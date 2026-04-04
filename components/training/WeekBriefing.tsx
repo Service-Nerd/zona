@@ -25,7 +25,7 @@ export default function WeekBriefing({ week }: Props) {
     setDone(prev => {
       const next = new Set(prev)
       next.has(day) ? next.delete(day) : next.add(day)
-      try { localStorage.setItem(`rts_sessions_w${week.n}`, JSON.stringify([...next])) } catch {}
+      try { localStorage.setItem(`rts_sessions_w${week.n}`, JSON.stringify(Array.from(next))) } catch {}
       return next
     })
   }
