@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --black:       #1a1a1a;
+  --off-black:   #222222;
+  --card:        #242424;
+  --card2:       #2c2c2c;
+  --border:      #2a2a2a;
+  --orange:      #FF6B1A;
+  --orange-dim:  rgba(255,107,26,0.12);
+  --orange-mid:  rgba(255,107,26,0.35);
+  --orange-bright: #FF8C42;
+  --yellow:      #FFD60A;
+  --red:         #FF3333;
+  --green:       #39D98A;
+  --grey:        #3D3D3D;
+  --grey-light:  #555555;
+  --white:       #F0F0F0;
+  --muted:       #666;
+  --text:        #E8E8E8;
+  --text-dim:    #888;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #3a3a3a;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Typography utilities */
+.font-display { font-family: 'Bebas Neue', sans-serif; }
+.font-mono    { font-family: 'DM Mono', monospace; }
+
+/* Scrollbar */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--black); }
+::-webkit-scrollbar-thumb { background: var(--grey); border-radius: 2px; }
+
+/* Focus ring */
+:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
