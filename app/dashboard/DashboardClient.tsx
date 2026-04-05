@@ -455,21 +455,26 @@ function TodayScreen({ plan, currentWeek, quitDays, daysToRace, daysTo50k, onOpe
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
   }
 
+  const todayStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+
   // Build sessions dynamically from plan data — only show run/quality/easy/race types, skip rest
   const ws = (currentWeek as any).sessions ?? {}
   const dayLabels: Record<string, string> = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' }
   const runTypes = ['run', 'easy', 'quality', 'race']
   const sessions = Object.entries(ws)
     .filter(([_, s]: [string, any]) => runTypes.includes(s.type))
-    .map(([key, s]: [string, any]) => ({
-      key,
-      day: dayLabels[key] ?? key,
-      title: s.label ?? 'Run',
-      detail: s.detail ?? '',
-      date: getSessionDate(key),
-      today: key === todayDow,
-      done: false, // TODO: wire from Strava
-    }))
+    .map(([key, s]: [string, any]) => {
+      const sessionDate = getSessionDate(key)
+      return {
+        key,
+        day: dayLabels[key] ?? key,
+        title: s.label ?? 'Run',
+        detail: s.detail ?? '',
+        date: sessionDate,
+        today: key === todayDow && sessionDate === todayStr,
+        done: false,
+      }
+    })
 
   // Week label and theme from plan data
   const weekLabel = (currentWeek as any).label ?? 'Build phase'
