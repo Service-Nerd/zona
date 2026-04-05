@@ -6,6 +6,7 @@ import PlanGrid from '@/components/training/PlanGrid'
 import PlanChart from '@/components/training/PlanChart'
 import WeekBriefing from '@/components/training/WeekBriefing'
 import StravaPanel from '@/components/strava/StravaPanel'
+import { createClient } from '@/lib/supabase/client'
 
 interface Props { plan: Plan; currentWeek: Week }
 
@@ -69,6 +70,15 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
   const [resetPhrase, setResetPhrase] = useState('')
   const [theme, setTheme] = useState<'dark' | 'light' | 'auto'>('dark')
 
+  // Shared Strava state — fetched once, passed to Coach + Strava screens
+  const [stravaRuns, setStravaRuns] = useState<any[] | null>(null)
+  const [stravaLoading, setStravaLoading] = useState(true)
+  const [stravaConnected, setStravaConnected] = useState(false)
+  const supabase = createClient()
+
+  const CLIENT_ID     = process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID!
+  const REFRESH_TOKEN = 'b2332fbde9c23d072e4e7712afc9d5b06e253fed'
+
   // Derive user initials from athlete name
   const initials = (plan.meta.athlete ?? 'RS')
     .split(' ')
@@ -85,6 +95,47 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
       const t = localStorage.getItem('rts_theme') as 'dark' | 'light' | 'auto' | null
       if (t) { setTheme(t); applyTheme(t) }
     } catch {}
+
+    // Fetch Strava data once on mount
+    async function fetchStrava() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { setStravaLoading(false); return }
+        const { data } = await supabase
+          .from('user_settings')
+          .select('strava_client_secret')
+          .eq('id', user.id)
+          .single()
+        if (!data?.strava_client_secret) { setStravaLoading(false); return }
+
+        const tokenRes = await fetch('https://www.strava.com/oauth/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_id: CLIENT_ID,
+            client_secret: data.strava_client_secret,
+            refresh_token: REFRESH_TOKEN,
+            grant_type: 'refresh_token',
+          }),
+        })
+        const { access_token } = await tokenRes.json()
+        if (!access_token) { setStravaLoading(false); return }
+
+        const after = Math.floor(new Date('2026-01-01').getTime() / 1000)
+        const actRes = await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=100`, {
+          headers: { Authorization: `Bearer ${access_token}` },
+        })
+        const activities = await actRes.json()
+        if (!Array.isArray(activities)) { setStravaLoading(false); return }
+
+        const { getRuns } = await import('@/lib/strava')
+        const runs = getRuns(activities)
+        setStravaRuns(runs)
+        setStravaConnected(true)
+      } catch {}
+      finally { setStravaLoading(false) }
+    }
+    fetchStrava()
   }, [])
 
   function saveMental(val: string) {
@@ -158,8 +209,8 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
         {screen === 'today'  && <TodayScreen plan={plan} currentWeek={currentWeek} quitDays={quitDays} daysToRace={daysToRace} daysTo50k={daysTo50k} onOpenMe={() => setShowMe(true)} initials={initials} />}
         {screen === 'plan'   && <PlanScreen plan={plan} onOpenMe={() => setShowMe(true)} initials={initials} />}
-        {screen === 'coach'  && <CoachScreen plan={plan} currentWeek={currentWeek} onOpenMe={() => setShowMe(true)} initials={initials} />}
-        {screen === 'strava' && <StravaScreen onOpenMe={() => setShowMe(true)} initials={initials} />}
+        {screen === 'coach'  && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setShowMe(true)} initials={initials} />}
+        {screen === 'strava' && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setShowMe(true)} initials={initials} />}
       </div>
 
       {/* Bottom nav */}
@@ -387,98 +438,124 @@ function PlanScreen({ plan, onOpenMe, initials }: { plan: Plan; onOpenMe: () => 
 
 // ── COACH SCREEN ──────────────────────────────────────────────────────────
 
-function CoachScreen({ plan, currentWeek, onOpenMe, initials }: { plan: Plan; currentWeek: Week; onOpenMe: () => void; initials: string }) {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, onOpenMe, initials }: {
+  plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean; onOpenMe: () => void; initials: string
+}) {
   const [analysis, setAnalysis] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [lastActivityId, setLastActivityId] = useState<string | null>(null)
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState<string | null>(null)
   const [cachedActivityId, setCachedActivityId] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
 
-  // Load cached analysis + last activity ID from localStorage
+  const weekNum    = plan.weeks.findIndex(w => w.type === 'current') + 1
+  const totalWeeks = plan.weeks.length
+  const latestRun  = runs?.[0] ?? null
+  const latestId   = latestRun ? String(latestRun.id) : null
+  const isNew      = latestId && latestId !== cachedActivityId
+
+  // Load cached analysis on mount
   useEffect(() => {
     try {
-      const cached = localStorage.getItem('rts_coach_analysis')
+      const cached   = localStorage.getItem('rts_coach_analysis')
       const cachedId = localStorage.getItem('rts_coach_activity_id')
-      if (cached) setAnalysis(cached)
+      if (cached)   setAnalysis(cached)
       if (cachedId) setCachedActivityId(cachedId)
     } catch {}
   }, [])
 
-  // Fetch latest Strava activity ID
+  // Auto-generate when new activity arrives
   useEffect(() => {
-    async function fetchLatestActivity() {
-      try {
-        const res = await fetch('/api/strava/latest-activity')
-        if (res.ok) {
-          const data = await res.json()
-          if (data.id) setLastActivityId(String(data.id))
-        }
-      } catch {}
-    }
-    fetchLatestActivity()
-  }, [])
-
-  // Auto-generate if new activity detected
-  useEffect(() => {
-    if (lastActivityId && lastActivityId !== cachedActivityId && !loading) {
-      generateAnalysis()
-    }
-  }, [lastActivityId, cachedActivityId])
-
-  const weekNum = plan.weeks.findIndex(w => w.type === 'current') + 1
-  const totalWeeks = plan.weeks.length
+    if (isNew && !loading && !stravaLoading) generateAnalysis()
+  }, [latestId, stravaLoading])
 
   async function generateAnalysis() {
+    if (!latestRun) return
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/coach/analyse', {
+      const { formatDuration, formatPace } = await import('@/lib/strava')
+      const weeksToRace = Math.max(0, Math.round((new Date('2026-07-11').getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 7)))
+      const weekLabel   = (currentWeek as any).label ?? 'build phase'
+      const weekTheme   = (currentWeek as any).theme ?? ''
+
+      const prompt = `You are a direct, no-fluff ultra running coach giving Russ a weekly check-in. He is training for Race to the Stones 100km on 11 July 2026 (${weeksToRace} weeks away).
+
+Athlete profile: HM 1:48:30, resting HR ~48, max HR ~188. Zone 2 ceiling: HR 145. Recently quit smoking 3 April 2026. Key metric to track: pace at HR 145.
+
+Current plan position: Week ${weekNum} of ${totalWeeks}. Phase: ${weekLabel}. Focus: ${weekTheme}.
+
+Latest activity:
+- Name: ${latestRun.name}
+- Date: ${new Date(latestRun.start_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+- Distance: ${(latestRun.distance / 1000).toFixed(2)}km
+- Duration: ${formatDuration(latestRun.moving_time)}
+- Avg HR: ${latestRun.average_heartrate ? Math.round(latestRun.average_heartrate) + ' bpm' : 'not recorded'}
+- Max HR: ${latestRun.max_heartrate ? Math.round(latestRun.max_heartrate) + ' bpm' : 'not recorded'}
+- Pace: ${formatPace(latestRun.moving_time, latestRun.distance)}
+- Elevation: +${Math.round(latestRun.total_elevation_gain ?? 0)}m
+
+Write 2 short paragraphs. First: where Russ is in the plan and whether he's on track. Second: direct feedback on the latest run — what was good, what to focus on next. Be specific, honest, no fluff. Use "you" not "Russ".`
+
+      const res = await fetch('/api/claude', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          week: weekNum,
-          totalWeeks,
-          currentWeek,
-          activityId: lastActivityId,
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }],
         }),
       })
-      if (!res.ok) throw new Error('Failed to generate analysis')
       const data = await res.json()
-      setAnalysis(data.analysis)
-      setCachedActivityId(lastActivityId)
+      const text = data.content?.map((b: { text?: string }) => b.text || '').join('') || ''
+      if (!text) throw new Error('Empty response')
+
+      setAnalysis(text)
+      setCachedActivityId(latestId)
       try {
-        localStorage.setItem('rts_coach_analysis', data.analysis)
-        if (lastActivityId) localStorage.setItem('rts_coach_activity_id', lastActivityId)
+        localStorage.setItem('rts_coach_analysis', text)
+        if (latestId) localStorage.setItem('rts_coach_activity_id', latestId)
       } catch {}
-    } catch (e) {
-      setError('Could not generate analysis. Check your connection.')
+    } catch {
+      setError('Could not generate analysis — check your connection.')
     } finally {
       setLoading(false)
     }
   }
 
-  const isNew = lastActivityId && lastActivityId !== cachedActivityId
+  const latestRunLabel = latestRun
+    ? `${new Date(latestRun.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · ${(latestRun.distance / 1000).toFixed(1)}km`
+    : null
 
   return (
     <div>
-      <ScreenHeader title="Coach" sub={`W${weekNum} · Build phase`} initials={initials} onOpenMe={onOpenMe} />
+      <ScreenHeader title="Coach" sub={`W${weekNum} · ${(currentWeek as any).label ?? 'Build phase'}`} initials={initials} onOpenMe={onOpenMe} />
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
         {/* Activity pill */}
-        <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '9px 12px', border: '0.5px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FC4C02' }} />
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#aaa' }}>
-              {loading ? 'New activity detected · analysing...' : isNew ? 'New Strava activity' : 'Latest Strava activity'}
-            </span>
+        {(stravaLoading || latestRun) && (
+          <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '9px 12px', border: '0.5px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FC4C02' }} />
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#aaa' }}>
+                {stravaLoading ? 'Loading Strava...' : loading ? 'Analysing latest run...' : latestRunLabel ?? 'Latest activity'}
+              </span>
+            </div>
+            {isNew && !loading && (
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#E05A1C', background: 'rgba(224,90,28,0.1)', padding: '2px 8px', borderRadius: '20px' }}>new</span>
+            )}
           </div>
-          {isNew && !loading && (
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#E05A1C', background: 'rgba(224,90,28,0.1)', padding: '2px 8px', borderRadius: '20px' }}>new</span>
-          )}
-        </div>
+        )}
+
+        {/* Strava not connected */}
+        {!stravaLoading && !latestRun && (
+          <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', padding: '28px 20px', textAlign: 'center' }}>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#777', lineHeight: 1.6, marginBottom: '8px' }}>
+              Connect Strava in the <span style={{ color: '#E05A1C' }}>Me</span> screen<br />to get coaching notes.
+            </div>
+          </div>
+        )}
 
         {/* Loading state */}
-        {loading && (
+        {(loading || (stravaLoading && !analysis)) && (
           <>
             <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', padding: '28px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
               <svg width="36" height="36" viewBox="0 0 36 36">
@@ -488,10 +565,9 @@ function CoachScreen({ plan, currentWeek, onOpenMe, initials }: { plan: Plan; cu
                 </circle>
               </svg>
               <p style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#777', textAlign: 'center', lineHeight: 1.6 }}>
-                Reading your latest run<br />and plan position...
+                {stravaLoading ? 'Loading Strava data...' : 'Reading your latest run\nand plan position...'}
               </p>
             </div>
-            {/* Skeleton */}
             <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', padding: '14px' }}>
               {[85, 100, 70, 90].map((w, i) => (
                 <div key={i} style={{ height: '10px', background: '#252525', borderRadius: '4px', marginBottom: i < 3 ? '8px' : 0, width: `${w}%` }} />
@@ -517,7 +593,7 @@ function CoachScreen({ plan, currentWeek, onOpenMe, initials }: { plan: Plan; cu
             <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', overflow: 'hidden' }}>
               <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid #222', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#E05A1C' }} />
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Plan position</span>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Coaching notes</span>
                 <span style={{ marginLeft: 'auto', fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666' }}>W{weekNum}/{totalWeeks}</span>
               </div>
               <div style={{ padding: '14px' }}>
@@ -528,20 +604,17 @@ function CoachScreen({ plan, currentWeek, onOpenMe, initials }: { plan: Plan; cu
                 ))}
               </div>
             </div>
-
-            {!isNew && (
-              <button onClick={generateAnalysis} style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#777', background: 'none', border: '0.5px solid #2a2a2a', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer', alignSelf: 'center' }}>
-                Refresh analysis
-              </button>
-            )}
+            <button onClick={generateAnalysis} style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#777', background: 'none', border: '0.5px solid #2a2a2a', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer', alignSelf: 'center' }}>
+              Refresh analysis
+            </button>
           </>
         )}
 
-        {/* Empty state — no analysis yet, no new activity */}
-        {!analysis && !loading && !error && (
+        {/* Empty — connected but no analysis yet */}
+        {!analysis && !loading && !error && latestRun && !stravaLoading && (
           <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', padding: '28px 20px', textAlign: 'center' }}>
             <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#777', lineHeight: 1.6 }}>
-              Waiting for a Strava activity<br />to generate your coaching notes.
+              Strava connected. Ready to generate<br />your coaching notes.
             </div>
             <button onClick={generateAnalysis} style={{ marginTop: '16px', fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#E05A1C', background: 'rgba(224,90,28,0.1)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}>
               Generate now
@@ -556,13 +629,155 @@ function CoachScreen({ plan, currentWeek, onOpenMe, initials }: { plan: Plan; cu
 
 // ── STRAVA SCREEN ─────────────────────────────────────────────────────────
 
-function StravaScreen({ onOpenMe, initials }: { onOpenMe: () => void; initials: string }) {
+function StravaScreen({ runs, loading, connected, onOpenMe, initials }: {
+  runs: any[] | null; loading: boolean; connected: boolean; onOpenMe: () => void; initials: string
+}) {
   return (
     <div>
       <ScreenHeader title="Strava" sub="Activity feed" initials={initials} onOpenMe={onOpenMe} />
       <div style={{ padding: '0 12px' }}>
-        <StravaPanel />
+        <StravaPanel preloadedRuns={runs} preloadedConnected={connected} preloadedLoading={loading} />
       </div>
+    </div>
+  )
+}
+
+// ── STRAVA CONNECTION ROW ─────────────────────────────────────────────────
+
+function StravaConnectionRow() {
+  const [secret, setSecret]       = useState('')
+  const [connected, setConnected] = useState<boolean | null>(null) // null = loading
+  const [saving, setSaving]       = useState(false)
+  const [expanded, setExpanded]   = useState(false)
+  const [error, setError]         = useState<string | null>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function check() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setConnected(false); return }
+      const { data } = await supabase
+        .from('user_settings')
+        .select('strava_client_secret')
+        .eq('id', user.id)
+        .single()
+      setConnected(!!(data?.strava_client_secret))
+    }
+    check()
+  }, [])
+
+  async function save() {
+    if (!secret.trim()) return
+    setSaving(true)
+    setError(null)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not signed in')
+      const { error: err } = await supabase.from('user_settings').upsert({
+        id: user.id,
+        strava_client_secret: secret.trim(),
+        updated_at: new Date().toISOString(),
+      })
+      if (err) throw err
+      setConnected(true)
+      setExpanded(false)
+      setSecret('')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Save failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function disconnect() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('user_settings').upsert({
+      id: user.id,
+      strava_client_secret: null,
+      updated_at: new Date().toISOString(),
+    })
+    setConnected(false)
+    setExpanded(false)
+  }
+
+  const isLoading = connected === null
+
+  return (
+    <div style={{ background: '#1a1a1a', borderRadius: '14px', border: '0.5px solid #2a2a2a', overflow: 'hidden' }}>
+      {/* Main row */}
+      <button onClick={() => !isLoading && setExpanded(e => !e)} style={{
+        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '13px 14px', background: 'none', border: 'none', cursor: 'pointer',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(252,76,2,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FC4C02' }} />
+          </div>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: '13px', color: '#ccc' }}>Strava</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#777', marginTop: '1px' }}>Client secret + OAuth</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {isLoading ? (
+            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#555' }}>checking...</span>
+          ) : connected ? (
+            <>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#5a5' }} />
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#5a5' }}>connected</span>
+            </>
+          ) : (
+            <>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#a44' }} />
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#a44' }}>not connected</span>
+            </>
+          )}
+          <span style={{ color: '#555', fontSize: '14px', marginLeft: '4px' }}>{expanded ? '˅' : '›'}</span>
+        </div>
+      </button>
+
+      {/* Expanded setup/manage panel */}
+      {expanded && (
+        <div style={{ borderTop: '0.5px solid #2a2a2a', padding: '14px' }}>
+          {!connected ? (
+            <>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#777', marginBottom: '10px', lineHeight: 1.6 }}>
+                Paste your Strava Client Secret. Find it at strava.com → Settings → My API Application.
+              </div>
+              <input
+                type="password"
+                value={secret}
+                onChange={e => setSecret(e.target.value)}
+                placeholder="Client secret..."
+                style={{ width: '100%', background: '#252525', border: '0.5px solid #333', borderRadius: '8px', padding: '10px 12px', color: '#ccc', fontFamily: "'DM Mono',monospace", fontSize: '12px', outline: 'none', marginBottom: '10px', boxSizing: 'border-box' }}
+              />
+              {error && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#a44', marginBottom: '8px' }}>{error}</div>}
+              <button onClick={save} disabled={saving || !secret.trim()} style={{
+                width: '100%', background: '#E05A1C', color: '#000', border: 'none', borderRadius: '8px',
+                padding: '10px', fontFamily: "'DM Mono',monospace", fontSize: '11px', letterSpacing: '0.08em',
+                textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold',
+                opacity: saving || !secret.trim() ? 0.6 : 1,
+              }}>
+                {saving ? 'Saving...' : 'Save & Connect'}
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#5a5', marginBottom: '12px' }}>
+                Secret saved to your account. Auto-connects on every load.
+              </div>
+              <button onClick={disconnect} style={{
+                background: 'none', border: '0.5px solid #a44', borderRadius: '8px',
+                padding: '8px 14px', fontFamily: "'DM Mono',monospace", fontSize: '11px',
+                color: '#a44', cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase',
+              }}>
+                Disconnect
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -597,15 +812,20 @@ function MeScreen({ initials, athlete, quitDays, resetPhrase, onSaveMental, them
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '32px' }}>
 
         {/* Profile card */}
-        <div style={{ background: '#1a1a1a', borderRadius: '16px', padding: '14px 16px', border: '0.5px solid #2a2a2a', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ background: '#1a1a1a', borderRadius: '16px', padding: '14px 16px', border: '0.5px solid #2a2a2a', display: 'flex', alignItems: 'center', gap: '14px', justifyContent: 'space-between' }}>
           <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#E05A1C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Mono',monospace", fontSize: '15px', fontWeight: 500, color: '#fff', flexShrink: 0 }}>
             {initials}
           </div>
-          <div>
+          <div style={{ flex: 1 }}>
             <div style={{ fontSize: '15px', color: '#fff', fontWeight: 500 }}>{athlete}</div>
             <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#777', marginTop: '2px' }}>Berkshire, UK</div>
             <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#E05A1C', marginTop: '4px' }}>Race to the Stones · {daysToRace} days</div>
           </div>
+          <form action="/auth/signout" method="post">
+            <button style={{ background: 'none', border: '0.5px solid #2a2a2a', borderRadius: '8px', color: '#777', fontFamily: "'DM Mono',monospace", fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              Sign out
+            </button>
+          </form>
         </div>
 
         {/* Appearance */}
@@ -629,23 +849,7 @@ function MeScreen({ initials, athlete, quitDays, resetPhrase, onSaveMental, them
 
         {/* Connections */}
         <SectionLabel>Connections</SectionLabel>
-        <div style={{ background: '#1a1a1a', borderRadius: '14px', border: '0.5px solid #2a2a2a' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(252,76,2,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FC4C02' }} />
-              </div>
-              <div>
-                <div style={{ fontSize: '13px', color: '#ccc' }}>Strava</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#777', marginTop: '1px' }}>Client secret + OAuth</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#5a5' }} />
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#5a5' }}>connected</span>
-            </div>
-          </div>
-        </div>
+        <StravaConnectionRow />
 
         {/* Training support */}
         <SectionLabel>Training support</SectionLabel>
