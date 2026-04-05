@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Plan, Week } from '@/types/plan'
 import PlanGrid from '@/components/training/PlanGrid'
 import PlanChart from '@/components/training/PlanChart'
@@ -172,8 +172,9 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
     }
   }
 
-  // Days to race
-  const raceDate = new Date('2026-07-11')
+  // Week navigation — default to current week
+  const currentWeekIndex = plan.weeks.findIndex(w => w.type === 'current')
+  const [viewWeekIndex, setViewWeekIndex] = useState(currentWeekIndex >= 0 ? currentWeekIndex : 0)
   const fiftyKDate = new Date('2026-05-10')
   const now = new Date()
   const daysToRace = Math.max(0, Math.ceil((raceDate.getTime() - now.getTime()) / 86400000))
@@ -207,7 +208,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
 
       {/* Main content area */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'  && <TodayScreen plan={plan} currentWeek={currentWeek} quitDays={quitDays} daysToRace={daysToRace} daysTo50k={daysTo50k} onOpenMe={() => setShowMe(true)} initials={initials} />}
+        {screen === 'today'  && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} daysToRace={daysToRace} daysTo50k={daysTo50k} onOpenMe={() => setShowMe(true)} initials={initials} />}
         {screen === 'plan'   && <PlanScreen plan={plan} onOpenMe={() => setShowMe(true)} initials={initials} />}
         {screen === 'coach'  && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setShowMe(true)} initials={initials} />}
         {screen === 'strava' && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setShowMe(true)} initials={initials} />}
@@ -429,15 +430,29 @@ function SessionPopup({ session, weekTheme, onClose }: { session: any; weekTheme
 
 // ── TODAY SCREEN ──────────────────────────────────────────────────────────
 
-function TodayScreen({ plan, currentWeek, quitDays, daysToRace, daysTo50k, onOpenMe, initials }: {
-  plan: Plan; currentWeek: Week; quitDays: number; daysToRace: number; daysTo50k: number; onOpenMe: () => void; initials: string
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, daysToRace, daysTo50k, onOpenMe, initials }: {
+  plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number; daysToRace: number; daysTo50k: number; onOpenMe: () => void; initials: string
 }) {
-  const weekNum = plan.weeks.findIndex(w => w.type === 'current') + 1
+  const currentWeek = plan.weeks[weekIndex]
+  const weekNum = weekIndex + 1
   const totalWeeks = plan.weeks.length
-  const doneKm = 0 // TODO: wire from Strava
+  const doneKm = 0
   const targetKm = currentWeek.weekly_km ?? 0
   const progress = targetKm > 0 ? Math.min(1, doneKm / targetKm) : 0
   const [activeSession, setActiveSession] = useState<any | null>(null)
+  const isCurrentWeek = currentWeek.type === 'current'
+
+  // Swipe detection
+  const touchStartX = useRef<number | null>(null)
+  function onTouchStart(e: React.TouchEvent) { touchStartX.current = e.touches[0].clientX }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return
+    const diff = touchStartX.current - e.changedTouches[0].clientX
+    if (Math.abs(diff) < 50) return // ignore small swipes
+    if (diff > 0 && weekIndex < totalWeeks - 1) onWeekChange(weekIndex + 1) // swipe left = next week
+    if (diff < 0 && weekIndex > 0) onWeekChange(weekIndex - 1) // swipe right = prev week
+    touchStartX.current = null
+  }
 
   // Determine today's day of week
   const now = new Date()
@@ -481,8 +496,36 @@ function TodayScreen({ plan, currentWeek, quitDays, daysToRace, daysTo50k, onOpe
   const weekTheme = (currentWeek as any).theme ?? 'Aerobic base + consistency'
 
   return (
-    <div style={{ paddingBottom: '8px' }}>
-      <ScreenHeader title="Today" sub={`W${weekNum} · ${daysToRace} days to go`} initials={initials} onOpenMe={onOpenMe} />
+    <div style={{ paddingBottom: '8px' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <ScreenHeader title="Today" sub={`W${weekNum}/${totalWeeks} · ${daysToRace} days to go`} initials={initials} onOpenMe={onOpenMe} />
+
+      {/* Week navigation */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', marginBottom: '8px' }}>
+        <button onClick={() => weekIndex > 0 && onWeekChange(weekIndex - 1)} style={{
+          background: 'none', border: 'none', color: weekIndex > 0 ? '#999' : '#333',
+          fontSize: '20px', cursor: weekIndex > 0 ? 'pointer' : 'default', padding: '4px 8px',
+        }}>‹</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {isCurrentWeek && (
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#E05A1C', background: 'rgba(224,90,28,0.1)', padding: '2px 8px', borderRadius: '20px' }}>
+              current week
+            </div>
+          )}
+          {!isCurrentWeek && (
+            <button onClick={() => onWeekChange(plan.weeks.findIndex(w => w.type === 'current'))} style={{
+              fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666',
+              background: 'none', border: '0.5px solid #2a2a2a', borderRadius: '20px',
+              padding: '2px 8px', cursor: 'pointer',
+            }}>
+              back to now
+            </button>
+          )}
+        </div>
+        <button onClick={() => weekIndex < totalWeeks - 1 && onWeekChange(weekIndex + 1)} style={{
+          background: 'none', border: 'none', color: weekIndex < totalWeeks - 1 ? '#999' : '#333',
+          fontSize: '20px', cursor: weekIndex < totalWeeks - 1 ? 'pointer' : 'default', padding: '4px 8px',
+        }}>›</button>
+      </div>
 
       {/* Week hero */}
       <div style={{ margin: '0 12px 10px' }}>
