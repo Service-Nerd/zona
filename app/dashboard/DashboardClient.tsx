@@ -12,8 +12,6 @@ interface Props { plan: Plan; currentWeek: Week }
 
 type Screen = 'today' | 'plan' | 'coach' | 'strava'
 
-const QUIT_DATE = new Date('2026-04-03T00:00:00')
-
 // ── Icons ─────────────────────────────────────────────────────────────────
 
 function IconToday({ active }: { active: boolean }) {
@@ -66,7 +64,9 @@ function IconStrava({ active }: { active: boolean }) {
 export default function DashboardClient({ plan, currentWeek }: Props) {
   const [screen, setScreen] = useState<Screen>('today')
   const [showMe, setShowMe] = useState(false)
-  const [quitDays, setQuitDays] = useState(1)
+  const [quitDays, setQuitDays] = useState<number | null>(null)
+  const [smokeTrackerEnabled, setSmokeTrackerEnabled] = useState(false)
+  const [quitDate, setQuitDate] = useState<string>('')
   const [resetPhrase, setResetPhrase] = useState('')
   const [theme, setTheme] = useState<'dark' | 'light' | 'auto'>('dark')
 
@@ -88,24 +88,31 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
     .slice(0, 2)
 
   useEffect(() => {
-    const days = Math.max(1, Math.floor((Date.now() - QUIT_DATE.getTime()) / 86400000))
-    setQuitDays(days)
     try {
       const p = localStorage.getItem('rts_phrase'); if (p) setResetPhrase(p)
       const t = localStorage.getItem('rts_theme') as 'dark' | 'light' | 'auto' | null
       if (t) { setTheme(t); applyTheme(t) }
     } catch {}
 
-    // Fetch Strava data once on mount
-    async function fetchStrava() {
+    // Fetch Strava + smoke tracker settings on mount
+    async function fetchSettings() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { setStravaLoading(false); return }
         const { data } = await supabase
           .from('user_settings')
-          .select('strava_client_secret')
+          .select('strava_client_secret, smoke_tracker_enabled, quit_date')
           .eq('id', user.id)
           .single()
+
+        // Smoke tracker
+        if (data?.smoke_tracker_enabled && data?.quit_date) {
+          setSmokeTrackerEnabled(true)
+          setQuitDate(data.quit_date)
+          const days = Math.max(0, Math.floor((Date.now() - new Date(data.quit_date).getTime()) / 86400000))
+          setQuitDays(days)
+        }
+
         if (!data?.strava_client_secret) { setStravaLoading(false); return }
 
         const tokenRes = await fetch('https://www.strava.com/oauth/token', {
@@ -135,7 +142,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
       } catch {}
       finally { setStravaLoading(false) }
     }
-    fetchStrava()
+    fetchSettings()
   }, [])
 
   function saveMental(val: string) {
@@ -201,6 +208,18 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
           initials={initials}
           athlete={plan.meta.athlete ?? 'Russell Shear'}
           quitDays={quitDays}
+          smokeTrackerEnabled={smokeTrackerEnabled}
+          quitDate={quitDate}
+          onSmokeTrackerChange={(enabled, date) => {
+            setSmokeTrackerEnabled(enabled)
+            setQuitDate(date)
+            if (enabled && date) {
+              const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000))
+              setQuitDays(days)
+            } else {
+              setQuitDays(null)
+            }
+          }}
           resetPhrase={resetPhrase}
           onSaveMental={saveMental}
           theme={theme}
@@ -211,7 +230,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
 
       {/* Main content area */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'  && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} daysToRace={daysToRace} daysTo50k={daysTo50k} onOpenMe={() => setShowMe(true)} initials={initials} />}
+      {screen === 'today'  && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} stravaRuns={stravaRuns ?? []} onOpenMe={() => setShowMe(true)} initials={initials} />}
         {screen === 'plan'   && <PlanScreen plan={plan} onOpenMe={() => setShowMe(true)} initials={initials} />}
         {screen === 'coach'  && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setShowMe(true)} initials={initials} />}
         {screen === 'strava' && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setShowMe(true)} initials={initials} />}
@@ -290,142 +309,324 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   )
 }
 
+// ── SESSION LIST ──────────────────────────────────────────────────────────
+
+const TYPE_COLORS: Record<string, string> = {
+  easy: '#378ADD', quality: '#E05A1C', run: '#E05A1C',
+  race: '#ff7777', strength: '#5a9a5a', rest: '#333',
+}
+
+function SessionList({ sessions, weekN, stravaRuns, onSessionAction }: {
+  sessions: any[]; weekN: number; stravaRuns: any[]; onSessionAction: (s: any) => void
+}) {
+  const [completions, setCompletions] = useState<Record<string, {status: string; strava_activity_id?: number; strava_activity_name?: string}>>({})
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function loadCompletions() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('session_completions')
+        .select('session_day, status, strava_activity_id, strava_activity_name')
+        .eq('user_id', user.id)
+        .eq('week_n', weekN)
+      if (data) {
+        const map: Record<string, any> = {}
+        data.forEach(r => { map[r.session_day] = r })
+        setCompletions(map)
+      }
+    }
+    loadCompletions()
+  }, [weekN])
+
+  return (
+    <div style={{ padding: '0 12px', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      {sessions.map((s, i) => {
+        const now = new Date()
+        const rawDate = new Date(s.rawDate)
+        const completion = completions[s.key]
+        const status = completion?.status
+        const isPast = !s.today && rawDate < now
+        const isFuture = !s.today && rawDate > now
+        const borderColor = status === 'complete' ? '#3a7a3a' : status === 'skipped' ? '#555' : s.today ? '#E05A1C' : '#2a2a2a'
+        const typeColor = TYPE_COLORS[s.type] ?? '#999'
+
+        return (
+          <div key={i} onClick={() => onSessionAction({ ...s, completion, isPast, isFuture })} style={{
+            background: status === 'skipped' ? '#141414' : '#1a1a1a',
+            borderRadius: '12px',
+            border: `0.5px solid ${borderColor}`,
+            borderLeft: `3px solid ${status === 'complete' ? '#3a7a3a' : status === 'skipped' ? '#444' : typeColor}`,
+            padding: '12px 14px',
+            cursor: 'pointer',
+            opacity: status === 'skipped' ? 0.6 : isPast && !status ? 0.5 : isFuture ? 0.7 : 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: s.today ? '#E05A1C' : '#777', textTransform: 'uppercase' }}>
+                  {s.day}{s.today ? ' · Today' : ''}
+                </span>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#555' }}>{s.date}</span>
+              </div>
+              <div style={{ fontSize: '14px', color: status === 'skipped' ? '#666' : '#ddd', fontWeight: 500 }}>{s.title}</div>
+              {s.detail && (
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#666', marginTop: '2px' }}>{s.detail}</div>
+              )}
+              {status === 'complete' && completion?.strava_activity_name && (
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#FC4C02', marginTop: '4px' }}>
+                  ● {completion.strava_activity_name}
+                </div>
+              )}
+            </div>
+            <div style={{ marginLeft: '12px', flexShrink: 0 }}>
+              {status === 'complete' && <span style={{ fontSize: '16px' }}>✓</span>}
+              {status === 'skipped' && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#555' }}>skipped</span>}
+              {!status && <span style={{ color: '#444', fontSize: '16px' }}>›</span>}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
-function SessionPopup({ session, weekTheme, onClose }: { session: any; weekTheme: string; onClose: () => void }) {
-  const typeConfig: Record<string, { color: string; label: string; tips: string[] }> = {
-    easy: {
-      color: '#378ADD',
-      label: 'Easy run — Zone 2',
-      tips: [
-        'HR cap: 145 bpm. If it goes above, walk until it drops.',
-        'Pace is irrelevant — HR is everything on this run.',
-        'Nose breathing test: if you can\'t hold a conversation, slow down.',
-        'Cardiac drift is normal late in the run — walk breaks are correct, not failure.',
-      ],
-    },
-    quality: {
-      color: '#E05A1C',
-      label: 'Quality session',
-      tips: [
-        'Warm up 10–15 min easy before picking up the pace.',
-        'Target HR 155–165 bpm during efforts. Not maximal — controlled.',
-        'Cool down 10 min easy. Don\'t skip this.',
-        'If legs feel dead from the week, dial it back — don\'t force quality on fatigue.',
-      ],
-    },
-    run: {
-      color: '#E05A1C',
-      label: 'Long run',
-      tips: [
-        'Start slower than feels right. First 30 min should feel embarrassingly easy.',
-        'Fuel every 45 min from the gun — don\'t wait until you\'re hungry.',
-        'Walk the hills. This is strategy, not weakness.',
-        'HR creeping above 150 late in the run? Walk break. Let it drop to 135 before resuming.',
-        'Practice your race-day kit, shoes, and nutrition on this run.',
-      ],
-    },
-    race: {
-      color: '#ff7777',
-      label: 'Race',
-      tips: [
-        'This is a training run with a bib. Not a race.',
-        'HR-capped — treat it like a Zone 2 long run.',
-        'Walk all significant climbs. No exceptions.',
-        'Fuel every 45 min from the gun. Use every aid station.',
-        'Finish feeling like you have 10k left in you.',
-      ],
-    },
-    strength: {
-      color: '#5a9a5a',
-      label: 'Strength session',
-      tips: [
-        'Keep it functional — focus on glutes, hips, and single-leg stability.',
-        'Don\'t go to failure. Leave 2–3 reps in the tank.',
-        'If legs are trashed from running, reduce load — don\'t skip entirely.',
-      ],
-    },
+function SessionPopup({ session, weekTheme, weekN, preloadedRuns, onClose }: {
+  session: any; weekTheme: string; weekN: number; preloadedRuns: any[]; onClose: () => void
+}) {
+  const [view, setView] = useState<'detail' | 'complete' | 'skip'>('detail')
+  const [saving, setSaving] = useState(false)
+  const [selectedActivity, setSelectedActivity] = useState<any | null>(null)
+  const [claimedIds, setClaimedIds] = useState<Set<number>>(new Set())
+  const [loadingClaimed, setLoadingClaimed] = useState(false)
+  const supabase = createClient()
+
+  const isPast = session.isPast
+  const completion = session.completion
+  const isComplete = completion?.status === 'complete'
+  const isSkipped = completion?.status === 'skipped'
+
+  // Load claimed activity IDs when entering complete view
+  useEffect(() => {
+    if (view !== 'complete') return
+    async function loadClaimed() {
+      setLoadingClaimed(true)
+      try {
+        const { data } = await supabase.from('session_completions').select('strava_activity_id').not('strava_activity_id', 'is', null)
+        setClaimedIds(new Set((data ?? []).map((r: any) => r.strava_activity_id)))
+      } catch {} finally { setLoadingClaimed(false) }
+    }
+    loadClaimed()
+  }, [view])
+
+  // Filter preloaded runs by date window and claimed status
+  const stravaRuns = preloadedRuns.filter((r: any) => {
+    if (claimedIds.has(r.id) && r.id !== completion?.strava_activity_id) return false
+    const actDate = new Date(r.start_date)
+    const today = new Date()
+    if (session.rawDate) {
+      const sessionDate = new Date(session.rawDate)
+      if (sessionDate > today) {
+        const fiveDaysAgo = new Date(today)
+        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5)
+        return actDate >= fiveDaysAgo
+      } else {
+        const sessionEnd = new Date(sessionDate)
+        sessionEnd.setHours(23, 59, 59, 999)
+        const fiveDaysBefore = new Date(sessionDate)
+        fiveDaysBefore.setDate(fiveDaysBefore.getDate() - 5)
+        return actDate >= fiveDaysBefore && actDate <= sessionEnd
+      }
+    }
+    const fiveDaysAgo = new Date(today)
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5)
+    return actDate >= fiveDaysAgo
+  })
+
+  async function saveCompletion(status: 'complete' | 'skipped') {
+    setSaving(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('session_completions').upsert({
+        user_id: user.id,
+        week_n: weekN,
+        session_day: session.key,
+        status,
+        strava_activity_id: status === 'complete' ? (selectedActivity?.id ?? null) : null,
+        strava_activity_name: status === 'complete' ? (selectedActivity?.name ?? null) : null,
+        strava_activity_km: status === 'complete' ? (selectedActivity ? +(selectedActivity.distance / 1000).toFixed(1) : null) : null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,week_n,session_day' })
+      onClose()
+      // Force a page refresh to update list states
+      window.location.reload()
+    } catch {} finally { setSaving(false) }
   }
 
+  const typeConfig: Record<string, { color: string; label: string; tips: string[] }> = {
+    easy: { color: '#378ADD', label: 'Easy run — Zone 2', tips: ['HR cap: 145 bpm. Walk if it goes above.', 'Pace is irrelevant — HR is everything.', "Nose breathing test: can't hold a conversation? Slow down.", 'Cardiac drift is normal — walk breaks are correct, not failure.'] },
+    quality: { color: '#E05A1C', label: 'Quality session', tips: ['Warm up 10–15 min easy first.', 'Target HR 155–165 bpm during efforts. Controlled, not maximal.', 'Cool down 10 min easy. Don\'t skip it.', 'Legs dead? Dial it back — don\'t force quality on fatigue.'] },
+    run: { color: '#E05A1C', label: 'Long run', tips: ['Start slower than feels right. First 30 min embarrassingly easy.', 'Fuel every 45 min from the gun — don\'t wait.', 'Walk the hills. Strategy, not weakness.', 'HR above 150 late in run? Walk break. Drop to 135 before resuming.'] },
+    race: { color: '#ff7777', label: 'Race', tips: ['Training run with a bib. Not a race.', 'HR-capped — Zone 2 long run.', 'Walk all significant climbs.', 'Fuel every 45 min. Use every aid station.', 'Finish feeling like you have 10k left.'] },
+    strength: { color: '#5a9a5a', label: 'Strength session', tips: ['Keep it functional — glutes, hips, single-leg stability.', 'Don\'t go to failure. Leave 2–3 reps in the tank.', 'Legs trashed from running? Reduce load, don\'t skip.'] },
+  }
   const config = typeConfig[session.type] ?? typeConfig['easy']
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 500,
-      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-      padding: '0',
-    }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{
-        background: '#1a1a1a', borderRadius: '20px 20px 0 0',
-        border: '0.5px solid #2a2a2a', borderBottom: 'none',
-        width: '100%', maxWidth: '480px',
-        maxHeight: '80vh', overflowY: 'auto',
-        paddingBottom: 'env(safe-area-inset-bottom)',
-      }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#1a1a1a', borderRadius: '20px 20px 0 0', border: '0.5px solid #2a2a2a', borderBottom: 'none', width: '100%', maxWidth: '480px', maxHeight: '85vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+
         {/* Handle */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
           <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#333' }} />
         </div>
 
         {/* Header */}
-        <div style={{ padding: '12px 18px 16px', borderBottom: '0.5px solid #252525' }}>
+        <div style={{ padding: '12px 18px 14px', borderBottom: '0.5px solid #252525' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
                 {session.day} · {session.date}
+                {isComplete && <span style={{ color: '#3a7a3a', marginLeft: '8px' }}>✓ Complete</span>}
+                {isSkipped && <span style={{ color: '#555', marginLeft: '8px' }}>Skipped</span>}
               </div>
-              <div style={{ fontSize: '18px', fontWeight: 500, color: '#fff', lineHeight: 1.2 }}>{session.title}</div>
-              {session.detail && (
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', marginTop: '4px' }}>{session.detail}</div>
-              )}
+              <div style={{ fontSize: '18px', fontWeight: 500, color: isPast && !isComplete ? '#888' : '#fff', lineHeight: 1.2 }}>{session.title}</div>
+              {session.detail && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#777', marginTop: '4px' }}>{session.detail}</div>}
             </div>
             <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#666', fontSize: '20px', cursor: 'pointer', padding: '0 0 0 12px' }}>✕</button>
           </div>
         </div>
 
-        {/* Week context */}
-        <div style={{ padding: '12px 18px', background: '#141414', borderBottom: '0.5px solid #252525' }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
-          <div style={{ fontSize: '13px', color: '#aaa', lineHeight: 1.5 }}>{weekTheme}</div>
-        </div>
-
-        {/* Coaching tips */}
-        <div style={{ padding: '16px 18px' }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
-            {config.label} — key points
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {config.tips.map((tip, i) => (
-              <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: config.color, flexShrink: 0, marginTop: '5px' }} />
-                <div style={{ fontSize: '13px', color: '#ccc', lineHeight: 1.6 }}>{tip}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Zone 2 reminder for easy/long runs */}
-        {(session.type === 'easy' || session.type === 'run') && (
-          <div style={{ margin: '0 18px 20px', background: '#111', borderRadius: '12px', padding: '12px 14px', border: '0.5px solid #252525' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>Zone 2 ceiling</div>
-              <div style={{ fontSize: '20px', fontWeight: 500, color: '#378ADD' }}>145 <span style={{ fontSize: '11px', color: '#666' }}>bpm</span></div>
+        {/* View: detail */}
+        {view === 'detail' && (
+          <>
+            <div style={{ padding: '12px 18px', background: '#141414', borderBottom: '0.5px solid #252525' }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
+              <div style={{ fontSize: '13px', color: '#aaa', lineHeight: 1.5 }}>{weekTheme}</div>
             </div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#555', marginTop: '4px' }}>Walk if HR exceeds this. No exceptions.</div>
+            <div style={{ padding: '16px 18px' }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>{config.label} — key points</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {config.tips.map((tip, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: config.color, flexShrink: 0, marginTop: '5px' }} />
+                    <div style={{ fontSize: '13px', color: '#ccc', lineHeight: 1.6 }}>{tip}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {(session.type === 'easy' || session.type === 'run') && (
+              <div style={{ margin: '0 18px 16px', background: '#111', borderRadius: '12px', padding: '12px 14px', border: '0.5px solid #252525' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>Zone 2 ceiling</div>
+                  <div style={{ fontSize: '20px', fontWeight: 500, color: '#378ADD' }}>145 <span style={{ fontSize: '11px', color: '#666' }}>bpm</span></div>
+                </div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#555', marginTop: '4px' }}>Walk if HR exceeds this. No exceptions.</div>
+              </div>
+            )}
+            {/* Action buttons */}
+            {(!isPast || isComplete || isSkipped) && !session.isFuture && (
+              <div style={{ padding: '0 18px 24px', display: 'flex', gap: '8px' }}>
+                {!isComplete && !isSkipped && (
+                  <>
+                    <button onClick={() => setView('complete')} style={{ flex: 1, background: '#3a7a3a', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
+                      Mark complete
+                    </button>
+                    <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: '#666', border: '0.5px solid #333', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                      Skip
+                    </button>
+                  </>
+                )}
+                {(isComplete || isSkipped) && (
+                  <button onClick={() => setView('complete')} style={{ flex: 1, background: 'none', color: '#666', border: '0.5px solid #333', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
+                    Update
+                  </button>
+                )}
+              </div>
+            )}
+            {session.isFuture && !isComplete && !isSkipped && (
+              <div style={{ padding: '0 18px 24px' }}>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#555', textAlign: 'center', padding: '10px' }}>
+                  Available to log on {session.date}
+                </div>
+              </div>
+            )}
+            {isPast && !isComplete && !isSkipped && !session.isFuture && (
+              <div style={{ padding: '0 18px 24px', display: 'flex', gap: '8px' }}>
+                <button onClick={() => setView('complete')} style={{ flex: 1, background: '#252525', color: '#777', border: 'none', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
+                  Log retroactively
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* View: complete */}
+        {view === 'complete' && (
+          <div style={{ padding: '16px 18px 24px' }}>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#3a7a3a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Mark as complete</div>
+
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#777', marginBottom: '8px' }}>Link a Strava activity (optional)</div>
+
+            {loadingClaimed ? (
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#555', padding: '12px 0' }}>Loading activities...</div>
+            ) : stravaRuns.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px', maxHeight: '200px', overflowY: 'auto' }}>
+                {stravaRuns.slice(0, 20).map((run: any) => {
+                  const isSelected = selectedActivity?.id === run.id
+                  return (
+                    <div key={run.id} onClick={() => setSelectedActivity(isSelected ? null : run)} style={{
+                      background: isSelected ? '#1a2a1a' : '#141414',
+                      border: `0.5px solid ${isSelected ? '#3a7a3a' : '#2a2a2a'}`,
+                      borderRadius: '10px', padding: '10px 12px', cursor: 'pointer',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '13px', color: isSelected ? '#fff' : '#ccc', fontWeight: 500 }}>{run.name}</div>
+                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666', marginTop: '2px' }}>
+                          {new Date(run.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {(run.distance / 1000).toFixed(1)}km {run.average_heartrate ? `· ${Math.round(run.average_heartrate)} bpm` : ''}
+                        </div>
+                      </div>
+                      {isSelected && <span style={{ color: '#3a7a3a', fontSize: '16px' }}>✓</span>}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#555', padding: '12px 0', marginBottom: '8px' }}>No Strava activities found in the 5 days before this session</div>
+            )}
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: '#666', border: '0.5px solid #333', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
+                Back
+              </button>
+              <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: '#3a7a3a', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving ? 0.6 : 1 }}>
+                {saving ? 'Saving...' : 'Confirm complete'}
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Close button */}
-        <div style={{ padding: '0 18px 24px' }}>
-          <button onClick={onClose} style={{
-            width: '100%', background: config.color, color: '#000', border: 'none',
-            borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace",
-            fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase',
-            fontWeight: 'bold', cursor: 'pointer',
-          }}>
-            Got it
-          </button>
-        </div>
+        {/* View: skip */}
+        {view === 'skip' && (
+          <div style={{ padding: '16px 18px 24px' }}>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#ccc', lineHeight: 1.6, marginBottom: '20px' }}>
+              Mark this session as skipped? It'll show as grey in your log.
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: '#666', border: '0.5px solid #333', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
+                Back
+              </button>
+              <button onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2, background: '#252525', color: '#888', border: '0.5px solid #444', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+                {saving ? 'Saving...' : 'Mark as skipped'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -433,8 +634,8 @@ function SessionPopup({ session, weekTheme, onClose }: { session: any; weekTheme
 
 // ── TODAY SCREEN ──────────────────────────────────────────────────────────
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, daysToRace, daysTo50k, onOpenMe, initials }: {
-  plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number; daysToRace: number; daysTo50k: number; onOpenMe: () => void; initials: string
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, daysTo50k, stravaRuns, onOpenMe, initials }: {
+  plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null; smokeTrackerEnabled: boolean; daysToRace: number; daysTo50k: number; stravaRuns: any[]; onOpenMe: () => void; initials: string
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
@@ -464,13 +665,15 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, daysToRace, days
   // Get the week start date from the plan
   const weekStartDate = new Date((currentWeek as any).date ?? now)
 
-  // Calculate actual dates for each session day
-  function getSessionDate(dayKey: string): string {
+  function getSessionDate(dayKey: string): { display: string; raw: Date } {
     const dayOffsets: Record<string, number> = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 }
     const offset = dayOffsets[dayKey] ?? 0
     const d = new Date(weekStartDate)
     d.setDate(d.getDate() + offset)
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+    return {
+      display: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+      raw: d,
+    }
   }
 
   const todayStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
@@ -482,14 +685,16 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, daysToRace, days
   const sessions = Object.entries(ws)
     .filter(([_, s]: [string, any]) => runTypes.includes(s.type))
     .map(([key, s]: [string, any]) => {
-      const sessionDate = getSessionDate(key)
+      const { display, raw } = getSessionDate(key)
       return {
         key,
         day: dayLabels[key] ?? key,
         title: s.label ?? 'Run',
         detail: s.detail ?? '',
-        date: sessionDate,
-        today: key === todayDow && sessionDate === todayStr,
+        type: s.type,
+        date: display,
+        rawDate: raw.toISOString(), // store as string to survive serialisation
+        today: key === todayDow && display === todayStr,
         done: false,
       }
     })
@@ -559,34 +764,22 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, daysToRace, days
 
       {/* Sessions */}
       <SectionLabel>This week's sessions</SectionLabel>
-      <div style={{ display: 'flex', gap: '8px', padding: '0 12px', marginBottom: '10px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        {sessions.map((s, i) => (
-          <div key={i} onClick={() => setActiveSession(s)} style={{
-            flexShrink: 0, cursor: 'pointer',
-            width: sessions.length <= 3 ? `calc((100% - ${(sessions.length - 1) * 8}px) / ${sessions.length})` : '140px',
-            background: '#1a1a1a', borderRadius: '12px', padding: '12px 10px',
-            border: `0.5px solid ${s.today ? '#E05A1C' : '#2a2a2a'}`,
-            transition: 'border-color 0.15s',
-          }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: s.done ? '#3a7a3a' : s.today ? '#E05A1C' : '#333', marginBottom: '8px' }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: s.today ? '#E05A1C' : '#999', textTransform: 'uppercase' }}>
-                {s.day}{s.today ? ' · Today' : ''}
-              </span>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: '#666' }}>
-                {s.date}
-              </span>
-            </div>
-            <div style={{ fontSize: '13px', color: '#ddd', fontWeight: 500, marginBottom: '4px', lineHeight: 1.3 }}>{s.title}</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#666' }}>{s.detail}</div>
-            <div style={{ marginTop: '8px', fontFamily: "'DM Mono',monospace", fontSize: '9px', color: '#444' }}>tap for detail →</div>
-          </div>
-        ))}
-      </div>
+      <SessionList
+        sessions={sessions}
+        weekN={weekNum}
+        stravaRuns={stravaRuns}
+        onSessionAction={(session) => setActiveSession(session)}
+      />
 
       {/* Session popup */}
       {activeSession && (
-        <SessionPopup session={activeSession} weekTheme={weekTheme} onClose={() => setActiveSession(null)} />
+        <SessionPopup
+          session={activeSession}
+          weekTheme={weekTheme}
+          weekN={weekNum}
+          preloadedRuns={stravaRuns}
+          onClose={() => setActiveSession(null)}
+        />
       )}
 
       {/* Stats strip */}
@@ -595,7 +788,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, daysToRace, days
         {[
           { num: String(daysToRace), unit: 'days', label: 'To RTS 100k' },
           { num: String(daysTo50k), unit: 'days', label: 'To 50k' },
-          { num: String(quitDays),  unit: 'days', label: 'Smoke-free' },
+          ...(smokeTrackerEnabled && quitDays !== null ? [{ num: String(quitDays), unit: 'days', label: 'Smoke-free' }] : []),
         ].map((s, i) => (
           <div key={i} style={{ flex: 1, background: '#1a1a1a', borderRadius: '12px', padding: '10px 12px', border: '0.5px solid #2a2a2a' }}>
             <div>
@@ -987,12 +1180,67 @@ function StravaConnectionRow() {
   )
 }
 
+// ── SMOKE TOGGLE ──────────────────────────────────────────────────────────
+
+function SmokeToggle({ enabled, quitDate, onChange }: {
+  enabled: boolean; quitDate: string; onChange: (enabled: boolean, date: string) => void
+}) {
+  const supabase = createClient()
+
+  async function toggle() {
+    const newEnabled = !enabled
+    const newDate = newEnabled && !quitDate ? new Date().toISOString().split('T')[0] : quitDate
+    onChange(newEnabled, newDate)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('user_settings').upsert({
+        id: user.id,
+        smoke_tracker_enabled: newEnabled,
+        quit_date: newEnabled ? newDate : null,
+        updated_at: new Date().toISOString(),
+      })
+    } catch {}
+  }
+
+  async function updateDate(date: string) {
+    onChange(true, date)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('user_settings').upsert({
+        id: user.id,
+        smoke_tracker_enabled: true,
+        quit_date: date,
+        updated_at: new Date().toISOString(),
+      })
+    } catch {}
+  }
+
+  return (
+    <div onClick={toggle} style={{
+      width: '44px', height: '26px', borderRadius: '13px',
+      background: enabled ? '#5a5' : '#333',
+      position: 'relative', cursor: 'pointer', flexShrink: 0,
+      transition: 'background 0.2s',
+    }}>
+      <div style={{
+        width: '20px', height: '20px', borderRadius: '50%',
+        background: '#fff', position: 'absolute',
+        top: '3px', left: enabled ? '21px' : '3px',
+        transition: 'left 0.2s',
+      }} />
+    </div>
+  )
+}
+
 // ── ME SCREEN (overlay) ───────────────────────────────────────────────────
 
-function MeScreen({ initials, athlete, quitDays, resetPhrase, onSaveMental, theme, onThemeChange, onClose }: {
-  initials: string; athlete: string; quitDays: number; resetPhrase: string
-  onSaveMental: (v: string) => void; theme: 'dark' | 'light' | 'auto'
-  onThemeChange: (t: 'dark' | 'light' | 'auto') => void; onClose: () => void
+function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onClose }: {
+  initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
+  onSmokeTrackerChange: (enabled: boolean, date: string) => void
+  resetPhrase: string; onSaveMental: (v: string) => void
+  theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void; onClose: () => void
 }) {
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling'>('main')
 
@@ -1059,10 +1307,58 @@ function MeScreen({ initials, athlete, quitDays, resetPhrase, onSaveMental, them
         {/* Training support */}
         <SectionLabel>Training support</SectionLabel>
         <div style={{ background: '#1a1a1a', borderRadius: '14px', border: '0.5px solid #2a2a2a', overflow: 'hidden' }}>
+
+          {/* Smoke tracker toggle row */}
+          <div style={{ padding: '13px 14px', borderBottom: '0.5px solid #222' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: smokeTrackerEnabled ? '10px' : 0 }}>
+              <div>
+                <div style={{ fontSize: '13px', color: '#ccc' }}>Smoke-free tracker</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: smokeTrackerEnabled ? '#5a5' : '#666', marginTop: '1px' }}>
+                  {smokeTrackerEnabled && quitDays !== null ? `${quitDays} days smoke-free` : 'Off'}
+                </div>
+              </div>
+              <SmokeToggle
+                enabled={smokeTrackerEnabled}
+                quitDate={quitDate}
+                onChange={onSmokeTrackerChange}
+              />
+            </div>
+            {smokeTrackerEnabled && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#666' }}>Quit date:</span>
+                <input
+                  type="date"
+                  value={quitDate}
+                  onChange={async e => {
+                    const newDate = e.target.value
+                    onSmokeTrackerChange(true, newDate)
+                    try {
+                      const supabase = createClient()
+                      const { data: { user } } = await supabase.auth.getUser()
+                      if (!user) return
+                      await supabase.from('user_settings').upsert({ id: user.id, smoke_tracker_enabled: true, quit_date: newDate, updated_at: new Date().toISOString() })
+                    } catch {}
+                  }}
+                  style={{ background: '#252525', border: '0.5px solid #333', borderRadius: '6px', padding: '4px 8px', color: '#ccc', fontFamily: "'DM Mono',monospace", fontSize: '11px', outline: 'none' }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Quit tracker detail — only if enabled */}
+          {smokeTrackerEnabled && (
+            <button onClick={() => setActiveSection('quit')} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 14px', background: 'none', border: 'none', borderBottom: '0.5px solid #222', cursor: 'pointer' }}>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: '13px', color: '#ccc' }}>Quit tracker</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#5a5', marginTop: '1px' }}>Milestones + benefits</div>
+              </div>
+              <div style={{ color: '#666', fontSize: '18px' }}>›</div>
+            </button>
+          )}
+
           {[
-            { id: 'quit' as const,    label: 'Quit tracker',    sub: `${quitDays} days smoke-free`,      color: '#5a5' },
-            { id: 'mental' as const,  label: 'Mental toolkit',  sub: 'Race mantras + strategies',         color: '#378ADD' },
-            { id: 'fueling' as const, label: 'Fueling plan',    sub: 'Gel strategy + hydration',          color: '#E05A1C' },
+            { id: 'mental' as const,  label: 'Mental toolkit',  sub: 'Race mantras + strategies', color: '#378ADD' },
+            { id: 'fueling' as const, label: 'Fueling plan',    sub: 'Gel strategy + hydration',  color: '#E05A1C' },
           ].map(({ id, label, sub, color }, i, arr) => (
             <button key={id} onClick={() => setActiveSection(id)} style={{
               width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1071,7 +1367,7 @@ function MeScreen({ initials, athlete, quitDays, resetPhrase, onSaveMental, them
             }}>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: '13px', color: '#ccc' }}>{label}</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color, marginTop: '1px' }}>{sub}</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color, marginTop: '1px' }}>{sub}</div>
               </div>
               <div style={{ color: '#666', fontSize: '18px' }}>›</div>
             </button>
@@ -1165,7 +1461,8 @@ function FuelingTab({ onBack }: { onBack: () => void }) {
   )
 }
 
-function QuitTab({ quitDays, onBack }: { quitDays: number; onBack: () => void }) {
+function QuitTab({ quitDays, onBack }: { quitDays: number | null; onBack: () => void }) {
+  const days = quitDays ?? 0
   const milestones = [
     { days: 3,  label: 'Day 3 — Nicotine clearing' },
     { days: 7,  label: 'Week 1' },
@@ -1178,13 +1475,13 @@ function QuitTab({ quitDays, onBack }: { quitDays: number; onBack: () => void })
       <BackHeader title="Quit tracker" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
         <div style={{ background: '#1a1a1a', border: '0.5px solid #2a5a2a', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px' }}>
-          <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: '3.5rem', color: '#5a5', lineHeight: 1 }}>{quitDays}</div>
+          <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: '3.5rem', color: '#5a5', lineHeight: 1 }}>{days}</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#5a5', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' }}>Smoke-free days</div>
-            <div style={{ fontSize: '13px', color: '#888', lineHeight: 1.55 }}>Started 3 April 2026. Your aerobic efficiency is already improving.</div>
+            <div style={{ fontSize: '13px', color: '#888', lineHeight: 1.55 }}>Your aerobic efficiency is already improving.</div>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' }}>
               {milestones.map(m => (
-                <div key={m.days} style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${quitDays >= m.days ? '#5a5' : '#333'}`, color: quitDays >= m.days ? '#5a5' : '#666' }}>
+                <div key={m.days} style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${days >= m.days ? '#5a5' : '#333'}`, color: days >= m.days ? '#5a5' : '#666' }}>
                   {m.label}
                 </div>
               ))}
