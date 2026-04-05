@@ -286,6 +286,147 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   )
 }
 
+// ── SESSION POPUP ─────────────────────────────────────────────────────────
+
+function SessionPopup({ session, weekTheme, onClose }: { session: any; weekTheme: string; onClose: () => void }) {
+  const typeConfig: Record<string, { color: string; label: string; tips: string[] }> = {
+    easy: {
+      color: '#378ADD',
+      label: 'Easy run — Zone 2',
+      tips: [
+        'HR cap: 145 bpm. If it goes above, walk until it drops.',
+        'Pace is irrelevant — HR is everything on this run.',
+        'Nose breathing test: if you can\'t hold a conversation, slow down.',
+        'Cardiac drift is normal late in the run — walk breaks are correct, not failure.',
+      ],
+    },
+    quality: {
+      color: '#E05A1C',
+      label: 'Quality session',
+      tips: [
+        'Warm up 10–15 min easy before picking up the pace.',
+        'Target HR 155–165 bpm during efforts. Not maximal — controlled.',
+        'Cool down 10 min easy. Don\'t skip this.',
+        'If legs feel dead from the week, dial it back — don\'t force quality on fatigue.',
+      ],
+    },
+    run: {
+      color: '#E05A1C',
+      label: 'Long run',
+      tips: [
+        'Start slower than feels right. First 30 min should feel embarrassingly easy.',
+        'Fuel every 45 min from the gun — don\'t wait until you\'re hungry.',
+        'Walk the hills. This is strategy, not weakness.',
+        'HR creeping above 150 late in the run? Walk break. Let it drop to 135 before resuming.',
+        'Practice your race-day kit, shoes, and nutrition on this run.',
+      ],
+    },
+    race: {
+      color: '#ff7777',
+      label: 'Race',
+      tips: [
+        'This is a training run with a bib. Not a race.',
+        'HR-capped — treat it like a Zone 2 long run.',
+        'Walk all significant climbs. No exceptions.',
+        'Fuel every 45 min from the gun. Use every aid station.',
+        'Finish feeling like you have 10k left in you.',
+      ],
+    },
+    strength: {
+      color: '#5a9a5a',
+      label: 'Strength session',
+      tips: [
+        'Keep it functional — focus on glutes, hips, and single-leg stability.',
+        'Don\'t go to failure. Leave 2–3 reps in the tank.',
+        'If legs are trashed from running, reduce load — don\'t skip entirely.',
+      ],
+    },
+  }
+
+  const config = typeConfig[session.type] ?? typeConfig['easy']
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 500,
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      padding: '0',
+    }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: '#1a1a1a', borderRadius: '20px 20px 0 0',
+        border: '0.5px solid #2a2a2a', borderBottom: 'none',
+        width: '100%', maxWidth: '480px',
+        maxHeight: '80vh', overflowY: 'auto',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
+        {/* Handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#333' }} />
+        </div>
+
+        {/* Header */}
+        <div style={{ padding: '12px 18px 16px', borderBottom: '0.5px solid #252525' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
+                {session.day} · {session.date}
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: 500, color: '#fff', lineHeight: 1.2 }}>{session.title}</div>
+              {session.detail && (
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', marginTop: '4px' }}>{session.detail}</div>
+              )}
+            </div>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#666', fontSize: '20px', cursor: 'pointer', padding: '0 0 0 12px' }}>✕</button>
+          </div>
+        </div>
+
+        {/* Week context */}
+        <div style={{ padding: '12px 18px', background: '#141414', borderBottom: '0.5px solid #252525' }}>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
+          <div style={{ fontSize: '13px', color: '#aaa', lineHeight: 1.5 }}>{weekTheme}</div>
+        </div>
+
+        {/* Coaching tips */}
+        <div style={{ padding: '16px 18px' }}>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
+            {config.label} — key points
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {config.tips.map((tip, i) => (
+              <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: config.color, flexShrink: 0, marginTop: '5px' }} />
+                <div style={{ fontSize: '13px', color: '#ccc', lineHeight: 1.6 }}>{tip}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Zone 2 reminder for easy/long runs */}
+        {(session.type === 'easy' || session.type === 'run') && (
+          <div style={{ margin: '0 18px 20px', background: '#111', borderRadius: '12px', padding: '12px 14px', border: '0.5px solid #252525' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>Zone 2 ceiling</div>
+              <div style={{ fontSize: '20px', fontWeight: 500, color: '#378ADD' }}>145 <span style={{ fontSize: '11px', color: '#666' }}>bpm</span></div>
+            </div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#555', marginTop: '4px' }}>Walk if HR exceeds this. No exceptions.</div>
+          </div>
+        )}
+
+        {/* Close button */}
+        <div style={{ padding: '0 18px 24px' }}>
+          <button onClick={onClose} style={{
+            width: '100%', background: config.color, color: '#000', border: 'none',
+            borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace",
+            fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase',
+            fontWeight: 'bold', cursor: 'pointer',
+          }}>
+            Got it
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── TODAY SCREEN ──────────────────────────────────────────────────────────
 
 function TodayScreen({ plan, currentWeek, quitDays, daysToRace, daysTo50k, onOpenMe, initials }: {
@@ -296,6 +437,7 @@ function TodayScreen({ plan, currentWeek, quitDays, daysToRace, daysTo50k, onOpe
   const doneKm = 0 // TODO: wire from Strava
   const targetKm = currentWeek.weekly_km ?? 0
   const progress = targetKm > 0 ? Math.min(1, doneKm / targetKm) : 0
+  const [activeSession, setActiveSession] = useState<any | null>(null)
 
   // Determine today's day of week
   const now = new Date()
@@ -313,18 +455,21 @@ function TodayScreen({ plan, currentWeek, quitDays, daysToRace, daysTo50k, onOpe
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
   }
 
-  // Derive sessions from nested sessions object
+  // Build sessions dynamically from plan data — only show run/quality/easy/race types, skip rest
   const ws = (currentWeek as any).sessions ?? {}
-  const sessions = [
-    { day: 'Tue', key: 'tue', title: ws.tue?.label ?? 'Easy aerobic', detail: ws.tue?.detail ?? 'Z2 · HR cap' },
-    { day: 'Thu', key: 'thu', title: ws.thu?.label ?? 'Quality run',  detail: ws.thu?.detail ?? 'See plan' },
-    { day: 'Sat', key: 'sat', title: ws.sat?.label ?? 'Long run',     detail: ws.sat?.detail ?? 'Z2 · easy' },
-  ].map(sess => ({
-    ...sess,
-    date: getSessionDate(sess.key),
-    today: sess.key === todayDow,
-    done: false, // TODO: wire from Strava
-  }))
+  const dayLabels: Record<string, string> = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' }
+  const runTypes = ['run', 'easy', 'quality', 'race']
+  const sessions = Object.entries(ws)
+    .filter(([_, s]: [string, any]) => runTypes.includes(s.type))
+    .map(([key, s]: [string, any]) => ({
+      key,
+      day: dayLabels[key] ?? key,
+      title: s.label ?? 'Run',
+      detail: s.detail ?? '',
+      date: getSessionDate(key),
+      today: key === todayDow,
+      done: false, // TODO: wire from Strava
+    }))
 
   // Week label and theme from plan data
   const weekLabel = (currentWeek as any).label ?? 'Build phase'
@@ -363,11 +508,14 @@ function TodayScreen({ plan, currentWeek, quitDays, daysToRace, daysTo50k, onOpe
 
       {/* Sessions */}
       <SectionLabel>This week's sessions</SectionLabel>
-      <div style={{ display: 'flex', gap: '8px', padding: '0 12px', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', gap: '8px', padding: '0 12px', marginBottom: '10px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         {sessions.map((s, i) => (
-          <div key={i} style={{
-            flex: 1, background: '#1a1a1a', borderRadius: '12px', padding: '12px 10px',
+          <div key={i} onClick={() => setActiveSession(s)} style={{
+            flexShrink: 0, cursor: 'pointer',
+            width: sessions.length <= 3 ? `calc((100% - ${(sessions.length - 1) * 8}px) / ${sessions.length})` : '140px',
+            background: '#1a1a1a', borderRadius: '12px', padding: '12px 10px',
             border: `0.5px solid ${s.today ? '#E05A1C' : '#2a2a2a'}`,
+            transition: 'border-color 0.15s',
           }}>
             <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: s.done ? '#3a7a3a' : s.today ? '#E05A1C' : '#333', marginBottom: '8px' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -379,10 +527,16 @@ function TodayScreen({ plan, currentWeek, quitDays, daysToRace, daysTo50k, onOpe
               </span>
             </div>
             <div style={{ fontSize: '13px', color: '#ddd', fontWeight: 500, marginBottom: '4px', lineHeight: 1.3 }}>{s.title}</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#666' }}>{s.detail}</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#666' }}>{s.detail}</div>
+            <div style={{ marginTop: '8px', fontFamily: "'DM Mono',monospace", fontSize: '9px', color: '#444' }}>tap for detail →</div>
           </div>
         ))}
       </div>
+
+      {/* Session popup */}
+      {activeSession && (
+        <SessionPopup session={activeSession} weekTheme={weekTheme} onClose={() => setActiveSession(null)} />
+      )}
 
       {/* Stats strip */}
       <SectionLabel>Race countdown</SectionLabel>
