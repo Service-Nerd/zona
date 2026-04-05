@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const [error, setError]       = useState<string | null>(null)
   const [mode, setMode]         = useState<'login' | 'signup'>('login')
   const supabase = createClient()
+  const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -24,7 +26,8 @@ export default function LoginPage() {
       setError(error.message)
       setLoading(false)
     } else {
-      window.location.href = '/dashboard'
+      router.refresh()
+      router.push('/dashboard')
     }
   }
 
@@ -63,7 +66,7 @@ export default function LoginPage() {
             )}
             <button type="submit" disabled={loading}
               style={{ background: 'var(--orange)', color: '#1a1a1a', border: 'none', borderRadius: '5px', padding: '12px', fontFamily: "'DM Mono', monospace", fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 'bold', cursor: 'pointer', marginTop: '4px' }}>
-              {loading ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Create Account'}
+              {loading ? 'Signing in...' : mode === 'login' ? 'Sign In' : 'Create Account'}
             </button>
           </form>
 
