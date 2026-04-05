@@ -175,6 +175,9 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
   // Week navigation — default to current week
   const currentWeekIndex = plan.weeks.findIndex(w => w.type === 'current')
   const [viewWeekIndex, setViewWeekIndex] = useState(currentWeekIndex >= 0 ? currentWeekIndex : 0)
+
+  // Days to race
+  const raceDate = new Date('2026-07-11')
   const fiftyKDate = new Date('2026-05-10')
   const now = new Date()
   const daysToRace = Math.max(0, Math.ceil((raceDate.getTime() - now.getTime()) / 86400000))
