@@ -7,7 +7,7 @@ export type WeekType =
   | 'race_event'
   | 'race'
 
-export type SessionType = 'run' | 'easy' | 'strength' | 'rest' | 'race'
+export type SessionType = 'run' | 'easy' | 'quality' | 'strength' | 'rest' | 'race'
 
 export interface Session {
   type: SessionType
