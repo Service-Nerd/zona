@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -11,7 +10,6 @@ export default function LoginPage() {
   const [error, setError]       = useState<string | null>(null)
   const [mode, setMode]         = useState<'login' | 'signup'>('login')
   const supabase = createClient()
-  const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -26,8 +24,8 @@ export default function LoginPage() {
       setError(error.message)
       setLoading(false)
     } else {
-      router.refresh()
-      router.push('/dashboard')
+      // Small delay to let Supabase set the auth cookie before redirecting
+      setTimeout(() => { window.location.href = '/dashboard' }, 300)
     }
   }
 
