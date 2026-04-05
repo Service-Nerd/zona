@@ -17,7 +17,7 @@ const QUIT_DATE = new Date('2026-04-03T00:00:00')
 // ── Icons ─────────────────────────────────────────────────────────────────
 
 function IconToday({ active }: { active: boolean }) {
-  const c = active ? '#E05A1C' : '#777'
+  const c = active ? '#E05A1C' : '#999'
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
       <rect x="3" y="11" width="4" height="8" rx="1" fill={c} />
@@ -28,7 +28,7 @@ function IconToday({ active }: { active: boolean }) {
 }
 
 function IconPlan({ active }: { active: boolean }) {
-  const c = active ? '#E05A1C' : '#777'
+  const c = active ? '#E05A1C' : '#999'
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
       <rect x="3" y="3" width="16" height="16" rx="2" stroke={c} strokeWidth="1.2" />
@@ -40,7 +40,7 @@ function IconPlan({ active }: { active: boolean }) {
 }
 
 function IconCoach({ active }: { active: boolean }) {
-  const c = active ? '#E05A1C' : '#777'
+  const c = active ? '#E05A1C' : '#999'
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
       <circle cx="11" cy="8" r="3.5" stroke={c} strokeWidth="1.2" />
@@ -52,7 +52,7 @@ function IconCoach({ active }: { active: boolean }) {
 }
 
 function IconStrava({ active }: { active: boolean }) {
-  const c = active ? '#E05A1C' : '#777'
+  const c = active ? '#E05A1C' : '#999'
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
       <circle cx="11" cy="11" r="7" stroke={c} strokeWidth="1.2" />
@@ -159,7 +159,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
       root.style.setProperty('--border-col', '#2a2a2a')
       root.style.setProperty('--text-primary', '#fff')
       root.style.setProperty('--text-secondary', '#ccc')
-      root.style.setProperty('--text-muted', '#777')
+      root.style.setProperty('--text-muted', '#999')
       root.style.setProperty('--nav-bg', '#161616')
     } else {
       root.style.setProperty('--bg', '#f4f4f0')
@@ -234,7 +234,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
               {id === 'plan'   && <IconPlan   active={active} />}
               {id === 'coach'  && <IconCoach  active={active} />}
               {id === 'strava' && <IconStrava active={active} />}
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: active ? '#E05A1C' : '#777' }}>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: active ? '#E05A1C' : '#999' }}>
                 {labels[id]}
               </span>
             </button>
@@ -252,7 +252,7 @@ function ScreenHeader({ title, sub, initials, onOpenMe }: { title: string; sub?:
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '16px 16px 8px' }}>
       <div>
         <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--white)', fontFamily: "'DM Sans',sans-serif", letterSpacing: '-0.3px' }}>{title}</div>
-        {sub && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#777', marginTop: '2px' }}>{sub}</div>}
+        {sub && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#999', marginTop: '2px' }}>{sub}</div>}
       </div>
       <button onClick={onOpenMe} style={{
         width: '34px', height: '34px', borderRadius: '50%', background: '#E05A1C',
@@ -270,7 +270,7 @@ function ScreenHeader({ title, sub, initials, onOpenMe }: { title: string; sub?:
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 16px', marginBottom: '6px', marginTop: '4px' }}>
+    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 16px', marginBottom: '6px', marginTop: '4px' }}>
       {children}
     </div>
   )
@@ -337,17 +337,17 @@ function TodayScreen({ plan, currentWeek, quitDays, daysToRace, daysTo50k, onOpe
       {/* Week hero */}
       <div style={{ margin: '0 12px 10px' }}>
         <Card style={{ padding: '14px 16px', margin: 0 }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#E05A1C', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
             Week {weekNum} — {weekLabel}
           </div>
           <div style={{ fontSize: '17px', fontWeight: 500, color: '#fff', marginBottom: '8px' }}>
             {weekTheme}
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
-            <span style={{ background: '#252525', borderRadius: '20px', padding: '4px 10px', fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#aaa' }}>
+            <span style={{ background: '#252525', borderRadius: '20px', padding: '4px 10px', fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#aaa' }}>
               <span style={{ color: '#E05A1C' }}>{targetKm}</span> km target
             </span>
-            <span style={{ background: '#252525', borderRadius: '20px', padding: '4px 10px', fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#aaa' }}>
+            <span style={{ background: '#252525', borderRadius: '20px', padding: '4px 10px', fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#aaa' }}>
               <span style={{ color: '#E05A1C' }}>{sessions.length}</span> sessions
             </span>
           </div>
@@ -355,8 +355,8 @@ function TodayScreen({ plan, currentWeek, quitDays, daysToRace, daysTo50k, onOpe
             <div style={{ background: '#E05A1C', height: '4px', width: `${Math.round(progress * 100)}%`, borderRadius: '4px' }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#777' }}>{doneKm}km done</span>
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#777' }}>{targetKm}km target</span>
+            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999' }}>{doneKm}km done</span>
+            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999' }}>{targetKm}km target</span>
           </div>
         </Card>
       </div>
@@ -371,7 +371,7 @@ function TodayScreen({ plan, currentWeek, quitDays, daysToRace, daysTo50k, onOpe
           }}>
             <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: s.done ? '#3a7a3a' : s.today ? '#E05A1C' : '#333', marginBottom: '8px' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: s.today ? '#E05A1C' : '#777', textTransform: 'uppercase' }}>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: s.today ? '#E05A1C' : '#999', textTransform: 'uppercase' }}>
                 {s.day}{s.today ? ' · Today' : ''}
               </span>
               <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: '#666' }}>
@@ -379,7 +379,7 @@ function TodayScreen({ plan, currentWeek, quitDays, daysToRace, daysTo50k, onOpe
               </span>
             </div>
             <div style={{ fontSize: '13px', color: '#ddd', fontWeight: 500, marginBottom: '4px', lineHeight: 1.3 }}>{s.title}</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#666' }}>{s.detail}</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#666' }}>{s.detail}</div>
           </div>
         ))}
       </div>
@@ -395,9 +395,9 @@ function TodayScreen({ plan, currentWeek, quitDays, daysToRace, daysTo50k, onOpe
           <div key={i} style={{ flex: 1, background: '#1a1a1a', borderRadius: '12px', padding: '10px 12px', border: '0.5px solid #2a2a2a' }}>
             <div>
               <span style={{ fontSize: '20px', color: '#fff', fontWeight: 500 }}>{s.num}</span>
-              <span style={{ fontSize: '11px', color: '#E05A1C', fontWeight: 500 }}> {s.unit}</span>
+              <span style={{ fontSize: '13px', color: '#E05A1C', fontWeight: 500 }}> {s.unit}</span>
             </div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#777', marginTop: '2px', textTransform: 'uppercase' }}>{s.label}</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', marginTop: '2px', textTransform: 'uppercase' }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -409,7 +409,7 @@ function TodayScreen({ plan, currentWeek, quitDays, daysToRace, daysTo50k, onOpe
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FC4C02' }} />
           <div>
             <div style={{ fontSize: '13px', color: '#ddd', fontWeight: 500 }}>Strava</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#666', marginTop: '1px' }}>View in Strava tab</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#666', marginTop: '1px' }}>View in Strava tab</div>
           </div>
         </div>
         <div style={{ color: '#666', fontSize: '18px' }}>›</div>
@@ -426,7 +426,7 @@ function PlanScreen({ plan, onOpenMe, initials }: { plan: Plan; onOpenMe: () => 
       <ScreenHeader title="Plan" sub="Race to the Stones · 11 Jul 2026" initials={initials} onOpenMe={onOpenMe} />
       <div style={{ padding: '0 12px' }}>
         <PlanChart weeks={plan.weeks} />
-        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.6rem', color: '#777', margin: '8px 0 12px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
+        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.6rem', color: '#999', margin: '8px 0 12px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
           <span>MIDWEEK: 2× Zone 2 · STRENGTH: Mon/Wed · SAT: long run</span>
           <span style={{ color: '#666' }}>v{plan.meta.version} · {plan.meta.last_updated}</span>
         </div>
@@ -540,7 +540,7 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
               </span>
             </div>
             {isNew && !loading && (
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#E05A1C', background: 'rgba(224,90,28,0.1)', padding: '2px 8px', borderRadius: '20px' }}>new</span>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C', background: 'rgba(224,90,28,0.1)', padding: '2px 8px', borderRadius: '20px' }}>new</span>
             )}
           </div>
         )}
@@ -548,7 +548,7 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
         {/* Strava not connected */}
         {!stravaLoading && !latestRun && (
           <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', padding: '28px 20px', textAlign: 'center' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#777', lineHeight: 1.6, marginBottom: '8px' }}>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', lineHeight: 1.6, marginBottom: '8px' }}>
               Connect Strava in the <span style={{ color: '#E05A1C' }}>Me</span> screen<br />to get coaching notes.
             </div>
           </div>
@@ -564,7 +564,7 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
                   <animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite" />
                 </circle>
               </svg>
-              <p style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#777', textAlign: 'center', lineHeight: 1.6 }}>
+              <p style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', textAlign: 'center', lineHeight: 1.6 }}>
                 {stravaLoading ? 'Loading Strava data...' : 'Reading your latest run\nand plan position...'}
               </p>
             </div>
@@ -581,7 +581,7 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
           <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', padding: '16px' }}>
             <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C', marginBottom: '8px' }}>Error</div>
             <div style={{ fontSize: '13px', color: '#888' }}>{error}</div>
-            <button onClick={generateAnalysis} style={{ marginTop: '12px', fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#E05A1C', background: 'rgba(224,90,28,0.1)', border: 'none', borderRadius: '20px', padding: '6px 14px', cursor: 'pointer' }}>
+            <button onClick={generateAnalysis} style={{ marginTop: '12px', fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#E05A1C', background: 'rgba(224,90,28,0.1)', border: 'none', borderRadius: '20px', padding: '6px 14px', cursor: 'pointer' }}>
               Try again
             </button>
           </div>
@@ -593,8 +593,8 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
             <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', overflow: 'hidden' }}>
               <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid #222', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#E05A1C' }} />
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Coaching notes</span>
-                <span style={{ marginLeft: 'auto', fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666' }}>W{weekNum}/{totalWeeks}</span>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Coaching notes</span>
+                <span style={{ marginLeft: 'auto', fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#666' }}>W{weekNum}/{totalWeeks}</span>
               </div>
               <div style={{ padding: '14px' }}>
                 {analysis.split('\n\n').map((para, i) => (
@@ -604,7 +604,7 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
                 ))}
               </div>
             </div>
-            <button onClick={generateAnalysis} style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#777', background: 'none', border: '0.5px solid #2a2a2a', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer', alignSelf: 'center' }}>
+            <button onClick={generateAnalysis} style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#999', background: 'none', border: '0.5px solid #2a2a2a', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer', alignSelf: 'center' }}>
               Refresh analysis
             </button>
           </>
@@ -613,10 +613,10 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
         {/* Empty — connected but no analysis yet */}
         {!analysis && !loading && !error && latestRun && !stravaLoading && (
           <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', padding: '28px 20px', textAlign: 'center' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#777', lineHeight: 1.6 }}>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', lineHeight: 1.6 }}>
               Strava connected. Ready to generate<br />your coaching notes.
             </div>
-            <button onClick={generateAnalysis} style={{ marginTop: '16px', fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#E05A1C', background: 'rgba(224,90,28,0.1)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}>
+            <button onClick={generateAnalysis} style={{ marginTop: '16px', fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#E05A1C', background: 'rgba(224,90,28,0.1)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}>
               Generate now
             </button>
           </div>
@@ -716,21 +716,21 @@ function StravaConnectionRow() {
           </div>
           <div style={{ textAlign: 'left' }}>
             <div style={{ fontSize: '13px', color: '#ccc' }}>Strava</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#777', marginTop: '1px' }}>Client secret + OAuth</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#999', marginTop: '1px' }}>Client secret + OAuth</div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {isLoading ? (
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#555' }}>checking...</span>
+            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#555' }}>checking...</span>
           ) : connected ? (
             <>
               <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#5a5' }} />
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#5a5' }}>connected</span>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#5a5' }}>connected</span>
             </>
           ) : (
             <>
               <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#a44' }} />
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#a44' }}>not connected</span>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#a44' }}>not connected</span>
             </>
           )}
           <span style={{ color: '#555', fontSize: '14px', marginLeft: '4px' }}>{expanded ? '˅' : '›'}</span>
@@ -742,7 +742,7 @@ function StravaConnectionRow() {
         <div style={{ borderTop: '0.5px solid #2a2a2a', padding: '14px' }}>
           {!connected ? (
             <>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#777', marginBottom: '10px', lineHeight: 1.6 }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#999', marginBottom: '10px', lineHeight: 1.6 }}>
                 Paste your Strava Client Secret. Find it at strava.com → Settings → My API Application.
               </div>
               <input
@@ -752,10 +752,10 @@ function StravaConnectionRow() {
                 placeholder="Client secret..."
                 style={{ width: '100%', background: '#252525', border: '0.5px solid #333', borderRadius: '8px', padding: '10px 12px', color: '#ccc', fontFamily: "'DM Mono',monospace", fontSize: '12px', outline: 'none', marginBottom: '10px', boxSizing: 'border-box' }}
               />
-              {error && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#a44', marginBottom: '8px' }}>{error}</div>}
+              {error && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#a44', marginBottom: '8px' }}>{error}</div>}
               <button onClick={save} disabled={saving || !secret.trim()} style={{
                 width: '100%', background: '#E05A1C', color: '#000', border: 'none', borderRadius: '8px',
-                padding: '10px', fontFamily: "'DM Mono',monospace", fontSize: '11px', letterSpacing: '0.08em',
+                padding: '10px', fontFamily: "'DM Mono',monospace", fontSize: '13px', letterSpacing: '0.08em',
                 textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold',
                 opacity: saving || !secret.trim() ? 0.6 : 1,
               }}>
@@ -764,12 +764,12 @@ function StravaConnectionRow() {
             </>
           ) : (
             <>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#5a5', marginBottom: '12px' }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#5a5', marginBottom: '12px' }}>
                 Secret saved to your account. Auto-connects on every load.
               </div>
               <button onClick={disconnect} style={{
                 background: 'none', border: '0.5px solid #a44', borderRadius: '8px',
-                padding: '8px 14px', fontFamily: "'DM Mono',monospace", fontSize: '11px',
+                padding: '8px 14px', fontFamily: "'DM Mono',monospace", fontSize: '13px',
                 color: '#a44', cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase',
               }}>
                 Disconnect
@@ -804,9 +804,9 @@ function MeScreen({ initials, athlete, quitDays, resetPhrase, onSaveMental, them
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '16px 16px 8px' }}>
         <div>
           <div style={{ fontSize: '22px', fontWeight: 500, color: '#fff', fontFamily: "'DM Sans',sans-serif" }}>Me</div>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#777', marginTop: '2px' }}>@doinghardthingsbadly</div>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#999', marginTop: '2px' }}>@doinghardthingsbadly</div>
         </div>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#777', fontSize: '22px', cursor: 'pointer', padding: '4px' }}>✕</button>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#999', fontSize: '22px', cursor: 'pointer', padding: '4px' }}>✕</button>
       </div>
 
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '32px' }}>
@@ -818,11 +818,11 @@ function MeScreen({ initials, athlete, quitDays, resetPhrase, onSaveMental, them
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '15px', color: '#fff', fontWeight: 500 }}>{athlete}</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#777', marginTop: '2px' }}>Berkshire, UK</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#E05A1C', marginTop: '4px' }}>Race to the Stones · {daysToRace} days</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', marginTop: '2px' }}>Berkshire, UK</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#E05A1C', marginTop: '4px' }}>Race to the Stones · {daysToRace} days</div>
           </div>
           <form action="/auth/signout" method="post">
-            <button style={{ background: 'none', border: '0.5px solid #2a2a2a', borderRadius: '8px', color: '#777', fontFamily: "'DM Mono',monospace", fontSize: '10px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            <button style={{ background: 'none', border: '0.5px solid #2a2a2a', borderRadius: '8px', color: '#999', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
               Sign out
             </button>
           </form>
@@ -837,7 +837,7 @@ function MeScreen({ initials, athlete, quitDays, resetPhrase, onSaveMental, them
               {(['dark', 'light', 'auto'] as const).map(t => (
                 <button key={t} onClick={() => onThemeChange(t)} style={{
                   borderRadius: '10px', padding: '6px 10px', border: `0.5px solid ${theme === t ? '#E05A1C' : '#333'}`,
-                  background: 'none', cursor: 'pointer', fontFamily: "'DM Mono',monospace", fontSize: '10px',
+                  background: 'none', cursor: 'pointer', fontFamily: "'DM Mono',monospace", fontSize: '12px',
                   color: theme === t ? '#E05A1C' : '#666', textTransform: 'capitalize',
                 }}>
                   {t}
@@ -866,7 +866,7 @@ function MeScreen({ initials, athlete, quitDays, resetPhrase, onSaveMental, them
             }}>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: '13px', color: '#ccc' }}>{label}</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color, marginTop: '1px' }}>{sub}</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color, marginTop: '1px' }}>{sub}</div>
               </div>
               <div style={{ color: '#666', fontSize: '18px' }}>›</div>
             </button>
@@ -916,13 +916,13 @@ function MentalTab({ resetPhrase, onSave, onBack }: { resetPhrase: string; onSav
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
           {tools.map(t => (
             <div key={t.title} style={{ background: '#1a1a1a', border: '0.5px solid #2a2a2a', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', letterSpacing: '0.05em', color: '#E05A1C', marginBottom: '6px', textTransform: 'uppercase' }}>{t.title}</div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.05em', color: '#E05A1C', marginBottom: '6px', textTransform: 'uppercase' }}>{t.title}</div>
               <div style={{ fontSize: '12px', color: '#888', lineHeight: 1.6 }}>{t.text}</div>
             </div>
           ))}
         </div>
         <div style={{ background: '#1a1a1a', border: '0.5px solid #2a2a2a', borderRadius: '12px', padding: '14px' }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#E05A1C', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Your Reset Phrase</div>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Your Reset Phrase</div>
           <textarea value={resetPhrase} onChange={e => onSave(e.target.value)} placeholder="What's the phrase you'll use when it gets dark at km 70?" style={{ width: '100%', background: 'transparent', border: 'none', color: '#ccc', fontFamily: "'DM Sans',sans-serif", fontSize: '13px', lineHeight: 1.7, resize: 'vertical', minHeight: '60px', outline: 'none' }} />
         </div>
       </div>
@@ -949,7 +949,7 @@ function FuelingTab({ onBack }: { onBack: () => void }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {protocol.map(p => (
             <div key={p.timing} style={{ background: '#1a1a1a', border: '0.5px solid #2a2a2a', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#E05A1C', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>{p.timing}</div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>{p.timing}</div>
               <div style={{ fontSize: '14px', fontWeight: 500, color: '#ddd', marginBottom: '4px' }}>{p.what}</div>
               <div style={{ fontSize: '12px', color: '#666', lineHeight: 1.55 }}>{p.why}</div>
             </div>
@@ -975,11 +975,11 @@ function QuitTab({ quitDays, onBack }: { quitDays: number; onBack: () => void })
         <div style={{ background: '#1a1a1a', border: '0.5px solid #2a5a2a', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px' }}>
           <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: '3.5rem', color: '#5a5', lineHeight: 1 }}>{quitDays}</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#5a5', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' }}>Smoke-free days</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#5a5', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' }}>Smoke-free days</div>
             <div style={{ fontSize: '13px', color: '#888', lineHeight: 1.55 }}>Started 3 April 2026. Your aerobic efficiency is already improving.</div>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' }}>
               {milestones.map(m => (
-                <div key={m.days} style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${quitDays >= m.days ? '#5a5' : '#333'}`, color: quitDays >= m.days ? '#5a5' : '#666' }}>
+                <div key={m.days} style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${quitDays >= m.days ? '#5a5' : '#333'}`, color: quitDays >= m.days ? '#5a5' : '#666' }}>
                   {m.label}
                 </div>
               ))}

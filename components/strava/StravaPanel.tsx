@@ -83,7 +83,7 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
             <animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite" />
           </circle>
         </svg>
-        <p style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#777', textAlign: 'center' }}>
+        <p style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', textAlign: 'center' }}>
           Connecting to Strava...
         </p>
       </div>
@@ -99,13 +99,13 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
           </div>
           <div>
             <div style={{ fontSize: '15px', color: '#ccc', fontWeight: 500, marginBottom: '6px' }}>Strava not connected</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#777', lineHeight: 1.6 }}>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', lineHeight: 1.6 }}>
               Head to the <span style={{ color: '#E05A1C' }}>Me</span> screen to add your<br />Strava client secret and connect.
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#555' }} />
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#555' }}>not connected</span>
+            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#555' }}>not connected</span>
           </div>
         </div>
       </div>
@@ -119,8 +119,8 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
       {/* Connection status pill */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#5a5' }} />
-        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#5a5' }}>Strava connected</span>
-        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#555', marginLeft: '4px' }}>· auto-syncing</span>
+        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#5a5' }}>Strava connected</span>
+        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#555', marginLeft: '4px' }}>· auto-syncing</span>
       </div>
 
       {/* Key metrics */}
@@ -132,15 +132,15 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
           { label: 'Longest run',   value: longestKm ? longestKm.toFixed(1) + 'km' : '—', sub: 'Since Jan 2026' },
         ].map(({ label, value, sub }) => (
           <div key={label} style={{ background: '#1a1a1a', border: '0.5px solid #2a2a2a', borderTop: '2px solid #E05A1C', borderRadius: '12px', padding: '12px 14px' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>{label}</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>{label}</div>
             <div style={{ fontSize: '20px', fontWeight: 500, color: '#E05A1C', lineHeight: 1 }}>{value}</div>
-            {sub && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666', marginTop: '4px' }}>{sub}</div>}
+            {sub && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#666', marginTop: '4px' }}>{sub}</div>}
           </div>
         ))}
       </div>
 
       {/* Recent activities */}
-      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Recent activities</div>
+      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Recent activities</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {runs?.slice(0, 12).map(run => {
           const km   = (run.distance / 1000).toFixed(1)
@@ -152,13 +152,13 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
             <div key={run.id} style={{ background: '#1a1a1a', border: '0.5px solid #2a2a2a', borderRadius: '12px', padding: '12px 14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                 <div style={{ fontSize: '13px', color: '#ddd', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: '8px' }}>{run.name}</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#666', flexShrink: 0 }}>{date}</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#666', flexShrink: 0 }}>{date}</div>
               </div>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C' }}>{km}km</span>
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#777' }}>{dur}</span>
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: hr ? hrColour(hr) : '#777' }}>{hr ? `${hr} bpm` : '—'}</span>
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#777' }}>{pace}</span>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999' }}>{dur}</span>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: hr ? hrColour(hr) : '#999' }}>{hr ? `${hr} bpm` : '—'}</span>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999' }}>{pace}</span>
               </div>
             </div>
           )
@@ -171,13 +171,13 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
           <div style={{ background: '#1a1a1a', border: '0.5px solid #E05A1C', borderTop: '3px solid #E05A1C', borderRadius: '16px', maxWidth: '440px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
             <div style={{ padding: '16px 18px', borderBottom: '0.5px solid #2a2a2a', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#E05A1C', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' }}>New activity</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' }}>New activity</div>
                 <div style={{ fontSize: '16px', fontWeight: 500, color: '#fff' }}>{popup.name}</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#777', marginTop: '2px' }}>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#999', marginTop: '2px' }}>
                   {new Date(popup.start_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </div>
               </div>
-              <button onClick={() => setPopup(null)} style={{ background: 'none', border: 'none', color: '#777', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              <button onClick={() => setPopup(null)} style={{ background: 'none', border: 'none', color: '#999', fontSize: '20px', cursor: 'pointer' }}>✕</button>
             </div>
             <div style={{ padding: '14px 18px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', borderBottom: '0.5px solid #2a2a2a' }}>
               {[
@@ -189,19 +189,19 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
                 { label: 'Elevation',value: `+${Math.round(popup.total_elevation_gain ?? 0)}m`, color: '#ccc' },
               ].map(({ label, value, color }) => (
                 <div key={label}>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>
                   <div style={{ fontSize: '18px', fontWeight: 500, color, lineHeight: 1.1 }}>{value}</div>
                 </div>
               ))}
             </div>
             <div style={{ padding: '14px 18px' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#E05A1C', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>Coaching notes</div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>Coaching notes</div>
               <div style={{ fontSize: '13px', lineHeight: 1.7, color: '#ccc' }}>
-                {analysis ?? <span style={{ color: '#777', fontStyle: 'italic' }}>Analysing activity...</span>}
+                {analysis ?? <span style={{ color: '#999', fontStyle: 'italic' }}>Analysing activity...</span>}
               </div>
             </div>
             <div style={{ padding: '12px 18px', borderTop: '0.5px solid #2a2a2a', textAlign: 'right' }}>
-              <button onClick={() => setPopup(null)} style={{ background: '#E05A1C', color: '#000', border: 'none', borderRadius: '8px', padding: '9px 22px', fontFamily: "'DM Mono',monospace", fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
+              <button onClick={() => setPopup(null)} style={{ background: '#E05A1C', color: '#000', border: 'none', borderRadius: '8px', padding: '9px 22px', fontFamily: "'DM Mono',monospace", fontSize: '13px', letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
                 Got it
               </button>
             </div>
