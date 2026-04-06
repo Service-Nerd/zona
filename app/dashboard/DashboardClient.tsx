@@ -804,9 +804,9 @@ function CalendarOverlay({ plan, stravaRuns, onClose }: {
 }) {
   const [activeSession, setActiveSession] = useState<any | null>(null)
   const [allCompletions, setAllCompletions] = useState<Record<string, Record<string, any>>>({})
+  const [showPast, setShowPast] = useState(false)
   const supabase = createClient()
 
-  // Load all completions across all weeks
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -827,28 +827,138 @@ function CalendarOverlay({ plan, stravaRuns, onClose }: {
     load()
   }, [])
 
-  // Group weeks by month
-  const months: { label: string; weeks: { week: any; weekNum: number }[] }[] = []
-  plan.weeks.forEach((week, i) => {
-    const weekNum = i + 1
-    const weekDate = new Date((week as any).date)
-    const monthLabel = weekDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
-    const last = months[months.length - 1]
-    if (!last || last.label !== monthLabel) {
-      months.push({ label: monthLabel, weeks: [{ week, weekNum }] })
-    } else {
-      last.weeks.push({ week, weekNum })
-    }
-  })
-
   const now = new Date()
   const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][now.getDay()]
   const todayStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+
+  // Find current week index
+  const currentWeekIndex = plan.weeks.findIndex(w => (w as any).type === 'current')
+
+  // Split weeks: past = before current, present+future = current onwards
+  const pastWeeks = plan.weeks.slice(0, currentWeekIndex).map((week, i) => ({ week, weekNum: i + 1 }))
+  const futureWeeks = plan.weeks.slice(currentWeekIndex).map((week, i) => ({ week, weekNum: currentWeekIndex + i + 1 }))
+
+  // Group into months
+  function groupByMonth(items: { week: any; weekNum: number }[]) {
+    const months: { label: string; weeks: { week: any; weekNum: number }[] }[] = []
+    items.forEach(({ week, weekNum }) => {
+      const weekDate = new Date((week as any).date)
+      const monthLabel = weekDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+      const last = months[months.length - 1]
+      if (!last || last.label !== monthLabel) {
+        months.push({ label: monthLabel, weeks: [{ week, weekNum }] })
+      } else {
+        last.weeks.push({ week, weekNum })
+      }
+    })
+    return months
+  }
+
+  const pastMonths = groupByMonth(pastWeeks)
+  const futureMonths = groupByMonth(futureWeeks)
 
   function getDotColor(type: string, completion?: any): string {
     if (completion?.status === 'complete') return '#4a9a5a'
     if (completion?.status === 'skipped') return '#2a2a2a'
     return TYPE_DOT[type] ?? 'transparent'
+  }
+
+  function renderWeekRow(week: any, weekNum: number) {
+    const ws = (week as any).sessions ?? {}
+    const weekStartDate = new Date((week as any).date)
+    const isCurrent = (week as any).type === 'current'
+    const weekCompletions = allCompletions[weekNum] ?? {}
+
+    return (
+      <div key={weekNum} style={{
+        display: 'grid', gridTemplateColumns: '40px repeat(7, 1fr)',
+        marginBottom: '4px',
+        background: isCurrent ? 'rgba(212,80,26,0.04)' : 'transparent',
+        borderRadius: '8px',
+        border: isCurrent ? '0.5px solid rgba(212,80,26,0.15)' : '0.5px solid transparent',
+        padding: '4px 0',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: "'DM Mono',monospace", fontSize: '9px',
+          color: isCurrent ? '#D4501A' : '#333',
+        }}>
+          W{weekNum}
+        </div>
+        {DOW_ORDER.map(key => {
+          const s = ws[key]
+          const d = new Date(weekStartDate)
+          d.setDate(d.getDate() + DAY_OFFSETS[key])
+          const displayDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+          const isToday = key === todayDow && displayDate === todayStr
+          const completion = weekCompletions[key]
+          const dotColor = s && s.type !== 'rest' ? getDotColor(s.type, completion) : null
+          const isPast = d < now && !isToday
+          const isFuture = d > now && !isToday
+
+          return (
+            <button
+              key={key}
+              onClick={() => {
+                if (!s || s.type === 'rest') return
+                setActiveSession({
+                  key, day: DOW_FULL[key],
+                  title: s.label ?? '', detail: s.detail ?? '',
+                  type: s.type, date: displayDate,
+                  rawDate: d.toISOString(), today: isToday,
+                  completion, isPast: isPast && !isToday, isFuture,
+                })
+              }}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: 'center', gap: '3px',
+                background: 'none', border: 'none',
+                cursor: s && s.type !== 'rest' ? 'pointer' : 'default',
+                padding: '4px 2px', borderRadius: '6px',
+                opacity: isPast && !completion && s && s.type !== 'rest' ? 0.35 : 1,
+              }}
+            >
+              <span style={{
+                fontFamily: "'DM Mono',monospace", fontSize: '11px',
+                color: isToday ? '#D4501A' : '#555',
+                fontWeight: isToday ? 600 : 400,
+                background: isToday ? 'rgba(212,80,26,0.12)' : 'transparent',
+                borderRadius: '50%', width: '20px', height: '20px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {d.getDate()}
+              </span>
+              <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: dotColor ?? 'transparent' }} />
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
+  function renderMonths(months: { label: string; weeks: { week: any; weekNum: number }[] }[]) {
+    return months.map(({ label, weeks }) => (
+      <div key={label}>
+        <div style={{
+          fontFamily: "'DM Mono',monospace", fontSize: '10px',
+          color: '#D4501A', letterSpacing: '0.1em', textTransform: 'uppercase',
+          padding: '14px 0 6px',
+        }}>
+          {label}
+        </div>
+        {weeks.map(({ week, weekNum }) => renderWeekRow(week, weekNum))}
+      </div>
+    ))
+  }
+
+  // Find week number for a session popup
+  function getWeekNumForDate(rawDate: string): number {
+    const d = new Date(rawDate)
+    const idx = plan.weeks.findIndex((w: any) => {
+      const ws = new Date((w as any).date)
+      return d >= ws && d < new Date(ws.getTime() + 7 * 86400000)
+    })
+    return idx + 1
   }
 
   return (
@@ -869,14 +979,8 @@ function CalendarOverlay({ plan, stravaRuns, onClose }: {
           Plan
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* Dot legend */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {[
-              { color: '#378ADD', label: 'Easy' },
-              { color: '#D4501A', label: 'Run' },
-              { color: '#4a9a5a', label: 'Done' },
-              { color: '#4a9a5a', label: 'Strength', dot: true },
-            ].filter((_, i) => i < 3).map(({ color, label }) => (
+            {[{ color: '#378ADD', label: 'Easy' }, { color: '#D4501A', label: 'Run' }, { color: '#4a9a5a', label: 'Done' }].map(({ color, label }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                 <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: color }} />
                 <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: '#444' }}>{label}</span>
@@ -887,7 +991,7 @@ function CalendarOverlay({ plan, stravaRuns, onClose }: {
         </div>
       </div>
 
-      {/* Day header row */}
+      {/* Day header row — sticky below title */}
       <div style={{
         display: 'grid', gridTemplateColumns: '40px repeat(7, 1fr)',
         padding: '8px 12px 4px',
@@ -902,124 +1006,55 @@ function CalendarOverlay({ plan, stravaRuns, onClose }: {
         ))}
       </div>
 
-      {/* Month groups */}
       <div style={{ padding: '0 12px 32px' }}>
-        {months.map(({ label, weeks }) => (
-          <div key={label}>
-            {/* Month label */}
-            <div style={{
-              fontFamily: "'DM Mono',monospace", fontSize: '10px',
-              color: '#D4501A', letterSpacing: '0.1em', textTransform: 'uppercase',
-              padding: '14px 0 6px',
-            }}>
-              {label}
-            </div>
 
-            {/* Week rows */}
-            {weeks.map(({ week, weekNum }) => {
-              const ws = (week as any).sessions ?? {}
-              const weekStartDate = new Date((week as any).date)
-              const isCurrent = (week as any).type === 'current'
-              const weekCompletions = allCompletions[weekNum] ?? {}
-
-              return (
-                <div key={weekNum} style={{
-                  display: 'grid', gridTemplateColumns: '40px repeat(7, 1fr)',
-                  marginBottom: '4px',
-                  background: isCurrent ? 'rgba(212,80,26,0.04)' : 'transparent',
-                  borderRadius: '8px',
-                  border: isCurrent ? '0.5px solid rgba(212,80,26,0.15)' : '0.5px solid transparent',
-                  padding: '4px 0',
-                }}>
-                  {/* Week label */}
-                  <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: "'DM Mono',monospace", fontSize: '9px',
-                    color: isCurrent ? '#D4501A' : '#333',
-                    letterSpacing: '0.04em',
-                  }}>
-                    W{weekNum}
-                  </div>
-
-                  {/* Day cells */}
-                  {DOW_ORDER.map(key => {
-                    const s = ws[key]
-                    const offset = DAY_OFFSETS[key]
-                    const d = new Date(weekStartDate)
-                    d.setDate(d.getDate() + offset)
-                    const displayDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-                    const isToday = key === todayDow && displayDate === todayStr
-                    const completion = weekCompletions[key]
-                    const dotColor = s && s.type !== 'rest' ? getDotColor(s.type, completion) : null
-                    const isPast = d < now && !isToday
-                    const isFuture = d > now && !isToday
-
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => {
-                          if (!s || s.type === 'rest') return
-                          setActiveSession({
-                            key,
-                            day: DOW_FULL[key],
-                            title: s.label ?? '',
-                            detail: s.detail ?? '',
-                            type: s.type,
-                            date: displayDate,
-                            rawDate: d.toISOString(),
-                            today: isToday,
-                            completion,
-                            isPast: isPast && !isToday,
-                            isFuture,
-                          })
-                        }}
-                        style={{
-                          display: 'flex', flexDirection: 'column', alignItems: 'center',
-                          justifyContent: 'center', gap: '3px',
-                          background: 'none', border: 'none',
-                          cursor: s && s.type !== 'rest' ? 'pointer' : 'default',
-                          padding: '4px 2px', borderRadius: '6px',
-                          opacity: isPast && !completion && s && s.type !== 'rest' ? 0.35 : 1,
-                        }}
-                      >
-                        <span style={{
-                          fontFamily: "'DM Mono',monospace", fontSize: '11px',
-                          color: isToday ? '#D4501A' : '#555',
-                          fontWeight: isToday ? 600 : 400,
-                          background: isToday ? 'rgba(212,80,26,0.12)' : 'transparent',
-                          borderRadius: '50%', width: '20px', height: '20px',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                          {d.getDate()}
-                        </span>
-                        <div style={{
-                          width: '4px', height: '4px', borderRadius: '50%',
-                          background: dotColor ?? 'transparent',
-                        }} />
-                      </button>
-                    )
-                  })}
-                </div>
-              )
-            })}
+        {/* Load past — always visible at top */}
+        {pastWeeks.length > 0 && (
+          <div style={{ padding: '12px 0 4px' }}>
+            {showPast ? (
+              <>
+                {renderMonths(pastMonths)}
+                <button
+                  onClick={() => setShowPast(false)}
+                  style={{
+                    width: '100%', padding: '10px',
+                    background: 'none', border: '0.5px solid #1c1c1c',
+                    borderRadius: '8px', cursor: 'pointer',
+                    fontFamily: "'DM Mono',monospace", fontSize: '11px',
+                    color: '#444', letterSpacing: '0.06em', textTransform: 'uppercase',
+                    marginBottom: '8px',
+                  }}
+                >
+                  ↑ Hide past weeks
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setShowPast(true)}
+                style={{
+                  width: '100%', padding: '10px',
+                  background: 'none', border: '0.5px solid #1c1c1c',
+                  borderRadius: '8px', cursor: 'pointer',
+                  fontFamily: "'DM Mono',monospace", fontSize: '11px',
+                  color: '#444', letterSpacing: '0.06em', textTransform: 'uppercase',
+                }}
+              >
+                ↑ Load {pastWeeks.length} past week{pastWeeks.length !== 1 ? 's' : ''}
+              </button>
+            )}
           </div>
-        ))}
+        )}
+
+        {/* Current + future months */}
+        {renderMonths(futureMonths)}
       </div>
 
       {/* Session popup */}
       {activeSession && (
         <SessionPopup
           session={activeSession}
-          weekTheme={plan.weeks[activeSession ? plan.weeks.findIndex((w: any) => {
-            const ws = new Date((w as any).date)
-            const se = new Date(activeSession.rawDate)
-            return se >= ws && se < new Date(ws.getTime() + 7 * 86400000)
-          }) : 0]?.theme ?? ''}
-          weekN={plan.weeks.findIndex((w: any) => {
-            const ws = new Date((w as any).date)
-            const se = new Date(activeSession.rawDate)
-            return se >= ws && se < new Date(ws.getTime() + 7 * 86400000)
-          }) + 1}
+          weekTheme={(plan.weeks[getWeekNumForDate(activeSession.rawDate) - 1] as any)?.theme ?? ''}
+          weekN={getWeekNumForDate(activeSession.rawDate)}
           preloadedRuns={stravaRuns}
           onClose={() => setActiveSession(null)}
         />
@@ -1138,15 +1173,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
       {/* Minimal today header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px 8px' }}>
-        <div style={{
-          fontFamily: "'DM Mono',monospace",
-          fontSize: '11px',
-          color: '#444',
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-        }}>
-          @doinghardthingsbadly
-        </div>
+        {/* Me avatar — left */}
         <button onClick={onOpenMe} style={{
           width: '32px', height: '32px', borderRadius: '50%', background: '#D4501A',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -1154,6 +1181,23 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           border: 'none', cursor: 'pointer', flexShrink: 0,
         }}>
           {initials}
+        </button>
+        {/* Brand slug — centre */}
+        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#444', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          @doinghardthingsbadly
+        </div>
+        {/* Calendar icon — right */}
+        <button onClick={() => setShowCalendar(true)} style={{
+          width: '32px', height: '32px', borderRadius: '8px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'none', border: '0.5px solid #222', cursor: 'pointer', flexShrink: 0,
+        }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="1.5" y="2.5" width="13" height="12" rx="1.5" stroke="#555" strokeWidth="1.1"/>
+            <line x1="1.5" y1="6.5" x2="14.5" y2="6.5" stroke="#555" strokeWidth="1.1"/>
+            <line x1="5" y1="1" x2="5" y2="4" stroke="#555" strokeWidth="1.1" strokeLinecap="round"/>
+            <line x1="11" y1="1" x2="11" y2="4" stroke="#555" strokeWidth="1.1" strokeLinecap="round"/>
+          </svg>
         </button>
       </div>
 
