@@ -10,16 +10,16 @@ export function createClient() {
         detectSessionInUrl: true,
         persistSession: true,
         storage: {
-          getItem: (key) => {
+          getItem: (key: string): string | null => {
             if (typeof document === 'undefined') return null
             const match = document.cookie.match(new RegExp('(^| )' + key + '=([^;]+)'))
             return match ? decodeURIComponent(match[2]) : null
           },
-          setItem: (key, value) => {
+          setItem: (key: string, value: string): void => {
             if (typeof document === 'undefined') return
             document.cookie = `${key}=${encodeURIComponent(value)};path=/;max-age=3600;SameSite=Lax`
           },
-          removeItem: (key) => {
+          removeItem: (key: string): void => {
             if (typeof document === 'undefined') return
             document.cookie = `${key}=;path=/;max-age=0`
           },
