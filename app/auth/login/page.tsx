@@ -15,13 +15,17 @@ export default function LoginPage() {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+        skipBrowserRedirect: false,
       },
     })
     if (error) {
       setError(error.message)
       setLoading(false)
     }
-    // On success Supabase redirects to Google — no further action needed here
   }
 
   return (

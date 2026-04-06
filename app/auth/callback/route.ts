@@ -7,17 +7,14 @@ export async function GET(request: Request) {
   const errorParam = searchParams.get('error')
   const errorDescription = searchParams.get('error_description')
 
-  // If Google returned an error directly
   if (errorParam) {
-    console.error('Google OAuth error:', errorParam, errorDescription)
-    return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(errorParam)}&desc=${encodeURIComponent(errorDescription ?? '')}`)
+    return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(errorParam)}`)
   }
 
   if (code) {
     const supabase = createClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (error) {
-      console.error('exchangeCodeForSession error:', error.message)
       return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(error.message)}`)
     }
     if (data.session) {
