@@ -70,7 +70,6 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
   const [resetPhrase, setResetPhrase] = useState('')
   const [theme, setTheme] = useState<'dark' | 'light' | 'auto'>('dark')
 
-  // Shared Strava state — fetched once, passed to Coach + Strava screens
   const [stravaRuns, setStravaRuns] = useState<any[] | null>(null)
   const [stravaLoading, setStravaLoading] = useState(true)
   const [stravaConnected, setStravaConnected] = useState(false)
@@ -79,7 +78,6 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
   const CLIENT_ID     = process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID!
   const REFRESH_TOKEN = 'b2332fbde9c23d072e4e7712afc9d5b06e253fed'
 
-  // Derive user initials from athlete name
   const initials = (plan.meta.athlete ?? 'RS')
     .split(' ')
     .map((w: string) => w[0])
@@ -94,7 +92,6 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
       if (t) { setTheme(t); applyTheme(t) }
     } catch {}
 
-    // Fetch Strava + smoke tracker settings on mount
     async function fetchSettings() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
@@ -105,7 +102,6 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
           .eq('id', user.id)
           .single()
 
-        // Smoke tracker
         if (data?.smoke_tracker_enabled && data?.quit_date) {
           setSmokeTrackerEnabled(true)
           setQuitDate(data.quit_date)
@@ -161,29 +157,27 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
     const isDark = t === 'dark' || (t === 'auto' && prefersDark)
     const root = document.documentElement
     if (isDark) {
-      root.style.setProperty('--bg', '#111')
-      root.style.setProperty('--card-bg', '#1a1a1a')
-      root.style.setProperty('--border-col', '#2a2a2a')
+      root.style.setProperty('--bg', '#000')
+      root.style.setProperty('--card-bg', '#0d0d0d')
+      root.style.setProperty('--border-col', '#1c1c1c')
       root.style.setProperty('--text-primary', '#fff')
-      root.style.setProperty('--text-secondary', '#ccc')
-      root.style.setProperty('--text-muted', '#999')
-      root.style.setProperty('--nav-bg', '#161616')
+      root.style.setProperty('--text-secondary', '#c0c0c0')
+      root.style.setProperty('--text-muted', '#777')
+      root.style.setProperty('--nav-bg', '#000')
     } else {
-      root.style.setProperty('--bg', '#f4f4f0')
+      root.style.setProperty('--bg', '#f5f3ef')
       root.style.setProperty('--card-bg', '#fff')
-      root.style.setProperty('--border-col', '#e0e0d8')
+      root.style.setProperty('--border-col', '#e8e3dc')
       root.style.setProperty('--text-primary', '#111')
-      root.style.setProperty('--text-secondary', '#333')
-      root.style.setProperty('--text-muted', '#999')
-      root.style.setProperty('--nav-bg', '#fff')
+      root.style.setProperty('--text-secondary', '#444')
+      root.style.setProperty('--text-muted', '#888')
+      root.style.setProperty('--nav-bg', '#f5f3ef')
     }
   }
 
-  // Week navigation — default to current week
   const currentWeekIndex = plan.weeks.findIndex(w => w.type === 'current')
   const [viewWeekIndex, setViewWeekIndex] = useState(currentWeekIndex >= 0 ? currentWeekIndex : 0)
 
-  // Days to race
   const raceDate = new Date('2026-07-11')
   const fiftyKDate = new Date('2026-05-10')
   const now = new Date()
@@ -194,7 +188,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
     minHeight: '100dvh',
     display: 'flex',
     flexDirection: 'column',
-    background: 'var(--bg, #111)',
+    background: 'var(--bg, #000)',
     maxWidth: '480px',
     margin: '0 auto',
     position: 'relative',
@@ -202,7 +196,6 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
 
   return (
     <div style={s}>
-      {/* Me overlay */}
       {showMe && (
         <MeScreen
           initials={initials}
@@ -228,20 +221,18 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
         />
       )}
 
-      {/* Main content area */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-      {screen === 'today'  && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} stravaRuns={stravaRuns ?? []} onOpenMe={() => setShowMe(true)} initials={initials} />}
+        {screen === 'today'  && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} stravaRuns={stravaRuns ?? []} onOpenMe={() => setShowMe(true)} initials={initials} />}
         {screen === 'plan'   && <PlanScreen plan={plan} onOpenMe={() => setShowMe(true)} initials={initials} />}
         {screen === 'coach'  && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setShowMe(true)} initials={initials} />}
         {screen === 'strava' && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setShowMe(true)} initials={initials} />}
       </div>
 
-      {/* Bottom nav */}
       <div style={{
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: '480px',
         display: 'flex', alignItems: 'center',
-        background: 'var(--nav-bg, #161616)', borderTop: '0.5px solid var(--border-col, #2a2a2a)',
+        background: 'var(--nav-bg, #000)', borderTop: '0.5px solid var(--border-col, #1c1c1c)',
         padding: '10px 0 max(16px, env(safe-area-inset-bottom))',
         zIndex: 100,
       }}>
@@ -274,11 +265,11 @@ function ScreenHeader({ title, sub, initials, onOpenMe }: { title: string; sub?:
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '16px 16px 8px' }}>
       <div>
-        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--white)', fontFamily: "'DM Sans',sans-serif", letterSpacing: '-0.3px' }}>{title}</div>
+        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary, #fff)', fontFamily: "'DM Sans',sans-serif", letterSpacing: '-0.3px' }}>{title}</div>
         {sub && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#999', marginTop: '2px' }}>{sub}</div>}
       </div>
       <button onClick={onOpenMe} style={{
-        width: '34px', height: '34px', borderRadius: '50%', background: '#E05A1C',
+        width: '34px', height: '34px', borderRadius: '50%', background: '#D4501A',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontFamily: "'DM Mono',monospace", fontSize: '12px', fontWeight: 500, color: '#fff',
         border: 'none', cursor: 'pointer', flexShrink: 0,
@@ -293,7 +284,7 @@ function ScreenHeader({ title, sub, initials, onOpenMe }: { title: string; sub?:
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 16px', marginBottom: '6px', marginTop: '4px' }}>
+    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#777', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 16px', marginBottom: '6px', marginTop: '4px' }}>
       {children}
     </div>
   )
@@ -303,93 +294,39 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ background: 'var(--card-bg, #1a1a1a)', borderRadius: '16px', border: '0.5px solid var(--border-col, #2a2a2a)', margin: '0 12px', ...style }}>
+    <div style={{ background: 'var(--card-bg, #0d0d0d)', borderRadius: '16px', border: '0.5px solid var(--border-col, #1c1c1c)', margin: '0 12px', ...style }}>
       {children}
     </div>
   )
 }
 
-// ── SESSION LIST ──────────────────────────────────────────────────────────
+// ── Dot / accent colours ──────────────────────────────────────────────────
 
-const TYPE_COLORS: Record<string, string> = {
-  easy: '#378ADD', quality: '#E05A1C', run: '#E05A1C',
-  race: '#ff7777', strength: '#5a9a5a', rest: '#333',
+const TYPE_DOT: Record<string, string> = {
+  easy:     '#378ADD',
+  quality:  '#D4501A',
+  run:      '#D4501A',
+  race:     '#ff7777',
+  strength: '#4a9a5a',
+  rest:     'transparent',
 }
 
-function SessionList({ sessions, weekN, stravaRuns, onSessionAction }: {
-  sessions: any[]; weekN: number; stravaRuns: any[]; onSessionAction: (s: any) => void
-}) {
-  const [completions, setCompletions] = useState<Record<string, {status: string; strava_activity_id?: number; strava_activity_name?: string}>>({})
-  const supabase = createClient()
+const TYPE_ACCENT: Record<string, string> = {
+  easy:     '#378ADD',
+  quality:  '#D4501A',
+  run:      '#D4501A',
+  race:     '#ff7777',
+  strength: '#4a9a5a',
+  rest:     '#555',
+}
 
-  useEffect(() => {
-    async function loadCompletions() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data } = await supabase
-        .from('session_completions')
-        .select('session_day, status, strava_activity_id, strava_activity_name')
-        .eq('user_id', user.id)
-        .eq('week_n', weekN)
-      if (data) {
-        const map: Record<string, any> = {}
-        data.forEach(r => { map[r.session_day] = r })
-        setCompletions(map)
-      }
-    }
-    loadCompletions()
-  }, [weekN])
-
-  return (
-    <div style={{ padding: '0 12px', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      {sessions.map((s, i) => {
-        const now = new Date()
-        const rawDate = new Date(s.rawDate)
-        const completion = completions[s.key]
-        const status = completion?.status
-        const isPast = !s.today && rawDate < now
-        const isFuture = !s.today && rawDate > now
-        const borderColor = status === 'complete' ? '#3a7a3a' : status === 'skipped' ? '#555' : s.today ? '#E05A1C' : '#2a2a2a'
-        const typeColor = TYPE_COLORS[s.type] ?? '#999'
-
-        return (
-          <div key={i} onClick={() => onSessionAction({ ...s, completion, isPast, isFuture })} style={{
-            background: status === 'skipped' ? '#141414' : '#1a1a1a',
-            borderRadius: '12px',
-            border: `0.5px solid ${borderColor}`,
-            borderLeft: `3px solid ${status === 'complete' ? '#3a7a3a' : status === 'skipped' ? '#444' : typeColor}`,
-            padding: '12px 14px',
-            cursor: 'pointer',
-            opacity: status === 'skipped' ? 0.6 : isPast && !status ? 0.5 : isFuture ? 0.7 : 1,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: s.today ? '#E05A1C' : '#777', textTransform: 'uppercase' }}>
-                  {s.day}{s.today ? ' · Today' : ''}
-                </span>
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#555' }}>{s.date}</span>
-              </div>
-              <div style={{ fontSize: '14px', color: status === 'skipped' ? '#666' : '#ddd', fontWeight: 500 }}>{s.title}</div>
-              {s.detail && (
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#666', marginTop: '2px' }}>{s.detail}</div>
-              )}
-              {status === 'complete' && completion?.strava_activity_name && (
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#FC4C02', marginTop: '4px' }}>
-                  ● {completion.strava_activity_name}
-                </div>
-              )}
-            </div>
-            <div style={{ marginLeft: '12px', flexShrink: 0 }}>
-              {status === 'complete' && <span style={{ fontSize: '16px' }}>✓</span>}
-              {status === 'skipped' && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#555' }}>skipped</span>}
-              {!status && <span style={{ color: '#444', fontSize: '16px' }}>›</span>}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
+const TYPE_LABEL: Record<string, string> = {
+  easy:     'Easy run — Zone 2',
+  quality:  'Quality session',
+  run:      'Long run',
+  race:     'Race',
+  strength: 'Strength',
+  rest:     'Rest day',
 }
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
@@ -409,7 +346,6 @@ function SessionPopup({ session, weekTheme, weekN, preloadedRuns, onClose }: {
   const isComplete = completion?.status === 'complete'
   const isSkipped = completion?.status === 'skipped'
 
-  // Load claimed activity IDs when entering complete view
   useEffect(() => {
     if (view !== 'complete') return
     async function loadClaimed() {
@@ -422,7 +358,6 @@ function SessionPopup({ session, weekTheme, weekN, preloadedRuns, onClose }: {
     loadClaimed()
   }, [view])
 
-  // Filter preloaded runs by date window and claimed status
   const stravaRuns = preloadedRuns.filter((r: any) => {
     if (claimedIds.has(r.id) && r.id !== completion?.strava_activity_id) return false
     const actDate = new Date(r.start_date)
@@ -462,51 +397,46 @@ function SessionPopup({ session, weekTheme, weekN, preloadedRuns, onClose }: {
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
       onClose()
-      // Force a page refresh to update list states
-      window.location.reload()
     } catch {} finally { setSaving(false) }
   }
 
   const typeConfig: Record<string, { color: string; label: string; tips: string[] }> = {
-    easy: { color: '#378ADD', label: 'Easy run — Zone 2', tips: ['HR cap: 145 bpm. Walk if it goes above.', 'Pace is irrelevant — HR is everything.', "Nose breathing test: can't hold a conversation? Slow down.", 'Cardiac drift is normal — walk breaks are correct, not failure.'] },
-    quality: { color: '#E05A1C', label: 'Quality session', tips: ['Warm up 10–15 min easy first.', 'Target HR 155–165 bpm during efforts. Controlled, not maximal.', 'Cool down 10 min easy. Don\'t skip it.', 'Legs dead? Dial it back — don\'t force quality on fatigue.'] },
-    run: { color: '#E05A1C', label: 'Long run', tips: ['Start slower than feels right. First 30 min embarrassingly easy.', 'Fuel every 45 min from the gun — don\'t wait.', 'Walk the hills. Strategy, not weakness.', 'HR above 150 late in run? Walk break. Drop to 135 before resuming.'] },
-    race: { color: '#ff7777', label: 'Race', tips: ['Training run with a bib. Not a race.', 'HR-capped — Zone 2 long run.', 'Walk all significant climbs.', 'Fuel every 45 min. Use every aid station.', 'Finish feeling like you have 10k left.'] },
-    strength: { color: '#5a9a5a', label: 'Strength session', tips: ['Keep it functional — glutes, hips, single-leg stability.', 'Don\'t go to failure. Leave 2–3 reps in the tank.', 'Legs trashed from running? Reduce load, don\'t skip.'] },
+    easy:     { color: '#378ADD', label: 'Easy run — Zone 2', tips: ['HR cap: 145 bpm. Walk if it goes above.', 'Pace is irrelevant — HR is everything.', "Nose breathing test: can't hold a conversation? Slow down.", 'Cardiac drift is normal — walk breaks are correct, not failure.'] },
+    quality:  { color: '#D4501A', label: 'Quality session',   tips: ['Warm up 10–15 min easy first.', 'Target HR 155–165 bpm during efforts. Controlled, not maximal.', 'Cool down 10 min easy. Don\'t skip it.', 'Legs dead? Dial it back — don\'t force quality on fatigue.'] },
+    run:      { color: '#D4501A', label: 'Long run',          tips: ['Start slower than feels right. First 30 min embarrassingly easy.', 'Fuel every 45 min from the gun — don\'t wait.', 'Walk the hills. Strategy, not weakness.', 'HR above 150 late in run? Walk break. Drop to 135 before resuming.'] },
+    race:     { color: '#ff7777', label: 'Race',              tips: ['Training run with a bib. Not a race.', 'HR-capped — Zone 2 long run.', 'Walk all significant climbs.', 'Fuel every 45 min. Use every aid station.', 'Finish feeling like you have 10k left.'] },
+    strength: { color: '#4a9a5a', label: 'Strength session',  tips: ['Keep it functional — glutes, hips, single-leg stability.', 'Don\'t go to failure. Leave 2–3 reps in the tank.', 'Legs trashed from running? Reduce load, don\'t skip.'] },
   }
   const config = typeConfig[session.type] ?? typeConfig['easy']
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#1a1a1a', borderRadius: '20px 20px 0 0', border: '0.5px solid #2a2a2a', borderBottom: 'none', width: '100%', maxWidth: '480px', maxHeight: '85vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#0d0d0d', borderRadius: '20px 20px 0 0', border: '0.5px solid #1c1c1c', borderBottom: 'none', width: '100%', maxWidth: '480px', maxHeight: '85vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}>
 
-        {/* Handle */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#333' }} />
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#222' }} />
         </div>
 
-        {/* Header */}
-        <div style={{ padding: '12px 18px 14px', borderBottom: '0.5px solid #252525' }}>
+        <div style={{ padding: '12px 18px 14px', borderBottom: '0.5px solid #1a1a1a' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
                 {session.day} · {session.date}
-                {isComplete && <span style={{ color: '#3a7a3a', marginLeft: '8px' }}>✓ Complete</span>}
+                {isComplete && <span style={{ color: '#4a9a5a', marginLeft: '8px' }}>✓ Complete</span>}
                 {isSkipped && <span style={{ color: '#555', marginLeft: '8px' }}>Skipped</span>}
               </div>
               <div style={{ fontSize: '18px', fontWeight: 500, color: isPast && !isComplete ? '#888' : '#fff', lineHeight: 1.2 }}>{session.title}</div>
-              {session.detail && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#777', marginTop: '4px' }}>{session.detail}</div>}
+              {session.detail && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#666', marginTop: '4px' }}>{session.detail}</div>}
             </div>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#666', fontSize: '20px', cursor: 'pointer', padding: '0 0 0 12px' }}>✕</button>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer', padding: '0 0 0 12px' }}>✕</button>
           </div>
         </div>
 
-        {/* View: detail */}
         {view === 'detail' && (
           <>
-            <div style={{ padding: '12px 18px', background: '#141414', borderBottom: '0.5px solid #252525' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
-              <div style={{ fontSize: '13px', color: '#aaa', lineHeight: 1.5 }}>{weekTheme}</div>
+            <div style={{ padding: '12px 18px', background: '#080808', borderBottom: '0.5px solid #1a1a1a' }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
+              <div style={{ fontSize: '13px', color: '#888', lineHeight: 1.5 }}>{weekTheme}</div>
             </div>
             <div style={{ padding: '16px 18px' }}>
               <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>{config.label} — key points</div>
@@ -514,114 +444,98 @@ function SessionPopup({ session, weekTheme, weekN, preloadedRuns, onClose }: {
                 {config.tips.map((tip, i) => (
                   <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                     <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: config.color, flexShrink: 0, marginTop: '5px' }} />
-                    <div style={{ fontSize: '13px', color: '#ccc', lineHeight: 1.6 }}>{tip}</div>
+                    <div style={{ fontSize: '13px', color: '#bbb', lineHeight: 1.6 }}>{tip}</div>
                   </div>
                 ))}
               </div>
             </div>
             {(session.type === 'easy' || session.type === 'run') && (
-              <div style={{ margin: '0 18px 16px', background: '#111', borderRadius: '12px', padding: '12px 14px', border: '0.5px solid #252525' }}>
+              <div style={{ margin: '0 18px 16px', background: '#080808', borderRadius: '12px', padding: '12px 14px', border: '0.5px solid #1a1a1a' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>Zone 2 ceiling</div>
-                  <div style={{ fontSize: '20px', fontWeight: 500, color: '#378ADD' }}>145 <span style={{ fontSize: '11px', color: '#666' }}>bpm</span></div>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#555', textTransform: 'uppercase' }}>Zone 2 ceiling</div>
+                  <div style={{ fontSize: '20px', fontWeight: 500, color: '#378ADD' }}>145 <span style={{ fontSize: '11px', color: '#555' }}>bpm</span></div>
                 </div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#555', marginTop: '4px' }}>Walk if HR exceeds this. No exceptions.</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#444', marginTop: '4px' }}>Walk if HR exceeds this. No exceptions.</div>
               </div>
             )}
-            {/* Action buttons */}
-            {(!isPast || isComplete || isSkipped) && !session.isFuture && (
-              <div style={{ padding: '0 18px 24px', display: 'flex', gap: '8px' }}>
-                {!isComplete && !isSkipped && (
-                  <>
-                    <button onClick={() => setView('complete')} style={{ flex: 1, background: '#3a7a3a', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
-                      Mark complete
-                    </button>
-                    <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: '#666', border: '0.5px solid #333', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
-                      Skip
-                    </button>
-                  </>
-                )}
-                {(isComplete || isSkipped) && (
-                  <button onClick={() => setView('complete')} style={{ flex: 1, background: 'none', color: '#666', border: '0.5px solid #333', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
-                    Update
+            <div style={{ padding: '0 18px 24px', display: 'flex', gap: '8px' }}>
+              {!isComplete && !isSkipped && !session.isFuture && (
+                <>
+                  <button onClick={() => setView('complete')} style={{ flex: 1, background: '#1a3a1a', color: '#4a9a5a', border: '0.5px solid #2a5a2a', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
+                    Mark complete
                   </button>
-                )}
-              </div>
-            )}
-            {session.isFuture && !isComplete && !isSkipped && (
-              <div style={{ padding: '0 18px 24px' }}>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#555', textAlign: 'center', padding: '10px' }}>
+                  <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: '#555', border: '0.5px solid #222', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                    Skip
+                  </button>
+                </>
+              )}
+              {(isComplete || isSkipped) && (
+                <button onClick={() => setView('complete')} style={{ flex: 1, background: 'none', color: '#555', border: '0.5px solid #222', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
+                  Update
+                </button>
+              )}
+              {session.isFuture && !isComplete && !isSkipped && (
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#444', textAlign: 'center', padding: '10px', width: '100%' }}>
                   Available to log on {session.date}
                 </div>
-              </div>
-            )}
-            {isPast && !isComplete && !isSkipped && !session.isFuture && (
-              <div style={{ padding: '0 18px 24px', display: 'flex', gap: '8px' }}>
-                <button onClick={() => setView('complete')} style={{ flex: 1, background: '#252525', color: '#777', border: 'none', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
+              )}
+              {isPast && !isComplete && !isSkipped && !session.isFuture && (
+                <button onClick={() => setView('complete')} style={{ flex: 1, background: '#111', color: '#666', border: 'none', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
                   Log retroactively
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </>
         )}
 
-        {/* View: complete */}
         {view === 'complete' && (
           <div style={{ padding: '16px 18px 24px' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#3a7a3a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Mark as complete</div>
-
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#777', marginBottom: '8px' }}>Link a Strava activity (optional)</div>
-
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#4a9a5a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Mark as complete</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#666', marginBottom: '8px' }}>Link a Strava activity (optional)</div>
             {loadingClaimed ? (
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#555', padding: '12px 0' }}>Loading activities...</div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#444', padding: '12px 0' }}>Loading activities...</div>
             ) : stravaRuns.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px', maxHeight: '200px', overflowY: 'auto' }}>
                 {stravaRuns.slice(0, 20).map((run: any) => {
                   const isSelected = selectedActivity?.id === run.id
                   return (
                     <div key={run.id} onClick={() => setSelectedActivity(isSelected ? null : run)} style={{
-                      background: isSelected ? '#1a2a1a' : '#141414',
-                      border: `0.5px solid ${isSelected ? '#3a7a3a' : '#2a2a2a'}`,
+                      background: isSelected ? '#0d1a0d' : '#080808',
+                      border: `0.5px solid ${isSelected ? '#2a5a2a' : '#1c1c1c'}`,
                       borderRadius: '10px', padding: '10px 12px', cursor: 'pointer',
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     }}>
                       <div>
-                        <div style={{ fontSize: '13px', color: isSelected ? '#fff' : '#ccc', fontWeight: 500 }}>{run.name}</div>
-                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666', marginTop: '2px' }}>
+                        <div style={{ fontSize: '13px', color: isSelected ? '#fff' : '#bbb', fontWeight: 500 }}>{run.name}</div>
+                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#555', marginTop: '2px' }}>
                           {new Date(run.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {(run.distance / 1000).toFixed(1)}km {run.average_heartrate ? `· ${Math.round(run.average_heartrate)} bpm` : ''}
                         </div>
                       </div>
-                      {isSelected && <span style={{ color: '#3a7a3a', fontSize: '16px' }}>✓</span>}
+                      {isSelected && <span style={{ color: '#4a9a5a', fontSize: '16px' }}>✓</span>}
                     </div>
                   )
                 })}
               </div>
             ) : (
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#555', padding: '12px 0', marginBottom: '8px' }}>No Strava activities found in the 5 days before this session</div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#444', padding: '12px 0', marginBottom: '8px' }}>No Strava activities found in the 5 days before this session</div>
             )}
-
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: '#666', border: '0.5px solid #333', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
-                Back
-              </button>
-              <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: '#3a7a3a', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving ? 0.6 : 1 }}>
+              <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: '#555', border: '0.5px solid #222', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>Back</button>
+              <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: '#1a3a1a', color: '#4a9a5a', border: '0.5px solid #2a5a2a', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving ? 0.6 : 1 }}>
                 {saving ? 'Saving...' : 'Confirm complete'}
               </button>
             </div>
           </div>
         )}
 
-        {/* View: skip */}
         {view === 'skip' && (
           <div style={{ padding: '16px 18px 24px' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#ccc', lineHeight: 1.6, marginBottom: '20px' }}>
+            <div style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, marginBottom: '20px' }}>
               Mark this session as skipped? It'll show as grey in your log.
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: '#666', border: '0.5px solid #333', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
-                Back
-              </button>
-              <button onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2, background: '#252525', color: '#888', border: '0.5px solid #444', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+              <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: '#555', border: '0.5px solid #222', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>Back</button>
+              <button onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2, background: '#111', color: '#666', border: '0.5px solid #333', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
                 {saving ? 'Saving...' : 'Mark as skipped'}
               </button>
             </div>
@@ -632,146 +546,390 @@ function SessionPopup({ session, weekTheme, weekN, preloadedRuns, onClose }: {
   )
 }
 
+// ── DATE STRIP ────────────────────────────────────────────────────────────
+
+const DOW_ORDER = ['mon','tue','wed','thu','fri','sat','sun']
+const DOW_LETTER: Record<string, string> = { mon:'M', tue:'T', wed:'W', thu:'T', fri:'F', sat:'S', sun:'S' }
+const DOW_FULL:   Record<string, string> = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' }
+const DAY_OFFSETS: Record<string, number> = { mon:0, tue:1, wed:2, thu:3, fri:4, sat:5, sun:6 }
+
+interface SessionEntry {
+  key: string
+  day: string
+  title: string
+  detail: string
+  type: string
+  date: string
+  rawDate: Date
+  today: boolean
+}
+
+function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, totalWeeks, onWeekChange }: {
+  sessions: SessionEntry[]
+  completions: Record<string, any>
+  selectedKey: string | null
+  onSelect: (key: string) => void
+  weekIndex: number
+  totalWeeks: number
+  onWeekChange: (i: number) => void
+}) {
+  const sessionMap = Object.fromEntries(sessions.map(s => [s.key, s]))
+  const touchStartX = useRef<number | null>(null)
+
+  function getDotColor(key: string): string | null {
+    const s = sessionMap[key]
+    if (!s || s.type === 'rest') return null
+    const comp = completions[key]
+    if (comp?.status === 'complete') return '#4a9a5a'
+    if (comp?.status === 'skipped') return '#333'
+    return TYPE_DOT[s.type] ?? '#666'
+  }
+
+  function handleTouchStart(e: React.TouchEvent) { touchStartX.current = e.touches[0].clientX }
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return
+    const diff = touchStartX.current - e.changedTouches[0].clientX
+    if (Math.abs(diff) < 60) return
+    if (diff > 0 && weekIndex < totalWeeks - 1) onWeekChange(weekIndex + 1)
+    if (diff < 0 && weekIndex > 0) onWeekChange(weekIndex - 1)
+    touchStartX.current = null
+  }
+
+  return (
+    <div
+      style={{ borderBottom: '0.5px solid var(--border-col, #1c1c1c)', background: 'var(--bg, #000)', paddingBottom: '10px' }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Week label row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px 8px' }}>
+        <button
+          onClick={() => weekIndex > 0 && onWeekChange(weekIndex - 1)}
+          style={{ background: 'none', border: 'none', color: weekIndex > 0 ? '#555' : '#222', fontSize: '18px', cursor: weekIndex > 0 ? 'pointer' : 'default', padding: 0, lineHeight: 1 }}
+        >‹</button>
+        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          Week {weekIndex + 1} of {totalWeeks}
+        </span>
+        <button
+          onClick={() => weekIndex < totalWeeks - 1 && onWeekChange(weekIndex + 1)}
+          style={{ background: 'none', border: 'none', color: weekIndex < totalWeeks - 1 ? '#555' : '#222', fontSize: '18px', cursor: weekIndex < totalWeeks - 1 ? 'pointer' : 'default', padding: 0, lineHeight: 1 }}
+        >›</button>
+      </div>
+
+      {/* Day cells */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '0 8px', gap: '2px' }}>
+        {DOW_ORDER.map(key => {
+          const s = sessionMap[key]
+          const isSelected = selectedKey === key
+          const isToday = s?.today ?? false
+          const dotColor = getDotColor(key)
+          const dateNum = s ? s.rawDate.getDate().toString() : ''
+          const hasEntry = !!s
+
+          return (
+            <button
+              key={key}
+              onClick={() => hasEntry && onSelect(key)}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
+                padding: '4px 2px', background: 'none', border: 'none',
+                cursor: hasEntry ? 'pointer' : 'default', borderRadius: '10px',
+              }}
+            >
+              {/* Day letter */}
+              <span style={{
+                fontFamily: "'DM Mono',monospace", fontSize: '10px',
+                color: isSelected ? '#D4501A' : isToday ? '#D4501A' : '#444',
+                letterSpacing: '0.04em', textTransform: 'uppercase',
+              }}>
+                {DOW_LETTER[key]}
+              </span>
+
+              {/* Date circle */}
+              <div style={{
+                width: '28px', height: '28px', borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: isSelected ? '#D4501A' : isToday && !isSelected ? 'rgba(212,80,26,0.12)' : 'transparent',
+                border: isToday && !isSelected ? '1px solid rgba(212,80,26,0.35)' : 'none',
+                transition: 'background 0.15s',
+              }}>
+                <span style={{
+                  fontFamily: "'DM Mono',monospace", fontSize: '13px',
+                  color: isSelected ? '#fff' : isToday ? '#D4501A' : dateNum ? '#999' : '#2a2a2a',
+                  fontWeight: isToday || isSelected ? 600 : 400,
+                }}>
+                  {dateNum}
+                </span>
+              </div>
+
+              {/* Session dot */}
+              <div style={{
+                width: '4px', height: '4px', borderRadius: '50%',
+                background: dotColor ?? 'transparent',
+              }} />
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── SESSION HERO ──────────────────────────────────────────────────────────
+
+function SessionHero({ session, completion, onTap }: {
+  session: SessionEntry; completion?: any; onTap: () => void
+}) {
+  const accent = TYPE_ACCENT[session.type] ?? '#D4501A'
+  const isComplete = completion?.status === 'complete'
+  const isSkipped = completion?.status === 'skipped'
+
+  return (
+    <div onClick={onTap} style={{
+      margin: '12px 12px 0',
+      background: 'var(--card-bg, #0d0d0d)',
+      borderRadius: '16px',
+      border: `0.5px solid ${isComplete ? '#2a4a2a' : isSkipped ? '#222' : '#1c1c1c'}`,
+      borderLeft: `3px solid ${isComplete ? '#4a9a5a' : isSkipped ? '#333' : accent}`,
+      padding: '16px',
+      cursor: 'pointer',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+        <span style={{
+          fontFamily: "'DM Mono',monospace", fontSize: '10px',
+          color: isComplete ? '#4a9a5a' : isSkipped ? '#444' : accent,
+          letterSpacing: '0.1em', textTransform: 'uppercase',
+        }}>
+          {session.today ? 'Today · ' : ''}{session.day} {session.date} · {TYPE_LABEL[session.type] ?? session.type}
+        </span>
+        {isComplete && <span style={{ fontSize: '14px', color: '#4a9a5a' }}>✓</span>}
+        {isSkipped && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#444' }}>skipped</span>}
+      </div>
+
+      <div style={{
+        fontSize: '20px', fontWeight: 500, letterSpacing: '-0.3px',
+        color: isSkipped ? '#444' : 'var(--text-primary, #fff)',
+        lineHeight: 1.2, marginBottom: session.detail ? '6px' : '14px',
+      }}>
+        {session.title}
+      </div>
+
+      {session.detail && (
+        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#555', marginBottom: '14px' }}>
+          {session.detail}
+        </div>
+      )}
+
+      {isComplete && completion?.strava_activity_name && (
+        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#FC4C02', marginBottom: '12px' }}>
+          ● {completion.strava_activity_name}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{
+          fontFamily: "'DM Mono',monospace", fontSize: '11px',
+          color: isComplete ? '#4a9a5a' : isSkipped ? '#333' : '#555',
+          letterSpacing: '0.06em', textTransform: 'uppercase',
+        }}>
+          {isComplete ? 'View details' : isSkipped ? 'Update' : session.today ? 'Log this session' : 'View session'}
+        </span>
+        <span style={{ color: '#333', fontSize: '18px' }}>›</span>
+      </div>
+    </div>
+  )
+}
+
+// ── REST DAY CARD ─────────────────────────────────────────────────────────
+
+function RestDayCard({ session, nextSession }: {
+  session: SessionEntry | null; nextSession: SessionEntry | null
+}) {
+  return (
+    <div style={{ margin: '12px 12px 0' }}>
+      <div style={{
+        background: 'var(--card-bg, #0d0d0d)', borderRadius: '16px',
+        border: '0.5px solid var(--border-col, #1c1c1c)', padding: '20px 18px', marginBottom: '10px',
+      }}>
+        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#444', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>
+          No run today
+        </div>
+        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary, #fff)', lineHeight: 1.25, marginBottom: '8px', letterSpacing: '-0.3px' }}>
+          {session?.type === 'rest' || !session ? 'Rest is the training.' : session.title}
+        </div>
+        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#555', lineHeight: 1.6 }}>
+          {session?.type === 'rest' || !session
+            ? "Nothing to run today. Your body is building fitness while you rest. Don't undo it."
+            : 'No running today. Keep it easy, stay off the legs.'}
+        </div>
+      </div>
+
+      {nextSession && (
+        <div style={{
+          background: 'var(--card-bg, #0d0d0d)', borderRadius: '12px',
+          border: '0.5px solid var(--border-col, #1c1c1c)', padding: '12px 14px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#444', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>
+              Next run · {nextSession.day} {nextSession.date}
+            </div>
+            <div style={{ fontSize: '14px', color: '#888', fontWeight: 500 }}>{nextSession.title}</div>
+            {nextSession.detail && (
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#444', marginTop: '2px' }}>{nextSession.detail}</div>
+            )}
+          </div>
+          <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: TYPE_DOT[nextSession.type] ?? '#555', flexShrink: 0, marginLeft: '12px' }} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── TODAY SCREEN ──────────────────────────────────────────────────────────
 
 function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, daysTo50k, stravaRuns, onOpenMe, initials }: {
-  plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null; smokeTrackerEnabled: boolean; daysToRace: number; daysTo50k: number; stravaRuns: any[]; onOpenMe: () => void; initials: string
+  plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
+  smokeTrackerEnabled: boolean; daysToRace: number; daysTo50k: number
+  stravaRuns: any[]; onOpenMe: () => void; initials: string
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
   const totalWeeks = plan.weeks.length
-  const doneKm = 0
-  const targetKm = currentWeek.weekly_km ?? 0
-  const progress = targetKm > 0 ? Math.min(1, doneKm / targetKm) : 0
   const [activeSession, setActiveSession] = useState<any | null>(null)
-  const isCurrentWeek = currentWeek.type === 'current'
+  const [completions, setCompletions] = useState<Record<string, any>>({})
+  const supabase = createClient()
 
-  // Swipe detection
+  // Swipe whole screen = week change
   const touchStartX = useRef<number | null>(null)
   function onTouchStart(e: React.TouchEvent) { touchStartX.current = e.touches[0].clientX }
   function onTouchEnd(e: React.TouchEvent) {
     if (touchStartX.current === null) return
     const diff = touchStartX.current - e.changedTouches[0].clientX
-    if (Math.abs(diff) < 50) return // ignore small swipes
-    if (diff > 0 && weekIndex < totalWeeks - 1) onWeekChange(weekIndex + 1) // swipe left = next week
-    if (diff < 0 && weekIndex > 0) onWeekChange(weekIndex - 1) // swipe right = prev week
+    if (Math.abs(diff) < 60) return
+    if (diff > 0 && weekIndex < totalWeeks - 1) onWeekChange(weekIndex + 1)
+    if (diff < 0 && weekIndex > 0) onWeekChange(weekIndex - 1)
     touchStartX.current = null
   }
 
-  // Determine today's day of week
+  // Load completions
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('session_completions')
+        .select('session_day, status, strava_activity_id, strava_activity_name')
+        .eq('user_id', user.id)
+        .eq('week_n', weekNum)
+      if (data) {
+        const map: Record<string, any> = {}
+        data.forEach((r: any) => { map[r.session_day] = r })
+        setCompletions(map)
+      }
+    }
+    load()
+  }, [weekNum])
+
+  // Build 7-day session list
   const now = new Date()
   const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][now.getDay()]
-
-  // Get the week start date from the plan
-  const weekStartDate = new Date((currentWeek as any).date ?? now)
-
-  function getSessionDate(dayKey: string): { display: string; raw: Date } {
-    const dayOffsets: Record<string, number> = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 }
-    const offset = dayOffsets[dayKey] ?? 0
-    const d = new Date(weekStartDate)
-    d.setDate(d.getDate() + offset)
-    return {
-      display: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-      raw: d,
-    }
-  }
-
+  const weekStartDate = new Date((currentWeek as any).date)
   const todayStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-
-  // Build sessions dynamically from plan data — only show run/quality/easy/race types, skip rest
   const ws = (currentWeek as any).sessions ?? {}
-  const dayLabels: Record<string, string> = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' }
-  const runTypes = ['run', 'easy', 'quality', 'race']
-  const sessions = Object.entries(ws)
-    .filter(([_, s]: [string, any]) => runTypes.includes(s.type))
-    .map(([key, s]: [string, any]) => {
-      const { display, raw } = getSessionDate(key)
-      return {
-        key,
-        day: dayLabels[key] ?? key,
-        title: s.label ?? 'Run',
-        detail: s.detail ?? '',
-        type: s.type,
-        date: display,
-        rawDate: raw.toISOString(), // store as string to survive serialisation
-        today: key === todayDow && display === todayStr,
-        done: false,
-      }
-    })
 
-  // Week label and theme from plan data
-  const weekLabel = (currentWeek as any).label ?? 'Build phase'
-  const weekTheme = (currentWeek as any).theme ?? 'Aerobic base + consistency'
+  const sessions: SessionEntry[] = DOW_ORDER.map(key => {
+    const s = ws[key]
+    const d = new Date(weekStartDate)
+    d.setDate(d.getDate() + DAY_OFFSETS[key])
+    const displayDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+    return {
+      key,
+      day: DOW_FULL[key],
+      title: s?.label ?? '',
+      detail: s?.detail ?? '',
+      type: s?.type ?? 'rest',
+      date: displayDate,
+      rawDate: d,
+      today: key === todayDow && displayDate === todayStr,
+    }
+  })
+
+  // Default selected day
+  const [selectedKey, setSelectedKey] = useState<string>(() => {
+    const t = sessions.find(s => s.today)
+    if (t) return t.key
+    const next = sessions.find(s => s.rawDate >= now && ws[s.key] && ws[s.key].type !== 'rest')
+    if (next) return next.key
+    const last = [...sessions].reverse().find(s => ws[s.key])
+    return last?.key ?? 'mon'
+  })
+
+  // Reset selected key on week change
+  useEffect(() => {
+    const t = sessions.find(s => s.today)
+    if (t) { setSelectedKey(t.key); return }
+    const next = sessions.find(s => s.rawDate >= now && ws[s.key] && ws[s.key].type !== 'rest')
+    if (next) { setSelectedKey(next.key); return }
+    const last = [...sessions].reverse().find(s => ws[s.key])
+    if (last) setSelectedKey(last.key)
+  }, [weekIndex])
+
+  const selectedSession = sessions.find(s => s.key === selectedKey) ?? null
+  const selectedEntry = ws[selectedKey]
+
+  const RUN_TYPES = ['run', 'easy', 'quality', 'race']
+  const isRunDay      = selectedEntry && RUN_TYPES.includes(selectedEntry.type)
+  const isStrengthDay = selectedEntry?.type === 'strength'
+  const showSessionHero = isRunDay || isStrengthDay
+
+  // Next run session after selected day
+  const nextRunSession = sessions.find(s =>
+    s.rawDate > (selectedSession?.rawDate ?? now) && RUN_TYPES.includes(s.type)
+  ) ?? null
+
+  const weekTheme = (currentWeek as any).theme ?? ''
 
   return (
-    <div style={{ paddingBottom: '8px' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      <ScreenHeader title="Today" sub={`W${weekNum}/${totalWeeks} · ${daysToRace} days to go`} initials={initials} onOpenMe={onOpenMe} />
+    <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{ paddingBottom: '8px' }}>
 
-      {/* Week navigation */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', marginBottom: '8px' }}>
-        <button onClick={() => weekIndex > 0 && onWeekChange(weekIndex - 1)} style={{
-          background: 'none', border: 'none', color: weekIndex > 0 ? '#999' : '#333',
-          fontSize: '20px', cursor: weekIndex > 0 ? 'pointer' : 'default', padding: '4px 8px',
-        }}>‹</button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          {isCurrentWeek && (
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#E05A1C', background: 'rgba(224,90,28,0.1)', padding: '2px 8px', borderRadius: '20px' }}>
-              current week
-            </div>
-          )}
-          {!isCurrentWeek && (
-            <button onClick={() => onWeekChange(plan.weeks.findIndex(w => w.type === 'current'))} style={{
-              fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#666',
-              background: 'none', border: '0.5px solid #2a2a2a', borderRadius: '20px',
-              padding: '2px 8px', cursor: 'pointer',
-            }}>
-              back to now
-            </button>
-          )}
-        </div>
-        <button onClick={() => weekIndex < totalWeeks - 1 && onWeekChange(weekIndex + 1)} style={{
-          background: 'none', border: 'none', color: weekIndex < totalWeeks - 1 ? '#999' : '#333',
-          fontSize: '20px', cursor: weekIndex < totalWeeks - 1 ? 'pointer' : 'default', padding: '4px 8px',
-        }}>›</button>
-      </div>
-
-      {/* Week hero */}
-      <div style={{ margin: '0 12px 10px' }}>
-        <Card style={{ padding: '14px 16px', margin: 0 }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
-            Week {weekNum} — {weekLabel}
-          </div>
-          <div style={{ fontSize: '17px', fontWeight: 500, color: '#fff', marginBottom: '8px' }}>
-            {weekTheme}
-          </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
-            <span style={{ background: '#252525', borderRadius: '20px', padding: '4px 10px', fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#aaa' }}>
-              <span style={{ color: '#E05A1C' }}>{targetKm}</span> km target
-            </span>
-            <span style={{ background: '#252525', borderRadius: '20px', padding: '4px 10px', fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#aaa' }}>
-              <span style={{ color: '#E05A1C' }}>{sessions.length}</span> sessions
-            </span>
-          </div>
-          <div style={{ background: '#252525', borderRadius: '4px', height: '4px', overflow: 'hidden' }}>
-            <div style={{ background: '#E05A1C', height: '4px', width: `${Math.round(progress * 100)}%`, borderRadius: '4px' }} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999' }}>{doneKm}km done</span>
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999' }}>{targetKm}km target</span>
-          </div>
-        </Card>
-      </div>
-
-      {/* Sessions */}
-      <SectionLabel>This week's sessions</SectionLabel>
-      <SessionList
-        sessions={sessions}
-        weekN={weekNum}
-        stravaRuns={stravaRuns}
-        onSessionAction={(session) => setActiveSession(session)}
+      <ScreenHeader
+        title="Today"
+        sub={`W${weekNum}/${totalWeeks} · ${daysToRace} days to go`}
+        initials={initials}
+        onOpenMe={onOpenMe}
       />
 
-      {/* Session popup */}
+      <DateStrip
+        sessions={sessions}
+        completions={completions}
+        selectedKey={selectedKey}
+        onSelect={setSelectedKey}
+        weekIndex={weekIndex}
+        totalWeeks={totalWeeks}
+        onWeekChange={onWeekChange}
+      />
+
+      {showSessionHero && selectedSession ? (
+        <SessionHero
+          session={selectedSession}
+          completion={completions[selectedKey]}
+          onTap={() => {
+            const isPast = selectedSession.rawDate < now && !selectedSession.today
+            const isFuture = !selectedSession.today && selectedSession.rawDate > now
+            setActiveSession({
+              ...selectedSession,
+              rawDate: selectedSession.rawDate.toISOString(),
+              completion: completions[selectedKey],
+              isPast,
+              isFuture,
+            })
+          }}
+        />
+      ) : (
+        <RestDayCard session={selectedSession} nextSession={nextRunSession} />
+      )}
+
       {activeSession && (
         <SessionPopup
           session={activeSession}
@@ -782,7 +940,15 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         />
       )}
 
-      {/* Stats strip */}
+      {/* Week focus */}
+      {weekTheme && (
+        <div style={{ margin: '10px 12px 0', padding: '10px 14px', background: 'var(--card-bg, #0d0d0d)', borderRadius: '10px', border: '0.5px solid var(--border-col, #1c1c1c)' }}>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#444', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '3px' }}>Week focus</div>
+          <div style={{ fontSize: '13px', color: '#666', lineHeight: 1.5 }}>{weekTheme}</div>
+        </div>
+      )}
+
+      {/* Race countdown */}
       <SectionLabel>Race countdown</SectionLabel>
       <div style={{ display: 'flex', gap: '8px', padding: '0 12px', marginBottom: '10px' }}>
         {[
@@ -790,12 +956,12 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           { num: String(daysTo50k), unit: 'days', label: 'To 50k' },
           ...(smokeTrackerEnabled && quitDays !== null ? [{ num: String(quitDays), unit: 'days', label: 'Smoke-free' }] : []),
         ].map((s, i) => (
-          <div key={i} style={{ flex: 1, background: '#1a1a1a', borderRadius: '12px', padding: '10px 12px', border: '0.5px solid #2a2a2a' }}>
+          <div key={i} style={{ flex: 1, background: 'var(--card-bg, #0d0d0d)', borderRadius: '12px', padding: '10px 12px', border: '0.5px solid var(--border-col, #1c1c1c)' }}>
             <div>
-              <span style={{ fontSize: '20px', color: '#fff', fontWeight: 500 }}>{s.num}</span>
-              <span style={{ fontSize: '13px', color: '#E05A1C', fontWeight: 500 }}> {s.unit}</span>
+              <span style={{ fontSize: '20px', color: 'var(--text-primary, #fff)', fontWeight: 500 }}>{s.num}</span>
+              <span style={{ fontSize: '13px', color: '#D4501A', fontWeight: 500 }}> {s.unit}</span>
             </div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', marginTop: '2px', textTransform: 'uppercase' }}>{s.label}</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#555', marginTop: '2px', textTransform: 'uppercase' }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -806,11 +972,11 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FC4C02' }} />
           <div>
-            <div style={{ fontSize: '13px', color: '#ddd', fontWeight: 500 }}>Strava</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#666', marginTop: '1px' }}>View in Strava tab</div>
+            <div style={{ fontSize: '13px', color: '#bbb', fontWeight: 500 }}>Strava</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#555', marginTop: '1px' }}>View in Strava tab</div>
           </div>
         </div>
-        <div style={{ color: '#666', fontSize: '18px' }}>›</div>
+        <div style={{ color: '#333', fontSize: '18px' }}>›</div>
       </Card>
     </div>
   )
@@ -824,9 +990,9 @@ function PlanScreen({ plan, onOpenMe, initials }: { plan: Plan; onOpenMe: () => 
       <ScreenHeader title="Plan" sub="Race to the Stones · 11 Jul 2026" initials={initials} onOpenMe={onOpenMe} />
       <div style={{ padding: '0 12px' }}>
         <PlanChart weeks={plan.weeks} />
-        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.6rem', color: '#999', margin: '8px 0 12px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
+        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.6rem', color: '#555', margin: '8px 0 12px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
           <span>MIDWEEK: 2× Zone 2 · STRENGTH: Mon/Wed · SAT: long run</span>
-          <span style={{ color: '#666' }}>v{plan.meta.version} · {plan.meta.last_updated}</span>
+          <span style={{ color: '#444' }}>v{plan.meta.version} · {plan.meta.last_updated}</span>
         </div>
         <PlanGrid weeks={plan.weeks} />
       </div>
@@ -850,7 +1016,6 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, onOpenMe, initial
   const latestId   = latestRun ? String(latestRun.id) : null
   const isNew      = latestId && latestId !== cachedActivityId
 
-  // Load cached analysis on mount
   useEffect(() => {
     try {
       const cached   = localStorage.getItem('rts_coach_analysis')
@@ -860,7 +1025,6 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, onOpenMe, initial
     } catch {}
   }, [])
 
-  // Auto-generate when new activity arrives
   useEffect(() => {
     if (isNew && !loading && !stravaLoading) generateAnalysis()
   }, [latestId, stravaLoading])
@@ -896,11 +1060,7 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
       const res = await fetch('/api/claude', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: prompt }],
-        }),
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }),
       })
       const data = await res.json()
       const text = data.content?.map((b: { text?: string }) => b.text || '').join('') || ''
@@ -928,98 +1088,89 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
       <ScreenHeader title="Coach" sub={`W${weekNum} · ${(currentWeek as any).label ?? 'Build phase'}`} initials={initials} onOpenMe={onOpenMe} />
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
-        {/* Activity pill */}
         {(stravaLoading || latestRun) && (
-          <div style={{ background: '#1a1a1a', borderRadius: '10px', padding: '9px 12px', border: '0.5px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ background: 'var(--card-bg, #0d0d0d)', borderRadius: '10px', padding: '9px 12px', border: '0.5px solid var(--border-col, #1c1c1c)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FC4C02' }} />
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#aaa' }}>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#888' }}>
                 {stravaLoading ? 'Loading Strava...' : loading ? 'Analysing latest run...' : latestRunLabel ?? 'Latest activity'}
               </span>
             </div>
             {isNew && !loading && (
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C', background: 'rgba(224,90,28,0.1)', padding: '2px 8px', borderRadius: '20px' }}>new</span>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#D4501A', background: 'rgba(212,80,26,0.1)', padding: '2px 8px', borderRadius: '20px' }}>new</span>
             )}
           </div>
         )}
 
-        {/* Strava not connected */}
         {!stravaLoading && !latestRun && (
-          <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', padding: '28px 20px', textAlign: 'center' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', lineHeight: 1.6, marginBottom: '8px' }}>
-              Connect Strava in the <span style={{ color: '#E05A1C' }}>Me</span> screen<br />to get coaching notes.
+          <div style={{ background: 'var(--card-bg, #0d0d0d)', borderRadius: '16px', border: '0.5px solid var(--border-col, #1c1c1c)', padding: '28px 20px', textAlign: 'center' }}>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#555', lineHeight: 1.6 }}>
+              Connect Strava in the <span style={{ color: '#D4501A' }}>Me</span> screen<br />to get coaching notes.
             </div>
           </div>
         )}
 
-        {/* Loading state */}
         {(loading || (stravaLoading && !analysis)) && (
           <>
-            <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', padding: '28px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+            <div style={{ background: 'var(--card-bg, #0d0d0d)', borderRadius: '16px', border: '0.5px solid var(--border-col, #1c1c1c)', padding: '28px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
               <svg width="36" height="36" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15" fill="none" stroke="#2a2a2a" strokeWidth="2" />
-                <circle cx="18" cy="18" r="15" fill="none" stroke="#E05A1C" strokeWidth="2" strokeDasharray="40 60" strokeLinecap="round">
+                <circle cx="18" cy="18" r="15" fill="none" stroke="#1c1c1c" strokeWidth="2" />
+                <circle cx="18" cy="18" r="15" fill="none" stroke="#D4501A" strokeWidth="2" strokeDasharray="40 60" strokeLinecap="round">
                   <animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite" />
                 </circle>
               </svg>
-              <p style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', textAlign: 'center', lineHeight: 1.6 }}>
+              <p style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#555', textAlign: 'center', lineHeight: 1.6 }}>
                 {stravaLoading ? 'Loading Strava data...' : 'Reading your latest run\nand plan position...'}
               </p>
             </div>
-            <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', padding: '14px' }}>
+            <div style={{ background: 'var(--card-bg, #0d0d0d)', borderRadius: '16px', border: '0.5px solid var(--border-col, #1c1c1c)', padding: '14px' }}>
               {[85, 100, 70, 90].map((w, i) => (
-                <div key={i} style={{ height: '10px', background: '#252525', borderRadius: '4px', marginBottom: i < 3 ? '8px' : 0, width: `${w}%` }} />
+                <div key={i} style={{ height: '10px', background: '#111', borderRadius: '4px', marginBottom: i < 3 ? '8px' : 0, width: `${w}%` }} />
               ))}
             </div>
           </>
         )}
 
-        {/* Error */}
         {error && !loading && (
-          <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', padding: '16px' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C', marginBottom: '8px' }}>Error</div>
-            <div style={{ fontSize: '13px', color: '#888' }}>{error}</div>
-            <button onClick={generateAnalysis} style={{ marginTop: '12px', fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#E05A1C', background: 'rgba(224,90,28,0.1)', border: 'none', borderRadius: '20px', padding: '6px 14px', cursor: 'pointer' }}>
+          <div style={{ background: 'var(--card-bg, #0d0d0d)', borderRadius: '16px', border: '0.5px solid var(--border-col, #1c1c1c)', padding: '16px' }}>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#D4501A', marginBottom: '8px' }}>Error</div>
+            <div style={{ fontSize: '13px', color: '#666' }}>{error}</div>
+            <button onClick={generateAnalysis} style={{ marginTop: '12px', fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#D4501A', background: 'rgba(212,80,26,0.1)', border: 'none', borderRadius: '20px', padding: '6px 14px', cursor: 'pointer' }}>
               Try again
             </button>
           </div>
         )}
 
-        {/* Analysis */}
         {analysis && !loading && (
           <>
-            <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', overflow: 'hidden' }}>
-              <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid #222', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#E05A1C' }} />
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Coaching notes</span>
-                <span style={{ marginLeft: 'auto', fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#666' }}>W{weekNum}/{totalWeeks}</span>
+            <div style={{ background: 'var(--card-bg, #0d0d0d)', borderRadius: '16px', border: '0.5px solid var(--border-col, #1c1c1c)', overflow: 'hidden' }}>
+              <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid #111', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#D4501A' }} />
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Coaching notes</span>
+                <span style={{ marginLeft: 'auto', fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#444' }}>W{weekNum}/{totalWeeks}</span>
               </div>
               <div style={{ padding: '14px' }}>
                 {analysis.split('\n\n').map((para, i) => (
-                  <p key={i} style={{ fontSize: '13px', color: '#ccc', lineHeight: 1.65, marginTop: i > 0 ? '10px' : 0 }}>
-                    {para}
-                  </p>
+                  <p key={i} style={{ fontSize: '13px', color: '#bbb', lineHeight: 1.65, marginTop: i > 0 ? '10px' : 0 }}>{para}</p>
                 ))}
               </div>
             </div>
-            <button onClick={generateAnalysis} style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#999', background: 'none', border: '0.5px solid #2a2a2a', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer', alignSelf: 'center' }}>
+            <button onClick={generateAnalysis} style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#555', background: 'none', border: '0.5px solid #1c1c1c', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer', alignSelf: 'center' }}>
               Refresh analysis
             </button>
           </>
         )}
 
-        {/* Empty — connected but no analysis yet */}
         {!analysis && !loading && !error && latestRun && !stravaLoading && (
-          <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', padding: '28px 20px', textAlign: 'center' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', lineHeight: 1.6 }}>
+          <div style={{ background: 'var(--card-bg, #0d0d0d)', borderRadius: '16px', border: '0.5px solid var(--border-col, #1c1c1c)', padding: '28px 20px', textAlign: 'center' }}>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#555', lineHeight: 1.6 }}>
               Strava connected. Ready to generate<br />your coaching notes.
             </div>
-            <button onClick={generateAnalysis} style={{ marginTop: '16px', fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#E05A1C', background: 'rgba(224,90,28,0.1)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}>
+            <button onClick={generateAnalysis} style={{ marginTop: '16px', fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#D4501A', background: 'rgba(212,80,26,0.1)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}>
               Generate now
             </button>
           </div>
         )}
-
       </div>
     </div>
   )
@@ -1044,7 +1195,7 @@ function StravaScreen({ runs, loading, connected, onOpenMe, initials }: {
 
 function StravaConnectionRow() {
   const [secret, setSecret]       = useState('')
-  const [connected, setConnected] = useState<boolean | null>(null) // null = loading
+  const [connected, setConnected] = useState<boolean | null>(null)
   const [saving, setSaving]       = useState(false)
   const [expanded, setExpanded]   = useState(false)
   const [error, setError]         = useState<string | null>(null)
@@ -1054,11 +1205,7 @@ function StravaConnectionRow() {
     async function check() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setConnected(false); return }
-      const { data } = await supabase
-        .from('user_settings')
-        .select('strava_client_secret')
-        .eq('id', user.id)
-        .single()
+      const { data } = await supabase.from('user_settings').select('strava_client_secret').eq('id', user.id).single()
       setConnected(!!(data?.strava_client_secret))
     }
     check()
@@ -1071,30 +1218,20 @@ function StravaConnectionRow() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not signed in')
-      const { error: err } = await supabase.from('user_settings').upsert({
-        id: user.id,
-        strava_client_secret: secret.trim(),
-        updated_at: new Date().toISOString(),
-      })
+      const { error: err } = await supabase.from('user_settings').upsert({ id: user.id, strava_client_secret: secret.trim(), updated_at: new Date().toISOString() })
       if (err) throw err
       setConnected(true)
       setExpanded(false)
       setSecret('')
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Save failed')
-    } finally {
-      setSaving(false)
-    }
+    } finally { setSaving(false) }
   }
 
   async function disconnect() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    await supabase.from('user_settings').upsert({
-      id: user.id,
-      strava_client_secret: null,
-      updated_at: new Date().toISOString(),
-    })
+    await supabase.from('user_settings').upsert({ id: user.id, strava_client_secret: null, updated_at: new Date().toISOString() })
     setConnected(false)
     setExpanded(false)
   }
@@ -1102,74 +1239,46 @@ function StravaConnectionRow() {
   const isLoading = connected === null
 
   return (
-    <div style={{ background: '#1a1a1a', borderRadius: '14px', border: '0.5px solid #2a2a2a', overflow: 'hidden' }}>
-      {/* Main row */}
-      <button onClick={() => !isLoading && setExpanded(e => !e)} style={{
-        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '13px 14px', background: 'none', border: 'none', cursor: 'pointer',
-      }}>
+    <div style={{ background: 'var(--card-bg, #0d0d0d)', borderRadius: '14px', border: '0.5px solid var(--border-col, #1c1c1c)', overflow: 'hidden' }}>
+      <button onClick={() => !isLoading && setExpanded(e => !e)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 14px', background: 'none', border: 'none', cursor: 'pointer' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(252,76,2,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(252,76,2,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FC4C02' }} />
           </div>
           <div style={{ textAlign: 'left' }}>
-            <div style={{ fontSize: '13px', color: '#ccc' }}>Strava</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#999', marginTop: '1px' }}>Client secret + OAuth</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary, #c0c0c0)' }}>Strava</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#555', marginTop: '1px' }}>Client secret + OAuth</div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {isLoading ? (
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#555' }}>checking...</span>
+            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#444' }}>checking...</span>
           ) : connected ? (
-            <>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#5a5' }} />
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#5a5' }}>connected</span>
-            </>
+            <><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4a9a5a' }} /><span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#4a9a5a' }}>connected</span></>
           ) : (
-            <>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#a44' }} />
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#a44' }}>not connected</span>
-            </>
+            <><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#8a3a3a' }} /><span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#8a3a3a' }}>not connected</span></>
           )}
-          <span style={{ color: '#555', fontSize: '14px', marginLeft: '4px' }}>{expanded ? '˅' : '›'}</span>
+          <span style={{ color: '#333', fontSize: '14px', marginLeft: '4px' }}>{expanded ? '˅' : '›'}</span>
         </div>
       </button>
 
-      {/* Expanded setup/manage panel */}
       {expanded && (
-        <div style={{ borderTop: '0.5px solid #2a2a2a', padding: '14px' }}>
+        <div style={{ borderTop: '0.5px solid var(--border-col, #1c1c1c)', padding: '14px' }}>
           {!connected ? (
             <>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#999', marginBottom: '10px', lineHeight: 1.6 }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#555', marginBottom: '10px', lineHeight: 1.6 }}>
                 Paste your Strava Client Secret. Find it at strava.com → Settings → My API Application.
               </div>
-              <input
-                type="password"
-                value={secret}
-                onChange={e => setSecret(e.target.value)}
-                placeholder="Client secret..."
-                style={{ width: '100%', background: '#252525', border: '0.5px solid #333', borderRadius: '8px', padding: '10px 12px', color: '#ccc', fontFamily: "'DM Mono',monospace", fontSize: '12px', outline: 'none', marginBottom: '10px', boxSizing: 'border-box' }}
-              />
-              {error && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#a44', marginBottom: '8px' }}>{error}</div>}
-              <button onClick={save} disabled={saving || !secret.trim()} style={{
-                width: '100%', background: '#E05A1C', color: '#000', border: 'none', borderRadius: '8px',
-                padding: '10px', fontFamily: "'DM Mono',monospace", fontSize: '13px', letterSpacing: '0.08em',
-                textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold',
-                opacity: saving || !secret.trim() ? 0.6 : 1,
-              }}>
+              <input type="password" value={secret} onChange={e => setSecret(e.target.value)} placeholder="Client secret..." style={{ width: '100%', background: '#080808', border: '0.5px solid #222', borderRadius: '8px', padding: '10px 12px', color: '#bbb', fontFamily: "'DM Mono',monospace", fontSize: '12px', outline: 'none', marginBottom: '10px', boxSizing: 'border-box' }} />
+              {error && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#8a3a3a', marginBottom: '8px' }}>{error}</div>}
+              <button onClick={save} disabled={saving || !secret.trim()} style={{ width: '100%', background: '#D4501A', color: '#000', border: 'none', borderRadius: '8px', padding: '10px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving || !secret.trim() ? 0.6 : 1 }}>
                 {saving ? 'Saving...' : 'Save & Connect'}
               </button>
             </>
           ) : (
             <>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#5a5', marginBottom: '12px' }}>
-                Secret saved to your account. Auto-connects on every load.
-              </div>
-              <button onClick={disconnect} style={{
-                background: 'none', border: '0.5px solid #a44', borderRadius: '8px',
-                padding: '8px 14px', fontFamily: "'DM Mono',monospace", fontSize: '13px',
-                color: '#a44', cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase',
-              }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#4a9a5a', marginBottom: '12px' }}>Secret saved. Auto-connects on every load.</div>
+              <button onClick={disconnect} style={{ background: 'none', border: '0.5px solid #5a2a2a', borderRadius: '8px', padding: '8px 14px', fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#8a3a3a', cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                 Disconnect
               </button>
             </>
@@ -1194,47 +1303,18 @@ function SmokeToggle({ enabled, quitDate, onChange }: {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      await supabase.from('user_settings').upsert({
-        id: user.id,
-        smoke_tracker_enabled: newEnabled,
-        quit_date: newEnabled ? newDate : null,
-        updated_at: new Date().toISOString(),
-      })
-    } catch {}
-  }
-
-  async function updateDate(date: string) {
-    onChange(true, date)
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      await supabase.from('user_settings').upsert({
-        id: user.id,
-        smoke_tracker_enabled: true,
-        quit_date: date,
-        updated_at: new Date().toISOString(),
-      })
+      await supabase.from('user_settings').upsert({ id: user.id, smoke_tracker_enabled: newEnabled, quit_date: newEnabled ? newDate : null, updated_at: new Date().toISOString() })
     } catch {}
   }
 
   return (
-    <div onClick={toggle} style={{
-      width: '44px', height: '26px', borderRadius: '13px',
-      background: enabled ? '#5a5' : '#333',
-      position: 'relative', cursor: 'pointer', flexShrink: 0,
-      transition: 'background 0.2s',
-    }}>
-      <div style={{
-        width: '20px', height: '20px', borderRadius: '50%',
-        background: '#fff', position: 'absolute',
-        top: '3px', left: enabled ? '21px' : '3px',
-        transition: 'left 0.2s',
-      }} />
+    <div onClick={toggle} style={{ width: '44px', height: '26px', borderRadius: '13px', background: enabled ? '#2a5a2a' : '#1c1c1c', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
+      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: enabled ? '#4a9a5a' : '#444', position: 'absolute', top: '3px', left: enabled ? '21px' : '3px', transition: 'left 0.2s, background 0.2s' }} />
     </div>
   )
 }
 
-// ── ME SCREEN (overlay) ───────────────────────────────────────────────────
+// ── ME SCREEN ─────────────────────────────────────────────────────────────
 
 function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onClose }: {
   initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
@@ -1248,51 +1328,43 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
   if (activeSection === 'mental')  return <MentalTab  resetPhrase={resetPhrase} onSave={onSaveMental} onBack={() => setActiveSection('main')} />
   if (activeSection === 'fueling') return <FuelingTab onBack={() => setActiveSection('main')} />
 
-  const raceDate = new Date('2026-07-11')
-  const daysToRace = Math.max(0, Math.ceil((raceDate.getTime() - Date.now()) / 86400000))
+  const daysToRace = Math.max(0, Math.ceil((new Date('2026-07-11').getTime() - Date.now()) / 86400000))
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'var(--bg, #111)', overflowY: 'auto', maxWidth: '480px', margin: '0 auto' }}>
-      {/* Header */}
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'var(--bg, #000)', overflowY: 'auto', maxWidth: '480px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '16px 16px 8px' }}>
         <div>
-          <div style={{ fontSize: '22px', fontWeight: 500, color: '#fff', fontFamily: "'DM Sans',sans-serif" }}>Me</div>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#999', marginTop: '2px' }}>@doinghardthingsbadly</div>
+          <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary, #fff)', fontFamily: "'DM Sans',sans-serif" }}>Me</div>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#555', marginTop: '2px' }}>@doinghardthingsbadly</div>
         </div>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#999', fontSize: '22px', cursor: 'pointer', padding: '4px' }}>✕</button>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '22px', cursor: 'pointer', padding: '4px' }}>✕</button>
       </div>
 
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '32px' }}>
 
-        {/* Profile card */}
-        <div style={{ background: '#1a1a1a', borderRadius: '16px', padding: '14px 16px', border: '0.5px solid #2a2a2a', display: 'flex', alignItems: 'center', gap: '14px', justifyContent: 'space-between' }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#E05A1C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Mono',monospace", fontSize: '15px', fontWeight: 500, color: '#fff', flexShrink: 0 }}>
+        <div style={{ background: 'var(--card-bg, #0d0d0d)', borderRadius: '16px', padding: '14px 16px', border: '0.5px solid var(--border-col, #1c1c1c)', display: 'flex', alignItems: 'center', gap: '14px', justifyContent: 'space-between' }}>
+          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#D4501A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Mono',monospace", fontSize: '15px', fontWeight: 500, color: '#fff', flexShrink: 0 }}>
             {initials}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '15px', color: '#fff', fontWeight: 500 }}>{athlete}</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', marginTop: '2px' }}>Berkshire, UK</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#E05A1C', marginTop: '4px' }}>Race to the Stones · {daysToRace} days</div>
+            <div style={{ fontSize: '15px', color: 'var(--text-primary, #fff)', fontWeight: 500 }}>{athlete}</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#555', marginTop: '2px' }}>Berkshire, UK</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#D4501A', marginTop: '4px' }}>Race to the Stones · {daysToRace} days</div>
           </div>
           <form action="/auth/signout" method="post">
-            <button style={{ background: 'none', border: '0.5px solid #2a2a2a', borderRadius: '8px', color: '#999', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            <button style={{ background: 'none', border: '0.5px solid var(--border-col, #1c1c1c)', borderRadius: '8px', color: '#555', fontFamily: "'DM Mono',monospace", fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
               Sign out
             </button>
           </form>
         </div>
 
-        {/* Appearance */}
         <SectionLabel>Appearance</SectionLabel>
-        <div style={{ background: '#1a1a1a', borderRadius: '14px', border: '0.5px solid #2a2a2a', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card-bg, #0d0d0d)', borderRadius: '14px', border: '0.5px solid var(--border-col, #1c1c1c)', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 14px' }}>
-            <div style={{ fontSize: '13px', color: '#ccc' }}>Theme</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary, #c0c0c0)' }}>Theme</div>
             <div style={{ display: 'flex', gap: '6px' }}>
               {(['dark', 'light', 'auto'] as const).map(t => (
-                <button key={t} onClick={() => onThemeChange(t)} style={{
-                  borderRadius: '10px', padding: '6px 10px', border: `0.5px solid ${theme === t ? '#E05A1C' : '#333'}`,
-                  background: 'none', cursor: 'pointer', fontFamily: "'DM Mono',monospace", fontSize: '12px',
-                  color: theme === t ? '#E05A1C' : '#666', textTransform: 'capitalize',
-                }}>
+                <button key={t} onClick={() => onThemeChange(t)} style={{ borderRadius: '10px', padding: '6px 10px', border: `0.5px solid ${theme === t ? '#D4501A' : '#222'}`, background: 'none', cursor: 'pointer', fontFamily: "'DM Mono',monospace", fontSize: '11px', color: theme === t ? '#D4501A' : '#444', textTransform: 'capitalize' }}>
                   {t}
                 </button>
               ))}
@@ -1300,80 +1372,61 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
           </div>
         </div>
 
-        {/* Connections */}
         <SectionLabel>Connections</SectionLabel>
         <StravaConnectionRow />
 
-        {/* Training support */}
         <SectionLabel>Training support</SectionLabel>
-        <div style={{ background: '#1a1a1a', borderRadius: '14px', border: '0.5px solid #2a2a2a', overflow: 'hidden' }}>
-
-          {/* Smoke tracker toggle row */}
-          <div style={{ padding: '13px 14px', borderBottom: '0.5px solid #222' }}>
+        <div style={{ background: 'var(--card-bg, #0d0d0d)', borderRadius: '14px', border: '0.5px solid var(--border-col, #1c1c1c)', overflow: 'hidden' }}>
+          <div style={{ padding: '13px 14px', borderBottom: '0.5px solid #111' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: smokeTrackerEnabled ? '10px' : 0 }}>
               <div>
-                <div style={{ fontSize: '13px', color: '#ccc' }}>Smoke-free tracker</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: smokeTrackerEnabled ? '#5a5' : '#666', marginTop: '1px' }}>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary, #c0c0c0)' }}>Smoke-free tracker</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: smokeTrackerEnabled ? '#4a9a5a' : '#444', marginTop: '1px' }}>
                   {smokeTrackerEnabled && quitDays !== null ? `${quitDays} days smoke-free` : 'Off'}
                 </div>
               </div>
-              <SmokeToggle
-                enabled={smokeTrackerEnabled}
-                quitDate={quitDate}
-                onChange={onSmokeTrackerChange}
-              />
+              <SmokeToggle enabled={smokeTrackerEnabled} quitDate={quitDate} onChange={onSmokeTrackerChange} />
             </div>
             {smokeTrackerEnabled && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#666' }}>Quit date:</span>
-                <input
-                  type="date"
-                  value={quitDate}
-                  onChange={async e => {
-                    const newDate = e.target.value
-                    onSmokeTrackerChange(true, newDate)
-                    try {
-                      const supabase = createClient()
-                      const { data: { user } } = await supabase.auth.getUser()
-                      if (!user) return
-                      await supabase.from('user_settings').upsert({ id: user.id, smoke_tracker_enabled: true, quit_date: newDate, updated_at: new Date().toISOString() })
-                    } catch {}
-                  }}
-                  style={{ background: '#252525', border: '0.5px solid #333', borderRadius: '6px', padding: '4px 8px', color: '#ccc', fontFamily: "'DM Mono',monospace", fontSize: '11px', outline: 'none' }}
-                />
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#444' }}>Quit date:</span>
+                <input type="date" value={quitDate} onChange={async e => {
+                  const newDate = e.target.value
+                  onSmokeTrackerChange(true, newDate)
+                  try {
+                    const supabase = createClient()
+                    const { data: { user } } = await supabase.auth.getUser()
+                    if (!user) return
+                    await supabase.from('user_settings').upsert({ id: user.id, smoke_tracker_enabled: true, quit_date: newDate, updated_at: new Date().toISOString() })
+                  } catch {}
+                }} style={{ background: '#080808', border: '0.5px solid #222', borderRadius: '6px', padding: '4px 8px', color: '#888', fontFamily: "'DM Mono',monospace", fontSize: '11px', outline: 'none' }} />
               </div>
             )}
           </div>
 
-          {/* Quit tracker detail — only if enabled */}
           {smokeTrackerEnabled && (
-            <button onClick={() => setActiveSection('quit')} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 14px', background: 'none', border: 'none', borderBottom: '0.5px solid #222', cursor: 'pointer' }}>
+            <button onClick={() => setActiveSection('quit')} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 14px', background: 'none', border: 'none', borderBottom: '0.5px solid #111', cursor: 'pointer' }}>
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '13px', color: '#ccc' }}>Quit tracker</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#5a5', marginTop: '1px' }}>Milestones + benefits</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary, #c0c0c0)' }}>Quit tracker</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#4a9a5a', marginTop: '1px' }}>Milestones + benefits</div>
               </div>
-              <div style={{ color: '#666', fontSize: '18px' }}>›</div>
+              <div style={{ color: '#333', fontSize: '18px' }}>›</div>
             </button>
           )}
 
           {[
-            { id: 'mental' as const,  label: 'Mental toolkit',  sub: 'Race mantras + strategies', color: '#378ADD' },
-            { id: 'fueling' as const, label: 'Fueling plan',    sub: 'Gel strategy + hydration',  color: '#E05A1C' },
+            { id: 'mental'  as const, label: 'Mental toolkit', sub: 'Race mantras + strategies', color: '#378ADD' },
+            { id: 'fueling' as const, label: 'Fueling plan',   sub: 'Gel strategy + hydration',  color: '#D4501A' },
           ].map(({ id, label, sub, color }, i, arr) => (
-            <button key={id} onClick={() => setActiveSection(id)} style={{
-              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '13px 14px', background: 'none', border: 'none',
-              borderBottom: i < arr.length - 1 ? '0.5px solid #222' : 'none', cursor: 'pointer',
-            }}>
+            <button key={id} onClick={() => setActiveSection(id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 14px', background: 'none', border: 'none', borderBottom: i < arr.length - 1 ? '0.5px solid #111' : 'none', cursor: 'pointer' }}>
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '13px', color: '#ccc' }}>{label}</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary, #c0c0c0)' }}>{label}</div>
                 <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color, marginTop: '1px' }}>{sub}</div>
               </div>
-              <div style={{ color: '#666', fontSize: '18px' }}>›</div>
+              <div style={{ color: '#333', fontSize: '18px' }}>›</div>
             </button>
           ))}
         </div>
-
       </div>
     </div>
   )
@@ -1384,15 +1437,15 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
 function BackHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px' }}>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#E05A1C', fontSize: '18px', cursor: 'pointer', padding: '0' }}>‹</button>
-      <div style={{ fontSize: '20px', fontWeight: 500, color: '#fff', fontFamily: "'DM Sans',sans-serif" }}>{title}</div>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '18px', cursor: 'pointer', padding: '0' }}>‹</button>
+      <div style={{ fontSize: '20px', fontWeight: 500, color: 'var(--text-primary, #fff)', fontFamily: "'DM Sans',sans-serif" }}>{title}</div>
     </div>
   )
 }
 
 function InfoBox({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background: '#1a1a1a', border: '0.5px solid #2a2a2a', borderRadius: '12px', padding: '16px 18px', fontSize: '13px', lineHeight: 1.75, color: '#888', marginBottom: '10px' }}>
+    <div style={{ background: 'var(--card-bg, #0d0d0d)', border: '0.5px solid var(--border-col, #1c1c1c)', borderRadius: '12px', padding: '16px 18px', fontSize: '13px', lineHeight: 1.75, color: '#666', marginBottom: '10px' }}>
       {children}
     </div>
   )
@@ -1408,23 +1461,23 @@ function MentalTab({ resetPhrase, onSave, onBack }: { resetPhrase: string; onSav
     { title: 'Walk = Strategy',  text: 'The elites walk the uphills at RTTS. Walking a climb at km 72 is a tactic, not a failure.' },
   ]
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: '#111', overflowY: 'auto', maxWidth: '480px', margin: '0 auto' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'var(--bg, #000)', overflowY: 'auto', maxWidth: '480px', margin: '0 auto' }}>
       <BackHeader title="Mental toolkit" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
         <InfoBox>
-          The dark patch is coming. Probably around <span style={{ color: '#E05A1C' }}>km 65–75</span>. It's not a sign you're broken — it's a sign you've been going long enough to feel something real.
+          The dark patch is coming. Probably around <span style={{ color: '#D4501A' }}>km 65–75</span>. It's not a sign you're broken — it's a sign you've been going long enough to feel something real.
         </InfoBox>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
           {tools.map(t => (
-            <div key={t.title} style={{ background: '#1a1a1a', border: '0.5px solid #2a2a2a', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.05em', color: '#E05A1C', marginBottom: '6px', textTransform: 'uppercase' }}>{t.title}</div>
-              <div style={{ fontSize: '12px', color: '#888', lineHeight: 1.6 }}>{t.text}</div>
+            <div key={t.title} style={{ background: 'var(--card-bg, #0d0d0d)', border: '0.5px solid var(--border-col, #1c1c1c)', borderRadius: '12px', padding: '14px' }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', letterSpacing: '0.05em', color: '#D4501A', marginBottom: '6px', textTransform: 'uppercase' }}>{t.title}</div>
+              <div style={{ fontSize: '12px', color: '#666', lineHeight: 1.6 }}>{t.text}</div>
             </div>
           ))}
         </div>
-        <div style={{ background: '#1a1a1a', border: '0.5px solid #2a2a2a', borderRadius: '12px', padding: '14px' }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Your Reset Phrase</div>
-          <textarea value={resetPhrase} onChange={e => onSave(e.target.value)} placeholder="What's the phrase you'll use when it gets dark at km 70?" style={{ width: '100%', background: 'transparent', border: 'none', color: '#ccc', fontFamily: "'DM Sans',sans-serif", fontSize: '13px', lineHeight: 1.7, resize: 'vertical', minHeight: '60px', outline: 'none' }} />
+        <div style={{ background: 'var(--card-bg, #0d0d0d)', border: '0.5px solid var(--border-col, #1c1c1c)', borderRadius: '12px', padding: '14px' }}>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#D4501A', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Your Reset Phrase</div>
+          <textarea value={resetPhrase} onChange={e => onSave(e.target.value)} placeholder="What's the phrase you'll use when it gets dark at km 70?" style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-secondary, #c0c0c0)', fontFamily: "'DM Sans',sans-serif", fontSize: '13px', lineHeight: 1.7, resize: 'vertical', minHeight: '60px', outline: 'none' }} />
         </div>
       </div>
     </div>
@@ -1433,26 +1486,26 @@ function MentalTab({ resetPhrase, onSave, onBack }: { resetPhrase: string; onSav
 
 function FuelingTab({ onBack }: { onBack: () => void }) {
   const protocol = [
-    { timing: 'Pre-run · 90 min before', what: 'Porridge + banana + coffee',       why: "Slow carbs, familiar, not ambitious. Don't experiment on race morning." },
-    { timing: '0–60 minutes',            what: 'Water only',                         why: "Glycogen tanks are full. Let your body warm up before fueling." },
-    { timing: 'Every 45 min after',      what: '1 gel OR real food',                 why: '~60g carbs/hr target. Alternate to avoid sweet fatigue.' },
-    { timing: 'Every 20–30 min',         what: 'Small sips — water or electrolyte',  why: "Don't wait for thirst. By then you're already behind." },
-    { timing: 'Hour 3+',                 what: 'Salty real food',                    why: 'Pretzels, nuts, cheese. Sweet fatigue is real.' },
-    { timing: 'Aid stations',            what: 'Eat at every single one',            why: "You'll never regret eating at a checkpoint. You will regret skipping one." },
+    { timing: 'Pre-run · 90 min before', what: 'Porridge + banana + coffee',      why: "Slow carbs, familiar, not ambitious. Don't experiment on race morning." },
+    { timing: '0–60 minutes',            what: 'Water only',                        why: "Glycogen tanks are full. Let your body warm up before fueling." },
+    { timing: 'Every 45 min after',      what: '1 gel OR real food',                why: '~60g carbs/hr target. Alternate to avoid sweet fatigue.' },
+    { timing: 'Every 20–30 min',         what: 'Small sips — water or electrolyte', why: "Don't wait for thirst. By then you're already behind." },
+    { timing: 'Hour 3+',                 what: 'Salty real food',                   why: 'Pretzels, nuts, cheese. Sweet fatigue is real.' },
+    { timing: 'Aid stations',            what: 'Eat at every single one',           why: "You'll never regret eating at a checkpoint. You will regret skipping one." },
   ]
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: '#111', overflowY: 'auto', maxWidth: '480px', margin: '0 auto' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'var(--bg, #000)', overflowY: 'auto', maxWidth: '480px', margin: '0 auto' }}>
       <BackHeader title="Fueling plan" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
         <InfoBox>
-          Real food + gels is the right call. The goal now is <span style={{ color: '#E05A1C' }}>stress-testing your gut before June</span> so there are zero surprises on race day.
+          Real food + gels is the right call. The goal now is <span style={{ color: '#D4501A' }}>stress-testing your gut before June</span> so there are zero surprises on race day.
         </InfoBox>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {protocol.map(p => (
-            <div key={p.timing} style={{ background: '#1a1a1a', border: '0.5px solid #2a2a2a', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>{p.timing}</div>
-              <div style={{ fontSize: '14px', fontWeight: 500, color: '#ddd', marginBottom: '4px' }}>{p.what}</div>
-              <div style={{ fontSize: '12px', color: '#666', lineHeight: 1.55 }}>{p.why}</div>
+            <div key={p.timing} style={{ background: 'var(--card-bg, #0d0d0d)', border: '0.5px solid var(--border-col, #1c1c1c)', borderRadius: '12px', padding: '14px' }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#D4501A', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>{p.timing}</div>
+              <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary, #c0c0c0)', marginBottom: '4px' }}>{p.what}</div>
+              <div style={{ fontSize: '12px', color: '#555', lineHeight: 1.55 }}>{p.why}</div>
             </div>
           ))}
         </div>
@@ -1471,17 +1524,17 @@ function QuitTab({ quitDays, onBack }: { quitDays: number | null; onBack: () => 
     { days: 99, label: 'Race Day — Job done' },
   ]
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: '#111', overflowY: 'auto', maxWidth: '480px', margin: '0 auto' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'var(--bg, #000)', overflowY: 'auto', maxWidth: '480px', margin: '0 auto' }}>
       <BackHeader title="Quit tracker" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
-        <div style={{ background: '#1a1a1a', border: '0.5px solid #2a5a2a', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px' }}>
-          <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: '3.5rem', color: '#5a5', lineHeight: 1 }}>{days}</div>
+        <div style={{ background: 'var(--card-bg, #0d0d0d)', border: '0.5px solid #1a3a1a', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px' }}>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '3.5rem', color: '#4a9a5a', lineHeight: 1, fontWeight: 500 }}>{days}</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#5a5', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' }}>Smoke-free days</div>
-            <div style={{ fontSize: '13px', color: '#888', lineHeight: 1.55 }}>Your aerobic efficiency is already improving.</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#4a9a5a', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' }}>Smoke-free days</div>
+            <div style={{ fontSize: '13px', color: '#666', lineHeight: 1.55 }}>Your aerobic efficiency is already improving.</div>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' }}>
               {milestones.map(m => (
-                <div key={m.days} style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${days >= m.days ? '#5a5' : '#333'}`, color: days >= m.days ? '#5a5' : '#666' }}>
+                <div key={m.days} style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${days >= m.days ? '#2a5a2a' : '#222'}`, color: days >= m.days ? '#4a9a5a' : '#444' }}>
                   {m.label}
                 </div>
               ))}
@@ -1489,12 +1542,12 @@ function QuitTab({ quitDays, onBack }: { quitDays: number | null; onBack: () => 
           </div>
         </div>
         <InfoBox>
-          <strong style={{ color: '#ddd' }}>What quitting does to your running:</strong><br /><br />
-          <span style={{ color: '#E05A1C' }}>48 hours</span> — CO leaves bloodstream. O₂ delivery improves immediately.<br />
-          <span style={{ color: '#E05A1C' }}>Week 1–2</span> — Resting HR starts dropping. Recovery improves noticeably.<br />
-          <span style={{ color: '#E05A1C' }}>Week 3–4</span> — Aerobic efficiency measurably better. Zone 2 feels easier.<br />
-          <span style={{ color: '#E05A1C' }}>Month 2+</span> — Cardiac drift reduces. That late-run HR creep? Less of it.<br /><br />
-          <strong style={{ color: '#ddd' }}>You quit 99 days before a 100km race. That's an upgrade.</strong>
+          <strong style={{ color: 'var(--text-secondary, #c0c0c0)' }}>What quitting does to your running:</strong><br /><br />
+          <span style={{ color: '#D4501A' }}>48 hours</span> — CO leaves bloodstream. O₂ delivery improves immediately.<br />
+          <span style={{ color: '#D4501A' }}>Week 1–2</span> — Resting HR starts dropping. Recovery improves noticeably.<br />
+          <span style={{ color: '#D4501A' }}>Week 3–4</span> — Aerobic efficiency measurably better. Zone 2 feels easier.<br />
+          <span style={{ color: '#D4501A' }}>Month 2+</span> — Cardiac drift reduces. That late-run HR creep? Less of it.<br /><br />
+          <strong style={{ color: 'var(--text-secondary, #c0c0c0)' }}>You quit 99 days before a 100km race. That's an upgrade.</strong>
         </InfoBox>
       </div>
     </div>
