@@ -42,6 +42,16 @@ function formatDateRange(weekStartDate: Date): string {
   return `${weekStartDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} – ${end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
 }
 
+const loadMoreStyle: React.CSSProperties = {
+  width: '100%', padding: '10px', background: 'none',
+  border: '0.5px solid var(--border-col, #1c1c1c)',
+  borderRadius: '10px', cursor: 'pointer',
+  fontFamily: "'DM Mono',monospace", fontSize: '11px',
+  color: '#444', letterSpacing: '0.06em', textTransform: 'uppercase',
+}
+
+// ── Main export ───────────────────────────────────────────────────────────
+
 interface Props {
   weeks: Week[]
   stravaRuns: any[]
@@ -77,7 +87,7 @@ export default function PlanCalendar({ weeks, stravaRuns, onSessionTap }: Props)
     load()
   }, [])
 
-  async function handleDrop(weekN: number, originalDay: string, newDay: string) {
+  async function handleMove(weekN: number, originalDay: string, newDay: string) {
     if (originalDay === newDay) return
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -85,7 +95,10 @@ export default function PlanCalendar({ weeks, stravaRuns, onSessionTap }: Props)
       user_id: user.id, week_n: weekN, original_day: originalDay, new_day: newDay,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,week_n,original_day' })
-    setOverrides(prev => [...prev.filter(o => !(o.week_n === weekN && o.original_day === originalDay)), { week_n: weekN, original_day: originalDay, new_day: newDay }])
+    setOverrides(prev => [
+      ...prev.filter(o => !(o.week_n === weekN && o.original_day === originalDay)),
+      { week_n: weekN, original_day: originalDay, new_day: newDay }
+    ])
   }
 
   function renderWeek({ week, weekNum }: { week: Week; weekNum: number }) {
@@ -98,7 +111,7 @@ export default function PlanCalendar({ weeks, stravaRuns, onSessionTap }: Props)
         overrides={overrides.filter(o => o.week_n === weekNum)}
         stravaRuns={stravaRuns}
         onSessionTap={onSessionTap}
-        onDrop={handleDrop}
+        onMove={handleMove}
       />
     )
   }
@@ -122,20 +135,13 @@ export default function PlanCalendar({ weeks, stravaRuns, onSessionTap }: Props)
   )
 }
 
-const loadMoreStyle: React.CSSProperties = {
-  width: '100%', padding: '10px', background: 'none',
-  border: '0.5px solid var(--border-col, #1c1c1c)',
-  borderRadius: '10px', cursor: 'pointer',
-  fontFamily: "'DM Mono',monospace", fontSize: '11px',
-  color: '#444', letterSpacing: '0.06em', textTransform: 'uppercase',
-}
-
 // ── Week card ─────────────────────────────────────────────────────────────
 
-function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSessionTap, onDrop }: {
+function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSessionTap, onMove }: {
   week: Week; weekNum: number; completions: Completion[]; overrides: Override[]
-  stravaRuns: any[]; onSessionTap: (session: any, weekN: number, weekTheme: string) => void
-  onDrop: (weekN: number, originalDay: string, newDay: string) => void
+  stravaRuns: any[]
+  onSessionTap: (session: any, weekN: number, weekTheme: string) => void
+  onMove: (weekN: number, originalDay: string, newDay: string) => void
 }) {
   const ws = (week as any).sessions ?? {}
   const weekStartDate = new Date((week as any).date)
@@ -147,7 +153,10 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
   const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][now.getDay()]
   const todayStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 
-  // Apply overrides to session map
+  // Which day's session is currently in "move mode"
+  const [movingDay, setMovingDay] = useState<string | null>(null)
+
+  // Apply overrides
   const effectiveSessions: Record<string, any> = {}
   DOW_ORDER.forEach(key => {
     if (!overrides.some(o => o.original_day === key) && ws[key]) {
@@ -167,8 +176,21 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
     .filter(c => c.status === 'complete' && c.strava_activity_km)
     .reduce((sum, c) => sum + (c.strava_activity_km ?? 0), 0)
 
-  const [dragOverDay, setDragOverDay] = useState<string | null>(null)
-  const [draggingDay, setDraggingDay] = useState<string | null>(null)
+  function handleMoveIconTap(key: string) {
+    if (movingDay === key) {
+      setMovingDay(null) // cancel
+    } else {
+      setMovingDay(key)
+      if (navigator.vibrate) navigator.vibrate(30)
+    }
+  }
+
+  function handleTargetTap(targetKey: string) {
+    if (!movingDay) return
+    const originalDay = effectiveSessions[movingDay]?.originalDay ?? movingDay
+    onMove(weekNum, originalDay, targetKey)
+    setMovingDay(null)
+  }
 
   return (
     <div style={{
@@ -179,6 +201,7 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
       overflow: 'hidden',
       opacity: isCompleted ? 0.5 : 1,
     }}>
+
       {/* Week header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -187,17 +210,11 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
         background: isCurrent ? 'rgba(212,80,26,0.04)' : 'transparent',
       }}>
         <div>
-          <div style={{
-            fontFamily: "'DM Mono',monospace", fontSize: '10px',
-            color: isCurrent ? '#D4501A' : '#555',
-            letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px',
-          }}>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: isCurrent ? '#D4501A' : '#555', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>
             W{weekNum} · {formatDateRange(weekStartDate)}
+            {movingDay && <span style={{ color: '#D4501A', marginLeft: '8px' }}>· tap a day to move session</span>}
           </div>
-          <div style={{
-            fontSize: '13px', fontWeight: 500,
-            color: isCompleted ? 'var(--text-muted, #777)' : 'var(--text-primary, #fff)',
-          }}>
+          <div style={{ fontSize: '13px', fontWeight: 500, color: isCompleted ? 'var(--text-muted, #777)' : 'var(--text-primary, #fff)' }}>
             {(week as any).label ?? ''}
           </div>
         </div>
@@ -222,8 +239,10 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
         const isSkipped = completion?.status === 'skipped'
         const isPast = d < now && !isToday
         const isFuture = d > now && !isToday
-        const isDraggable = !!s && s.type !== 'rest' && !isComplete && !isSkipped
-        const isDragTarget = dragOverDay === key && draggingDay !== null && draggingDay !== key
+        const isMovable = !!s && s.type !== 'rest' && !isComplete && !isSkipped
+        const isMoving = movingDay === key
+        // A day is a valid target if: in move mode, this isn't the moving day, and it doesn't already have a session
+        const isTarget = !!movingDay && movingDay !== key && !effectiveSessions[key]
 
         return (
           <DayRow
@@ -235,10 +254,14 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
             isPast={isPast}
             isFuture={isFuture}
             completion={completion}
-            isDraggable={isDraggable}
-            isDragTarget={isDragTarget}
+            isMovable={isMovable}
+            isMoving={isMoving}
+            isTarget={isTarget}
+            isMoveMode={!!movingDay}
             isLast={i === DOW_ORDER.length - 1}
             onTap={() => {
+              if (isTarget) { handleTargetTap(key); return }
+              if (movingDay) { setMovingDay(null); return } // tap elsewhere = cancel
               if (!s || s.type === 'rest') return
               onSessionTap({
                 key: s.originalDay ?? key,
@@ -254,131 +277,65 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
                 isFuture,
               }, weekNum, weekTheme)
             }}
-            onDragStart={() => setDraggingDay(s?.originalDay ?? key)}
-            onDragEnd={() => { setDraggingDay(null); setDragOverDay(null) }}
-            onDragOver={() => setDragOverDay(key)}
-            onDrop={() => {
-              if (draggingDay && draggingDay !== key) onDrop(weekNum, draggingDay, key)
-              setDraggingDay(null)
-              setDragOverDay(null)
-            }}
+            onMoveIconTap={() => handleMoveIconTap(key)}
           />
         )
       })}
+
+      {/* Cancel move banner */}
+      {movingDay && (
+        <button
+          onClick={() => setMovingDay(null)}
+          style={{
+            width: '100%', padding: '10px 14px',
+            background: 'rgba(212,80,26,0.06)',
+            border: 'none', borderTop: '0.5px solid rgba(212,80,26,0.2)',
+            cursor: 'pointer',
+            fontFamily: "'DM Mono',monospace", fontSize: '11px',
+            color: '#D4501A', letterSpacing: '0.06em', textTransform: 'uppercase',
+            textAlign: 'center',
+          }}
+        >
+          Cancel move
+        </button>
+      )}
     </div>
   )
 }
 
 // ── Day row ───────────────────────────────────────────────────────────────
 
-function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isDraggable, isDragTarget, isLast, onTap, onDragStart, onDragEnd, onDragOver, onDrop }: {
+function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isTarget, isMoveMode, isLast, onTap, onMoveIconTap }: {
   dayKey: string; session: any; date: Date; isToday: boolean; isPast: boolean; isFuture: boolean
-  completion?: Completion; isDraggable: boolean; isDragTarget: boolean; isLast: boolean
-  onTap: () => void; onDragStart: () => void; onDragEnd: () => void; onDragOver: () => void; onDrop: () => void
+  completion?: Completion; isMovable: boolean; isMoving: boolean; isTarget: boolean
+  isMoveMode: boolean; isLast: boolean
+  onTap: () => void; onMoveIconTap: () => void
 }) {
-  const rowRef = useRef<HTMLDivElement>(null)
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const touchStartPos = useRef<{ x: number; y: number } | null>(null)
-  const isLongPressedRef = useRef(false)
-  const [isDragging, setIsDragging] = useState(false)
-  const [isLongPressed, setIsLongPressed] = useState(false)
-
   const isComplete = completion?.status === 'complete'
   const isSkipped  = completion?.status === 'skipped'
   const hasSession = !!session && session.type !== 'rest'
   const isRestType = !session || session.type === 'rest'
   const accent = session ? (TYPE_ACCENT[session.type] ?? '#555') : 'transparent'
 
-  function cancelLongPress() {
-    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
-  }
-
-  // Attach non-passive touch listeners directly to DOM for reliable preventDefault
-  useEffect(() => {
-    const el = rowRef.current
-    if (!el || !isDraggable) return
-
-    function onTouchStart(e: TouchEvent) {
-      const touch = e.touches[0]
-      touchStartPos.current = { x: touch.clientX, y: touch.clientY }
-      isLongPressedRef.current = false
-      longPressTimer.current = setTimeout(() => {
-        isLongPressedRef.current = true
-        setIsLongPressed(true)
-        setIsDragging(true)
-        onDragStart()
-        if (navigator.vibrate) navigator.vibrate(40)
-      }, 500)
-    }
-
-    function onTouchMove(e: TouchEvent) {
-      if (!touchStartPos.current) return
-      const touch = e.touches[0]
-      const dx = Math.abs(touch.clientX - touchStartPos.current.x)
-      const dy = Math.abs(touch.clientY - touchStartPos.current.y)
-
-      if (!isLongPressedRef.current) {
-        if (dx > 8 || dy > 8) cancelLongPress()
-        return
-      }
-
-      // We're in drag mode — prevent scroll
-      e.preventDefault()
-
-      const target = document.elementFromPoint(touch.clientX, touch.clientY)
-      const row = target?.closest('[data-daykey]') as HTMLElement | null
-      if (row?.dataset.daykey && row.dataset.daykey !== dayKey) onDragOver()
-    }
-
-    function onTouchEnd(e: TouchEvent) {
-      cancelLongPress()
-      if (isLongPressedRef.current) {
-        const touch = e.changedTouches[0]
-        const target = document.elementFromPoint(touch.clientX, touch.clientY)
-        const row = target?.closest('[data-daykey]') as HTMLElement | null
-        if (row?.dataset.daykey && row.dataset.daykey !== dayKey) onDrop()
-        isLongPressedRef.current = false
-        setIsLongPressed(false)
-        setIsDragging(false)
-        onDragEnd()
-      }
-      touchStartPos.current = null
-    }
-
-    el.addEventListener('touchstart', onTouchStart, { passive: true })
-    el.addEventListener('touchmove', onTouchMove, { passive: false })
-    el.addEventListener('touchend', onTouchEnd, { passive: true })
-
-    return () => {
-      el.removeEventListener('touchstart', onTouchStart)
-      el.removeEventListener('touchmove', onTouchMove)
-      el.removeEventListener('touchend', onTouchEnd)
-    }
-  }, [isDraggable, dayKey])
-
   return (
     <div
-      ref={rowRef}
-      data-daykey={dayKey}
-      draggable={isDraggable}
-      onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; setIsDragging(true); onDragStart() }}
-      onDragEnd={() => { setIsDragging(false); onDragEnd() }}
-      onDragOver={e => { e.preventDefault(); onDragOver() }}
-      onDrop={e => { e.preventDefault(); onDrop() }}
-      onClick={() => !isLongPressed && hasSession && onTap()}
+      onClick={onTap}
       style={{
         display: 'flex', alignItems: 'center',
         padding: '10px 14px',
         borderBottom: isLast ? 'none' : '0.5px solid var(--border-col, #1c1c1c)',
-        background: isDragTarget ? 'rgba(212,80,26,0.08)' : 'transparent',
-        cursor: hasSession ? 'pointer' : 'default',
-        opacity: isDragging ? 0.35 : isSkipped ? 0.5 : isPast && !isComplete && hasSession ? 0.45 : 1,
-        outline: isDragTarget ? '1px dashed rgba(212,80,26,0.35)' : 'none',
+        background: isMoving
+          ? 'rgba(212,80,26,0.1)'
+          : isTarget
+          ? 'rgba(212,80,26,0.06)'
+          : 'transparent',
+        cursor: (hasSession || isTarget) ? 'pointer' : 'default',
+        opacity: isMoving ? 0.7 : isMoveMode && !isTarget && !isMoving ? 0.4 : isSkipped ? 0.5 : isPast && !isComplete && hasSession ? 0.45 : 1,
+        outline: isTarget ? '1px dashed rgba(212,80,26,0.5)' : isMoving ? '1px solid rgba(212,80,26,0.5)' : 'none',
         outlineOffset: '-1px',
-        transition: 'background 0.1s',
-        WebkitUserSelect: 'none',
+        transition: 'background 0.15s, opacity 0.15s',
         userSelect: 'none',
-        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
       } as React.CSSProperties}
     >
       {/* Day + date */}
@@ -391,16 +348,20 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
         </div>
       </div>
 
-      {/* Accent bar */}
-      <div style={{
-        width: '3px', height: hasSession ? '34px' : '16px', borderRadius: '2px',
-        background: isComplete ? '#4a9a5a' : isSkipped ? '#222' : accent,
-        marginRight: '12px', flexShrink: 0,
-      }} />
+      {/* Accent bar or target indicator */}
+      {isTarget ? (
+        <div style={{ width: '3px', height: '34px', borderRadius: '2px', background: 'rgba(212,80,26,0.5)', marginRight: '12px', flexShrink: 0 }} />
+      ) : (
+        <div style={{ width: '3px', height: hasSession ? '34px' : '16px', borderRadius: '2px', background: isComplete ? '#4a9a5a' : isSkipped ? '#222' : isMoving ? '#D4501A' : accent, marginRight: '12px', flexShrink: 0 }} />
+      )}
 
       {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        {isRestType ? (
+        {isTarget ? (
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#D4501A', letterSpacing: '0.04em' }}>
+            Move here
+          </div>
+        ) : isRestType ? (
           <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #444)' }}>
             {session?.label ?? 'Rest is the training.'}
           </div>
@@ -408,10 +369,11 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
           <>
             <div style={{
               fontSize: '13px', fontWeight: 500,
-              color: isSkipped ? 'var(--text-muted, #555)' : isFuture ? 'var(--text-secondary, #888)' : 'var(--text-primary, #fff)',
+              color: isMoving ? '#D4501A' : isSkipped ? 'var(--text-muted, #555)' : isFuture ? 'var(--text-secondary, #888)' : 'var(--text-primary, #fff)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
               {session.label ?? ''}
+              {isMoving && <span style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.7 }}>moving...</span>}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', flexWrap: 'wrap' }}>
               {session.detail && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #555)' }}>{session.detail}</span>}
@@ -426,14 +388,35 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
         )}
       </div>
 
-      {/* Right */}
+      {/* Right side */}
       <div style={{ flexShrink: 0, marginLeft: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        {isComplete && <span style={{ color: '#4a9a5a', fontSize: '14px' }}>✓</span>}
-        {hasSession && !isComplete && !isSkipped && <span style={{ color: 'var(--text-muted, #333)', fontSize: '16px' }}>›</span>}
-        {isDraggable && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5px', opacity: isLongPressed ? 0.8 : 0.2, transition: 'opacity 0.2s' }}>
-            {[0,1,2].map(i => <div key={i} style={{ width: '14px', height: '1.5px', background: 'var(--text-primary, #fff)', borderRadius: '1px' }} />)}
-          </div>
+        {isComplete && !isMoveMode && <span style={{ color: '#4a9a5a', fontSize: '14px' }}>✓</span>}
+        {hasSession && !isComplete && !isSkipped && !isMoveMode && (
+          <span style={{ color: 'var(--text-muted, #333)', fontSize: '16px' }}>›</span>
+        )}
+        {/* Move handle — tap to enter move mode */}
+        {isMovable && !isMoveMode && (
+          <button
+            onClick={e => { e.stopPropagation(); onMoveIconTap() }}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: '4px', display: 'flex', flexDirection: 'column', gap: '2.5px',
+              opacity: 0.25,
+            }}
+          >
+            {[0,1,2].map(i => (
+              <div key={i} style={{ width: '14px', height: '1.5px', background: 'var(--text-primary, #fff)', borderRadius: '1px' }} />
+            ))}
+          </button>
+        )}
+        {/* Cancel icon when this row is moving */}
+        {isMoving && (
+          <button
+            onClick={e => { e.stopPropagation(); onMoveIconTap() }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D4501A', fontSize: '16px', padding: '2px' }}
+          >
+            ✕
+          </button>
         )}
       </div>
     </div>
