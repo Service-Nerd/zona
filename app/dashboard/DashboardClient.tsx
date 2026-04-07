@@ -1194,7 +1194,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
     if (next) { setSelectedKey(next.key); return }
     const last = [...sessions].reverse().find(s => effectiveWs[s.key])
     if (last) setSelectedKey(last.key)
-  }, [weekIndex])
+  }, [weekIndex, overridesReady])
 
   const selectedSession = sessions.find(s => s.key === selectedKey) ?? null
   const selectedEntry = effectiveWs[selectedKey]
@@ -1264,7 +1264,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         />
       )}
 
-      {overridesReady && (showSessionHero && selectedSession ? (
+      {showSessionHero && selectedSession ? (
         <SessionHero
           session={selectedSession}
           completion={completions[selectedKey]}
@@ -1282,7 +1282,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         />
       ) : (
         <RestDayCard session={selectedSession} nextSession={nextRunSession} />
-      ))}
+      )}
 
       {activeSession && (
         <SessionPopup
