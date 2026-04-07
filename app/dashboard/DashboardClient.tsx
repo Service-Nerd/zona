@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import type { Plan, Week } from '@/types/plan'
 import PlanChart from '@/components/training/PlanChart'
 import PlanCalendar from '@/components/training/PlanCalendar'
@@ -1126,20 +1126,20 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   const todayStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
   const ws = (currentWeek as any).sessions ?? {}
 
-  // Apply overrides to session map
-  const effectiveWs: Record<string, any> = {}
-  DOW_ORDER.forEach(key => {
-    const isOverridden = Object.values(overrides).includes(key) && !Object.keys(overrides).includes(key)
-    // Skip sessions that have been moved away, unless this key is the destination
-    if (Object.keys(overrides).includes(key)) return // moved away — skip original slot
-    if (ws[key]) effectiveWs[key] = ws[key]
-  })
-  // Place overridden sessions at their new day
-  Object.entries(overrides).forEach(([originalDay, newDay]) => {
-    if (ws[originalDay]) effectiveWs[newDay] = ws[originalDay]
-  })
+  // Apply overrides — memoised so it recomputes when overrides state changes
+  const effectiveWs = useMemo(() => {
+    const result: Record<string, any> = {}
+    DOW_ORDER.forEach(key => {
+      if (Object.keys(overrides).includes(key)) return // moved away
+      if (ws[key]) result[key] = ws[key]
+    })
+    Object.entries(overrides).forEach(([originalDay, newDay]) => {
+      if (ws[originalDay]) result[newDay] = ws[originalDay]
+    })
+    return result
+  }, [overrides, weekIndex])
 
-  const sessions: SessionEntry[] = DOW_ORDER.map(key => {
+  const sessions: SessionEntry[] = useMemo(() => DOW_ORDER.map(key => {
     const s = effectiveWs[key]
     const d = new Date(weekStartDate)
     d.setDate(d.getDate() + DAY_OFFSETS[key])
@@ -1154,7 +1154,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       rawDate: d,
       today: key === todayDow && displayDate === todayStr,
     }
-  })
+  }), [effectiveWs, weekIndex])
 
   // Default selected day
   const [selectedKey, setSelectedKey] = useState<string>(() => {
