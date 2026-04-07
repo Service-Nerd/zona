@@ -933,12 +933,13 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, onBack, onOpenSession
               key={key}
               onClick={() => {
                 if (!s || s.type === 'rest') return
-                setActiveSession({
+                onOpenSession?.({
                   key, day: DOW_FULL[key],
                   title: s.label ?? '', detail: s.detail ?? '',
                   type: s.type, date: displayDate,
                   rawDate: d.toISOString(), today: isToday,
                   completion, isPast: isPast && !isToday, isFuture,
+                  fromCalendar: true,
                 })
               }}
               style={{
@@ -1227,7 +1228,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           @doinghardthingsbadly
         </div>
         {/* Calendar icon — right */}
-        <button onClick={() => setShowCalendar(true)} style={{
+        <button onClick={() => onOpenCalendar?.()} style={{
           width: '32px', height: '32px', borderRadius: '8px',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: 'none', border: '0.5px solid #222', cursor: 'pointer', flexShrink: 0,
@@ -1252,14 +1253,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         onOpenCalendar={() => onOpenCalendar?.()}
       />
 
-      {showCalendar && (
-        <CalendarOverlay
-          plan={plan}
-          stravaRuns={stravaRuns}
-          allOverrides={allOverrides}
-          onClose={() => setShowCalendar(false)}
-        />
-      )}
+
 
       {showSessionHero && selectedSession ? (
         <SessionHero
@@ -1268,7 +1262,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           onTap={() => {
             const isPast = selectedSession.rawDate < now && !selectedSession.today
             const isFuture = !selectedSession.today && selectedSession.rawDate > now
-            setActiveSession({
+            onOpenSession?.({
               ...selectedSession,
               rawDate: selectedSession.rawDate.toISOString(),
               completion: completions[selectedKey],
@@ -1287,7 +1281,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           weekTheme={weekTheme}
           weekN={weekNum}
           preloadedRuns={stravaRuns}
-          onClose={() => setActiveSession(null)}
+          onClose={() => {}}
         />
       )}
 
@@ -1375,7 +1369,7 @@ function PlanScreen({ plan, stravaRuns, onOpenMe, initials, allOverrides, onOver
           weekTheme={activeWeekTheme}
           weekN={activeWeekN}
           preloadedRuns={stravaRuns}
-          onClose={() => setActiveSession(null)}
+          onClose={() => {}}
         />
       )}
     </div>
