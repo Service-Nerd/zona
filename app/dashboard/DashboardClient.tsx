@@ -437,7 +437,8 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose }
         </div>
 
         <div style={{ padding: '12px 18px 14px', borderBottom: '0.5px solid var(--border-col, #1a1a1a)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1, flexShrink: 0, marginTop: '2px' }}>‹</button>
             <div>
               <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
                 {session.day} · {session.date}
@@ -447,7 +448,6 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose }
               <div style={{ fontSize: '18px', fontWeight: 500, color: isPast && !isComplete ? 'var(--text-muted, #888)' : 'var(--text-primary, #fff)', lineHeight: 1.2 }}>{session.title}</div>
               {session.detail && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #666)', marginTop: '4px' }}>{session.detail}</div>}
             </div>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 }}>‹</button>
           </div>
         </div>
 
