@@ -1089,20 +1089,31 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
     touchStartX.current = null
   }
 
-  // Load completions
+  // Load completions + overrides
+  const [overrides, setOverrides] = useState<Record<string, string>>({}) // originalDay → newDay
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data } = await supabase
-        .from('session_completions')
-        .select('session_day, status, strava_activity_id, strava_activity_name')
-        .eq('user_id', user.id)
-        .eq('week_n', weekNum)
-      if (data) {
+      const [compRes, overRes] = await Promise.all([
+        supabase.from('session_completions')
+          .select('session_day, status, strava_activity_id, strava_activity_name')
+          .eq('user_id', user.id)
+          .eq('week_n', weekNum),
+        supabase.from('session_overrides')
+          .select('original_day, new_day')
+          .eq('user_id', user.id)
+          .eq('week_n', weekNum),
+      ])
+      if (compRes.data) {
         const map: Record<string, any> = {}
-        data.forEach((r: any) => { map[r.session_day] = r })
+        compRes.data.forEach((r: any) => { map[r.session_day] = r })
         setCompletions(map)
+      }
+      if (overRes.data) {
+        const map: Record<string, string> = {}
+        overRes.data.forEach((r: any) => { map[r.original_day] = r.new_day })
+        setOverrides(map)
       }
     }
     load()
@@ -1115,8 +1126,21 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   const todayStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
   const ws = (currentWeek as any).sessions ?? {}
 
+  // Apply overrides to session map
+  const effectiveWs: Record<string, any> = {}
+  DOW_ORDER.forEach(key => {
+    const isOverridden = Object.values(overrides).includes(key) && !Object.keys(overrides).includes(key)
+    // Skip sessions that have been moved away, unless this key is the destination
+    if (Object.keys(overrides).includes(key)) return // moved away — skip original slot
+    if (ws[key]) effectiveWs[key] = ws[key]
+  })
+  // Place overridden sessions at their new day
+  Object.entries(overrides).forEach(([originalDay, newDay]) => {
+    if (ws[originalDay]) effectiveWs[newDay] = ws[originalDay]
+  })
+
   const sessions: SessionEntry[] = DOW_ORDER.map(key => {
-    const s = ws[key]
+    const s = effectiveWs[key]
     const d = new Date(weekStartDate)
     d.setDate(d.getDate() + DAY_OFFSETS[key])
     const displayDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
@@ -1136,9 +1160,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   const [selectedKey, setSelectedKey] = useState<string>(() => {
     const t = sessions.find(s => s.today)
     if (t) return t.key
-    const next = sessions.find(s => s.rawDate >= now && ws[s.key] && ws[s.key].type !== 'rest')
+    const next = sessions.find(s => s.rawDate >= now && effectiveWs[s.key] && effectiveWs[s.key].type !== 'rest')
     if (next) return next.key
-    const last = [...sessions].reverse().find(s => ws[s.key])
+    const last = [...sessions].reverse().find(s => effectiveWs[s.key])
     return last?.key ?? 'mon'
   })
 
@@ -1146,14 +1170,14 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   useEffect(() => {
     const t = sessions.find(s => s.today)
     if (t) { setSelectedKey(t.key); return }
-    const next = sessions.find(s => s.rawDate >= now && ws[s.key] && ws[s.key].type !== 'rest')
+    const next = sessions.find(s => s.rawDate >= now && effectiveWs[s.key] && effectiveWs[s.key].type !== 'rest')
     if (next) { setSelectedKey(next.key); return }
-    const last = [...sessions].reverse().find(s => ws[s.key])
+    const last = [...sessions].reverse().find(s => effectiveWs[s.key])
     if (last) setSelectedKey(last.key)
   }, [weekIndex])
 
   const selectedSession = sessions.find(s => s.key === selectedKey) ?? null
-  const selectedEntry = ws[selectedKey]
+  const selectedEntry = effectiveWs[selectedKey]
 
   const RUN_TYPES = ['run', 'easy', 'quality', 'race']
   const isRunDay      = selectedEntry && RUN_TYPES.includes(selectedEntry.type)
