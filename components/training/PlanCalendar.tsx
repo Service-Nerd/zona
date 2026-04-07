@@ -91,10 +91,11 @@ export default function PlanCalendar({ weeks, stravaRuns, onSessionTap }: Props)
     if (originalDay === newDay) return
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    await supabase.from('session_overrides').upsert({
+    const { error } = await supabase.from('session_overrides').upsert({
       user_id: user.id, week_n: weekN, original_day: originalDay, new_day: newDay,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,week_n,original_day' })
+    if (error) { console.error('Move failed:', error.message); return }
     setOverrides(prev => [
       ...prev.filter(o => !(o.week_n === weekN && o.original_day === originalDay)),
       { week_n: weekN, original_day: originalDay, new_day: newDay }
@@ -177,19 +178,17 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
     .reduce((sum, c) => sum + (c.strava_activity_km ?? 0), 0)
 
   function handleMoveIconTap(key: string) {
-    if (movingDay === key) {
-      setMovingDay(null) // cancel
-    } else {
-      setMovingDay(key)
-      if (navigator.vibrate) navigator.vibrate(30)
-    }
+    setMovingDay(prev => prev === key ? null : key)
+    if (navigator.vibrate) navigator.vibrate(30)
   }
 
   function handleTargetTap(targetKey: string) {
-    if (!movingDay) return
-    const originalDay = effectiveSessions[movingDay]?.originalDay ?? movingDay
-    onMove(weekNum, originalDay, targetKey)
-    setMovingDay(null)
+    setMovingDay(prev => {
+      if (!prev) return null
+      const originalDay = effectiveSessions[prev]?.originalDay ?? prev
+      onMove(weekNum, originalDay, targetKey)
+      return null
+    })
   }
 
   return (
