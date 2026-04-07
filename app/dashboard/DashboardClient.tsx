@@ -1075,6 +1075,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   const [activeSession, setActiveSession] = useState<any | null>(null)
   const [completions, setCompletions] = useState<Record<string, any>>({})
   const [showCalendar, setShowCalendar] = useState(false)
+  const [overridesLoaded, setOverridesLoaded] = useState(false)
   const supabase = createClient()
 
   // Swipe whole screen = week change
@@ -1094,7 +1095,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) { setOverridesLoaded(true); return }
       const [compRes, overRes] = await Promise.all([
         supabase.from('session_completions')
           .select('session_day, status, strava_activity_id, strava_activity_name')
@@ -1115,6 +1116,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         overRes.data.forEach((r: any) => { map[r.original_day] = r.new_day })
         setOverrides(map)
       }
+      setOverridesLoaded(true)
     }
     load()
   }, [weekNum])
@@ -1243,7 +1245,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         />
       )}
 
-      {showSessionHero && selectedSession ? (
+      {!overridesLoaded ? (
+        <div style={{ height: '120px' }} />
+      ) : showSessionHero && selectedSession ? (
         <SessionHero
           session={selectedSession}
           completion={completions[selectedKey]}
