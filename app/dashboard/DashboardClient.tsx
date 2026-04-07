@@ -823,7 +823,6 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, onBack, onOpenSession
   onBack: () => void
   onOpenSession: (s: any) => void
 }) {
-  const [activeSession, setActiveSession] = useState<any | null>(null)
   const [allCompletions, setAllCompletions] = useState<Record<string, Record<string, any>>>({})
   const [showPast, setShowPast] = useState(false)
   const supabase = createClient()
@@ -1077,7 +1076,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, onBack, onOpenSession
         {renderMonths(futureMonths)}
       </div>
 
-      {activeSession && onOpenSession({ ...activeSession, fromCalendar: true, weekTheme: (plan.weeks[getWeekNumForDate(activeSession.rawDate) - 1] as any)?.theme ?? '', weekN: getWeekNumForDate(activeSession.rawDate) }) && null}
+
     </div>
   )
 }
@@ -1275,15 +1274,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         <RestDayCard session={selectedSession} nextSession={nextRunSession} />
       )}
 
-      {activeSession && (
-        <SessionPopup
-          session={activeSession}
-          weekTheme={weekTheme}
-          weekN={weekNum}
-          preloadedRuns={stravaRuns}
-          onClose={() => {}}
-        />
-      )}
+
 
       {/* Week focus */}
       {weekTheme && (
@@ -1364,7 +1355,7 @@ function PlanScreen({ plan, stravaRuns, onOpenMe, initials, allOverrides, onOver
       />
 
       {activeSession && (
-        <SessionPopup
+        <SessionPopupInner
           session={activeSession}
           weekTheme={activeWeekTheme}
           weekN={activeWeekN}
