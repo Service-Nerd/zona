@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Plan, Week } from '@/types/plan'
-import PlanGrid from '@/components/training/PlanGrid'
 import PlanChart from '@/components/training/PlanChart'
-import WeekBriefing from '@/components/training/WeekBriefing'
+import PlanCalendar from '@/components/training/PlanCalendar'
 import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
 
@@ -223,7 +222,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
         {screen === 'today'  && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} stravaRuns={stravaRuns ?? []} onOpenMe={() => setShowMe(true)} initials={initials} />}
-        {screen === 'plan'   && <PlanScreen plan={plan} onOpenMe={() => setShowMe(true)} initials={initials} />}
+        {screen === 'plan'   && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} onOpenMe={() => setShowMe(true)} initials={initials} />}
         {screen === 'coach'  && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setShowMe(true)} initials={initials} />}
         {screen === 'strava' && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setShowMe(true)} initials={initials} />}
       </div>
@@ -1294,18 +1293,42 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
 // ── PLAN SCREEN ───────────────────────────────────────────────────────────
 
-function PlanScreen({ plan, onOpenMe, initials }: { plan: Plan; onOpenMe: () => void; initials: string }) {
+function PlanScreen({ plan, stravaRuns, onOpenMe, initials }: { plan: Plan; stravaRuns: any[]; onOpenMe: () => void; initials: string }) {
+  const [activeSession, setActiveSession] = useState<any | null>(null)
+  const [activeWeekN, setActiveWeekN] = useState<number>(1)
+  const [activeWeekTheme, setActiveWeekTheme] = useState<string>('')
+
   return (
     <div>
       <ScreenHeader title="Plan" sub="Race to the Stones · 11 Jul 2026" initials={initials} onOpenMe={onOpenMe} />
       <div style={{ padding: '0 12px' }}>
         <PlanChart weeks={plan.weeks} />
-        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.6rem', color: '#555', margin: '8px 0 12px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
+        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.6rem', color: '#555', margin: '8px 0 4px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
           <span>MIDWEEK: 2× Zone 2 · STRENGTH: Mon/Wed · SAT: long run</span>
           <span style={{ color: '#444' }}>v{plan.meta.version} · {plan.meta.last_updated}</span>
         </div>
-        <PlanGrid weeks={plan.weeks} />
       </div>
+
+      {/* Calendar list */}
+      <PlanCalendar
+        weeks={plan.weeks}
+        stravaRuns={stravaRuns}
+        onSessionTap={(session, weekN, weekTheme) => {
+          setActiveSession(session)
+          setActiveWeekN(weekN)
+          setActiveWeekTheme(weekTheme)
+        }}
+      />
+
+      {activeSession && (
+        <SessionPopup
+          session={activeSession}
+          weekTheme={activeWeekTheme}
+          weekN={activeWeekN}
+          preloadedRuns={stravaRuns}
+          onClose={() => setActiveSession(null)}
+        />
+      )}
     </div>
   )
 }
