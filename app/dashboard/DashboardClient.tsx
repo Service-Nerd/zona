@@ -410,32 +410,32 @@ function SessionPopup({ session, weekTheme, weekN, preloadedRuns, onClose }: {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#0d0d0d', borderRadius: '20px 20px 0 0', border: '0.5px solid #1c1c1c', borderBottom: 'none', width: '100%', maxWidth: '480px', maxHeight: '85vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--card-bg, #0d0d0d)', borderRadius: '20px 20px 0 0', border: '0.5px solid var(--border-col, #1c1c1c)', borderBottom: 'none', width: '100%', maxWidth: '480px', maxHeight: '85vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}>
 
         <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#222' }} />
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border-col, #222)' }} />
         </div>
 
-        <div style={{ padding: '12px 18px 14px', borderBottom: '0.5px solid #1a1a1a' }}>
+        <div style={{ padding: '12px 18px 14px', borderBottom: '0.5px solid var(--border-col, #1a1a1a)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
                 {session.day} · {session.date}
                 {isComplete && <span style={{ color: '#4a9a5a', marginLeft: '8px' }}>✓ Complete</span>}
-                {isSkipped && <span style={{ color: '#555', marginLeft: '8px' }}>Skipped</span>}
+                {isSkipped && <span style={{ color: 'var(--text-muted, #555)', marginLeft: '8px' }}>Skipped</span>}
               </div>
-              <div style={{ fontSize: '18px', fontWeight: 500, color: isPast && !isComplete ? '#888' : '#fff', lineHeight: 1.2 }}>{session.title}</div>
-              {session.detail && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#666', marginTop: '4px' }}>{session.detail}</div>}
+              <div style={{ fontSize: '18px', fontWeight: 500, color: isPast && !isComplete ? 'var(--text-muted, #888)' : 'var(--text-primary, #fff)', lineHeight: 1.2 }}>{session.title}</div>
+              {session.detail && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #666)', marginTop: '4px' }}>{session.detail}</div>}
             </div>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer', padding: '0 0 0 12px' }}>✕</button>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted, #555)', fontSize: '20px', cursor: 'pointer', padding: '0 0 0 12px' }}>✕</button>
           </div>
         </div>
 
         {view === 'detail' && (
           <>
-            <div style={{ padding: '12px 18px', background: '#080808', borderBottom: '0.5px solid #1a1a1a' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
-              <div style={{ fontSize: '13px', color: '#888', lineHeight: 1.5 }}>{weekTheme}</div>
+            <div style={{ padding: '12px 18px', background: 'var(--bg, #080808)', borderBottom: '0.5px solid var(--border-col, #1a1a1a)' }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #555)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary, #888)', lineHeight: 1.5 }}>{weekTheme}</div>
             </div>
             <div style={{ padding: '16px 18px' }}>
               <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>{config.label} — key points</div>
@@ -443,43 +443,43 @@ function SessionPopup({ session, weekTheme, weekN, preloadedRuns, onClose }: {
                 {config.tips.map((tip, i) => (
                   <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                     <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: config.color, flexShrink: 0, marginTop: '5px' }} />
-                    <div style={{ fontSize: '13px', color: '#bbb', lineHeight: 1.6 }}>{tip}</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary, #bbb)', lineHeight: 1.6 }}>{tip}</div>
                   </div>
                 ))}
               </div>
             </div>
             {(session.type === 'easy' || session.type === 'run') && (
-              <div style={{ margin: '0 18px 16px', background: '#080808', borderRadius: '12px', padding: '12px 14px', border: '0.5px solid #1a1a1a' }}>
+              <div style={{ margin: '0 18px 16px', background: 'var(--bg, #080808)', borderRadius: '12px', padding: '12px 14px', border: '0.5px solid var(--border-col, #1a1a1a)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#555', textTransform: 'uppercase' }}>Zone 2 ceiling</div>
-                  <div style={{ fontSize: '20px', fontWeight: 500, color: '#378ADD' }}>145 <span style={{ fontSize: '11px', color: '#555' }}>bpm</span></div>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #555)', textTransform: 'uppercase' }}>Zone 2 ceiling</div>
+                  <div style={{ fontSize: '20px', fontWeight: 500, color: '#378ADD' }}>145 <span style={{ fontSize: '11px', color: 'var(--text-muted, #555)' }}>bpm</span></div>
                 </div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#444', marginTop: '4px' }}>Walk if HR exceeds this. No exceptions.</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #444)', marginTop: '4px' }}>Walk if HR exceeds this. No exceptions.</div>
               </div>
             )}
             <div style={{ padding: '0 18px 24px', display: 'flex', gap: '8px' }}>
               {!isComplete && !isSkipped && !session.isFuture && (
                 <>
-                  <button onClick={() => setView('complete')} style={{ flex: 1, background: '#1a3a1a', color: '#4a9a5a', border: '0.5px solid #2a5a2a', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
+                  <button onClick={() => setView('complete')} style={{ flex: 1, background: 'rgba(74,154,90,0.15)', color: '#4a9a5a', border: '0.5px solid rgba(74,154,90,0.4)', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
                     Mark complete
                   </button>
-                  <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: '#555', border: '0.5px solid #222', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                  <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #555)', border: '0.5px solid var(--border-col, #222)', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
                     Skip
                   </button>
                 </>
               )}
               {(isComplete || isSkipped) && (
-                <button onClick={() => setView('complete')} style={{ flex: 1, background: 'none', color: '#555', border: '0.5px solid #222', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
+                <button onClick={() => setView('complete')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #555)', border: '0.5px solid var(--border-col, #222)', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
                   Update
                 </button>
               )}
               {session.isFuture && !isComplete && !isSkipped && (
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#444', textAlign: 'center', padding: '10px', width: '100%' }}>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #444)', textAlign: 'center', padding: '10px', width: '100%' }}>
                   Available to log on {session.date}
                 </div>
               )}
               {isPast && !isComplete && !isSkipped && !session.isFuture && (
-                <button onClick={() => setView('complete')} style={{ flex: 1, background: '#111', color: '#666', border: 'none', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
+                <button onClick={() => setView('complete')} style={{ flex: 1, background: 'var(--bg, #111)', color: 'var(--text-muted, #666)', border: 'none', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
                   Log retroactively
                 </button>
               )}
@@ -490,23 +490,23 @@ function SessionPopup({ session, weekTheme, weekN, preloadedRuns, onClose }: {
         {view === 'complete' && (
           <div style={{ padding: '16px 18px 24px' }}>
             <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#4a9a5a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Mark as complete</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#666', marginBottom: '8px' }}>Link a Strava activity (optional)</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #666)', marginBottom: '8px' }}>Link a Strava activity (optional)</div>
             {loadingClaimed ? (
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#444', padding: '12px 0' }}>Loading activities...</div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #444)', padding: '12px 0' }}>Loading activities...</div>
             ) : stravaRuns.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px', maxHeight: '200px', overflowY: 'auto' }}>
                 {stravaRuns.slice(0, 20).map((run: any) => {
                   const isSelected = selectedActivity?.id === run.id
                   return (
                     <div key={run.id} onClick={() => setSelectedActivity(isSelected ? null : run)} style={{
-                      background: isSelected ? '#0d1a0d' : '#080808',
-                      border: `0.5px solid ${isSelected ? '#2a5a2a' : '#1c1c1c'}`,
+                      background: isSelected ? 'rgba(74,154,90,0.1)' : 'var(--bg, #080808)',
+                      border: `0.5px solid ${isSelected ? 'rgba(74,154,90,0.4)' : 'var(--border-col, #1c1c1c)'}`,
                       borderRadius: '10px', padding: '10px 12px', cursor: 'pointer',
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     }}>
                       <div>
-                        <div style={{ fontSize: '13px', color: isSelected ? '#fff' : '#bbb', fontWeight: 500 }}>{run.name}</div>
-                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#555', marginTop: '2px' }}>
+                        <div style={{ fontSize: '13px', color: isSelected ? 'var(--text-primary, #fff)' : 'var(--text-secondary, #bbb)', fontWeight: 500 }}>{run.name}</div>
+                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #555)', marginTop: '2px' }}>
                           {new Date(run.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {(run.distance / 1000).toFixed(1)}km {run.average_heartrate ? `· ${Math.round(run.average_heartrate)} bpm` : ''}
                         </div>
                       </div>
@@ -516,11 +516,11 @@ function SessionPopup({ session, weekTheme, weekN, preloadedRuns, onClose }: {
                 })}
               </div>
             ) : (
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#444', padding: '12px 0', marginBottom: '8px' }}>No Strava activities found in the 5 days before this session</div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #444)', padding: '12px 0', marginBottom: '8px' }}>No Strava activities found in the 5 days before this session</div>
             )}
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: '#555', border: '0.5px solid #222', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>Back</button>
-              <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: '#1a3a1a', color: '#4a9a5a', border: '0.5px solid #2a5a2a', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving ? 0.6 : 1 }}>
+              <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #555)', border: '0.5px solid var(--border-col, #222)', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>Back</button>
+              <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: 'rgba(74,154,90,0.15)', color: '#4a9a5a', border: '0.5px solid rgba(74,154,90,0.4)', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving ? 0.6 : 1 }}>
                 {saving ? 'Saving...' : 'Confirm complete'}
               </button>
             </div>
@@ -529,12 +529,12 @@ function SessionPopup({ session, weekTheme, weekN, preloadedRuns, onClose }: {
 
         {view === 'skip' && (
           <div style={{ padding: '16px 18px 24px' }}>
-            <div style={{ fontSize: '13px', color: '#888', lineHeight: 1.6, marginBottom: '20px' }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary, #888)', lineHeight: 1.6, marginBottom: '20px' }}>
               Mark this session as skipped? It'll show as grey in your log.
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: '#555', border: '0.5px solid #222', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>Back</button>
-              <button onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2, background: '#111', color: '#666', border: '0.5px solid #333', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+              <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #555)', border: '0.5px solid var(--border-col, #222)', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>Back</button>
+              <button onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2, background: 'var(--bg, #111)', color: 'var(--text-muted, #666)', border: '0.5px solid var(--border-col, #333)', borderRadius: '12px', padding: '13px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
                 {saving ? 'Saving...' : 'Mark as skipped'}
               </button>
             </div>
