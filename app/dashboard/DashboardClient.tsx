@@ -1002,19 +1002,19 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, onBack, onOpenSession
         borderBottom: '0.5px solid var(--border-col, #1c1c1c)',
         position: 'sticky', top: 0, background: 'var(--bg, #000)', zIndex: 10,
       }}>
-        <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary, #fff)', fontFamily: "'DM Sans',sans-serif", letterSpacing: '-0.3px' }}>
-          Plan
-        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {[{ color: '#378ADD', label: 'Easy' }, { color: '#D4501A', label: 'Run' }, { color: '#4a9a5a', label: 'Done' }].map(({ color, label }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: color }} />
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: '#444' }}>{label}</span>
-              </div>
-            ))}
-          </div>
           <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 }}>‹</button>
+          <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary, #fff)', fontFamily: "'DM Sans',sans-serif", letterSpacing: '-0.3px' }}>
+            Plan
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {[{ color: '#378ADD', label: 'Easy' }, { color: '#D4501A', label: 'Run' }, { color: '#4a9a5a', label: 'Done' }].map(({ color, label }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: color }} />
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: '#444' }}>{label}</span>
+            </div>
+          ))}
         </div>
       </div>
 
