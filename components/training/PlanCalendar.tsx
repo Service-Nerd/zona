@@ -84,26 +84,41 @@ export default function PlanCalendar({ weeks, stravaRuns, allOverrides, onOverri
   async function handleMove(weekN: number, originalDay: string, newDay: string) {
     if (originalDay === newDay) return
 
-    // Update shared state immediately (optimistic)
-    const updated = [
-      ...allOverrides.filter(o => !(o.week_n === weekN && o.original_day === originalDay)),
-      { week_n: weekN, original_day: originalDay, new_day: newDay }
-    ]
-    onOverrideChange(updated)
-
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
+    // If moving back to the original base plan position, just delete the override
+    const existingOverride = allOverrides.find(o => o.week_n === weekN && o.original_day === originalDay)
+    const movingToBase = newDay === originalDay
+
+    // Also check: if there's an existing override pointing TO originalDay,
+    // moving away from there means we should delete that override
+    const reverseOverride = allOverrides.find(o => o.week_n === weekN && o.new_day === originalDay)
+
+    // Update shared state optimistically
+    let updated = allOverrides.filter(o => !(o.week_n === weekN && o.original_day === originalDay))
+    // Remove any reverse override that conflicts
+    updated = updated.filter(o => !(o.week_n === weekN && o.new_day === newDay))
+    // Only add new override if not moving back to base
+    if (newDay !== originalDay) {
+      updated = [...updated, { week_n: weekN, original_day: originalDay, new_day: newDay }]
+    }
+    onOverrideChange(updated)
+
+    // Sync to Supabase — first clear all overrides for this week that involve these days
     await supabase.from('session_overrides')
       .delete()
       .eq('user_id', user.id)
       .eq('week_n', weekN)
-      .eq('original_day', originalDay)
+      .or(`original_day.eq.${originalDay},new_day.eq.${newDay},original_day.eq.${newDay}`)
 
-    await supabase.from('session_overrides').insert({
-      user_id: user.id, week_n: weekN, original_day: originalDay, new_day: newDay,
-      updated_at: new Date().toISOString(),
-    })
+    // Insert new override only if session is not at its base plan position
+    if (newDay !== originalDay) {
+      await supabase.from('session_overrides').insert({
+        user_id: user.id, week_n: weekN, original_day: originalDay, new_day: newDay,
+        updated_at: new Date().toISOString(),
+      })
+    }
   }
 
   function renderWeek({ week, weekNum }: { week: Week; weekNum: number }) {
