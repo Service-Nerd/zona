@@ -1075,7 +1075,6 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   const [activeSession, setActiveSession] = useState<any | null>(null)
   const [completions, setCompletions] = useState<Record<string, any>>({})
   const [showCalendar, setShowCalendar] = useState(false)
-  const [overridesLoaded, setOverridesLoaded] = useState(false)
   const supabase = createClient()
 
   // Swipe whole screen = week change
@@ -1095,7 +1094,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setOverridesLoaded(true); return }
+      if (!user) return
       const [compRes, overRes] = await Promise.all([
         supabase.from('session_completions')
           .select('session_day, status, strava_activity_id, strava_activity_name')
@@ -1116,7 +1115,6 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         overRes.data.forEach((r: any) => { map[r.original_day] = r.new_day })
         setOverrides(map)
       }
-      setOverridesLoaded(true)
     }
     load()
   }, [weekNum])
@@ -1177,6 +1175,16 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
     const last = [...sessions].reverse().find(s => effectiveWs[s.key])
     if (last) setSelectedKey(last.key)
   }, [weekIndex])
+
+  // Re-evaluate selected key when overrides load — fixes flash where today's
+  // session appears before being moved to its overridden day
+  useEffect(() => {
+    if (Object.keys(overrides).length === 0) return
+    const t = sessions.find(s => s.today)
+    if (t) { setSelectedKey(t.key); return }
+    const next = sessions.find(s => s.rawDate >= now && effectiveWs[s.key] && effectiveWs[s.key].type !== 'rest')
+    if (next) setSelectedKey(next.key)
+  }, [overrides])
 
   const selectedSession = sessions.find(s => s.key === selectedKey) ?? null
   const selectedEntry = effectiveWs[selectedKey]
@@ -1245,9 +1253,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         />
       )}
 
-      {!overridesLoaded ? (
-        <div style={{ height: '120px' }} />
-      ) : showSessionHero && selectedSession ? (
+      {showSessionHero && selectedSession ? (
         <SessionHero
           session={selectedSession}
           completion={completions[selectedKey]}

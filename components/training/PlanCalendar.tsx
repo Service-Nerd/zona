@@ -89,27 +89,26 @@ export default function PlanCalendar({ weeks, stravaRuns, onSessionTap }: Props)
 
   async function handleMove(weekN: number, originalDay: string, newDay: string) {
     if (originalDay === newDay) return
+
+    // Update local state immediately (optimistic)
+    setOverrides(prev => [
+      ...prev.filter(o => !(o.week_n === weekN && o.original_day === originalDay)),
+      { week_n: weekN, original_day: originalDay, new_day: newDay }
+    ])
+
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Delete any existing override for this original_day first, then insert fresh
     await supabase.from('session_overrides')
       .delete()
       .eq('user_id', user.id)
       .eq('week_n', weekN)
       .eq('original_day', originalDay)
 
-    const { error } = await supabase.from('session_overrides').insert({
+    await supabase.from('session_overrides').insert({
       user_id: user.id, week_n: weekN, original_day: originalDay, new_day: newDay,
       updated_at: new Date().toISOString(),
     })
-
-    if (error) { console.error('Move failed:', error.message); return }
-
-    setOverrides(prev => [
-      ...prev.filter(o => !(o.week_n === weekN && o.original_day === originalDay)),
-      { week_n: weekN, original_day: originalDay, new_day: newDay }
-    ])
   }
 
   function renderWeek({ week, weekNum }: { week: Week; weekNum: number }) {
