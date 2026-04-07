@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 
 interface Props { plan: Plan; currentWeek: Week }
 
-type Screen = 'today' | 'plan' | 'coach' | 'strava'
+type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session'
 
 // ── Icons ─────────────────────────────────────────────────────────────────
 
@@ -63,6 +63,7 @@ function IconStrava({ active }: { active: boolean }) {
 export default function DashboardClient({ plan, currentWeek }: Props) {
   const [screen, setScreen] = useState<Screen>('today')
   const [showMe, setShowMe] = useState(false)
+  const [activeSessionData, setActiveSessionData] = useState<any | null>(null)
   const [quitDays, setQuitDays] = useState<number | null>(null)
   const [smokeTrackerEnabled, setSmokeTrackerEnabled] = useState(false)
   const [quitDate, setQuitDate] = useState<string>('')
@@ -234,36 +235,16 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
 
   return (
     <div style={s}>
-      {showMe && (
-        <MeScreen
-          initials={initials}
-          athlete={plan.meta.athlete ?? 'Russell Shear'}
-          quitDays={quitDays}
-          smokeTrackerEnabled={smokeTrackerEnabled}
-          quitDate={quitDate}
-          onSmokeTrackerChange={(enabled, date) => {
-            setSmokeTrackerEnabled(enabled)
-            setQuitDate(date)
-            if (enabled && date) {
-              const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000))
-              setQuitDays(days)
-            } else {
-              setQuitDays(null)
-            }
-          }}
-          resetPhrase={resetPhrase}
-          onSaveMental={saveMental}
-          theme={theme}
-          onThemeChange={saveTheme}
-          onClose={() => setShowMe(false)}
-        />
-      )}
+      {/* Me and Calendar rendered as screens below */
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'  && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} stravaRuns={stravaRuns ?? []} onOpenMe={() => setShowMe(true)} initials={initials} allOverrides={allOverrides} overridesReady={overridesReady} />}
-        {screen === 'plan'   && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} onOpenMe={() => setShowMe(true)} initials={initials} allOverrides={allOverrides} onOverrideChange={setAllOverrides} />}
-        {screen === 'coach'  && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setShowMe(true)} initials={initials} />}
-        {screen === 'strava' && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setShowMe(true)} initials={initials} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} overridesReady={overridesReady} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
+        {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} onOverrideChange={setAllOverrides} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
+        {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setScreen('me')} initials={initials} />}
+        {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setScreen('me')} initials={initials} />}
+        {screen === 'me'       && <MeScreen initials={initials} athlete={plan.meta.athlete ?? 'Russell Shear'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} />}
+        {screen === 'calendar' && <CalendarOverlay plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} onBack={() => setScreen('today')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} />}
       </div>
 
       <div style={{
@@ -272,7 +253,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
         display: 'flex', alignItems: 'center',
         background: 'var(--nav-bg, #000)', borderTop: '0.5px solid var(--border-col, #1c1c1c)',
         padding: '10px 0 max(16px, env(safe-area-inset-bottom))',
-        zIndex: 400,
+        zIndex: 1000,
       }}>
         {(['today', 'plan', 'coach', 'strava'] as Screen[]).map(id => {
           const labels: Record<Screen, string> = { today: 'Today', plan: 'Plan', coach: 'Coach', strava: 'Strava' }
@@ -369,7 +350,7 @@ const TYPE_LABEL: Record<string, string> = {
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
-function SessionPopup({ session, weekTheme, weekN, preloadedRuns, onClose }: {
+function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose }: {
   session: any; weekTheme: string; weekN: number; preloadedRuns: any[]; onClose: () => void
 }) {
   const [view, setView] = useState<'detail' | 'complete' | 'skip'>('detail')
@@ -466,7 +447,7 @@ function SessionPopup({ session, weekTheme, weekN, preloadedRuns, onClose }: {
               <div style={{ fontSize: '18px', fontWeight: 500, color: isPast && !isComplete ? 'var(--text-muted, #888)' : 'var(--text-primary, #fff)', lineHeight: 1.2 }}>{session.title}</div>
               {session.detail && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #666)', marginTop: '4px' }}>{session.detail}</div>}
             </div>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted, #555)', fontSize: '20px', cursor: 'pointer', padding: '0 0 0 12px' }}>✕</button>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 }}>‹</button>
           </div>
         </div>
 
@@ -835,11 +816,12 @@ function RestDayCard({ session, nextSession }: {
 
 // ── CALENDAR OVERLAY ──────────────────────────────────────────────────────
 
-function CalendarOverlay({ plan, stravaRuns, allOverrides, onClose }: {
+function CalendarOverlay({ plan, stravaRuns, allOverrides, onBack, onOpenSession }: {
   plan: Plan
   stravaRuns: any[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
-  onClose: () => void
+  onBack: () => void
+  onOpenSession: (s: any) => void
 }) {
   const [activeSession, setActiveSession] = useState<any | null>(null)
   const [allCompletions, setAllCompletions] = useState<Record<string, Record<string, any>>>({})
@@ -1012,12 +994,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, onClose }: {
   }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 400,
-      background: 'var(--bg, #000)',
-      overflowY: 'auto',
-      maxWidth: '480px', margin: '0 auto',
-    }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg, #000)', overflowY: 'auto' }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1037,7 +1014,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, onClose }: {
               </div>
             ))}
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer', padding: '0' }}>✕</button>
+          <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 }}>‹</button>
         </div>
       </div>
 
@@ -1099,35 +1076,26 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, onClose }: {
         {renderMonths(futureMonths)}
       </div>
 
-      {/* Session popup */}
-      {activeSession && (
-        <SessionPopup
-          session={activeSession}
-          weekTheme={(plan.weeks[getWeekNumForDate(activeSession.rawDate) - 1] as any)?.theme ?? ''}
-          weekN={getWeekNumForDate(activeSession.rawDate)}
-          preloadedRuns={stravaRuns}
-          onClose={() => setActiveSession(null)}
-        />
-      )}
+      {activeSession && onOpenSession({ ...activeSession, fromCalendar: true, weekTheme: (plan.weeks[getWeekNumForDate(activeSession.rawDate) - 1] as any)?.theme ?? '', weekN: getWeekNumForDate(activeSession.rawDate) }) && null}
     </div>
   )
 }
 
 // ── TODAY SCREEN ──────────────────────────────────────────────────────────
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, daysTo50k, stravaRuns, onOpenMe, initials, allOverrides, overridesReady }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, daysTo50k, stravaRuns, onOpenMe, initials, allOverrides, overridesReady, onOpenCalendar, onOpenSession }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; daysTo50k: number
   stravaRuns: any[]; onOpenMe: () => void; initials: string
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   overridesReady: boolean
+  onOpenCalendar?: () => void
+  onOpenSession?: (s: any) => void
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
   const totalWeeks = plan.weeks.length
-  const [activeSession, setActiveSession] = useState<any | null>(null)
   const [completions, setCompletions] = useState<Record<string, any>>({})
-  const [showCalendar, setShowCalendar] = useState(false)
   const supabase = createClient()
 
   // Derive this week's overrides from shared prop — no fetch needed
@@ -1281,7 +1249,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         weekIndex={weekIndex}
         totalWeeks={totalWeeks}
         onWeekChange={onWeekChange}
-        onOpenCalendar={() => setShowCalendar(true)}
+        onOpenCalendar={() => onOpenCalendar?.()}
       />
 
       {showCalendar && (
@@ -1367,10 +1335,12 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
 // ── PLAN SCREEN ───────────────────────────────────────────────────────────
 
-function PlanScreen({ plan, stravaRuns, onOpenMe, initials, allOverrides, onOverrideChange }: {
+function PlanScreen({ plan, stravaRuns, onOpenMe, initials, allOverrides, onOverrideChange, onOpenCalendar, onOpenSession }: {
   plan: Plan; stravaRuns: any[]; onOpenMe: () => void; initials: string
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
+  onOpenCalendar?: () => void
+  onOpenSession?: (s: any) => void
 }) {
   const [activeSession, setActiveSession] = useState<any | null>(null)
   const [activeWeekN, setActiveWeekN] = useState<number>(1)
@@ -1728,11 +1698,11 @@ function SmokeToggle({ enabled, quitDate, onChange }: {
 
 // ── ME SCREEN ─────────────────────────────────────────────────────────────
 
-function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onClose }: {
+function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack }: {
   initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   resetPhrase: string; onSaveMental: (v: string) => void
-  theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void; onClose: () => void
+  theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void; onBack: () => void
 }) {
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling'>('main')
 
@@ -1743,13 +1713,13 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
   const daysToRace = Math.max(0, Math.ceil((new Date('2026-07-11').getTime() - Date.now()) / 86400000))
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'var(--bg, #000)', overflowY: 'auto', maxWidth: '480px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '16px 16px 8px' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg, #000)', overflowY: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 8px' }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 }}>‹</button>
         <div>
           <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary, #fff)', fontFamily: "'DM Sans',sans-serif" }}>Me</div>
           <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#555', marginTop: '2px' }}>@doinghardthingsbadly</div>
         </div>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '22px', cursor: 'pointer', padding: '4px' }}>✕</button>
       </div>
 
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '10px', paddingBottom: '32px' }}>
@@ -1846,6 +1816,29 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
 
 // ── SUPPORT SCREENS ───────────────────────────────────────────────────────
 
+
+// ── SESSION SCREEN ────────────────────────────────────────────────────────
+
+function SessionScreen({ session, preloadedRuns, onBack }: {
+  session: any; preloadedRuns: any[]; onBack: () => void
+}) {
+  return (
+    <div style={{ minHeight: '100%', background: 'var(--bg, #000)', overflowY: 'auto', paddingBottom: '80px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: '0.5px solid var(--border-col, #1c1c1c)', position: 'sticky', top: 0, background: 'var(--bg, #000)', zIndex: 10 }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 }}>\u2039</button>
+        <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary, #fff)', fontFamily: "\'DM Sans\',sans-serif" }}>{session.title}</div>
+      </div>
+      <SessionPopupInner
+        session={session}
+        weekTheme={session.weekTheme ?? ''}
+        weekN={session.weekN ?? 1}
+        preloadedRuns={preloadedRuns}
+        onClose={onBack}
+      />
+    </div>
+  )
+}
+
 function BackHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px' }}>
@@ -1873,7 +1866,7 @@ function MentalTab({ resetPhrase, onSave, onBack }: { resetPhrase: string; onSav
     { title: 'Walk = Strategy',  text: 'The elites walk the uphills at RTTS. Walking a climb at km 72 is a tactic, not a failure.' },
   ]
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'var(--bg, #000)', overflowY: 'auto', maxWidth: '480px', margin: '0 auto', paddingBottom: '80px' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg, #000)', overflowY: 'auto', paddingBottom: '80px' }}>
       <BackHeader title="Mental toolkit" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
         <InfoBox>
@@ -1906,7 +1899,7 @@ function FuelingTab({ onBack }: { onBack: () => void }) {
     { timing: 'Aid stations',            what: 'Eat at every single one',           why: "You'll never regret eating at a checkpoint. You will regret skipping one." },
   ]
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'var(--bg, #000)', overflowY: 'auto', maxWidth: '480px', margin: '0 auto', paddingBottom: '80px' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg, #000)', overflowY: 'auto', paddingBottom: '80px' }}>
       <BackHeader title="Fueling plan" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
         <InfoBox>
@@ -1936,7 +1929,7 @@ function QuitTab({ quitDays, onBack }: { quitDays: number | null; onBack: () => 
     { days: 99, label: 'Race Day — Job done' },
   ]
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'var(--bg, #000)', overflowY: 'auto', maxWidth: '480px', margin: '0 auto', paddingBottom: '80px' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg, #000)', overflowY: 'auto', paddingBottom: '80px' }}>
       <BackHeader title="Quit tracker" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
         <div style={{ background: 'var(--card-bg, #0d0d0d)', border: '0.5px solid #1a3a1a', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px' }}>
