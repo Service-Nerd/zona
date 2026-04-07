@@ -68,6 +68,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
   const [quitDate, setQuitDate] = useState<string>('')
   const [resetPhrase, setResetPhrase] = useState('')
   const [theme, setTheme] = useState<'dark' | 'light' | 'auto'>('dark')
+  const [appReady, setAppReady] = useState(false)
 
   // Global overrides — fetched once, shared across all screens
   const [allOverrides, setAllOverrides] = useState<{ week_n: number; original_day: string; new_day: string }[]>([])
@@ -98,7 +99,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
     async function fetchSettings() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { setStravaLoading(false); setOverridesReady(true); return }
+        if (!user) { setStravaLoading(false); setOverridesReady(true); setAppReady(true); return }
 
         // Fetch overrides + user settings in parallel
         const [settingsRes, overridesRes] = await Promise.all([
@@ -108,6 +109,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
 
         if (overridesRes.data) setAllOverrides(overridesRes.data)
         setOverridesReady(true)
+        setAppReady(true)
 
         const data = settingsRes.data
 
@@ -201,6 +203,33 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
     maxWidth: '480px',
     margin: '0 auto',
     position: 'relative',
+  }
+
+  // Loading screen — shown until overrides + settings are fetched
+  if (!appReady) {
+    return (
+      <div style={{
+        minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        background: 'var(--bg, #000)', maxWidth: '480px', margin: '0 auto',
+      }}>
+        <div style={{
+          fontFamily: "'DM Mono', monospace", fontSize: '11px',
+          color: '#D4501A', letterSpacing: '0.12em', textTransform: 'uppercase',
+          marginBottom: '32px',
+        }}>
+          @doinghardthingsbadly
+        </div>
+        <svg width="28" height="28" viewBox="0 0 28 28">
+          <circle cx="14" cy="14" r="11" fill="none" stroke="#1c1c1c" strokeWidth="2" />
+          <circle cx="14" cy="14" r="11" fill="none" stroke="#D4501A" strokeWidth="2"
+            strokeDasharray="30 46" strokeLinecap="round">
+            <animateTransform attributeName="transform" type="rotate"
+              from="0 14 14" to="360 14 14" dur="0.9s" repeatCount="indefinite" />
+          </circle>
+        </svg>
+      </div>
+    )
   }
 
   return (
