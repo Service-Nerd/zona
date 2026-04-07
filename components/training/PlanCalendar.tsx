@@ -11,12 +11,6 @@ interface Completion {
   strava_activity_km?: number
 }
 
-interface Override {
-  week_n: number
-  original_day: string
-  new_day: string
-}
-
 const DOW_ORDER = ['mon','tue','wed','thu','fri','sat','sun']
 const DOW_FULL: Record<string, string> = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' }
 const DAY_OFFSETS: Record<string, number> = { mon:0, tue:1, wed:2, thu:3, fri:4, sat:5, sun:6 }
@@ -55,12 +49,13 @@ const loadMoreStyle: React.CSSProperties = {
 interface Props {
   weeks: Week[]
   stravaRuns: any[]
+  allOverrides: { week_n: number; original_day: string; new_day: string }[]
+  onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
   onSessionTap: (session: any, weekN: number, weekTheme: string) => void
 }
 
-export default function PlanCalendar({ weeks, stravaRuns, onSessionTap }: Props) {
+export default function PlanCalendar({ weeks, stravaRuns, allOverrides, onOverrideChange, onSessionTap }: Props) {
   const [allCompletions, setAllCompletions] = useState<Record<number, Completion[]>>({})
-  const [overrides, setOverrides] = useState<Override[]>([])
   const [showPast, setShowPast] = useState(false)
   const supabase = createClient()
 
@@ -73,16 +68,15 @@ export default function PlanCalendar({ weeks, stravaRuns, onSessionTap }: Props)
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const [compRes, overRes] = await Promise.all([
-        supabase.from('session_completions').select('week_n, session_day, status, strava_activity_name, strava_activity_km').eq('user_id', user.id),
-        supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
-      ])
+      const compRes = await supabase
+        .from('session_completions')
+        .select('week_n, session_day, status, strava_activity_name, strava_activity_km')
+        .eq('user_id', user.id)
       if (compRes.data) {
         const map: Record<number, Completion[]> = {}
         compRes.data.forEach((r: any) => { if (!map[r.week_n]) map[r.week_n] = []; map[r.week_n].push(r) })
         setAllCompletions(map)
       }
-      if (overRes.data) setOverrides(overRes.data)
     }
     load()
   }, [])
@@ -90,11 +84,12 @@ export default function PlanCalendar({ weeks, stravaRuns, onSessionTap }: Props)
   async function handleMove(weekN: number, originalDay: string, newDay: string) {
     if (originalDay === newDay) return
 
-    // Update local state immediately (optimistic)
-    setOverrides(prev => [
-      ...prev.filter(o => !(o.week_n === weekN && o.original_day === originalDay)),
+    // Update shared state immediately (optimistic)
+    const updated = [
+      ...allOverrides.filter(o => !(o.week_n === weekN && o.original_day === originalDay)),
       { week_n: weekN, original_day: originalDay, new_day: newDay }
-    ])
+    ]
+    onOverrideChange(updated)
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -118,7 +113,7 @@ export default function PlanCalendar({ weeks, stravaRuns, onSessionTap }: Props)
         week={week}
         weekNum={weekNum}
         completions={allCompletions[weekNum] ?? []}
-        overrides={overrides.filter(o => o.week_n === weekNum)}
+        overrides={allOverrides.filter(o => o.week_n === weekNum)}
         stravaRuns={stravaRuns}
         onSessionTap={onSessionTap}
         onMove={handleMove}
@@ -148,7 +143,7 @@ export default function PlanCalendar({ weeks, stravaRuns, onSessionTap }: Props)
 // ── Week card ─────────────────────────────────────────────────────────────
 
 function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSessionTap, onMove }: {
-  week: Week; weekNum: number; completions: Completion[]; overrides: Override[]
+  week: Week; weekNum: number; completions: Completion[]; overrides: { week_n: number; original_day: string; new_day: string }[]
   stravaRuns: any[]
   onSessionTap: (session: any, weekN: number, weekTheme: string) => void
   onMove: (weekN: number, originalDay: string, newDay: string) => void
