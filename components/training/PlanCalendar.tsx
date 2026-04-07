@@ -276,8 +276,10 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
   completion?: Completion; isDraggable: boolean; isDragTarget: boolean; isLast: boolean
   onTap: () => void; onDragStart: () => void; onDragEnd: () => void; onDragOver: () => void; onDrop: () => void
 }) {
+  const rowRef = useRef<HTMLDivElement>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const touchStartPos = useRef<{ x: number; y: number } | null>(null)
+  const isLongPressedRef = useRef(false)
   const [isDragging, setIsDragging] = useState(false)
   const [isLongPressed, setIsLongPressed] = useState(false)
 
@@ -291,56 +293,78 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
     if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null }
   }
 
-  function handleTouchStart(e: React.TouchEvent) {
-    if (!isDraggable) return
-    const touch = e.touches[0]
-    touchStartPos.current = { x: touch.clientX, y: touch.clientY }
-    longPressTimer.current = setTimeout(() => {
-      setIsLongPressed(true)
-      setIsDragging(true)
-      onDragStart()
-      if (navigator.vibrate) navigator.vibrate(40)
-    }, 500)
-  }
+  // Attach non-passive touch listeners directly to DOM for reliable preventDefault
+  useEffect(() => {
+    const el = rowRef.current
+    if (!el || !isDraggable) return
 
-  function handleTouchMove(e: React.TouchEvent) {
-    if (!touchStartPos.current) return
-    const touch = e.touches[0]
-    const dx = Math.abs(touch.clientX - touchStartPos.current.x)
-    const dy = Math.abs(touch.clientY - touchStartPos.current.y)
-    if (!isLongPressed && (dx > 8 || dy > 8)) { cancelLongPress(); return }
-    if (!isLongPressed) return
-    e.preventDefault()
-    const el = document.elementFromPoint(touch.clientX, touch.clientY)
-    const row = el?.closest('[data-daykey]') as HTMLElement | null
-    if (row?.dataset.daykey && row.dataset.daykey !== dayKey) onDragOver()
-  }
-
-  function handleTouchEnd(e: React.TouchEvent) {
-    cancelLongPress()
-    if (isLongPressed) {
-      const touch = e.changedTouches[0]
-      const el = document.elementFromPoint(touch.clientX, touch.clientY)
-      const row = el?.closest('[data-daykey]') as HTMLElement | null
-      if (row?.dataset.daykey && row.dataset.daykey !== dayKey) onDrop()
-      setIsLongPressed(false)
-      setIsDragging(false)
-      onDragEnd()
+    function onTouchStart(e: TouchEvent) {
+      const touch = e.touches[0]
+      touchStartPos.current = { x: touch.clientX, y: touch.clientY }
+      isLongPressedRef.current = false
+      longPressTimer.current = setTimeout(() => {
+        isLongPressedRef.current = true
+        setIsLongPressed(true)
+        setIsDragging(true)
+        onDragStart()
+        if (navigator.vibrate) navigator.vibrate(40)
+      }, 500)
     }
-    touchStartPos.current = null
-  }
+
+    function onTouchMove(e: TouchEvent) {
+      if (!touchStartPos.current) return
+      const touch = e.touches[0]
+      const dx = Math.abs(touch.clientX - touchStartPos.current.x)
+      const dy = Math.abs(touch.clientY - touchStartPos.current.y)
+
+      if (!isLongPressedRef.current) {
+        if (dx > 8 || dy > 8) cancelLongPress()
+        return
+      }
+
+      // We're in drag mode — prevent scroll
+      e.preventDefault()
+
+      const target = document.elementFromPoint(touch.clientX, touch.clientY)
+      const row = target?.closest('[data-daykey]') as HTMLElement | null
+      if (row?.dataset.daykey && row.dataset.daykey !== dayKey) onDragOver()
+    }
+
+    function onTouchEnd(e: TouchEvent) {
+      cancelLongPress()
+      if (isLongPressedRef.current) {
+        const touch = e.changedTouches[0]
+        const target = document.elementFromPoint(touch.clientX, touch.clientY)
+        const row = target?.closest('[data-daykey]') as HTMLElement | null
+        if (row?.dataset.daykey && row.dataset.daykey !== dayKey) onDrop()
+        isLongPressedRef.current = false
+        setIsLongPressed(false)
+        setIsDragging(false)
+        onDragEnd()
+      }
+      touchStartPos.current = null
+    }
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true })
+    el.addEventListener('touchmove', onTouchMove, { passive: false })
+    el.addEventListener('touchend', onTouchEnd, { passive: true })
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart)
+      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchend', onTouchEnd)
+    }
+  }, [isDraggable, dayKey])
 
   return (
     <div
+      ref={rowRef}
       data-daykey={dayKey}
       draggable={isDraggable}
       onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; setIsDragging(true); onDragStart() }}
       onDragEnd={() => { setIsDragging(false); onDragEnd() }}
       onDragOver={e => { e.preventDefault(); onDragOver() }}
       onDrop={e => { e.preventDefault(); onDrop() }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
       onClick={() => !isLongPressed && hasSession && onTap()}
       style={{
         display: 'flex', alignItems: 'center',
