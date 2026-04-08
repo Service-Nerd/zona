@@ -282,19 +282,19 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
 
 function ScreenHeader({ title, sub, initials, onOpenMe }: { title: string; sub?: string; initials: string; onOpenMe: () => void }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '16px 16px 8px' }}>
-      <div>
-        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary, #fff)', fontFamily: "'DM Sans',sans-serif", letterSpacing: '-0.3px' }}>{title}</div>
-        {sub && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#999', marginTop: '2px' }}>{sub}</div>}
-      </div>
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '16px 16px 8px' }}>
       <button onClick={onOpenMe} style={{
         width: '34px', height: '34px', borderRadius: '50%', background: '#D4501A',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontFamily: "'DM Mono',monospace", fontSize: '12px', fontWeight: 500, color: '#fff',
-        border: 'none', cursor: 'pointer', flexShrink: 0,
+        border: 'none', cursor: 'pointer', flexShrink: 0, marginTop: '2px',
       }}>
         {initials}
       </button>
+      <div>
+        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary, #fff)', fontFamily: "'DM Sans',sans-serif", letterSpacing: '-0.3px' }}>{title}</div>
+        {sub && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#999', marginTop: '2px' }}>{sub}</div>}
+      </div>
     </div>
   )
 }
@@ -429,20 +429,14 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose }
   const config = typeConfig[session.type] ?? typeConfig['easy']
 
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg, #000)', overflowY: 'auto', paddingBottom: '80px' }}>
-        <div style={{ padding: '12px 18px 14px', borderBottom: '0.5px solid var(--border-col, #1a1a1a)', position: 'sticky', top: 0, background: 'var(--bg, #000)', zIndex: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-            <button onClick={onClose} style={{ border: 'none', color: '#D4501A', cursor: 'pointer', padding: '0', lineHeight: 1, flexShrink: 0, width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
-            <div>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
-                {session.day} · {session.date}
-                {isComplete && <span style={{ color: '#4a9a5a', marginLeft: '8px' }}>✓ Complete</span>}
-                {isSkipped && <span style={{ color: 'var(--text-muted, #555)', marginLeft: '8px' }}>Skipped</span>}
-              </div>
-              <div style={{ fontSize: '18px', fontWeight: 500, color: isPast && !isComplete ? 'var(--text-muted, #888)' : 'var(--text-primary, #fff)', lineHeight: 1.2 }}>{session.title}</div>
-              {session.detail && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #666)', marginTop: '4px' }}>{session.detail}</div>}
-            </div>
+    <div>
+        <div style={{ padding: '12px 18px 8px', borderBottom: '0.5px solid var(--border-col, #1a1a1a)' }}>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
+            {session.day} · {session.date}
+            {isComplete && <span style={{ color: '#4a9a5a', marginLeft: '8px' }}>✓ Complete</span>}
+            {isSkipped && <span style={{ color: 'var(--text-muted, #555)', marginLeft: '8px' }}>Skipped</span>}
           </div>
+          {session.detail && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #666)', marginTop: '2px' }}>{session.detail}</div>}
         </div>
 
         {view === 'detail' && (
@@ -554,7 +548,6 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose }
             </div>
           </div>
         )}
-    </div>
   )
 }
 
