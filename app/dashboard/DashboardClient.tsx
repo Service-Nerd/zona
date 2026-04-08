@@ -955,19 +955,36 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, onBack, onOpenSession
     )
   }
 
+  const currentMonthLabel = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+
   function renderMonths(months: { label: string; weeks: { week: any; weekNum: number }[] }[]) {
-    return months.map(({ label, weeks }) => (
-      <div key={label}>
-        <div style={{
-          fontFamily: "'DM Mono',monospace", fontSize: '10px',
-          color: '#D4501A', letterSpacing: '0.1em', textTransform: 'uppercase',
-          padding: '14px 0 6px',
+    return months.map(({ label, weeks }) => {
+      const isCurrent = label === currentMonthLabel
+      return (
+        <div key={label} style={{
+          background: 'var(--card-bg, #0d0d0d)',
+          borderRadius: '16px',
+          border: isCurrent ? '0.5px solid rgba(212,80,26,0.4)' : '0.5px solid var(--border-col, #1c1c1c)',
+          overflow: 'hidden',
+          marginBottom: '10px',
         }}>
-          {label}
+          <div style={{
+            fontFamily: "'DM Mono',monospace", fontSize: '10px',
+            color: isCurrent ? '#D4501A' : '#555',
+            letterSpacing: '0.1em', textTransform: 'uppercase',
+            padding: '12px 12px 6px',
+            borderBottom: '0.5px solid var(--border-col, #1c1c1c)',
+            display: 'flex', alignItems: 'center', gap: '8px',
+          }}>
+            {label}
+            {isCurrent && <span style={{ background: 'rgba(212,80,26,0.12)', color: '#D4501A', fontSize: '9px', padding: '2px 8px', borderRadius: '20px', border: '0.5px solid rgba(212,80,26,0.3)' }}>current</span>}
+          </div>
+          <div style={{ padding: '6px 8px 8px' }}>
+            {weeks.map(({ week, weekNum }) => renderWeekRow(week, weekNum))}
+          </div>
         </div>
-        {weeks.map(({ week, weekNum }) => renderWeekRow(week, weekNum))}
-      </div>
-    ))
+      )
+    })
   }
 
   // Find week number for a session popup
@@ -1786,13 +1803,17 @@ function SessionScreen({ session, preloadedRuns, onBack }: {
         <button onClick={onBack} style={{ border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
         <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary, #fff)', fontFamily: "\'DM Sans\',sans-serif" }}>{session.title}</div>
       </div>
-      <SessionPopupInner
-        session={session}
-        weekTheme={session.weekTheme ?? ''}
-        weekN={session.weekN ?? 1}
-        preloadedRuns={preloadedRuns}
-        onClose={onBack}
-      />
+      <div style={{ padding: '12px' }}>
+        <div style={{ background: 'var(--card-bg, #0d0d0d)', borderRadius: '16px', border: '0.5px solid var(--border-col, #1c1c1c)', overflow: 'hidden' }}>
+          <SessionPopupInner
+            session={session}
+            weekTheme={session.weekTheme ?? ''}
+            weekN={session.weekN ?? 1}
+            preloadedRuns={preloadedRuns}
+            onClose={onBack}
+          />
+        </div>
+      </div>
     </div>
   )
 }
