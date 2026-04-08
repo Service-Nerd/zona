@@ -429,16 +429,10 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose }
   const config = typeConfig[session.type] ?? typeConfig['easy']
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--card-bg, #0d0d0d)', borderRadius: '20px 20px 0 0', border: '0.5px solid var(--border-col, #1c1c1c)', borderBottom: 'none', width: '100%', maxWidth: '480px', maxHeight: '85vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border-col, #222)' }} />
-        </div>
-
-        <div style={{ padding: '12px 18px 14px', borderBottom: '0.5px solid var(--border-col, #1a1a1a)' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg, #000)', overflowY: 'auto', paddingBottom: '80px' }}>
+        <div style={{ padding: '12px 18px 14px', borderBottom: '0.5px solid var(--border-col, #1a1a1a)', position: 'sticky', top: 0, background: 'var(--bg, #000)', zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1, flexShrink: 0, marginTop: '2px' }}>‹</button>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1, flexShrink: 0, marginTop: '2px' , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
             <div>
               <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
                 {session.day} · {session.date}
@@ -560,7 +554,6 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose }
             </div>
           </div>
         )}
-      </div>
     </div>
   )
 }
@@ -626,7 +619,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
         <button
           onClick={() => weekIndex > 0 && onWeekChange(weekIndex - 1)}
           style={{ background: 'none', border: 'none', color: weekIndex > 0 ? '#555' : '#222', fontSize: '18px', cursor: weekIndex > 0 ? 'pointer' : 'default', padding: 0, lineHeight: 1 }}
-        >‹</button>
+        ><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
         <button onClick={onOpenCalendar} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}>
           <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
             <rect x="1" y="2" width="12" height="11" rx="1.5" stroke="#555" strokeWidth="1.1"/>
@@ -1003,7 +996,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, onBack, onOpenSession
         position: 'sticky', top: 0, background: 'var(--bg, #000)', zIndex: 10,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 }}>‹</button>
+          <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
           <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary, #fff)', fontFamily: "'DM Sans',sans-serif", letterSpacing: '-0.3px' }}>
             Plan
           </div>
@@ -1327,10 +1320,6 @@ function PlanScreen({ plan, stravaRuns, onOpenMe, initials, allOverrides, onOver
   onOpenCalendar?: () => void
   onOpenSession?: (s: any) => void
 }) {
-  const [activeSession, setActiveSession] = useState<any | null>(null)
-  const [activeWeekN, setActiveWeekN] = useState<number>(1)
-  const [activeWeekTheme, setActiveWeekTheme] = useState<string>('')
-
   return (
     <div>
       <ScreenHeader title="Plan" sub="Race to the Stones · 11 Jul 2026" initials={initials} onOpenMe={onOpenMe} />
@@ -1348,21 +1337,11 @@ function PlanScreen({ plan, stravaRuns, onOpenMe, initials, allOverrides, onOver
         allOverrides={allOverrides}
         onOverrideChange={onOverrideChange}
         onSessionTap={(session, weekN, weekTheme) => {
-          setActiveSession(session)
-          setActiveWeekN(weekN)
-          setActiveWeekTheme(weekTheme)
+          onOpenSession?.({ ...session, weekN, weekTheme })
         }}
       />
 
-      {activeSession && (
-        <SessionPopupInner
-          session={activeSession}
-          weekTheme={activeWeekTheme}
-          weekN={activeWeekN}
-          preloadedRuns={stravaRuns}
-          onClose={() => {}}
-        />
-      )}
+
     </div>
   )
 }
@@ -1700,7 +1679,7 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg, #000)', overflowY: 'auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 8px' }}>
-        <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 }}>‹</button>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
         <div>
           <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary, #fff)', fontFamily: "'DM Sans',sans-serif" }}>Me</div>
           <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#555', marginTop: '2px' }}>@doinghardthingsbadly</div>
@@ -1810,7 +1789,7 @@ function SessionScreen({ session, preloadedRuns, onBack }: {
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg, #000)', overflowY: 'auto', paddingBottom: '80px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: '0.5px solid var(--border-col, #1c1c1c)', position: 'sticky', top: 0, background: 'var(--bg, #000)', zIndex: 10 }}>
-        <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 }}>\u2039</button>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
         <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary, #fff)', fontFamily: "\'DM Sans\',sans-serif" }}>{session.title}</div>
       </div>
       <SessionPopupInner
@@ -1827,7 +1806,7 @@ function SessionScreen({ session, preloadedRuns, onBack }: {
 function BackHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px' }}>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '18px', cursor: 'pointer', padding: '0' }}>‹</button>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#D4501A', fontSize: '18px', cursor: 'pointer', padding: '0' , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
       <div style={{ fontSize: '20px', fontWeight: 500, color: 'var(--text-primary, #fff)', fontFamily: "'DM Sans',sans-serif" }}>{title}</div>
     </div>
   )
