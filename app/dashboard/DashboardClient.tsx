@@ -548,6 +548,8 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose }
             </div>
           </div>
         )}
+    </div>
+    </div>
   )
 }
 
