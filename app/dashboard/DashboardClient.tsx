@@ -68,7 +68,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
   const [smokeTrackerEnabled, setSmokeTrackerEnabled] = useState(false)
   const [quitDate, setQuitDate] = useState<string>('')
   const [resetPhrase, setResetPhrase] = useState('')
-  const [theme, setTheme] = useState<'dark' | 'light' | 'auto'>('dark')
+  const [theme, setTheme] = useState<'dark' | 'light' | 'auto'>('light')
   const [appReady, setAppReady] = useState(false)
 
   // Global overrides — fetched once, shared across all screens
@@ -94,7 +94,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
     try {
       const p = localStorage.getItem('rts_phrase'); if (p) setResetPhrase(p)
       const t = localStorage.getItem('rts_theme') as 'dark' | 'light' | 'auto' | null
-      if (t) { setTheme(t); applyTheme(t) }
+      if (t) { setTheme(t); applyTheme(t) } else { applyTheme('light') }
     } catch {}
 
     async function fetchSettings() {
@@ -1306,18 +1306,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         ))}
       </div>
 
-      {/* Strava hook */}
-      <SectionLabel>Latest activity</SectionLabel>
-      <Card style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FC4C02' }} />
-          <div>
-            <div style={{ fontSize: '13px', color: '#bbb', fontWeight: 500 }}>Strava</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#555', marginTop: '1px' }}>View in Strava tab</div>
-          </div>
-        </div>
-        <div style={{ color: '#333', fontSize: '18px' }}>›</div>
-      </Card>
+
     </div>
   )
 }

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -23,26 +23,34 @@
   --muted:       #666;
   --text:        #E8E8E8;
   --text-dim:    #888;
+
+  /* App theme — light by default */
+  --bg:            #f5f3ef;
+  --card-bg:       #ffffff;
+  --border-col:    #e8e3dc;
+  --text-primary:  #111111;
+  --text-secondary:#444444;
+  --text-muted:    #888888;
+  --nav-bg:        #f5f3ef;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  background: #3a3a3a;
-  color: var(--text);
+  background: var(--bg);
+  color: var(--text-primary);
   font-family: 'DM Sans', sans-serif;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
 /* Typography utilities */
-.font-display { font-family: 'Bebas Neue', sans-serif; }
-.font-mono    { font-family: 'DM Mono', monospace; }
+.font-mono { font-family: 'DM Mono', monospace; }
 
 /* Scrollbar */
 ::-webkit-scrollbar       { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: var(--black); }
-::-webkit-scrollbar-thumb { background: var(--grey); border-radius: 2px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-col); border-radius: 2px; }
 
 /* Focus ring */
-:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+:focus-visible { outline: 2px solid #D4501A; outline-offset: 2px; }
