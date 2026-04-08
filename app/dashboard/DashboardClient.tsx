@@ -429,15 +429,15 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose }
   const config = typeConfig[session.type] ?? typeConfig['easy']
 
   return (
-    <div>
-        <div style={{ padding: '12px 18px 8px', borderBottom: '0.5px solid var(--border-col, #1a1a1a)' }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
-            {session.day} · {session.date}
-            {isComplete && <span style={{ color: '#4a9a5a', marginLeft: '8px' }}>✓ Complete</span>}
-            {isSkipped && <span style={{ color: 'var(--text-muted, #555)', marginLeft: '8px' }}>Skipped</span>}
-          </div>
-          {session.detail && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #666)', marginTop: '2px' }}>{session.detail}</div>}
+    <>
+      <div style={{ padding: '12px 18px 8px', borderBottom: '0.5px solid var(--border-col, #1a1a1a)' }}>
+        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
+          {session.day} · {session.date}
+          {isComplete && <span style={{ color: '#4a9a5a', marginLeft: '8px' }}>✓ Complete</span>}
+          {isSkipped && <span style={{ color: 'var(--text-muted, #555)', marginLeft: '8px' }}>Skipped</span>}
         </div>
+        {session.detail && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #666)', marginTop: '2px' }}>{session.detail}</div>}
+      </div>
 
         {view === 'detail' && (
           <>
@@ -548,8 +548,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose }
             </div>
           </div>
         )}
-    </div>
-    </div>
+    </>
   )
 }
 
