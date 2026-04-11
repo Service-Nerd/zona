@@ -88,13 +88,10 @@ export default function DashboardClient() {
   const [stravaConnected, setStravaConnected] = useState(false)
   const supabase = createClient()
 
-  const CLIENT_ID = process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID!
-
   useEffect(() => {
     // Handle strava OAuth redirect result
     const params = new URLSearchParams(window.location.search)
-    const stravaResult = params.get('strava')
-    if (stravaResult === 'connected') {
+    if (params.get('strava') === 'connected') {
       setStravaConnected(true)
       window.history.replaceState({}, '', '/dashboard')
     }
@@ -163,31 +160,11 @@ export default function DashboardClient() {
 
         if (!data?.strava_refresh_token) { setStravaLoading(false); return }
 
-        // Use stored refresh token to get a fresh access token
-        const tokenRes = await fetch('https://www.strava.com/oauth/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            client_id: CLIENT_ID,
-            client_secret: process.env.NEXT_PUBLIC_STRAVA_CLIENT_SECRET || '',
-            refresh_token: data.strava_refresh_token,
-            grant_type: 'refresh_token',
-          }),
-        })
-        const tokenData = await tokenRes.json()
-        const access_token = tokenData.access_token
+        // Refresh token via server-side route — keeps client secret safe
+        const tokenRes = await fetch('/api/strava/refresh', { method: 'POST' })
+        if (!tokenRes.ok) { setStravaLoading(false); return }
+        const { access_token } = await tokenRes.json()
         if (!access_token) { setStravaLoading(false); return }
-
-        // Store updated tokens if refreshed
-        if (tokenData.refresh_token && tokenData.expires_at) {
-          await supabase.from('user_settings').upsert({
-            id: user.id,
-            strava_access_token: access_token,
-            strava_refresh_token: tokenData.refresh_token,
-            strava_token_expires_at: tokenData.expires_at,
-            updated_at: new Date().toISOString(),
-          })
-        }
 
         const after = Math.floor(new Date('2026-01-01').getTime() / 1000)
         const actRes = await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=100`, {
