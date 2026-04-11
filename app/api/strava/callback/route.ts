@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const error = searchParams.get('error')
-  const userId = searchParams.get('state') // user ID passed from connect route
+  const userId = searchParams.get('state')
 
   if (error || !code) {
     return NextResponse.redirect(`${origin}/dashboard?strava=denied`)
@@ -36,8 +36,12 @@ export async function GET(request: Request) {
 
     const { access_token, refresh_token, expires_at } = tokenBody
 
-    // Use service role to write tokens — no user session needed
-    const supabase = createClient()
+    // Use service role client to bypass RLS — safe, server-side only
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    )
+
     const { error: upsertError } = await supabase.from('user_settings').upsert({
       id: userId,
       strava_access_token: access_token,
