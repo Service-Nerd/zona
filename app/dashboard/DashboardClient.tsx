@@ -475,7 +475,7 @@ export default function DashboardClient() {
         zIndex: 1000,
       }}>
         {(['today', 'plan', 'coach', 'strava'] as Screen[]).map(id => {
-          const labels: Record<Screen, string> = { today: 'Today', plan: 'Plan', coach: 'Coach', strava: 'Strava', me: 'Me', calendar: 'Calendar', session: 'Session' }
+          const labels: Record<Screen, string> = { today: 'Today', plan: 'Plan', coach: 'Coach', strava: 'Strava', me: 'Me', calendar: 'Calendar', session: 'Session', admin: 'Admin' }
           const active = screen === id
           return (
             <button key={id} onClick={() => setScreen(id)} style={{
