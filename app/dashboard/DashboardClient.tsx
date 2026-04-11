@@ -668,7 +668,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '0 8px', gap: '2px' }}>
         {DOW_ORDER.map(key => {
           const s = sessionMap[key]
-          const isSelected = s?.key === selectedKey
+          const isSelected = s?.key === selectedKey && s?.type !== 'rest'
           const isToday = s?.today ?? false
           const dotColor = getDotColor(key)
           const dateNum = s ? s.rawDate.getDate().toString() : ''
