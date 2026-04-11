@@ -593,6 +593,7 @@ const DAY_OFFSETS: Record<string, number> = { mon:0, tue:1, wed:2, thu:3, fri:4,
 
 interface SessionEntry {
   key: string
+  displayKey: string
   day: string
   title: string
   detail: string
@@ -612,13 +613,13 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
   onWeekChange: (i: number) => void
   onOpenCalendar: () => void
 }) {
-  const sessionMap = Object.fromEntries(sessions.map(s => [s.key, s]))
+  const sessionMap = Object.fromEntries(sessions.map(s => [s.displayKey, s]))
   const touchStartX = useRef<number | null>(null)
 
   function getDotColor(key: string): string | null {
     const s = sessionMap[key]
     if (!s || s.type === 'rest') return null
-    const comp = completions[key]
+    const comp = completions[s.key] // use originalDay for completion lookup
     if (comp?.status === 'complete') return '#4a9a5a'
     if (comp?.status === 'skipped') return '#333'
     return TYPE_DOT[s.type] ?? '#666'
@@ -667,7 +668,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '0 8px', gap: '2px' }}>
         {DOW_ORDER.map(key => {
           const s = sessionMap[key]
-          const isSelected = selectedKey === key
+          const isSelected = s?.key === selectedKey
           const isToday = s?.today ?? false
           const dotColor = getDotColor(key)
           const dateNum = s ? s.rawDate.getDate().toString() : ''
@@ -676,7 +677,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
           return (
             <button
               key={key}
-              onClick={() => hasEntry && onSelect(key)}
+              onClick={() => hasEntry && onSelect(s?.key ?? key)}
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
                 padding: '4px 2px', background: 'none', border: 'none',
@@ -1178,7 +1179,8 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
     d.setDate(d.getDate() + DAY_OFFSETS[key])
     const displayDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
     return {
-      key: originalDay, // always the original day — stable completion key
+      key: originalDay, // stable completion key
+      displayKey: key,  // display position in the week
       day: DOW_FULL[key],
       title: s?.label ?? '',
       detail: s?.detail ?? '',
@@ -1193,9 +1195,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   const [selectedKey, setSelectedKey] = useState<string>(() => {
     const t = sessions.find(s => s.today)
     if (t) return t.key
-    const next = sessions.find(s => s.rawDate >= now && effectiveWs[s.key] && effectiveWs[s.key].type !== 'rest')
+    const next = sessions.find(s => s.rawDate >= now && effectiveWs[s.displayKey] && effectiveWs[s.displayKey].type !== 'rest')
     if (next) return next.key
-    const last = [...sessions].reverse().find(s => effectiveWs[s.key])
+    const last = [...sessions].reverse().find(s => effectiveWs[s.displayKey])
     return last?.key ?? 'mon'
   })
 
@@ -1203,14 +1205,14 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   useEffect(() => {
     const t = sessions.find(s => s.today)
     if (t) { setSelectedKey(t.key); return }
-    const next = sessions.find(s => s.rawDate >= now && effectiveWs[s.key] && effectiveWs[s.key].type !== 'rest')
+    const next = sessions.find(s => s.rawDate >= now && effectiveWs[s.displayKey] && effectiveWs[s.displayKey].type !== 'rest')
     if (next) { setSelectedKey(next.key); return }
-    const last = [...sessions].reverse().find(s => effectiveWs[s.key])
+    const last = [...sessions].reverse().find(s => effectiveWs[s.displayKey])
     if (last) setSelectedKey(last.key)
   }, [weekIndex, overridesReady])
 
   const selectedSession = sessions.find(s => s.key === selectedKey) ?? null
-  const selectedEntry = effectiveWs[selectedKey]
+  const selectedEntry = selectedSession ? effectiveWs[selectedSession.displayKey] : null
 
   const RUN_TYPES = ['run', 'easy', 'quality', 'race']
   const isRunDay      = selectedEntry && RUN_TYPES.includes(selectedEntry.type)
