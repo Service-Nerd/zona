@@ -72,6 +72,7 @@ export default function DashboardClient() {
   const [theme, setTheme] = useState<'dark' | 'light' | 'auto'>('light')
   const [appReady, setAppReady] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [preferredUnits, setPreferredUnits] = useState<'km' | 'mi'>('km')
 
   // Impersonation state
   const [impersonating, setImpersonating] = useState<{ userId: string; name: string } | null>(null)
@@ -118,7 +119,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, has_onboarded, is_admin').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, has_onboarded, is_admin, preferred_units').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name').eq('user_id', user.id),
         ])
@@ -142,6 +143,9 @@ export default function DashboardClient() {
 
         // Admin flag
         if (data?.is_admin) setIsAdmin(true)
+
+        // Units preference
+        if (data?.preferred_units === 'mi') setPreferredUnits('mi')
 
         // Show welcome screen if not yet onboarded
         if (!data?.has_onboarded) {
@@ -473,9 +477,9 @@ export default function DashboardClient() {
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
         {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setScreen('me')} initials={initials} />}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setScreen('me')} initials={initials} />}
-        {screen === 'me'       && <MeScreen initials={initials} athlete={plan.meta.athlete ?? 'Russell Shear'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} />}
+        {screen === 'me'       && <MeScreen initials={initials} athlete={plan.meta.athlete ?? 'Russell Shear'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} />}
         {screen === 'calendar' && <CalendarOverlay plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onBack={() => setScreen('today')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} onSaved={impersonating ? undefined : refreshCompletions} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} zone2Ceiling={plan?.meta?.zone2_ceiling ?? 145} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
       </div>
 
@@ -582,20 +586,43 @@ const TYPE_LABEL: Record<string, string> = {
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
-function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved }: {
-  session: any; weekTheme: string; weekN: number; preloadedRuns: any[]; onClose: () => void; onSaved?: () => void
+function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling }: {
+  session: any; weekTheme: string; weekN: number; preloadedRuns: any[]
+  onClose: () => void; onSaved?: () => void
+  preferredUnits: 'km' | 'mi'; zone2Ceiling: number
 }) {
-  const [view, setView] = useState<'detail' | 'complete' | 'skip'>('detail')
+  const [view, setView] = useState<'detail' | 'complete' | 'skip' | 'manual'>('detail')
   const [saving, setSaving] = useState(false)
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null)
   const [claimedIds, setClaimedIds] = useState<Set<number>>(new Set())
   const [loadingClaimed, setLoadingClaimed] = useState(false)
+  const [guidance, setGuidance] = useState<any | null>(null)
+  const [manualDistance, setManualDistance] = useState('')
+  const [manualDuration, setManualDuration] = useState('')
+  const [manualNotes, setManualNotes] = useState('')
   const supabase = createClient()
 
   const isPast = session.isPast
   const completion = session.completion
   const isComplete = completion?.status === 'complete'
   const isSkipped = completion?.status === 'skipped'
+
+  // Fetch session guidance from Supabase
+  useEffect(() => {
+    async function loadGuidance() {
+      try {
+        // Try phase-specific first, fall back to null phase
+        const { data } = await supabase
+          .from('session_guidance')
+          .select('*')
+          .eq('session_type', session.type)
+          .order('phase', { ascending: false, nullsFirst: false })
+          .limit(2)
+        if (data && data.length > 0) setGuidance(data[0])
+      } catch {}
+    }
+    if (session.type && session.type !== 'rest') loadGuidance()
+  }, [session.type])
 
   useEffect(() => {
     if (view !== 'complete') return
@@ -652,17 +679,66 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
     } catch {} finally { setSaving(false) }
   }
 
-  const typeConfig: Record<string, { color: string; label: string; tips: string[] }> = {
-    easy:     { color: '#378ADD', label: 'Easy run — Zone 2', tips: ['HR cap: 145 bpm. Walk if it goes above.', 'Pace is irrelevant — HR is everything.', "Nose breathing test: can't hold a conversation? Slow down.", 'Cardiac drift is normal — walk breaks are correct, not failure.'] },
-    quality:  { color: '#D4501A', label: 'Quality session',   tips: ['Warm up 10–15 min easy first.', 'Target HR 155–165 bpm during efforts. Controlled, not maximal.', 'Cool down 10 min easy. Don\'t skip it.', 'Legs dead? Dial it back — don\'t force quality on fatigue.'] },
-    run:      { color: '#D4501A', label: 'Long run',          tips: ['Start slower than feels right. First 30 min embarrassingly easy.', 'Fuel every 45 min from the gun — don\'t wait.', 'Walk the hills. Strategy, not weakness.', 'HR above 150 late in run? Walk break. Drop to 135 before resuming.'] },
-    race:     { color: '#ff7777', label: 'Race',              tips: ['Training run with a bib. Not a race.', 'HR-capped — Zone 2 long run.', 'Walk all significant climbs.', 'Fuel every 45 min. Use every aid station.', 'Finish feeling like you have 10k left.'] },
-    strength: { color: '#4a7c6f', label: 'Strength session',  tips: ['Keep it functional — glutes, hips, single-leg stability.', 'Don\'t go to failure. Leave 2–3 reps in the tank.', 'Legs trashed from running? Reduce load, don\'t skip.'] },
+  async function saveManualRun() {
+    if (!manualDistance && !manualDuration) return
+    setSaving(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const distKm = manualDistance ? parseFloat(manualDistance) : null
+      await supabase.from('session_completions').upsert({
+        user_id: user.id,
+        week_n: weekN,
+        session_day: session.key,
+        status: 'complete',
+        strava_activity_id: null,
+        strava_activity_name: manualNotes || `Manual log · ${manualDuration || ''}`,
+        strava_activity_km: distKm,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,week_n,session_day' })
+      onSaved?.()
+      onClose()
+    } catch {} finally { setSaving(false) }
+  }
+
+  // Pace bracket calculation from zone2_ceiling using HRR
+  function getPaceBracket(): string | null {
+    if (session.type !== 'easy' && session.type !== 'run') return null
+    // Approximate pace from zone2_ceiling — lower HR = slower pace
+    // Zone 2 for a HM 1:48 runner is roughly 6:00–7:30/km
+    // We use zone2_ceiling to estimate: 145 bpm ≈ 6:30/km, adjust ±15s per 5bpm
+    const baseHR = 145
+    const basePaceSecPerKm = 390 // 6:30/km
+    const secondsPerBpm = 3
+    const diffBpm = zone2Ceiling - baseHR
+    const loPaceKm = basePaceSecPerKm + (5 * secondsPerBpm) - (diffBpm * secondsPerBpm)
+    const hiPaceKm = basePaceSecPerKm + (15 * secondsPerBpm) - (diffBpm * secondsPerBpm)
+
+    function fmtPace(secPerKm: number, units: 'km' | 'mi'): string {
+      const sec = units === 'mi' ? secPerKm * 1.60934 : secPerKm
+      const m = Math.floor(sec / 60)
+      const s = Math.round(sec % 60)
+      return `${m}:${String(s).padStart(2, '0')}`
+    }
+
+    const unit = preferredUnits === 'mi' ? '/mi' : '/km'
+    return `${fmtPace(loPaceKm, preferredUnits)}–${fmtPace(hiPaceKm, preferredUnits)}${unit}`
+  }
+
+  const paceBracket = getPaceBracket()
+
+  const typeConfig: Record<string, { color: string; label: string }> = {
+    easy:     { color: '#378ADD', label: 'Easy run — Zone 2' },
+    quality:  { color: '#D4501A', label: 'Quality session' },
+    run:      { color: '#D4501A', label: 'Long run' },
+    race:     { color: '#ff7777', label: 'Race' },
+    strength: { color: '#4a7c6f', label: 'Strength' },
   }
   const config = typeConfig[session.type] ?? typeConfig['easy']
 
   return (
     <>
+      {/* Header */}
       <div style={{ padding: '12px 18px 8px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
         <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
           {session.day} · {session.date}
@@ -672,118 +748,228 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
         {session.detail && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #666)', marginTop: '2px' }}>{session.detail}</div>}
       </div>
 
-        {view === 'detail' && (
-          <>
-            <div style={{ padding: '12px 18px', background: 'var(--bg, #f5f2ee)', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary, #555)', lineHeight: 1.5 }}>{weekTheme}</div>
-            </div>
-            <div style={{ padding: '18px 18px' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>{config.label} — key points</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {config.tips.map((tip, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: config.color, flexShrink: 0, marginTop: '5px' }} />
-                    <div style={{ fontSize: '13px', color: 'var(--text-secondary, #bbb)', lineHeight: 1.6 }}>{tip}</div>
+      {view === 'detail' && (
+        <>
+          {/* Week theme */}
+          <div style={{ padding: '12px 18px', background: 'var(--bg, #f5f2ee)', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary, #555)', lineHeight: 1.5 }}>{weekTheme}</div>
+          </div>
+
+          {/* Zone + pace bracket */}
+          {(session.type === 'easy' || session.type === 'run' || session.type === 'quality') && (
+            <div style={{ margin: '14px 18px 0', background: 'var(--bg, #f5f2ee)', borderRadius: '12px', padding: '14px 16px', border: '0.5px solid var(--border-col, #e8e3dc)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', marginBottom: '3px' }}>
+                    {session.type === 'quality' ? 'Target HR zone' : 'Zone 2 ceiling'}
                   </div>
-                ))}
+                  <div style={{ fontSize: '22px', fontWeight: 500, color: session.type === 'quality' ? '#D4501A' : '#378ADD' }}>
+                    {session.type === 'quality' ? '155–165' : zone2Ceiling}
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted, #777)', marginLeft: '4px' }}>bpm</span>
+                  </div>
+                </div>
+                {paceBracket && session.type !== 'quality' && (
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', marginBottom: '3px' }}>Est. pace bracket</div>
+                    <div style={{ fontSize: '18px', fontWeight: 500, color: '#378ADD' }}>{paceBracket}</div>
+                  </div>
+                )}
+              </div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)' }}>
+                {session.type === 'quality' ? 'Controlled efforts. Not maximal. Warm up 15 min first.' : 'Walk immediately if HR exceeds this. No exceptions.'}
               </div>
             </div>
-            {(session.type === 'easy' || session.type === 'run') && (
-              <div style={{ margin: '0 18px 16px', background: 'var(--bg, #f5f2ee)', borderRadius: '12px', padding: '16px', border: '0.5px solid var(--border-col, #e8e3dc)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase' }}>Zone 2 ceiling</div>
-                  <div style={{ fontSize: '20px', fontWeight: 500, color: '#378ADD' }}>145 <span style={{ fontSize: '12px', color: 'var(--text-muted, #777)' }}>bpm</span></div>
-                </div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #444)', marginTop: '4px' }}>Walk if HR exceeds this. No exceptions.</div>
+          )}
+
+          {/* Why this session */}
+          {guidance && (
+            <div style={{ padding: '16px 18px 0' }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Why this session</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.7, marginBottom: '16px' }}>
+                {guidance.why}
               </div>
-            )}
-            <div style={{ padding: '0 18px 24px', display: 'flex', gap: '8px' }}>
-              {!isComplete && !isSkipped && !session.isFuture && (
+
+              {guidance.what && (
                 <>
-                  <button onClick={() => setView('complete')} style={{ flex: 1, background: 'rgba(74,124,111,0.15)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.4)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
-                    Mark complete
-                  </button>
-                  <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
-                    Skip
-                  </button>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>What</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.6, marginBottom: '16px' }}>
+                    {guidance.what}
+                  </div>
                 </>
               )}
-              {(isComplete || isSkipped) && (
-                <button onClick={() => setView('complete')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
-                  Update
-                </button>
-              )}
-              {session.isFuture && !isComplete && !isSkipped && (
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #444)', textAlign: 'center', padding: '12px', width: '100%' }}>
-                  Available to log on {session.date}
-                </div>
-              )}
-              {isPast && !isComplete && !isSkipped && !session.isFuture && (
-                <button onClick={() => setView('complete')} style={{ flex: 1, background: 'var(--bg, #111)', color: 'var(--text-muted, #666)', border: 'none', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
-                  Log retroactively
-                </button>
+
+              {guidance.how && (
+                <>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>How</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.6, marginBottom: '8px' }}>
+                    {guidance.how}
+                  </div>
+                </>
               )}
             </div>
-          </>
-        )}
+          )}
 
-        {view === 'complete' && (
-          <div style={{ padding: '16px 18px 24px' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#4a7c6f', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Mark as complete</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #666)', marginBottom: '8px' }}>Link a Strava activity (optional)</div>
-            {loadingClaimed ? (
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #444)', padding: '12px 0' }}>Loading activities...</div>
-            ) : stravaRuns.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', maxHeight: '200px', overflowY: 'auto' }}>
-                {stravaRuns.slice(0, 20).map((run: any) => {
-                  const isSelected = selectedActivity?.id === run.id
-                  return (
-                    <div key={run.id} onClick={() => setSelectedActivity(isSelected ? null : run)} style={{
-                      background: isSelected ? 'rgba(74,124,111,0.1)' : 'var(--bg, #080808)',
-                      border: `0.5px solid ${isSelected ? 'rgba(74,124,111,0.4)' : 'var(--border-col, #1c1c1c)'}`,
-                      borderRadius: '12px', padding: '10px 12px', cursor: 'pointer',
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '13px', color: isSelected ? 'var(--text-primary, #fff)' : 'var(--text-secondary, #bbb)', fontWeight: 500 }}>{run.name}</div>
-                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', marginTop: '2px' }}>
-                          {new Date(run.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {(run.distance / 1000).toFixed(1)}km {run.average_heartrate ? `· ${Math.round(run.average_heartrate)} bpm` : ''}
-                        </div>
-                      </div>
-                      {isSelected && <span style={{ color: '#4a7c6f', fontSize: '16px' }}>✓</span>}
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #444)', padding: '12px 0', marginBottom: '8px' }}>No Strava activities found in the 5 days before this session</div>
+          {/* Action buttons */}
+          <div style={{ padding: '16px 18px 24px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {!isComplete && !isSkipped && !session.isFuture && (
+              <>
+                <button onClick={() => setView('complete')} style={{ flex: 1, minWidth: '120px', background: 'rgba(74,124,111,0.15)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.4)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
+                  Log with Strava
+                </button>
+                <button onClick={() => setView('manual')} style={{ flex: 1, minWidth: '120px', background: 'rgba(74,124,111,0.08)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.3)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                  Log manually
+                </button>
+                <button onClick={() => setView('skip')} style={{ width: '100%', background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '12px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                  Skip
+                </button>
+              </>
             )}
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>Back</button>
-              <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: 'rgba(74,124,111,0.15)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.4)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving ? 0.6 : 1 }}>
-                {saving ? 'Saving...' : 'Confirm complete'}
+            {(isComplete || isSkipped) && (
+              <button onClick={() => setView('complete')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
+                Update
               </button>
-            </div>
+            )}
+            {session.isFuture && !isComplete && !isSkipped && (
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #444)', textAlign: 'center', padding: '12px', width: '100%' }}>
+                Available to log on {session.date}
+              </div>
+            )}
+            {isPast && !isComplete && !isSkipped && !session.isFuture && (
+              <button onClick={() => setView('complete')} style={{ flex: 1, background: 'var(--bg, #f5f2ee)', color: 'var(--text-muted, #666)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
+                Log retroactively
+              </button>
+            )}
           </div>
-        )}
+        </>
+      )}
 
-        {view === 'skip' && (
-          <div style={{ padding: '16px 18px 24px' }}>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary, #555)', lineHeight: 1.6, marginBottom: '20px' }}>
-              Mark this session as skipped? It'll show as grey in your log.
+      {/* Strava log view */}
+      {view === 'complete' && (
+        <div style={{ padding: '16px 18px 24px' }}>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#4a7c6f', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Link a Strava activity</div>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #666)', marginBottom: '8px' }}>Optional — select from recent runs</div>
+          {loadingClaimed ? (
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #444)', padding: '12px 0' }}>Loading activities...</div>
+          ) : stravaRuns.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', maxHeight: '200px', overflowY: 'auto' }}>
+              {stravaRuns.slice(0, 20).map((run: any) => {
+                const isSelected = selectedActivity?.id === run.id
+                return (
+                  <div key={run.id} onClick={() => setSelectedActivity(isSelected ? null : run)} style={{
+                    background: isSelected ? 'rgba(74,124,111,0.1)' : 'var(--bg, #f5f2ee)',
+                    border: `0.5px solid ${isSelected ? 'rgba(74,124,111,0.4)' : 'var(--border-col, #e8e3dc)'}`,
+                    borderRadius: '12px', padding: '10px 12px', cursor: 'pointer',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '13px', color: 'var(--text-primary, #111)', fontWeight: 500 }}>{run.name}</div>
+                      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', marginTop: '2px' }}>
+                        {new Date(run.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {(run.distance / 1000).toFixed(1)}km {run.average_heartrate ? `· ${Math.round(run.average_heartrate)} bpm` : ''}
+                      </div>
+                    </div>
+                    {isSelected && <span style={{ color: '#4a7c6f', fontSize: '16px' }}>✓</span>}
+                  </div>
+                )
+              })}
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>Back</button>
-              <button onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2, background: 'var(--bg, #111)', color: 'var(--text-muted, #666)', border: '0.5px solid var(--border-col, #333)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
-                {saving ? 'Saving...' : 'Mark as skipped'}
-              </button>
+          ) : (
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #444)', padding: '12px 0', marginBottom: '8px' }}>No Strava activities found near this session date</div>
+          )}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>Back</button>
+            <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: 'rgba(74,124,111,0.15)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.4)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving ? 0.6 : 1 }}>
+              {saving ? 'Saving...' : 'Confirm complete'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Manual log view */}
+      {view === 'manual' && (
+        <div style={{ padding: '16px 18px 24px' }}>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#4a7c6f', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Log manually</div>
+
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', marginBottom: '6px' }}>Distance ({preferredUnits})</div>
+              <input
+                type="number"
+                inputMode="decimal"
+                placeholder={`e.g. ${preferredUnits === 'km' ? '8.5' : '5.3'}`}
+                value={manualDistance}
+                onChange={e => setManualDistance(e.target.value)}
+                style={{
+                  width: '100%', background: 'var(--bg, #f5f2ee)',
+                  border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px',
+                  padding: '12px', color: 'var(--text-primary, #111)',
+                  fontFamily: "'DM Mono',monospace", fontSize: '14px', outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', marginBottom: '6px' }}>Duration</div>
+              <input
+                type="text"
+                placeholder="e.g. 1:05:30"
+                value={manualDuration}
+                onChange={e => setManualDuration(e.target.value)}
+                style={{
+                  width: '100%', background: 'var(--bg, #f5f2ee)',
+                  border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px',
+                  padding: '12px', color: 'var(--text-primary, #111)',
+                  fontFamily: "'DM Mono',monospace", fontSize: '14px', outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
             </div>
           </div>
-        )}
+
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', marginBottom: '6px' }}>Notes (optional)</div>
+            <textarea
+              placeholder="How did it go?"
+              value={manualNotes}
+              onChange={e => setManualNotes(e.target.value)}
+              rows={2}
+              style={{
+                width: '100%', background: 'var(--bg, #f5f2ee)',
+                border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px',
+                padding: '12px', color: 'var(--text-primary, #111)',
+                fontFamily: "'DM Sans',sans-serif", fontSize: '13px',
+                outline: 'none', resize: 'none', boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>Back</button>
+            <button onClick={saveManualRun} disabled={saving || (!manualDistance && !manualDuration)} style={{ flex: 2, background: 'rgba(74,124,111,0.15)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.4)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving || (!manualDistance && !manualDuration) ? 0.5 : 1 }}>
+              {saving ? 'Saving...' : 'Save run'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Skip view */}
+      {view === 'skip' && (
+        <div style={{ padding: '16px 18px 24px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary, #555)', lineHeight: 1.6, marginBottom: '20px' }}>
+            Mark this session as skipped? It will show in your log.
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>Back</button>
+            <button onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2, background: 'var(--bg, #f5f2ee)', color: 'var(--text-muted, #666)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+              {saving ? 'Saving...' : 'Mark as skipped'}
+            </button>
+          </div>
+        </div>
+      )}
     </>
   )
 }
+
 
 // ── DATE STRIP ────────────────────────────────────────────────────────────
 
@@ -1879,12 +2065,13 @@ function SmokeToggle({ enabled, quitDate, onChange }: {
 
 // ── ME SCREEN ─────────────────────────────────────────────────────────────
 
-function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin }: {
+function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange }: {
   initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   resetPhrase: string; onSaveMental: (v: string) => void
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void; onBack: () => void
   isAdmin?: boolean; onOpenAdmin?: () => void
+  preferredUnits: 'km' | 'mi'; onUnitsChange: (u: 'km' | 'mi') => void
 }) {
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling'>('main')
 
@@ -1924,12 +2111,25 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
 
         <SectionLabel>Appearance</SectionLabel>
         <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '12px', border: '0.5px solid var(--border-col, #e8e3dc)', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary, #c0c0c0)', lineHeight: 1.55 }}>Theme</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.55 }}>Theme</div>
             <div style={{ display: 'flex', gap: '8px' }}>
               {(['dark', 'light', 'auto'] as const).map(t => (
-                <button key={t} onClick={() => onThemeChange(t)} style={{ borderRadius: '12px', padding: '6px 10px', border: `0.5px solid ${theme === t ? '#D4501A' : '#222'}`, background: 'none', cursor: 'pointer', fontFamily: "'DM Mono',monospace", fontSize: '12px', color: theme === t ? '#D4501A' : '#444', textTransform: 'capitalize' }}>
+                <button key={t} onClick={() => onThemeChange(t)} style={{ borderRadius: '12px', padding: '6px 10px', border: `0.5px solid ${theme === t ? '#D4501A' : 'var(--border-col)'}`, background: 'none', cursor: 'pointer', fontFamily: "'DM Mono',monospace", fontSize: '12px', color: theme === t ? '#D4501A' : 'var(--text-muted)', textTransform: 'capitalize' }}>
                   {t}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
+            <div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.55 }}>Distance units</div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Pace brackets and distances</div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {(['km', 'mi'] as const).map(u => (
+                <button key={u} onClick={() => onUnitsChange(u)} style={{ borderRadius: '12px', padding: '6px 14px', border: `0.5px solid ${preferredUnits === u ? '#D4501A' : 'var(--border-col)'}`, background: preferredUnits === u ? 'rgba(212,80,26,0.08)' : 'none', cursor: 'pointer', fontFamily: "'DM Mono',monospace", fontSize: '12px', color: preferredUnits === u ? '#D4501A' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  {u}
                 </button>
               ))}
             </div>
@@ -2098,8 +2298,9 @@ function AdminScreen({ onBack, onImpersonate }: {
 
 // ── SESSION SCREEN ────────────────────────────────────────────────────────
 
-function SessionScreen({ session, preloadedRuns, onBack, onSaved }: {
+function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling }: {
   session: any; preloadedRuns: any[]; onBack: () => void; onSaved?: () => void
+  preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number
 }) {
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto', paddingBottom: '80px' }}>
@@ -2116,6 +2317,8 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved }: {
             preloadedRuns={preloadedRuns}
             onClose={onBack}
             onSaved={onSaved}
+            preferredUnits={preferredUnits ?? 'km'}
+            zone2Ceiling={zone2Ceiling ?? 145}
           />
         </div>
       </div>
