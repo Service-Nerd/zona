@@ -1754,12 +1754,14 @@ function StravaScreen({ runs, loading, connected, onOpenMe, initials }: {
 function StravaConnectionRow() {
   const [connected, setConnected] = useState<boolean | null>(null)
   const [disconnecting, setDisconnecting] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
     async function check() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setConnected(false); return }
+      setUserId(user.id)
       const { data } = await supabase.from('user_settings').select('strava_refresh_token').eq('id', user.id).single()
       setConnected(!!(data?.strava_refresh_token))
     }
@@ -1819,12 +1821,13 @@ function StravaConnectionRow() {
               {disconnecting ? 'Disconnecting...' : 'Disconnect'}
             </button>
           ) : (
-            <button onClick={() => { window.location.href = '/api/strava/connect' }} style={{
+            <button onClick={() => { window.location.href = `/api/strava/connect?user_id=${userId}` }} disabled={!userId} style={{
               background: '#FC4C02', color: '#fff',
               border: 'none', borderRadius: '8px', padding: '8px 14px',
               fontFamily: "'DM Mono',monospace", fontSize: '11px',
               letterSpacing: '0.06em', textTransform: 'uppercase',
-              cursor: 'pointer',
+              cursor: userId ? 'pointer' : 'default',
+              opacity: userId ? 1 : 0.5,
             }}>
               Connect
             </button>

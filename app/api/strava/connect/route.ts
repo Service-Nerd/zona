@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
-  const { origin } = new URL(request.url)
+  const { searchParams, origin } = new URL(request.url)
+  const userId = searchParams.get('user_id')
 
-  // Get user ID to pass as state — so callback can identify user without session
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
+  if (!userId) {
     return NextResponse.redirect(`${origin}/auth/login`)
   }
 
@@ -20,7 +17,7 @@ export async function GET(request: Request) {
     response_type: 'code',
     approval_prompt: 'auto',
     scope: 'read,activity:read',
-    state: user.id, // pass user ID through OAuth flow
+    state: userId,
   })
 
   return NextResponse.redirect(
