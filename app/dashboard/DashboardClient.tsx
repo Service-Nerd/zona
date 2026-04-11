@@ -222,6 +222,7 @@ export default function DashboardClient() {
     const isDark = t === 'dark' || (t === 'auto' && prefersDark)
     const root = document.documentElement
     if (isDark) {
+      root.setAttribute('data-theme', 'dark')
       root.style.setProperty('--bg', '#0a0a0a')
       root.style.setProperty('--card-bg', '#0d0d0d')
       root.style.setProperty('--border-col', '#1c1c1c')
@@ -230,6 +231,7 @@ export default function DashboardClient() {
       root.style.setProperty('--text-muted', '#777')
       root.style.setProperty('--nav-bg', '#0a0a0a')
     } else {
+      root.setAttribute('data-theme', 'light')
       root.style.setProperty('--bg', '#f5f2ee')
       root.style.setProperty('--card-bg', '#fff')
       root.style.setProperty('--border-col', '#e8e3dc')
@@ -326,7 +328,7 @@ export default function DashboardClient() {
     minHeight: '100dvh',
     display: 'flex',
     flexDirection: 'column',
-    background: 'var(--bg, #f5f3ef)',
+    background: 'var(--bg, #f5f2ee)',
     maxWidth: '480px',
     margin: '0 auto',
     position: 'relative',
@@ -481,7 +483,7 @@ export default function DashboardClient() {
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: '480px',
         display: 'flex', alignItems: 'center',
-        background: 'var(--nav-bg, #f5f3ef)', borderTop: '0.5px solid var(--border-col, #e8e3dc)',
+        background: 'var(--nav-bg, #f5f2ee)', borderTop: '0.5px solid var(--border-col, #e8e3dc)',
         padding: '10px 0 max(16px, env(safe-area-inset-bottom))',
         zIndex: 1000,
       }}>
@@ -672,7 +674,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
 
         {view === 'detail' && (
           <>
-            <div style={{ padding: '12px 18px', background: 'var(--bg, #f5f3ef)', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
+            <div style={{ padding: '12px 18px', background: 'var(--bg, #f5f2ee)', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
               <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
               <div style={{ fontSize: '13px', color: 'var(--text-secondary, #555)', lineHeight: 1.5 }}>{weekTheme}</div>
             </div>
@@ -688,7 +690,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               </div>
             </div>
             {(session.type === 'easy' || session.type === 'run') && (
-              <div style={{ margin: '0 18px 16px', background: 'var(--bg, #f5f3ef)', borderRadius: '12px', padding: '16px', border: '0.5px solid var(--border-col, #e8e3dc)' }}>
+              <div style={{ margin: '0 18px 16px', background: 'var(--bg, #f5f2ee)', borderRadius: '12px', padding: '16px', border: '0.5px solid var(--border-col, #e8e3dc)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase' }}>Zone 2 ceiling</div>
                   <div style={{ fontSize: '20px', fontWeight: 500, color: '#378ADD' }}>145 <span style={{ fontSize: '12px', color: 'var(--text-muted, #777)' }}>bpm</span></div>
@@ -836,7 +838,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
 
   return (
     <div
-      style={{ borderBottom: '0.5px solid var(--border-col, #e8e3dc)', background: 'var(--bg, #f5f3ef)', paddingBottom: '10px' }}
+      style={{ borderBottom: '0.5px solid var(--border-col, #e8e3dc)', background: 'var(--bg, #f5f2ee)', paddingBottom: '10px' }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -1225,13 +1227,13 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
   }
 
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f3ef)', overflowY: 'auto' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto' }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '16px 16px 8px',
         borderBottom: '0.5px solid var(--border-col, #e8e3dc)',
-        position: 'sticky', top: 0, background: 'var(--bg, #f5f3ef)', zIndex: 10,
+        position: 'sticky', top: 0, background: 'var(--bg, #f5f2ee)', zIndex: 10,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button onClick={onBack} style={{ border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
@@ -1253,7 +1255,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
       <div style={{
         display: 'grid', gridTemplateColumns: '40px repeat(7, 1fr)',
         padding: '8px 12px 4px',
-        position: 'sticky', top: '53px', background: 'var(--bg, #f5f3ef)', zIndex: 9,
+        position: 'sticky', top: '53px', background: 'var(--bg, #f5f2ee)', zIndex: 9,
         borderBottom: '0.5px solid var(--border-col, #e8e3dc)',
       }}>
         <div />
@@ -1695,7 +1697,7 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
             </div>
             <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', border: '0.5px solid var(--border-col, #e8e3dc)', padding: '14px' }}>
               {[85, 100, 70, 90].map((w, i) => (
-                <div key={i} style={{ height: '10px', background: 'var(--bg, #f5f3ef)', borderRadius: '4px', marginBottom: i < 3 ? '8px' : 0, width: `${w}%` }} />
+                <div key={i} style={{ height: '10px', background: 'var(--bg, #f5f2ee)', borderRadius: '4px', marginBottom: i < 3 ? '8px' : 0, width: `${w}%` }} />
               ))}
             </div>
           </>
@@ -1893,12 +1895,12 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
   const daysToRace = Math.max(0, Math.ceil((new Date('2026-07-11').getTime() - Date.now()) / 86400000))
 
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f3ef)', overflowY: 'auto' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 8px' }}>
         <button onClick={onBack} style={{ border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
         <div>
           <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary, #111)', fontFamily: "'DM Sans',sans-serif" }}>Me</div>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: 'var(--text-muted, #888)', marginTop: '2px' }}>@doinghardthingsbadly</div>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: 'var(--text-muted, #888)', marginTop: '2px' }}>effort-first training</div>
         </div>
       </div>
 
@@ -1961,7 +1963,7 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
                     if (!user) return
                     await supabase.from('user_settings').upsert({ id: user.id, smoke_tracker_enabled: true, quit_date: newDate, updated_at: new Date().toISOString() })
                   } catch {}
-                }} style={{ background: 'var(--bg, #f5f3ef)', border: '0.5px solid #222', borderRadius: '6px', padding: '4px 8px', color: 'var(--text-muted, #888)', fontFamily: "'DM Mono',monospace", fontSize: '12px', outline: 'none' }} />
+                }} style={{ background: 'var(--bg, #f5f2ee)', border: '0.5px solid #222', borderRadius: '6px', padding: '4px 8px', color: 'var(--text-muted, #888)', fontFamily: "'DM Mono',monospace", fontSize: '12px', outline: 'none' }} />
               </div>
             )}
           </div>
@@ -2100,8 +2102,8 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved }: {
   session: any; preloadedRuns: any[]; onBack: () => void; onSaved?: () => void
 }) {
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f3ef)', overflowY: 'auto', paddingBottom: '80px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)', position: 'sticky', top: 0, background: 'var(--bg, #f5f3ef)', zIndex: 10 }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto', paddingBottom: '80px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)', position: 'sticky', top: 0, background: 'var(--bg, #f5f2ee)', zIndex: 10 }}>
         <button onClick={onBack} style={{ border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
         <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary, #111)', fontFamily: "\'DM Sans\',sans-serif" }}>{session.title}</div>
       </div>
@@ -2148,7 +2150,7 @@ function MentalTab({ resetPhrase, onSave, onBack }: { resetPhrase: string; onSav
     { title: 'Walk = Strategy',  text: 'The elites walk the uphills at RTTS. Walking a climb at km 72 is a tactic, not a failure.' },
   ]
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f3ef)', overflowY: 'auto', paddingBottom: '80px' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto', paddingBottom: '80px' }}>
       <BackHeader title="Mental toolkit" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
         <InfoBox>
@@ -2181,7 +2183,7 @@ function FuelingTab({ onBack }: { onBack: () => void }) {
     { timing: 'Aid stations',            what: 'Eat at every single one',           why: "You'll never regret eating at a checkpoint. You will regret skipping one." },
   ]
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f3ef)', overflowY: 'auto', paddingBottom: '80px' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto', paddingBottom: '80px' }}>
       <BackHeader title="Fueling plan" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
         <InfoBox>
@@ -2211,7 +2213,7 @@ function QuitTab({ quitDays, onBack }: { quitDays: number | null; onBack: () => 
     { days: 99, label: 'Race Day — Job done' },
   ]
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f3ef)', overflowY: 'auto', paddingBottom: '80px' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto', paddingBottom: '80px' }}>
       <BackHeader title="Quit tracker" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
         <div style={{ background: 'var(--card-bg, #fff)', border: '0.5px solid #1e3d37', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px' }}>

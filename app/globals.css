@@ -1,56 +1,94 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --black:       #1a1a1a;
-  --off-black:   #222222;
-  --card:        #242424;
-  --card2:       #2c2c2c;
-  --border:      #2a2a2a;
-  --orange:      #FF6B1A;
-  --orange-dim:  rgba(255,107,26,0.12);
-  --orange-mid:  rgba(255,107,26,0.35);
-  --orange-bright: #FF8C42;
-  --yellow:      #FFD60A;
-  --red:         #FF3333;
-  --green:       #39D98A;
-  --grey:        #3D3D3D;
-  --grey-light:  #555555;
-  --white:       #F0F0F0;
-  --muted:       #666;
-  --text:        #E8E8E8;
-  --text-dim:    #888;
+/* ── ZONA Design Tokens ──────────────────────────────────────────────────
+   Single source of truth. Dark/light vars set here (light default),
+   overridden by applyTheme() in DashboardClient for dark mode.
+   ─────────────────────────────────────────────────────────────────────── */
 
-  /* App theme — light by default */
-  --bg:            #f5f3ef;
-  --card-bg:       #ffffff;
-  --border-col:    #e8e3dc;
-  --text-primary:  #111111;
-  --text-secondary:#444444;
-  --text-muted:    #888888;
-  --nav-bg:        #f5f3ef;
+:root {
+  /* Brand */
+  --zona-ember:        #D4501A;
+  --zona-ember-dim:    rgba(212,80,26,0.12);
+  --zona-ember-mid:    rgba(212,80,26,0.35);
+  --zona-ember-soft:   rgba(212,80,26,0.06);
+
+  /* Completion — teal/sage */
+  --zona-teal:         #4a7c6f;
+  --zona-teal-dim:     rgba(74,124,111,0.15);
+  --zona-teal-mid:     rgba(74,124,111,0.4);
+  --zona-teal-bg:      #1e3d37;
+
+  /* Data */
+  --zona-blue:         #378ADD;
+  --strava-orange:     #FC4C02;
+  --zona-red:          #ff7777;
+  --zona-yellow:       #FFD60A;
+
+  /* Fonts */
+  --font-brand:        'Space Grotesk', sans-serif;
+  --font-ui:           'DM Sans', sans-serif;
+  --font-data:         'DM Mono', monospace;
+
+  /* Border radius */
+  --radius-sm:         8px;
+  --radius-md:         12px;
+  --radius-lg:         16px;
+  --radius-xl:         20px;
+
+  /* App theme — light default */
+  --bg:                #f5f2ee;
+  --card-bg:           #ffffff;
+  --border-col:        #e8e3dc;
+  --text-primary:      #111111;
+  --text-secondary:    #444444;
+  --text-muted:        #888888;
+  --nav-bg:            #f5f2ee;
+
+  /* Legacy aliases — keeps StravaPanel and older components working */
+  --black:             #0d0d0d;
+  --off-black:         #1a1a1a;
+  --card:              var(--card-bg);
+  --border:            var(--border-col);
+  --orange:            var(--zona-ember);
+  --orange-dim:        var(--zona-ember-dim);
+  --orange-mid:        var(--zona-ember-mid);
+  --orange-bright:     #E05A1C;
+  --green:             var(--zona-teal);
+  --text-dim:          var(--text-muted);
+  --text:              var(--text-primary);
+  --muted:             var(--text-muted);
+  --red:               var(--zona-red);
+  --yellow:            var(--zona-yellow);
 }
+
+/* ── Reset ───────────────────────────────────────────────────────────── */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
   background: var(--bg);
   color: var(--text-primary);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-ui);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Typography utilities */
-.font-mono { font-family: 'DM Mono', monospace; }
+/* ── Typography ──────────────────────────────────────────────────────── */
 
-/* Scrollbar */
+.font-mono  { font-family: var(--font-data); }
+.font-brand { font-family: var(--font-brand); }
+.font-ui    { font-family: var(--font-ui); }
+
+/* ── Scrollbar ───────────────────────────────────────────────────────── */
+
 ::-webkit-scrollbar       { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border-col); border-radius: 2px; }
 
-/* Focus ring */
-:focus-visible { outline: 2px solid #D4501A; outline-offset: 2px; }
+/* ── Focus ring ──────────────────────────────────────────────────────── */
+
+:focus-visible { outline: 2px solid var(--zona-ember); outline-offset: 2px; }
