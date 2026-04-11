@@ -243,21 +243,41 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
       <div style={{
         minHeight: '100dvh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        background: 'var(--bg, #f5f3ef)', maxWidth: '480px', margin: '0 auto',
+        background: 'var(--bg, #f5f2ee)', maxWidth: '480px', margin: '0 auto',
+        gap: '0',
       }}>
+        {/* ZONA wordmark */}
         <div style={{
-          fontFamily: "'DM Mono', monospace", fontSize: '12px',
-          color: '#D4501A', letterSpacing: '0.08em', textTransform: 'uppercase',
-          marginBottom: '32px',
+          fontFamily: "'Fraunces', serif",
+          fontSize: '42px',
+          fontWeight: 300,
+          letterSpacing: '-0.02em',
+          color: '#D4501A',
+          lineHeight: 1,
+          marginBottom: '8px',
         }}>
-          @doinghardthingsbadly
+          ZONA
         </div>
-        <svg width="28" height="28" viewBox="0 0 28 28">
-          <circle cx="14" cy="14" r="11" fill="none" stroke="#1c1c1c" strokeWidth="2" />
-          <circle cx="14" cy="14" r="11" fill="none" stroke="#D4501A" strokeWidth="2"
-            strokeDasharray="30 46" strokeLinecap="round">
+
+        {/* Tagline */}
+        <div style={{
+          fontFamily: "'DM Mono', monospace",
+          fontSize: '11px',
+          color: 'var(--text-muted, #888)',
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          marginBottom: '48px',
+        }}>
+          effort-first training
+        </div>
+
+        {/* Spinner */}
+        <svg width="24" height="24" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="var(--border-col, #e8e3dc)" strokeWidth="1.5" />
+          <circle cx="12" cy="12" r="9" fill="none" stroke="#D4501A" strokeWidth="1.5"
+            strokeDasharray="24 38" strokeLinecap="round">
             <animateTransform attributeName="transform" type="rotate"
-              from="0 14 14" to="360 14 14" dur="0.9s" repeatCount="indefinite" />
+              from="0 12 12" to="360 12 12" dur="0.9s" repeatCount="indefinite" />
           </circle>
         </svg>
       </div>
@@ -1243,8 +1263,8 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           {initials}
         </button>
         {/* Brand slug — centre */}
-        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          @doinghardthingsbadly
+        <div style={{ fontFamily: "'Fraunces', serif", fontSize: '18px', fontWeight: 300, color: '#D4501A', letterSpacing: '-0.01em' }}>
+          ZONA
         </div>
         {/* Calendar icon — right */}
         <button onClick={() => onOpenCalendar?.()} style={{
