@@ -5,16 +5,23 @@ export const metadata: Metadata = {
   title: 'ZONA — Effort-first training',
   description: 'Train with intention. Adapt with intelligence.',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'ZONA',
+  },
 }
 
 // Blocking script — runs before paint, prevents theme flash
 const themeScript = `
 (function() {
   try {
-    var t = localStorage.getItem('rts_theme') || 'dark';
+    var t = localStorage.getItem('rts_theme') || 'light';
     var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     var isDark = t === 'dark' || (t === 'auto' && prefersDark);
     var r = document.documentElement;
+    r.setAttribute('data-theme', isDark ? 'dark' : 'light');
     if (isDark) {
       r.style.setProperty('--bg', '#0a0a0a');
       r.style.setProperty('--card-bg', '#0d0d0d');
@@ -41,6 +48,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="theme-color" content="#D4501A" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
