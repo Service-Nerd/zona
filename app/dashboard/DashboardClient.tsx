@@ -302,7 +302,15 @@ export default function DashboardClient() {
   }
 
   const currentWeekIndex = plan ? plan.weeks.findIndex(w => w.type === 'current') : 0
-  const [viewWeekIndex, setViewWeekIndex] = useState(currentWeekIndex >= 0 ? currentWeekIndex : 0)
+  const [viewWeekIndex, setViewWeekIndex] = useState(0)
+
+  // Update to current week once plan loads
+  useEffect(() => {
+    if (plan) {
+      const idx = plan.weeks.findIndex(w => w.type === 'current')
+      setViewWeekIndex(idx >= 0 ? idx : 0)
+    }
+  }, [plan])
 
   const raceDate = new Date('2026-07-11')
   const fiftyKDate = new Date('2026-05-10')
