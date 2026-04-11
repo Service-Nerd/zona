@@ -92,3 +92,9 @@ body {
 /* ── Focus ring ──────────────────────────────────────────────────────── */
 
 :focus-visible { outline: 2px solid var(--zona-ember); outline-offset: 2px; }
+
+/* ── Sheet slide-up animation ─────────────────────────────────────────── */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}

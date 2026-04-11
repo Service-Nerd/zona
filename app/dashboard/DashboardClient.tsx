@@ -1119,22 +1119,40 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
   onClose: () => void
   onSaved: () => void
 }) {
-  const [distance, setDistance] = useState('')
-  const [duration, setDuration] = useState('')
+  const [distWhole, setDistWhole] = useState(5)
+  const [distDecimal, setDistDecimal] = useState(0)
+  const [hours, setHours] = useState(0)
+  const [minutes, setMinutes] = useState(30)
+  const [seconds, setSeconds] = useState(0)
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
+  const [visible, setVisible] = useState(false)
   const supabase = createClient()
 
-  // Today's day key
+  useEffect(() => {
+    // Trigger slide-up animation on mount
+    requestAnimationFrame(() => setVisible(true))
+  }, [])
+
+  function handleClose() {
+    setVisible(false)
+    setTimeout(onClose, 300)
+  }
+
   const todayKey = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()]
 
+  const distanceStr = `${distWhole}.${distDecimal}`
+  const durationStr = `${hours > 0 ? hours + 'h ' : ''}${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`
+  const hasData = distWhole > 0 || distDecimal > 0 || hours > 0 || minutes > 0 || seconds > 0
+
   async function save() {
-    if (!distance && !duration) return
+    if (!hasData) return
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const distKm = distance ? (preferredUnits === 'mi' ? parseFloat(distance) * 1.60934 : parseFloat(distance)) : null
+      const dist = parseFloat(distanceStr)
+      const distKm = preferredUnits === 'mi' ? dist * 1.60934 : dist
       const key = sessionKey ?? todayKey
       await supabase.from('session_completions').upsert({
         user_id: user.id,
@@ -1142,102 +1160,151 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
         session_day: key,
         status: 'complete',
         strava_activity_id: null,
-        strava_activity_name: notes || `Manual run · ${duration || distance + preferredUnits}`,
-        strava_activity_km: distKm ? +distKm.toFixed(1) : null,
+        strava_activity_name: notes || `Manual run · ${distanceStr}${preferredUnits} · ${durationStr}`,
+        strava_activity_km: +distKm.toFixed(1),
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
-      onSaved()
+      setVisible(false)
+      setTimeout(onSaved, 300)
     } catch {} finally { setSaving(false) }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', background: 'var(--bg, #f5f2ee)',
-    border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px',
-    padding: '12px', color: 'var(--text-primary, #111)',
-    fontFamily: "'DM Mono',monospace", fontSize: '14px',
-    outline: 'none', boxSizing: 'border-box',
+  const labelStyle: React.CSSProperties = {
+    fontFamily: "'DM Mono',monospace", fontSize: '10px',
+    color: 'var(--text-muted, #777)', textTransform: 'uppercase',
+    letterSpacing: '0.08em', marginBottom: '8px',
+  }
+
+  const stepperBtn = (onClick: () => void, label: string): React.CSSProperties => ({
+    width: '36px', height: '36px', borderRadius: '8px',
+    background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)',
+    color: 'var(--text-primary, #111)', fontSize: '18px', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontFamily: "'DM Mono',monospace", flexShrink: 0,
+  })
+
+  function Stepper({ label, value, min, max, step = 1, onChange, pad = false }: {
+    label: string; value: number; min: number; max: number
+    step?: number; onChange: (v: number) => void; pad?: boolean
+  }) {
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+        <div style={labelStyle}>{label}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button onClick={() => onChange(Math.max(min, value - step))} style={stepperBtn(() => {}, '-')}>−</button>
+          <div style={{
+            minWidth: '44px', textAlign: 'center',
+            fontFamily: "'DM Mono',monospace", fontSize: '22px',
+            fontWeight: 500, color: 'var(--text-primary, #111)',
+          }}>
+            {pad ? String(value).padStart(2, '0') : value}
+          </div>
+          <button onClick={() => onChange(Math.min(max, value + step))} style={stepperBtn(() => {}, '+')}>+</button>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-      zIndex: 2000, display: 'flex', alignItems: 'flex-end',
-      justifyContent: 'center',
-    }} onClick={onClose}>
+    <div
+      style={{
+        position: 'fixed', inset: 0, background: visible ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0)',
+        zIndex: 2000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        transition: 'background 0.3s',
+      }}
+      onClick={handleClose}
+    >
       <div
         onClick={e => e.stopPropagation()}
         style={{
           background: 'var(--card-bg, #fff)', width: '100%', maxWidth: '480px',
-          borderRadius: '20px 20px 0 0', padding: '24px 20px 40px',
+          borderRadius: '20px 20px 0 0', padding: '8px 20px 40px',
           border: '0.5px solid var(--border-col, #e8e3dc)',
+          transform: visible ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
         }}
       >
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <div>
-            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: '17px', fontWeight: 500, color: 'var(--text-primary, #111)' }}>Log a run</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #888)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Manual entry</div>
-          </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted, #888)', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>✕</button>
+        {/* Drag handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 16px' }}>
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border-col, #e8e3dc)' }} />
         </div>
 
-        {/* Distance + Duration */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
-              Distance ({preferredUnits})
-            </div>
-            <input
-              type="number" inputMode="decimal"
-              placeholder={preferredUnits === 'km' ? 'e.g. 8.5' : 'e.g. 5.3'}
-              value={distance}
-              onChange={e => setDistance(e.target.value)}
-              style={inputStyle}
-            />
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+          <div>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: '18px', fontWeight: 500, color: 'var(--text-primary, #111)' }}>Log a run</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #888)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Manual entry · no Strava needed</div>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
-              Duration
+          <button onClick={handleClose} style={{ background: 'rgba(0,0,0,0.06)', border: 'none', color: 'var(--text-muted, #888)', fontSize: '16px', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+        </div>
+
+        {/* Distance */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={labelStyle}>Distance ({preferredUnits})</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0', background: 'var(--bg, #f5f2ee)', borderRadius: '12px', border: '0.5px solid var(--border-col, #e8e3dc)', overflow: 'hidden' }}>
+            {/* Whole number */}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px 8px' }}>
+              <button onClick={() => setDistWhole(Math.max(0, distWhole - 1))} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg, #fff)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary, #111)', fontSize: '18px', cursor: 'pointer' }}>−</button>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '28px', fontWeight: 500, color: 'var(--text-primary, #111)', minWidth: '32px', textAlign: 'center' }}>{distWhole}</span>
+              <button onClick={() => setDistWhole(distWhole + 1)} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg, #fff)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary, #111)', fontSize: '18px', cursor: 'pointer' }}>+</button>
             </div>
-            <input
-              type="text"
-              placeholder="e.g. 1:05:30"
-              value={duration}
-              onChange={e => setDuration(e.target.value)}
-              style={inputStyle}
-            />
+            {/* Decimal separator */}
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '28px', fontWeight: 500, color: 'var(--text-muted, #888)', padding: '0 4px' }}>.</div>
+            {/* Decimal */}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px 8px' }}>
+              <button onClick={() => setDistDecimal(Math.max(0, distDecimal - 1))} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg, #fff)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary, #111)', fontSize: '18px', cursor: 'pointer' }}>−</button>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '28px', fontWeight: 500, color: 'var(--text-primary, #111)', minWidth: '16px', textAlign: 'center' }}>{distDecimal}</span>
+              <button onClick={() => setDistDecimal(Math.min(9, distDecimal + 1))} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg, #fff)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary, #111)', fontSize: '18px', cursor: 'pointer' }}>+</button>
+            </div>
+          </div>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #888)', marginTop: '4px', textAlign: 'center' }}>{distanceStr} {preferredUnits}</div>
+        </div>
+
+        {/* Duration */}
+        <div style={{ marginBottom: '20px' }}>
+          <div style={labelStyle}>Duration</div>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+            <Stepper label="hrs" value={hours} min={0} max={12} onChange={setHours} />
+            <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '8px', color: 'var(--text-muted)', fontSize: '20px', fontFamily: "'DM Mono',monospace" }}>:</div>
+            <Stepper label="min" value={minutes} min={0} max={59} onChange={setMinutes} pad />
+            <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '8px', color: 'var(--text-muted)', fontSize: '20px', fontFamily: "'DM Mono',monospace" }}>:</div>
+            <Stepper label="sec" value={seconds} min={0} max={59} step={5} onChange={setSeconds} pad />
           </div>
         </div>
 
         {/* Notes */}
         <div style={{ marginBottom: '20px' }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
-            Notes (optional)
-          </div>
+          <div style={labelStyle}>Notes (optional)</div>
           <textarea
             placeholder="How did it go?"
             value={notes}
             onChange={e => setNotes(e.target.value)}
             rows={2}
-            style={{ ...inputStyle, fontFamily: "'DM Sans',sans-serif", fontSize: '13px', resize: 'none' }}
+            style={{
+              width: '100%', background: 'var(--bg, #f5f2ee)',
+              border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px',
+              padding: '12px', color: 'var(--text-primary, #111)',
+              fontFamily: "'DM Sans',sans-serif", fontSize: '13px',
+              outline: 'none', resize: 'none', boxSizing: 'border-box',
+            }}
           />
         </div>
 
         {/* Save */}
         <button
           onClick={save}
-          disabled={saving || (!distance && !duration)}
+          disabled={saving}
           style={{
             width: '100%', padding: '16px',
-            background: (!distance && !duration) ? 'var(--border-col)' : '#4a7c6f',
-            color: '#fff', border: 'none', borderRadius: '12px',
+            background: '#4a7c6f', color: '#fff',
+            border: 'none', borderRadius: '14px',
             fontFamily: "'DM Mono',monospace", fontSize: '13px',
             letterSpacing: '0.08em', textTransform: 'uppercase',
-            cursor: (!distance && !duration) ? 'default' : 'pointer',
-            fontWeight: 500, opacity: saving ? 0.7 : 1,
+            cursor: 'pointer', fontWeight: 500,
+            opacity: saving ? 0.7 : 1,
           }}
         >
-          {saving ? 'Saving...' : 'Save run'}
+          {saving ? 'Saving...' : `Save · ${distanceStr}${preferredUnits} · ${durationStr}`}
         </button>
       </div>
     </div>
@@ -1832,12 +1899,13 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       <button
         onClick={() => setShowManualLog(true)}
         style={{
-          margin: '8px 12px 0', width: 'calc(100% - 24px)',
+          margin: '10px 12px 0', width: 'calc(100% - 24px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-          background: 'none', border: '0.5px solid var(--border-col, #e8e3dc)',
-          borderRadius: '12px', padding: '12px',
+          background: 'rgba(212,80,26,0.08)',
+          border: '0.5px solid rgba(212,80,26,0.3)',
+          borderRadius: '12px', padding: '13px',
           fontFamily: "'DM Mono',monospace", fontSize: '12px',
-          color: 'var(--text-muted, #888)', letterSpacing: '0.06em',
+          color: '#D4501A', letterSpacing: '0.06em',
           textTransform: 'uppercase', cursor: 'pointer',
         }}
       >
