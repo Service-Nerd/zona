@@ -244,7 +244,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setScreen('me')} initials={initials} />}
         {screen === 'me'       && <MeScreen initials={initials} athlete={plan.meta.athlete ?? 'Russell Shear'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} />}
         {screen === 'calendar' && <CalendarOverlay plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} onBack={() => setScreen('today')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} onSaved={activeSessionData.onSaved} />}
       </div>
 
       <div style={{
@@ -350,8 +350,8 @@ const TYPE_LABEL: Record<string, string> = {
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
-function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose }: {
-  session: any; weekTheme: string; weekN: number; preloadedRuns: any[]; onClose: () => void
+function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved }: {
+  session: any; weekTheme: string; weekN: number; preloadedRuns: any[]; onClose: () => void; onSaved?: () => void
 }) {
   const [view, setView] = useState<'detail' | 'complete' | 'skip'>('detail')
   const [saving, setSaving] = useState(false)
@@ -415,6 +415,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose }
         strava_activity_km: status === 'complete' ? (selectedActivity ? +(selectedActivity.distance / 1000).toFixed(1) : null) : null,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
+      onSaved?.()
       onClose()
     } catch {} finally { setSaving(false) }
   }
@@ -702,29 +703,44 @@ function SessionHero({ session, completion, onTap }: {
   return (
     <div onClick={onTap} style={{
       margin: '12px 12px 0',
-      background: 'var(--card-bg, #fff)',
+      background: isComplete ? 'rgba(74,154,90,0.06)' : isSkipped ? 'rgba(80,80,80,0.06)' : 'var(--card-bg, #fff)',
       borderRadius: '16px',
-      border: `0.5px solid ${isComplete ? '#2a4a2a' : isSkipped ? '#222' : '#1c1c1c'}`,
-      borderLeft: `3px solid ${isComplete ? '#4a9a5a' : isSkipped ? '#333' : accent}`,
+      border: `0.5px solid ${isComplete ? 'rgba(74,154,90,0.35)' : isSkipped ? '#2a2a2a' : 'var(--border-col, #e8e3dc)'}`,
+      borderLeft: `4px solid ${isComplete ? '#4a9a5a' : isSkipped ? '#444' : accent}`,
       padding: '16px',
       cursor: 'pointer',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
         <span style={{
           fontFamily: "'DM Mono',monospace", fontSize: '10px',
-          color: isComplete ? '#4a9a5a' : isSkipped ? '#444' : accent,
+          color: isComplete ? '#4a9a5a' : isSkipped ? '#555' : accent,
           letterSpacing: '0.1em', textTransform: 'uppercase',
         }}>
           {session.today ? 'Today · ' : ''}{session.day} {session.date} · {TYPE_LABEL[session.type] ?? session.type}
         </span>
-        {isComplete && <span style={{ fontSize: '15px', color: '#4a9a5a' }}>✓</span>}
-        {isSkipped && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)' }}>skipped</span>}
+        {isComplete && (
+          <span style={{
+            fontFamily: "'DM Mono',monospace", fontSize: '10px', letterSpacing: '0.08em',
+            background: 'rgba(74,154,90,0.15)', color: '#4a9a5a',
+            border: '0.5px solid rgba(74,154,90,0.4)',
+            borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase',
+          }}>✓ Done</span>
+        )}
+        {isSkipped && (
+          <span style={{
+            fontFamily: "'DM Mono',monospace", fontSize: '10px', letterSpacing: '0.08em',
+            background: 'rgba(80,80,80,0.12)', color: '#666',
+            border: '0.5px solid #333',
+            borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase',
+          }}>Skipped</span>
+        )}
       </div>
 
       <div style={{
         fontSize: '20px', fontWeight: 500, letterSpacing: '-0.3px',
-        color: isSkipped ? '#444' : 'var(--text-primary, #fff)',
+        color: isSkipped ? 'var(--text-muted, #888)' : 'var(--text-primary, #111)',
         lineHeight: 1.2, marginBottom: session.detail ? '6px' : '14px',
+        textDecoration: isSkipped ? 'line-through' : 'none',
       }}>
         {session.title}
       </div>
@@ -744,7 +760,7 @@ function SessionHero({ session, completion, onTap }: {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{
           fontFamily: "'DM Mono',monospace", fontSize: '12px',
-          color: isComplete ? '#4a9a5a' : isSkipped ? '#333' : '#555',
+          color: isComplete ? '#4a9a5a' : isSkipped ? '#555' : 'var(--text-muted, #888)',
           letterSpacing: '0.06em', textTransform: 'uppercase',
         }}>
           {isComplete ? 'View details' : isSkipped ? 'Update' : session.today ? 'Log this session' : 'View session'}
@@ -1123,7 +1139,10 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
   // Load completions only — overrides come from shared prop
   useEffect(() => {
-    async function load() {
+    load()
+  }, [weekNum])
+
+  async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const { data } = await supabase
@@ -1136,9 +1155,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         data.forEach((r: any) => { map[r.session_day] = r })
         setCompletions(map)
       }
-    }
-    load()
-  }, [weekNum])
+  }
 
   // Build 7-day session list
   const now = new Date()
@@ -1271,6 +1288,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               completion: completions[selectedKey],
               isPast,
               isFuture,
+              onSaved: load,
             })
           }}
         />
@@ -1783,8 +1801,8 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
 
 // ── SESSION SCREEN ────────────────────────────────────────────────────────
 
-function SessionScreen({ session, preloadedRuns, onBack }: {
-  session: any; preloadedRuns: any[]; onBack: () => void
+function SessionScreen({ session, preloadedRuns, onBack, onSaved }: {
+  session: any; preloadedRuns: any[]; onBack: () => void; onSaved?: () => void
 }) {
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg, #f5f3ef)', overflowY: 'auto', paddingBottom: '80px' }}>
@@ -1800,6 +1818,7 @@ function SessionScreen({ session, preloadedRuns, onBack }: {
             weekN={session.weekN ?? 1}
             preloadedRuns={preloadedRuns}
             onClose={onBack}
+            onSaved={onSaved}
           />
         </div>
       </div>
