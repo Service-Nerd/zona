@@ -6,13 +6,13 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const error = searchParams.get('error')
 
-  // User denied access
   if (error || !code) {
+    console.error('Strava callback: no code or error param', { error, code })
     return NextResponse.redirect(`${origin}/dashboard?strava=denied`)
   }
 
   try {
-    // Exchange code for tokens
+    console.log('Strava callback: exchanging code for tokens')
     const tokenRes = await fetch('https://www.strava.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -24,16 +24,23 @@ export async function GET(request: Request) {
       }),
     })
 
-    if (!tokenRes.ok) throw new Error('Token exchange failed')
+    const tokenBody = await tokenRes.json()
+    console.log('Strava token response status:', tokenRes.status)
+    console.log('Strava token response:', JSON.stringify(tokenBody))
 
-    const { access_token, refresh_token, expires_at } = await tokenRes.json()
+    if (!tokenRes.ok) {
+      throw new Error(`Token exchange failed: ${tokenBody.message ?? tokenRes.status}`)
+    }
 
-    // Store tokens against the user
+    const { access_token, refresh_token, expires_at } = tokenBody
+
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    console.log('Supabase user:', user?.id ?? 'none', 'error:', userError?.message ?? 'none')
+
     if (!user) throw new Error('No user session')
 
-    await supabase.from('user_settings').upsert({
+    const { error: upsertError } = await supabase.from('user_settings').upsert({
       id: user.id,
       strava_access_token: access_token,
       strava_refresh_token: refresh_token,
@@ -41,6 +48,9 @@ export async function GET(request: Request) {
       updated_at: new Date().toISOString(),
     })
 
+    if (upsertError) throw new Error(`Upsert failed: ${upsertError.message}`)
+
+    console.log('Strava callback: success for user', user.id)
     return NextResponse.redirect(`${origin}/dashboard?strava=connected`)
   } catch (e) {
     console.error('Strava callback error:', e)
