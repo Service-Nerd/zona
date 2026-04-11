@@ -134,6 +134,8 @@ export default function DashboardClient() {
         }
 
         const data = settingsRes.data
+        console.log('settingsRes data:', JSON.stringify(data))
+        console.log('settingsRes error:', settingsRes.error?.message)
 
         // Load plan from user's gist_url, fallback to default
         const gistUrl = data?.gist_url || DEFAULT_GIST_URL
@@ -177,7 +179,7 @@ export default function DashboardClient() {
         const runs = getRuns(activities)
         setStravaRuns(runs)
         setStravaConnected(true)
-      } catch {}
+      } catch (e) { console.error('fetchSettings error:', e) }
       finally { setStravaLoading(false) }
     }
     fetchSettings()
