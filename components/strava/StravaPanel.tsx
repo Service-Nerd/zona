@@ -17,7 +17,6 @@ export default function StravaPanel({ preloadedRuns, preloadedConnected, preload
   const [analysis, setAnalysis] = useState<string | null>(null)
   const supabase = createClient()
 
-  // Check for new activity and trigger popup
   useEffect(() => {
     if (runs && runs.length > 0) checkForNewActivity(runs)
   }, [runs])
@@ -72,55 +71,62 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
     return runs.filter(r => new Date(r.start_date) >= monday).reduce((s, r) => s + r.distance / 1000, 0)
   })() : null
 
-  // ── Not connected state ───────────────────────────────────────────────
+  // ── Loading ───────────────────────────────────────────────────────────
 
   if (loading) {
     return (
       <div style={{ padding: '32px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
         <svg width="36" height="36" viewBox="0 0 36 36">
-          <circle cx="18" cy="18" r="15" fill="none" stroke="#2a2a2a" strokeWidth="2" />
+          <circle cx="18" cy="18" r="15" fill="none" stroke="var(--border-col)" strokeWidth="2" />
           <circle cx="18" cy="18" r="15" fill="none" stroke="#FC4C02" strokeWidth="2" strokeDasharray="40 60" strokeLinecap="round">
             <animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite" />
           </circle>
         </svg>
-        <p style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', textAlign: 'center' }}>
+        <p style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
           Connecting to Strava...
         </p>
       </div>
     )
   }
 
+  // ── Not connected ─────────────────────────────────────────────────────
+
   if (!connected) {
     return (
       <div style={{ margin: '12px 0' }}>
-        <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '0.5px solid #2a2a2a', padding: '28px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', textAlign: 'center' }}>
+        <div style={{
+          background: 'var(--card-bg)', borderRadius: '16px',
+          border: '0.5px solid var(--border-col)', padding: '28px 20px',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: '16px', textAlign: 'center',
+        }}>
           <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(252,76,2,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#FC4C02', opacity: 0.5 }} />
           </div>
           <div>
-            <div style={{ fontSize: '15px', color: '#ccc', fontWeight: 500, marginBottom: '6px' }}>Strava not connected</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', lineHeight: 1.6 }}>
-              Head to the <span style={{ color: '#E05A1C' }}>Me</span> screen to add your<br />Strava client secret and connect.
+            <div style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 500, marginBottom: '6px' }}>Strava not connected</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              Go to the <span style={{ color: '#D4501A' }}>Me</span> screen to connect your Strava account.
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#555' }} />
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#555' }}>not connected</span>
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--border-col)' }} />
+            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: 'var(--text-muted)' }}>not connected</span>
           </div>
         </div>
       </div>
     )
   }
 
-  // ── Connected state ───────────────────────────────────────────────────
+  // ── Connected ─────────────────────────────────────────────────────────
 
   return (
     <div>
-      {/* Connection status pill */}
+      {/* Status */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
-        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#5a5' }} />
-        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#5a5' }}>Strava connected</span>
-        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#555', marginLeft: '4px' }}>· auto-syncing</span>
+        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4a7c6f' }} />
+        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#4a7c6f' }}>Strava connected</span>
+        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: 'var(--text-muted)', marginLeft: '4px' }}>· auto-syncing</span>
       </div>
 
       {/* Key metrics */}
@@ -131,16 +137,19 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
           { label: 'This week',     value: thisWeekKm ? thisWeekKm.toFixed(1) + 'km' : '0km', sub: 'Running km' },
           { label: 'Longest run',   value: longestKm ? longestKm.toFixed(1) + 'km' : '—', sub: 'Since Jan 2026' },
         ].map(({ label, value, sub }) => (
-          <div key={label} style={{ background: '#1a1a1a', border: '0.5px solid #2a2a2a', borderTop: '2px solid #E05A1C', borderRadius: '12px', padding: '12px 14px' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>{label}</div>
-            <div style={{ fontSize: '20px', fontWeight: 500, color: '#E05A1C', lineHeight: 1 }}>{value}</div>
-            {sub && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#666', marginTop: '4px' }}>{sub}</div>}
+          <div key={label} style={{
+            background: 'var(--card-bg)', border: '0.5px solid var(--border-col)',
+            borderTop: '2px solid #D4501A', borderRadius: '12px', padding: '12px 14px',
+          }}>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>{label}</div>
+            <div style={{ fontSize: '20px', fontWeight: 500, color: '#D4501A', lineHeight: 1 }}>{value}</div>
+            {sub && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>{sub}</div>}
           </div>
         ))}
       </div>
 
       {/* Recent activities */}
-      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Recent activities</div>
+      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Recent activities</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {runs?.slice(0, 12).map(run => {
           const km   = (run.distance / 1000).toFixed(1)
@@ -149,16 +158,19 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
           const hr   = run.average_heartrate ? Math.round(run.average_heartrate) : null
           const date = new Date(run.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
           return (
-            <div key={run.id} style={{ background: '#1a1a1a', border: '0.5px solid #2a2a2a', borderRadius: '12px', padding: '12px 14px' }}>
+            <div key={run.id} style={{
+              background: 'var(--card-bg)', border: '0.5px solid var(--border-col)',
+              borderRadius: '12px', padding: '12px 14px',
+            }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <div style={{ fontSize: '13px', color: '#ddd', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: '8px' }}>{run.name}</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#666', flexShrink: 0 }}>{date}</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: '8px' }}>{run.name}</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: 'var(--text-muted)', flexShrink: 0 }}>{date}</div>
               </div>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C' }}>{km}km</span>
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999' }}>{dur}</span>
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: hr ? hrColour(hr) : '#999' }}>{hr ? `${hr} bpm` : '—'}</span>
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999' }}>{pace}</span>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#D4501A' }}>{km}km</span>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted)' }}>{dur}</span>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: hr ? hrColour(hr) : 'var(--text-muted)' }}>{hr ? `${hr} bpm` : '—'}</span>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted)' }}>{pace}</span>
               </div>
             </div>
           )
@@ -167,41 +179,50 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
 
       {/* Activity popup */}
       {popup && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#1a1a1a', border: '0.5px solid #E05A1C', borderTop: '3px solid #E05A1C', borderRadius: '16px', maxWidth: '440px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
-            <div style={{ padding: '16px 18px', borderBottom: '0.5px solid #2a2a2a', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{
+            background: 'var(--card-bg)', border: '0.5px solid #D4501A',
+            borderTop: '3px solid #D4501A', borderRadius: '16px',
+            maxWidth: '440px', width: '100%', maxHeight: '80vh', overflowY: 'auto',
+          }}>
+            <div style={{ padding: '16px 18px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' }}>New activity</div>
-                <div style={{ fontSize: '16px', fontWeight: 500, color: '#fff' }}>{popup.name}</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#999', marginTop: '2px' }}>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#D4501A', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' }}>New activity</div>
+                <div style={{ fontSize: '16px', fontWeight: 500, color: 'var(--text-primary)' }}>{popup.name}</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
                   {new Date(popup.start_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </div>
               </div>
-              <button onClick={() => setPopup(null)} style={{ background: 'none', border: 'none', color: '#999', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+              <button onClick={() => setPopup(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer' }}>✕</button>
             </div>
-            <div style={{ padding: '14px 18px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', borderBottom: '0.5px solid #2a2a2a' }}>
+            <div style={{ padding: '14px 18px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', borderBottom: '0.5px solid var(--border-col)' }}>
               {[
-                { label: 'Distance', value: `${(popup.distance/1000).toFixed(2)}km`, color: '#E05A1C' },
-                { label: 'Duration', value: formatDuration(popup.moving_time), color: '#E05A1C' },
+                { label: 'Distance', value: `${(popup.distance/1000).toFixed(2)}km`, color: '#D4501A' },
+                { label: 'Duration', value: formatDuration(popup.moving_time), color: '#D4501A' },
                 { label: 'Avg HR',   value: popup.average_heartrate ? `${Math.round(popup.average_heartrate)}` : '—', color: hrColour(popup.average_heartrate) },
-                { label: 'Pace',     value: formatPace(popup.moving_time, popup.distance), color: '#ccc' },
-                { label: 'Max HR',   value: popup.max_heartrate ? `${Math.round(popup.max_heartrate)}` : '—', color: '#ccc' },
-                { label: 'Elevation',value: `+${Math.round(popup.total_elevation_gain ?? 0)}m`, color: '#ccc' },
+                { label: 'Pace',     value: formatPace(popup.moving_time, popup.distance), color: 'var(--text-secondary)' },
+                { label: 'Max HR',   value: popup.max_heartrate ? `${Math.round(popup.max_heartrate)}` : '—', color: 'var(--text-secondary)' },
+                { label: 'Elevation',value: `+${Math.round(popup.total_elevation_gain ?? 0)}m`, color: 'var(--text-secondary)' },
               ].map(({ label, value, color }) => (
                 <div key={label}>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>
                   <div style={{ fontSize: '18px', fontWeight: 500, color, lineHeight: 1.1 }}>{value}</div>
                 </div>
               ))}
             </div>
             <div style={{ padding: '14px 18px' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#E05A1C', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>Coaching notes</div>
-              <div style={{ fontSize: '13px', lineHeight: 1.7, color: '#ccc' }}>
-                {analysis ?? <span style={{ color: '#999', fontStyle: 'italic' }}>Analysing activity...</span>}
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#D4501A', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>Coaching notes</div>
+              <div style={{ fontSize: '13px', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                {analysis ?? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Analysing activity...</span>}
               </div>
             </div>
-            <div style={{ padding: '12px 18px', borderTop: '0.5px solid #2a2a2a', textAlign: 'right' }}>
-              <button onClick={() => setPopup(null)} style={{ background: '#E05A1C', color: '#000', border: 'none', borderRadius: '8px', padding: '9px 22px', fontFamily: "'DM Mono',monospace", fontSize: '13px', letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
+            <div style={{ padding: '12px 18px', borderTop: '0.5px solid var(--border-col)', textAlign: 'right' }}>
+              <button onClick={() => setPopup(null)} style={{
+                background: '#D4501A', color: '#fff', border: 'none',
+                borderRadius: '8px', padding: '9px 22px',
+                fontFamily: "'DM Mono',monospace", fontSize: '13px',
+                letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold',
+              }}>
                 Got it
               </button>
             </div>
