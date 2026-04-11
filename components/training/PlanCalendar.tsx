@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import type { Week } from '@/types/plan'
 import { createClient } from '@/lib/supabase/client'
 
@@ -50,12 +50,12 @@ interface Props {
   weeks: Week[]
   stravaRuns: any[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
+  allCompletions: Record<number, Record<string, any>>
   onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
   onSessionTap: (session: any, weekN: number, weekTheme: string) => void
 }
 
-export default function PlanCalendar({ weeks, stravaRuns, allOverrides, onOverrideChange, onSessionTap }: Props) {
-  const [allCompletions, setAllCompletions] = useState<Record<number, Completion[]>>({})
+export default function PlanCalendar({ weeks, stravaRuns, allOverrides, allCompletions, onOverrideChange, onSessionTap }: Props) {
   const [showPast, setShowPast] = useState(false)
   const supabase = createClient()
 
@@ -64,47 +64,25 @@ export default function PlanCalendar({ weeks, stravaRuns, allOverrides, onOverri
   const pastWeeks = weeks.slice(0, safeIndex).map((week, i) => ({ week, weekNum: i + 1 }))
   const currentAndFutureWeeks = weeks.slice(safeIndex).map((week, i) => ({ week, weekNum: safeIndex + i + 1 }))
 
-  useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const compRes = await supabase
-        .from('session_completions')
-        .select('week_n, session_day, status, strava_activity_name, strava_activity_km')
-        .eq('user_id', user.id)
-      if (compRes.data) {
-        const map: Record<number, Completion[]> = {}
-        compRes.data.forEach((r: any) => { if (!map[r.week_n]) map[r.week_n] = []; map[r.week_n].push(r) })
-        setAllCompletions(map)
-      }
-    }
-    load()
-  }, [])
-
   async function handleMove(weekN: number, originalDay: string, newDay: string, currentSlot: string) {
-    if (currentSlot === newDay) return // already there
+    if (currentSlot === newDay) return
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Update shared state optimistically
     let updated = allOverrides.filter(o => !(o.week_n === weekN && o.original_day === originalDay))
-    // Remove any conflicting override pointing to the target day
     updated = updated.filter(o => !(o.week_n === weekN && o.new_day === newDay))
-    // Only add override if not moving back to base plan position
     if (newDay !== originalDay) {
       updated = [...updated, { week_n: weekN, original_day: originalDay, new_day: newDay }]
     }
     onOverrideChange(updated)
 
-    // Clear all overrides for this week involving these days
     await supabase.from('session_overrides')
       .delete()
       .eq('user_id', user.id)
       .eq('week_n', weekN)
       .or(`original_day.eq.${originalDay},new_day.eq.${newDay},original_day.eq.${newDay}`)
 
-    // Insert new override only if not returning to base plan position
     if (newDay !== originalDay) {
       await supabase.from('session_overrides').insert({
         user_id: user.id, week_n: weekN, original_day: originalDay, new_day: newDay,
@@ -119,7 +97,7 @@ export default function PlanCalendar({ weeks, stravaRuns, allOverrides, onOverri
         key={weekNum}
         week={week}
         weekNum={weekNum}
-        completions={allCompletions[weekNum] ?? []}
+        completions={Object.values(allCompletions[weekNum] ?? {})}
         overrides={allOverrides.filter(o => o.week_n === weekNum)}
         stravaRuns={stravaRuns}
         onSessionTap={onSessionTap}
@@ -165,10 +143,9 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
   const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][now.getDay()]
   const todayStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 
-  // Which day's session is currently in "move mode"
   const [movingDay, setMovingDay] = useState<string | null>(null)
 
-  // Apply overrides
+  // Apply overrides — carry originalDay on each entry
   const effectiveSessions: Record<string, any> = {}
   DOW_ORDER.forEach(key => {
     if (!overrides.some(o => o.original_day === key) && ws[key]) {
@@ -182,6 +159,7 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
   })
 
   const intendedKm = (week as any).weekly_km ?? 0
+  // completionMap keyed by originalDay (session_day in DB) — stable key
   const completionMap: Record<string, Completion> = {}
   completions.forEach(c => { completionMap[c.session_day] = c })
   const actualKm = completions
@@ -197,7 +175,7 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
     setMovingDay(prev => {
       if (!prev) return null
       const originalDay = effectiveSessions[prev]?.originalDay ?? prev
-      onMove(weekNum, originalDay, targetKey, prev) // prev = currentSlot
+      onMove(weekNum, originalDay, targetKey, prev)
       return null
     })
   }
@@ -244,6 +222,7 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
         const d = weekDates[key]
         const displayDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
         const isToday = key === todayDow && displayDate === todayStr
+        // Always look up completion by originalDay — the stable DB key
         const completion = completionMap[s?.originalDay ?? key]
         const isComplete = completion?.status === 'complete'
         const isSkipped = completion?.status === 'skipped'
@@ -251,7 +230,6 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
         const isFuture = d > now && !isToday
         const isMovable = !!s && s.type !== 'rest' && !isComplete && !isSkipped
         const isMoving = movingDay === key
-        // A day is a valid target if: in move mode, this isn't the moving day, and it doesn't already have a session
         const isTarget = !!movingDay && movingDay !== key && !effectiveSessions[key]
 
         return (
@@ -271,7 +249,7 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
             isLast={i === DOW_ORDER.length - 1}
             onTap={() => {
               if (isTarget) { handleTargetTap(key); return }
-              if (movingDay) { setMovingDay(null); return } // tap elsewhere = cancel
+              if (movingDay) { setMovingDay(null); return }
               if (!s || s.type === 'rest') return
               onSessionTap({
                 key: s.originalDay ?? key,
@@ -292,7 +270,6 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
         )
       })}
 
-      {/* Cancel move banner */}
       {movingDay && (
         <button
           onClick={() => setMovingDay(null)}
@@ -404,7 +381,6 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
         {hasSession && !isComplete && !isSkipped && !isMoveMode && (
           <span style={{ color: 'var(--text-muted, #333)', fontSize: '16px' }}>›</span>
         )}
-        {/* Move handle — tap to enter move mode */}
         {isMovable && !isMoveMode && (
           <button
             onClick={e => { e.stopPropagation(); onMoveIconTap() }}
@@ -419,7 +395,6 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
             ))}
           </button>
         )}
-        {/* Cancel icon when this row is moving */}
         {isMoving && (
           <button
             onClick={e => { e.stopPropagation(); onMoveIconTap() }}

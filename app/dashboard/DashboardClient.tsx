@@ -270,7 +270,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
         {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} overridesReady={overridesReady} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} />}
-        {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} onOverrideChange={setAllOverrides} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
+        {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
         {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setScreen('me')} initials={initials} />}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setScreen('me')} initials={initials} />}
         {screen === 'me'       && <MeScreen initials={initials} athlete={plan.meta.athlete ?? 'Russell Shear'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} />}
@@ -1331,9 +1331,10 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
 // ── PLAN SCREEN ───────────────────────────────────────────────────────────
 
-function PlanScreen({ plan, stravaRuns, onOpenMe, initials, allOverrides, onOverrideChange, onOpenCalendar, onOpenSession }: {
+function PlanScreen({ plan, stravaRuns, onOpenMe, initials, allOverrides, allCompletions, onOverrideChange, onOpenCalendar, onOpenSession }: {
   plan: Plan; stravaRuns: any[]; onOpenMe: () => void; initials: string
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
+  allCompletions: Record<number, Record<string, any>>
   onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
   onOpenCalendar?: () => void
   onOpenSession?: (s: any) => void
@@ -1353,13 +1354,12 @@ function PlanScreen({ plan, stravaRuns, onOpenMe, initials, allOverrides, onOver
         weeks={plan.weeks}
         stravaRuns={stravaRuns}
         allOverrides={allOverrides}
+        allCompletions={allCompletions}
         onOverrideChange={onOverrideChange}
         onSessionTap={(session, weekN, weekTheme) => {
           onOpenSession?.({ ...session, weekN, weekTheme })
         }}
       />
-
-
     </div>
   )
 }
