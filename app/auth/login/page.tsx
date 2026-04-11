@@ -32,26 +32,26 @@ export default function LoginPage() {
     <div style={{
       minHeight: '100dvh', display: 'flex', alignItems: 'center',
       justifyContent: 'center', padding: '24px',
-      background: '#000',
+      background: '#0a0a0a',
     }}>
       <div style={{ width: '100%', maxWidth: '340px' }}>
 
-        {/* Brand */}
-        <div style={{ marginBottom: '40px', textAlign: 'center' }}>
+        {/* ZONA wordmark */}
+        <div style={{ marginBottom: '48px', textAlign: 'center' }}>
           <div style={{
-            fontFamily: "'DM Mono', monospace",
-            fontSize: '13px', color: '#D4501A',
-            letterSpacing: '0.08em', textTransform: 'uppercase',
-            marginBottom: '6px',
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: '40px', fontWeight: 500,
+            letterSpacing: '0.08em', color: '#D4501A',
+            lineHeight: 1, marginBottom: '8px',
           }}>
-            @doinghardthingsbadly
+            ZONA
           </div>
           <div style={{
             fontFamily: "'DM Mono', monospace",
-            fontSize: '10px', color: '#333',
+            fontSize: '11px', color: '#444',
             letterSpacing: '0.12em', textTransform: 'uppercase',
           }}>
-            Race to the Stones · Training Hub
+            effort-first training
           </div>
         </div>
 
@@ -73,9 +73,9 @@ export default function LoginPage() {
           <div style={{
             fontFamily: "'DM Mono', monospace",
             fontSize: '11px', color: '#444',
-            marginBottom: '24px', lineHeight: 1.5,
+            marginBottom: '24px', lineHeight: 1.6,
           }}>
-            Use your Google account to access your training hub.
+            Use your Google account to access your plan.
           </div>
 
           {/* Google button */}
@@ -97,7 +97,6 @@ export default function LoginPage() {
               transition: 'opacity 0.15s',
             }}
           >
-            {/* Google logo */}
             {!loading && (
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
@@ -125,11 +124,12 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div style={{
-          marginTop: '20px', textAlign: 'center',
+          marginTop: '24px', textAlign: 'center',
           fontFamily: "'DM Mono', monospace",
           fontSize: '10px', color: '#2a2a2a',
+          lineHeight: 1.7,
         }}>
-          Race to the Stones · 11 July 2026 · Make-A-Wish UK
+          Train with intention. Adapt with intelligence.
         </div>
       </div>
     </div>

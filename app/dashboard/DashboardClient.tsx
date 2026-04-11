@@ -1819,15 +1819,15 @@ function StravaConnectionRow() {
               {disconnecting ? 'Disconnecting...' : 'Disconnect'}
             </button>
           ) : (
-            <a href="/api/strava/connect" style={{
+            <button onClick={() => { window.location.href = '/api/strava/connect' }} style={{
               background: '#FC4C02', color: '#fff',
               border: 'none', borderRadius: '8px', padding: '8px 14px',
               fontFamily: "'DM Mono',monospace", fontSize: '11px',
               letterSpacing: '0.06em', textTransform: 'uppercase',
-              cursor: 'pointer', textDecoration: 'none', display: 'inline-block',
+              cursor: 'pointer',
             }}>
               Connect
-            </a>
+            </button>
           )
         )}
       </div>
