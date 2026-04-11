@@ -88,8 +88,17 @@ export default function DashboardClient() {
   const [stravaConnected, setStravaConnected] = useState(false)
   const supabase = createClient()
 
-  const CLIENT_ID     = process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID!
-  const REFRESH_TOKEN = 'b2332fbde9c23d072e4e7712afc9d5b06e253fed'
+  const CLIENT_ID = process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID!
+
+  useEffect(() => {
+    // Handle strava OAuth redirect result
+    const params = new URLSearchParams(window.location.search)
+    const stravaResult = params.get('strava')
+    if (stravaResult === 'connected') {
+      setStravaConnected(true)
+      window.history.replaceState({}, '', '/dashboard')
+    }
+  }, [])
 
   const initials = (plan?.meta?.athlete ?? 'RS')
     .split(' ')
@@ -112,7 +121,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_client_secret, smoke_tracker_enabled, quit_date, gist_url, has_onboarded, is_admin').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, has_onboarded, is_admin').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name').eq('user_id', user.id),
         ])
@@ -152,20 +161,33 @@ export default function DashboardClient() {
           setQuitDays(days)
         }
 
-        if (!data?.strava_client_secret) { setStravaLoading(false); return }
+        if (!data?.strava_refresh_token) { setStravaLoading(false); return }
 
+        // Use stored refresh token to get a fresh access token
         const tokenRes = await fetch('https://www.strava.com/oauth/token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             client_id: CLIENT_ID,
-            client_secret: data.strava_client_secret,
-            refresh_token: REFRESH_TOKEN,
+            client_secret: process.env.NEXT_PUBLIC_STRAVA_CLIENT_SECRET || '',
+            refresh_token: data.strava_refresh_token,
             grant_type: 'refresh_token',
           }),
         })
-        const { access_token } = await tokenRes.json()
+        const tokenData = await tokenRes.json()
+        const access_token = tokenData.access_token
         if (!access_token) { setStravaLoading(false); return }
+
+        // Store updated tokens if refreshed
+        if (tokenData.refresh_token && tokenData.expires_at) {
+          await supabase.from('user_settings').upsert({
+            id: user.id,
+            strava_access_token: access_token,
+            strava_refresh_token: tokenData.refresh_token,
+            strava_token_expires_at: tokenData.expires_at,
+            updated_at: new Date().toISOString(),
+          })
+        }
 
         const after = Math.floor(new Date('2026-01-01').getTime() / 1000)
         const actRes = await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=100`, {
@@ -417,10 +439,26 @@ export default function DashboardClient() {
               fontFamily: "'DM Mono', monospace", fontSize: '13px',
               letterSpacing: '0.08em', textTransform: 'uppercase',
               cursor: 'pointer', fontWeight: 500,
+              marginBottom: '10px',
             }}
           >
             Let's go
           </button>
+
+          <a
+            href="/api/strava/connect"
+            style={{
+              display: 'block', width: '100%', padding: '16px',
+              background: 'none', color: '#FC4C02',
+              border: '0.5px solid rgba(252,76,2,0.4)', borderRadius: '14px',
+              fontFamily: "'DM Mono', monospace", fontSize: '13px',
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              cursor: 'pointer', fontWeight: 500, textAlign: 'center',
+              textDecoration: 'none', boxSizing: 'border-box',
+            }}
+          >
+            Connect Strava (optional)
+          </a>
         </div>
       </div>
     )
@@ -1746,97 +1784,85 @@ function StravaScreen({ runs, loading, connected, onOpenMe, initials }: {
 // ── STRAVA CONNECTION ROW ─────────────────────────────────────────────────
 
 function StravaConnectionRow() {
-  const [secret, setSecret]       = useState('')
   const [connected, setConnected] = useState<boolean | null>(null)
-  const [saving, setSaving]       = useState(false)
-  const [expanded, setExpanded]   = useState(false)
-  const [error, setError]         = useState<string | null>(null)
+  const [disconnecting, setDisconnecting] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
     async function check() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setConnected(false); return }
-      const { data } = await supabase.from('user_settings').select('strava_client_secret').eq('id', user.id).single()
-      setConnected(!!(data?.strava_client_secret))
+      const { data } = await supabase.from('user_settings').select('strava_refresh_token').eq('id', user.id).single()
+      setConnected(!!(data?.strava_refresh_token))
     }
     check()
+
+    // Handle redirect back from Strava OAuth
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('strava') === 'connected') {
+      setConnected(true)
+      window.history.replaceState({}, '', '/dashboard')
+    }
   }, [])
 
-  async function save() {
-    if (!secret.trim()) return
-    setSaving(true)
-    setError(null)
+  async function disconnect() {
+    setDisconnecting(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not signed in')
-      const { error: err } = await supabase.from('user_settings').upsert({ id: user.id, strava_client_secret: secret.trim(), updated_at: new Date().toISOString() })
-      if (err) throw err
-      setConnected(true)
-      setExpanded(false)
-      setSecret('')
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Save failed')
-    } finally { setSaving(false) }
-  }
-
-  async function disconnect() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    await supabase.from('user_settings').upsert({ id: user.id, strava_client_secret: null, updated_at: new Date().toISOString() })
-    setConnected(false)
-    setExpanded(false)
+      if (!user) return
+      await supabase.from('user_settings').upsert({
+        id: user.id,
+        strava_access_token: null,
+        strava_refresh_token: null,
+        strava_token_expires_at: null,
+        updated_at: new Date().toISOString(),
+      })
+      setConnected(false)
+    } finally { setDisconnecting(false) }
   }
 
   const isLoading = connected === null
 
   return (
     <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '12px', border: '0.5px solid var(--border-col, #e8e3dc)', overflow: 'hidden' }}>
-      <button onClick={() => !isLoading && setExpanded(e => !e)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(252,76,2,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FC4C02' }} />
           </div>
-          <div style={{ textAlign: 'left' }}>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary, #c0c0c0)', lineHeight: 1.55 }}>Strava</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', marginTop: '1px' }}>Client secret + OAuth</div>
+          <div>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.55 }}>Strava</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', marginTop: '1px', color: isLoading ? '#888' : connected ? '#4a7c6f' : '#888' }}>
+              {isLoading ? 'checking...' : connected ? 'Connected' : 'Not connected'}
+            </div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {isLoading ? (
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)' }}>checking...</span>
-          ) : connected ? (
-            <><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4a7c6f' }} /><span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#4a7c6f' }}>connected</span></>
-          ) : (
-            <><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#8a3a3a' }} /><span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#8a3a3a' }}>not connected</span></>
-          )}
-          <span style={{ color: 'var(--text-muted, #888)', fontSize: '15px', marginLeft: '4px' }}>{expanded ? '˅' : '›'}</span>
-        </div>
-      </button>
 
-      {expanded && (
-        <div style={{ borderTop: '0.5px solid var(--border-col, #e8e3dc)', padding: '14px' }}>
-          {!connected ? (
-            <>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', marginBottom: '10px', lineHeight: 1.6 }}>
-                Paste your Strava Client Secret. Find it at strava.com → Settings → My API Application.
-              </div>
-              <input type="password" value={secret} onChange={e => setSecret(e.target.value)} placeholder="Client secret..." style={{ width: '100%', background: 'var(--bg, #f5f3ef)', border: '0.5px solid #222', borderRadius: '8px', padding: '10px 12px', color: 'var(--text-secondary, #444)', fontFamily: "'DM Mono',monospace", fontSize: '12px', outline: 'none', marginBottom: '10px', boxSizing: 'border-box' }} />
-              {error && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#8a3a3a', marginBottom: '8px' }}>{error}</div>}
-              <button onClick={save} disabled={saving || !secret.trim()} style={{ width: '100%', background: '#D4501A', color: 'var(--text-primary, #111)', border: 'none', borderRadius: '8px', padding: '12px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving || !secret.trim() ? 0.6 : 1 }}>
-                {saving ? 'Saving...' : 'Save & Connect'}
-              </button>
-            </>
+        {!isLoading && (
+          connected ? (
+            <button onClick={disconnect} disabled={disconnecting} style={{
+              background: 'none', border: '0.5px solid var(--border-col, #e8e3dc)',
+              borderRadius: '8px', padding: '6px 12px',
+              fontFamily: "'DM Mono',monospace", fontSize: '11px',
+              color: 'var(--text-muted, #888)', letterSpacing: '0.06em',
+              textTransform: 'uppercase', cursor: 'pointer',
+              opacity: disconnecting ? 0.6 : 1,
+            }}>
+              {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+            </button>
           ) : (
-            <>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#4a7c6f', marginBottom: '12px' }}>Secret saved. Auto-connects on every load.</div>
-              <button onClick={disconnect} style={{ background: 'none', border: '0.5px solid #5a2a2a', borderRadius: '8px', padding: '8px 14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#8a3a3a', cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                Disconnect
-              </button>
-            </>
-          )}
-        </div>
-      )}
+            <a href="/api/strava/connect" style={{
+              background: '#FC4C02', color: '#fff',
+              border: 'none', borderRadius: '8px', padding: '8px 14px',
+              fontFamily: "'DM Mono',monospace", fontSize: '11px',
+              letterSpacing: '0.06em', textTransform: 'uppercase',
+              cursor: 'pointer', textDecoration: 'none', display: 'inline-block',
+            }}>
+              Connect
+            </a>
+          )
+        )}
+      </div>
     </div>
   )
 }
