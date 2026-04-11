@@ -16,21 +16,21 @@ const themeScript = `
     var isDark = t === 'dark' || (t === 'auto' && prefersDark);
     var r = document.documentElement;
     if (isDark) {
-      r.style.setProperty('--bg', '#000');
+      r.style.setProperty('--bg', '#0a0a0a');
       r.style.setProperty('--card-bg', '#0d0d0d');
       r.style.setProperty('--border-col', '#1c1c1c');
       r.style.setProperty('--text-primary', '#fff');
       r.style.setProperty('--text-secondary', '#c0c0c0');
       r.style.setProperty('--text-muted', '#777');
-      r.style.setProperty('--nav-bg', '#000');
+      r.style.setProperty('--nav-bg', '#0a0a0a');
     } else {
-      r.style.setProperty('--bg', '#f5f3ef');
+      r.style.setProperty('--bg', '#f5f2ee');
       r.style.setProperty('--card-bg', '#fff');
       r.style.setProperty('--border-col', '#e8e3dc');
       r.style.setProperty('--text-primary', '#111');
       r.style.setProperty('--text-secondary', '#444');
       r.style.setProperty('--text-muted', '#888');
-      r.style.setProperty('--nav-bg', '#f5f3ef');
+      r.style.setProperty('--nav-bg', '#f5f2ee');
     }
   } catch(e) {}
 })();
@@ -44,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
       </head>

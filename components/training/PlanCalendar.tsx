@@ -17,7 +17,7 @@ const DAY_OFFSETS: Record<string, number> = { mon:0, tue:1, wed:2, thu:3, fri:4,
 
 const TYPE_ACCENT: Record<string, string> = {
   easy: '#378ADD', quality: '#D4501A', run: '#D4501A',
-  race: '#ff7777', strength: '#4a9a5a', rest: 'transparent',
+  race: '#ff7777', strength: '#4a7c6f', rest: 'transparent',
 }
 
 function getWeekDates(weekStartDate: Date): Record<string, Date> {
@@ -208,7 +208,7 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', justifyContent: 'flex-end' }}>
-            {actualKm > 0 && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#4a9a5a', fontWeight: 500 }}>{actualKm.toFixed(1)}</span>}
+            {actualKm > 0 && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#4a7c6f', fontWeight: 500 }}>{actualKm.toFixed(1)}</span>}
             {actualKm > 0 && intendedKm > 0 && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#333' }}>/</span>}
             {intendedKm > 0 && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#444' }}>{intendedKm}km</span>}
           </div>
@@ -339,7 +339,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
       {isTarget ? (
         <div style={{ width: '3px', height: '34px', borderRadius: '2px', background: 'rgba(212,80,26,0.5)', marginRight: '12px', flexShrink: 0 }} />
       ) : (
-        <div style={{ width: '3px', height: hasSession ? '34px' : '16px', borderRadius: '2px', background: isComplete ? '#4a9a5a' : isSkipped ? '#222' : isMoving ? '#D4501A' : accent, marginRight: '12px', flexShrink: 0 }} />
+        <div style={{ width: '3px', height: hasSession ? '34px' : '16px', borderRadius: '2px', background: isComplete ? '#4a7c6f' : isSkipped ? '#222' : isMoving ? '#D4501A' : accent, marginRight: '12px', flexShrink: 0 }} />
       )}
 
       {/* Content */}
@@ -377,7 +377,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
 
       {/* Right side */}
       <div style={{ flexShrink: 0, marginLeft: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        {isComplete && !isMoveMode && <span style={{ color: '#4a9a5a', fontSize: '14px' }}>✓</span>}
+        {isComplete && !isMoveMode && <span style={{ color: '#4a7c6f', fontSize: '14px' }}>✓</span>}
         {hasSession && !isComplete && !isSkipped && !isMoveMode && (
           <span style={{ color: 'var(--text-muted, #333)', fontSize: '16px' }}>›</span>
         )}

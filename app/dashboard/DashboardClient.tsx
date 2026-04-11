@@ -200,21 +200,21 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
     const isDark = t === 'dark' || (t === 'auto' && prefersDark)
     const root = document.documentElement
     if (isDark) {
-      root.style.setProperty('--bg', '#000')
+      root.style.setProperty('--bg', '#0a0a0a')
       root.style.setProperty('--card-bg', '#0d0d0d')
       root.style.setProperty('--border-col', '#1c1c1c')
       root.style.setProperty('--text-primary', '#fff')
       root.style.setProperty('--text-secondary', '#c0c0c0')
       root.style.setProperty('--text-muted', '#777')
-      root.style.setProperty('--nav-bg', '#000')
+      root.style.setProperty('--nav-bg', '#0a0a0a')
     } else {
-      root.style.setProperty('--bg', '#f5f3ef')
+      root.style.setProperty('--bg', '#f5f2ee')
       root.style.setProperty('--card-bg', '#fff')
       root.style.setProperty('--border-col', '#e8e3dc')
       root.style.setProperty('--text-primary', '#111')
       root.style.setProperty('--text-secondary', '#444')
       root.style.setProperty('--text-muted', '#888')
-      root.style.setProperty('--nav-bg', '#f5f3ef')
+      root.style.setProperty('--nav-bg', '#f5f2ee')
     }
   }
 
@@ -246,17 +246,28 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
         background: 'var(--bg, #f5f2ee)', maxWidth: '480px', margin: '0 auto',
         gap: '0',
       }}>
-        {/* ZONA wordmark */}
-        <div style={{
-          fontFamily: "'Fraunces', serif",
-          fontSize: '42px',
-          fontWeight: 300,
-          letterSpacing: '-0.02em',
-          color: '#D4501A',
-          lineHeight: 1,
-          marginBottom: '8px',
-        }}>
-          ZONA
+        {/* ZONA wordmark — O has zone arc */}
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+          <span style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: '38px', fontWeight: 500, letterSpacing: '0.08em',
+            color: '#D4501A', lineHeight: 1,
+          }}>Z</span>
+          {/* Custom O with zone arc */}
+          <svg width="28" height="38" viewBox="0 0 28 38" fill="none" style={{ margin: '0 1px' }}>
+            <text x="14" y="30" textAnchor="middle"
+              fontFamily="'Space Grotesk', sans-serif"
+              fontSize="38" fontWeight="500" letterSpacing="0"
+              fill="#D4501A">O</text>
+            {/* Zone arc overlay — sits on top right of O */}
+            <path d="M 21 8 A 9 9 0 0 1 26 16" stroke="#f5f2ee" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            <path d="M 21 8 A 9 9 0 0 1 26 16" stroke="#D4501A" strokeWidth="1.5" strokeLinecap="round" fill="none" strokeDasharray="3 3" opacity="0.6" />
+          </svg>
+          <span style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: '38px', fontWeight: 500, letterSpacing: '0.08em',
+            color: '#D4501A', lineHeight: 1,
+          }}>NA</span>
         </div>
 
         {/* Tagline */}
@@ -266,18 +277,18 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
           color: 'var(--text-muted, #888)',
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
-          marginBottom: '48px',
+          marginBottom: '52px',
         }}>
           effort-first training
         </div>
 
         {/* Spinner */}
-        <svg width="24" height="24" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="9" fill="none" stroke="var(--border-col, #e8e3dc)" strokeWidth="1.5" />
-          <circle cx="12" cy="12" r="9" fill="none" stroke="#D4501A" strokeWidth="1.5"
-            strokeDasharray="24 38" strokeLinecap="round">
+        <svg width="22" height="22" viewBox="0 0 22 22">
+          <circle cx="11" cy="11" r="8" fill="none" stroke="var(--border-col, #e8e3dc)" strokeWidth="1.5" />
+          <circle cx="11" cy="11" r="8" fill="none" stroke="#D4501A" strokeWidth="1.5"
+            strokeDasharray="20 34" strokeLinecap="round">
             <animateTransform attributeName="transform" type="rotate"
-              from="0 12 12" to="360 12 12" dur="0.9s" repeatCount="indefinite" />
+              from="0 11 11" to="360 11 11" dur="0.9s" repeatCount="indefinite" />
           </circle>
         </svg>
       </div>
@@ -377,7 +388,7 @@ const TYPE_DOT: Record<string, string> = {
   quality:  '#D4501A',
   run:      '#D4501A',
   race:     '#ff7777',
-  strength: '#4a9a5a',
+  strength: '#4a7c6f',
   rest:     'transparent',
 }
 
@@ -386,7 +397,7 @@ const TYPE_ACCENT: Record<string, string> = {
   quality:  '#D4501A',
   run:      '#D4501A',
   race:     '#ff7777',
-  strength: '#4a9a5a',
+  strength: '#4a7c6f',
   rest:     '#555',
 }
 
@@ -476,7 +487,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
     quality:  { color: '#D4501A', label: 'Quality session',   tips: ['Warm up 10–15 min easy first.', 'Target HR 155–165 bpm during efforts. Controlled, not maximal.', 'Cool down 10 min easy. Don\'t skip it.', 'Legs dead? Dial it back — don\'t force quality on fatigue.'] },
     run:      { color: '#D4501A', label: 'Long run',          tips: ['Start slower than feels right. First 30 min embarrassingly easy.', 'Fuel every 45 min from the gun — don\'t wait.', 'Walk the hills. Strategy, not weakness.', 'HR above 150 late in run? Walk break. Drop to 135 before resuming.'] },
     race:     { color: '#ff7777', label: 'Race',              tips: ['Training run with a bib. Not a race.', 'HR-capped — Zone 2 long run.', 'Walk all significant climbs.', 'Fuel every 45 min. Use every aid station.', 'Finish feeling like you have 10k left.'] },
-    strength: { color: '#4a9a5a', label: 'Strength session',  tips: ['Keep it functional — glutes, hips, single-leg stability.', 'Don\'t go to failure. Leave 2–3 reps in the tank.', 'Legs trashed from running? Reduce load, don\'t skip.'] },
+    strength: { color: '#4a7c6f', label: 'Strength session',  tips: ['Keep it functional — glutes, hips, single-leg stability.', 'Don\'t go to failure. Leave 2–3 reps in the tank.', 'Legs trashed from running? Reduce load, don\'t skip.'] },
   }
   const config = typeConfig[session.type] ?? typeConfig['easy']
 
@@ -485,7 +496,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
       <div style={{ padding: '12px 18px 8px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
         <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
           {session.day} · {session.date}
-          {isComplete && <span style={{ color: '#4a9a5a', marginLeft: '8px' }}>✓ Complete</span>}
+          {isComplete && <span style={{ color: '#4a7c6f', marginLeft: '8px' }}>✓ Complete</span>}
           {isSkipped && <span style={{ color: 'var(--text-muted, #777)', marginLeft: '8px' }}>Skipped</span>}
         </div>
         {session.detail && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #666)', marginTop: '2px' }}>{session.detail}</div>}
@@ -520,7 +531,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             <div style={{ padding: '0 18px 24px', display: 'flex', gap: '8px' }}>
               {!isComplete && !isSkipped && !session.isFuture && (
                 <>
-                  <button onClick={() => setView('complete')} style={{ flex: 1, background: 'rgba(74,154,90,0.15)', color: '#4a9a5a', border: '0.5px solid rgba(74,154,90,0.4)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
+                  <button onClick={() => setView('complete')} style={{ flex: 1, background: 'rgba(74,124,111,0.15)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.4)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
                     Mark complete
                   </button>
                   <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
@@ -549,7 +560,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
 
         {view === 'complete' && (
           <div style={{ padding: '16px 18px 24px' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#4a9a5a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Mark as complete</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#4a7c6f', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Mark as complete</div>
             <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #666)', marginBottom: '8px' }}>Link a Strava activity (optional)</div>
             {loadingClaimed ? (
               <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #444)', padding: '12px 0' }}>Loading activities...</div>
@@ -559,8 +570,8 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                   const isSelected = selectedActivity?.id === run.id
                   return (
                     <div key={run.id} onClick={() => setSelectedActivity(isSelected ? null : run)} style={{
-                      background: isSelected ? 'rgba(74,154,90,0.1)' : 'var(--bg, #080808)',
-                      border: `0.5px solid ${isSelected ? 'rgba(74,154,90,0.4)' : 'var(--border-col, #1c1c1c)'}`,
+                      background: isSelected ? 'rgba(74,124,111,0.1)' : 'var(--bg, #080808)',
+                      border: `0.5px solid ${isSelected ? 'rgba(74,124,111,0.4)' : 'var(--border-col, #1c1c1c)'}`,
                       borderRadius: '12px', padding: '10px 12px', cursor: 'pointer',
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     }}>
@@ -570,7 +581,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                           {new Date(run.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {(run.distance / 1000).toFixed(1)}km {run.average_heartrate ? `· ${Math.round(run.average_heartrate)} bpm` : ''}
                         </div>
                       </div>
-                      {isSelected && <span style={{ color: '#4a9a5a', fontSize: '16px' }}>✓</span>}
+                      {isSelected && <span style={{ color: '#4a7c6f', fontSize: '16px' }}>✓</span>}
                     </div>
                   )
                 })}
@@ -580,7 +591,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             )}
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>Back</button>
-              <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: 'rgba(74,154,90,0.15)', color: '#4a9a5a', border: '0.5px solid rgba(74,154,90,0.4)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving ? 0.6 : 1 }}>
+              <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: 'rgba(74,124,111,0.15)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.4)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving ? 0.6 : 1 }}>
                 {saving ? 'Saving...' : 'Confirm complete'}
               </button>
             </div>
@@ -640,7 +651,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
     const s = sessionMap[key]
     if (!s || s.type === 'rest') return null
     const comp = completions[s.key] // use originalDay for completion lookup
-    if (comp?.status === 'complete') return '#4a9a5a'
+    if (comp?.status === 'complete') return '#4a7c6f'
     if (comp?.status === 'skipped') return '#333'
     return TYPE_DOT[s.type] ?? '#666'
   }
@@ -755,17 +766,17 @@ function SessionHero({ session, completion, onTap }: {
   return (
     <div onClick={onTap} style={{
       margin: '12px 12px 0',
-      background: isComplete ? 'rgba(74,154,90,0.06)' : isSkipped ? 'rgba(80,80,80,0.06)' : 'var(--card-bg, #fff)',
+      background: isComplete ? 'rgba(74,124,111,0.06)' : isSkipped ? 'rgba(80,80,80,0.06)' : 'var(--card-bg, #fff)',
       borderRadius: '16px',
       border: `0.5px solid ${isComplete ? 'rgba(74,154,90,0.35)' : isSkipped ? '#2a2a2a' : 'var(--border-col, #e8e3dc)'}`,
-      borderLeft: `4px solid ${isComplete ? '#4a9a5a' : isSkipped ? '#444' : accent}`,
+      borderLeft: `4px solid ${isComplete ? '#4a7c6f' : isSkipped ? '#444' : accent}`,
       padding: '16px',
       cursor: 'pointer',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
         <span style={{
           fontFamily: "'DM Mono',monospace", fontSize: '10px',
-          color: isComplete ? '#4a9a5a' : isSkipped ? '#555' : accent,
+          color: isComplete ? '#4a7c6f' : isSkipped ? '#555' : accent,
           letterSpacing: '0.1em', textTransform: 'uppercase',
         }}>
           {session.today ? 'Today · ' : ''}{session.day} {session.date} · {TYPE_LABEL[session.type] ?? session.type}
@@ -773,8 +784,8 @@ function SessionHero({ session, completion, onTap }: {
         {isComplete && (
           <span style={{
             fontFamily: "'DM Mono',monospace", fontSize: '10px', letterSpacing: '0.08em',
-            background: 'rgba(74,154,90,0.15)', color: '#4a9a5a',
-            border: '0.5px solid rgba(74,154,90,0.4)',
+            background: 'rgba(74,124,111,0.15)', color: '#4a7c6f',
+            border: '0.5px solid rgba(74,124,111,0.4)',
             borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase',
           }}>✓ Done</span>
         )}
@@ -812,7 +823,7 @@ function SessionHero({ session, completion, onTap }: {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{
           fontFamily: "'DM Mono',monospace", fontSize: '12px',
-          color: isComplete ? '#4a9a5a' : isSkipped ? '#555' : 'var(--text-muted, #888)',
+          color: isComplete ? '#4a7c6f' : isSkipped ? '#555' : 'var(--text-muted, #888)',
           letterSpacing: '0.06em', textTransform: 'uppercase',
         }}>
           {isComplete ? 'View details' : isSkipped ? 'Update' : session.today ? 'Log this session' : 'View session'}
@@ -838,11 +849,11 @@ function RestDayCard({ session, nextSession }: {
           No run today
         </div>
         <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary, #111)', lineHeight: 1.25, marginBottom: '8px', letterSpacing: '-0.3px' }}>
-          {session?.type === 'rest' || !session ? 'Rest is the training.' : session.title}
+          {session?.type === 'rest' || !session ? 'Rest is the work.' : session.title}
         </div>
         <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', lineHeight: 1.6 }}>
           {session?.type === 'rest' || !session
-            ? "Nothing to run today. Your body is building fitness while you rest. Don't undo it."
+            ? "No session today. Adaptation happens here, not in the run."
             : 'No running today. Keep it easy, stay off the legs.'}
         </div>
       </div>
@@ -912,7 +923,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
   const futureMonths = groupByMonth(futureWeeks)
 
   function getDotColor(type: string, completion?: any): string {
-    if (completion?.status === 'complete') return '#4a9a5a'
+    if (completion?.status === 'complete') return '#4a7c6f'
     if (completion?.status === 'skipped') return '#2a2a2a'
     return TYPE_DOT[type] ?? 'transparent'
   }
@@ -1061,7 +1072,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {[{ color: '#378ADD', label: 'Easy' }, { color: '#D4501A', label: 'Run' }, { color: '#4a9a5a', label: 'Done' }].map(({ color, label }) => (
+          {[{ color: '#378ADD', label: 'Easy' }, { color: '#D4501A', label: 'Run' }, { color: '#4a7c6f', label: 'Done' }].map(({ color, label }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
               <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: color }} />
               <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)' }}>{label}</span>
@@ -1263,7 +1274,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           {initials}
         </button>
         {/* Brand slug — centre */}
-        <div style={{ fontFamily: "'Fraunces', serif", fontSize: '18px', fontWeight: 300, color: '#D4501A', letterSpacing: '-0.01em' }}>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 500, color: '#D4501A', letterSpacing: '0.06em' }}>
           ZONA
         </div>
         {/* Calendar icon — right */}
@@ -1638,7 +1649,7 @@ function StravaConnectionRow() {
           {isLoading ? (
             <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)' }}>checking...</span>
           ) : connected ? (
-            <><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4a9a5a' }} /><span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#4a9a5a' }}>connected</span></>
+            <><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4a7c6f' }} /><span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#4a7c6f' }}>connected</span></>
           ) : (
             <><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#8a3a3a' }} /><span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#8a3a3a' }}>not connected</span></>
           )}
@@ -1661,7 +1672,7 @@ function StravaConnectionRow() {
             </>
           ) : (
             <>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#4a9a5a', marginBottom: '12px' }}>Secret saved. Auto-connects on every load.</div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#4a7c6f', marginBottom: '12px' }}>Secret saved. Auto-connects on every load.</div>
               <button onClick={disconnect} style={{ background: 'none', border: '0.5px solid #5a2a2a', borderRadius: '8px', padding: '8px 14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#8a3a3a', cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                 Disconnect
               </button>
@@ -1692,8 +1703,8 @@ function SmokeToggle({ enabled, quitDate, onChange }: {
   }
 
   return (
-    <div onClick={toggle} style={{ width: '44px', height: '26px', borderRadius: '13px', background: enabled ? '#2a5a2a' : '#1c1c1c', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
-      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: enabled ? '#4a9a5a' : '#444', position: 'absolute', top: '3px', left: enabled ? '21px' : '3px', transition: 'left 0.2s, background 0.2s' }} />
+    <div onClick={toggle} style={{ width: '44px', height: '26px', borderRadius: '13px', background: enabled ? '#1e3d37' : '#1c1c1c', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
+      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: enabled ? '#4a7c6f' : '#444', position: 'absolute', top: '3px', left: enabled ? '21px' : '3px', transition: 'left 0.2s, background 0.2s' }} />
     </div>
   )
 }
@@ -1765,7 +1776,7 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: smokeTrackerEnabled ? '10px' : 0 }}>
               <div>
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary, #c0c0c0)', lineHeight: 1.55 }}>Smoke-free tracker</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: smokeTrackerEnabled ? '#4a9a5a' : '#444', marginTop: '1px' }}>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: smokeTrackerEnabled ? '#4a7c6f' : '#444', marginTop: '1px' }}>
                   {smokeTrackerEnabled && quitDays !== null ? `${quitDays} days smoke-free` : 'Off'}
                 </div>
               </div>
@@ -1792,7 +1803,7 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
             <button onClick={() => setActiveSection('quit')} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '0.5px solid #111', cursor: 'pointer' }}>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary, #c0c0c0)', lineHeight: 1.55 }}>Quit tracker</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#4a9a5a', marginTop: '1px' }}>Milestones + benefits</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#4a7c6f', marginTop: '1px' }}>Milestones + benefits</div>
               </div>
               <div style={{ color: 'var(--text-muted, #777)', fontSize: '18px' }}>›</div>
             </button>
@@ -1877,7 +1888,7 @@ function MentalTab({ resetPhrase, onSave, onBack }: { resetPhrase: string; onSav
       <BackHeader title="Mental toolkit" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
         <InfoBox>
-          The dark patch is coming. Probably around <span style={{ color: '#D4501A' }}>km 65–75</span>. It's not a sign you're broken — it's a sign you've been going long enough to feel something real.
+          The dark patch is coming. Probably around <span style={{ color: '#D4501A' }}>km 65–75</span>. That's not a sign something's wrong — it's a sign you've been working long enough for it to be real. These tools exist for that moment.
         </InfoBox>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
           {tools.map(t => (
@@ -1910,7 +1921,7 @@ function FuelingTab({ onBack }: { onBack: () => void }) {
       <BackHeader title="Fueling plan" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
         <InfoBox>
-          Real food + gels is the right call. The goal now is <span style={{ color: '#D4501A' }}>stress-testing your gut before June</span> so there are zero surprises on race day.
+          Real food plus gels is the right call. The goal now is <span style={{ color: '#D4501A' }}>stress-testing your gut before race day</span>. No surprises on the day. None.
         </InfoBox>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {protocol.map(p => (
@@ -1939,14 +1950,14 @@ function QuitTab({ quitDays, onBack }: { quitDays: number | null; onBack: () => 
     <div style={{ minHeight: '100%', background: 'var(--bg, #f5f3ef)', overflowY: 'auto', paddingBottom: '80px' }}>
       <BackHeader title="Quit tracker" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
-        <div style={{ background: 'var(--card-bg, #fff)', border: '0.5px solid #1a3a1a', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px' }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '3.5rem', color: '#4a9a5a', lineHeight: 1, fontWeight: 500 }}>{days}</div>
+        <div style={{ background: 'var(--card-bg, #fff)', border: '0.5px solid #1e3d37', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px' }}>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '3.5rem', color: '#4a7c6f', lineHeight: 1, fontWeight: 500 }}>{days}</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#4a9a5a', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>Smoke-free days</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-muted, #888)', lineHeight: 1.55 }}>Your aerobic efficiency is already improving.</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#4a7c6f', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>Smoke-free days</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-muted, #888)', lineHeight: 1.55 }}>Your aerobic capacity is recovering. The data will show it.</div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
               {milestones.map(m => (
-                <div key={m.days} style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${days >= m.days ? '#2a5a2a' : '#222'}`, color: days >= m.days ? '#4a9a5a' : '#444' }}>
+                <div key={m.days} style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${days >= m.days ? '#1e3d37' : '#222'}`, color: days >= m.days ? '#4a7c6f' : '#444' }}>
                   {m.label}
                 </div>
               ))}
