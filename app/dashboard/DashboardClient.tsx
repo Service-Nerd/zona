@@ -6,8 +6,7 @@ import PlanChart from '@/components/training/PlanChart'
 import PlanCalendar from '@/components/training/PlanCalendar'
 import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
-
-interface Props { plan: Plan; currentWeek: Week }
+import { fetchPlanFromUrl, DEFAULT_GIST_URL, getCurrentWeek } from '@/lib/plan'
 
 type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session'
 
@@ -60,7 +59,9 @@ function IconStrava({ active }: { active: boolean }) {
 
 // ── Layout shell ──────────────────────────────────────────────────────────
 
-export default function DashboardClient({ plan, currentWeek }: Props) {
+export default function DashboardClient() {
+  const [plan, setPlan] = useState<Plan | null>(null)
+  const [showWelcome, setShowWelcome] = useState(false)
   const [screen, setScreen] = useState<Screen>('today')
   const [showMe, setShowMe] = useState(false)
   const [activeSessionData, setActiveSessionData] = useState<any | null>(null)
@@ -86,7 +87,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
   const CLIENT_ID     = process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID!
   const REFRESH_TOKEN = 'b2332fbde9c23d072e4e7712afc9d5b06e253fed'
 
-  const initials = (plan.meta.athlete ?? 'RS')
+  const initials = (plan?.meta?.athlete ?? 'RS')
     .split(' ')
     .map((w: string) => w[0])
     .join('')
@@ -107,7 +108,7 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_client_secret, smoke_tracker_enabled, quit_date').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_client_secret, smoke_tracker_enabled, quit_date, gist_url, has_onboarded').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name').eq('user_id', user.id),
         ])
@@ -121,10 +122,21 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
           })
           setAllCompletions(map)
         }
-        setOverridesReady(true)
-        setAppReady(true)
 
         const data = settingsRes.data
+
+        // Load plan from user's gist_url, fallback to default
+        const gistUrl = data?.gist_url || DEFAULT_GIST_URL
+        const loadedPlan = await fetchPlanFromUrl(gistUrl)
+        setPlan(loadedPlan)
+
+        // Show welcome screen if not yet onboarded
+        if (!data?.has_onboarded) {
+          setShowWelcome(true)
+        }
+
+        setOverridesReady(true)
+        setAppReady(true)
 
         if (data?.smoke_tracker_enabled && data?.quit_date) {
           setSmokeTrackerEnabled(true)
@@ -218,7 +230,16 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
     }
   }
 
-  const currentWeekIndex = plan.weeks.findIndex(w => w.type === 'current')
+  async function dismissWelcome() {
+    setShowWelcome(false)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('user_settings').upsert({ id: user.id, has_onboarded: true, updated_at: new Date().toISOString() })
+    } catch {}
+  }
+
+  const currentWeekIndex = plan ? plan.weeks.findIndex(w => w.type === 'current') : 0
   const [viewWeekIndex, setViewWeekIndex] = useState(currentWeekIndex >= 0 ? currentWeekIndex : 0)
 
   const raceDate = new Date('2026-07-11')
@@ -289,11 +310,63 @@ export default function DashboardClient({ plan, currentWeek }: Props) {
             strokeDasharray="20 34" strokeLinecap="round">
             <animateTransform attributeName="transform" type="rotate"
               from="0 11 11" to="360 11 11" dur="0.9s" repeatCount="indefinite" />
-          </circle>
+            </circle>
         </svg>
       </div>
     )
   }
+
+  // Welcome screen — shown once on first login
+  if (showWelcome) {
+    return (
+      <div style={{
+        minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        background: 'var(--bg, #f5f2ee)', maxWidth: '480px', margin: '0 auto',
+        padding: '32px 24px',
+      }}>
+        {/* ZONA wordmark */}
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '36px', fontWeight: 500, letterSpacing: '0.08em', color: '#D4501A', marginBottom: '8px' }}>
+          ZONA
+        </div>
+        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: '11px', color: 'var(--text-muted, #888)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '48px' }}>
+          effort-first training
+        </div>
+
+        {/* Welcome message */}
+        <div style={{ width: '100%', maxWidth: '320px', textAlign: 'center' }}>
+          <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary, #111)', fontFamily: "'DM Sans', sans-serif", letterSpacing: '-0.3px', marginBottom: '16px', lineHeight: 1.3 }}>
+            Your plan is ready.
+          </div>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: '13px', color: 'var(--text-muted, #888)', lineHeight: 1.7, marginBottom: '12px' }}>
+            ZONA keeps track of your sessions, adapts when things shift, and keeps you focused on what matters — finishing.
+          </div>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: '13px', color: 'var(--text-muted, #888)', lineHeight: 1.7, marginBottom: '48px' }}>
+            Train with intention. The rest follows.
+          </div>
+
+          <button
+            onClick={dismissWelcome}
+            style={{
+              width: '100%', padding: '16px',
+              background: '#D4501A', color: '#fff',
+              border: 'none', borderRadius: '14px',
+              fontFamily: "'DM Mono', monospace", fontSize: '13px',
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              cursor: 'pointer', fontWeight: 500,
+            }}
+          >
+            Let's go
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Plan not loaded yet (shouldn't normally reach here)
+  if (!plan) return null
+
+  const currentWeek = getCurrentWeek(plan.weeks)
 
   return (
     <div style={s}>
