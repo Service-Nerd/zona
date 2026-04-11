@@ -416,26 +416,10 @@ export default function DashboardClient() {
               fontFamily: "'DM Mono', monospace", fontSize: '13px',
               letterSpacing: '0.08em', textTransform: 'uppercase',
               cursor: 'pointer', fontWeight: 500,
-              marginBottom: '10px',
             }}
           >
             Let's go
           </button>
-
-          <a
-            href="/api/strava/connect"
-            style={{
-              display: 'block', width: '100%', padding: '16px',
-              background: 'none', color: '#FC4C02',
-              border: '0.5px solid rgba(252,76,2,0.4)', borderRadius: '14px',
-              fontFamily: "'DM Mono', monospace", fontSize: '13px',
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              cursor: 'pointer', fontWeight: 500, textAlign: 'center',
-              textDecoration: 'none', boxSizing: 'border-box',
-            }}
-          >
-            Connect Strava (optional)
-          </a>
         </div>
       </div>
     )
@@ -1331,6 +1315,13 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
   const totalWeeks = plan.weeks.length
+
+  // Guard against empty plan (e.g. failed Gist fetch)
+  if (!currentWeek) return (
+    <div style={{ padding: '32px 16px', textAlign: 'center', fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)' }}>
+      Unable to load plan. Check your connection and try again.
+    </div>
+  )
 
   // Completions for this week — derived from shared allCompletions prop
   const completions = allCompletions[weekNum] ?? {}
