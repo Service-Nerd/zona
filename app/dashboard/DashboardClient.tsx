@@ -8,7 +8,7 @@ import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
 import { fetchPlanFromUrl, DEFAULT_GIST_URL, getCurrentWeek } from '@/lib/plan'
 
-type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session'
+type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'admin'
 
 // ── Icons ─────────────────────────────────────────────────────────────────
 
@@ -71,6 +71,10 @@ export default function DashboardClient() {
   const [resetPhrase, setResetPhrase] = useState('')
   const [theme, setTheme] = useState<'dark' | 'light' | 'auto'>('light')
   const [appReady, setAppReady] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  // Impersonation state
+  const [impersonating, setImpersonating] = useState<{ userId: string; name: string } | null>(null)
 
   // Global overrides — fetched once, shared across all screens
   const [allOverrides, setAllOverrides] = useState<{ week_n: number; original_day: string; new_day: string }[]>([])
@@ -108,7 +112,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_client_secret, smoke_tracker_enabled, quit_date, gist_url, has_onboarded').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_client_secret, smoke_tracker_enabled, quit_date, gist_url, has_onboarded, is_admin').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name').eq('user_id', user.id),
         ])
@@ -129,6 +133,9 @@ export default function DashboardClient() {
         const gistUrl = data?.gist_url || DEFAULT_GIST_URL
         const loadedPlan = await fetchPlanFromUrl(gistUrl)
         setPlan(loadedPlan)
+
+        // Admin flag
+        if (data?.is_admin) setIsAdmin(true)
 
         // Show welcome screen if not yet onboarded
         if (!data?.has_onboarded) {
@@ -237,6 +244,62 @@ export default function DashboardClient() {
       if (!user) return
       await supabase.from('user_settings').upsert({ id: user.id, has_onboarded: true, updated_at: new Date().toISOString() })
     } catch {}
+  }
+
+  async function impersonateUser(userId: string, name: string) {
+    try {
+      // Load their plan
+      const { data: settings } = await supabase.from('user_settings').select('gist_url').eq('id', userId).single()
+      const gistUrl = settings?.gist_url || DEFAULT_GIST_URL
+      const loadedPlan = await fetchPlanFromUrl(gistUrl)
+      setPlan(loadedPlan)
+
+      // Load their overrides
+      const { data: overrides } = await supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', userId)
+      setAllOverrides(overrides ?? [])
+
+      // Load their completions
+      const { data: completions } = await supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name').eq('user_id', userId)
+      if (completions) {
+        const map: Record<number, Record<string, any>> = {}
+        completions.forEach((r: any) => {
+          if (!map[r.week_n]) map[r.week_n] = {}
+          map[r.week_n][r.session_day] = r
+        })
+        setAllCompletions(map)
+      }
+
+      setImpersonating({ userId, name })
+      setScreen('today')
+    } catch (e) {
+      console.error('Impersonation failed', e)
+    }
+  }
+
+  async function exitImpersonation() {
+    // Reload own data
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data: settings } = await supabase.from('user_settings').select('gist_url').eq('id', user.id).single()
+    const gistUrl = settings?.gist_url || DEFAULT_GIST_URL
+    const loadedPlan = await fetchPlanFromUrl(gistUrl)
+    setPlan(loadedPlan)
+
+    const { data: overrides } = await supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id)
+    setAllOverrides(overrides ?? [])
+
+    const { data: completions } = await supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name').eq('user_id', user.id)
+    if (completions) {
+      const map: Record<number, Record<string, any>> = {}
+      completions.forEach((r: any) => {
+        if (!map[r.week_n]) map[r.week_n] = {}
+        map[r.week_n][r.session_day] = r
+      })
+      setAllCompletions(map)
+    }
+
+    setImpersonating(null)
+    setScreen('today')
   }
 
   const currentWeekIndex = plan ? plan.weeks.findIndex(w => w.type === 'current') : 0
@@ -370,16 +433,37 @@ export default function DashboardClient() {
 
   return (
     <div style={s}>
-      {/* Me and Calendar rendered as screens below */}
+
+      {/* Impersonation banner */}
+      {impersonating && (
+        <div style={{
+          background: '#D4501A', padding: '8px 16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          position: 'sticky', top: 0, zIndex: 2000,
+        }}>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: '11px', color: '#fff', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            Viewing as {impersonating.name}
+          </div>
+          <button onClick={exitImpersonation} style={{
+            background: 'rgba(0,0,0,0.2)', border: 'none', borderRadius: '6px',
+            color: '#fff', fontFamily: "'DM Mono', monospace", fontSize: '11px',
+            letterSpacing: '0.06em', textTransform: 'uppercase', padding: '4px 10px',
+            cursor: 'pointer',
+          }}>
+            Exit
+          </button>
+        </div>
+      )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
         {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} overridesReady={overridesReady} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
         {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setScreen('me')} initials={initials} />}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setScreen('me')} initials={initials} />}
-        {screen === 'me'       && <MeScreen initials={initials} athlete={plan.meta.athlete ?? 'Russell Shear'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} />}
+        {screen === 'me'       && <MeScreen initials={initials} athlete={plan.meta.athlete ?? 'Russell Shear'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} />}
         {screen === 'calendar' && <CalendarOverlay plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onBack={() => setScreen('today')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} onSaved={refreshCompletions} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} onSaved={impersonating ? undefined : refreshCompletions} />}
+        {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
       </div>
 
       <div style={{
@@ -1784,11 +1868,12 @@ function SmokeToggle({ enabled, quitDate, onChange }: {
 
 // ── ME SCREEN ─────────────────────────────────────────────────────────────
 
-function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack }: {
+function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin }: {
   initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   resetPhrase: string; onSaveMental: (v: string) => void
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void; onBack: () => void
+  isAdmin?: boolean; onOpenAdmin?: () => void
 }) {
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling'>('main')
 
@@ -1895,12 +1980,109 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
             </button>
           ))}
         </div>
+
+        {isAdmin && (
+          <>
+            <SectionLabel>Admin</SectionLabel>
+            <button onClick={onOpenAdmin} style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '14px 16px', background: 'var(--card-bg, #fff)',
+              borderRadius: '12px', border: '0.5px solid rgba(212,80,26,0.3)',
+              cursor: 'pointer',
+            }}>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: '13px', color: '#D4501A', lineHeight: 1.55 }}>User management</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', marginTop: '1px' }}>Impersonate · view plans</div>
+              </div>
+              <div style={{ color: '#D4501A', fontSize: '18px' }}>›</div>
+            </button>
+          </>
+        )}
       </div>
     </div>
   )
 }
 
-// ── SUPPORT SCREENS ───────────────────────────────────────────────────────
+// ── ADMIN SCREEN ──────────────────────────────────────────────────────────
+
+function AdminScreen({ onBack, onImpersonate }: {
+  onBack: () => void
+  onImpersonate: (userId: string, name: string) => void
+}) {
+  const [users, setUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const { data } = await supabase
+          .from('user_settings')
+          .select('id, gist_url, has_onboarded, is_admin')
+        if (data) setUsers(data)
+      } catch {}
+      finally { setLoading(false) }
+    }
+    load()
+  }, [])
+
+  return (
+    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto', paddingBottom: '80px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)', position: 'sticky', top: 0, background: 'var(--bg, #f5f2ee)', zIndex: 10 }}>
+        <button onClick={onBack} style={{ border: 'none', color: '#D4501A', cursor: 'pointer', padding: '0', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)' }}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+        <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary, #111)', fontFamily: "'DM Sans',sans-serif" }}>User management</div>
+      </div>
+
+      <div style={{ padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {loading ? (
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', padding: '24px 0', textAlign: 'center' }}>Loading users...</div>
+        ) : users.length === 0 ? (
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', padding: '24px 0', textAlign: 'center' }}>No users found</div>
+        ) : users.map(u => {
+          const name = u.gist_url
+            ? u.gist_url.split('/').pop()?.replace('.json', '').replace('zona_plan_', '') ?? u.id.slice(0, 8)
+            : u.id.slice(0, 8)
+          const displayName = name.charAt(0).toUpperCase() + name.slice(1)
+
+          return (
+            <div key={u.id} style={{
+              background: 'var(--card-bg, #fff)', borderRadius: '12px',
+              border: '0.5px solid var(--border-col, #e8e3dc)',
+              padding: '14px 16px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary, #111)', fontFamily: "'DM Sans',sans-serif" }}>
+                  {displayName}
+                  {u.is_admin && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#D4501A', marginLeft: '8px', border: '0.5px solid rgba(212,80,26,0.4)', borderRadius: '10px', padding: '1px 6px' }}>admin</span>}
+                </div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #888)', marginTop: '3px' }}>
+                  {u.has_onboarded ? 'Onboarded' : 'Not yet onboarded'} · {u.gist_url ? 'Plan set' : 'No plan'}
+                </div>
+              </div>
+              {!u.is_admin && (
+                <button
+                  onClick={() => onImpersonate(u.id, displayName)}
+                  style={{
+                    background: 'rgba(212,80,26,0.1)', border: '0.5px solid rgba(212,80,26,0.3)',
+                    borderRadius: '8px', color: '#D4501A',
+                    fontFamily: "'DM Mono',monospace", fontSize: '11px',
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                    padding: '6px 12px', cursor: 'pointer',
+                  }}
+                >
+                  View
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 
 // ── SESSION SCREEN ────────────────────────────────────────────────────────
