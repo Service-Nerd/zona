@@ -134,8 +134,6 @@ export default function DashboardClient() {
         }
 
         const data = settingsRes.data
-        console.log('settingsRes data:', JSON.stringify(data))
-        console.log('settingsRes error:', settingsRes.error?.message)
 
         // Load plan from user's gist_url, fallback to default
         const gistUrl = data?.gist_url || DEFAULT_GIST_URL
@@ -163,7 +161,11 @@ export default function DashboardClient() {
         if (!data?.strava_refresh_token) { setStravaLoading(false); return }
 
         // Refresh token via server-side route — keeps client secret safe
-        const tokenRes = await fetch('/api/strava/refresh', { method: 'POST' })
+        const tokenRes = await fetch('/api/strava/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id }),
+        })
         if (!tokenRes.ok) { setStravaLoading(false); return }
         const { access_token } = await tokenRes.json()
         if (!access_token) { setStravaLoading(false); return }
@@ -179,7 +181,7 @@ export default function DashboardClient() {
         const runs = getRuns(activities)
         setStravaRuns(runs)
         setStravaConnected(true)
-      } catch (e) { console.error('fetchSettings error:', e) }
+      } catch {}
       finally { setStravaLoading(false) }
     }
     fetchSettings()
