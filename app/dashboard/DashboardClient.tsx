@@ -1292,6 +1292,8 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               completion: completions[selectedKey],
               isPast,
               isFuture,
+              weekN: weekNum,
+              weekTheme,
             })
           }}
         />
