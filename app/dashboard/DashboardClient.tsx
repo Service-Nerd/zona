@@ -473,7 +473,7 @@ export default function DashboardClient() {
       )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} overridesReady={overridesReady} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} overridesReady={overridesReady} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={plan?.meta?.zone2_ceiling ?? 145} onManualSaved={refreshCompletions} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
         {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setScreen('me')} initials={initials} />}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setScreen('me')} initials={initials} />}
@@ -1110,6 +1110,140 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
   )
 }
 
+// ── MANUAL RUN MODAL ─────────────────────────────────────────────────────
+
+function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }: {
+  weekN: number
+  sessionKey: string | null
+  preferredUnits: 'km' | 'mi'
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const [distance, setDistance] = useState('')
+  const [duration, setDuration] = useState('')
+  const [notes, setNotes] = useState('')
+  const [saving, setSaving] = useState(false)
+  const supabase = createClient()
+
+  // Today's day key
+  const todayKey = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()]
+
+  async function save() {
+    if (!distance && !duration) return
+    setSaving(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const distKm = distance ? (preferredUnits === 'mi' ? parseFloat(distance) * 1.60934 : parseFloat(distance)) : null
+      const key = sessionKey ?? todayKey
+      await supabase.from('session_completions').upsert({
+        user_id: user.id,
+        week_n: weekN,
+        session_day: key,
+        status: 'complete',
+        strava_activity_id: null,
+        strava_activity_name: notes || `Manual run · ${duration || distance + preferredUnits}`,
+        strava_activity_km: distKm ? +distKm.toFixed(1) : null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,week_n,session_day' })
+      onSaved()
+    } catch {} finally { setSaving(false) }
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', background: 'var(--bg, #f5f2ee)',
+    border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px',
+    padding: '12px', color: 'var(--text-primary, #111)',
+    fontFamily: "'DM Mono',monospace", fontSize: '14px',
+    outline: 'none', boxSizing: 'border-box',
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+      zIndex: 2000, display: 'flex', alignItems: 'flex-end',
+      justifyContent: 'center',
+    }} onClick={onClose}>
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: 'var(--card-bg, #fff)', width: '100%', maxWidth: '480px',
+          borderRadius: '20px 20px 0 0', padding: '24px 20px 40px',
+          border: '0.5px solid var(--border-col, #e8e3dc)',
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <div>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: '17px', fontWeight: 500, color: 'var(--text-primary, #111)' }}>Log a run</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #888)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Manual entry</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted, #888)', fontSize: '20px', cursor: 'pointer', lineHeight: 1 }}>✕</button>
+        </div>
+
+        {/* Distance + Duration */}
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+              Distance ({preferredUnits})
+            </div>
+            <input
+              type="number" inputMode="decimal"
+              placeholder={preferredUnits === 'km' ? 'e.g. 8.5' : 'e.g. 5.3'}
+              value={distance}
+              onChange={e => setDistance(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+              Duration
+            </div>
+            <input
+              type="text"
+              placeholder="e.g. 1:05:30"
+              value={duration}
+              onChange={e => setDuration(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+        </div>
+
+        {/* Notes */}
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+            Notes (optional)
+          </div>
+          <textarea
+            placeholder="How did it go?"
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            rows={2}
+            style={{ ...inputStyle, fontFamily: "'DM Sans',sans-serif", fontSize: '13px', resize: 'none' }}
+          />
+        </div>
+
+        {/* Save */}
+        <button
+          onClick={save}
+          disabled={saving || (!distance && !duration)}
+          style={{
+            width: '100%', padding: '16px',
+            background: (!distance && !duration) ? 'var(--border-col)' : '#4a7c6f',
+            color: '#fff', border: 'none', borderRadius: '12px',
+            fontFamily: "'DM Mono',monospace", fontSize: '13px',
+            letterSpacing: '0.08em', textTransform: 'uppercase',
+            cursor: (!distance && !duration) ? 'default' : 'pointer',
+            fontWeight: 500, opacity: saving ? 0.7 : 1,
+          }}
+        >
+          {saving ? 'Saving...' : 'Save run'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── SESSION HERO ──────────────────────────────────────────────────────────
 
 function SessionHero({ session, completion, onTap }: {
@@ -1502,7 +1636,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
 
 // ── TODAY SCREEN ──────────────────────────────────────────────────────────
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, daysTo50k, stravaRuns, onOpenMe, initials, allOverrides, overridesReady, onOpenCalendar, onOpenSession, allCompletions }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, daysTo50k, stravaRuns, onOpenMe, initials, allOverrides, overridesReady, onOpenCalendar, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; daysTo50k: number
   stravaRuns: any[]; onOpenMe: () => void; initials: string
@@ -1511,6 +1645,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   onOpenCalendar?: () => void
   onOpenSession?: (s: any) => void
   allCompletions: Record<number, Record<string, any>>
+  preferredUnits: 'km' | 'mi'
+  zone2Ceiling: number
+  onManualSaved?: () => void
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
@@ -1525,6 +1662,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
   // Completions for this week — derived from shared allCompletions prop
   const completions = allCompletions[weekNum] ?? {}
+  const [showManualLog, setShowManualLog] = useState(false)
 
   // Derive this week's overrides from shared prop — no fetch needed
   const overrides = useMemo(() => {
@@ -1688,6 +1826,37 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         />
       ) : (
         <RestDayCard session={selectedSession} nextSession={nextRunSession} />
+      )}
+
+      {/* Manual log button — always visible */}
+      <button
+        onClick={() => setShowManualLog(true)}
+        style={{
+          margin: '8px 12px 0', width: 'calc(100% - 24px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          background: 'none', border: '0.5px solid var(--border-col, #e8e3dc)',
+          borderRadius: '12px', padding: '12px',
+          fontFamily: "'DM Mono',monospace", fontSize: '12px',
+          color: 'var(--text-muted, #888)', letterSpacing: '0.06em',
+          textTransform: 'uppercase', cursor: 'pointer',
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <line x1="7" y1="2" x2="7" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <line x1="2" y1="7" x2="12" y2="7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+        Log a run manually
+      </button>
+
+      {/* Manual log modal */}
+      {showManualLog && (
+        <ManualRunModal
+          weekN={weekNum}
+          sessionKey={selectedSession?.today ? selectedSession.key : null}
+          preferredUnits={preferredUnits}
+          onClose={() => setShowManualLog(false)}
+          onSaved={() => { setShowManualLog(false); onManualSaved?.() }}
+        />
       )}
 
 
