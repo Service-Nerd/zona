@@ -222,8 +222,8 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
         const d = weekDates[key]
         const displayDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
         const isToday = key === todayDow && displayDate === todayStr
-        // Always look up completion by originalDay — the stable DB key
-        const completion = completionMap[s?.originalDay ?? key]
+        // Only look up completion if this day actually has a session
+        const completion = s ? completionMap[s.originalDay ?? key] : undefined
         const isComplete = completion?.status === 'complete'
         const isSkipped = completion?.status === 'skipped'
         const isPast = d < now && !isToday
