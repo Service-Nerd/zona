@@ -15,24 +15,18 @@ export default function LoginPage() {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
+        queryParams: { access_type: 'offline', prompt: 'consent' },
         skipBrowserRedirect: false,
       },
     })
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-    }
+    if (error) { setError(error.message); setLoading(false) }
   }
 
   return (
     <div style={{
       minHeight: '100dvh', display: 'flex', alignItems: 'center',
       justifyContent: 'center', padding: '24px',
-      background: '#0a0a0a',
+      background: '#0B132B',
     }}>
       <div style={{ width: '100%', maxWidth: '340px' }}>
 
@@ -41,14 +35,14 @@ export default function LoginPage() {
           <div style={{
             fontFamily: "'Space Grotesk', sans-serif",
             fontSize: '40px', fontWeight: 500,
-            letterSpacing: '0.08em', color: '#D4501A',
+            letterSpacing: '0.08em', color: '#5BC0BE',
             lineHeight: 1, marginBottom: '8px',
           }}>
             ZONA
           </div>
           <div style={{
-            fontFamily: "'DM Mono', monospace",
-            fontSize: '11px', color: '#444',
+            fontFamily: "'Inter', sans-serif",
+            fontSize: '11px', color: '#3A506B',
             letterSpacing: '0.12em', textTransform: 'uppercase',
           }}>
             effort-first training
@@ -57,40 +51,39 @@ export default function LoginPage() {
 
         {/* Card */}
         <div style={{
-          background: '#0d0d0d',
-          border: '0.5px solid #1c1c1c',
+          background: '#162040',
+          border: '0.5px solid #1e2e55',
           borderRadius: '16px',
           padding: '28px 24px',
         }}>
           <div style={{
-            fontFamily: "'DM Sans', sans-serif",
+            fontFamily: "'Space Grotesk', sans-serif",
             fontSize: '18px', fontWeight: 500,
-            color: '#fff', marginBottom: '6px',
+            color: '#F7F9FB', marginBottom: '6px',
             letterSpacing: '-0.3px',
           }}>
             Sign in
           </div>
           <div style={{
-            fontFamily: "'DM Mono', monospace",
-            fontSize: '11px', color: '#444',
+            fontFamily: "'Inter', sans-serif",
+            fontSize: '11px', color: '#3A506B',
             marginBottom: '24px', lineHeight: 1.6,
           }}>
             Use your Google account to access your plan.
           </div>
 
-          {/* Google button */}
           <button
             onClick={signInWithGoogle}
             disabled={loading}
             style={{
               width: '100%',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-              background: loading ? '#111' : '#fff',
-              color: '#111',
-              border: '0.5px solid #1c1c1c',
+              background: loading ? '#1e2e55' : '#F7F9FB',
+              color: '#0B132B',
+              border: '0.5px solid #1e2e55',
               borderRadius: '10px',
               padding: '13px 16px',
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "'Inter', sans-serif",
               fontSize: '14px', fontWeight: 500,
               cursor: loading ? 'default' : 'pointer',
               opacity: loading ? 0.6 : 1,
@@ -111,10 +104,10 @@ export default function LoginPage() {
           {error && (
             <div style={{
               marginTop: '12px',
-              fontFamily: "'DM Mono', monospace",
-              fontSize: '11px', color: '#a44',
+              fontFamily: "'Inter', sans-serif",
+              fontSize: '11px', color: '#F2C14E',
               padding: '8px 12px',
-              background: 'rgba(170,68,68,0.08)',
+              background: 'rgba(242,193,78,0.08)',
               borderRadius: '8px',
             }}>
               {error}
@@ -125,11 +118,11 @@ export default function LoginPage() {
         {/* Footer */}
         <div style={{
           marginTop: '24px', textAlign: 'center',
-          fontFamily: "'DM Mono', monospace",
-          fontSize: '10px', color: '#2a2a2a',
+          fontFamily: "'Inter', sans-serif",
+          fontSize: '10px', color: '#1e2e55',
           lineHeight: 1.7,
         }}>
-          Train with intention. Adapt with intelligence.
+          Slow down. You&apos;re not Kipchoge.
         </div>
       </div>
     </div>
