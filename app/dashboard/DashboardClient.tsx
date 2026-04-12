@@ -750,7 +750,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   const paceBracket = getPaceBracket()
 
   const typeConfig: Record<string, { color: string; label: string }> = {
-    easy:     { color: '#378ADD', label: 'Easy run — Zone 2' },
+    easy:     { color: '#5BC0BE', label: 'Easy run — Zone 2' },
     quality:  { color: '#5BC0BE', label: 'Quality session' },
     run:      { color: '#5BC0BE', label: 'Long run' },
     race:     { color: '#ff7777', label: 'Race' },
@@ -786,7 +786,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                   <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted, #94A3B8)', textTransform: 'uppercase', marginBottom: '3px' }}>
                     {session.type === 'quality' ? 'Target HR zone' : 'Zone 2 ceiling'}
                   </div>
-                  <div style={{ fontSize: '22px', fontWeight: 500, color: session.type === 'quality' ? '#5BC0BE' : '#378ADD' }}>
+                  <div style={{ fontSize: '22px', fontWeight: 500, color: session.type === 'quality' ? '#5BC0BE' : '#5BC0BE' }}>
                     {session.type === 'quality' ? '155–165' : zone2Ceiling}
                     <span style={{ fontSize: '12px', color: 'var(--text-muted, #94A3B8)', marginLeft: '4px' }}>bpm</span>
                   </div>
@@ -794,7 +794,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 {paceBracket && session.type !== 'quality' && (
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted, #94A3B8)', textTransform: 'uppercase', marginBottom: '3px' }}>Est. pace bracket</div>
-                    <div style={{ fontSize: '18px', fontWeight: 500, color: '#378ADD' }}>{paceBracket}</div>
+                    <div style={{ fontSize: '18px', fontWeight: 500, color: '#5BC0BE' }}>{paceBracket}</div>
                   </div>
                 )}
               </div>
@@ -853,7 +853,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               </button>
             )}
             {session.isFuture && !isComplete && !isSkipped && (
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #444)', textAlign: 'center', padding: '12px', width: '100%' }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #94A3B8)', textAlign: 'center', padding: '12px', width: '100%' }}>
                 Available to log on {session.date}
               </div>
             )}
@@ -872,7 +872,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: '#3A506B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Link a Strava activity</div>
           <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #666)', marginBottom: '8px' }}>Optional — select from recent runs</div>
           {loadingClaimed ? (
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #444)', padding: '12px 0' }}>Loading activities...</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #94A3B8)', padding: '12px 0' }}>Loading activities...</div>
           ) : stravaRuns.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', maxHeight: '200px', overflowY: 'auto' }}>
               {stravaRuns.slice(0, 20).map((run: any) => {
@@ -896,7 +896,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               })}
             </div>
           ) : (
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #444)', padding: '12px 0', marginBottom: '8px' }}>No Strava activities found near this session date</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #94A3B8)', padding: '12px 0', marginBottom: '8px' }}>No Strava activities found near this session date</div>
           )}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #94A3B8)', border: '0.5px solid var(--border-col, #E2E8F0)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer' }}>Back</button>
@@ -1096,7 +1096,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
               {/* Day letter */}
               <span style={{
                 fontFamily: "'Inter', sans-serif", fontSize: '10px',
-                color: isSelected ? '#5BC0BE' : isToday ? '#5BC0BE' : '#444',
+                color: isSelected ? '#5BC0BE' : isToday ? '#5BC0BE' : '#94A3B8',
                 letterSpacing: '0.04em', textTransform: 'uppercase',
               }}>
                 {DOW_LETTER[key]}
@@ -1112,7 +1112,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
               }}>
                 <span style={{
                   fontFamily: "'Inter', sans-serif", fontSize: '13px',
-                  color: isSelected ? '#fff' : isToday ? '#5BC0BE' : dateNum ? '#999' : '#2a2a2a',
+                  color: isSelected ? '#fff' : isToday ? '#5BC0BE' : dateNum ? '#3A506B' : '#2a2a2a',
                   fontWeight: isToday || isSelected ? 600 : 400,
                 }}>
                   {dateNum}
@@ -1346,7 +1346,7 @@ function SessionHero({ session, completion, onTap }: {
       background: isComplete ? 'rgba(91,192,190,0.06)' : isSkipped ? 'rgba(80,80,80,0.06)' : 'var(--card-bg, #ffffff)',
       borderRadius: '16px',
       border: `0.5px solid ${isComplete ? 'rgba(91,192,190,0.35)' : isSkipped ? '#2a2a2a' : 'var(--border-col, #E2E8F0)'}`,
-      borderLeft: `4px solid ${isComplete ? '#3A506B' : isSkipped ? '#444' : accent}`,
+      borderLeft: `4px solid ${isComplete ? '#5BC0BE' : isSkipped ? 'var(--text-muted, #94A3B8)' : accent}`,
       padding: '16px',
       cursor: 'pointer',
     }}>
@@ -1649,7 +1649,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {[{ color: '#378ADD', label: 'Easy' }, { color: '#5BC0BE', label: 'Run' }, { color: '#3A506B', label: 'Done' }].map(({ color, label }) => (
+          {[{ color: '#5BC0BE', label: 'Easy' }, { color: '#5BC0BE', label: 'Run' }, { color: '#3A506B', label: 'Done' }].map(({ color, label }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
               <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: color }} />
               <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted, #94A3B8)' }}>{label}</span>
@@ -1685,7 +1685,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
                   onClick={() => setShowPast(false)}
                   style={{
                     width: '100%', padding: '12px',
-                    background: 'none', border: '0.5px solid #1c1c1c',
+                    background: 'none', border: '0.5px solid var(--border-col, #1e2e55)',
                     borderRadius: '8px', cursor: 'pointer',
                     fontFamily: "'Inter', sans-serif", fontSize: '12px',
                     color: 'var(--text-muted, #94A3B8)', letterSpacing: '0.06em', textTransform: 'uppercase',
@@ -1700,7 +1700,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
                 onClick={() => setShowPast(true)}
                 style={{
                   width: '100%', padding: '12px',
-                  background: 'none', border: '0.5px solid #1c1c1c',
+                  background: 'none', border: '0.5px solid var(--border-col, #1e2e55)',
                   borderRadius: '8px', cursor: 'pointer',
                   fontFamily: "'Inter', sans-serif", fontSize: '12px',
                   color: 'var(--text-muted, #94A3B8)', letterSpacing: '0.06em', textTransform: 'uppercase',
@@ -2129,7 +2129,7 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
           <>
             <div style={{ background: 'var(--card-bg, #ffffff)', borderRadius: '16px', border: '0.5px solid var(--border-col, #E2E8F0)', padding: '28px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
               <svg width="36" height="36" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15" fill="none" stroke="#1c1c1c" strokeWidth="2" />
+                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--border-col)" strokeWidth="2" />
                 <circle cx="18" cy="18" r="15" fill="none" stroke="#5BC0BE" strokeWidth="2" strokeDasharray="40 60" strokeLinecap="round">
                   <animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite" />
                 </circle>
@@ -2159,7 +2159,7 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
         {analysis && !loading && (
           <>
             <div style={{ background: 'var(--card-bg, #ffffff)', borderRadius: '16px', border: '0.5px solid var(--border-col, #E2E8F0)', overflow: 'hidden' }}>
-              <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid #111', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--border-col, #E2E8F0)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#5BC0BE' }} />
                 <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #94A3B8)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Coaching notes</span>
                 <span style={{ marginLeft: 'auto', fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #94A3B8)' }}>W{weekNum}/{totalWeeks}</span>
@@ -2170,7 +2170,7 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
                 ))}
               </div>
             </div>
-            <button onClick={generateAnalysis} style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'var(--text-muted, #94A3B8)', background: 'none', border: '0.5px solid #1c1c1c', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer', alignSelf: 'center' }}>
+            <button onClick={generateAnalysis} style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'var(--text-muted, #94A3B8)', background: 'none', border: '0.5px solid var(--border-col, #1e2e55)', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer', alignSelf: 'center' }}>
               Refresh analysis
             </button>
           </>
@@ -2259,7 +2259,7 @@ function StravaConnectionRow() {
           </div>
           <div>
             <div style={{ fontSize: '13px', color: 'var(--text-secondary, #3A506B)', lineHeight: 1.55 }}>Strava</div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', marginTop: '1px', color: isLoading ? '#888' : connected ? '#3A506B' : '#888' }}>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', marginTop: '1px', color: isLoading ? 'var(--text-muted, #94A3B8)' : connected ? '#5BC0BE' : 'var(--text-muted, #94A3B8)' }}>
               {isLoading ? 'checking...' : connected ? 'Connected' : 'Not connected'}
             </div>
           </div>
@@ -2314,8 +2314,8 @@ function SmokeToggle({ enabled, quitDate, onChange }: {
   }
 
   return (
-    <div onClick={toggle} style={{ width: '44px', height: '26px', borderRadius: '13px', background: enabled ? '#1e3d37' : '#1c1c1c', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
-      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: enabled ? '#3A506B' : '#444', position: 'absolute', top: '3px', left: enabled ? '21px' : '3px', transition: 'left 0.2s, background 0.2s' }} />
+    <div onClick={toggle} style={{ width: '44px', height: '26px', borderRadius: '13px', background: enabled ? 'rgba(91,192,190,0.2)' : 'var(--border-col, #1e2e55)', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
+      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: enabled ? '#3A506B' : '#94A3B8', position: 'absolute', top: '3px', left: enabled ? '21px' : '3px', transition: 'left 0.2s, background 0.2s' }} />
     </div>
   )
 }
@@ -2333,7 +2333,7 @@ function SmokeToggle({ enabled, quitDate, onChange }: {
 
 const ZONE_META = [
   { zone: 1, name: 'Recovery',  colour: '#5BC0BE', desc: 'Active recovery · warm-up · cool-down' },
-  { zone: 2, name: 'Aerobic',   colour: '#378ADD', desc: 'Aerobic base · conversational · fat burning' },
+  { zone: 2, name: 'Aerobic',   colour: '#5BC0BE', desc: 'Aerobic base · conversational · fat burning' },
   { zone: 3, name: 'Tempo',     colour: '#d4a017', desc: 'Comfortably hard · 3-word sentences' },
   { zone: 4, name: 'Threshold', colour: '#5BC0BE', desc: 'Hard · sustained race effort' },
   { zone: 5, name: 'VO₂ Max',  colour: '#c0392b', desc: 'Maximum effort · short intervals only' },
@@ -2620,11 +2620,11 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
 
         <SectionLabel>Training support</SectionLabel>
         <div style={{ background: 'var(--card-bg, #ffffff)', borderRadius: '12px', border: '0.5px solid var(--border-col, #E2E8F0)', overflow: 'hidden' }}>
-          <div style={{ padding: '14px 16px', borderBottom: '0.5px solid #111' }}>
+          <div style={{ padding: '14px 16px', borderBottom: '0.5px solid var(--border-col, #E2E8F0)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: smokeTrackerEnabled ? '10px' : 0 }}>
               <div>
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary, #A0AEC0)', lineHeight: 1.55 }}>Smoke-free tracker</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: smokeTrackerEnabled ? '#3A506B' : '#444', marginTop: '1px' }}>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: smokeTrackerEnabled ? '#3A506B' : '#94A3B8', marginTop: '1px' }}>
                   {smokeTrackerEnabled && quitDays !== null ? `${quitDays} days smoke-free` : 'Off'}
                 </div>
               </div>
@@ -2648,7 +2648,7 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
           </div>
 
           {smokeTrackerEnabled && (
-            <button onClick={() => setActiveSection('quit')} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '0.5px solid #111', cursor: 'pointer' }}>
+            <button onClick={() => setActiveSection('quit')} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '0.5px solid var(--border-col, #E2E8F0)', cursor: 'pointer' }}>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary, #A0AEC0)', lineHeight: 1.55 }}>Quit tracker</div>
                 <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: '#3A506B', marginTop: '1px' }}>Milestones + benefits</div>
@@ -2658,10 +2658,10 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
           )}
 
           {[
-            { id: 'mental'  as const, label: 'Mental toolkit', sub: 'Race mantras + strategies', color: '#378ADD' },
+            { id: 'mental'  as const, label: 'Mental toolkit', sub: 'Race mantras + strategies', color: '#5BC0BE' },
             { id: 'fueling' as const, label: 'Fueling plan',   sub: 'Gel strategy + hydration',  color: '#5BC0BE' },
           ].map(({ id, label, sub, color }, i, arr) => (
-            <button key={id} onClick={() => setActiveSection(id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: i < arr.length - 1 ? '0.5px solid #111' : 'none', cursor: 'pointer' }}>
+            <button key={id} onClick={() => setActiveSection(id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: i < arr.length - 1 ? '0.5px solid var(--border-col, #E2E8F0)' : 'none', cursor: 'pointer' }}>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary, #A0AEC0)', lineHeight: 1.55 }}>{label}</div>
                 <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color, marginTop: '1px' }}>{sub}</div>
@@ -2898,14 +2898,14 @@ function QuitTab({ quitDays, onBack }: { quitDays: number | null; onBack: () => 
     <div style={{ minHeight: '100%', background: 'var(--bg, #F7F9FB)', overflowY: 'auto', paddingBottom: '80px' }}>
       <BackHeader title="Quit tracker" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
-        <div style={{ background: 'var(--card-bg, #ffffff)', border: '0.5px solid #1e3d37', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px' }}>
+        <div style={{ background: 'var(--card-bg, #ffffff)', border: '0.5px solid rgba(91,192,190,0.3)', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px' }}>
           <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '3.5rem', color: '#3A506B', lineHeight: 1, fontWeight: 500 }}>{days}</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: '#3A506B', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>Smoke-free days</div>
             <div style={{ fontSize: '13px', color: 'var(--text-muted, #94A3B8)', lineHeight: 1.55 }}>Your aerobic capacity is recovering. The data will show it.</div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
               {milestones.map(m => (
-                <div key={m.days} style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${days >= m.days ? '#1e3d37' : '#222'}`, color: days >= m.days ? '#3A506B' : '#444' }}>
+                <div key={m.days} style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${days >= m.days ? '#5BC0BE' : 'var(--border-col, #E2E8F0)'}`, color: days >= m.days ? '#3A506B' : '#94A3B8' }}>
                   {m.label}
                 </div>
               ))}
