@@ -2443,6 +2443,8 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
 }
 
 // ── ME SCREEN ─────────────────────────────────────────────────────────────
+
+function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, restingHR, maxHR, onHRChange }: {
   initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   resetPhrase: string; onSaveMental: (v: string) => void
