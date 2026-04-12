@@ -10,6 +10,10 @@ import { fetchPlanFromUrl, DEFAULT_GIST_URL, getCurrentWeek } from '@/lib/plan'
 
 type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'admin'
 
+// ── HR zone constants — defined here so available to all components ────────
+const DEFAULT_ZONE_BOUNDARIES = [46, 60, 73, 87, 100] // upper HRR% per zone
+const DEFAULT_ZONE_FLOOR = 33                          // lower HRR% of Z1
+
 // ── Icons ─────────────────────────────────────────────────────────────────
 
 function IconToday({ active }: { active: boolean }) {
@@ -75,7 +79,7 @@ export default function DashboardClient() {
   const [preferredUnits, setPreferredUnits] = useState<'km' | 'mi'>('km')
   const [restingHR, setRestingHR] = useState<number | null>(null)
   const [maxHR, setMaxHR] = useState<number | null>(null)
-  const [zoneBoundaries, setZoneBoundaries] = useState<number[]>(DEFAULT_ZONE_BOUNDARIES)
+  const [zoneBoundaries, setZoneBoundaries] = useState<number[]>([DEFAULT_ZONE_FLOOR, ...DEFAULT_ZONE_BOUNDARIES])
 
   // Impersonation state
   const [impersonating, setImpersonating] = useState<{ userId: string; name: string } | null>(null)
@@ -2318,11 +2322,9 @@ function SmokeToggle({ enabled, quitDate, onChange }: {
 // ── HR ZONE CALCULATION (HRR% with configurable boundaries) ──────────────
 //
 // Zone boundaries are the UPPER HRR% for each zone.
-// Defaults match Garmin's 5-zone model: [39, 54, 69, 85, 100]
-// Zone lower = previous zone's upper (Zone 1 lower = 0%)
-// LTHR ≈ top of Z4: with resting 48, max 190, Z4 top = 48 + 0.85×142 = 169bpm
-
-const DEFAULT_ZONE_BOUNDARIES = [39, 54, 69, 85, 100]
+// Defaults reverse-engineered from Garmin (resting 48, max 190):
+//   Z1: 95–114, Z2: 114–133, Z3: 133–152, Z4: 152–171, Z5: 171–190
+// Z1 has a lower floor (33% HRR = 95bpm) — below this is pure rest, not Z1.
 
 const ZONE_META = [
   { zone: 1, name: 'Recovery',  colour: '#4a9a5a', desc: 'Active recovery · warm-up · cool-down' },
@@ -2332,11 +2334,11 @@ const ZONE_META = [
   { zone: 5, name: 'VO₂ Max',  colour: '#c0392b', desc: 'Maximum effort · short intervals only' },
 ]
 
-function calculateZones(restingHR: number, maxHR: number, boundaries: number[]) {
+function calculateZones(restingHR: number, maxHR: number, boundaries: number[], floor: number = DEFAULT_ZONE_FLOOR) {
   const hrr = maxHR - restingHR
   return ZONE_META.map((meta, i) => {
     const upperPct = boundaries[i] ?? 100
-    const lowerPct = i === 0 ? 0 : (boundaries[i - 1] ?? 0)
+    const lowerPct = i === 0 ? floor : (boundaries[i - 1] ?? 0)
     return {
       ...meta,
       pctMin: lowerPct,
@@ -2355,20 +2357,27 @@ function HRZonesSection({ restingHR, maxHR, zoneBoundaries, onSave }: {
 }) {
   const [rhr, setRhr] = useState(restingHR ? String(restingHR) : '')
   const [mhr, setMhr] = useState(maxHR ? String(maxHR) : '')
-  const [bounds, setBounds] = useState<string[]>(zoneBoundaries.map(String))
+  // First element of zoneBoundaries is the floor, rest are upper bounds
+  const storedFloor = zoneBoundaries[0] ?? DEFAULT_ZONE_FLOOR
+  const storedBounds = zoneBoundaries.slice(1).length === 5 ? zoneBoundaries.slice(1) : DEFAULT_ZONE_BOUNDARIES
+  const [floor, setFloor] = useState(String(storedFloor))
+  const [bounds, setBounds] = useState<string[]>(storedBounds.map(String))
   const [showBounds, setShowBounds] = useState(false)
   const [saved, setSaved] = useState(false)
 
   const rhrNum = parseInt(rhr)
   const mhrNum = parseInt(mhr)
+  const floorNum = parseInt(floor)
   const boundsNum = bounds.map(b => parseInt(b))
-  const boundsValid = boundsNum.every((b, i) => !isNaN(b) && b > 0 && b <= 100 && (i === 0 || b > boundsNum[i - 1]))
+  const boundsValid = !isNaN(floorNum) && floorNum >= 0 && floorNum < boundsNum[0] &&
+    boundsNum.every((b, i) => !isNaN(b) && b > 0 && b <= 100 && (i === 0 || b > boundsNum[i - 1]))
   const valid = rhrNum > 0 && mhrNum > 0 && mhrNum > rhrNum && boundsValid
-  const zones = valid ? calculateZones(rhrNum, mhrNum, boundsNum) : []
+  const zones = valid ? calculateZones(rhrNum, mhrNum, boundsNum, floorNum) : []
 
   function handleSave() {
     if (!valid) return
-    onSave(rhrNum, mhrNum, boundsNum)
+    // Store floor as first element, then the 5 upper bounds
+    onSave(rhrNum, mhrNum, [floorNum, ...boundsNum])
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -2425,7 +2434,25 @@ function HRZonesSection({ restingHR, maxHR, zoneBoundaries, onSave }: {
 
         {showBounds && (
           <div style={{ marginBottom: '12px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', marginBottom: '8px' }}>
+            {/* Floor + 5 upper bounds in one row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px', marginBottom: '8px' }}>
+              {/* Floor */}
+              <div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', textAlign: 'center', marginBottom: '4px', textTransform: 'uppercase' }}>Floor</div>
+                <div style={{ position: 'relative' }}>
+                  <input type="number" inputMode="numeric" value={floor}
+                    onChange={e => setFloor(e.target.value)}
+                    style={{
+                      width: '100%', background: 'var(--bg, #f5f2ee)', borderRadius: '6px',
+                      border: `0.5px solid ${!isNaN(floorNum) && floorNum >= 0 && floorNum < boundsNum[0] ? 'var(--border-col, #e8e3dc)' : 'rgba(212,80,26,0.5)'}`,
+                      padding: '8px 18px 8px 8px', color: 'var(--text-primary, #111)',
+                      fontFamily: "'DM Mono',monospace", fontSize: '13px',
+                      outline: 'none', boxSizing: 'border-box' as const, textAlign: 'center' as const,
+                    }} />
+                  <span style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)' }}>%</span>
+                </div>
+              </div>
+              {/* Z1–Z5 upper bounds */}
               {ZONE_META.map((meta, i) => (
                 <div key={i}>
                   <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: meta.colour, textAlign: 'center', marginBottom: '4px', textTransform: 'uppercase' }}>Z{i + 1}</div>
@@ -2434,7 +2461,7 @@ function HRZonesSection({ restingHR, maxHR, zoneBoundaries, onSave }: {
                       onChange={e => { const next = [...bounds]; next[i] = e.target.value; setBounds(next) }}
                       style={{
                         width: '100%', background: 'var(--bg, #f5f2ee)', borderRadius: '6px',
-                        border: `0.5px solid ${!isNaN(boundsNum[i]) && boundsNum[i] > (boundsNum[i-1] ?? 0) && boundsNum[i] <= 100 ? 'var(--border-col, #e8e3dc)' : 'rgba(212,80,26,0.5)'}`,
+                        border: `0.5px solid ${!isNaN(boundsNum[i]) && boundsNum[i] > (boundsNum[i-1] ?? floorNum) && boundsNum[i] <= 100 ? 'var(--border-col, #e8e3dc)' : 'rgba(212,80,26,0.5)'}`,
                         padding: '8px 18px 8px 8px', color: 'var(--text-primary, #111)',
                         fontFamily: "'DM Mono',monospace", fontSize: '13px',
                         outline: 'none', boxSizing: 'border-box' as const, textAlign: 'center' as const,
@@ -2444,7 +2471,7 @@ function HRZonesSection({ restingHR, maxHR, zoneBoundaries, onSave }: {
                 </div>
               ))}
             </div>
-            <button onClick={() => setBounds(DEFAULT_ZONE_BOUNDARIES.map(String))} style={{
+            <button onClick={() => { setFloor(String(DEFAULT_ZONE_FLOOR)); setBounds(DEFAULT_ZONE_BOUNDARIES.map(String)) }} style={{
               background: 'none', border: 'none', cursor: 'pointer',
               fontFamily: "'DM Mono',monospace", fontSize: '10px',
               color: 'var(--text-muted, #888)', textDecoration: 'underline', padding: 0,
