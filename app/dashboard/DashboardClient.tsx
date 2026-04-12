@@ -489,7 +489,7 @@ export default function DashboardClient() {
         display: 'flex', alignItems: 'center',
         background: 'var(--nav-bg, #f5f2ee)', borderTop: '0.5px solid var(--border-col, #e8e3dc)',
         padding: '10px 0 max(16px, env(safe-area-inset-bottom))',
-        zIndex: 1000,
+        zIndex: 3000,
       }}>
         {(['today', 'plan', 'coach', 'strava'] as Screen[]).map(id => {
           const labels: Record<Screen, string> = { today: 'Today', plan: 'Plan', coach: 'Coach', strava: 'Strava', me: 'Me', calendar: 'Calendar', session: 'Session', admin: 'Admin' }
@@ -1188,18 +1188,14 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
     step?: number; onChange: (v: number) => void; pad?: boolean
   }) {
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', minWidth: 0 }}>
         <div style={labelStyle}>{label}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <button onClick={() => onChange(Math.max(min, value - step))} style={stepperBtn(() => {}, '-')}>−</button>
-          <div style={{
-            minWidth: '44px', textAlign: 'center',
-            fontFamily: "'DM Mono',monospace", fontSize: '22px',
-            fontWeight: 500, color: 'var(--text-primary, #111)',
-          }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', justifyContent: 'center' }}>
+          <button onClick={() => onChange(Math.max(min, value - step))} style={{ width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0, background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)', color: 'var(--text-primary, #111)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Mono',monospace" }}>−</button>
+          <div style={{ minWidth: '34px', textAlign: 'center', fontFamily: "'DM Mono',monospace", fontSize: '20px', fontWeight: 500, color: 'var(--text-primary, #111)', flexShrink: 0 }}>
             {pad ? String(value).padStart(2, '0') : value}
           </div>
-          <button onClick={() => onChange(Math.min(max, value + step))} style={stepperBtn(() => {}, '+')}>+</button>
+          <button onClick={() => onChange(Math.min(max, value + step))} style={{ width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0, background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)', color: 'var(--text-primary, #111)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Mono',monospace" }}>+</button>
         </div>
       </div>
     )
@@ -1208,7 +1204,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, background: visible ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0)',
+        position: 'fixed', inset: 0, background: visible ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0)',
         zIndex: 2000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         transition: 'background 0.3s',
       }}
@@ -1218,8 +1214,10 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
         onClick={e => e.stopPropagation()}
         style={{
           background: 'var(--card-bg, #fff)', width: '100%', maxWidth: '480px',
-          borderRadius: '20px 20px 0 0', padding: '8px 20px 40px',
+          borderRadius: '20px 20px 0 0', padding: '8px 20px 24px',
           border: '0.5px solid var(--border-col, #e8e3dc)',
+          marginBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
+          maxHeight: 'calc(90vh - 64px)', overflowY: 'auto',
           transform: visible ? 'translateY(0)' : 'translateY(100%)',
           transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
         }}
@@ -1260,14 +1258,14 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
           <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #888)', marginTop: '4px', textAlign: 'center' }}>{distanceStr} {preferredUnits}</div>
         </div>
 
-        {/* Duration */}
+        {/* Duration — CSS grid keeps all 3 steppers fully on screen */}
         <div style={{ marginBottom: '20px' }}>
           <div style={labelStyle}>Duration</div>
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 16px 1fr 16px 1fr', alignItems: 'start', width: '100%' }}>
             <Stepper label="hrs" value={hours} min={0} max={12} onChange={setHours} />
-            <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '8px', color: 'var(--text-muted)', fontSize: '20px', fontFamily: "'DM Mono',monospace" }}>:</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '24px', color: 'var(--text-muted, #888)', fontSize: '18px', fontFamily: "'DM Mono',monospace" }}>:</div>
             <Stepper label="min" value={minutes} min={0} max={59} onChange={setMinutes} pad />
-            <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '8px', color: 'var(--text-muted)', fontSize: '20px', fontFamily: "'DM Mono',monospace" }}>:</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '24px', color: 'var(--text-muted, #888)', fontSize: '18px', fontFamily: "'DM Mono',monospace" }}>:</div>
             <Stepper label="sec" value={seconds} min={0} max={59} step={5} onChange={setSeconds} pad />
           </div>
         </div>
