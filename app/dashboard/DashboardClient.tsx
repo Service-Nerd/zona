@@ -75,6 +75,7 @@ export default function DashboardClient() {
   const [preferredUnits, setPreferredUnits] = useState<'km' | 'mi'>('km')
   const [restingHR, setRestingHR] = useState<number | null>(null)
   const [maxHR, setMaxHR] = useState<number | null>(null)
+  const [zoneBoundaries, setZoneBoundaries] = useState<number[]>(DEFAULT_ZONE_BOUNDARIES)
 
   // Impersonation state
   const [impersonating, setImpersonating] = useState<{ userId: string; name: string } | null>(null)
@@ -121,7 +122,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, has_onboarded, is_admin, preferred_units, resting_hr, max_hr').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, has_onboarded, is_admin, preferred_units, resting_hr, max_hr, zone_boundaries').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name').eq('user_id', user.id),
         ])
@@ -152,6 +153,12 @@ export default function DashboardClient() {
         // HR data
         if (data?.resting_hr) setRestingHR(data.resting_hr)
         if (data?.max_hr) setMaxHR(data.max_hr)
+        if (data?.zone_boundaries) {
+          try {
+            const parsed = typeof data.zone_boundaries === 'string' ? JSON.parse(data.zone_boundaries) : data.zone_boundaries
+            if (Array.isArray(parsed) && parsed.length === 5) setZoneBoundaries(parsed)
+          } catch {}
+        }
 
         // Show welcome screen if not yet onboarded
         if (!data?.has_onboarded) {
@@ -483,7 +490,7 @@ export default function DashboardClient() {
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
         {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setScreen('me')} initials={initials} />}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setScreen('me')} initials={initials} />}
-        {screen === 'me'       && <MeScreen initials={initials} athlete={plan.meta.athlete ?? 'Russell Shear'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} />}
+        {screen === 'me'       && <MeScreen initials={initials} athlete={plan.meta.athlete ?? 'Russell Shear'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} zoneBoundaries={zoneBoundaries} onHRChange={async (rhr: number, mhr: number, bounds: number[]) => { setRestingHR(rhr); setMaxHR(mhr); setZoneBoundaries(bounds); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, zone_boundaries: JSON.stringify(bounds), updated_at: new Date().toISOString() }) } catch {} }} />}
         {screen === 'calendar' && <CalendarOverlay plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onBack={() => setScreen('today')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} zone2Ceiling={plan?.meta?.zone2_ceiling ?? 145} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
@@ -2308,40 +2315,60 @@ function SmokeToggle({ enabled, quitDate, onChange }: {
 
 // ── HR ZONE CALCULATION (Karvonen / HRR method) ───────────────────────────
 
-const ZONE_DEFS = [
-  { zone: 1, name: 'Recovery',  pctMin: 50, pctMax: 60, colour: '#4a9a5a', desc: 'Active recovery · warm-up · cool-down' },
-  { zone: 2, name: 'Aerobic',   pctMin: 60, pctMax: 70, colour: '#378ADD', desc: 'Aerobic base · conversational · fat burning' },
-  { zone: 3, name: 'Tempo',     pctMin: 70, pctMax: 80, colour: '#d4a017', desc: 'Comfortably hard · 3-word sentences' },
-  { zone: 4, name: 'Threshold', pctMin: 80, pctMax: 90, colour: '#D4501A', desc: 'Hard · sustained race effort' },
-  { zone: 5, name: 'VO₂ Max',  pctMin: 90, pctMax: 100, colour: '#c0392b', desc: 'Maximum effort · short intervals only' },
+// ── HR ZONE CALCULATION (HRR% with configurable boundaries) ──────────────
+//
+// Zone boundaries are the UPPER HRR% for each zone.
+// Defaults match Garmin's 5-zone model: [39, 54, 69, 85, 100]
+// Zone lower = previous zone's upper (Zone 1 lower = 0%)
+// LTHR ≈ top of Z4: with resting 48, max 190, Z4 top = 48 + 0.85×142 = 169bpm
+
+const DEFAULT_ZONE_BOUNDARIES = [39, 54, 69, 85, 100]
+
+const ZONE_META = [
+  { zone: 1, name: 'Recovery',  colour: '#4a9a5a', desc: 'Active recovery · warm-up · cool-down' },
+  { zone: 2, name: 'Aerobic',   colour: '#378ADD', desc: 'Aerobic base · conversational · fat burning' },
+  { zone: 3, name: 'Tempo',     colour: '#d4a017', desc: 'Comfortably hard · 3-word sentences' },
+  { zone: 4, name: 'Threshold', colour: '#D4501A', desc: 'Hard · sustained race effort' },
+  { zone: 5, name: 'VO₂ Max',  colour: '#c0392b', desc: 'Maximum effort · short intervals only' },
 ]
 
-function calculateZones(restingHR: number, maxHR: number) {
+function calculateZones(restingHR: number, maxHR: number, boundaries: number[]) {
   const hrr = maxHR - restingHR
-  return ZONE_DEFS.map(d => ({
-    ...d,
-    minHR: Math.round(restingHR + (d.pctMin / 100) * hrr),
-    maxHR: Math.round(restingHR + (d.pctMax / 100) * hrr),
-  }))
+  return ZONE_META.map((meta, i) => {
+    const upperPct = boundaries[i] ?? 100
+    const lowerPct = i === 0 ? 0 : (boundaries[i - 1] ?? 0)
+    return {
+      ...meta,
+      pctMin: lowerPct,
+      pctMax: upperPct,
+      minHR: Math.round(restingHR + (lowerPct / 100) * hrr),
+      maxHR: Math.round(restingHR + (upperPct / 100) * hrr),
+    }
+  })
 }
 
-function HRZonesSection({ restingHR, maxHR, onSave }: {
+function HRZonesSection({ restingHR, maxHR, zoneBoundaries, onSave }: {
   restingHR: number | null
   maxHR: number | null
-  onSave: (rhr: number, mhr: number) => void
+  zoneBoundaries: number[]
+  onSave: (rhr: number, mhr: number, boundaries: number[]) => void
 }) {
   const [rhr, setRhr] = useState(restingHR ? String(restingHR) : '')
   const [mhr, setMhr] = useState(maxHR ? String(maxHR) : '')
+  const [bounds, setBounds] = useState<string[]>(zoneBoundaries.map(String))
+  const [showBounds, setShowBounds] = useState(false)
   const [saved, setSaved] = useState(false)
 
   const rhrNum = parseInt(rhr)
   const mhrNum = parseInt(mhr)
-  const valid = rhrNum > 0 && mhrNum > 0 && mhrNum > rhrNum
-  const zones = valid ? calculateZones(rhrNum, mhrNum) : []
+  const boundsNum = bounds.map(b => parseInt(b))
+  const boundsValid = boundsNum.every((b, i) => !isNaN(b) && b > 0 && b <= 100 && (i === 0 || b > boundsNum[i - 1]))
+  const valid = rhrNum > 0 && mhrNum > 0 && mhrNum > rhrNum && boundsValid
+  const zones = valid ? calculateZones(rhrNum, mhrNum, boundsNum) : []
 
   function handleSave() {
     if (!valid) return
-    onSave(rhrNum, mhrNum)
+    onSave(rhrNum, mhrNum, boundsNum)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -2363,8 +2390,9 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
   return (
     <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '12px', border: '0.5px solid var(--border-col, #e8e3dc)', overflow: 'hidden' }}>
 
-      {/* Editable HR inputs */}
       <div style={{ padding: '14px 16px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
+
+        {/* Resting + Max HR */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
           <div>
             <label style={labelStyle}>Resting HR</label>
@@ -2377,21 +2405,61 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
           <div>
             <label style={labelStyle}>Max HR</label>
             <div style={{ position: 'relative' }}>
-              <input type="number" inputMode="numeric" placeholder="188" value={mhr}
+              <input type="number" inputMode="numeric" placeholder="190" value={mhr}
                 onChange={e => setMhr(e.target.value)} style={inputStyle} />
               <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)' }}>bpm</span>
             </div>
           </div>
         </div>
-        <button onClick={handleSave} disabled={!valid}
-          style={{
-            width: '100%', padding: '11px',
-            background: saved ? 'rgba(74,154,90,0.12)' : valid ? 'rgba(212,80,26,0.1)' : 'var(--bg, #f5f2ee)',
-            border: `0.5px solid ${saved ? 'rgba(74,154,90,0.4)' : valid ? 'rgba(212,80,26,0.3)' : 'var(--border-col)'}`,
-            borderRadius: '8px', cursor: valid ? 'pointer' : 'not-allowed',
-            fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.08em',
-            textTransform: 'uppercase', color: saved ? '#4a9a5a' : valid ? '#D4501A' : 'var(--text-muted, #888)',
-          }}>
+
+        {/* Collapsible boundary editor */}
+        <button onClick={() => setShowBounds(v => !v)} style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0 10px',
+          fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)',
+          letterSpacing: '0.08em', textTransform: 'uppercase',
+        }}>
+          <span>Zone boundaries (HRR%)</span>
+          <span>{showBounds ? '▲' : '▼'}</span>
+        </button>
+
+        {showBounds && (
+          <div style={{ marginBottom: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', marginBottom: '8px' }}>
+              {ZONE_META.map((meta, i) => (
+                <div key={i}>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: meta.colour, textAlign: 'center', marginBottom: '4px', textTransform: 'uppercase' }}>Z{i + 1}</div>
+                  <div style={{ position: 'relative' }}>
+                    <input type="number" inputMode="numeric" value={bounds[i]}
+                      onChange={e => { const next = [...bounds]; next[i] = e.target.value; setBounds(next) }}
+                      style={{
+                        width: '100%', background: 'var(--bg, #f5f2ee)', borderRadius: '6px',
+                        border: `0.5px solid ${!isNaN(boundsNum[i]) && boundsNum[i] > (boundsNum[i-1] ?? 0) && boundsNum[i] <= 100 ? 'var(--border-col, #e8e3dc)' : 'rgba(212,80,26,0.5)'}`,
+                        padding: '8px 18px 8px 8px', color: 'var(--text-primary, #111)',
+                        fontFamily: "'DM Mono',monospace", fontSize: '13px',
+                        outline: 'none', boxSizing: 'border-box' as const, textAlign: 'center' as const,
+                      }} />
+                    <span style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)' }}>%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setBounds(DEFAULT_ZONE_BOUNDARIES.map(String))} style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: "'DM Mono',monospace", fontSize: '10px',
+              color: 'var(--text-muted, #888)', textDecoration: 'underline', padding: 0,
+            }}>Reset to Garmin defaults</button>
+          </div>
+        )}
+
+        <button onClick={handleSave} disabled={!valid} style={{
+          width: '100%', padding: '11px',
+          background: saved ? 'rgba(74,154,90,0.12)' : valid ? 'rgba(212,80,26,0.1)' : 'var(--bg, #f5f2ee)',
+          border: `0.5px solid ${saved ? 'rgba(74,154,90,0.4)' : valid ? 'rgba(212,80,26,0.3)' : 'var(--border-col)'}`,
+          borderRadius: '8px', cursor: valid ? 'pointer' : 'not-allowed',
+          fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.08em',
+          textTransform: 'uppercase', color: saved ? '#4a9a5a' : valid ? '#D4501A' : 'var(--text-muted, #888)',
+        }}>
           {saved ? '✓ Saved' : 'Save HR data'}
         </button>
       </div>
@@ -2400,17 +2468,15 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
       {zones.length > 0 && (
         <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
-            Calculated zones · HRR method
+            Calculated zones · HRR%
           </div>
           {zones.map(z => (
             <div key={z.zone} style={{
               display: 'grid', gridTemplateColumns: '24px 1fr auto',
-              alignItems: 'center', gap: '10px',
-              padding: '9px 10px', borderRadius: '8px',
-              background: 'var(--bg, #f5f2ee)',
+              alignItems: 'center', gap: '10px', padding: '9px 10px',
+              borderRadius: '8px', background: 'var(--bg, #f5f2ee)',
               border: '0.5px solid var(--border-col, #e8e3dc)',
             }}>
-              {/* Zone number */}
               <div style={{
                 width: '24px', height: '24px', borderRadius: '50%',
                 background: z.colour + '18', border: `1.5px solid ${z.colour}`,
@@ -2418,21 +2484,19 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
                 fontFamily: "'DM Mono',monospace", fontSize: '10px',
                 color: z.colour, fontWeight: 'bold', flexShrink: 0,
               }}>{z.zone}</div>
-              {/* Name + desc */}
               <div>
                 <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-primary, #111)', fontWeight: 500 }}>{z.name}</div>
                 <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '11px', color: 'var(--text-muted, #888)', marginTop: '1px' }}>{z.desc}</div>
               </div>
-              {/* HR range */}
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: z.colour, whiteSpace: 'nowrap', textAlign: 'right' }}>
-                {z.minHR}–{z.maxHR}
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: z.colour, whiteSpace: 'nowrap' }}>{z.minHR}–{z.maxHR}</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', marginTop: '1px' }}>{z.pctMin}–{z.pctMax}%</div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Prompt if incomplete */}
       {zones.length === 0 && (rhr || mhr) && (
         <div style={{ padding: '14px 16px', fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #888)', textAlign: 'center' }}>
           Enter both values to calculate zones
@@ -2444,14 +2508,14 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
 
 // ── ME SCREEN ─────────────────────────────────────────────────────────────
 
-function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, restingHR, maxHR, onHRChange }: {
+function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, restingHR, maxHR, zoneBoundaries, onHRChange }: {
   initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   resetPhrase: string; onSaveMental: (v: string) => void
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void; onBack: () => void
   isAdmin?: boolean; onOpenAdmin?: () => void
   preferredUnits: 'km' | 'mi'; onUnitsChange: (u: 'km' | 'mi') => void
-  restingHR: number | null; maxHR: number | null; onHRChange: (rhr: number, mhr: number) => void
+  restingHR: number | null; maxHR: number | null; zoneBoundaries: number[]; onHRChange: (rhr: number, mhr: number, bounds: number[]) => void
 }) {
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling'>('main')
 
@@ -2520,7 +2584,7 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
         <StravaConnectionRow />
 
         <SectionLabel>Heart rate zones</SectionLabel>
-        <HRZonesSection restingHR={restingHR} maxHR={maxHR} onSave={onHRChange} />
+        <HRZonesSection restingHR={restingHR} maxHR={maxHR} zoneBoundaries={zoneBoundaries} onSave={onHRChange} />
 
         <SectionLabel>Training support</SectionLabel>
         <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '12px', border: '0.5px solid var(--border-col, #e8e3dc)', overflow: 'hidden' }}>
