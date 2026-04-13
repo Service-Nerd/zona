@@ -1276,7 +1276,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
               }}>
                 <span style={{
                   fontFamily: "'Inter', sans-serif", fontSize: '13px',
-                  color: isSelected ? '#fff' : isToday ? 'var(--accent)' : dateNum ? 'var(--text-muted)' : ''#2a2a2a'',
+                  color: isSelected ? '#fff' : isToday ? 'var(--accent)' : dateNum ? 'var(--text-muted)' : '#2a2a2a',
                   fontWeight: isToday || isSelected ? 600 : 400,
                 }}>
                   {dateNum}
@@ -1532,7 +1532,7 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits 
       margin: '12px 12px 0',
       background: isComplete ? 'var(--teal-soft)' : isSkipped ? 'rgba(80,80,80,0.04)' : 'var(--card-bg)',
       borderRadius: '16px',
-      border: `0.5px solid ${isComplete ? 'var(--teal-mid)' : isSkipped ? ''#2a2a2a'' : 'var(--border-col)'}`,
+      border: `0.5px solid ${isComplete ? 'var(--teal-mid)' : isSkipped ? '#2a2a2a' : 'var(--border-col)'}`,
       borderLeft: `4px solid ${isComplete ? 'var(--teal)' : isSkipped ? 'var(--text-secondary)' : accent}`,
       cursor: 'pointer',
       overflow: 'hidden',
@@ -1726,7 +1726,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
 
   function getDotColor(type: string, completion?: any): string {
     if (completion?.status === 'complete') return 'var(--teal)'
-    if (completion?.status === 'skipped') return ''#2a2a2a''
+    if (completion?.status === 'skipped') return '#2a2a2a'
     return TYPE_DOT[type] ?? 'transparent'
   }
 
