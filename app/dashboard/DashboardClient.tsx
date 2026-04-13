@@ -75,6 +75,9 @@ export default function DashboardClient() {
   const [preferredUnits, setPreferredUnits] = useState<'km' | 'mi'>('km')
   const [restingHR, setRestingHR] = useState<number | null>(null)
   const [maxHR, setMaxHR] = useState<number | null>(null)
+  const [firstName, setFirstName] = useState<string>('')
+  const [lastName, setLastName] = useState<string>('')
+  const [profileEmail, setProfileEmail] = useState<string>('')
 
   // Impersonation state
   const [impersonating, setImpersonating] = useState<{ userId: string; name: string } | null>(null)
@@ -89,10 +92,6 @@ export default function DashboardClient() {
   const [stravaRuns, setStravaRuns] = useState<any[] | null>(null)
   const [stravaLoading, setStravaLoading] = useState(true)
   const [stravaConnected, setStravaConnected] = useState(false)
-
-  // Screen guide state — shows first-load popup per screen
-  const [guideScreen, setGuideScreen] = useState<Screen | null>(null)
-
   const supabase = createClient()
 
   useEffect(() => {
@@ -104,12 +103,17 @@ export default function DashboardClient() {
     }
   }, [])
 
-  const initials = (plan?.meta?.athlete ?? 'RS')
-    .split(' ')
-    .map((w: string) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  const initials = (() => {
+    if (firstName || lastName) {
+      return `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase().slice(0, 2) || 'RS'
+    }
+    return (plan?.meta?.athlete ?? 'RS')
+      .split(' ')
+      .map((w: string) => w[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  })()
 
   useEffect(() => {
     try {
@@ -125,7 +129,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, has_onboarded, is_admin, preferred_units, resting_hr, max_hr').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, has_onboarded, is_admin, preferred_units, resting_hr, max_hr, first_name, last_name, email').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name').eq('user_id', user.id),
         ])
@@ -156,6 +160,11 @@ export default function DashboardClient() {
         // HR data
         if (data?.resting_hr) setRestingHR(data.resting_hr)
         if (data?.max_hr) setMaxHR(data.max_hr)
+
+        // Profile data
+        if (data?.first_name) setFirstName(data.first_name)
+        if (data?.last_name) setLastName(data.last_name)
+        if (data?.email) setProfileEmail(data.email)
 
         // Show welcome screen if not yet onboarded
         if (!data?.has_onboarded) {
@@ -487,16 +496,11 @@ export default function DashboardClient() {
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
         {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setScreen('me')} initials={initials} />}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setScreen('me')} initials={initials} />}
-        {screen === 'me'       && <MeScreen initials={initials} athlete={plan.meta.athlete ?? 'Russell Shear'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} />}
+        {screen === 'me'       && <MeScreen initials={initials} athlete={plan.meta.athlete ?? 'Russell Shear'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} />}
         {screen === 'calendar' && <CalendarOverlay plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onBack={() => setScreen('today')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} zone2Ceiling={plan?.meta?.zone2_ceiling ?? 145} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
       </div>
-
-      {/* Screen guide — first-load popup */}
-      {guideScreen && (
-        <ScreenGuide screen={guideScreen} onDismiss={() => setGuideScreen(null)} />
-      )}
 
       <div style={{
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
@@ -510,11 +514,7 @@ export default function DashboardClient() {
           const labels: Record<Screen, string> = { today: 'Today', plan: 'Plan', coach: 'Coach', strava: 'Strava', me: 'Me', calendar: 'Calendar', session: 'Session', admin: 'Admin' }
           const active = screen === id
           return (
-            <button key={id} onClick={() => {
-              setScreen(id)
-              const seen = getSeenGuides()
-              if (!seen.has(id)) setGuideScreen(id)
-            }} style={{
+            <button key={id} onClick={() => setScreen(id)} style={{
               flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
               background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
             }}>
@@ -571,150 +571,6 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
     <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', border: '0.5px solid var(--border-col, #e8e3dc)', margin: '0 12px', ...style }}>
       {children}
     </div>
-  )
-}
-
-// ── SCREEN GUIDE ──────────────────────────────────────────────────────────
-
-const GUIDE_CONTENT: Partial<Record<Screen, { title: string; body: string }>> = {
-  today: {
-    title: 'Today',
-    body: "Your day. Tap a date, see what's on. Log it when you're done. That's the whole thing.",
-  },
-  plan: {
-    title: 'Plan',
-    body: "Your full build, laid out. Tap any session to move it or mark it done. Don't skip leg day.",
-  },
-  coach: {
-    title: 'Coach',
-    body: 'Pulls your latest Strava run and tells you what it means. Occasionally harsh. Always right.',
-  },
-  strava: {
-    title: 'Strava',
-    body: 'Your runs, linked to your plan. Connects the effort to the training. Nothing else.',
-  },
-}
-
-const GUIDE_SEEN_KEY = 'zona_guide_seen'
-
-function getSeenGuides(): Set<string> {
-  try {
-    const raw = localStorage.getItem(GUIDE_SEEN_KEY)
-    return new Set(raw ? JSON.parse(raw) : [])
-  } catch { return new Set() }
-}
-
-function markGuideSeen(screen: string) {
-  try {
-    const seen = getSeenGuides()
-    seen.add(screen)
-    localStorage.setItem(GUIDE_SEEN_KEY, JSON.stringify([...seen]))
-  } catch {}
-}
-
-function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => void }) {
-  const content = GUIDE_CONTENT[screen]
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 10)
-    return () => clearTimeout(t)
-  }, [])
-
-  function dismiss() {
-    markGuideSeen(screen)
-    setVisible(false)
-    setTimeout(onDismiss, 280)
-  }
-
-  if (!content) return null
-
-  const NAV_SCREENS: Screen[] = ['today', 'plan', 'coach', 'strava']
-  const NAV_LABELS: Record<string, string> = { today: 'Today', plan: 'Plan', coach: 'Coach', strava: 'Strava' }
-
-  return (
-    <>
-      {/* Scrim */}
-      <div
-        onClick={dismiss}
-        style={{
-          position: 'fixed', inset: 0, zIndex: 4000,
-          background: 'rgba(0,0,0,0.45)',
-          opacity: visible ? 1 : 0,
-          transition: 'opacity 0.28s ease',
-        }}
-      />
-
-      {/* Sheet */}
-      <div style={{
-        position: 'fixed', bottom: 0, left: '50%',
-        transform: `translateX(-50%) translateY(${visible ? '0' : '100%'})`,
-        transition: 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
-        width: '100%', maxWidth: '480px',
-        background: 'var(--card-bg, #fff)',
-        borderRadius: '20px 20px 0 0',
-        zIndex: 4001,
-        paddingBottom: 'max(32px, env(safe-area-inset-bottom))',
-      }}>
-        {/* Drag handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border-col, #e8e3dc)' }} />
-        </div>
-
-        {/* Mirrored nav bar */}
-        <div style={{
-          display: 'flex', alignItems: 'center',
-          borderBottom: '0.5px solid var(--border-col, #e8e3dc)',
-          padding: '8px 0 10px',
-        }}>
-          {NAV_SCREENS.map(id => {
-            const active = screen === id
-            return (
-              <div key={id} style={{
-                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-              }}>
-                {id === 'today'  && <IconToday  active={active} />}
-                {id === 'plan'   && <IconPlan   active={active} />}
-                {id === 'coach'  && <IconCoach  active={active} />}
-                {id === 'strava' && <IconStrava active={active} />}
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: active ? '#E05A1C' : '#999' }}>
-                  {NAV_LABELS[id]}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Content */}
-        <div style={{ padding: '28px 24px 8px' }}>
-          <div style={{
-            fontFamily: "'DM Sans',sans-serif", fontSize: '20px', fontWeight: 500,
-            color: 'var(--text-primary, #111)', letterSpacing: '-0.3px', marginBottom: '12px',
-          }}>
-            {content.title}
-          </div>
-          <div style={{
-            fontFamily: "'DM Mono',monospace", fontSize: '13px', lineHeight: 1.7,
-            color: 'var(--text-muted, #888)', marginBottom: '32px',
-          }}>
-            {content.body}
-          </div>
-          <button
-            onClick={dismiss}
-            style={{
-              width: '100%', padding: '16px',
-              background: '#D4501A', color: '#fff',
-              border: 'none', borderRadius: '14px',
-              fontFamily: "'DM Mono',monospace", fontSize: '13px',
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              cursor: 'pointer', fontWeight: 500,
-            }}
-          >
-            Got it
-          </button>
-        </div>
-      </div>
-    </>
   )
 }
 
@@ -901,74 +757,115 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
 
   return (
     <>
-      {/* Header */}
-      <div style={{ padding: '12px 18px 8px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
-        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
-          {session.day} · {session.date}
-          {isComplete && <span style={{ color: '#4a7c6f', marginLeft: '8px' }}>✓ Complete</span>}
-          {isSkipped && <span style={{ color: 'var(--text-muted, #777)', marginLeft: '8px' }}>Skipped</span>}
+      {/* ── TOP BLOCK: session type, zone, HR target, pace, dist+dur ── */}
+      <div style={{
+        borderLeft: `4px solid ${config.color}`,
+        padding: '14px 18px 14px 16px',
+        borderBottom: '0.5px solid var(--border-col, #e8e3dc)',
+      }}>
+        {/* Row 1: date + status badge */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            {session.day} · {session.date}
+          </span>
+          {isComplete && (
+            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', background: 'rgba(74,124,111,0.12)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.4)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>✓ Done</span>
+          )}
+          {isSkipped && (
+            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', background: 'rgba(80,80,80,0.1)', color: '#666', border: '0.5px solid #333', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Skipped</span>
+          )}
         </div>
-        {session.detail && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #666)', marginTop: '2px' }}>{session.detail}</div>}
+
+        {/* Row 2: session type chip */}
+        <div style={{ marginBottom: '12px' }}>
+          <span style={{
+            fontFamily: "'DM Mono',monospace", fontSize: '11px', fontWeight: 600,
+            color: config.color, letterSpacing: '0.08em', textTransform: 'uppercase',
+            background: `${config.color}18`, borderRadius: '6px', padding: '4px 10px',
+          }}>
+            {config.label}
+          </span>
+        </div>
+
+        {/* Row 3: metrics grid — HR / pace / dist+dur */}
+        {(session.type === 'easy' || session.type === 'run' || session.type === 'quality') && (
+          <div style={{ display: 'grid', gridTemplateColumns: paceBracket ? '1fr 1fr' : '1fr', gap: '10px' }}>
+            {/* HR target */}
+            <div style={{ background: 'var(--bg, #f5f2ee)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col, #e8e3dc)' }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+                {session.type === 'quality' ? 'Target HR' : 'Zone 2 ceiling'}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '22px', fontWeight: 600, color: config.color, lineHeight: 1 }}>
+                  {session.type === 'quality' ? '155–165' : zone2Ceiling}
+                </span>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)' }}>bpm</span>
+              </div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', marginTop: '4px' }}>
+                {session.type === 'quality' ? 'Warm up 15 min first' : 'Walk if exceeded'}
+              </div>
+            </div>
+
+            {/* Pace bracket */}
+            {paceBracket && (
+              <div style={{ background: 'var(--bg, #f5f2ee)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col, #e8e3dc)' }}>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Est. pace</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
+                  <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '18px', fontWeight: 600, color: config.color, lineHeight: 1 }}>{paceBracket}</span>
+                </div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', marginTop: '4px' }}>HR-derived estimate</div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {view === 'detail' && (
         <>
-          {/* Week theme */}
-          <div style={{ padding: '12px 18px', background: 'var(--bg, #f5f2ee)', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary, #555)', lineHeight: 1.5 }}>{weekTheme}</div>
-          </div>
-
-          {/* Zone + pace bracket */}
-          {(session.type === 'easy' || session.type === 'run' || session.type === 'quality') && (
-            <div style={{ margin: '14px 18px 0', background: 'var(--bg, #f5f2ee)', borderRadius: '12px', padding: '14px 16px', border: '0.5px solid var(--border-col, #e8e3dc)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <div>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', marginBottom: '3px' }}>
-                    {session.type === 'quality' ? 'Target HR zone' : 'Zone 2 ceiling'}
-                  </div>
-                  <div style={{ fontSize: '22px', fontWeight: 500, color: session.type === 'quality' ? '#D4501A' : '#378ADD' }}>
-                    {session.type === 'quality' ? '155–165' : zone2Ceiling}
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted, #777)', marginLeft: '4px' }}>bpm</span>
-                  </div>
-                </div>
-                {paceBracket && session.type !== 'quality' && (
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', marginBottom: '3px' }}>Est. pace bracket</div>
-                    <div style={{ fontSize: '18px', fontWeight: 500, color: '#378ADD' }}>{paceBracket}</div>
-                  </div>
-                )}
-              </div>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)' }}>
-                {session.type === 'quality' ? 'Controlled efforts. Not maximal. Warm up 15 min first.' : 'Walk immediately if HR exceeds this. No exceptions.'}
+          {/* ── MIDDLE BLOCK: session description ── */}
+          {session.detail && (
+            <div style={{ padding: '16px 18px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Session</div>
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary, #444)', lineHeight: 1.65 }}>
+                {session.detail}
               </div>
             </div>
           )}
 
-          {/* Why this session */}
+          {/* Week theme — compact, below description */}
+          {weekTheme && (
+            <div style={{ padding: '12px 18px', background: 'var(--bg, #f5f2ee)', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted, #888)', lineHeight: 1.5, fontStyle: 'italic' }}>{weekTheme}</div>
+            </div>
+          )}
+
+          {/* ── BOTTOM BLOCK: coach notes / why ── */}
           {guidance && (
-            <div style={{ padding: '16px 18px 0' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Why this session</div>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.7, marginBottom: '16px' }}>
-                {guidance.why}
+            <div style={{ padding: '14px 18px 4px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: config.color, flexShrink: 0 }} />
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Coach notes</div>
               </div>
 
+              {guidance.why && (
+                <div style={{ fontSize: '13px', color: 'var(--text-muted, #777)', lineHeight: 1.7, marginBottom: guidance.what || guidance.how ? '14px' : '10px', fontStyle: 'italic' }}>
+                  {guidance.why}
+                </div>
+              )}
+
               {guidance.what && (
-                <>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>What</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.6, marginBottom: '16px' }}>
-                    {guidance.what}
-                  </div>
-                </>
+                <div style={{ marginBottom: guidance.how ? '12px' : '10px' }}>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>What</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.6 }}>{guidance.what}</div>
+                </div>
               )}
 
               {guidance.how && (
-                <>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>How</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.6, marginBottom: '8px' }}>
-                    {guidance.how}
-                  </div>
-                </>
+                <div style={{ marginBottom: '10px' }}>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>How</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.6 }}>{guidance.how}</div>
+                </div>
               )}
             </div>
           )}
@@ -1484,69 +1381,72 @@ function SessionHero({ session, completion, onTap }: {
   return (
     <div onClick={onTap} style={{
       margin: '12px 12px 0',
-      background: isComplete ? 'rgba(74,124,111,0.06)' : isSkipped ? 'rgba(80,80,80,0.06)' : 'var(--card-bg, #fff)',
+      background: isComplete ? 'rgba(74,124,111,0.05)' : isSkipped ? 'rgba(80,80,80,0.04)' : 'var(--card-bg, #fff)',
       borderRadius: '16px',
-      border: `0.5px solid ${isComplete ? 'rgba(74,154,90,0.35)' : isSkipped ? '#2a2a2a' : 'var(--border-col, #e8e3dc)'}`,
+      border: `0.5px solid ${isComplete ? 'rgba(74,154,90,0.3)' : isSkipped ? '#2a2a2a' : 'var(--border-col, #e8e3dc)'}`,
       borderLeft: `4px solid ${isComplete ? '#4a7c6f' : isSkipped ? '#444' : accent}`,
-      padding: '16px',
       cursor: 'pointer',
+      overflow: 'hidden',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-        <span style={{
-          fontFamily: "'DM Mono',monospace", fontSize: '10px',
-          color: isComplete ? '#4a7c6f' : isSkipped ? '#555' : accent,
-          letterSpacing: '0.1em', textTransform: 'uppercase',
+      {/* Top row: type chip + date */}
+      <div style={{ padding: '14px 16px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+          <span style={{
+            fontFamily: "'DM Mono',monospace", fontSize: '10px', fontWeight: 600,
+            color: isComplete ? '#4a7c6f' : isSkipped ? '#555' : accent,
+            background: isComplete ? 'rgba(74,124,111,0.12)' : isSkipped ? 'rgba(80,80,80,0.1)' : `${accent}15`,
+            borderRadius: '6px', padding: '3px 8px',
+            textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0,
+          }}>
+            {isComplete ? '✓ Done' : isSkipped ? 'Skipped' : TYPE_LABEL[session.type] ?? session.type}
+          </span>
+          <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #999)', textTransform: 'uppercase', letterSpacing: '0.05em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {session.today ? 'Today' : `${session.day} ${session.date}`}
+          </span>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div style={{ padding: '0 16px 14px' }}>
+        <div style={{
+          fontSize: '20px', fontWeight: 500, letterSpacing: '-0.3px',
+          color: isSkipped ? 'var(--text-muted, #888)' : 'var(--text-primary, #111)',
+          lineHeight: 1.2, marginBottom: '6px',
+          fontFamily: "'DM Sans',sans-serif",
+          textDecoration: isSkipped ? 'line-through' : 'none',
         }}>
-          {session.today ? 'Today · ' : ''}{session.day} {session.date} · {TYPE_LABEL[session.type] ?? session.type}
-        </span>
-        {isComplete && (
-          <span style={{
-            fontFamily: "'DM Mono',monospace", fontSize: '10px', letterSpacing: '0.08em',
-            background: 'rgba(74,124,111,0.15)', color: '#4a7c6f',
-            border: '0.5px solid rgba(74,124,111,0.4)',
-            borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase',
-          }}>✓ Done</span>
+          {session.title}
+        </div>
+
+        {session.detail && !isComplete && !isSkipped && (
+          <div style={{ fontSize: '13px', color: 'var(--text-muted, #888)', lineHeight: 1.55, marginBottom: '10px' }}>
+            {session.detail}
+          </div>
         )}
-        {isSkipped && (
-          <span style={{
-            fontFamily: "'DM Mono',monospace", fontSize: '10px', letterSpacing: '0.08em',
-            background: 'rgba(80,80,80,0.12)', color: '#666',
-            border: '0.5px solid #333',
-            borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase',
-          }}>Skipped</span>
+
+        {isComplete && completion?.strava_activity_name && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FC4C02', flexShrink: 0 }} />
+            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#FC4C02' }}>{completion.strava_activity_name}</span>
+          </div>
         )}
       </div>
 
+      {/* Footer CTA */}
       <div style={{
-        fontSize: '20px', fontWeight: 500, letterSpacing: '-0.3px',
-        color: isSkipped ? 'var(--text-muted, #888)' : 'var(--text-primary, #111)',
-        lineHeight: 1.2, marginBottom: session.detail ? '6px' : '14px',
-        textDecoration: isSkipped ? 'line-through' : 'none',
+        padding: '10px 16px',
+        borderTop: '0.5px solid var(--border-col, #e8e3dc)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: 'var(--bg, #f5f2ee)',
       }}>
-        {session.title}
-      </div>
-
-      {session.detail && (
-        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', marginBottom: '14px' }}>
-          {session.detail}
-        </div>
-      )}
-
-      {isComplete && completion?.strava_activity_name && (
-        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#FC4C02', marginBottom: '12px' }}>
-          ● {completion.strava_activity_name}
-        </div>
-      )}
-
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{
-          fontFamily: "'DM Mono',monospace", fontSize: '12px',
-          color: isComplete ? '#4a7c6f' : isSkipped ? '#555' : 'var(--text-muted, #888)',
-          letterSpacing: '0.06em', textTransform: 'uppercase',
+          fontFamily: "'DM Mono',monospace", fontSize: '11px', letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          color: isComplete ? '#4a7c6f' : isSkipped ? '#555' : accent,
         }}>
           {isComplete ? 'View details' : isSkipped ? 'Update' : session.today ? 'Log this session' : 'View session'}
         </span>
-        <span style={{ color: 'var(--text-muted, #777)', fontSize: '18px' }}>›</span>
+        <span style={{ color: 'var(--text-muted, #999)', fontSize: '16px', lineHeight: 1 }}>›</span>
       </div>
     </div>
   )
@@ -2599,9 +2499,87 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
   )
 }
 
+// ── PROFILE SECTION ───────────────────────────────────────────────────────
+
+function ProfileSection({ firstName, lastName, email, onSave }: {
+  firstName: string; lastName: string; email: string
+  onSave: (fn: string, ln: string, em: string) => void
+}) {
+  const [fn, setFn] = useState(firstName)
+  const [ln, setLn] = useState(lastName)
+  const [em, setEm] = useState(email)
+  const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => { setFn(firstName) }, [firstName])
+  useEffect(() => { setLn(lastName) }, [lastName])
+  useEffect(() => { setEm(email) }, [email])
+
+  const isDirty = fn !== firstName || ln !== lastName || em !== email
+  const isValid = fn.trim().length > 0 || ln.trim().length > 0
+
+  async function handleSave() {
+    if (!isValid) return
+    setSaving(true)
+    await onSave(fn.trim(), ln.trim(), em.trim())
+    setSaved(true)
+    setSaving(false)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', background: 'var(--bg, #f5f2ee)',
+    border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px',
+    padding: '11px 12px', color: 'var(--text-primary, #111)',
+    fontFamily: "'DM Sans',sans-serif", fontSize: '14px',
+    outline: 'none', boxSizing: 'border-box',
+  }
+
+  const labelStyle: React.CSSProperties = {
+    fontFamily: "'DM Mono',monospace", fontSize: '10px',
+    color: 'var(--text-muted, #777)', textTransform: 'uppercase',
+    letterSpacing: '0.08em', marginBottom: '6px', display: 'block',
+  }
+
+  return (
+    <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '12px', border: '0.5px solid var(--border-col, #e8e3dc)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        <div>
+          <label style={labelStyle}>First name</label>
+          <input type="text" placeholder="Russell" value={fn} onChange={e => setFn(e.target.value)} style={inputStyle} />
+        </div>
+        <div>
+          <label style={labelStyle}>Last name</label>
+          <input type="text" placeholder="Shear" value={ln} onChange={e => setLn(e.target.value)} style={inputStyle} />
+        </div>
+      </div>
+      <div>
+        <label style={labelStyle}>Email</label>
+        <input type="email" placeholder="you@example.com" value={em} onChange={e => setEm(e.target.value)} style={inputStyle} />
+      </div>
+      <button
+        onClick={handleSave}
+        disabled={!isDirty || !isValid || saving}
+        style={{
+          width: '100%', padding: '11px',
+          background: saved ? 'rgba(74,154,90,0.12)' : isDirty && isValid ? 'rgba(212,80,26,0.1)' : 'var(--bg, #f5f2ee)',
+          border: `0.5px solid ${saved ? 'rgba(74,154,90,0.4)' : isDirty && isValid ? 'rgba(212,80,26,0.3)' : 'var(--border-col)'}`,
+          borderRadius: '8px', cursor: isDirty && isValid ? 'pointer' : 'not-allowed',
+          fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          color: saved ? '#4a9a5a' : isDirty && isValid ? '#D4501A' : 'var(--text-muted, #888)',
+          transition: 'all 0.15s',
+        }}
+      >
+        {saving ? 'Saving...' : saved ? '✓ Saved' : 'Save profile'}
+      </button>
+    </div>
+  )
+}
+
 // ── ME SCREEN ─────────────────────────────────────────────────────────────
 
-function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, restingHR, maxHR, onHRChange }: {
+function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange }: {
   initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   resetPhrase: string; onSaveMental: (v: string) => void
@@ -2609,6 +2587,8 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
   isAdmin?: boolean; onOpenAdmin?: () => void
   preferredUnits: 'km' | 'mi'; onUnitsChange: (u: 'km' | 'mi') => void
   restingHR: number | null; maxHR: number | null; onHRChange: (rhr: number, mhr: number) => void
+  firstName: string; lastName: string; profileEmail: string
+  onProfileChange: (fn: string, ln: string, em: string) => void
 }) {
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling'>('main')
 
@@ -2617,6 +2597,7 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
   if (activeSection === 'fueling') return <FuelingTab onBack={() => setActiveSection('main')} />
 
   const daysToRace = Math.max(0, Math.ceil((new Date('2026-07-11').getTime() - Date.now()) / 86400000))
+  const displayName = [firstName, lastName].filter(Boolean).join(' ') || athlete
 
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto' }}>
@@ -2630,13 +2611,14 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
 
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '32px' }}>
 
+        {/* Identity card */}
         <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', padding: '16px', border: '0.5px solid var(--border-col, #e8e3dc)', display: 'flex', alignItems: 'center', gap: '14px', justifyContent: 'space-between' }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#D4501A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Mono',monospace", fontSize: '15px', fontWeight: 500, color: 'var(--text-primary, #111)', flexShrink: 0 }}>
+          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#D4501A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Mono',monospace", fontSize: '15px', fontWeight: 500, color: '#fff', flexShrink: 0 }}>
             {initials}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '15px', color: 'var(--text-primary, #111)', fontWeight: 500 }}>{athlete}</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', marginTop: '2px' }}>Berkshire, UK</div>
+            <div style={{ fontSize: '15px', color: 'var(--text-primary, #111)', fontWeight: 500 }}>{displayName}</div>
+            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', marginTop: '2px' }}>{profileEmail || 'Berkshire, UK'}</div>
             <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#D4501A', marginTop: '4px' }}>Race to the Stones · {daysToRace} days</div>
           </div>
           <form action="/auth/signout" method="post">
@@ -2645,6 +2627,10 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
             </button>
           </form>
         </div>
+
+        {/* Profile section */}
+        <SectionLabel>Profile</SectionLabel>
+        <ProfileSection firstName={firstName} lastName={lastName} email={profileEmail} onSave={onProfileChange} />
 
         <SectionLabel>Appearance</SectionLabel>
         <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '12px', border: '0.5px solid var(--border-col, #e8e3dc)', overflow: 'hidden' }}>
