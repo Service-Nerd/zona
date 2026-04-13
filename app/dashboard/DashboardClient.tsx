@@ -92,6 +92,10 @@ export default function DashboardClient() {
   const [stravaRuns, setStravaRuns] = useState<any[] | null>(null)
   const [stravaLoading, setStravaLoading] = useState(true)
   const [stravaConnected, setStravaConnected] = useState(false)
+
+  // Screen guide state — shows first-load popup per screen
+  const [guideScreen, setGuideScreen] = useState<Screen | null>(null)
+
   const supabase = createClient()
 
   useEffect(() => {
@@ -502,6 +506,11 @@ export default function DashboardClient() {
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
       </div>
 
+      {/* Screen guide — first-load popup */}
+      {guideScreen && (
+        <ScreenGuide screen={guideScreen} onDismiss={() => setGuideScreen(null)} />
+      )}
+
       <div style={{
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: '480px',
@@ -514,7 +523,11 @@ export default function DashboardClient() {
           const labels: Record<Screen, string> = { today: 'Today', plan: 'Plan', coach: 'Coach', strava: 'Strava', me: 'Me', calendar: 'Calendar', session: 'Session', admin: 'Admin' }
           const active = screen === id
           return (
-            <button key={id} onClick={() => setScreen(id)} style={{
+            <button key={id} onClick={() => {
+              setScreen(id)
+              const seen = getSeenGuides()
+              if (!seen.has(id)) setGuideScreen(id)
+            }} style={{
               flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
               background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
             }}>
@@ -571,6 +584,150 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
     <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', border: '0.5px solid var(--border-col, #e8e3dc)', margin: '0 12px', ...style }}>
       {children}
     </div>
+  )
+}
+
+// ── SCREEN GUIDE ──────────────────────────────────────────────────────────
+
+const GUIDE_CONTENT: Partial<Record<Screen, { title: string; body: string }>> = {
+  today: {
+    title: 'Today',
+    body: "Your day. Tap a date, see what's on. Log it when you're done. That's the whole thing.",
+  },
+  plan: {
+    title: 'Plan',
+    body: "Your full build, laid out. Tap any session to move it or mark it done. Don't skip leg day.",
+  },
+  coach: {
+    title: 'Coach',
+    body: 'Pulls your latest Strava run and tells you what it means. Occasionally harsh. Always right.',
+  },
+  strava: {
+    title: 'Strava',
+    body: 'Your runs, linked to your plan. Connects the effort to the training. Nothing else.',
+  },
+}
+
+const GUIDE_SEEN_KEY = 'zona_guide_seen'
+
+function getSeenGuides(): Set<string> {
+  try {
+    const raw = localStorage.getItem(GUIDE_SEEN_KEY)
+    return new Set(raw ? JSON.parse(raw) : [])
+  } catch { return new Set() }
+}
+
+function markGuideSeen(screen: string) {
+  try {
+    const seen = getSeenGuides()
+    seen.add(screen)
+    localStorage.setItem(GUIDE_SEEN_KEY, JSON.stringify(Array.from(seen)))
+  } catch {}
+}
+
+function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => void }) {
+  const content = GUIDE_CONTENT[screen]
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 10)
+    return () => clearTimeout(t)
+  }, [])
+
+  function dismiss() {
+    markGuideSeen(screen)
+    setVisible(false)
+    setTimeout(onDismiss, 280)
+  }
+
+  if (!content) return null
+
+  const NAV_SCREENS: Screen[] = ['today', 'plan', 'coach', 'strava']
+  const NAV_LABELS: Record<string, string> = { today: 'Today', plan: 'Plan', coach: 'Coach', strava: 'Strava' }
+
+  return (
+    <>
+      {/* Scrim */}
+      <div
+        onClick={dismiss}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 4000,
+          background: 'rgba(0,0,0,0.45)',
+          opacity: visible ? 1 : 0,
+          transition: 'opacity 0.28s ease',
+        }}
+      />
+
+      {/* Sheet */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: '50%',
+        transform: `translateX(-50%) translateY(${visible ? '0' : '100%'})`,
+        transition: 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
+        width: '100%', maxWidth: '480px',
+        background: 'var(--card-bg, #fff)',
+        borderRadius: '20px 20px 0 0',
+        zIndex: 4001,
+        paddingBottom: 'max(32px, env(safe-area-inset-bottom))',
+      }}>
+        {/* Drag handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border-col, #e8e3dc)' }} />
+        </div>
+
+        {/* Mirrored nav bar */}
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          borderBottom: '0.5px solid var(--border-col, #e8e3dc)',
+          padding: '8px 0 10px',
+        }}>
+          {NAV_SCREENS.map(id => {
+            const active = screen === id
+            return (
+              <div key={id} style={{
+                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+              }}>
+                {id === 'today'  && <IconToday  active={active} />}
+                {id === 'plan'   && <IconPlan   active={active} />}
+                {id === 'coach'  && <IconCoach  active={active} />}
+                {id === 'strava' && <IconStrava active={active} />}
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: active ? '#E05A1C' : '#999' }}>
+                  {NAV_LABELS[id]}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Content */}
+        <div style={{ padding: '28px 24px 8px' }}>
+          <div style={{
+            fontFamily: "'DM Sans',sans-serif", fontSize: '20px', fontWeight: 500,
+            color: 'var(--text-primary, #111)', letterSpacing: '-0.3px', marginBottom: '12px',
+          }}>
+            {content.title}
+          </div>
+          <div style={{
+            fontFamily: "'DM Mono',monospace", fontSize: '13px', lineHeight: 1.7,
+            color: 'var(--text-muted, #888)', marginBottom: '32px',
+          }}>
+            {content.body}
+          </div>
+          <button
+            onClick={dismiss}
+            style={{
+              width: '100%', padding: '16px',
+              background: '#D4501A', color: '#fff',
+              border: 'none', borderRadius: '14px',
+              fontFamily: "'DM Mono',monospace", fontSize: '13px',
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              cursor: 'pointer', fontWeight: 500,
+            }}
+          >
+            Got it
+          </button>
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -757,40 +914,25 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
 
   return (
     <>
-      {/* ── TOP BLOCK: session type, zone, HR target, pace, dist+dur ── */}
-      <div style={{
-        borderLeft: `4px solid ${config.color}`,
-        padding: '14px 18px 14px 16px',
-        borderBottom: '0.5px solid var(--border-col, #e8e3dc)',
-      }}>
+      {/* ── TOP BLOCK: accent border + date/status + type chip + metric cards ── */}
+      <div style={{ borderLeft: `4px solid ${config.color}`, padding: '14px 18px 14px 16px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
         {/* Row 1: date + status badge */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             {session.day} · {session.date}
           </span>
-          {isComplete && (
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', background: 'rgba(74,124,111,0.12)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.4)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>✓ Done</span>
-          )}
-          {isSkipped && (
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', background: 'rgba(80,80,80,0.1)', color: '#666', border: '0.5px solid #333', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Skipped</span>
-          )}
+          {isComplete && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', background: 'rgba(74,124,111,0.12)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.4)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>✓ Done</span>}
+          {isSkipped && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', background: 'rgba(80,80,80,0.1)', color: '#666', border: '0.5px solid #333', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Skipped</span>}
         </div>
-
         {/* Row 2: session type chip */}
         <div style={{ marginBottom: '12px' }}>
-          <span style={{
-            fontFamily: "'DM Mono',monospace", fontSize: '11px', fontWeight: 600,
-            color: config.color, letterSpacing: '0.08em', textTransform: 'uppercase',
-            background: `${config.color}18`, borderRadius: '6px', padding: '4px 10px',
-          }}>
+          <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', fontWeight: 600, color: config.color, letterSpacing: '0.08em', textTransform: 'uppercase', background: `${config.color}18`, borderRadius: '6px', padding: '4px 10px' }}>
             {config.label}
           </span>
         </div>
-
-        {/* Row 3: metrics grid — HR / pace / dist+dur */}
+        {/* Row 3: HR + pace metric cards */}
         {(session.type === 'easy' || session.type === 'run' || session.type === 'quality') && (
           <div style={{ display: 'grid', gridTemplateColumns: paceBracket ? '1fr 1fr' : '1fr', gap: '10px' }}>
-            {/* HR target */}
             <div style={{ background: 'var(--bg, #f5f2ee)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col, #e8e3dc)' }}>
               <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
                 {session.type === 'quality' ? 'Target HR' : 'Zone 2 ceiling'}
@@ -805,14 +947,10 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 {session.type === 'quality' ? 'Warm up 15 min first' : 'Walk if exceeded'}
               </div>
             </div>
-
-            {/* Pace bracket */}
             {paceBracket && (
               <div style={{ background: 'var(--bg, #f5f2ee)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col, #e8e3dc)' }}>
                 <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Est. pace</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
-                  <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '18px', fontWeight: 600, color: config.color, lineHeight: 1 }}>{paceBracket}</span>
-                </div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '18px', fontWeight: 600, color: config.color, lineHeight: 1 }}>{paceBracket}</div>
                 <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', marginTop: '4px' }}>HR-derived estimate</div>
               </div>
             )}
@@ -826,13 +964,11 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           {session.detail && (
             <div style={{ padding: '16px 18px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
               <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Session</div>
-              <div style={{ fontSize: '14px', color: 'var(--text-secondary, #444)', lineHeight: 1.65 }}>
-                {session.detail}
-              </div>
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary, #444)', lineHeight: 1.65 }}>{session.detail}</div>
             </div>
           )}
 
-          {/* Week theme — compact, below description */}
+          {/* Week theme — compact, muted */}
           {weekTheme && (
             <div style={{ padding: '12px 18px', background: 'var(--bg, #f5f2ee)', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
               <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
@@ -840,27 +976,24 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             </div>
           )}
 
-          {/* ── BOTTOM BLOCK: coach notes / why ── */}
+          {/* ── BOTTOM BLOCK: coach notes ── */}
           {guidance && (
             <div style={{ padding: '14px 18px 4px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                 <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: config.color, flexShrink: 0 }} />
                 <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Coach notes</div>
               </div>
-
               {guidance.why && (
                 <div style={{ fontSize: '13px', color: 'var(--text-muted, #777)', lineHeight: 1.7, marginBottom: guidance.what || guidance.how ? '14px' : '10px', fontStyle: 'italic' }}>
                   {guidance.why}
                 </div>
               )}
-
               {guidance.what && (
                 <div style={{ marginBottom: guidance.how ? '12px' : '10px' }}>
                   <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>What</div>
                   <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.6 }}>{guidance.what}</div>
                 </div>
               )}
-
               {guidance.how && (
                 <div style={{ marginBottom: '10px' }}>
                   <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>How</div>
@@ -1388,22 +1521,20 @@ function SessionHero({ session, completion, onTap }: {
       cursor: 'pointer',
       overflow: 'hidden',
     }}>
-      {/* Top row: type chip + date */}
-      <div style={{ padding: '14px 16px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-          <span style={{
-            fontFamily: "'DM Mono',monospace", fontSize: '10px', fontWeight: 600,
-            color: isComplete ? '#4a7c6f' : isSkipped ? '#555' : accent,
-            background: isComplete ? 'rgba(74,124,111,0.12)' : isSkipped ? 'rgba(80,80,80,0.1)' : `${accent}15`,
-            borderRadius: '6px', padding: '3px 8px',
-            textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0,
-          }}>
-            {isComplete ? '✓ Done' : isSkipped ? 'Skipped' : TYPE_LABEL[session.type] ?? session.type}
-          </span>
-          <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #999)', textTransform: 'uppercase', letterSpacing: '0.05em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {session.today ? 'Today' : `${session.day} ${session.date}`}
-          </span>
-        </div>
+      {/* Top: type chip + date */}
+      <div style={{ padding: '14px 16px 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{
+          fontFamily: "'DM Mono',monospace", fontSize: '10px', fontWeight: 600,
+          color: isComplete ? '#4a7c6f' : isSkipped ? '#555' : accent,
+          background: isComplete ? 'rgba(74,124,111,0.12)' : isSkipped ? 'rgba(80,80,80,0.1)' : `${accent}15`,
+          borderRadius: '6px', padding: '3px 8px',
+          textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0,
+        }}>
+          {isComplete ? '✓ Done' : isSkipped ? 'Skipped' : TYPE_LABEL[session.type] ?? session.type}
+        </span>
+        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #999)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          {session.today ? 'Today' : `${session.day} ${session.date}`}
+        </span>
       </div>
 
       {/* Main content */}
@@ -1411,19 +1542,16 @@ function SessionHero({ session, completion, onTap }: {
         <div style={{
           fontSize: '20px', fontWeight: 500, letterSpacing: '-0.3px',
           color: isSkipped ? 'var(--text-muted, #888)' : 'var(--text-primary, #111)',
-          lineHeight: 1.2, marginBottom: '6px',
-          fontFamily: "'DM Sans',sans-serif",
+          lineHeight: 1.2, marginBottom: '6px', fontFamily: "'DM Sans',sans-serif",
           textDecoration: isSkipped ? 'line-through' : 'none',
         }}>
           {session.title}
         </div>
-
         {session.detail && !isComplete && !isSkipped && (
-          <div style={{ fontSize: '13px', color: 'var(--text-muted, #888)', lineHeight: 1.55, marginBottom: '10px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted, #888)', lineHeight: 1.55, marginBottom: '4px' }}>
             {session.detail}
           </div>
         )}
-
         {isComplete && completion?.strava_activity_name && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
             <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FC4C02', flexShrink: 0 }} />
@@ -1434,16 +1562,11 @@ function SessionHero({ session, completion, onTap }: {
 
       {/* Footer CTA */}
       <div style={{
-        padding: '10px 16px',
-        borderTop: '0.5px solid var(--border-col, #e8e3dc)',
+        padding: '10px 16px', borderTop: '0.5px solid var(--border-col, #e8e3dc)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         background: 'var(--bg, #f5f2ee)',
       }}>
-        <span style={{
-          fontFamily: "'DM Mono',monospace", fontSize: '11px', letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          color: isComplete ? '#4a7c6f' : isSkipped ? '#555' : accent,
-        }}>
+        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: isComplete ? '#4a7c6f' : isSkipped ? '#555' : accent }}>
           {isComplete ? 'View details' : isSkipped ? 'Update' : session.today ? 'Log this session' : 'View session'}
         </span>
         <span style={{ color: 'var(--text-muted, #999)', fontSize: '16px', lineHeight: 1 }}>›</span>
@@ -2628,7 +2751,6 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
           </form>
         </div>
 
-        {/* Profile section */}
         <SectionLabel>Profile</SectionLabel>
         <ProfileSection firstName={firstName} lastName={lastName} email={profileEmail} onSave={onProfileChange} />
 
