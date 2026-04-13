@@ -248,25 +248,13 @@ export default function DashboardClient() {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     const isDark = t === 'dark' || (t === 'auto' && prefersDark)
     const root = document.documentElement
-    if (isDark) {
-      root.setAttribute('data-theme', 'dark')
-      root.style.setProperty('--bg', '#0a0a0a')
-      root.style.setProperty('--card-bg', '#0d0d0d')
-      root.style.setProperty('--border-col', '#1c1c1c')
-      root.style.setProperty('--text-primary', '#fff')
-      root.style.setProperty('--text-secondary', '#c0c0c0')
-      root.style.setProperty('--text-muted', '#777')
-      root.style.setProperty('--nav-bg', '#0a0a0a')
-    } else {
-      root.setAttribute('data-theme', 'light')
-      root.style.setProperty('--bg', '#f5f2ee')
-      root.style.setProperty('--card-bg', '#fff')
-      root.style.setProperty('--border-col', '#e8e3dc')
-      root.style.setProperty('--text-primary', '#111')
-      root.style.setProperty('--text-secondary', '#444')
-      root.style.setProperty('--text-muted', '#888')
-      root.style.setProperty('--nav-bg', '#f5f2ee')
-    }
+    // Just toggle the attribute — globals.css handles all the var values.
+    // Using setProperty here would override the CSS vars with inline styles,
+    // which breaks the cascade and causes the colour flash.
+    root.setAttribute('data-theme', isDark ? 'dark' : 'light')
+    // Remove any stale inline style overrides from old versions
+    const vars = ['--bg','--card-bg','--border-col','--text-primary','--text-secondary','--text-muted','--nav-bg']
+    vars.forEach(v => root.style.removeProperty(v))
   }
 
   async function dismissWelcome() {
@@ -674,11 +662,42 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
           <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border-col, #e8e3dc)' }} />
         </div>
 
-        {/* Mirrored nav bar */}
+        {/* Content */}
+        <div style={{ padding: '20px 24px 16px' }}>
+          <div style={{
+            fontFamily: "'DM Sans',sans-serif", fontSize: '20px', fontWeight: 500,
+            color: 'var(--text-primary, #111)', letterSpacing: '-0.3px', marginBottom: '10px',
+          }}>
+            {content.title}
+          </div>
+          <div style={{
+            fontFamily: "'DM Mono',monospace", fontSize: '13px', lineHeight: 1.7,
+            color: 'var(--text-muted, #888)', marginBottom: '24px',
+          }}>
+            {content.body}
+          </div>
+          <button
+            onClick={dismiss}
+            style={{
+              width: '100%', padding: '16px',
+              background: '#D4501A', color: '#fff',
+              border: 'none', borderRadius: '14px',
+              fontFamily: "'DM Mono',monospace", fontSize: '13px',
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              cursor: 'pointer', fontWeight: 500,
+              marginBottom: '16px',
+            }}
+          >
+            Got it
+          </button>
+        </div>
+
+        {/* Mirrored nav bar — sits at bottom to show position */}
         <div style={{
           display: 'flex', alignItems: 'center',
-          borderBottom: '0.5px solid var(--border-col, #e8e3dc)',
-          padding: '8px 0 10px',
+          borderTop: '0.5px solid var(--border-col, #e8e3dc)',
+          padding: '10px 0 4px',
+          background: 'var(--nav-bg, #f5f2ee)',
         }}>
           {NAV_SCREENS.map(id => {
             const active = screen === id
@@ -696,35 +715,6 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
               </div>
             )
           })}
-        </div>
-
-        {/* Content */}
-        <div style={{ padding: '28px 24px 8px' }}>
-          <div style={{
-            fontFamily: "'DM Sans',sans-serif", fontSize: '20px', fontWeight: 500,
-            color: 'var(--text-primary, #111)', letterSpacing: '-0.3px', marginBottom: '12px',
-          }}>
-            {content.title}
-          </div>
-          <div style={{
-            fontFamily: "'DM Mono',monospace", fontSize: '13px', lineHeight: 1.7,
-            color: 'var(--text-muted, #888)', marginBottom: '32px',
-          }}>
-            {content.body}
-          </div>
-          <button
-            onClick={dismiss}
-            style={{
-              width: '100%', padding: '16px',
-              background: '#D4501A', color: '#fff',
-              border: 'none', borderRadius: '14px',
-              fontFamily: "'DM Mono',monospace", fontSize: '13px',
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              cursor: 'pointer', fontWeight: 500,
-            }}
-          >
-            Got it
-          </button>
         </div>
       </div>
     </>
@@ -1181,6 +1171,9 @@ interface SessionEntry {
   date: string
   rawDate: Date
   today: boolean
+  distance?: number
+  duration?: string
+  zone?: string
 }
 
 function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, totalWeeks, onWeekChange, onOpenCalendar }: {
@@ -1504,12 +1497,35 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
 
 // ── SESSION HERO ──────────────────────────────────────────────────────────
 
-function SessionHero({ session, completion, onTap }: {
+function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits }: {
   session: SessionEntry; completion?: any; onTap: () => void
+  zone2Ceiling?: number; preferredUnits?: 'km' | 'mi'
 }) {
   const accent = TYPE_ACCENT[session.type] ?? '#D4501A'
   const isComplete = completion?.status === 'complete'
   const isSkipped = completion?.status === 'skipped'
+
+  // Derive HR ceiling for display
+  const hrCeiling = session.type === 'quality' ? '155–165' : zone2Ceiling ? `≤${zone2Ceiling}` : null
+  const hrLabel = session.type === 'quality' ? 'Target HR' : 'Z2 ceiling'
+
+  // Pace estimate (same logic as SessionPopupInner)
+  function getPace(): string | null {
+    if (session.type !== 'easy' && session.type !== 'run') return null
+    if (!zone2Ceiling) return null
+    const baseHR = 145, basePace = 390, sPerBpm = 3
+    const diff = zone2Ceiling - baseHR
+    const lo = basePace + (5 * sPerBpm) - (diff * sPerBpm)
+    const hi = basePace + (15 * sPerBpm) - (diff * sPerBpm)
+    function fmt(s: number): string {
+      const adj = preferredUnits === 'mi' ? s * 1.60934 : s
+      return `${Math.floor(adj / 60)}:${String(Math.round(adj % 60)).padStart(2, '0')}`
+    }
+    return `${fmt(lo)}–${fmt(hi)}${preferredUnits === 'mi' ? '/mi' : '/km'}`
+  }
+  const pace = getPace()
+
+  const showMetrics = ['easy', 'run', 'quality'].includes(session.type)
 
   return (
     <div onClick={onTap} style={{
@@ -1521,55 +1537,100 @@ function SessionHero({ session, completion, onTap }: {
       cursor: 'pointer',
       overflow: 'hidden',
     }}>
-      {/* Top: type chip + date */}
-      <div style={{ padding: '14px 16px 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+
+      {/* Row 1: type chip left + status badge right */}
+      <div style={{ padding: '12px 14px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
         <span style={{
           fontFamily: "'DM Mono',monospace", fontSize: '10px', fontWeight: 600,
-          color: isComplete ? '#4a7c6f' : isSkipped ? '#555' : accent,
-          background: isComplete ? 'rgba(74,124,111,0.12)' : isSkipped ? 'rgba(80,80,80,0.1)' : `${accent}15`,
+          color: accent,
+          background: `${accent}18`,
           borderRadius: '6px', padding: '3px 8px',
-          textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0,
+          textTransform: 'uppercase', letterSpacing: '0.07em',
         }}>
-          {isComplete ? '✓ Done' : isSkipped ? 'Skipped' : TYPE_LABEL[session.type] ?? session.type}
+          {TYPE_LABEL[session.type] ?? session.type}
         </span>
         <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #999)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {session.today ? 'Today' : `${session.day} ${session.date}`}
         </span>
       </div>
 
-      {/* Main content */}
-      <div style={{ padding: '0 16px 14px' }}>
+      {/* Row 2: session title */}
+      <div style={{ padding: '0 14px 10px' }}>
         <div style={{
-          fontSize: '20px', fontWeight: 500, letterSpacing: '-0.3px',
+          fontSize: '19px', fontWeight: 500, letterSpacing: '-0.3px',
           color: isSkipped ? 'var(--text-muted, #888)' : 'var(--text-primary, #111)',
-          lineHeight: 1.2, marginBottom: '6px', fontFamily: "'DM Sans',sans-serif",
+          lineHeight: 1.2, fontFamily: "'DM Sans',sans-serif",
           textDecoration: isSkipped ? 'line-through' : 'none',
         }}>
           {session.title}
         </div>
-        {session.detail && !isComplete && !isSkipped && (
-          <div style={{ fontSize: '13px', color: 'var(--text-muted, #888)', lineHeight: 1.55, marginBottom: '4px' }}>
-            {session.detail}
-          </div>
-        )}
-        {isComplete && completion?.strava_activity_name && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FC4C02', flexShrink: 0 }} />
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#FC4C02' }}>{completion.strava_activity_name}</span>
-          </div>
-        )}
       </div>
+
+      {/* Row 3: metrics — zone / HR / pace / distance+duration */}
+      {showMetrics && !isSkipped && (
+        <div style={{
+          display: 'flex', gap: '6px', padding: '0 14px 12px', flexWrap: 'wrap',
+        }}>
+          {/* Zone */}
+          {(session.zone || session.type) && (
+            <div style={{ background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px', minWidth: '52px' }}>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '8px', color: 'var(--text-muted, #999)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Zone</span>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', fontWeight: 600, color: accent, lineHeight: 1 }}>
+                {session.zone ?? (session.type === 'quality' ? 'Z3–4' : 'Z2')}
+              </span>
+            </div>
+          )}
+          {/* HR */}
+          {hrCeiling && (
+            <div style={{ background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '8px', color: 'var(--text-muted, #999)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{hrLabel}</span>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', fontWeight: 600, color: accent, lineHeight: 1 }}>{hrCeiling} <span style={{ fontSize: '9px', fontWeight: 400, color: 'var(--text-muted, #999)' }}>bpm</span></span>
+            </div>
+          )}
+          {/* Pace */}
+          {pace && (
+            <div style={{ background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '8px', color: 'var(--text-muted, #999)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Est. pace</span>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', fontWeight: 600, color: accent, lineHeight: 1 }}>{pace}</span>
+            </div>
+          )}
+          {/* Distance */}
+          {session.distance && (
+            <div style={{ background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '8px', color: 'var(--text-muted, #999)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Dist</span>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', fontWeight: 600, color: accent, lineHeight: 1 }}>{session.distance}<span style={{ fontSize: '9px', fontWeight: 400, color: 'var(--text-muted, #999)' }}> {preferredUnits ?? 'km'}</span></span>
+            </div>
+          )}
+          {/* Duration */}
+          {session.duration && (
+            <div style={{ background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '8px', color: 'var(--text-muted, #999)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Time</span>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', fontWeight: 600, color: accent, lineHeight: 1 }}>{session.duration}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Strava activity if complete */}
+      {isComplete && completion?.strava_activity_name && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0 14px 10px' }}>
+          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FC4C02', flexShrink: 0 }} />
+          <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#FC4C02' }}>{completion.strava_activity_name}</span>
+        </div>
+      )}
 
       {/* Footer CTA */}
       <div style={{
-        padding: '10px 16px', borderTop: '0.5px solid var(--border-col, #e8e3dc)',
+        padding: '10px 14px', borderTop: '0.5px solid var(--border-col, #e8e3dc)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         background: 'var(--bg, #f5f2ee)',
       }}>
         <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: isComplete ? '#4a7c6f' : isSkipped ? '#555' : accent }}>
           {isComplete ? 'View details' : isSkipped ? 'Update' : session.today ? 'Log this session' : 'View session'}
         </span>
-        <span style={{ color: 'var(--text-muted, #999)', fontSize: '16px', lineHeight: 1 }}>›</span>
+        {isComplete && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', background: 'rgba(74,124,111,0.12)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.35)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>✓ Done</span>}
+        {isSkipped && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', background: 'rgba(80,80,80,0.08)', color: '#777', border: '0.5px solid #444', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>Skipped</span>}
+        {!isComplete && !isSkipped && <span style={{ color: 'var(--text-muted, #999)', fontSize: '16px', lineHeight: 1 }}>›</span>}
       </div>
     </div>
   )
@@ -1962,8 +2023,8 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
     d.setDate(d.getDate() + DAY_OFFSETS[key])
     const displayDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
     return {
-      key: originalDay, // stable completion key
-      displayKey: key,  // display position in the week
+      key: originalDay,
+      displayKey: key,
       day: DOW_FULL[key],
       title: s?.label ?? '',
       detail: s?.detail ?? '',
@@ -1971,6 +2032,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       date: displayDate,
       rawDate: d,
       today: key === todayDow && displayDate === todayStr,
+      distance: s?.distance ?? undefined,
+      duration: s?.duration ?? undefined,
+      zone: s?.zone ?? undefined,
     }
   }), [effectiveWs, weekIndex])
 
@@ -2061,6 +2125,8 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         <SessionHero
           session={selectedSession}
           completion={completions[selectedKey]}
+          zone2Ceiling={zone2Ceiling}
+          preferredUnits={preferredUnits}
           onTap={() => {
             const isPast = selectedSession.rawDate < now && !selectedSession.today
             const isFuture = !selectedSession.today && selectedSession.rawDate > now
@@ -2079,23 +2145,25 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         <RestDayCard session={selectedSession} nextSession={nextRunSession} />
       )}
 
-      {/* Manual log button — always visible */}
+      {/* Manual log button — more prominent */}
       <button
         onClick={() => setShowManualLog(true)}
         style={{
-          margin: '10px 12px 0', width: 'calc(100% - 24px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-          background: 'rgba(212,80,26,0.08)',
-          border: '0.5px solid rgba(212,80,26,0.3)',
-          borderRadius: '12px', padding: '13px',
+          margin: '12px 12px 0', width: 'calc(100% - 24px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+          background: '#D4501A',
+          border: 'none',
+          borderRadius: '14px', padding: '15px',
           fontFamily: "'DM Mono',monospace", fontSize: '12px',
-          color: '#D4501A', letterSpacing: '0.06em',
+          color: '#fff', letterSpacing: '0.08em',
           textTransform: 'uppercase', cursor: 'pointer',
+          fontWeight: 500,
+          boxShadow: '0 2px 12px rgba(212,80,26,0.25)',
         }}
       >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <line x1="7" y1="2" x2="7" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          <line x1="2" y1="7" x2="12" y2="7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <line x1="8" y1="2" x2="8" y2="14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+          <line x1="2" y1="8" x2="14" y2="8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
         </svg>
         Log a run manually
       </button>

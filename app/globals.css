@@ -98,3 +98,30 @@ body {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
 }
+
+/* ── Dark mode override ───────────────────────────────────────────────
+   applyTheme() sets data-theme="dark" on <html>.
+   These vars override the :root light defaults above.
+   ─────────────────────────────────────────────────────────────────── */
+
+[data-theme="dark"] {
+  --bg:             #0a0a0a;
+  --card-bg:        #0d0d0d;
+  --border-col:     #1c1c1c;
+  --text-primary:   #ffffff;
+  --text-secondary: #c0c0c0;
+  --text-muted:     #777777;
+  --nav-bg:         #0a0a0a;
+  --card:           var(--card-bg);
+  --border:         var(--border-col);
+  --text:           var(--text-primary);
+  --muted:          var(--text-muted);
+}
+
+/* ── Safe area / mobile ──────────────────────────────────────────────── */
+
+html, body {
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 100dvh;
+}
