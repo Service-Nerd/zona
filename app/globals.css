@@ -1,87 +1,128 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── ZONA Design Tokens ──────────────────────────────────────────────────
-   Single source of truth. Dark/light vars set here (light default),
-   overridden by applyTheme() in DashboardClient for dark mode.
-   ─────────────────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════
+   ZONA — Design Token System (System B)
+   Single source of truth for all colour, typography and spacing.
+   Change here, change everywhere. Nothing hardcoded in components.
+   ══════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Brand */
-  --zona-ember:        #D4501A;
-  --zona-ember-dim:    rgba(212,80,26,0.12);
-  --zona-ember-mid:    rgba(212,80,26,0.35);
-  --zona-ember-soft:   rgba(212,80,26,0.06);
 
-  /* Completion — teal/sage */
-  --zona-teal:         #4a7c6f;
-  --zona-teal-dim:     rgba(74,124,111,0.15);
-  --zona-teal-mid:     rgba(74,124,111,0.4);
-  --zona-teal-bg:      #1e3d37;
-
-  /* Data */
-  --zona-blue:         #378ADD;
-  --strava-orange:     #FC4C02;
+  /* ── Brand colours ──────────────────────────────────────────────── */
+  --zona-navy:         #0B132B;
+  --zona-teal:         #5BC0BE;
+  --zona-amber:        #F2C14E;
+  --zona-muted:        #3A506B;
   --zona-red:          #ff7777;
-  --zona-yellow:       #FFD60A;
+  --strava-orange:     #FC4C02;
 
-  /* Fonts */
+  /* ── Semantic: accent (primary CTA, active states) ──────────────── */
+  --accent:            #5BC0BE;
+  --accent-soft:       rgba(91,192,190,0.08);
+  --accent-dim:        rgba(91,192,190,0.15);
+  --accent-mid:        rgba(91,192,190,0.35);
+
+  /* ── Semantic: teal (completion, success) ───────────────────────── */
+  --teal:              #5BC0BE;
+  --teal-soft:         rgba(91,192,190,0.08);
+  --teal-dim:          rgba(91,192,190,0.15);
+  --teal-mid:          rgba(91,192,190,0.35);
+  --teal-bg:           #0d2d2c;
+
+  /* ── Semantic: amber (coaching, warnings) ───────────────────────── */
+  --amber:             #F2C14E;
+  --amber-soft:        rgba(242,193,78,0.12);
+  --amber-mid:         rgba(242,193,78,0.35);
+
+  /* ── Semantic: data colours ─────────────────────────────────────── */
+  --blue:              #5BC0BE;   /* zone 2 / easy runs — using teal */
+  --red:               #ff7777;
+  --strava:            #FC4C02;
+
+  /* ── Typography ─────────────────────────────────────────────────── */
   --font-brand:        'Space Grotesk', sans-serif;
-  --font-ui:           'DM Sans', sans-serif;
-  --font-data:         'DM Mono', monospace;
+  --font-ui:           'Inter', sans-serif;
+  --font-data:         'Inter', sans-serif;
 
-  /* Border radius */
+  /* ── Border radius ──────────────────────────────────────────────── */
   --radius-sm:         8px;
   --radius-md:         12px;
   --radius-lg:         16px;
   --radius-xl:         20px;
 
-  /* App theme — light default */
-  --bg:                #f5f2ee;
+  /* ── Light mode (default) ───────────────────────────────────────── */
+  --bg:                #F7F9FB;
   --card-bg:           #ffffff;
-  --border-col:        #e8e3dc;
-  --text-primary:      #111111;
-  --text-secondary:    #444444;
-  --text-muted:        #888888;
-  --nav-bg:            #f5f2ee;
+  --border-col:        #E2E8F0;
+  --text-primary:      #0B132B;
+  --text-secondary:    #3A506B;
+  --text-muted:        #94A3B8;
+  --nav-bg:            #F7F9FB;
 
-  /* Legacy aliases — keeps StravaPanel and older components working */
-  --black:             #0d0d0d;
-  --off-black:         #1a1a1a;
+  /* ── Legacy aliases — keeps older component refs working ─────────── */
+  --black:             #0B132B;
+  --off-black:         #0B132B;
   --card:              var(--card-bg);
   --border:            var(--border-col);
-  --orange:            var(--zona-ember);
-  --orange-dim:        var(--zona-ember-dim);
-  --orange-mid:        var(--zona-ember-mid);
-  --orange-bright:     #E05A1C;
-  --green:             var(--zona-teal);
+  --orange:            var(--accent);
+  --orange-dim:        var(--accent-soft);
+  --orange-mid:        var(--accent-mid);
+  --orange-bright:     var(--accent);
+  --green:             var(--teal);
   --text-dim:          var(--text-muted);
   --text:              var(--text-primary);
   --muted:             var(--text-muted);
-  --red:               var(--zona-red);
-  --yellow:            var(--zona-yellow);
+  --yellow:            var(--amber);
+}
+
+/* ── Dark mode ──────────────────────────────────────────────────────────
+   applyTheme() sets data-theme="dark" on <html>.
+   No setProperty calls — the cascade handles everything from here.
+   ─────────────────────────────────────────────────────────────────────── */
+
+[data-theme="dark"] {
+  --bg:                #0B132B;
+  --card-bg:           #162040;
+  --border-col:        #1e2e55;
+  --text-primary:      #F7F9FB;
+  --text-secondary:    #94A3B8;
+  --text-muted:        #3A506B;
+  --nav-bg:            #0B132B;
+
+  --card:              var(--card-bg);
+  --border:            var(--border-col);
+  --text:              var(--text-primary);
+  --muted:             var(--text-muted);
 }
 
 /* ── Reset ───────────────────────────────────────────────────────────── */
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-body {
+html, body {
   background: var(--bg);
   color: var(--text-primary);
   font-family: var(--font-ui);
-  min-height: 100vh;
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* ── Typography ──────────────────────────────────────────────────────── */
+/* ── Typography helpers ──────────────────────────────────────────────── */
 
-.font-mono  { font-family: var(--font-data); }
 .font-brand { font-family: var(--font-brand); }
 .font-ui    { font-family: var(--font-ui); }
+.font-data  { font-family: var(--font-data); }
 
 /* ── Scrollbar ───────────────────────────────────────────────────────── */
 
@@ -91,37 +132,14 @@ body {
 
 /* ── Focus ring ──────────────────────────────────────────────────────── */
 
-:focus-visible { outline: 2px solid var(--zona-ember); outline-offset: 2px; }
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 
-/* ── Sheet slide-up animation ─────────────────────────────────────────── */
+/* ── Animations ──────────────────────────────────────────────────────── */
+
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
-}
-
-/* ── Dark mode override ───────────────────────────────────────────────
-   applyTheme() sets data-theme="dark" on <html>.
-   These vars override the :root light defaults above.
-   ─────────────────────────────────────────────────────────────────── */
-
-[data-theme="dark"] {
-  --bg:             #0a0a0a;
-  --card-bg:        #0d0d0d;
-  --border-col:     #1c1c1c;
-  --text-primary:   #ffffff;
-  --text-secondary: #c0c0c0;
-  --text-muted:     #777777;
-  --nav-bg:         #0a0a0a;
-  --card:           var(--card-bg);
-  --border:         var(--border-col);
-  --text:           var(--text-primary);
-  --muted:          var(--text-muted);
-}
-
-/* ── Safe area / mobile ──────────────────────────────────────────────── */
-
-html, body {
-  overscroll-behavior: none;
-  -webkit-tap-highlight-color: transparent;
-  min-height: 100dvh;
 }

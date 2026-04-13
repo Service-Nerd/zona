@@ -13,7 +13,7 @@ type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'sessi
 // ── Icons ─────────────────────────────────────────────────────────────────
 
 function IconToday({ active }: { active: boolean }) {
-  const c = active ? '#E05A1C' : '#999'
+  const c = active ? 'var(--accent)' : 'var(--text-muted)'
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
       <rect x="3" y="11" width="4" height="8" rx="1" fill={c} />
@@ -24,7 +24,7 @@ function IconToday({ active }: { active: boolean }) {
 }
 
 function IconPlan({ active }: { active: boolean }) {
-  const c = active ? '#E05A1C' : '#999'
+  const c = active ? 'var(--accent)' : 'var(--text-muted)'
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
       <rect x="3" y="3" width="16" height="16" rx="2" stroke={c} strokeWidth="1.2" />
@@ -36,7 +36,7 @@ function IconPlan({ active }: { active: boolean }) {
 }
 
 function IconCoach({ active }: { active: boolean }) {
-  const c = active ? '#E05A1C' : '#999'
+  const c = active ? 'var(--accent)' : 'var(--text-muted)'
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
       <circle cx="11" cy="8" r="3.5" stroke={c} strokeWidth="1.2" />
@@ -48,7 +48,7 @@ function IconCoach({ active }: { active: boolean }) {
 }
 
 function IconStrava({ active }: { active: boolean }) {
-  const c = active ? '#E05A1C' : '#999'
+  const c = active ? 'var(--accent)' : 'var(--text-muted)'
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
       <circle cx="11" cy="11" r="7" stroke={c} strokeWidth="1.2" />
@@ -343,7 +343,7 @@ export default function DashboardClient() {
     minHeight: '100dvh',
     display: 'flex',
     flexDirection: 'column',
-    background: 'var(--bg, #f5f2ee)',
+    background: 'var(--bg)',
     maxWidth: '480px',
     margin: '0 auto',
     position: 'relative',
@@ -355,7 +355,7 @@ export default function DashboardClient() {
       <div style={{
         minHeight: '100dvh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        background: 'var(--bg, #f5f2ee)', maxWidth: '480px', margin: '0 auto',
+        background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
         gap: '0',
       }}>
         {/* ZONA wordmark — O has zone arc */}
@@ -363,30 +363,30 @@ export default function DashboardClient() {
           <span style={{
             fontFamily: "'Space Grotesk', sans-serif",
             fontSize: '38px', fontWeight: 500, letterSpacing: '0.08em',
-            color: '#D4501A', lineHeight: 1,
+            color: 'var(--accent)', lineHeight: 1,
           }}>Z</span>
           {/* Custom O with zone arc */}
           <svg width="28" height="38" viewBox="0 0 28 38" fill="none" style={{ margin: '0 1px' }}>
             <text x="14" y="30" textAnchor="middle"
               fontFamily="'Space Grotesk', sans-serif"
               fontSize="38" fontWeight="500" letterSpacing="0"
-              fill="#D4501A">O</text>
+              fill="var(--accent)">O</text>
             {/* Zone arc overlay — sits on top right of O */}
-            <path d="M 21 8 A 9 9 0 0 1 26 16" stroke="#f5f2ee" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-            <path d="M 21 8 A 9 9 0 0 1 26 16" stroke="#D4501A" strokeWidth="1.5" strokeLinecap="round" fill="none" strokeDasharray="3 3" opacity="0.6" />
+            <path d="M 21 8 A 9 9 0 0 1 26 16" stroke="var(--bg)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            <path d="M 21 8 A 9 9 0 0 1 26 16" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" fill="none" strokeDasharray="3 3" opacity="0.6" />
           </svg>
           <span style={{
             fontFamily: "'Space Grotesk', sans-serif",
             fontSize: '38px', fontWeight: 500, letterSpacing: '0.08em',
-            color: '#D4501A', lineHeight: 1,
+            color: 'var(--accent)', lineHeight: 1,
           }}>NA</span>
         </div>
 
         {/* Tagline */}
         <div style={{
-          fontFamily: "'DM Mono', monospace",
+          fontFamily: "'Inter', monospace",
           fontSize: '11px',
-          color: 'var(--text-muted, #888)',
+          color: 'var(--text-muted)',
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
           marginBottom: '52px',
@@ -396,8 +396,8 @@ export default function DashboardClient() {
 
         {/* Spinner */}
         <svg width="22" height="22" viewBox="0 0 22 22">
-          <circle cx="11" cy="11" r="8" fill="none" stroke="var(--border-col, #e8e3dc)" strokeWidth="1.5" />
-          <circle cx="11" cy="11" r="8" fill="none" stroke="#D4501A" strokeWidth="1.5"
+          <circle cx="11" cy="11" r="8" fill="none" stroke="var(--border-col)" strokeWidth="1.5" />
+          <circle cx="11" cy="11" r="8" fill="none" stroke="var(--accent)" strokeWidth="1.5"
             strokeDasharray="20 34" strokeLinecap="round">
             <animateTransform attributeName="transform" type="rotate"
               from="0 11 11" to="360 11 11" dur="0.9s" repeatCount="indefinite" />
@@ -413,26 +413,26 @@ export default function DashboardClient() {
       <div style={{
         minHeight: '100dvh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        background: 'var(--bg, #f5f2ee)', maxWidth: '480px', margin: '0 auto',
+        background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
         padding: '32px 24px',
       }}>
         {/* ZONA wordmark */}
-        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '36px', fontWeight: 500, letterSpacing: '0.08em', color: '#D4501A', marginBottom: '8px' }}>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '36px', fontWeight: 500, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: '8px' }}>
           ZONA
         </div>
-        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: '11px', color: 'var(--text-muted, #888)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '48px' }}>
+        <div style={{ fontFamily: "'Inter', monospace", fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '48px' }}>
           effort-first training
         </div>
 
         {/* Welcome message */}
         <div style={{ width: '100%', maxWidth: '320px', textAlign: 'center' }}>
-          <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary, #111)', fontFamily: "'DM Sans', sans-serif", letterSpacing: '-0.3px', marginBottom: '16px', lineHeight: 1.3 }}>
+          <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.3px', marginBottom: '16px', lineHeight: 1.3 }}>
             Your plan is ready.
           </div>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: '13px', color: 'var(--text-muted, #888)', lineHeight: 1.7, marginBottom: '12px' }}>
+          <div style={{ fontFamily: "'Inter', monospace", fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '12px' }}>
             ZONA keeps track of your sessions, adapts when things shift, and keeps you focused on what matters — finishing.
           </div>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: '13px', color: 'var(--text-muted, #888)', lineHeight: 1.7, marginBottom: '48px' }}>
+          <div style={{ fontFamily: "'Inter', monospace", fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '48px' }}>
             Train with intention. The rest follows.
           </div>
 
@@ -440,9 +440,9 @@ export default function DashboardClient() {
             onClick={dismissWelcome}
             style={{
               width: '100%', padding: '16px',
-              background: '#D4501A', color: '#fff',
+              background: 'var(--accent)', color: '#fff',
               border: 'none', borderRadius: '14px',
-              fontFamily: "'DM Mono', monospace", fontSize: '13px',
+              fontFamily: "'Inter', monospace", fontSize: '13px',
               letterSpacing: '0.08em', textTransform: 'uppercase',
               cursor: 'pointer', fontWeight: 500,
             }}
@@ -465,16 +465,16 @@ export default function DashboardClient() {
       {/* Impersonation banner */}
       {impersonating && (
         <div style={{
-          background: '#D4501A', padding: '8px 16px',
+          background: 'var(--accent)', padding: '8px 16px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           position: 'sticky', top: 0, zIndex: 2000,
         }}>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: '11px', color: '#fff', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontFamily: "'Inter', monospace", fontSize: '11px', color: '#fff', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             Viewing as {impersonating.name}
           </div>
           <button onClick={exitImpersonation} style={{
             background: 'rgba(0,0,0,0.2)', border: 'none', borderRadius: '6px',
-            color: '#fff', fontFamily: "'DM Mono', monospace", fontSize: '11px',
+            color: '#fff', fontFamily: "'Inter', monospace", fontSize: '11px',
             letterSpacing: '0.06em', textTransform: 'uppercase', padding: '4px 10px',
             cursor: 'pointer',
           }}>
@@ -503,7 +503,7 @@ export default function DashboardClient() {
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: '480px',
         display: 'flex', alignItems: 'center',
-        background: 'var(--nav-bg, #f5f2ee)', borderTop: '0.5px solid var(--border-col, #e8e3dc)',
+        background: 'var(--nav-bg)', borderTop: '0.5px solid var(--border-col)',
         padding: '10px 0 max(16px, env(safe-area-inset-bottom))',
         zIndex: 3000,
       }}>
@@ -523,7 +523,7 @@ export default function DashboardClient() {
               {id === 'plan'   && <IconPlan   active={active} />}
               {id === 'coach'  && <IconCoach  active={active} />}
               {id === 'strava' && <IconStrava active={active} />}
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: active ? '#E05A1C' : '#999' }}>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: active ? 'var(--accent)' : 'var(--text-muted)' }}>
                 {labels[id]}
               </span>
             </button>
@@ -540,16 +540,16 @@ function ScreenHeader({ title, sub, initials, onOpenMe }: { title: string; sub?:
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '16px 16px 8px' }}>
       <button onClick={onOpenMe} style={{
-        width: '34px', height: '34px', borderRadius: '50%', background: '#D4501A',
+        width: '34px', height: '34px', borderRadius: '50%', background: 'var(--accent)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontFamily: "'DM Mono',monospace", fontSize: '12px', fontWeight: 500, color: 'var(--text-primary, #111)',
+        fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)',
         border: 'none', cursor: 'pointer', flexShrink: 0, marginTop: '2px',
       }}>
         {initials}
       </button>
       <div>
-        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary, #111)', fontFamily: "'DM Sans',sans-serif", letterSpacing: '-0.3px' }}>{title}</div>
-        {sub && <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #777)', marginTop: '3px', letterSpacing: '0.04em' }}>{sub}</div>}
+        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '-0.3px' }}>{title}</div>
+        {sub && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '3px', letterSpacing: '0.04em' }}>{sub}</div>}
       </div>
     </div>
   )
@@ -559,7 +559,7 @@ function ScreenHeader({ title, sub, initials, onOpenMe }: { title: string; sub?:
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #777)', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0 16px', marginBottom: '8px', marginTop: '20px' }}>
+    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0 16px', marginBottom: '8px', marginTop: '20px' }}>
       {children}
     </div>
   )
@@ -569,7 +569,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', border: '0.5px solid var(--border-col, #e8e3dc)', margin: '0 12px', ...style }}>
+    <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', margin: '0 12px', ...style }}>
       {children}
     </div>
   )
@@ -652,27 +652,27 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
         transform: `translateX(-50%) translateY(${visible ? '0' : '100%'})`,
         transition: 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
         width: '100%', maxWidth: '480px',
-        background: 'var(--card-bg, #fff)',
+        background: 'var(--card-bg)',
         borderRadius: '20px 20px 0 0',
         zIndex: 4001,
         paddingBottom: 'max(32px, env(safe-area-inset-bottom))',
       }}>
         {/* Drag handle */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border-col, #e8e3dc)' }} />
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border-col)' }} />
         </div>
 
         {/* Content */}
         <div style={{ padding: '20px 24px 16px' }}>
           <div style={{
-            fontFamily: "'DM Sans',sans-serif", fontSize: '20px', fontWeight: 500,
-            color: 'var(--text-primary, #111)', letterSpacing: '-0.3px', marginBottom: '10px',
+            fontFamily: "'Space Grotesk',sans-serif", fontSize: '20px', fontWeight: 500,
+            color: 'var(--text-primary)', letterSpacing: '-0.3px', marginBottom: '10px',
           }}>
             {content.title}
           </div>
           <div style={{
-            fontFamily: "'DM Mono',monospace", fontSize: '13px', lineHeight: 1.7,
-            color: 'var(--text-muted, #888)', marginBottom: '24px',
+            fontFamily: "'Inter', sans-serif", fontSize: '13px', lineHeight: 1.7,
+            color: 'var(--text-muted)', marginBottom: '24px',
           }}>
             {content.body}
           </div>
@@ -680,9 +680,9 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
             onClick={dismiss}
             style={{
               width: '100%', padding: '16px',
-              background: '#D4501A', color: '#fff',
+              background: 'var(--accent)', color: '#fff',
               border: 'none', borderRadius: '14px',
-              fontFamily: "'DM Mono',monospace", fontSize: '13px',
+              fontFamily: "'Inter', sans-serif", fontSize: '13px',
               letterSpacing: '0.08em', textTransform: 'uppercase',
               cursor: 'pointer', fontWeight: 500,
               marginBottom: '16px',
@@ -695,9 +695,9 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
         {/* Mirrored nav bar — sits at bottom to show position */}
         <div style={{
           display: 'flex', alignItems: 'center',
-          borderTop: '0.5px solid var(--border-col, #e8e3dc)',
+          borderTop: '0.5px solid var(--border-col)',
           padding: '10px 0 4px',
-          background: 'var(--nav-bg, #f5f2ee)',
+          background: 'var(--nav-bg)',
         }}>
           {NAV_SCREENS.map(id => {
             const active = screen === id
@@ -709,7 +709,7 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
                 {id === 'plan'   && <IconPlan   active={active} />}
                 {id === 'coach'  && <IconCoach  active={active} />}
                 {id === 'strava' && <IconStrava active={active} />}
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: active ? '#E05A1C' : '#999' }}>
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: active ? 'var(--accent)' : 'var(--text-muted)' }}>
                   {NAV_LABELS[id]}
                 </span>
               </div>
@@ -724,20 +724,20 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
 // ── Dot / accent colours ──────────────────────────────────────────────────
 
 const TYPE_DOT: Record<string, string> = {
-  easy:     '#378ADD',
-  quality:  '#D4501A',
-  run:      '#D4501A',
-  race:     '#ff7777',
-  strength: '#4a7c6f',
+  easy:     'var(--blue)',
+  quality:  'var(--accent)',
+  run:      'var(--accent)',
+  race:     'var(--red)',
+  strength: 'var(--teal)',
   rest:     'transparent',
 }
 
 const TYPE_ACCENT: Record<string, string> = {
-  easy:     '#378ADD',
-  quality:  '#D4501A',
-  run:      '#D4501A',
-  race:     '#ff7777',
-  strength: '#4a7c6f',
+  easy:     'var(--blue)',
+  quality:  'var(--accent)',
+  run:      'var(--accent)',
+  race:     'var(--red)',
+  strength: 'var(--teal)',
   rest:     '#555',
 }
 
@@ -894,54 +894,54 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   const paceBracket = getPaceBracket()
 
   const typeConfig: Record<string, { color: string; label: string }> = {
-    easy:     { color: '#378ADD', label: 'Easy run — Zone 2' },
-    quality:  { color: '#D4501A', label: 'Quality session' },
-    run:      { color: '#D4501A', label: 'Long run' },
-    race:     { color: '#ff7777', label: 'Race' },
-    strength: { color: '#4a7c6f', label: 'Strength' },
+    easy:     { color: 'var(--blue)', label: 'Easy run — Zone 2' },
+    quality:  { color: 'var(--accent)', label: 'Quality session' },
+    run:      { color: 'var(--accent)', label: 'Long run' },
+    race:     { color: 'var(--red)', label: 'Race' },
+    strength: { color: 'var(--teal)', label: 'Strength' },
   }
   const config = typeConfig[session.type] ?? typeConfig['easy']
 
   return (
     <>
       {/* ── TOP BLOCK: accent border + date/status + type chip + metric cards ── */}
-      <div style={{ borderLeft: `4px solid ${config.color}`, padding: '14px 18px 14px 16px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
+      <div style={{ borderLeft: `4px solid ${config.color}`, padding: '14px 18px 14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
         {/* Row 1: date + status badge */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-          <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             {session.day} · {session.date}
           </span>
-          {isComplete && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', background: 'rgba(74,124,111,0.12)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.4)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>✓ Done</span>}
-          {isSkipped && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', background: 'rgba(80,80,80,0.1)', color: '#666', border: '0.5px solid #333', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Skipped</span>}
+          {isComplete && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'var(--teal-dim)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>✓ Done</span>}
+          {isSkipped && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'rgba(80,80,80,0.1)', color: '#666', border: '0.5px solid #333', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Skipped</span>}
         </div>
         {/* Row 2: session type chip */}
         <div style={{ marginBottom: '12px' }}>
-          <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', fontWeight: 600, color: config.color, letterSpacing: '0.08em', textTransform: 'uppercase', background: `${config.color}18`, borderRadius: '6px', padding: '4px 10px' }}>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', fontWeight: 600, color: config.color, letterSpacing: '0.08em', textTransform: 'uppercase', background: `${config.color}18`, borderRadius: '6px', padding: '4px 10px' }}>
             {config.label}
           </span>
         </div>
         {/* Row 3: HR + pace metric cards */}
         {(session.type === 'easy' || session.type === 'run' || session.type === 'quality') && (
           <div style={{ display: 'grid', gridTemplateColumns: paceBracket ? '1fr 1fr' : '1fr', gap: '10px' }}>
-            <div style={{ background: 'var(--bg, #f5f2ee)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col, #e8e3dc)' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+            <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
                 {session.type === 'quality' ? 'Target HR' : 'Zone 2 ceiling'}
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '22px', fontWeight: 600, color: config.color, lineHeight: 1 }}>
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 600, color: config.color, lineHeight: 1 }}>
                   {session.type === 'quality' ? '155–165' : zone2Ceiling}
                 </span>
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)' }}>bpm</span>
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)' }}>bpm</span>
               </div>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', marginTop: '4px' }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>
                 {session.type === 'quality' ? 'Warm up 15 min first' : 'Walk if exceeded'}
               </div>
             </div>
             {paceBracket && (
-              <div style={{ background: 'var(--bg, #f5f2ee)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col, #e8e3dc)' }}>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Est. pace</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '18px', fontWeight: 600, color: config.color, lineHeight: 1 }}>{paceBracket}</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', marginTop: '4px' }}>HR-derived estimate</div>
+              <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Est. pace</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '18px', fontWeight: 600, color: config.color, lineHeight: 1 }}>{paceBracket}</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>HR-derived estimate</div>
               </div>
             )}
           </div>
@@ -952,42 +952,42 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
         <>
           {/* ── MIDDLE BLOCK: session description ── */}
           {session.detail && (
-            <div style={{ padding: '16px 18px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Session</div>
-              <div style={{ fontSize: '14px', color: 'var(--text-secondary, #444)', lineHeight: 1.65 }}>{session.detail}</div>
+            <div style={{ padding: '16px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Session</div>
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.65 }}>{session.detail}</div>
             </div>
           )}
 
           {/* Week theme — compact, muted */}
           {weekTheme && (
-            <div style={{ padding: '12px 18px', background: 'var(--bg, #f5f2ee)', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted, #888)', lineHeight: 1.5, fontStyle: 'italic' }}>{weekTheme}</div>
+            <div style={{ padding: '12px 18px', background: 'var(--bg)', borderBottom: '0.5px solid var(--border-col)' }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, fontStyle: 'italic' }}>{weekTheme}</div>
             </div>
           )}
 
           {/* ── BOTTOM BLOCK: coach notes ── */}
           {guidance && (
-            <div style={{ padding: '14px 18px 4px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
+            <div style={{ padding: '14px 18px 4px', borderBottom: '0.5px solid var(--border-col)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                 <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: config.color, flexShrink: 0 }} />
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Coach notes</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Coach notes</div>
               </div>
               {guidance.why && (
-                <div style={{ fontSize: '13px', color: 'var(--text-muted, #777)', lineHeight: 1.7, marginBottom: guidance.what || guidance.how ? '14px' : '10px', fontStyle: 'italic' }}>
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: guidance.what || guidance.how ? '14px' : '10px', fontStyle: 'italic' }}>
                   {guidance.why}
                 </div>
               )}
               {guidance.what && (
                 <div style={{ marginBottom: guidance.how ? '12px' : '10px' }}>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>What</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.6 }}>{guidance.what}</div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>What</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{guidance.what}</div>
                 </div>
               )}
               {guidance.how && (
                 <div style={{ marginBottom: '10px' }}>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>How</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.6 }}>{guidance.how}</div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>How</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{guidance.how}</div>
                 </div>
               )}
             </div>
@@ -997,29 +997,29 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           <div style={{ padding: '16px 18px 24px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {!isComplete && !isSkipped && !session.isFuture && (
               <>
-                <button onClick={() => setView('complete')} style={{ flex: 1, minWidth: '120px', background: 'rgba(74,124,111,0.15)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.4)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
+                <button onClick={() => setView('complete')} style={{ flex: 1, minWidth: '120px', background: 'var(--teal-dim)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
                   Log with Strava
                 </button>
-                <button onClick={() => setView('manual')} style={{ flex: 1, minWidth: '120px', background: 'rgba(74,124,111,0.08)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.3)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                <button onClick={() => setView('manual')} style={{ flex: 1, minWidth: '120px', background: 'var(--teal-soft)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
                   Log manually
                 </button>
-                <button onClick={() => setView('skip')} style={{ width: '100%', background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '12px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                <button onClick={() => setView('skip')} style={{ width: '100%', background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '12px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
                   Skip
                 </button>
               </>
             )}
             {(isComplete || isSkipped) && (
-              <button onClick={() => setView('complete')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
+              <button onClick={() => setView('complete')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer' }}>
                 Update
               </button>
             )}
             {session.isFuture && !isComplete && !isSkipped && (
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #444)', textAlign: 'center', padding: '12px', width: '100%' }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #444)', textAlign: 'center', padding: '12px', width: '100%' }}>
                 Available to log on {session.date}
               </div>
             )}
             {isPast && !isComplete && !isSkipped && !session.isFuture && (
-              <button onClick={() => setView('complete')} style={{ flex: 1, background: 'var(--bg, #f5f2ee)', color: 'var(--text-muted, #666)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>
+              <button onClick={() => setView('complete')} style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-muted, #666)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer' }}>
                 Log retroactively
               </button>
             )}
@@ -1030,38 +1030,38 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
       {/* Strava log view */}
       {view === 'complete' && (
         <div style={{ padding: '16px 18px 24px' }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#4a7c6f', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Link a Strava activity</div>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #666)', marginBottom: '8px' }}>Optional — select from recent runs</div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Link a Strava activity</div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #666)', marginBottom: '8px' }}>Optional — select from recent runs</div>
           {loadingClaimed ? (
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #444)', padding: '12px 0' }}>Loading activities...</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #444)', padding: '12px 0' }}>Loading activities...</div>
           ) : stravaRuns.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', maxHeight: '200px', overflowY: 'auto' }}>
               {stravaRuns.slice(0, 20).map((run: any) => {
                 const isSelected = selectedActivity?.id === run.id
                 return (
                   <div key={run.id} onClick={() => setSelectedActivity(isSelected ? null : run)} style={{
-                    background: isSelected ? 'rgba(74,124,111,0.1)' : 'var(--bg, #f5f2ee)',
-                    border: `0.5px solid ${isSelected ? 'rgba(74,124,111,0.4)' : 'var(--border-col, #e8e3dc)'}`,
+                    background: isSelected ? 'var(--teal-soft)' : 'var(--bg)',
+                    border: `0.5px solid ${isSelected ? 'var(--teal-mid)' : 'var(--border-col)'}`,
                     borderRadius: '12px', padding: '10px 12px', cursor: 'pointer',
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   }}>
                     <div>
-                      <div style={{ fontSize: '13px', color: 'var(--text-primary, #111)', fontWeight: 500 }}>{run.name}</div>
-                      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', marginTop: '2px' }}>
+                      <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>{run.name}</div>
+                      <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
                         {new Date(run.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {(run.distance / 1000).toFixed(1)}km {run.average_heartrate ? `· ${Math.round(run.average_heartrate)} bpm` : ''}
                       </div>
                     </div>
-                    {isSelected && <span style={{ color: '#4a7c6f', fontSize: '16px' }}>✓</span>}
+                    {isSelected && <span style={{ color: 'var(--teal)', fontSize: '16px' }}>✓</span>}
                   </div>
                 )
               })}
             </div>
           ) : (
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #444)', padding: '12px 0', marginBottom: '8px' }}>No Strava activities found near this session date</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #444)', padding: '12px 0', marginBottom: '8px' }}>No Strava activities found near this session date</div>
           )}
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>Back</button>
-            <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: 'rgba(74,124,111,0.15)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.4)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving ? 0.6 : 1 }}>
+            <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer' }}>Back</button>
+            <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: 'var(--teal-dim)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Saving...' : 'Confirm complete'}
             </button>
           </div>
@@ -1071,11 +1071,11 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
       {/* Manual log view */}
       {view === 'manual' && (
         <div style={{ padding: '16px 18px 24px' }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#4a7c6f', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Log manually</div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Log manually</div>
 
           <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', marginBottom: '6px' }}>Distance ({preferredUnits})</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Distance ({preferredUnits})</div>
               <input
                 type="number"
                 inputMode="decimal"
@@ -1083,26 +1083,26 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 value={manualDistance}
                 onChange={e => setManualDistance(e.target.value)}
                 style={{
-                  width: '100%', background: 'var(--bg, #f5f2ee)',
-                  border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px',
-                  padding: '12px', color: 'var(--text-primary, #111)',
-                  fontFamily: "'DM Mono',monospace", fontSize: '14px', outline: 'none',
+                  width: '100%', background: 'var(--bg)',
+                  border: '0.5px solid var(--border-col)', borderRadius: '8px',
+                  padding: '12px', color: 'var(--text-primary)',
+                  fontFamily: "'Inter', sans-serif", fontSize: '14px', outline: 'none',
                   boxSizing: 'border-box',
                 }}
               />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', marginBottom: '6px' }}>Duration</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Duration</div>
               <input
                 type="text"
                 placeholder="e.g. 1:05:30"
                 value={manualDuration}
                 onChange={e => setManualDuration(e.target.value)}
                 style={{
-                  width: '100%', background: 'var(--bg, #f5f2ee)',
-                  border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px',
-                  padding: '12px', color: 'var(--text-primary, #111)',
-                  fontFamily: "'DM Mono',monospace", fontSize: '14px', outline: 'none',
+                  width: '100%', background: 'var(--bg)',
+                  border: '0.5px solid var(--border-col)', borderRadius: '8px',
+                  padding: '12px', color: 'var(--text-primary)',
+                  fontFamily: "'Inter', sans-serif", fontSize: '14px', outline: 'none',
                   boxSizing: 'border-box',
                 }}
               />
@@ -1110,25 +1110,25 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           </div>
 
           <div style={{ marginBottom: '16px' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #777)', textTransform: 'uppercase', marginBottom: '6px' }}>Notes (optional)</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Notes (optional)</div>
             <textarea
               placeholder="How did it go?"
               value={manualNotes}
               onChange={e => setManualNotes(e.target.value)}
               rows={2}
               style={{
-                width: '100%', background: 'var(--bg, #f5f2ee)',
-                border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px',
-                padding: '12px', color: 'var(--text-primary, #111)',
-                fontFamily: "'DM Sans',sans-serif", fontSize: '13px',
+                width: '100%', background: 'var(--bg)',
+                border: '0.5px solid var(--border-col)', borderRadius: '8px',
+                padding: '12px', color: 'var(--text-primary)',
+                fontFamily: "'Space Grotesk',sans-serif", fontSize: '13px',
                 outline: 'none', resize: 'none', boxSizing: 'border-box',
               }}
             />
           </div>
 
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>Back</button>
-            <button onClick={saveManualRun} disabled={saving || (!manualDistance && !manualDuration)} style={{ flex: 2, background: 'rgba(74,124,111,0.15)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.4)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving || (!manualDistance && !manualDuration) ? 0.5 : 1 }}>
+            <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer' }}>Back</button>
+            <button onClick={saveManualRun} disabled={saving || (!manualDistance && !manualDuration)} style={{ flex: 2, background: 'var(--teal-dim)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving || (!manualDistance && !manualDuration) ? 0.5 : 1 }}>
               {saving ? 'Saving...' : 'Save run'}
             </button>
           </div>
@@ -1138,12 +1138,12 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
       {/* Skip view */}
       {view === 'skip' && (
         <div style={{ padding: '16px 18px 24px' }}>
-          <div style={{ fontSize: '13px', color: 'var(--text-secondary, #555)', lineHeight: 1.6, marginBottom: '20px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '20px' }}>
             Mark this session as skipped? It will show in your log.
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted, #777)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', cursor: 'pointer' }}>Back</button>
-            <button onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2, background: 'var(--bg, #f5f2ee)', color: 'var(--text-muted, #666)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+            <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer' }}>Back</button>
+            <button onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2, background: 'var(--bg)', color: 'var(--text-muted, #666)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Saving...' : 'Mark as skipped'}
             </button>
           </div>
@@ -1193,7 +1193,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
     const s = sessionMap[key]
     if (!s || s.type === 'rest') return null
     const comp = completions[s.key] // use originalDay for completion lookup
-    if (comp?.status === 'complete') return '#4a7c6f'
+    if (comp?.status === 'complete') return 'var(--teal)'
     if (comp?.status === 'skipped') return '#333'
     return TYPE_DOT[s.type] ?? '#666'
   }
@@ -1210,7 +1210,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
 
   return (
     <div
-      style={{ borderBottom: '0.5px solid var(--border-col, #e8e3dc)', background: 'var(--bg, #f5f2ee)', paddingBottom: '10px' }}
+      style={{ borderBottom: '0.5px solid var(--border-col)', background: 'var(--bg)', paddingBottom: '10px' }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -1227,7 +1227,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
             <line x1="4.5" y1="1" x2="4.5" y2="3.5" stroke="#555" strokeWidth="1.1" strokeLinecap="round"/>
             <line x1="9.5" y1="1" x2="9.5" y2="3.5" stroke="#555" strokeWidth="1.1" strokeLinecap="round"/>
           </svg>
-          <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             Week {weekIndex + 1} of {totalWeeks}
           </span>
         </button>
@@ -1259,8 +1259,8 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
             >
               {/* Day letter */}
               <span style={{
-                fontFamily: "'DM Mono',monospace", fontSize: '10px',
-                color: isSelected ? '#D4501A' : isToday ? '#D4501A' : '#444',
+                fontFamily: "'Inter', sans-serif", fontSize: '10px',
+                color: isSelected ? 'var(--accent)' : isToday ? 'var(--accent)' : 'var(--text-secondary)',
                 letterSpacing: '0.04em', textTransform: 'uppercase',
               }}>
                 {DOW_LETTER[key]}
@@ -1270,13 +1270,13 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
               <div style={{
                 width: '28px', height: '28px', borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: isSelected ? '#D4501A' : isToday && !isSelected ? 'rgba(212,80,26,0.12)' : 'transparent',
-                border: isToday && !isSelected ? '1px solid rgba(212,80,26,0.35)' : 'none',
+                background: isSelected ? 'var(--accent)' : isToday && !isSelected ? 'var(--accent-soft)' : 'transparent',
+                border: isToday && !isSelected ? '1px solid var(--accent-mid)' : 'none',
                 transition: 'background 0.15s',
               }}>
                 <span style={{
-                  fontFamily: "'DM Mono',monospace", fontSize: '13px',
-                  color: isSelected ? '#fff' : isToday ? '#D4501A' : dateNum ? '#999' : '#2a2a2a',
+                  fontFamily: "'Inter', sans-serif", fontSize: '13px',
+                  color: isSelected ? '#fff' : isToday ? 'var(--accent)' : dateNum ? 'var(--text-muted)' : ''#2a2a2a'',
                   fontWeight: isToday || isSelected ? 600 : 400,
                 }}>
                   {dateNum}
@@ -1356,17 +1356,17 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
   }
 
   const labelStyle: React.CSSProperties = {
-    fontFamily: "'DM Mono',monospace", fontSize: '10px',
-    color: 'var(--text-muted, #777)', textTransform: 'uppercase',
+    fontFamily: "'Inter', sans-serif", fontSize: '10px',
+    color: 'var(--text-muted)', textTransform: 'uppercase',
     letterSpacing: '0.08em', marginBottom: '8px',
   }
 
   const stepperBtn = (onClick: () => void, label: string): React.CSSProperties => ({
     width: '36px', height: '36px', borderRadius: '8px',
-    background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)',
-    color: 'var(--text-primary, #111)', fontSize: '18px', cursor: 'pointer',
+    background: 'var(--bg)', border: '0.5px solid var(--border-col)',
+    color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontFamily: "'DM Mono',monospace", flexShrink: 0,
+    fontFamily: "'Inter', sans-serif", flexShrink: 0,
   })
 
   function Stepper({ label, value, min, max, step = 1, onChange, pad = false }: {
@@ -1377,11 +1377,11 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', minWidth: 0 }}>
         <div style={labelStyle}>{label}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', justifyContent: 'center' }}>
-          <button onClick={() => onChange(Math.max(min, value - step))} style={{ width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0, background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)', color: 'var(--text-primary, #111)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Mono',monospace" }}>−</button>
-          <div style={{ minWidth: '34px', textAlign: 'center', fontFamily: "'DM Mono',monospace", fontSize: '20px', fontWeight: 500, color: 'var(--text-primary, #111)', flexShrink: 0 }}>
+          <button onClick={() => onChange(Math.max(min, value - step))} style={{ width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0, background: 'var(--bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', sans-serif" }}>−</button>
+          <div style={{ minWidth: '34px', textAlign: 'center', fontFamily: "'Inter', sans-serif", fontSize: '20px', fontWeight: 500, color: 'var(--text-primary)', flexShrink: 0 }}>
             {pad ? String(value).padStart(2, '0') : value}
           </div>
-          <button onClick={() => onChange(Math.min(max, value + step))} style={{ width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0, background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)', color: 'var(--text-primary, #111)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Mono',monospace" }}>+</button>
+          <button onClick={() => onChange(Math.min(max, value + step))} style={{ width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0, background: 'var(--bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', sans-serif" }}>+</button>
         </div>
       </div>
     )
@@ -1399,9 +1399,9 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: 'var(--card-bg, #fff)', width: '100%', maxWidth: '480px',
+          background: 'var(--card-bg)', width: '100%', maxWidth: '480px',
           borderRadius: '20px 20px 0 0', padding: '8px 20px 24px',
-          border: '0.5px solid var(--border-col, #e8e3dc)',
+          border: '0.5px solid var(--border-col)',
           marginBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
           maxHeight: 'calc(90vh - 64px)', overflowY: 'auto',
           transform: visible ? 'translateY(0)' : 'translateY(100%)',
@@ -1410,38 +1410,38 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
       >
         {/* Drag handle */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 16px' }}>
-          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border-col, #e8e3dc)' }} />
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border-col)' }} />
         </div>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
           <div>
-            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: '18px', fontWeight: 500, color: 'var(--text-primary, #111)' }}>Log a run</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #888)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Manual entry · no Strava needed</div>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)' }}>Log a run</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Manual entry · no Strava needed</div>
           </div>
-          <button onClick={handleClose} style={{ background: 'rgba(0,0,0,0.06)', border: 'none', color: 'var(--text-muted, #888)', fontSize: '16px', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+          <button onClick={handleClose} style={{ background: 'rgba(0,0,0,0.06)', border: 'none', color: 'var(--text-muted)', fontSize: '16px', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
         </div>
 
         {/* Distance */}
         <div style={{ marginBottom: '24px' }}>
           <div style={labelStyle}>Distance ({preferredUnits})</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0', background: 'var(--bg, #f5f2ee)', borderRadius: '12px', border: '0.5px solid var(--border-col, #e8e3dc)', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0', background: 'var(--bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
             {/* Whole number */}
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px 8px' }}>
-              <button onClick={() => setDistWhole(Math.max(0, distWhole - 1))} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg, #fff)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary, #111)', fontSize: '18px', cursor: 'pointer' }}>−</button>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '28px', fontWeight: 500, color: 'var(--text-primary, #111)', minWidth: '32px', textAlign: 'center' }}>{distWhole}</span>
-              <button onClick={() => setDistWhole(distWhole + 1)} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg, #fff)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary, #111)', fontSize: '18px', cursor: 'pointer' }}>+</button>
+              <button onClick={() => setDistWhole(Math.max(0, distWhole - 1))} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer' }}>−</button>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '28px', fontWeight: 500, color: 'var(--text-primary)', minWidth: '32px', textAlign: 'center' }}>{distWhole}</span>
+              <button onClick={() => setDistWhole(distWhole + 1)} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer' }}>+</button>
             </div>
             {/* Decimal separator */}
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '28px', fontWeight: 500, color: 'var(--text-muted, #888)', padding: '0 4px' }}>.</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '28px', fontWeight: 500, color: 'var(--text-muted)', padding: '0 4px' }}>.</div>
             {/* Decimal */}
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px 8px' }}>
-              <button onClick={() => setDistDecimal(Math.max(0, distDecimal - 1))} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg, #fff)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary, #111)', fontSize: '18px', cursor: 'pointer' }}>−</button>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '28px', fontWeight: 500, color: 'var(--text-primary, #111)', minWidth: '16px', textAlign: 'center' }}>{distDecimal}</span>
-              <button onClick={() => setDistDecimal(Math.min(9, distDecimal + 1))} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg, #fff)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary, #111)', fontSize: '18px', cursor: 'pointer' }}>+</button>
+              <button onClick={() => setDistDecimal(Math.max(0, distDecimal - 1))} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer' }}>−</button>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '28px', fontWeight: 500, color: 'var(--text-primary)', minWidth: '16px', textAlign: 'center' }}>{distDecimal}</span>
+              <button onClick={() => setDistDecimal(Math.min(9, distDecimal + 1))} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer' }}>+</button>
             </div>
           </div>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #888)', marginTop: '4px', textAlign: 'center' }}>{distanceStr} {preferredUnits}</div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textAlign: 'center' }}>{distanceStr} {preferredUnits}</div>
         </div>
 
         {/* Duration — CSS grid keeps all 3 steppers fully on screen */}
@@ -1449,9 +1449,9 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
           <div style={labelStyle}>Duration</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 16px 1fr 16px 1fr', alignItems: 'start', width: '100%' }}>
             <Stepper label="hrs" value={hours} min={0} max={12} onChange={setHours} />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '24px', color: 'var(--text-muted, #888)', fontSize: '18px', fontFamily: "'DM Mono',monospace" }}>:</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '24px', color: 'var(--text-muted)', fontSize: '18px', fontFamily: "'Inter', sans-serif" }}>:</div>
             <Stepper label="min" value={minutes} min={0} max={59} onChange={setMinutes} pad />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '24px', color: 'var(--text-muted, #888)', fontSize: '18px', fontFamily: "'DM Mono',monospace" }}>:</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '24px', color: 'var(--text-muted)', fontSize: '18px', fontFamily: "'Inter', sans-serif" }}>:</div>
             <Stepper label="sec" value={seconds} min={0} max={59} step={5} onChange={setSeconds} pad />
           </div>
         </div>
@@ -1465,10 +1465,10 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
             onChange={e => setNotes(e.target.value)}
             rows={2}
             style={{
-              width: '100%', background: 'var(--bg, #f5f2ee)',
-              border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px',
-              padding: '12px', color: 'var(--text-primary, #111)',
-              fontFamily: "'DM Sans',sans-serif", fontSize: '13px',
+              width: '100%', background: 'var(--bg)',
+              border: '0.5px solid var(--border-col)', borderRadius: '8px',
+              padding: '12px', color: 'var(--text-primary)',
+              fontFamily: "'Space Grotesk',sans-serif", fontSize: '13px',
               outline: 'none', resize: 'none', boxSizing: 'border-box',
             }}
           />
@@ -1480,9 +1480,9 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
           disabled={saving}
           style={{
             width: '100%', padding: '16px',
-            background: '#4a7c6f', color: '#fff',
+            background: 'var(--teal)', color: '#fff',
             border: 'none', borderRadius: '14px',
-            fontFamily: "'DM Mono',monospace", fontSize: '13px',
+            fontFamily: "'Inter', sans-serif", fontSize: '13px',
             letterSpacing: '0.08em', textTransform: 'uppercase',
             cursor: 'pointer', fontWeight: 500,
             opacity: saving ? 0.7 : 1,
@@ -1501,7 +1501,7 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits 
   session: SessionEntry; completion?: any; onTap: () => void
   zone2Ceiling?: number; preferredUnits?: 'km' | 'mi'
 }) {
-  const accent = TYPE_ACCENT[session.type] ?? '#D4501A'
+  const accent = TYPE_ACCENT[session.type] ?? 'var(--accent)'
   const isComplete = completion?.status === 'complete'
   const isSkipped = completion?.status === 'skipped'
 
@@ -1530,10 +1530,10 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits 
   return (
     <div onClick={onTap} style={{
       margin: '12px 12px 0',
-      background: isComplete ? 'rgba(74,124,111,0.05)' : isSkipped ? 'rgba(80,80,80,0.04)' : 'var(--card-bg, #fff)',
+      background: isComplete ? 'var(--teal-soft)' : isSkipped ? 'rgba(80,80,80,0.04)' : 'var(--card-bg)',
       borderRadius: '16px',
-      border: `0.5px solid ${isComplete ? 'rgba(74,154,90,0.3)' : isSkipped ? '#2a2a2a' : 'var(--border-col, #e8e3dc)'}`,
-      borderLeft: `4px solid ${isComplete ? '#4a7c6f' : isSkipped ? '#444' : accent}`,
+      border: `0.5px solid ${isComplete ? 'var(--teal-mid)' : isSkipped ? ''#2a2a2a'' : 'var(--border-col)'}`,
+      borderLeft: `4px solid ${isComplete ? 'var(--teal)' : isSkipped ? 'var(--text-secondary)' : accent}`,
       cursor: 'pointer',
       overflow: 'hidden',
     }}>
@@ -1541,7 +1541,7 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits 
       {/* Row 1: type chip left + status badge right */}
       <div style={{ padding: '12px 14px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
         <span style={{
-          fontFamily: "'DM Mono',monospace", fontSize: '10px', fontWeight: 600,
+          fontFamily: "'Inter', sans-serif", fontSize: '10px', fontWeight: 600,
           color: accent,
           background: `${accent}18`,
           borderRadius: '6px', padding: '3px 8px',
@@ -1549,7 +1549,7 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits 
         }}>
           {TYPE_LABEL[session.type] ?? session.type}
         </span>
-        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #999)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {session.today ? 'Today' : `${session.day} ${session.date}`}
         </span>
       </div>
@@ -1559,7 +1559,7 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits 
         <div style={{
           fontSize: '19px', fontWeight: 500, letterSpacing: '-0.3px',
           color: isSkipped ? 'var(--text-muted, #888)' : 'var(--text-primary, #111)',
-          lineHeight: 1.2, fontFamily: "'DM Sans',sans-serif",
+          lineHeight: 1.2, fontFamily: "'Space Grotesk',sans-serif",
           textDecoration: isSkipped ? 'line-through' : 'none',
         }}>
           {session.title}
@@ -1573,39 +1573,39 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits 
         }}>
           {/* Zone */}
           {(session.zone || session.type) && (
-            <div style={{ background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px', minWidth: '52px' }}>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '8px', color: 'var(--text-muted, #999)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Zone</span>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', fontWeight: 600, color: accent, lineHeight: 1 }}>
+            <div style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px', minWidth: '52px' }}>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Zone</span>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', fontWeight: 600, color: accent, lineHeight: 1 }}>
                 {session.zone ?? (session.type === 'quality' ? 'Z3–4' : 'Z2')}
               </span>
             </div>
           )}
           {/* HR */}
           {hrCeiling && (
-            <div style={{ background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '8px', color: 'var(--text-muted, #999)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{hrLabel}</span>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', fontWeight: 600, color: accent, lineHeight: 1 }}>{hrCeiling} <span style={{ fontSize: '9px', fontWeight: 400, color: 'var(--text-muted, #999)' }}>bpm</span></span>
+            <div style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{hrLabel}</span>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', fontWeight: 600, color: accent, lineHeight: 1 }}>{hrCeiling} <span style={{ fontSize: '9px', fontWeight: 400, color: 'var(--text-muted)' }}>bpm</span></span>
             </div>
           )}
           {/* Pace */}
           {pace && (
-            <div style={{ background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '8px', color: 'var(--text-muted, #999)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Est. pace</span>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', fontWeight: 600, color: accent, lineHeight: 1 }}>{pace}</span>
+            <div style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Est. pace</span>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 600, color: accent, lineHeight: 1 }}>{pace}</span>
             </div>
           )}
           {/* Distance */}
           {session.distance && (
-            <div style={{ background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '8px', color: 'var(--text-muted, #999)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Dist</span>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', fontWeight: 600, color: accent, lineHeight: 1 }}>{session.distance}<span style={{ fontSize: '9px', fontWeight: 400, color: 'var(--text-muted, #999)' }}> {preferredUnits ?? 'km'}</span></span>
+            <div style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Dist</span>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', fontWeight: 600, color: accent, lineHeight: 1 }}>{session.distance}<span style={{ fontSize: '9px', fontWeight: 400, color: 'var(--text-muted)' }}> {preferredUnits ?? 'km'}</span></span>
             </div>
           )}
           {/* Duration */}
           {session.duration && (
-            <div style={{ background: 'var(--bg, #f5f2ee)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '8px', color: 'var(--text-muted, #999)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Time</span>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', fontWeight: 600, color: accent, lineHeight: 1 }}>{session.duration}</span>
+            <div style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Time</span>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 600, color: accent, lineHeight: 1 }}>{session.duration}</span>
             </div>
           )}
         </div>
@@ -1614,23 +1614,23 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits 
       {/* Strava activity if complete */}
       {isComplete && completion?.strava_activity_name && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0 14px 10px' }}>
-          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FC4C02', flexShrink: 0 }} />
-          <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: '#FC4C02' }}>{completion.strava_activity_name}</span>
+          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--strava)', flexShrink: 0 }} />
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--strava)' }}>{completion.strava_activity_name}</span>
         </div>
       )}
 
       {/* Footer CTA */}
       <div style={{
-        padding: '10px 14px', borderTop: '0.5px solid var(--border-col, #e8e3dc)',
+        padding: '10px 14px', borderTop: '0.5px solid var(--border-col)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'var(--bg, #f5f2ee)',
+        background: 'var(--bg)',
       }}>
-        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: isComplete ? '#4a7c6f' : isSkipped ? '#555' : accent }}>
+        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: isComplete ? 'var(--teal)' : isSkipped ? '#555' : accent }}>
           {isComplete ? 'View details' : isSkipped ? 'Update' : session.today ? 'Log this session' : 'View session'}
         </span>
-        {isComplete && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', background: 'rgba(74,124,111,0.12)', color: '#4a7c6f', border: '0.5px solid rgba(74,124,111,0.35)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>✓ Done</span>}
-        {isSkipped && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', background: 'rgba(80,80,80,0.08)', color: '#777', border: '0.5px solid #444', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>Skipped</span>}
-        {!isComplete && !isSkipped && <span style={{ color: 'var(--text-muted, #999)', fontSize: '16px', lineHeight: 1 }}>›</span>}
+        {isComplete && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'var(--teal-dim)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>✓ Done</span>}
+        {isSkipped && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'rgba(80,80,80,0.08)', color: 'var(--text-muted)', border: '0.5px solid #444', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>Skipped</span>}
+        {!isComplete && !isSkipped && <span style={{ color: 'var(--text-muted)', fontSize: '16px', lineHeight: 1 }}>›</span>}
       </div>
     </div>
   )
@@ -1644,16 +1644,16 @@ function RestDayCard({ session, nextSession }: {
   return (
     <div style={{ margin: '12px 12px 0' }}>
       <div style={{
-        background: 'var(--card-bg, #fff)', borderRadius: '16px',
-        border: '0.5px solid var(--border-col, #e8e3dc)', padding: '20px 18px', marginBottom: '10px',
+        background: 'var(--card-bg)', borderRadius: '16px',
+        border: '0.5px solid var(--border-col)', padding: '20px 18px', marginBottom: '10px',
       }}>
-        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>
+        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>
           No run today
         </div>
-        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary, #111)', lineHeight: 1.25, marginBottom: '8px', letterSpacing: '-0.3px' }}>
+        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.25, marginBottom: '8px', letterSpacing: '-0.3px' }}>
           {session?.type === 'rest' || !session ? 'Rest is the work.' : session.title}
         </div>
-        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', lineHeight: 1.6 }}>
+        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
           {session?.type === 'rest' || !session
             ? "No session today. Adaptation happens here, not in the run."
             : 'No running today. Keep it easy, stay off the legs.'}
@@ -1662,17 +1662,17 @@ function RestDayCard({ session, nextSession }: {
 
       {nextSession && (
         <div style={{
-          background: 'var(--card-bg, #fff)', borderRadius: '12px',
-          border: '0.5px solid var(--border-col, #e8e3dc)', padding: '14px 16px',
+          background: 'var(--card-bg)', borderRadius: '12px',
+          border: '0.5px solid var(--border-col)', padding: '14px 16px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>
               Next run · {nextSession.day} {nextSession.date}
             </div>
-            <div style={{ fontSize: '15px', color: 'var(--text-muted, #888)', fontWeight: 500 }}>{nextSession.title}</div>
+            <div style={{ fontSize: '15px', color: 'var(--text-muted)', fontWeight: 500 }}>{nextSession.title}</div>
             {nextSession.detail && (
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', marginTop: '2px' }}>{nextSession.detail}</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{nextSession.detail}</div>
             )}
           </div>
           <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: TYPE_DOT[nextSession.type] ?? '#555', flexShrink: 0, marginLeft: '12px' }} />
@@ -1725,8 +1725,8 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
   const futureMonths = groupByMonth(futureWeeks)
 
   function getDotColor(type: string, completion?: any): string {
-    if (completion?.status === 'complete') return '#4a7c6f'
-    if (completion?.status === 'skipped') return '#2a2a2a'
+    if (completion?.status === 'complete') return 'var(--teal)'
+    if (completion?.status === 'skipped') return ''#2a2a2a''
     return TYPE_DOT[type] ?? 'transparent'
   }
 
@@ -1751,15 +1751,15 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
       <div key={weekNum} style={{
         display: 'grid', gridTemplateColumns: '40px repeat(7, 1fr)',
         marginBottom: '4px',
-        background: isCurrent ? 'rgba(212,80,26,0.04)' : 'transparent',
+        background: isCurrent ? 'var(--accent-soft)' : 'transparent',
         borderRadius: '8px',
-        border: isCurrent ? '0.5px solid rgba(212,80,26,0.15)' : '0.5px solid transparent',
+        border: isCurrent ? '0.5px solid var(--accent-dim)' : '0.5px solid transparent',
         padding: '4px 0',
       }}>
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: "'DM Mono',monospace", fontSize: '10px',
-          color: isCurrent ? '#D4501A' : '#333',
+          fontFamily: "'Inter', sans-serif", fontSize: '10px',
+          color: isCurrent ? 'var(--accent)' : '#333',
         }}>
           W{weekNum}
         </div>
@@ -1799,10 +1799,10 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
               }}
             >
               <span style={{
-                fontFamily: "'DM Mono',monospace", fontSize: '12px',
-                color: isToday ? '#D4501A' : '#555',
+                fontFamily: "'Inter', sans-serif", fontSize: '12px',
+                color: isToday ? 'var(--accent)' : '#555',
                 fontWeight: isToday ? 600 : 400,
-                background: isToday ? 'rgba(212,80,26,0.12)' : 'transparent',
+                background: isToday ? 'var(--accent-soft)' : 'transparent',
                 borderRadius: '50%', width: '20px', height: '20px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
@@ -1823,22 +1823,22 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
       const isCurrent = label === currentMonthLabel
       return (
         <div key={label} style={{
-          background: 'var(--card-bg, #fff)',
+          background: 'var(--card-bg)',
           borderRadius: '16px',
-          border: isCurrent ? '0.5px solid rgba(212,80,26,0.4)' : '0.5px solid var(--border-col, #1c1c1c)',
+          border: isCurrent ? '0.5px solid var(--accent-mid)' : '0.5px solid var(--border-col)',
           overflow: 'hidden',
           marginBottom: '10px',
         }}>
           <div style={{
-            fontFamily: "'DM Mono',monospace", fontSize: '10px',
-            color: isCurrent ? '#D4501A' : '#555',
+            fontFamily: "'Inter', sans-serif", fontSize: '10px',
+            color: isCurrent ? 'var(--accent)' : '#555',
             letterSpacing: '0.1em', textTransform: 'uppercase',
             padding: '12px 12px 6px',
-            borderBottom: '0.5px solid var(--border-col, #e8e3dc)',
+            borderBottom: '0.5px solid var(--border-col)',
             display: 'flex', alignItems: 'center', gap: '8px',
           }}>
             {label}
-            {isCurrent && <span style={{ background: 'rgba(212,80,26,0.12)', color: '#D4501A', fontSize: '10px', padding: '2px 8px', borderRadius: '20px', border: '0.5px solid rgba(212,80,26,0.3)' }}>current</span>}
+            {isCurrent && <span style={{ background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px', border: '0.5px solid var(--accent-mid)' }}>current</span>}
           </div>
           <div style={{ padding: '6px 8px 8px' }}>
             {weeks.map(({ week, weekNum }) => renderWeekRow(week, weekNum))}
@@ -1859,25 +1859,25 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
   }
 
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto' }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '16px 16px 8px',
-        borderBottom: '0.5px solid var(--border-col, #e8e3dc)',
-        position: 'sticky', top: 0, background: 'var(--bg, #f5f2ee)', zIndex: 10,
+        borderBottom: '0.5px solid var(--border-col)',
+        position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={onBack} style={{ border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
-          <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary, #111)', fontFamily: "'DM Sans',sans-serif", letterSpacing: '-0.3px' }}>
+          <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
+          <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '-0.3px' }}>
             Plan
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {[{ color: '#378ADD', label: 'Easy' }, { color: '#D4501A', label: 'Run' }, { color: '#4a7c6f', label: 'Done' }].map(({ color, label }) => (
+          {[{ color: 'var(--blue)', label: 'Easy' }, { color: 'var(--accent)', label: 'Run' }, { color: 'var(--teal)', label: 'Done' }].map(({ color, label }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
               <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: color }} />
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)' }}>{label}</span>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)' }}>{label}</span>
             </div>
           ))}
         </div>
@@ -1887,12 +1887,12 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
       <div style={{
         display: 'grid', gridTemplateColumns: '40px repeat(7, 1fr)',
         padding: '8px 12px 4px',
-        position: 'sticky', top: '53px', background: 'var(--bg, #f5f2ee)', zIndex: 9,
-        borderBottom: '0.5px solid var(--border-col, #e8e3dc)',
+        position: 'sticky', top: '53px', background: 'var(--bg)', zIndex: 9,
+        borderBottom: '0.5px solid var(--border-col)',
       }}>
         <div />
         {DOW_ORDER.map(key => (
-          <div key={key} style={{ textAlign: 'center', fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div key={key} style={{ textAlign: 'center', fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {DOW_LETTER[key]}
           </div>
         ))}
@@ -1910,10 +1910,10 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
                   onClick={() => setShowPast(false)}
                   style={{
                     width: '100%', padding: '12px',
-                    background: 'none', border: '0.5px solid #1c1c1c',
+                    background: 'none', border: '0.5px solid var(--border-col)',
                     borderRadius: '8px', cursor: 'pointer',
-                    fontFamily: "'DM Mono',monospace", fontSize: '12px',
-                    color: 'var(--text-muted, #888)', letterSpacing: '0.06em', textTransform: 'uppercase',
+                    fontFamily: "'Inter', sans-serif", fontSize: '12px',
+                    color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase',
                     marginBottom: '8px',
                   }}
                 >
@@ -1925,10 +1925,10 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
                 onClick={() => setShowPast(true)}
                 style={{
                   width: '100%', padding: '12px',
-                  background: 'none', border: '0.5px solid #1c1c1c',
+                  background: 'none', border: '0.5px solid var(--border-col)',
                   borderRadius: '8px', cursor: 'pointer',
-                  fontFamily: "'DM Mono',monospace", fontSize: '12px',
-                  color: 'var(--text-muted, #888)', letterSpacing: '0.06em', textTransform: 'uppercase',
+                  fontFamily: "'Inter', sans-serif", fontSize: '12px',
+                  color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase',
                 }}
               >
                 ↑ Load {pastWeeks.length} past week{pastWeeks.length !== 1 ? 's' : ''}
@@ -1967,7 +1967,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
   // Guard against empty plan (e.g. failed Gist fetch)
   if (!currentWeek) return (
-    <div style={{ padding: '32px 16px', textAlign: 'center', fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)' }}>
+    <div style={{ padding: '32px 16px', textAlign: 'center', fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)' }}>
       Unable to load plan. Check your connection and try again.
     </div>
   )
@@ -2082,15 +2082,15 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px 8px' }}>
         {/* Me avatar — left */}
         <button onClick={onOpenMe} style={{
-          width: '32px', height: '32px', borderRadius: '50%', background: '#D4501A',
+          width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: "'DM Mono',monospace", fontSize: '12px', fontWeight: 500, color: 'var(--text-primary, #111)',
+          fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)',
           border: 'none', cursor: 'pointer', flexShrink: 0,
         }}>
           {initials}
         </button>
         {/* Brand slug — centre */}
-        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 500, color: '#D4501A', letterSpacing: '0.06em' }}>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 500, color: 'var(--accent)', letterSpacing: '0.06em' }}>
           ZONA
         </div>
         {/* Calendar icon — right */}
@@ -2151,14 +2151,14 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         style={{
           margin: '12px 12px 0', width: 'calc(100% - 24px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-          background: '#D4501A',
+          background: 'var(--accent)',
           border: 'none',
           borderRadius: '14px', padding: '15px',
-          fontFamily: "'DM Mono',monospace", fontSize: '12px',
+          fontFamily: "'Inter', sans-serif", fontSize: '12px',
           color: '#fff', letterSpacing: '0.08em',
           textTransform: 'uppercase', cursor: 'pointer',
           fontWeight: 500,
-          boxShadow: '0 2px 12px rgba(212,80,26,0.25)',
+          boxShadow: '0 2px 12px var(--accent-mid)',
         }}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -2183,9 +2183,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
       {/* Week focus */}
       {weekTheme && (
-        <div style={{ margin: '10px 12px 0', padding: '10px 14px', background: 'var(--card-bg, #fff)', borderRadius: '12px', border: '0.5px solid var(--border-col, #e8e3dc)' }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '3px' }}>Week focus</div>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted, #888)', lineHeight: 1.5 }}>{weekTheme}</div>
+        <div style={{ margin: '10px 12px 0', padding: '10px 14px', background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)' }}>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '3px' }}>Week focus</div>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{weekTheme}</div>
         </div>
       )}
 
@@ -2197,12 +2197,12 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           { num: String(daysTo50k), unit: 'days', label: 'To 50k' },
           ...(smokeTrackerEnabled && quitDays !== null ? [{ num: String(quitDays), unit: 'days', label: 'Smoke-free' }] : []),
         ].map((s, i) => (
-          <div key={i} style={{ flex: 1, background: 'var(--card-bg, #fff)', borderRadius: '12px', padding: '10px 12px', border: '0.5px solid var(--border-col, #e8e3dc)' }}>
+          <div key={i} style={{ flex: 1, background: 'var(--card-bg)', borderRadius: '12px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
             <div>
-              <span style={{ fontSize: '20px', color: 'var(--text-primary, #111)', fontWeight: 500 }}>{s.num}</span>
-              <span style={{ fontSize: '13px', color: '#D4501A', fontWeight: 500 }}> {s.unit}</span>
+              <span style={{ fontSize: '20px', color: 'var(--text-primary)', fontWeight: 500 }}>{s.num}</span>
+              <span style={{ fontSize: '13px', color: 'var(--accent)', fontWeight: 500 }}> {s.unit}</span>
             </div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', marginTop: '2px', textTransform: 'uppercase' }}>{s.label}</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', textTransform: 'uppercase' }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -2227,9 +2227,9 @@ function PlanScreen({ plan, stravaRuns, onOpenMe, initials, allOverrides, allCom
       <ScreenHeader title="Plan" sub="Race to the Stones · 11 Jul 2026" initials={initials} onOpenMe={onOpenMe} />
       <div style={{ padding: '0 12px' }}>
         <PlanChart weeks={plan.weeks} />
-        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.6rem', color: 'var(--text-muted, #888)', margin: '8px 0 4px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
+        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '0.6rem', color: 'var(--text-muted)', margin: '8px 0 4px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
           <span>MIDWEEK: 2× Zone 2 · STRENGTH: Mon/Wed · SAT: long run</span>
-          <span style={{ color: 'var(--text-muted, #888)' }}>v{plan.meta.version} · {plan.meta.last_updated}</span>
+          <span style={{ color: 'var(--text-muted)' }}>v{plan.meta.version} · {plan.meta.last_updated}</span>
         </div>
       </div>
 
@@ -2336,53 +2336,53 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
         {(stravaLoading || latestRun) && (
-          <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '12px', padding: '9px 12px', border: '0.5px solid var(--border-col, #e8e3dc)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ background: 'var(--card-bg)', borderRadius: '12px', padding: '9px 12px', border: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FC4C02' }} />
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: 'var(--text-muted, #888)' }}>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--strava)' }} />
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'var(--text-muted)' }}>
                 {stravaLoading ? 'Loading Strava...' : loading ? 'Analysing latest run...' : latestRunLabel ?? 'Latest activity'}
               </span>
             </div>
             {isNew && !loading && (
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#D4501A', background: 'rgba(212,80,26,0.1)', padding: '2px 8px', borderRadius: '20px' }}>new</span>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', background: 'var(--accent-soft)', padding: '2px 8px', borderRadius: '20px' }}>new</span>
             )}
           </div>
         )}
 
         {!stravaLoading && !latestRun && (
-          <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', border: '0.5px solid var(--border-col, #e8e3dc)', padding: '28px 20px', textAlign: 'center' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', lineHeight: 1.6 }}>
-              Connect Strava in the <span style={{ color: '#D4501A' }}>Me</span> screen<br />to get coaching notes.
+          <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', padding: '28px 20px', textAlign: 'center' }}>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              Connect Strava in the <span style={{ color: 'var(--accent)' }}>Me</span> screen<br />to get coaching notes.
             </div>
           </div>
         )}
 
         {(loading || (stravaLoading && !analysis)) && (
           <>
-            <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', border: '0.5px solid var(--border-col, #e8e3dc)', padding: '28px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+            <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', padding: '28px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
               <svg width="36" height="36" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15" fill="none" stroke="#1c1c1c" strokeWidth="2" />
-                <circle cx="18" cy="18" r="15" fill="none" stroke="#D4501A" strokeWidth="2" strokeDasharray="40 60" strokeLinecap="round">
+                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--border-col)" strokeWidth="2" />
+                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--accent)" strokeWidth="2" strokeDasharray="40 60" strokeLinecap="round">
                   <animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite" />
                 </circle>
               </svg>
-              <p style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', textAlign: 'center', lineHeight: 1.6 }}>
+              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.6 }}>
                 {stravaLoading ? 'Loading Strava data...' : 'Reading your latest run\nand plan position...'}
               </p>
             </div>
-            <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', border: '0.5px solid var(--border-col, #e8e3dc)', padding: '14px' }}>
+            <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', padding: '14px' }}>
               {[85, 100, 70, 90].map((w, i) => (
-                <div key={i} style={{ height: '10px', background: 'var(--bg, #f5f2ee)', borderRadius: '4px', marginBottom: i < 3 ? '8px' : 0, width: `${w}%` }} />
+                <div key={i} style={{ height: '10px', background: 'var(--bg)', borderRadius: '4px', marginBottom: i < 3 ? '8px' : 0, width: `${w}%` }} />
               ))}
             </div>
           </>
         )}
 
         {error && !loading && (
-          <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', border: '0.5px solid var(--border-col, #e8e3dc)', padding: '16px' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#D4501A', marginBottom: '8px' }}>Error</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-muted, #888)' }}>{error}</div>
-            <button onClick={generateAnalysis} style={{ marginTop: '12px', fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#D4501A', background: 'rgba(212,80,26,0.1)', border: 'none', borderRadius: '20px', padding: '6px 14px', cursor: 'pointer' }}>
+          <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', padding: '16px' }}>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', marginBottom: '8px' }}>Error</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{error}</div>
+            <button onClick={generateAnalysis} style={{ marginTop: '12px', fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '6px 14px', cursor: 'pointer' }}>
               Try again
             </button>
           </div>
@@ -2390,30 +2390,30 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
 
         {analysis && !loading && (
           <>
-            <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', border: '0.5px solid var(--border-col, #e8e3dc)', overflow: 'hidden' }}>
+            <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
               <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid #111', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#D4501A' }} />
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Coaching notes</span>
-                <span style={{ marginLeft: 'auto', fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)' }}>W{weekNum}/{totalWeeks}</span>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Coaching notes</span>
+                <span style={{ marginLeft: 'auto', fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)' }}>W{weekNum}/{totalWeeks}</span>
               </div>
               <div style={{ padding: '14px' }}>
                 {analysis.split('\n\n').map((para, i) => (
-                  <p key={i} style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.65, marginTop: i > 0 ? '10px' : 0 }}>{para}</p>
+                  <p key={i} style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.65, marginTop: i > 0 ? '10px' : 0 }}>{para}</p>
                 ))}
               </div>
             </div>
-            <button onClick={generateAnalysis} style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: 'var(--text-muted, #888)', background: 'none', border: '0.5px solid #1c1c1c', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer', alignSelf: 'center' }}>
+            <button onClick={generateAnalysis} style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'var(--text-muted)', background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer', alignSelf: 'center' }}>
               Refresh analysis
             </button>
           </>
         )}
 
         {!analysis && !loading && !error && latestRun && !stravaLoading && (
-          <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', border: '0.5px solid var(--border-col, #e8e3dc)', padding: '28px 20px', textAlign: 'center' }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', lineHeight: 1.6 }}>
+          <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', padding: '28px 20px', textAlign: 'center' }}>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
               Strava connected. Ready to generate<br />your coaching notes.
             </div>
-            <button onClick={generateAnalysis} style={{ marginTop: '16px', fontFamily: "'DM Mono',monospace", fontSize: '13px', color: '#D4501A', background: 'rgba(212,80,26,0.1)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}>
+            <button onClick={generateAnalysis} style={{ marginTop: '16px', fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}>
               Generate now
             </button>
           </div>
@@ -2483,15 +2483,15 @@ function StravaConnectionRow() {
   const isLoading = connected === null
 
   return (
-    <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '12px', border: '0.5px solid var(--border-col, #e8e3dc)', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(252,76,2,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FC4C02' }} />
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--strava)' }} />
           </div>
           <div>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.55 }}>Strava</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', marginTop: '1px', color: isLoading ? '#888' : connected ? '#4a7c6f' : '#888' }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Strava</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', marginTop: '1px', color: isLoading ? 'var(--text-muted)' : connected ? 'var(--teal)' : 'var(--text-muted)' }}>
               {isLoading ? 'checking...' : connected ? 'Connected' : 'Not connected'}
             </div>
           </div>
@@ -2500,10 +2500,10 @@ function StravaConnectionRow() {
         {!isLoading && (
           connected ? (
             <button onClick={disconnect} disabled={disconnecting} style={{
-              background: 'none', border: '0.5px solid var(--border-col, #e8e3dc)',
+              background: 'none', border: '0.5px solid var(--border-col)',
               borderRadius: '8px', padding: '6px 12px',
-              fontFamily: "'DM Mono',monospace", fontSize: '11px',
-              color: 'var(--text-muted, #888)', letterSpacing: '0.06em',
+              fontFamily: "'Inter', sans-serif", fontSize: '11px',
+              color: 'var(--text-muted)', letterSpacing: '0.06em',
               textTransform: 'uppercase', cursor: 'pointer',
               opacity: disconnecting ? 0.6 : 1,
             }}>
@@ -2511,9 +2511,9 @@ function StravaConnectionRow() {
             </button>
           ) : (
             <button onClick={() => { window.location.href = `/api/strava/connect?user_id=${userId}` }} disabled={!userId} style={{
-              background: '#FC4C02', color: '#fff',
+              background: 'var(--strava)', color: '#fff',
               border: 'none', borderRadius: '8px', padding: '8px 14px',
-              fontFamily: "'DM Mono',monospace", fontSize: '11px',
+              fontFamily: "'Inter', sans-serif", fontSize: '11px',
               letterSpacing: '0.06em', textTransform: 'uppercase',
               cursor: userId ? 'pointer' : 'default',
               opacity: userId ? 1 : 0.5,
@@ -2546,8 +2546,8 @@ function SmokeToggle({ enabled, quitDate, onChange }: {
   }
 
   return (
-    <div onClick={toggle} style={{ width: '44px', height: '26px', borderRadius: '13px', background: enabled ? '#1e3d37' : '#1c1c1c', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
-      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: enabled ? '#4a7c6f' : '#444', position: 'absolute', top: '3px', left: enabled ? '21px' : '3px', transition: 'left 0.2s, background 0.2s' }} />
+    <div onClick={toggle} style={{ width: '44px', height: '26px', borderRadius: '13px', background: enabled ? 'var(--teal-bg)' : 'var(--border-col)', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
+      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: enabled ? 'var(--teal)' : 'var(--text-secondary)', position: 'absolute', top: '3px', left: enabled ? '21px' : '3px', transition: 'left 0.2s, background 0.2s' }} />
     </div>
   )
 }
@@ -2557,10 +2557,10 @@ function SmokeToggle({ enabled, quitDate, onChange }: {
 // ── HR ZONE CALCULATION (Karvonen / HRR method) ───────────────────────────
 
 const ZONE_DEFS = [
-  { zone: 1, name: 'Recovery',  pctMin: 50, pctMax: 60, colour: '#4a9a5a', desc: 'Active recovery · warm-up · cool-down' },
-  { zone: 2, name: 'Aerobic',   pctMin: 60, pctMax: 70, colour: '#378ADD', desc: 'Aerobic base · conversational · fat burning' },
+  { zone: 1, name: 'Recovery',  pctMin: 50, pctMax: 60, colour: 'var(--teal)', desc: 'Active recovery · warm-up · cool-down' },
+  { zone: 2, name: 'Aerobic',   pctMin: 60, pctMax: 70, colour: 'var(--blue)', desc: 'Aerobic base · conversational · fat burning' },
   { zone: 3, name: 'Tempo',     pctMin: 70, pctMax: 80, colour: '#d4a017', desc: 'Comfortably hard · 3-word sentences' },
-  { zone: 4, name: 'Threshold', pctMin: 80, pctMax: 90, colour: '#D4501A', desc: 'Hard · sustained race effort' },
+  { zone: 4, name: 'Threshold', pctMin: 80, pctMax: 90, colour: 'var(--accent)', desc: 'Hard · sustained race effort' },
   { zone: 5, name: 'VO₂ Max',  pctMin: 90, pctMax: 100, colour: '#c0392b', desc: 'Maximum effort · short intervals only' },
 ]
 
@@ -2595,31 +2595,31 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
   }
 
   const labelStyle: React.CSSProperties = {
-    fontFamily: "'DM Mono',monospace", fontSize: '10px',
-    color: 'var(--text-muted, #777)', textTransform: 'uppercase',
+    fontFamily: "'Inter', sans-serif", fontSize: '10px',
+    color: 'var(--text-muted)', textTransform: 'uppercase',
     letterSpacing: '0.08em', marginBottom: '6px', display: 'block',
   }
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', background: 'var(--bg, #f5f2ee)',
-    border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px',
-    padding: '11px 36px 11px 12px', color: 'var(--text-primary, #111)',
-    fontFamily: "'DM Mono',monospace", fontSize: '15px',
+    width: '100%', background: 'var(--bg)',
+    border: '0.5px solid var(--border-col)', borderRadius: '8px',
+    padding: '11px 36px 11px 12px', color: 'var(--text-primary)',
+    fontFamily: "'Inter', sans-serif", fontSize: '15px',
     outline: 'none', boxSizing: 'border-box',
   }
 
   return (
-    <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '12px', border: '0.5px solid var(--border-col, #e8e3dc)', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
 
       {/* Editable HR inputs */}
-      <div style={{ padding: '14px 16px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
+      <div style={{ padding: '14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
           <div>
             <label style={labelStyle}>Resting HR</label>
             <div style={{ position: 'relative' }}>
               <input type="number" inputMode="numeric" placeholder="48" value={rhr}
                 onChange={e => setRhr(e.target.value)} style={inputStyle} />
-              <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)' }}>bpm</span>
+              <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)' }}>bpm</span>
             </div>
           </div>
           <div>
@@ -2627,18 +2627,18 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
             <div style={{ position: 'relative' }}>
               <input type="number" inputMode="numeric" placeholder="188" value={mhr}
                 onChange={e => setMhr(e.target.value)} style={inputStyle} />
-              <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontFamily: "'DM Mono',monospace", fontSize: '10px', color: 'var(--text-muted, #888)' }}>bpm</span>
+              <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)' }}>bpm</span>
             </div>
           </div>
         </div>
         <button onClick={handleSave} disabled={!valid}
           style={{
             width: '100%', padding: '11px',
-            background: saved ? 'rgba(74,154,90,0.12)' : valid ? 'rgba(212,80,26,0.1)' : 'var(--bg, #f5f2ee)',
-            border: `0.5px solid ${saved ? 'rgba(74,154,90,0.4)' : valid ? 'rgba(212,80,26,0.3)' : 'var(--border-col)'}`,
+            background: saved ? 'var(--teal-dim)' : valid ? 'var(--accent-soft)' : 'var(--bg)',
+            border: `0.5px solid ${saved ? 'rgba(74,154,90,0.4)' : valid ? 'var(--accent-mid)' : 'var(--border-col)'}`,
             borderRadius: '8px', cursor: valid ? 'pointer' : 'not-allowed',
-            fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.08em',
-            textTransform: 'uppercase', color: saved ? '#4a9a5a' : valid ? '#D4501A' : 'var(--text-muted, #888)',
+            fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.08em',
+            textTransform: 'uppercase', color: saved ? 'var(--teal)' : valid ? 'var(--accent)' : 'var(--text-muted, #888)',
           }}>
           {saved ? '✓ Saved' : 'Save HR data'}
         </button>
@@ -2647,7 +2647,7 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
       {/* Calculated zones — read only */}
       {zones.length > 0 && (
         <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '9px', color: 'var(--text-muted, #888)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
             Calculated zones · HRR method
           </div>
           {zones.map(z => (
@@ -2655,24 +2655,24 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
               display: 'grid', gridTemplateColumns: '24px 1fr auto',
               alignItems: 'center', gap: '10px',
               padding: '9px 10px', borderRadius: '8px',
-              background: 'var(--bg, #f5f2ee)',
-              border: '0.5px solid var(--border-col, #e8e3dc)',
+              background: 'var(--bg)',
+              border: '0.5px solid var(--border-col)',
             }}>
               {/* Zone number */}
               <div style={{
                 width: '24px', height: '24px', borderRadius: '50%',
                 background: z.colour + '18', border: `1.5px solid ${z.colour}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: "'DM Mono',monospace", fontSize: '10px',
+                fontFamily: "'Inter', sans-serif", fontSize: '10px',
                 color: z.colour, fontWeight: 'bold', flexShrink: 0,
               }}>{z.zone}</div>
               {/* Name + desc */}
               <div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-primary, #111)', fontWeight: 500 }}>{z.name}</div>
-                <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '11px', color: 'var(--text-muted, #888)', marginTop: '1px' }}>{z.desc}</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500 }}>{z.name}</div>
+                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>{z.desc}</div>
               </div>
               {/* HR range */}
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: z.colour, whiteSpace: 'nowrap', textAlign: 'right' }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: z.colour, whiteSpace: 'nowrap', textAlign: 'right' }}>
                 {z.minHR}–{z.maxHR}
               </div>
             </div>
@@ -2682,7 +2682,7 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
 
       {/* Prompt if incomplete */}
       {zones.length === 0 && (rhr || mhr) && (
-        <div style={{ padding: '14px 16px', fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #888)', textAlign: 'center' }}>
+        <div style={{ padding: '14px 16px', fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
           Enter both values to calculate zones
         </div>
       )}
@@ -2719,21 +2719,21 @@ function ProfileSection({ firstName, lastName, email, onSave }: {
   }
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', background: 'var(--bg, #f5f2ee)',
-    border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px',
-    padding: '11px 12px', color: 'var(--text-primary, #111)',
-    fontFamily: "'DM Sans',sans-serif", fontSize: '14px',
+    width: '100%', background: 'var(--bg)',
+    border: '0.5px solid var(--border-col)', borderRadius: '8px',
+    padding: '11px 12px', color: 'var(--text-primary)',
+    fontFamily: "'Space Grotesk',sans-serif", fontSize: '14px',
     outline: 'none', boxSizing: 'border-box',
   }
 
   const labelStyle: React.CSSProperties = {
-    fontFamily: "'DM Mono',monospace", fontSize: '10px',
-    color: 'var(--text-muted, #777)', textTransform: 'uppercase',
+    fontFamily: "'Inter', sans-serif", fontSize: '10px',
+    color: 'var(--text-muted)', textTransform: 'uppercase',
     letterSpacing: '0.08em', marginBottom: '6px', display: 'block',
   }
 
   return (
-    <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '12px', border: '0.5px solid var(--border-col, #e8e3dc)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
         <div>
           <label style={labelStyle}>First name</label>
@@ -2753,12 +2753,12 @@ function ProfileSection({ firstName, lastName, email, onSave }: {
         disabled={!isDirty || !isValid || saving}
         style={{
           width: '100%', padding: '11px',
-          background: saved ? 'rgba(74,154,90,0.12)' : isDirty && isValid ? 'rgba(212,80,26,0.1)' : 'var(--bg, #f5f2ee)',
-          border: `0.5px solid ${saved ? 'rgba(74,154,90,0.4)' : isDirty && isValid ? 'rgba(212,80,26,0.3)' : 'var(--border-col)'}`,
+          background: saved ? 'var(--teal-dim)' : isDirty && isValid ? 'var(--accent-soft)' : 'var(--bg)',
+          border: `0.5px solid ${saved ? 'rgba(74,154,90,0.4)' : isDirty && isValid ? 'var(--accent-mid)' : 'var(--border-col)'}`,
           borderRadius: '8px', cursor: isDirty && isValid ? 'pointer' : 'not-allowed',
-          fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.08em',
+          fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.08em',
           textTransform: 'uppercase',
-          color: saved ? '#4a9a5a' : isDirty && isValid ? '#D4501A' : 'var(--text-muted, #888)',
+          color: saved ? 'var(--teal)' : isDirty && isValid ? 'var(--accent)' : 'var(--text-muted, #888)',
           transition: 'all 0.15s',
         }}
       >
@@ -2791,29 +2791,29 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
   const displayName = [firstName, lastName].filter(Boolean).join(' ') || athlete
 
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 8px' }}>
-        <button onClick={onBack} style={{ border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
+        <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
         <div>
-          <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary, #111)', fontFamily: "'DM Sans',sans-serif" }}>Me</div>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '13px', color: 'var(--text-muted, #888)', marginTop: '2px' }}>effort-first training</div>
+          <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif" }}>Me</div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>effort-first training</div>
         </div>
       </div>
 
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '32px' }}>
 
         {/* Identity card */}
-        <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', padding: '16px', border: '0.5px solid var(--border-col, #e8e3dc)', display: 'flex', alignItems: 'center', gap: '14px', justifyContent: 'space-between' }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#D4501A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Mono',monospace", fontSize: '15px', fontWeight: 500, color: '#fff', flexShrink: 0 }}>
+        <div style={{ background: 'var(--card-bg)', borderRadius: '16px', padding: '16px', border: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '14px', justifyContent: 'space-between' }}>
+          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', sans-serif", fontSize: '15px', fontWeight: 500, color: '#fff', flexShrink: 0 }}>
             {initials}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '15px', color: 'var(--text-primary, #111)', fontWeight: 500 }}>{displayName}</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', marginTop: '2px' }}>{profileEmail || 'Berkshire, UK'}</div>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#D4501A', marginTop: '4px' }}>Race to the Stones · {daysToRace} days</div>
+            <div style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 500 }}>{displayName}</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{profileEmail || 'Berkshire, UK'}</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', marginTop: '4px' }}>Race to the Stones · {daysToRace} days</div>
           </div>
           <form action="/auth/signout" method="post">
-            <button style={{ background: 'none', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '8px', color: 'var(--text-muted, #888)', fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            <button style={{ background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '8px', color: 'var(--text-muted)', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
               Sign out
             </button>
           </form>
@@ -2823,12 +2823,12 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
         <ProfileSection firstName={firstName} lastName={lastName} email={profileEmail} onSave={onProfileChange} />
 
         <SectionLabel>Appearance</SectionLabel>
-        <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '12px', border: '0.5px solid var(--border-col, #e8e3dc)', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)' }}>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.55 }}>Theme</div>
+        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Theme</div>
             <div style={{ display: 'flex', gap: '8px' }}>
               {(['dark', 'light', 'auto'] as const).map(t => (
-                <button key={t} onClick={() => onThemeChange(t)} style={{ borderRadius: '12px', padding: '6px 10px', border: `0.5px solid ${theme === t ? '#D4501A' : 'var(--border-col)'}`, background: 'none', cursor: 'pointer', fontFamily: "'DM Mono',monospace", fontSize: '12px', color: theme === t ? '#D4501A' : 'var(--text-muted)', textTransform: 'capitalize' }}>
+                <button key={t} onClick={() => onThemeChange(t)} style={{ borderRadius: '12px', padding: '6px 10px', border: `0.5px solid ${theme === t ? 'var(--accent)' : 'var(--border-col)'}`, background: 'none', cursor: 'pointer', fontFamily: "'Inter', sans-serif", fontSize: '12px', color: theme === t ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'capitalize' }}>
                   {t}
                 </button>
               ))}
@@ -2836,12 +2836,12 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
             <div>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary, #444)', lineHeight: 1.55 }}>Distance units</div>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Pace brackets and distances</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Distance units</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Pace brackets and distances</div>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               {(['km', 'mi'] as const).map(u => (
-                <button key={u} onClick={() => onUnitsChange(u)} style={{ borderRadius: '12px', padding: '6px 14px', border: `0.5px solid ${preferredUnits === u ? '#D4501A' : 'var(--border-col)'}`, background: preferredUnits === u ? 'rgba(212,80,26,0.08)' : 'none', cursor: 'pointer', fontFamily: "'DM Mono',monospace", fontSize: '12px', color: preferredUnits === u ? '#D4501A' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <button key={u} onClick={() => onUnitsChange(u)} style={{ borderRadius: '12px', padding: '6px 14px', border: `0.5px solid ${preferredUnits === u ? 'var(--accent)' : 'var(--border-col)'}`, background: preferredUnits === u ? 'var(--accent-soft)' : 'none', cursor: 'pointer', fontFamily: "'Inter', sans-serif", fontSize: '12px', color: preferredUnits === u ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   {u}
                 </button>
               ))}
@@ -2856,12 +2856,12 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
         <HRZonesSection restingHR={restingHR} maxHR={maxHR} onSave={onHRChange} />
 
         <SectionLabel>Training support</SectionLabel>
-        <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '12px', border: '0.5px solid var(--border-col, #e8e3dc)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
           <div style={{ padding: '14px 16px', borderBottom: '0.5px solid #111' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: smokeTrackerEnabled ? '10px' : 0 }}>
               <div>
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary, #c0c0c0)', lineHeight: 1.55 }}>Smoke-free tracker</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: smokeTrackerEnabled ? '#4a7c6f' : '#444', marginTop: '1px' }}>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: smokeTrackerEnabled ? 'var(--teal)' : 'var(--text-secondary)', marginTop: '1px' }}>
                   {smokeTrackerEnabled && quitDays !== null ? `${quitDays} days smoke-free` : 'Off'}
                 </div>
               </div>
@@ -2869,7 +2869,7 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
             </div>
             {smokeTrackerEnabled && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)' }}>Quit date:</span>
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)' }}>Quit date:</span>
                 <input type="date" value={quitDate} onChange={async e => {
                   const newDate = e.target.value
                   onSmokeTrackerChange(true, newDate)
@@ -2879,7 +2879,7 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
                     if (!user) return
                     await supabase.from('user_settings').upsert({ id: user.id, smoke_tracker_enabled: true, quit_date: newDate, updated_at: new Date().toISOString() })
                   } catch {}
-                }} style={{ background: 'var(--bg, #f5f2ee)', border: '0.5px solid #222', borderRadius: '6px', padding: '4px 8px', color: 'var(--text-muted, #888)', fontFamily: "'DM Mono',monospace", fontSize: '12px', outline: 'none' }} />
+                }} style={{ background: 'var(--bg)', border: '0.5px solid #222', borderRadius: '6px', padding: '4px 8px', color: 'var(--text-muted)', fontFamily: "'Inter', sans-serif", fontSize: '12px', outline: 'none' }} />
               </div>
             )}
           </div>
@@ -2888,22 +2888,22 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
             <button onClick={() => setActiveSection('quit')} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '0.5px solid #111', cursor: 'pointer' }}>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary, #c0c0c0)', lineHeight: 1.55 }}>Quit tracker</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#4a7c6f', marginTop: '1px' }}>Milestones + benefits</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--teal)', marginTop: '1px' }}>Milestones + benefits</div>
               </div>
-              <div style={{ color: 'var(--text-muted, #777)', fontSize: '18px' }}>›</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '18px' }}>›</div>
             </button>
           )}
 
           {[
-            { id: 'mental'  as const, label: 'Mental toolkit', sub: 'Race mantras + strategies', color: '#378ADD' },
-            { id: 'fueling' as const, label: 'Fueling plan',   sub: 'Gel strategy + hydration',  color: '#D4501A' },
+            { id: 'mental'  as const, label: 'Mental toolkit', sub: 'Race mantras + strategies', color: 'var(--blue)' },
+            { id: 'fueling' as const, label: 'Fueling plan',   sub: 'Gel strategy + hydration',  color: 'var(--accent)' },
           ].map(({ id, label, sub, color }, i, arr) => (
             <button key={id} onClick={() => setActiveSection(id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: i < arr.length - 1 ? '0.5px solid #111' : 'none', cursor: 'pointer' }}>
               <div style={{ textAlign: 'left' }}>
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary, #c0c0c0)', lineHeight: 1.55 }}>{label}</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color, marginTop: '1px' }}>{sub}</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color, marginTop: '1px' }}>{sub}</div>
               </div>
-              <div style={{ color: 'var(--text-muted, #777)', fontSize: '18px' }}>›</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '18px' }}>›</div>
             </button>
           ))}
         </div>
@@ -2913,15 +2913,15 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
             <SectionLabel>Admin</SectionLabel>
             <button onClick={onOpenAdmin} style={{
               width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '14px 16px', background: 'var(--card-bg, #fff)',
-              borderRadius: '12px', border: '0.5px solid rgba(212,80,26,0.3)',
+              padding: '14px 16px', background: 'var(--card-bg)',
+              borderRadius: '12px', border: '0.5px solid var(--accent-mid)',
               cursor: 'pointer',
             }}>
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '13px', color: '#D4501A', lineHeight: 1.55 }}>User management</div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', marginTop: '1px' }}>Impersonate · view plans</div>
+                <div style={{ fontSize: '13px', color: 'var(--accent)', lineHeight: 1.55 }}>User management</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Impersonate · view plans</div>
               </div>
-              <div style={{ color: '#D4501A', fontSize: '18px' }}>›</div>
+              <div style={{ color: 'var(--accent)', fontSize: '18px' }}>›</div>
             </button>
           </>
         )}
@@ -2954,19 +2954,19 @@ function AdminScreen({ onBack, onImpersonate }: {
   }, [])
 
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto', paddingBottom: '80px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)', position: 'sticky', top: 0, background: 'var(--bg, #f5f2ee)', zIndex: 10 }}>
-        <button onClick={onBack} style={{ border: 'none', color: '#D4501A', cursor: 'pointer', padding: '0', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: '0.5px solid var(--border-col)', position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10 }}>
+        <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: '0', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)' }}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
-        <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary, #111)', fontFamily: "'DM Sans',sans-serif" }}>User management</div>
+        <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif" }}>User management</div>
       </div>
 
       <div style={{ padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {loading ? (
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', padding: '24px 0', textAlign: 'center' }}>Loading users...</div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', padding: '24px 0', textAlign: 'center' }}>Loading users...</div>
         ) : users.length === 0 ? (
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: 'var(--text-muted, #888)', padding: '24px 0', textAlign: 'center' }}>No users found</div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', padding: '24px 0', textAlign: 'center' }}>No users found</div>
         ) : users.map(u => {
           const name = u.gist_url
             ? u.gist_url.split('/').pop()?.replace('.json', '').replace('zona_plan_', '') ?? u.id.slice(0, 8)
@@ -2975,17 +2975,17 @@ function AdminScreen({ onBack, onImpersonate }: {
 
           return (
             <div key={u.id} style={{
-              background: 'var(--card-bg, #fff)', borderRadius: '12px',
-              border: '0.5px solid var(--border-col, #e8e3dc)',
+              background: 'var(--card-bg)', borderRadius: '12px',
+              border: '0.5px solid var(--border-col)',
               padding: '14px 16px',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
               <div>
-                <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary, #111)', fontFamily: "'DM Sans',sans-serif" }}>
+                <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif" }}>
                   {displayName}
-                  {u.is_admin && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '10px', color: '#D4501A', marginLeft: '8px', border: '0.5px solid rgba(212,80,26,0.4)', borderRadius: '10px', padding: '1px 6px' }}>admin</span>}
+                  {u.is_admin && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--accent)', marginLeft: '8px', border: '0.5px solid var(--accent-mid)', borderRadius: '10px', padding: '1px 6px' }}>admin</span>}
                 </div>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '11px', color: 'var(--text-muted, #888)', marginTop: '3px' }}>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>
                   {u.has_onboarded ? 'Onboarded' : 'Not yet onboarded'} · {u.gist_url ? 'Plan set' : 'No plan'}
                 </div>
               </div>
@@ -2993,9 +2993,9 @@ function AdminScreen({ onBack, onImpersonate }: {
                 <button
                   onClick={() => onImpersonate(u.id, displayName)}
                   style={{
-                    background: 'rgba(212,80,26,0.1)', border: '0.5px solid rgba(212,80,26,0.3)',
-                    borderRadius: '8px', color: '#D4501A',
-                    fontFamily: "'DM Mono',monospace", fontSize: '11px',
+                    background: 'var(--accent-soft)', border: '0.5px solid var(--accent-mid)',
+                    borderRadius: '8px', color: 'var(--accent)',
+                    fontFamily: "'Inter', sans-serif", fontSize: '11px',
                     letterSpacing: '0.06em', textTransform: 'uppercase',
                     padding: '6px 12px', cursor: 'pointer',
                   }}
@@ -3019,13 +3019,13 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
   preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number
 }) {
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto', paddingBottom: '80px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: '0.5px solid var(--border-col, #e8e3dc)', position: 'sticky', top: 0, background: 'var(--bg, #f5f2ee)', zIndex: 10 }}>
-        <button onClick={onBack} style={{ border: 'none', color: '#D4501A', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
-        <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary, #111)', fontFamily: "\'DM Sans\',sans-serif" }}>{session.title}</div>
+    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: '0.5px solid var(--border-col)', position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10 }}>
+        <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
+        <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "\'Space Grotesk\',sans-serif" }}>{session.title}</div>
       </div>
       <div style={{ padding: '12px' }}>
-        <div style={{ background: 'var(--card-bg, #fff)', borderRadius: '16px', border: '0.5px solid var(--border-col, #e8e3dc)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
           <SessionPopupInner
             session={session}
             weekTheme={session.weekTheme ?? ''}
@@ -3045,15 +3045,15 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
 function BackHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px' }}>
-      <button onClick={onBack} style={{ border: 'none', color: '#D4501A', fontSize: '18px', cursor: 'pointer', padding: '0' , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'rgba(212,80,26,0.1)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
-      <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary, #111)', fontFamily: "'DM Sans',sans-serif" }}>{title}</div>
+      <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', fontSize: '18px', cursor: 'pointer', padding: '0' , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
+      <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif" }}>{title}</div>
     </div>
   )
 }
 
 function InfoBox({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background: 'var(--card-bg, #fff)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '16px 18px', fontSize: '13px', lineHeight: 1.8, color: 'var(--text-secondary, #444)', marginBottom: '10px' }}>
+    <div style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '16px 18px', fontSize: '13px', lineHeight: 1.8, color: 'var(--text-secondary)', marginBottom: '10px' }}>
       {children}
     </div>
   )
@@ -3069,23 +3069,23 @@ function MentalTab({ resetPhrase, onSave, onBack }: { resetPhrase: string; onSav
     { title: 'Walk = Strategy',  text: 'The elites walk the uphills at RTTS. Walking a climb at km 72 is a tactic, not a failure.' },
   ]
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto', paddingBottom: '80px' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
       <BackHeader title="Mental toolkit" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
         <InfoBox>
-          The dark patch is coming. Probably around <span style={{ color: '#D4501A' }}>km 65–75</span>. That's not a sign something's wrong — it's a sign you've been working long enough for it to be real. These tools exist for that moment.
+          The dark patch is coming. Probably around <span style={{ color: 'var(--accent)' }}>km 65–75</span>. That's not a sign something's wrong — it's a sign you've been working long enough for it to be real. These tools exist for that moment.
         </InfoBox>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
           {tools.map(t => (
-            <div key={t.title} style={{ background: 'var(--card-bg, #fff)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', letterSpacing: '0.05em', color: '#D4501A', marginBottom: '8px', textTransform: 'uppercase' }}>{t.title}</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted, #888)', lineHeight: 1.6 }}>{t.text}</div>
+            <div key={t.title} style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px' }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.05em', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase' }}>{t.title}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>{t.text}</div>
             </div>
           ))}
         </div>
-        <div style={{ background: 'var(--card-bg, #fff)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px' }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#D4501A', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Your Reset Phrase</div>
-          <textarea value={resetPhrase} onChange={e => onSave(e.target.value)} placeholder="What's the phrase you'll use when it gets dark at km 70?" style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-secondary, #c0c0c0)', fontFamily: "'DM Sans',sans-serif", fontSize: '13px', lineHeight: 1.7, resize: 'vertical', minHeight: '60px', outline: 'none' }} />
+        <div style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px' }}>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Your Reset Phrase</div>
+          <textarea value={resetPhrase} onChange={e => onSave(e.target.value)} placeholder="What's the phrase you'll use when it gets dark at km 70?" style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-secondary, #c0c0c0)', fontFamily: "'Space Grotesk',sans-serif", fontSize: '13px', lineHeight: 1.7, resize: 'vertical', minHeight: '60px', outline: 'none' }} />
         </div>
       </div>
     </div>
@@ -3102,18 +3102,18 @@ function FuelingTab({ onBack }: { onBack: () => void }) {
     { timing: 'Aid stations',            what: 'Eat at every single one',           why: "You'll never regret eating at a checkpoint. You will regret skipping one." },
   ]
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto', paddingBottom: '80px' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
       <BackHeader title="Fueling plan" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
         <InfoBox>
-          Real food plus gels is the right call. The goal now is <span style={{ color: '#D4501A' }}>stress-testing your gut before race day</span>. No surprises on the day. None.
+          Real food plus gels is the right call. The goal now is <span style={{ color: 'var(--accent)' }}>stress-testing your gut before race day</span>. No surprises on the day. None.
         </InfoBox>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {protocol.map(p => (
-            <div key={p.timing} style={{ background: 'var(--card-bg, #fff)', border: '0.5px solid var(--border-col, #e8e3dc)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#D4501A', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>{p.timing}</div>
+            <div key={p.timing} style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px' }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>{p.timing}</div>
               <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-secondary, #c0c0c0)', marginBottom: '4px' }}>{p.what}</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted, #888)', lineHeight: 1.55 }}>{p.why}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.55 }}>{p.why}</div>
             </div>
           ))}
         </div>
@@ -3132,17 +3132,17 @@ function QuitTab({ quitDays, onBack }: { quitDays: number | null; onBack: () => 
     { days: 99, label: 'Race Day — Job done' },
   ]
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg, #f5f2ee)', overflowY: 'auto', paddingBottom: '80px' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
       <BackHeader title="Quit tracker" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
-        <div style={{ background: 'var(--card-bg, #fff)', border: '0.5px solid #1e3d37', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px' }}>
-          <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '3.5rem', color: '#4a7c6f', lineHeight: 1, fontWeight: 500 }}>{days}</div>
+        <div style={{ background: 'var(--card-bg)', border: '0.5px solid var(--teal-bg)', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px' }}>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '3.5rem', color: 'var(--teal)', lineHeight: 1, fontWeight: 500 }}>{days}</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#4a7c6f', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>Smoke-free days</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-muted, #888)', lineHeight: 1.55 }}>Your aerobic capacity is recovering. The data will show it.</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--teal)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>Smoke-free days</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.55 }}>Your aerobic capacity is recovering. The data will show it.</div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
               {milestones.map(m => (
-                <div key={m.days} style={{ fontFamily: "'DM Mono',monospace", fontSize: '12px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${days >= m.days ? '#1e3d37' : '#222'}`, color: days >= m.days ? '#4a7c6f' : '#444' }}>
+                <div key={m.days} style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${days >= m.days ? 'var(--teal-bg)' : '#222'}`, color: days >= m.days ? 'var(--teal)' : 'var(--text-secondary)' }}>
                   {m.label}
                 </div>
               ))}
@@ -3151,10 +3151,10 @@ function QuitTab({ quitDays, onBack }: { quitDays: number | null; onBack: () => 
         </div>
         <InfoBox>
           <strong style={{ color: 'var(--text-secondary, #c0c0c0)' }}>What quitting does to your running:</strong><br /><br />
-          <span style={{ color: '#D4501A' }}>48 hours</span> — CO leaves bloodstream. O₂ delivery improves immediately.<br />
-          <span style={{ color: '#D4501A' }}>Week 1–2</span> — Resting HR starts dropping. Recovery improves noticeably.<br />
-          <span style={{ color: '#D4501A' }}>Week 3–4</span> — Aerobic efficiency measurably better. Zone 2 feels easier.<br />
-          <span style={{ color: '#D4501A' }}>Month 2+</span> — Cardiac drift reduces. That late-run HR creep? Less of it.<br /><br />
+          <span style={{ color: 'var(--accent)' }}>48 hours</span> — CO leaves bloodstream. O₂ delivery improves immediately.<br />
+          <span style={{ color: 'var(--accent)' }}>Week 1–2</span> — Resting HR starts dropping. Recovery improves noticeably.<br />
+          <span style={{ color: 'var(--accent)' }}>Week 3–4</span> — Aerobic efficiency measurably better. Zone 2 feels easier.<br />
+          <span style={{ color: 'var(--accent)' }}>Month 2+</span> — Cardiac drift reduces. That late-run HR creep? Less of it.<br /><br />
           <strong style={{ color: 'var(--text-secondary, #c0c0c0)' }}>You quit 99 days before a 100km race. That's an upgrade.</strong>
         </InfoBox>
       </div>
