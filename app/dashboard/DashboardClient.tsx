@@ -2953,7 +2953,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 500 }}>{displayName}</div>
             <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{profileEmail || 'Berkshire, UK'}</div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', marginTop: '4px' }}}>{plan?.meta?.race_name ?? 'Race to the Stones'} · {daysToRace} days</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', marginTop: '4px' }}>{plan?.meta?.race_name ?? 'Race to the Stones'} · {daysToRace} days</div>
           </div>
           <button
             onClick={async () => {
