@@ -6,7 +6,7 @@ import PlanChart from '@/components/training/PlanChart'
 import PlanCalendar from '@/components/training/PlanCalendar'
 import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
-import { fetchPlanFromUrl, DEFAULT_GIST_URL, getCurrentWeek } from '@/lib/plan'
+import { fetchPlanFromUrl, DEFAULT_GIST_URL, getCurrentWeek, getCurrentWeekIndex } from '@/lib/plan'
 
 type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'admin'
 
@@ -322,13 +322,13 @@ export default function DashboardClient() {
     setScreen('today')
   }
 
-  const currentWeekIndex = plan ? plan.weeks.findIndex(w => w.type === 'current') : 0
+  const currentWeekIndex = plan ? getCurrentWeekIndex(plan.weeks) : 0
   const [viewWeekIndex, setViewWeekIndex] = useState(0)
 
   // Update to current week once plan loads
   useEffect(() => {
     if (plan) {
-      const idx = plan.weeks.findIndex(w => w.type === 'current')
+      const idx = getCurrentWeekIndex(plan.weeks)
       setViewWeekIndex(idx >= 0 ? idx : 0)
     }
   }, [plan])
@@ -1794,7 +1794,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
   const todayStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 
   // Find current week index
-  const currentWeekIndex = plan.weeks.findIndex(w => (w as any).type === 'current')
+  const currentWeekIndex = getCurrentWeekIndex(plan.weeks)
 
   // Split weeks: past = before current, present+future = current onwards
   const pastWeeks = plan.weeks.slice(0, currentWeekIndex).map((week, i) => ({ week, weekNum: i + 1 }))
@@ -1828,7 +1828,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
   function renderWeekRow(week: any, weekNum: number) {
     const ws = (week as any).sessions ?? {}
     const weekStartDate = new Date((week as any).date)
-    const isCurrent = (week as any).type === 'current'
+    const isCurrent = getCurrentWeek(plan.weeks) === week
     const weekCompletions = allCompletions[weekNum] ?? {}
 
     // Apply overrides for this week
@@ -2400,7 +2400,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, onOpenMe, initial
   const [error, setError]       = useState<string | null>(null)
   const [cachedActivityId, setCachedActivityId] = useState<string | null>(null)
 
-  const weekNum    = plan.weeks.findIndex(w => w.type === 'current') + 1
+  const weekNum    = getCurrentWeekIndex(plan.weeks) + 1
   const totalWeeks = plan.weeks.length
   const latestRun  = runs?.[0] ?? null
   const latestId   = latestRun ? String(latestRun.id) : null
