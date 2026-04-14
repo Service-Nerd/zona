@@ -109,9 +109,9 @@ export default function DashboardClient() {
 
   const initials = (() => {
     if (firstName || lastName) {
-      return `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase().slice(0, 2) || 'RS'
+      return `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase().slice(0, 2) || '?'
     }
-    return (plan?.meta?.athlete ?? 'RS')
+    return (plan?.meta?.athlete ?? '?')
       .split(' ')
       .map((w: string) => w[0])
       .join('')
@@ -333,9 +333,10 @@ export default function DashboardClient() {
     }
   }, [plan])
 
-  const raceDate = new Date('2026-07-11')
-  const fiftyKDate = new Date('2026-05-10')
   const now = new Date()
+  const raceDate = plan?.meta?.race_date ? new Date(plan.meta.race_date) : new Date('2026-07-11')
+  const raceName = plan?.meta?.race_name ?? 'Race to the Stones 100k'
+  const fiftyKDate = new Date('2026-05-10')
   const daysToRace = Math.max(0, Math.ceil((raceDate.getTime() - now.getTime()) / 86400000))
   const daysTo50k = Math.max(0, Math.ceil((fiftyKDate.getTime() - now.getTime()) / 86400000))
 
@@ -484,11 +485,11 @@ export default function DashboardClient() {
       )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} overridesReady={overridesReady} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={plan?.meta?.zone2_ceiling ?? 145} onManualSaved={refreshCompletions} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} raceName={raceName} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} overridesReady={overridesReady} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={plan?.meta?.zone2_ceiling ?? 145} onManualSaved={refreshCompletions} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
         {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setScreen('me')} initials={initials} />}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setScreen('me')} initials={initials} />}
-        {screen === 'me'       && <MeScreen initials={initials} athlete={plan.meta.athlete ?? 'Anon'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} />}
+        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan.meta.athlete ?? 'Anon'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} />}
         {screen === 'calendar' && <CalendarOverlay plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onBack={() => setScreen('today')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} zone2Ceiling={plan?.meta?.zone2_ceiling ?? 145} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
@@ -1863,7 +1864,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
           const d = new Date(weekStartDate)
           d.setDate(d.getDate() + DAY_OFFSETS[key])
           const displayDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-          const isToday = key === todayDow && displayDate === todayStr
+          const isToday = key === todayDow && isCurrent
           const completion = weekCompletions[originalDay]
           const dotColor = s && s.type !== 'rest' ? getDotColor(s.type, completion) : null
           const isPast = d < now && !isToday
@@ -2042,9 +2043,9 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
 
 // ── TODAY SCREEN ──────────────────────────────────────────────────────────
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, daysTo50k, stravaRuns, onOpenMe, initials, allOverrides, overridesReady, onOpenCalendar, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, daysTo50k, raceName, stravaRuns, onOpenMe, initials, allOverrides, overridesReady, onOpenCalendar, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
-  smokeTrackerEnabled: boolean; daysToRace: number; daysTo50k: number
+  smokeTrackerEnabled: boolean; daysToRace: number; daysTo50k: number; raceName: string
   stravaRuns: any[]; onOpenMe: () => void; initials: string
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   overridesReady: boolean
@@ -2287,7 +2288,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       <SectionLabel>Race countdown</SectionLabel>
       <div style={{ display: 'flex', gap: '8px', padding: '0 12px', marginBottom: '10px' }}>
         {[
-          { num: String(daysToRace), unit: 'days', label: 'To RTS 100k' },
+          { num: String(daysToRace), unit: 'days', label: `To ${raceName}` },
           { num: String(daysTo50k), unit: 'days', label: 'To 50k' },
           ...(smokeTrackerEnabled && quitDays !== null ? [{ num: String(quitDays), unit: 'days', label: 'Smoke-free' }] : []),
         ].map((s, i) => (
@@ -2912,8 +2913,8 @@ function ProfileSection({ firstName, lastName, email, onSave }: {
 
 // ── ME SCREEN ─────────────────────────────────────────────────────────────
 
-function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange }: {
-  initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange }: {
+  plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   resetPhrase: string; onSaveMental: (v: string) => void
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void; onBack: () => void
@@ -2929,7 +2930,7 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
   if (activeSection === 'mental')  return <MentalTab  resetPhrase={resetPhrase} onSave={onSaveMental} onBack={() => setActiveSection('main')} />
   if (activeSection === 'fueling') return <FuelingTab onBack={() => setActiveSection('main')} />
 
-  const daysToRace = Math.max(0, Math.ceil((new Date('2026-07-11').getTime() - Date.now()) / 86400000))
+  const daysToRace = Math.max(0, Math.ceil(((plan?.meta?.race_date ? new Date(plan.meta.race_date) : new Date('2026-07-11')).getTime() - Date.now()) / 86400000))
   const displayName = [firstName, lastName].filter(Boolean).join(' ') || athlete
 
   return (
@@ -2952,7 +2953,7 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 500 }}>{displayName}</div>
             <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{profileEmail || 'Berkshire, UK'}</div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', marginTop: '4px' }}>Race to the Stones · {daysToRace} days</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', marginTop: '4px' }}}>{plan?.meta?.race_name ?? 'Race to the Stones'} · {daysToRace} days</div>
           </div>
           <button
             onClick={async () => {
@@ -3091,8 +3092,11 @@ function AdminScreen({ onBack, onImpersonate }: {
       try {
         const { data } = await supabase
           .from('user_settings')
-          .select('id, gist_url, has_onboarded, is_admin')
-        if (data) setUsers(data)
+          .select('id, gist_url, has_onboarded, is_admin, first_name, last_name, email')
+        if (data) {
+          const { data: { user } } = await supabase.auth.getUser()
+          setUsers(data.filter((u: any) => u.id !== user?.id))
+        }
       } catch {}
       finally { setLoading(false) }
     }
@@ -3114,10 +3118,7 @@ function AdminScreen({ onBack, onImpersonate }: {
         ) : users.length === 0 ? (
           <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', padding: '24px 0', textAlign: 'center' }}>No users found</div>
         ) : users.map(u => {
-          const name = u.gist_url
-            ? u.gist_url.split('/').pop()?.replace('.json', '').replace('zona_plan_', '') ?? u.id.slice(0, 8)
-            : u.id.slice(0, 8)
-          const displayName = name.charAt(0).toUpperCase() + name.slice(1)
+          const displayName = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email || u.id.slice(0, 8)
 
           return (
             <div key={u.id} style={{
