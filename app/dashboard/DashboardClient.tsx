@@ -2125,7 +2125,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       type: s?.type ?? 'rest',
       date: displayDate,
       rawDate: d,
-      today: key === todayDow && displayDate === todayStr,
+      today: key === todayDow,
       distance: s?.distance ?? undefined,
       duration: s?.duration ?? undefined,
       zone: s?.zone ?? undefined,
@@ -2332,13 +2332,13 @@ function PlanProgressBar({ plan, allCompletions }: { plan: Plan; allCompletions:
 
   const pct = totalSessions > 0 ? Math.round((doneSessions / totalSessions) * 100) : 0
 
+  if (pct === 0) return null
+
   return (
     <div style={{ padding: '0 12px 16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
         <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Plan progress</div>
-        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--teal)', fontWeight: 500 }}>
-          {doneSessions} / {totalSessions} sessions · {pct}%
-        </div>
+        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--teal)', fontWeight: 500 }}>{pct}%</div>
       </div>
       <div style={{ height: '6px', borderRadius: '3px', background: 'var(--border-col)', overflow: 'hidden' }}>
         <div style={{
