@@ -135,7 +135,7 @@ export default function DashboardClient() {
         const [settingsRes, overridesRes, completionsRes] = await Promise.all([
           supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, has_onboarded, is_admin, preferred_units, resting_hr, max_hr, first_name, last_name, email').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
-          supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name').eq('user_id', user.id),
+          supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, rpe, fatigue_tag').eq('user_id', user.id),
         ])
 
         if (overridesRes.data) setAllOverrides(overridesRes.data)
@@ -308,7 +308,7 @@ export default function DashboardClient() {
     const { data: overrides } = await supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id)
     setAllOverrides(overrides ?? [])
 
-    const { data: completions } = await supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name').eq('user_id', user.id)
+    const { data: completions } = await supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, rpe, fatigue_tag').eq('user_id', user.id)
     if (completions) {
       const map: Record<number, Record<string, any>> = {}
       completions.forEach((r: any) => {
@@ -766,12 +766,39 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   const [manualDistance, setManualDistance] = useState('')
   const [manualDuration, setManualDuration] = useState('')
   const [manualNotes, setManualNotes] = useState('')
+  const [rpe, setRpe] = useState<number | null>(null)
+  const [fatigueTag, setFatigueTag] = useState<string | null>(null)
+  const [savingRPE, setSavingRPE] = useState(false)
   const supabase = createClient()
 
   const isPast = session.isPast
   const completion = session.completion
   const isComplete = completion?.status === 'complete'
   const isSkipped = completion?.status === 'skipped'
+
+  // Load existing RPE/fatigue from completion
+  useEffect(() => {
+    if (completion?.rpe != null) setRpe(completion.rpe)
+    if (completion?.fatigue_tag) setFatigueTag(completion.fatigue_tag)
+  }, [completion])
+
+  async function saveRPEFatigue(newRpe: number | null, newTag: string | null) {
+    setSavingRPE(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('session_completions').upsert({
+        user_id: user.id,
+        week_n: weekN,
+        session_day: session.key,
+        status: completion?.status ?? 'complete',
+        rpe: newRpe,
+        fatigue_tag: newTag,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,week_n,session_day' })
+      onSaved?.()
+    } catch {} finally { setSavingRPE(false) }
+  }
 
   // Fetch session guidance from Supabase
   useEffect(() => {
@@ -1021,6 +1048,76 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               </button>
             )}
           </div>
+
+          {/* ── RPE + FATIGUE INLINE (shown when complete or skipped) ── */}
+          {(isComplete || isSkipped) && (
+            <div style={{ padding: '14px 18px 20px', borderTop: '0.5px solid var(--border-col)' }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
+                How did it feel? {savingRPE && <span style={{ color: 'var(--teal)', marginLeft: '6px' }}>saving…</span>}
+              </div>
+
+              {/* RPE slider */}
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>RPE</div>
+                  {rpe != null && (
+                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '18px', fontWeight: 600, color: rpe <= 4 ? 'var(--teal)' : rpe <= 7 ? 'var(--accent)' : 'var(--red, #e05)' }}>
+                      {rpe}<span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 400 }}>/10</span>
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={10}
+                  value={rpe ?? ''}
+                  onChange={e => {
+                    const val = parseInt(e.target.value)
+                    setRpe(val)
+                    saveRPEFatigue(val, fatigueTag)
+                  }}
+                  style={{ width: '100%', accentColor: 'var(--teal)', cursor: 'pointer' }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  <span>Easy</span><span>Moderate</span><span>Max</span>
+                </div>
+              </div>
+
+              {/* Fatigue tag pills */}
+              <div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>Body feeling</div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {(['Fresh', 'Normal', 'Heavy', 'Cooked'] as const).map(tag => {
+                    const isActive = fatigueTag === tag
+                    const tagColor = tag === 'Fresh' ? 'var(--teal)' : tag === 'Normal' ? 'var(--accent)' : tag === 'Heavy' ? '#a78' : 'var(--red, #e05)'
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => {
+                          const next = isActive ? null : tag
+                          setFatigueTag(next)
+                          saveRPEFatigue(rpe, next)
+                        }}
+                        style={{
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: '11px',
+                          padding: '6px 14px',
+                          borderRadius: '20px',
+                          border: `0.5px solid ${isActive ? tagColor : 'var(--border-col)'}`,
+                          background: isActive ? `${tagColor}18` : 'none',
+                          color: isActive ? tagColor : 'var(--text-muted)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {tag}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -2211,6 +2308,51 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
 // ── PLAN SCREEN ───────────────────────────────────────────────────────────
 
+// ── PLAN PROGRESS BAR ─────────────────────────────────────────────────────
+
+function PlanProgressBar({ plan, allCompletions }: { plan: Plan; allCompletions: Record<number, Record<string, any>> }) {
+  const SESSION_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun',
+    'mon2', 'tue2', 'wed2', 'thu2', 'fri2', 'sat2', 'sun2']
+
+  let totalSessions = 0
+  let doneSessions = 0
+
+  plan.weeks.forEach((week, wi) => {
+    const weekN = wi + 1
+    const weekAny = week as any
+    const weekCompletions = allCompletions[weekN] ?? {}
+    SESSION_KEYS.forEach(k => {
+      if (weekAny[k] && typeof weekAny[k] === 'object') {
+        totalSessions++
+        const c = weekCompletions[k]
+        if (c?.status === 'complete' || c?.status === 'skipped') doneSessions++
+      }
+    })
+  })
+
+  const pct = totalSessions > 0 ? Math.round((doneSessions / totalSessions) * 100) : 0
+
+  return (
+    <div style={{ padding: '0 12px 16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Plan progress</div>
+        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--teal)', fontWeight: 500 }}>
+          {doneSessions} / {totalSessions} sessions · {pct}%
+        </div>
+      </div>
+      <div style={{ height: '6px', borderRadius: '3px', background: 'var(--border-col)', overflow: 'hidden' }}>
+        <div style={{
+          height: '100%',
+          width: `${pct}%`,
+          borderRadius: '3px',
+          background: pct === 100 ? 'var(--teal)' : `linear-gradient(90deg, var(--teal) ${pct < 20 ? '100%' : '80%'}, var(--accent))`,
+          transition: 'width 0.4s ease',
+        }} />
+      </div>
+    </div>
+  )
+}
+
 function PlanScreen({ plan, stravaRuns, onOpenMe, initials, allOverrides, allCompletions, onOverrideChange, onOpenCalendar, onOpenSession }: {
   plan: Plan; stravaRuns: any[]; onOpenMe: () => void; initials: string
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
@@ -2229,6 +2371,8 @@ function PlanScreen({ plan, stravaRuns, onOpenMe, initials, allOverrides, allCom
           <span style={{ color: 'var(--text-muted)' }}>v{plan.meta.version} · {plan.meta.last_updated}</span>
         </div>
       </div>
+
+      <PlanProgressBar plan={plan} allCompletions={allCompletions} />
 
       <PlanCalendar
         weeks={plan.weeks}
