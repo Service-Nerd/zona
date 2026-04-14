@@ -129,18 +129,20 @@ export default function DashboardClient() {
     async function fetchSettings() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
+        let activeUser = user
+        if (!activeUser) {
           // Wait for implicit flow to process hash token, then recheck
           await new Promise(r => setTimeout(r, 800))
           const { data: { user: retryUser } } = await supabase.auth.getUser()
           if (!retryUser) { window.location.href = '/auth/login'; return }
+          activeUser = retryUser
         }
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, has_onboarded, is_admin, preferred_units, resting_hr, max_hr, first_name, last_name, email').eq('id', user.id).single(),
-          supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
-          supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, rpe, fatigue_tag').eq('user_id', user.id),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, has_onboarded, is_admin, preferred_units, resting_hr, max_hr, first_name, last_name, email').eq('id', activeUser.id).single(),
+          supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', activeUser.id),
+          supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, rpe, fatigue_tag').eq('user_id', activeUser.id),
         ])
 
         if (overridesRes.data) setAllOverrides(overridesRes.data)
