@@ -2958,7 +2958,7 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
             onClick={async () => {
               const supabase = createClient()
               await supabase.auth.signOut()
-              window.location.href = '/login'
+              window.location.href = '/auth/login'
             }}
             style={{ background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '8px', color: 'var(--text-muted)', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
             Sign out
