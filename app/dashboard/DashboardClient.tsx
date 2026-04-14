@@ -2151,7 +2151,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
     if (next) { setSelectedKey(next.key); return }
     const last = [...sessions].reverse().find(s => effectiveWs[s.displayKey])
     if (last) setSelectedKey(last.key)
-  }, [weekIndex, overridesReady])
+  }, [weekIndex, overridesReady, sessions])
 
   const selectedSession = sessions.find(s => s.key === selectedKey && s.type !== 'rest')
     ?? sessions.find(s => s.key === selectedKey)
