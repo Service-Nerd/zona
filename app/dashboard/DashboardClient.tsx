@@ -1020,34 +1020,52 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
 
           {/* Action buttons */}
           <div style={{ padding: '16px 18px 24px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {!isComplete && !isSkipped && !session.isFuture && (
-              <>
-                <button onClick={() => setView('complete')} style={{ flex: 1, minWidth: '120px', background: 'var(--teal-dim)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
-                  Log with Strava
-                </button>
-                <button onClick={() => setView('manual')} style={{ flex: 1, minWidth: '120px', background: 'var(--teal-soft)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
-                  Log manually
-                </button>
-                <button onClick={() => setView('skip')} style={{ width: '100%', background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '12px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
-                  Skip
-                </button>
-              </>
-            )}
-            {(isComplete || isSkipped) && (
-              <button onClick={() => setView('complete')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer' }}>
-                Update
-              </button>
-            )}
-            {session.isFuture && !isComplete && !isSkipped && (
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #444)', textAlign: 'center', padding: '12px', width: '100%' }}>
-                Available to log on {session.date}
-              </div>
-            )}
-            {isPast && !isComplete && !isSkipped && !session.isFuture && (
-              <button onClick={() => setView('complete')} style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-muted, #666)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer' }}>
-                Log retroactively
-              </button>
-            )}
+            {(() => {
+              const isRunType = ['easy', 'run', 'quality', 'race'].includes(session.type)
+              if (session.isFuture && !isComplete && !isSkipped) {
+                return (
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #444)', textAlign: 'center', padding: '12px', width: '100%' }}>
+                    Available to log on {session.date}
+                  </div>
+                )
+              }
+              if (isComplete || isSkipped) {
+                return (
+                  <button onClick={() => isRunType ? setView('complete') : saveCompletion('complete')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer' }}>
+                    Update
+                  </button>
+                )
+              }
+              if (!isComplete && !isSkipped) {
+                if (isRunType) {
+                  return (
+                    <>
+                      <button onClick={() => setView('complete')} style={{ flex: 1, minWidth: '120px', background: 'var(--teal-dim)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
+                        Log with Strava
+                      </button>
+                      <button onClick={() => setView('manual')} style={{ flex: 1, minWidth: '120px', background: 'var(--teal-soft)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                        Log manually
+                      </button>
+                      <button onClick={() => setView('skip')} style={{ width: '100%', background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '12px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                        Skip
+                      </button>
+                    </>
+                  )
+                } else {
+                  return (
+                    <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                      <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: 'var(--teal-dim)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving ? 0.6 : 1 }}>
+                        {saving ? 'Saving...' : 'Done'}
+                      </button>
+                      <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                        Skip
+                      </button>
+                    </div>
+                  )
+                }
+              }
+              return null
+            })()}
           </div>
 
           {/* ── RPE + FATIGUE INLINE (shown when complete or skipped) ── */}
