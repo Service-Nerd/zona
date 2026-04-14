@@ -2320,9 +2320,10 @@ function PlanProgressBar({ plan, allCompletions }: { plan: Plan; allCompletions:
   plan.weeks.forEach((week, wi) => {
     const weekN = wi + 1
     const weekAny = week as any
+    const sessions = weekAny.sessions ?? weekAny
     const weekCompletions = allCompletions[weekN] ?? {}
     SESSION_KEYS.forEach(k => {
-      if (weekAny[k] && typeof weekAny[k] === 'object') {
+      if (sessions[k] && typeof sessions[k] === 'object' && sessions[k].type !== 'rest') {
         totalSessions++
         const c = weekCompletions[k]
         if (c?.status === 'complete' || c?.status === 'skipped') doneSessions++
@@ -2332,7 +2333,7 @@ function PlanProgressBar({ plan, allCompletions }: { plan: Plan; allCompletions:
 
   const pct = totalSessions > 0 ? Math.round((doneSessions / totalSessions) * 100) : 0
 
-  if (pct === 0) return null
+  if (totalSessions === 0) return null
 
   return (
     <div style={{ padding: '0 12px 16px' }}>
