@@ -129,7 +129,12 @@ export default function DashboardClient() {
     async function fetchSettings() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { window.location.href = '/auth/login'; return }
+        if (!user) {
+          // Wait for implicit flow to process hash token, then recheck
+          await new Promise(r => setTimeout(r, 800))
+          const { data: { user: retryUser } } = await supabase.auth.getUser()
+          if (!retryUser) { window.location.href = '/auth/login'; return }
+        }
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes] = await Promise.all([
