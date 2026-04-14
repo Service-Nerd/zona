@@ -2954,11 +2954,15 @@ function MeScreen({ initials, athlete, quitDays, smokeTrackerEnabled, quitDate, 
             <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{profileEmail || 'Berkshire, UK'}</div>
             <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', marginTop: '4px' }}>Race to the Stones · {daysToRace} days</div>
           </div>
-          <form action="/auth/signout" method="post">
-            <button style={{ background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '8px', color: 'var(--text-muted)', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              Sign out
-            </button>
-          </form>
+          <button
+            onClick={async () => {
+              const supabase = createClient()
+              await supabase.auth.signOut()
+              window.location.href = '/login'
+            }}
+            style={{ background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '8px', color: 'var(--text-muted)', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            Sign out
+          </button>
         </div>
 
         <SectionLabel>Profile</SectionLabel>
