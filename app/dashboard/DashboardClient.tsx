@@ -129,7 +129,7 @@ export default function DashboardClient() {
     async function fetchSettings() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { setStravaLoading(false); setOverridesReady(true); setAppReady(true); return }
+        if (!user) { window.location.href = '/auth/login'; return }
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes] = await Promise.all([
