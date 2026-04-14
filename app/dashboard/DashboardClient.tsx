@@ -198,7 +198,7 @@ export default function DashboardClient() {
         const tokenRes = await fetch('/api/strava/refresh', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id }),
+          body: JSON.stringify({ userId: activeUser.id }),
         })
         if (!tokenRes.ok) { setStravaLoading(false); return }
         const { access_token } = await tokenRes.json()
