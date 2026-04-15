@@ -16,8 +16,18 @@ const DOW_FULL: Record<string, string> = { mon:'Mon', tue:'Tue', wed:'Wed', thu:
 const DAY_OFFSETS: Record<string, number> = { mon:0, tue:1, wed:2, thu:3, fri:4, sat:5, sun:6 }
 
 const TYPE_ACCENT: Record<string, string> = {
-  easy: '#5BC0BE', quality: '#F2C14E', run: '#5BC0BE',
-  race: '#5BC0BE', strength: '#3A506B', rest: 'transparent',
+  easy:      '#4A90D9',
+  run:       '#7B68EE',
+  long:      '#7B68EE',
+  quality:   '#F2C14E',
+  tempo:     '#F2C14E',
+  intervals: '#E05A5A',
+  hard:      '#E05A5A',
+  race:      '#E8833A',
+  recovery:  '#5BAD8C',
+  strength:  '#3A506B',
+  cross:     '#5BC0BE',
+  rest:      'transparent',
 }
 
 function getWeekDates(weekStartDate: Date): Record<string, Date> {
@@ -206,7 +216,7 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
         const s = effectiveSessions[key]
         const d = weekDates[key]
         const displayDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-        const isToday = key === todayDow && displayDate === todayStr
+        const isToday = key === todayDow && isCurrent
         const completion = s ? completionMap[s.originalDay ?? key] : undefined
         const isComplete = completion?.status === 'complete'
         const isSkipped = completion?.status === 'skipped'

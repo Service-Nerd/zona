@@ -73,6 +73,7 @@ export default function DashboardClient() {
   const [appReady, setAppReady] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [preferredUnits, setPreferredUnits] = useState<'km' | 'mi'>('km')
+  const [preferredMetric, setPreferredMetric] = useState<'distance' | 'duration'>('distance')
   const [restingHR, setRestingHR] = useState<number | null>(null)
   const [maxHR, setMaxHR] = useState<number | null>(null)
   const [firstName, setFirstName] = useState<string>('')
@@ -133,7 +134,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, has_onboarded, is_admin, preferred_units, resting_hr, max_hr, first_name, last_name, email').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, first_name, last_name, email').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, rpe, fatigue_tag').eq('user_id', user.id),
         ])
@@ -160,6 +161,7 @@ export default function DashboardClient() {
 
         // Units preference
         if (data?.preferred_units === 'mi') setPreferredUnits('mi')
+        if (data?.preferred_metric === 'duration') setPreferredMetric('duration')
 
         // HR data
         if (data?.resting_hr) setRestingHR(data.resting_hr)
@@ -485,13 +487,13 @@ export default function DashboardClient() {
       )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} raceName={raceName} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} overridesReady={overridesReady} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={plan?.meta?.zone2_ceiling ?? 145} onManualSaved={refreshCompletions} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} overridesReady={overridesReady} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={plan?.meta?.zone2_ceiling ?? 145} onManualSaved={refreshCompletions} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
         {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setScreen('me')} initials={initials} />}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setScreen('me')} initials={initials} />}
-        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan.meta.athlete ?? 'Anon'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} />}
+        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan.meta.athlete ?? 'Anon'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} />}
         {screen === 'calendar' && <CalendarOverlay plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onBack={() => setScreen('today')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} zone2Ceiling={plan?.meta?.zone2_ceiling ?? 145} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={plan?.meta?.zone2_ceiling ?? 145} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
       </div>
 
@@ -724,39 +726,49 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
 
 // ── Dot / accent colours ──────────────────────────────────────────────────
 
-const TYPE_DOT: Record<string, string> = {
-  easy:     'var(--blue)',
-  quality:  'var(--accent)',
-  run:      'var(--accent)',
-  race:     'var(--red)',
-  strength: 'var(--teal)',
-  rest:     'transparent',
+const TYPE_COLOR: Record<string, string> = {
+  easy:       '#4A90D9',
+  run:        '#7B68EE',
+  long:       '#7B68EE',
+  quality:    '#F2C14E',
+  tempo:      '#F2C14E',
+  intervals:  '#E05A5A',
+  hard:       '#E05A5A',
+  race:       '#E8833A',
+  recovery:   '#5BAD8C',
+  strength:   '#3A506B',
+  cross:      '#5BC0BE',
+  rest:       'transparent',
 }
 
-const TYPE_ACCENT: Record<string, string> = {
-  easy:     'var(--blue)',
-  quality:  'var(--accent)',
-  run:      'var(--accent)',
-  race:     'var(--red)',
-  strength: 'var(--teal)',
-  rest:     '#555',
+function getTypeColor(type: string): string {
+  return TYPE_COLOR[type] ?? '#4A90D9'
 }
+
+const TYPE_DOT: Record<string, string> = TYPE_COLOR
+const TYPE_ACCENT: Record<string, string> = TYPE_COLOR
 
 const TYPE_LABEL: Record<string, string> = {
-  easy:     'Easy run — Zone 2',
-  quality:  'Quality session',
-  run:      'Long run',
-  race:     'Race',
-  strength: 'Strength',
-  rest:     'Rest day',
+  easy:       'Easy run — Zone 2',
+  run:        'Long run',
+  long:       'Long run',
+  quality:    'Quality session',
+  tempo:      'Tempo run',
+  intervals:  'Intervals',
+  hard:       'Hard session',
+  race:       'Race',
+  recovery:   'Recovery run',
+  strength:   'Strength',
+  cross:      'Cross-training',
+  rest:       'Rest day',
 }
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
-function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling }: {
+function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric }: {
   session: any; weekTheme: string; weekN: number; preloadedRuns: any[]
   onClose: () => void; onSaved?: () => void
-  preferredUnits: 'km' | 'mi'; zone2Ceiling: number
+  preferredUnits: 'km' | 'mi'; zone2Ceiling: number; preferredMetric?: 'distance' | 'duration'
 }) {
   const [view, setView] = useState<'detail' | 'complete' | 'skip' | 'manual'>('detail')
   const [saving, setSaving] = useState(false)
@@ -770,7 +782,10 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   const [rpe, setRpe] = useState<number | null>(null)
   const [fatigueTag, setFatigueTag] = useState<string | null>(null)
   const [savingRPE, setSavingRPE] = useState(false)
+  const [sessionMetric, setSessionMetric] = useState<'distance' | 'duration' | null>(null)
   const supabase = createClient()
+  const effectiveMetric = sessionMetric ?? preferredMetric ?? 'distance'
+  const isMetricCustom = sessionMetric !== null && sessionMetric !== preferredMetric
 
   const isPast = session.isPast
   const completion = session.completion
@@ -918,59 +933,96 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
 
   const paceBracket = getPaceBracket()
 
-  const typeConfig: Record<string, { color: string; label: string }> = {
-    easy:     { color: 'var(--blue)', label: 'Easy run — Zone 2' },
-    quality:  { color: 'var(--accent)', label: 'Quality session' },
-    run:      { color: 'var(--accent)', label: 'Long run' },
-    race:     { color: 'var(--red)', label: 'Race' },
-    strength: { color: 'var(--teal)', label: 'Strength' },
-  }
-  const config = typeConfig[session.type] ?? typeConfig['easy']
+  const color = getTypeColor(session.type)
+  const config = { color, label: TYPE_LABEL[session.type] ?? session.type }
+
+  // Per-session metric values
+  const estimatedDuration = session.duration ?? (session.distance ? `~${Math.round(Number(session.distance) * 6.5)} min` : null)
+  const estimatedDistance = session.distance ?? null
 
   return (
     <>
-      {/* ── TOP BLOCK: accent border + date/status + type chip + metric cards ── */}
-      <div style={{ borderLeft: `4px solid ${config.color}`, padding: '14px 18px 14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
-        {/* Row 1: date + status badge */}
+      {/* ── TOP BLOCK ── */}
+      <div style={{ borderLeft: `5px solid ${config.color}`, padding: '14px 18px 16px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
+        {/* Date + status */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
           <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             {session.day} · {session.date}
           </span>
-          {isComplete && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'var(--teal-dim)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>✓ Done</span>}
-          {isSkipped && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'rgba(80,80,80,0.1)', color: '#666', border: '0.5px solid #333', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Skipped</span>}
+          {isComplete && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'rgba(91,192,190,0.1)', color: '#5BC0BE', border: '0.5px solid rgba(91,192,190,0.3)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>✓ Done</span>}
+          {isSkipped && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'rgba(80,80,80,0.08)', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Skipped</span>}
         </div>
-        {/* Row 2: session type chip */}
-        <div style={{ marginBottom: '12px' }}>
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', fontWeight: 600, color: config.color, letterSpacing: '0.08em', textTransform: 'uppercase', background: `${config.color}18`, borderRadius: '6px', padding: '4px 10px' }}>
+        {/* Type chip */}
+        <div style={{ marginBottom: '14px' }}>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', fontWeight: 500, color: config.color, letterSpacing: '0.08em', textTransform: 'uppercase', background: `${config.color}15`, borderRadius: '6px', padding: '4px 10px' }}>
             {config.label}
           </span>
         </div>
-        {/* Row 3: HR + pace metric cards */}
-        {(session.type === 'easy' || session.type === 'run' || session.type === 'quality') && (
-          <div style={{ display: 'grid', gridTemplateColumns: paceBracket ? '1fr 1fr' : '1fr', gap: '10px' }}>
+        {/* Metric grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          {/* Primary metric card with per-session toggle */}
+          {(estimatedDistance || estimatedDuration) && ['easy','run','quality','intervals','hard','tempo','race','recovery'].includes(session.type) && (
+            <div style={{ background: `${config.color}10`, borderRadius: '10px', padding: '10px 12px', border: `0.5px solid ${config.color}30` }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {effectiveMetric === 'distance' ? 'Distance' : 'Duration'}
+                {isMetricCustom && (
+                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', background: 'rgba(242,193,78,0.15)', color: '#c49a2a', border: '0.5px solid rgba(242,193,78,0.4)', borderRadius: '4px', padding: '1px 5px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>custom</span>
+                )}
+              </div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 500, color: config.color, lineHeight: 1, marginBottom: '6px' }}>
+                {effectiveMetric === 'distance'
+                  ? <>{estimatedDistance ?? '—'}<span style={{ fontSize: '11px', fontWeight: 400, color: config.color, opacity: 0.7 }}> {preferredUnits}</span></>
+                  : <span style={{ fontSize: '18px' }}>{estimatedDuration ?? '—'}</span>
+                }
+              </div>
+              {/* Toggle */}
+              <div style={{ display: 'flex', background: 'rgba(255,255,255,0.5)', borderRadius: '6px', padding: '2px', width: 'fit-content', border: '0.5px solid var(--border-col)' }}>
+                {(['distance', 'duration'] as const).map(m => (
+                  <button key={m} onClick={() => setSessionMetric(m === preferredMetric ? null : m)} style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', padding: '3px 9px', borderRadius: '4px', border: 'none', background: effectiveMetric === m ? config.color : 'none', color: effectiveMetric === m ? '#fff' : 'var(--text-muted)', cursor: 'pointer', fontWeight: 500, transition: 'all 0.15s' }}>
+                    {m === 'distance' ? preferredUnits : 'min'}
+                  </button>
+                ))}
+              </div>
+              {isMetricCustom && (
+                <button onClick={() => setSessionMetric(null)} style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: '#c49a2a', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0 0', textDecoration: 'underline', textAlign: 'left' }}>
+                  Reset to global
+                </button>
+              )}
+            </div>
+          )}
+          {/* HR card */}
+          {['easy','run','quality','intervals','hard','tempo','race','recovery'].includes(session.type) && (
             <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
-                {session.type === 'quality' ? 'Target HR' : 'Zone 2 ceiling'}
+                {session.type === 'quality' || session.type === 'intervals' || session.type === 'hard' ? 'Target HR' : 'Zone 2 ceiling'}
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
-                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 600, color: config.color, lineHeight: 1 }}>
-                  {session.type === 'quality' ? '155–165' : zone2Ceiling}
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>
+                  {session.type === 'quality' || session.type === 'intervals' || session.type === 'hard' ? '155–165' : zone2Ceiling}
                 </span>
                 <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)' }}>bpm</span>
               </div>
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                {session.type === 'quality' ? 'Warm up 15 min first' : 'Walk if exceeded'}
+                {session.type === 'quality' || session.type === 'intervals' || session.type === 'hard' ? 'Warm up 15 min first' : 'Walk if exceeded'}
               </div>
             </div>
-            {paceBracket && (
-              <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Est. pace</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '18px', fontWeight: 600, color: config.color, lineHeight: 1 }}>{paceBracket}</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>HR-derived estimate</div>
-              </div>
-            )}
-          </div>
-        )}
+          )}
+          {/* Pace card */}
+          {paceBracket && (
+            <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Est. pace</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>{paceBracket}</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>HR-derived estimate</div>
+            </div>
+          )}
+          {/* Zone card for strength */}
+          {session.type === 'strength' && (
+            <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Duration</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>{estimatedDuration ?? '45 min'}</div>
+            </div>
+          )}
+        </div>
       </div>
 
       {view === 'detail' && (
@@ -1040,22 +1092,22 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 if (isRunType) {
                   return (
                     <>
-                      <button onClick={() => setView('complete')} style={{ flex: 1, minWidth: '120px', background: 'var(--teal-dim)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold' }}>
+                      <button onClick={() => setView('complete')} style={{ flex: 1, minWidth: '120px', background: config.color, color: '#fff', border: 'none', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500 }}>
                         Log with Strava
                       </button>
-                      <button onClick={() => setView('manual')} style={{ flex: 1, minWidth: '120px', background: 'var(--teal-soft)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                      <button onClick={() => setView('manual')} style={{ flex: 1, minWidth: '120px', background: 'var(--card-bg)', color: config.color, border: `1px solid ${config.color}`, borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500 }}>
                         Log manually
                       </button>
                       <button onClick={() => setView('skip')} style={{ width: '100%', background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '12px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
-                        Skip
+                        Skip this session
                       </button>
                     </>
                   )
                 } else {
                   return (
                     <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                      <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: 'var(--teal-dim)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving ? 0.6 : 1 }}>
-                        {saving ? 'Saving...' : 'Done'}
+                      <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: config.color, color: '#fff', border: 'none', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500, opacity: saving ? 0.6 : 1 }}>
+                        {saving ? 'Saving...' : 'Mark as done'}
                       </button>
                       <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
                         Skip
@@ -1068,67 +1120,48 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             })()}
           </div>
 
-          {/* ── RPE + FATIGUE INLINE (shown when complete or skipped) ── */}
+          {/* ── HOW DID IT FEEL (shown when complete or skipped) ── */}
           {(isComplete || isSkipped) && (
-            <div style={{ padding: '14px 18px 20px', borderTop: '0.5px solid var(--border-col)' }}>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
-                How did it feel? {savingRPE && <span style={{ color: 'var(--teal)', marginLeft: '6px' }}>saving…</span>}
+            <div style={{ background: 'var(--bg)', borderTop: '8px solid var(--border-col)', padding: '18px 18px 22px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '16px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif" }}>
+                  How did it feel?
+                </div>
+                {savingRPE && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: config.color }}>saving…</span>}
               </div>
 
-              {/* RPE slider */}
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
-                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>RPE</div>
+              {/* RPE */}
+              <div style={{ marginBottom: '18px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
+                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Effort (RPE)</span>
                   {rpe != null && (
-                    <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '18px', fontWeight: 600, color: rpe <= 4 ? 'var(--teal)' : rpe <= 7 ? 'var(--accent)' : 'var(--red, #e05)' }}>
-                      {rpe}<span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 400 }}>/10</span>
-                    </div>
+                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 500, color: rpe <= 3 ? '#5BAD8C' : rpe <= 6 ? '#4A90D9' : rpe <= 8 ? '#F2C14E' : '#E05A5A', lineHeight: 1 }}>
+                      {rpe}<span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400 }}>/10</span>
+                    </span>
                   )}
                 </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={10}
-                  value={rpe ?? ''}
-                  onChange={e => {
-                    const val = parseInt(e.target.value)
-                    setRpe(val)
-                    saveRPEFatigue(val, fatigueTag)
-                  }}
-                  style={{ width: '100%', accentColor: 'var(--teal)', cursor: 'pointer' }}
+                <div style={{ height: '6px', background: 'var(--border-col)', borderRadius: '3px', overflow: 'hidden', marginBottom: '6px' }}>
+                  <div style={{ height: '100%', width: rpe ? `${rpe * 10}%` : '0%', background: rpe ? (rpe <= 3 ? '#5BAD8C' : rpe <= 6 ? '#4A90D9' : rpe <= 8 ? '#F2C14E' : '#E05A5A') : 'transparent', borderRadius: '3px', transition: 'width 0.2s, background 0.2s' }} />
+                </div>
+                <input type="range" min={1} max={10} step={1} value={rpe ?? 5}
+                  onChange={e => { const val = parseInt(e.target.value); setRpe(val); saveRPEFatigue(val, fatigueTag) }}
+                  style={{ width: '100%', accentColor: config.color, cursor: 'pointer', marginBottom: '4px' }}
                 />
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                  <span>Easy</span><span>Moderate</span><span>Max</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)' }}>
+                  <span>Easy</span><span>Moderate</span><span>Max effort</span>
                 </div>
               </div>
 
-              {/* Fatigue tag pills */}
+              {/* Fatigue tags */}
               <div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>Body feeling</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Body feeling</div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {(['Fresh', 'Normal', 'Heavy', 'Cooked'] as const).map(tag => {
                     const isActive = fatigueTag === tag
-                    const tagColor = tag === 'Fresh' ? 'var(--teal)' : tag === 'Normal' ? 'var(--accent)' : tag === 'Heavy' ? '#a78' : 'var(--red, #e05)'
+                    const tagColor = tag === 'Fresh' ? '#5BAD8C' : tag === 'Normal' ? '#4A90D9' : tag === 'Heavy' ? '#F2C14E' : '#E05A5A'
                     return (
-                      <button
-                        key={tag}
-                        onClick={() => {
-                          const next = isActive ? null : tag
-                          setFatigueTag(next)
-                          saveRPEFatigue(rpe, next)
-                        }}
-                        style={{
-                          fontFamily: "'Inter', sans-serif",
-                          fontSize: '11px',
-                          padding: '6px 14px',
-                          borderRadius: '20px',
-                          border: `0.5px solid ${isActive ? tagColor : 'var(--border-col)'}`,
-                          background: isActive ? `${tagColor}18` : 'none',
-                          color: isActive ? tagColor : 'var(--text-muted)',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s',
-                        }}
-                      >
+                      <button key={tag} onClick={() => { const next = isActive ? null : tag; setFatigueTag(next); saveRPEFatigue(rpe, next) }}
+                        style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', padding: '7px 16px', borderRadius: '20px', border: `1px solid ${isActive ? tagColor : 'var(--border-col)'}`, background: isActive ? `${tagColor}18` : 'var(--card-bg)', color: isActive ? tagColor : 'var(--text-muted)', cursor: 'pointer', fontWeight: isActive ? 500 : 400, transition: 'all 0.15s' }}>
                         {tag}
                       </button>
                     )
@@ -1174,7 +1207,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           )}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer' }}>Back</button>
-            <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: 'var(--teal-dim)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving ? 0.6 : 1 }}>
+            <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: config.color, color: '#fff', border: 'none', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500, opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Saving...' : 'Confirm complete'}
             </button>
           </div>
@@ -1241,7 +1274,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
 
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer' }}>Back</button>
-            <button onClick={saveManualRun} disabled={saving || (!manualDistance && !manualDuration)} style={{ flex: 2, background: 'var(--teal-dim)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 'bold', opacity: saving || (!manualDistance && !manualDuration) ? 0.5 : 1 }}>
+            <button onClick={saveManualRun} disabled={saving || (!manualDistance && !manualDuration)} style={{ flex: 2, background: config.color, color: '#fff', border: 'none', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500, opacity: saving || (!manualDistance && !manualDuration) ? 0.5 : 1 }}>
               {saving ? 'Saving...' : 'Save run'}
             </button>
           </div>
@@ -1256,7 +1289,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer' }}>Back</button>
-            <button onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2, background: 'var(--bg)', color: 'var(--text-muted, #666)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+            <button onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2, background: 'var(--card-bg)', color: 'var(--text-secondary)', border: '1px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500, opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Saving...' : 'Mark as skipped'}
             </button>
           </div>
@@ -1610,19 +1643,17 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
 
 // ── SESSION HERO ──────────────────────────────────────────────────────────
 
-function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits }: {
+function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits, preferredMetric }: {
   session: SessionEntry; completion?: any; onTap: () => void
-  zone2Ceiling?: number; preferredUnits?: 'km' | 'mi'
+  zone2Ceiling?: number; preferredUnits?: 'km' | 'mi'; preferredMetric?: 'distance' | 'duration'
 }) {
-  const accent = TYPE_ACCENT[session.type] ?? 'var(--accent)'
+  const accent = getTypeColor(session.type)
   const isComplete = completion?.status === 'complete'
   const isSkipped = completion?.status === 'skipped'
 
-  // Derive HR ceiling for display
   const hrCeiling = session.type === 'quality' ? '155–165' : zone2Ceiling ? `≤${zone2Ceiling}` : null
   const hrLabel = session.type === 'quality' ? 'Target HR' : 'Z2 ceiling'
 
-  // Pace estimate (same logic as SessionPopupInner)
   function getPace(): string | null {
     if (session.type !== 'easy' && session.type !== 'run') return null
     if (!zone2Ceiling) return null
@@ -1638,112 +1669,96 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits 
   }
   const pace = getPace()
 
-  const showMetrics = ['easy', 'run', 'quality'].includes(session.type)
+  // Metric shown on collapsed card — respects global preferredMetric
+  const showDistance = preferredMetric !== 'duration'
+  const estimatedDuration = session.duration ?? (session.distance ? `~${Math.round(session.distance * 6.5)} min` : null)
+  const estimatedDistance = session.distance ?? null
+
+  const showMetrics = ['easy', 'run', 'quality', 'intervals', 'hard', 'tempo', 'race', 'recovery'].includes(session.type)
 
   return (
     <div onClick={onTap} style={{
       margin: '12px 12px 0',
-      background: isComplete ? 'var(--teal-soft)' : isSkipped ? 'rgba(80,80,80,0.04)' : 'var(--card-bg)',
+      background: 'var(--card-bg)',
       borderRadius: '16px',
-      border: `0.5px solid ${isComplete ? 'var(--teal-mid)' : isSkipped ? '#2a2a2a' : 'var(--border-col)'}`,
-      borderLeft: `4px solid ${isComplete ? 'var(--teal)' : isSkipped ? 'var(--text-secondary)' : accent}`,
-      cursor: 'pointer',
+      border: `0.5px solid ${isComplete ? `${accent}40` : isSkipped ? 'var(--border-col)' : 'var(--border-col)'}`,
       overflow: 'hidden',
+      cursor: 'pointer',
+      display: 'flex',
+      opacity: isSkipped ? 0.6 : 1,
     }}>
+      {/* Left accent bar */}
+      <div style={{ width: '5px', flexShrink: 0, background: isComplete ? '#5BC0BE' : isSkipped ? 'var(--border-col)' : accent }} />
 
-      {/* Row 1: type chip left + status badge right */}
-      <div style={{ padding: '12px 14px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-        <span style={{
-          fontFamily: "'Inter', sans-serif", fontSize: '10px', fontWeight: 600,
-          color: accent,
-          background: `${accent}18`,
-          borderRadius: '6px', padding: '3px 8px',
-          textTransform: 'uppercase', letterSpacing: '0.07em',
-        }}>
-          {TYPE_LABEL[session.type] ?? session.type}
-        </span>
-        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          {session.today ? 'Today' : `${session.day} ${session.date}`}
-        </span>
-      </div>
-
-      {/* Row 2: session title */}
-      <div style={{ padding: '0 14px 10px' }}>
-        <div style={{
-          fontSize: '19px', fontWeight: 500, letterSpacing: '-0.3px',
-          color: isSkipped ? 'var(--text-muted, #888)' : 'var(--text-primary, #111)',
-          lineHeight: 1.2, fontFamily: "'Space Grotesk',sans-serif",
-          textDecoration: isSkipped ? 'line-through' : 'none',
-        }}>
-          {session.title}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Row 1: type label + date */}
+        <div style={{ padding: '12px 14px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', fontWeight: 500, color: isComplete ? '#5BC0BE' : isSkipped ? 'var(--text-muted)' : accent, textTransform: 'uppercase', letterSpacing: '0.09em' }}>
+            {TYPE_LABEL[session.type] ?? session.type}
+          </span>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>
+            {session.today ? 'Today' : `${session.day} · ${session.date}`}
+          </span>
         </div>
-      </div>
 
-      {/* Row 3: metrics — zone / HR / pace / distance+duration */}
-      {showMetrics && !isSkipped && (
-        <div style={{
-          display: 'flex', gap: '6px', padding: '0 14px 12px', flexWrap: 'wrap',
-        }}>
-          {/* Zone */}
-          {(session.zone || session.type) && (
-            <div style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px', minWidth: '52px' }}>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Zone</span>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', fontWeight: 600, color: accent, lineHeight: 1 }}>
-                {session.zone ?? (session.type === 'quality' ? 'Z3–4' : 'Z2')}
-              </span>
-            </div>
-          )}
-          {/* HR */}
-          {hrCeiling && (
-            <div style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{hrLabel}</span>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', fontWeight: 600, color: accent, lineHeight: 1 }}>{hrCeiling} <span style={{ fontSize: '9px', fontWeight: 400, color: 'var(--text-muted)' }}>bpm</span></span>
-            </div>
-          )}
-          {/* Pace */}
-          {pace && (
-            <div style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Est. pace</span>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 600, color: accent, lineHeight: 1 }}>{pace}</span>
-            </div>
-          )}
-          {/* Distance */}
-          {session.distance && (
-            <div style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Dist</span>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', fontWeight: 600, color: accent, lineHeight: 1 }}>{session.distance}<span style={{ fontSize: '9px', fontWeight: 400, color: 'var(--text-muted)' }}> {preferredUnits ?? 'km'}</span></span>
-            </div>
-          )}
-          {/* Duration */}
-          {session.duration && (
-            <div style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Time</span>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 600, color: accent, lineHeight: 1 }}>{session.duration}</span>
-            </div>
-          )}
+        {/* Row 2: session title */}
+        <div style={{ padding: '0 14px 10px' }}>
+          <div style={{ fontSize: '18px', fontWeight: 500, letterSpacing: '-0.3px', color: isSkipped ? 'var(--text-muted)' : 'var(--text-primary)', lineHeight: 1.25, fontFamily: "'Space Grotesk',sans-serif", textDecoration: isSkipped ? 'line-through' : 'none' }}>
+            {session.title}
+          </div>
         </div>
-      )}
 
-      {/* Strava activity if complete */}
-      {isComplete && completion?.strava_activity_name && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0 14px 10px' }}>
-          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--strava)', flexShrink: 0 }} />
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--strava)' }}>{completion.strava_activity_name}</span>
+        {/* Row 3: metric pills */}
+        {showMetrics && !isSkipped && (
+          <div style={{ display: 'flex', gap: '6px', padding: '0 14px 12px', flexWrap: 'wrap' }}>
+            {/* Primary metric: distance OR duration based on global preference */}
+            {(showDistance ? estimatedDistance : estimatedDuration) && (
+              <div style={{ background: `${accent}10`, border: `0.5px solid ${accent}30`, borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '8px', color: accent, textTransform: 'uppercase', letterSpacing: '0.07em', opacity: 0.8 }}>
+                  {showDistance ? 'Distance' : 'Duration'}
+                </span>
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', fontWeight: 600, color: accent, lineHeight: 1 }}>
+                  {showDistance
+                    ? <>{estimatedDistance}<span style={{ fontSize: '10px', fontWeight: 400 }}> {preferredUnits ?? 'km'}</span></>
+                    : estimatedDuration
+                  }
+                </span>
+              </div>
+            )}
+            {/* HR */}
+            {hrCeiling && (
+              <div style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{hrLabel}</span>
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1 }}>{hrCeiling} <span style={{ fontSize: '9px', fontWeight: 400, color: 'var(--text-muted)' }}>bpm</span></span>
+              </div>
+            )}
+            {/* Pace */}
+            {pace && (
+              <div style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '8px', padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Est. pace</span>
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1 }}>{pace}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Strava if complete */}
+        {isComplete && completion?.strava_activity_name && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0 14px 10px' }}>
+            <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#FC4C02', flexShrink: 0 }} />
+            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: '#FC4C02' }}>{completion.strava_activity_name}</span>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div style={{ padding: '9px 14px', borderTop: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg)' }}>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: isComplete ? '#5BC0BE' : isSkipped ? 'var(--text-muted)' : accent }}>
+            {isComplete ? 'View details' : isSkipped ? 'Update' : session.today ? 'Log this session' : 'View session'}
+          </span>
+          {isComplete && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'rgba(91,192,190,0.1)', color: '#5BC0BE', border: '0.5px solid rgba(91,192,190,0.3)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>✓ Done</span>}
+          {isSkipped && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'rgba(80,80,80,0.08)', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>Skipped</span>}
+          {!isComplete && !isSkipped && <span style={{ color: 'var(--text-muted)', fontSize: '16px', lineHeight: 1 }}>›</span>}
         </div>
-      )}
-
-      {/* Footer CTA */}
-      <div style={{
-        padding: '10px 14px', borderTop: '0.5px solid var(--border-col)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'var(--bg)',
-      }}>
-        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: isComplete ? 'var(--teal)' : isSkipped ? '#555' : accent }}>
-          {isComplete ? 'View details' : isSkipped ? 'Update' : session.today ? 'Log this session' : 'View session'}
-        </span>
-        {isComplete && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'var(--teal-dim)', color: 'var(--teal)', border: '0.5px solid var(--teal-mid)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>✓ Done</span>}
-        {isSkipped && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'rgba(80,80,80,0.08)', color: 'var(--text-muted)', border: '0.5px solid #444', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>Skipped</span>}
-        {!isComplete && !isSkipped && <span style={{ color: 'var(--text-muted)', fontSize: '16px', lineHeight: 1 }}>›</span>}
       </div>
     </div>
   )
@@ -2061,9 +2076,9 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
 
 // ── TODAY SCREEN ──────────────────────────────────────────────────────────
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, daysTo50k, raceName, stravaRuns, onOpenMe, initials, allOverrides, overridesReady, onOpenCalendar, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, daysTo50k, raceName, preferredMetric, stravaRuns, onOpenMe, initials, allOverrides, overridesReady, onOpenCalendar, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
-  smokeTrackerEnabled: boolean; daysToRace: number; daysTo50k: number; raceName: string
+  smokeTrackerEnabled: boolean; daysToRace: number; daysTo50k: number; raceName: string; preferredMetric: 'distance' | 'duration'
   stravaRuns: any[]; onOpenMe: () => void; initials: string
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   overridesReady: boolean
@@ -2240,6 +2255,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           completion={completions[selectedKey]}
           zone2Ceiling={zone2Ceiling}
           preferredUnits={preferredUnits}
+          preferredMetric={preferredMetric}
           onTap={() => {
             const isPast = selectedSession.rawDate < now && !selectedSession.today
             const isFuture = !selectedSession.today && selectedSession.rawDate > now
@@ -2931,13 +2947,14 @@ function ProfileSection({ firstName, lastName, email, onSave }: {
 
 // ── ME SCREEN ─────────────────────────────────────────────────────────────
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   resetPhrase: string; onSaveMental: (v: string) => void
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void; onBack: () => void
   isAdmin?: boolean; onOpenAdmin?: () => void
   preferredUnits: 'km' | 'mi'; onUnitsChange: (u: 'km' | 'mi') => void
+  preferredMetric: 'distance' | 'duration'; onMetricChange: (m: 'distance' | 'duration') => void
   restingHR: number | null; maxHR: number | null; onHRChange: (rhr: number, mhr: number) => void
   firstName: string; lastName: string; profileEmail: string
   onProfileChange: (fn: string, ln: string, em: string) => void
@@ -2999,7 +3016,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
               ))}
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
             <div>
               <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Distance units</div>
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Pace brackets and distances</div>
@@ -3008,6 +3025,19 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
               {(['km', 'mi'] as const).map(u => (
                 <button key={u} onClick={() => onUnitsChange(u)} style={{ borderRadius: '12px', padding: '6px 14px', border: `0.5px solid ${preferredUnits === u ? 'var(--accent)' : 'var(--border-col)'}`, background: preferredUnits === u ? 'var(--accent-soft)' : 'none', cursor: 'pointer', fontFamily: "'Inter', sans-serif", fontSize: '12px', color: preferredUnits === u ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   {u}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
+            <div>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Session display</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Default metric shown on session cards</div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {(['distance', 'duration'] as const).map(m => (
+                <button key={m} onClick={() => onMetricChange(m)} style={{ borderRadius: '12px', padding: '6px 14px', border: `0.5px solid ${preferredMetric === m ? 'var(--accent)' : 'var(--border-col)'}`, background: preferredMetric === m ? 'var(--accent-soft)' : 'none', cursor: 'pointer', fontFamily: "'Inter', sans-serif", fontSize: '12px', color: preferredMetric === m ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'capitalize', letterSpacing: '0.04em' }}>
+                  {m}
                 </button>
               ))}
             </div>
@@ -3179,15 +3209,16 @@ function AdminScreen({ onBack, onImpersonate }: {
 
 // ── SESSION SCREEN ────────────────────────────────────────────────────────
 
-function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling }: {
+function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric }: {
   session: any; preloadedRuns: any[]; onBack: () => void; onSaved?: () => void
-  preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number
+  preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number; preferredMetric?: 'distance' | 'duration'
 }) {
+  const color = getTypeColor(session.type ?? 'easy')
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: '0.5px solid var(--border-col)', position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10 }}>
-        <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
-        <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "\'Space Grotesk\',sans-serif" }}>{session.title}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: `3px solid ${color}`, position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10 }}>
+        <button onClick={onBack} style={{ border: 'none', color, fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1, width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: `${color}18`}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
+        <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif" }}>{session.title}</div>
       </div>
       <div style={{ padding: '12px' }}>
         <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
@@ -3200,6 +3231,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
             onSaved={onSaved}
             preferredUnits={preferredUnits ?? 'km'}
             zone2Ceiling={zone2Ceiling ?? 145}
+            preferredMetric={preferredMetric}
           />
         </div>
       </div>
