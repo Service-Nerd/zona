@@ -15,6 +15,19 @@
 | R17 | RPE + Fatigue Tags, Progress bar |
 | R23 | Plan Generator — API route, multi-step form UI, schema, new user flow |
 
+## Architecture Hygiene (shipped 2026-04-17)
+
+| Finding | Fix |
+|---------|-----|
+| H-001 | `layout.tsx` — removed all `setProperty()` calls; `data-theme` toggle only |
+| H-003 | Created `lib/session-types.ts` as canonical session colour/label resolver; removed duplicate local maps from `DashboardClient` and `PlanCalendar` |
+| M-001 | `PlanCalendar.tsx` — all hardcoded hex/rgba/font strings replaced with CSS custom properties |
+| M-002 | `PlanCalendar.tsx` — all `any` types replaced with `StravaActivity[]`, `Completion`, `EffectiveSession`, `SessionTapPayload` |
+| L-001 | `SessionType` union extended from 6 to 12 types in `types/plan.ts` |
+| L-002 | `tailwind.config.ts` — old-palette colours and banned fonts (Bebas Neue, DM Mono, DM Sans) removed |
+| Docs | `/docs` restructured into `canonical/`, `contracts/`, `architecture/`, `releases/`. ADRs 001–004 written. API and component contracts written from live code. `CLAUDE.md` updated. |
+| Tooling | Pre-commit git hook added — blocks `setProperty()`, hardcoded hex, banned fonts, ember orange/warm beige at commit time |
+
 ---
 
 ## Active Work
@@ -109,4 +122,7 @@ Required card hierarchy:
 | Item | Detail |
 |------|--------|
 | Strava token refresh | Cache and refresh Strava OAuth token — currently single-use |
-| Design token centralisation | Hardcoded colours/fonts remain in: `DashboardClient`, `login/page`, `PlanChart`, `PlanCalendar`, `StravaPanel`, `layout.tsx` — all need replacing with CSS custom properties |
+| `PlanChart.tsx` hardcoded values | Likely still has hardcoded hex/font strings — not yet audited |
+| `StravaPanel.tsx` hardcoded values | Likely still has hardcoded hex/font strings — not yet audited |
+| `login/page.tsx` hardcoded values | Not yet audited |
+| `PlanCalendar` `any` props (partial) | `stravaRuns` prop is accepted but unused in WeekCard — remove or wire up |
