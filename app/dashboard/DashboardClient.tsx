@@ -974,7 +974,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   const config = { color, label: TYPE_LABEL[session.type] ?? session.type }
 
   // Per-session metric values
-  const estimatedDuration = session.duration ?? (session.distance ? `~${Math.round(Number(session.distance) * 6.5)} min` : null)
+  const estimatedDuration = session.duration ?? (session.distance ? `~${fmtDurationMins(Math.round(Number(session.distance) * 6.5))}` : null)
   const estimatedDistance = session.distance ?? null
 
   return (
@@ -1061,7 +1061,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           {session.type === 'strength' && (
             <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Duration</div>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>{estimatedDuration ?? '45 min'}</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>{estimatedDuration ?? '45min'}</div>
             </div>
           )}
         </div>
@@ -1702,6 +1702,14 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
 
 // ── UTILITIES ─────────────────────────────────────────────────────────────
 
+/** Format a duration in minutes as a human-readable string: 45 → "45min", 90 → "1h30", 120 → "2h00" */
+function fmtDurationMins(mins: number): string {
+  if (mins < 60) return `${mins}min`
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
+}
+
 /** Parse legacy free-text detail field into structured distance/duration */
 function parseSessionDetail(detail: string | null): { distance?: number; duration?: string } {
   if (!detail) return {}
@@ -1811,7 +1819,7 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
       ? (session.pace_target ?? null)
       : null
 
-  const estimatedDuration = session.duration ?? (session.distance ? `~${Math.round(session.distance * 6.5)} min` : null)
+  const estimatedDuration = session.duration ?? (session.distance ? `~${fmtDurationMins(Math.round(session.distance * 6.5))}` : null)
   const estimatedDistance = session.distance ?? null
   const showMetrics = ['easy', 'run', 'quality', 'intervals', 'hard', 'tempo', 'race', 'recovery'].includes(session.type)
 
@@ -2318,7 +2326,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       rawDate: d,
       today: key === todayDow,
       distance: s?.distance_km ?? parsed.distance,
-      duration: s?.duration_mins != null ? `${s.duration_mins} min` : parsed.duration,
+      duration: s?.duration_mins != null ? fmtDurationMins(s.duration_mins) : parsed.duration,
       zone: s?.zone ?? undefined,
       hr_target: s?.hr_target ?? undefined,
       pace_target: s?.pace_target ?? undefined,
