@@ -361,6 +361,17 @@ export default function DashboardClient() {
     }
   }, [plan])
 
+  // Personalised zone ceiling: Karvonen 70% HRR, falls back to plan meta or 145
+  const effectiveZone2Ceiling = useMemo(() => {
+    if (restingHR && maxHR) return Math.round(restingHR + 0.70 * (maxHR - restingHR))
+    return plan?.meta?.zone2_ceiling ?? 145
+  }, [restingHR, maxHR, plan])
+
+  // Aerobic pace derived from Strava runs in user's Z2 HR band
+  const aerobicPace = useMemo(() =>
+    computeAerobicPace(stravaRuns, restingHR, maxHR, preferredUnits),
+  [stravaRuns, restingHR, maxHR, preferredUnits])
+
   const now = new Date()
   const raceDate = plan?.meta?.race_date ? new Date(plan.meta.race_date) : new Date('2026-07-11')
   const raceName = plan?.meta?.race_name ?? 'Race to the Stones 100k'
@@ -513,13 +524,13 @@ export default function DashboardClient() {
       )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} overridesReady={overridesReady} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={plan?.meta?.zone2_ceiling ?? 145} onManualSaved={refreshCompletions} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} overridesReady={overridesReady} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} onOpenGenerate={() => setScreen('generate')} />}
         {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setScreen('me')} initials={initials} />}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setScreen('me')} initials={initials} />}
         {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} />}
         {screen === 'calendar' && <CalendarOverlay plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onBack={() => setScreen('today')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={plan?.meta?.zone2_ceiling ?? 145} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
         {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen('plan')} />}
       </div>
@@ -792,10 +803,11 @@ const TYPE_LABEL: Record<string, string> = {
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
-function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric }: {
+function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace }: {
   session: any; weekTheme: string; weekN: number; preloadedRuns: any[]
   onClose: () => void; onSaved?: () => void
   preferredUnits: 'km' | 'mi'; zone2Ceiling: number; preferredMetric?: 'distance' | 'duration'
+  restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
 }) {
   const [view, setView] = useState<'detail' | 'complete' | 'skip' | 'manual'>('detail')
   const [saving, setSaving] = useState(false)
@@ -954,28 +966,9 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
     } catch {} finally { setSaving(false) }
   }
 
-  // Pace bracket calculation from zone2_ceiling using HRR
-  function getPaceBracket(): string | null {
-    if (session.type !== 'easy' && session.type !== 'run') return null
-    const baseHR = 145
-    const basePaceSecPerKm = 390 // 6:30/km
-    const secondsPerBpm = 3
-    const diffBpm = zone2Ceiling - baseHR
-    const loPaceKm = basePaceSecPerKm + (5 * secondsPerBpm) - (diffBpm * secondsPerBpm)
-    const hiPaceKm = basePaceSecPerKm + (15 * secondsPerBpm) - (diffBpm * secondsPerBpm)
-
-    function fmtPace(secPerKm: number, units: 'km' | 'mi'): string {
-      const sec = units === 'mi' ? secPerKm * 1.60934 : secPerKm
-      const m = Math.floor(sec / 60)
-      const s = Math.round(sec % 60)
-      return `${m}:${String(s).padStart(2, '0')}`
-    }
-
-    const unit = preferredUnits === 'mi' ? '/mi' : '/km'
-    return `${fmtPace(loPaceKm, preferredUnits)}–${fmtPace(hiPaceKm, preferredUnits)}${unit}`
-  }
-
-  const paceBracket = session.pace_target ?? getPaceBracket()
+  // Pace from session structured field → Strava aerobic pace → null (no hardcoded fallback)
+  const paceBracket = session.pace_target
+    ?? ((session.type === 'easy' || session.type === 'run') ? aerobicPace ?? null : null)
 
   const color = getTypeColor(session.type)
   const config = { color, label: TYPE_LABEL[session.type] ?? session.type }
@@ -1040,12 +1033,17 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
                 {session.type === 'quality' || session.type === 'intervals' || session.type === 'hard' ? 'Target HR' : 'Zone 2 ceiling'}
               </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
-                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>
-                  {session.hr_target ?? (session.type === 'quality' || session.type === 'intervals' || session.type === 'hard' ? '155–165' : zone2Ceiling)}
-                </span>
-                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)' }}>bpm</span>
-              </div>
+              {(() => {
+                const hrVal = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling)
+                return (
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
+                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>
+                      {hrVal ?? '—'}
+                    </span>
+                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)' }}>bpm</span>
+                  </div>
+                )
+              })()}
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>
                 {session.type === 'quality' || session.type === 'intervals' || session.type === 'hard' ? 'Warm up 15 min first' : 'Walk if exceeded'}
               </div>
@@ -1702,12 +1700,89 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
   )
 }
 
+// ── UTILITIES ─────────────────────────────────────────────────────────────
+
+/** Parse legacy free-text detail field into structured distance/duration */
+function parseSessionDetail(detail: string | null): { distance?: number; duration?: string } {
+  if (!detail) return {}
+  const s = detail.trim()
+  const hm = s.match(/^(\d+)h(\d{2})\b/)
+  if (hm) return { duration: `${hm[1]}h${hm[2]}` }
+  const h = s.match(/^(\d+)h\b/)
+  if (h) return { duration: `${h[1]}h` }
+  const min = s.match(/^(\d+(?:\.\d+)?)\s*min\b/i)
+  if (min) return { duration: `${min[1]}min` }
+  const km = s.match(/^(\d+(?:\.\d+)?)\s*km\b/i)
+  if (km) return { distance: parseFloat(km[1]) }
+  return {}
+}
+
+/** Karvonen HR zones: returns {lo, hi} or null if HR data unavailable */
+function karvonenZone(
+  restingHR: number | null,
+  maxHR: number | null,
+  loPct: number,
+  hiPct: number,
+): { lo: number; hi: number } | null {
+  if (!restingHR || !maxHR) return null
+  const hrr = maxHR - restingHR
+  return {
+    lo: Math.round(restingHR + (loPct / 100) * hrr),
+    hi: Math.round(restingHR + (hiPct / 100) * hrr),
+  }
+}
+
+/** Returns the HR string to display for a session type, using Karvonen if available */
+function getSessionHRDisplay(
+  sessionType: string,
+  hr_target: string | undefined,
+  restingHR: number | null,
+  maxHR: number | null,
+  zone2Ceiling: number | undefined,
+): string | null {
+  // Generated plan already has a personalised hr_target
+  if (hr_target) return hr_target
+  if (sessionType === 'easy' || sessionType === 'run') {
+    const z = karvonenZone(restingHR, maxHR, 60, 70)
+    if (z) return `< ${z.hi}`
+    return zone2Ceiling ? `< ${zone2Ceiling}` : null
+  }
+  if (sessionType === 'quality' || sessionType === 'intervals' || sessionType === 'hard' || sessionType === 'tempo') {
+    const z = karvonenZone(restingHR, maxHR, 75, 85)
+    if (z) return `${z.lo}–${z.hi}`
+    return null
+  }
+  return null
+}
+
+/** Returns aerobic pace bracket derived from Strava runs in the user's Z2 HR band */
+function computeAerobicPace(
+  runs: any[] | null,
+  restingHR: number | null,
+  maxHR: number | null,
+  preferredUnits: 'km' | 'mi' = 'km',
+): string | null {
+  if (!runs || !runs.length || !restingHR || !maxHR) return null
+  const hrr = maxHR - restingHR
+  const lo = Math.round(restingHR + 0.60 * hrr)
+  const hi = Math.round(restingHR + 0.70 * hrr)
+  const sample = runs.filter((r: any) =>
+    r.average_heartrate && r.average_heartrate >= lo && r.average_heartrate <= hi
+    && r.moving_time > 0 && r.distance > 2000
+  ).slice(0, 6)
+  if (!sample.length) return null
+  const avgSecPerKm = sample.reduce((s: number, r: any) => s + r.moving_time / (r.distance / 1000), 0) / sample.length
+  const sec = preferredUnits === 'mi' ? avgSecPerKm * 1.60934 : avgSecPerKm
+  const unit = preferredUnits === 'mi' ? '/mi' : '/km'
+  return `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}${unit}`
+}
+
 // ── SESSION HERO ──────────────────────────────────────────────────────────
 
-function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits, preferredMetric, weekN }: {
+function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits, preferredMetric, weekN, restingHR, maxHR, aerobicPace }: {
   session: SessionEntry; completion?: any; onTap: () => void
   zone2Ceiling?: number; preferredUnits?: 'km' | 'mi'; preferredMetric?: 'distance' | 'duration'
-  weekN?: number
+  weekN?: number; restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
 }) {
   const accent = getTypeColor(session.type)
   const isComplete = completion?.status === 'complete'
@@ -1728,23 +1803,13 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
     try { localStorage.setItem(metricStorageKey, m) } catch {}
   }
 
-  const hrCeiling = session.hr_target ?? (session.type === 'quality' ? '155–165' : zone2Ceiling ? `≤${zone2Ceiling}` : null)
-  const hrLabel = session.type === 'quality' ? 'Target HR' : 'Z2 ceiling'
-
-  function getPace(): string | null {
-    if (session.type !== 'easy' && session.type !== 'run') return null
-    if (!zone2Ceiling) return null
-    const baseHR = 145, basePace = 390, sPerBpm = 3
-    const diff = zone2Ceiling - baseHR
-    const lo = basePace + (5 * sPerBpm) - (diff * sPerBpm)
-    const hi = basePace + (15 * sPerBpm) - (diff * sPerBpm)
-    function fmt(s: number): string {
-      const adj = preferredUnits === 'mi' ? s * 1.60934 : s
-      return `${Math.floor(adj / 60)}:${String(Math.round(adj % 60)).padStart(2, '0')}`
-    }
-    return `${fmt(lo)}–${fmt(hi)}${preferredUnits === 'mi' ? '/mi' : '/km'}`
-  }
-  const pace = getPace()
+  const hrDisplay = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling)
+  const hrLabel = (session.type === 'quality' || session.type === 'intervals' || session.type === 'hard' || session.type === 'tempo') ? 'Target HR' : 'Z2 ceiling'
+  const pace = (session.type === 'easy' || session.type === 'run')
+    ? (session.pace_target ?? aerobicPace ?? null)
+    : (session.type === 'quality' || session.type === 'intervals' || session.type === 'hard' || session.type === 'tempo')
+      ? (session.pace_target ?? null)
+      : null
 
   const estimatedDuration = session.duration ?? (session.distance ? `~${Math.round(session.distance * 6.5)} min` : null)
   const estimatedDistance = session.distance ?? null
@@ -1815,10 +1880,10 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
               </div>
             )}
             {/* HR */}
-            {hrCeiling && (
+            {hrDisplay && (
               <div style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
                 <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '5px', display: 'block' }}>{hrLabel}</span>
-                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1 }}>{hrCeiling}<span style={{ fontSize: '10px', fontWeight: 400, color: 'var(--text-muted)' }}> bpm</span></span>
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1 }}>{hrDisplay}<span style={{ fontSize: '10px', fontWeight: 400, color: 'var(--text-muted)' }}> bpm</span></span>
               </div>
             )}
             {/* Pace */}
@@ -2165,7 +2230,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
 
 // ── TODAY SCREEN ──────────────────────────────────────────────────────────
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, daysTo50k, raceName, preferredMetric, stravaRuns, onOpenMe, initials, allOverrides, overridesReady, onOpenCalendar, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, daysTo50k, raceName, preferredMetric, stravaRuns, onOpenMe, initials, allOverrides, overridesReady, onOpenCalendar, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; daysTo50k: number; raceName: string; preferredMetric: 'distance' | 'duration'
   stravaRuns: any[]; onOpenMe: () => void; initials: string
@@ -2177,6 +2242,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   preferredUnits: 'km' | 'mi'
   zone2Ceiling: number
   onManualSaved?: () => void
+  restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
@@ -2239,6 +2305,8 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
     const d = new Date(weekStartDate)
     d.setDate(d.getDate() + DAY_OFFSETS[key])
     const displayDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+    // Parse legacy free-text detail as fallback for hand-authored plans
+    const parsed = s ? parseSessionDetail(s.detail ?? null) : {}
     return {
       key: originalDay,
       displayKey: key,
@@ -2249,8 +2317,8 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       date: displayDate,
       rawDate: d,
       today: key === todayDow,
-      distance: s?.distance_km ?? (s as any)?.distance ?? undefined,
-      duration: s?.duration_mins != null ? `${s.duration_mins} min` : ((s as any)?.duration ?? undefined),
+      distance: s?.distance_km ?? parsed.distance,
+      duration: s?.duration_mins != null ? `${s.duration_mins} min` : parsed.duration,
       zone: s?.zone ?? undefined,
       hr_target: s?.hr_target ?? undefined,
       pace_target: s?.pace_target ?? undefined,
@@ -2350,6 +2418,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           preferredUnits={preferredUnits}
           preferredMetric={preferredMetric}
           weekN={weekNum}
+          restingHR={restingHR}
+          maxHR={maxHR}
+          aerobicPace={aerobicPace}
           onTap={() => {
             const isPast = selectedSession.rawDate < now && !selectedSession.today
             const isFuture = !selectedSession.today && selectedSession.rawDate > now
@@ -3312,9 +3383,10 @@ function AdminScreen({ onBack, onImpersonate }: {
 
 // ── SESSION SCREEN ────────────────────────────────────────────────────────
 
-function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric }: {
+function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace }: {
   session: any; preloadedRuns: any[]; onBack: () => void; onSaved?: () => void
   preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number; preferredMetric?: 'distance' | 'duration'
+  restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
 }) {
   const color = getTypeColor(session.type ?? 'easy')
   return (
@@ -3335,6 +3407,9 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
             preferredUnits={preferredUnits ?? 'km'}
             zone2Ceiling={zone2Ceiling ?? 145}
             preferredMetric={preferredMetric}
+            restingHR={restingHR}
+            maxHR={maxHR}
+            aerobicPace={aerobicPace}
           />
         </div>
       </div>
