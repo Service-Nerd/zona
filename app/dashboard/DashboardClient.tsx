@@ -151,6 +151,7 @@ export default function DashboardClient() {
           setAllCompletions(map)
         }
 
+        if (settingsRes.error) console.error('user_settings query failed:', settingsRes.error)
         const data = settingsRes.data
 
         // Load plan from user's gist_url, fallback to default
@@ -2766,6 +2767,9 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
 }) {
   const [rhr, setRhr] = useState(restingHR ? String(restingHR) : '')
   const [mhr, setMhr] = useState(maxHR ? String(maxHR) : '')
+
+  useEffect(() => { setRhr(restingHR ? String(restingHR) : '') }, [restingHR])
+  useEffect(() => { setMhr(maxHR ? String(maxHR) : '') }, [maxHR])
   const [saved, setSaved] = useState(false)
 
   const rhrNum = parseInt(rhr)
