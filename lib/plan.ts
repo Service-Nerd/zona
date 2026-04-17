@@ -3,6 +3,17 @@ import type { Plan } from '@/types/plan'
 export const DEFAULT_GIST_URL = process.env.NEXT_PUBLIC_GIST_URL ||
   'https://gist.githubusercontent.com/Service-Nerd/efec07a87f65494f0e078a1ccb136100/raw/rts_plan.json'
 
+export const EMPTY_PLAN: Plan = {
+  meta: {
+    athlete: '', handle: '',
+    race_name: '', race_date: '', race_distance_km: 0,
+    charity: '', plan_start: '', quit_date: '',
+    resting_hr: 0, max_hr: 0, zone2_ceiling: 145,
+    version: '', last_updated: '', notes: '',
+  },
+  weeks: [],
+}
+
 const PLAN_FALLBACK: Plan = {
   meta: {
     athlete: 'Russ Shear', handle: '@doinghardthingsbadly',

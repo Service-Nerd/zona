@@ -6,7 +6,7 @@ import PlanChart from '@/components/training/PlanChart'
 import PlanCalendar from '@/components/training/PlanCalendar'
 import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
-import { fetchPlanFromUrl, DEFAULT_GIST_URL, getCurrentWeek, getCurrentWeekIndex } from '@/lib/plan'
+import { fetchPlanFromUrl, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex } from '@/lib/plan'
 import dynamic from 'next/dynamic'
 const GeneratePlanScreen = dynamic(() => import('./GeneratePlanScreen'), { ssr: false })
 
@@ -154,10 +154,14 @@ export default function DashboardClient() {
         if (settingsRes.error) console.error('user_settings query failed:', settingsRes.error)
         const data = settingsRes.data
 
-        // Load plan from user's gist_url, fallback to default
-        const gistUrl = data?.gist_url || DEFAULT_GIST_URL
-        const loadedPlan = await fetchPlanFromUrl(gistUrl)
-        setPlan(loadedPlan)
+        // Load plan from user's gist_url; new users go to the generator
+        if (data?.gist_url) {
+          const loadedPlan = await fetchPlanFromUrl(data.gist_url)
+          setPlan(loadedPlan)
+        } else {
+          setPlan(EMPTY_PLAN)
+          setScreen('plan')
+        }
 
         // Admin flag
         if (data?.is_admin) setIsAdmin(true)
@@ -170,10 +174,29 @@ export default function DashboardClient() {
         if (data?.resting_hr) setRestingHR(data.resting_hr)
         if (data?.max_hr) setMaxHR(data.max_hr)
 
-        // Profile data
+        // Profile data — prefer DB, fall back to auth provider metadata
         if (data?.first_name) setFirstName(data.first_name)
         if (data?.last_name) setLastName(data.last_name)
         if (data?.email) setProfileEmail(data.email)
+
+        if (!data?.first_name && !data?.last_name) {
+          const fullName = (user.user_metadata?.full_name || user.user_metadata?.name || '') as string
+          if (fullName) {
+            const parts = fullName.trim().split(' ')
+            const fn = parts[0] || ''
+            const ln = parts.slice(1).join(' ') || ''
+            if (fn) setFirstName(fn)
+            if (ln) setLastName(ln)
+            void supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, updated_at: new Date().toISOString() })
+          }
+        }
+        if (!data?.email) {
+          const authEmail = user.email || (user.user_metadata?.email as string) || ''
+          if (authEmail) {
+            setProfileEmail(authEmail)
+            void supabase.from('user_settings').upsert({ id: user.id, email: authEmail, updated_at: new Date().toISOString() })
+          }
+        }
 
         // Show welcome screen if not yet onboarded
         if (!data?.has_onboarded) {
@@ -494,7 +517,7 @@ export default function DashboardClient() {
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} onOpenGenerate={() => setScreen('generate')} />}
         {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setScreen('me')} initials={initials} />}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setScreen('me')} initials={initials} />}
-        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan.meta.athlete ?? 'Anon'} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} />}
+        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} />}
         {screen === 'calendar' && <CalendarOverlay plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onBack={() => setScreen('today')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={plan?.meta?.zone2_ceiling ?? 145} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
@@ -2979,7 +3002,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   if (activeSection === 'fueling') return <FuelingTab onBack={() => setActiveSection('main')} />
 
   const daysToRace = Math.max(0, Math.ceil(((plan?.meta?.race_date ? new Date(plan.meta.race_date) : new Date('2026-07-11')).getTime() - Date.now()) / 86400000))
-  const displayName = [firstName, lastName].filter(Boolean).join(' ') || athlete
+  const displayName = [firstName, lastName].filter(Boolean).join(' ') || (profileEmail ? profileEmail.split('@')[0] : '') || athlete || '?'
 
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto' }}>
@@ -3000,8 +3023,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 500 }}>{displayName}</div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{profileEmail || 'Berkshire, UK'}</div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', marginTop: '4px' }}>{plan?.meta?.race_name ?? 'Race to the Stones'} · {daysToRace} days</div>
+            {profileEmail && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{profileEmail}</div>}
+            {plan?.meta?.race_name && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', marginTop: '4px' }}>{plan.meta.race_name} · {daysToRace} days</div>}
           </div>
           <button
             onClick={async () => {
