@@ -37,7 +37,12 @@ export type WeekType =
   | 'race_event'
   | 'race'
 
-export type SessionType = 'run' | 'easy' | 'quality' | 'strength' | 'rest' | 'race'
+export type SessionType =
+  | 'run' | 'easy' | 'long'
+  | 'quality' | 'tempo' | 'intervals' | 'hard'
+  | 'race' | 'recovery'
+  | 'strength' | 'cross-train'
+  | 'rest'
 
 export type PrimaryMetric = 'distance' | 'duration'
 

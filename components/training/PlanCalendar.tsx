@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { Week } from '@/types/plan'
 import { createClient } from '@/lib/supabase/client'
+import { SESSION_COLORS, getSessionColor } from '@/lib/session-types'
 
 interface Completion {
   session_day: string
@@ -15,20 +16,6 @@ const DOW_ORDER = ['mon','tue','wed','thu','fri','sat','sun']
 const DOW_FULL: Record<string, string> = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' }
 const DAY_OFFSETS: Record<string, number> = { mon:0, tue:1, wed:2, thu:3, fri:4, sat:5, sun:6 }
 
-const TYPE_ACCENT: Record<string, string> = {
-  easy:      '#4A90D9',
-  run:       '#7B68EE',
-  long:      '#7B68EE',
-  quality:   '#F2C14E',
-  tempo:     '#F2C14E',
-  intervals: '#E05A5A',
-  hard:      '#E05A5A',
-  race:      '#E8833A',
-  recovery:  '#5BAD8C',
-  strength:  '#3A506B',
-  cross:     '#5BC0BE',
-  rest:      'transparent',
-}
 
 function getWeekDates(weekStartDate: Date): Record<string, Date> {
   const dates: Record<string, Date> = {}
@@ -294,7 +281,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
   const isSkipped  = completion?.status === 'skipped'
   const hasSession = !!session && session.type !== 'rest'
   const isRestType = !session || session.type === 'rest'
-  const accent = session ? (TYPE_ACCENT[session.type] ?? 'var(--text-muted, #94A3B8)') : 'transparent'
+  const accent = session ? (SESSION_COLORS[session.type] ?? 'var(--text-muted, #94A3B8)') : 'transparent'
 
   return (
     <div

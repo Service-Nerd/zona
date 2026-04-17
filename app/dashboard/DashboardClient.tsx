@@ -7,6 +7,7 @@ import PlanCalendar from '@/components/training/PlanCalendar'
 import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
 import { fetchPlanFromUrl, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex } from '@/lib/plan'
+import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
 import dynamic from 'next/dynamic'
 const GeneratePlanScreen = dynamic(() => import('./GeneratePlanScreen'), { ssr: false })
 
@@ -762,44 +763,7 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
   )
 }
 
-// ── Dot / accent colours ──────────────────────────────────────────────────
-
-const TYPE_COLOR: Record<string, string> = {
-  easy:       '#4A90D9',
-  run:        '#7B68EE',
-  long:       '#7B68EE',
-  quality:    '#F2C14E',
-  tempo:      '#F2C14E',
-  intervals:  '#E05A5A',
-  hard:       '#E05A5A',
-  race:       '#E8833A',
-  recovery:   '#5BAD8C',
-  strength:   '#3A506B',
-  cross:      '#5BC0BE',
-  rest:       'transparent',
-}
-
-function getTypeColor(type: string): string {
-  return TYPE_COLOR[type] ?? '#4A90D9'
-}
-
-const TYPE_DOT: Record<string, string> = TYPE_COLOR
-const TYPE_ACCENT: Record<string, string> = TYPE_COLOR
-
-const TYPE_LABEL: Record<string, string> = {
-  easy:       'Easy run — Zone 2',
-  run:        'Long run',
-  long:       'Long run',
-  quality:    'Quality session',
-  tempo:      'Tempo run',
-  intervals:  'Intervals',
-  hard:       'Hard session',
-  race:       'Race',
-  recovery:   'Recovery run',
-  strength:   'Strength',
-  cross:      'Cross-training',
-  rest:       'Rest day',
-}
+// ── Dot / accent colours — resolved via lib/session-types.ts ─────────────
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
@@ -824,8 +788,9 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   const [sessionMetric, setSessionMetric] = useState<'distance' | 'duration' | null>(null)
   const supabase = createClient()
   const metricStorageKey = `rts_metric_${weekN}_${session.key}`
-  const effectiveMetric = sessionMetric ?? preferredMetric ?? 'distance'
-  const isMetricCustom = sessionMetric !== null && sessionMetric !== preferredMetric
+  const sessionDefault = session.primary_metric ?? preferredMetric ?? 'distance'
+  const effectiveMetric = sessionMetric ?? sessionDefault
+  const isMetricCustom = sessionMetric !== null && sessionMetric !== sessionDefault
 
   // Load saved per-session metric from localStorage on mount
   useEffect(() => {
@@ -970,8 +935,8 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   const paceBracket = session.pace_target
     ?? ((session.type === 'easy' || session.type === 'run') ? aerobicPace ?? null : null)
 
-  const color = getTypeColor(session.type)
-  const config = { color, label: TYPE_LABEL[session.type] ?? session.type }
+  const color = getSessionColor(session.type)
+  const config = { color, label: getSessionLabel(session.type) }
 
   // Per-session metric values — session may come from TodayScreen (formatted) or raw plan object (unformatted)
   const rawDuration = session.duration ?? (session.duration_mins != null ? fmtDurationMins(Number(session.duration_mins)) : null)
@@ -1375,6 +1340,7 @@ interface SessionEntry {
   today: boolean
   distance?: number
   duration?: string
+  primary_metric?: 'distance' | 'duration'
   zone?: string
   hr_target?: string
   pace_target?: string
@@ -1401,7 +1367,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
     const comp = completions[s.key] // use originalDay for completion lookup
     if (comp?.status === 'complete') return 'var(--teal)'
     if (comp?.status === 'skipped') return '#333'
-    return TYPE_DOT[s.type] ?? '#666'
+    return getSessionColor(s.type)
   }
 
   function handleTouchStart(e: React.TouchEvent) { touchStartX.current = e.touches[0].clientX }
@@ -1793,19 +1759,20 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
   zone2Ceiling?: number; preferredUnits?: 'km' | 'mi'; preferredMetric?: 'distance' | 'duration'
   weekN?: number; restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
 }) {
-  const accent = getTypeColor(session.type)
+  const accent = getSessionColor(session.type)
   const isComplete = completion?.status === 'complete'
   const isSkipped = completion?.status === 'skipped'
 
   const metricStorageKey = `rts_metric_${weekN ?? 0}_${session.key}`
-  const [heroMetric, setHeroMetric] = useState<'distance' | 'duration'>(preferredMetric ?? 'distance')
+  const sessionDefault = session.primary_metric ?? preferredMetric ?? 'distance'
+  const [heroMetric, setHeroMetric] = useState<'distance' | 'duration'>(sessionDefault)
   useEffect(() => {
     try {
       const saved = localStorage.getItem(metricStorageKey)
       if (saved === 'distance' || saved === 'duration') setHeroMetric(saved)
-      else setHeroMetric(preferredMetric ?? 'distance')
+      else setHeroMetric(sessionDefault)
     } catch {}
-  }, [metricStorageKey, preferredMetric])
+  }, [metricStorageKey, sessionDefault])
 
   function toggleHeroMetric(m: 'distance' | 'duration') {
     setHeroMetric(m)
@@ -1842,7 +1809,7 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
         {/* Row 1: type label + date */}
         <div style={{ padding: '12px 14px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
           <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', fontWeight: 500, color: isComplete ? '#5BC0BE' : isSkipped ? 'var(--text-muted)' : accent, textTransform: 'uppercase', letterSpacing: '0.09em' }}>
-            {TYPE_LABEL[session.type] ?? session.type}
+            {getSessionLabel(session.type)}
           </span>
           <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>
             {session.today ? 'Today' : `${session.day} · ${session.date}`}
@@ -1966,7 +1933,7 @@ function RestDayCard({ session, nextSession }: {
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{nextSession.detail}</div>
             )}
           </div>
-          <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: TYPE_DOT[nextSession.type] ?? '#555', flexShrink: 0, marginLeft: '12px' }} />
+          <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: getSessionColor(nextSession.type), flexShrink: 0, marginLeft: '12px' }} />
         </div>
       )}
     </div>
@@ -2018,7 +1985,7 @@ function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBac
   function getDotColor(type: string, completion?: any): string {
     if (completion?.status === 'complete') return 'var(--teal)'
     if (completion?.status === 'skipped') return '#2a2a2a'
-    return TYPE_DOT[type] ?? 'transparent'
+    return SESSION_COLORS[type] ?? 'transparent'
   }
 
   function renderWeekRow(week: any, weekNum: number) {
@@ -2328,6 +2295,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       today: key === todayDow,
       distance: s?.distance_km ?? parsed.distance,
       duration: s?.duration_mins != null ? fmtDurationMins(s.duration_mins) : parsed.duration,
+      primary_metric: s?.primary_metric ?? undefined,
       zone: s?.zone ?? undefined,
       hr_target: s?.hr_target ?? undefined,
       pace_target: s?.pace_target ?? undefined,
@@ -3397,7 +3365,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
   preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number; preferredMetric?: 'distance' | 'duration'
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
 }) {
-  const color = getTypeColor(session.type ?? 'easy')
+  const color = getSessionColor(session.type ?? 'easy')
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: `3px solid ${color}`, position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10 }}>
