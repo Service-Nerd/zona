@@ -3,6 +3,13 @@
 import { useState } from 'react'
 import type { Plan, GeneratorInput } from '@/types/plan'
 
+function fmtDurationMins(mins: number): string {
+  if (mins < 60) return `${mins}min`
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Step = 'form' | 'generating' | 'preview' | 'error'
@@ -211,7 +218,7 @@ function WeekPreviewCard({ week }: { week: Plan['weeks'][0] }) {
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColour, display: 'inline-block', flexShrink: 0 }} />
               <span style={{ textTransform: 'capitalize' }}>{day}</span>
               {session.distance_km && <span style={{ color: 'var(--text-muted)' }}>{session.distance_km}km</span>}
-              {!session.distance_km && session.duration_mins && <span style={{ color: 'var(--text-muted)' }}>{session.duration_mins}m</span>}
+              {!session.distance_km && session.duration_mins && <span style={{ color: 'var(--text-muted)' }}>{fmtDurationMins(Number(session.duration_mins))}</span>}
             </div>
           )
         })}
