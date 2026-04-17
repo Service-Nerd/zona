@@ -1,23 +1,53 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState<string | null>(null)
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState<string | null>(null)
+  const [mode, setMode]         = useState<'signin' | 'signup'>('signin')
+  const [email, setEmail]       = useState('')
+  const [password, setPassword] = useState('')
+  const [message, setMessage]   = useState<string | null>(null)
   const supabase = createClient()
+  const router   = useRouter()
 
   async function signInWithGoogle() {
-    setLoading(true)
-    setError(null)
+    setLoading(true); setError(null)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
     if (error) { setError(error.message); setLoading(false) }
+  }
+
+  async function handleEmail(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true); setError(null); setMessage(null)
+
+    if (mode === 'signin') {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) { setError(error.message); setLoading(false); return }
+      router.push('/dashboard')
+    } else {
+      const { error } = await supabase.auth.signUp({
+        email, password,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      })
+      if (error) { setError(error.message); setLoading(false); return }
+      setMessage('Account created — check your email to confirm, or sign in if confirmation is disabled.')
+      setLoading(false)
+    }
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', background: '#0B132B',
+    border: '0.5px solid #1e2e55', borderRadius: '10px',
+    padding: '12px 14px', color: '#F7F9FB',
+    fontFamily: "'Inter', sans-serif", fontSize: '14px',
+    outline: 'none', boxSizing: 'border-box',
   }
 
   return (
@@ -35,16 +65,12 @@ export default function LoginPage() {
             fontSize: '40px', fontWeight: 500,
             letterSpacing: '0.08em', color: '#5BC0BE',
             lineHeight: 1, marginBottom: '8px',
-          }}>
-            ZONA
-          </div>
+          }}>ZONA</div>
           <div style={{
             fontFamily: "'Inter', sans-serif",
             fontSize: '11px', color: '#3A506B',
             letterSpacing: '0.12em', textTransform: 'uppercase',
-          }}>
-            effort-first training
-          </div>
+          }}>effort-first training</div>
         </div>
 
         {/* Card */}
@@ -59,17 +85,14 @@ export default function LoginPage() {
             fontSize: '18px', fontWeight: 500,
             color: '#F7F9FB', marginBottom: '6px',
             letterSpacing: '-0.3px',
-          }}>
-            Sign in
-          </div>
+          }}>Sign in</div>
           <div style={{
             fontFamily: "'Inter', sans-serif",
             fontSize: '11px', color: '#3A506B',
             marginBottom: '24px', lineHeight: 1.6,
-          }}>
-            Use your Google account to access your plan.
-          </div>
+          }}>Access your training plan.</div>
 
+          {/* Google */}
           <button
             onClick={signInWithGoogle}
             disabled={loading}
@@ -99,6 +122,56 @@ export default function LoginPage() {
             {loading ? 'Redirecting...' : 'Continue with Google'}
           </button>
 
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '20px 0' }}>
+            <div style={{ flex: 1, height: '0.5px', background: '#1e2e55' }} />
+            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: '#3A506B', letterSpacing: '0.1em', textTransform: 'uppercase' }}>or</span>
+            <div style={{ flex: 1, height: '0.5px', background: '#1e2e55' }} />
+          </div>
+
+          {/* Mode toggle */}
+          <div style={{ display: 'flex', background: '#0B132B', borderRadius: '8px', padding: '3px', marginBottom: '16px' }}>
+            {(['signin', 'signup'] as const).map(m => (
+              <button key={m} onClick={() => { setMode(m); setError(null); setMessage(null) }} style={{
+                flex: 1, padding: '7px',
+                background: mode === m ? '#162040' : 'transparent',
+                border: mode === m ? '0.5px solid #1e2e55' : 'none',
+                borderRadius: '6px',
+                fontFamily: "'Inter', sans-serif", fontSize: '11px',
+                color: mode === m ? '#F7F9FB' : '#3A506B',
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+                cursor: 'pointer', transition: 'all 0.15s',
+              }}>
+                {m === 'signin' ? 'Sign in' : 'Sign up'}
+              </button>
+            ))}
+          </div>
+
+          {/* Email/password form */}
+          <form onSubmit={handleEmail} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <input
+              type="email" placeholder="Email" required
+              value={email} onChange={e => setEmail(e.target.value)}
+              style={inputStyle}
+            />
+            <input
+              type="password" placeholder="Password" required
+              value={password} onChange={e => setPassword(e.target.value)}
+              style={inputStyle}
+            />
+            <button type="submit" disabled={loading || !email || !password} style={{
+              width: '100%', padding: '13px',
+              background: '#5BC0BE', color: '#0B132B',
+              border: 'none', borderRadius: '10px',
+              fontFamily: "'Inter', sans-serif", fontSize: '14px', fontWeight: 500,
+              cursor: loading || !email || !password ? 'default' : 'pointer',
+              opacity: loading || !email || !password ? 0.5 : 1,
+              transition: 'opacity 0.15s',
+            }}>
+              {loading ? '...' : mode === 'signin' ? 'Sign in' : 'Create account'}
+            </button>
+          </form>
+
           {error && (
             <div style={{
               marginTop: '12px',
@@ -107,13 +180,21 @@ export default function LoginPage() {
               padding: '8px 12px',
               background: 'rgba(242,193,78,0.08)',
               borderRadius: '8px',
-            }}>
-              {error}
-            </div>
+            }}>{error}</div>
+          )}
+
+          {message && (
+            <div style={{
+              marginTop: '12px',
+              fontFamily: "'Inter', sans-serif",
+              fontSize: '11px', color: '#5BC0BE',
+              padding: '8px 12px',
+              background: 'rgba(91,192,190,0.08)',
+              borderRadius: '8px',
+            }}>{message}</div>
           )}
         </div>
 
-        {/* Footer */}
         <div style={{
           marginTop: '24px', textAlign: 'center',
           fontFamily: "'Inter', sans-serif",
