@@ -13,6 +13,7 @@
 |---------|-----------------------------------------------------------------|
 | R0–R15b | All complete. R15b = screen guide popups, localStorage, 4 screens |
 | R17 | RPE + Fatigue Tags, Progress bar |
+| R23 | Plan Generator — API route, multi-step form UI, schema, new user flow |
 
 ---
 
@@ -66,11 +67,12 @@ Required card hierarchy:
 - Plan reshapes around blockout days
 
 ### R23 — Plan Generator
-**Status:** 🔲 Not Started | **Tier:** FREE (templates) / PAID (full AI generator)
+**Status:** ✅ Shipped (R23b wizard UI still to do) | **Tier:** FREE (templates) / PAID (full AI generator)
 - FREE: Pre-built templates (5K/10K/HM, 8 & 12 week variants)
 - PAID: Full AI generator with user-editable athlete variables
 - Output = JSON always; never direct-to-DB
 - Creation and reshaping (R20) are separate flows, shared schema
+- API route + multi-step form shipped; new users land on Plan screen with Generate CTA
 
 ### R23b — Plan Generator Wizard UI
 **Status:** 🔲 Not Started | **Tier:** PAID
@@ -91,15 +93,7 @@ Required card hierarchy:
 |---------|-------|
 | Estimated race times | 5K/10K/HM/Marathon — data-driven; placeholder first |
 | Zone method selector | Stored in Supabase; user chooses HR zone calculation method |
-| Profile screen | Editable first name, last name, email on `user_settings` |
-
-**Profile screen migration:**
-```sql
-ALTER TABLE user_settings
-  ADD COLUMN IF NOT EXISTS first_name text,
-  ADD COLUMN IF NOT EXISTS last_name text,
-  ADD COLUMN IF NOT EXISTS email text;
-```
+| ~~Profile screen~~ | ✅ Shipped — first name, last name, email on `user_settings`; auto-populated from auth provider on first login |
 
 ---
 
