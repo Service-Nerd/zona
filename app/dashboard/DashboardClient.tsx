@@ -973,9 +973,10 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   const color = getTypeColor(session.type)
   const config = { color, label: TYPE_LABEL[session.type] ?? session.type }
 
-  // Per-session metric values
-  const estimatedDuration = session.duration ?? (session.distance ? `~${fmtDurationMins(Math.round(Number(session.distance) * 6.5))}` : null)
-  const estimatedDistance = session.distance ?? null
+  // Per-session metric values — session may come from TodayScreen (formatted) or raw plan object (unformatted)
+  const rawDuration = session.duration ?? (session.duration_mins != null ? fmtDurationMins(Number(session.duration_mins)) : null)
+  const estimatedDuration = rawDuration ?? (session.distance ?? session.distance_km ? `~${fmtDurationMins(Math.round(Number(session.distance ?? session.distance_km) * 6.5))}` : null)
+  const estimatedDistance = session.distance ?? session.distance_km ?? null
 
   return (
     <>
