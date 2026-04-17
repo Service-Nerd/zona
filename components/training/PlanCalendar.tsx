@@ -1,15 +1,33 @@
 'use client'
 
 import { useState } from 'react'
-import type { Week } from '@/types/plan'
+import type { Week, Session, StravaActivity } from '@/types/plan'
 import { createClient } from '@/lib/supabase/client'
-import { SESSION_COLORS, getSessionColor } from '@/lib/session-types'
+import { SESSION_COLORS } from '@/lib/session-types'
 
 interface Completion {
   session_day: string
   status: string
   strava_activity_name?: string
   strava_activity_km?: number
+}
+
+/** Session as it appears after override resolution — augmented with routing metadata. */
+type EffectiveSession = Session & { originalDay: string; isOverride?: boolean }
+
+/** Shape passed to onSessionTap — matches docs/contracts/components/plan-calendar.md */
+export interface SessionTapPayload {
+  key: string
+  day: string
+  title: string
+  detail: string
+  type: string
+  date: string
+  rawDate: string
+  today: boolean
+  completion: Completion | undefined
+  isPast: boolean
+  isFuture: boolean
 }
 
 const DOW_ORDER = ['mon','tue','wed','thu','fri','sat','sun']
@@ -35,19 +53,19 @@ function formatDateRange(weekStartDate: Date): string {
 
 const loadMoreStyle: React.CSSProperties = {
   width: '100%', padding: '10px', background: 'none',
-  border: '0.5px solid var(--border-col, #E2E8F0)',
+  border: '0.5px solid var(--border-col)',
   borderRadius: '10px', cursor: 'pointer',
-  fontFamily: "'Inter', sans-serif", fontSize: '11px',
-  color: 'var(--text-muted, #94A3B8)', letterSpacing: '0.06em', textTransform: 'uppercase',
+  fontFamily: 'var(--font-ui)', fontSize: '11px',
+  color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase',
 }
 
 interface Props {
   weeks: Week[]
-  stravaRuns: any[]
+  stravaRuns: StravaActivity[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
-  allCompletions: Record<number, Record<string, any>>
+  allCompletions: Record<number, Record<string, Completion>>
   onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
-  onSessionTap: (session: any, weekN: number, weekTheme: string) => void
+  onSessionTap: (session: SessionTapPayload, weekN: number, weekTheme: string) => void
 }
 
 export default function PlanCalendar({ weeks, stravaRuns, allOverrides, allCompletions, onOverrideChange, onSessionTap }: Props) {
@@ -116,34 +134,35 @@ export default function PlanCalendar({ weeks, stravaRuns, allOverrides, allCompl
 
 function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSessionTap, onMove }: {
   week: Week; weekNum: number; completions: Completion[]; overrides: { week_n: number; original_day: string; new_day: string }[]
-  stravaRuns: any[]
-  onSessionTap: (session: any, weekN: number, weekTheme: string) => void
+  stravaRuns: StravaActivity[]
+  onSessionTap: (session: SessionTapPayload, weekN: number, weekTheme: string) => void
   onMove: (weekN: number, originalDay: string, newDay: string, currentSlot: string) => void
 }) {
-  const ws = (week as any).sessions ?? {}
-  const weekStartDate = new Date((week as any).date)
+  const ws = week.sessions ?? {}
+  const weekStartDate = new Date(week.date)
   const weekDates = getWeekDates(weekStartDate)
-  const isCurrent = (week as any).type === 'current'
-  const isCompleted = (week as any).type === 'completed' || (week as any).type === 'deload_done'
-  const weekTheme = (week as any).theme ?? ''
+  const isCurrent = week.type === 'current'
+  const isCompleted = week.type === 'completed' || week.type === 'deload_done'
+  const weekTheme = week.theme ?? ''
   const now = new Date()
   const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][now.getDay()]
-  const todayStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
   const [movingDay, setMovingDay] = useState<string | null>(null)
 
-  const effectiveSessions: Record<string, any> = {}
+  const effectiveSessions: Record<string, EffectiveSession> = {}
   DOW_ORDER.forEach(key => {
-    if (!overrides.some(o => o.original_day === key) && ws[key]) {
-      effectiveSessions[key] = { ...ws[key], originalDay: key }
+    const session = ws[key as keyof typeof ws]
+    if (!overrides.some(o => o.original_day === key) && session) {
+      effectiveSessions[key] = { ...session, originalDay: key }
     }
   })
   overrides.forEach(o => {
-    if (ws[o.original_day]) {
-      effectiveSessions[o.new_day] = { ...ws[o.original_day], originalDay: o.original_day, isOverride: true }
+    const session = ws[o.original_day as keyof typeof ws]
+    if (session) {
+      effectiveSessions[o.new_day] = { ...session, originalDay: o.original_day, isOverride: true }
     }
   })
 
-  const intendedKm = (week as any).weekly_km ?? 0
+  const intendedKm = week.weekly_km ?? 0
   const completionMap: Record<string, Completion> = {}
   completions.forEach(c => { completionMap[c.session_day] = c })
   const actualKm = completions
@@ -166,10 +185,10 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
 
   return (
     <div style={{
-      background: 'var(--card-bg, #ffffff)',
+      background: 'var(--card-bg)',
       borderRadius: '14px',
-      border: `0.5px solid ${isCurrent ? 'rgba(91,192,190,0.4)' : 'var(--border-col, #E2E8F0)'}`,
-      borderLeft: isCurrent ? '3px solid #5BC0BE' : undefined,
+      border: `0.5px solid ${isCurrent ? 'var(--teal-mid)' : 'var(--border-col)'}`,
+      borderLeft: isCurrent ? '3px solid var(--accent)' : undefined,
       overflow: 'hidden',
       opacity: isCompleted ? 0.5 : 1,
     }}>
@@ -177,25 +196,25 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '12px 14px 10px',
-        borderBottom: '0.5px solid var(--border-col, #E2E8F0)',
-        background: isCurrent ? 'rgba(91,192,190,0.04)' : 'transparent',
+        borderBottom: '0.5px solid var(--border-col)',
+        background: isCurrent ? 'var(--teal-soft)' : 'transparent',
       }}>
         <div>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: isCurrent ? '#5BC0BE' : 'var(--text-muted, #94A3B8)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: isCurrent ? 'var(--accent)' : 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>
             W{weekNum} · {formatDateRange(weekStartDate)}
-            {movingDay && <span style={{ color: '#5BC0BE', marginLeft: '8px' }}>· tap a day to move session</span>}
+            {movingDay && <span style={{ color: 'var(--accent)', marginLeft: '8px' }}>· tap a day to move session</span>}
           </div>
-          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '13px', fontWeight: 500, color: isCompleted ? 'var(--text-muted, #94A3B8)' : 'var(--text-primary, #0B132B)' }}>
-            {(week as any).label ?? ''}
+          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '13px', fontWeight: 500, color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+            {week.label ?? ''}
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', justifyContent: 'flex-end' }}>
-            {actualKm > 0 && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: '#5BC0BE', fontWeight: 500 }}>{actualKm.toFixed(1)}</span>}
-            {actualKm > 0 && intendedKm > 0 && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted, #94A3B8)' }}>/</span>}
-            {intendedKm > 0 && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'var(--text-muted, #94A3B8)' }}>{intendedKm}km</span>}
+            {actualKm > 0 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', fontWeight: 500 }}>{actualKm.toFixed(1)}</span>}
+            {actualKm > 0 && intendedKm > 0 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)' }}>/</span>}
+            {intendedKm > 0 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)' }}>{intendedKm}km</span>}
           </div>
-          {actualKm > 0 && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted, #94A3B8)', textTransform: 'uppercase', marginTop: '1px' }}>done / target</div>}
+          {actualKm > 0 && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '1px' }}>done / target</div>}
         </div>
       </div>
 
@@ -256,11 +275,11 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
           onClick={() => setMovingDay(null)}
           style={{
             width: '100%', padding: '10px 14px',
-            background: 'rgba(91,192,190,0.06)',
-            border: 'none', borderTop: '0.5px solid rgba(91,192,190,0.2)',
+            background: 'var(--teal-soft)',
+            border: 'none', borderTop: '0.5px solid var(--teal-dim)',
             cursor: 'pointer',
-            fontFamily: "'Inter', sans-serif", fontSize: '11px',
-            color: '#5BC0BE', letterSpacing: '0.06em', textTransform: 'uppercase',
+            fontFamily: 'var(--font-ui)', fontSize: '11px',
+            color: 'var(--accent)', letterSpacing: '0.06em', textTransform: 'uppercase',
             textAlign: 'center',
           }}
         >
@@ -272,7 +291,7 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
 }
 
 function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isTarget, isMoveMode, isLast, onTap, onMoveIconTap }: {
-  dayKey: string; session: any; date: Date; isToday: boolean; isPast: boolean; isFuture: boolean
+  dayKey: string; session: EffectiveSession | undefined; date: Date; isToday: boolean; isPast: boolean; isFuture: boolean
   completion?: Completion; isMovable: boolean; isMoving: boolean; isTarget: boolean
   isMoveMode: boolean; isLast: boolean
   onTap: () => void; onMoveIconTap: () => void
@@ -281,7 +300,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
   const isSkipped  = completion?.status === 'skipped'
   const hasSession = !!session && session.type !== 'rest'
   const isRestType = !session || session.type === 'rest'
-  const accent = session ? (SESSION_COLORS[session.type] ?? 'var(--text-muted, #94A3B8)') : 'transparent'
+  const accent = session ? (SESSION_COLORS[session.type] ?? 'var(--text-muted)') : 'transparent'
 
   return (
     <div
@@ -289,15 +308,15 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
       style={{
         display: 'flex', alignItems: 'center',
         padding: '10px 14px',
-        borderBottom: isLast ? 'none' : '0.5px solid var(--border-col, #E2E8F0)',
+        borderBottom: isLast ? 'none' : '0.5px solid var(--border-col)',
         background: isMoving
-          ? 'rgba(91,192,190,0.08)'
+          ? 'var(--teal-soft)'
           : isTarget
-          ? 'rgba(91,192,190,0.04)'
+          ? 'var(--teal-soft)'
           : 'transparent',
         cursor: (hasSession || isTarget) ? 'pointer' : 'default',
         opacity: isMoving ? 0.7 : isMoveMode && !isTarget && !isMoving ? 0.4 : isSkipped ? 0.5 : isPast && !isComplete && hasSession ? 0.45 : 1,
-        outline: isTarget ? '1px dashed rgba(91,192,190,0.4)' : isMoving ? '1px solid rgba(91,192,190,0.5)' : 'none',
+        outline: isTarget ? '1px dashed var(--teal-dim)' : isMoving ? '1px solid var(--teal-mid)' : 'none',
         outlineOffset: '-1px',
         transition: 'background 0.15s, opacity 0.15s',
         userSelect: 'none',
@@ -305,56 +324,56 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
       } as React.CSSProperties}
     >
       <div style={{ width: '40px', flexShrink: 0 }}>
-        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: isToday ? '#5BC0BE' : 'var(--text-muted, #94A3B8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: isToday ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {DOW_FULL[dayKey]}
         </div>
-        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: isToday ? '#5BC0BE' : 'var(--text-muted, #94A3B8)', fontWeight: isToday ? 600 : 400, marginTop: '1px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: isToday ? 'var(--accent)' : 'var(--text-muted)', fontWeight: isToday ? 600 : 400, marginTop: '1px' }}>
           {date.getDate()}
         </div>
       </div>
 
       {isTarget ? (
-        <div style={{ width: '3px', height: '34px', borderRadius: '2px', background: 'rgba(91,192,190,0.5)', marginRight: '12px', flexShrink: 0 }} />
+        <div style={{ width: '3px', height: '34px', borderRadius: '2px', background: 'var(--teal-mid)', marginRight: '12px', flexShrink: 0 }} />
       ) : (
-        <div style={{ width: '3px', height: hasSession ? '34px' : '16px', borderRadius: '2px', background: isComplete ? '#5BC0BE' : isSkipped ? 'var(--border-col, #E2E8F0)' : isMoving ? '#5BC0BE' : accent, marginRight: '12px', flexShrink: 0 }} />
+        <div style={{ width: '3px', height: hasSession ? '34px' : '16px', borderRadius: '2px', background: isComplete ? 'var(--accent)' : isSkipped ? 'var(--border-col)' : isMoving ? 'var(--accent)' : accent, marginRight: '12px', flexShrink: 0 }} />
       )}
 
       <div style={{ flex: 1, minWidth: 0 }}>
         {isTarget ? (
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: '#5BC0BE', letterSpacing: '0.04em' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--accent)', letterSpacing: '0.04em' }}>
             Move here
           </div>
         ) : isRestType ? (
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted, #94A3B8)' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)' }}>
             {session?.label ?? 'Rest is the training.'}
           </div>
         ) : (
           <>
             <div style={{
               fontSize: '13px', fontWeight: 500,
-              color: isMoving ? '#5BC0BE' : isSkipped ? 'var(--text-muted, #94A3B8)' : isFuture ? 'var(--text-secondary, #3A506B)' : 'var(--text-primary, #0B132B)',
+              color: isMoving ? 'var(--accent)' : isSkipped ? 'var(--text-muted)' : isFuture ? 'var(--text-secondary)' : 'var(--text-primary)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
               {session.label ?? ''}
               {isMoving && <span style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.7 }}>moving...</span>}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', flexWrap: 'wrap' }}>
-              {session.detail && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted, #94A3B8)' }}>{session.detail}</span>}
+              {session.detail && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)' }}>{session.detail}</span>}
               {isComplete && completion?.strava_activity_name && (
-                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: '#FC4C02' }}>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--strava)' }}>
                   ● {completion.strava_activity_name}{completion.strava_activity_km ? ` · ${completion.strava_activity_km}km` : ''}
                 </span>
               )}
-              {isSkipped && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted, #94A3B8)' }}>skipped</span>}
+              {isSkipped && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)' }}>skipped</span>}
             </div>
           </>
         )}
       </div>
 
       <div style={{ flexShrink: 0, marginLeft: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        {isComplete && !isMoveMode && <span style={{ color: '#5BC0BE', fontSize: '14px' }}>✓</span>}
+        {isComplete && !isMoveMode && <span style={{ color: 'var(--accent)', fontSize: '14px' }}>✓</span>}
         {hasSession && !isComplete && !isSkipped && !isMoveMode && (
-          <span style={{ color: 'var(--text-muted, #94A3B8)', fontSize: '16px' }}>›</span>
+          <span style={{ color: 'var(--text-muted)', fontSize: '16px' }}>›</span>
         )}
         {isMovable && !isMoveMode && (
           <button
@@ -366,14 +385,14 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
             }}
           >
             {[0,1,2].map(i => (
-              <div key={i} style={{ width: '14px', height: '1.5px', background: 'var(--text-primary, #0B132B)', borderRadius: '1px' }} />
+              <div key={i} style={{ width: '14px', height: '1.5px', background: 'var(--text-primary)', borderRadius: '1px' }} />
             ))}
           </button>
         )}
         {isMoving && (
           <button
             onClick={e => { e.stopPropagation(); onMoveIconTap() }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5BC0BE', fontSize: '16px', padding: '2px' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: '16px', padding: '2px' }}
           >
             ✕
           </button>

@@ -19,31 +19,7 @@ const themeScript = `
     var t = localStorage.getItem('rts_theme') || 'light';
     var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     var isDark = t === 'dark' || (t === 'auto' && prefersDark);
-    var r = document.documentElement;
-    r.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    if (isDark) {
-      r.style.setProperty('--bg', '#0B132B');
-      r.style.setProperty('--card-bg', '#162040');
-      r.style.setProperty('--border-col', '#1e2e55');
-      r.style.setProperty('--text-primary', '#F7F9FB');
-      r.style.setProperty('--text-secondary', '#A0AEC0');
-      r.style.setProperty('--text-muted', '#3A506B');
-      r.style.setProperty('--nav-bg', '#0B132B');
-      r.style.setProperty('--accent', '#5BC0BE');
-      r.style.setProperty('--accent-amber', '#F2C14E');
-      r.style.setProperty('--input-bg', '#162040');
-    } else {
-      r.style.setProperty('--bg', '#F7F9FB');
-      r.style.setProperty('--card-bg', '#ffffff');
-      r.style.setProperty('--border-col', '#E2E8F0');
-      r.style.setProperty('--text-primary', '#0B132B');
-      r.style.setProperty('--text-secondary', '#3A506B');
-      r.style.setProperty('--text-muted', '#94A3B8');
-      r.style.setProperty('--nav-bg', '#F7F9FB');
-      r.style.setProperty('--accent', '#5BC0BE');
-      r.style.setProperty('--accent-amber', '#F2C14E');
-      r.style.setProperty('--input-bg', '#F7F9FB');
-    }
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
   } catch(e) {}
 })();
 `

@@ -35,6 +35,7 @@
 
   /* ── Semantic: amber (coaching, warnings) ───────────────────────── */
   --amber:             #F2C14E;
+  --accent-amber:      #F2C14E;   /* alias used by components — same value in both modes */
   --amber-soft:        rgba(242,193,78,0.12);
   --amber-mid:         rgba(242,193,78,0.35);
 
@@ -62,6 +63,7 @@
   --text-secondary:    #3A506B;
   --text-muted:        #94A3B8;
   --nav-bg:            #F7F9FB;
+  --input-bg:          #F7F9FB;
 
   /* ── Legacy aliases — keeps older component refs working ─────────── */
   --black:             #0B132B;
@@ -92,6 +94,7 @@
   --text-secondary:    #94A3B8;
   --text-muted:        #3A506B;
   --nav-bg:            #0B132B;
+  --input-bg:          #162040;
 
   --card:              var(--card-bg);
   --border:            var(--border-col);
