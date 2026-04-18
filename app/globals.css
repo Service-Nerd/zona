@@ -44,6 +44,18 @@
   --red:               #ff7777;
   --strava:            #FC4C02;
 
+  /* ── Session type colours (canonical — match session-types.ts) ───── */
+  --session-easy:      #4A90D9;   /* easy, run */
+  --session-long:      #7B68EE;   /* long */
+  --session-quality:   #F2C14E;   /* quality, tempo */
+  --session-intervals: #E05A5A;   /* intervals, hard */
+  --session-race:      #E8833A;   /* race */
+  --session-recovery:  #5BAD8C;   /* recovery */
+  --session-strength:  #3A506B;   /* strength */
+  --session-cross:     #5BC0BE;   /* cross-train */
+  --coral:             #E05A5A;   /* high-effort / RPE 9-10 */
+  --session-green:     #5BAD8C;   /* low-effort / RPE 1-3 */
+
   /* ── Typography ─────────────────────────────────────────────────── */
   --font-brand:        'Space Grotesk', sans-serif;
   --font-ui:           'Inter', sans-serif;

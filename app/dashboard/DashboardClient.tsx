@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import type { Plan, Week } from '@/types/plan'
 import PlanChart from '@/components/training/PlanChart'
 import PlanCalendar from '@/components/training/PlanCalendar'
+import CalendarOverlay from './CalendarOverlay'
 import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
 import { fetchPlanFromUrl, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex } from '@/lib/plan'
@@ -60,6 +61,27 @@ function IconStrava({ active }: { active: boolean }) {
   )
 }
 
+function IconMore({ active }: { active: boolean }) {
+  const c = active ? 'var(--accent)' : 'var(--text-muted)'
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="6"  cy="11" r="1.5" fill={c} />
+      <circle cx="11" cy="11" r="1.5" fill={c} />
+      <circle cx="16" cy="11" r="1.5" fill={c} />
+    </svg>
+  )
+}
+
+function IconMe({ active }: { active: boolean }) {
+  const c = active ? 'var(--accent)' : 'var(--text-muted)'
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="8" r="3.5" stroke={c} strokeWidth="1.2" />
+      <path d="M4 19c0-3.866 3.134-7 7-7h.5c3.866 0 7 3.134 7 7" stroke={c} strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 // ── Layout shell ──────────────────────────────────────────────────────────
 
 export default function DashboardClient() {
@@ -67,6 +89,7 @@ export default function DashboardClient() {
   const [showWelcome, setShowWelcome] = useState(false)
   const [screen, setScreen] = useState<Screen>('today')
   const [showMe, setShowMe] = useState(false)
+  const [showMore, setShowMore] = useState(false)
   const [activeSessionData, setActiveSessionData] = useState<any | null>(null)
   const [quitDays, setQuitDays] = useState<number | null>(null)
   const [smokeTrackerEnabled, setSmokeTrackerEnabled] = useState(false)
@@ -137,7 +160,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, first_name, last_name, email').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, first_name, last_name, email').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, rpe, fatigue_tag').eq('user_id', user.id),
         ])
@@ -155,13 +178,15 @@ export default function DashboardClient() {
         if (settingsRes.error) console.error('user_settings query failed:', settingsRes.error)
         const data = settingsRes.data
 
-        // Load plan from user's gist_url; new users go to the generator
+        // Load plan from user's gist_url or plan_json; new users go to the generator
         if (data?.gist_url) {
           const loadedPlan = await fetchPlanFromUrl(data.gist_url)
           setPlan(loadedPlan)
+        } else if (data?.plan_json) {
+          setPlan(data.plan_json as Plan)
         } else {
           setPlan(EMPTY_PLAN)
-          setScreen('plan')
+          setScreen('generate')
         }
 
         // Admin flag
@@ -351,6 +376,23 @@ export default function DashboardClient() {
     setScreen('today')
   }
 
+  async function handlePlanSaved(savedPlan: Plan) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('user_settings').upsert({
+        id: user.id,
+        plan_json: savedPlan,
+        updated_at: new Date().toISOString(),
+      })
+      setPlan(savedPlan)
+      setScreen('today')
+    } catch (err) {
+      console.error('Failed to save plan:', err)
+      throw err
+    }
+  }
+
   const currentWeekIndex = plan ? getCurrentWeekIndex(plan.weeks) : 0
   const [viewWeekIndex, setViewWeekIndex] = useState(0)
 
@@ -481,7 +523,7 @@ export default function DashboardClient() {
             onClick={dismissWelcome}
             style={{
               width: '100%', padding: '16px',
-              background: 'var(--accent)', color: '#fff',
+              background: 'var(--accent)', color: 'var(--zona-navy)',
               border: 'none', borderRadius: '14px',
               fontFamily: "'Inter', monospace", fontSize: '13px',
               letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -510,12 +552,12 @@ export default function DashboardClient() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           position: 'sticky', top: 0, zIndex: 2000,
         }}>
-          <div style={{ fontFamily: "'Inter', monospace", fontSize: '11px', color: '#fff', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontFamily: "'Inter', monospace", fontSize: '11px', color: 'var(--zona-navy)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             Viewing as {impersonating.name}
           </div>
           <button onClick={exitImpersonation} style={{
             background: 'rgba(0,0,0,0.2)', border: 'none', borderRadius: '6px',
-            color: '#fff', fontFamily: "'Inter', monospace", fontSize: '11px',
+            color: 'var(--zona-navy)', fontFamily: "'Inter', monospace", fontSize: '11px',
             letterSpacing: '0.06em', textTransform: 'uppercase', padding: '4px 10px',
             cursor: 'pointer',
           }}>
@@ -525,15 +567,16 @@ export default function DashboardClient() {
       )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} overridesReady={overridesReady} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} />}
-        {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} onOpenMe={() => setScreen('me')} initials={initials} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenCalendar={() => setScreen('calendar')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} onOpenGenerate={() => setScreen('generate')} />}
-        {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} onOpenMe={() => setScreen('me')} initials={initials} />}
-        {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} onOpenMe={() => setScreen('me')} initials={initials} />}
-        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} />}
+        {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} />}
+        {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} />}
+        {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} />}
+        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} />}
+        {/* CalendarOverlay hidden — entry point removed. Component lives in CalendarOverlay.tsx. */}
         {screen === 'calendar' && <CalendarOverlay plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onBack={() => setScreen('today')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(activeSessionData.fromCalendar ? 'calendar' : 'today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
-        {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen('plan')} />}
+        {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} />}
       </div>
 
       {/* Screen guide — first-load popup */}
@@ -541,58 +584,133 @@ export default function DashboardClient() {
         <ScreenGuide screen={guideScreen} onDismiss={() => setGuideScreen(null)} />
       )}
 
-      <div style={{
-        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-        width: '100%', maxWidth: '480px',
-        display: 'flex', alignItems: 'center',
-        background: 'var(--nav-bg)', borderTop: '0.5px solid var(--border-col)',
-        padding: '10px 0 max(16px, env(safe-area-inset-bottom))',
-        zIndex: 3000,
-      }}>
-        {(['today', 'plan', 'coach', 'strava'] as Screen[]).map(id => {
-          const labels: Record<Screen, string> = { today: 'Today', plan: 'Plan', coach: 'Coach', strava: 'Strava', me: 'Me', calendar: 'Calendar', session: 'Session', admin: 'Admin', generate: 'Generate' }
-          const active = screen === id
-          return (
-            <button key={id} onClick={() => {
-              setScreen(id)
-              const seen = getSeenGuides()
-              if (!seen.has(id)) setGuideScreen(id)
-            }} style={{
+      {/* ── More expansion panel ── */}
+      {showMore && (
+        <>
+          {/* Scrim — tap outside to close */}
+          <div
+            onClick={() => setShowMore(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 2998 }}
+          />
+          {/* Panel — slides up from just above nav */}
+          <div style={{
+            position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+            width: '100%', maxWidth: '480px',
+            paddingBottom: 'calc(max(16px, env(safe-area-inset-bottom)) + 66px)',
+            padding: '0 12px calc(max(16px, env(safe-area-inset-bottom)) + 66px)',
+            zIndex: 2999,
+            pointerEvents: 'none',
+          }}>
+            <div style={{
+              background: 'var(--card-bg)', borderRadius: '16px',
+              border: '0.5px solid var(--border-col)',
+              overflow: 'hidden',
+              boxShadow: '0 -8px 32px rgba(0,0,0,0.12)',
+              pointerEvents: 'auto',
+              animation: 'slideUp 0.22s cubic-bezier(0.32, 0.72, 0, 1)',
+            }}>
+              {([
+                { id: 'coach'  as Screen, label: 'Coach',   icon: (a: boolean) => <IconCoach  active={a} /> },
+                { id: 'strava' as Screen, label: 'Strava',  icon: (a: boolean) => <IconStrava active={a} /> },
+                { id: 'me'     as Screen, label: 'Profile', icon: (a: boolean) => <IconMe     active={a} /> },
+              ]).map(({ id, label, icon }, i) => {
+                const active = screen === id
+                return (
+                  <button
+                    key={id}
+                    onClick={() => {
+                      setScreen(id)
+                      setShowMore(false)
+                      const seen = getSeenGuides()
+                      if (!seen.has(id)) setGuideScreen(id)
+                    }}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: '14px',
+                      padding: '14px 18px',
+                      background: active ? 'var(--accent-soft)' : 'none',
+                      border: 'none',
+                      borderTop: i > 0 ? '0.5px solid var(--border-col)' : 'none',
+                      cursor: 'pointer', textAlign: 'left',
+                    }}
+                  >
+                    {icon(active)}
+                    <span style={{
+                      fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 500,
+                      color: active ? 'var(--accent)' : 'var(--text-primary)',
+                      flex: 1,
+                    }}>
+                      {label}
+                    </span>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M6 4l4 4-4 4" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Bottom nav bar ── */}
+      {(() => {
+        const moreActive = showMore || ['coach', 'strava', 'me'].includes(screen)
+        const navItems: { id: Screen; label: string; icon: (a: boolean) => React.ReactNode }[] = [
+          { id: 'today', label: 'Today', icon: (a) => <IconToday active={a} /> },
+          { id: 'plan',  label: 'Plan',  icon: (a) => <IconPlan  active={a} /> },
+        ]
+        return (
+          <div style={{
+            position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+            width: '100%', maxWidth: '480px',
+            display: 'flex', alignItems: 'center',
+            background: 'var(--nav-bg)', borderTop: '0.5px solid var(--border-col)',
+            padding: '10px 0 max(16px, env(safe-area-inset-bottom))',
+            zIndex: 3000,
+          }}>
+            {navItems.map(({ id, label, icon }) => {
+              const active = screen === id
+              return (
+                <button key={id} onClick={() => {
+                  setScreen(id)
+                  setShowMore(false)
+                  const seen = getSeenGuides()
+                  if (!seen.has(id)) setGuideScreen(id)
+                }} style={{
+                  flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                  background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
+                }}>
+                  {icon(active)}
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: active ? 'var(--accent)' : 'var(--text-muted)' }}>
+                    {label}
+                  </span>
+                </button>
+              )
+            })}
+            {/* More button */}
+            <button onClick={() => setShowMore(prev => !prev)} style={{
               flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
               background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
             }}>
-              {id === 'today'  && <IconToday  active={active} />}
-              {id === 'plan'   && <IconPlan   active={active} />}
-              {id === 'coach'  && <IconCoach  active={active} />}
-              {id === 'strava' && <IconStrava active={active} />}
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: active ? 'var(--accent)' : 'var(--text-muted)' }}>
-                {labels[id]}
+              <IconMore active={moreActive} />
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: moreActive ? 'var(--accent)' : 'var(--text-muted)' }}>
+                More
               </span>
             </button>
-          )
-        })}
-      </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
 
 // ── Shared header ─────────────────────────────────────────────────────────
 
-function ScreenHeader({ title, sub, initials, onOpenMe }: { title: string; sub?: string; initials: string; onOpenMe: () => void }) {
+function ScreenHeader({ title, sub }: { title: string; sub?: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '16px 16px 8px' }}>
-      <button onClick={onOpenMe} style={{
-        width: '34px', height: '34px', borderRadius: '50%', background: 'var(--accent)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)',
-        border: 'none', cursor: 'pointer', flexShrink: 0, marginTop: '2px',
-      }}>
-        {initials}
-      </button>
-      <div>
-        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '-0.3px' }}>{title}</div>
-        {sub && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '3px', letterSpacing: '0.04em' }}>{sub}</div>}
-      </div>
+    <div style={{ padding: '16px 16px 8px' }}>
+      <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '-0.3px' }}>{title}</div>
+      {sub && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '3px', letterSpacing: '0.04em' }}>{sub}</div>}
     </div>
   )
 }
@@ -722,7 +840,7 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
             onClick={dismiss}
             style={{
               width: '100%', padding: '16px',
-              background: 'var(--accent)', color: '#fff',
+              background: 'var(--accent)', color: 'var(--zona-navy)',
               border: 'none', borderRadius: '14px',
               fontFamily: "'Inter', sans-serif", fontSize: '13px',
               letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -773,15 +891,13 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   preferredUnits: 'km' | 'mi'; zone2Ceiling: number; preferredMetric?: 'distance' | 'duration'
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
 }) {
-  const [view, setView] = useState<'detail' | 'complete' | 'skip' | 'manual'>('detail')
+  const [view, setView] = useState<'detail' | 'complete' | 'skip'>('detail')
+  const [showManualModal, setShowManualModal] = useState(false)
   const [saving, setSaving] = useState(false)
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null)
   const [claimedIds, setClaimedIds] = useState<Set<number>>(new Set())
   const [loadingClaimed, setLoadingClaimed] = useState(false)
   const [guidance, setGuidance] = useState<any | null>(null)
-  const [manualDistance, setManualDistance] = useState('')
-  const [manualDuration, setManualDuration] = useState('')
-  const [manualNotes, setManualNotes] = useState('')
   const [rpe, setRpe] = useState<number | null>(null)
   const [fatigueTag, setFatigueTag] = useState<string | null>(null)
   const [savingRPE, setSavingRPE] = useState(false)
@@ -909,27 +1025,6 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
     } catch {} finally { setSaving(false) }
   }
 
-  async function saveManualRun() {
-    if (!manualDistance && !manualDuration) return
-    setSaving(true)
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const distKm = manualDistance ? parseFloat(manualDistance) : null
-      await supabase.from('session_completions').upsert({
-        user_id: user.id,
-        week_n: weekN,
-        session_day: session.key,
-        status: 'complete',
-        strava_activity_id: null,
-        strava_activity_name: manualNotes || `Manual log · ${manualDuration || ''}`,
-        strava_activity_km: distKm,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,week_n,session_day' })
-      onSaved?.()
-      onClose()
-    } catch {} finally { setSaving(false) }
-  }
 
   // Pace from session structured field → Strava aerobic pace → null (no hardcoded fallback)
   const paceBracket = session.pace_target
@@ -946,20 +1041,14 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   return (
     <>
       {/* ── TOP BLOCK ── */}
-      <div style={{ borderLeft: `5px solid ${config.color}`, padding: '14px 18px 16px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
+      <div style={{ padding: '14px 18px 16px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
         {/* Date + status */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.02em' }}>
             {session.day} · {session.date}
           </span>
-          {isComplete && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'rgba(91,192,190,0.1)', color: '#5BC0BE', border: '0.5px solid rgba(91,192,190,0.3)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>✓ Done</span>}
+          {isComplete && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'var(--accent-soft)', color: 'var(--teal)', border: '0.5px solid var(--teal-dim)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>✓ Done</span>}
           {isSkipped && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'rgba(80,80,80,0.08)', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Skipped</span>}
-        </div>
-        {/* Type chip */}
-        <div style={{ marginBottom: '14px' }}>
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', fontWeight: 500, color: config.color, letterSpacing: '0.08em', textTransform: 'uppercase', background: `${config.color}15`, borderRadius: '6px', padding: '4px 10px' }}>
-            {config.label}
-          </span>
         </div>
         {/* Metric grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -969,7 +1058,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {effectiveMetric === 'distance' ? 'Distance' : 'Duration'}
                 {isMetricCustom && (
-                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', background: 'rgba(242,193,78,0.15)', color: '#c49a2a', border: '0.5px solid rgba(242,193,78,0.4)', borderRadius: '4px', padding: '1px 5px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>custom</span>
+                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '9px', background: 'var(--amber-soft)', color: 'var(--amber)', border: '0.5px solid var(--amber-mid)', borderRadius: '4px', padding: '1px 5px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>custom</span>
                 )}
               </div>
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 500, color: config.color, lineHeight: 1, marginBottom: '6px' }}>
@@ -981,13 +1070,13 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               {/* Toggle */}
               <div style={{ display: 'flex', background: 'rgba(255,255,255,0.5)', borderRadius: '6px', padding: '2px', width: 'fit-content', border: '0.5px solid var(--border-col)' }}>
                 {(['distance', 'duration'] as const).map(m => (
-                  <button key={m} onClick={() => updateSessionMetric(m === effectiveMetric && isMetricCustom ? null : m)} style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', padding: '3px 9px', borderRadius: '4px', border: 'none', background: effectiveMetric === m ? config.color : 'none', color: effectiveMetric === m ? '#fff' : 'var(--text-muted)', cursor: 'pointer', fontWeight: 500, transition: 'all 0.15s' }}>
+                  <button key={m} onClick={() => updateSessionMetric(m === effectiveMetric && isMetricCustom ? null : m)} style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', padding: '3px 9px', borderRadius: '4px', border: 'none', background: effectiveMetric === m ? config.color : 'none', color: effectiveMetric === m ? 'var(--zona-navy)' : 'var(--text-muted)', cursor: 'pointer', fontWeight: 500, transition: 'all 0.15s' }}>
                     {m === 'distance' ? preferredUnits : 'min'}
                   </button>
                 ))}
               </div>
               {isMetricCustom && (
-                <button onClick={() => updateSessionMetric(null)} style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: '#c49a2a', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0 0', textDecoration: 'underline', textAlign: 'left' }}>
+                <button onClick={() => updateSessionMetric(null)} style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--amber)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0 0', textDecoration: 'underline', textAlign: 'left' }}>
                   Reset to global
                 </button>
               )}
@@ -1038,16 +1127,16 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           {/* ── MIDDLE BLOCK: session description ── */}
           {session.detail && (
             <div style={{ padding: '16px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Session</div>
-              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.65 }}>{session.detail}</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>What to do</div>
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>{session.detail}</div>
             </div>
           )}
 
-          {/* Week theme — compact, muted */}
+          {/* Week theme — readable, not footnote */}
           {weekTheme && (
             <div style={{ padding: '12px 18px', background: 'var(--bg)', borderBottom: '0.5px solid var(--border-col)' }}>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Week focus</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5, fontStyle: 'italic' }}>{weekTheme}</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '5px' }}>Week focus</div>
+              <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{weekTheme}</div>
             </div>
           )}
 
@@ -1091,21 +1180,28 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             </div>
           )}
 
-          {/* Action buttons */}
-          <div style={{ padding: '16px 18px 24px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {/* Action buttons — sticky to bottom of scroll container */}
+          <div style={{
+            position: 'sticky', bottom: 0,
+            padding: '12px 18px 16px',
+            background: 'var(--card-bg)',
+            borderTop: '0.5px solid var(--border-col)',
+            display: 'flex', gap: '8px', flexWrap: 'wrap',
+            borderRadius: '0 0 12px 12px',
+          }}>
             {(() => {
               const isRunType = ['easy', 'run', 'quality', 'race'].includes(session.type)
               if (session.isFuture && !isComplete && !isSkipped) {
                 return (
-                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #444)', textAlign: 'center', padding: '12px', width: '100%' }}>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '8px', width: '100%' }}>
                     Available to log on {session.date}
                   </div>
                 )
               }
               if (isComplete || isSkipped) {
                 return (
-                  <button onClick={() => isRunType ? setView('complete') : saveCompletion('complete')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer' }}>
-                    Update
+                  <button onClick={() => isRunType ? setView('complete') : saveCompletion('complete')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '13px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer', letterSpacing: '0.04em' }}>
+                    Update log
                   </button>
                 )
               }
@@ -1113,13 +1209,13 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 if (isRunType) {
                   return (
                     <>
-                      <button onClick={() => setView('complete')} style={{ flex: 1, minWidth: '120px', background: config.color, color: '#fff', border: 'none', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500 }}>
-                        Log with Strava
+                      <button onClick={() => setView('complete')} style={{ flex: 1, minWidth: '120px', background: config.color, color: 'var(--zona-navy)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600 }}>
+                        Match a Strava run
                       </button>
-                      <button onClick={() => setView('manual')} style={{ flex: 1, minWidth: '120px', background: 'var(--card-bg)', color: config.color, border: `1px solid ${config.color}`, borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500 }}>
+                      <button onClick={() => setShowManualModal(true)} style={{ flex: 1, minWidth: '100px', background: 'var(--card-bg)', color: config.color, border: `0.5px solid ${config.color}40`, borderRadius: '10px', padding: '13px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500 }}>
                         Log manually
                       </button>
-                      <button onClick={() => setView('skip')} style={{ width: '100%', background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '12px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                      <button onClick={() => setView('skip')} style={{ width: '100%', background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '11px', fontFamily: "'Inter', sans-serif", fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
                         Skip this session
                       </button>
                     </>
@@ -1127,10 +1223,10 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 } else {
                   return (
                     <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                      <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: config.color, color: '#fff', border: 'none', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500, opacity: saving ? 0.6 : 1 }}>
+                      <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: config.color, color: 'var(--zona-navy)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}>
                         {saving ? 'Saving...' : 'Mark as done'}
                       </button>
-                      <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                      <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '13px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
                         Skip
                       </button>
                     </div>
@@ -1143,46 +1239,62 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
 
           {/* ── HOW DID IT FEEL (shown when complete or skipped) ── */}
           {(isComplete || isSkipped) && (
-            <div style={{ background: 'var(--bg)', borderTop: '8px solid var(--border-col)', padding: '18px 18px 22px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '16px' }}>
-                <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif" }}>
+            <div style={{ padding: '18px 18px 8px', borderTop: '0.5px solid var(--border-col)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '18px' }}>
+                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>
                   How did it feel?
                 </div>
-                {savingRPE && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: config.color }}>saving…</span>}
+                {savingRPE && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)' }}>saving…</span>}
               </div>
 
-              {/* RPE */}
-              <div style={{ marginBottom: '18px' }}>
+              {/* RPE — tappable 1–10 buttons */}
+              <div style={{ marginBottom: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
                   <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Effort (RPE)</span>
                   {rpe != null && (
-                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '22px', fontWeight: 500, color: rpe <= 3 ? '#5BAD8C' : rpe <= 6 ? '#4A90D9' : rpe <= 8 ? '#F2C14E' : '#E05A5A', lineHeight: 1 }}>
+                    <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600, color: rpe <= 3 ? 'var(--session-green)' : rpe <= 6 ? 'var(--session-easy)' : rpe <= 8 ? 'var(--amber)' : 'var(--coral)', lineHeight: 1 }}>
                       {rpe}<span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400 }}>/10</span>
                     </span>
                   )}
                 </div>
-                <div style={{ height: '6px', background: 'var(--border-col)', borderRadius: '3px', overflow: 'hidden', marginBottom: '6px' }}>
-                  <div style={{ height: '100%', width: rpe ? `${rpe * 10}%` : '0%', background: rpe ? (rpe <= 3 ? '#5BAD8C' : rpe <= 6 ? '#4A90D9' : rpe <= 8 ? '#F2C14E' : '#E05A5A') : 'transparent', borderRadius: '3px', transition: 'width 0.2s, background 0.2s' }} />
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {[1,2,3,4,5,6,7,8,9,10].map(n => {
+                    const isActive = rpe === n
+                    const btnColor = n <= 3 ? 'var(--session-green)' : n <= 6 ? 'var(--session-easy)' : n <= 8 ? 'var(--amber)' : 'var(--coral)'
+                    return (
+                      <button
+                        key={n}
+                        onClick={() => { setRpe(n); saveRPEFatigue(n, fatigueTag) }}
+                        style={{
+                          flex: 1, aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontFamily: "'Inter', sans-serif", fontSize: '13px', fontWeight: isActive ? 700 : 400,
+                          borderRadius: '8px', border: `0.5px solid ${isActive ? btnColor : 'var(--border-col)'}`,
+                          background: isActive ? btnColor : 'var(--bg)',
+                          color: isActive ? 'var(--zona-navy)' : 'var(--text-muted)',
+                          cursor: 'pointer', transition: 'all 0.12s', padding: '0',
+                          minWidth: 0,
+                        }}
+                      >
+                        {n}
+                      </button>
+                    )
+                  })}
                 </div>
-                <input type="range" min={1} max={10} step={1} value={rpe ?? 5}
-                  onChange={e => { const val = parseInt(e.target.value); setRpe(val); saveRPEFatigue(val, fatigueTag) }}
-                  style={{ width: '100%', accentColor: config.color, cursor: 'pointer', marginBottom: '4px' }}
-                />
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)' }}>
-                  <span>Easy</span><span>Moderate</span><span>Max effort</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Inter', sans-serif", fontSize: '9px', color: 'var(--text-muted)', marginTop: '5px' }}>
+                  <span>Easy</span><span>Moderate</span><span>Max</span>
                 </div>
               </div>
 
               {/* Fatigue tags */}
-              <div>
+              <div style={{ marginBottom: '4px' }}>
                 <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Body feeling</div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {(['Fresh', 'Normal', 'Heavy', 'Cooked'] as const).map(tag => {
                     const isActive = fatigueTag === tag
-                    const tagColor = tag === 'Fresh' ? '#5BAD8C' : tag === 'Normal' ? '#4A90D9' : tag === 'Heavy' ? '#F2C14E' : '#E05A5A'
+                    const tagColor = tag === 'Fresh' ? 'var(--session-green)' : tag === 'Normal' ? 'var(--session-easy)' : tag === 'Heavy' ? 'var(--amber)' : 'var(--coral)'
                     return (
                       <button key={tag} onClick={() => { const next = isActive ? null : tag; setFatigueTag(next); saveRPEFatigue(rpe, next) }}
-                        style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', padding: '7px 16px', borderRadius: '20px', border: `1px solid ${isActive ? tagColor : 'var(--border-col)'}`, background: isActive ? `${tagColor}18` : 'var(--card-bg)', color: isActive ? tagColor : 'var(--text-muted)', cursor: 'pointer', fontWeight: isActive ? 500 : 400, transition: 'all 0.15s' }}>
+                        style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', padding: '8px 18px', borderRadius: '20px', border: `0.5px solid ${isActive ? tagColor : 'var(--border-col)'}`, background: isActive ? `${tagColor}18` : 'transparent', color: isActive ? tagColor : 'var(--text-muted)', cursor: 'pointer', fontWeight: isActive ? 500 : 400, transition: 'all 0.12s' }}>
                         {tag}
                       </button>
                     )
@@ -1198,9 +1310,9 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
       {view === 'complete' && (
         <div style={{ padding: '16px 18px 24px' }}>
           <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Link a Strava activity</div>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #666)', marginBottom: '8px' }}>Optional — select from recent runs</div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>Optional — select from recent runs</div>
           {loadingClaimed ? (
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #444)', padding: '12px 0' }}>Loading activities...</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0' }}>Loading activities...</div>
           ) : stravaRuns.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', maxHeight: '200px', overflowY: 'auto' }}>
               {stravaRuns.slice(0, 20).map((run: any) => {
@@ -1224,82 +1336,30 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               })}
             </div>
           ) : (
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted, #444)', padding: '12px 0', marginBottom: '8px' }}>No Strava activities found near this session date</div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0', marginBottom: '8px' }}>No Strava activities found near this session date</div>
           )}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer' }}>Back</button>
-            <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: config.color, color: '#fff', border: 'none', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500, opacity: saving ? 0.6 : 1 }}>
+            <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: config.color, color: 'var(--zona-navy)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Saving...' : 'Confirm complete'}
             </button>
           </div>
         </div>
       )}
 
-      {/* Manual log view */}
-      {view === 'manual' && (
-        <div style={{ padding: '16px 18px 24px' }}>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Log manually</div>
-
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Distance ({preferredUnits})</div>
-              <input
-                type="number"
-                inputMode="decimal"
-                placeholder={`e.g. ${preferredUnits === 'km' ? '8.5' : '5.3'}`}
-                value={manualDistance}
-                onChange={e => setManualDistance(e.target.value)}
-                style={{
-                  width: '100%', background: 'var(--bg)',
-                  border: '0.5px solid var(--border-col)', borderRadius: '8px',
-                  padding: '12px', color: 'var(--text-primary)',
-                  fontFamily: "'Inter', sans-serif", fontSize: '14px', outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Duration</div>
-              <input
-                type="text"
-                placeholder="e.g. 1:05:30"
-                value={manualDuration}
-                onChange={e => setManualDuration(e.target.value)}
-                style={{
-                  width: '100%', background: 'var(--bg)',
-                  border: '0.5px solid var(--border-col)', borderRadius: '8px',
-                  padding: '12px', color: 'var(--text-primary)',
-                  fontFamily: "'Inter', sans-serif", fontSize: '14px', outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              />
-            </div>
-          </div>
-
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Notes (optional)</div>
-            <textarea
-              placeholder="How did it go?"
-              value={manualNotes}
-              onChange={e => setManualNotes(e.target.value)}
-              rows={2}
-              style={{
-                width: '100%', background: 'var(--bg)',
-                border: '0.5px solid var(--border-col)', borderRadius: '8px',
-                padding: '12px', color: 'var(--text-primary)',
-                fontFamily: "'Space Grotesk',sans-serif", fontSize: '13px',
-                outline: 'none', resize: 'none', boxSizing: 'border-box',
-              }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', cursor: 'pointer' }}>Back</button>
-            <button onClick={saveManualRun} disabled={saving || (!manualDistance && !manualDuration)} style={{ flex: 2, background: config.color, color: '#fff', border: 'none', borderRadius: '12px', padding: '14px', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500, opacity: saving || (!manualDistance && !manualDuration) ? 0.5 : 1 }}>
-              {saving ? 'Saving...' : 'Save run'}
-            </button>
-          </div>
-        </div>
+      {/* ManualRunModal — opened from session screen, pre-filled with session context */}
+      {showManualModal && (
+        <ManualRunModal
+          weekN={weekN}
+          sessionKey={session.key}
+          preferredUnits={preferredUnits}
+          onClose={() => setShowManualModal(false)}
+          onSaved={() => { setShowManualModal(false); onSaved?.(); onClose() }}
+          sessionName={session.title}
+          sessionType={session.type}
+          plannedDistanceKm={session.distance_km ?? session.distance ?? undefined}
+          plannedDurationMins={session.duration_mins ? Number(session.duration_mins) : undefined}
+        />
       )}
 
       {/* Skip view */}
@@ -1348,7 +1408,7 @@ interface SessionEntry {
   coach_notes?: [string, string?, string?]
 }
 
-function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, totalWeeks, onWeekChange, onOpenCalendar }: {
+function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, totalWeeks, onWeekChange }: {
   sessions: SessionEntry[]
   completions: Record<string, any>
   selectedKey: string | null
@@ -1356,7 +1416,6 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
   weekIndex: number
   totalWeeks: number
   onWeekChange: (i: number) => void
-  onOpenCalendar: () => void
 }) {
   const sessionMap = Object.fromEntries(sessions.map(s => [s.displayKey, s]))
   const touchStartX = useRef<number | null>(null)
@@ -1366,7 +1425,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
     if (!s || s.type === 'rest') return null
     const comp = completions[s.key] // use originalDay for completion lookup
     if (comp?.status === 'complete') return 'var(--teal)'
-    if (comp?.status === 'skipped') return '#333'
+    if (comp?.status === 'skipped') return 'var(--text-muted)'
     return getSessionColor(s.type)
   }
 
@@ -1390,22 +1449,14 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px 8px' }}>
         <button
           onClick={() => weekIndex > 0 && onWeekChange(weekIndex - 1)}
-          style={{ background: 'none', border: 'none', color: weekIndex > 0 ? '#555' : '#222', fontSize: '18px', cursor: weekIndex > 0 ? 'pointer' : 'default', padding: 0, lineHeight: 1 }}
+          style={{ background: 'none', border: 'none', color: weekIndex > 0 ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '18px', cursor: weekIndex > 0 ? 'pointer' : 'default', padding: 0, lineHeight: 1 }}
         ><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
-        <button onClick={onOpenCalendar} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px' }}>
-          <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-            <rect x="1" y="2" width="12" height="11" rx="1.5" stroke="#555" strokeWidth="1.1"/>
-            <line x1="1" y1="5.5" x2="13" y2="5.5" stroke="#555" strokeWidth="1.1"/>
-            <line x1="4.5" y1="1" x2="4.5" y2="3.5" stroke="#555" strokeWidth="1.1" strokeLinecap="round"/>
-            <line x1="9.5" y1="1" x2="9.5" y2="3.5" stroke="#555" strokeWidth="1.1" strokeLinecap="round"/>
-          </svg>
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Week {weekIndex + 1} of {totalWeeks}
-          </span>
-        </button>
+        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+          Week {weekIndex + 1} of {totalWeeks}
+        </span>
         <button
           onClick={() => weekIndex < totalWeeks - 1 && onWeekChange(weekIndex + 1)}
-          style={{ background: 'none', border: 'none', color: weekIndex < totalWeeks - 1 ? '#555' : '#222', fontSize: '18px', cursor: weekIndex < totalWeeks - 1 ? 'pointer' : 'default', padding: 0, lineHeight: 1 }}
+          style={{ background: 'none', border: 'none', color: weekIndex < totalWeeks - 1 ? 'var(--text-secondary)' : 'var(--text-muted)', fontSize: '18px', cursor: weekIndex < totalWeeks - 1 ? 'pointer' : 'default', padding: 0, lineHeight: 1 }}
         >›</button>
       </div>
 
@@ -1448,17 +1499,20 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
               }}>
                 <span style={{
                   fontFamily: "'Inter', sans-serif", fontSize: '13px',
-                  color: isSelected ? '#fff' : isToday ? 'var(--accent)' : dateNum ? 'var(--text-muted)' : '#2a2a2a',
+                  color: isSelected ? 'var(--zona-navy)' : isToday ? 'var(--accent)' : dateNum ? 'var(--text-muted)' : 'var(--text-primary)',
                   fontWeight: isToday || isSelected ? 600 : 400,
                 }}>
                   {dateNum}
                 </span>
               </div>
 
-              {/* Session dot */}
+              {/* Session dot — larger for completed */}
               <div style={{
-                width: '4px', height: '4px', borderRadius: '50%',
+                width: dotColor === 'var(--teal)' ? '6px' : '4px',
+                height: dotColor === 'var(--teal)' ? '6px' : '4px',
+                borderRadius: '50%',
                 background: dotColor ?? 'transparent',
+                transition: 'width 0.1s, height 0.1s',
               }} />
             </button>
           )
@@ -1470,27 +1524,63 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
 
 // ── MANUAL RUN MODAL ─────────────────────────────────────────────────────
 
-function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }: {
+function rpeColour(n: number): string {
+  if (n <= 3) return 'var(--session-recovery)'
+  if (n <= 6) return 'var(--accent)'
+  if (n <= 8) return 'var(--amber)'
+  return 'var(--coral)'
+}
+
+function rpeLabel(n: number): string {
+  if (n <= 2) return 'Very easy. Barely working.'
+  if (n <= 4) return 'Comfortable. Zone 2 territory.'
+  if (n <= 6) return 'Moderate. You could still talk.'
+  if (n <= 8) return 'Hard. Breathing heavy.'
+  if (n <= 9) return 'Very hard. Lactate territory.'
+  return 'Maximum. Left nothing behind.'
+}
+
+function savedCopy(rpe: number | null): string {
+  if (rpe === null) return "Logged. That's in the books."
+  if (rpe <= 3) return "Easy day done. That's the zone."
+  if (rpe <= 5) return "Comfortable effort. Exactly right."
+  if (rpe <= 7) return "Solid work. Let the legs recover."
+  if (rpe <= 9) return "Hard session logged. Earn that rest."
+  return "Maximum effort. Now actually rest."
+}
+
+function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, sessionName, sessionType, plannedDistanceKm, plannedDurationMins }: {
   weekN: number
   sessionKey: string | null
   preferredUnits: 'km' | 'mi'
   onClose: () => void
   onSaved: () => void
+  sessionName?: string
+  sessionType?: string
+  plannedDistanceKm?: number
+  plannedDurationMins?: number
 }) {
-  const [distWhole, setDistWhole] = useState(5)
-  const [distDecimal, setDistDecimal] = useState(0)
-  const [hours, setHours] = useState(0)
-  const [minutes, setMinutes] = useState(30)
+  const initWhole   = plannedDistanceKm ? Math.floor(plannedDistanceKm) : 5
+  const initDecimal = plannedDistanceKm ? Math.round((plannedDistanceKm % 1) * 10) : 0
+  const initHours   = plannedDurationMins ? Math.floor(plannedDurationMins / 60) : 0
+  const initMinutes = plannedDurationMins ? plannedDurationMins % 60 : 30
+
+  const [distWhole, setDistWhole] = useState(initWhole)
+  const [distDecimal, setDistDecimal] = useState(initDecimal)
+  const [hours, setHours]   = useState(initHours)
+  const [minutes, setMinutes] = useState(initMinutes)
   const [seconds, setSeconds] = useState(0)
-  const [notes, setNotes] = useState('')
+  const [notes, setNotes]   = useState('')
+  const [rpe, setRpe]       = useState<number | null>(null)
+  const [fatigueTag, setFatigueTag] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [visible, setVisible] = useState(false)
+  const [savedStep, setSavedStep] = useState(false)
   const supabase = createClient()
 
-  useEffect(() => {
-    // Trigger slide-up animation on mount
-    requestAnimationFrame(() => setVisible(true))
-  }, [])
+  const sessionColour = sessionType ? getSessionColor(sessionType) : 'var(--teal)'
+
+  useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
 
   function handleClose() {
     setVisible(false)
@@ -1498,9 +1588,8 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
   }
 
   const todayKey = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()]
-
   const distanceStr = `${distWhole}.${distDecimal}`
-  const durationStr = `${hours > 0 ? hours + 'h ' : ''}${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`
+  const durationStr = `${hours > 0 ? hours + 'h ' : ''}${String(minutes).padStart(2, '0')}m${seconds > 0 ? ' ' + String(seconds).padStart(2, '0') + 's' : ''}`
   const hasData = distWhole > 0 || distDecimal > 0 || hours > 0 || minutes > 0 || seconds > 0
 
   async function save() {
@@ -1509,21 +1598,23 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const dist = parseFloat(distanceStr)
+      const dist  = parseFloat(distanceStr)
       const distKm = preferredUnits === 'mi' ? dist * 1.60934 : dist
-      const key = sessionKey ?? todayKey
+      const key   = sessionKey ?? todayKey
       await supabase.from('session_completions').upsert({
         user_id: user.id,
         week_n: weekN,
         session_day: key,
         status: 'complete',
         strava_activity_id: null,
-        strava_activity_name: notes || `Manual run · ${distanceStr}${preferredUnits} · ${durationStr}`,
+        strava_activity_name: notes || `Manual log · ${distanceStr}${preferredUnits} · ${durationStr}`,
         strava_activity_km: +distKm.toFixed(1),
+        rpe: rpe ?? null,
+        fatigue_tag: fatigueTag ?? null,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
-      setVisible(false)
-      setTimeout(onSaved, 300)
+      setSavedStep(true)
+      setTimeout(() => { setVisible(false); setTimeout(onSaved, 300) }, 1400)
     } catch {} finally { setSaving(false) }
   }
 
@@ -1533,14 +1624,6 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
     letterSpacing: '0.08em', marginBottom: '8px',
   }
 
-  const stepperBtn = (onClick: () => void, label: string): React.CSSProperties => ({
-    width: '36px', height: '36px', borderRadius: '8px',
-    background: 'var(--bg)', border: '0.5px solid var(--border-col)',
-    color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontFamily: "'Inter', sans-serif", flexShrink: 0,
-  })
-
   function Stepper({ label, value, min, max, step = 1, onChange, pad = false }: {
     label: string; value: number; min: number; max: number
     step?: number; onChange: (v: number) => void; pad?: boolean
@@ -1549,11 +1632,11 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', minWidth: 0 }}>
         <div style={labelStyle}>{label}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', justifyContent: 'center' }}>
-          <button onClick={() => onChange(Math.max(min, value - step))} style={{ width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0, background: 'var(--bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', sans-serif" }}>−</button>
+          <button onClick={() => onChange(Math.max(min, value - step))} style={{ width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0, background: 'var(--bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
           <div style={{ minWidth: '34px', textAlign: 'center', fontFamily: "'Inter', sans-serif", fontSize: '20px', fontWeight: 500, color: 'var(--text-primary)', flexShrink: 0 }}>
             {pad ? String(value).padStart(2, '0') : value}
           </div>
-          <button onClick={() => onChange(Math.min(max, value + step))} style={{ width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0, background: 'var(--bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', sans-serif" }}>+</button>
+          <button onClick={() => onChange(Math.min(max, value + step))} style={{ width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0, background: 'var(--bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
         </div>
       </div>
     )
@@ -1562,7 +1645,8 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, background: visible ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0)',
+        position: 'fixed', inset: 0,
+        background: visible ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0)',
         zIndex: 2000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         transition: 'background 0.3s',
       }}
@@ -1585,83 +1669,188 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved }:
           <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border-col)' }} />
         </div>
 
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-          <div>
-            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)' }}>Log a run</div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Manual entry · no Strava needed</div>
-          </div>
-          <button onClick={handleClose} style={{ background: 'rgba(0,0,0,0.06)', border: 'none', color: 'var(--text-muted)', fontSize: '16px', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
-        </div>
-
-        {/* Distance */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={labelStyle}>Distance ({preferredUnits})</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0', background: 'var(--bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
-            {/* Whole number */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px 8px' }}>
-              <button onClick={() => setDistWhole(Math.max(0, distWhole - 1))} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer' }}>−</button>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '28px', fontWeight: 500, color: 'var(--text-primary)', minWidth: '32px', textAlign: 'center' }}>{distWhole}</span>
-              <button onClick={() => setDistWhole(distWhole + 1)} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer' }}>+</button>
+        {/* ── SUCCESS STATE ── */}
+        {savedStep ? (
+          <div style={{ textAlign: 'center', padding: '24px 0 40px' }}>
+            <div style={{
+              width: '52px', height: '52px', borderRadius: '50%',
+              background: 'var(--teal-soft)', border: '1.5px solid var(--teal)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 16px',
+            }}>
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <path d="M4 11.5L9 16.5L18 6" stroke="var(--teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </div>
-            {/* Decimal separator */}
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '28px', fontWeight: 500, color: 'var(--text-muted)', padding: '0 4px' }}>.</div>
-            {/* Decimal */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px 8px' }}>
-              <button onClick={() => setDistDecimal(Math.max(0, distDecimal - 1))} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer' }}>−</button>
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '28px', fontWeight: 500, color: 'var(--text-primary)', minWidth: '16px', textAlign: 'center' }}>{distDecimal}</span>
-              <button onClick={() => setDistDecimal(Math.min(9, distDecimal + 1))} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer' }}>+</button>
+            <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '17px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
+              {savedCopy(rpe)}
+            </div>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'var(--text-muted)' }}>
+              {distanceStr}{preferredUnits} · {durationStr}
+              {rpe !== null && <span> · RPE {rpe}</span>}
             </div>
           </div>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textAlign: 'center' }}>{distanceStr} {preferredUnits}</div>
-        </div>
+        ) : (
+          <>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div>
+                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>Log a run</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Manual entry · no Strava needed
+                </div>
+              </div>
+              <button onClick={handleClose} style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-muted)', fontSize: '14px', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            </div>
 
-        {/* Duration — CSS grid keeps all 3 steppers fully on screen */}
-        <div style={{ marginBottom: '20px' }}>
-          <div style={labelStyle}>Duration</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 16px 1fr 16px 1fr', alignItems: 'start', width: '100%' }}>
-            <Stepper label="hrs" value={hours} min={0} max={12} onChange={setHours} />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '24px', color: 'var(--text-muted)', fontSize: '18px', fontFamily: "'Inter', sans-serif" }}>:</div>
-            <Stepper label="min" value={minutes} min={0} max={59} onChange={setMinutes} pad />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '24px', color: 'var(--text-muted)', fontSize: '18px', fontFamily: "'Inter', sans-serif" }}>:</div>
-            <Stepper label="sec" value={seconds} min={0} max={59} step={5} onChange={setSeconds} pad />
-          </div>
-        </div>
+            {/* Session context strip — shown when opened from a planned session */}
+            {sessionName && (
+              <div style={{
+                background: `color-mix(in srgb, ${sessionColour} 8%, transparent)`,
+                border: `0.5px solid color-mix(in srgb, ${sessionColour} 30%, transparent)`,
+                borderRadius: '10px', padding: '10px 14px', marginBottom: '20px',
+              }}>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: sessionColour, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '3px' }}>
+                  Planned
+                </div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>
+                  {sessionName}
+                </div>
+                {(plannedDistanceKm != null || plannedDurationMins != null) && (
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    {plannedDistanceKm != null ? `${plannedDistanceKm}${preferredUnits}` : ''}
+                    {plannedDistanceKm != null && plannedDurationMins != null ? ' · ' : ''}
+                    {plannedDurationMins != null ? fmtDurationMins(plannedDurationMins) : ''}
+                    {' '}<span style={{ opacity: 0.6 }}>— edit below if different</span>
+                  </div>
+                )}
+              </div>
+            )}
 
-        {/* Notes */}
-        <div style={{ marginBottom: '20px' }}>
-          <div style={labelStyle}>Notes (optional)</div>
-          <textarea
-            placeholder="How did it go?"
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            rows={2}
-            style={{
-              width: '100%', background: 'var(--bg)',
-              border: '0.5px solid var(--border-col)', borderRadius: '8px',
-              padding: '12px', color: 'var(--text-primary)',
-              fontFamily: "'Space Grotesk',sans-serif", fontSize: '13px',
-              outline: 'none', resize: 'none', boxSizing: 'border-box',
-            }}
-          />
-        </div>
+            {/* Distance */}
+            <div style={{ marginBottom: '24px' }}>
+              <div style={labelStyle}>Distance ({preferredUnits})</div>
+              <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px 8px' }}>
+                  <button onClick={() => setDistWhole(Math.max(0, distWhole - 1))} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer' }}>−</button>
+                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '28px', fontWeight: 500, color: 'var(--text-primary)', minWidth: '32px', textAlign: 'center' }}>{distWhole}</span>
+                  <button onClick={() => setDistWhole(distWhole + 1)} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer' }}>+</button>
+                </div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '28px', fontWeight: 500, color: 'var(--text-muted)', padding: '0 4px' }}>.</div>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px 8px' }}>
+                  <button onClick={() => setDistDecimal(Math.max(0, distDecimal - 1))} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer' }}>−</button>
+                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '28px', fontWeight: 500, color: 'var(--text-primary)', minWidth: '16px', textAlign: 'center' }}>{distDecimal}</span>
+                  <button onClick={() => setDistDecimal(Math.min(9, distDecimal + 1))} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer' }}>+</button>
+                </div>
+              </div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textAlign: 'center' }}>{distanceStr} {preferredUnits}</div>
+            </div>
 
-        {/* Save */}
-        <button
-          onClick={save}
-          disabled={saving}
-          style={{
-            width: '100%', padding: '16px',
-            background: 'var(--teal)', color: '#fff',
-            border: 'none', borderRadius: '14px',
-            fontFamily: "'Inter', sans-serif", fontSize: '13px',
-            letterSpacing: '0.08em', textTransform: 'uppercase',
-            cursor: 'pointer', fontWeight: 500,
-            opacity: saving ? 0.7 : 1,
-          }}
-        >
-          {saving ? 'Saving...' : `Save · ${distanceStr}${preferredUnits} · ${durationStr}`}
-        </button>
+            {/* Duration */}
+            <div style={{ marginBottom: '20px' }}>
+              <div style={labelStyle}>Duration</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 16px 1fr 16px 1fr', alignItems: 'start', width: '100%' }}>
+                <Stepper label="hrs" value={hours}   min={0} max={12} onChange={setHours} />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '24px', color: 'var(--text-muted)', fontSize: '18px' }}>:</div>
+                <Stepper label="min" value={minutes} min={0} max={59} onChange={setMinutes} pad />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '24px', color: 'var(--text-muted)', fontSize: '18px' }}>:</div>
+                <Stepper label="sec" value={seconds} min={0} max={59} step={5} onChange={setSeconds} pad />
+              </div>
+            </div>
+
+            {/* RPE */}
+            <div style={{ marginBottom: '16px' }}>
+              <div style={labelStyle}>How hard was it? <span style={{ textTransform: 'none', letterSpacing: 0, opacity: 0.6, fontSize: '10px' }}>optional</span></div>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                {[1,2,3,4,5,6,7,8,9,10].map(n => {
+                  const active = rpe === n
+                  const col = rpeColour(n)
+                  return (
+                    <button
+                      key={n}
+                      onClick={() => setRpe(active ? null : n)}
+                      style={{
+                        width: '34px', height: '34px', borderRadius: '8px',
+                        border: `0.5px solid ${active ? col : 'var(--border-col)'}`,
+                        background: active ? `color-mix(in srgb, ${col} 15%, transparent)` : 'none',
+                        color: active ? col : 'var(--text-secondary)',
+                        fontFamily: "'Inter', sans-serif", fontSize: '13px',
+                        fontWeight: active ? 600 : 400,
+                        cursor: 'pointer', transition: 'all 0.12s',
+                      }}
+                    >{n}</button>
+                  )
+                })}
+              </div>
+              {rpe !== null && (
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  {rpeLabel(rpe)}
+                </div>
+              )}
+            </div>
+
+            {/* Fatigue tags */}
+            <div style={{ marginBottom: '20px' }}>
+              <div style={labelStyle}>How do the legs feel? <span style={{ textTransform: 'none', letterSpacing: 0, opacity: 0.6, fontSize: '10px' }}>optional</span></div>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {(['Fresh', 'Fine', 'Heavy', 'Wrecked'] as const).map(tag => {
+                  const active = fatigueTag === tag
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => setFatigueTag(active ? null : tag)}
+                      style={{
+                        padding: '7px 14px', borderRadius: '8px',
+                        border: `0.5px solid ${active ? 'var(--accent)' : 'var(--border-col)'}`,
+                        background: active ? 'var(--accent-soft)' : 'none',
+                        color: active ? 'var(--accent)' : 'var(--text-secondary)',
+                        fontFamily: "'Inter', sans-serif", fontSize: '12px',
+                        cursor: 'pointer', transition: 'all 0.12s',
+                      }}
+                    >{tag}</button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div style={{ marginBottom: '20px' }}>
+              <div style={labelStyle}>Notes <span style={{ textTransform: 'none', letterSpacing: 0, opacity: 0.6, fontSize: '10px' }}>optional</span></div>
+              <textarea
+                placeholder="Anything worth remembering?"
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                rows={2}
+                style={{
+                  width: '100%', background: 'var(--bg)',
+                  border: '0.5px solid var(--border-col)', borderRadius: '8px',
+                  padding: '12px', color: 'var(--text-primary)',
+                  fontFamily: "'Inter', sans-serif", fontSize: '13px',
+                  outline: 'none', resize: 'none', boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            {/* Save */}
+            <button
+              onClick={save}
+              disabled={saving || !hasData}
+              style={{
+                width: '100%', padding: '16px',
+                background: hasData ? 'var(--teal)' : 'var(--teal-dim)',
+                color: hasData ? 'var(--zona-navy)' : 'var(--teal)',
+                border: 'none', borderRadius: '14px',
+                fontFamily: "'Space Grotesk', sans-serif", fontSize: '14px',
+                fontWeight: 600, letterSpacing: '-0.1px',
+                cursor: hasData ? 'pointer' : 'not-allowed',
+                opacity: saving ? 0.7 : 1,
+                transition: 'all 0.15s',
+              }}
+            >
+              {saving ? 'Saving…' : hasData ? `Save · ${distanceStr}${preferredUnits} · ${durationStr}` : 'Enter distance or duration'}
+            </button>
+          </>
+        )}
       </div>
     </div>
   )
@@ -1803,12 +1992,12 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
       opacity: isSkipped ? 0.6 : 1,
     }}>
       {/* Left accent bar */}
-      <div style={{ width: '5px', flexShrink: 0, background: isComplete ? '#5BC0BE' : isSkipped ? 'var(--border-col)' : accent }} />
+      <div style={{ width: '5px', flexShrink: 0, background: isComplete ? 'var(--teal)' : isSkipped ? 'var(--border-col)' : accent }} />
 
       <div style={{ flex: 1, minWidth: 0 }}>
         {/* Row 1: type label + date */}
         <div style={{ padding: '12px 14px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', fontWeight: 500, color: isComplete ? '#5BC0BE' : isSkipped ? 'var(--text-muted)' : accent, textTransform: 'uppercase', letterSpacing: '0.09em' }}>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', fontWeight: 500, color: isComplete ? 'var(--teal)' : isSkipped ? 'var(--text-muted)' : accent, textTransform: 'uppercase', letterSpacing: '0.09em' }}>
             {getSessionLabel(session.type)}
           </span>
           <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>
@@ -1842,7 +2031,7 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
                         fontFamily: "'Inter', sans-serif", fontSize: '9px', padding: '2px 7px',
                         borderRadius: '4px', border: 'none',
                         background: heroMetric === m ? accent : 'none',
-                        color: heroMetric === m ? '#fff' : 'var(--text-muted)',
+                        color: heroMetric === m ? 'var(--zona-navy)' : 'var(--text-muted)',
                         cursor: 'pointer', fontWeight: 500, lineHeight: 1.4,
                       }}>
                         {m === 'distance' ? (preferredUnits ?? 'km') : 'min'}
@@ -1875,17 +2064,17 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
         {/* Strava if complete */}
         {isComplete && completion?.strava_activity_name && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0 14px 10px' }}>
-            <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#FC4C02', flexShrink: 0 }} />
-            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: '#FC4C02' }}>{completion.strava_activity_name}</span>
+            <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--strava)', flexShrink: 0 }} />
+            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--strava)' }}>{completion.strava_activity_name}</span>
           </div>
         )}
 
         {/* Footer */}
         <div style={{ padding: '9px 14px', borderTop: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg)' }}>
-          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: isComplete ? '#5BC0BE' : isSkipped ? 'var(--text-muted)' : accent }}>
+          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: isComplete ? 'var(--teal)' : isSkipped ? 'var(--text-muted)' : accent }}>
             {isComplete ? 'View details' : isSkipped ? 'Update' : session.today ? 'Log this session' : 'View session'}
           </span>
-          {isComplete && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'rgba(91,192,190,0.1)', color: '#5BC0BE', border: '0.5px solid rgba(91,192,190,0.3)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>✓ Done</span>}
+          {isComplete && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'var(--teal-soft)', color: 'var(--teal)', border: '0.5px solid var(--teal-dim)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>✓ Done</span>}
           {isSkipped && <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', background: 'rgba(80,80,80,0.08)', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>Skipped</span>}
           {!isComplete && !isSkipped && <span style={{ color: 'var(--text-muted)', fontSize: '16px', lineHeight: 1 }}>›</span>}
         </div>
@@ -1896,9 +2085,42 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
 
 // ── REST DAY CARD ─────────────────────────────────────────────────────────
 
-function RestDayCard({ session, nextSession }: {
-  session: SessionEntry | null; nextSession: SessionEntry | null
+function getRestCopy(weekType?: string, weekPhase?: string, sessionType?: string): { label: string; headline: string; body: string } {
+  // Non-running session types
+  if (sessionType === 'strength') return { label: 'Strength today', headline: 'No running today.', body: "Legs get a pass. The gym work matters. Don't skip it thinking you're saving energy for the run." }
+  if (sessionType === 'cross') return { label: 'Cross-train today', headline: 'No running today.', body: 'Keep the effort aerobic. This counts. Your legs will thank you on the long run.' }
+
+  // Special week types take priority
+  if (weekType === 'race' || weekType === 'race_event') {
+    return { label: 'Race week', headline: "It's race week.", body: "Your legs need to forget how tired they were. One more run fixes nothing. Leave it." }
+  }
+  if (weekType === 'deload' || weekType === 'deload_done') {
+    return { label: 'Deload week', headline: "Deload week.", body: "You've been piling on the load. This is the week your body catches up. Don't ruin it with extra miles." }
+  }
+
+  // Phase-based rest copy
+  switch (weekPhase) {
+    case 'taper':
+      return { label: 'No run today', headline: 'Step away from the trainers.', body: "You've done the work. The fitness is locked in. Resting now is the last thing on the plan." }
+    case 'peak':
+      return { label: 'No run today', headline: "You're sharp enough.", body: "One more run won't make you fitter. This rest keeps you there. Trust it." }
+    case 'build':
+      return { label: 'No run today', headline: 'The work is done.', body: "The hard sessions are taxing your system. This is where adaptation happens. Sit down." }
+    case 'base':
+    default:
+      return { label: 'No run today', headline: 'Rest is the work.', body: "Aerobic fitness isn't built during the run. It's built in the recovery that follows. This day matters." }
+  }
+}
+
+function RestDayCard({ session, nextSession, weekPhase, weekType }: {
+  session: SessionEntry | null
+  nextSession: SessionEntry | null
+  weekPhase?: string
+  weekType?: string
 }) {
+  const isRestOrEmpty = !session || session.type === 'rest'
+  const copy = getRestCopy(weekType, weekPhase, isRestOrEmpty ? undefined : session?.type)
+
   return (
     <div style={{ margin: '12px 12px 0' }}>
       <div style={{
@@ -1906,15 +2128,13 @@ function RestDayCard({ session, nextSession }: {
         border: '0.5px solid var(--border-col)', padding: '20px 18px', marginBottom: '10px',
       }}>
         <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>
-          No run today
+          {copy.label}
         </div>
         <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.25, marginBottom: '8px', letterSpacing: '-0.3px' }}>
-          {session?.type === 'rest' || !session ? 'Rest is the work.' : session.title}
+          {copy.headline}
         </div>
         <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-          {session?.type === 'rest' || !session
-            ? "No session today. Adaptation happens here, not in the run."
-            : 'No running today. Keep it easy, stay off the legs.'}
+          {copy.body}
         </div>
       </div>
 
@@ -1941,284 +2161,27 @@ function RestDayCard({ session, nextSession }: {
 }
 
 // ── CALENDAR OVERLAY ──────────────────────────────────────────────────────
+// Moved to CalendarOverlay.tsx — imported at top of file.
+// To re-expose in the UI: add 'calendar' entry point back to TodayScreen header
+// and pass onOpenCalendar prop through DateStrip.
 
-function CalendarOverlay({ plan, stravaRuns, allOverrides, allCompletions, onBack, onOpenSession }: {
-  plan: Plan
-  stravaRuns: any[]
-  allOverrides: { week_n: number; original_day: string; new_day: string }[]
-  allCompletions: Record<number, Record<string, any>>
-  onBack: () => void
-  onOpenSession: (s: any) => void
-}) {
-  const [showPast, setShowPast] = useState(false)
-
-  const now = new Date()
-  const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][now.getDay()]
-  const todayStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-
-  // Find current week index
-  const currentWeekIndex = getCurrentWeekIndex(plan.weeks)
-
-  // Split weeks: past = before current, present+future = current onwards
-  const pastWeeks = plan.weeks.slice(0, currentWeekIndex).map((week, i) => ({ week, weekNum: i + 1 }))
-  const futureWeeks = plan.weeks.slice(currentWeekIndex).map((week, i) => ({ week, weekNum: currentWeekIndex + i + 1 }))
-
-  // Group into months
-  function groupByMonth(items: { week: any; weekNum: number }[]) {
-    const months: { label: string; weeks: { week: any; weekNum: number }[] }[] = []
-    items.forEach(({ week, weekNum }) => {
-      const weekDate = new Date((week as any).date)
-      const monthLabel = weekDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
-      const last = months[months.length - 1]
-      if (!last || last.label !== monthLabel) {
-        months.push({ label: monthLabel, weeks: [{ week, weekNum }] })
-      } else {
-        last.weeks.push({ week, weekNum })
-      }
-    })
-    return months
-  }
-
-  const pastMonths = groupByMonth(pastWeeks)
-  const futureMonths = groupByMonth(futureWeeks)
-
-  function getDotColor(type: string, completion?: any): string {
-    if (completion?.status === 'complete') return 'var(--teal)'
-    if (completion?.status === 'skipped') return '#2a2a2a'
-    return SESSION_COLORS[type] ?? 'transparent'
-  }
-
-  function renderWeekRow(week: any, weekNum: number) {
-    const ws = (week as any).sessions ?? {}
-    const weekStartDate = new Date((week as any).date)
-    const isCurrent = getCurrentWeek(plan.weeks) === week
-    const weekCompletions = allCompletions[weekNum] ?? {}
-
-    // Apply overrides for this week
-    const weekOverrides = allOverrides.filter(o => o.week_n === weekNum)
-    const effectiveWs: Record<string, any> = {}
-    DOW_ORDER.forEach(key => {
-      if (weekOverrides.some(o => o.original_day === key)) return
-      if (ws[key]) effectiveWs[key] = { ...ws[key], originalDay: key }
-    })
-    weekOverrides.forEach(o => {
-      if (ws[o.original_day]) effectiveWs[o.new_day] = { ...ws[o.original_day], originalDay: o.original_day }
-    })
-
-    return (
-      <div key={weekNum} style={{
-        display: 'grid', gridTemplateColumns: '40px repeat(7, 1fr)',
-        marginBottom: '4px',
-        background: isCurrent ? 'var(--accent-soft)' : 'transparent',
-        borderRadius: '8px',
-        border: isCurrent ? '0.5px solid var(--accent-dim)' : '0.5px solid transparent',
-        padding: '4px 0',
-      }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: "'Inter', sans-serif", fontSize: '10px',
-          color: isCurrent ? 'var(--accent)' : '#333',
-        }}>
-          W{weekNum}
-        </div>
-        {DOW_ORDER.map(key => {
-          const s = effectiveWs[key]
-          const originalDay = s?.originalDay ?? key
-          const d = new Date(weekStartDate)
-          d.setDate(d.getDate() + DAY_OFFSETS[key])
-          const displayDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-          const isToday = key === todayDow && isCurrent
-          const completion = weekCompletions[originalDay]
-          const dotColor = s && s.type !== 'rest' ? getDotColor(s.type, completion) : null
-          const isPast = d < now && !isToday
-          const isFuture = d > now && !isToday
-
-          return (
-            <button
-              key={key}
-              onClick={() => {
-                if (!s || s.type === 'rest') return
-                onOpenSession?.({
-                  key: originalDay, day: DOW_FULL[key],
-                  title: s.label ?? '', detail: s.detail ?? '',
-                  type: s.type, date: displayDate,
-                  rawDate: d.toISOString(), today: isToday,
-                  completion, isPast: isPast && !isToday, isFuture,
-                  fromCalendar: true,
-                })
-              }}
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                justifyContent: 'center', gap: '3px',
-                background: 'none', border: 'none',
-                cursor: s && s.type !== 'rest' ? 'pointer' : 'default',
-                padding: '4px 2px', borderRadius: '6px',
-                opacity: isPast && !completion && s && s.type !== 'rest' ? 0.35 : 1,
-              }}
-            >
-              <span style={{
-                fontFamily: "'Inter', sans-serif", fontSize: '12px',
-                color: isToday ? 'var(--accent)' : '#555',
-                fontWeight: isToday ? 600 : 400,
-                background: isToday ? 'var(--accent-soft)' : 'transparent',
-                borderRadius: '50%', width: '20px', height: '20px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {d.getDate()}
-              </span>
-              <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: dotColor ?? 'transparent' }} />
-            </button>
-          )
-        })}
-      </div>
-    )
-  }
-
-  const currentMonthLabel = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
-
-  function renderMonths(months: { label: string; weeks: { week: any; weekNum: number }[] }[]) {
-    return months.map(({ label, weeks }) => {
-      const isCurrent = label === currentMonthLabel
-      return (
-        <div key={label} style={{
-          background: 'var(--card-bg)',
-          borderRadius: '16px',
-          border: isCurrent ? '0.5px solid var(--accent-mid)' : '0.5px solid var(--border-col)',
-          overflow: 'hidden',
-          marginBottom: '10px',
-        }}>
-          <div style={{
-            fontFamily: "'Inter', sans-serif", fontSize: '10px',
-            color: isCurrent ? 'var(--accent)' : '#555',
-            letterSpacing: '0.1em', textTransform: 'uppercase',
-            padding: '12px 12px 6px',
-            borderBottom: '0.5px solid var(--border-col)',
-            display: 'flex', alignItems: 'center', gap: '8px',
-          }}>
-            {label}
-            {isCurrent && <span style={{ background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px', border: '0.5px solid var(--accent-mid)' }}>current</span>}
-          </div>
-          <div style={{ padding: '6px 8px 8px' }}>
-            {weeks.map(({ week, weekNum }) => renderWeekRow(week, weekNum))}
-          </div>
-        </div>
-      )
-    })
-  }
-
-  // Find week number for a session popup
-  function getWeekNumForDate(rawDate: string): number {
-    const d = new Date(rawDate)
-    const idx = plan.weeks.findIndex((w: any) => {
-      const ws = new Date((w as any).date)
-      return d >= ws && d < new Date(ws.getTime() + 7 * 86400000)
-    })
-    return idx + 1
-  }
-
-  return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto' }}>
-      {/* Header */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '16px 16px 8px',
-        borderBottom: '0.5px solid var(--border-col)',
-        position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
-          <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '-0.3px' }}>
-            Plan
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {[{ color: 'var(--blue)', label: 'Easy' }, { color: 'var(--accent)', label: 'Run' }, { color: 'var(--teal)', label: 'Done' }].map(({ color, label }) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-              <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: color }} />
-              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)' }}>{label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Day header row — sticky below title */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: '40px repeat(7, 1fr)',
-        padding: '8px 12px 4px',
-        position: 'sticky', top: '53px', background: 'var(--bg)', zIndex: 9,
-        borderBottom: '0.5px solid var(--border-col)',
-      }}>
-        <div />
-        {DOW_ORDER.map(key => (
-          <div key={key} style={{ textAlign: 'center', fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            {DOW_LETTER[key]}
-          </div>
-        ))}
-      </div>
-
-      <div style={{ padding: '0 12px 32px' }}>
-
-        {/* Load past — always visible at top */}
-        {pastWeeks.length > 0 && (
-          <div style={{ padding: '12px 0 4px' }}>
-            {showPast ? (
-              <>
-                {renderMonths(pastMonths)}
-                <button
-                  onClick={() => setShowPast(false)}
-                  style={{
-                    width: '100%', padding: '12px',
-                    background: 'none', border: '0.5px solid var(--border-col)',
-                    borderRadius: '8px', cursor: 'pointer',
-                    fontFamily: "'Inter', sans-serif", fontSize: '12px',
-                    color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase',
-                    marginBottom: '8px',
-                  }}
-                >
-                  ↑ Hide past weeks
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setShowPast(true)}
-                style={{
-                  width: '100%', padding: '12px',
-                  background: 'none', border: '0.5px solid var(--border-col)',
-                  borderRadius: '8px', cursor: 'pointer',
-                  fontFamily: "'Inter', sans-serif", fontSize: '12px',
-                  color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase',
-                }}
-              >
-                ↑ Load {pastWeeks.length} past week{pastWeeks.length !== 1 ? 's' : ''}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Current + future months */}
-        {renderMonths(futureMonths)}
-      </div>
-
-
-    </div>
-  )
-}
+// CalendarOverlay moved to CalendarOverlay.tsx — imported at top of file.
 
 // ── TODAY SCREEN ──────────────────────────────────────────────────────────
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, daysTo50k, raceName, preferredMetric, stravaRuns, onOpenMe, initials, allOverrides, overridesReady, onOpenCalendar, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, daysTo50k, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, firstName }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; daysTo50k: number; raceName: string; preferredMetric: 'distance' | 'duration'
-  stravaRuns: any[]; onOpenMe: () => void; initials: string
+  stravaRuns: any[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   overridesReady: boolean
-  onOpenCalendar?: () => void
   onOpenSession?: (s: any) => void
   allCompletions: Record<number, Record<string, any>>
   preferredUnits: 'km' | 'mi'
   zone2Ceiling: number
   onManualSaved?: () => void
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
+  firstName?: string
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
@@ -2341,37 +2304,38 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
   const weekTheme = (currentWeek as any).theme ?? ''
 
+  if (!overridesReady) return (
+    <div style={{ paddingBottom: '8px' }}>
+      <div style={{ padding: '16px 16px 6px' }}>
+        <div style={{ width: '180px', height: '28px', borderRadius: '6px', background: 'var(--border-col)', marginBottom: '8px' }} />
+        <div style={{ width: '100px', height: '14px', borderRadius: '4px', background: 'var(--border-col)' }} />
+      </div>
+      <div style={{ margin: '12px', height: '60px', borderRadius: '12px', background: 'var(--border-col)' }} />
+      <div style={{ margin: '12px', height: '120px', borderRadius: '14px', background: 'var(--border-col)' }} />
+    </div>
+  )
+
   return (
     <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{ paddingBottom: '8px' }}>
 
-      {/* Minimal today header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px 8px' }}>
-        {/* Me avatar — left */}
-        <button onClick={onOpenMe} style={{
-          width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: "'Inter', sans-serif", fontSize: '12px', fontWeight: 500, color: 'var(--text-primary)',
-          border: 'none', cursor: 'pointer', flexShrink: 0,
-        }}>
-          {initials}
-        </button>
-        {/* Brand slug — centre */}
-        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 500, color: 'var(--accent)', letterSpacing: '0.06em' }}>
-          ZONA
+      {/* Date + plan context header */}
+      <div style={{ padding: '16px 16px 6px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.4px', lineHeight: 1.1 }}>
+            {now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
+          </div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '0.02em' }}>
+            {firstName ? `${firstName} · ` : ''}{(currentWeek as any).label || `Week ${weekNum} of ${totalWeeks}`}
+          </div>
         </div>
-        {/* Calendar icon — right */}
-        <button onClick={() => onOpenCalendar?.()} style={{
-          width: '32px', height: '32px', borderRadius: '8px',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'none', border: '0.5px solid #222', cursor: 'pointer', flexShrink: 0,
-        }}>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <rect x="1.5" y="2.5" width="13" height="12" rx="1.5" stroke="#555" strokeWidth="1.1"/>
-            <line x1="1.5" y1="6.5" x2="14.5" y2="6.5" stroke="#555" strokeWidth="1.1"/>
-            <line x1="5" y1="1" x2="5" y2="4" stroke="#555" strokeWidth="1.1" strokeLinecap="round"/>
-            <line x1="11" y1="1" x2="11" y2="4" stroke="#555" strokeWidth="1.1" strokeLinecap="round"/>
-          </svg>
-        </button>
+        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1, letterSpacing: '-0.5px' }}>
+            {daysToRace}
+          </div>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            days left
+          </div>
+        </div>
       </div>
 
       <DateStrip
@@ -2382,10 +2346,17 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         weekIndex={weekIndex}
         totalWeeks={totalWeeks}
         onWeekChange={onWeekChange}
-        onOpenCalendar={() => onOpenCalendar?.()}
       />
 
 
+
+      {/* Week focus — above the session hero */}
+      {weekTheme && (
+        <div style={{ margin: '10px 12px 0', padding: '12px 14px', background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)' }}>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>Week focus</div>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.5 }}>{weekTheme}</div>
+        </div>
+      )}
 
       {showSessionHero && selectedSession ? (
         <SessionHero
@@ -2413,33 +2384,38 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           }}
         />
       ) : (
-        <RestDayCard session={selectedSession} nextSession={nextRunSession} />
+        <RestDayCard
+          session={selectedSession}
+          nextSession={nextRunSession}
+          weekPhase={(currentWeek as any).phase}
+          weekType={(currentWeek as any).type}
+        />
       )}
 
-      {/* Manual log button — more prominent */}
-      <button
-        onClick={() => setShowManualLog(true)}
-        style={{
-          margin: '12px 12px 0', width: 'calc(100% - 24px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-          background: 'var(--accent)',
-          border: 'none',
-          borderRadius: '14px', padding: '15px',
-          fontFamily: "'Inter', sans-serif", fontSize: '12px',
-          color: '#fff', letterSpacing: '0.08em',
-          textTransform: 'uppercase', cursor: 'pointer',
-          fontWeight: 500,
-          boxShadow: '0 2px 12px var(--accent-mid)',
-        }}
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <line x1="8" y1="2" x2="8" y2="14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-          <line x1="2" y1="8" x2="14" y2="8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-        </svg>
-        Log a run manually
-      </button>
+      {/* Manual log — elevated when no Strava connected, secondary otherwise */}
+      {selectedSession && (selectedSession.today || selectedSession.rawDate < now) && (
+        <button
+          onClick={() => setShowManualLog(true)}
+          style={{
+            margin: '10px 12px 0', width: 'calc(100% - 24px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            background: stravaRuns.length === 0 ? 'var(--accent-soft)' : 'none',
+            border: `0.5px solid ${stravaRuns.length === 0 ? 'var(--accent)' : 'var(--border-col)'}`,
+            borderRadius: '10px', padding: '11px',
+            fontFamily: "'Inter', sans-serif", fontSize: '12px',
+            color: stravaRuns.length === 0 ? 'var(--accent)' : 'var(--text-muted)',
+            letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+            <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+          </svg>
+          Log a run manually
+        </button>
+      )}
 
-      {/* Manual log modal */}
+      {/* Manual log modal — pre-filled from selected session */}
       {showManualLog && (
         <ManualRunModal
           weekN={weekNum}
@@ -2447,37 +2423,26 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           preferredUnits={preferredUnits}
           onClose={() => setShowManualLog(false)}
           onSaved={() => { setShowManualLog(false); onManualSaved?.() }}
+          sessionName={selectedSession?.title}
+          sessionType={selectedSession?.type}
+          plannedDistanceKm={selectedSession?.distance}
         />
       )}
 
-
-
-      {/* Week focus */}
-      {weekTheme && (
-        <div style={{ margin: '10px 12px 0', padding: '10px 14px', background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)' }}>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '3px' }}>Week focus</div>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{weekTheme}</div>
+      {/* Secondary stats row */}
+      {(daysTo50k > 0 || (smokeTrackerEnabled && quitDays !== null)) && (
+        <div style={{ margin: '10px 12px 0', display: 'flex', gap: '8px' }}>
+          {[
+            { num: daysTo50k, label: 'To 50k checkpoint', show: daysTo50k > 0 },
+            ...(smokeTrackerEnabled && quitDays !== null ? [{ num: quitDays, label: 'Smoke-free days', show: true }] : []),
+          ].filter(s => s.show).map((s, i) => (
+            <div key={i} style={{ flex: 1, background: 'var(--card-bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
+              <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1 }}>{s.num}</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', marginTop: '3px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{s.label}</div>
+            </div>
+          ))}
         </div>
       )}
-
-      {/* Race countdown */}
-      <SectionLabel>Race countdown</SectionLabel>
-      <div style={{ display: 'flex', gap: '8px', padding: '0 12px', marginBottom: '10px' }}>
-        {[
-          { num: String(daysToRace), unit: 'days', label: `To ${raceName}` },
-          { num: String(daysTo50k), unit: 'days', label: 'To 50k' },
-          ...(smokeTrackerEnabled && quitDays !== null ? [{ num: String(quitDays), unit: 'days', label: 'Smoke-free' }] : []),
-        ].map((s, i) => (
-          <div key={i} style={{ flex: 1, background: 'var(--card-bg)', borderRadius: '12px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
-            <div>
-              <span style={{ fontSize: '20px', color: 'var(--text-primary)', fontWeight: 500 }}>{s.num}</span>
-              <span style={{ fontSize: '13px', color: 'var(--accent)', fontWeight: 500 }}> {s.unit}</span>
-            </div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', textTransform: 'uppercase' }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
-
 
     </div>
   )
@@ -2513,50 +2478,60 @@ function PlanProgressBar({ plan, allCompletions }: { plan: Plan; allCompletions:
   if (totalSessions === 0) return null
 
   return (
-    <div style={{ padding: '0 12px 16px' }}>
+    <div style={{ padding: '10px 16px 14px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
-        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Plan progress</div>
-        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--teal)', fontWeight: 500 }}>{pct}%</div>
+        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          {doneSessions} of {totalSessions} sessions complete
+        </div>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '13px', color: 'var(--teal)', fontWeight: 600 }}>{pct}%</div>
       </div>
-      <div style={{ height: '6px', borderRadius: '3px', background: 'var(--border-col)', overflow: 'hidden' }}>
+      <div style={{ height: '4px', borderRadius: '2px', background: 'var(--border-col)', overflow: 'hidden' }}>
         <div style={{
           height: '100%',
           width: `${pct}%`,
-          borderRadius: '3px',
-          background: pct === 100 ? 'var(--teal)' : `linear-gradient(90deg, var(--teal) ${pct < 20 ? '100%' : '80%'}, var(--accent))`,
-          transition: 'width 0.4s ease',
+          borderRadius: '2px',
+          background: 'var(--teal)',
+          transition: 'width 0.5s ease',
         }} />
       </div>
     </div>
   )
 }
 
-function PlanScreen({ plan, stravaRuns, onOpenMe, initials, allOverrides, allCompletions, onOverrideChange, onOpenCalendar, onOpenSession, onOpenGenerate }: {
-  plan: Plan; stravaRuns: any[]; onOpenMe: () => void; initials: string
+function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady }: {
+  plan: Plan; stravaRuns: any[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   allCompletions: Record<number, Record<string, any>>
   onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
-  onOpenCalendar?: () => void
   onOpenSession?: (s: any) => void
-  onOpenGenerate?: () => void
+  overridesReady: boolean
 }) {
+  const currentWeekIndex = getCurrentWeekIndex(plan.weeks)
+  const weekNum = currentWeekIndex + 1
+  const totalWeeks = plan.weeks.length
+  const raceName = (plan as any)?.meta?.race_name ?? 'Race to the Stones'
+  const raceDate = (plan as any)?.meta?.race_date ? new Date((plan as any).meta.race_date) : new Date('2026-07-11')
+  const raceDateStr = raceDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+
   return (
     <div>
-      <ScreenHeader title="Plan" sub="Race to the Stones · 11 Jul 2026" initials={initials} onOpenMe={onOpenMe} />
-      <div style={{ padding: '0 12px' }}>
-        <PlanChart weeks={plan.weeks} />
-        <button onClick={onOpenGenerate} style={{
-          display: 'block', width: '100%', marginTop: '12px', marginBottom: '4px',
-          padding: '12px', borderRadius: '10px', border: 'none', cursor: 'pointer',
-          background: 'var(--accent)', color: '#fff',
-          fontFamily: "'Inter', sans-serif", fontSize: '14px', fontWeight: 600,
-          letterSpacing: '0.02em',
-        }}>
-          Generate a new plan
-        </button>
+      {/* Race context header — replaces generic "Plan" label */}
+      <div style={{ padding: '16px 16px 4px' }}>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.4px', lineHeight: 1.1 }}>
+          {raceName}
+        </div>
+        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '0.02em' }}>
+          {raceDateStr} · Week {weekNum} of {totalWeeks}
+        </div>
       </div>
 
+      {/* Progress — anchored to header, not floating */}
       <PlanProgressBar plan={plan} allCompletions={allCompletions} />
+
+      {/* Load chart */}
+      <div style={{ padding: '0 12px 12px' }}>
+        <PlanChart weeks={plan.weeks} />
+      </div>
 
       <PlanCalendar
         weeks={plan.weeks}
@@ -2564,6 +2539,7 @@ function PlanScreen({ plan, stravaRuns, onOpenMe, initials, allOverrides, allCom
         allOverrides={allOverrides}
         allCompletions={allCompletions}
         onOverrideChange={onOverrideChange}
+        overridesReady={overridesReady}
         onSessionTap={(session, weekN, weekTheme) => {
           onOpenSession?.({ ...session, weekN, weekTheme })
         }}
@@ -2574,8 +2550,8 @@ function PlanScreen({ plan, stravaRuns, onOpenMe, initials, allOverrides, allCom
 
 // ── COACH SCREEN ──────────────────────────────────────────────────────────
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, onOpenMe, initials }: {
-  plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean; onOpenMe: () => void; initials: string
+function CoachScreen({ plan, currentWeek, runs, stravaLoading }: {
+  plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
 }) {
   const [analysis, setAnalysis] = useState<string | null>(null)
   const [loading, setLoading]   = useState(false)
@@ -2657,7 +2633,7 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
 
   return (
     <div>
-      <ScreenHeader title="Coach" sub={`W${weekNum} · ${(currentWeek as any).label ?? 'Build phase'}`} initials={initials} onOpenMe={onOpenMe} />
+      <ScreenHeader title="Coach" sub={`W${weekNum} · ${(currentWeek as any).label ?? 'Build phase'}`} />
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
         {(stravaLoading || latestRun) && (
@@ -2716,7 +2692,7 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
         {analysis && !loading && (
           <>
             <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
-              <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid #111', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
                 <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Coaching notes</span>
                 <span style={{ marginLeft: 'auto', fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)' }}>W{weekNum}/{totalWeeks}</span>
@@ -2750,12 +2726,12 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
 
 // ── STRAVA SCREEN ─────────────────────────────────────────────────────────
 
-function StravaScreen({ runs, loading, connected, onOpenMe, initials }: {
-  runs: any[] | null; loading: boolean; connected: boolean; onOpenMe: () => void; initials: string
+function StravaScreen({ runs, loading, connected }: {
+  runs: any[] | null; loading: boolean; connected: boolean
 }) {
   return (
     <div>
-      <ScreenHeader title="Strava" sub="Activity feed" initials={initials} onOpenMe={onOpenMe} />
+      <ScreenHeader title="Strava" sub="Activity feed" />
       <div style={{ padding: '0 12px' }}>
         <StravaPanel preloadedRuns={runs} preloadedConnected={connected} preloadedLoading={loading} />
       </div>
@@ -2836,7 +2812,7 @@ function StravaConnectionRow() {
             </button>
           ) : (
             <button onClick={() => { window.location.href = `/api/strava/connect?user_id=${userId}` }} disabled={!userId} style={{
-              background: 'var(--strava)', color: '#fff',
+              background: 'var(--strava)', color: 'var(--zona-navy)',
               border: 'none', borderRadius: '8px', padding: '8px 14px',
               fontFamily: "'Inter', sans-serif", fontSize: '11px',
               letterSpacing: '0.06em', textTransform: 'uppercase',
@@ -2884,9 +2860,9 @@ function SmokeToggle({ enabled, quitDate, onChange }: {
 const ZONE_DEFS = [
   { zone: 1, name: 'Recovery',  pctMin: 50, pctMax: 60, colour: 'var(--teal)', desc: 'Active recovery · warm-up · cool-down' },
   { zone: 2, name: 'Aerobic',   pctMin: 60, pctMax: 70, colour: 'var(--blue)', desc: 'Aerobic base · conversational · fat burning' },
-  { zone: 3, name: 'Tempo',     pctMin: 70, pctMax: 80, colour: '#d4a017', desc: 'Comfortably hard · 3-word sentences' },
+  { zone: 3, name: 'Tempo',     pctMin: 70, pctMax: 80, colour: 'var(--amber)', desc: 'Comfortably hard · 3-word sentences' },
   { zone: 4, name: 'Threshold', pctMin: 80, pctMax: 90, colour: 'var(--accent)', desc: 'Hard · sustained race effort' },
-  { zone: 5, name: 'VO₂ Max',  pctMin: 90, pctMax: 100, colour: '#c0392b', desc: 'Maximum effort · short intervals only' },
+  { zone: 5, name: 'VO₂ Max',  pctMin: 90, pctMax: 100, colour: 'var(--red)', desc: 'Maximum effort · short intervals only' },
 ]
 
 function calculateZones(restingHR: number, maxHR: number) {
@@ -2966,7 +2942,7 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
             border: `0.5px solid ${saved ? 'rgba(74,154,90,0.4)' : valid ? 'var(--accent-mid)' : 'var(--border-col)'}`,
             borderRadius: '8px', cursor: valid ? 'pointer' : 'not-allowed',
             fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.08em',
-            textTransform: 'uppercase', color: saved ? 'var(--teal)' : valid ? 'var(--accent)' : 'var(--text-muted, #888)',
+            textTransform: 'uppercase', color: saved ? 'var(--teal)' : valid ? 'var(--accent)' : 'var(--text-muted)',
           }}>
           {saved ? '✓ Saved' : 'Save HR data'}
         </button>
@@ -3086,7 +3062,7 @@ function ProfileSection({ firstName, lastName, email, onSave }: {
           borderRadius: '8px', cursor: isDirty && isValid ? 'pointer' : 'not-allowed',
           fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.08em',
           textTransform: 'uppercase',
-          color: saved ? 'var(--teal)' : isDirty && isValid ? 'var(--accent)' : 'var(--text-muted, #888)',
+          color: saved ? 'var(--teal)' : isDirty && isValid ? 'var(--accent)' : 'var(--text-muted)',
           transition: 'all 0.15s',
         }}
       >
@@ -3098,7 +3074,7 @@ function ProfileSection({ firstName, lastName, email, onSave }: {
 
 // ── ME SCREEN ─────────────────────────────────────────────────────────────
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   resetPhrase: string; onSaveMental: (v: string) => void
@@ -3109,6 +3085,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   restingHR: number | null; maxHR: number | null; onHRChange: (rhr: number, mhr: number) => void
   firstName: string; lastName: string; profileEmail: string
   onProfileChange: (fn: string, ln: string, em: string) => void
+  onOpenGenerate?: () => void
 }) {
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling'>('main')
 
@@ -3117,77 +3094,144 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   if (activeSection === 'fueling') return <FuelingTab onBack={() => setActiveSection('main')} />
 
   const daysToRace = Math.max(0, Math.ceil(((plan?.meta?.race_date ? new Date(plan.meta.race_date) : new Date('2026-07-11')).getTime() - Date.now()) / 86400000))
-  const displayName = [firstName, lastName].filter(Boolean).join(' ') || (profileEmail ? profileEmail.split('@')[0] : '') || athlete || '?'
+  const hasPlan = !!(plan?.meta?.race_name)
+
+  // Compute Zone 2 ceiling for display — mirrors DashboardClient logic
+  const z2Ceiling = (restingHR && maxHR)
+    ? Math.round(restingHR + 0.70 * (maxHR - restingHR))
+    : plan?.meta?.zone2_ceiling ?? null
+  const hrConfigured = !!(restingHR && maxHR)
+
+  const chevron = (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+      <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
 
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto' }}>
+
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 8px' }}>
-        <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1 , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
-        <div>
-          <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif" }}>Me</div>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>effort-first training</div>
+        <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0, width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)', flexShrink: 0 }}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '-0.3px' }}>
+          {firstName ? `${firstName}'s profile` : 'Profile'}
         </div>
       </div>
 
-      <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '32px' }}>
+      <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '40px' }}>
 
-        {/* Identity card */}
-        <div style={{ background: 'var(--card-bg)', borderRadius: '16px', padding: '16px', border: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '14px', justifyContent: 'space-between' }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', sans-serif", fontSize: '15px', fontWeight: 500, color: '#fff', flexShrink: 0 }}>
+        {/* Identity card — avatar + race goal. Name/email live in Profile section below. */}
+        <div style={{ background: 'var(--card-bg)', borderRadius: '16px', padding: '16px', border: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Space Grotesk', sans-serif", fontSize: '16px', fontWeight: 600, color: 'var(--zona-navy)', flexShrink: 0 }}>
             {initials}
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 500 }}>{displayName}</div>
-            {profileEmail && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{profileEmail}</div>}
-            {plan?.meta?.race_name && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', marginTop: '4px' }}>{plan.meta.race_name} · {daysToRace} days</div>}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {hasPlan ? (
+              <>
+                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {plan.meta.race_name}
+                </div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', marginTop: '4px', letterSpacing: '0.02em' }}>
+                  {daysToRace} days to go
+                </div>
+              </>
+            ) : (
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'var(--text-muted)' }}>No race set</div>
+            )}
           </div>
-          <button
-            onClick={async () => {
-              const supabase = createClient()
-              await supabase.auth.signOut()
-              window.location.href = '/auth/login'
-            }}
-            style={{ background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '8px', color: 'var(--text-muted)', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '6px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-            Sign out
-          </button>
         </div>
 
+        {/* ── Profile ────────────────────────────────────────────── */}
         <SectionLabel>Profile</SectionLabel>
         <ProfileSection firstName={firstName} lastName={lastName} email={profileEmail} onSave={onProfileChange} />
 
-        <SectionLabel>Appearance</SectionLabel>
+        {/* ── Plan ───────────────────────────────────────────────── */}
+        <SectionLabel>Plan</SectionLabel>
         <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+          <button
+            onClick={onOpenGenerate}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+          >
+            <div>
+              <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.55 }}>
+                {hasPlan ? 'Change your plan' : 'Generate a plan'}
+              </div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                {hasPlan ? 'Build a new plan around a different race or goal' : 'Choose a template or build a custom plan'}
+              </div>
+            </div>
+            <div style={{ color: 'var(--text-muted)', marginLeft: '12px' }}>{chevron}</div>
+          </button>
+        </div>
+
+        {/* ── Connections ────────────────────────────────────────── */}
+        <SectionLabel>Connections</SectionLabel>
+        <StravaConnectionRow />
+
+        {/* ── Training setup ─────────────────────────────────────── */}
+        {/* HR data drives Zone 2 ceiling and aerobic pace shown on every session card */}
+        <SectionLabel>Training setup</SectionLabel>
+
+        {/* HR payoff — shows what the data unlocks */}
+        {hrConfigured && z2Ceiling && (
+          <div style={{ background: 'var(--accent-soft)', borderRadius: '10px', border: '0.5px solid var(--accent-dim)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', lineHeight: 1.5 }}>
+              Your Zone 2 ceiling is <strong>{z2Ceiling} bpm</strong> — shown on every session card.
+            </div>
+          </div>
+        )}
+        {!hrConfigured && (
+          <div style={{ background: 'var(--amber-soft)', borderRadius: '10px', border: '0.5px solid var(--amber-mid)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--amber)', flexShrink: 0 }} />
+            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--amber)', lineHeight: 1.5 }}>
+              Add your HR data below to personalise every session's HR targets.
+            </div>
+          </div>
+        )}
+
+        <HRZonesSection restingHR={restingHR} maxHR={maxHR} onSave={onHRChange} />
+
+        {/* ── Preferences ────────────────────────────────────────── */}
+        <SectionLabel>Preferences</SectionLabel>
+        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+          {/* Theme */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
             <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Theme</div>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '6px' }}>
               {(['dark', 'light', 'auto'] as const).map(t => (
-                <button key={t} onClick={() => onThemeChange(t)} style={{ borderRadius: '12px', padding: '6px 10px', border: `0.5px solid ${theme === t ? 'var(--accent)' : 'var(--border-col)'}`, background: 'none', cursor: 'pointer', fontFamily: "'Inter', sans-serif", fontSize: '12px', color: theme === t ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'capitalize' }}>
+                <button key={t} onClick={() => onThemeChange(t)} style={{ borderRadius: '10px', padding: '5px 10px', border: `0.5px solid ${theme === t ? 'var(--accent)' : 'var(--border-col)'}`, background: theme === t ? 'var(--accent-soft)' : 'none', cursor: 'pointer', fontFamily: "'Inter', sans-serif", fontSize: '12px', color: theme === t ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'capitalize' }}>
                   {t}
                 </button>
               ))}
             </div>
           </div>
+          {/* Units */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
             <div>
               <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Distance units</div>
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Pace brackets and distances</div>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '6px' }}>
               {(['km', 'mi'] as const).map(u => (
-                <button key={u} onClick={() => onUnitsChange(u)} style={{ borderRadius: '12px', padding: '6px 14px', border: `0.5px solid ${preferredUnits === u ? 'var(--accent)' : 'var(--border-col)'}`, background: preferredUnits === u ? 'var(--accent-soft)' : 'none', cursor: 'pointer', fontFamily: "'Inter', sans-serif", fontSize: '12px', color: preferredUnits === u ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <button key={u} onClick={() => onUnitsChange(u)} style={{ borderRadius: '10px', padding: '5px 12px', border: `0.5px solid ${preferredUnits === u ? 'var(--accent)' : 'var(--border-col)'}`, background: preferredUnits === u ? 'var(--accent-soft)' : 'none', cursor: 'pointer', fontFamily: "'Inter', sans-serif", fontSize: '12px', color: preferredUnits === u ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   {u}
                 </button>
               ))}
             </div>
           </div>
+          {/* Session display */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
             <div>
               <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Session display</div>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Default metric shown on session cards</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Default metric on session cards</div>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '6px' }}>
               {(['distance', 'duration'] as const).map(m => (
-                <button key={m} onClick={() => onMetricChange(m)} style={{ borderRadius: '12px', padding: '6px 14px', border: `0.5px solid ${preferredMetric === m ? 'var(--accent)' : 'var(--border-col)'}`, background: preferredMetric === m ? 'var(--accent-soft)' : 'none', cursor: 'pointer', fontFamily: "'Inter', sans-serif", fontSize: '12px', color: preferredMetric === m ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'capitalize', letterSpacing: '0.04em' }}>
+                <button key={m} onClick={() => onMetricChange(m)} style={{ borderRadius: '10px', padding: '5px 12px', border: `0.5px solid ${preferredMetric === m ? 'var(--accent)' : 'var(--border-col)'}`, background: preferredMetric === m ? 'var(--accent-soft)' : 'none', cursor: 'pointer', fontFamily: "'Inter', sans-serif", fontSize: '12px', color: preferredMetric === m ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'capitalize', letterSpacing: '0.04em' }}>
                   {m}
                 </button>
               ))}
@@ -3195,19 +3239,32 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           </div>
         </div>
 
-        <SectionLabel>Connections</SectionLabel>
-        <StravaConnectionRow />
-
-        <SectionLabel>Heart rate zones</SectionLabel>
-        <HRZonesSection restingHR={restingHR} maxHR={maxHR} onSave={onHRChange} />
-
-        <SectionLabel>Training support</SectionLabel>
+        {/* ── Race prep ──────────────────────────────────────────── */}
+        {/* Premium content — not generic settings. Elevated section. */}
+        <SectionLabel>Race prep</SectionLabel>
         <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
-          <div style={{ padding: '14px 16px', borderBottom: '0.5px solid #111' }}>
+          {[
+            { id: 'mental'  as const, label: 'Mental toolkit', sub: '6 tools for when it gets dark at km 70', color: 'var(--session-easy)' },
+            { id: 'fueling' as const, label: 'Fueling plan',   sub: 'Gel + hydration protocol for race day',  color: 'var(--accent)' },
+          ].map(({ id, label, sub, color }, i, arr) => (
+            <button key={id} onClick={() => setActiveSection(id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: i < arr.length - 1 ? '0.5px solid var(--border-col)' : 'none', cursor: 'pointer', textAlign: 'left' }}>
+              <div>
+                <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.55 }}>{label}</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color, marginTop: '2px' }}>{sub}</div>
+              </div>
+              <div style={{ color: 'var(--text-muted)', marginLeft: '12px' }}>{chevron}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* ── Smoke tracker ──────────────────────────────────────── */}
+        <SectionLabel>Smoke tracker</SectionLabel>
+        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+          <div style={{ padding: '14px 16px', borderBottom: smokeTrackerEnabled ? '0.5px solid var(--border-col)' : 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: smokeTrackerEnabled ? '10px' : 0 }}>
               <div>
-                <div style={{ fontSize: '13px', color: 'var(--text-secondary, #c0c0c0)', lineHeight: 1.55 }}>Smoke-free tracker</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: smokeTrackerEnabled ? 'var(--teal)' : 'var(--text-secondary)', marginTop: '1px' }}>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Smoke-free tracker</div>
+                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: smokeTrackerEnabled ? 'var(--teal)' : 'var(--text-muted)', marginTop: '1px' }}>
                   {smokeTrackerEnabled && quitDays !== null ? `${quitDays} days smoke-free` : 'Off'}
                 </div>
               </div>
@@ -3225,52 +3282,49 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                     if (!user) return
                     await supabase.from('user_settings').upsert({ id: user.id, smoke_tracker_enabled: true, quit_date: newDate, updated_at: new Date().toISOString() })
                   } catch {}
-                }} style={{ background: 'var(--bg)', border: '0.5px solid #222', borderRadius: '6px', padding: '4px 8px', color: 'var(--text-muted)', fontFamily: "'Inter', sans-serif", fontSize: '12px', outline: 'none' }} />
+                }} style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '6px', padding: '4px 8px', color: 'var(--text-muted)', fontFamily: "'Inter', sans-serif", fontSize: '12px', outline: 'none' }} />
               </div>
             )}
           </div>
-
           {smokeTrackerEnabled && (
-            <button onClick={() => setActiveSection('quit')} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '0.5px solid #111', cursor: 'pointer' }}>
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '13px', color: 'var(--text-secondary, #c0c0c0)', lineHeight: 1.55 }}>Quit tracker</div>
+            <button onClick={() => setActiveSection('quit')} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+              <div>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Quit tracker</div>
                 <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--teal)', marginTop: '1px' }}>Milestones + benefits</div>
               </div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '18px' }}>›</div>
+              <div style={{ color: 'var(--text-muted)', marginLeft: '12px' }}>{chevron}</div>
             </button>
           )}
-
-          {[
-            { id: 'mental'  as const, label: 'Mental toolkit', sub: 'Race mantras + strategies', color: 'var(--blue)' },
-            { id: 'fueling' as const, label: 'Fueling plan',   sub: 'Gel strategy + hydration',  color: 'var(--accent)' },
-          ].map(({ id, label, sub, color }, i, arr) => (
-            <button key={id} onClick={() => setActiveSection(id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: i < arr.length - 1 ? '0.5px solid #111' : 'none', cursor: 'pointer' }}>
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '13px', color: 'var(--text-secondary, #c0c0c0)', lineHeight: 1.55 }}>{label}</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color, marginTop: '1px' }}>{sub}</div>
-              </div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '18px' }}>›</div>
-            </button>
-          ))}
         </div>
 
+        {/* ── Admin ──────────────────────────────────────────────── */}
         {isAdmin && (
           <>
             <SectionLabel>Admin</SectionLabel>
-            <button onClick={onOpenAdmin} style={{
-              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '14px 16px', background: 'var(--card-bg)',
-              borderRadius: '12px', border: '0.5px solid var(--accent-mid)',
-              cursor: 'pointer',
-            }}>
-              <div style={{ textAlign: 'left' }}>
+            <button onClick={onOpenAdmin} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--accent-mid)', cursor: 'pointer', textAlign: 'left' }}>
+              <div>
                 <div style={{ fontSize: '13px', color: 'var(--accent)', lineHeight: 1.55 }}>User management</div>
                 <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Impersonate · view plans</div>
               </div>
-              <div style={{ color: 'var(--accent)', fontSize: '18px' }}>›</div>
+              <div style={{ color: 'var(--accent)', marginLeft: '12px' }}>{chevron}</div>
             </button>
           </>
         )}
+
+        {/* ── Sign out — bottom, destructive action de-emphasised ── */}
+        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '0.5px solid var(--border-col)' }}>
+          <button
+            onClick={async () => {
+              const supabase = createClient()
+              await supabase.auth.signOut()
+              window.location.href = '/auth/login'
+            }}
+            style={{ width: '100%', padding: '12px', background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '10px', color: 'var(--text-muted)', fontFamily: "'Inter', sans-serif", fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}
+          >
+            Sign out
+          </button>
+        </div>
+
       </div>
     </div>
   )
@@ -3366,14 +3420,41 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
 }) {
   const color = getSessionColor(session.type ?? 'easy')
+  const typeLabel = getSessionLabel(session.type ?? 'easy')
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: `3px solid ${color}`, position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10 }}>
-        <button onClick={onBack} style={{ border: 'none', color, fontSize: '22px', cursor: 'pointer', padding: '0', lineHeight: 1, width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: `${color}18`}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
-        <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif" }}>{session.title}</div>
+    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '120px' }}>
+      {/* Sticky header — type chip + session title */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '12px',
+        padding: '14px 16px 12px',
+        borderBottom: '0.5px solid var(--border-col)',
+        position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10,
+      }}>
+        <button onClick={onBack} style={{
+          border: 'none', color, cursor: 'pointer', padding: '0', lineHeight: 1,
+          width: '36px', height: '36px', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', borderRadius: '8px', background: `${color}18`, flexShrink: 0,
+        }}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', fontWeight: 600, color, textTransform: 'uppercase', letterSpacing: '0.09em', background: `${color}15`, borderRadius: '5px', padding: '2px 8px', display: 'inline-block', marginBottom: '4px' }}>
+            {typeLabel}
+          </div>
+          <div style={{ fontSize: '17px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: "'Space Grotesk',sans-serif", letterSpacing: '-0.3px', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {session.title}
+          </div>
+        </div>
       </div>
+
+      {/* Card — left accent border on card, no overflow:hidden needed */}
       <div style={{ padding: '12px' }}>
-        <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+        <div style={{
+          background: 'var(--card-bg)',
+          borderRadius: '16px',
+          border: '0.5px solid var(--border-col)',
+          borderLeft: `4px solid ${color}`,
+        }}>
           <SessionPopupInner
             session={session}
             weekTheme={session.weekTheme ?? ''}
@@ -3437,7 +3518,7 @@ function MentalTab({ resetPhrase, onSave, onBack }: { resetPhrase: string; onSav
         </div>
         <div style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px' }}>
           <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Your Reset Phrase</div>
-          <textarea value={resetPhrase} onChange={e => onSave(e.target.value)} placeholder="What's the phrase you'll use when it gets dark at km 70?" style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-secondary, #c0c0c0)', fontFamily: "'Space Grotesk',sans-serif", fontSize: '13px', lineHeight: 1.7, resize: 'vertical', minHeight: '60px', outline: 'none' }} />
+          <textarea value={resetPhrase} onChange={e => onSave(e.target.value)} placeholder="What's the phrase you'll use when it gets dark at km 70?" style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontFamily: "'Space Grotesk',sans-serif", fontSize: '13px', lineHeight: 1.7, resize: 'vertical', minHeight: '60px', outline: 'none' }} />
         </div>
       </div>
     </div>
@@ -3464,7 +3545,7 @@ function FuelingTab({ onBack }: { onBack: () => void }) {
           {protocol.map(p => (
             <div key={p.timing} style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px' }}>
               <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>{p.timing}</div>
-              <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-secondary, #c0c0c0)', marginBottom: '4px' }}>{p.what}</div>
+              <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '4px' }}>{p.what}</div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.55 }}>{p.why}</div>
             </div>
           ))}
@@ -3494,7 +3575,7 @@ function QuitTab({ quitDays, onBack }: { quitDays: number | null; onBack: () => 
             <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.55 }}>Your aerobic capacity is recovering. The data will show it.</div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
               {milestones.map(m => (
-                <div key={m.days} style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${days >= m.days ? 'var(--teal-bg)' : '#222'}`, color: days >= m.days ? 'var(--teal)' : 'var(--text-secondary)' }}>
+                <div key={m.days} style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${days >= m.days ? 'var(--teal-bg)' : 'var(--border-col)'}`, color: days >= m.days ? 'var(--teal)' : 'var(--text-secondary)' }}>
                   {m.label}
                 </div>
               ))}
@@ -3502,12 +3583,12 @@ function QuitTab({ quitDays, onBack }: { quitDays: number | null; onBack: () => 
           </div>
         </div>
         <InfoBox>
-          <strong style={{ color: 'var(--text-secondary, #c0c0c0)' }}>What quitting does to your running:</strong><br /><br />
+          <strong style={{ color: 'var(--text-secondary)' }}>What quitting does to your running:</strong><br /><br />
           <span style={{ color: 'var(--accent)' }}>48 hours</span> — CO leaves bloodstream. O₂ delivery improves immediately.<br />
           <span style={{ color: 'var(--accent)' }}>Week 1–2</span> — Resting HR starts dropping. Recovery improves noticeably.<br />
           <span style={{ color: 'var(--accent)' }}>Week 3–4</span> — Aerobic efficiency measurably better. Zone 2 feels easier.<br />
           <span style={{ color: 'var(--accent)' }}>Month 2+</span> — Cardiac drift reduces. That late-run HR creep? Less of it.<br /><br />
-          <strong style={{ color: 'var(--text-secondary, #c0c0c0)' }}>You quit 99 days before a 100km race. That's an upgrade.</strong>
+          <strong style={{ color: 'var(--text-secondary)' }}>You quit 99 days before a 100km race. That's an upgrade.</strong>
         </InfoBox>
       </div>
     </div>

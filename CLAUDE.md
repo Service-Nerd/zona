@@ -100,6 +100,10 @@ Honest, slightly sarcastic, self-aware, encouraging without cringe.
 - Back arrow always top-left
 - Slide-up sheets: mirrored nav bar at bottom, not top
 
+**Reference aesthetic: Runna + Planzy** — bold metric hierarchy, dark athletic cards, left-accent session type indicators, week-strip navigation, clean session rows. See `docs/canonical/ui-patterns.md` before building any new screen.
+
+**Before building any screen or component**: read `docs/canonical/ui-patterns.md`. Use the prompt template at the bottom of that file. Trigger the `frontend-design` skill for all UI work.
+
 ---
 
 ## Critical Rules & Known Gotchas
@@ -144,6 +148,32 @@ Honest, slightly sarcastic, self-aware, encouraging without cringe.
 - Build-check locally before pushing
 - One release at a time, shipped properly before starting the next
 - All new features tagged FREE or PAID before building begins
+
+## Development Approach — SLC (Non-Negotiable)
+
+All development uses the **Simple, Lovable, Complete** model. No exceptions.
+
+| Principle | Meaning |
+|---|---|
+| **Simple** | One job per change. Tight scope. Nothing beyond what was asked. |
+| **Lovable** | Actually good quality. Matches the Runna/Planzy bar. References `ui-patterns.md`. Not half-baked. |
+| **Complete** | Fully done. All states handled (loading, empty, error, edge cases). Nothing left hanging. |
+
+SLC beats MVP. MVP ships minimal-but-unlovable. SLC ships smaller-but-actually-good.
+
+### Prompt template for UI changes
+
+Use this structure when requesting any screen or component change:
+
+```
+Screen: [screen or component name]
+Change: [what specifically is changing]
+SLC:
+  Simple — [one sentence: what this does and nothing else]
+  Lovable — [what makes it feel good / which ui-patterns.md pattern applies]
+  Complete — [states to handle: loading / empty / error / edge cases]
+Trigger frontend-design skill.
+```
 
 ---
 
@@ -194,7 +224,8 @@ Per-session toggle in expanded card only — saves per session, updates collapse
 
 ## Available Skills
 
-Load `.claude/skills/zona-architectural-principles/SKILL.md` when:
+### `zona-architectural-principles`
+Load when:
 - making architectural decisions
 - refactoring core systems
 - defining data contracts or APIs
@@ -205,6 +236,11 @@ Do NOT load for:
 - simple feature builds
 - UI tweaks
 - early prototyping
+
+### `frontend-design`
+Trigger with `/frontend-design` for ALL UI work — screens, components, layouts.
+This skill biases output toward high-quality, non-generic design.
+Use the prompt template in `docs/canonical/ui-patterns.md` alongside it.
 
 ---
 

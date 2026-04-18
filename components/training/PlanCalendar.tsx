@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { Week, Session, StravaActivity } from '@/types/plan'
 import { createClient } from '@/lib/supabase/client'
-import { SESSION_COLORS } from '@/lib/session-types'
+import { SESSION_COLORS, SESSION_LABELS } from '@/lib/session-types'
 
 interface Completion {
   session_day: string
@@ -28,6 +28,15 @@ export interface SessionTapPayload {
   completion: Completion | undefined
   isPast: boolean
   isFuture: boolean
+  // Structured session fields — always pass through so SessionScreen renders identically
+  // regardless of whether it was opened from Today or Plan.
+  distance_km?: number
+  duration_mins?: number
+  primary_metric?: 'distance' | 'duration'
+  hr_target?: string
+  pace_target?: string
+  rpe_target?: number
+  coach_notes?: [string, string?, string?]
 }
 
 const DOW_ORDER = ['mon','tue','wed','thu','fri','sat','sun']
@@ -66,9 +75,10 @@ interface Props {
   allCompletions: Record<number, Record<string, Completion>>
   onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
   onSessionTap: (session: SessionTapPayload, weekN: number, weekTheme: string) => void
+  overridesReady?: boolean
 }
 
-export default function PlanCalendar({ weeks, stravaRuns, allOverrides, allCompletions, onOverrideChange, onSessionTap }: Props) {
+export default function PlanCalendar({ weeks, stravaRuns, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true }: Props) {
   const [showPast, setShowPast] = useState(false)
   const supabase = createClient()
 
@@ -112,6 +122,14 @@ export default function PlanCalendar({ weeks, stravaRuns, allOverrides, allCompl
       />
     )
   }
+
+  if (!overridesReady) return (
+    <div style={{ padding: '0 12px 32px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {[120, 200, 160].map((h, i) => (
+        <div key={i} style={{ height: `${h}px`, borderRadius: '14px', background: 'var(--border-col)', opacity: 1 - i * 0.15 }} />
+      ))}
+    </div>
+  )
 
   return (
     <div style={{ padding: '0 12px 32px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -190,7 +208,7 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
       border: `0.5px solid ${isCurrent ? 'var(--teal-mid)' : 'var(--border-col)'}`,
       borderLeft: isCurrent ? '3px solid var(--accent)' : undefined,
       overflow: 'hidden',
-      opacity: isCompleted ? 0.5 : 1,
+      opacity: isCompleted ? 0.65 : 1,
     }}>
       {/* Week header */}
       <div style={{
@@ -200,7 +218,7 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
         background: isCurrent ? 'var(--teal-soft)' : 'transparent',
       }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: isCurrent ? 'var(--accent)' : 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: isCurrent ? 'var(--accent)' : 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>
             W{weekNum} · {formatDateRange(weekStartDate)}
             {movingDay && <span style={{ color: 'var(--accent)', marginLeft: '8px' }}>· tap a day to move session</span>}
           </div>
@@ -209,12 +227,18 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', justifyContent: 'flex-end' }}>
-            {actualKm > 0 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', fontWeight: 500 }}>{actualKm.toFixed(1)}</span>}
-            {actualKm > 0 && intendedKm > 0 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)' }}>/</span>}
-            {intendedKm > 0 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)' }}>{intendedKm}km</span>}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px', justifyContent: 'flex-end' }}>
+            {actualKm > 0
+              ? <span style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', color: 'var(--accent)', fontWeight: 600, lineHeight: 1 }}>{actualKm.toFixed(1)}</span>
+              : intendedKm > 0
+              ? <span style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1 }}>{intendedKm}</span>
+              : null
+            }
+            {actualKm > 0 && intendedKm > 0 && (
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>/{intendedKm}</span>
+            )}
           </div>
-          {actualKm > 0 && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '1px' }}>done / target</div>}
+          {intendedKm > 0 && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '2px' }}>{actualKm > 0 ? 'km done' : 'km planned'}</div>}
         </div>
       </div>
 
@@ -263,6 +287,13 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
                 completion,
                 isPast: isPast && !isToday,
                 isFuture,
+                distance_km:    s.distance_km,
+                duration_mins:  s.duration_mins,
+                primary_metric: s.primary_metric,
+                hr_target:      s.hr_target,
+                pace_target:    s.pace_target,
+                rpe_target:     s.rpe_target,
+                coach_notes:    s.coach_notes,
               }, weekNum, weekTheme)
             }}
             onMoveIconTap={() => handleMoveIconTap(key)}
@@ -307,7 +338,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
       onClick={onTap}
       style={{
         display: 'flex', alignItems: 'center',
-        padding: '10px 14px',
+        padding: isRestType && !isTarget ? '6px 14px' : '10px 14px',
         borderBottom: isLast ? 'none' : '0.5px solid var(--border-col)',
         background: isMoving
           ? 'var(--teal-soft)'
@@ -327,7 +358,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: isToday ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {DOW_FULL[dayKey]}
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: isToday ? 'var(--accent)' : 'var(--text-muted)', fontWeight: isToday ? 600 : 400, marginTop: '1px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: isToday ? 'var(--accent)' : 'var(--text-muted)', fontWeight: isToday ? 600 : 400, marginTop: '1px' }}>
           {date.getDate()}
         </div>
       </div>
@@ -343,22 +374,31 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--accent)', letterSpacing: '0.04em' }}>
             Move here
           </div>
-        ) : isRestType ? (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)' }}>
-            {session?.label ?? 'Rest is the training.'}
-          </div>
-        ) : (
+        ) : isRestType ? null : (
           <>
-            <div style={{
-              fontSize: '13px', fontWeight: 500,
-              color: isMoving ? 'var(--accent)' : isSkipped ? 'var(--text-muted)' : isFuture ? 'var(--text-secondary)' : 'var(--text-primary)',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              {session.label ?? ''}
-              {isMoving && <span style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.7 }}>moving...</span>}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+              <div style={{
+                fontSize: '15px', fontWeight: 500,
+                color: isMoving ? 'var(--accent)' : isSkipped ? 'var(--text-muted)' : isFuture ? 'var(--text-secondary)' : 'var(--text-primary)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                flex: 1, minWidth: 0,
+              }}>
+                {session.label ?? ''}
+                {isMoving && <span style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.7 }}>moving...</span>}
+              </div>
+              {!isMoving && SESSION_LABELS[session.type] && (
+                <span style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 600,
+                  textTransform: 'uppercase', letterSpacing: '0.07em',
+                  color: accent, background: `${accent}22`,
+                  borderRadius: '4px', padding: '2px 6px', whiteSpace: 'nowrap', flexShrink: 0,
+                }}>
+                  {SESSION_LABELS[session.type]}
+                </span>
+              )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', flexWrap: 'wrap' }}>
-              {session.detail && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)' }}>{session.detail}</span>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px', flexWrap: 'wrap' }}>
+              {session.detail && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.detail}</span>}
               {isComplete && completion?.strava_activity_name && (
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--strava)' }}>
                   ● {completion.strava_activity_name}{completion.strava_activity_km ? ` · ${completion.strava_activity_km}km` : ''}
@@ -381,7 +421,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               padding: '4px', display: 'flex', flexDirection: 'column', gap: '2.5px',
-              opacity: 0.25,
+              opacity: 0.45,
             }}
           >
             {[0,1,2].map(i => (
