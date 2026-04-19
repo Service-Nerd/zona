@@ -11,25 +11,25 @@ export default function PlanChart({ weeks }: Props) {
 
   return (
     <div style={{
-      background: 'var(--card-bg, #ffffff)',
-      border: '0.5px solid var(--border-col, #E2E8F0)',
+      background: 'var(--card-bg)',
+      border: '0.5px solid var(--border-col)',
       borderRadius: '12px',
       padding: '16px',
       marginBottom: '18px',
     }}>
       <div style={{
         fontFamily: "'Inter', sans-serif", fontSize: '10px',
-        color: 'var(--text-muted, #94A3B8)', letterSpacing: '0.08em',
+        color: 'var(--text-muted)', letterSpacing: '0.08em',
         textTransform: 'uppercase', marginBottom: '14px',
         display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center',
       }}>
         <span style={{ letterSpacing: '0.05em' }}>Long run progression</span>
         {[
-          { color: 'var(--text-muted, #94A3B8)', label: 'Done' },
-          { color: '#5BC0BE',                    label: 'Current' },
-          { color: 'rgba(91,192,190,0.2)',        label: 'Deload' },
-          { color: 'var(--border-col, #E2E8F0)', label: 'Upcoming' },
-          { color: '#FC4C02',                    label: 'Race' },
+          { color: 'var(--text-muted)',  label: 'Done' },
+          { color: 'var(--teal)',        label: 'Current' },
+          { color: 'var(--teal-20)',     label: 'Deload' },
+          { color: 'var(--border-col)', label: 'Upcoming' },
+          { color: 'var(--strava)',      label: 'Race' },
         ].map(({ color, label }) => (
           <span key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span style={{ width: 8, height: 8, borderRadius: '2px', background: color, display: 'inline-block', flexShrink: 0 }} />
@@ -46,14 +46,14 @@ export default function PlanChart({ weeks }: Props) {
           const isDeload = w.type === 'deload'
           const isRaceEv = w.type === 'race_event'
 
-          const bg = isCurr   ? '#5BC0BE'
-            : isRaceEv        ? '#FC4C02'
-            : isDone          ? 'var(--text-muted, #94A3B8)'
-            : isDeload        ? 'rgba(91,192,190,0.2)'
-            : 'var(--border-col, #E2E8F0)'
+          const bg = isCurr   ? 'var(--teal)'
+            : isRaceEv        ? 'var(--strava)'
+            : isDone          ? 'var(--text-muted)'
+            : isDeload        ? 'var(--teal-20)'
+            : 'var(--border-col)'
 
-          const shadow = isCurr ? '0 0 8px rgba(91,192,190,0.35)' : undefined
-          const border = isDeload ? '1px solid rgba(91,192,190,0.3)' : undefined
+          const shadow = isCurr ? `0 0 8px var(--teal-mid)` : undefined
+          const border = isDeload ? `1px solid var(--teal-30)` : undefined
 
           const d = new Date(w.date)
           const label = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
@@ -78,7 +78,7 @@ export default function PlanChart({ weeks }: Props) {
               <div style={{
                 fontFamily: "'Inter', sans-serif",
                 fontSize: '0.46rem',
-                color: isCurr ? '#5BC0BE' : 'var(--text-muted, #94A3B8)',
+                color: isCurr ? 'var(--teal)' : 'var(--text-muted)',
                 fontWeight: isCurr ? 600 : 400,
                 writingMode: 'vertical-rl',
                 whiteSpace: 'nowrap',

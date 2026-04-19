@@ -117,12 +117,62 @@ Required card hierarchy:
 
 ---
 
+---
+
+## UX & Product Backlog — Post-Review (2026-04-18)
+
+Derived from a full-app UX audit. P1 items (race countdown, week narrative, fatigue trend, override labels, HR zone labels) have been shipped. P2 items shipped 2026-04-18. P3 follows.
+
+---
+
+### UI Consistency
+
+| # | Status | Title | Problem it solves | Why it matters | Approach | Impact | Effort |
+|---|--------|-------|-------------------|----------------|----------|--------|--------|
+| UX-01 | ✅ Shipped | Unify fatigue tag vocabulary | Two sets in use: `Fresh/Normal/Heavy/Cooked` (SessionPopupInner) and `Fresh/Fine/Heavy/Wrecked` (ManualRunModal). Trend dots handle both but the labels differ. | Data inconsistency makes trend comparisons meaningless. | Standardise to `Fresh / Fine / Heavy / Wrecked` in both places. Update any existing DB rows if needed (migration). | Data integrity | S |
+| UX-02 | ✅ Shipped | Me screen information architecture | Settings dump — HR zones, Strava, profile, smoke tracker all stacked with no grouping. | Cognitive load on a screen users visit frequently to manage their training config. | Group into sections: **Your Profile** / **Your Training** (HR zones, units, metric) / **Connections** (Strava) / **App Settings** (theme, smoke tracker). | Perception / polish | S |
+| UX-03 | ✅ Shipped (superseded) | Post-completion micro-moment | After marking a session complete, user is returned to Today with no acknowledgement. | Completing a session is the core loop. Missing the reward moment is a retention miss. | Originally: 2s in-card flash. **Superseded 2026-04-19 by post-log reflect view** — see UX-03b. | Retention / emotional | S |
+| UX-03b | ✅ Shipped 2026-04-19 | Post-log reflect view | RPE and feel data saved but invisible — no feedback loop, no sense data was heard. Users felt emotionally detached from the logging flow. | Completing a session is the emotional peak of training. The app must acknowledge it, ask how it went, and respond. | After any run is logged (Strava or manual): dedicated reflect step before close. RPE 1–10 + feel tags. ZONA voice responds inline (session-type-aware). Done CTA turns teal after response. Skip flow gets "what got in the way?" one-tap reasons. RPE badge appears on collapsed card footer. Manual log form: RPE/feel removed from entry form; collected in reflect step instead. | Retention / emotional attachment | M |
+
+---
+
+### Personalisation
+
+| # | Status | Title | Problem it solves | Why it matters | Approach | Impact | Effort |
+|---|--------|-------|-------------------|----------------|----------|--------|--------|
+| UX-04 | ✅ Shipped | Plan-based Coach fallback (no Strava) | Coach screen is empty for non-Strava users. "Connect Strava" is a dead end for many. | Coach is the most differentiating screen. It should never be empty for a user with a plan. | Add plan-aware static coaching: "Long run Sunday — keep easy runs easy this week." Derived from current week data. Show when no Strava or no recent activity. No AI call needed. | Retention / perception | M |
+| UX-05 | ✅ Shipped | Use collected fatigue to inform session framing | Fatigue tags are logged but never acted on. Heavy × 3 days = no change in how sessions are presented. | The product collects the data. Using it even superficially creates the impression of intelligence. | When last 3 fatigue tags average Heavy/Wrecked, add a contextual note to today's session card: "You've been logging heavy legs. Keep the effort honest today." Derive inline, no AI. | Personalisation / perception | M |
+| UX-05b | ✅ Shipped | Fitness-level-calibrated coaching copy | Beginner and experienced runners see identical session copy. | The product knows the user's fitness level from plan generation. Using it costs nothing. | Store `fitness_level` from `plan.meta`. Vary copy in `getRestCopy` and `RestDayCard` based on level. Beginner: reassurance. Experienced: precision. | Personalisation | L |
+| UX-06 | ✅ Shipped | First name in session greeting | Name is in the DB. Never used outside the Today subtitle. | Tiny, feels personal. Low effort. | Use `firstName` in `RestDayCard` body copy and Coach screen header when available. | Polish | XS |
+
+---
+
+### UX Flow
+
+| # | Status | Title | Problem it solves | Why it matters | Approach | Impact | Effort |
+|---|--------|-------|-------------------|----------------|----------|--------|--------|
+| UX-07 | ✅ Shipped | Post-wizard orientation screen | After generating a plan and landing on Today, new users have no context — may land on a rest day with no guidance. | First-session experience sets retention. Confusion = churn. | After `handlePlanSaved`, show a single-screen orientation: "You're in Week 1 of {N}. Your first session is {day}. Here's what Zone 2 means." Dismiss-once, not re-shown. | Onboarding / retention | M |
+| UX-08 | ✅ Shipped | Strava reconnect flow | If the stored Strava token is invalid, the app fails silently. Coach shows loading, then nothing. | Users who connected Strava expect it to work. Silent failure damages trust. | On token refresh failure (`/api/strava/refresh` non-200), surface a prompt in the Coach screen: "Strava connection expired — reconnect in Profile." Link to Me screen. | Reliability / perception | M |
+| UX-09 | ✅ Shipped | Past session "not logged" state in Calendar | Past sessions with no completion data show at 35% opacity — no CTA, no explanation. | Leaves the user wondering whether to backfill or ignore. | Added "log" label below the dot for past unlogged sessions in CalendarOverlay — signals tapability. Tapping opens SessionPopupInner which already presents log/skip options. | Completeness | M |
+
+---
+
+### Polish
+
+| # | Status | Title | Problem it solves | Why it matters | Approach | Impact | Effort |
+|---|--------|-------|-------------------|----------------|----------|--------|--------|
+| UX-10 | ✅ Shipped | Weekly session count on Plan screen header | Plan screen has race countdown (now shipped) but no session count for the current week. | Context coherence — Plan and Today should tell the same story. | Below the race date line on Plan screen, add "Week {N}: {done}/{total} sessions" — mirrors Today screen narrative pattern. Derive from `allCompletions[weekNum]`. | Consistency | XS |
+| UX-11 | ✅ Shipped | Audit `session-types.ts` hex values | `lib/session-types.ts` uses hardcoded hex values for `SESSION_COLORS`. Pre-commit hook would catch these if they were in components, but the lib is currently exempted. | Palette regressions. Once these values drift from `globals.css`, colours break in dark mode or on theme changes. | All hex values in `SESSION_COLORS` and `getSessionColor` fallback replaced with `var(--session-*)` CSS vars. All vars already existed in `globals.css`. | Palette integrity | M |
+| UX-12 | ✅ Shipped | Tech debt audit — `PlanChart.tsx`, `StravaPanel.tsx` | Both files are flagged in tech debt as unaudited for hardcoded hex/font strings. | Any hardcoded value will trigger the pre-commit hook on the next commit touching those files. | All hardcoded hex and rgba values replaced with CSS vars. Added `--strava-soft`, `--teal-20`, `--teal-30` to `globals.css`. StravaPanel inline `var(--x, #fallback)` patterns cleaned to `var(--x)`. | Technical | S |
+
+---
+
 ## Tech Debt
 
 | Item | Detail |
 |------|--------|
 | Strava token refresh | Cache and refresh Strava OAuth token — currently single-use |
-| `PlanChart.tsx` hardcoded values | Likely still has hardcoded hex/font strings — not yet audited |
-| `StravaPanel.tsx` hardcoded values | Likely still has hardcoded hex/font strings — not yet audited |
+| `PlanChart.tsx` hardcoded values | ✅ Audited and fixed — all hex/rgba replaced with CSS vars |
+| `StravaPanel.tsx` hardcoded values | ✅ Audited and fixed — all hex/rgba replaced with CSS vars |
 | `login/page.tsx` hardcoded values | Not yet audited |
 | `PlanCalendar` `any` props (partial) | `stravaRuns` prop is accepted but unused in WeekCard — remove or wire up |

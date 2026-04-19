@@ -198,7 +198,48 @@ Minimal. 4–5 tabs max.
 - Body: Inter 400, `0.875rem`, muted
 - No button unless there's a specific action available
 
-### 9. Loading State
+### 9. Post-Log Reflect Sheet
+
+Used after any session is logged or skipped. This is the emotional peak of the session — treat it as such.
+
+```
+┌─────────────────────────────────────────────┐
+│ [✓]  Hard session logged.                   │
+│      Don't follow it with more effort.      │
+│ ────────────────────────────────────────── │
+│  How did that land?                         │
+│  Effort and body state. That's all I need.  │
+│                                             │
+│  Effort (RPE)                               │
+│  [1][2][3][4][5][6][7][8][9][10]            │
+│                                             │
+│  Body state                                 │
+│  [Fresh] [Fine] [Heavy] [Wrecked]           │
+│                                             │
+│  ┌──────────────────────────────────────┐   │
+│  │ Hard session in the bank. Earn rest. │   │  ← fades in
+│  └──────────────────────────────────────┘   │
+│                                             │
+│  [           DONE           ]               │  ← teal when response shown
+└─────────────────────────────────────────────┘
+```
+
+Rules:
+- Completion confirmation (headline + body) always shown at top — acts as transition from the action
+- Question and inputs follow a visual divider — creates a "new moment" feel
+- ZONA voice response fades in (`opacity 0 → 1`, `translateY(6px) → 0`, 350ms) after any selection
+- CTA button shifts from ghost (`Skip for now`) to solid teal (`Done`) once a response appears
+- Skip path (close without rating) always available — run is already saved, reflect is invited not required
+- Never auto-dismiss — the reflect step should feel intentional, not rushed
+- For skip-reflect: same structure, replace RPE row with 2×2 reason grid (`Injury / illness / Too tired / Life got busy / Bad weather`)
+
+ZONA voice rules:
+- One sentence only
+- Session-type-aware: RPE 8 on easy = flag it; RPE 8 on intervals = endorse it
+- Canonical response matrix lives in `getZonaReflectResponse()` — `DashboardClient.tsx`
+- Tone: honest, dry, not cringe — matches CLAUDE.md voice guidelines
+
+### 10. Loading State
 
 Skeleton shimmer only. No spinners.
 

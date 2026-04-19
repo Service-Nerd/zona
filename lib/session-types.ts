@@ -5,18 +5,18 @@
  */
 
 export const SESSION_COLORS: Record<string, string> = {
-  easy:          '#4A90D9',
-  run:           '#7B68EE',
-  long:          '#7B68EE',
-  quality:       '#F2C14E',
-  tempo:         '#F2C14E',
-  intervals:     '#E05A5A',
-  hard:          '#E05A5A',
-  race:          '#E8833A',
-  recovery:      '#5BAD8C',
-  strength:      '#3A506B',
-  'cross-train': '#5BC0BE',
-  cross:         '#5BC0BE', // legacy alias — hand-authored gists may use 'cross'
+  easy:          'var(--session-easy)',
+  run:           'var(--session-long)',
+  long:          'var(--session-long)',
+  quality:       'var(--session-quality)',
+  tempo:         'var(--session-quality)',
+  intervals:     'var(--session-intervals)',
+  hard:          'var(--session-intervals)',
+  race:          'var(--session-race)',
+  recovery:      'var(--session-recovery)',
+  strength:      'var(--session-strength)',
+  'cross-train': 'var(--session-cross)',
+  cross:         'var(--session-cross)', // legacy alias — hand-authored gists may use 'cross'
   rest:          'transparent',
 }
 
@@ -38,7 +38,7 @@ export const SESSION_LABELS: Record<string, string> = {
 
 /** Returns the accent colour for a session type. Defaults to easy blue for unknown types. */
 export function getSessionColor(type: string): string {
-  return SESSION_COLORS[type] ?? '#4A90D9'
+  return SESSION_COLORS[type] ?? 'var(--session-easy)'
 }
 
 /** Returns the display label for a session type. Defaults to the raw type string. */

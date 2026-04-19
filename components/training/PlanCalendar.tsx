@@ -390,7 +390,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
                 <span style={{
                   fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 600,
                   textTransform: 'uppercase', letterSpacing: '0.07em',
-                  color: accent, background: `${accent}22`,
+                  color: accent, background: `color-mix(in srgb, ${accent} 18%, transparent)`,
                   borderRadius: '4px', padding: '2px 6px', whiteSpace: 'nowrap', flexShrink: 0,
                 }}>
                   {SESSION_LABELS[session.type]}

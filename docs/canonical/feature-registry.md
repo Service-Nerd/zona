@@ -11,8 +11,8 @@
 | Core app shell (4 screens, nav) | FREE | R0–R15b | Today, Plan, Coach, Me screens |
 | Screen guide popups | FREE | R15b | First-load onboarding |
 | Progress bar | PAID | R17 | Session completion % |
-| RPE input post-session | PAID | R17 | Stored in `session_completions` |
-| Fatigue tags | PAID | R17 | Legs / general / mental |
+| RPE input post-session | PAID | R17 + reflect UX | Stored in `session_completions`. Post-log reflect view (2026-04-19): dedicated step after Strava log or manual log — replaces instant-dismiss toast. ZONA voice responds to RPE, session-type-aware. |
+| Fatigue tags | PAID | R17 | Canonical vocabulary: `Fresh / Fine / Heavy / Wrecked`. Shown in reflect view and on collapsed card badge. Skip reason also stored in `fatigue_tag`. |
 | Plan Generator (API route + form) | FREE (templates) / PAID (AI) | R23 | FREE = pre-built templates; PAID = AI generator with athlete variables |
 | Profile screen | FREE | R15b | First name, last name, email on `user_settings` |
 | Smoke tracker | FREE | R15b | Days since quit, displayed on dashboard |

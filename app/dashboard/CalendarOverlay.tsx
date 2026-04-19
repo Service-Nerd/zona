@@ -135,6 +135,9 @@ export default function CalendarOverlay({ plan, stravaRuns, allOverrides, allCom
                 {d.getDate()}
               </span>
               <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: dotColor ?? 'transparent' }} />
+              {isPast && !completion && s && s.type !== 'rest' && (
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '7px', color: 'var(--text-muted)', letterSpacing: '0.02em', opacity: 0.7, lineHeight: 1 }}>log</span>
+              )}
             </button>
           )
         })}
@@ -192,7 +195,7 @@ export default function CalendarOverlay({ plan, stravaRuns, allOverrides, allCom
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {[{ color: 'var(--blue)', label: 'Easy' }, { color: 'var(--accent)', label: 'Run' }, { color: 'var(--teal)', label: 'Done' }].map(({ color, label }) => (
+          {[{ color: 'var(--session-easy)', label: 'Easy' }, { color: 'var(--accent)', label: 'Run' }, { color: 'var(--teal)', label: 'Done' }].map(({ color, label }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
               <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: color }} />
               <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '10px', color: 'var(--text-muted)' }}>{label}</span>

@@ -25,9 +25,16 @@ interface SessionCardProps {
 ### Collapsed State
 
 ```
-[dot] [Run Type Label]    [Zone]    [HR target]
-[Distance or Duration]    (toggle: dist/duration from Me screen preference)
+[left accent] [Run Type Label]    [date]
+              [Session Title]
+              [distance/duration pill] [HR pill] [pace pill]
+              [Strava activity name — if linked]
+─────────────────────────────────────────────────────────
+[View details / Log this session]    [● RPE] [✓ Done]
 ```
+
+- RPE badge (coloured dot + number) appears only when `completion.rpe != null`
+- Skipped cards show skip reason text (if captured) next to the Skipped pill
 
 ### Expanded State
 
@@ -38,9 +45,45 @@ TOP ─────────────────────────�
 
 MIDDLE ────────────────────────────────────────
   Session description (coaching copy)
+  Week focus (if set)
 
 BOTTOM ────────────────────────────────────────
-  Why / coach notes
+  Coach notes / guidance
+  [Action buttons — sticky]
+  How did it feel? (RPE + feel tags — editing only, shown when already complete/skipped)
+```
+
+### Post-Log Reflect View
+
+Shown immediately after any session is logged (Strava or non-run completion) or skipped.
+Replaces the old instant-dismiss success flash. Not shown when editing an existing log via "Update log."
+
+```
+[✓ tick] [Completion headline]
+         [Completion body copy]
+──────────────────────────────
+How did that land?
+Effort and body state. That's all I need.
+
+[RPE 1–10 row]
+[Body state: Fresh / Fine / Heavy / Wrecked]
+
+[ZONA voice response — fades in after selection]
+
+[Skip for now / Done CTA]
+```
+
+Skip-reflect variant (after skipping):
+```
+Skipped.
+What got in the way?
+
+[Injury / illness] [Too tired]
+[Life got busy]    [Bad weather]
+
+[ZONA voice response — fades in after selection]
+
+[Close without answering / Close CTA]
 ```
 
 ---
@@ -83,3 +126,8 @@ Duration > 60 minutes must display as `Xh` or `XhYY` — never as raw minutes.
 - No popup or modal — expanded state is inline within the card (slide/toggle).
 - Strength and rest sessions show no HR target, no zone, no pace bracket.
 - Never show estimated or formula-derived pace — only Strava-derived values.
+- RPE badge on collapsed card only appears when `completion.rpe != null`.
+- Reflect view is shown after logging; "How did it feel?" section in expanded is for editing existing logs only.
+- ZONA voice response in reflect view is session-type-aware — see `getZonaReflectResponse()` in `DashboardClient.tsx`.
+- Fatigue vocabulary is canonical: `Fresh / Fine / Heavy / Wrecked`. No other tags.
+- Skip reason vocabulary: `Injury / illness / Too tired / Life got busy / Bad weather`. Saves to `fatigue_tag` column.
