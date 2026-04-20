@@ -32,16 +32,27 @@
 
 ## Active Work
 
-### Session Card Redesign
-**Status:** 🔄 In Progress
+### Session Card Redesign + Coaching Signal
+**Status:** 🔄 Built, not deployed
 
-Required card hierarchy:
-1. TOP: Run type · Zone · HR target(s) · Estimated pace bracket · Distance + duration
-2. MIDDLE: Session description
-3. BOTTOM: Why / coach notes
+**Session card hierarchy (built 2026-04-20):**
+1. TOP: Zone chip · Metric grid (dist/duration with toggle, HR, pace)
+2. EXECUTION SUMMARY (when complete): Planned vs Actual — distance, HR, RPE side-by-side
+3. MIDDLE: Session description · Week focus
+4. BOTTOM: Coach notes
 
-- Global dist/duration toggle → Me screen
-- Per-session toggle → expanded card only; saves per session; updates collapsed card
+**Collapsed card (built 2026-04-20):**
+- Compact inline metric strip: Zone · HR · Pace · Metric (no toggle — expanded only)
+- Footer badge: `✓ On target` (teal) / `— Check this` (amber) / `✓ Done` — driven by `coaching_flag`
+
+**Coaching signal (built 2026-04-20):**
+- `getCoachingFlag()`: pure function computing execution quality from RPE + avg HR vs zone
+- `avg_hr` and `coaching_flag` added to `session_completions` (migration: `supabase/migrations/20260420_coaching_signal.sql`)
+- `avg_hr` captured at Strava activity link time
+- `coaching_flag` computed and persisted at RPE save (reflect view + manual log)
+- R18-ready: flags are the per-session atom that confidence scoring will aggregate
+
+**Deployment blocker**: run `supabase/migrations/20260420_coaching_signal.sql` in Supabase SQL editor before pushing.
 
 ---
 

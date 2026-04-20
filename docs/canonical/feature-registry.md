@@ -27,7 +27,8 @@
 
 | Feature | Tier | Release | Notes |
 |---|---|---|---|
-| Session Card Redesign | PAID | — | New card hierarchy; HR zones; Strava pace; Karvonen |
+| Session Card Redesign | PAID | — | New card hierarchy; compact metric strip; zone chip; per-session toggle (expanded only) |
+| Coaching Signal | PAID | — | `coaching_flag` per session (`ok`/`watch`/`flag`); `avg_hr` from Strava; execution summary in expanded card; flag badge on collapsed card. R18-ready. Requires DB migration before deploy. |
 
 ---
 

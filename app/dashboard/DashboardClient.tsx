@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react'
 import type { Plan, Week } from '@/types/plan'
 import PlanChart from '@/components/training/PlanChart'
 import PlanCalendar from '@/components/training/PlanCalendar'
@@ -168,7 +168,7 @@ export default function DashboardClient() {
         const [settingsRes, overridesRes, completionsRes] = await Promise.all([
           supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, first_name, last_name, email').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
-          supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, rpe, fatigue_tag').eq('user_id', user.id),
+          supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
         ])
 
         if (overridesRes.data) setAllOverrides(overridesRes.data)
@@ -339,7 +339,7 @@ export default function DashboardClient() {
       setAllOverrides(overrides ?? [])
 
       // Load their completions
-      const { data: completions } = await supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name').eq('user_id', userId)
+      const { data: completions } = await supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', userId)
       if (completions) {
         const map: Record<number, Record<string, any>> = {}
         completions.forEach((r: any) => {
@@ -368,7 +368,7 @@ export default function DashboardClient() {
     const { data: overrides } = await supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id)
     setAllOverrides(overrides ?? [])
 
-    const { data: completions } = await supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, rpe, fatigue_tag').eq('user_id', user.id)
+    const { data: completions } = await supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id)
     if (completions) {
       const map: Record<number, Record<string, any>> = {}
       completions.forEach((r: any) => {
@@ -1083,6 +1083,53 @@ function getSkipResponse(reason: string): string {
   return "Fair enough. Pick it back up."
 }
 
+// ── COACHING FLAG ─────────────────────────────────────────────────────────
+// Per-session quality-of-execution signal. Stored in session_completions.coaching_flag.
+// R18 (confidence score) will aggregate these into a weekly signal.
+
+type CoachingFlag = 'ok' | 'watch' | 'flag'
+
+/** Pure function — no side effects. Returns null for session types without effort targets. */
+function getCoachingFlag({
+  sessionType,
+  rpe,
+  avgHr,
+  zone2Ceiling,
+}: {
+  sessionType: string
+  rpe: number | null
+  avgHr: number | null
+  zone2Ceiling: number | undefined
+}): CoachingFlag | null {
+  const isEasySession = ['easy', 'run', 'long', 'recovery'].includes(sessionType)
+  const isHardSession = ['quality', 'intervals', 'tempo', 'hard'].includes(sessionType)
+  const isRaceSession = sessionType === 'race'
+
+  if (!isEasySession && !isHardSession && !isRaceSession) return null
+  if (rpe === null && avgHr === null) return null
+
+  if (isEasySession) {
+    // Zone 2 breach is the strongest signal — takes precedence over RPE
+    if (avgHr !== null && zone2Ceiling !== undefined && avgHr > zone2Ceiling) return 'flag'
+    if (rpe !== null && rpe >= 7) return 'flag'
+    if (rpe !== null && rpe >= 5) return 'watch'
+    return 'ok'
+  }
+
+  if (isHardSession) {
+    // Quality sessions: goal is to push. Very low RPE = didn't engage.
+    if (rpe !== null && rpe <= 3) return 'watch'
+    return 'ok'
+  }
+
+  if (isRaceSession) {
+    if (rpe !== null && rpe <= 4) return 'watch'
+    return 'ok'
+  }
+
+  return null
+}
+
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
 function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace }: {
@@ -1142,6 +1189,12 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+      const flag = getCoachingFlag({
+        sessionType: session.type,
+        rpe: newRpe,
+        avgHr: completion?.avg_hr ?? null,
+        zone2Ceiling,
+      })
       await supabase.from('session_completions').upsert({
         user_id: user.id,
         week_n: weekN,
@@ -1149,6 +1202,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
         status: completion?.status ?? 'complete',
         rpe: newRpe,
         fatigue_tag: newTag,
+        coaching_flag: flag,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
       onSaved?.()
@@ -1220,6 +1274,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
         strava_activity_id: status === 'complete' ? (selectedActivity?.id ?? null) : null,
         strava_activity_name: status === 'complete' ? (selectedActivity?.name ?? null) : null,
         strava_activity_km: status === 'complete' ? (selectedActivity ? +(selectedActivity.distance / 1000).toFixed(1) : null) : null,
+        avg_hr: status === 'complete' ? (selectedActivity?.average_heartrate ? Math.round(selectedActivity.average_heartrate) : null) : null,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
       onSaved?.()
@@ -1452,6 +1507,21 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           {isComplete && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', background: 'var(--accent-soft)', color: 'var(--teal)', border: '0.5px solid var(--teal-dim)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>✓ Done</span>}
           {isSkipped && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', background: 'rgba(80,80,80,0.08)', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Skipped</span>}
         </div>
+        {/* Zone label */}
+        {(() => {
+          const zL: string | null = (session.zone as string | undefined) ?? (
+            session.type === 'recovery' ? 'Zone 1' :
+            session.type === 'easy' || session.type === 'run' || session.type === 'long' ? 'Zone 2' :
+            session.type === 'quality' || session.type === 'tempo' ? 'Zone 3' :
+            session.type === 'intervals' || session.type === 'hard' ? 'Zone 4–5' : null
+          )
+          if (!zL || !['easy','run','quality','intervals','hard','tempo','race','recovery','long'].includes(session.type)) return null
+          return (
+            <div style={{ marginBottom: '12px' }}>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: config.color, fontWeight: 500, background: `${config.color}12`, borderRadius: '5px', padding: '3px 9px', letterSpacing: '0.04em' }}>{zL}</span>
+            </div>
+          )
+        })()}
         {/* Metric grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
           {/* Primary metric card with per-session toggle */}
@@ -1526,6 +1596,87 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
 
       {view === 'detail' && (
         <>
+          {/* ── EXECUTION SUMMARY: planned vs actual — only when complete with actuals ── */}
+          {isComplete && (completion?.strava_activity_km || completion?.avg_hr || completion?.rpe != null) && (() => {
+            const plannedZone = (session.zone as string | undefined) ?? (
+              session.type === 'recovery' ? 'Zone 1' :
+              session.type === 'easy' || session.type === 'run' || session.type === 'long' ? 'Zone 2' :
+              session.type === 'quality' || session.type === 'tempo' ? 'Zone 3' :
+              session.type === 'intervals' || session.type === 'hard' ? 'Zone 4–5' : null
+            )
+            const isZoneBreach = completion?.avg_hr && zone2Ceiling &&
+              completion.avg_hr > zone2Ceiling &&
+              ['easy', 'run', 'long', 'recovery'].includes(session.type)
+            const flag = completion?.coaching_flag as string | null | undefined
+            return (
+              <div style={{ padding: '14px 18px', borderBottom: '0.5px solid var(--border-col)', background: 'var(--bg)' }}>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+
+                  {/* Planned column */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Planned</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      {(estimatedDistance || estimatedDuration) && (
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                          {effectiveMetric === 'distance' ? `${estimatedDistance ?? '—'}${preferredUnits}` : (estimatedDuration ?? '—')}
+                        </span>
+                      )}
+                      {(plannedZone || session.hr_target) && (
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                          {[plannedZone, session.hr_target].filter(Boolean).join(' · ')}
+                        </span>
+                      )}
+                      {session.rpe_target != null && (
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                          RPE {session.rpe_target}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Vertical divider */}
+                  <div style={{ width: '0.5px', background: 'var(--border-col)', alignSelf: 'stretch', flexShrink: 0 }} />
+
+                  {/* Actual column */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Actual</div>
+                      {flag && (
+                        <span style={{
+                          fontFamily: 'var(--font-ui)', fontSize: '9px', letterSpacing: '0.05em',
+                          textTransform: 'uppercase', borderRadius: '4px', padding: '2px 6px',
+                          color: flag === 'ok' ? 'var(--teal)' : 'var(--amber)',
+                          background: flag === 'ok' ? 'var(--teal-soft)' : 'var(--amber-soft)',
+                        }}>
+                          {flag === 'ok' ? 'On target' : 'Check this'}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      {completion?.strava_activity_km && (
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)' }}>
+                          {completion.strava_activity_km}{preferredUnits}
+                        </span>
+                      )}
+                      {completion?.avg_hr && (
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: isZoneBreach ? 'var(--amber)' : 'var(--text-primary)' }}>
+                          {completion.avg_hr} bpm avg
+                          {isZoneBreach && <span style={{ fontSize: '10px', marginLeft: '4px', opacity: 0.8 }}>↑</span>}
+                        </span>
+                      )}
+                      {completion?.rpe != null && (
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: rpeColour(completion.rpe) }}>
+                          RPE {completion.rpe}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            )
+          })()}
+
           {/* ── MIDDLE BLOCK: session description ── */}
           {session.detail && (
             <div style={{ padding: '16px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
@@ -2037,9 +2188,11 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const key = sessionKey ?? todayKey
+      const flag = getCoachingFlag({ sessionType: sessionType ?? '', rpe: newRpe, avgHr: null, zone2Ceiling: undefined })
       await supabase.from('session_completions').upsert({
         user_id: user.id, week_n: weekN, session_day: key,
         status: 'complete', rpe: newRpe, fatigue_tag: newTag,
+        coaching_flag: flag,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
     } catch {}
@@ -2430,11 +2583,6 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
     } catch {}
   }, [metricStorageKey, sessionDefault])
 
-  function toggleHeroMetric(m: 'distance' | 'duration') {
-    setHeroMetric(m)
-    try { localStorage.setItem(metricStorageKey, m) } catch {}
-  }
-
   const hrDisplay = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling)
   const hrLabel = session.zone
     ? session.zone
@@ -2450,6 +2598,12 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
   const estimatedDuration = session.duration ?? (session.distance ? `~${fmtDurationMins(Math.round(session.distance * 6.5))}` : null)
   const estimatedDistance = session.distance ?? null
   const showMetrics = ['easy', 'run', 'quality', 'intervals', 'hard', 'tempo', 'race', 'recovery'].includes(session.type)
+  const zoneLabel: string | null = (session.zone as string | undefined) ?? (
+    session.type === 'recovery' ? 'Zone 1' :
+    session.type === 'easy' || session.type === 'run' || session.type === 'long' ? 'Zone 2' :
+    session.type === 'quality' || session.type === 'tempo' ? 'Zone 3' :
+    session.type === 'intervals' || session.type === 'hard' ? 'Zone 4–5' : null
+  )
 
   return (
     <div onClick={onTap} style={{
@@ -2490,54 +2644,24 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
           </div>
         </div>
 
-        {/* Row 3: metric pills */}
-        {showMetrics && !isSkipped && (
-          <div style={{ display: 'flex', gap: '6px', padding: '0 14px 12px', flexWrap: 'wrap' }}>
-            {/* Primary metric with inline toggle */}
-            {(estimatedDistance || estimatedDuration) && (
-              <div
-                onClick={e => e.stopPropagation()}
-                style={{ background: `${accent}10`, border: `0.5px solid ${accent}30`, borderRadius: '10px', padding: '8px 12px', minWidth: '100px' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '5px' }}>
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '8px', color: accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    {heroMetric === 'distance' ? (preferredUnits === 'mi' ? 'Miles' : 'km') : 'Duration'}
-                  </span>
-                  <div style={{ display: 'flex', background: 'rgba(0,0,0,0.06)', borderRadius: '5px', padding: '1px' }}>
-                    {(['distance', 'duration'] as const).map(m => (
-                      <button key={m} onClick={e => { e.stopPropagation(); toggleHeroMetric(m) }} style={{
-                        fontFamily: 'var(--font-ui)', fontSize: '9px', padding: '2px 7px',
-                        borderRadius: '4px', border: 'none',
-                        background: heroMetric === m ? accent : 'none',
-                        color: heroMetric === m ? 'var(--zona-navy)' : 'var(--text-muted)',
-                        cursor: 'pointer', fontWeight: 500, lineHeight: 1.4,
-                      }}>
-                        {m === 'distance' ? (preferredUnits ?? 'km') : 'min'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 600, color: accent, lineHeight: 1, display: 'block' }}>
-                  {heroMetric === 'distance' ? (estimatedDistance ?? '—') : (estimatedDuration ?? '—')}
-                </span>
-              </div>
-            )}
-            {/* HR */}
-            {hrDisplay && (
-              <div style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '5px', display: 'block' }}>{hrLabel}</span>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1 }}>{hrDisplay}<span style={{ fontSize: '10px', fontWeight: 400, color: 'var(--text-muted)' }}> bpm</span></span>
-              </div>
-            )}
-            {/* Pace */}
-            {pace && (
-              <div style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '5px', display: 'block' }}>Est. pace</span>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1 }}>{pace}</span>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Row 3: compact metric strip — zone · HR · pace · metric */}
+        {showMetrics && !isSkipped && (() => {
+          const metricVal = heroMetric === 'distance'
+            ? (estimatedDistance ? `${estimatedDistance}${preferredUnits ?? 'km'}` : null)
+            : (estimatedDuration ?? null)
+          const items = [zoneLabel, hrDisplay ? `${hrDisplay} bpm` : null, pace, metricVal].filter(Boolean) as string[]
+          if (!items.length) return null
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', padding: '0 14px 12px' }}>
+              {items.map((item, i) => (
+                <Fragment key={i}>
+                  {i > 0 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', opacity: 0.4 }}>·</span>}
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: i === 0 ? accent : 'var(--text-muted)', fontWeight: i === 0 ? 500 : 400 }}>{item}</span>
+                </Fragment>
+              ))}
+            </div>
+          )
+        })()}
 
         {/* Strava if complete */}
         {isComplete && completion?.strava_activity_name && (
@@ -2559,7 +2683,13 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
                 {completion.rpe}
               </span>
             )}
-            {isComplete && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', background: 'var(--teal-soft)', color: 'var(--teal)', border: '0.5px solid var(--teal-dim)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' }}>✓ Done</span>}
+            {isComplete && (() => {
+              const flag = completion?.coaching_flag as string | null | undefined
+              const pill = { fontFamily: 'var(--font-ui)', fontSize: '10px', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase' as const, letterSpacing: '0.04em' }
+              if (flag === 'ok') return <span style={{ ...pill, background: 'var(--teal-soft)', color: 'var(--teal)', border: '0.5px solid var(--teal-dim)' }}>✓ On target</span>
+              if (flag === 'watch' || flag === 'flag') return <span style={{ ...pill, background: 'var(--amber-soft)', color: 'var(--amber)', border: '0.5px solid var(--amber-mid)' }}>— Check this</span>
+              return <span style={{ ...pill, background: 'var(--teal-soft)', color: 'var(--teal)', border: '0.5px solid var(--teal-dim)' }}>✓ Done</span>
+            })()}
             {isSkipped && completion?.fatigue_tag && (
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', opacity: 0.7 }}>{completion.fatigue_tag}</span>
             )}
