@@ -84,6 +84,7 @@
 **Status:** 🔲 Not Started | **Tier:** FREE (stubs) / PAID (dynamic)
 - Flesh out strength session stubs currently in plan JSON
 - Display in session cards with appropriate UI treatment
+- **v1 decision (2026-04-20):** strength sessions are admin-only for launch. Generator can produce them but cards render with no content — ghost feature. Filter from public plan/today view until R21 is ready. Code task: pass `isAdmin` to TodayScreen and PlanCalendar; hide strength sessions for non-admin.
 
 ### R22 — Blockout Days
 **Status:** 🔲 Not Started | **Tier:** PAID
@@ -97,6 +98,13 @@
 - Output = JSON always; never direct-to-DB
 - Creation and reshaping (R20) are separate flows, shared schema
 - API route + multi-step form shipped; new users land on Plan screen with Generate CTA
+
+### Coach Tab — Re-enable for public
+**Status:** 🔲 Not Started | **Tier:** PAID
+- Coach tab built and working but disabled for v1 launch (admin-only)
+- **Why deferred:** requires Strava + Claude API call on every tab open (no caching), prompt is not plan-phase-aware (doesn't pass weekNum/phase/weeklyKm), and adds operational cost before monetisation is in place
+- **To re-enable:** (1) add localStorage caching per `activity_id`, (2) pass `weekNum`, `phase`, `weeklyKm` to Claude prompt, (3) remove `isAdmin` gate in DashboardClient more-menu
+- SLC assessment: the reflect view + ZONA voice covers the coaching need for v1. Coach tab is a P1 post-launch feature.
 
 ### R23b — Plan Generator Wizard UI
 **Status:** 🔲 Not Started | **Tier:** PAID

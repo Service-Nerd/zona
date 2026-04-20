@@ -641,7 +641,7 @@ export default function DashboardClient() {
               animation: 'slideUp 0.22s cubic-bezier(0.32, 0.72, 0, 1)',
             }}>
               {([
-                { id: 'coach'  as Screen, label: 'Coach',   icon: (a: boolean) => <IconCoach  active={a} /> },
+                ...(isAdmin ? [{ id: 'coach' as Screen, label: 'Coach', icon: (a: boolean) => <IconCoach active={a} /> }] : []),
                 { id: 'strava' as Screen, label: 'Strava',  icon: (a: boolean) => <IconStrava active={a} /> },
                 { id: 'me'     as Screen, label: 'Profile', icon: (a: boolean) => <IconMe     active={a} /> },
               ]).map(({ id, label, icon }, i) => {
@@ -685,7 +685,7 @@ export default function DashboardClient() {
 
       {/* ── Bottom nav bar ── */}
       {(() => {
-        const moreActive = showMore || ['coach', 'strava', 'me'].includes(screen)
+        const moreActive = showMore || ['strava', 'me'].includes(screen) || (isAdmin && screen === 'coach')
         const navItems: { id: Screen; label: string; icon: (a: boolean) => React.ReactNode }[] = [
           { id: 'today', label: 'Today', icon: (a) => <IconToday active={a} /> },
           { id: 'plan',  label: 'Plan',  icon: (a) => <IconPlan  active={a} /> },

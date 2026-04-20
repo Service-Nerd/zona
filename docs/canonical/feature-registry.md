@@ -8,7 +8,7 @@
 
 | Feature | Tier | Release | Notes |
 |---|---|---|---|
-| Core app shell (4 screens, nav) | FREE | R0–R15b | Today, Plan, Coach, Me screens |
+| Core app shell (3 screens, nav) | FREE | R0–R15b | Today, Plan, Me screens. Coach tab built but disabled for v1 launch — admin-only until post-launch. |
 | Screen guide popups | FREE | R15b | First-load onboarding |
 | Progress bar | PAID | R17 | Session completion % |
 | RPE input post-session | PAID | R17 + reflect UX | Stored in `session_completions`. Post-log reflect view (2026-04-19): dedicated step after Strava log or manual log — replaces instant-dismiss toast. ZONA voice responds to RPE, session-type-aware. |
@@ -34,7 +34,7 @@
 | Plan Confidence Score | PAID | R18 | Derived from completion + RPE data |
 | Coaching Tips in Supabase | PAID | R19 | Move hardcoded copy to DB; dynamic per user |
 | Dynamic Plan Reshaping | PAID | R20 | Separate from creation; shared schema with R23 |
-| Strength Sessions | FREE (stubs) / PAID (dynamic) | R21 | Generator stubs exist; full content in R21 |
+| Strength Sessions | FREE (stubs) / PAID (dynamic) | R21 | Generator stubs exist; cards render with no content. **Admin-only for v1 launch** — filtered from public plan view until R21 ships full content. |
 | Blockout Days | PAID | R22 | User marks unavailable days; plan reshapes |
 | Plan Generator Wizard UI | PAID | R23b | Multi-step wizard; replaces current form |
 | Multi-Race Support | PAID | R24 | A/B race hierarchy |
