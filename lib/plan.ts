@@ -16,12 +16,11 @@ export const EMPTY_PLAN: Plan = {
 
 const PLAN_FALLBACK: Plan = {
   meta: {
-    athlete: 'Russ Shear', handle: '@doinghardthingsbadly',
-    race_name: 'Race to the Stones', race_date: '2026-07-11', race_distance_km: 100,
-    charity: 'Make-A-Wish UK', plan_start: '2026-01-19', quit_date: '2026-04-03',
-    resting_hr: 48, max_hr: 188, zone2_ceiling: 145,
-    version: '2.1', last_updated: '2026-04-06',
-    notes: 'v2.1: W14 Saturday B2B added. Thu renamed to Fri throughout.'
+    athlete: '', handle: '',
+    race_name: '', race_date: '', race_distance_km: 0,
+    charity: '', plan_start: '', quit_date: '',
+    resting_hr: 0, max_hr: 0, zone2_ceiling: 145,
+    version: '', last_updated: '', notes: ''
   },
   weeks: []
 }

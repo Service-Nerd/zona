@@ -5,10 +5,16 @@ import { createClient } from '@/lib/supabase/client'
 import { formatDuration, formatPace, hrColour, paceAtHR, getRuns } from '@/lib/strava'
 import type { StravaActivity } from '@/types/plan'
 
-export default function StravaPanel({ preloadedRuns, preloadedConnected, preloadedLoading }: {
+export default function StravaPanel({ preloadedRuns, preloadedConnected, preloadedLoading, raceName, raceDate, raceDistanceKm, zone2Ceiling, restingHR, maxHR }: {
   preloadedRuns?: any[] | null
   preloadedConnected?: boolean
   preloadedLoading?: boolean
+  raceName?: string
+  raceDate?: string
+  raceDistanceKm?: number
+  zone2Ceiling?: number
+  restingHR?: number
+  maxHR?: number
 }) {
   const runs      = preloadedRuns ?? null
   const connected = preloadedConnected ?? false
@@ -33,10 +39,19 @@ export default function StravaPanel({ preloadedRuns, preloadedConnected, preload
 
   async function analyseActivity(run: StravaActivity) {
     setAnalysis(null)
-    const weeksToRace = Math.max(0, Math.round((new Date('2026-07-11').getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 7)))
-    const prompt = `You are a direct ultra running coach reviewing a single training activity for Russ, training for Race to the Stones 100km on 11 July 2026 (${weeksToRace} weeks away).
+    const z2 = zone2Ceiling ?? 145
+    const weeksToRace = raceDate ? Math.max(0, Math.round((new Date(raceDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 7))) : null
+    const raceDesc = [raceName || '', raceDistanceKm ? `${raceDistanceKm}km` : ''].filter(Boolean).join(' ')
+    const raceContext = raceDate
+      ? `${raceDesc || 'their target race'} on ${new Date(raceDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}${weeksToRace !== null ? ` (${weeksToRace} weeks away)` : ''}`
+      : raceDesc || 'an upcoming race'
+    const hrProfile = restingHR && maxHR
+      ? `Resting HR ~${restingHR}, max HR ~${maxHR}. Priority: Zone 2 discipline (HR ≤${z2}).`
+      : `Priority: Zone 2 discipline (HR ≤${z2}).`
 
-Athlete: HM 1:48:30, resting HR ~48, max HR ~186-190. Priority: Zone 2 discipline (HR ≤145). Recently quit smoking April 3rd.
+    const prompt = `You are a direct running coach reviewing a single training activity. The athlete is training for ${raceContext}.
+
+Athlete: ${hrProfile}
 
 Activity:
 - Name: ${run.name}

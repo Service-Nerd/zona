@@ -12,9 +12,9 @@ A running training app for non-elite runners who overtrain.
 Brand positioning: "Slow down. You're not Kipchoge."
 Core truth: "You're trying hard. That's the problem."
 
-The primary user (Russ) is training for Race to the Stones 100km
-(11 Jul 2026). The app is built around his plan but designed
-to be multi-user.
+Each user brings their own plan — race, distance, training phase. All
+athlete-specific data (race, HR zones, name) lives in the plan JSON
+and user_settings. Nothing is hardcoded to a specific person.
 
 ---
 

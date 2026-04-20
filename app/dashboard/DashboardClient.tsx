@@ -589,7 +589,7 @@ export default function DashboardClient() {
         {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} />}
         {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaTokenFailed={stravaTokenFailed} firstName={firstName} onGoToMe={() => setScreen('me')} />}
-        {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} />}
+        {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
         {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} />}
         {/* CalendarOverlay hidden — entry point removed. Component lives in CalendarOverlay.tsx. */}
         {screen === 'calendar' && <CalendarOverlay plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onBack={() => setScreen('today')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
@@ -3471,13 +3471,21 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
     setError(null)
     try {
       const { formatDuration, formatPace } = await import('@/lib/strava')
-      const weeksToRace = Math.max(0, Math.round((new Date('2026-07-11').getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 7)))
+      const weeksToRace = plan.meta.race_date ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 7))) : 0
       const weekLabel   = (currentWeek as any).label ?? 'build phase'
       const weekTheme   = (currentWeek as any).theme ?? ''
+      const raceName    = plan.meta.race_name || 'target race'
+      const raceDist    = plan.meta.race_distance_km ? `${plan.meta.race_distance_km}km` : ''
+      const raceDesc    = [raceName, raceDist].filter(Boolean).join(' ')
+      const raceContext = plan.meta.race_date ? `${raceDesc} on ${new Date(plan.meta.race_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} (${weeksToRace} weeks away)` : raceDesc
+      const z2          = plan.meta.zone2_ceiling || 145
+      const hrProfile   = plan.meta.resting_hr && plan.meta.max_hr
+        ? `Resting HR ~${plan.meta.resting_hr}, max HR ~${plan.meta.max_hr}. Zone 2 ceiling: HR ${z2}.`
+        : `Zone 2 ceiling: HR ${z2}.`
 
-      const prompt = `You are a direct, no-fluff ultra running coach giving Russ a weekly check-in. He is training for Race to the Stones 100km on 11 July 2026 (${weeksToRace} weeks away).
+      const prompt = `You are a direct, no-fluff running coach giving an athlete a weekly check-in. They are training for ${raceContext}.
 
-Athlete profile: HM 1:48:30, resting HR ~48, max HR ~188. Zone 2 ceiling: HR 145. Recently quit smoking 3 April 2026. Key metric to track: pace at HR 145.
+Athlete profile: ${hrProfile} Key metric to track: pace at Zone 2 HR.
 
 Current plan position: Week ${weekNum} of ${totalWeeks}. Phase: ${weekLabel}. Focus: ${weekTheme}.
 
@@ -3491,7 +3499,7 @@ Latest activity:
 - Pace: ${formatPace(latestRun.moving_time, latestRun.distance)}
 - Elevation: +${Math.round(latestRun.total_elevation_gain ?? 0)}m
 
-Write 2 short paragraphs. First: where Russ is in the plan and whether he's on track. Second: direct feedback on the latest run — what was good, what to focus on next. Be specific, honest, no fluff. Use "you" not "Russ".`
+Write 2 short paragraphs. First: where the athlete is in the plan and whether they're on track. Second: direct feedback on the latest run — what was good, what to focus on next. Be specific, honest, no fluff. Use "you" throughout.`
 
       const res = await fetch('/api/claude', {
         method: 'POST',
@@ -3622,14 +3630,16 @@ Write 2 short paragraphs. First: where Russ is in the plan and whether he's on t
 
 // ── STRAVA SCREEN ─────────────────────────────────────────────────────────
 
-function StravaScreen({ runs, loading, connected }: {
+function StravaScreen({ runs, loading, connected, raceName, raceDate, raceDistanceKm, zone2Ceiling, restingHR, maxHR }: {
   runs: any[] | null; loading: boolean; connected: boolean
+  raceName?: string; raceDate?: string; raceDistanceKm?: number
+  zone2Ceiling?: number; restingHR?: number; maxHR?: number
 }) {
   return (
     <div>
       <ScreenHeader title="Strava" sub="Activity feed" />
       <div style={{ padding: '0 12px' }}>
-        <StravaPanel preloadedRuns={runs} preloadedConnected={connected} preloadedLoading={loading} />
+        <StravaPanel preloadedRuns={runs} preloadedConnected={connected} preloadedLoading={loading} raceName={raceName} raceDate={raceDate} raceDistanceKm={raceDistanceKm} zone2Ceiling={zone2Ceiling} restingHR={restingHR} maxHR={maxHR} />
       </div>
     </div>
   )
@@ -3985,11 +3995,15 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
 }) {
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling'>('main')
 
-  if (activeSection === 'quit')    return <QuitTab    quitDays={quitDays} onBack={() => setActiveSection('main')} />
-  if (activeSection === 'mental')  return <MentalTab  resetPhrase={resetPhrase} onSave={onSaveMental} onBack={() => setActiveSection('main')} />
+  const raceDistKm = plan?.meta?.race_distance_km ?? 0
+  const raceNm     = plan?.meta?.race_name ?? ''
+  const charity    = plan?.meta?.charity ?? ''
+
+  if (activeSection === 'quit')    return <QuitTab    quitDays={quitDays} raceDistanceKm={raceDistKm} onBack={() => setActiveSection('main')} />
+  if (activeSection === 'mental')  return <MentalTab  resetPhrase={resetPhrase} onSave={onSaveMental} onBack={() => setActiveSection('main')} raceDistanceKm={raceDistKm} raceName={raceNm} charity={charity} />
   if (activeSection === 'fueling') return <FuelingTab onBack={() => setActiveSection('main')} />
 
-  const daysToRace = Math.max(0, Math.ceil(((plan?.meta?.race_date ? new Date(plan.meta.race_date) : new Date('2026-07-11')).getTime() - Date.now()) / 86400000))
+  const daysToRace = plan?.meta?.race_date ? Math.max(0, Math.ceil((new Date(plan.meta.race_date).getTime() - Date.now()) / 86400000)) : 0
   const hasPlan = !!(plan?.meta?.race_name)
 
   // Compute Zone 2 ceiling for display — mirrors DashboardClient logic
@@ -4388,21 +4402,29 @@ function InfoBox({ children }: { children: React.ReactNode }) {
   )
 }
 
-function MentalTab({ resetPhrase, onSave, onBack }: { resetPhrase: string; onSave: (v: string) => void; onBack: () => void }) {
+function MentalTab({ resetPhrase, onSave, onBack, raceDistanceKm, raceName, charity }: { resetPhrase: string; onSave: (v: string) => void; onBack: () => void; raceDistanceKm?: number; raceName?: string; charity?: string }) {
+  const distLabel  = raceDistanceKm ? `${raceDistanceKm}km` : 'the full distance'
+  const raceLabel  = raceName || 'your race'
+  const darkKmLow  = raceDistanceKm ? Math.round(raceDistanceKm * 0.65) : null
+  const darkKmHigh = raceDistanceKm ? Math.round(raceDistanceKm * 0.75) : null
+  const darkRange  = darkKmLow && darkKmHigh ? `km ${darkKmLow}–${darkKmHigh}` : 'the back half'
+  const whyCard    = charity
+    ? `${charity}. When you want to stop, think about why you started. That one doesn't move when everything else does.`
+    : "When you want to stop, think about why you started. That one doesn't move when everything else does."
   const tools = [
-    { title: 'The Box',          text: "Don't think about 100km. Next checkpoint only. That's your entire world. Shrink it right down and stay in it." },
+    { title: 'The Box',          text: `Don't think about ${distLabel}. Next checkpoint only. That's your entire world. Shrink it right down and stay in it.` },
     { title: 'The Reset Phrase', text: 'Pick one phrase now, before race day. Short. Yours. Use it the moment the voice starts. Write it below.' },
     { title: 'Feeling ≠ Fact',   text: '"I can\'t do this" is a feeling. Not information. Your legs are still moving — that\'s information. It passes.' },
     { title: 'The Fuel Check',   text: '80% of dark patches are underfueling in a trench coat. Before you spiral, eat something. Wait 8 minutes.' },
-    { title: 'The Why Card',     text: 'Make-A-Wish. When you want to stop, think about why you started. That one doesn\'t move when everything else does.' },
-    { title: 'Walk = Strategy',  text: 'The elites walk the uphills at RTTS. Walking a climb at km 72 is a tactic, not a failure.' },
+    { title: 'The Why Card',     text: whyCard },
+    { title: 'Walk = Strategy',  text: `Elites walk the uphills at ${raceLabel}. Walking a climb is a tactic, not a failure.` },
   ]
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
       <BackHeader title="Mental toolkit" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
         <InfoBox>
-          The dark patch is coming. Probably around <span style={{ color: 'var(--accent)' }}>km 65–75</span>. That's not a sign something's wrong — it's a sign you've been working long enough for it to be real. These tools exist for that moment.
+          The dark patch is coming. Probably around <span style={{ color: 'var(--accent)' }}>{darkRange}</span>. That's not a sign something's wrong — it's a sign you've been working long enough for it to be real. These tools exist for that moment.
         </InfoBox>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
           {tools.map(t => (
@@ -4414,7 +4436,7 @@ function MentalTab({ resetPhrase, onSave, onBack }: { resetPhrase: string; onSav
         </div>
         <div style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px' }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Your Reset Phrase</div>
-          <textarea value={resetPhrase} onChange={e => onSave(e.target.value)} placeholder="What's the phrase you'll use when it gets dark at km 70?" style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontFamily: 'var(--font-brand)', fontSize: '13px', lineHeight: 1.7, resize: 'vertical', minHeight: '60px', outline: 'none' }} />
+          <textarea value={resetPhrase} onChange={e => onSave(e.target.value)} placeholder="What's the phrase you'll use when it gets dark?" style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontFamily: 'var(--font-brand)', fontSize: '13px', lineHeight: 1.7, resize: 'vertical', minHeight: '60px', outline: 'none' }} />
         </div>
       </div>
     </div>
@@ -4451,15 +4473,16 @@ function FuelingTab({ onBack }: { onBack: () => void }) {
   )
 }
 
-function QuitTab({ quitDays, onBack }: { quitDays: number | null; onBack: () => void }) {
+function QuitTab({ quitDays, raceDistanceKm, onBack }: { quitDays: number | null; raceDistanceKm?: number; onBack: () => void }) {
   const days = quitDays ?? 0
   const milestones = [
     { days: 3,  label: 'Day 3 — Nicotine clearing' },
     { days: 7,  label: 'Week 1' },
     { days: 14, label: 'Day 14 — Habit breaking' },
     { days: 30, label: 'Day 30 — Lung function' },
-    { days: 99, label: 'Race Day — Job done' },
+    { days: 60, label: 'Day 60 — Aerobic gains' },
   ]
+  const raceCtx = raceDistanceKm ? `a ${raceDistanceKm}km race` : 'your race'
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
       <BackHeader title="Quit tracker" onBack={onBack} />
@@ -4484,7 +4507,7 @@ function QuitTab({ quitDays, onBack }: { quitDays: number | null; onBack: () => 
           <span style={{ color: 'var(--accent)' }}>Week 1–2</span> — Resting HR starts dropping. Recovery improves noticeably.<br />
           <span style={{ color: 'var(--accent)' }}>Week 3–4</span> — Aerobic efficiency measurably better. Zone 2 feels easier.<br />
           <span style={{ color: 'var(--accent)' }}>Month 2+</span> — Cardiac drift reduces. That late-run HR creep? Less of it.<br /><br />
-          <strong style={{ color: 'var(--text-secondary)' }}>You quit 99 days before a 100km race. That's an upgrade.</strong>
+          <strong style={{ color: 'var(--text-secondary)' }}>Quitting while training for {raceCtx}. That's an upgrade.</strong>
         </InfoBox>
       </div>
     </div>
