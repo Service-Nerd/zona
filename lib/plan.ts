@@ -40,20 +40,25 @@ export async function fetchPlan(): Promise<Plan> {
   return fetchPlanFromUrl(DEFAULT_GIST_URL)
 }
 
+// Parse a YYYY-MM-DD string as local midnight — avoids UTC-offset week mismatches
+export function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 export function getCurrentWeek(weeks: Plan['weeks']) {
   const now = new Date()
   now.setHours(0, 0, 0, 0)
   // Find the week where today falls within its 7-day window
   const current = weeks.find(w => {
-    const weekStart = new Date((w as any).date)
-    weekStart.setHours(0, 0, 0, 0)
+    const weekStart = parseLocalDate((w as any).date)
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekEnd.getDate() + 7)
     return now >= weekStart && now < weekEnd
   })
   // Fallback: last week before today (if between weeks), or first future week
   if (!current) {
-    const past = [...weeks].reverse().find(w => new Date((w as any).date) <= now)
+    const past = [...weeks].reverse().find(w => parseLocalDate((w as any).date) <= now)
     return past ?? weeks[0]
   }
   return current

@@ -7,7 +7,7 @@ import PlanCalendar from '@/components/training/PlanCalendar'
 import CalendarOverlay from './CalendarOverlay'
 import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
-import { fetchPlanFromUrl, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex } from '@/lib/plan'
+import { fetchPlanFromUrl, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
 import dynamic from 'next/dynamic'
 const GeneratePlanScreen = dynamic(() => import('./GeneratePlanScreen'), { ssr: false })
@@ -739,7 +739,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, onDismiss }: {
   const now = new Date(); now.setHours(0, 0, 0, 0)
   let firstSession: { day: string; label: string; type: string } | null = null
   for (const week of plan.weeks) {
-    const wDate = new Date((week as any).date)
+    const wDate = parseLocalDate((week as any).date)
     for (const key of DOW_KEYS) {
       const s = (week as any).sessions?.[key]
       if (!s || s.type === 'rest') continue
@@ -2878,7 +2878,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   // Build 7-day session list
   const now = new Date()
   const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][now.getDay()]
-  const weekStartDate = new Date((currentWeek as any).date)
+  const weekStartDate = parseLocalDate((currentWeek as any).date)
   const todayStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
   const ws = (currentWeek as any).sessions ?? {}
 
