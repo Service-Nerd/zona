@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { Week, Session, StravaActivity } from '@/types/plan'
 import { createClient } from '@/lib/supabase/client'
 import { SESSION_COLORS, SESSION_LABELS } from '@/lib/session-types'
+import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
 
 interface Completion {
   session_day: string
@@ -82,7 +83,7 @@ export default function PlanCalendar({ weeks, stravaRuns, allOverrides, allCompl
   const [showPast, setShowPast] = useState(false)
   const supabase = createClient()
 
-  const currentWeekIndex = weeks.findIndex(w => (w as any).type === 'current')
+  const currentWeekIndex = getCurrentWeekIndex(weeks)
   const safeIndex = currentWeekIndex >= 0 ? currentWeekIndex : 0
   const pastWeeks = weeks.slice(0, safeIndex).map((week, i) => ({ week, weekNum: i + 1 }))
   const currentAndFutureWeeks = weeks.slice(safeIndex).map((week, i) => ({ week, weekNum: safeIndex + i + 1 }))
@@ -157,13 +158,15 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
   onMove: (weekN: number, originalDay: string, newDay: string, currentSlot: string) => void
 }) {
   const ws = week.sessions ?? {}
-  const weekStartDate = new Date(week.date)
+  const weekStartDate = parseLocalDate(week.date)
   const weekDates = getWeekDates(weekStartDate)
-  const isCurrent = week.type === 'current'
-  const isCompleted = week.type === 'completed' || week.type === 'deload_done'
-  const weekTheme = week.theme ?? ''
   const now = new Date()
-  const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][now.getDay()]
+  now.setHours(0, 0, 0, 0)
+  const weekEnd = new Date(weekStartDate); weekEnd.setDate(weekEnd.getDate() + 7)
+  const isCurrent = now >= weekStartDate && now < weekEnd
+  const isCompleted = !isCurrent && weekStartDate < now
+  const weekTheme = week.theme ?? ''
+  const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()]
   const [movingDay, setMovingDay] = useState<string | null>(null)
 
   const effectiveSessions: Record<string, EffectiveSession> = {}
