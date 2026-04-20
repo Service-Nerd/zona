@@ -33,26 +33,26 @@
 ## Active Work
 
 ### Session Card Redesign + Coaching Signal
-**Status:** 🔄 Built, not deployed
+**Status:** ✅ Shipped (2026-04-20)
 
-**Session card hierarchy (built 2026-04-20):**
+**Session card hierarchy:**
 1. TOP: Zone chip · Metric grid (dist/duration with toggle, HR, pace)
 2. EXECUTION SUMMARY (when complete): Planned vs Actual — distance, HR, RPE side-by-side
 3. MIDDLE: Session description · Week focus
 4. BOTTOM: Coach notes
 
-**Collapsed card (built 2026-04-20):**
+**Collapsed card:**
 - Compact inline metric strip: Zone · HR · Pace · Metric (no toggle — expanded only)
 - Footer badge: `✓ On target` (teal) / `— Check this` (amber) / `✓ Done` — driven by `coaching_flag`
 
-**Coaching signal (built 2026-04-20):**
+**Coaching signal:**
 - `getCoachingFlag()`: pure function computing execution quality from RPE + avg HR vs zone
-- `avg_hr` and `coaching_flag` added to `session_completions` (migration: `supabase/migrations/20260420_coaching_signal.sql`)
+- `avg_hr` and `coaching_flag` added to `session_completions` — migration `supabase/migrations/20260420_coaching_signal.sql` run in production
 - `avg_hr` captured at Strava activity link time
 - `coaching_flag` computed and persisted at RPE save (reflect view + manual log)
 - R18-ready: flags are the per-session atom that confidence scoring will aggregate
 
-**Deployment blocker**: run `supabase/migrations/20260420_coaching_signal.sql` in Supabase SQL editor before pushing.
+**Post-log Reflect UX (UX-03b):** Shipped. Dedicated reflect step after any session logged — RPE 1–10, fatigue tags, ZONA voice response (session-type-aware). Skip flow records reason in `fatigue_tag`.
 
 ---
 

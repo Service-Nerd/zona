@@ -13,6 +13,8 @@
 | Progress bar | PAID | R17 | Session completion % |
 | RPE input post-session | PAID | R17 + reflect UX | Stored in `session_completions`. Post-log reflect view (2026-04-19): dedicated step after Strava log or manual log — replaces instant-dismiss toast. ZONA voice responds to RPE, session-type-aware. |
 | Fatigue tags | PAID | R17 | Canonical vocabulary: `Fresh / Fine / Heavy / Wrecked`. Shown in reflect view and on collapsed card badge. Skip reason also stored in `fatigue_tag`. |
+| Session Card Redesign | PAID | 2026-04-20 | New card hierarchy; compact metric strip; zone chip; per-session toggle (expanded only). |
+| Coaching Signal | PAID | 2026-04-20 | `coaching_flag` per session (`ok`/`watch`/`flag`); `avg_hr` from Strava; execution summary in expanded card; flag badge on collapsed card. DB migration deployed. R18-ready. |
 | Plan Generator (API route + form) | FREE (templates) / PAID (AI) | R23 | FREE = pre-built templates; PAID = AI generator with athlete variables |
 | Profile screen | FREE | R15b | First name, last name, email on `user_settings` |
 | Smoke tracker | FREE | R15b | Days since quit, displayed on dashboard |
@@ -22,13 +24,6 @@
 | Strava integration | PAID | — | OAuth, run sync, aerobic pace derivation |
 
 ---
-
-## In Progress
-
-| Feature | Tier | Release | Notes |
-|---|---|---|---|
-| Session Card Redesign | PAID | — | New card hierarchy; compact metric strip; zone chip; per-session toggle (expanded only) |
-| Coaching Signal | PAID | — | `coaching_flag` per session (`ok`/`watch`/`flag`); `avg_hr` from Strava; execution summary in expanded card; flag badge on collapsed card. R18-ready. Requires DB migration before deploy. |
 
 ---
 
