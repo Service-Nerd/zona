@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage]   = useState<string | null>(null)
+  const [ageConfirmed, setAgeConfirmed] = useState(false)
   const supabase = createClient()
   const router   = useRouter()
 
@@ -158,15 +159,32 @@ export default function LoginPage() {
               value={password} onChange={e => setPassword(e.target.value)}
               style={inputStyle}
             />
-            <button type="submit" disabled={loading || !email || !password} style={{
-              width: '100%', padding: '13px',
-              background: 'var(--accent)', color: 'var(--zona-navy)',
-              border: 'none', borderRadius: '10px',
-              fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500,
-              cursor: loading || !email || !password ? 'default' : 'pointer',
-              opacity: loading || !email || !password ? 0.5 : 1,
-              transition: 'opacity 0.15s',
-            }}>
+            {mode === 'signup' && (
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>
+                <input
+                  type="checkbox"
+                  checked={ageConfirmed}
+                  onChange={e => setAgeConfirmed(e.target.checked)}
+                  style={{ marginTop: '2px', accentColor: 'var(--accent)', flexShrink: 0 }}
+                />
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                  I confirm I am 13 years of age or older.
+                </span>
+              </label>
+            )}
+            <button
+              type="submit"
+              disabled={loading || !email || !password || (mode === 'signup' && !ageConfirmed)}
+              style={{
+                width: '100%', padding: '13px',
+                background: 'var(--accent)', color: 'var(--zona-navy)',
+                border: 'none', borderRadius: '10px',
+                fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500,
+                cursor: loading || !email || !password || (mode === 'signup' && !ageConfirmed) ? 'default' : 'pointer',
+                opacity: loading || !email || !password || (mode === 'signup' && !ageConfirmed) ? 0.5 : 1,
+                transition: 'opacity 0.15s',
+              }}
+            >
               {loading ? '...' : mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
           </form>
@@ -201,6 +219,21 @@ export default function LoginPage() {
           opacity: 0.5, lineHeight: 1.7,
         }}>
           Slow down. You&apos;re not Kipchoge.
+        </div>
+        <div style={{ marginTop: '10px', textAlign: 'center' }}>
+          <a
+            href="https://zona.app/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: '10px', color: 'var(--text-muted)',
+              opacity: 0.4, textDecoration: 'underline',
+              textUnderlineOffset: '2px',
+            }}
+          >
+            Privacy Policy
+          </a>
         </div>
       </div>
     </div>

@@ -3741,6 +3741,11 @@ function StravaConnectionRow() {
           )
         )}
       </div>
+      {!isLoading && !connected && (
+        <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+          ZONA will read your Strava activities to provide coaching insights. No other data is accessed.
+        </div>
+      )}
     </div>
   )
 }

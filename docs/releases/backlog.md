@@ -187,3 +187,18 @@ Derived from a full-app UX audit. P1 items (race countdown, week narrative, fati
 | `StravaPanel.tsx` hardcoded values | ✅ Audited and fixed — all hex/rgba replaced with CSS vars |
 | `login/page.tsx` hardcoded values | Not yet audited |
 | `PlanCalendar` `any` props (partial) | `stravaRuns` prop is accepted but unused in WeekCard — remove or wire up |
+
+---
+
+## App Store Compliance — 2026-04-20
+
+Pre-launch audit (2026-04-20) identified App Store/GDPR blockers. Status:
+
+| Item | Status | Notes |
+|------|--------|-------|
+| React Error Boundary | ✅ Shipped | `components/ErrorBoundary.tsx` wraps `<body>` in `layout.tsx`. Component crashes show fallback UI instead of full app crash. |
+| Strava OAuth scope disclosure | ✅ Shipped | Disclosure shown before Connect button in Me screen when not yet connected. |
+| Privacy policy link pre-login | ✅ Shipped | `login/page.tsx` footer links to `zona.app/privacy`. **Reminder: host the page before App Store submission.** |
+| Age confirmation on signup | ✅ Shipped | 13+ checkbox gates account creation in email/password signup flow. |
+| Sign in with Apple | 🔲 Not Started | Apple §5.1.1d — required because Google OAuth is present. P0 blocker. |
+| Account deletion flow | 🔲 Not Started | Apple + Google mandate since 2022/2023. No route, no UI, no cascade delete. P0 blocker. |
