@@ -7,206 +7,198 @@
 
 ---
 
-## Releases Shipped
+## What's Shipped
 
-| Release | Summary                                                         |
-|---------|-----------------------------------------------------------------|
-| R0–R15b | All complete. R15b = screen guide popups, localStorage, 4 screens |
-| R17 | RPE + Fatigue Tags, Progress bar |
-| R23 | Plan Generator — API route, multi-step form UI, schema, new user flow |
-
-## Architecture Hygiene (shipped 2026-04-17)
-
-| Finding | Fix |
-|---------|-----|
-| H-001 | `layout.tsx` — removed all `setProperty()` calls; `data-theme` toggle only |
-| H-003 | Created `lib/session-types.ts` as canonical session colour/label resolver; removed duplicate local maps from `DashboardClient` and `PlanCalendar` |
-| M-001 | `PlanCalendar.tsx` — all hardcoded hex/rgba/font strings replaced with CSS custom properties |
-| M-002 | `PlanCalendar.tsx` — all `any` types replaced with `StravaActivity[]`, `Completion`, `EffectiveSession`, `SessionTapPayload` |
-| L-001 | `SessionType` union extended from 6 to 12 types in `types/plan.ts` |
-| L-002 | `tailwind.config.ts` — old-palette colours and banned fonts (Bebas Neue, DM Mono, DM Sans) removed |
-| Docs | `/docs` restructured into `canonical/`, `contracts/`, `architecture/`, `releases/`. ADRs 001–004 written. API and component contracts written from live code. `CLAUDE.md` updated. |
-| Tooling | Pre-commit git hook added — blocks `setProperty()`, hardcoded hex, banned fonts, ember orange/warm beige at commit time |
+| Release | Summary |
+|---------|---------|
+| R0–R15b | Core app shell (Today, Plan, Me, Coach screens), nav, screen guide popups, localStorage, profile screen, smoke tracker, theme toggle |
+| R17 | RPE + fatigue tags, progress bar, post-log reflect view, Zona voice responses |
+| R23 | Plan generator — API route, multi-step form, new user flow, orientation screen |
+| Session Card Redesign | New card hierarchy, zone chip, metric grid, execution summary, coaching flag badge |
+| Coaching Signal | `coaching_flag` + `avg_hr` on session completions, `getCoachingFlag()` pure function, DB migration deployed |
+| Architecture hygiene | Pre-commit hook, `lib/session-types.ts`, CSS token audit, ADRs 001–004, docs restructure |
+| UX audit (P1–P3) | Race countdown, week narrative, fatigue trend, HR zone labels, post-log reflect, Coach fallback, fatigue-informed session framing, fitness-level copy, first name greeting, Strava reconnect flow, past session log state, weekly session count, palette + font audits — all shipped |
+| App Store basics | Error boundary, Strava OAuth disclosure, privacy policy link pre-login, 13+ age gate |
 
 ---
 
-## Active Work
+## v1 App Store Launch Roadmap
 
-### Session Card Redesign + Coaching Signal
-**Status:** ✅ Shipped (2026-04-20)
+### Decisions required first
+Product owner must resolve these before any build work starts. Each one blocks work downstream.
 
-**Session card hierarchy:**
-1. TOP: Zone chip · Metric grid (dist/duration with toggle, HR, pace)
-2. EXECUTION SUMMARY (when complete): Planned vs Actual — distance, HR, RPE side-by-side
-3. MIDDLE: Session description · Week focus
-4. BOTTOM: Coach notes
-
-**Collapsed card:**
-- Compact inline metric strip: Zone · HR · Pace · Metric (no toggle — expanded only)
-- Footer badge: `✓ On target` (teal) / `— Check this` (amber) / `✓ Done` — driven by `coaching_flag`
-
-**Coaching signal:**
-- `getCoachingFlag()`: pure function computing execution quality from RPE + avg HR vs zone
-- `avg_hr` and `coaching_flag` added to `session_completions` — migration `supabase/migrations/20260420_coaching_signal.sql` run in production
-- `avg_hr` captured at Strava activity link time
-- `coaching_flag` computed and persisted at RPE save (reflect view + manual log)
-- R18-ready: flags are the per-session atom that confidence scoring will aggregate
-
-**Post-log Reflect UX (UX-03b):** Shipped. Dedicated reflect step after any session logged — RPE 1–10, fatigue tags, Zona voice response (session-type-aware). Skip flow records reason in `fatigue_tag`.
+| # | Decision | Blocks |
+|---|----------|--------|
+| D1 | **StoreKit (Apple IAP) vs web checkout** — Apple §3.1.1 requires all iOS subscription revenue through IAP (15–30% cut). Web checkout requires an External Purchase Entitlement application (takes weeks, not guaranteed). This is a commercial decision, not a technical one. | All monetisation build work |
+| D2 | **Upgrade prompt UX** — inline sheet or dedicated screen? | Reverse trial UI |
+| D3 | **Gist → Supabase migration timing** — before or after launch? New users need a plan storage target. | R0.5 onboarding build |
+| D4 | **Final pricing** — exact price point and billing frequency | App Store Connect setup, subscription terms UI |
 
 ---
 
-## Ordered Backlog
+### Phase 1 — Legal & Platform Compliance
+**All P0. Apple will reject without every item here.**
 
-### R17 — RPE + Fatigue Tags
-**Status:** ✅ Shipped | **Tier:** PAID
-- Add RPE input post-session
-- Add fatigue tags (legs, general, mental)
-- Store in `session_completions`
+| Item | Status | Notes |
+|------|--------|-------|
+| Sign in with Apple | 🔲 Not Started | Apple §5.1.1d — mandatory when any other social login is present (Google OAuth is). |
+| Account deletion flow | 🔲 Not Started | Apple + Google mandate since 2022/2023. Needs: UI in Me screen → API route → Supabase cascade delete of all user data. |
+| Terms of Service | 🔲 Not Started | Required for any app with accounts or IAP. Write, host at public URL, link pre-login alongside privacy policy. |
+| Privacy policy hosted | 🔲 Not Started | Page is built (`/privacy`). Needs to be live at `zona.app/privacy` before submission. |
+| StoreKit 2 integration **or** External Purchase Entitlement | 🔲 Not Started | Depends on D1 above. If IAP: implement StoreKit 2 purchase + receipt validation. If web checkout: apply for entitlement — not guaranteed and slow. |
+| Subscription terms disclosure UI | 🔲 Not Started | Apple requires price, billing frequency, 14-day trial length, and auto-renewal terms shown before user subscribes. |
+| App Store Connect setup | 🔲 Not Started | Active developer account, app record, subscription product (ID + pricing tiers + trial config), screenshots for all required device sizes, App Store description and keywords. |
+
+---
+
+### Phase 2 — Infrastructure
+**Blocks all new-user flows. Must ship before Phase 3.**
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Gist → Supabase plan storage | 🔲 Not Started | Add `plans` table (`user_id`, `plan_json` JSONB, `created_at`, `updated_at`). Wire plan save + fetch. ADR-002 ensures generator/reshaper need no changes. Blocked on D3. |
+| Reverse trial infrastructure | 🔲 Not Started | Add `trial_started_at` to `user_settings` (set on account creation, never updated). Create `lib/trial.ts` with `isTrialActive()`. Enforce PAID gates in API routes + components (both layers per ADR-003). Upgrade prompt component (blocked on D2). Graceful downgrade flow. |
+
+---
+
+### Phase 3 — Onboarding
+**The core new-user journey. No new user can reach the product without this.**
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Rule-based plan engine | 🔲 Not Started | Deterministic plan generation from pre-built templates — zero Anthropic API calls. Inputs: race distance, fitness level, days available, race date. Templates: 5K / 10K / HM, 8 & 12-week. Output: valid JSON matching canonical plan schema. Lives alongside existing AI path in `app/api/generate-plan/route.ts`. |
+| R0.5 — Onboarding flow | 🔲 Not Started | Questionnaire → plan on screen in under 3 minutes. Free path: questionnaire → matched template. Trial/paid path: questionnaire → AI generator. Progressive disclosure — core inputs only (race, distance, fitness level, days available). Sensible defaults, no blocking required fields. Depends on Gist→Supabase (Phase 2) and trial infrastructure (Phase 2). |
+
+---
+
+### Phase 4 — Pre-submission Quality
+
+| Item | Status | Notes |
+|------|--------|-------|
+| TestFlight beta | 🔲 Not Started | Internal testing on device before public submission. |
+| Full journey test | 🔲 Not Started | Tested end-to-end with agent-browser: create account → onboarding → plan on screen → log session → post-log reflect → simulate trial end → attempt paid feature → upgrade prompt. |
+| App Store assets | 🔲 Not Started | Screenshots (all required device sizes), preview video (optional), keywords, App Store description copy. |
+
+---
+
+## v1 SLC — What Ships, What Doesn't
+
+### In v1
+1. Create account (email/password + Sign in with Apple + Google)
+2. Onboarding questionnaire → plan on screen in under 3 minutes
+3. Today screen — session with zone, HR, and pace targets
+4. Log a session (manual or Strava) → post-log reflect (RPE + feel + Zona voice)
+5. Plan screen — full training plan view
+6. Me screen — profile, HR zones, Strava connection, theme
+7. 14-day full access trial → graceful downgrade to free tier
+8. Free tier: template plans, session tracking, formula-derived targets
+
+### Explicitly out of v1
+| Feature | Why deferred |
+|---------|-------------|
+| Coach tab | Admin-only. No caching, not plan-phase-aware, adds AI cost before monetisation is live. |
+| Dynamic plan reshaping (R20) | PAID, post-launch. |
+| Plan confidence score (R18) | PAID, post-launch. |
+| Strength sessions full content (R21) | Admin-only for launch — ghost feature, hidden from public view. |
+| Blockout days (R22) | PAID, post-launch. |
+| Multi-race support (R24) | PAID, post-launch. |
+| Plan generator wizard UI (R23b) | PAID, post-launch. |
+
+---
+
+## Post-Launch Roadmap
+
+Ordered by value. Each item needs FREE/PAID tag confirmed in `docs/canonical/feature-registry.md` before build begins.
+
+### Coach Tab — Re-enable for public
+**Tier:** PAID | **Priority:** P1 post-launch
+- Built and working but admin-only at launch
+- To re-enable: (1) add localStorage caching per `activity_id`, (2) pass `weekNum`, `phase`, `weeklyKm` to Claude prompt, (3) remove `isAdmin` gate in DashboardClient more-menu
 
 ### R18 — Plan Confidence Score
-**Status:** 🔲 Not Started | **Tier:** PAID
+**Tier:** PAID
 - Derive confidence score from recent session completion + RPE data
-- Display on dashboard
+- R17 coaching flags are the per-session atom this aggregates
+- Display on dashboard or plan screen
 
 ### R19 — Coaching Tips in Supabase
-**Status:** 🔲 Not Started | **Tier:** PAID
-- Move hardcoded coaching copy into Supabase
+**Tier:** PAID
+- Move hardcoded coaching copy into Supabase table
 - Enables dynamic, user-specific coaching messages
 
 ### R20 — Dynamic Plan Reshaping
-**Status:** 🔲 Not Started | **Tier:** PAID
+**Tier:** PAID
 - Reshape active plan based on fatigue, missed sessions, race proximity
-- Separate flow from plan creation (R23)
-- Shares schema and rules with R23
+- Separate flow from plan creation (R23); shares schema and rules
+- See `docs/canonical/adaptation-rules.md` for reshaping logic
 
 ### R21 — Strength Sessions
-**Status:** 🔲 Not Started | **Tier:** FREE (stubs) / PAID (dynamic)
-- Flesh out strength session stubs currently in plan JSON
-- Display in session cards with appropriate UI treatment
-- **v1 decision (2026-04-20):** strength sessions are admin-only for launch. Generator can produce them but cards render with no content — ghost feature. Filter from public plan/today view until R21 is ready. Code task: pass `isAdmin` to TodayScreen and PlanCalendar; hide strength sessions for non-admin.
+**Tier:** FREE (display stubs) / PAID (dynamic)
+- Flesh out strength session stubs in plan JSON
+- Session cards with appropriate UI treatment
+- Currently: admin-only, hidden from public plan + today view
 
 ### R22 — Blockout Days
-**Status:** 🔲 Not Started | **Tier:** PAID
-- User marks days unavailable
-- Plan reshapes around blockout days
-
-### R23 — Plan Generator
-**Status:** ✅ Shipped (R23b wizard UI still to do) | **Tier:** FREE (templates) / PAID (full AI generator)
-- FREE: Pre-built templates (5K/10K/HM, 8 & 12 week variants)
-- PAID: Full AI generator with user-editable athlete variables
-- Output = JSON always; never direct-to-DB
-- Creation and reshaping (R20) are separate flows, shared schema
-- API route + multi-step form shipped; new users land on Plan screen with Generate CTA
-
-### Coach Tab — Re-enable for public
-**Status:** 🔲 Not Started | **Tier:** PAID
-- Coach tab built and working but disabled for v1 launch (admin-only)
-- **Why deferred:** requires Strava + Claude API call on every tab open (no caching), prompt is not plan-phase-aware (doesn't pass weekNum/phase/weeklyKm), and adds operational cost before monetisation is in place
-- **To re-enable:** (1) add localStorage caching per `activity_id`, (2) pass `weekNum`, `phase`, `weeklyKm` to Claude prompt, (3) remove `isAdmin` gate in DashboardClient more-menu
-- SLC assessment: the reflect view + Zona voice covers the coaching need for v1. Coach tab is a P1 post-launch feature.
+**Tier:** PAID
+- User marks days unavailable; plan reshapes around them
 
 ### R23b — Plan Generator Wizard UI
-**Status:** 🔲 Not Started | **Tier:** PAID
-- Convert the plan generator form into a multi-step wizard interface
-- One question / section per screen with progress indicator
-- Improve mobile UX for longer forms
+**Tier:** PAID
+- Multi-step wizard replacing the current form
+- One question per screen with progress indicator
+- Better mobile UX for longer forms
 
 ### R24 — Multi-Race Support
-**Status:** 🔲 Not Started | **Tier:** PAID
-- Support multiple target races per user
-- Plan structure accommodates A/B race hierarchy
+**Tier:** PAID
+- Support multiple target races per user (A/B race hierarchy)
 
 ---
 
-## Scoped But Not Started
+## Scoped But Unscheduled
 
-| Feature | Notes |
-|---------|-------|
-| Estimated race times | 5K/10K/HM/Marathon — data-driven; placeholder first |
-| Zone method selector | Stored in Supabase; user chooses HR zone calculation method |
-| ~~Profile screen~~ | ✅ Shipped — first name, last name, email on `user_settings`; auto-populated from auth provider on first login |
+| Feature | Tier | Notes |
+|---------|------|-------|
+| Estimated race times | PAID | 5K/10K/HM/Marathon — data-driven |
+| Zone method selector | PAID | User chooses HR zone calculation method; stored in `user_settings` |
 
 ---
 
 ## Parking Lot (Deprioritised)
 
-- Session swap
-- AM/PM scheduling
-
----
-
----
-
-## UX & Product Backlog — Post-Review (2026-04-18)
-
-Derived from a full-app UX audit. P1 items (race countdown, week narrative, fatigue trend, override labels, HR zone labels) have been shipped. P2 items shipped 2026-04-18. P3 follows.
-
----
-
-### UI Consistency
-
-| # | Status | Title | Problem it solves | Why it matters | Approach | Impact | Effort |
-|---|--------|-------|-------------------|----------------|----------|--------|--------|
-| UX-01 | ✅ Shipped | Unify fatigue tag vocabulary | Two sets in use: `Fresh/Normal/Heavy/Cooked` (SessionPopupInner) and `Fresh/Fine/Heavy/Wrecked` (ManualRunModal). Trend dots handle both but the labels differ. | Data inconsistency makes trend comparisons meaningless. | Standardise to `Fresh / Fine / Heavy / Wrecked` in both places. Update any existing DB rows if needed (migration). | Data integrity | S |
-| UX-02 | ✅ Shipped | Me screen information architecture | Settings dump — HR zones, Strava, profile, smoke tracker all stacked with no grouping. | Cognitive load on a screen users visit frequently to manage their training config. | Group into sections: **Your Profile** / **Your Training** (HR zones, units, metric) / **Connections** (Strava) / **App Settings** (theme, smoke tracker). | Perception / polish | S |
-| UX-03 | ✅ Shipped (superseded) | Post-completion micro-moment | After marking a session complete, user is returned to Today with no acknowledgement. | Completing a session is the core loop. Missing the reward moment is a retention miss. | Originally: 2s in-card flash. **Superseded 2026-04-19 by post-log reflect view** — see UX-03b. | Retention / emotional | S |
-| UX-03b | ✅ Shipped 2026-04-19 | Post-log reflect view | RPE and feel data saved but invisible — no feedback loop, no sense data was heard. Users felt emotionally detached from the logging flow. | Completing a session is the emotional peak of training. The app must acknowledge it, ask how it went, and respond. | After any run is logged (Strava or manual): dedicated reflect step before close. RPE 1–10 + feel tags. Zona voice responds inline (session-type-aware). Done CTA turns teal after response. Skip flow gets "what got in the way?" one-tap reasons. RPE badge appears on collapsed card footer. Manual log form: RPE/feel removed from entry form; collected in reflect step instead. | Retention / emotional attachment | M |
-
----
-
-### Personalisation
-
-| # | Status | Title | Problem it solves | Why it matters | Approach | Impact | Effort |
-|---|--------|-------|-------------------|----------------|----------|--------|--------|
-| UX-04 | ✅ Shipped | Plan-based Coach fallback (no Strava) | Coach screen is empty for non-Strava users. "Connect Strava" is a dead end for many. | Coach is the most differentiating screen. It should never be empty for a user with a plan. | Add plan-aware static coaching: "Long run Sunday — keep easy runs easy this week." Derived from current week data. Show when no Strava or no recent activity. No AI call needed. | Retention / perception | M |
-| UX-05 | ✅ Shipped | Use collected fatigue to inform session framing | Fatigue tags are logged but never acted on. Heavy × 3 days = no change in how sessions are presented. | The product collects the data. Using it even superficially creates the impression of intelligence. | When last 3 fatigue tags average Heavy/Wrecked, add a contextual note to today's session card: "You've been logging heavy legs. Keep the effort honest today." Derive inline, no AI. | Personalisation / perception | M |
-| UX-05b | ✅ Shipped | Fitness-level-calibrated coaching copy | Beginner and experienced runners see identical session copy. | The product knows the user's fitness level from plan generation. Using it costs nothing. | Store `fitness_level` from `plan.meta`. Vary copy in `getRestCopy` and `RestDayCard` based on level. Beginner: reassurance. Experienced: precision. | Personalisation | L |
-| UX-06 | ✅ Shipped | First name in session greeting | Name is in the DB. Never used outside the Today subtitle. | Tiny, feels personal. Low effort. | Use `firstName` in `RestDayCard` body copy and Coach screen header when available. | Polish | XS |
-
----
-
-### UX Flow
-
-| # | Status | Title | Problem it solves | Why it matters | Approach | Impact | Effort |
-|---|--------|-------|-------------------|----------------|----------|--------|--------|
-| UX-07 | ✅ Shipped | Post-wizard orientation screen | After generating a plan and landing on Today, new users have no context — may land on a rest day with no guidance. | First-session experience sets retention. Confusion = churn. | After `handlePlanSaved`, show a single-screen orientation: "You're in Week 1 of {N}. Your first session is {day}. Here's what Zone 2 means." Dismiss-once, not re-shown. | Onboarding / retention | M |
-| UX-08 | ✅ Shipped | Strava reconnect flow | If the stored Strava token is invalid, the app fails silently. Coach shows loading, then nothing. | Users who connected Strava expect it to work. Silent failure damages trust. | On token refresh failure (`/api/strava/refresh` non-200), surface a prompt in the Coach screen: "Strava connection expired — reconnect in Profile." Link to Me screen. | Reliability / perception | M |
-| UX-09 | ✅ Shipped | Past session "not logged" state in Calendar | Past sessions with no completion data show at 35% opacity — no CTA, no explanation. | Leaves the user wondering whether to backfill or ignore. | Added "log" label below the dot for past unlogged sessions in CalendarOverlay — signals tapability. Tapping opens SessionPopupInner which already presents log/skip options. | Completeness | M |
-
----
-
-### Polish
-
-| # | Status | Title | Problem it solves | Why it matters | Approach | Impact | Effort |
-|---|--------|-------|-------------------|----------------|----------|--------|--------|
-| UX-10 | ✅ Shipped | Weekly session count on Plan screen header | Plan screen has race countdown (now shipped) but no session count for the current week. | Context coherence — Plan and Today should tell the same story. | Below the race date line on Plan screen, add "Week {N}: {done}/{total} sessions" — mirrors Today screen narrative pattern. Derive from `allCompletions[weekNum]`. | Consistency | XS |
-| UX-11 | ✅ Shipped | Audit `session-types.ts` hex values | `lib/session-types.ts` uses hardcoded hex values for `SESSION_COLORS`. Pre-commit hook would catch these if they were in components, but the lib is currently exempted. | Palette regressions. Once these values drift from `globals.css`, colours break in dark mode or on theme changes. | All hex values in `SESSION_COLORS` and `getSessionColor` fallback replaced with `var(--session-*)` CSS vars. All vars already existed in `globals.css`. | Palette integrity | M |
-| UX-12 | ✅ Shipped | Tech debt audit — `PlanChart.tsx`, `StravaPanel.tsx` | Both files are flagged in tech debt as unaudited for hardcoded hex/font strings. | Any hardcoded value will trigger the pre-commit hook on the next commit touching those files. | All hardcoded hex and rgba values replaced with CSS vars. Added `--strava-soft`, `--teal-20`, `--teal-30` to `globals.css`. StravaPanel inline `var(--x, #fallback)` patterns cleaned to `var(--x)`. | Technical | S |
+| Feature | Tier |
+|---------|------|
+| Session swap | PAID |
+| AM/PM scheduling | PAID |
 
 ---
 
 ## Tech Debt
 
-| Item | Detail |
+| Item | Status |
 |------|--------|
-| Strava token refresh | Cache and refresh Strava OAuth token — currently single-use |
-| `PlanChart.tsx` hardcoded values | ✅ Audited and fixed — all hex/rgba replaced with CSS vars |
-| `StravaPanel.tsx` hardcoded values | ✅ Audited and fixed — all hex/rgba replaced with CSS vars |
+| Strava token refresh | Not started — currently single-use; needs cache + refresh logic |
 | `login/page.tsx` hardcoded values | Not yet audited |
-| `PlanCalendar` `any` props (partial) | `stravaRuns` prop is accepted but unused in WeekCard — remove or wire up |
+| `PlanCalendar` `stravaRuns` prop | Accepted but unused in WeekCard — remove or wire up |
+| `DashboardClient.tsx` hardcoded fonts | ~228 occurrences of `'Inter', sans-serif` / `'Space Grotesk', sans-serif` hardcoded; 7 instances of `'Inter', monospace` (wrong fallback) |
 
 ---
 
-## App Store Compliance — 2026-04-20
+## Archive — Shipped UX Audit (2026-04-18)
 
-Pre-launch audit (2026-04-20) identified App Store/GDPR blockers. Status:
+All items below are complete. Preserved for context.
 
-| Item | Status | Notes |
-|------|--------|-------|
-| React Error Boundary | ✅ Shipped | `components/ErrorBoundary.tsx` wraps `<body>` in `layout.tsx`. Component crashes show fallback UI instead of full app crash. |
-| Strava OAuth scope disclosure | ✅ Shipped | Disclosure shown before Connect button in Me screen when not yet connected. |
-| Privacy policy link pre-login | ✅ Shipped | `login/page.tsx` footer links to `zona.app/privacy`. **Reminder: host the page before App Store submission.** |
-| Age confirmation on signup | ✅ Shipped | 13+ checkbox gates account creation in email/password signup flow. |
-| Sign in with Apple | 🔲 Not Started | Apple §5.1.1d — required because Google OAuth is present. P0 blocker. |
-| Account deletion flow | 🔲 Not Started | Apple + Google mandate since 2022/2023. No route, no UI, no cascade delete. P0 blocker. |
+| # | Title | What it fixed |
+|---|-------|--------------|
+| UX-01 | Fatigue tag vocabulary | Standardised to `Fresh / Fine / Heavy / Wrecked` everywhere |
+| UX-02 | Me screen IA | Grouped into Profile / Training / Connections / App Settings |
+| UX-03b | Post-log reflect view | RPE + feel + Zona voice after every session log or skip |
+| UX-04 | Coach fallback (no Strava) | Plan-aware static coaching when no Strava activity present |
+| UX-05 | Fatigue-informed session framing | Contextual note on today's card when 3+ heavy fatigue logs |
+| UX-05b | Fitness-level copy | Beginner vs experienced copy in rest + coach screens |
+| UX-06 | First name in greeting | `firstName` used in RestDayCard and Coach screen header |
+| UX-07 | Post-wizard orientation screen | Week number + first session + zone explanation after plan generation |
+| UX-08 | Strava reconnect flow | Expired token surfaced as actionable prompt in Coach screen |
+| UX-09 | Past session "not logged" state | Log label on past unlogged dots in CalendarOverlay |
+| UX-10 | Weekly session count on Plan screen | Done/total mirrors Today screen narrative |
+| UX-11 | `session-types.ts` hex audit | All hardcoded hex replaced with `var(--session-*)` CSS vars |
+| UX-12 | `PlanChart.tsx` + `StravaPanel.tsx` audit | All hardcoded hex/rgba replaced with CSS vars |

@@ -31,6 +31,10 @@
 
 | Feature | Tier | Release | Notes |
 |---|---|---|---|
+| Onboarding flow | FREE / PAID | R0.5 | Questionnaire → template plan (free) or AI plan (paid/trial) → plan on screen. Target: first value in <3 mins. Requires plan storage decision (Gist vs Supabase). |
+| Rule-based plan engine | FREE | — | Deterministic plan generation from pre-built templates. Zero AI calls. Powers the free path in R0.5 and post-trial plan regeneration. |
+| Gist → Supabase plan storage | FREE (infrastructure) | — | Add `plans` table; wire save + fetch. Prerequisite for multi-user onboarding. Blocked on product decision — see backlog TODO. |
+| Reverse trial infrastructure | FREE (infrastructure) | — | `trial_started_at` in `user_settings`; `isTrialActive()` helper; PAID gates in API + components; upgrade prompt; downgrade flow. See `docs/canonical/monetisation-strategy.md`. |
 | Plan Confidence Score | PAID | R18 | Derived from completion + RPE data |
 | Coaching Tips in Supabase | PAID | R19 | Move hardcoded copy to DB; dynamic per user |
 | Dynamic Plan Reshaping | PAID | R20 | Separate from creation; shared schema with R23 |
@@ -63,7 +67,11 @@
 
 | Tier | Includes |
 |---|---|
-| FREE | Generic pre-built plan templates (5K/10K/HM, 8 & 12-week variants), core session display, theme, basic profile. No AI, no Strava, no dynamic coaching. |
-| PAID | Dynamic plan generation, Strava integration, AI coaching, plan reshaping, confidence scoring, all personalised or intelligent features. |
+| FREE | Generic pre-built plan templates (5K/10K/HM, 8 & 12-week variants) via rule-based engine (no AI calls), core session display and tracking, formula-derived pace/HR targets, basic profile. No Strava, no dynamic coaching. |
+| PAID | AI plan generation, dynamic plan reshaping, Strava integration, AI coaching, plan confidence score, all personalised or intelligent features. |
+
+**Monetisation model**: Hybrid Reverse Trial — 14 days full (PAID) access for all new users, then graceful downgrade to FREE. See `docs/canonical/monetisation-strategy.md`.
 
 **Rule**: FREE tier must not expose paid-tier data or imply its existence without an explicit product decision.
+
+**Rule**: All AI calls (Anthropic API) route through Next.js API routes only — never client-side. Rule-based engine makes zero AI calls — enforced at route level.

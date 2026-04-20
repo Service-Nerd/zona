@@ -177,12 +177,20 @@ Trigger frontend-design skill.
 
 ---
 
+## Monetisation Model
+
+Zona uses a **Hybrid Reverse Trial**: 14 days full access for all new users, then graceful downgrade to free tier. Upgrade prompts are triggered by user behaviour (attempting a PAID feature), never by a calendar date.
+
+See `docs/canonical/monetisation-strategy.md` for the full model, pricing targets, and trial infrastructure requirements.
+
 ## Feature Tagging
 
 | Tier | Includes |
 |------|----------|
-| FREE | Generic plans (5K/10K/HM, 8 & 12 week), no Strava, no dynamic coaching |
-| PAID | Dynamic plan building, Strava integration, AI coaching, plan reshaping, all intelligent features |
+| FREE | Generic plans (5K/10K/HM, 8 & 12 week, rule-based engine — no AI calls), session display and tracking, formula-derived pace/HR targets, basic profile |
+| PAID | AI plan generation, dynamic plan reshaping, Strava integration, AI coaching, confidence scoring, all personalised or intelligent features |
+
+**All AI calls route through Next.js API routes only — never from the client.**
 
 ---
 
@@ -204,9 +212,9 @@ Per-session toggle in expanded card only — saves per session, updates collapse
 
 | Folder | Authority For |
 |---|---|
-| `docs/canonical/` | All domain rules — session types, plan schema, zone rules, coaching rules, feature registry |
+| `docs/canonical/` | All domain rules — session types, plan schema, zone rules, coaching rules, feature registry, monetisation strategy, brand, UX principles |
 | `docs/contracts/` | All API route and component prop contracts |
-| `docs/architecture/` | Architectural decision records (ADRs) |
+| `docs/architecture/` | Architectural decision records (ADRs) and architecture overview |
 | `docs/releases/` | Release notes and ordered backlog |
 
 **Before building any new feature**: check `docs/canonical/feature-registry.md` — every feature must be tagged FREE or PAID before implementation begins.
@@ -219,6 +227,9 @@ Per-session toggle in expanded card only — saves per session, updates collapse
 - Backlog: `docs/releases/backlog.md`
 - Feature registry (FREE/PAID): `docs/canonical/feature-registry.md`
 - ADRs: `docs/architecture/ADR-*.md`
+- Monetisation strategy: `docs/canonical/monetisation-strategy.md`
+- Brand & tone of voice: `docs/canonical/brand.md`
+- UX principles: `docs/canonical/ux-principles.md`
 
 ---
 
