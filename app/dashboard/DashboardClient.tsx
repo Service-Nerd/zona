@@ -247,17 +247,31 @@ export default function DashboardClient() {
 
         if (!data?.strava_refresh_token) { setStravaLoading(false); return }
 
-        // Refresh token via server-side route — keeps client secret safe
-        const tokenRes = await fetch('/api/strava/refresh', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id }),
-        })
-        if (!tokenRes.ok) { setStravaTokenFailed(true); setStravaLoading(false); return }
-        const { access_token } = await tokenRes.json()
-        if (!access_token) { setStravaLoading(false); return }
+        // Use cached access token if still valid (Strava tokens last 6 hours)
+        let access_token: string | null = null
+        const cachedToken   = localStorage.getItem('strava_access_token')
+        const cachedExpiry  = localStorage.getItem('strava_token_expires_at')
+        const nowSec        = Math.floor(Date.now() / 1000)
+        if (cachedToken && cachedExpiry && nowSec < Number(cachedExpiry) - 300) {
+          access_token = cachedToken
+        } else {
+          // Refresh token via server-side route — keeps client secret safe
+          const tokenRes = await fetch('/api/strava/refresh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id }),
+          })
+          if (!tokenRes.ok) { setStravaTokenFailed(true); setStravaLoading(false); return }
+          const tokenData = await tokenRes.json()
+          if (!tokenData.access_token) { setStravaTokenFailed(true); setStravaLoading(false); return }
+          access_token = tokenData.access_token
+          localStorage.setItem('strava_access_token', tokenData.access_token)
+          localStorage.setItem('strava_token_expires_at', String(tokenData.expires_at))
+        }
 
-        const after = Math.floor(new Date('2026-01-01').getTime() / 1000)
+        // Fetch activities from the past 12 months
+        const oneYearAgo = new Date(); oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+        const after = Math.floor(oneYearAgo.getTime() / 1000)
         const actRes = await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=100`, {
           headers: { Authorization: `Bearer ${access_token}` },
         })

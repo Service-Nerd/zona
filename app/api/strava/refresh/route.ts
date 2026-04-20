@@ -25,8 +25,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No Strava connection' }, { status: 404 })
     }
 
-    const accessToken = await getStravaToken(settings.strava_refresh_token)
-    return NextResponse.json({ access_token: accessToken })
+    const { access_token, expires_at } = await getStravaToken(settings.strava_refresh_token)
+    return NextResponse.json({ access_token, expires_at })
   } catch (e) {
     console.error('Strava refresh error:', e)
     return NextResponse.json({ error: 'Token refresh failed' }, { status: 500 })

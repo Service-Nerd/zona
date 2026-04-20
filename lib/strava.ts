@@ -3,7 +3,7 @@ import type { StravaActivity } from '@/types/plan'
 const CLIENT_ID     = process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID!
 const CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET!
 
-export async function getStravaToken(refreshToken: string): Promise<string> {
+export async function getStravaToken(refreshToken: string): Promise<{ access_token: string; expires_at: number }> {
   const res = await fetch('https://www.strava.com/oauth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -17,7 +17,8 @@ export async function getStravaToken(refreshToken: string): Promise<string> {
   })
   const data = await res.json()
   if (!data.access_token) throw new Error('Failed to get Strava token')
-  return data.access_token
+  // expires_at is a Unix timestamp (seconds) from Strava — typically now + 21600 (6 hours)
+  return { access_token: data.access_token, expires_at: data.expires_at ?? Math.floor(Date.now() / 1000) + 21600 }
 }
 
 export async function fetchActivities(accessToken: string, afterDate = '2026-01-01'): Promise<StravaActivity[]> {
