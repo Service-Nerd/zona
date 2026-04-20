@@ -1,8 +1,8 @@
-# Architecture — ZONA
+# Architecture — Zona
 
 ## System Overview
 
-ZONA is a Next.js App Router application backed by Supabase,
+Zona is a Next.js App Router application backed by Supabase,
 deployed on Vercel. Training plan data lives in a GitHub Gist
 (JSON), fetched fresh on each request. Strava provides run
 data via OAuth.

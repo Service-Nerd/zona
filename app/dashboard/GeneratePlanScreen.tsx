@@ -630,7 +630,7 @@ export default function GeneratePlanScreen({
 
   const currentStep = appStep as WizardStep
   const stepMeta = currentStep === 1 && isOnboarding
-    ? { title: 'Welcome to ZONA.', subtitle: "Let's build your plan. Start with the finish line." }
+    ? { title: 'Welcome to Zona.', subtitle: "Let's build your plan. Start with the finish line." }
     : STEP_META[currentStep]
 
   return (

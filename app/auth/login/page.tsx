@@ -62,14 +62,14 @@ export default function LoginPage() {
     >
       <div style={{ width: '100%', maxWidth: '340px' }}>
 
-        {/* ZONA wordmark */}
+        {/* Zona wordmark */}
         <div style={{ marginBottom: '48px', textAlign: 'center' }}>
           <div style={{
             fontFamily: 'var(--font-brand)',
             fontSize: '40px', fontWeight: 500,
             letterSpacing: '0.08em', color: 'var(--accent)',
             lineHeight: 1, marginBottom: '8px',
-          }}>ZONA</div>
+          }}>Zona</div>
           <div style={{
             fontFamily: 'var(--font-ui)',
             fontSize: '11px', color: 'var(--text-muted)',

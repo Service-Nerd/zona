@@ -1,4 +1,4 @@
-# Backlog — ZONA
+# Backlog — Zona
 
 ## Status Key
 - ✅ Shipped
@@ -52,7 +52,7 @@
 - `coaching_flag` computed and persisted at RPE save (reflect view + manual log)
 - R18-ready: flags are the per-session atom that confidence scoring will aggregate
 
-**Post-log Reflect UX (UX-03b):** Shipped. Dedicated reflect step after any session logged — RPE 1–10, fatigue tags, ZONA voice response (session-type-aware). Skip flow records reason in `fatigue_tag`.
+**Post-log Reflect UX (UX-03b):** Shipped. Dedicated reflect step after any session logged — RPE 1–10, fatigue tags, Zona voice response (session-type-aware). Skip flow records reason in `fatigue_tag`.
 
 ---
 
@@ -104,7 +104,7 @@
 - Coach tab built and working but disabled for v1 launch (admin-only)
 - **Why deferred:** requires Strava + Claude API call on every tab open (no caching), prompt is not plan-phase-aware (doesn't pass weekNum/phase/weeklyKm), and adds operational cost before monetisation is in place
 - **To re-enable:** (1) add localStorage caching per `activity_id`, (2) pass `weekNum`, `phase`, `weeklyKm` to Claude prompt, (3) remove `isAdmin` gate in DashboardClient more-menu
-- SLC assessment: the reflect view + ZONA voice covers the coaching need for v1. Coach tab is a P1 post-launch feature.
+- SLC assessment: the reflect view + Zona voice covers the coaching need for v1. Coach tab is a P1 post-launch feature.
 
 ### R23b — Plan Generator Wizard UI
 **Status:** 🔲 Not Started | **Tier:** PAID
@@ -151,7 +151,7 @@ Derived from a full-app UX audit. P1 items (race countdown, week narrative, fati
 | UX-01 | ✅ Shipped | Unify fatigue tag vocabulary | Two sets in use: `Fresh/Normal/Heavy/Cooked` (SessionPopupInner) and `Fresh/Fine/Heavy/Wrecked` (ManualRunModal). Trend dots handle both but the labels differ. | Data inconsistency makes trend comparisons meaningless. | Standardise to `Fresh / Fine / Heavy / Wrecked` in both places. Update any existing DB rows if needed (migration). | Data integrity | S |
 | UX-02 | ✅ Shipped | Me screen information architecture | Settings dump — HR zones, Strava, profile, smoke tracker all stacked with no grouping. | Cognitive load on a screen users visit frequently to manage their training config. | Group into sections: **Your Profile** / **Your Training** (HR zones, units, metric) / **Connections** (Strava) / **App Settings** (theme, smoke tracker). | Perception / polish | S |
 | UX-03 | ✅ Shipped (superseded) | Post-completion micro-moment | After marking a session complete, user is returned to Today with no acknowledgement. | Completing a session is the core loop. Missing the reward moment is a retention miss. | Originally: 2s in-card flash. **Superseded 2026-04-19 by post-log reflect view** — see UX-03b. | Retention / emotional | S |
-| UX-03b | ✅ Shipped 2026-04-19 | Post-log reflect view | RPE and feel data saved but invisible — no feedback loop, no sense data was heard. Users felt emotionally detached from the logging flow. | Completing a session is the emotional peak of training. The app must acknowledge it, ask how it went, and respond. | After any run is logged (Strava or manual): dedicated reflect step before close. RPE 1–10 + feel tags. ZONA voice responds inline (session-type-aware). Done CTA turns teal after response. Skip flow gets "what got in the way?" one-tap reasons. RPE badge appears on collapsed card footer. Manual log form: RPE/feel removed from entry form; collected in reflect step instead. | Retention / emotional attachment | M |
+| UX-03b | ✅ Shipped 2026-04-19 | Post-log reflect view | RPE and feel data saved but invisible — no feedback loop, no sense data was heard. Users felt emotionally detached from the logging flow. | Completing a session is the emotional peak of training. The app must acknowledge it, ask how it went, and respond. | After any run is logged (Strava or manual): dedicated reflect step before close. RPE 1–10 + feel tags. Zona voice responds inline (session-type-aware). Done CTA turns teal after response. Skip flow gets "what got in the way?" one-tap reasons. RPE badge appears on collapsed card footer. Manual log form: RPE/feel removed from entry form; collected in reflect step instead. | Retention / emotional attachment | M |
 
 ---
 

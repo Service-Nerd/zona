@@ -1,4 +1,4 @@
-# Feature Registry — ZONA
+# Feature Registry — Zona
 
 **Authority**: Every feature must be tagged FREE or PAID here before implementation begins. Untagged features are build blockers. See `docs/canonical/` for domain rules and `docs/releases/backlog.md` for status and ordering.
 
@@ -11,7 +11,7 @@
 | Core app shell (3 screens, nav) | FREE | R0–R15b | Today, Plan, Me screens. Coach tab built but disabled for v1 launch — admin-only until post-launch. |
 | Screen guide popups | FREE | R15b | First-load onboarding |
 | Progress bar | PAID | R17 | Session completion % |
-| RPE input post-session | PAID | R17 + reflect UX | Stored in `session_completions`. Post-log reflect view (2026-04-19): dedicated step after Strava log or manual log — replaces instant-dismiss toast. ZONA voice responds to RPE, session-type-aware. |
+| RPE input post-session | PAID | R17 + reflect UX | Stored in `session_completions`. Post-log reflect view (2026-04-19): dedicated step after Strava log or manual log — replaces instant-dismiss toast. Zona voice responds to RPE, session-type-aware. |
 | Fatigue tags | PAID | R17 | Canonical vocabulary: `Fresh / Fine / Heavy / Wrecked`. Shown in reflect view and on collapsed card badge. Skip reason also stored in `fatigue_tag`. |
 | Session Card Redesign | PAID | 2026-04-20 | New card hierarchy; compact metric strip; zone chip; per-session toggle (expanded only). |
 | Coaching Signal | PAID | 2026-04-20 | `coaching_flag` per session (`ok`/`watch`/`flag`); `avg_hr` from Strava; execution summary in expanded card; flag badge on collapsed card. DB migration deployed. R18-ready. |

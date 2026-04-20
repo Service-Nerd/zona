@@ -1,13 +1,13 @@
 # ADR-001 — Design Tokens: System B Palette and globals.css as Single Source
 
 **Status**: Accepted  
-**Date**: 2025 (pre-ZONA rebrand)
+**Date**: 2025 (pre-Zona rebrand)
 
 ---
 
 ## Context
 
-The original ZONA palette (Ember orange `#D4501A`, warm beige `#f5f2ee`, DM Mono, DM Sans) was scattered across components as hardcoded values. During a deliberate rebrand to System B (navy, off-white, teal, amber), the lack of centralisation caused palette regressions on every AI-assisted session — the most frequent and wasteful failure mode in the project's history.
+The original Zona palette (Ember orange `#D4501A`, warm beige `#f5f2ee`, DM Mono, DM Sans) was scattered across components as hardcoded values. During a deliberate rebrand to System B (navy, off-white, teal, amber), the lack of centralisation caused palette regressions on every AI-assisted session — the most frequent and wasteful failure mode in the project's history.
 
 ---
 

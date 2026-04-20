@@ -87,7 +87,7 @@ Effort and body state. That's all I need.
 [RPE 1–10 row]
 [Body state: Fresh / Fine / Heavy / Wrecked]
 
-[ZONA voice response — fades in after selection]
+[Zona voice response — fades in after selection]
 
 [Skip for now / Done CTA]
 ```
@@ -100,7 +100,7 @@ What got in the way?
 [Injury / illness] [Too tired]
 [Life got busy]    [Bad weather]
 
-[ZONA voice response — fades in after selection]
+[Zona voice response — fades in after selection]
 
 [Close without answering / Close CTA]
 ```
@@ -184,7 +184,7 @@ Migration: `supabase/migrations/20260420_coaching_signal.sql`
 - Never show estimated or formula-derived pace — only Strava-derived values.
 - RPE badge on collapsed card only appears when `completion.rpe != null`.
 - Reflect view is shown after logging; "How did it feel?" section in expanded is for editing existing logs only.
-- ZONA voice response in reflect view is session-type-aware — see `getZonaReflectResponse()` in `DashboardClient.tsx`.
+- Zona voice response in reflect view is session-type-aware — see `getZonaReflectResponse()` in `DashboardClient.tsx`.
 - Fatigue vocabulary is canonical: `Fresh / Fine / Heavy / Wrecked`. No other tags.
 - Skip reason vocabulary: `Injury / illness / Too tired / Life got busy / Bad weather`. Saves to `fatigue_tag` column.
 - `coaching_flag` is never persisted as a display string — always the raw enum value. Display strings are derived at render time.

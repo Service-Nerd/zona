@@ -16,7 +16,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error('[ZONA] Uncaught error:', error, info.componentStack)
+    console.error('[Zona] Uncaught error:', error, info.componentStack)
   }
 
   render() {
@@ -31,29 +31,29 @@ export class ErrorBoundary extends React.Component<Props, State> {
           alignItems: 'center',
           justifyContent: 'center',
           padding: '32px 24px',
-          background: '#0B132B',
-          fontFamily: "'Space Grotesk', sans-serif",
+          background: 'var(--bg)',
+          fontFamily: 'var(--font-brand)',
         }}
       >
         <div style={{ width: '100%', maxWidth: '320px', textAlign: 'center' }}>
-          <div style={{ fontSize: '32px', fontWeight: 500, letterSpacing: '0.08em', color: '#5BC0BE', marginBottom: '24px' }}>
-            ZONA
+          <div style={{ fontSize: '32px', fontWeight: 500, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: '24px' }}>
+            Zona
           </div>
-          <div style={{ fontSize: '16px', fontWeight: 500, color: '#F7F9FB', marginBottom: '8px', letterSpacing: '-0.3px' }}>
+          <div style={{ fontSize: '16px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '8px', letterSpacing: '-0.3px' }}>
             Something went wrong.
           </div>
-          <div style={{ fontSize: '13px', color: '#3A506B', marginBottom: '32px', lineHeight: 1.6, fontFamily: "'Inter', sans-serif" }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '32px', lineHeight: 1.6, fontFamily: 'var(--font-ui)' }}>
             Not ideal. Try refreshing — it usually sorts itself out.
           </div>
           <button
             onClick={() => window.location.reload()}
             style={{
-              background: '#5BC0BE',
-              color: '#0B132B',
+              background: 'var(--accent)',
+              color: 'var(--zona-navy)',
               border: 'none',
               borderRadius: '10px',
               padding: '12px 24px',
-              fontFamily: "'Inter', sans-serif",
+              fontFamily: 'var(--font-ui)',
               fontSize: '13px',
               fontWeight: 500,
               cursor: 'pointer',

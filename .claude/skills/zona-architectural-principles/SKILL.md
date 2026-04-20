@@ -1,11 +1,11 @@
 ---
 name: zona-architectural-principles
-description: "ZONA architecture decisions, MUST/NEVER rules, doctrine, invariants, canonical contracts, UI testing with agent-browser, documentation governance. Triggers: architecture, doctrine, invariants, contracts, design, is this allowed, should I, does this violate, refactor, release, feature flag, free/paid, colour token, theme, Supabase, plan schema, session card, coaching, route, component, API, Strava, auth."
+description: "Zona architecture decisions, MUST/NEVER rules, doctrine, invariants, canonical contracts, UI testing with agent-browser, documentation governance. Triggers: architecture, doctrine, invariants, contracts, design, is this allowed, should I, does this violate, refactor, release, feature flag, free/paid, colour token, theme, Supabase, plan schema, session card, coaching, route, component, API, Strava, auth."
 ---
 
-# ZONA Architectural Principles
+# Zona Architectural Principles
 
-The single consolidated reference for all architectural principles, doctrine, invariants, and design rules governing the ZONA app.
+The single consolidated reference for all architectural principles, doctrine, invariants, and design rules governing the Zona app.
 
 **Authority**: This skill synthesizes rules from `CLAUDE.md`, `docs/contracts/`, `docs/canonical/`, and system-specific documents. When in doubt, trace to the canonical source listed in each section.
 
@@ -96,7 +96,7 @@ Do not stop at one layer if the defect crosses boundaries.
 
 ## 1. Project Doctrine (Non-Negotiable)
 
-| # | Principle | ZONA Meaning |
+| # | Principle | Zona Meaning |
 |---|---|---|
 | D-01 | Ambiguity is the enemy | Every behaviour — session types, zone calculation, free/paid gates, theme toggling — must be explicitly stated. Implicit = broken. |
 | D-02 | No assumptions | Never assume a Supabase table, column, RLS policy, or API route exists. Trace to the migration or surface it as a gap. |
@@ -125,7 +125,7 @@ Do not stop at one layer if the defect crosses boundaries.
 
 Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, Auditable, Consistent**.
 
-| Principle | ZONA Meaning |
+| Principle | Zona Meaning |
 |---|---|
 | Maintainable | Components have clear ownership. Tokens live in one place. New developers can follow the design system without archaeology. |
 | Reliable | Supabase errors, failed Gist fetches, and Strava OAuth failures degrade gracefully with visible UI state. |
@@ -174,7 +174,7 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 |---|---|
 | N-001 | Never hardcode hex colours, font names, or spacing values in components. Use CSS custom properties only. |
 | N-002 | Never use old palette values: Ember orange `#D4501A`, warm beige `#f5f2ee`, DM Mono, DM Sans. |
-| N-003 | Never use red anywhere in the ZONA UI. |
+| N-003 | Never use red anywhere in the Zona UI. |
 | N-004 | Never use popups or modals. All interactions navigate to full screens with back arrow top-left. |
 | N-005 | Never build the next release before the current one is shipped and build-checked. |
 | N-006 | Never store Strava client secret in code or environment files committed to git. Use Supabase `user_settings`. |
@@ -195,7 +195,7 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 | INV-DS-002 | No Old Palette | Ember orange, warm beige, DM Mono, DM Sans do not exist anywhere in any live surface. |
 | INV-DS-003 | Dark Mode Correctness | `data-theme="dark"` on `<html>` is the sole dark mode switch. No component-level overrides. |
 | INV-DS-004 | Session Colour Consistency | A session type always resolves to exactly one colour across collapsed card, expanded card, calendar, and plan chart. |
-| INV-DS-005 | No Red | Red does not appear anywhere in ZONA UI — not for errors, warnings, or emphasis. Use Amber `#F2C14E` for warnings. |
+| INV-DS-005 | No Red | Red does not appear anywhere in Zona UI — not for errors, warnings, or emphasis. Use Amber `#F2C14E` for warnings. |
 
 **Locked System B palette:**
 
@@ -278,7 +278,7 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 | INV-UI-005 | Session card hierarchy: TOP (run type, zone, HR target, pace bracket, distance + duration) → MIDDLE (session description) → BOTTOM (why / coach notes). |
 | INV-UI-006 | Global dist/duration toggle lives in Me screen. Per-session toggle lives in expanded card only and saves per session. |
 | INV-UI-007 | Mobile layout (375px) verified before every release closes. |
-| INV-UI-008 | Calm guidance, not alerts. ZONA tone: honest, slightly sarcastic, encouraging without cringe. Never urgent. Never red. |
+| INV-UI-008 | Calm guidance, not alerts. Zona tone: honest, slightly sarcastic, encouraging without cringe. Never urgent. Never red. |
 
 ---
 
@@ -377,7 +377,7 @@ Before implementing anything, verify ALL of these:
 6. **Does it fail visibly on error?** (Structured UI error state, not console-only)
 7. **Is the mobile layout considered?** (375px viewport)
 8. **Does it follow the screen/navigation contract?** (Full screens, back arrow top-left, no popups)
-9. **Does it match ZONA tone?** (Honest, calm, slightly sarcastic — never urgent, never red)
+9. **Does it match Zona tone?** (Honest, calm, slightly sarcastic — never urgent, never red)
 10. **Is the dark/light theme handled correctly?** (`data-theme` on `<html>` only)
 11. **Will there be a journey test for it?** (agent-browser, before release closes)
 12. **Is the contract doc updated?** (`docs/contracts/` in same commit)
@@ -466,7 +466,7 @@ Use these before making architectural decisions:
 6. Am I working from the live file or a stale snapshot?
 7. Is there a contract doc for this surface? If not, should I write it first?
 8. Does this navigation follow the full-screen / back-arrow-top-left contract?
-9. Does this copy match the ZONA tone (calm, honest, slightly sarcastic)?
+9. Does this copy match the Zona tone (calm, honest, slightly sarcastic)?
 10. Would a hard cut on this leave the old value alive in any other surface?
 11. If I add this feature, does it need a journey test in agent-browser?
 12. Does this change require updating `docs/canonical/` or `docs/contracts/`?

@@ -1,12 +1,12 @@
-# CLAUDE.md — ZONA Project Intelligence
+# CLAUDE.md — Zona Project Intelligence
 
-This is the single source of truth for the ZONA codebase.
+This is the single source of truth for the Zona codebase.
 Read this before touching anything. All design, architecture, and
 behavioural rules live here or in /docs.
 
 ---
 
-## What Is ZONA?
+## What Is Zona?
 
 A running training app for non-elite runners who overtrain.
 Brand positioning: "Slow down. You're not Kipchoge."
@@ -31,7 +31,7 @@ and user_settings. Nothing is hardcoded to a specific person.
 | Dev machine | Mac Mini                      |
 
 - Supabase project ID: `wkppmpsvqkaxbekdgzdm`
-- Vercel app: `https://rts-training-hub.vercel.app`
+- Vercel app: `https://rts-training-hub.vercel.app` *(rename to zona on Vercel dashboard when ready)*
 - Plan JSON: `https://gist.githubusercontent.com/Service-Nerd/efec07a87f65494f0e078a1ccb136100/raw/rts_plan.json`
   - Always fetched with `cache: 'no-store'`
 

@@ -3,14 +3,14 @@ import './globals.css'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export const metadata: Metadata = {
-  title: 'ZONA — Effort-first training',
+  title: 'Zona — Effort-first training',
   description: "Slow down. You're not Kipchoge.",
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'ZONA',
+    title: 'Zona',
   },
 }
 

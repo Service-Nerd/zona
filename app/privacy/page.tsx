@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — ZONA',
-  description: 'How ZONA collects, uses, and protects your data.',
+  title: 'Privacy Policy — Zona',
+  description: 'How Zona collects, uses, and protects your data.',
 }
 
 export default function PrivacyPage() {
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
           letterSpacing: '0.08em',
           color: 'var(--accent)',
         }}>
-          ZONA
+          Zona
         </span>
         <Link
           href="/auth/login"
@@ -89,7 +89,7 @@ export default function PrivacyPage() {
             lineHeight: 1.7,
             margin: '0 0 8px',
           }}>
-            We built ZONA to help you train smarter, not to harvest your data. This policy explains what we collect, why, and what you can do about it. Plain English throughout — no legal fog.
+            We built Zona to help you train smarter, not to harvest your data. This policy explains what we collect, why, and what you can do about it. Plain English throughout — no legal fog.
           </p>
           <div style={{
             fontFamily: 'var(--font-ui)',
@@ -102,7 +102,7 @@ export default function PrivacyPage() {
         </div>
 
         <Section title="Who we are">
-          <P>ZONA is a running training application operated by Russ (service-nerd). The app is available at <strong>zona.app</strong> and via the App Store and Google Play.</P>
+          <P>Zona is a running training application operated by Russ (service-nerd). The app is available at <strong>zona.app</strong> and via the App Store and Google Play.</P>
           <P>For any privacy-related queries, contact us at <A href="mailto:support@zona.app">support@zona.app</A>.</P>
         </Section>
 
@@ -119,7 +119,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="Strava">
-          <P>If you connect Strava, ZONA requests read-only access to your Strava activities. Specifically: <strong>ZONA will read your Strava activities to provide coaching insights.</strong> We do not write to Strava, we do not access your social connections, and we do not share your Strava data with third parties.</P>
+          <P>If you connect Strava, Zona requests read-only access to your Strava activities. Specifically: <strong>Zona will read your Strava activities to provide coaching insights.</strong> We do not write to Strava, we do not access your social connections, and we do not share your Strava data with third parties.</P>
           <P>Your Strava access token is stored securely in your account. You can disconnect Strava at any time from the Profile screen — this deletes the stored token immediately.</P>
         </Section>
 
@@ -127,7 +127,7 @@ export default function PrivacyPage() {
           <ul style={{ margin: '0 0 16px', padding: '0 0 0 20px' }}>
             {[
               'To generate and display your personalised training plan',
-              'To provide session-level coaching feedback (effort flags, ZONA voice responses)',
+              'To provide session-level coaching feedback (effort flags, Zona voice responses)',
               'To display your progress over time (session history, fatigue trends)',
               'To connect your Strava activities to your training plan',
               'To send transactional emails (account confirmation, password reset)',
@@ -150,7 +150,7 @@ export default function PrivacyPage() {
           <SubHead>Anthropic (Claude AI)</SubHead>
           <P>When you use the AI coaching features, session data is sent to Anthropic's API to generate a coaching response. Anthropic does not use API inputs to train their models by default. <A href="https://www.anthropic.com/privacy">Anthropic privacy policy →</A></P>
           <SubHead>Strava</SubHead>
-          <P>If connected, Strava activity data is fetched via the Strava API and stored in your ZONA account. <A href="https://www.strava.com/legal/privacy">Strava privacy policy →</A></P>
+          <P>If connected, Strava activity data is fetched via the Strava API and stored in your Zona account. <A href="https://www.strava.com/legal/privacy">Strava privacy policy →</A></P>
           <SubHead>Vercel</SubHead>
           <P>The app is hosted on Vercel. Request logs may be retained by Vercel per their standard policies. <A href="https://vercel.com/legal/privacy-policy">Vercel privacy policy →</A></P>
         </Section>
@@ -210,17 +210,17 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="Children">
-          <P>ZONA is not directed at children under 13. We do not knowingly collect personal data from anyone under 13. If you believe a child under 13 has provided us with personal data, please contact <A href="mailto:support@zona.app">support@zona.app</A> and we will delete it promptly.</P>
+          <P>Zona is not directed at children under 13. We do not knowingly collect personal data from anyone under 13. If you believe a child under 13 has provided us with personal data, please contact <A href="mailto:support@zona.app">support@zona.app</A> and we will delete it promptly.</P>
         </Section>
 
         <Section title="Cookies and local storage">
-          <P>ZONA uses browser local storage (not cookies) to persist your theme preference and Strava session token on your device. This data stays on your device and is not transmitted to our servers.</P>
+          <P>Zona uses browser local storage (not cookies) to persist your theme preference and Strava session token on your device. This data stays on your device and is not transmitted to our servers.</P>
           <P>We do not use tracking cookies or third-party advertising cookies.</P>
         </Section>
 
         <Section title="Changes to this policy">
           <P>If we make material changes to this policy, we will notify you by email or via an in-app notice before the changes take effect. The "last updated" date at the top of this page reflects the most recent revision.</P>
-          <P>Continued use of ZONA after changes constitutes acceptance of the updated policy.</P>
+          <P>Continued use of Zona after changes constitutes acceptance of the updated policy.</P>
         </Section>
 
         <Section title="Contact">
@@ -232,7 +232,7 @@ export default function PrivacyPage() {
             padding: '20px',
             marginTop: '16px',
           }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px', fontWeight: 500 }}>ZONA</div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px', fontWeight: 500 }}>Zona</div>
             <A href="mailto:support@zona.app">support@zona.app</A>
           </div>
         </Section>
@@ -252,7 +252,7 @@ export default function PrivacyPage() {
             fontWeight: 500,
             letterSpacing: '0.08em',
             color: 'var(--accent)',
-          }}>ZONA</span>
+          }}>Zona</span>
           <span style={{
             fontFamily: 'var(--font-ui)',
             fontSize: '10px',

@@ -1,7 +1,7 @@
-# UI Patterns — ZONA Visual Language
+# UI Patterns — Zona Visual Language
 
 **Reference aesthetic**: Runna · Planzy  
-**Authority**: This document defines layout patterns, component anatomy, spacing, and typography rules for all ZONA screens. Read before building any new screen or component.
+**Authority**: This document defines layout patterns, component anatomy, spacing, and typography rules for all Zona screens. Read before building any new screen or component.
 
 ---
 
@@ -227,13 +227,13 @@ Used after any session is logged or skipped. This is the emotional peak of the s
 Rules:
 - Completion confirmation (headline + body) always shown at top — acts as transition from the action
 - Question and inputs follow a visual divider — creates a "new moment" feel
-- ZONA voice response fades in (`opacity 0 → 1`, `translateY(6px) → 0`, 350ms) after any selection
+- Zona voice response fades in (`opacity 0 → 1`, `translateY(6px) → 0`, 350ms) after any selection
 - CTA button shifts from ghost (`Skip for now`) to solid teal (`Done`) once a response appears
 - Skip path (close without rating) always available — run is already saved, reflect is invited not required
 - Never auto-dismiss — the reflect step should feel intentional, not rushed
 - For skip-reflect: same structure, replace RPE row with 2×2 reason grid (`Injury / illness / Too tired / Life got busy / Bad weather`)
 
-ZONA voice rules:
+Zona voice rules:
 - One sentence only
 - Session-type-aware: RPE 8 on easy = flag it; RPE 8 on intervals = endorse it
 - Canonical response matrix lives in `getZonaReflectResponse()` — `DashboardClient.tsx`

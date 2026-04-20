@@ -1,6 +1,6 @@
 {
-  "name": "ZONA",
-  "short_name": "ZONA",
+  "name": "Zona",
+  "short_name": "Zona",
   "description": "Effort-first training. Train with intention, adapt with intelligence.",
   "start_url": "/dashboard",
   "display": "standalone",

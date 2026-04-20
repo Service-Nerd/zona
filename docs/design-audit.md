@@ -1,4 +1,4 @@
-# ZONA Design Audit
+# Zona Design Audit
 **Date**: 2026-04-19  
 **Scope**: All component, page, and lib files. Read-only — no changes made.
 

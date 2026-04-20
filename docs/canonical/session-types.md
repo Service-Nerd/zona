@@ -26,7 +26,7 @@
 ## Rules
 
 1. **One owner**: Session type → colour/label/zone logic lives exclusively in `session-types.ts`. No component resolves this independently.
-2. **No red**: `#E05A5A` (intervals/hard) is coral, not red. Never use pure red anywhere in ZONA.
+2. **No red**: `#E05A5A` (intervals/hard) is coral, not red. Never use pure red anywhere in Zona.
 3. **Strength stubs**: Strength sessions carry no HR target and no zone until R21. Display as label only.
 4. **Rest**: No dot, no accent, no HR display.
 5. **HR target fallback chain**: See `docs/canonical/zone-rules.md` — `session.hr_target` → Karvonen → `plan.meta.zone2_ceiling` → show nothing.

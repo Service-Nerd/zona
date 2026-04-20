@@ -1,6 +1,6 @@
 # Plan Schema — Canonical Reference
 
-**Authority**: This document defines the canonical JSON shape for ZONA training plans (GitHub Gist format) and the TypeScript interfaces. Any field addition requires an update here first, then the TypeScript interfaces in `types/plan.ts`, then downstream consumers.
+**Authority**: This document defines the canonical JSON shape for Zona training plans (GitHub Gist format) and the TypeScript interfaces. Any field addition requires an update here first, then the TypeScript interfaces in `types/plan.ts`, then downstream consumers.
 
 ---
 
@@ -112,7 +112,7 @@ export interface Plan {
 
 ## Two-Tier Session Data Model
 
-ZONA supports two session data formats. Structured is preferred; legacy is fallback only.
+Zona supports two session data formats. Structured is preferred; legacy is fallback only.
 
 ### Structured Fields (generator output — R23 onwards)
 

@@ -460,7 +460,7 @@ export default function DashboardClient() {
         background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
         gap: '0',
       }}>
-        {/* ZONA wordmark — O has zone arc */}
+        {/* Zona wordmark — O has zone arc */}
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
           <span style={{
             fontFamily: 'var(--font-brand)',
@@ -518,9 +518,9 @@ export default function DashboardClient() {
         background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
         padding: '32px 24px',
       }}>
-        {/* ZONA wordmark */}
+        {/* Zona wordmark */}
         <div style={{ fontFamily: 'var(--font-brand)', fontSize: '36px', fontWeight: 500, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: '8px' }}>
-          ZONA
+          Zona
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '48px' }}>
           Do less. Improve more.
@@ -532,7 +532,7 @@ export default function DashboardClient() {
             Your plan is ready.
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '12px' }}>
-            ZONA keeps track of your sessions, adapts when things shift, and keeps you focused on what matters — finishing.
+            Zona keeps track of your sessions, adapts when things shift, and keeps you focused on what matters — finishing.
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '48px' }}>
             Train with intention. The rest follows.
@@ -781,7 +781,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, onDismiss }: {
     }}>
       {/* Brand mark */}
       <div style={{ fontFamily: 'var(--font-brand)', fontSize: '32px', fontWeight: 500, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: '6px' }}>
-        ZONA
+        Zona
       </div>
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
         effort-first training
@@ -1041,7 +1041,7 @@ function getCompletionCopy(type: string): { headline: string; body: string } {
   }
 }
 
-// ── ZONA REFLECT RESPONSE ─────────────────────────────────────────────────
+// ── Zona REFLECT RESPONSE ─────────────────────────────────────────────────
 
 function getZonaReflectResponse(sessionType: string, rpe: number | null, fatigueTag: string | null): string {
   if (rpe === null && fatigueTag) {
@@ -1390,7 +1390,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           </div>
         </div>
 
-        {/* ZONA response */}
+        {/* Zona response */}
         <div style={{
           minHeight: '48px', marginBottom: '20px',
           opacity: reflectResponse ? 1 : 0,
@@ -2341,7 +2341,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
               </div>
             </div>
 
-            {/* ZONA response */}
+            {/* Zona response */}
             <div style={{
               minHeight: '48px', marginBottom: '16px',
               opacity: reflectResponse ? 1 : 0,
@@ -3743,7 +3743,7 @@ function StravaConnectionRow() {
       </div>
       {!isLoading && !connected && (
         <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-          ZONA will read your Strava activities to provide coaching insights. No other data is accessed.
+          Zona will read your Strava activities to provide coaching insights. No other data is accessed.
         </div>
       )}
     </div>

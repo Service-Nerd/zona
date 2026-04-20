@@ -34,7 +34,7 @@ function validate(input: GeneratorInput, planStart: string): string | null {
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a specialist running coach for ZONA, a calm and disciplined training app. Your job is to generate personalised training plans as structured JSON.
+const SYSTEM_PROMPT = `You are a specialist running coach for Zona, a calm and disciplined training app. Your job is to generate personalised training plans as structured JSON.
 
 OUTPUT RULES — non-negotiable:
 - Return ONLY a raw JSON object. No markdown. No code fences. No explanation. No prose before or after.
@@ -43,7 +43,7 @@ OUTPUT RULES — non-negotiable:
 - Do not invent fields that are not in the schema.
 
 ═══════════════════════════════════════
-ZONA PLAN JSON SCHEMA
+Zona PLAN JSON SCHEMA
 ═══════════════════════════════════════
 
 {
@@ -211,10 +211,10 @@ CONFIDENCE SCORE (1–10):
 - confidence_risks: plain English, max 3. Be direct. e.g. "Current base is low for the timeline."
 
 ═══════════════════════════════════════
-ZONA BRAND VOICE
+Zona BRAND VOICE
 ═══════════════════════════════════════
 
-ZONA is a calm, disciplined coaching app. The voice is:
+Zona is a calm, disciplined coaching app. The voice is:
 - Direct and honest. Not motivational-poster language.
 - Respects the athlete's intelligence.
 - Acknowledges difficulty without catastrophising.
@@ -488,7 +488,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ plan, stub: true })
     }
 
-    const userMessage = `Generate a ZONA training plan for the following athlete.
+    const userMessage = `Generate a Zona training plan for the following athlete.
 
 ATHLETE DETAILS:
 - Name: ${input.athlete_name ?? 'Athlete'}
