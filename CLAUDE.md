@@ -31,7 +31,7 @@ and user_settings. Nothing is hardcoded to a specific person.
 | Dev machine | Mac Mini                      |
 
 - Supabase project ID: `wkppmpsvqkaxbekdgzdm`
-- Vercel app: `https://rts-training-hub.vercel.app` *(rename to zona on Vercel dashboard when ready)*
+- Vercel app: `https://zona.vercel.app`
 - Plan JSON: `https://gist.githubusercontent.com/Service-Nerd/efec07a87f65494f0e078a1ccb136100/raw/rts_plan.json`
   - Always fetched with `cache: 'no-store'`
 
