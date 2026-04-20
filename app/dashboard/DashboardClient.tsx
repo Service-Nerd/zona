@@ -423,11 +423,9 @@ export default function DashboardClient() {
   [stravaRuns, restingHR, maxHR, preferredUnits])
 
   const now = new Date()
-  const raceDate = plan?.meta?.race_date ? new Date(plan.meta.race_date) : new Date('2026-07-11')
-  const raceName = plan?.meta?.race_name ?? 'Race to the Stones 100k'
-  const fiftyKDate = new Date('2026-05-10')
-  const daysToRace = Math.max(0, Math.ceil((raceDate.getTime() - now.getTime()) / 86400000))
-  const daysTo50k = Math.max(0, Math.ceil((fiftyKDate.getTime() - now.getTime()) / 86400000))
+  const raceDate = plan?.meta?.race_date ? new Date(plan.meta.race_date) : null
+  const raceName = plan?.meta?.race_name ?? ''
+  const daysToRace = raceDate ? Math.max(0, Math.ceil((raceDate.getTime() - now.getTime()) / 86400000)) : 0
 
   const s: React.CSSProperties = {
     minHeight: '100dvh',
@@ -586,7 +584,7 @@ export default function DashboardClient() {
       )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} daysTo50k={daysTo50k} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} />}
         {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaTokenFailed={stravaTokenFailed} firstName={firstName} onGoToMe={() => setScreen('me')} />}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
@@ -2827,9 +2825,9 @@ function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, 
 
 // ── TODAY SCREEN ──────────────────────────────────────────────────────────
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, daysTo50k, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, firstName }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, firstName }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
-  smokeTrackerEnabled: boolean; daysToRace: number; daysTo50k: number; raceName: string; preferredMetric: 'distance' | 'duration'
+  smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   stravaRuns: any[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   overridesReady: boolean
@@ -3177,18 +3175,13 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         />
       )}
 
-      {/* Secondary stats row */}
-      {(daysTo50k > 0 || (smokeTrackerEnabled && quitDays !== null)) && (
+      {/* Secondary stats row — smoke tracker only */}
+      {(smokeTrackerEnabled && quitDays !== null) && (
         <div style={{ margin: '10px 12px 0', display: 'flex', gap: '8px' }}>
-          {[
-            { num: daysTo50k, label: 'To 50k checkpoint', show: daysTo50k > 0 },
-            ...(smokeTrackerEnabled && quitDays !== null ? [{ num: quitDays, label: 'Smoke-free days', show: true }] : []),
-          ].filter(s => s.show).map((s, i) => (
-            <div key={i} style={{ flex: 1, background: 'var(--card-bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
-              <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1 }}>{s.num}</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', marginTop: '3px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{s.label}</div>
-            </div>
-          ))}
+          <div style={{ flex: 1, background: 'var(--card-bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
+            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1 }}>{quitDays}</div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', marginTop: '3px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Smoke-free days</div>
+          </div>
         </div>
       )}
 
@@ -3257,31 +3250,35 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   const currentWeekIndex = getCurrentWeekIndex(plan.weeks)
   const weekNum = currentWeekIndex + 1
   const totalWeeks = plan.weeks.length
-  const raceName = (plan as any)?.meta?.race_name ?? 'Race to the Stones'
-  const raceDate = (plan as any)?.meta?.race_date ? new Date((plan as any).meta.race_date) : new Date('2026-07-11')
-  const raceDateStr = raceDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-  const daysToRace = Math.max(0, Math.ceil((raceDate.getTime() - Date.now()) / 86400000))
+  const raceName = (plan as any)?.meta?.race_name ?? ''
+  const raceDate = (plan as any)?.meta?.race_date ? new Date((plan as any).meta.race_date) : null
+  const raceDateStr = raceDate ? raceDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null
+  const daysToRace = raceDate ? Math.max(0, Math.ceil((raceDate.getTime() - Date.now()) / 86400000)) : null
 
   return (
     <div>
       {/* Race context header — with countdown matching Today screen */}
       <div style={{ padding: '16px 16px 4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.4px', lineHeight: 1.1 }}>
-            {raceName}
-          </div>
+          {raceName && (
+            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.4px', lineHeight: 1.1 }}>
+              {raceName}
+            </div>
+          )}
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '0.02em' }}>
-            {raceDateStr} · Week {weekNum} of {totalWeeks}
+            {raceDateStr ? `${raceDateStr} · ` : ''}Week {weekNum} of {totalWeeks}
           </div>
         </div>
-        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
-          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1, letterSpacing: '-0.5px' }}>
-            {daysToRace}
+        {daysToRace !== null && (
+          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
+            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1, letterSpacing: '-0.5px' }}>
+              {daysToRace}
+            </div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              days left
+            </div>
           </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-            days left
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Progress — anchored to header, not floating */}
