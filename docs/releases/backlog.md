@@ -58,7 +58,7 @@ Product owner must resolve these before any build work starts. Each one blocks w
 |------|--------|-------|
 | Subscription webhooks | ✅ Shipped | `/api/webhooks/stripe` + `/api/webhooks/revenuecat`. `subscriptions` table live in Supabase. ADR-005. |
 | Gist → Supabase plan storage | 🔲 Not Started | Add `plans` table (`user_id`, `plan_json` JSONB, `created_at`, `updated_at`). Wire plan save + fetch. ADR-002 ensures generator/reshaper need no changes. Blocked on D3. |
-| Reverse trial infrastructure | 🔲 Not Started | Add `trial_started_at` to `user_settings` (set on account creation, never updated). Create `lib/trial.ts` with `isTrialActive()`. Enforce PAID gates in API routes + components (both layers per ADR-003). Upgrade prompt component (blocked on D2). Graceful downgrade flow. |
+| Reverse trial infrastructure | ✅ Shipped | `lib/trial.ts` — `isTrialActive()` + `hasPaidAccess()`. `trial_started_at` set on first load. Gates on `/api/generate-plan`, `/api/claude`, `/api/strava/callback`. `UpgradeScreen` (dedicated screen, D2 resolved). `/api/checkout` stub ready for Stripe wiring. Migration: `20260422_trial_started_at.sql` — apply in Supabase. |
 
 ---
 
@@ -87,6 +87,8 @@ Product owner must resolve these before any build work starts. Each one blocks w
 
 | Item | Status | Notes |
 |------|--------|-------|
+| Apply migration `20260422_trial_started_at.sql` | 🔲 | `ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS trial_started_at TIMESTAMPTZ` |
+| Set `STRIPE_PRICE_MONTHLY` + `STRIPE_PRICE_ANNUAL` in Vercel | 🔲 | Price IDs from Stripe dashboard after creating product |
 | Set `STRIPE_SECRET_KEY` in Vercel | 🔲 | Stripe dashboard → Developers → API keys |
 | Set `STRIPE_WEBHOOK_SECRET` in Vercel | 🔲 | Stripe dashboard → Webhooks → add endpoint `https://zona.vercel.app/api/webhooks/stripe`, copy signing secret |
 | Set `REVENUECAT_WEBHOOK_SECRET` in Vercel | 🔲 | RevenueCat dashboard → Integrations → Webhooks → set URL + copy secret |
