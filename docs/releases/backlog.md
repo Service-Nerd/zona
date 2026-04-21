@@ -21,6 +21,7 @@
 | R23 — Plan generator | Hybrid generation (ADR-006): rule engine always runs, AI enricher for trial/paid with silent fallback. Tier-divergent wizard (3-step free / 4-step paid). Generating Ceremony. Free users now get plans (403 removed). `lib/plan/ruleEngine.ts`, `enrich.ts`, `generate.ts`. |
 | R0.5 — Onboarding | New user auto-routed to wizard on empty plan. Wizard state persisted in sessionStorage. Upgrade-from-wizard routing. Plan archive (data protection). Welcome screen bug fixed. |
 | Design system fixes | Zone colour coherence (Z1–Z5 now match session type colours). `--red` token removed. Strava HR colour fixed. Plan overwrite warning. `ui-patterns.md` zone invariant documented. |
+| Login + loading screen audit | Login heading/subtext now mode-aware. Tagline aligned to canonical copy. Loading button copy improved. Signup subtext surfaces 14-day trial. Spinner removed from loading state (no-spinner principle). Google Fonts weight range extended to 400;500;600;700 — bold metrics and headings now render at correct weight throughout the app. |
 
 ---
 
@@ -201,10 +202,10 @@ Ordered by value. Each item needs FREE/PAID tag confirmed in `docs/canonical/fea
 | Item | Status |
 |------|--------|
 | Strava token refresh | Not started — currently single-use; needs cache + refresh logic |
-| `login/page.tsx` hardcoded values | Not yet audited |
+| `login/page.tsx` hardcoded values | ✅ Audited and fixed — heading, tagline, copy, spinner all corrected |
 | `PlanCalendar` `stravaRuns` prop | Accepted but unused in WeekCard — remove or wire up |
 | `DashboardClient.tsx` hardcoded fonts | ~228 occurrences of `'Inter', sans-serif` / `'Space Grotesk', sans-serif` hardcoded; 7 instances of `'Inter', monospace` (wrong fallback) |
-| `nextMonday()` UTC drift in `route.ts` | `nextMonday()` calls `.toISOString()` on a local-time Date, which can shift the Monday back by one day near midnight local time. `lib/plan/length.ts` (R23) uses `new Date(y, m-1, d)` to avoid this; the original route function should be refactored to match when the route is simplified in R23 Phase 2. |
+| `nextMonday()` UTC drift in `route.ts` | ✅ Fixed — route.ts rewritten in R23; now uses `lib/plan/length.ts` `parseDateLocal()` throughout |
 | Tier-divergent rendering utility | Once a second tier-divergent component lands (after `GeneratingCeremony.tsx`), centralise the `tier` prop pattern into a shared context or typed prop convention. Document as a pattern in `ui-patterns.md`. |
 | Plan history UI | Data is archived to `plan_archive` table (migration `20260424`). UI (browse archived plans + restore) deferred post-launch. Schema has `race_name`, `race_date`, `archived_at` for future list display. |
 
