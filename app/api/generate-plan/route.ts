@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { Plan, GeneratorInput } from '@/types/plan'
+import { createClient } from '@/lib/supabase/server'
+import { hasPaidAccess } from '@/lib/trial'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -467,6 +469,13 @@ function buildStubPlan(input: GeneratorInput, planStart: string, metric: 'distan
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!await hasPaidAccess(user.id)) {
+      return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
+    }
+
     const input: GeneratorInput = await req.json()
 
     // Compute plan start (next Monday from today)

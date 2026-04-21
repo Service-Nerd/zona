@@ -9,10 +9,12 @@ import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
 import { fetchPlanFromUrl, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
+import { isTrialActive } from '@/lib/trial'
 import dynamic from 'next/dynamic'
 const GeneratePlanScreen = dynamic(() => import('./GeneratePlanScreen'), { ssr: false })
+const UpgradeScreen = dynamic(() => import('./UpgradeScreen'), { ssr: false })
 
-type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'admin' | 'generate'
+type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'admin' | 'generate' | 'upgrade'
 
 // ── Icons ─────────────────────────────────────────────────────────────────
 
@@ -106,6 +108,9 @@ export default function DashboardClient() {
   const [lastName, setLastName] = useState<string>('')
   const [profileEmail, setProfileEmail] = useState<string>('')
 
+  // Paid access — default true to avoid flash of locked state during load
+  const [hasPaidAccess, setHasPaidAccess] = useState(true)
+
   // Post-wizard orientation — shown once after plan generation
   const [showOrientation, setShowOrientation] = useState(false)
 
@@ -138,6 +143,10 @@ export default function DashboardClient() {
       setStravaConnected(true)
       window.history.replaceState({}, '', '/dashboard')
     }
+    if (params.get('strava') === 'upgrade') {
+      setScreen('upgrade')
+      window.history.replaceState({}, '', '/dashboard')
+    }
   }, [])
 
   const initials = (() => {
@@ -165,10 +174,11 @@ export default function DashboardClient() {
         if (!user) { setStravaLoading(false); setOverridesReady(true); setAppReady(true); return }
 
         // Fetch overrides + user settings + completions in parallel
-        const [settingsRes, overridesRes, completionsRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, first_name, last_name, email').eq('id', user.id).single(),
+        const [settingsRes, overridesRes, completionsRes, subRes] = await Promise.all([
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, first_name, last_name, email, trial_started_at').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
+          supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
         ])
 
         if (overridesRes.data) setAllOverrides(overridesRes.data)
@@ -234,6 +244,20 @@ export default function DashboardClient() {
         if (!data?.has_onboarded) {
           setShowWelcome(true)
         }
+
+        // Trial — set trial_started_at on first load if not already set
+        let trialStartedAt: string | null = data?.trial_started_at ?? null
+        if (!trialStartedAt) {
+          trialStartedAt = new Date().toISOString()
+          void supabase.from('user_settings').upsert({ id: user.id, trial_started_at: trialStartedAt, updated_at: new Date().toISOString() })
+        }
+
+        // Paid access — active subscription OR within trial window
+        const sub = subRes.data
+        const hasActiveSub = sub?.status &&
+          ['trialing', 'active'].includes(sub.status) &&
+          new Date(sub.current_period_end) > new Date()
+        setHasPaidAccess(!!(hasActiveSub || isTrialActive(trialStartedAt)))
 
         setOverridesReady(true)
         setAppReady(true)
@@ -608,6 +632,7 @@ export default function DashboardClient() {
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
         {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} />}
+        {screen === 'upgrade'  && <UpgradeScreen onBack={() => setScreen('today')} />}
       </div>
 
       {/* Screen guide — first-load popup */}
@@ -642,7 +667,7 @@ export default function DashboardClient() {
             }}>
               {([
                 ...(isAdmin ? [{ id: 'coach' as Screen, label: 'Coach', icon: (a: boolean) => <IconCoach active={a} /> }] : []),
-                { id: 'strava' as Screen, label: 'Strava',  icon: (a: boolean) => <IconStrava active={a} /> },
+                { id: (hasPaidAccess ? 'strava' : 'upgrade') as Screen, label: 'Strava',  icon: (a: boolean) => <IconStrava active={a} /> },
                 { id: 'me'     as Screen, label: 'Profile', icon: (a: boolean) => <IconMe     active={a} /> },
               ]).map(({ id, label, icon }, i) => {
                 const active = screen === id

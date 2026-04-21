@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { hasPaidAccess } from '@/lib/trial'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -14,6 +15,10 @@ export async function GET(request: Request) {
   if (!userId) {
     console.error('Strava callback: no user ID in state param')
     return NextResponse.redirect(`${origin}/dashboard?strava=error`)
+  }
+
+  if (!await hasPaidAccess(userId)) {
+    return NextResponse.redirect(`${origin}/dashboard?strava=upgrade`)
   }
 
   try {
