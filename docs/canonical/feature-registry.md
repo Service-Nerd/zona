@@ -33,7 +33,7 @@
 |---|---|---|---|
 | Onboarding flow | FREE / PAID | R0.5 | Questionnaire → template plan (free) or AI plan (paid/trial) → plan on screen. Target: first value in <3 mins. Requires plan storage decision (Gist vs Supabase). |
 | Rule-based plan engine | FREE | — | Deterministic plan generation from pre-built templates. Zero AI calls. Powers the free path in R0.5 and post-trial plan regeneration. |
-| Gist → Supabase plan storage | FREE (infrastructure) | — | Add `plans` table; wire save + fetch. Prerequisite for multi-user onboarding. Blocked on product decision — see backlog TODO. |
+| Gist → Supabase plan storage | FREE (infrastructure) | 2026-04-21 | `plans` table with RLS. `fetchPlanForUser` + `savePlanForUser` in `lib/plan.ts`. Auto-migration from gist_url / plan_json on first load. Contract: `docs/contracts/api/plan-fetch.md`. |
 | Reverse trial infrastructure | FREE (infrastructure) | — | `trial_started_at` in `user_settings`; `isTrialActive()` helper; PAID gates in API + components; upgrade prompt; downgrade flow. See `docs/canonical/monetisation-strategy.md`. |
 | Plan Confidence Score | PAID | R18 | Derived from completion + RPE data |
 | Coaching Tips in Supabase | PAID | R19 | Move hardcoded copy to DB; dynamic per user |

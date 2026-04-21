@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Plan } from '@/types/plan'
 
 export const DEFAULT_GIST_URL = process.env.NEXT_PUBLIC_GIST_URL ||
@@ -38,6 +39,50 @@ export async function fetchPlanFromUrl(url: string): Promise<Plan> {
 // Legacy export — used as fallback
 export async function fetchPlan(): Promise<Plan> {
   return fetchPlanFromUrl(DEFAULT_GIST_URL)
+}
+
+// Fetch plan for a user: plans table → gist_url auto-migrate → plan_json auto-migrate → EMPTY_PLAN.
+// Auto-migration is fire-and-forget: existing users' plans move to Supabase on first load.
+export async function fetchPlanForUser(
+  userId: string,
+  supabase: SupabaseClient,
+  opts: { gistUrl?: string | null; legacyPlanJson?: Plan | null } = {}
+): Promise<Plan> {
+  const { data: planRow } = await supabase
+    .from('plans')
+    .select('plan_json')
+    .eq('user_id', userId)
+    .single()
+
+  if (planRow?.plan_json) return planRow.plan_json as Plan
+
+  if (opts.gistUrl) {
+    const plan = await fetchPlanFromUrl(opts.gistUrl)
+    if (plan.weeks.length > 0) {
+      void savePlanForUser(userId, plan, supabase)
+      return plan
+    }
+  }
+
+  if (opts.legacyPlanJson && (opts.legacyPlanJson as Plan).weeks?.length > 0) {
+    void savePlanForUser(userId, opts.legacyPlanJson, supabase)
+    return opts.legacyPlanJson
+  }
+
+  return EMPTY_PLAN
+}
+
+export async function savePlanForUser(
+  userId: string,
+  plan: Plan,
+  supabase: SupabaseClient
+): Promise<void> {
+  await supabase
+    .from('plans')
+    .upsert(
+      { user_id: userId, plan_json: plan, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    )
 }
 
 // Parse a YYYY-MM-DD string as local midnight — avoids UTC-offset week mismatches

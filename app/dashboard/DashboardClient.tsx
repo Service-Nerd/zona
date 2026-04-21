@@ -7,7 +7,7 @@ import PlanCalendar from '@/components/training/PlanCalendar'
 import CalendarOverlay from './CalendarOverlay'
 import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
-import { fetchPlanFromUrl, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
+import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
 import { isTrialActive } from '@/lib/trial'
 import dynamic from 'next/dynamic'
@@ -194,15 +194,16 @@ export default function DashboardClient() {
         if (settingsRes.error) console.error('user_settings query failed:', settingsRes.error)
         const data = settingsRes.data
 
-        // Load plan from user's gist_url or plan_json; new users go to the generator
-        if (data?.gist_url) {
-          const loadedPlan = await fetchPlanFromUrl(data.gist_url)
-          setPlan(loadedPlan)
-        } else if (data?.plan_json) {
-          setPlan(data.plan_json as Plan)
-        } else {
+        // Load plan — plans table first, auto-migrate from gist_url / plan_json on first load
+        const loadedPlan = await fetchPlanForUser(user.id, supabase, {
+          gistUrl: data?.gist_url,
+          legacyPlanJson: data?.plan_json as Plan | null,
+        })
+        if (loadedPlan.weeks.length === 0) {
           setPlan(EMPTY_PLAN)
           setScreen('generate')
+        } else {
+          setPlan(loadedPlan)
         }
 
         // Admin flag
@@ -366,11 +367,16 @@ export default function DashboardClient() {
 
   async function impersonateUser(userId: string, name: string) {
     try {
-      // Load their plan
-      const { data: settings } = await supabase.from('user_settings').select('gist_url').eq('id', userId).single()
-      const gistUrl = settings?.gist_url || DEFAULT_GIST_URL
-      const loadedPlan = await fetchPlanFromUrl(gistUrl)
-      setPlan(loadedPlan)
+      // Load their plan — plans table (RLS returns empty for other users), fall back to gist_url
+      const { data: planRow } = await supabase.from('plans').select('plan_json').eq('user_id', userId).single()
+      if (planRow?.plan_json) {
+        setPlan(planRow.plan_json as Plan)
+      } else {
+        const { data: settings } = await supabase.from('user_settings').select('gist_url').eq('id', userId).single()
+        const gistUrl = settings?.gist_url || DEFAULT_GIST_URL
+        const loadedPlan = await fetchPlanFromUrl(gistUrl)
+        setPlan(loadedPlan)
+      }
 
       // Load their overrides
       const { data: overrides } = await supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', userId)
@@ -398,9 +404,7 @@ export default function DashboardClient() {
     // Reload own data
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data: settings } = await supabase.from('user_settings').select('gist_url').eq('id', user.id).single()
-    const gistUrl = settings?.gist_url || DEFAULT_GIST_URL
-    const loadedPlan = await fetchPlanFromUrl(gistUrl)
+    const loadedPlan = await fetchPlanForUser(user.id, supabase)
     setPlan(loadedPlan)
 
     const { data: overrides } = await supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id)
@@ -424,11 +428,7 @@ export default function DashboardClient() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      await supabase.from('user_settings').upsert({
-        id: user.id,
-        plan_json: savedPlan,
-        updated_at: new Date().toISOString(),
-      })
+      await savePlanForUser(user.id, savedPlan, supabase)
       setPlan(savedPlan)
       setScreen('today')
       setShowOrientation(true)

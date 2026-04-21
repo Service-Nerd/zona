@@ -24,15 +24,14 @@
 
 ## v1 App Store Launch Roadmap
 
-### Decisions required first
-Product owner must resolve these before any build work starts. Each one blocks work downstream.
+### Decisions resolved
 
-| # | Decision | Blocks |
-|---|----------|--------|
-| D1 | **StoreKit (Apple IAP) vs web checkout** — Apple §3.1.1 requires all iOS subscription revenue through IAP (15–30% cut). Web checkout requires an External Purchase Entitlement application (takes weeks, not guaranteed). This is a commercial decision, not a technical one. | All monetisation build work |
-| D2 | **Upgrade prompt UX** — inline sheet or dedicated screen? | Reverse trial UI |
-| D3 | **Gist → Supabase migration timing** — before or after launch? New users need a plan storage target. | R0.5 onboarding build |
-| D4 | **Final pricing** — exact price point and billing frequency | App Store Connect setup, subscription terms UI |
+| # | Decision | Resolution |
+|---|----------|------------|
+| D1 | **StoreKit (Apple IAP) vs web checkout** | ✅ RevenueCat + StoreKit 2 for iOS; Stripe for web. See ADR-005. |
+| D2 | **Upgrade prompt UX** | ✅ Dedicated full screen (`UpgradeScreen`). Shipped. |
+| D3 | **Gist → Supabase migration timing** | ✅ Before launch. Required for onboarding. |
+| D4 | **Final pricing** | ✅ £7–10/month billed annually. Exact price TBD but does not block build work. |
 
 ---
 
@@ -42,7 +41,7 @@ Product owner must resolve these before any build work starts. Each one blocks w
 | Item | Status | Notes |
 |------|--------|-------|
 | Sign in with Apple | 🔲 Not Started | Apple §5.1.1d — mandatory when any other social login is present (Google OAuth is). |
-| Account deletion flow | 🔲 Not Started | Apple + Google mandate since 2022/2023. Needs: UI in Me screen → API route → Supabase cascade delete of all user data. |
+| Account deletion flow | ✅ Shipped | Me screen → `DeleteAccountScreen` → `/api/delete-account` → cascade delete session_completions + subscriptions + user_settings + auth user. |
 | Terms of Service | 🔲 Not Started | Required for any app with accounts or IAP. Write, host at public URL, link pre-login alongside privacy policy. |
 | Privacy policy hosted | 🔲 Not Started | Page is built (`/privacy`). Needs to be live at `zona.app/privacy` before submission. |
 | StoreKit 2 integration **or** External Purchase Entitlement | 🔲 Not Started | Depends on D1 above. If IAP: implement StoreKit 2 purchase + receipt validation. If web checkout: apply for entitlement — not guaranteed and slow. |
