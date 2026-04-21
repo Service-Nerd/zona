@@ -18,6 +18,7 @@ export type SessionType = 'run' | 'easy' | 'quality' | 'strength' | 'rest' | 'ra
 
 ```typescript
 export interface Session {
+  id?: string                              // deterministic: "w{N}-{day}" e.g. "w5-wed" — required on R23+ plans, absent on legacy (INV-PLAN-009)
   type: SessionType
   label: string
   /** Legacy free-text display field. Kept for backward compat with hand-authored gists.
@@ -28,11 +29,11 @@ export interface Session {
   distance_km?: number                     // e.g. 8.5
   duration_mins?: number                   // e.g. 45
   primary_metric?: 'distance' | 'duration' // session-level override of plan default
-  zone?: string                            // e.g. "Zone 2" | "Zone 3–4"
-  hr_target?: string                       // e.g. "< 145 bpm" | "155–165 bpm"
+  zone?: string                            // e.g. "Zone 2" | "Zone 3–4" — always a string (INV-PLAN-007)
+  hr_target?: string                       // e.g. "< 145 bpm" | "155–165 bpm" — always a string (INV-PLAN-007)
   pace_target?: string                     // e.g. "6:30–7:00 /km"
   rpe_target?: number                      // 1–10
-  coach_notes?: [string, string?, string?] // max 3 bullet points — plain coaching language
+  coach_notes?: [string, string?, string?] // max 3 bullet points — plain coaching language (INV-PLAN-008)
 }
 ```
 
@@ -98,12 +99,24 @@ export interface PlanMeta {
   generator_version?: string   // e.g. "1.0"
 
   // R18 — confidence score produced at generation time
-  confidence_score?: number    // 1–10
-  confidence_risks?: string[]  // e.g. ["low base volume", "tight timeline"]
+  confidence_score?: number    // 1–10 — PAID plans only (INV-PLAN-008)
+  confidence_risks?: string[]  // e.g. ["low base volume", "tight timeline"] — PAID only
+
+  // R23 — hybrid generation fields (added 2026-04-21)
+  tier?: 'free' | 'trial' | 'paid'  // tier at which plan was generated
+  compressed?: boolean               // true if available weeks < ideal plan length for distance
+  coach_intro?: string               // PAID only — enricher-generated intro paragraph in ZONA voice
+}
+
+export interface Phase {
+  name: 'base' | 'build' | 'peak' | 'taper'
+  start_week: number   // 1-indexed, inclusive
+  end_week: number     // 1-indexed, inclusive
 }
 
 export interface Plan {
   meta: PlanMeta
+  phases?: Phase[]     // optional — present on R23+ plans; absent on legacy gist plans
   weeks: Week[]
 }
 ```
@@ -177,13 +190,14 @@ Hand-authored gists use only `type`, `label`, `detail`. The app prefers structur
 | ID | Rule |
 |---|---|
 | INV-PLAN-001 | Plan JSON is the single source of truth for session definitions. Supabase stores overrides and completions only. |
-| INV-PLAN-002 | Plan JSON always fetched from GitHub Gist with `cache: 'no-store'`. |
+| INV-PLAN-002 | Plan JSON always fetched from Supabase `plans` table (migrated from GitHub Gist in R23 Phase 2). `fetchPlanForUser` in `lib/plan.ts` is the only read path. |
 | INV-PLAN-003 | `Session` interface in `types/plan.ts` is the TypeScript authority. Field additions require interface update first. |
 | INV-PLAN-004 | Plan output = JSON first, never direct-to-DB. Generator (R23) and reshaper (R20) share this schema. |
 | INV-PLAN-005 | `primary_metric` determines default display (distance or duration). Both fields may coexist in a session. |
 | INV-PLAN-006 | Strength session stubs carry no HR target and no zone until R21. |
-| INV-PLAN-007 | `hr_target` is always a formatted string (e.g. `"< 145 bpm"`), never a raw number. |
-| INV-PLAN-008 | `coach_notes` is a tuple of max 3 strings. Never more. |
+| INV-PLAN-007 | `zone` and `hr_target` are always formatted strings (e.g. `"Zone 2"`, `"< 145 bpm"`). Never numeric or object types. The rule engine computes numeric values internally and formats to strings before output. R23 reaffirms this. |
+| INV-PLAN-008 | Free plans (`meta.tier === 'free'`) never carry `confidence_score` or `confidence_risks`. These fields are PAID-only. UI consumers may rely on their absence as a tier signal. `coach_notes` is a tuple of max 3 strings — never more. |
+| INV-PLAN-009 | Sessions on R23+ plans carry a deterministic `id` of the form `w{N}-{day}` (e.g. `w5-wed`). This ID is used by R20 (reshaper) for targeted session updates. Legacy plans (pre-R23) have no session IDs — consumers must handle absence gracefully. |
 
 ---
 

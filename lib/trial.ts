@@ -1,5 +1,7 @@
 const TRIAL_DAYS = 14
 
+export type UserTier = 'free' | 'trial' | 'paid'
+
 // Pure — safe to call on client or server.
 export function isTrialActive(trialStartedAt: string | null | undefined): boolean {
   if (!trialStartedAt) return false
@@ -8,8 +10,8 @@ export function isTrialActive(trialStartedAt: string | null | undefined): boolea
 }
 
 // Server-only — uses service role to bypass RLS.
-// Check order: active subscription → trial window → deny.
-export async function hasPaidAccess(userId: string): Promise<boolean> {
+// Resolution order: active subscription → trial window → free.
+export async function getUserTier(userId: string): Promise<UserTier> {
   const { createClient } = await import('@supabase/supabase-js')
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,8 +36,13 @@ export async function hasPaidAccess(userId: string): Promise<boolean> {
     ['trialing', 'active'].includes(sub.status) &&
     new Date(sub.current_period_end) > new Date()
   ) {
-    return true
+    return 'paid'
   }
 
-  return isTrialActive(settings?.trial_started_at)
+  return isTrialActive(settings?.trial_started_at) ? 'trial' : 'free'
+}
+
+// Convenience wrapper — kept for existing callers (strava/callback, claude route).
+export async function hasPaidAccess(userId: string): Promise<boolean> {
+  return (await getUserTier(userId)) !== 'free'
 }

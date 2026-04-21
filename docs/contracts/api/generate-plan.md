@@ -2,6 +2,8 @@
 
 **Authority**: This document defines the request/response contract for the plan generator API route. The route lives at `app/api/generate-plan/route.ts`.
 
+**Architecture**: Hybrid generation (ADR-006). Rule engine always runs; AI enricher runs for trial/paid and falls back silently on failure. Free users always receive a plan.
+
 ---
 
 ## Request
@@ -34,8 +36,8 @@ Body: GeneratorInput
 {
   race_name?: string
   target_time?: string            // only if goal = 'time_target'
-  zone2_ceiling?: number          // defaults to 145 if absent
-  days_cannot_train?: string[]    // e.g. ['mon', 'fri']
+  zone2_ceiling?: number          // computed via Karvonen if absent
+  days_cannot_train?: string[]    // full day names e.g. ['monday', 'friday']
   max_weekday_mins?: number
   max_weekend_mins?: number
   training_style?: 'predictable' | 'variety' | 'minimalist' | 'structured'
@@ -57,13 +59,16 @@ Body: GeneratorInput
 { "plan": Plan }
 ```
 
-### 200 — Stub plan (no API key configured)
+The plan always contains at minimum rule-engine output. For trial/paid users, AI-enriched labels,
+week themes, and session coach notes are included. For paid users only: `confidence_score`,
+`confidence_risks`, and `coach_intro` are added. The `meta.tier` field indicates which tier
+produced the plan.
+
+### 401 — Unauthenticated
 
 ```json
-{ "plan": Plan, "stub": true }
+{ "error": "Unauthorized" }
 ```
-
-The stub plan is a 12-week half marathon template exercising the full schema. Used for UI development when `ANTHROPIC_API_KEY` is not set.
 
 ### 422 — Guard rail violation
 
@@ -76,17 +81,9 @@ Triggered by:
 - Marathon+ race fewer than 6 weeks away
 - Fewer than 2 days available per week
 
-### 502 — Anthropic API error
+### 500 — Unexpected error
 
 ```json
-{ "error": "Plan generation failed" }
-```
-
-### 500 — Parse or structure error
-
-```json
-{ "error": "Generated plan was not valid JSON" }
-{ "error": "Generated plan is missing required structure" }
 { "error": "Unexpected error" }
 ```
 
@@ -94,20 +91,42 @@ Triggered by:
 
 ## Behaviour
 
-- Guard rails are checked **before** the API call. Invalid inputs never reach Anthropic.
-- Plan start is always the **next Monday** from the current date.
-- Token budget scales with plan length: ≤12 weeks → 12,000 tokens; ≤20 weeks → 18,000; >20 weeks → 24,000.
-- The route strips markdown fences from the response before parsing, in case the model wraps JSON in a code block.
-- A minimal sanity check runs after parse: `plan.meta` and `plan.weeks` must exist and weeks must be non-empty.
-- Model: `claude-sonnet-4-6`
+### Tier-based generation
 
----
+| Tier | Rule engine | AI enricher | Confidence fields | coach_intro |
+|------|-------------|-------------|-------------------|-------------|
+| free | ✅ always | ✗ | ✗ | ✗ |
+| trial | ✅ always | ✅ (fallback) | ✗ | ✗ |
+| paid | ✅ always | ✅ (fallback) | ✅ | ✅ |
 
-## Primary Metric Selection (server-side)
+Tier is determined server-side by `getUserTier(userId)`. The client never sends a tier claim.
 
-The route determines `primary_metric` before calling the API:
+### Enricher fallback
+If the AI enricher fails (timeout, invalid JSON, schema violation), the rule-engine plan is
+returned unchanged. The caller cannot distinguish enriched from unenriched in the 200 response
+(by design — ADR-006: enricher failure is silent).
+
+### Plan start
+Plan start is always the **next Monday** from the current date, computed using local-time date
+arithmetic (avoids UTC midnight drift). This is computed server-side; the client does not send
+a plan start date.
+
+### Guard rails
+Guard rails are checked **before** generation. Invalid inputs never reach the rule engine.
+
+### Primary metric
+Determined by rule engine:
 - `beginner` → `duration`
 - `race_distance_km >= 50` → `duration`
 - otherwise → `distance`
 
-This is passed to the model as a suggestion and applied to `meta.primary_metric`.
+---
+
+## Generation modules
+
+| Module | Responsibility |
+|--------|---------------|
+| `lib/plan/ruleEngine.ts` | Deterministic plan structure — distances, HR, zones, sessions |
+| `lib/plan/enrich.ts` | AI coaching voice — labels, themes, coach notes, confidence |
+| `lib/plan/generate.ts` | Orchestrator — calls rule engine then enricher |
+| `lib/trial.ts` | Auth boundary — `getUserTier()` |

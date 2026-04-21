@@ -241,12 +241,33 @@ Zona voice rules:
 
 ### 10. Loading State
 
-Skeleton shimmer only. No spinners.
+Skeleton shimmer only. No spinners. No progress percentages. No rotating circles.
 
 - Match the exact shape of the content it replaces
-- Shimmer: CSS animation from `var(--color-border)` → slightly lighter → back
+- Shimmer: CSS animation from `var(--border-col)` → slightly lighter (use `var(--teal)` as the highlight sweep colour) → back
 - Session card skeleton: same height as collapsed card, left accent bar included
 - Never show partial data while loading — skeleton or nothing
+
+**The Generating Ceremony (canonical example — `GeneratingCeremony.tsx`)**
+
+The plan generation screen is the highest-emotion loading moment in the app. It is not a loading state. It is a signature ZONA moment. Shipped in R23.
+
+Architecture:
+- `hasPaidAccess: boolean` — controls copy set and minimum duration
+- `plan: Plan | null` — null while generating, Plan when API responds
+- `onRevealComplete: () => void` — parent transitions to full preview after reveal
+
+Phases:
+1. **Loading**: skeleton shimmer of 3 phase card placeholders. Copy cycles every 1.8s in `var(--font-brand)`. Minimum duration: 1.8s (free) / 3.6s (paid) — ensures at least one copy line is seen even when the rule engine responds instantly.
+2. **Revealing**: skeleton unmounts, phase cards draw in with `visible` prop + 80ms stagger. Copy transitions to the payoff line: *"There it is. Don't ruin it."* in `var(--teal)`.
+3. **Done**: calls `onRevealComplete` after 500ms post-last-card → parent sets `appStep('preview')`.
+
+Copy (paid/trial, 5 lines): "Reading your race date." → "Protecting you from yourself." → "Zone 2 ceiling" → "Deload weeks" → "Almost done."
+Copy (free, 4 lines): "Working out your schedule." → "10% rule" → "Deload weeks" → "Almost done."
+
+No spinner. No percentage. The reveal is the payoff — not the wait.
+
+Reference `components/GeneratingCeremony.tsx` for implementation.
 
 ---
 
@@ -286,6 +307,44 @@ Skeleton shimmer only. No spinners.
 - Weeks as sections, each with stat row + session list
 - Compact collapsed cards by default
 - No calendar grid — list is better for this density
+
+---
+
+## HR Zone → Session Colour Coherence
+
+**Design invariant**: HR zone colours match the session type colours for the sessions that target those zones. A user sees the same blue for a Zone 2 easy run on the plan screen AND on the HR zone chart. This is intentional — the visual vocabulary reinforces the physiological relationship.
+
+| Zone | Name | Token | Hex | Matching session type |
+|------|------|-------|-----|----------------------|
+| 1 | Recovery | `--session-recovery` | `#5BAD8C` | recovery |
+| 2 | Aerobic | `--session-easy` | `#4A90D9` | easy, long |
+| 3 | Tempo | `--session-quality` | `#F2C14E` | quality, tempo |
+| 4 | Threshold | `--session-race` | `#E8833A` | race (race-pace effort = threshold intensity) |
+| 5 | VO₂ Max | `--coral` / `--session-intervals` | `#E05A5A` | intervals |
+
+**Rules:**
+- Zone colours must always use session type tokens (not semantic tokens like `--accent` or `--amber`).
+- `--amber` is reserved for coaching warnings and quality session accents only — it must never be used for Zone 5.
+- `--coral` (`#E05A5A`) is the canonical max-effort colour shared by `--session-intervals` and Zone 5.
+- Never introduce a standalone zone colour that doesn't map to an existing session type token.
+
+---
+
+## Tier-Divergent Components
+
+A component that renders differently for FREE vs PAID/TRIAL users must follow these rules:
+
+1. **Single file, conditional render.** Never split into `FooFree.tsx` + `FooPaid.tsx`. One component, one `tier` prop, internal branching.
+2. **Free is the baseline, paid is enrichment.** The free variant must be a complete, lovable experience on its own — not a degraded fallback. PAID adds voice, confidence scoring, and deeper personalisation on top.
+3. **Header comment is mandatory.** Every tier-divergent file must open with:
+   ```tsx
+   // TIER-DIVERGENT — FREE: [brief description of free variant]
+   //                  PAID: [brief description of paid enrichment]
+   ```
+4. **No tier logic in child components.** The tier prop travels from the route to the top-level screen component. Children receive pre-computed data, not a tier flag they must interpret.
+5. **Graceful degradation only.** If the paid enrichment is absent (Claude failed, fields missing), the component falls back to the free variant automatically. Never show an empty state where a standard plan could show.
+
+Canonical examples (R23): `GeneratingCeremony.tsx`, `GeneratePlanScreen.tsx` (Step 4 visibility).
 
 ---
 

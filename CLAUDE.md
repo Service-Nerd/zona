@@ -53,12 +53,15 @@ and user_settings. Nothing is hardcoded to a specific person.
 
 **Fonts:** Inter (metrics/UI) · Space Grotesk (headings/brand)
 
+**Font tokens:** `var(--font-ui)` = Inter · `var(--font-brand)` = Space Grotesk. These are the only two font tokens. `--font-display` is NOT a token — any reference to it is a typo; use `var(--font-brand)`.
+
 **BANNED:**
 - `#D4501A` (ember orange)
 - `#f5f2ee` (warm beige)
 - DM Mono
 - DM Sans
 - Hardcoded colour values anywhere in components
+- Hardcoded font family strings — use `var(--font-ui)` / `var(--font-brand)` only
 
 All colour MUST come from CSS custom properties in `globals.css`.
 Nothing hardcoded in component files.
@@ -134,10 +137,34 @@ Honest, slightly sarcastic, self-aware, encouraging without cringe.
 - Passed as props to child components
 - Avoids duplicate API calls and flash/inconsistency
 
+### sessionStorage Keys (canonical)
+- `zona_wizard_draft` — wizard form state persisted by `GeneratePlanScreen`. Written on every field change; restored on mount; cleared on `handleUsePlan` success. Enables back-navigation resumption and upgrade-mid-wizard flow. Never rely on this in server or API code — client only.
+
+### Plan Archive
+- `plan_archive` Supabase table — previous plan stored here before every `savePlanForUser` call. Populated via fire-and-forget `void` insert in `handlePlanSaved` (DashboardClient). Migration: `20260424_plan_archive.sql`. No restore UI at v1 — data protection only. Future plan history screen reads from this table.
+
 ### Palette Regression (Most Common Failure)
 - System B palette regressions are the #1 recurring issue
 - The fix: full `globals.css` rewrite + sed-based replacement of all hardcoded values
 - If you see ember orange, warm beige, DM Mono, or DM Sans — stop and fix it
+
+### Hybrid Generation Pattern (R23+)
+
+All plan generators (R23 plan generator, R20 reshaper, R24 multi-race, R21 strength) follow the same shape:
+
+1. **Deterministic rule engine** produces canonical plan JSON — no AI calls, always succeeds.
+2. **AI enricher** optionally adds voice, coaching copy, and confidence score on top of that JSON.
+3. **Enricher failure is silent** — if Claude times out, returns malformed JSON, or fails validation, the rule-engine output is returned unchanged. The user always gets a plan.
+
+This is the only permitted architecture for plan generation. Binary split (free=template / paid=AI-only) is explicitly rejected. See `docs/architecture/ADR-006-hybrid-generation-pattern.md`.
+
+### Auth at the Route Boundary
+
+`lib/plan/*` modules are pure functions of inputs and a `tier` parameter. They do not import auth helpers, call Supabase, or access `process.env` authentication secrets. The API route is the auth boundary: it calls `hasPaidAccess()`, determines the tier, and passes `tier: 'free' | 'trial' | 'paid'` into `generate(input, tier)`. This keeps plan logic unit-testable and honours ADR-003.
+
+### Free Users Are Never Abandoned
+
+Any feature that locks a free user out of core function — getting a plan, seeing a session, logging a run — is a brand violation. Gate richness (AI labels, coaching voice, confidence score), never gate access (the plan itself, the session card, the log action). ZONA protects runners from themselves; abandonment is not protection.
 
 ---
 
@@ -226,7 +253,7 @@ Per-session toggle in expanded card only — saves per session, updates collapse
 - Architecture overview: `docs/architecture/architecture.md`
 - Backlog: `docs/releases/backlog.md`
 - Feature registry (FREE/PAID): `docs/canonical/feature-registry.md`
-- ADRs: `docs/architecture/ADR-*.md`
+- ADRs: `docs/architecture/ADR-*.md` (ADR-001 design tokens, ADR-002 JSON-first, ADR-003 free/paid gates, ADR-004 theme system, ADR-005 subscription payments, ADR-006 hybrid generation)
 - Monetisation strategy: `docs/canonical/monetisation-strategy.md`
 - Brand & tone of voice: `docs/canonical/brand.md`
 - UX principles: `docs/canonical/ux-principles.md`

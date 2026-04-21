@@ -15,7 +15,15 @@
 | Fatigue tags | PAID | R17 | Canonical vocabulary: `Fresh / Fine / Heavy / Wrecked`. Shown in reflect view and on collapsed card badge. Skip reason also stored in `fatigue_tag`. |
 | Session Card Redesign | PAID | 2026-04-20 | New card hierarchy; compact metric strip; zone chip; per-session toggle (expanded only). |
 | Coaching Signal | PAID | 2026-04-20 | `coaching_flag` per session (`ok`/`watch`/`flag`); `avg_hr` from Strava; execution summary in expanded card; flag badge on collapsed card. DB migration deployed. R18-ready. |
-| Plan Generator (API route + form) | FREE (templates) / PAID (AI) | R23 | FREE = pre-built templates; PAID = AI generator with athlete variables |
+| Plan Generator (API route + form) | FREE (templates) / PAID (AI) | R23 | FREE = rule-based engine, no AI calls; PAID = rule engine + AI enrichment (labels, voice, confidence) |
+| `lib/plan/schema.ts` (Zod) | FREE (infra) | R23 | Canonical plan schema shared by rule engine, enricher, R20, R24 |
+| `lib/plan/length.ts` | FREE (infra) | R23 | Auto plan-length calculator — weeks from race date, min/ideal by distance, compressed flag |
+| `lib/plan/ruleEngine.ts` | FREE | R23 | Deterministic plan generator — no AI calls, always produces a valid plan |
+| `lib/plan/enrich.ts` | PAID | R23 | Claude enrichment layer — voice labels, coach_notes, confidence score. Silent fallback on failure. |
+| `lib/plan/generate.ts` | TIER-DIVERGENT | R23 | Single entry point: `generate(input, tier)`. Calls rule engine always; calls enricher for trial/paid. |
+| `components/GeneratingCeremony.tsx` | TIER-DIVERGENT | R23 | Generating screen — skeleton shimmer + staged ZONA-voice copy. Different copy for free vs paid/trial. |
+| Wizard Step 4 (terrain / injuries / HR / style) | PAID | R23 | Hidden for free users. Teaser card shown instead. |
+| Teaser card (post-Step-3, free users) | TIER-DIVERGENT | R23 | Upsell above the generate CTA for free users. Taps → UpgradeScreen. Non-blocking. |
 | Profile screen | FREE | R15b | First name, last name, email on `user_settings` |
 | Smoke tracker | FREE | R15b | Days since quit, displayed on dashboard |
 | Theme toggle (light/dark) | FREE | R0 | `data-theme` on `<html>` only |

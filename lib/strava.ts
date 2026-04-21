@@ -56,7 +56,7 @@ export function hrColour(hr: number | undefined) {
   if (!hr) return 'var(--text-dim)'
   if (hr <= 145) return 'var(--green)'
   if (hr <= 158) return 'var(--yellow)'
-  return 'var(--red)'
+  return 'var(--coral)'
 }
 
 // Pace at a given HR band — aerobic efficiency metric

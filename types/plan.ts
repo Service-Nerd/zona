@@ -44,9 +44,18 @@ export type SessionType =
   | 'strength' | 'cross-train'
   | 'rest'
 
+// INV-PLAN-009: { name, start_week, end_week } — added R23; absent on legacy plans
+export interface Phase {
+  name: 'base' | 'build' | 'peak' | 'taper'
+  start_week: number
+  end_week: number
+}
+
 export type PrimaryMetric = 'distance' | 'duration'
 
 export interface Session {
+  /** INV-PLAN-009: deterministic ID "w{N}-{day}" e.g. "w5-wed". Present on R23+ plans; absent on legacy. */
+  id?: string
   type: SessionType
   label: string
   /** Legacy free-text display field. Kept for backward compat with hand-authored gists.
@@ -119,13 +128,20 @@ export interface PlanMeta {
   generated_at?: string                   // ISO timestamp of generation
   generator_version?: string              // e.g. "1.0"
 
-  // R18 — confidence score produced at generation time
+  // R18 — confidence score produced at generation time (INV-PLAN-008: PAID only)
   confidence_score?: number               // 1–10
   confidence_risks?: string[]             // e.g. ["low base volume", "tight timeline"]
+
+  // R23 — hybrid generation fields
+  tier?: 'free' | 'trial' | 'paid'       // tier at which plan was generated
+  compressed?: boolean                    // true if available weeks < ideal minimum for this distance
+  coach_intro?: string                    // PAID only — enricher-generated intro paragraph
 }
 
 export interface Plan {
   meta: PlanMeta
+  /** Phase distribution — present on R23+ plans; absent on legacy gist plans. */
+  phases?: Phase[]
   weeks: Week[]
 }
 

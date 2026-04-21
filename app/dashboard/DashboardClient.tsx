@@ -241,8 +241,9 @@ export default function DashboardClient() {
           }
         }
 
-        // Show welcome screen if not yet onboarded
-        if (!data?.has_onboarded) {
+        // Welcome screen for migrated users who haven't been onboarded yet.
+        // New users (empty plan) skip this — the wizard Step 1 handles the welcome.
+        if (!data?.has_onboarded && loadedPlan.weeks.length > 0) {
           setShowWelcome(true)
         }
 
@@ -428,6 +429,15 @@ export default function DashboardClient() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+      // Archive the previous plan before overwriting — data protection, no restore UI at v1
+      if (plan && plan !== EMPTY_PLAN && plan.weeks.length > 0) {
+        void supabase.from('plan_archive').insert({
+          user_id: user.id,
+          plan_json: plan,
+          race_name: (plan.meta as any)?.race_name ?? null,
+          race_date: (plan.meta as any)?.race_date ?? null,
+        })
+      }
       await savePlanForUser(user.id, savedPlan, supabase)
       setPlan(savedPlan)
       setScreen('today')
@@ -631,8 +641,11 @@ export default function DashboardClient() {
         {screen === 'calendar' && <CalendarOverlay plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onBack={() => setScreen('today')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
-        {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} />}
-        {screen === 'upgrade'  && <UpgradeScreen onBack={() => setScreen('today')} />}
+        {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
+        {screen === 'upgrade'  && <UpgradeScreen onBack={() => {
+          const hasWizardDraft = typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('zona_wizard_draft')
+          setScreen(hasWizardDraft ? 'generate' : 'today')
+        }} />}
       </div>
 
       {/* Screen guide — first-load popup */}
@@ -3805,11 +3818,11 @@ function SmokeToggle({ enabled, quitDate, onChange }: {
 // ── HR ZONE CALCULATION (Karvonen / HRR method) ───────────────────────────
 
 const ZONE_DEFS = [
-  { zone: 1, name: 'Recovery',  pctMin: 50, pctMax: 60, colour: 'var(--teal)', desc: 'Active recovery · warm-up · cool-down' },
-  { zone: 2, name: 'Aerobic',   pctMin: 60, pctMax: 70, colour: 'var(--blue)', desc: 'Aerobic base · conversational · fat burning' },
-  { zone: 3, name: 'Tempo',     pctMin: 70, pctMax: 80, colour: 'var(--amber)', desc: 'Comfortably hard · 3-word sentences' },
-  { zone: 4, name: 'Threshold', pctMin: 80, pctMax: 90, colour: 'var(--accent)', desc: 'Hard · sustained race effort' },
-  { zone: 5, name: 'VO₂ Max',  pctMin: 90, pctMax: 100, colour: 'var(--red)', desc: 'Maximum effort · short intervals only' },
+  { zone: 1, name: 'Recovery',  pctMin: 50, pctMax: 60, colour: 'var(--session-recovery)', desc: 'Active recovery · warm-up · cool-down' },
+  { zone: 2, name: 'Aerobic',   pctMin: 60, pctMax: 70, colour: 'var(--session-easy)',     desc: 'Aerobic base · conversational · fat burning' },
+  { zone: 3, name: 'Tempo',     pctMin: 70, pctMax: 80, colour: 'var(--session-quality)',  desc: 'Comfortably hard · 3-word sentences' },
+  { zone: 4, name: 'Threshold', pctMin: 80, pctMax: 90, colour: 'var(--session-race)',     desc: 'Hard · sustained race effort' },
+  { zone: 5, name: 'VO₂ Max',  pctMin: 90, pctMax: 100, colour: 'var(--coral)',            desc: 'Maximum effort · short intervals only' },
 ]
 
 function calculateZones(restingHR: number, maxHR: number) {

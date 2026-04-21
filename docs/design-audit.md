@@ -446,3 +446,56 @@ This pins the login screen to dark mode regardless of user preference. The CSS `
 - Dark/light mode cascade architecture is correct and clean ✓
 - Session colour map in `globals.css` matches `CLAUDE.md` specification exactly ✓
 - Pre-commit hook exists to catch hardcoded hex and banned fonts at commit time ✓
+
+---
+
+## 8. R23 Remediation Status (2026-04-21)
+
+Items surfaced in the R23 Phase 0 audit and their resolution status.
+
+### Blockers being fixed in R23
+
+| ID | File | Violation | Resolution |
+|---|---|---|---|
+| A-1 | `GeneratePlanScreen.tsx` L160 | `var(--red)` in ConfidenceBadge (score < 5) | Phase 5 — replace with `var(--amber)` |
+| A-1 | `GeneratePlanScreen.tsx` L521–524 | `var(--red)` in error card border + text | Phase 3/5 — replace with `var(--amber)` |
+| A-1 | `GeneratePlanScreen.tsx` L789–792 | `var(--red)` + `rgba(224,90,90,0.1)` in days-off button active state | Phase 3 — `var(--navy)` bg + `var(--teal)` border |
+| A-2 | `GeneratePlanScreen.tsx` L481–488 | Spinner (`genSpin` rotation animation) | Phase 4 — replaced by `GeneratingCeremony.tsx` |
+| A-5 | `app/api/generate-plan/route.ts` L475–477 | 403 Subscription required for free users | Phase 5 — route through `lib/plan/generate.ts` |
+
+### Fix-during-R23
+
+| ID | File | Violation | Resolution |
+|---|---|---|---|
+| A-3 | `GeneratePlanScreen.tsx` (many) | Hardcoded `'Inter', sans-serif` / `'Space Grotesk', sans-serif` | Phase 3/4/5 — replace with `var(--font-ui)` / `var(--font-brand)` as each section is rewritten |
+| A-5 | `GeneratePlanScreen.tsx` error screen | "Try again" routes to `setAppStep(4)` — will skip free users | Phase 3 — route to Step 3 for free, Step 4 for paid/trial |
+
+### Token gaps to address in future
+
+| ID | Gap | Suggested fix |
+|---|---|---|
+| G-02 | `rgba(224,90,90,0.1)` — no `--coral-soft` token | Add `--coral-soft: rgba(224,90,90,0.10)` to `globals.css`, or use `color-mix()` |
+| G-03 | `rgba(0,0,0,0.X)` modal scrims — 4 different opacities | Add `--overlay-light: rgba(0,0,0,0.45)` and `--overlay-scrim: rgba(0,0,0,0.5)` |
+
+---
+
+## 9. Token validity reference
+
+| Token | Valid | Notes |
+|---|---|---|
+| `var(--font-ui)` | ✓ | = `'Inter', sans-serif` |
+| `var(--font-brand)` | ✓ | = `'Space Grotesk', sans-serif` |
+| `var(--font-display)` | ✗ | **Does not exist.** This is a typo for `var(--font-brand)`. |
+| `var(--red)` | Exists but banned from UI states | Use `var(--amber)` for warnings, never red |
+| `var(--font-data)` | Exists but redundant | Identical to `--font-ui` — prefer `--font-ui` |
+
+### SLC-blocker pattern list (auto-fail)
+
+Any of the following found in a new component or PR is an automatic SLC blocker:
+
+1. Any rotating spinner or progress percentage as a loading state
+2. Any use of `var(--red)` or red-adjacent colour in a UI state
+3. Any hardcoded `fontFamily` string (must be `var(--font-ui)` or `var(--font-brand)`)
+4. Any popup, modal, or overlay that is not a full-screen navigation
+5. Any `setProperty()` call inside theme logic
+6. Any reference to `var(--font-display)` (non-existent token)

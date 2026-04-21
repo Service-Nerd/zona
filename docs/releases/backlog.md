@@ -13,12 +13,14 @@
 |---------|---------|
 | R0–R15b | Core app shell (Today, Plan, Me, Coach screens), nav, screen guide popups, localStorage, profile screen, smoke tracker, theme toggle |
 | R17 | RPE + fatigue tags, progress bar, post-log reflect view, Zona voice responses |
-| R23 | Plan generator — API route, multi-step form, new user flow, orientation screen |
 | Session Card Redesign | New card hierarchy, zone chip, metric grid, execution summary, coaching flag badge |
 | Coaching Signal | `coaching_flag` + `avg_hr` on session completions, `getCoachingFlag()` pure function, DB migration deployed |
 | Architecture hygiene | Pre-commit hook, `lib/session-types.ts`, CSS token audit, ADRs 001–004, docs restructure |
 | UX audit (P1–P3) | Race countdown, week narrative, fatigue trend, HR zone labels, post-log reflect, Coach fallback, fatigue-informed session framing, fitness-level copy, first name greeting, Strava reconnect flow, past session log state, weekly session count, palette + font audits — all shipped |
 | App Store basics | Error boundary, Strava OAuth disclosure, privacy policy link pre-login, 13+ age gate |
+| R23 — Plan generator | Hybrid generation (ADR-006): rule engine always runs, AI enricher for trial/paid with silent fallback. Tier-divergent wizard (3-step free / 4-step paid). Generating Ceremony. Free users now get plans (403 removed). `lib/plan/ruleEngine.ts`, `enrich.ts`, `generate.ts`. |
+| R0.5 — Onboarding | New user auto-routed to wizard on empty plan. Wizard state persisted in sessionStorage. Upgrade-from-wizard routing. Plan archive (data protection). Welcome screen bug fixed. |
+| Design system fixes | Zone colour coherence (Z1–Z5 now match session type colours). `--red` token removed. Strava HR colour fixed. Plan overwrite warning. `ui-patterns.md` zone invariant documented. |
 
 ---
 
@@ -66,8 +68,10 @@
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Rule-based plan engine | 🔲 Not Started | Deterministic plan generation from pre-built templates — zero Anthropic API calls. Inputs: race distance, fitness level, days available, race date. Templates: 5K / 10K / HM, 8 & 12-week. Output: valid JSON matching canonical plan schema. Lives alongside existing AI path in `app/api/generate-plan/route.ts`. |
-| R0.5 — Onboarding flow | 🔲 Not Started | Questionnaire → plan on screen in under 3 minutes. Free path: questionnaire → matched template. Trial/paid path: questionnaire → AI generator. Progressive disclosure — core inputs only (race, distance, fitness level, days available). Sensible defaults, no blocking required fields. Depends on Gist→Supabase (Phase 2) and trial infrastructure (Phase 2). |
+| Rule-based plan engine | ✅ Shipped | `lib/plan/ruleEngine.ts` + `lib/plan/enrich.ts` + `lib/plan/generate.ts`. Hybrid architecture: rule engine always runs; AI enricher runs for trial/paid (silent fallback). Route rewritten to remove 403 for free users. `lib/trial.ts` adds `getUserTier()`. |
+| Generating Ceremony | ✅ Shipped | `components/GeneratingCeremony.tsx`. Skeleton shimmer + staged ZONA copy + phase-arc reveal (80ms stagger). Tier-divergent: 3-line/1.8s-min for free, 5-line/3.6s-min for paid/trial. Replaces interim spinner. |
+| Wizard tier-divergence | ✅ Shipped | `GeneratePlanScreen` is 3-step for free (teaser card above CTA), 4-step for paid/trial. Error retry and back routing are tier-aware. All hardcoded fonts fixed. Red replaced with amber throughout. |
+| R0.5 — Onboarding flow | ✅ Shipped | New user → auto-route to wizard (empty plan detection). Wizard state persisted in sessionStorage (survives back-nav + upgrade flow). Upgrade-from-wizard routing: after UpgradeScreen, draft resumes wizard. Plan archive: previous plan archived to `plan_archive` table before overwrite. OrientationScreen shown post-save. Welcome screen bug fixed (new users skip the "Your plan is ready" screen). Migration: `20260424_plan_archive.sql`. |
 
 ---
 
@@ -149,6 +153,7 @@ Ordered by value. Each item needs FREE/PAID tag confirmed in `docs/canonical/fea
 - Reshape active plan based on fatigue, missed sessions, race proximity
 - Separate flow from plan creation (R23); shares schema and rules
 - See `docs/canonical/adaptation-rules.md` for reshaping logic
+- **R23 schema inheritance**: R23 plans include `Session.id` (format `w{N}-{day}`, e.g. `w5-wed`) for targeted session updates, `Plan.phases[]` for phase-aware reshaping, and `meta.tier` / `meta.compressed`. R20 inherits the hybrid generation architecture (ADR-006) — reshaper is also a rule engine + optional enrichment.
 
 ### R21 — Strength Sessions
 **Tier:** FREE (display stubs) / PAID (dynamic)
@@ -169,6 +174,7 @@ Ordered by value. Each item needs FREE/PAID tag confirmed in `docs/canonical/fea
 ### R24 — Multi-Race Support
 **Tier:** PAID
 - Support multiple target races per user (A/B race hierarchy)
+- **Schema path**: Current `meta.race_date` and `meta.race_name` are canonical primary-race fields and remain unchanged. R24 will introduce `meta.races: Race[]` as a non-breaking additive field. `Plan.phases[]` (added in R23) provides the structure for multi-race periodisation — phases can be anchored to different race targets.
 
 ---
 
@@ -198,6 +204,9 @@ Ordered by value. Each item needs FREE/PAID tag confirmed in `docs/canonical/fea
 | `login/page.tsx` hardcoded values | Not yet audited |
 | `PlanCalendar` `stravaRuns` prop | Accepted but unused in WeekCard — remove or wire up |
 | `DashboardClient.tsx` hardcoded fonts | ~228 occurrences of `'Inter', sans-serif` / `'Space Grotesk', sans-serif` hardcoded; 7 instances of `'Inter', monospace` (wrong fallback) |
+| `nextMonday()` UTC drift in `route.ts` | `nextMonday()` calls `.toISOString()` on a local-time Date, which can shift the Monday back by one day near midnight local time. `lib/plan/length.ts` (R23) uses `new Date(y, m-1, d)` to avoid this; the original route function should be refactored to match when the route is simplified in R23 Phase 2. |
+| Tier-divergent rendering utility | Once a second tier-divergent component lands (after `GeneratingCeremony.tsx`), centralise the `tier` prop pattern into a shared context or typed prop convention. Document as a pattern in `ui-patterns.md`. |
+| Plan history UI | Data is archived to `plan_archive` table (migration `20260424`). UI (browse archived plans + restore) deferred post-launch. Schema has `race_name`, `race_date`, `archived_at` for future list display. |
 
 ---
 

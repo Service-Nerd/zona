@@ -15,7 +15,6 @@
   --zona-teal:         #5BC0BE;
   --zona-amber:        #F2C14E;
   --zona-muted:        #3A506B;
-  --zona-red:          #ff7777;
   --strava-orange:     #FC4C02;
 
   /* ── Semantic: accent (primary CTA, active states) ──────────────── */
@@ -41,7 +40,6 @@
 
   /* ── Semantic: data colours ─────────────────────────────────────── */
   --blue:              #4A90D9;   /* zone 2 / easy runs */
-  --red:               #ff7777;
   --strava:            #FC4C02;
   --strava-soft:       rgba(252,76,2,0.08);
 
@@ -57,7 +55,7 @@
   --session-recovery-soft:  rgba(91,173,140,0.12);
   --session-strength:       #3A506B;            /* strength */
   --session-cross:          #5BC0BE;            /* cross-train */
-  --coral:                  #E05A5A;            /* high-effort / RPE 9-10 */
+  --coral:                  #E05A5A;            /* high-effort / RPE 9-10 / Zone 5 — alias of --session-intervals */
   --session-green:          #5BAD8C;            /* low-effort / RPE 1-3 */
 
   /* ── Overlay tints ──────────────────────────────────────────────── */
