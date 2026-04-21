@@ -525,20 +525,9 @@ export default function DashboardClient() {
           color: 'var(--text-muted)',
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
-          marginBottom: '52px',
         }}>
           Do less. Improve more.
         </div>
-
-        {/* Spinner */}
-        <svg width="22" height="22" viewBox="0 0 22 22">
-          <circle cx="11" cy="11" r="8" fill="none" stroke="var(--border-col)" strokeWidth="1.5" />
-          <circle cx="11" cy="11" r="8" fill="none" stroke="var(--accent)" strokeWidth="1.5"
-            strokeDasharray="20 34" strokeLinecap="round">
-            <animateTransform attributeName="transform" type="rotate"
-              from="0 11 11" to="360 11 11" dur="0.9s" repeatCount="indefinite" />
-            </circle>
-        </svg>
       </div>
     )
   }

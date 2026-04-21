@@ -74,7 +74,7 @@ export default function LoginPage() {
             fontFamily: 'var(--font-ui)',
             fontSize: '11px', color: 'var(--text-muted)',
             letterSpacing: '0.12em', textTransform: 'uppercase',
-          }}>effort-first training</div>
+          }}>Do less. Improve more.</div>
         </div>
 
         {/* Card */}
@@ -89,12 +89,12 @@ export default function LoginPage() {
             fontSize: '18px', fontWeight: 500,
             color: 'var(--text-primary)', marginBottom: '6px',
             letterSpacing: '-0.3px',
-          }}>Sign in</div>
+          }}>{mode === 'signin' ? 'Sign in' : 'Create account'}</div>
           <div style={{
             fontFamily: 'var(--font-ui)',
             fontSize: '11px', color: 'var(--text-muted)',
             marginBottom: '24px', lineHeight: 1.6,
-          }}>Access your training plan.</div>
+          }}>{mode === 'signin' ? 'Access your training plan.' : 'Your 14-day trial starts today.'}</div>
 
           {/* Google */}
           <button
@@ -185,7 +185,9 @@ export default function LoginPage() {
                 transition: 'opacity 0.15s',
               }}
             >
-              {loading ? '...' : mode === 'signin' ? 'Sign in' : 'Create account'}
+              {loading
+                ? (mode === 'signin' ? 'Signing in…' : 'Creating account…')
+                : (mode === 'signin' ? 'Sign in' : 'Create account')}
             </button>
           </form>
 
