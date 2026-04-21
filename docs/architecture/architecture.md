@@ -39,6 +39,29 @@ Next.js Server
 
 ---
 
+## Subscription Payment Architecture
+
+See `docs/architecture/ADR-005-subscription-payments.md` for the full decision record.
+
+- **iOS**: RevenueCat SDK (in native wrapper) → StoreKit 2 → webhook → `subscriptions` table
+- **Web**: Stripe Checkout → webhook → `subscriptions` table
+- **Gating**: all reads from `subscriptions` table only — no direct Stripe or StoreKit calls in Next.js
+
+A user is active if: `status IN ('trialing', 'active') AND current_period_end > now()`
+
+### `subscriptions`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID | PK |
+| `user_id` | UUID | FK → `auth.users`, unique |
+| `provider` | TEXT | `'revenuecat'` or `'stripe'` |
+| `status` | TEXT | `'trialing'` · `'active'` · `'cancelled'` · `'expired'` |
+| `current_period_end` | TIMESTAMPTZ | — |
+| `created_at` / `updated_at` | TIMESTAMPTZ | — |
+
+---
+
 ## Supabase Schema
 
 ### `user_settings`
