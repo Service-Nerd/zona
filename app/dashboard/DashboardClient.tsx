@@ -4021,6 +4021,91 @@ function ProfileSection({ firstName, lastName, email, onSave }: {
 
 // ── ME SCREEN ─────────────────────────────────────────────────────────────
 
+function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
+  const [checked, setChecked] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleDelete() {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/delete-account', { method: 'POST' })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        setError(body.error ?? 'Something went wrong. Try again.')
+        setLoading(false)
+        return
+      }
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      window.location.href = '/auth/login'
+    } catch {
+      setError('Something went wrong. Try again.')
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 8px' }}>
+        <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0, width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)', flexShrink: 0 }}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+        <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px' }}>
+          Delete your account
+        </div>
+      </div>
+
+      <div style={{ padding: '8px 16px 40px', display: 'flex', flexDirection: 'column', gap: '20px', flex: 1 }}>
+        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.55 }}>
+            Your sessions, plan, and profile will be permanently removed.
+          </div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+            There&apos;s no going back. Your training history, HR data, and account details will be gone for good.
+          </div>
+        </div>
+
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
+          <div
+            onClick={() => setChecked(c => !c)}
+            style={{ width: '20px', height: '20px', borderRadius: '5px', border: `1.5px solid ${checked ? 'var(--coral)' : 'var(--border-col)'}`, background: checked ? 'var(--session-intervals-soft)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px', cursor: 'pointer' }}
+          >
+            {checked && (
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6L5 9L10 3" stroke="var(--coral)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </div>
+          <span
+            onClick={() => setChecked(c => !c)}
+            style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.55, userSelect: 'none' }}
+          >
+            I understand this can&apos;t be undone
+          </span>
+        </label>
+
+        {error && (
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coral)', background: 'var(--session-intervals-soft)', borderRadius: '8px', padding: '10px 14px' }}>
+            {error}
+          </div>
+        )}
+
+        <div style={{ marginTop: 'auto' }}>
+          <button
+            onClick={handleDelete}
+            disabled={!checked || loading}
+            style={{ width: '100%', padding: '15px', background: checked && !loading ? 'var(--session-intervals)' : 'var(--session-intervals-soft)', border: 'none', borderRadius: '12px', color: checked && !loading ? '#ffffff' : 'var(--coral)', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, letterSpacing: '0.02em', cursor: checked && !loading ? 'pointer' : 'default', transition: 'background 0.15s, color 0.15s' }}
+          >
+            {loading ? 'Deleting…' : 'Delete account'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
@@ -4034,15 +4119,16 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   onProfileChange: (fn: string, ln: string, em: string) => void
   onOpenGenerate?: () => void
 }) {
-  const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling'>('main')
+  const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling' | 'delete-account'>('main')
 
   const raceDistKm = plan?.meta?.race_distance_km ?? 0
   const raceNm     = plan?.meta?.race_name ?? ''
   const charity    = plan?.meta?.charity ?? ''
 
-  if (activeSection === 'quit')    return <QuitTab    quitDays={quitDays} raceDistanceKm={raceDistKm} onBack={() => setActiveSection('main')} />
-  if (activeSection === 'mental')  return <MentalTab  resetPhrase={resetPhrase} onSave={onSaveMental} onBack={() => setActiveSection('main')} raceDistanceKm={raceDistKm} raceName={raceNm} charity={charity} />
-  if (activeSection === 'fueling') return <FuelingTab onBack={() => setActiveSection('main')} />
+  if (activeSection === 'quit')           return <QuitTab    quitDays={quitDays} raceDistanceKm={raceDistKm} onBack={() => setActiveSection('main')} />
+  if (activeSection === 'mental')         return <MentalTab  resetPhrase={resetPhrase} onSave={onSaveMental} onBack={() => setActiveSection('main')} raceDistanceKm={raceDistKm} raceName={raceNm} charity={charity} />
+  if (activeSection === 'fueling')        return <FuelingTab onBack={() => setActiveSection('main')} />
+  if (activeSection === 'delete-account') return <DeleteAccountScreen onBack={() => setActiveSection('main')} />
 
   const daysToRace = plan?.meta?.race_date ? Math.max(0, Math.ceil((new Date(plan.meta.race_date).getTime() - Date.now()) / 86400000)) : 0
   const hasPlan = !!(plan?.meta?.race_name)
@@ -4262,8 +4348,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           </>
         )}
 
-        {/* ── Sign out — bottom, destructive action de-emphasised ── */}
-        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '0.5px solid var(--border-col)' }}>
+        {/* ── Sign out + delete — bottom, destructive actions de-emphasised ── */}
+        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '0.5px solid var(--border-col)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <button
             onClick={async () => {
               const supabase = createClient()
@@ -4273,6 +4359,12 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             style={{ width: '100%', padding: '12px', background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}
           >
             Sign out
+          </button>
+          <button
+            onClick={() => setActiveSection('delete-account')}
+            style={{ width: '100%', padding: '10px', background: 'none', border: 'none', color: 'var(--coral)', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.04em', cursor: 'pointer', opacity: 0.6 }}
+          >
+            Delete account
           </button>
         </div>
 
