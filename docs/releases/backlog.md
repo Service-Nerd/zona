@@ -56,7 +56,7 @@
 | Item | Status | Notes |
 |------|--------|-------|
 | Subscription webhooks | ✅ Shipped | `/api/webhooks/stripe` + `/api/webhooks/revenuecat`. `subscriptions` table live in Supabase. ADR-005. |
-| Gist → Supabase plan storage | 🔲 Not Started | Add `plans` table (`user_id`, `plan_json` JSONB, `created_at`, `updated_at`). Wire plan save + fetch. ADR-002 ensures generator/reshaper need no changes. Blocked on D3. |
+| Gist → Supabase plan storage | ✅ Shipped | `plans` table with RLS. `fetchPlanForUser` + `savePlanForUser` in `lib/plan.ts`. Auto-migration from gist_url/plan_json on first load — all 4 existing users migrated transparently. Contract: `docs/contracts/api/plan-fetch.md`. Known gap: admin impersonation falls back to gist_url for migrated users (needs service-role admin route, tracked as tech debt). |
 | Reverse trial infrastructure | ✅ Shipped | `lib/trial.ts` — `isTrialActive()` + `hasPaidAccess()`. `trial_started_at` set on first load. Gates on `/api/generate-plan`, `/api/claude`, `/api/strava/callback`. `UpgradeScreen` (dedicated screen, D2 resolved). `/api/checkout` stub ready for Stripe wiring. Migration: `20260422_trial_started_at.sql` — apply in Supabase. |
 
 ---
