@@ -56,6 +56,7 @@ Product owner must resolve these before any build work starts. Each one blocks w
 
 | Item | Status | Notes |
 |------|--------|-------|
+| Subscription webhooks | ✅ Shipped | `/api/webhooks/stripe` + `/api/webhooks/revenuecat`. `subscriptions` table live in Supabase. ADR-005. |
 | Gist → Supabase plan storage | 🔲 Not Started | Add `plans` table (`user_id`, `plan_json` JSONB, `created_at`, `updated_at`). Wire plan save + fetch. ADR-002 ensures generator/reshaper need no changes. Blocked on D3. |
 | Reverse trial infrastructure | 🔲 Not Started | Add `trial_started_at` to `user_settings` (set on account creation, never updated). Create `lib/trial.ts` with `isTrialActive()`. Enforce PAID gates in API routes + components (both layers per ADR-003). Upgrade prompt component (blocked on D2). Graceful downgrade flow. |
 
@@ -78,6 +79,22 @@ Product owner must resolve these before any build work starts. Each one blocks w
 | TestFlight beta | 🔲 Not Started | Internal testing on device before public submission. |
 | Full journey test | 🔲 Not Started | Tested end-to-end with agent-browser: create account → onboarding → plan on screen → log session → post-log reflect → simulate trial end → attempt paid feature → upgrade prompt. |
 | App Store assets | 🔲 Not Started | Screenshots (all required device sizes), preview video (optional), keywords, App Store description copy. |
+
+---
+
+### Launch Config Checklist
+**Non-code tasks that must be done before go-live. No code changes required — ops/dashboard work.**
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Set `STRIPE_SECRET_KEY` in Vercel | 🔲 | Stripe dashboard → Developers → API keys |
+| Set `STRIPE_WEBHOOK_SECRET` in Vercel | 🔲 | Stripe dashboard → Webhooks → add endpoint `https://zona.vercel.app/api/webhooks/stripe`, copy signing secret |
+| Set `REVENUECAT_WEBHOOK_SECRET` in Vercel | 🔲 | RevenueCat dashboard → Integrations → Webhooks → set URL + copy secret |
+| Set `SUPABASE_SERVICE_ROLE_KEY` in Vercel | 🔲 | Supabase dashboard → Settings → API → service_role key (keep secret) |
+| Create Stripe product + price | 🔲 | Product: "Zona Premium", Price: TBD (depends on D4), billing: monthly + annual, 14-day trial |
+| Configure RevenueCat app + entitlement | 🔲 | Link to App Store product ID, set entitlement identifier (e.g. `zona_premium`) |
+| Enrol in Apple Small Business Program | 🔲 | 15% vs 30% cut — do before first live transaction |
+| Point `zona.app/privacy` at live URL | 🔲 | Privacy policy page built, needs custom domain live |
 
 ---
 
