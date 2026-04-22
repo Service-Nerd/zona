@@ -35,7 +35,12 @@
 | D1 | **StoreKit (Apple IAP) vs web checkout** | ✅ RevenueCat + StoreKit 2 for iOS; Stripe for web. See ADR-005. |
 | D2 | **Upgrade prompt UX** | ✅ Dedicated full screen (`UpgradeScreen`). Shipped. |
 | D3 | **Gist → Supabase migration timing** | ✅ Before launch. Required for onboarding. |
-| D4 | **Final pricing** | ✅ £7–10/month billed annually. Exact price TBD but does not block build work. |
+| D4 | **Final pricing** | ✅ £7.99/month, £59.99/year. Parameterised in `lib/brand.ts` — never hardcoded. |
+| D5 | **Canonical tagline** | ✅ **"Slow down. You've got a day job."** — all surfaces. Speaks directly to the target user's identity; names a person, not just a training approach. "Slow down. You're not Kipchoge." demoted to brand statement (editorial/App Store only). "Do less. Improve more.", "The slowest way to get faster.", and "effort-first training" retired. All strings live in `lib/brand.ts`. |
+| D6 | **Monthly price** | ✅ £7.99/month, £59.99/year. Hold. Parameterised so it can be adjusted in `lib/brand.ts` without a search-replace. Annual discount currently 37% (category norm 44–49%) — revisit after first 100 paid users. |
+| D7 | **Marketing site** | ✅ In-app Next.js page (replaces `app/page.tsx` redirect). Deferred — ships post-launch Phase 1 compliance. Not a separate domain. |
+| D8 | **Zone discipline score for free users** | ✅ **Locked teaser on Coach tab.** Free users see the score category (zone discipline) in a locked/blurred state with upgrade CTA. Does not expose paid data. Mirrors the wizard teaser card pattern. Makes the upgrade value tangible without giving away the coaching signal. |
+| D9 | **"effort-first training" sub-tagline** | ✅ Removed. Replace all instances with `BRAND.tagline` from `lib/brand.ts`. OrientationScreen is the only current location. |
 
 ---
 
@@ -107,7 +112,51 @@
 | Set `CRON_SECRET` in Vercel | 🔲 | Any secret string — protects `/api/push/send-weekly-report` cron endpoint |
 | Generate VAPID keys and set in Vercel | 🔲 | `npx web-push generate-vapid-keys` → set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (e.g. `mailto:push@zona.app`) |
 | Set `NEXT_PUBLIC_APP_URL` in Vercel | 🔲 | e.g. `https://zona-service-nerds-projects.vercel.app` — used by cron to call internal API routes |
-| Register Strava webhook subscription | 🔲 | POST to Strava API with callback URL `https://zona-service-nerds-projects.vercel.app/api/webhooks/strava` after VAPID/env vars are set and app is deployed |
+| Register Strava webhook subscription | ✅ | Subscription ID: `342111`. Callback: `https://zona-service-nerds-projects.vercel.app/api/webhooks/strava`. To delete: `DELETE https://www.strava.com/api/v3/push_subscriptions/342111` with client_id + client_secret. |
+
+---
+
+## GTM & Commercial
+
+Findings from the 2026-04-22 GTM audit (`docs/gtm/audit-2026-04-22.md`). Ordered by impact × ease. Items marked **pre-launch** must ship before App Store submission; items marked **post-launch** follow the store release.
+
+### Decisions behind this section
+D5–D9 resolved above. Key: tagline is "Slow down. You've got a day job." everywhere; all brand strings and pricing live in `lib/brand.ts`; zone discipline score shown as locked teaser to free users.
+
+### Pre-launch GTM — Ship before App Store submission
+
+| # | Item | Effort | Tier | Notes |
+|---|------|--------|------|-------|
+| GTM-01 | **Brand constants rollout** | S | FREE (infra) | ✅ Shipped. `lib/brand.ts` created and wired to: login tagline, loading screen, welcome screen, OrientationScreen (replaces "effort-first training"), push notification title, UpgradeScreen pricing. |
+| GTM-02 | **Copy fixes — voice batch** | S | FREE | ✅ Shipped. All 7 strings replaced. See list below. |
+| GTM-03 | **UpgradeScreen rewrite** | S | PAID | ✅ Shipped (copy + feature list). "Get Zona Premium" → "Start your subscription". "BEST VALUE" → `PRICING.annual.savingLabel`. Feature list reordered: weekly zone coaching first. Remaining: trial loss framing variant (GTM-04). |
+| GTM-04 | **UpgradeScreen — trial loss framing** | S | PAID | ✅ Shipped. `trialExpired` state tracked in DashboardClient, passed to UpgradeScreen. When expired: headline "Your coaching has paused.", sub "14 days done. Here's what stopped.", amber-accented LOSSES list (zone coaching, weekly reports, session feedback, plan adjustments). Gain framing unchanged for non-expired gate. |
+| GTM-05 | **Zone discipline teaser (Coach tab, free users)** | M | TIER-DIVERGENT | ✅ Shipped. Coach tab now always visible in More nav for all users. Free users see `CoachTeaser` component: locked report card anatomy (muted/dimmed), locked zone discipline + load ratio stats (—), teal-accent teaser card with upgrade CTA. Paid users see full `CoachScreen` unchanged. |
+| GTM-06 | **Post-session Strava prompt (free users)** | S | TIER-DIVERGENT | ✅ Shipped. Prop chain: DashboardClient → SessionScreen → SessionPopupInner. Free users see "Connect Strava to see how your HR compared. →" below the Done button in the reflect view. Taps to upgrade screen (Strava is PAID). |
+| GTM-07 | **OG / social image** | S | FREE (ops) | ✅ Shipped. Dynamic `app/api/og/route.tsx` using `next/og` ImageResponse (edge runtime). 1200×630, navy bg, teal left accent bar, Space Grotesk wordmark + tagline from `BRAND`. Layout metadata updated: title, description, openGraph, twitter card — all from `lib/brand.ts`. |
+
+#### GTM-02 copy fixes detail
+
+| Surface | File | Current | Replace with |
+|---------|------|---------|-------------|
+| Login signup sub | `app/auth/login/page.tsx` line ~97 | "Your 14-day trial starts today." | `BRAND.signupSub` — "14 days, no limits. After that, you decide." |
+| Push notification title | `app/api/push/send-weekly-report/route.ts` line ~55 | "Zona · Weekly report" | `BRAND.push.weeklyReport` — "Your week, reviewed." |
+| Skip confirm | `DashboardClient.tsx` line ~1989 | "Mark this session as skipped? It will show in your log." | "Skip it. It'll stay in your log." |
+| Coach empty state | `DashboardClient.tsx` line ~3681 | "Log some sessions and runs to generate this week's coaching report." | "Log a few sessions first. The report needs something to work with." |
+| Plan generation error | `GeneratePlanScreen.tsx` line ~578 | "Could not generate plan" | "Something went wrong building the plan." |
+| Teaser card CTA | `GeneratePlanScreen.tsx` line ~329 | "Free trial →" | "Upgrade to personalise →" |
+| OrientationScreen sub | `DashboardClient.tsx` line ~886 | "effort-first training" | `BRAND.tagline` — "Slow down. You've got a day job." |
+
+---
+
+### Post-launch GTM — After App Store release
+
+| # | Item | Effort | Tier | Priority | Notes |
+|---|------|--------|------|----------|-------|
+| GTM-08 | **Marketing site (app/page.tsx)** | M | FREE | High | Replace dashboard redirect with one-page site: overtraining thesis, Zona voice, single CTA (sign up / download). Uses `lib/brand.ts` for all copy. Screenshots: session card, reflect view, coach screen. Must exist before any paid acquisition or press. |
+| GTM-09 | **Trial expiry email** | M | PAID | High | Single Zona-voice email at trial day 14. Subject and body reference zone discipline coaching specifically — not abstract features. "Your zone coaching pauses today." Include upgrade CTA. Requires email platform (Resend or Supabase Edge Function + SMTP). |
+| GTM-10 | **Trial nudge email (day 11)** | S | PAID | Medium | "3 days of full access left." Zona voice. Links to UpgradeScreen. Ships with GTM-09 — same infrastructure. |
+| GTM-11 | **Pricing review** | — | — | Low | Annual discount currently 37% vs category norm 44–49%. Monthly is parameterised via `lib/brand.ts` — can raise to £9.99/month (50% annual discount) without a code search-replace. Revisit after first 100 paid conversions. |
 
 ---
 

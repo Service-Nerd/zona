@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { BRAND } from '@/lib/brand'
 
 export default function LoginPage() {
   const [loading, setLoading]   = useState(false)
@@ -74,7 +75,7 @@ export default function LoginPage() {
             fontFamily: 'var(--font-ui)',
             fontSize: '11px', color: 'var(--text-muted)',
             letterSpacing: '0.12em', textTransform: 'uppercase',
-          }}>Do less. Improve more.</div>
+          }}>{BRAND.tagline}</div>
         </div>
 
         {/* Card */}
@@ -94,7 +95,7 @@ export default function LoginPage() {
             fontFamily: 'var(--font-ui)',
             fontSize: '11px', color: 'var(--text-muted)',
             marginBottom: '24px', lineHeight: 1.6,
-          }}>{mode === 'signin' ? 'Access your training plan.' : 'Your 14-day trial starts today.'}</div>
+          }}>{mode === 'signin' ? 'Access your training plan.' : BRAND.signupSub}</div>
 
           {/* Google */}
           <button

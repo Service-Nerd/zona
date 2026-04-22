@@ -59,6 +59,26 @@
 
 ## Ordered Backlog
 
+### GTM & Commercial (pre-launch, ordered by impact)
+
+| Feature | Tier | Release | Notes |
+|---|---|---|---|
+| Brand constants rollout (GTM-01) | FREE (infra) | GTM | `lib/brand.ts` created. Wire to: login tagline, loading screen, OrientationScreen (replaces "effort-first training"), push notification title, UpgradeScreen pricing labels. No new UI — pure string reference pass. |
+| Copy fixes batch (GTM-02) | FREE | GTM | 7 targeted string replacements. Login signup sub, push title, skip confirm, coach empty state, plan error, teaser CTA, OrientationScreen sub. See backlog for file/line detail. |
+| UpgradeScreen rewrite (GTM-03 + GTM-04) | PAID | GTM | Paywall copy: "Start your subscription", pricing uses `PRICING.annual.savingLabel`. Feature list reordered: weekly report first. Trial-expired variant uses loss framing ("Your zone discipline coaching pauses here"). |
+| Zone discipline teaser — Coach tab, free users (GTM-05) | TIER-DIVERGENT | GTM | Free users see locked zone discipline score category on Coach tab. Blurred state + upgrade CTA. Does not expose paid data. Mirrors wizard teaser card pattern. |
+| Post-session Strava prompt — free users (GTM-06) | TIER-DIVERGENT | GTM | After manual session log, one-line prompt at bottom of reflect view: "Connect Strava to see how your HR compared." Taps to Strava connection / upgrade. |
+| OG / social image (GTM-07) | FREE (ops) | GTM | `/public/og-image.jpg` 1200×630. Brand graphic + tagline. Currently missing — any shared link shows blank preview. |
+
+### GTM & Commercial (post-launch)
+
+| Feature | Tier | Release | Notes |
+|---|---|---|---|
+| Marketing site (GTM-08) | FREE | post-launch | Replace `app/page.tsx` redirect with one-page marketing site. In-app Next.js page (D7). All copy from `lib/brand.ts`. |
+| Trial expiry email + day-11 nudge (GTM-09/10) | PAID | post-launch | Email platform required (Resend or Supabase Edge). Zona-voice copy referencing zone discipline coaching specifically. |
+
+### Product Backlog
+
 | Feature | Tier | Release | Notes |
 |---|---|---|---|
 | Plan Confidence Score | PAID | R18 | Derived from completion + RPE data |

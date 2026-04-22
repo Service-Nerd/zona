@@ -9,8 +9,11 @@ behavioural rules live here or in /docs.
 ## What Is Zona?
 
 A running training app for non-elite runners who overtrain.
-Brand positioning: "Slow down. You're not Kipchoge."
+**Canonical tagline:** "Slow down. You've got a day job." — use on all UI surfaces.
+**Brand statement** (editorial / App Store only): "Slow down. You're not Kipchoge."
 Core truth: "You're trying hard. That's the problem."
+
+**All brand strings and pricing are parameterised in `lib/brand.ts`.** Never hardcode taglines, app name, or pricing values in components. Change once in `lib/brand.ts` — changes everywhere.
 
 Each user brings their own plan — race, distance, training phase. All
 athlete-specific data (race, HR zones, name) lives in the plan JSON

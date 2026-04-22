@@ -1,16 +1,31 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { BRAND } from '@/lib/brand'
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zona-service-nerds-projects.vercel.app'
 
 export const metadata: Metadata = {
-  title: 'Zona — Effort-first training',
-  description: "Slow down. You're not Kipchoge.",
+  title: `${BRAND.name} — ${BRAND.tagline}`,
+  description: BRAND.brandStatement,
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
   manifest: '/manifest.json',
+  openGraph: {
+    title: `${BRAND.name} — ${BRAND.tagline}`,
+    description: BRAND.brandStatement,
+    images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630 }],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${BRAND.name} — ${BRAND.tagline}`,
+    description: BRAND.brandStatement,
+    images: [`${APP_URL}/api/og`],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Zona',
+    title: BRAND.name,
   },
 }
 

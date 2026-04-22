@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { BRAND } from '@/lib/brand'
 
 // POST /api/push/send-weekly-report
 // Called by Vercel cron every Sunday at 18:00.
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
 
       // Send push notification
       const pushSent = await sendWebPush(sub, {
-        title: 'Zona · Weekly report',
+        title: BRAND.push.weeklyReport,
         body:  report.headline,
         tag:   'weekly-report',
         data:  { url: '/dashboard?screen=coach' },

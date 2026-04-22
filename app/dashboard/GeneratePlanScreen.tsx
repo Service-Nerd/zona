@@ -5,6 +5,7 @@
 import { useState, useEffect, useRef } from 'react'
 import type { Plan, GeneratorInput } from '@/types/plan'
 import GeneratingCeremony from '@/components/GeneratingCeremony'
+import { BRAND } from '@/lib/brand'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -326,7 +327,7 @@ function TeaserCard({ onUpgrade }: { onUpgrade: () => void }) {
         </div>
       </div>
       <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--teal)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-        Free trial →
+        Upgrade to personalise →
       </span>
     </button>
   )
@@ -575,7 +576,7 @@ export default function GeneratePlanScreen({
 
         <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--amber)', padding: '20px', marginBottom: '16px' }}>
           <div style={{ fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 500, color: 'var(--amber)', marginBottom: '8px' }}>
-            Could not generate plan
+            Something went wrong building the plan.
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
             {error}

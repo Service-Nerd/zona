@@ -3,17 +3,37 @@
 // Upgrade screen — shown when a user hits a PAID gate post-trial.
 // Pattern: upgrade screen (see frontend-design skill for anatomy rules).
 // Single job: show what paid access includes, offer subscription.
+//
+// Two variants:
+//   trialExpired=false — gain framing (fresh gate during/before trial)
+//   trialExpired=true  — loss framing (trial ended, user has experienced the product)
 
 import { useState } from 'react'
+import { PRICING } from '@/lib/brand'
 
+// Ordered by recurring value — weekly coaching and zone scoring are the ongoing proof of
+// subscription value. AI plans are high at onboarding but low thereafter.
 const FEATURES = [
-  { name: 'AI training plans',   detail: 'Built around your race, not a template.' },
-  { name: 'Strava sync',         detail: 'Your actual paces. Not guesses.' },
-  { name: 'AI coaching',         detail: 'Session feedback that knows your plan.' },
-  { name: 'Dynamic reshaping',   detail: 'Miss a week. The plan adapts.' },
+  { name: 'Weekly zone coaching',  detail: 'Your zone discipline score, every week. Honest.' },
+  { name: 'Strava analysis',       detail: 'Your actual paces and HR. Not guesses.' },
+  { name: 'AI session feedback',   detail: 'After every run. Knows your plan and your zones.' },
+  { name: 'AI training plans',     detail: 'Built around your race, not a template.' },
+  { name: 'Dynamic reshaping',     detail: 'Miss a week. The plan adapts.' },
 ]
 
-export default function UpgradeScreen({ onBack }: { onBack: () => void }) {
+// Loss framing — shown when the user's trial has expired.
+// Names specifically what stopped, not what they could have.
+const LOSSES = [
+  { name: 'Zone discipline coaching', detail: 'Your weekly zone score has paused.' },
+  { name: 'Weekly coaching reports',  detail: 'No more weekly reports.' },
+  { name: 'Session feedback',         detail: 'Post-run analysis has stopped.' },
+  { name: 'Plan adjustments',         detail: 'Your plan will no longer adapt.' },
+]
+
+export default function UpgradeScreen({ onBack, trialExpired = false }: {
+  onBack: () => void
+  trialExpired?: boolean
+}) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -38,6 +58,11 @@ export default function UpgradeScreen({ onBack }: { onBack: () => void }) {
       setLoading(false)
     }
   }
+
+  const items    = trialExpired ? LOSSES    : FEATURES
+  const accent   = trialExpired ? 'var(--amber)' : 'var(--teal)'
+  const headline = trialExpired ? 'Your coaching has paused.' : "Your trial's done."
+  const sub      = trialExpired ? "14 days done. Here's what stopped." : 'Time to make it official.'
 
   return (
     <div style={{
@@ -69,28 +94,28 @@ export default function UpgradeScreen({ onBack }: { onBack: () => void }) {
           color: 'var(--text-primary)', margin: 0,
           lineHeight: 1.15,
         }}>
-          Your trial's done.
+          {headline}
         </h1>
         <p style={{
           fontFamily: 'var(--font-ui)',
           fontWeight: 400, fontSize: '0.9375rem',
           color: 'var(--text-muted)', margin: '8px 0 0',
         }}>
-          Time to make it official.
+          {sub}
         </p>
 
         <div style={{ height: '1px', background: 'var(--border-col)', margin: '24px 0' }} />
 
-        {/* Feature list — left accent, session card visual language */}
+        {/* Feature / loss list — left accent, session card visual language */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {FEATURES.map((f) => (
+          {items.map((f) => (
             <div
               key={f.name}
               style={{
                 display: 'flex', alignItems: 'flex-start',
                 background: 'var(--card-bg)',
                 border: '1px solid var(--border-col)',
-                borderLeft: '3px solid var(--teal)',
+                borderLeft: `3px solid ${accent}`,
                 borderRadius: '10px',
                 padding: '13px 16px',
               }}
@@ -128,7 +153,7 @@ export default function UpgradeScreen({ onBack }: { onBack: () => void }) {
             <div style={{
               fontFamily: 'var(--font-ui)', fontWeight: 700,
               fontSize: '1.5rem', color: 'var(--text-primary)',
-            }}>£7.99</div>
+            }}>{PRICING.monthly.display}</div>
             <div style={{
               fontFamily: 'var(--font-ui)', fontWeight: 400,
               fontSize: '0.75rem', color: 'var(--text-muted)',
@@ -158,16 +183,16 @@ export default function UpgradeScreen({ onBack }: { onBack: () => void }) {
               textTransform: 'uppercase',
               color: 'var(--zona-navy)',
               whiteSpace: 'nowrap',
-            }}>BEST VALUE</div>
+            }}>{PRICING.annual.savingLabel}</div>
             <div style={{
               fontFamily: 'var(--font-ui)', fontWeight: 700,
               fontSize: '1.5rem', color: 'var(--text-primary)',
-            }}>£59.99</div>
+            }}>{PRICING.annual.display}</div>
             <div style={{
               fontFamily: 'var(--font-ui)', fontWeight: 400,
               fontSize: '0.75rem', color: 'var(--text-muted)',
               marginTop: '4px',
-            }}>per year · £5/mo</div>
+            }}>per year · {PRICING.annual.perMonthDisplay}</div>
           </button>
         </div>
 
@@ -204,7 +229,7 @@ export default function UpgradeScreen({ onBack }: { onBack: () => void }) {
             transition: 'opacity 0.15s',
           }}
         >
-          {loading ? 'Loading…' : 'Get Zona Premium'}
+          {loading ? 'Loading…' : 'Start your subscription'}
         </button>
 
         {/* Free path — always visible */}
