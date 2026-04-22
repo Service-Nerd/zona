@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Price not configured.' }, { status: 503 })
   }
 
-  const origin = req.headers.get('origin') ?? 'https://zona.vercel.app'
+  const origin = req.headers.get('origin') ?? 'https://zona-service-nerds-projects.vercel.app'
 
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',

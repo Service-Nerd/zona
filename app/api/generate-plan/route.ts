@@ -9,9 +9,23 @@ import { nextMonday, formatDate, weeksBetweenLocal } from '@/lib/plan/length'
 
 function validate(input: GeneratorInput, planStart: string): string | null {
   const weeks = weeksBetweenLocal(planStart, input.race_date)
+
+  // Time-based blocks
   if (weeks < 3) return 'Race is fewer than 3 weeks away. Cannot generate a safe plan.'
-  if (input.race_distance_km >= 42 && weeks < 6) return 'Race is fewer than 6 weeks away for a marathon or longer. Cannot generate a safe plan.'
+  if (input.race_distance_km >= 42 && weeks < 8) return 'Marathon or longer needs at least 8 weeks. There is not enough time to build safely.'
+  if (input.race_distance_km >= 21 && input.race_distance_km < 42 && weeks < 4) return 'Half marathon needs at least 4 weeks. Race is too close to generate a safe plan.'
   if (input.days_available < 2) return 'At least 2 training days per week are required.'
+
+  // Volume vs distance mismatch
+  if (input.race_distance_km >= 42 && input.current_weekly_km < 20) {
+    return 'Current weekly volume is very low for a marathon. We need at least 20 km/week to generate a safe plan. Build your base first.'
+  }
+
+  // Longest run vs race distance
+  if (input.race_distance_km >= 21 && input.longest_recent_run_km < 5) {
+    return 'Longest recent run is very short for this distance. Log at least a 5 km run in the last 6 weeks before generating this plan.'
+  }
+
   return null
 }
 

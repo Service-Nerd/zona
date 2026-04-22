@@ -30,6 +30,28 @@
 | Dist/duration toggle (global) | FREE | Session Card Redesign | Lives in Me screen |
 | Dist/duration toggle (per-session) | PAID | Session Card Redesign | Expanded card only; saves per session |
 | Strava integration | PAID | — | OAuth, run sync, aerobic pace derivation |
+| VDOT zone model (Jack Daniels) | FREE (infra) | R24 | Replaces hardcoded pace brackets. Benchmark input (race or 30-min TT) → VDOT → E/T/I paces. Falls back to fitness-level brackets when no benchmark. |
+| Fitness level derivation | FREE (infra) | R24 | Derived from weekly_km + longest_run + VDOT (if available). No longer self-reported. |
+| Age field + Tanaka max HR | FREE (infra) | R24 | Age required in wizard. Max HR calculated via Tanaka formula (208 − 0.7 × age). max_hr field removed from wizard. |
+| Dual-anchor training zones | FREE (infra) | R24 | Every session prescribes pace range + HR ceiling. HR governs on hills/heat/fatigue days. |
+| Benchmark input (wizard step 2) | FREE | R24 | Optional recent race result (any distance) or 30-min TT. Populates VDOT for the plan. |
+| Distance tier gating | TIER-DIVERGENT | R24 | 5K/10K/HM = FREE. Marathon/50K/100K = PAID. Locked chips in wizard for free users. |
+| Recalibration week markers | FREE | R24 | Deload weeks in base/build phase flagged as recalibration weeks. Theme prompts a benchmark test. `meta.recalibration_weeks` array in plan. |
+| Goal pace overlay | FREE (infra) | R24 | When goal = time_target, derives goal_pace_per_km. Surfaced in peak-phase quality sessions as a coach note. Not used as a training zone. |
+| Enhanced guard rails | FREE (infra) | R24 | HM < 4 weeks, Marathon < 8 weeks, marathon with < 20km/week base, HM with < 5km longest run all blocked at API. |
+| BenchmarkUpdateScreen | PAID | R24 | Manual zone recalibration screen. Enter new race/TT result → zones update for remaining plan weeks. Calls /api/recalibrate-zones. |
+| /api/recalibrate-zones | PAID (infra) | R24 | Auth-gated API: takes benchmark input, recalculates VDOT/zones, updates all sessions from current week onwards, saves to Supabase. |
+| Coach tab (paid users) | PAID | 2026-04-25 | Enabled for all paid/trial users. Was admin-only at launch. `CoachScreen` shows weekly report card + stats row (zone discipline, load ratio, sessions). Generate/regenerate buttons. Falls back to plan notes card when no report exists. |
+| `lib/coaching/` module tree | PAID (infra) | 2026-04-25 | Per-session scoring (`sessionScore.ts`), session matching (`sessionMatch.ts`), aerobic efficiency (`efTrend.ts`), load calculations (`loadCalc.ts`), weekly report (`weeklyReport.ts`), plan adjustment triggers (`planAdjustment.ts`), coaching flag (`coachingFlag.ts`), aerobic pace (`aerobicPace.ts`), constants (`constants.ts`). Rule engine version stamped on every analysis row. |
+| AI prompt templates | PAID (infra) | 2026-04-25 | `prompts/sessionFeedback.ts`, `prompts/weeklyReport.ts`, `prompts/planAdjustment.ts` — few-shot examples, structured output (Headline/Body/CTA). All use claude-haiku-4-5-20251001, silent fallback. |
+| Strava webhook + auto-analysis pipeline | PAID | 2026-04-25 | GET challenge-response; POST fires `enrichAndPersist()` → HR stream fetch → zone % computation → strava_activities upsert → `triggerAutoAnalysis()` → session match → calls `/api/analyse-run` internally. |
+| /api/analyse-run | PAID | 2026-04-25 | 4-dimension session scoring: HR discipline 50%, distance 25%, pace 15%, EF 10%. Verdicts: nailed/close/off_target/concerning. AI feedback text (claude-haiku, max_tokens 200, silent fallback). Upserts to run_analysis table. |
+| /api/weekly-report | PAID | 2026-04-25 | Aggregates completions + run_analysis + load history. Computes acute:chronic ratio, zone discipline score. AI generates Headline/Body/CTA (claude-haiku, max_tokens 300, silent fallback). Cached per week unless `?force=true`. |
+| /api/adjust-plan + /api/revert-adjustment | PAID | 2026-04-25 | Adjustment triggers: load_spike, zone_drift, shadow_load, ef_decline. Auto-apply low-risk; confirm-required for significant. Full revert to sessions_before snapshot. Hard caps: max 2/week, 3-week taper protection, 10% volume cap, 48hr quality spacing. |
+| RunFeedbackCard | PAID | 2026-04-25 | Verdict chip + score/100 + 4 dimension bars (HR/Distance/Pace/Efficiency) + AI feedback text. Shown in session expanded view. |
+| AdjustmentBanner | PAID | 2026-04-25 | Amber left-border banner on Today/Coach screens. Apply/Dismiss buttons. Dismiss calls `/api/revert-adjustment`. |
+| Dynamic adjustments toggle (Me screen) | PAID | 2026-04-25 | Toggle in Me screen settings. Stored as `dynamic_adjustments_enabled` in user_settings. Opt-out only — default on. |
+| Web Push notifications | PAID | 2026-04-25 | `public/sw.js` service worker. `/api/push/subscribe` (POST + DELETE). `/api/push/send-weekly-report` cron (Sundays 18:00 UTC via Vercel cron). push_subscriptions table. VAPID signing via `web-push` npm package. Auto-cleanup of 410 Gone subscriptions. |
 
 ---
 
@@ -39,13 +61,9 @@
 
 | Feature | Tier | Release | Notes |
 |---|---|---|---|
-| Onboarding flow | FREE / PAID | R0.5 | Questionnaire → template plan (free) or AI plan (paid/trial) → plan on screen. Target: first value in <3 mins. Requires plan storage decision (Gist vs Supabase). |
-| Rule-based plan engine | FREE | — | Deterministic plan generation from pre-built templates. Zero AI calls. Powers the free path in R0.5 and post-trial plan regeneration. |
-| Gist → Supabase plan storage | FREE (infrastructure) | 2026-04-21 | `plans` table with RLS. `fetchPlanForUser` + `savePlanForUser` in `lib/plan.ts`. Auto-migration from gist_url / plan_json on first load. Contract: `docs/contracts/api/plan-fetch.md`. |
-| Reverse trial infrastructure | FREE (infrastructure) | — | `trial_started_at` in `user_settings`; `isTrialActive()` helper; PAID gates in API + components; upgrade prompt; downgrade flow. See `docs/canonical/monetisation-strategy.md`. |
 | Plan Confidence Score | PAID | R18 | Derived from completion + RPE data |
 | Coaching Tips in Supabase | PAID | R19 | Move hardcoded copy to DB; dynamic per user |
-| Dynamic Plan Reshaping | PAID | R20 | Separate from creation; shared schema with R23 |
+| Dynamic Plan Reshaping (user-initiated) | PAID | R20 | Core triggers shipped (see coaching pipeline above). Remaining: user-initiated reshape flow from Me screen, phase-aware reshaping using `Plan.phases[]`. |
 | Strength Sessions | FREE (stubs) / PAID (dynamic) | R21 | Generator stubs exist; cards render with no content. **Admin-only for v1 launch** — filtered from public plan view until R21 ships full content. |
 | Blockout Days | PAID | R22 | User marks unavailable days; plan reshapes |
 | Plan Generator Wizard UI | PAID | R23b | Multi-step wizard; replaces current form |

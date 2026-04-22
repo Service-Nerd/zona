@@ -2,8 +2,12 @@
 // Deterministic plan generator. Zero AI calls. Same inputs always produce the same structure.
 // Enrichment (labels, coaching voice, confidence score) is layered on top in lib/plan/enrich.ts.
 // This file owns all numeric values: distances, durations, zones, HR targets.
+//
+// Zone model: dual-anchor (pace + HR). Pace derived from VDOT when benchmark available;
+// falls back to fitness-level brackets. HR from Karvonen when resting HR known; otherwise
+// uses HRmax percentages (Tanaka max HR from age).
 
-import type { GeneratorInput, Plan, Week, Session } from '@/types/plan'
+import type { GeneratorInput, Plan, Week, Session, BenchmarkInput } from '@/types/plan'
 import type { Phase } from '@/types/plan'
 import {
   getDistanceConfig, calcPlanLength, nextMonday,
@@ -24,20 +28,123 @@ interface ZoneTargets {
 }
 
 interface PaceGuide {
-  easyPaceStr:    string
-  qualityPaceStr: string
-  minPerKmEasy:   number
+  easyPaceStr:     string   // e.g. "6:00–7:15 /km"
+  qualityPaceStr:  string   // e.g. "5:10–5:25 /km"
+  minPerKmEasy:    number   // midpoint for duration calculations
   minPerKmQuality: number
+  source: 'vdot' | 'fitness_level'
 }
 
-// ─── Zone computation (Karvonen formula) ─────────────────────────────────────
+// ─── VDOT model (Jack Daniels) ────────────────────────────────────────────────
 
-function computeZones(rhr: number, mhr: number): ZoneTargets {
-  const hrr = mhr - rhr
-  const z2 = Math.round(rhr + 0.60 * hrr)
-  const z3lo = Math.round(rhr + 0.65 * hrr)
-  const z4hi = Math.round(rhr + 0.82 * hrr)
-  const z4lo = Math.round(rhr + 0.75 * hrr)
+// Parse "H:MM:SS", "MM:SS", or "H:MM" → total minutes
+function parseBenchmarkTime(time: string): number {
+  const parts = time.split(':').map(Number)
+  if (parts.length === 3) return parts[0] * 60 + parts[1] + parts[2] / 60
+  if (parts.length === 2) return parts[0] + parts[1] / 60
+  return NaN
+}
+
+// Jack Daniels VDOT formula: VDOT from any race result
+function calcVDOT(distanceKm: number, timeMinutes: number): number {
+  if (!Number.isFinite(timeMinutes) || timeMinutes <= 0) return NaN
+  const v = (distanceKm * 1000) / timeMinutes  // metres per minute
+  const utilization = 0.8
+    + 0.1894393 * Math.exp(-0.012778 * timeMinutes)
+    + 0.2989558 * Math.exp(-0.1932605 * timeMinutes)
+  const vo2 = -4.60 + 0.182258 * v + 0.000104 * v * v
+  return vo2 / utilization
+}
+
+// Velocity (m/min) at a given fraction of VDOT — quadratic solve
+function velocityAtFraction(vdot: number, fraction: number): number {
+  const a = 0.000104
+  const b = 0.182258
+  const c = -4.60 - fraction * vdot
+  const disc = b * b - 4 * a * c
+  if (disc < 0) return 100  // fallback ~10 min/km
+  return (-b + Math.sqrt(disc)) / (2 * a)
+}
+
+// Pace in min/km at a given VO2 fraction of VDOT
+function paceAtFraction(vdot: number, fraction: number): number {
+  return 1000 / velocityAtFraction(vdot, fraction)
+}
+
+function formatPace(minPerKm: number): string {
+  const mins = Math.floor(minPerKm)
+  const secs = Math.round((minPerKm - mins) * 60)
+  if (secs === 60) return `${mins + 1}:00`
+  return `${mins}:${String(secs).padStart(2, '0')}`
+}
+
+// VDOT training pace fractions (Jack Daniels E/T/I)
+// Easy: 59–74% VO2max. Tempo: 83–88%. Interval: 97–100%.
+function buildPaceFromVDOT(vdot: number): PaceGuide {
+  const eFast = paceAtFraction(vdot, 0.74)  // faster end of easy
+  const eSlow = paceAtFraction(vdot, 0.59)  // slower end of easy
+  const tFast = paceAtFraction(vdot, 0.88)
+  const tSlow = paceAtFraction(vdot, 0.83)
+  const eMid  = (eFast + eSlow) / 2
+  const tMid  = (tFast + tSlow) / 2
+  return {
+    easyPaceStr:     `${formatPace(eFast)}–${formatPace(eSlow)} /km`,
+    qualityPaceStr:  `${formatPace(tFast)}–${formatPace(tSlow)} /km`,
+    minPerKmEasy:    eMid,
+    minPerKmQuality: tMid,
+    source: 'vdot',
+  }
+}
+
+function calcVDOTFromBenchmark(b: BenchmarkInput): number {
+  const mins = parseBenchmarkTime(b.time)
+  return calcVDOT(b.distance_km, mins)
+}
+
+// ─── Tanaka max HR formula ────────────────────────────────────────────────────
+
+function tanakaMaxHR(age: number): number {
+  return Math.round(208 - 0.7 * age)
+}
+
+// ─── Fitness level derivation ─────────────────────────────────────────────────
+// Uses VDOT when available (more accurate). Falls back to volume-based proxy.
+
+function deriveFitnessLevel(weeklyKm: number, longestKm: number, vdot?: number): FitnessLevel {
+  if (vdot !== undefined && Number.isFinite(vdot)) {
+    if (vdot < 35) return 'beginner'
+    if (vdot <= 50) return 'intermediate'
+    return 'experienced'
+  }
+  if (weeklyKm < 20 || longestKm < 8) return 'beginner'
+  if (weeklyKm >= 55 && longestKm >= 20) return 'experienced'
+  return 'intermediate'
+}
+
+// ─── Zone computation ─────────────────────────────────────────────────────────
+// Dual-anchor: pace is primary; HR is the governor on hills, heat, and fatigue.
+// Karvonen when resting HR is known; HRmax% otherwise.
+
+function computeZones(mhr: number, rhr?: number): ZoneTargets {
+  if (rhr !== undefined) {
+    // Karvonen (Heart Rate Reserve) — more personalised
+    const hrr = mhr - rhr
+    const z2  = Math.round(rhr + 0.60 * hrr)
+    const z3lo = Math.round(rhr + 0.65 * hrr)
+    const z4hi = Math.round(rhr + 0.82 * hrr)
+    const z4lo = Math.round(rhr + 0.75 * hrr)
+    return {
+      zone2Ceiling: z2,
+      easyHR:       `< ${z2} bpm`,
+      qualityHR:    `${z3lo}–${z4hi} bpm`,
+      intervalsHR:  `${z4lo}–${mhr} bpm`,
+    }
+  }
+  // HRmax % — used when resting HR not provided
+  const z2  = Math.round(mhr * 0.76)
+  const z3lo = Math.round(mhr * 0.82)
+  const z4hi = Math.round(mhr * 0.89)
+  const z4lo = Math.round(mhr * 0.92)
   return {
     zone2Ceiling: z2,
     easyHR:       `< ${z2} bpm`,
@@ -46,12 +153,16 @@ function computeZones(rhr: number, mhr: number): ZoneTargets {
   }
 }
 
-// ─── Pace guides by fitness level ─────────────────────────────────────────────
+// ─── Pace guides by fitness level (fallback when no benchmark) ─────────────────
 
-const PACE_GUIDE: Record<FitnessLevel, PaceGuide> = {
+const PACE_GUIDE: Record<FitnessLevel, Omit<PaceGuide, 'source'>> = {
   beginner:     { easyPaceStr: '7:30–9:00 /km', qualityPaceStr: '6:30–7:30 /km', minPerKmEasy: 8.0,  minPerKmQuality: 7.0  },
   intermediate: { easyPaceStr: '6:30–7:30 /km', qualityPaceStr: '5:30–6:00 /km', minPerKmEasy: 7.0,  minPerKmQuality: 5.75 },
   experienced:  { easyPaceStr: '5:45–6:45 /km', qualityPaceStr: '4:45–5:20 /km', minPerKmEasy: 6.25, minPerKmQuality: 5.0  },
+}
+
+function buildFallbackPace(fitness: FitnessLevel): PaceGuide {
+  return { ...PACE_GUIDE[fitness], source: 'fitness_level' }
 }
 
 // ─── Phase distribution ───────────────────────────────────────────────────────
@@ -289,6 +400,7 @@ function buildWeekSessions(
   pace: PaceGuide,
   metric: 'distance' | 'duration',
   phases: Phase[],
+  goalPace?: string | null,
 ): Partial<Record<Day, Session>> {
   const blocked = blockedDays(input)
   const fitness = input.fitness_level as FitnessLevel
@@ -359,11 +471,16 @@ function buildWeekSessions(
     ?? firstAvailableDay(['wed', 'thu', 'tue', 'mon', 'fri'], blocked, used)
 
     if (qualDay && dayGap(qualDay, longDay) >= 2) {
+      // In peak phase with a goal pace: reference it so the athlete knows what they're building toward
+      const qualNotes: Session['coach_notes'] | undefined = (phase === 'peak' && goalPace)
+        ? [`Race-pace work. Target: ${goalPace}. Controlled — not all-out.`]
+        : undefined
       sessions[qualDay] = qualitySession(
         weekN, qualDay,
         Math.max(qualKm, 5), metric, zones, pace,
         qualLabelMap[phase],
         isDeload ? 6 : 7,
+        qualNotes,
       )
       used.push(qualDay)
 
@@ -464,17 +581,81 @@ function sumWeeklyKm(sessions: Partial<Record<Day, Session>>, pace: PaceGuide): 
 
 export type Tier = 'free' | 'trial' | 'paid'
 
+// ─── Goal pace from target time ───────────────────────────────────────────────
+
+function calcGoalPace(distanceKm: number, targetTime: string): string | null {
+  const mins = parseBenchmarkTime(targetTime)
+  if (!Number.isFinite(mins) || mins <= 0) return null
+  const paceMinPerKm = mins / distanceKm
+  return `${formatPace(paceMinPerKm)} /km`
+}
+
+// ─── Apply new benchmark to all sessions from a given week ───────────────────
+// Used by the recalibrate-zones API to update future weeks after a re-test.
+
+export function applyRecalibration(
+  plan: Plan,
+  benchmark: BenchmarkInput,
+  fromWeekN: number,
+): Plan {
+  const vdot = calcVDOTFromBenchmark(benchmark)
+  if (!Number.isFinite(vdot) || vdot <= 0) return plan
+
+  const mhr = plan.meta.max_hr
+  const rhr  = plan.meta.resting_hr > 0 ? plan.meta.resting_hr : undefined
+  const zones = computeZones(mhr, rhr)
+  const pace  = buildPaceFromVDOT(vdot)
+
+  const updated: Plan = JSON.parse(JSON.stringify(plan))
+  updated.meta.vdot      = Math.round(vdot * 10) / 10
+  updated.meta.benchmark = benchmark
+
+  for (const week of updated.weeks) {
+    if (week.n < fromWeekN) continue
+    for (const session of Object.values(week.sessions)) {
+      if (!session || session.type === 'strength' || session.type === 'rest') continue
+      if (session.type === 'easy' || session.type === 'long' || session.type === 'recovery') {
+        session.hr_target    = zones.easyHR
+        session.pace_target  = pace.easyPaceStr
+      } else if (session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals') {
+        session.hr_target    = zones.qualityHR
+        session.pace_target  = pace.qualityPaceStr
+      }
+    }
+  }
+
+  return updated
+}
+
 export function generateRulePlan(input: GeneratorInput, tier: Tier, planStart?: string): Plan {
   const planStartIso = planStart ?? formatDate(nextMonday())
   const planStartDate = parseDateLocal(planStartIso)
   const today = formatDate(new Date())
 
+  // ── Derive max HR, VDOT, fitness level, zones, paces ─────────────────────────
+  const derivedMaxHR = input.max_hr ?? tanakaMaxHR(input.age)
+  const vdot: number | undefined = (() => {
+    if (!input.benchmark) return undefined
+    const v = calcVDOTFromBenchmark(input.benchmark)
+    return Number.isFinite(v) && v > 0 ? v : undefined
+  })()
+
+  const fitness: FitnessLevel = input.fitness_level
+    ?? deriveFitnessLevel(input.current_weekly_km, input.longest_recent_run_km, vdot)
+
+  const rhr = input.resting_hr && input.resting_hr > 0 ? input.resting_hr : undefined
+  const zones = computeZones(derivedMaxHR, rhr)
+  const pace: PaceGuide = vdot !== undefined
+    ? buildPaceFromVDOT(vdot)
+    : buildFallbackPace(fitness)
+
+  const goalPace = input.goal === 'time_target' && input.target_time
+    ? calcGoalPace(input.race_distance_km, input.target_time)
+    : null
+
   const config = getDistanceConfig(input.race_distance_km)
   const { totalWeeks, compressed } = calcPlanLength(input.race_distance_km, input.race_date, planStartIso)
   const phases = computePhases(totalWeeks, input.race_distance_km)
-  const zones = computeZones(input.resting_hr, input.max_hr)
-  const fitness = input.fitness_level as FitnessLevel
-  const pace = PACE_GUIDE[fitness]
 
   const metric: 'distance' | 'duration' =
     fitness === 'beginner' || input.race_distance_km >= 50 ? 'duration' : 'distance'
@@ -487,6 +668,7 @@ export function generateRulePlan(input: GeneratorInput, tier: Tier, planStart?: 
   // ── Build weeks ─────────────────────────────────────────────────────────────
   const weeks: Week[] = []
   const taperPhase = phases.find(p => p.name === 'taper')!
+  const recalibrationWeeks: number[] = []
 
   // Track phase-local week count for labels
   const phaseWeekCount: Record<PhaseType, number> = { base: 0, build: 0, peak: 0, taper: 0 }
@@ -498,17 +680,21 @@ export function generateRulePlan(input: GeneratorInput, tier: Tier, planStart?: 
 
     const weekDate = formatDate(addDays(planStartDate, i * 7))
     const isRaceWeek = weekN === totalWeeks
-    const isDeload = !isRaceWeek && weekN % 4 === 0 && phase !== 'peak'
+    // Deload every 4th week (not peak or taper — those phases have their own rhythm)
+    const isDeload = !isRaceWeek && weekN % 4 === 0 && phase !== 'peak' && phase !== 'taper'
+    // Recalibration on deload weeks in base/build — fresher legs, good time to benchmark
+    const isRecalibration = isDeload && (phase === 'base' || phase === 'build')
+    if (isRecalibration) recalibrationWeeks.push(weekN)
 
     const weeklyKm = volumes[i]
     const prevWeeklyKm = i > 0 ? volumes[i - 1] : startKm
 
-    // applyInjuryAdjustments handles volume (knee cap). Quality suppression is handled inside buildWeekSessions.
     const { adjustedKm } = applyInjuryAdjustments(weeklyKm, prevWeeklyKm, true, input)
 
     const sessions = buildWeekSessions(
       weekN, phase, isDeload, isRaceWeek,
       adjustedKm, input, zones, pace, metric, phases,
+      goalPace,
     )
 
     const longRunHrs = computeLongRunHrs(sessions, pace)
@@ -517,11 +703,17 @@ export function generateRulePlan(input: GeneratorInput, tier: Tier, planStart?: 
     const weekType: Week['type'] = isRaceWeek ? 'race' : isDeload ? 'deload' : 'normal'
     const badge: Week['badge'] = isRaceWeek ? 'race' : isDeload ? 'deload' : undefined
 
+    const theme = isRaceWeek
+      ? 'The work is done. Arrive rested.'
+      : isRecalibration
+        ? 'Deload week. Run a parkrun or timed 5K — your result sharpens the zones for the next block.'
+        : weekTheme(phase, isDeload)
+
     weeks.push({
       n: weekN,
       date: weekDate,
       label: isRaceWeek ? 'Race week' : weekLabel(phase, weekN, phaseWeekCount[phase], isDeload),
-      theme: isRaceWeek ? 'The work is done. Arrive rested.' : weekTheme(phase, isDeload),
+      theme,
       type: weekType,
       phase,
       ...(badge ? { badge } : {}),
@@ -545,8 +737,8 @@ export function generateRulePlan(input: GeneratorInput, tier: Tier, planStart?: 
     plan_start:       planStartIso,
     quit_date:        '',
 
-    resting_hr:    input.resting_hr,
-    max_hr:        input.max_hr,
+    resting_hr:    rhr ?? 0,
+    max_hr:        derivedMaxHR,
     zone2_ceiling: zones.zone2Ceiling,
 
     version:      '2.0',
@@ -570,6 +762,13 @@ export function generateRulePlan(input: GeneratorInput, tier: Tier, planStart?: 
     // INV-PLAN-008: free plans never carry confidence fields
     tier,
     compressed,
+
+    // VDOT / zone model fields
+    age: input.age,
+    ...(vdot !== undefined ? { vdot: Math.round(vdot * 10) / 10 } : {}),
+    ...(goalPace ? { goal_pace_per_km: goalPace } : {}),
+    ...(recalibrationWeeks.length > 0 ? { recalibration_weeks: recalibrationWeeks } : {}),
+    ...(input.benchmark ? { benchmark: input.benchmark } : {}),
   }
 
   return { meta, phases, weeks }

@@ -10,11 +10,22 @@ import { createClient } from '@/lib/supabase/client'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
 import { isTrialActive } from '@/lib/trial'
+import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
+import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
 import dynamic from 'next/dynamic'
 const GeneratePlanScreen = dynamic(() => import('./GeneratePlanScreen'), { ssr: false })
 const UpgradeScreen = dynamic(() => import('./UpgradeScreen'), { ssr: false })
 
 type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'admin' | 'generate' | 'upgrade'
+
+function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4)
+  const base64   = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData  = window.atob(base64)
+  const bytes    = new Uint8Array(rawData.length)
+  for (let i = 0; i < rawData.length; i++) bytes[i] = rawData.charCodeAt(i)
+  return bytes.buffer
+}
 
 // ── Icons ─────────────────────────────────────────────────────────────────
 
@@ -111,6 +122,14 @@ export default function DashboardClient() {
   // Paid access — default true to avoid flash of locked state during load
   const [hasPaidAccess, setHasPaidAccess] = useState(true)
 
+  // Feature 3 — dynamic adjustments opt-in
+  const [dynamicAdjustmentsEnabled, setDynamicAdjustmentsEnabled] = useState(true)
+
+  // Coaching data — run analysis + weekly report + pending adjustments
+  const [runAnalysisMap, setRunAnalysisMap] = useState<Record<string, any>>({})  // keyed by session_day
+  const [weeklyReport, setWeeklyReport] = useState<any | null>(null)
+  const [pendingAdjustment, setPendingAdjustment] = useState<any | null>(null)
+
   // Post-wizard orientation — shown once after plan generation
   const [showOrientation, setShowOrientation] = useState(false)
 
@@ -161,6 +180,35 @@ export default function DashboardClient() {
       .slice(0, 2)
   })()
 
+  // Register service worker + subscribe to push (paid/trial only, after app ready)
+  useEffect(() => {
+    if (!hasPaidAccess || !appReady) return
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+    void (async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('/sw.js')
+        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        if (!vapidKey) return
+
+        let sub = await reg.pushManager.getSubscription()
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidKey),
+          })
+        }
+
+        await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sub.toJSON()),
+        })
+      } catch {
+        // push setup is non-critical — fail silently
+      }
+    })()
+  }, [hasPaidAccess, appReady])
+
   useEffect(() => {
     try {
       const p = localStorage.getItem('rts_phrase'); if (p) setResetPhrase(p)
@@ -175,7 +223,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes, subRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, first_name, last_name, email, trial_started_at').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
@@ -259,7 +307,31 @@ export default function DashboardClient() {
         const hasActiveSub = sub?.status &&
           ['trialing', 'active'].includes(sub.status) &&
           new Date(sub.current_period_end) > new Date()
-        setHasPaidAccess(!!(hasActiveSub || isTrialActive(trialStartedAt)))
+        const paidAccess = !!(hasActiveSub || isTrialActive(trialStartedAt))
+        setHasPaidAccess(paidAccess)
+
+        // Dynamic adjustments toggle
+        if (data?.dynamic_adjustments_enabled === false) setDynamicAdjustmentsEnabled(false)
+
+        // Coaching data — run analysis, weekly report, pending adjustments (paid/trial only)
+        if (paidAccess) {
+          void (async () => {
+            try {
+              const [analysisRes, reportRes, adjustmentsRes] = await Promise.all([
+                supabase.from('run_analysis').select('session_day, verdict, total_score, feedback_text, hr_in_zone_pct, ef_trend_pct').eq('user_id', user.id),
+                supabase.from('weekly_reports').select('*').eq('user_id', user.id).order('week_n', { ascending: false }).limit(1).maybeSingle(),
+                supabase.from('plan_adjustments').select('*').eq('user_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+              ])
+              if (analysisRes.data) {
+                const map: Record<string, any> = {}
+                analysisRes.data.forEach((r: any) => { map[r.session_day] = r })
+                setRunAnalysisMap(map)
+              }
+              if (reportRes.data) setWeeklyReport(reportRes.data)
+              if (adjustmentsRes.data) setPendingAdjustment(adjustmentsRes.data)
+            } catch {}
+          })()
+        }
 
         setOverridesReady(true)
         setAppReady(true)
@@ -621,16 +693,16 @@ export default function DashboardClient() {
       )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} />}
-        {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaTokenFailed={stravaTokenFailed} firstName={firstName} onGoToMe={() => setScreen('me')} />}
+        {screen === 'coach'    && <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaTokenFailed={stravaTokenFailed} firstName={firstName} onGoToMe={() => setScreen('me')} weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport} />}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
-        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} />}
+        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={saveTheme} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} hasPaidAccess={hasPaidAccess} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} />}
         {/* CalendarOverlay hidden — entry point removed. Component lives in CalendarOverlay.tsx. */}
         {screen === 'calendar' && <CalendarOverlay plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onBack={() => setScreen('today')} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} />}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} runAnalysis={runAnalysisMap[activeSessionData?.sessionKey ?? ''] ?? null} hasPaidAccess={hasPaidAccess} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
-        {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
+        {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'upgrade'  && <UpgradeScreen onBack={() => {
           const hasWizardDraft = typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('zona_wizard_draft')
           setScreen(hasWizardDraft ? 'generate' : 'today')
@@ -668,7 +740,7 @@ export default function DashboardClient() {
               animation: 'slideUp 0.22s cubic-bezier(0.32, 0.72, 0, 1)',
             }}>
               {([
-                ...(isAdmin ? [{ id: 'coach' as Screen, label: 'Coach', icon: (a: boolean) => <IconCoach active={a} /> }] : []),
+                ...(hasPaidAccess ? [{ id: 'coach' as Screen, label: 'Coach', icon: (a: boolean) => <IconCoach active={a} /> }] : []),
                 { id: (hasPaidAccess ? 'strava' : 'upgrade') as Screen, label: 'Strava',  icon: (a: boolean) => <IconStrava active={a} /> },
                 { id: 'me'     as Screen, label: 'Profile', icon: (a: boolean) => <IconMe     active={a} /> },
               ]).map(({ id, label, icon }, i) => {
@@ -712,7 +784,7 @@ export default function DashboardClient() {
 
       {/* ── Bottom nav bar ── */}
       {(() => {
-        const moreActive = showMore || ['strava', 'me'].includes(screen) || (isAdmin && screen === 'coach')
+        const moreActive = showMore || ['strava', 'me'].includes(screen) || (hasPaidAccess && screen === 'coach')
         const navItems: { id: Screen; label: string; icon: (a: boolean) => React.ReactNode }[] = [
           { id: 'today', label: 'Today', icon: (a) => <IconToday active={a} /> },
           { id: 'plan',  label: 'Plan',  icon: (a) => <IconPlan  active={a} /> },
@@ -1123,51 +1195,7 @@ function getSkipResponse(reason: string): string {
 }
 
 // ── COACHING FLAG ─────────────────────────────────────────────────────────
-// Per-session quality-of-execution signal. Stored in session_completions.coaching_flag.
-// R18 (confidence score) will aggregate these into a weekly signal.
-
-type CoachingFlag = 'ok' | 'watch' | 'flag'
-
-/** Pure function — no side effects. Returns null for session types without effort targets. */
-function getCoachingFlag({
-  sessionType,
-  rpe,
-  avgHr,
-  zone2Ceiling,
-}: {
-  sessionType: string
-  rpe: number | null
-  avgHr: number | null
-  zone2Ceiling: number | undefined
-}): CoachingFlag | null {
-  const isEasySession = ['easy', 'run', 'long', 'recovery'].includes(sessionType)
-  const isHardSession = ['quality', 'intervals', 'tempo', 'hard'].includes(sessionType)
-  const isRaceSession = sessionType === 'race'
-
-  if (!isEasySession && !isHardSession && !isRaceSession) return null
-  if (rpe === null && avgHr === null) return null
-
-  if (isEasySession) {
-    // Zone 2 breach is the strongest signal — takes precedence over RPE
-    if (avgHr !== null && zone2Ceiling !== undefined && avgHr > zone2Ceiling) return 'flag'
-    if (rpe !== null && rpe >= 7) return 'flag'
-    if (rpe !== null && rpe >= 5) return 'watch'
-    return 'ok'
-  }
-
-  if (isHardSession) {
-    // Quality sessions: goal is to push. Very low RPE = didn't engage.
-    if (rpe !== null && rpe <= 3) return 'watch'
-    return 'ok'
-  }
-
-  if (isRaceSession) {
-    if (rpe !== null && rpe <= 4) return 'watch'
-    return 'ok'
-  }
-
-  return null
-}
+// getCoachingFlag imported from lib/coaching/coachingFlag.ts
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
@@ -2578,27 +2606,7 @@ function getSessionHRDisplay(
   return null
 }
 
-/** Returns aerobic pace bracket derived from Strava runs in the user's Z2 HR band */
-function computeAerobicPace(
-  runs: any[] | null,
-  restingHR: number | null,
-  maxHR: number | null,
-  preferredUnits: 'km' | 'mi' = 'km',
-): string | null {
-  if (!runs || !runs.length || !restingHR || !maxHR) return null
-  const hrr = maxHR - restingHR
-  const lo = Math.round(restingHR + 0.60 * hrr)
-  const hi = Math.round(restingHR + 0.70 * hrr)
-  const sample = runs.filter((r: any) =>
-    r.average_heartrate && r.average_heartrate >= lo && r.average_heartrate <= hi
-    && r.moving_time > 0 && r.distance > 2000
-  ).slice(0, 6)
-  if (!sample.length) return null
-  const avgSecPerKm = sample.reduce((s: number, r: any) => s + r.moving_time / (r.distance / 1000), 0) / sample.length
-  const sec = preferredUnits === 'mi' ? avgSecPerKm * 1.60934 : avgSecPerKm
-  const unit = preferredUnits === 'mi' ? '/mi' : '/km'
-  return `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}${unit}`
-}
+// computeAerobicPace imported from lib/coaching/aerobicPace.ts
 
 // ── SESSION HERO ──────────────────────────────────────────────────────────
 
@@ -2866,7 +2874,79 @@ function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, 
 
 // ── TODAY SCREEN ──────────────────────────────────────────────────────────
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, firstName }: {
+// ── ADJUSTMENT BANNER ────────────────────────────────────────────────────
+
+function AdjustmentBanner({ adjustment, onConfirmed, onReverted }: {
+  adjustment: any
+  onConfirmed?: (plan: any) => void
+  onReverted?:  (plan: any) => void
+}) {
+  const [state, setState] = useState<'idle' | 'loading' | 'done'>('idle')
+  const [dismissed, setDismissed] = useState(false)
+
+  if (dismissed) return null
+
+  async function confirm() {
+    setState('loading')
+    try {
+      const res  = await fetch('/api/adjust-plan', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      onConfirmed?.(data.plan)
+      setState('done')
+    } catch { setState('idle') }
+  }
+
+  async function revert() {
+    setState('loading')
+    try {
+      const res  = await fetch('/api/revert-adjustment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adjustment_id: adjustment.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      onReverted?.(data.plan)
+      setDismissed(true)
+    } catch { setState('idle') }
+  }
+
+  if (state === 'done') return null
+
+  return (
+    <div style={{ margin: '10px 12px 0', background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--amber)', borderLeft: '3px solid var(--amber)', overflow: 'hidden' }}>
+      <div style={{ padding: '12px 14px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--amber)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+          Plan adjustment
+        </div>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '12px' }}>
+          {adjustment.summary}
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {adjustment.status === 'pending' && (
+            <button
+              onClick={confirm}
+              disabled={state === 'loading'}
+              style={{ flex: 1, padding: '10px', background: 'var(--accent)', border: 'none', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--zona-navy)', cursor: 'pointer' }}
+            >
+              {state === 'loading' ? '…' : 'Apply'}
+            </button>
+          )}
+          <button
+            onClick={revert}
+            disabled={state === 'loading'}
+            style={{ flex: 1, padding: '10px', background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', cursor: 'pointer' }}
+          >
+            {state === 'loading' ? '…' : 'Dismiss'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   stravaRuns: any[]
@@ -2879,6 +2959,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   onManualSaved?: () => void
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
   firstName?: string
+  pendingAdjustment?: any | null
+  onAdjustmentConfirmed?: (plan: any) => void
+  onAdjustmentReverted?: (plan: any) => void
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
@@ -3124,6 +3207,15 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
             {fatigueHistory[fatigueHistory.length - 1].tag}
           </span>
         </div>
+      )}
+
+      {/* Pending adjustment banner */}
+      {pendingAdjustment && (
+        <AdjustmentBanner
+          adjustment={pendingAdjustment}
+          onConfirmed={onAdjustmentConfirmed}
+          onReverted={onAdjustmentReverted}
+        />
       )}
 
       {/* Week focus — above the session hero */}
@@ -3475,192 +3567,155 @@ function PlanCoachingCard({ plan, currentWeek }: { plan: Plan; currentWeek: Week
 
 // ── COACH SCREEN ──────────────────────────────────────────────────────────
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed, firstName, onGoToMe }: {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed, firstName, onGoToMe, weeklyReport, onReportGenerated }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaTokenFailed?: boolean; firstName?: string; onGoToMe?: () => void
+  weeklyReport?: any | null; onReportGenerated?: (report: any) => void
 }) {
-  const [analysis, setAnalysis] = useState<string | null>(null)
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState<string | null>(null)
-  const [cachedActivityId, setCachedActivityId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState<string | null>(null)
 
   const weekNum    = getCurrentWeekIndex(plan.weeks) + 1
   const totalWeeks = plan.weeks.length
-  const latestRun  = runs?.[0] ?? null
-  const latestId   = latestRun ? String(latestRun.id) : null
-  const isNew      = latestId && latestId !== cachedActivityId
 
-  useEffect(() => {
-    try {
-      const cached   = localStorage.getItem('rts_coach_analysis')
-      const cachedId = localStorage.getItem('rts_coach_activity_id')
-      if (cached)   setAnalysis(cached)
-      if (cachedId) setCachedActivityId(cachedId)
-    } catch {}
-  }, [])
+  // Check if report is for current week
+  const reportIsCurrent = weeklyReport?.week_n === weekNum
 
-  useEffect(() => {
-    if (isNew && !loading && !stravaLoading) generateAnalysis()
-  }, [latestId, stravaLoading])
-
-  async function generateAnalysis() {
-    if (!latestRun) return
+  async function generateReport() {
     setLoading(true)
     setError(null)
     try {
-      const { formatDuration, formatPace } = await import('@/lib/strava')
-      const weeksToRace = plan.meta.race_date ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 7))) : 0
-      const weekLabel   = (currentWeek as any).label ?? 'build phase'
-      const weekTheme   = (currentWeek as any).theme ?? ''
-      const raceName    = plan.meta.race_name || 'target race'
-      const raceDist    = plan.meta.race_distance_km ? `${plan.meta.race_distance_km}km` : ''
-      const raceDesc    = [raceName, raceDist].filter(Boolean).join(' ')
-      const raceContext = plan.meta.race_date ? `${raceDesc} on ${new Date(plan.meta.race_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} (${weeksToRace} weeks away)` : raceDesc
-      const z2          = plan.meta.zone2_ceiling || 145
-      const hrProfile   = plan.meta.resting_hr && plan.meta.max_hr
-        ? `Resting HR ~${plan.meta.resting_hr}, max HR ~${plan.meta.max_hr}. Zone 2 ceiling: HR ${z2}.`
-        : `Zone 2 ceiling: HR ${z2}.`
-
-      const prompt = `You are a direct, no-fluff running coach giving an athlete a weekly check-in. They are training for ${raceContext}.
-
-Athlete profile: ${hrProfile} Key metric to track: pace at Zone 2 HR.
-
-Current plan position: Week ${weekNum} of ${totalWeeks}. Phase: ${weekLabel}. Focus: ${weekTheme}.
-
-Latest activity:
-- Name: ${latestRun.name}
-- Date: ${new Date(latestRun.start_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
-- Distance: ${(latestRun.distance / 1000).toFixed(2)}km
-- Duration: ${formatDuration(latestRun.moving_time)}
-- Avg HR: ${latestRun.average_heartrate ? Math.round(latestRun.average_heartrate) + ' bpm' : 'not recorded'}
-- Max HR: ${latestRun.max_heartrate ? Math.round(latestRun.max_heartrate) + ' bpm' : 'not recorded'}
-- Pace: ${formatPace(latestRun.moving_time, latestRun.distance)}
-- Elevation: +${Math.round(latestRun.total_elevation_gain ?? 0)}m
-
-Write 2 short paragraphs. First: where the athlete is in the plan and whether they're on track. Second: direct feedback on the latest run — what was good, what to focus on next. Be specific, honest, no fluff. Use "you" throughout.`
-
-      const res = await fetch('/api/claude', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }),
-      })
+      const res  = await fetch('/api/weekly-report?force=true', { method: 'POST' })
       const data = await res.json()
-      const text = data.content?.map((b: { text?: string }) => b.text || '').join('') || ''
-      if (!text) throw new Error('Empty response')
-
-      setAnalysis(text)
-      setCachedActivityId(latestId)
-      try {
-        localStorage.setItem('rts_coach_analysis', text)
-        if (latestId) localStorage.setItem('rts_coach_activity_id', latestId)
-      } catch {}
+      if (!res.ok) throw new Error(data.error ?? 'Failed')
+      onReportGenerated?.(data.report)
     } catch {
-      setError('Could not generate analysis — check your connection.')
+      setError('Could not generate report. Check your connection.')
     } finally {
       setLoading(false)
     }
   }
 
-  const latestRunLabel = latestRun
-    ? `${new Date(latestRun.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · ${(latestRun.distance / 1000).toFixed(1)}km`
-    : null
-
   return (
     <div>
-      <ScreenHeader title="Coach" sub={firstName ? `${firstName} · W${weekNum} · ${(currentWeek as any).label ?? 'Build phase'}` : `W${weekNum} · ${(currentWeek as any).label ?? 'Build phase'}`} />
+      <ScreenHeader title="Coach" sub={firstName ? `${firstName} · W${weekNum}/${totalWeeks}` : `W${weekNum}/${totalWeeks}`} />
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-        {stravaTokenFailed && !stravaLoading && !latestRun && (
+        {stravaTokenFailed && !stravaLoading && !runs?.length && (
           <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--amber-mid)', padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>Strava connection expired.</span>
-            <button
-              onClick={onGoToMe}
-              style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '5px 12px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
-            >
+            <button onClick={onGoToMe} style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '5px 12px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
               Reconnect in Profile
             </button>
           </div>
         )}
 
-        {(stravaLoading || latestRun) && (
-          <div style={{ background: 'var(--card-bg)', borderRadius: '12px', padding: '9px 12px', border: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--strava)' }} />
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)' }}>
-                {stravaLoading ? 'Loading Strava...' : loading ? 'Analysing latest run...' : latestRunLabel ?? 'Latest activity'}
-              </span>
+        {/* Weekly report card */}
+        {reportIsCurrent && weeklyReport?.headline ? (
+          <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+            <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>This week</span>
+              <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)' }}>W{weekNum}/{totalWeeks}</span>
             </div>
-            {isNew && !loading && (
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', background: 'var(--accent-soft)', padding: '2px 8px', borderRadius: '20px' }}>new</span>
+            <div style={{ padding: '16px' }}>
+              <div style={{ fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.3px', lineHeight: 1.3, marginBottom: '10px' }}>
+                {weeklyReport.headline}
+              </div>
+              {weeklyReport.body && (
+                <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: weeklyReport.cta ? '12px' : 0 }}>
+                  {weeklyReport.body}
+                </p>
+              )}
+              {weeklyReport.cta && (
+                <div style={{ padding: '10px 12px', background: 'var(--accent-soft)', borderRadius: '10px', border: '0.5px solid var(--accent-dim)' }}>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', fontWeight: 500 }}>{weeklyReport.cta}</span>
+                </div>
+              )}
+            </div>
+            {/* Stats row */}
+            {(weeklyReport.zone_discipline_score !== null || weeklyReport.acute_chronic_ratio !== null) && (
+              <div style={{ padding: '10px 16px', borderTop: '0.5px solid var(--border-col)', display: 'flex', gap: '16px' }}>
+                {weeklyReport.zone_discipline_score !== null && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Zone discipline</span>
+                    <span style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: weeklyReport.zone_discipline_score >= 80 ? 'var(--teal)' : weeklyReport.zone_discipline_score >= 60 ? 'var(--accent)' : 'var(--amber)' }}>
+                      {weeklyReport.zone_discipline_score}
+                    </span>
+                  </div>
+                )}
+                {weeklyReport.acute_chronic_ratio !== null && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Load ratio</span>
+                    <span style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: weeklyReport.acute_chronic_ratio >= 1.3 ? 'var(--amber)' : 'var(--teal)' }}>
+                      {Number(weeklyReport.acute_chronic_ratio).toFixed(2)}x
+                    </span>
+                  </div>
+                )}
+                {weeklyReport.sessions_completed !== null && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sessions</span>
+                    <span style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {weeklyReport.sessions_completed}/{weeklyReport.sessions_planned}
+                    </span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
-        )}
-
-        {!stravaLoading && !latestRun && (
-          <PlanCoachingCard plan={plan} currentWeek={currentWeek} />
-        )}
-
-        {(loading || (stravaLoading && !analysis)) && (
-          <>
-            <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', padding: '28px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
-              <svg width="36" height="36" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--border-col)" strokeWidth="2" />
-                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--accent)" strokeWidth="2" strokeDasharray="40 60" strokeLinecap="round">
-                  <animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite" />
-                </circle>
-              </svg>
-              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.6 }}>
-                {stravaLoading ? 'Loading Strava data...' : 'Reading your latest run\nand plan position...'}
-              </p>
-            </div>
-            <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', padding: '14px' }}>
-              {[85, 100, 70, 90].map((w, i) => (
-                <div key={i} style={{ height: '10px', background: 'var(--bg)', borderRadius: '4px', marginBottom: i < 3 ? '8px' : 0, width: `${w}%` }} />
+        ) : (
+          // Loading skeleton or generate prompt
+          loading ? (
+            <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', padding: '20px' }}>
+              {[90, 100, 70].map((w, i) => (
+                <div key={i} style={{ height: '12px', background: 'var(--bg)', borderRadius: '4px', marginBottom: i < 2 ? '10px' : 0, width: `${w}%` }} />
               ))}
             </div>
-          </>
+          ) : (
+            <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', padding: '20px' }}>
+              <div style={{ fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                {weeklyReport ? 'Report from last week.' : 'No report yet this week.'}
+              </div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '16px' }}>
+                {runs?.length
+                  ? 'Log some sessions and runs to generate this week\'s coaching report.'
+                  : 'Connect Strava to get weekly coaching insights based on your actual training data.'}
+              </div>
+              {runs?.length ? (
+                <button
+                  onClick={generateReport}
+                  style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}
+                >
+                  Generate report
+                </button>
+              ) : (
+                <button onClick={onGoToMe} style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}>
+                  Connect Strava in Profile
+                </button>
+              )}
+            </div>
+          )
         )}
 
-        {error && !loading && (
-          <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', padding: '16px' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', marginBottom: '8px' }}>Error</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{error}</div>
-            <button onClick={generateAnalysis} style={{ marginTop: '12px', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '6px 14px', cursor: 'pointer' }}>
-              Try again
-            </button>
+        {error && (
+          <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--amber)', padding: '12px 14px' }}>
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--amber)' }}>{error}</span>
           </div>
         )}
 
-        {analysis && !loading && (
-          <>
-            <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
-              <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Coaching notes</span>
-                <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>W{weekNum}/{totalWeeks}</span>
-              </div>
-              <div style={{ padding: '14px' }}>
-                {analysis.split('\n\n').map((para, i) => (
-                  <p key={i} style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.65, marginTop: i > 0 ? '10px' : 0 }}>{para}</p>
-                ))}
-              </div>
-            </div>
-            <button onClick={generateAnalysis} style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer', alignSelf: 'center' }}>
-              Refresh analysis
-            </button>
-          </>
+        {/* Regenerate button when report exists */}
+        {reportIsCurrent && weeklyReport?.headline && !loading && (
+          <button
+            onClick={generateReport}
+            style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer', alignSelf: 'center' }}
+          >
+            Regenerate
+          </button>
         )}
 
-        {!analysis && !loading && !error && latestRun && !stravaLoading && (
-          <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', padding: '28px 20px', textAlign: 'center' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              Strava connected. Ready to generate<br />your coaching notes.
-            </div>
-            <button onClick={generateAnalysis} style={{ marginTop: '16px', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}>
-              Generate now
-            </button>
-          </div>
-        )}
+        {/* Plan notes — always shown below report */}
+        <PlanCoachingCard plan={plan} currentWeek={currentWeek} />
+
       </div>
     </div>
   )
@@ -4108,7 +4163,7 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
   )
 }
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, hasPaidAccess, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   resetPhrase: string; onSaveMental: (v: string) => void
@@ -4120,6 +4175,9 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   firstName: string; lastName: string; profileEmail: string
   onProfileChange: (fn: string, ln: string, em: string) => void
   onOpenGenerate?: () => void
+  hasPaidAccess?: boolean
+  dynamicAdjustmentsEnabled?: boolean
+  onDynamicAdjustmentsChange?: (enabled: boolean) => void
 }) {
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling' | 'delete-account'>('main')
 
@@ -4336,6 +4394,39 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           )}
         </div>
 
+        {/* ── Dynamic adjustments toggle (paid/trial only) ──────── */}
+        {hasPaidAccess && onDynamicAdjustmentsChange && (
+          <>
+            <SectionLabel>Training intelligence</SectionLabel>
+            <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: '2px' }}>Dynamic adjustments</div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  {dynamicAdjustmentsEnabled
+                    ? 'Zona will suggest plan changes based on your Strava data.'
+                    : 'Plan stays fixed. Zona tracks data but won\'t suggest changes.'}
+                </div>
+              </div>
+              <button
+                onClick={() => onDynamicAdjustmentsChange(!dynamicAdjustmentsEnabled)}
+                style={{
+                  width: '44px', height: '26px', borderRadius: '13px', border: 'none', cursor: 'pointer',
+                  background: dynamicAdjustmentsEnabled ? 'var(--accent)' : 'var(--border-col)',
+                  position: 'relative', flexShrink: 0, transition: 'background 0.2s',
+                }}
+                aria-label="Toggle dynamic adjustments"
+              >
+                <div style={{
+                  position: 'absolute', top: '3px',
+                  left: dynamicAdjustmentsEnabled ? '21px' : '3px',
+                  width: '20px', height: '20px', borderRadius: '50%',
+                  background: 'white', transition: 'left 0.2s',
+                }} />
+              </button>
+            </div>
+          </>
+        )}
+
         {/* ── Admin ──────────────────────────────────────────────── */}
         {isAdmin && (
           <>
@@ -4459,10 +4550,68 @@ function AdminScreen({ onBack, onImpersonate }: {
 
 // ── SESSION SCREEN ────────────────────────────────────────────────────────
 
-function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace }: {
+// ── RUN FEEDBACK CARD ─────────────────────────────────────────────────────
+
+function RunFeedbackCard({ analysis }: { analysis: any }) {
+  const verdict     = analysis.verdict as string
+  const score       = analysis.total_score as number
+  const feedback    = analysis.feedback_text as string | null
+
+  const verdictConfig = {
+    nailed:     { color: 'var(--teal)',   label: 'Nailed it' },
+    close:      { color: 'var(--accent)', label: 'Close' },
+    off_target: { color: 'var(--amber)',  label: 'Off target' },
+    concerning: { color: 'var(--coral)',  label: 'Check this' },
+  }[verdict] ?? { color: 'var(--text-muted)', label: verdict }
+
+  return (
+    <div style={{ marginTop: '12px', background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', borderLeft: `3px solid ${verdictConfig.color}`, overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          Coach
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: verdictConfig.color, background: `${verdictConfig.color}18`, padding: '2px 8px', borderRadius: '20px' }}>
+            {verdictConfig.label}
+          </span>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
+            {score}/100
+          </span>
+        </div>
+      </div>
+      {/* Score bars */}
+      <div style={{ padding: '12px 14px', display: 'flex', gap: '8px' }}>
+        {[
+          { label: 'HR', value: analysis.hr_discipline_score },
+          { label: 'Distance', value: analysis.distance_score },
+          { label: 'Pace', value: analysis.pace_score },
+          { label: 'Efficiency', value: analysis.ef_score },
+        ].map(({ label, value }) => value !== undefined && (
+          <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
+            <div style={{ width: '100%', height: '4px', background: 'var(--bg)', borderRadius: '2px', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${value}%`, background: value >= 80 ? 'var(--teal)' : value >= 60 ? 'var(--accent)' : 'var(--amber)', borderRadius: '2px', transition: 'width 0.4s ease' }} />
+            </div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 500 }}>{value}</div>
+          </div>
+        ))}
+      </div>
+      {/* AI feedback text */}
+      {feedback && (
+        <div style={{ padding: '0 14px 14px', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+          {feedback}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, runAnalysis, hasPaidAccess }: {
   session: any; preloadedRuns: any[]; onBack: () => void; onSaved?: () => void
   preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number; preferredMetric?: 'distance' | 'duration'
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
+  runAnalysis?: any | null; hasPaidAccess?: boolean
 }) {
   const color = getSessionColor(session.type ?? 'easy')
   const typeLabel = getSessionLabel(session.type ?? 'easy')
@@ -4515,6 +4664,11 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
             aerobicPace={aerobicPace}
           />
         </div>
+
+        {/* Run analysis feedback card — shown after a session is analysed */}
+        {runAnalysis && hasPaidAccess && (
+          <RunFeedbackCard analysis={runAnalysis} />
+        )}
       </div>
     </div>
   )

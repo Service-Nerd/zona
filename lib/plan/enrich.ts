@@ -148,7 +148,7 @@ function buildUserMessage(plan: Plan, input: GeneratorInput, wantPaidFields: boo
 
 ATHLETE:
 - Name: ${input.athlete_name ?? 'Athlete'}
-- Fitness level: ${input.fitness_level}
+- Fitness level: ${plan.meta.fitness_level ?? input.fitness_level ?? 'intermediate'}
 - Goal: ${input.goal === 'time_target' ? `Finish in ${input.target_time}` : 'Finish the race'}
 - Race: ${plan.meta.race_name} — ${plan.meta.race_date} (${input.race_distance_km} km)
 - Current weekly volume: ${input.current_weekly_km} km/week

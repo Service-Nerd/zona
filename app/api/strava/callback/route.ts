@@ -39,7 +39,7 @@ export async function GET(request: Request) {
       throw new Error(`Token exchange failed: ${tokenBody.message ?? tokenRes.status}`)
     }
 
-    const { access_token, refresh_token, expires_at } = tokenBody
+    const { access_token, refresh_token, expires_at, athlete } = tokenBody
 
     // Use service role client to bypass RLS — safe, server-side only
     const supabase = createClient(
@@ -52,6 +52,7 @@ export async function GET(request: Request) {
       strava_access_token: access_token,
       strava_refresh_token: refresh_token,
       strava_token_expires_at: expires_at,
+      strava_athlete_id: athlete?.id ?? null,
       updated_at: new Date().toISOString(),
     })
 

@@ -22,6 +22,7 @@
 | R0.5 — Onboarding | New user auto-routed to wizard on empty plan. Wizard state persisted in sessionStorage. Upgrade-from-wizard routing. Plan archive (data protection). Welcome screen bug fixed. |
 | Design system fixes | Zone colour coherence (Z1–Z5 now match session type colours). `--red` token removed. Strava HR colour fixed. Plan overwrite warning. `ui-patterns.md` zone invariant documented. |
 | Login + loading screen audit | Login heading/subtext now mode-aware. Tagline aligned to canonical copy. Loading button copy improved. Signup subtext surfaces 14-day trial. Spinner removed from loading state (no-spinner principle). Google Fonts weight range extended to 400;500;600;700 — bold metrics and headings now render at correct weight throughout the app. |
+| Strava coaching features (Phases 1–5) | Full coaching pipeline: per-session run analysis (4-dimension scoring: HR discipline 50%, distance 25%, pace 15%, EF 10%), weekly report generation, AI-generated feedback and report copy (claude-haiku-4-5-20251001, silent fallback to rule-based). Strava webhook for auto-analysis pipeline. Coach tab enabled for paid users (was admin-only). Dynamic plan adjustment triggers + revert. Push notifications (web-push + VAPID, service worker, Vercel cron Sunday 18:00). `lib/coaching/` module tree with constants, scoring, matching, EF trend, load calc, weekly report, plan adjustment, AI prompt templates. 6 Supabase migrations: run_analysis, weekly_reports, plan_adjustments, strava_activities, strava_athlete_id, dynamic_adjustments_enabled, push_subscriptions. R20 dynamic reshaping merged into Feature 3 (plan adjustment triggers). |
 
 ---
 
@@ -94,13 +95,19 @@
 | Apply migration `20260422_trial_started_at.sql` | ✅ | `ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS trial_started_at TIMESTAMPTZ` |
 | Set `STRIPE_PRICE_MONTHLY` + `STRIPE_PRICE_ANNUAL` in Vercel | 🔲 | Price IDs from Stripe dashboard after creating product |
 | Set `STRIPE_SECRET_KEY` in Vercel | 🔲 | Stripe dashboard → Developers → API keys |
-| Set `STRIPE_WEBHOOK_SECRET` in Vercel | 🔲 | Stripe dashboard → Webhooks → add endpoint `https://zona.vercel.app/api/webhooks/stripe`, copy signing secret |
+| Set `STRIPE_WEBHOOK_SECRET` in Vercel | 🔲 | Stripe dashboard → Webhooks → add endpoint `https://zona-service-nerds-projects.vercel.app/api/webhooks/stripe`, copy signing secret |
 | Set `REVENUECAT_WEBHOOK_SECRET` in Vercel | 🔲 | RevenueCat dashboard → Integrations → Webhooks → set URL + copy secret |
 | Set `SUPABASE_SERVICE_ROLE_KEY` in Vercel | 🔲 | Supabase dashboard → Settings → API → service_role key (keep secret) |
 | Create Stripe product + price | 🔲 | Product: "Zona Premium", Price: TBD (depends on D4), billing: monthly + annual, 14-day trial |
 | Configure RevenueCat app + entitlement | 🔲 | Link to App Store product ID, set entitlement identifier (e.g. `zona_premium`) |
 | Enrol in Apple Small Business Program | 🔲 | 15% vs 30% cut — do before first live transaction |
 | Point `zona.app/privacy` at live URL | 🔲 | Privacy policy page built, needs custom domain live |
+| Apply 6 coaching migrations in Supabase SQL editor | 🔲 | `20260425_run_analysis.sql`, `20260425_weekly_reports.sql`, `20260425_plan_adjustments.sql` (includes strava_activities), `20260425_strava_athlete_id.sql`, `20260425_dynamic_adjustments.sql`, `20260425_push_subscriptions.sql` |
+| Set `STRAVA_WEBHOOK_VERIFY_TOKEN` in Vercel | 🔲 | Any secret string — used to verify Strava webhook subscription challenge |
+| Set `CRON_SECRET` in Vercel | 🔲 | Any secret string — protects `/api/push/send-weekly-report` cron endpoint |
+| Generate VAPID keys and set in Vercel | 🔲 | `npx web-push generate-vapid-keys` → set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (e.g. `mailto:push@zona.app`) |
+| Set `NEXT_PUBLIC_APP_URL` in Vercel | 🔲 | e.g. `https://zona-service-nerds-projects.vercel.app` — used by cron to call internal API routes |
+| Register Strava webhook subscription | 🔲 | POST to Strava API with callback URL `https://zona-service-nerds-projects.vercel.app/api/webhooks/strava` after VAPID/env vars are set and app is deployed |
 
 ---
 
@@ -119,8 +126,6 @@
 ### Explicitly out of v1
 | Feature | Why deferred |
 |---------|-------------|
-| Coach tab | Admin-only. No caching, not plan-phase-aware, adds AI cost before monetisation is live. |
-| Dynamic plan reshaping (R20) | PAID, post-launch. |
 | Plan confidence score (R18) | PAID, post-launch. |
 | Strength sessions full content (R21) | Admin-only for launch — ghost feature, hidden from public view. |
 | Blockout days (R22) | PAID, post-launch. |
@@ -133,11 +138,6 @@
 
 Ordered by value. Each item needs FREE/PAID tag confirmed in `docs/canonical/feature-registry.md` before build begins.
 
-### Coach Tab — Re-enable for public
-**Tier:** PAID | **Priority:** P1 post-launch
-- Built and working but admin-only at launch
-- To re-enable: (1) add localStorage caching per `activity_id`, (2) pass `weekNum`, `phase`, `weeklyKm` to Claude prompt, (3) remove `isAdmin` gate in DashboardClient more-menu
-
 ### R18 — Plan Confidence Score
 **Tier:** PAID
 - Derive confidence score from recent session completion + RPE data
@@ -149,12 +149,12 @@ Ordered by value. Each item needs FREE/PAID tag confirmed in `docs/canonical/fea
 - Move hardcoded coaching copy into Supabase table
 - Enables dynamic, user-specific coaching messages
 
-### R20 — Dynamic Plan Reshaping
-**Tier:** PAID
-- Reshape active plan based on fatigue, missed sessions, race proximity
-- Separate flow from plan creation (R23); shares schema and rules
-- See `docs/canonical/adaptation-rules.md` for reshaping logic
-- **R23 schema inheritance**: R23 plans include `Session.id` (format `w{N}-{day}`, e.g. `w5-wed`) for targeted session updates, `Plan.phases[]` for phase-aware reshaping, and `meta.tier` / `meta.compressed`. R20 inherits the hybrid generation architecture (ADR-006) — reshaper is also a rule engine + optional enrichment.
+### R20 — Dynamic Plan Reshaping ✅ Merged into coaching pipeline
+**Tier:** PAID | **Status:** Core shipped as Feature 3 (plan adjustment triggers)
+- Adjustment triggers shipped: load_spike, zone_drift, shadow_load, ef_decline — auto-apply low-risk, confirm-required for significant
+- Plan adjustment API: `/api/adjust-plan` + `/api/revert-adjustment` (full revert to sessions_before snapshot)
+- Hard caps enforced: max 2 adjustments/week, 3-week taper protection, 10% max volume increase, 48hr quality spacing
+- Remaining post-launch: user-initiated reshape flow (manual trigger from Me screen), phase-aware reshaping using `Plan.phases[]`
 
 ### R21 — Strength Sessions
 **Tier:** FREE (display stubs) / PAID (dynamic)
@@ -194,6 +194,14 @@ Ordered by value. Each item needs FREE/PAID tag confirmed in `docs/canonical/fea
 |---------|------|
 | Session swap | PAID |
 | AM/PM scheduling | PAID |
+
+---
+
+## Scoped But Unscheduled — Ops
+
+| Item | Notes |
+|------|-------|
+| Rename Vercel project to `zona` (or `zona-app`) | Currently `zona-service-nerds-projects` — taken at rename time. Pick a cleaner name when available, then update `NEXT_PUBLIC_APP_URL` env var, `CLAUDE.md`, `docs/releases/backlog.md`, and `app/api/checkout/route.ts` fallback. |
 
 ---
 

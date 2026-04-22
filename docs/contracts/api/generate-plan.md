@@ -19,14 +19,12 @@ Body: GeneratorInput
 ```typescript
 {
   race_date: string               // ISO date "YYYY-MM-DD"
-  race_distance_km: number
+  race_distance_km: number        // 5K/10K/HM free; Marathon/50K/100K PAID
   goal: 'finish' | 'time_target'
-  fitness_level: 'beginner' | 'intermediate' | 'experienced'
-  current_weekly_km: number
-  longest_recent_run_km: number
+  current_weekly_km: number       // 4-week average
+  longest_recent_run_km: number   // within last 6 weeks
   days_available: number          // 2–6
-  resting_hr: number
-  max_hr: number
+  age: number                     // used for Tanaka max HR (208 − 0.7 × age)
 }
 ```
 
@@ -34,12 +32,27 @@ Body: GeneratorInput
 
 ```typescript
 {
+  // Fitness — all derived server-side; supply to override derivation
+  fitness_level?: 'beginner' | 'intermediate' | 'experienced'  // derived from data if absent
+  resting_hr?: number             // improves Karvonen zone accuracy; falls back to HRmax%
+  max_hr?: number                 // derived from age via Tanaka if absent
+
+  // Benchmark — enables VDOT-based pace targets (Jack Daniels model)
+  benchmark?: {
+    type: 'race' | 'tt_30min'
+    distance_km: number           // race distance OR km covered in 30 min
+    time: string                  // finish time e.g. "25:30", "1:52:00". "30:00" for TT.
+  }
+
+  // Race
   race_name?: string
-  target_time?: string            // only if goal = 'time_target'
-  zone2_ceiling?: number          // computed via Karvonen if absent
+  target_time?: string            // only if goal = 'time_target'. Derives goal_pace_per_km.
+
+  // Schedule
   days_cannot_train?: string[]    // full day names e.g. ['monday', 'friday']
   max_weekday_mins?: number
-  max_weekend_mins?: number
+
+  // Profile (Step 4 — paid/trial only)
   training_style?: 'predictable' | 'variety' | 'minimalist' | 'structured'
   hard_session_relationship?: 'avoid' | 'neutral' | 'love' | 'overdo'
   motivation_type?: 'identity' | 'achievement' | 'health' | 'social'
@@ -78,8 +91,11 @@ produced the plan.
 
 Triggered by:
 - Race fewer than 3 weeks away
-- Marathon+ race fewer than 6 weeks away
+- Marathon+ race fewer than 8 weeks away
+- Half marathon race fewer than 4 weeks away
 - Fewer than 2 days available per week
+- Marathon distance with current_weekly_km < 20
+- HM+ distance with longest_recent_run_km < 5
 
 ### 500 — Unexpected error
 

@@ -143,7 +143,7 @@ Duration > 60 minutes must display as `Xh` or `XhYY` — never as raw minutes.
 
 ## Coaching Flag Logic — `getCoachingFlag()`
 
-Pure function. Location: `DashboardClient.tsx`. Inputs: `sessionType`, `rpe`, `avgHr`, `zone2Ceiling`.
+Pure function. Location: `lib/coaching/coachingFlag.ts`. Imported by `DashboardClient.tsx`. Inputs: `sessionType`, `rpe`, `avgHr`, `zone2Ceiling`.
 
 | Session type | Condition | Flag |
 |---|---|---|

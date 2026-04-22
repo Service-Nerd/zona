@@ -16,12 +16,19 @@ const WIZARD_KEY = 'zona_wizard_draft'
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const DISTANCES = [
-  { label: '5K',        value: 5 },
-  { label: '10K',       value: 10 },
-  { label: 'Half',      value: 21.1 },
-  { label: 'Marathon',  value: 42.2 },
-  { label: '50K',       value: 50 },
-  { label: '100K',      value: 100 },
+  { label: '5K',       value: 5,    paid: false },
+  { label: '10K',      value: 10,   paid: false },
+  { label: 'Half',     value: 21.1, paid: false },
+  { label: 'Marathon', value: 42.2, paid: true  },
+  { label: '50K',      value: 50,   paid: true  },
+  { label: '100K',     value: 100,  paid: true  },
+]
+
+const BENCHMARK_DISTANCES = [
+  { label: '5K',   value: 5    },
+  { label: '10K',  value: 10   },
+  { label: 'Half', value: 21.1 },
+  { label: 'Full', value: 42.2 },
 ]
 
 const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -48,7 +55,7 @@ const STEP_META: Record<WizardStep, { title: string; subtitle: string }> = {
   1: { title: 'Your race.',          subtitle: 'Start with the finish line. Work backwards from there.' },
   2: { title: 'Be honest.',          subtitle: "The plan only works if these numbers are real. Flattering yourself here just means a harder race." },
   3: { title: 'Your schedule.',      subtitle: "Training has to fit your life. Not the other way around." },
-  4: { title: 'A bit more detail.',  subtitle: "Fill what you know. Skip what you don't. HR data makes every session smarter." },
+  4: { title: 'A bit more detail.',  subtitle: "Terrain, injury history, training preferences. Skip what doesn't apply." },
 }
 
 
@@ -332,7 +339,6 @@ export default function GeneratePlanScreen({
   firstName,
   lastName,
   restingHR: initialRHR,
-  maxHR: initialMHR,
   onPlanSaved,
   isOnboarding = false,
   hasExistingPlan = false,
@@ -343,12 +349,11 @@ export default function GeneratePlanScreen({
   firstName?: string
   lastName?: string
   restingHR?: number | null
-  maxHR?: number | null
   onPlanSaved?: (plan: Plan) => Promise<void>
   isOnboarding?: boolean
-  hasExistingPlan?: boolean  // true = warn user that this overwrites their current plan
-  hasPaidAccess?: boolean    // false = free tier: 3 steps, teaser, no Step 4
-  onUpgrade?: () => void     // navigate to UpgradeScreen
+  hasExistingPlan?: boolean
+  hasPaidAccess?: boolean
+  onUpgrade?: () => void
 }) {
   const lastStep: WizardStep = hasPaidAccess ? 4 : 3
   const totalSteps = hasPaidAccess ? 4 : 3
@@ -366,9 +371,14 @@ export default function GeneratePlanScreen({
   const [targetTime, setTargetTime] = useState('')
 
   // Step 2 — Fitness
-  const [fitnessLevel, setFitnessLevel] = useState<'beginner' | 'intermediate' | 'experienced' | null>(null)
-  const [weeklyKm, setWeeklyKm]         = useState('')
-  const [longestRun, setLongestRun]     = useState('')
+  const [age, setAge]             = useState('')
+  const [weeklyKm, setWeeklyKm]   = useState('')
+  const [longestRun, setLongestRun] = useState('')
+  // Benchmark — optional, enables VDOT-derived paces
+  const [benchmarkType, setBenchmarkType] = useState<'race' | 'tt_30min' | null>(null)
+  const [benchmarkDistKm, setBenchmarkDistKm] = useState<number | null>(null)
+  const [benchmarkTime, setBenchmarkTime] = useState('')
+  const [benchmarkTTDist, setBenchmarkTTDist] = useState('')
 
   // Step 3 — Schedule
   const [daysAvailable, setDaysAvailable] = useState<number | null>(null)
@@ -376,18 +386,16 @@ export default function GeneratePlanScreen({
   const [maxWeekday, setMaxWeekday]       = useState('')
 
   // Step 4 — Profile (all optional, paid/trial only)
-  const [restingHR, setRestingHR]         = useState(initialRHR ? String(initialRHR) : '')
-  const [maxHR, setMaxHR]                 = useState(initialMHR ? String(initialMHR) : '')
-  const [terrain, setTerrain]             = useState<string | null>(null)
+  const [restingHR, setRestingHR] = useState(initialRHR ? String(initialRHR) : '')
+  const [terrain, setTerrain]     = useState<string | null>(null)
   const [hardSessions, setHardSessions]   = useState<string | null>(null)
   const [trainingStyle, setTrainingStyle] = useState<string | null>(null)
   const [injuries, setInjuries]           = useState<string[]>([])
 
-  // Pre-fill HR from profile if it arrives after mount
+  // Pre-fill resting HR from profile if it arrives after mount
   useEffect(() => {
     if (initialRHR && !restingHR) setRestingHR(String(initialRHR))
-    if (initialMHR && !maxHR) setMaxHR(String(initialMHR))
-  }, [initialRHR, initialMHR])
+  }, [initialRHR])
 
   // Restore wizard draft from sessionStorage on mount (survives back-navigation and upgrade flow)
   useEffect(() => {
@@ -396,21 +404,25 @@ export default function GeneratePlanScreen({
       if (!raw) return
       const s = JSON.parse(raw)
       if (typeof s.appStep === 'number' && s.appStep >= 1 && s.appStep <= 4) setAppStep(s.appStep as WizardStep)
-      if (s.raceName)              setRaceName(s.raceName)
-      if (s.raceDate)              setRaceDate(s.raceDate)
-      if (s.distanceKm != null)    setDistanceKm(s.distanceKm)
-      if (s.goal)                  setGoal(s.goal)
-      if (s.targetTime)            setTargetTime(s.targetTime)
-      if (s.fitnessLevel)          setFitnessLevel(s.fitnessLevel)
-      if (s.weeklyKm)              setWeeklyKm(s.weeklyKm)
-      if (s.longestRun)            setLongestRun(s.longestRun)
-      if (s.daysAvailable != null) setDaysAvailable(s.daysAvailable)
-      if (s.daysOff)               setDaysOff(s.daysOff)
-      if (s.maxWeekday)            setMaxWeekday(s.maxWeekday)
-      if (s.terrain)               setTerrain(s.terrain)
-      if (s.hardSessions)          setHardSessions(s.hardSessions)
-      if (s.trainingStyle)         setTrainingStyle(s.trainingStyle)
-      if (s.injuries)              setInjuries(s.injuries)
+      if (s.raceName)                  setRaceName(s.raceName)
+      if (s.raceDate)                  setRaceDate(s.raceDate)
+      if (s.distanceKm != null)        setDistanceKm(s.distanceKm)
+      if (s.goal)                      setGoal(s.goal)
+      if (s.targetTime)                setTargetTime(s.targetTime)
+      if (s.age)                       setAge(s.age)
+      if (s.weeklyKm)                  setWeeklyKm(s.weeklyKm)
+      if (s.longestRun)                setLongestRun(s.longestRun)
+      if (s.benchmarkType)             setBenchmarkType(s.benchmarkType)
+      if (s.benchmarkDistKm != null)   setBenchmarkDistKm(s.benchmarkDistKm)
+      if (s.benchmarkTime)             setBenchmarkTime(s.benchmarkTime)
+      if (s.benchmarkTTDist)           setBenchmarkTTDist(s.benchmarkTTDist)
+      if (s.daysAvailable != null)     setDaysAvailable(s.daysAvailable)
+      if (s.daysOff)                   setDaysOff(s.daysOff)
+      if (s.maxWeekday)                setMaxWeekday(s.maxWeekday)
+      if (s.terrain)                   setTerrain(s.terrain)
+      if (s.hardSessions)              setHardSessions(s.hardSessions)
+      if (s.trainingStyle)             setTrainingStyle(s.trainingStyle)
+      if (s.injuries)                  setInjuries(s.injuries)
     } catch {}
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -420,13 +432,15 @@ export default function GeneratePlanScreen({
     try {
       sessionStorage.setItem(WIZARD_KEY, JSON.stringify({
         appStep, raceName, raceDate, distanceKm, goal, targetTime,
-        fitnessLevel, weeklyKm, longestRun,
+        age, weeklyKm, longestRun,
+        benchmarkType, benchmarkDistKm, benchmarkTime, benchmarkTTDist,
         daysAvailable, daysOff, maxWeekday,
         terrain, hardSessions, trainingStyle, injuries,
       }))
     } catch {}
   }, [appStep, raceName, raceDate, distanceKm, goal, targetTime,
-      fitnessLevel, weeklyKm, longestRun,
+      age, weeklyKm, longestRun,
+      benchmarkType, benchmarkDistKm, benchmarkTime, benchmarkTTDist,
       daysAvailable, daysOff, maxWeekday,
       terrain, hardSessions, trainingStyle, injuries])
 
@@ -436,7 +450,7 @@ export default function GeneratePlanScreen({
     return raceDate !== '' && distanceKm !== null && goal !== null && (goal !== 'time_target' || targetTime !== '')
   }
   function step2Valid() {
-    return fitnessLevel !== null && weeklyKm !== '' && longestRun !== ''
+    return age !== '' && Number(age) >= 14 && Number(age) <= 90 && weeklyKm !== '' && longestRun !== ''
   }
   function step3Valid() {
     return daysAvailable !== null
@@ -475,24 +489,31 @@ export default function GeneratePlanScreen({
     setError(null)
     setPlan(null)   // reset so ceremony starts in loading phase
 
-    const rhr = restingHR ? Number(restingHR) : 55
-    const mhr = maxHR     ? Number(maxHR)     : 185
+    const benchmark = (() => {
+      if (benchmarkType === 'race' && benchmarkDistKm && benchmarkTime) {
+        return { type: 'race' as const, distance_km: benchmarkDistKm, time: benchmarkTime }
+      }
+      if (benchmarkType === 'tt_30min' && benchmarkTTDist) {
+        return { type: 'tt_30min' as const, distance_km: Number(benchmarkTTDist), time: '30:00' }
+      }
+      return undefined
+    })()
 
     const input: GeneratorInput = {
-      race_date:                 raceDate,
-      race_distance_km:          distanceKm!,
-      race_name:                 raceName || undefined,
-      goal:                      goal!,
-      target_time:               goal === 'time_target' ? targetTime : undefined,
-      fitness_level:             fitnessLevel!,
-      current_weekly_km:         Number(weeklyKm),
-      longest_recent_run_km:     Number(longestRun),
-      days_available:            daysAvailable!,
-      resting_hr:                rhr,
-      max_hr:                    mhr,
-      days_cannot_train:         daysOff.length ? daysOff : undefined,
-      max_weekday_mins:          maxWeekday ? Number(maxWeekday) : undefined,
-      // Step 4 fields — only collected for paid/trial users
+      race_date:             raceDate,
+      race_distance_km:      distanceKm!,
+      race_name:             raceName || undefined,
+      goal:                  goal!,
+      target_time:           goal === 'time_target' ? targetTime : undefined,
+      age:                   Number(age),
+      current_weekly_km:     Number(weeklyKm),
+      longest_recent_run_km: Number(longestRun),
+      days_available:        daysAvailable!,
+      resting_hr:            restingHR ? Number(restingHR) : undefined,
+      benchmark,
+      days_cannot_train:     daysOff.length ? daysOff : undefined,
+      max_weekday_mins:      maxWeekday ? Number(maxWeekday) : undefined,
+      // Step 4 fields — paid/trial only
       training_style:            hasPaidAccess ? (trainingStyle as GeneratorInput['training_style'] ?? undefined) : undefined,
       hard_session_relationship: hasPaidAccess ? (hardSessions as GeneratorInput['hard_session_relationship'] ?? undefined) : undefined,
       injury_history:            hasPaidAccess && injuries.length ? injuries.map(i => i.toLowerCase()) : undefined,
@@ -724,15 +745,45 @@ export default function GeneratePlanScreen({
             <div>
               <FieldLabel>Distance</FieldLabel>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {DISTANCES.map(d => (
-                  <ChipToggle
-                    key={d.value}
-                    label={d.label}
-                    active={distanceKm === d.value}
-                    onClick={() => setDistanceKm(d.value)}
-                  />
-                ))}
+                {DISTANCES.map(d => {
+                  const locked = d.paid && !hasPaidAccess
+                  const active = distanceKm === d.value
+                  return (
+                    <button
+                      key={d.value}
+                      onClick={() => locked ? onUpgrade?.() : setDistanceKm(d.value)}
+                      style={{
+                        padding: '9px 16px',
+                        borderRadius: '10px',
+                        border: `0.5px solid ${active ? 'var(--accent)' : locked ? 'var(--border-col)' : 'var(--border-col)'}`,
+                        background: active ? 'var(--accent-soft)' : 'none',
+                        color: active ? 'var(--accent)' : locked ? 'var(--text-muted)' : 'var(--text-secondary)',
+                        fontFamily: 'var(--font-ui)',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        whiteSpace: 'nowrap',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        opacity: locked ? 0.6 : 1,
+                      }}
+                    >
+                      {d.label}
+                      {locked && (
+                        <span style={{ fontSize: '10px', color: 'var(--teal)', letterSpacing: '0.04em' }}>
+                          PAID
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
+              {!hasPaidAccess && (
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                  Marathon and longer require a paid plan. <button onClick={onUpgrade} style={{ background: 'none', border: 'none', color: 'var(--teal)', fontFamily: 'var(--font-ui)', fontSize: '11px', cursor: 'pointer', padding: 0 }}>Start free trial →</button>
+                </div>
+              )}
             </div>
 
             <div>
@@ -757,42 +808,88 @@ export default function GeneratePlanScreen({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
             <div>
-              <FieldLabel>How would you describe your running?</FieldLabel>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {([
-                  { value: 'beginner',     label: 'Starting out',       desc: "Running a few times a week. Longest run under 10km." },
-                  { value: 'intermediate', label: 'Getting serious',     desc: "Running consistently. Completed a few races. Up to half-marathon distance." },
-                  { value: 'experienced',  label: 'Been at it a while',  desc: "Regular training, multiple race finishes, comfortable with long distances." },
-                ] as { value: 'beginner' | 'intermediate' | 'experienced'; label: string; desc: string }[]).map(opt => (
-                  <button
-                    key={opt.value}
-                    onClick={() => setFitnessLevel(opt.value)}
-                    style={{
-                      padding: '14px 16px', borderRadius: '12px', textAlign: 'left',
-                      border: `0.5px solid ${fitnessLevel === opt.value ? 'var(--accent)' : 'var(--border-col)'}`,
-                      background: fitnessLevel === opt.value ? 'var(--accent-soft)' : 'var(--card-bg)',
-                      cursor: 'pointer', transition: 'all 0.15s',
-                    }}
-                  >
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500, color: fitnessLevel === opt.value ? 'var(--accent)' : 'var(--text-primary)', marginBottom: '3px' }}>
-                      {opt.label}
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                      {opt.desc}
-                    </div>
-                  </button>
-                ))}
+              <FieldLabel>Age</FieldLabel>
+              <StepInput type="number" value={age} onChange={setAge} placeholder="32" min={14} max={90} />
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                Used to calculate your max heart rate and training zones.
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <FieldLabel>Weekly km (avg)</FieldLabel>
+                <FieldLabel>Avg weekly km — last 4 weeks</FieldLabel>
                 <StepInput type="number" value={weeklyKm} onChange={setWeeklyKm} placeholder="35" min={0} />
               </div>
               <div>
-                <FieldLabel>Longest recent run (km)</FieldLabel>
+                <FieldLabel>Longest run — last 6 weeks (km)</FieldLabel>
                 <StepInput type="number" value={longestRun} onChange={setLongestRun} placeholder="18" min={0} />
+              </div>
+            </div>
+
+            {/* Benchmark — optional, enables VDOT-derived paces */}
+            <div>
+              <FieldLabel optional>Recent benchmark</FieldLabel>
+              <div style={{
+                background: 'var(--card-bg)', borderRadius: '12px',
+                border: '0.5px solid var(--border-col)', padding: '14px 16px',
+              }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '12px' }}>
+                  A recent race time or time trial gives us precise pace targets for every session. Without one we use population estimates — still works, less personal.
+                </div>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+                  <ChipToggle
+                    label="Recent race result"
+                    active={benchmarkType === 'race'}
+                    onClick={() => setBenchmarkType(benchmarkType === 'race' ? null : 'race')}
+                  />
+                  <ChipToggle
+                    label="30-min time trial"
+                    active={benchmarkType === 'tt_30min'}
+                    onClick={() => setBenchmarkType(benchmarkType === 'tt_30min' ? null : 'tt_30min')}
+                  />
+                </div>
+
+                {benchmarkType === 'race' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div>
+                      <FieldLabel>Race distance</FieldLabel>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {BENCHMARK_DISTANCES.map(d => (
+                          <ChipToggle
+                            key={d.value}
+                            label={d.label}
+                            active={benchmarkDistKm === d.value}
+                            onClick={() => setBenchmarkDistKm(d.value)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <FieldLabel>Finish time</FieldLabel>
+                      <StepInput
+                        value={benchmarkTime}
+                        onChange={setBenchmarkTime}
+                        placeholder="e.g. 25:30 or 1:52:00"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {benchmarkType === 'tt_30min' && (
+                  <div>
+                    <FieldLabel>Distance covered in 30 minutes (km)</FieldLabel>
+                    <StepInput
+                      type="number"
+                      value={benchmarkTTDist}
+                      onChange={setBenchmarkTTDist}
+                      placeholder="e.g. 5.2"
+                      min={1}
+                    />
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                      Run as far as you can in exactly 30 minutes on a flat surface. Record the distance.
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -857,23 +954,14 @@ export default function GeneratePlanScreen({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
             <div>
-              <FieldLabel optional>Heart rate data</FieldLabel>
+              <FieldLabel optional>Resting heart rate</FieldLabel>
               <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', padding: '14px 16px', marginBottom: '4px' }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '12px' }}>
-                  Used to calculate your personal Zone 2 ceiling. Skipping this uses population averages — it still works, just less precise.
+                  Refines your Zone 2 ceiling via the Karvonen formula. Check your wearable's overnight average, or measure first thing in the morning before getting up. Skip if you don't know it.
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div>
-                    <FieldLabel optional>Resting HR</FieldLabel>
-                    <StepInput type="number" value={restingHR} onChange={setRestingHR} placeholder="55" min={30} max={100} />
-                  </div>
-                  <div>
-                    <FieldLabel optional>Max HR</FieldLabel>
-                    <StepInput type="number" value={maxHR} onChange={setMaxHR} placeholder="185" min={130} max={220} />
-                  </div>
-                </div>
+                <StepInput type="number" value={restingHR} onChange={setRestingHR} placeholder="e.g. 52" min={30} max={100} />
               </div>
-              {(initialRHR || initialMHR) && (
+              {initialRHR && (
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--teal)', marginTop: '4px' }}>
                   Pre-filled from your profile
                 </div>

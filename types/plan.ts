@@ -1,3 +1,13 @@
+// ─── Benchmark input ──────────────────────────────────────────────────────────
+// Used to derive VDOT and accurate training paces (Jack Daniels model).
+// 'race': any recent race result. 'tt_30min': distance covered in a 30-minute time trial.
+
+export interface BenchmarkInput {
+  type: 'race' | 'tt_30min'
+  distance_km: number    // race distance OR distance covered in 30 min
+  time: string           // finish time e.g. "25:30", "1:52:00". For tt_30min always "30:00".
+}
+
 // ─── Plan generator input ─────────────────────────────────────────────────────
 // Shared between the API route and the client form — must not import server modules.
 
@@ -6,12 +16,18 @@ export interface GeneratorInput {
   race_date: string
   race_distance_km: number
   goal: 'finish' | 'time_target'
-  fitness_level: 'beginner' | 'intermediate' | 'experienced'
   current_weekly_km: number
   longest_recent_run_km: number
   days_available: number
-  resting_hr: number
-  max_hr: number
+  age: number                   // used for Tanaka max HR derivation
+
+  // Derived server-side (optional — computed from age + data if absent)
+  fitness_level?: 'beginner' | 'intermediate' | 'experienced'
+  resting_hr?: number           // optional — improves zone accuracy via Karvonen
+  max_hr?: number               // optional — derived from age (Tanaka: 208 − 0.7 × age)
+
+  // Benchmark — optional, enables VDOT-based pace derivation
+  benchmark?: BenchmarkInput
 
   // Optional
   race_name?: string
@@ -136,6 +152,13 @@ export interface PlanMeta {
   tier?: 'free' | 'trial' | 'paid'       // tier at which plan was generated
   compressed?: boolean                    // true if available weeks < ideal minimum for this distance
   coach_intro?: string                    // PAID only — enricher-generated intro paragraph
+
+  // R24 — VDOT / zone model fields
+  age?: number                            // athlete age at time of generation
+  vdot?: number                           // Jack Daniels VDOT score (from benchmark)
+  goal_pace_per_km?: string               // e.g. "5:04 /km" — target race pace, not a training zone
+  recalibration_weeks?: number[]          // week numbers where a benchmark re-test is scheduled
+  benchmark?: BenchmarkInput              // stored so recalibration can reference original
 }
 
 export interface Plan {
