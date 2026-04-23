@@ -524,6 +524,35 @@ No spinner. No percentage. The reveal is the payoff — not the wait.
 
 ---
 
+### 16. SectionLabel
+
+Eyebrow label above a group of related rows. Used to name a category section in list-based screens (MeScreen, settings).
+
+```
+CAREFUL NOW                     ← uppercase, muted, 10px, 0.08em tracking
+──────────────────────────────  ← optional top divider
+[row]
+[row]
+```
+
+**Rules:**
+- Text: `10px 700 --mute uppercase 0.08em tracking`
+- Padding: `0 16px`, margin-bottom `8px`
+- No border on the label itself — the section content provides its own borders
+- Use before groups of destructive or irreversible actions (account deletion, sign-out)
+- Use before any grouping where the category isn't obvious from the rows alone
+
+**Anatomy in MeScreen:**
+```
+[SectionLabel: Careful now]
+  Sign out
+  Delete account
+```
+
+Reference: `components/shared/SectionLabel.tsx` (if extracted) or inline in `DashboardClient.tsx`
+
+---
+
 ## Screen Templates
 
 ### Today Screen
@@ -552,7 +581,7 @@ No spinner. No percentage. The reveal is the payoff — not the wait.
 
 ### Session Detail Screen
 
-- Full screen, back arrow top-left (36px circle, `--bg-soft` bg)
+- Full screen, back arrow top-left (44px circle, `--bg-soft` bg)
 - Eyebrow: day + week label (`10px 600 --mute uppercase`)
 - Title: session name (`16px 700 --ink`)
 - Session type chip right-aligned
@@ -632,6 +661,7 @@ Canonical examples: `GeneratingCeremony.tsx`, `GeneratePlanScreen.tsx`
 | Icons everywhere | Text labels where space allows |
 | Spinner loading states | Skeleton placeholders |
 | Alert/modal popups | Navigate to full screen |
+| Button tap target < 44px | `width/height: 44px` or `minHeight: 44px` — iOS HIG minimum |
 | Centred-only layouts | Left-aligned with consistent margin |
 | Dark mode anything | Single light theme (ADR-008) |
 
