@@ -27,8 +27,19 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const [planRes, analysisRes, prevWeeksRes, adjustmentsThisWeekRes] = await Promise.all([
-    serviceSupabase.from('plans').select('plan_json').eq('user_id', user.id).single(),
+  // Fetch plan first — weekN is needed to scope the adjustment count query.
+  const planRes = await serviceSupabase.from('plans').select('plan_json').eq('user_id', user.id).single()
+
+  const plan = planRes.data?.plan_json as Plan | null
+  if (!plan || plan.weeks.length === 0) {
+    return NextResponse.json({ error: 'No plan found' }, { status: 404 })
+  }
+
+  const weekIndex = getCurrentWeekIndex(plan.weeks)
+  const weekN     = weekIndex + 1
+  const week      = plan.weeks[weekIndex]
+
+  const [analysisRes, prevWeeksRes, adjustmentsThisWeekRes] = await Promise.all([
     serviceSupabase
       .from('run_analysis')
       .select('session_day, hr_in_zone_pct, actual_load_km, planned_load_km, ef_trend_pct')
@@ -45,20 +56,13 @@ export async function POST(req: NextRequest) {
       .from('plan_adjustments')
       .select('id')
       .eq('user_id', user.id)
+      .eq('week_n', weekN)
       .in('status', ['pending', 'confirmed', 'auto_applied']),
   ])
 
-  const plan = planRes.data?.plan_json as Plan | null
-  if (!plan || plan.weeks.length === 0) {
-    return NextResponse.json({ error: 'No plan found' }, { status: 404 })
-  }
+  const analyses = analysisRes.data ?? []
 
-  const weekIndex = getCurrentWeekIndex(plan.weeks)
-  const weekN     = weekIndex + 1
-  const week      = plan.weeks[weekIndex]
-  const analyses  = analysisRes.data ?? []
-
-  // Get this week's count of adjustments
+  // Count of adjustments already made this week — enforces MAX_ADJUSTMENTS_PER_WEEK.
   const adjustmentsThisWeek = (adjustmentsThisWeekRes.data ?? []).length
 
   // Build aggregates for trigger check
