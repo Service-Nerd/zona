@@ -140,8 +140,9 @@ export default function DashboardClient() {
   const [weeklyReport, setWeeklyReport] = useState<any | null>(null)
   const [pendingAdjustment, setPendingAdjustment] = useState<any | null>(null)
 
-  // Post-wizard orientation — shown once after plan generation
+  // Post-wizard orientation — shown once after first-ever plan generation (B-002)
   const [showOrientation, setShowOrientation] = useState(false)
+  const [orientationSeen, setOrientationSeen] = useState(false)
 
   // Strava token failure — set when refresh call returns non-200 for a user who had a token
   const [stravaTokenFailed, setStravaTokenFailed] = useState(false)
@@ -212,7 +213,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes, subRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
@@ -301,6 +302,9 @@ export default function DashboardClient() {
 
         // Dynamic adjustments toggle
         if (data?.dynamic_adjustments_enabled === false) setDynamicAdjustmentsEnabled(false)
+
+        // Orientation seen flag (B-002) — true means we've shown it before, don't show again
+        if (data?.orientation_seen) setOrientationSeen(true)
 
         // Coaching data — run analysis, weekly report, pending adjustments (paid/trial only)
         if (paidAccess) {
@@ -503,7 +507,8 @@ export default function DashboardClient() {
       await savePlanForUser(user.id, savedPlan, supabase)
       setPlan(savedPlan)
       setScreen('today')
-      setShowOrientation(true)
+      // Only show orientation on first-ever plan generation (B-002)
+      if (!orientationSeen) setShowOrientation(true)
     } catch (err) {
       console.error('Failed to save plan:', err)
       throw err
@@ -644,14 +649,21 @@ export default function DashboardClient() {
   // Plan not loaded yet (shouldn't normally reach here)
   if (!plan) return null
 
-  // Post-wizard orientation — shown once after a plan is generated or replaced
+  // Post-wizard orientation — shown once after first-ever plan generation (B-002)
   if (showOrientation) {
     return (
       <OrientationScreen
         plan={plan}
         firstName={firstName}
         zone2Ceiling={effectiveZone2Ceiling}
-        onDismiss={() => setShowOrientation(false)}
+        onDismiss={async () => {
+          setShowOrientation(false)
+          setOrientationSeen(true)
+          try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) void supabase.from('user_settings').upsert({ id: user.id, orientation_seen: true, updated_at: new Date().toISOString() })
+          } catch {}
+        }}
       />
     )
   }
