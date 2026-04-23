@@ -10,7 +10,6 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <div
-      data-theme="dark"
       style={{
         minHeight: '100dvh',
         background: 'var(--bg)',

@@ -193,8 +193,9 @@ export default function DashboardClient() {
   useEffect(() => {
     try {
       const p = localStorage.getItem('rts_phrase'); if (p) setResetPhrase(p)
-      const t = localStorage.getItem('rts_theme') as 'dark' | 'light' | 'auto' | null
-      if (t) { setTheme(t); applyTheme(t) } else { applyTheme('light') }
+      // DEPRECATED — rts_theme no longer used (see ADR-008). Theme read ignored.
+      // const t = localStorage.getItem('rts_theme') as 'dark' | 'light' | 'auto' | null
+      // if (t) { setTheme(t); applyTheme(t) } else { applyTheme('light') }
     } catch {}
 
     async function fetchSettings() {
@@ -396,23 +397,20 @@ export default function DashboardClient() {
     try { localStorage.setItem('rts_phrase', val) } catch {}
   }
 
+  /* Theme toggle removed per ADR-008 — single light theme only.
+     saveTheme() left as comment for one-release rollback window.
   function saveTheme(t: 'dark' | 'light' | 'auto') {
     setTheme(t)
     applyTheme(t)
+    // DEPRECATED — rts_theme no longer used (see ADR-008)
     try { localStorage.setItem('rts_theme', t) } catch {}
   }
+  */
 
-  function applyTheme(t: 'dark' | 'light' | 'auto') {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const isDark = t === 'dark' || (t === 'auto' && prefersDark)
-    const root = document.documentElement
-    // Just toggle the attribute — globals.css handles all the var values.
-    // Using setProperty here would override the CSS vars with inline styles,
-    // which breaks the cascade and causes the colour flash.
-    root.setAttribute('data-theme', isDark ? 'dark' : 'light')
-    // Remove any stale inline style overrides from old versions
-    const vars = ['--bg','--card-bg','--border-col','--text-primary','--text-secondary','--text-muted','--nav-bg']
-    vars.forEach(v => root.style.removeProperty(v))
+  function applyTheme(_t: 'dark' | 'light' | 'auto') {
+    // Theme system retired — single light theme only (see ADR-008).
+    // No-op. Call sites preserved to avoid missing-reference errors.
+    // Remove in Phase 2 cleanup.
   }
 
   async function dismissWelcome() {
@@ -4507,7 +4505,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         {/* Theme and personal tracking — not training-related */}
         <SectionLabel>App settings</SectionLabel>
         <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
-          {/* Theme */}
+          {/* Theme toggle removed per ADR-008 — single light theme only */}
+          {/*
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: smokeTrackerEnabled ? '0.5px solid var(--border-col)' : 'none' }}>
             <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Theme</div>
             <div style={{ display: 'flex', gap: '6px' }}>
@@ -4518,6 +4517,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
               ))}
             </div>
           </div>
+          */}
           {/* Smoke tracker — inline in app settings */}
           <div style={{ padding: '14px 16px', borderBottom: smokeTrackerEnabled ? '0.5px solid var(--border-col)' : 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: smokeTrackerEnabled ? '10px' : 0 }}>
