@@ -3835,7 +3835,7 @@ function StravaScreen({ runs, loading, connected, raceName, raceDate, raceDistan
 
 // ── PUSH NOTIFICATIONS ROW ────────────────────────────────────────────────
 
-function PushDebugRow() {
+function PushNotificationsRow() {
   const [status, setStatus] = useState<'checking' | 'unsupported' | 'subscribed' | 'denied' | 'idle'>('checking')
   const [loading, setLoading] = useState(false)
 
@@ -4484,7 +4484,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         {/* Strava powers run matching and post-run coaching analysis */}
         <SectionLabel>Connections</SectionLabel>
         <StravaConnectionRow />
-        <PushDebugRow />
+        {hasPaidAccess && <PushNotificationsRow />}
 
         {/* ── Race prep ──────────────────────────────────────────── */}
         <SectionLabel>Race prep</SectionLabel>
