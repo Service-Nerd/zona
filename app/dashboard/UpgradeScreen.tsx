@@ -60,7 +60,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
   }
 
   const items    = trialExpired ? LOSSES    : FEATURES
-  const accent   = trialExpired ? 'var(--amber)' : 'var(--teal)'
+  const accent   = trialExpired ? 'var(--warn)' : 'var(--moss)'
   const headline = trialExpired ? 'Your coaching has paused.' : "Your trial's done."
   const sub      = trialExpired ? "14 days done. Here's what stopped." : 'Time to make it official.'
 
@@ -76,7 +76,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
           onClick={onBack}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            color: 'var(--text-muted)', padding: '4px 0',
+            color: 'var(--mute)', padding: '4px 0',
             fontFamily: 'var(--font-ui)', fontSize: '15px',
             display: 'flex', alignItems: 'center', gap: '4px',
           }}
@@ -89,22 +89,22 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
       <div style={{ flex: 1, padding: '28px 20px 32px', display: 'flex', flexDirection: 'column' }}>
         {/* Headline */}
         <h1 style={{
-          fontFamily: 'var(--font-brand)',
-          fontWeight: 700, fontSize: '1.75rem',
-          color: 'var(--text-primary)', margin: 0,
-          lineHeight: 1.15,
+          fontFamily: 'var(--font-ui)',
+          fontWeight: 800, fontSize: '26px',
+          color: 'var(--ink)', margin: 0,
+          letterSpacing: '-0.5px', lineHeight: 1.15,
         }}>
           {headline}
         </h1>
         <p style={{
           fontFamily: 'var(--font-ui)',
           fontWeight: 400, fontSize: '0.9375rem',
-          color: 'var(--text-muted)', margin: '8px 0 0',
+          color: 'var(--mute)', margin: '8px 0 0',
         }}>
           {sub}
         </p>
 
-        <div style={{ height: '1px', background: 'var(--border-col)', margin: '24px 0' }} />
+        <div style={{ height: '1px', background: 'var(--line)', margin: '24px 0' }} />
 
         {/* Feature / loss list — left accent, session card visual language */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -113,8 +113,8 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
               key={f.name}
               style={{
                 display: 'flex', alignItems: 'flex-start',
-                background: 'var(--card-bg)',
-                border: '1px solid var(--border-col)',
+                background: 'var(--card)',
+                border: '1px solid var(--line)',
                 borderLeft: `3px solid ${accent}`,
                 borderRadius: '10px',
                 padding: '13px 16px',
@@ -123,11 +123,11 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
               <div>
                 <div style={{
                   fontFamily: 'var(--font-ui)', fontWeight: 600,
-                  fontSize: '0.9375rem', color: 'var(--text-primary)',
+                  fontSize: '0.9375rem', color: 'var(--ink)',
                 }}>{f.name}</div>
                 <div style={{
                   fontFamily: 'var(--font-ui)', fontWeight: 400,
-                  fontSize: '0.8125rem', color: 'var(--text-muted)',
+                  fontSize: '0.8125rem', color: 'var(--mute)',
                   marginTop: '2px',
                 }}>{f.detail}</div>
               </div>
@@ -135,7 +135,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
           ))}
         </div>
 
-        <div style={{ height: '1px', background: 'var(--border-col)', margin: '24px 0' }} />
+        <div style={{ height: '1px', background: 'var(--line)', margin: '24px 0' }} />
 
         {/* Pricing — metric pair pattern */}
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -144,19 +144,19 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
             disabled={loading}
             style={{
               flex: 1, textAlign: 'center',
-              background: 'var(--card-bg)',
-              border: '1px solid var(--border-col)',
+              background: 'var(--card)',
+              border: '1px solid var(--line)',
               borderRadius: '10px', padding: '16px 12px',
               cursor: loading ? 'default' : 'pointer',
             }}
           >
             <div style={{
               fontFamily: 'var(--font-ui)', fontWeight: 700,
-              fontSize: '1.5rem', color: 'var(--text-primary)',
+              fontSize: '1.5rem', color: 'var(--ink)',
             }}>{PRICING.monthly.display}</div>
             <div style={{
               fontFamily: 'var(--font-ui)', fontWeight: 400,
-              fontSize: '0.75rem', color: 'var(--text-muted)',
+              fontSize: '0.75rem', color: 'var(--mute)',
               marginTop: '4px',
             }}>per month</div>
           </button>
@@ -166,8 +166,8 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
             disabled={loading}
             style={{
               flex: 1, textAlign: 'center',
-              background: 'var(--card-bg)',
-              border: '2px solid var(--teal)',
+              background: 'var(--card)',
+              border: '2px solid var(--moss)',
               borderRadius: '10px', padding: '16px 12px',
               cursor: loading ? 'default' : 'pointer',
               position: 'relative',
@@ -176,21 +176,21 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
             <div style={{
               position: 'absolute', top: '-11px', left: '50%',
               transform: 'translateX(-50%)',
-              background: 'var(--teal)',
+              background: 'var(--moss)',
               borderRadius: '4px', padding: '2px 8px',
               fontFamily: 'var(--font-ui)', fontWeight: 600,
               fontSize: '0.625rem', letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              color: 'var(--zona-navy)',
+              color: 'var(--card)',
               whiteSpace: 'nowrap',
             }}>{PRICING.annual.savingLabel}</div>
             <div style={{
               fontFamily: 'var(--font-ui)', fontWeight: 700,
-              fontSize: '1.5rem', color: 'var(--text-primary)',
+              fontSize: '1.5rem', color: 'var(--ink)',
             }}>{PRICING.annual.display}</div>
             <div style={{
               fontFamily: 'var(--font-ui)', fontWeight: 400,
-              fontSize: '0.75rem', color: 'var(--text-muted)',
+              fontSize: '0.75rem', color: 'var(--mute)',
               marginTop: '4px',
             }}>per year · {PRICING.annual.perMonthDisplay}</div>
           </button>
@@ -199,7 +199,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
         {/* Legal */}
         <p style={{
           fontFamily: 'var(--font-ui)', fontWeight: 400,
-          fontSize: '0.6875rem', color: 'var(--text-muted)',
+          fontSize: '0.6875rem', color: 'var(--mute)',
           margin: '14px 0 0', textAlign: 'center', lineHeight: 1.5,
         }}>
           Auto-renews. Cancel any time.{' '}
@@ -210,7 +210,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
         {error && (
           <p style={{
             fontFamily: 'var(--font-ui)', fontSize: '0.875rem',
-            color: 'var(--amber)', margin: '12px 0 0', textAlign: 'center',
+            color: 'var(--warn)', margin: '12px 0 0', textAlign: 'center',
           }}>{error}</p>
         )}
 
@@ -220,10 +220,10 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
           disabled={loading}
           style={{
             marginTop: '20px', width: '100%', padding: '16px',
-            background: loading ? 'var(--border-col)' : 'var(--teal)',
+            background: loading ? 'var(--line)' : 'var(--moss)',
             border: 'none', borderRadius: '10px',
             fontFamily: 'var(--font-ui)', fontWeight: 600,
-            fontSize: '1rem', color: 'var(--zona-navy)',
+            fontSize: '1rem', color: 'var(--card)',
             cursor: loading ? 'default' : 'pointer',
             letterSpacing: '0.02em',
             transition: 'opacity 0.15s',
@@ -239,7 +239,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
             marginTop: '16px',
             background: 'none', border: 'none',
             fontFamily: 'var(--font-ui)', fontWeight: 400,
-            fontSize: '0.875rem', color: 'var(--text-muted)',
+            fontSize: '0.875rem', color: 'var(--mute)',
             cursor: 'pointer', textDecoration: 'underline',
             padding: '4px 0',
           }}
