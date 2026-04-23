@@ -940,8 +940,8 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, onDismiss }: {
 function ScreenHeader({ title, sub }: { title: string; sub?: string }) {
   return (
     <div style={{ padding: '16px 16px 8px' }}>
-      <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px' }}>{title}</div>
-      {sub && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '3px', letterSpacing: '0.04em' }}>{sub}</div>}
+      <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-ui)', letterSpacing: '-0.5px' }}>{title}</div>
+      {sub && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '3px', letterSpacing: '0.04em' }}>{sub}</div>}
     </div>
   )
 }
@@ -3920,38 +3920,38 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
         {/* Locked report card — mirrors the paid CoachScreen weekly report card anatomy */}
-        <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
-          <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-muted)', opacity: 0.3 }} />
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>This week</span>
+        <div style={{ background: 'var(--card)', borderRadius: '16px', border: '0.5px solid var(--line)', overflow: 'hidden' }}>
+          <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--line)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--mute)', opacity: 0.3 }} />
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>This week</span>
           </div>
           <div style={{ padding: '16px' }}>
-            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '-0.3px', lineHeight: 1.3, marginBottom: '8px', opacity: 0.45 }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 600, color: 'var(--mute)', letterSpacing: '-0.3px', lineHeight: 1.3, marginBottom: '8px', opacity: 0.45 }}>
               Your weekly coaching report.
             </div>
-            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, margin: 0, opacity: 0.5 }}>
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.7, margin: 0, opacity: 0.5 }}>
               Connect Strava and run a few sessions. We'll tell you exactly what's working — and what isn't.
             </p>
           </div>
           {/* Locked stats row */}
-          <div style={{ padding: '10px 16px', borderTop: '0.5px solid var(--border-col)', display: 'flex', gap: '16px' }}>
+          <div style={{ padding: '10px 16px', borderTop: '0.5px solid var(--line)', display: 'flex', gap: '16px' }}>
             {(['Zone discipline', 'Load ratio'] as const).map((label) => (
               <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
-                <span style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--text-muted)', opacity: 0.3 }}>—</span>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 600, color: 'var(--mute)', opacity: 0.3 }}>—</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Teaser card — same left-accent pattern as wizard teaser card */}
+        {/* Teaser card — left-accent pattern, moss for paid upgrade */}
         <button
           onClick={onUpgrade}
           style={{
             width: '100%', textAlign: 'left',
-            background: 'var(--card-bg)',
-            border: '0.5px solid var(--border-col)',
-            borderLeft: '3px solid var(--teal)',
+            background: 'var(--card)',
+            border: '0.5px solid var(--line)',
+            borderLeft: '3px solid var(--moss)',
             borderRadius: '10px',
             padding: '14px 16px',
             cursor: 'pointer',
@@ -3959,14 +3959,14 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
           }}
         >
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '3px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '3px' }}>
               See your zone discipline score
             </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
               Weekly report, session feedback, plan adjustments — all from your Strava data.
             </div>
           </div>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--teal)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--moss)', whiteSpace: 'nowrap', flexShrink: 0 }}>
             Upgrade →
           </span>
         </button>
@@ -4011,9 +4011,9 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
         {stravaTokenFailed && !stravaLoading && !runs?.length && (
-          <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--amber-mid)', padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>Strava connection expired.</span>
-            <button onClick={onGoToMe} style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '5px 12px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+          <div style={{ background: 'var(--warn-bg)', borderRadius: '12px', border: '0.5px solid var(--warn-bg)', padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.5 }}>Strava connection expired.</span>
+            <button onClick={onGoToMe} style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--moss)', background: 'var(--moss-soft)', border: 'none', borderRadius: '20px', padding: '5px 12px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
               Reconnect in Profile
             </button>
           </div>
@@ -4021,50 +4021,50 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
 
         {/* Weekly report card */}
         {reportIsCurrent && weeklyReport?.headline ? (
-          <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
-            <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>This week</span>
-              <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)' }}>W{weekNum}/{totalWeeks}</span>
+          <div style={{ background: 'var(--card)', borderRadius: '16px', border: '0.5px solid var(--line)', overflow: 'hidden' }}>
+            <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--line)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--moss)' }} />
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>This week</span>
+              <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>W{weekNum}/{totalWeeks}</span>
             </div>
             <div style={{ padding: '16px' }}>
-              <div style={{ fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.3px', lineHeight: 1.3, marginBottom: '10px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3, marginBottom: '10px' }}>
                 {weeklyReport.headline}
               </div>
               {weeklyReport.body && (
-                <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: weeklyReport.cta ? '12px' : 0 }}>
+                <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.7, marginBottom: weeklyReport.cta ? '12px' : 0 }}>
                   {weeklyReport.body}
                 </p>
               )}
               {weeklyReport.cta && (
-                <div style={{ padding: '10px 12px', background: 'var(--accent-soft)', borderRadius: '10px', border: '0.5px solid var(--accent-dim)' }}>
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', fontWeight: 500 }}>{weeklyReport.cta}</span>
+                <div style={{ padding: '10px 12px', background: 'var(--moss-soft)', borderRadius: '10px', border: '0.5px solid var(--moss-soft)' }}>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--moss)', fontWeight: 500 }}>{weeklyReport.cta}</span>
                 </div>
               )}
             </div>
             {/* Stats row */}
             {(weeklyReport.zone_discipline_score !== null || weeklyReport.acute_chronic_ratio !== null) && (
-              <div style={{ padding: '10px 16px', borderTop: '0.5px solid var(--border-col)', display: 'flex', gap: '16px' }}>
+              <div style={{ padding: '10px 16px', borderTop: '0.5px solid var(--line)', display: 'flex', gap: '16px' }}>
                 {weeklyReport.zone_discipline_score !== null && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Zone discipline</span>
-                    <span style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: weeklyReport.zone_discipline_score >= 80 ? 'var(--teal)' : weeklyReport.zone_discipline_score >= 60 ? 'var(--accent)' : 'var(--amber)' }}>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Zone discipline</span>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 600, color: weeklyReport.zone_discipline_score >= 80 ? 'var(--moss)' : weeklyReport.zone_discipline_score >= 60 ? 'var(--ink-2)' : 'var(--warn)' }}>
                       {weeklyReport.zone_discipline_score}
                     </span>
                   </div>
                 )}
                 {weeklyReport.acute_chronic_ratio !== null && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Load ratio</span>
-                    <span style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: weeklyReport.acute_chronic_ratio >= 1.3 ? 'var(--amber)' : 'var(--teal)' }}>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Load ratio</span>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 600, color: weeklyReport.acute_chronic_ratio >= 1.3 ? 'var(--warn)' : 'var(--moss)' }}>
                       {Number(weeklyReport.acute_chronic_ratio).toFixed(2)}x
                     </span>
                   </div>
                 )}
                 {weeklyReport.sessions_completed !== null && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sessions</span>
-                    <span style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sessions</span>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 600, color: 'var(--ink)' }}>
                       {weeklyReport.sessions_completed}/{weeklyReport.sessions_planned}
                     </span>
                   </div>
@@ -4075,37 +4075,37 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
         ) : (
           // Loading skeleton or generate prompt
           loading ? (
-            <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', padding: '20px' }}>
+            <div style={{ background: 'var(--card)', borderRadius: '16px', border: '0.5px solid var(--line)', padding: '20px' }}>
               {[90, 100, 70].map((w, i) => (
-                <div key={i} style={{ height: '12px', background: 'var(--bg)', borderRadius: '4px', marginBottom: i < 2 ? '10px' : 0, width: `${w}%` }} />
+                <div key={i} style={{ height: '12px', background: 'var(--bg-soft)', borderRadius: '4px', marginBottom: i < 2 ? '10px' : 0, width: `${w}%` }} />
               ))}
             </div>
           ) : (
-            <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', padding: '20px' }}>
-              <div style={{ fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+            <div style={{ background: 'var(--card)', borderRadius: '16px', border: '0.5px solid var(--line)', padding: '20px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--ink)', marginBottom: '8px' }}>
                 {weeklyReport ? 'Report from last week.' : 'No report yet this week.'}
               </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '14px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.6, marginBottom: '14px' }}>
                 {runs?.length
                   ? 'Log a few sessions first. The report needs something to work with.'
                   : 'Connect Strava to get weekly coaching insights based on your actual training data.'}
               </div>
 
               {/* Zone discipline score explainer — shown before first report so new users know what they're working toward */}
-              <div style={{ borderTop: '0.5px solid var(--border-col)', paddingTop: '14px', marginBottom: '16px' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Zone discipline score</div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              <div style={{ borderTop: '0.5px solid var(--line)', paddingTop: '14px', marginBottom: '16px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Zone discipline score</div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.6 }}>
                   How often your easy days actually stayed easy — measured against your Zone 2 HR ceiling. Coaches spend careers fixing this one thing.
                 </div>
                 <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
                   {[
-                    { label: '80+',    note: 'Clean base work.',       color: 'var(--teal)' },
-                    { label: '60–79',  note: 'Getting there.',         color: 'var(--accent)' },
-                    { label: 'Below 60', note: 'Easy days too hot.',   color: 'var(--amber)' },
+                    { label: '80+',      note: 'Clean base work.',     color: 'var(--moss)' },
+                    { label: '60–79',    note: 'Getting there.',       color: 'var(--ink-2)' },
+                    { label: 'Below 60', note: 'Easy days too hot.',   color: 'var(--warn)' },
                   ].map(({ label, note, color }) => (
                     <div key={label} style={{ flex: 1 }}>
-                      <div style={{ fontFamily: 'var(--font-brand)', fontSize: '13px', fontWeight: 600, color, marginBottom: '2px' }}>{label}</div>
-                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{note}</div>
+                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color, marginBottom: '2px' }}>{label}</div>
+                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.4 }}>{note}</div>
                     </div>
                   ))}
                 </div>
@@ -4114,12 +4114,12 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
               {runs?.length ? (
                 <button
                   onClick={generateReport}
-                  style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}
+                  style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--moss)', background: 'var(--moss-soft)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}
                 >
                   Generate report
                 </button>
               ) : (
-                <button onClick={onGoToMe} style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}>
+                <button onClick={onGoToMe} style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--moss)', background: 'var(--moss-soft)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}>
                   Connect Strava in Profile
                 </button>
               )}
@@ -4128,8 +4128,8 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
         )}
 
         {error && (
-          <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--amber)', padding: '12px 14px' }}>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--amber)' }}>{error}</span>
+          <div style={{ background: 'var(--warn-bg)', borderRadius: '12px', border: '0.5px solid var(--warn-bg)', padding: '12px 14px' }}>
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--warn)' }}>{error}</span>
           </div>
         )}
 
@@ -4137,7 +4137,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
         {reportIsCurrent && weeklyReport?.headline && !loading && (
           <button
             onClick={generateReport}
-            style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer', alignSelf: 'center' }}
+            style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', background: 'none', border: '0.5px solid var(--line)', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer', alignSelf: 'center' }}
           >
             Regenerate
           </button>
