@@ -100,7 +100,7 @@
 | Apply migration `20260422_trial_started_at.sql` | ✅ | `ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS trial_started_at TIMESTAMPTZ` |
 | Set `STRIPE_PRICE_MONTHLY` + `STRIPE_PRICE_ANNUAL` in Vercel | 🔲 | Price IDs from Stripe dashboard after creating product |
 | Set `STRIPE_SECRET_KEY` in Vercel | 🔲 | Stripe dashboard → Developers → API keys |
-| Set `STRIPE_WEBHOOK_SECRET` in Vercel | 🔲 | Stripe dashboard → Webhooks → add endpoint `https://zona-service-nerds-projects.vercel.app/api/webhooks/stripe`, copy signing secret |
+| Set `STRIPE_WEBHOOK_SECRET` in Vercel | 🔲 | Stripe dashboard → Webhooks → add endpoint `https://rts-training-hub.vercel.app/api/webhooks/stripe`, copy signing secret |
 | Set `REVENUECAT_WEBHOOK_SECRET` in Vercel | 🔲 | RevenueCat dashboard → Integrations → Webhooks → set URL + copy secret |
 | Set `SUPABASE_SERVICE_ROLE_KEY` in Vercel | 🔲 | Supabase dashboard → Settings → API → service_role key (keep secret) |
 | Create Stripe product + price | 🔲 | Product: "Zona Premium", Price: TBD (depends on D4), billing: monthly + annual, 14-day trial |
@@ -111,8 +111,8 @@
 | Set `STRAVA_WEBHOOK_VERIFY_TOKEN` in Vercel | 🔲 | Any secret string — used to verify Strava webhook subscription challenge |
 | Set `CRON_SECRET` in Vercel | 🔲 | Any secret string — protects `/api/push/send-weekly-report` cron endpoint |
 | Generate VAPID keys and set in Vercel | 🔲 | `npx web-push generate-vapid-keys` → set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (e.g. `mailto:push@zona.app`) |
-| Set `NEXT_PUBLIC_APP_URL` in Vercel | 🔲 | e.g. `https://zona-service-nerds-projects.vercel.app` — used by cron to call internal API routes |
-| Register Strava webhook subscription | ✅ | Subscription ID: `342111`. Callback: `https://zona-service-nerds-projects.vercel.app/api/webhooks/strava`. To delete: `DELETE https://www.strava.com/api/v3/push_subscriptions/342111` with client_id + client_secret. |
+| Set `NEXT_PUBLIC_APP_URL` in Vercel | 🔲 | e.g. `https://rts-training-hub.vercel.app` — used by cron to call internal API routes |
+| Register Strava webhook subscription | ✅ | Subscription ID: `342111`. Callback: `https://rts-training-hub.vercel.app/api/webhooks/strava`. To delete: `DELETE https://www.strava.com/api/v3/push_subscriptions/342111` with client_id + client_secret. |
 
 ---
 

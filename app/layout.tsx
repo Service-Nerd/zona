@@ -3,7 +3,7 @@ import './globals.css'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { BRAND } from '@/lib/brand'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zona-service-nerds-projects.vercel.app'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://rts-training-hub.vercel.app'
 
 export const metadata: Metadata = {
   title: `${BRAND.name} — ${BRAND.tagline}`,
