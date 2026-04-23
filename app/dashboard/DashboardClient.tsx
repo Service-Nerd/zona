@@ -3310,15 +3310,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         />
       )}
 
-      {/* Secondary stats row — smoke tracker only */}
-      {(smokeTrackerEnabled && quitDays !== null) && (
-        <div style={{ margin: '10px 12px 0', display: 'flex', gap: '8px' }}>
-          <div style={{ flex: 1, background: 'var(--card-bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
-            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1 }}>{quitDays}</div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', marginTop: '3px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Smoke-free days</div>
-          </div>
-        </div>
-      )}
+      {/* Smoke tracker removed per brand-product-alignment v2 */}
 
     </div>
   )
@@ -4516,42 +4508,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             </div>
           </div>
           */}
-          {/* Smoke tracker — inline in app settings */}
-          <div style={{ padding: '14px 16px', borderBottom: smokeTrackerEnabled ? '0.5px solid var(--border-col)' : 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: smokeTrackerEnabled ? '10px' : 0 }}>
-              <div>
-                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Smoke-free tracker</div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: smokeTrackerEnabled ? 'var(--teal)' : 'var(--text-muted)', marginTop: '1px' }}>
-                  {smokeTrackerEnabled && quitDays !== null ? `${quitDays} days smoke-free` : 'Off'}
-                </div>
-              </div>
-              <SmokeToggle enabled={smokeTrackerEnabled} quitDate={quitDate} onChange={onSmokeTrackerChange} />
-            </div>
-            {smokeTrackerEnabled && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>Quit date:</span>
-                <input type="date" value={quitDate} onChange={async e => {
-                  const newDate = e.target.value
-                  onSmokeTrackerChange(true, newDate)
-                  try {
-                    const supabase = createClient()
-                    const { data: { user } } = await supabase.auth.getUser()
-                    if (!user) return
-                    await supabase.from('user_settings').upsert({ id: user.id, smoke_tracker_enabled: true, quit_date: newDate, updated_at: new Date().toISOString() })
-                  } catch {}
-                }} style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', borderRadius: '6px', padding: '4px 8px', color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', fontSize: '12px', outline: 'none' }} />
-              </div>
-            )}
-          </div>
-          {smokeTrackerEnabled && (
-            <button onClick={() => setActiveSection('quit')} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-              <div>
-                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Quit tracker</div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--teal)', marginTop: '1px' }}>Milestones + benefits</div>
-              </div>
-              <div style={{ color: 'var(--text-muted)', marginLeft: '12px' }}>{chevron}</div>
-            </button>
-          )}
+          {/* Smoke tracker removed per brand-product-alignment v2 */}
         </div>
 
         {/* ── Dynamic adjustments toggle (paid/trial only) ──────── */}
