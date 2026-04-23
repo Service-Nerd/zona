@@ -11,26 +11,37 @@
 export const BRAND = {
   name: 'Zona',
 
-  /** Primary tagline. Use on login, loading, marketing site, push notifications, OG image. */
+  /**
+   * App Store subtitle (30 chars max). Discovery surfaces: App Store, landing page, paid ads.
+   * Functional and outward-facing — describes what Zona does.
+   */
+  appStoreSubtitle: 'Training plans that stop you overtraining.',
+
+  /** Primary tagline. Use on login, loading, OG image, in-app footer moments. Names the user. */
   tagline: "Slow down. You've got a day job.",
 
   /**
-   * Brand statement. Use for editorial contexts — about page, App Store description, press.
-   * Not a UI surface tagline; too long for compact use.
+   * Brand statement. Editorial/voice contexts only — login footer, privacy footer, App Store description.
+   * Personality moment, not a feature description. Never use alongside tagline on the same surface.
    */
   brandStatement: "Slow down. You're not Kipchoge.",
 
-  /** Sub-tagline used in login/signup context. Zona doesn't pitch — it states. */
+  /** Sub-text shown below the sign-in card heading. */
+  signinSub: 'Access your training plan.',
+
+  /** Sub-tagline used in signup context only. Zona doesn't pitch — it states. */
   signupSub: '14 days, no limits. After that, you decide.',
 
   /**
    * Raw hex values for next/og ImageResponse — CSS variables don't work there.
-   * Must stay in sync with System B palette in globals.css.
+   * DEPRECATED — remove once OG image regenerated with Warm Slate palette (see ADR-007).
+   * These reference the retired System B palette; kept only to avoid breaking the OG route
+   * before the visual update lands in Phase 2.
    */
   og: {
-    navy:     '#0B132B',
-    teal:     '#5BC0BE',
-    offWhite: '#F7F9FB',
+    navy:     '#0B132B', // DEPRECATED — retire with Phase 2 OG image update
+    teal:     '#5BC0BE', // DEPRECATED — retire with Phase 2 OG image update
+    offWhite: '#F7F9FB', // DEPRECATED — retire with Phase 2 OG image update
   },
 
   /** Push notification titles — each is a coaching voice opportunity, not a label. */
