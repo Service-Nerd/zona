@@ -22,6 +22,16 @@ export async function POST(req: NextRequest) {
   const tier = await getUserTier(user.id)
   if (tier === 'free') return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
+  // Respect the user's dynamic adjustments opt-out before doing any work.
+  const { data: settings } = await supabase
+    .from('user_settings')
+    .select('dynamic_adjustments_enabled')
+    .eq('id', user.id)
+    .single()
+  if (settings?.dynamic_adjustments_enabled === false) {
+    return NextResponse.json({ skipped: true, reason: 'user_disabled' })
+  }
+
   const serviceSupabase = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
