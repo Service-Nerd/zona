@@ -189,9 +189,12 @@ export default function DashboardClient() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
     void (async () => {
       try {
-        const reg = await navigator.serviceWorker.register('/sw.js')
+        await navigator.serviceWorker.register('/sw.js')
         const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
         if (!vapidKey) return
+
+        // Wait for SW to activate before subscribing — required on iOS
+        const reg = await navigator.serviceWorker.ready
 
         let sub = await reg.pushManager.getSubscription()
         if (!sub) {
