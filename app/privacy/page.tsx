@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { BRAND } from '@/lib/brand'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy — Zona',
@@ -259,7 +260,7 @@ export default function PrivacyPage() {
             color: 'var(--text-muted)',
             opacity: 0.5,
           }}>
-            Slow down. You&apos;re not Kipchoge.
+            {BRAND.brandStatement}
           </span>
         </div>
 

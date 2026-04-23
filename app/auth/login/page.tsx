@@ -70,7 +70,7 @@ export default function LoginPage() {
             fontSize: '40px', fontWeight: 500,
             letterSpacing: '0.08em', color: 'var(--accent)',
             lineHeight: 1, marginBottom: '8px',
-          }}>Zona</div>
+          }}>{BRAND.name}</div>
           <div style={{
             fontFamily: 'var(--font-ui)',
             fontSize: '11px', color: 'var(--text-muted)',
@@ -95,7 +95,7 @@ export default function LoginPage() {
             fontFamily: 'var(--font-ui)',
             fontSize: '11px', color: 'var(--text-muted)',
             marginBottom: '24px', lineHeight: 1.6,
-          }}>{mode === 'signin' ? 'Access your training plan.' : BRAND.signupSub}</div>
+          }}>{mode === 'signin' ? BRAND.signinSub : BRAND.signupSub}</div>
 
           {/* Google */}
           <button
@@ -221,7 +221,7 @@ export default function LoginPage() {
           fontSize: '10px', color: 'var(--text-muted)',
           opacity: 0.5, lineHeight: 1.7,
         }}>
-          Slow down. You&apos;re not Kipchoge.
+          {BRAND.brandStatement}
         </div>
         <div style={{ marginTop: '10px', textAlign: 'center' }}>
           <a

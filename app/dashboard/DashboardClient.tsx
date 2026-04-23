@@ -601,7 +601,7 @@ export default function DashboardClient() {
       }}>
         {/* Zona wordmark */}
         <div style={{ fontFamily: 'var(--font-brand)', fontSize: '36px', fontWeight: 500, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: '8px' }}>
-          Zona
+          {BRAND.name}
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '48px' }}>
           {BRAND.tagline}
@@ -869,7 +869,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, onDismiss }: {
     }}>
       {/* Brand mark */}
       <div style={{ fontFamily: 'var(--font-brand)', fontSize: '32px', fontWeight: 500, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: '6px' }}>
-        Zona
+        {BRAND.name}
       </div>
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
         {BRAND.tagline}
