@@ -33,17 +33,17 @@ const COPY_REVEAL = "There it is. Don't ruin it."
 // ─── Session / phase colours ──────────────────────────────────────────────────
 
 const SESSION_COLOURS: Record<string, string> = {
-  easy: 'var(--session-easy)', run: 'var(--session-easy)',
-  long: 'var(--session-long)',
-  quality: 'var(--session-quality)', tempo: 'var(--session-quality)',
-  intervals: 'var(--session-intervals)',
-  race: 'var(--session-race)', recovery: 'var(--session-recovery)',
-  strength: 'var(--session-strength)', 'cross-train': 'var(--session-cross)',
+  easy: 'var(--s-easy)', run: 'var(--s-easy)',
+  long: 'var(--s-long)',
+  quality: 'var(--s-quality)', tempo: 'var(--s-quality)',
+  intervals: 'var(--s-inter)',
+  race: 'var(--s-race)', recovery: 'var(--s-recov)',
+  strength: 'var(--s-strength)', 'cross-train': 'var(--s-cross)',
 }
 
 const PHASE_COLOURS: Record<string, string> = {
-  base: 'var(--session-easy)', build: 'var(--accent)',
-  peak: 'var(--amber)', taper: 'var(--text-muted)',
+  base: 'var(--s-easy)', build: 'var(--moss)',
+  peak: 'var(--warn)', taper: 'var(--mute)',
 }
 
 // ─── Skeleton card ────────────────────────────────────────────────────────────
@@ -51,8 +51,8 @@ const PHASE_COLOURS: Record<string, string> = {
 function SkeletonCard() {
   return (
     <div style={{
-      background: 'var(--card-bg)', borderRadius: '12px',
-      border: '0.5px solid var(--border-col)', padding: '14px 16px',
+      background: 'var(--card)', borderRadius: '12px',
+      border: '0.5px solid var(--line)', padding: '14px 16px',
       marginBottom: '10px',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -64,7 +64,7 @@ function SkeletonCard() {
           <div key={i} className="gc-shimmer" style={{ height: '24px', width: '50px', borderRadius: '6px' }} />
         ))}
       </div>
-      <div style={{ paddingTop: '10px', borderTop: '0.5px solid var(--border-col)' }}>
+      <div style={{ paddingTop: '10px', borderTop: '0.5px solid var(--line)' }}>
         <div className="gc-shimmer" style={{ height: '10px', width: '28%', borderRadius: '4px' }} />
       </div>
     </div>
@@ -86,16 +86,16 @@ function RevealCard({ week, phaseLabel, phaseColour, visible }: {
       opacity: visible ? 1 : 0,
       transform: visible ? 'translateY(0)' : 'translateY(10px)',
       transition: 'opacity 0.3s ease-out, transform 0.3s ease-out',
-      background: 'var(--card-bg)', borderRadius: '12px',
-      border: '0.5px solid var(--border-col)', padding: '14px 16px',
+      background: 'var(--card)', borderRadius: '12px',
+      border: '0.5px solid var(--line)', padding: '14px 16px',
       marginBottom: '10px',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500, color: 'var(--ink)' }}>
           {phaseLabel
             ? `${phaseLabel.charAt(0).toUpperCase()}${phaseLabel.slice(1)} phase`
             : `Week ${week.n}`}
-          <span style={{ fontFamily: 'var(--font-ui)', fontWeight: 400, color: 'var(--text-muted)', fontSize: '13px' }}> · W{week.n}</span>
+          <span style={{ fontFamily: 'var(--font-ui)', fontWeight: 400, color: 'var(--mute)', fontSize: '13px' }}> · W{week.n}</span>
         </div>
         {phaseColour && phaseLabel && (
           <span style={{
@@ -112,23 +112,23 @@ function RevealCard({ week, phaseLabel, phaseColour, visible }: {
         {sessionDays.map(([day, s]) => (
           <div key={day} style={{
             display: 'flex', alignItems: 'center', gap: '4px',
-            fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-secondary)',
+            fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--ink-2)',
             background: 'var(--bg)', borderRadius: '6px', padding: '4px 8px',
           }}>
             <span style={{
               width: '5px', height: '5px', borderRadius: '50%', flexShrink: 0,
-              background: SESSION_COLOURS[s!.type] ?? 'var(--text-muted)', display: 'inline-block',
+              background: SESSION_COLOURS[s!.type] ?? 'var(--mute)', display: 'inline-block',
             }} />
             <span style={{ textTransform: 'capitalize' }}>{day}</span>
           </div>
         ))}
       </div>
-      <div style={{ paddingTop: '8px', borderTop: '0.5px solid var(--border-col)', display: 'flex', gap: '16px' }}>
+      <div style={{ paddingTop: '8px', borderTop: '0.5px solid var(--line)', display: 'flex', gap: '16px' }}>
         {week.weekly_km > 0 && (
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>{week.weekly_km} km</span>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>{week.weekly_km} km</span>
         )}
         {week.badge && (
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--amber)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{week.badge}</span>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{week.badge}</span>
         )}
       </div>
     </div>
@@ -150,7 +150,7 @@ function getRepWeeks(plan: Plan): RepWeek[] {
   if (result.length) return result
   // No phases — use first 3 weeks
   return plan.weeks.slice(0, 3).map(w => ({
-    week: w, phaseLabel: `Week ${w.n}`, phaseColour: 'var(--text-muted)',
+    week: w, phaseLabel: `Week ${w.n}`, phaseColour: 'var(--mute)',
   }))
 }
 
@@ -229,8 +229,7 @@ export default function GeneratingCeremony({
           to   { opacity: 1; transform: translateY(0); }
         }
         .gc-shimmer {
-          /* rgba(91,192,190) = --color-teal */
-          background: linear-gradient(90deg, var(--border-col) 25%, rgba(91,192,190,0.14) 50%, var(--border-col) 75%);
+          background: linear-gradient(90deg, var(--line) 25%, var(--moss-soft) 50%, var(--line) 75%);
           background-size: 200% 100%;
           animation: gc-shimmer 1.6s ease-in-out infinite;
         }
@@ -245,8 +244,8 @@ export default function GeneratingCeremony({
         <div style={{ marginBottom: '36px', minHeight: '64px' }}>
           {phase === 'loading' && (
             <p key={lineIdx} style={{
-              fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 500,
-              color: 'var(--text-primary)', lineHeight: 1.45, margin: 0,
+              fontFamily: 'var(--font-ui)', fontSize: '20px', fontWeight: 500,
+              color: 'var(--ink)', lineHeight: 1.45, margin: 0,
               animation: 'gc-copy-in 0.45s ease-out',
             }}>
               {lines[lineIdx % lines.length]}
@@ -254,8 +253,8 @@ export default function GeneratingCeremony({
           )}
           {phase === 'revealing' && (
             <p style={{
-              fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 500,
-              color: 'var(--teal)', lineHeight: 1.45, margin: 0,
+              fontFamily: 'var(--font-ui)', fontSize: '20px', fontWeight: 500,
+              color: 'var(--moss)', lineHeight: 1.45, margin: 0,
               animation: 'gc-copy-in 0.45s ease-out',
             }}>
               {COPY_REVEAL}
