@@ -950,7 +950,7 @@ function ScreenHeader({ title, sub }: { title: string; sub?: string }) {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0 16px', marginBottom: '8px', marginTop: '20px' }}>
+    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0 16px', marginBottom: '8px', marginTop: '20px' }}>
       {children}
     </div>
   )
@@ -960,7 +960,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', margin: '0 12px', ...style }}>
+    <div style={{ background: 'var(--card)', borderRadius: '16px', border: '0.5px solid var(--line)', margin: '0 12px', ...style }}>
       {children}
     </div>
   )
@@ -4706,10 +4706,10 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 8px' }}>
-        <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0, width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)', flexShrink: 0 }}>
+        <button onClick={onBack} style={{ border: 'none', color: 'var(--moss)', cursor: 'pointer', padding: 0, width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--moss-soft)', flexShrink: 0 }}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
-        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px' }}>
+        <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-ui)', letterSpacing: '-0.5px' }}>
           {firstName ? `${firstName}'s profile` : 'Profile'}
         </div>
       </div>
@@ -4717,22 +4717,22 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '40px' }}>
 
         {/* Identity card — avatar + race goal. Name/email live in Profile section below. */}
-        <div style={{ background: 'var(--card-bg)', borderRadius: '16px', padding: '16px', border: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-brand)', fontSize: '16px', fontWeight: 600, color: 'var(--zona-navy)', flexShrink: 0 }}>
+        <div style={{ background: 'var(--card)', borderRadius: '16px', padding: '16px', border: '0.5px solid var(--line)', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--moss)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 700, color: 'var(--card)', flexShrink: 0 }}>
             {initials}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             {hasPlan ? (
               <>
-                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {plan.meta.race_name}
                 </div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', marginTop: '4px', letterSpacing: '0.02em' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--moss)', marginTop: '4px', letterSpacing: '0.02em' }}>
                   {daysToRace} days to go
                 </div>
               </>
             ) : (
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)' }}>No race set</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>No race set</div>
             )}
           </div>
         </div>
@@ -4746,36 +4746,36 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         <SectionLabel>Your training</SectionLabel>
 
         {/* Plan button */}
-        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', borderRadius: '12px', border: '0.5px solid var(--line)', overflow: 'hidden' }}>
           <button
             onClick={onOpenGenerate}
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
           >
             <div>
-              <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.55 }}>
+              <div style={{ fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>
                 {hasPlan ? 'Change your plan' : 'Generate a plan'}
               </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>
                 {hasPlan ? 'Build a new plan around a different race or goal' : 'Choose a template or build a custom plan'}
               </div>
             </div>
-            <div style={{ color: 'var(--text-muted)', marginLeft: '12px' }}>{chevron}</div>
+            <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
           </button>
         </div>
 
         {/* HR payoff callout */}
         {hrConfigured && z2Ceiling && (
-          <div style={{ background: 'var(--accent-soft)', borderRadius: '10px', border: '0.5px solid var(--accent-dim)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', lineHeight: 1.5 }}>
+          <div style={{ background: 'var(--moss-soft)', borderRadius: '10px', border: '0.5px solid var(--moss-soft)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--moss)', flexShrink: 0 }} />
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--moss)', lineHeight: 1.5 }}>
               Your Zone 2 ceiling is <strong>{z2Ceiling} bpm</strong> — shown on every session card.
             </div>
           </div>
         )}
         {!hrConfigured && (
-          <div style={{ background: 'var(--amber-soft)', borderRadius: '10px', border: '0.5px solid var(--amber-mid)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--amber)', flexShrink: 0 }} />
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--amber)', lineHeight: 1.5 }}>
+          <div style={{ background: 'var(--warn-bg)', borderRadius: '10px', border: '0.5px solid var(--warn-bg)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--warn)', flexShrink: 0 }} />
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', lineHeight: 1.5 }}>
               Add your HR data below to personalise every session's HR targets.
             </div>
           </div>
@@ -4784,16 +4784,16 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         <HRZonesSection restingHR={restingHR} maxHR={maxHR} onSave={onHRChange} />
 
         {/* Display preferences — grouped with training since they affect session cards */}
-        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', borderRadius: '12px', border: '0.5px solid var(--line)', overflow: 'hidden' }}>
           {/* Units */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '0.5px solid var(--line)' }}>
             <div>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Distance units</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Pace brackets and distances</div>
+              <div style={{ fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.55 }}>Distance units</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>Pace brackets and distances</div>
             </div>
             <div style={{ display: 'flex', gap: '6px' }}>
               {(['km', 'mi'] as const).map(u => (
-                <button key={u} onClick={() => onUnitsChange(u)} style={{ borderRadius: '10px', padding: '5px 12px', border: `0.5px solid ${preferredUnits === u ? 'var(--accent)' : 'var(--border-col)'}`, background: preferredUnits === u ? 'var(--accent-soft)' : 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', color: preferredUnits === u ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <button key={u} onClick={() => onUnitsChange(u)} style={{ borderRadius: '10px', padding: '5px 12px', border: `0.5px solid ${preferredUnits === u ? 'var(--moss)' : 'var(--line)'}`, background: preferredUnits === u ? 'var(--moss-soft)' : 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', color: preferredUnits === u ? 'var(--moss)' : 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   {u}
                 </button>
               ))}
@@ -4802,12 +4802,12 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           {/* Session display */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
             <div>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Session display</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Default metric on session cards</div>
+              <div style={{ fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.55 }}>Session display</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>Default metric on session cards</div>
             </div>
             <div style={{ display: 'flex', gap: '6px' }}>
               {(['distance', 'duration'] as const).map(m => (
-                <button key={m} onClick={() => onMetricChange(m)} style={{ borderRadius: '10px', padding: '5px 12px', border: `0.5px solid ${preferredMetric === m ? 'var(--accent)' : 'var(--border-col)'}`, background: preferredMetric === m ? 'var(--accent-soft)' : 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', color: preferredMetric === m ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'capitalize', letterSpacing: '0.04em' }}>
+                <button key={m} onClick={() => onMetricChange(m)} style={{ borderRadius: '10px', padding: '5px 12px', border: `0.5px solid ${preferredMetric === m ? 'var(--moss)' : 'var(--line)'}`, background: preferredMetric === m ? 'var(--moss-soft)' : 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', color: preferredMetric === m ? 'var(--moss)' : 'var(--mute)', textTransform: 'capitalize', letterSpacing: '0.04em' }}>
                   {m}
                 </button>
               ))}
@@ -4823,49 +4823,31 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
 
         {/* ── Race prep ──────────────────────────────────────────── */}
         <SectionLabel>Race prep</SectionLabel>
-        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', borderRadius: '12px', border: '0.5px solid var(--line)', overflow: 'hidden' }}>
           {[
-            { id: 'mental'  as const, label: 'Mental toolkit', sub: '6 tools for when it gets dark at km 70', color: 'var(--session-easy)' },
-            { id: 'fueling' as const, label: 'Fueling plan',   sub: 'Gel + hydration protocol for race day',  color: 'var(--accent)' },
+            { id: 'mental'  as const, label: 'Mental toolkit', sub: '6 tools for when it gets dark at km 70', color: 'var(--s-easy)' },
+            { id: 'fueling' as const, label: 'Fueling plan',   sub: 'Gel + hydration protocol for race day',  color: 'var(--moss)' },
           ].map(({ id, label, sub, color }, i, arr) => (
-            <button key={id} onClick={() => setActiveSection(id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: i < arr.length - 1 ? '0.5px solid var(--border-col)' : 'none', cursor: 'pointer', textAlign: 'left' }}>
+            <button key={id} onClick={() => setActiveSection(id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: i < arr.length - 1 ? '0.5px solid var(--line)' : 'none', cursor: 'pointer', textAlign: 'left' }}>
               <div>
-                <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.55 }}>{label}</div>
+                <div style={{ fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>{label}</div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color, marginTop: '2px' }}>{sub}</div>
               </div>
-              <div style={{ color: 'var(--text-muted)', marginLeft: '12px' }}>{chevron}</div>
+              <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
             </button>
           ))}
         </div>
 
-        {/* ── App settings ───────────────────────────────────────── */}
-        {/* Theme and personal tracking — not training-related */}
-        <SectionLabel>App settings</SectionLabel>
-        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
-          {/* Theme toggle removed per ADR-008 — single light theme only */}
-          {/*
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: smokeTrackerEnabled ? '0.5px solid var(--border-col)' : 'none' }}>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Theme</div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {(['dark', 'light', 'auto'] as const).map(t => (
-                <button key={t} onClick={() => onThemeChange(t)} style={{ borderRadius: '10px', padding: '5px 10px', border: `0.5px solid ${theme === t ? 'var(--accent)' : 'var(--border-col)'}`, background: theme === t ? 'var(--accent-soft)' : 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', color: theme === t ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'capitalize' }}>
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-          */}
-          {/* Smoke tracker removed per brand-product-alignment v2 */}
-        </div>
+        {/* App settings section intentionally empty — theme (ADR-008) and smoke tracker removed */}
 
         {/* ── Dynamic adjustments toggle (paid/trial only) ──────── */}
         {hasPaidAccess && onDynamicAdjustmentsChange && (
           <>
             <SectionLabel>Training intelligence</SectionLabel>
-            <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+            <div style={{ background: 'var(--card)', borderRadius: '12px', border: '0.5px solid var(--line)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: '2px' }}>Dynamic adjustments</div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', lineHeight: 1.4, marginBottom: '2px' }}>Dynamic adjustments</div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
                   {dynamicAdjustmentsEnabled
                     ? 'Zona will suggest plan changes based on your Strava data.'
                     : 'Plan stays fixed. Zona tracks data but won\'t suggest changes.'}
@@ -4875,7 +4857,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                 onClick={() => onDynamicAdjustmentsChange(!dynamicAdjustmentsEnabled)}
                 style={{
                   width: '44px', height: '26px', borderRadius: '13px', border: 'none', cursor: 'pointer',
-                  background: dynamicAdjustmentsEnabled ? 'var(--accent)' : 'var(--border-col)',
+                  background: dynamicAdjustmentsEnabled ? 'var(--moss)' : 'var(--line-strong)',
                   position: 'relative', flexShrink: 0, transition: 'background 0.2s',
                 }}
                 aria-label="Toggle dynamic adjustments"
@@ -4884,7 +4866,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                   position: 'absolute', top: '3px',
                   left: dynamicAdjustmentsEnabled ? '21px' : '3px',
                   width: '20px', height: '20px', borderRadius: '50%',
-                  background: 'white', transition: 'left 0.2s',
+                  background: 'var(--card)', transition: 'left 0.2s',
                 }} />
               </button>
             </div>
@@ -4895,31 +4877,31 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         {isAdmin && (
           <>
             <SectionLabel>Admin</SectionLabel>
-            <button onClick={onOpenAdmin} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--accent-mid)', cursor: 'pointer', textAlign: 'left' }}>
+            <button onClick={onOpenAdmin} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'var(--card)', borderRadius: '12px', border: '0.5px solid var(--moss-mid)', cursor: 'pointer', textAlign: 'left' }}>
               <div>
-                <div style={{ fontSize: '13px', color: 'var(--accent)', lineHeight: 1.55 }}>User management</div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Impersonate · view plans</div>
+                <div style={{ fontSize: '13px', color: 'var(--moss)', lineHeight: 1.55 }}>User management</div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>Impersonate · view plans</div>
               </div>
-              <div style={{ color: 'var(--accent)', marginLeft: '12px' }}>{chevron}</div>
+              <div style={{ color: 'var(--moss)', marginLeft: '12px' }}>{chevron}</div>
             </button>
           </>
         )}
 
         {/* ── Sign out + delete — bottom, destructive actions de-emphasised ── */}
-        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '0.5px solid var(--border-col)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '0.5px solid var(--line)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <button
             onClick={async () => {
               const supabase = createClient()
               await supabase.auth.signOut()
               window.location.href = '/auth/login'
             }}
-            style={{ width: '100%', padding: '12px', background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}
+            style={{ width: '100%', padding: '12px', background: 'none', border: '0.5px solid var(--line)', borderRadius: '10px', color: 'var(--mute)', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}
           >
             Sign out
           </button>
           <button
             onClick={() => setActiveSection('delete-account')}
-            style={{ width: '100%', padding: '10px', background: 'none', border: 'none', color: 'var(--coral)', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.04em', cursor: 'pointer', opacity: 0.6 }}
+            style={{ width: '100%', padding: '10px', background: 'none', border: 'none', color: 'var(--mute)', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.04em', cursor: 'pointer', opacity: 0.5 }}
           >
             Delete account
           </button>
@@ -4958,34 +4940,34 @@ function AdminScreen({ onBack, onImpersonate }: {
 
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: '0.5px solid var(--border-col)', position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10 }}>
-        <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: '0', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: '0.5px solid var(--line)', position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10 }}>
+        <button onClick={onBack} style={{ border: 'none', color: 'var(--moss)', cursor: 'pointer', padding: '0', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--moss-soft)' }}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
-        <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)' }}>User management</div>
+        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-ui)' }}>User management</div>
       </div>
 
       <div style={{ padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {loading ? (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '24px 0', textAlign: 'center' }}>Loading users...</div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', padding: '24px 0', textAlign: 'center' }}>Loading users...</div>
         ) : users.length === 0 ? (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '24px 0', textAlign: 'center' }}>No users found</div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', padding: '24px 0', textAlign: 'center' }}>No users found</div>
         ) : users.map(u => {
           const displayName = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email || u.id.slice(0, 8)
 
           return (
             <div key={u.id} style={{
-              background: 'var(--card-bg)', borderRadius: '12px',
-              border: '0.5px solid var(--border-col)',
+              background: 'var(--card)', borderRadius: '12px',
+              border: '0.5px solid var(--line)',
               padding: '14px 16px',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
               <div>
-                <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)' }}>
+                <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--ink)', fontFamily: 'var(--font-ui)' }}>
                   {displayName}
-                  {u.is_admin && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--accent)', marginLeft: '8px', border: '0.5px solid var(--accent-mid)', borderRadius: '10px', padding: '1px 6px' }}>admin</span>}
+                  {u.is_admin && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--moss)', marginLeft: '8px', border: '0.5px solid var(--moss-mid)', borderRadius: '10px', padding: '1px 6px' }}>admin</span>}
                 </div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '3px' }}>
                   {u.has_onboarded ? 'Onboarded' : 'Not yet onboarded'} · {u.gist_url ? 'Plan set' : 'No plan'}
                 </div>
               </div>
@@ -4993,8 +4975,8 @@ function AdminScreen({ onBack, onImpersonate }: {
                 <button
                   onClick={() => onImpersonate(u.id, displayName)}
                   style={{
-                    background: 'var(--accent-soft)', border: '0.5px solid var(--accent-mid)',
-                    borderRadius: '8px', color: 'var(--accent)',
+                    background: 'var(--moss-soft)', border: '0.5px solid var(--moss-mid)',
+                    borderRadius: '8px', color: 'var(--moss)',
                     fontFamily: 'var(--font-ui)', fontSize: '11px',
                     letterSpacing: '0.06em', textTransform: 'uppercase',
                     padding: '6px 12px', cursor: 'pointer',
