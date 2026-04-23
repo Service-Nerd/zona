@@ -4932,8 +4932,9 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           </>
         )}
 
-        {/* ── Sign out + delete — bottom, destructive actions de-emphasised ── */}
-        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '0.5px solid var(--border-col)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {/* ── Careful Now — destructive account actions ───────── */}
+        <SectionLabel>Careful now</SectionLabel>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <button
             onClick={async () => {
               const supabase = createClient()
