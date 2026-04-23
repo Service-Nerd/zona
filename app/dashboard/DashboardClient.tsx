@@ -860,7 +860,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, onDismiss }: {
     if (firstSession) break
   }
 
-  const accent = firstSession ? getSessionColor(firstSession.type) : 'var(--accent)'
+  const accent = firstSession ? getSessionColor(firstSession.type) : 'var(--moss)'
   const greeting = firstName ? `${firstName}, your` : 'Your'
 
   return (
@@ -871,29 +871,29 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, onDismiss }: {
       padding: '32px 24px',
     }}>
       {/* Brand mark */}
-      <div style={{ fontFamily: 'var(--font-brand)', fontSize: '32px', fontWeight: 500, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: '6px' }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '32px', fontWeight: 800, letterSpacing: '0.04em', color: 'var(--moss)', marginBottom: '6px' }}>
         {BRAND.name}
       </div>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
         {BRAND.tagline}
       </div>
 
       <div style={{ width: '100%', maxWidth: '340px' }}>
         {/* Headline */}
-        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.4px', lineHeight: 1.25, marginBottom: '6px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', lineHeight: 1.25, marginBottom: '6px' }}>
           {greeting} plan is set.
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '28px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.6, marginBottom: '28px' }}>
           {totalWeeks} weeks. One session at a time.
         </div>
 
         {/* Race card */}
         {(raceName || raceDateStr) && (
-          <div style={{ background: 'var(--card-bg)', borderRadius: '14px', border: '0.5px solid var(--border-col)', padding: '16px', marginBottom: '12px' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Goal race</div>
-            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>{raceName}</div>
+          <div style={{ background: 'var(--card)', borderRadius: '14px', border: '0.5px solid var(--line)', padding: '16px', marginBottom: '12px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Goal race</div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2 }}>{raceName}</div>
             {raceDateStr && (
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '4px' }}>
                 {raceDateStr}{daysToRace !== null ? ` · ${daysToRace} days` : ''}
               </div>
             )}
@@ -902,16 +902,16 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, onDismiss }: {
 
         {/* First session card */}
         {firstSession && (
-          <div style={{ background: 'var(--card-bg)', borderRadius: '14px', border: `0.5px solid var(--border-col)`, borderLeft: `4px solid ${accent}`, padding: '14px 16px', marginBottom: '12px' }}>
+          <div style={{ background: 'var(--card)', borderRadius: '14px', border: `0.5px solid var(--line)`, borderLeft: `4px solid ${accent}`, padding: '14px 16px', marginBottom: '12px' }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>First session</div>
-            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>{firstSession.label}</div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '3px' }}>{firstSession.day}</div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2 }}>{firstSession.label}</div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '3px' }}>{firstSession.day}</div>
           </div>
         )}
 
         {/* Zone 2 note */}
-        <div style={{ background: 'var(--accent-soft)', borderRadius: '12px', border: '0.5px solid var(--accent-dim)', padding: '12px 14px', marginBottom: '32px' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', lineHeight: 1.6 }}>
+        <div style={{ background: 'var(--moss-soft)', borderRadius: '12px', border: '0.5px solid var(--moss-soft)', padding: '12px 14px', marginBottom: '32px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--moss)', lineHeight: 1.6 }}>
             Your Zone 2 ceiling is <strong>{zone2Ceiling} bpm</strong>. Easy runs stay under that. If your HR climbs above it, walk until it drops.
           </div>
         </div>
@@ -921,7 +921,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, onDismiss }: {
           onClick={onDismiss}
           style={{
             width: '100%', padding: '16px',
-            background: 'var(--accent)', color: 'var(--zona-navy)',
+            background: 'var(--moss)', color: 'var(--card)',
             border: 'none', borderRadius: '14px',
             fontFamily: 'var(--font-ui)', fontSize: '13px',
             letterSpacing: '0.08em', textTransform: 'uppercase',
