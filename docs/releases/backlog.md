@@ -264,6 +264,7 @@ Ordered by value. Each item needs FREE/PAID tag confirmed in `docs/canonical/fea
 | `DashboardClient.tsx` hardcoded fonts | ~228 occurrences of `'Inter', sans-serif` / `'Space Grotesk', sans-serif` hardcoded; 7 instances of `'Inter', monospace` (wrong fallback) |
 | `nextMonday()` UTC drift in `route.ts` | ✅ Fixed — route.ts rewritten in R23; now uses `lib/plan/length.ts` `parseDateLocal()` throughout |
 | Tier-divergent rendering utility | Once a second tier-divergent component lands (after `GeneratingCeremony.tsx`), centralise the `tier` prop pattern into a shared context or typed prop convention. Document as a pattern in `ui-patterns.md`. |
+| API contract docs (9 routes) | Missing `docs/contracts/api/` entries for: `analyse-run`, `adjust-plan`, `checkout`, `recalibrate-zones`, `revert-adjustment`, `delete-account`, `weekly-report`, `push/subscribe`, `push/send-weekly-report`. Flagged in arch review 2026-04-23. Write after UX rework — route shapes may change. |
 | Plan history UI | Data is archived to `plan_archive` table (migration `20260424`). UI (browse archived plans + restore) deferred post-launch. Schema has `race_name`, `race_date`, `archived_at` for future list display. |
 
 ---
