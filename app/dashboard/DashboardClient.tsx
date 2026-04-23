@@ -407,21 +407,6 @@ export default function DashboardClient() {
     try { localStorage.setItem('rts_phrase', val) } catch {}
   }
 
-  /* Theme toggle removed per ADR-008 — single light theme only.
-     saveTheme() left as comment for one-release rollback window.
-  function saveTheme(t: 'dark' | 'light' | 'auto') {
-    setTheme(t)
-    applyTheme(t)
-    // DEPRECATED — rts_theme no longer used (see ADR-008)
-    try { localStorage.setItem('rts_theme', t) } catch {}
-  }
-  */
-
-  function applyTheme(_t: 'dark' | 'light' | 'auto') {
-    // Theme system retired — single light theme only (see ADR-008).
-    // No-op. Call sites preserved to avoid missing-reference errors.
-    // Remove in Phase 2 cleanup.
-  }
 
   async function dismissWelcome() {
     setShowWelcome(false)
