@@ -95,7 +95,7 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
             <animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite" />
           </circle>
         </svg>
-        <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
+        <p style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
           Connecting to Strava...
         </p>
       </div>
@@ -116,13 +116,13 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
           </div>
           <div>
             <div style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 500, marginBottom: '6px' }}>Strava not connected</div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+            <div style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
               Go to the <span style={{ color: 'var(--teal)' }}>Me</span> screen to connect your Strava account.
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--border-col)' }} />
-            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'var(--text-muted)' }}>not connected</span>
+            <span style={{ fontFamily: "var(--font-ui)", fontSize: '13px', color: 'var(--text-muted)' }}>not connected</span>
           </div>
         </div>
       </div>
@@ -134,8 +134,8 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
       {/* Status */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--teal)' }} />
-        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'var(--teal)' }}>Strava connected</span>
-        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: 'var(--text-muted)', marginLeft: '4px' }}>· auto-syncing</span>
+        <span style={{ fontFamily: "var(--font-ui)", fontSize: '13px', color: 'var(--teal)' }}>Strava connected</span>
+        <span style={{ fontFamily: "var(--font-ui)", fontSize: '13px', color: 'var(--text-muted)', marginLeft: '4px' }}>· auto-syncing</span>
       </div>
 
       {/* Key metrics */}
@@ -150,15 +150,15 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
             background: 'var(--card-bg)', border: '0.5px solid var(--border-col)',
             borderTop: '2px solid var(--teal)', borderRadius: '12px', padding: '12px 14px',
           }}>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>{label}</div>
-            <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '20px', fontWeight: 500, color: 'var(--teal)', lineHeight: 1 }}>{value}</div>
-            {sub && <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>{sub}</div>}
+            <div style={{ fontFamily: "var(--font-ui)", fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>{label}</div>
+            <div style={{ fontFamily: "var(--font-brand)", fontSize: '20px', fontWeight: 500, color: 'var(--teal)', lineHeight: 1 }}>{value}</div>
+            {sub && <div style={{ fontFamily: "var(--font-ui)", fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>{sub}</div>}
           </div>
         ))}
       </div>
 
       {/* Recent activities */}
-      <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Recent activities</div>
+      <div style={{ fontFamily: "var(--font-ui)", fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Recent activities</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {runs?.slice(0, 12).map(run => {
           const km   = (run.distance / 1000).toFixed(1)
@@ -173,13 +173,13 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                 <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: '8px' }}>{run.name}</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', flexShrink: 0 }}>{date}</div>
+                <div style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: 'var(--text-muted)', flexShrink: 0 }}>{date}</div>
               </div>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--teal)' }}>{km}km</span>
-                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)' }}>{dur}</span>
-                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: hr ? hrColour(hr) : 'var(--text-muted)' }}>{hr ? `${hr} bpm` : '—'}</span>
-                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)' }}>{pace}</span>
+                <span style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: 'var(--teal)' }}>{km}km</span>
+                <span style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: 'var(--text-muted)' }}>{dur}</span>
+                <span style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: hr ? hrColour(hr) : 'var(--text-muted)' }}>{hr ? `${hr} bpm` : '—'}</span>
+                <span style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: 'var(--text-muted)' }}>{pace}</span>
               </div>
             </div>
           )
@@ -196,9 +196,9 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
           }}>
             <div style={{ padding: '16px 18px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--teal)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' }}>New activity</div>
-                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '16px', fontWeight: 500, color: 'var(--text-primary)' }}>{popup.name}</div>
-                <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                <div style={{ fontFamily: "var(--font-ui)", fontSize: '11px', color: 'var(--teal)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' }}>New activity</div>
+                <div style={{ fontFamily: "var(--font-brand)", fontSize: '16px', fontWeight: 500, color: 'var(--text-primary)' }}>{popup.name}</div>
+                <div style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                   {new Date(popup.start_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </div>
               </div>
@@ -214,13 +214,13 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
                 { label: 'Elevation',value: `+${Math.round(popup.total_elevation_gain ?? 0)}m`, color: 'var(--text-secondary)' },
               ].map(({ label, value, color }) => (
                 <div key={label}>
-                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>
-                  <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: '18px', fontWeight: 500, color, lineHeight: 1.1 }}>{value}</div>
+                  <div style={{ fontFamily: "var(--font-ui)", fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>{label}</div>
+                  <div style={{ fontFamily: "var(--font-brand)", fontSize: '18px', fontWeight: 500, color, lineHeight: 1.1 }}>{value}</div>
                 </div>
               ))}
             </div>
             <div style={{ padding: '14px 18px' }}>
-              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: '11px', color: 'var(--amber)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>Coaching notes</div>
+              <div style={{ fontFamily: "var(--font-ui)", fontSize: '11px', color: 'var(--amber)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>Coaching notes</div>
               <div style={{ fontSize: '13px', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
                 {analysis ?? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Analysing activity...</span>}
               </div>
@@ -229,7 +229,7 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
               <button onClick={() => setPopup(null)} style={{
                 background: 'var(--teal)', color: 'var(--zona-navy)', border: 'none',
                 borderRadius: '8px', padding: '9px 22px',
-                fontFamily: "'Inter', sans-serif", fontSize: '13px',
+                fontFamily: "var(--font-ui)", fontSize: '13px',
                 letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500,
               }}>
                 Got it

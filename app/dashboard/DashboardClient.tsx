@@ -24,7 +24,7 @@ const GeneratePlanScreen = dynamic(() => import('./GeneratePlanScreen'), { ssr: 
 const UpgradeScreen = dynamic(() => import('./UpgradeScreen'), { ssr: false })
 const BenchmarkUpdateScreen = dynamic(() => import('./BenchmarkUpdateScreen'), { ssr: false })
 
-type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'admin' | 'generate' | 'upgrade' | 'benchmark'
+type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'admin' | 'generate' | 'upgrade' | 'benchmark' | 'reshape'
 
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - base64String.length % 4) % 4)
@@ -556,7 +556,7 @@ export default function DashboardClient() {
           {/* Custom O with zone arc */}
           <svg width="28" height="38" viewBox="0 0 28 38" fill="none" style={{ margin: '0 1px' }}>
             <text x="14" y="30" textAnchor="middle"
-              fontFamily="'Space Grotesk', sans-serif"
+              fontFamily="var(--font-brand)"
               fontSize="38" fontWeight="500" letterSpacing="0"
               fill="var(--accent)">O</text>
             {/* Zone arc overlay — sits on top right of O */}
@@ -687,7 +687,7 @@ export default function DashboardClient() {
           : <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => setScreen('upgrade')} />
         )}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
-        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} hasPaidAccess={hasPaidAccess} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} />}
+        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} hasPaidAccess={hasPaidAccess} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} runAnalysis={runAnalysisMap[activeSessionData?.sessionKey ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
@@ -697,6 +697,7 @@ export default function DashboardClient() {
           setScreen(hasWizardDraft ? 'generate' : 'today')
         }} />}
         {screen === 'benchmark' && plan && <BenchmarkUpdateScreen plan={plan} onBack={() => setScreen('me')} onUpdated={(updatedPlan) => { setPlan(updatedPlan) }} />}
+        {screen === 'reshape'   && <ReshapeScreen plan={plan} onBack={() => setScreen('me')} onReshapeApplied={(updatedPlan) => { setPlan(updatedPlan); setPendingAdjustment(null); setScreen('today') }} />}
       </div>
 
       {/* Screen guide — first-load popup */}
@@ -2845,7 +2846,11 @@ function AdjustmentBanner({ adjustment, onConfirmed, onReverted }: {
   async function confirm() {
     setLoading(true)
     try {
-      const res  = await fetch('/api/adjust-plan', { method: 'POST' })
+      const res  = await fetch('/api/confirm-adjustment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adjustment_id: adjustment.id }),
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       onConfirmed?.(data.plan)
@@ -2876,6 +2881,151 @@ function AdjustmentBanner({ adjustment, onConfirmed, onReverted }: {
       >
         {adjustment.summary}
       </PendingAdjustmentBanner>
+    </div>
+  )
+}
+
+// ── ReshapeScreen ─────────────────────────────────────────────────────────────
+// User-initiated plan reshape. Calls /api/adjust-plan with manual:true, shows result.
+
+function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied }: {
+  plan: Plan | null
+  onBack: () => void
+  onReshapeApplied: (plan: any) => void
+}) {
+  const [status, setStatus]               = useState<'loading' | 'found' | 'clean' | 'error'>('loading')
+  const [adjustment, setAdjustment]       = useState<any | null>(null)
+  const [actionLoading, setActionLoading] = useState(false)
+  const [error, setError]                 = useState<string | null>(null)
+
+  useEffect(() => { void analyse() }, [])
+
+  async function analyse() {
+    setStatus('loading')
+    setError(null)
+    try {
+      const res  = await fetch('/api/adjust-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ manual: true }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'Something went wrong.'); setStatus('error'); return }
+      if (data.skipped) { setError('Dynamic adjustments are turned off in your settings.'); setStatus('error'); return }
+      if (data.adjustment) { setAdjustment(data.adjustment); setStatus('found') }
+      else setStatus('clean')
+    } catch { setError('Could not reach the server. Check your connection.'); setStatus('error') }
+  }
+
+  async function handleConfirm() {
+    if (!adjustment) return
+    setActionLoading(true)
+    try {
+      const res  = await fetch('/api/confirm-adjustment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adjustment_id: adjustment.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      onReshapeApplied(data.plan)
+    } catch { /* keep visible */ } finally { setActionLoading(false) }
+  }
+
+  async function handleDismiss() {
+    if (!adjustment) return
+    setActionLoading(true)
+    try {
+      const res = await fetch('/api/revert-adjustment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adjustment_id: adjustment.id }),
+      })
+      if (res.ok) onBack()
+    } catch { /* keep visible */ } finally { setActionLoading(false) }
+  }
+
+  const backBtn = (
+    <button onClick={onBack} style={{
+      width: '44px', height: '44px', borderRadius: '50%', background: 'var(--bg-soft)',
+      border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      color: 'var(--ink)', marginBottom: '20px', flexShrink: 0,
+    }}>
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+        <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </button>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
+      <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
+        {backBtn}
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+          Plan adjustment
+        </div>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: '8px' }}>
+          Reshape plan
+        </div>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)', lineHeight: 1.5, marginBottom: '28px' }}>
+          {status === 'loading' ? 'Checking your recent sessions for adjustment signals.' : 'Here\'s what Zona found.'}
+        </div>
+      </div>
+
+      <div style={{ flex: 1, padding: '0 20px 24px' }}>
+        {status === 'loading' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <style>{`@keyframes zona-shimmer { 0%,100%{opacity:.3} 50%{opacity:.6} }`}</style>
+            {[1,2,3].map(i => (
+              <div key={i} style={{ height: '64px', borderRadius: '12px', background: 'var(--line-strong)', animation: 'zona-shimmer 1.4s ease-in-out infinite', animationDelay: `${i * 0.1}s` }} />
+            ))}
+          </div>
+        )}
+
+        {status === 'found' && adjustment && (
+          <PendingAdjustmentBanner onConfirm={handleConfirm} onRevert={handleDismiss} loading={actionLoading}>
+            {adjustment.summary}
+          </PendingAdjustmentBanner>
+        )}
+
+        {status === 'clean' && (
+          <div style={{ background: 'var(--card)', borderRadius: '14px', border: '1px solid var(--line)', padding: '20px' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--moss-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8l3.5 3.5L13 5" stroke="var(--moss)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--ink)', marginBottom: '6px' }}>
+              Plan looks good.
+            </div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55 }}>
+              No adjustment signals in your recent sessions. Keep going.
+            </div>
+          </div>
+        )}
+
+        {status === 'error' && (
+          <div style={{ background: 'var(--warn-bg)', borderRadius: '14px', padding: '20px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--warn)', marginBottom: '6px' }}>
+              Something went wrong.
+            </div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55, marginBottom: '16px' }}>
+              {error}
+            </div>
+            <button onClick={() => void analyse()} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--warn)', background: 'none', color: 'var(--warn)', fontFamily: 'var(--font-ui)', fontSize: '13px', cursor: 'pointer' }}>
+              Try again
+            </button>
+          </div>
+        )}
+      </div>
+
+      {(status === 'clean' || status === 'error') && (
+        <div style={{ flexShrink: 0, padding: '12px 20px calc(12px + env(safe-area-inset-bottom))', borderTop: '1px solid var(--line)', background: 'var(--bg)' }}>
+          <button onClick={onBack} style={{ width: '100%', padding: '15px', borderRadius: 'var(--radius-md)', background: 'var(--moss)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: '#fff' }}>
+            Back
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -4677,7 +4827,7 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
   )
 }
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, hasPaidAccess, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, hasPaidAccess, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   resetPhrase: string; onSaveMental: (v: string) => void
@@ -4690,6 +4840,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   onProfileChange: (fn: string, ln: string, em: string) => void
   onOpenGenerate?: () => void
   onOpenBenchmark?: () => void
+  onOpenReshape?: () => void
   hasPaidAccess?: boolean
   dynamicAdjustmentsEnabled?: boolean
   onDynamicAdjustmentsChange?: (enabled: boolean) => void
@@ -4889,35 +5040,51 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           {/* Smoke tracker removed per brand-product-alignment v2 */}
         </div>
 
-        {/* ── Dynamic adjustments toggle (paid/trial only) ──────── */}
+        {/* ── Training intelligence (paid/trial only) ──────────── */}
         {hasPaidAccess && onDynamicAdjustmentsChange && (
           <>
             <SectionLabel>Training intelligence</SectionLabel>
-            <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: '2px' }}>Dynamic adjustments</div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  {dynamicAdjustmentsEnabled
-                    ? 'Zona will suggest plan changes based on your Strava data.'
-                    : 'Plan stays fixed. Zona tracks data but won\'t suggest changes.'}
-                </div>
-              </div>
+            <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+              {/* Reshape plan — manual trigger */}
               <button
-                onClick={() => onDynamicAdjustmentsChange(!dynamicAdjustmentsEnabled)}
-                style={{
-                  width: '44px', height: '26px', borderRadius: '13px', border: 'none', cursor: 'pointer',
-                  background: dynamicAdjustmentsEnabled ? 'var(--accent)' : 'var(--border-col)',
-                  position: 'relative', flexShrink: 0, transition: 'background 0.2s',
-                }}
-                aria-label="Toggle dynamic adjustments"
+                onClick={onOpenReshape}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '0.5px solid var(--border-col)', cursor: 'pointer', textAlign: 'left' }}
               >
-                <div style={{
-                  position: 'absolute', top: '3px',
-                  left: dynamicAdjustmentsEnabled ? '21px' : '3px',
-                  width: '20px', height: '20px', borderRadius: '50%',
-                  background: 'white', transition: 'left 0.2s',
-                }} />
+                <div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2px' }}>Reshape plan</div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                    Check your recent sessions for adjustment signals now
+                  </div>
+                </div>
+                <div style={{ color: 'var(--text-muted)', marginLeft: '12px' }}>{chevron}</div>
               </button>
+              {/* Dynamic adjustments toggle */}
+              <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: '2px' }}>Auto-adjust</div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                    {dynamicAdjustmentsEnabled
+                      ? 'Zona suggests plan changes based on your Strava data.'
+                      : 'Plan stays fixed. Zona tracks data but won\'t suggest changes.'}
+                  </div>
+                </div>
+                <button
+                  onClick={() => onDynamicAdjustmentsChange(!dynamicAdjustmentsEnabled)}
+                  style={{
+                    width: '44px', height: '26px', borderRadius: '13px', border: 'none', cursor: 'pointer',
+                    background: dynamicAdjustmentsEnabled ? 'var(--accent)' : 'var(--border-col)',
+                    position: 'relative', flexShrink: 0, transition: 'background 0.2s',
+                  }}
+                  aria-label="Toggle dynamic adjustments"
+                >
+                  <div style={{
+                    position: 'absolute', top: '3px',
+                    left: dynamicAdjustmentsEnabled ? '21px' : '3px',
+                    width: '20px', height: '20px', borderRadius: '50%',
+                    background: 'white', transition: 'left 0.2s',
+                  }} />
+                </button>
+              </div>
             </div>
           </>
         )}

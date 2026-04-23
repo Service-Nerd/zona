@@ -198,12 +198,22 @@ Ordered by value. Each item needs FREE/PAID tag confirmed in `docs/canonical/fea
 - Move hardcoded coaching copy into Supabase table
 - Enables dynamic, user-specific coaching messages
 
-### R20 — Dynamic Plan Reshaping ✅ Merged into coaching pipeline
-**Tier:** PAID | **Status:** Core shipped as Feature 3 (plan adjustment triggers)
-- Adjustment triggers shipped: load_spike, zone_drift, shadow_load, ef_decline — auto-apply low-risk, confirm-required for significant
-- Plan adjustment API: `/api/adjust-plan` + `/api/revert-adjustment` (full revert to sessions_before snapshot)
-- Hard caps enforced: max 2 adjustments/week, 3-week taper protection, 10% max volume increase, 48hr quality spacing
-- Remaining post-launch: user-initiated reshape flow (manual trigger from Me screen), phase-aware reshaping using `Plan.phases[]`
+### R20 — Dynamic Plan Reshaping ✅ Complete
+**Tier:** PAID | **Status:** Fully shipped
+- Automatic triggers: `load_spike`, `zone_drift`, `shadow_load`, `ef_decline` — auto-apply low-risk, confirm-required for significant
+- Phase-aware: taper blocked, peak phase preserves quality sessions on EF decline
+- Plan adjustment API: `/api/adjust-plan` + `/api/confirm-adjustment` + `/api/revert-adjustment`
+- Hard caps: max 2 adjustments/week, 3-week taper protection, 10% volume cap, 48hr quality spacing
+- User-initiated reshape: Me screen → Training Intelligence → "Reshape plan" → `ReshapeScreen`
+- **Parked — plan adaptation triggers (v1.1+):** See `docs/alignment/plan-adjustments-parked.md` for full product spec. Five triggers below are not built — infrastructure exists but nothing generates them yet.
+
+| Parked trigger | Description | Target version |
+|---|---|---|
+| Session move → rebalance | User drags session to new day; hard/easy alternation preserved | v1.1 |
+| Skip with reason | User marks session skipped with reason; plan responds (make up / push / absorb) | v1.2 |
+| Silent miss detection | Day passes with no log; morning-after prompt | v1.2 |
+| Fatigue-driven softening | 3+ consecutive Heavy/Wrecked logs → soften upcoming sessions | v1.3 |
+| RPE disconnect | RPE 8+ on easy run → coach note only (no plan change — decision made) | v1.3 |
 
 ### R21 — Strength Sessions
 **Tier:** FREE (display stubs) / PAID (dynamic)
@@ -215,11 +225,12 @@ Ordered by value. Each item needs FREE/PAID tag confirmed in `docs/canonical/fea
 **Tier:** PAID
 - User marks days unavailable; plan reshapes around them
 
-### R23b — Plan Generator Wizard UI
-**Tier:** PAID
-- Multi-step wizard replacing the current form
-- One question per screen with progress indicator
-- Better mobile UX for longer forms
+### R23b — Plan Generator Wizard UI ✅ Complete
+**Tier:** PAID | **Status:** Shipped
+- One question per screen (8 steps free / 12 steps paid)
+- Slide + fade transitions, expanding pill progress dots
+- Large OptionCard selectors for goal, hard-sessions, terrain, training-style
+- SessionStorage persistence maintained; same API and data model
 
 ### R24 — Multi-Race Support
 **Tier:** PAID
@@ -258,13 +269,13 @@ Ordered by value. Each item needs FREE/PAID tag confirmed in `docs/canonical/fea
 
 | Item | Status |
 |------|--------|
-| Strava token refresh | Not started — currently single-use; needs cache + refresh logic |
+| Strava token refresh | ✅ Done — `lib/strava.ts` `getStravaToken()` + `/api/strava/refresh` route. Full refresh flow in place. |
 | `login/page.tsx` hardcoded values | ✅ Audited and fixed — heading, tagline, copy, spinner all corrected |
 | `PlanCalendar` `stravaRuns` prop | Accepted but unused in WeekCard — remove or wire up |
-| `DashboardClient.tsx` hardcoded fonts | ~228 occurrences of `'Inter', sans-serif` / `'Space Grotesk', sans-serif` hardcoded; 7 instances of `'Inter', monospace` (wrong fallback) |
+| Hardcoded font strings | ✅ Done — `StravaPanel.tsx` (20), `PlanChart.tsx` (2), `DashboardClient.tsx` (1) all replaced with `var(--font-ui)` / `var(--font-brand)`. Zero remaining across `app/` and `components/`. |
 | `nextMonday()` UTC drift in `route.ts` | ✅ Fixed — route.ts rewritten in R23; now uses `lib/plan/length.ts` `parseDateLocal()` throughout |
 | Tier-divergent rendering utility | Once a second tier-divergent component lands (after `GeneratingCeremony.tsx`), centralise the `tier` prop pattern into a shared context or typed prop convention. Document as a pattern in `ui-patterns.md`. |
-| API contract docs (9 routes) | Missing `docs/contracts/api/` entries for: `analyse-run`, `adjust-plan`, `checkout`, `recalibrate-zones`, `revert-adjustment`, `delete-account`, `weekly-report`, `push/subscribe`, `push/send-weekly-report`. Flagged in arch review 2026-04-23. Write after UX rework — route shapes may change. |
+| API contract docs (10 routes) | Missing `docs/contracts/api/` entries for: `analyse-run`, `adjust-plan`, `confirm-adjustment`, `checkout`, `recalibrate-zones`, `revert-adjustment`, `delete-account`, `weekly-report`, `push/subscribe`, `push/send-weekly-report`. Write after UX rework — route shapes may change. |
 | Plan history UI | Data is archived to `plan_archive` table (migration `20260424`). UI (browse archived plans + restore) deferred post-launch. Schema has `race_name`, `race_date`, `archived_at` for future list display. |
 
 ---

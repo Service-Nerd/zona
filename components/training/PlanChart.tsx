@@ -18,7 +18,7 @@ export default function PlanChart({ weeks }: Props) {
       marginBottom: '18px',
     }}>
       <div style={{
-        fontFamily: "'Inter', sans-serif", fontSize: '10px',
+        fontFamily: "var(--font-ui)", fontSize: '10px',
         color: 'var(--text-muted)', letterSpacing: '0.08em',
         textTransform: 'uppercase', marginBottom: '14px',
         display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center',
@@ -76,7 +76,7 @@ export default function PlanChart({ weeks }: Props) {
                 }}
               />
               <div style={{
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "var(--font-ui)",
                 fontSize: '0.46rem',
                 color: isCurr ? 'var(--teal)' : 'var(--text-muted)',
                 fontWeight: isCurr ? 600 : 400,

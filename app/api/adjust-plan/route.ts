@@ -22,14 +22,20 @@ export async function POST(req: NextRequest) {
   const tier = await getUserTier(user.id)
   if (tier === 'free') return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
-  // Respect the user's dynamic adjustments opt-out before doing any work.
-  const { data: settings } = await supabase
-    .from('user_settings')
-    .select('dynamic_adjustments_enabled')
-    .eq('id', user.id)
-    .single()
-  if (settings?.dynamic_adjustments_enabled === false) {
-    return NextResponse.json({ skipped: true, reason: 'user_disabled' })
+  // manual: true means user explicitly requested a reshape — bypass the opt-out toggle
+  const body = await req.json().catch(() => ({}))
+  const isManual = body?.manual === true
+
+  // Respect the user's dynamic adjustments opt-out for automatic triggers only
+  if (!isManual) {
+    const { data: settings } = await supabase
+      .from('user_settings')
+      .select('dynamic_adjustments_enabled')
+      .eq('id', user.id)
+      .single()
+    if (settings?.dynamic_adjustments_enabled === false) {
+      return NextResponse.json({ skipped: true, reason: 'user_disabled' })
+    }
   }
 
   const serviceSupabase = createServiceClient(
@@ -49,7 +55,12 @@ export async function POST(req: NextRequest) {
   const weekN     = weekIndex + 1
   const week      = plan.weeks[weekIndex]
 
-  const [analysisRes, prevWeeksRes, adjustmentsThisWeekRes] = await Promise.all([
+  // Resolve current training phase from plan.phases (R23+ plans only)
+  const currentPhase = plan.phases
+    ? plan.phases.find(p => p.start_week <= weekN && weekN <= p.end_week)?.name
+    : undefined
+
+  const [analysisRes, prevWeeksRes, adjustmentsThisWeekRes, existingPendingRes] = await Promise.all([
     serviceSupabase
       .from('run_analysis')
       .select('session_day, hr_in_zone_pct, actual_load_km, planned_load_km, ef_trend_pct')
@@ -68,9 +79,23 @@ export async function POST(req: NextRequest) {
       .eq('user_id', user.id)
       .eq('week_n', weekN)
       .in('status', ['pending', 'confirmed', 'auto_applied']),
+    // Return any existing pending adjustment rather than creating a duplicate
+    serviceSupabase
+      .from('plan_adjustments')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ])
 
   const analyses = analysisRes.data ?? []
+
+  // Return existing pending adjustment instead of creating a duplicate
+  if (existingPendingRes.data) {
+    return NextResponse.json({ adjustment: existingPendingRes.data, requires_confirmation: true })
+  }
 
   // Count of adjustments already made this week — enforces MAX_ADJUSTMENTS_PER_WEEK.
   const adjustmentsThisWeek = (adjustmentsThisWeekRes.data ?? []).length
@@ -116,6 +141,7 @@ export async function POST(req: NextRequest) {
     hrInZoneData,
     efTrendPct,
     adjustmentsThisWeek,
+    currentPhase,
   })
 
   if (!proposed) {
@@ -148,8 +174,8 @@ export async function POST(req: NextRequest) {
     // silent fallback to rule-based summary
   }
 
-  // Auto-apply low-risk adjustments (no confirmation required)
-  const status = proposed.requiresConfirmation ? 'pending' : 'auto_applied'
+  // Manual triggers always require confirmation — user should review what they asked for
+  const status = (proposed.requiresConfirmation || isManual) ? 'pending' : 'auto_applied'
 
   const adjustmentRow = {
     user_id:         user.id,

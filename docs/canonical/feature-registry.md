@@ -83,10 +83,10 @@
 |---|---|---|---|
 | Plan Confidence Score | PAID | R18 | Derived from completion + RPE data |
 | Coaching Tips in Supabase | PAID | R19 | Move hardcoded copy to DB; dynamic per user |
-| Dynamic Plan Reshaping (user-initiated) | PAID | R20 | Core triggers shipped (see coaching pipeline above). Remaining: user-initiated reshape flow from Me screen, phase-aware reshaping using `Plan.phases[]`. |
+| Dynamic Plan Reshaping (user-initiated) | PAID | R20 | ✅ Complete. Phase-aware reshaping (`currentPhase` guards taper/peak). User-initiated flow: Me → "Reshape plan" → `ReshapeScreen` → analyse → confirm/dismiss. `/api/confirm-adjustment` route. `AdjustmentBanner.confirm()` bug fixed. |
 | Strength Sessions | FREE (stubs) / PAID (dynamic) | R21 | Generator stubs exist; cards render with no content. **Admin-only for v1 launch** — filtered from public plan view until R21 ships full content. |
 | Blockout Days | PAID | R22 | User marks unavailable days; plan reshapes |
-| Plan Generator Wizard UI | PAID | R23b | Multi-step wizard; replaces current form |
+| Plan Generator Wizard UI | PAID | R23b | ✅ Complete. One-question-per-screen sub-step wizard. 8 steps (free) / 12 steps (paid). Slide transition animation. Progress pills. Warm Slate tokens. OptionCard pattern for goal/terrain/style/hard-sessions. |
 | Multi-Race Support | PAID | R24 | A/B race hierarchy |
 
 ---

@@ -1,28 +1,33 @@
-// TIER-DIVERGENT — FREE: 3-step wizard (race → fitness → schedule) → rule-engine plan; teaser card above CTA
-//                  PAID/TRIAL: 4-step wizard adds terrain, injuries, hard sessions, training style → enriched plan
+// TIER-DIVERGENT — FREE:  8-step wizard (distance → race → goal → fitness → benchmark → schedule → constraints)
+//                  PAID:  12-step wizard adds hard-sessions → training-style → terrain → injuries
+// One decision per screen. Slide transitions between steps.
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import type { Plan, GeneratorInput } from '@/types/plan'
 import GeneratingCeremony from '@/components/GeneratingCeremony'
 import { BRAND } from '@/lib/brand'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type WizardStep = 1 | 2 | 3 | 4
-type AppStep = WizardStep | 'generating' | 'preview' | 'error'
+type WizardSubStep =
+  | 'distance' | 'race-details' | 'goal' | 'target-time'
+  | 'fitness' | 'benchmark' | 'schedule' | 'constraints'
+  | 'hard-sessions' | 'training-style' | 'terrain' | 'injuries'
+
+type AppStep = WizardSubStep | 'generating' | 'preview' | 'error'
 
 const WIZARD_KEY = 'zona_wizard_draft'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const DISTANCES = [
-  { label: '5K',       value: 5,    paid: false },
-  { label: '10K',      value: 10,   paid: false },
-  { label: 'Half',     value: 21.1, paid: false },
-  { label: 'Marathon', value: 42.2, paid: true  },
-  { label: '50K',      value: 50,   paid: true  },
-  { label: '100K',     value: 100,  paid: true  },
+  { label: '5K',       sub: '5 km',    value: 5,    paid: false },
+  { label: '10K',      sub: '10 km',   value: 10,   paid: false },
+  { label: 'Half',     sub: '21.1 km', value: 21.1, paid: false },
+  { label: 'Marathon', sub: '42.2 km', value: 42.2, paid: true  },
+  { label: '50K',      sub: '50 km',   value: 50,   paid: true  },
+  { label: '100K',     sub: '100 km',  value: 100,  paid: true  },
 ]
 
 const BENCHMARK_DISTANCES = [
@@ -34,86 +39,57 @@ const BENCHMARK_DISTANCES = [
 
 const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const DAY_KEYS   = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+const INJURIES   = ['Achilles', 'Knee', 'Back', 'Hip', 'Shin splints', 'Plantar fasciitis']
 
-const INJURIES = ['Achilles', 'Knee', 'Back', 'Hip', 'Shin splints', 'Plantar fasciitis']
-
-const SESSION_COLOURS: Record<string, string> = {
-  easy:           'var(--session-easy)',
-  run:            'var(--session-easy)',
-  long:           'var(--session-long)',
-  quality:        'var(--session-quality)',
-  tempo:          'var(--session-quality)',
-  intervals:      'var(--session-intervals)',
-  hard:           'var(--session-intervals)',
-  race:           'var(--session-race)',
-  recovery:       'var(--session-recovery)',
-  strength:       'var(--session-strength)',
-  'cross-train':  'var(--session-cross)',
-  cross:          'var(--session-cross)',
+const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; optional?: boolean }> = {
+  'distance':        { title: 'How far?',              subtitle: 'Start with the finish line. Work backwards from there.' },
+  'race-details':    { title: 'Tell me about the race.', subtitle: 'Race name is optional. The date is not.' },
+  'goal':            { title: 'What matters most?',    subtitle: 'Crossing the line, or hitting a number. Both are valid.' },
+  'target-time':     { title: "What's the target?",    subtitle: "Be honest. Optimistic goals make bad training plans." },
+  'fitness':         { title: 'Be honest.',             subtitle: "The plan only works if these numbers are real. Flattering yourself here just means a harder race." },
+  'benchmark':       { title: 'Recent race result?',   subtitle: 'Gives us precise pace targets for every session. Skip if you haven\'t raced lately.', optional: true },
+  'schedule':        { title: 'Your schedule.',         subtitle: "Training has to fit your life. Not the other way around." },
+  'constraints':     { title: 'Any hard limits?',       subtitle: 'Days you can never train, or a max time on weekdays. Skip if you\'re flexible.', optional: true },
+  'hard-sessions':   { title: 'You and hard sessions.', subtitle: 'Intervals, tempo, threshold. Where do you land?' },
+  'training-style':  { title: 'How should this feel?',  subtitle: 'Your preference shapes how your weeks are structured.' },
+  'terrain':         { title: 'Where do you run?',      subtitle: 'Road, trail, or a bit of both. Affects pace targets.' },
+  'injuries':        { title: 'Anything to flag?',      subtitle: 'Old injuries that still show up. Skip if you\'re clean.', optional: true },
 }
 
-const STEP_META: Record<WizardStep, { title: string; subtitle: string }> = {
-  1: { title: 'Your race.',          subtitle: 'Start with the finish line. Work backwards from there.' },
-  2: { title: 'Be honest.',          subtitle: "The plan only works if these numbers are real. Flattering yourself here just means a harder race." },
-  3: { title: 'Your schedule.',      subtitle: "Training has to fit your life. Not the other way around." },
-  4: { title: 'A bit more detail.',  subtitle: "Terrain, injury history, training preferences. Skip what doesn't apply." },
+// ─── Step sequence ────────────────────────────────────────────────────────────
+
+function getStepSequence(hasPaidAccess: boolean, goal: 'finish' | 'time_target' | null): WizardSubStep[] {
+  const steps: WizardSubStep[] = ['distance', 'race-details', 'goal']
+  if (goal === 'time_target') steps.push('target-time')
+  steps.push('fitness', 'benchmark', 'schedule', 'constraints')
+  if (hasPaidAccess) steps.push('hard-sessions', 'training-style', 'terrain', 'injuries')
+  return steps
 }
 
+// ─── Progress dots ────────────────────────────────────────────────────────────
 
-function fmtDurationMins(mins: number): string {
-  if (mins < 60) return `${mins}min`
-  const h = Math.floor(mins / 60)
-  const m = mins % 60
-  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
-}
-
-// ─── Primitives ───────────────────────────────────────────────────────────────
-
-function ChipToggle({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function ProgressDots({ total, current }: { total: number; current: number }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: '9px 16px',
-        borderRadius: '10px',
-        border: `0.5px solid ${active ? 'var(--accent)' : 'var(--border-col)'}`,
-        background: active ? 'var(--accent-soft)' : 'none',
-        color: active ? 'var(--accent)' : 'var(--text-secondary)',
-        fontFamily: 'var(--font-ui)',
-        fontSize: '13px',
-        cursor: 'pointer',
-        transition: 'all 0.15s',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {label}
-    </button>
-  )
-}
-
-function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
-  return (
-    <div style={{
-      fontFamily: 'var(--font-ui)',
-      fontSize: '11px',
-      color: 'var(--text-muted)',
-      letterSpacing: '0.08em',
-      textTransform: 'uppercase',
-      marginBottom: '8px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '6px',
-    }}>
-      {children}
-      {optional && (
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'none', letterSpacing: 0, opacity: 0.7 }}>optional</span>
-      )}
+    <div style={{ display: 'flex', gap: '5px', alignItems: 'center', marginBottom: '24px' }}>
+      {Array.from({ length: total }, (_, i) => (
+        <div key={i} style={{
+          height: '5px',
+          borderRadius: '3px',
+          width: i === current ? '20px' : '5px',
+          background: i <= current ? 'var(--moss)' : 'var(--line-strong)',
+          transition: 'all 0.25s ease',
+          flexShrink: 0,
+        }} />
+      ))}
     </div>
   )
 }
 
-function StepInput({ value, onChange, placeholder, type = 'text', min, max }: {
-  value: string; onChange: (v: string) => void; placeholder?: string; type?: string; min?: number; max?: number
+// ─── Shared primitives ────────────────────────────────────────────────────────
+
+function WizardInput({ value, onChange, placeholder, type = 'text', min, max }: {
+  value: string; onChange: (v: string) => void; placeholder?: string
+  type?: string; min?: number; max?: number
 }) {
   return (
     <input
@@ -124,227 +100,184 @@ function StepInput({ value, onChange, placeholder, type = 'text', min, max }: {
       min={min}
       max={max}
       style={{
-        width: '100%',
-        boxSizing: 'border-box',
-        background: 'var(--input-bg)',
-        border: '0.5px solid var(--border-col)',
-        borderRadius: '10px',
-        padding: '12px 14px',
-        fontFamily: 'var(--font-ui)',
-        fontSize: '15px',
-        color: 'var(--text-primary)',
-        outline: 'none',
+        width: '100%', boxSizing: 'border-box',
+        background: 'var(--bg-soft)', border: '1px solid var(--line)',
+        borderRadius: 'var(--radius-md)', padding: '14px 16px',
+        fontFamily: 'var(--font-ui)', fontSize: '17px',
+        color: 'var(--ink)', outline: 'none',
       }}
     />
   )
 }
 
-// ─── Step progress bar ────────────────────────────────────────────────────────
-
-function StepProgress({ current, total }: { current: WizardStep; total: number }) {
+function FieldNote({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', gap: '4px', padding: '0 16px', marginBottom: '28px' }}>
-      {Array.from({ length: total }, (_, i) => i + 1).map(n => (
-        <div key={n} style={{
-          flex: 1,
-          height: '2px',
-          borderRadius: '2px',
-          background: n <= current ? 'var(--accent)' : 'var(--border-col)',
-          transition: 'background 0.3s',
-        }} />
-      ))}
+    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '8px' }}>
+      {children}
     </div>
   )
 }
 
-// ─── Confidence badge (paid-only — only rendered when meta.confidence_score present) ─────
-
-function ConfidenceBadge({ score, risks }: { score: number; risks?: string[] }) {
-  const colour = score >= 7 ? 'var(--teal)' : 'var(--amber)'
-  const label  = score >= 7 ? 'Good fit' : score >= 5 ? 'Possible' : 'Challenging'
-  const desc   = score >= 7
-    ? "Your fitness and timeline line up. This plan will stretch you without breaking you."
-    : score >= 5
-    ? "Achievable, but there's some stretch here. Stick to the easy days and it's yours."
-    : "This is a big ask given your current base. You can do it — the plan will reflect that."
-
+function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
   return (
-    <div style={{ textAlign: 'center', padding: '24px 0 20px' }}>
-      <div style={{
-        width: '64px', height: '64px', borderRadius: '50%',
-        border: `2px solid ${colour}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        margin: '0 auto 12px',
-        background: `color-mix(in srgb, ${colour} 8%, transparent)`,
-      }}>
-        <span style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: colour }}>{score}</span>
-      </div>
-      <div style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: colour, marginBottom: '6px' }}>{label}</div>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55, maxWidth: '280px', margin: '0 auto' }}>{desc}</div>
-      {risks && risks.length > 0 && (
-        <div style={{ marginTop: '14px', textAlign: 'left', padding: '12px 14px', background: 'var(--amber-soft)', borderRadius: '10px', border: '0.5px solid var(--amber-mid)' }}>
-          {risks.map((r, i) => (
-            <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.6, paddingLeft: '10px', position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 0, color: 'var(--amber)' }}>·</span>
-              {r}
-            </div>
-          ))}
+    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+      {children}
+      {optional && <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, opacity: 0.7, fontSize: '10px' }}>optional</span>}
+    </div>
+  )
+}
+
+// Large card-style option (used for goal, hard-sessions, training-style, terrain)
+function OptionCard({ label, sub, active, onClick, locked, lockLabel }: {
+  label: string; sub?: string; active: boolean; onClick: () => void
+  locked?: boolean; lockLabel?: string
+}) {
+  return (
+    <button
+      onClick={locked ? undefined : onClick}
+      style={{
+        width: '100%', textAlign: 'left',
+        padding: '18px 20px',
+        borderRadius: 'var(--radius-lg)',
+        border: `1.5px solid ${active ? 'var(--moss)' : 'var(--line)'}`,
+        background: active ? 'var(--moss-soft)' : 'var(--card)',
+        cursor: locked ? 'default' : 'pointer',
+        transition: 'all 0.15s',
+        opacity: locked ? 0.5 : 1,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+      }}
+    >
+      <div>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: active ? 700 : 500, color: active ? 'var(--moss)' : 'var(--ink)', marginBottom: sub ? '4px' : 0 }}>
+          {label}
         </div>
-      )}
-    </div>
+        {sub && (
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.45 }}>
+            {sub}
+          </div>
+        )}
+      </div>
+      {lockLabel && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700, color: 'var(--moss)', letterSpacing: '0.08em', marginTop: '2px', flexShrink: 0 }}>{lockLabel}</span>}
+    </button>
   )
 }
 
-// ─── Phase arc — one rep week per phase ───────────────────────────────────────
+// Compact chip toggle (used for benchmark distances, days-off circles)
+function Chip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '10px 18px', borderRadius: 'var(--radius-md)',
+        border: `1px solid ${active ? 'var(--moss)' : 'var(--line)'}`,
+        background: active ? 'var(--moss-soft)' : 'var(--card)',
+        color: active ? 'var(--moss)' : 'var(--ink-2)',
+        fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: active ? 600 : 400,
+        cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
+      }}
+    >
+      {label}
+    </button>
+  )
+}
+
+// Preview components — plan arc + week card
+const PHASES = ['base', 'build', 'peak', 'taper'] as const
 
 function PhaseArc({ weeks }: { weeks: Plan['weeks'] }) {
-  const PHASES = ['base', 'build', 'peak', 'taper'] as const
   const phaseColour: Record<string, string> = {
-    base: 'var(--session-easy)', build: 'var(--accent)', peak: 'var(--amber)', taper: 'var(--text-muted)'
+    base: 'var(--s-easy)', build: 'var(--s-quality)', peak: 'var(--s-inter)', taper: 'var(--s-recov)',
   }
-
   const repWeeks = PHASES.map(phase => {
     const phaseWks = weeks.filter(w => w.phase === phase)
     if (!phaseWks.length) return null
     return { week: phaseWks[Math.floor(phaseWks.length / 2)], phase }
   }).filter(Boolean) as { week: Plan['weeks'][0]; phase: string }[]
 
-  if (!repWeeks.length) {
-    return <>{weeks.slice(0, 3).map(w => <WeekCard key={w.n} week={w} />)}</>
-  }
+  if (!repWeeks.length) return null
 
   return (
-    <>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>
-        Plan arc
-      </div>
+    <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', overflowX: 'auto' }}>
       {repWeeks.map(({ week, phase }) => (
         <WeekCard key={week.n} week={week} phaseLabel={phase} phaseColour={phaseColour[phase]} />
       ))}
-    </>
+    </div>
   )
 }
 
-// ─── Week card (preview) ──────────────────────────────────────────────────────
-
 function WeekCard({ week, phaseLabel, phaseColour }: {
-  week: Plan['weeks'][0]
-  phaseLabel?: string
-  phaseColour?: string
+  week: Plan['weeks'][0]; phaseLabel?: string; phaseColour?: string
 }) {
-  const sessionDays = Object.entries(week.sessions ?? {})
-
+  const sessions = Object.values(week.sessions).filter(Boolean)
   return (
-    <div style={{
-      background: 'var(--card-bg)', borderRadius: '12px',
-      border: '0.5px solid var(--border-col)', padding: '14px 16px', marginBottom: '10px',
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-        <div>
-          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
-            {phaseLabel ? `${phaseLabel.charAt(0).toUpperCase()}${phaseLabel.slice(1)} phase` : `Week ${week.n}`}
-            {' '}
-            <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '13px' }}>· W{week.n}</span>
-          </div>
-          {week.label && (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-              {week.label}
-            </div>
-          )}
+    <div style={{ background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--line)', padding: '14px 16px', minWidth: '140px', flex: '1 1 140px' }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: '8px' }}>
+        Week {week.n} · {week.weekly_km ?? '—'}km
+      </div>
+      {phaseLabel && phaseColour && (
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: phaseColour, textTransform: 'uppercase', letterSpacing: '0.08em', border: `1px solid ${phaseColour}`, borderRadius: '20px', padding: '2px 8px', display: 'inline-block', marginBottom: '8px' }}>
+          {phaseLabel}
         </div>
-        {phaseColour && phaseLabel && (
-          <span style={{
-            fontFamily: 'var(--font-ui)', fontSize: '10px', letterSpacing: '0.08em',
-            textTransform: 'uppercase', color: phaseColour,
-            border: `0.5px solid ${phaseColour}`, borderRadius: '20px',
-            padding: '2px 8px', flexShrink: 0, marginLeft: '8px',
-          }}>
-            {phaseLabel}
-          </span>
-        )}
-      </div>
-      <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-        {sessionDays.map(([day, session]) => {
-          if (!session || session.type === 'rest') return null
-          const dot = SESSION_COLOURS[session.type] ?? 'var(--text-muted)'
-          return (
-            <div key={day} style={{
-              fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-secondary)',
-              background: 'var(--bg)', borderRadius: '6px', padding: '4px 8px',
-              display: 'flex', alignItems: 'center', gap: '5px',
-            }}>
-              <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: dot, display: 'inline-block', flexShrink: 0 }} />
-              <span style={{ textTransform: 'capitalize' }}>{day}</span>
-              {session.distance_km
-                ? <span style={{ color: 'var(--text-muted)' }}>{session.distance_km}km</span>
-                : session.duration_mins
-                  ? <span style={{ color: 'var(--text-muted)' }}>{fmtDurationMins(Number(session.duration_mins))}</span>
-                  : null}
-            </div>
-          )
-        })}
-      </div>
-      <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '0.5px solid var(--border-col)', display: 'flex', gap: '16px' }}>
-        {week.weekly_km > 0 && (
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>{week.weekly_km} km</span>
-        )}
-        {week.long_run_hrs && (
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>Long {week.long_run_hrs}h</span>
-        )}
-        {week.badge && (
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--amber)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{week.badge}</span>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {sessions.slice(0, 3).map((s: any, i: number) => (
+          <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--ink-2)', lineHeight: 1.4 }}>
+            {s.label ?? s.type}
+          </div>
+        ))}
+        {sessions.length > 3 && (
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
+            +{sessions.length - 3} more
+          </div>
         )}
       </div>
     </div>
   )
 }
 
-// ─── Teaser card (free users on Step 3) ──────────────────────────────────────
-// Non-blocking upsell. Left teal accent = same visual language as session cards.
-// Free path (generate anyway) is always visible as the primary CTA below.
-
-function TeaserCard({ onUpgrade }: { onUpgrade: () => void }) {
+function ConfidenceBadge({ score, risks }: { score: number; risks?: string[] }) {
+  const colour = score >= 80 ? 'var(--moss)' : score >= 60 ? 'var(--warn)' : 'var(--danger)'
+  const label  = score >= 80 ? 'High confidence' : score >= 60 ? 'Moderate confidence' : 'Lower confidence'
   return (
-    <button
-      onClick={onUpgrade}
-      style={{
-        width: '100%', textAlign: 'left', cursor: 'pointer',
-        background: 'var(--card-bg)', borderRadius: '12px',
-        borderTop: '0.5px solid var(--border-col)',
-        borderRight: '0.5px solid var(--border-col)',
-        borderBottom: '0.5px solid var(--border-col)',
-        borderLeft: '3px solid var(--teal)',
-        padding: '14px 16px',
-        display: 'flex', alignItems: 'center', gap: '12px',
-      }}
-    >
-      <div style={{ flex: 1 }}>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '3px' }}>
-          Want a more personal plan?
-        </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-          Terrain, injury history, training style. Your plan adapts around what matters to you.
-        </div>
+    <div style={{ paddingTop: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: colour }}>{score}</span>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: colour }}>{label}</span>
       </div>
-      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--teal)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-        Upgrade to personalise →
-      </span>
-    </button>
+      {risks?.length ? (
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.55 }}>
+          {risks.join(' · ')}
+        </div>
+      ) : null}
+    </div>
   )
 }
 
-// ─── Main screen ──────────────────────────────────────────────────────────────
+// Teaser card shown to free users on the last free step
+function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
+  return (
+    <div style={{ background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '16px 18px', marginTop: '24px' }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
+        Unlock more personalisation
+      </div>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55, marginBottom: '14px' }}>
+        Add terrain, injury history, hard session preferences, and training style. Your plan adapts to you — not a template.
+      </div>
+      <button
+        onClick={onUpgrade}
+        style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--warn)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+      >
+        Upgrade to personalise →
+      </button>
+    </div>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function GeneratePlanScreen({
-  onBack,
-  firstName,
-  lastName,
-  restingHR: initialRHR,
-  onPlanSaved,
-  isOnboarding = false,
-  hasExistingPlan = false,
-  hasPaidAccess = true,
-  onUpgrade,
+  onBack, firstName: _firstName, lastName: _lastName, restingHR: initialRHR,
+  onPlanSaved, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade,
 }: {
   onBack: () => void
   firstName?: string
@@ -356,147 +289,186 @@ export default function GeneratePlanScreen({
   hasPaidAccess?: boolean
   onUpgrade?: () => void
 }) {
-  const lastStep: WizardStep = hasPaidAccess ? 4 : 3
-  const totalSteps = hasPaidAccess ? 4 : 3
-
-  const [appStep, setAppStep]   = useState<AppStep>(1)
-  const [error, setError]       = useState<string | null>(null)
+  // ── App-level step state ──────────────────────────────────────────────────
+  const [appStep, setAppStep]   = useState<AppStep>('distance')
   const [plan, setPlan]         = useState<Plan | null>(null)
+  const [error, setError]       = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
-  // Step 1 — Race
-  const [raceName, setRaceName]     = useState('')
-  const [raceDate, setRaceDate]     = useState('')
+  // ── Animation state ───────────────────────────────────────────────────────
+  const [visible, setVisible]     = useState(true)
+  const [slideFrom, setSlideFrom] = useState<'right' | 'left'>('right')
+
+  // ── Step 1 — Distance ─────────────────────────────────────────────────────
   const [distanceKm, setDistanceKm] = useState<number | null>(null)
-  const [goal, setGoal]             = useState<'finish' | 'time_target' | null>(null)
+
+  // ── Step 2 — Race details ─────────────────────────────────────────────────
+  const [raceName, setRaceName] = useState('')
+  const [raceDate, setRaceDate] = useState('')
+
+  // ── Step 3 — Goal ─────────────────────────────────────────────────────────
+  const [goal, setGoal] = useState<'finish' | 'time_target' | null>(null)
+
+  // ── Step 4 — Target time (paid/time_target only) ──────────────────────────
   const [targetTime, setTargetTime] = useState('')
 
-  // Step 2 — Fitness
-  const [age, setAge]             = useState('')
-  const [weeklyKm, setWeeklyKm]   = useState('')
+  // ── Step 5 — Fitness ─────────────────────────────────────────────────────
+  const [age,        setAge]        = useState('')
+  const [weeklyKm,   setWeeklyKm]   = useState('')
   const [longestRun, setLongestRun] = useState('')
-  // Benchmark — optional, enables VDOT-derived paces
-  const [benchmarkType, setBenchmarkType] = useState<'race' | 'tt_30min' | null>(null)
-  const [benchmarkDistKm, setBenchmarkDistKm] = useState<number | null>(null)
-  const [benchmarkTime, setBenchmarkTime] = useState('')
-  const [benchmarkTTDist, setBenchmarkTTDist] = useState('')
+  const [restingHR,  setRestingHR]  = useState(initialRHR ? String(initialRHR) : '')
 
-  // Step 3 — Schedule
+  // ── Step 6 — Benchmark ───────────────────────────────────────────────────
+  const [benchmarkType,    setBenchmarkType]    = useState<'race' | 'tt_30min' | null>(null)
+  const [benchmarkDistKm,  setBenchmarkDistKm]  = useState<number | null>(null)
+  const [benchmarkTime,    setBenchmarkTime]    = useState('')
+  const [benchmarkTTDist,  setBenchmarkTTDist]  = useState('')
+
+  // ── Step 7 — Schedule ────────────────────────────────────────────────────
   const [daysAvailable, setDaysAvailable] = useState<number | null>(null)
-  const [daysOff, setDaysOff]             = useState<string[]>([])
-  const [maxWeekday, setMaxWeekday]       = useState('')
 
-  // Step 4 — Profile (all optional, paid/trial only)
-  const [restingHR, setRestingHR] = useState(initialRHR ? String(initialRHR) : '')
-  const [terrain, setTerrain]     = useState<string | null>(null)
-  const [hardSessions, setHardSessions]   = useState<string | null>(null)
-  const [trainingStyle, setTrainingStyle] = useState<string | null>(null)
-  const [injuries, setInjuries]           = useState<string[]>([])
+  // ── Step 8 — Constraints ─────────────────────────────────────────────────
+  const [daysOff,     setDaysOff]     = useState<string[]>([])
+  const [maxWeekday,  setMaxWeekday]  = useState('')
 
-  // Pre-fill resting HR from profile if it arrives after mount
-  useEffect(() => {
-    if (initialRHR && !restingHR) setRestingHR(String(initialRHR))
-  }, [initialRHR])
+  // ── Step 9 — Hard sessions (paid) ────────────────────────────────────────
+  const [hardSessions, setHardSessions] = useState<'avoid' | 'neutral' | 'love' | 'overdo' | null>(null)
 
-  // Restore wizard draft from sessionStorage on mount (survives back-navigation and upgrade flow)
+  // ── Step 10 — Training style (paid) ──────────────────────────────────────
+  const [trainingStyle, setTrainingStyle] = useState<'predictable' | 'variety' | 'minimalist' | 'structured' | null>(null)
+
+  // ── Step 11 — Terrain (paid) ──────────────────────────────────────────────
+  const [terrain, setTerrain] = useState<'road' | 'trail' | 'mixed' | null>(null)
+
+  // ── Step 12 — Injuries (paid) ────────────────────────────────────────────
+  const [injuries, setInjuries] = useState<string[]>([])
+
+  // ── Restore wizard draft from sessionStorage ──────────────────────────────
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(WIZARD_KEY)
       if (!raw) return
       const s = JSON.parse(raw)
-      if (typeof s.appStep === 'number' && s.appStep >= 1 && s.appStep <= 4) setAppStep(s.appStep as WizardStep)
-      if (s.raceName)                  setRaceName(s.raceName)
-      if (s.raceDate)                  setRaceDate(s.raceDate)
-      if (s.distanceKm != null)        setDistanceKm(s.distanceKm)
-      if (s.goal)                      setGoal(s.goal)
-      if (s.targetTime)                setTargetTime(s.targetTime)
-      if (s.age)                       setAge(s.age)
-      if (s.weeklyKm)                  setWeeklyKm(s.weeklyKm)
-      if (s.longestRun)                setLongestRun(s.longestRun)
-      if (s.benchmarkType)             setBenchmarkType(s.benchmarkType)
-      if (s.benchmarkDistKm != null)   setBenchmarkDistKm(s.benchmarkDistKm)
-      if (s.benchmarkTime)             setBenchmarkTime(s.benchmarkTime)
-      if (s.benchmarkTTDist)           setBenchmarkTTDist(s.benchmarkTTDist)
-      if (s.daysAvailable != null)     setDaysAvailable(s.daysAvailable)
-      if (s.daysOff)                   setDaysOff(s.daysOff)
-      if (s.maxWeekday)                setMaxWeekday(s.maxWeekday)
-      if (s.terrain)                   setTerrain(s.terrain)
-      if (s.hardSessions)              setHardSessions(s.hardSessions)
-      if (s.trainingStyle)             setTrainingStyle(s.trainingStyle)
-      if (s.injuries)                  setInjuries(s.injuries)
+      if (s.distanceKm)      setDistanceKm(s.distanceKm)
+      if (s.raceName)        setRaceName(s.raceName)
+      if (s.raceDate)        setRaceDate(s.raceDate)
+      if (s.goal)            setGoal(s.goal)
+      if (s.targetTime)      setTargetTime(s.targetTime)
+      if (s.age)             setAge(s.age)
+      if (s.weeklyKm)        setWeeklyKm(s.weeklyKm)
+      if (s.longestRun)      setLongestRun(s.longestRun)
+      if (s.restingHR)       setRestingHR(s.restingHR)
+      if (s.benchmarkType)   setBenchmarkType(s.benchmarkType)
+      if (s.benchmarkDistKm) setBenchmarkDistKm(s.benchmarkDistKm)
+      if (s.benchmarkTime)   setBenchmarkTime(s.benchmarkTime)
+      if (s.benchmarkTTDist) setBenchmarkTTDist(s.benchmarkTTDist)
+      if (s.daysAvailable)   setDaysAvailable(s.daysAvailable)
+      if (Array.isArray(s.daysOff)) setDaysOff(s.daysOff)
+      if (s.maxWeekday)      setMaxWeekday(s.maxWeekday)
+      if (s.hardSessions)    setHardSessions(s.hardSessions)
+      if (s.trainingStyle)   setTrainingStyle(s.trainingStyle)
+      if (s.terrain)         setTerrain(s.terrain)
+      if (Array.isArray(s.injuries)) setInjuries(s.injuries)
+      // Restore sub-step if it's a valid wizard step name
+      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','fitness','benchmark','schedule','constraints','hard-sessions','training-style','terrain','injuries']
+      if (validSubSteps.includes(s.appStep)) setAppStep(s.appStep)
     } catch {}
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
-  // Persist wizard draft to sessionStorage on every form change
+  // ── Persist wizard draft to sessionStorage ────────────────────────────────
   useEffect(() => {
-    if (typeof appStep !== 'number') return // don't save transient states
+    if (typeof appStep !== 'string' || appStep === 'generating' || appStep === 'preview' || appStep === 'error') return
     try {
       sessionStorage.setItem(WIZARD_KEY, JSON.stringify({
-        appStep, raceName, raceDate, distanceKm, goal, targetTime,
-        age, weeklyKm, longestRun,
+        appStep, distanceKm, raceName, raceDate, goal, targetTime,
+        age, weeklyKm, longestRun, restingHR,
         benchmarkType, benchmarkDistKm, benchmarkTime, benchmarkTTDist,
         daysAvailable, daysOff, maxWeekday,
-        terrain, hardSessions, trainingStyle, injuries,
+        hardSessions, trainingStyle, terrain, injuries,
       }))
     } catch {}
-  }, [appStep, raceName, raceDate, distanceKm, goal, targetTime,
-      age, weeklyKm, longestRun,
+  }, [appStep, distanceKm, raceName, raceDate, goal, targetTime,
+      age, weeklyKm, longestRun, restingHR,
       benchmarkType, benchmarkDistKm, benchmarkTime, benchmarkTTDist,
       daysAvailable, daysOff, maxWeekday,
-      terrain, hardSessions, trainingStyle, injuries])
+      hardSessions, trainingStyle, terrain, injuries])
 
-  // ── Step validation ──────────────────────────────────────────────────────────
+  // ── Navigation helpers ────────────────────────────────────────────────────
 
-  function step1Valid() {
-    return raceDate !== '' && distanceKm !== null && goal !== null && (goal !== 'time_target' || targetTime !== '')
+  function navigateTo(step: AppStep, dir: 'fwd' | 'back') {
+    setSlideFrom(dir === 'fwd' ? 'right' : 'left')
+    setVisible(false)
+    setTimeout(() => {
+      setAppStep(step)
+      setVisible(true)
+    }, 140)
   }
-  function step2Valid() {
-    return age !== '' && Number(age) >= 14 && Number(age) <= 90 && weeklyKm !== '' && longestRun !== ''
-  }
-  function step3Valid() {
-    return daysAvailable !== null
-  }
-  // Step 4 is always valid (all optional)
-
-  function canProceed() {
-    if (appStep === 1) return step1Valid()
-    if (appStep === 2) return step2Valid()
-    if (appStep === 3) return step3Valid()
-    return true
-  }
-
-  // ── Handlers ─────────────────────────────────────────────────────────────────
 
   function goNext() {
-    if (appStep === lastStep) {
+    if (appStep === 'generating' || appStep === 'preview' || appStep === 'error') return
+    const sequence = getStepSequence(!!hasPaidAccess, goal)
+    const idx      = sequence.indexOf(appStep as WizardSubStep)
+    if (idx === sequence.length - 1) {
       void handleGenerate()
-    } else if (typeof appStep === 'number' && appStep < lastStep) {
-      setAppStep((appStep + 1) as WizardStep)
+    } else {
+      navigateTo(sequence[idx + 1], 'fwd')
     }
+  }
+
+  function skipStep() {
+    goNext()
   }
 
   function goBack() {
-    if (appStep === 1 || appStep === 'error') {
-      onBack()
-    } else if (appStep === 'preview') {
-      setAppStep(lastStep)
-    } else if (typeof appStep === 'number' && appStep > 1) {
-      setAppStep((appStep - 1) as WizardStep)
+    if (appStep === 'error') { onBack(); return }
+    if (appStep === 'preview') { navigateTo(getLastWizardStep(), 'back'); return }
+    if (appStep === 'generating') { onBack(); return }
+    const sequence = getStepSequence(!!hasPaidAccess, goal)
+    const idx      = sequence.indexOf(appStep as WizardSubStep)
+    if (idx <= 0) { onBack() } else { navigateTo(sequence[idx - 1], 'back') }
+  }
+
+  function getLastWizardStep(): WizardSubStep {
+    const sequence = getStepSequence(!!hasPaidAccess, goal)
+    return sequence[sequence.length - 1]
+  }
+
+  // ── Validation ────────────────────────────────────────────────────────────
+
+  function canProceed(): boolean {
+    switch (appStep) {
+      case 'distance':       return distanceKm !== null
+      case 'race-details':   return raceDate !== ''
+      case 'goal':           return goal !== null
+      case 'target-time':    return targetTime !== ''
+      case 'fitness':
+        return age !== '' && Number(age) >= 14 && Number(age) <= 90 && weeklyKm !== '' && longestRun !== ''
+      case 'benchmark':
+        if (benchmarkType === 'race')     return !!(benchmarkDistKm && benchmarkTime)
+        if (benchmarkType === 'tt_30min') return benchmarkTTDist !== ''
+        return true
+      case 'schedule':       return daysAvailable !== null
+      case 'constraints':    return true
+      case 'hard-sessions':  return true
+      case 'training-style': return true
+      case 'terrain':        return true
+      case 'injuries':       return true
+      default:               return true
     }
   }
+
+  // ── Plan generation ───────────────────────────────────────────────────────
 
   async function handleGenerate() {
     setAppStep('generating')
     setError(null)
-    setPlan(null)   // reset so ceremony starts in loading phase
+    setPlan(null)
 
     const benchmark = (() => {
-      if (benchmarkType === 'race' && benchmarkDistKm && benchmarkTime) {
+      if (benchmarkType === 'race' && benchmarkDistKm && benchmarkTime)
         return { type: 'race' as const, distance_km: benchmarkDistKm, time: benchmarkTime }
-      }
-      if (benchmarkType === 'tt_30min' && benchmarkTTDist) {
+      if (benchmarkType === 'tt_30min' && benchmarkTTDist)
         return { type: 'tt_30min' as const, distance_km: Number(benchmarkTTDist), time: '30:00' }
-      }
       return undefined
     })()
 
@@ -514,27 +486,25 @@ export default function GeneratePlanScreen({
       benchmark,
       days_cannot_train:     daysOff.length ? daysOff : undefined,
       max_weekday_mins:      maxWeekday ? Number(maxWeekday) : undefined,
-      // Step 4 fields — paid/trial only
-      training_style:            hasPaidAccess ? (trainingStyle as GeneratorInput['training_style'] ?? undefined) : undefined,
-      hard_session_relationship: hasPaidAccess ? (hardSessions as GeneratorInput['hard_session_relationship'] ?? undefined) : undefined,
+      training_style:            hasPaidAccess ? (trainingStyle ?? undefined) : undefined,
+      hard_session_relationship: hasPaidAccess ? (hardSessions ?? undefined) : undefined,
       injury_history:            hasPaidAccess && injuries.length ? injuries.map(i => i.toLowerCase()) : undefined,
-      terrain:                   hasPaidAccess ? (terrain as GeneratorInput['terrain'] ?? undefined) : undefined,
+      terrain:                   hasPaidAccess ? (terrain ?? undefined) : undefined,
     }
 
     try {
-      const res = await fetch('/api/generate-plan', {
+      const res  = await fetch('/api/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(input),
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error ?? 'Something went wrong. Please try again.')
+        setError(data.error ?? 'Something went wrong building the plan.')
         setAppStep('error')
         return
       }
       setPlan(data.plan)
-      // Ceremony handles the transition to 'preview' via onRevealComplete
     } catch {
       setError('Could not reach the server. Check your connection.')
       setAppStep('error')
@@ -547,89 +517,73 @@ export default function GeneratePlanScreen({
     try {
       await onPlanSaved(plan)
       sessionStorage.removeItem(WIZARD_KEY)
-    } catch {
-      setIsSaving(false)
-    }
+    } catch { setIsSaving(false) }
   }
 
-  // ── Generating ceremony ──────────────────────────────────────────────────────
+  // ── Special screens (ceremony / preview / error) ──────────────────────────
 
   if (appStep === 'generating') {
     return (
       <GeneratingCeremony
-        hasPaidAccess={hasPaidAccess}
+        hasPaidAccess={!!hasPaidAccess}
         plan={plan}
         onRevealComplete={() => setAppStep('preview')}
       />
     )
   }
 
-  // ── Error screen ─────────────────────────────────────────────────────────────
-
   if (appStep === 'error') {
     return (
-      <div style={{ padding: '16px' }}>
-        <button onClick={goBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '8px 0 20px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px' }}>Back</span>
-        </button>
-
-        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--amber)', padding: '20px', marginBottom: '16px' }}>
-          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 500, color: 'var(--amber)', marginBottom: '8px' }}>
-            Something went wrong building the plan.
-          </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-            {error}
-          </div>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
+        <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
+          <BackBtn onClick={goBack} />
         </div>
-
-        <button onClick={() => setAppStep(lastStep)} style={{
-          width: '100%', padding: '14px', borderRadius: '12px',
-          background: 'var(--accent)', border: 'none', cursor: 'pointer',
-          fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 500,
-          color: 'var(--zona-navy)',
-        }}>
-          Try again
-        </button>
+        <div style={{ flex: 1, padding: '0 20px 24px' }}>
+          <div style={{ background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '20px', marginBottom: '16px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--warn)', marginBottom: '8px' }}>
+              Something went wrong building the plan.
+            </div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55 }}>
+              {error}
+            </div>
+          </div>
+          <button
+            onClick={() => navigateTo(getLastWizardStep(), 'back')}
+            style={{ width: '100%', padding: '15px', borderRadius: 'var(--radius-md)', background: 'var(--moss)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: '#fff' }}
+          >
+            Try again
+          </button>
+        </div>
       </div>
     )
   }
 
-  // ── Preview screen ───────────────────────────────────────────────────────────
-
   if (appStep === 'preview' && plan) {
     const { meta, weeks } = plan
-
     return (
-      <div style={{ paddingBottom: '40px' }}>
-        <div style={{ padding: '16px 16px 0' }}>
-          <button onClick={goBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px' }}>Adjust inputs</span>
-          </button>
-        </div>
-
-        <div style={{ padding: '0 16px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)', paddingBottom: '40px' }}>
+        <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
+          <BackBtn onClick={goBack} label="Adjust inputs" />
           <div style={{ marginTop: '16px' }}>
-            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.3px' }}>
               {meta.race_name || 'Your plan'}
             </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', marginTop: '4px' }}>
               {weeks.length} weeks · starts {meta.plan_start} · {meta.race_distance_km}km
             </div>
           </div>
+        </div>
 
-          {/* Confidence badge — paid-only; absent on free plans (INV-PLAN-008) */}
+        <div style={{ flex: 1, padding: '0 20px', overflowY: 'auto' }}>
           {meta.confidence_score != null && (
-            <div style={{ background: 'var(--card-bg)', borderRadius: '14px', border: '0.5px solid var(--border-col)', padding: '4px 16px 20px', margin: '16px 0' }}>
+            <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '4px 16px 20px', margin: '16px 0' }}>
               <ConfidenceBadge score={meta.confidence_score} risks={meta.confidence_risks} />
             </div>
           )}
 
-          {/* Coach intro — paid-only */}
           {meta.coach_intro && (
-            <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', borderLeft: '3px solid var(--teal)', padding: '14px 16px', margin: '16px 0' }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+            <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', borderLeft: '3px solid var(--moss)', padding: '14px 16px', margin: '16px 0' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.65 }}>
                 {meta.coach_intro}
               </div>
             </div>
@@ -639,22 +593,20 @@ export default function GeneratePlanScreen({
             <PhaseArc weeks={weeks} />
           </div>
 
+          {weeks.slice(0, 4).map(w => (
+            <WeekCard key={w.n} week={w} />
+          ))}
+
           {weeks.length > 4 && (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '4px 0 16px' }}>
-              + {weeks.length - Math.min(4, weeks.length)} more weeks in your plan
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', textAlign: 'center', padding: '4px 0 16px' }}>
+              + {weeks.length - 4} more weeks in your plan
             </div>
           )}
         </div>
 
-        {/* Actions — sticky bottom */}
-        <div style={{
-          position: 'sticky', bottom: 0,
-          background: 'var(--bg)',
-          borderTop: '0.5px solid var(--border-col)',
-          padding: '12px 16px calc(12px + env(safe-area-inset-bottom))',
-        }}>
+        <div style={{ position: 'sticky', bottom: 0, background: 'var(--bg)', borderTop: '1px solid var(--line)', padding: '12px 20px calc(12px + env(safe-area-inset-bottom))' }}>
           {hasExistingPlan && !isSaving && (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '8px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', textAlign: 'center', marginBottom: '8px' }}>
               This replaces your current plan.
             </div>
           )}
@@ -663,19 +615,18 @@ export default function GeneratePlanScreen({
               onClick={handleUsePlan}
               disabled={isSaving}
               style={{
-                width: '100%', padding: '15px', borderRadius: '12px',
-                background: isSaving ? 'var(--accent-dim)' : 'var(--accent)',
+                width: '100%', padding: '15px', borderRadius: 'var(--radius-md)',
+                background: isSaving ? 'var(--moss-soft)' : 'var(--moss)',
                 border: 'none', cursor: isSaving ? 'wait' : 'pointer',
-                fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600,
-                color: isSaving ? 'var(--accent)' : 'var(--zona-navy)',
-                transition: 'all 0.15s',
+                fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
+                color: isSaving ? 'var(--mute)' : '#fff', transition: 'all 0.15s',
               }}
             >
               {isSaving ? 'Saving…' : 'Use this plan'}
             </button>
           ) : (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
-              Plan preview — save is not available in this context
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', textAlign: 'center' }}>
+              Preview only — save not available in this context
             </div>
           )}
         </div>
@@ -683,237 +634,291 @@ export default function GeneratePlanScreen({
     )
   }
 
-  // ── Wizard form ──────────────────────────────────────────────────────────────
+  // ── Wizard ────────────────────────────────────────────────────────────────
 
-  const currentStep = appStep as WizardStep
-  const stepMeta = currentStep === 1 && isOnboarding
-    ? { title: 'Welcome to Zona.', subtitle: "Let's build your plan. Start with the finish line." }
-    : STEP_META[currentStep]
+  const currentSubStep = appStep as WizardSubStep
+  const sequence       = getStepSequence(!!hasPaidAccess, goal)
+  const currentIdx     = sequence.indexOf(currentSubStep)
+  const isLastStep     = currentIdx === sequence.length - 1
+  const stepMeta       = STEP_META[currentSubStep] ?? STEP_META['distance']
+  const ctaLabel       = isLastStep ? 'Generate my plan →' : 'Continue'
 
-  const ctaLabel = currentStep === lastStep ? 'Generate my plan' : 'Continue'
+  const welcomeOverride = isOnboarding && currentSubStep === 'distance'
+    ? { title: 'Welcome to Zona.', subtitle: "Let's build your plan. Start with the distance." }
+    : null
+
+  const title    = welcomeOverride?.title    ?? stepMeta.title
+  const subtitle = welcomeOverride?.subtitle ?? stepMeta.subtitle
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
-      {/* Header */}
-      <div style={{ padding: '16px 16px 0', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <button onClick={goBack} style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: 'var(--text-muted)', padding: 0,
-            display: 'flex', alignItems: 'center', gap: '6px',
-          }}>
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-              <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px' }}>
-              {currentStep === 1 ? 'Back' : `Step ${currentStep - 1}`}
-            </span>
-          </button>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
-            {currentStep} / {totalSteps}
-          </span>
-        </div>
-
-        <StepProgress current={currentStep} total={totalSteps} />
-
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
+      {/* Header — back button + progress */}
+      <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
+        <BackBtn onClick={goBack} />
+        <ProgressDots total={sequence.length} current={currentIdx} />
         <div style={{ marginBottom: '28px' }}>
-          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.3px', marginBottom: '6px' }}>
-            {stepMeta.title}
-          </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-            {stepMeta.subtitle}
-          </div>
+          <h1 style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: '8px', margin: '0 0 8px' }}>
+            {title}
+          </h1>
+          <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)', lineHeight: 1.55, margin: 0 }}>
+            {subtitle}
+          </p>
         </div>
       </div>
 
-      {/* Form body — scrollable */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px' }}>
+      {/* Step content — animated */}
+      <div
+        style={{
+          flex: 1,
+          padding: '0 20px 24px',
+          overflowY: 'auto',
+          opacity:   visible ? 1 : 0,
+          transform: visible ? 'translateX(0)' : `translateX(${slideFrom === 'right' ? '14px' : '-14px'})`,
+          transition: visible ? 'opacity 0.18s ease-out, transform 0.18s ease-out' : 'none',
+        }}
+      >
+        {renderStep()}
+      </div>
 
-        {/* ── Step 1: Race ── */}
-        {currentStep === 1 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* CTA — sticky bottom */}
+      <div style={{
+        flexShrink: 0,
+        padding: '12px 20px calc(12px + env(safe-area-inset-bottom))',
+        borderTop: '1px solid var(--line)',
+        background: 'var(--bg)',
+      }}>
+        {stepMeta.optional && (
+          <button
+            onClick={skipStep}
+            style={{ width: '100%', textAlign: 'center', marginBottom: '8px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', padding: '8px' }}
+          >
+            Skip this →
+          </button>
+        )}
+        <button
+          onClick={canProceed() ? goNext : undefined}
+          disabled={!canProceed()}
+          style={{
+            width: '100%', padding: '15px', borderRadius: 'var(--radius-md)',
+            background: canProceed() ? 'var(--moss)' : 'var(--moss-soft)',
+            color:      canProceed() ? '#fff'         : 'var(--mute)',
+            border: 'none', cursor: canProceed() ? 'pointer' : 'not-allowed',
+            fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
+            transition: 'all 0.15s',
+          }}
+        >
+          {ctaLabel}
+        </button>
+      </div>
+    </div>
+  )
 
-            <div>
-              <FieldLabel optional>Race name</FieldLabel>
-              <StepInput value={raceName} onChange={setRaceName} placeholder="e.g. London Marathon" />
-            </div>
+  // ── Step renderers ────────────────────────────────────────────────────────
 
-            <div>
-              <FieldLabel>Race date</FieldLabel>
-              <StepInput type="date" value={raceDate} onChange={setRaceDate} />
-            </div>
+  function renderStep(): React.ReactNode {
+    switch (currentSubStep) {
 
-            <div>
-              <FieldLabel>Distance</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {DISTANCES.map(d => {
-                  const locked = d.paid && !hasPaidAccess
-                  const active = distanceKm === d.value
-                  return (
-                    <button
-                      key={d.value}
-                      onClick={() => locked ? onUpgrade?.() : setDistanceKm(d.value)}
-                      style={{
-                        padding: '9px 16px',
-                        borderRadius: '10px',
-                        border: `0.5px solid ${active ? 'var(--accent)' : locked ? 'var(--border-col)' : 'var(--border-col)'}`,
-                        background: active ? 'var(--accent-soft)' : 'none',
-                        color: active ? 'var(--accent)' : locked ? 'var(--text-muted)' : 'var(--text-secondary)',
-                        fontFamily: 'var(--font-ui)',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                        whiteSpace: 'nowrap',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        opacity: locked ? 0.6 : 1,
-                      }}
-                    >
-                      {d.label}
-                      {locked && (
-                        <span style={{ fontSize: '10px', color: 'var(--teal)', letterSpacing: '0.04em' }}>
-                          PAID
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-              {!hasPaidAccess && (
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
-                  Marathon and longer require a paid plan. <button onClick={onUpgrade} style={{ background: 'none', border: 'none', color: 'var(--teal)', fontFamily: 'var(--font-ui)', fontSize: '11px', cursor: 'pointer', padding: 0 }}>Start free trial →</button>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <FieldLabel>Goal</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <ChipToggle label="Just finish" active={goal === 'finish'} onClick={() => setGoal('finish')} />
-                <ChipToggle label="Target time" active={goal === 'time_target'} onClick={() => setGoal('time_target')} />
-              </div>
-            </div>
-
-            {goal === 'time_target' && (
-              <div>
-                <FieldLabel>Target time</FieldLabel>
-                <StepInput value={targetTime} onChange={setTargetTime} placeholder="e.g. 4:30:00" />
+      // ── Distance ───────────────────────────────────────────────────────────
+      case 'distance':
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            {DISTANCES.map(d => {
+              const locked = d.paid && !hasPaidAccess
+              const active = distanceKm === d.value
+              return (
+                <button
+                  key={d.value}
+                  onClick={() => locked ? onUpgrade?.() : setDistanceKm(d.value)}
+                  style={{
+                    padding: '18px 16px', borderRadius: 'var(--radius-lg)',
+                    border: `1.5px solid ${active ? 'var(--moss)' : 'var(--line)'}`,
+                    background: active ? 'var(--moss-soft)' : 'var(--card)',
+                    cursor: locked ? 'default' : 'pointer',
+                    textAlign: 'left', transition: 'all 0.15s',
+                    opacity: locked ? 0.55 : 1,
+                    display: 'flex', flexDirection: 'column', gap: '4px',
+                    minHeight: '72px', position: 'relative',
+                  }}
+                >
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: active ? 700 : 500, color: active ? 'var(--moss)' : 'var(--ink)' }}>{d.label}</span>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>{d.sub}</span>
+                  {locked && (
+                    <span style={{ position: 'absolute', top: '8px', right: '10px', fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700, color: 'var(--moss)', letterSpacing: '0.08em' }}>
+                      PAID
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+            {!hasPaidAccess && (
+              <div style={{ gridColumn: '1/-1', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '4px' }}>
+                Marathon and longer require a paid plan.{' '}
+                <button onClick={onUpgrade} style={{ background: 'none', border: 'none', color: 'var(--moss)', fontFamily: 'var(--font-ui)', fontSize: '12px', cursor: 'pointer', padding: 0 }}>
+                  Start free trial →
+                </button>
               </div>
             )}
           </div>
-        )}
+        )
 
-        {/* ── Step 2: Fitness ── */}
-        {currentStep === 2 && (
+      // ── Race details ───────────────────────────────────────────────────────
+      case 'race-details':
+        return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
             <div>
-              <FieldLabel>Age</FieldLabel>
-              <StepInput type="number" value={age} onChange={setAge} placeholder="32" min={14} max={90} />
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
-                Used to calculate your max heart rate and training zones.
-              </div>
+              <FieldLabel optional>Race name</FieldLabel>
+              <WizardInput value={raceName} onChange={setRaceName} placeholder="e.g. London Marathon" />
             </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <FieldLabel>Avg weekly km — last 4 weeks</FieldLabel>
-                <StepInput type="number" value={weeklyKm} onChange={setWeeklyKm} placeholder="35" min={0} />
-              </div>
-              <div>
-                <FieldLabel>Longest run — last 6 weeks (km)</FieldLabel>
-                <StepInput type="number" value={longestRun} onChange={setLongestRun} placeholder="18" min={0} />
-              </div>
-            </div>
-
-            {/* Benchmark — optional, enables VDOT-derived paces */}
             <div>
-              <FieldLabel optional>Recent benchmark</FieldLabel>
-              <div style={{
-                background: 'var(--card-bg)', borderRadius: '12px',
-                border: '0.5px solid var(--border-col)', padding: '14px 16px',
-              }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '12px' }}>
-                  A recent race time or time trial gives us precise pace targets for every session. Without one we use population estimates — still works, less personal.
-                </div>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
-                  <ChipToggle
-                    label="Recent race result"
-                    active={benchmarkType === 'race'}
-                    onClick={() => setBenchmarkType(benchmarkType === 'race' ? null : 'race')}
-                  />
-                  <ChipToggle
-                    label="30-min time trial"
-                    active={benchmarkType === 'tt_30min'}
-                    onClick={() => setBenchmarkType(benchmarkType === 'tt_30min' ? null : 'tt_30min')}
-                  />
-                </div>
-
-                {benchmarkType === 'race' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div>
-                      <FieldLabel>Race distance</FieldLabel>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        {BENCHMARK_DISTANCES.map(d => (
-                          <ChipToggle
-                            key={d.value}
-                            label={d.label}
-                            active={benchmarkDistKm === d.value}
-                            onClick={() => setBenchmarkDistKm(d.value)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <FieldLabel>Finish time</FieldLabel>
-                      <StepInput
-                        value={benchmarkTime}
-                        onChange={setBenchmarkTime}
-                        placeholder="e.g. 25:30 or 1:52:00"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {benchmarkType === 'tt_30min' && (
-                  <div>
-                    <FieldLabel>Distance covered in 30 minutes (km)</FieldLabel>
-                    <StepInput
-                      type="number"
-                      value={benchmarkTTDist}
-                      onChange={setBenchmarkTTDist}
-                      placeholder="e.g. 5.2"
-                      min={1}
-                    />
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
-                      Run as far as you can in exactly 30 minutes on a flat surface. Record the distance.
-                    </div>
-                  </div>
-                )}
-              </div>
+              <FieldLabel>Race date</FieldLabel>
+              <WizardInput type="date" value={raceDate} onChange={setRaceDate} />
+              <FieldNote>Date locks the plan length. Everything works backwards from here.</FieldNote>
             </div>
           </div>
-        )}
+        )
 
-        {/* ── Step 3: Schedule ── */}
-        {currentStep === 3 && (
+      // ── Goal ───────────────────────────────────────────────────────────────
+      case 'goal':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <OptionCard
+              label="Just finish."
+              sub="Get to the line in one piece. That's the job."
+              active={goal === 'finish'}
+              onClick={() => setGoal('finish')}
+            />
+            <OptionCard
+              label="Hit a time."
+              sub="A number on the clock. You'll need to earn it."
+              active={goal === 'time_target'}
+              onClick={() => setGoal('time_target')}
+            />
+          </div>
+        )
+
+      // ── Target time ────────────────────────────────────────────────────────
+      case 'target-time':
+        return (
+          <div>
+            <FieldLabel>Target time</FieldLabel>
+            <WizardInput value={targetTime} onChange={setTargetTime} placeholder="e.g. 4:30:00" />
+            <FieldNote>Format: h:mm:ss for marathon. mm:ss for 5K/10K.</FieldNote>
+          </div>
+        )
+
+      // ── Fitness ────────────────────────────────────────────────────────────
+      case 'fitness':
+        return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
             <div>
-              <FieldLabel>How many days can you run each week?</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {[2,3,4,5,6].map(n => (
-                  <ChipToggle key={n} label={`${n} days`} active={daysAvailable === n} onClick={() => setDaysAvailable(n)} />
-                ))}
-              </div>
+              <FieldLabel>Age</FieldLabel>
+              <WizardInput type="number" value={age} onChange={setAge} placeholder="32" min={14} max={90} />
+              <FieldNote>Used to calculate your max heart rate via the Tanaka formula.</FieldNote>
+            </div>
+            <div>
+              <FieldLabel>Average weekly km — last 4 weeks</FieldLabel>
+              <WizardInput type="number" value={weeklyKm} onChange={setWeeklyKm} placeholder="35" min={0} />
+            </div>
+            <div>
+              <FieldLabel>Longest run in last 6 weeks (km)</FieldLabel>
+              <WizardInput type="number" value={longestRun} onChange={setLongestRun} placeholder="18" min={0} />
+            </div>
+          </div>
+        )
+
+      // ── Benchmark ──────────────────────────────────────────────────────────
+      case 'benchmark':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <Chip
+                label="Race result"
+                active={benchmarkType === 'race'}
+                onClick={() => setBenchmarkType(benchmarkType === 'race' ? null : 'race')}
+              />
+              <Chip
+                label="30-min time trial"
+                active={benchmarkType === 'tt_30min'}
+                onClick={() => setBenchmarkType(benchmarkType === 'tt_30min' ? null : 'tt_30min')}
+              />
             </div>
 
+            {benchmarkType === 'race' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <FieldLabel>Race distance</FieldLabel>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {BENCHMARK_DISTANCES.map(d => (
+                      <Chip
+                        key={d.value}
+                        label={d.label}
+                        active={benchmarkDistKm === d.value}
+                        onClick={() => setBenchmarkDistKm(d.value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <FieldLabel>Finish time</FieldLabel>
+                  <WizardInput value={benchmarkTime} onChange={setBenchmarkTime} placeholder="e.g. 25:30 or 1:52:00" />
+                </div>
+              </div>
+            )}
+
+            {benchmarkType === 'tt_30min' && (
+              <div>
+                <FieldLabel>Distance covered in 30 minutes (km)</FieldLabel>
+                <WizardInput type="number" value={benchmarkTTDist} onChange={setBenchmarkTTDist} placeholder="e.g. 5.2" min={1} />
+                <FieldNote>Run flat-out for exactly 30 minutes and record the distance.</FieldNote>
+              </div>
+            )}
+
+            {benchmarkType === null && (
+              <div style={{ background: 'var(--bg-soft)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55 }}>
+                  Without a benchmark we use population estimates for your fitness level. Still works — just less personal.
+                </div>
+              </div>
+            )}
+          </div>
+        )
+
+      // ── Schedule ───────────────────────────────────────────────────────────
+      case 'schedule':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {[2,3,4,5,6].map(n => (
+              <button
+                key={n}
+                onClick={() => setDaysAvailable(n)}
+                style={{
+                  width: '100%', padding: '18px 20px', borderRadius: 'var(--radius-lg)',
+                  border: `1.5px solid ${daysAvailable === n ? 'var(--moss)' : 'var(--line)'}`,
+                  background: daysAvailable === n ? 'var(--moss-soft)' : 'var(--card)',
+                  textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}
+              >
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: daysAvailable === n ? 700 : 500, color: daysAvailable === n ? 'var(--moss)' : 'var(--ink)' }}>
+                  {n} days
+                </span>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>
+                  {n === 2 ? 'Minimal' : n === 3 ? 'Light' : n === 4 ? 'Moderate' : n === 5 ? 'Committed' : 'Heavy'}
+                </span>
+              </button>
+            ))}
+          </div>
+        )
+
+      // ── Constraints ────────────────────────────────────────────────────────
+      case 'constraints':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div>
               <FieldLabel optional>Days you can never train</FieldLabel>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {DAYS_SHORT.map((d, i) => {
-                  const key = DAY_KEYS[i]
+                  const key    = DAY_KEYS[i]
                   const active = daysOff.includes(key)
                   return (
                     <button
@@ -921,10 +926,10 @@ export default function GeneratePlanScreen({
                       onClick={() => setDaysOff(prev => active ? prev.filter(x => x !== key) : [...prev, key])}
                       style={{
                         width: '44px', height: '44px', borderRadius: '50%',
-                        border: `0.5px solid ${active ? 'var(--teal)' : 'var(--border-col)'}`,
-                        background: active ? 'var(--accent-soft)' : 'none',
-                        color: active ? 'var(--teal)' : 'var(--text-secondary)',
-                        fontFamily: 'var(--font-ui)', fontSize: '12px',
+                        border: `1px solid ${active ? 'var(--moss)' : 'var(--line)'}`,
+                        background: active ? 'var(--moss-soft)' : 'var(--card)',
+                        color: active ? 'var(--moss)' : 'var(--ink-2)',
+                        fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: active ? 600 : 400,
                         cursor: 'pointer', transition: 'all 0.15s',
                       }}
                     >
@@ -934,123 +939,97 @@ export default function GeneratePlanScreen({
                 })}
               </div>
             </div>
-
             <div>
-              <FieldLabel optional>Max weekday session length (mins)</FieldLabel>
-              <StepInput type="number" value={maxWeekday} onChange={setMaxWeekday} placeholder="90" min={30} max={180} />
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
-                Leave blank for no limit. Applies Monday–Friday only.
-              </div>
+              <FieldLabel optional>Max weekday session (mins)</FieldLabel>
+              <WizardInput type="number" value={maxWeekday} onChange={setMaxWeekday} placeholder="90" min={30} max={180} />
+              <FieldNote>Leave blank for no limit. Applies Monday–Friday only.</FieldNote>
             </div>
-
-            {/* Teaser — free users only, non-blocking upsell to Step 4 personalisation */}
-            {!hasPaidAccess && onUpgrade && (
-              <TeaserCard onUpgrade={onUpgrade} />
-            )}
+            {!hasPaidAccess && onUpgrade && <TeaserCard onUpgrade={onUpgrade} />}
           </div>
-        )}
+        )
 
-        {/* ── Step 4: Profile + Generate (paid/trial only) ── */}
-        {currentStep === 4 && hasPaidAccess && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-            <div>
-              <FieldLabel optional>Resting heart rate</FieldLabel>
-              <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', padding: '14px 16px', marginBottom: '4px' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '12px' }}>
-                  Refines your Zone 2 ceiling via the Karvonen formula. Check your wearable's overnight average, or measure first thing in the morning before getting up. Skip if you don't know it.
-                </div>
-                <StepInput type="number" value={restingHR} onChange={setRestingHR} placeholder="e.g. 52" min={30} max={100} />
-              </div>
-              {initialRHR && (
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--teal)', marginTop: '4px' }}>
-                  Pre-filled from your profile
-                </div>
-              )}
-            </div>
-
-            <div>
-              <FieldLabel optional>Terrain preference</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {(['road', 'trail', 'mixed'] as const).map(t => (
-                  <ChipToggle key={t} label={t.charAt(0).toUpperCase() + t.slice(1)} active={terrain === t} onClick={() => setTerrain(t)} />
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <FieldLabel optional>Hard sessions</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {([
-                  { value: 'avoid',   label: 'Avoid them' },
-                  { value: 'neutral', label: 'Fine either way' },
-                  { value: 'love',    label: 'Bring it on' },
-                  { value: 'overdo',  label: 'I overdo it' },
-                ] as const).map(o => (
-                  <ChipToggle key={o.value} label={o.label} active={hardSessions === o.value} onClick={() => setHardSessions(o.value)} />
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <FieldLabel optional>Training style</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {([
-                  { value: 'predictable', label: 'Predictable' },
-                  { value: 'variety',     label: 'Variety' },
-                  { value: 'minimalist',  label: 'Minimalist' },
-                  { value: 'structured',  label: 'Structured' },
-                ] as const).map(o => (
-                  <ChipToggle key={o.value} label={o.label} active={trainingStyle === o.value} onClick={() => setTrainingStyle(o.value)} />
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <FieldLabel optional>Injury history</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {INJURIES.map(inj => (
-                  <ChipToggle
-                    key={inj}
-                    label={inj}
-                    active={injuries.includes(inj)}
-                    onClick={() => setInjuries(prev => prev.includes(inj) ? prev.filter(x => x !== inj) : [...prev, inj])}
-                  />
-                ))}
-              </div>
-            </div>
+      // ── Hard sessions (paid) ───────────────────────────────────────────────
+      case 'hard-sessions':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {([
+              { value: 'avoid',   label: 'Avoid them.',    sub: 'Keep it aerobic. No intervals unless absolutely necessary.' },
+              { value: 'neutral', label: 'Fine either way.', sub: 'Structure as the plan needs. No strong preference.' },
+              { value: 'love',    label: 'Bring it on.',   sub: 'More quality, more structure. I like working hard.' },
+              { value: 'overdo',  label: 'I overdo it.',   sub: 'Reign me in. I know I\'ll push too hard if I can.' },
+            ] as const).map(o => (
+              <OptionCard key={o.value} label={o.label} sub={o.sub} active={hardSessions === o.value} onClick={() => setHardSessions(o.value)} />
+            ))}
           </div>
-        )}
+        )
+
+      // ── Training style (paid) ──────────────────────────────────────────────
+      case 'training-style':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {([
+              { value: 'predictable', label: 'Predictable.', sub: 'Same structure every week. I know what\'s coming.' },
+              { value: 'variety',     label: 'Variety.',     sub: 'Mix it up. Different workouts keep me engaged.' },
+              { value: 'minimalist',  label: 'Minimalist.',  sub: 'Fewer sessions, higher quality. Less is more.' },
+              { value: 'structured',  label: 'Structured.',  sub: 'Everything planned. Nothing improvised. I follow the script.' },
+            ] as const).map(o => (
+              <OptionCard key={o.value} label={o.label} sub={o.sub} active={trainingStyle === o.value} onClick={() => setTrainingStyle(o.value)} />
+            ))}
+          </div>
+        )
+
+      // ── Terrain (paid) ────────────────────────────────────────────────────
+      case 'terrain':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <OptionCard label="Road." sub="Pavement, tracks, flat surfaces. Speed-focused." active={terrain === 'road'} onClick={() => setTerrain('road')} />
+            <OptionCard label="Trail." sub="Off-road, elevation, technical terrain. Effort-focused." active={terrain === 'trail'} onClick={() => setTerrain('trail')} />
+            <OptionCard label="Mixed." sub="Both. Adapt pace targets to the surface." active={terrain === 'mixed'} onClick={() => setTerrain('mixed')} />
+          </div>
+        )
+
+      // ── Injuries (paid) ───────────────────────────────────────────────────
+      case 'injuries':
+        return (
+          <div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {INJURIES.map(inj => (
+                <Chip
+                  key={inj}
+                  label={inj}
+                  active={injuries.includes(inj)}
+                  onClick={() => setInjuries(prev => prev.includes(inj) ? prev.filter(x => x !== inj) : [...prev, inj])}
+                />
+              ))}
+            </div>
+            <FieldNote>Select any that are still an issue. We'll avoid aggravating them in the plan structure.</FieldNote>
+          </div>
+        )
+
+      default: return null
+    }
+  }
+}
+
+// ─── Back button ──────────────────────────────────────────────────────────────
+
+function BackBtn({ onClick, label }: { onClick: () => void; label?: string }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: '6px',
+        background: 'none', border: 'none', cursor: 'pointer',
+        color: 'var(--mute)', padding: '0 0 4px', marginBottom: '4px',
+        minHeight: '44px',
+      }}
+    >
+      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
       </div>
-
-      {/* CTA — sticky bottom */}
-      <div style={{
-        flexShrink: 0,
-        padding: '12px 16px calc(12px + env(safe-area-inset-bottom))',
-        borderTop: '0.5px solid var(--border-col)',
-        background: 'var(--bg)',
-      }}>
-        <button
-          onClick={goNext}
-          disabled={!canProceed()}
-          style={{
-            width: '100%', padding: '15px', borderRadius: '12px',
-            background: canProceed() ? 'var(--accent)' : 'var(--accent-dim)',
-            border: 'none', cursor: canProceed() ? 'pointer' : 'not-allowed',
-            fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600,
-            color: canProceed() ? 'var(--zona-navy)' : 'var(--accent)',
-            transition: 'all 0.15s',
-          }}
-        >
-          {ctaLabel}
-        </button>
-
-        {!canProceed() && currentStep === 1 && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '8px' }}>
-            Date, distance, and goal are required
-          </div>
-        )}
-      </div>
-    </div>
+      {label && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>{label}</span>}
+    </button>
   )
 }

@@ -39,6 +39,7 @@ export interface AdjustmentCheckInput {
   hrInZoneData:     { sessionType: string; hrInZonePct: number | null }[]
   efTrendPct:       number | null
   adjustmentsThisWeek: number
+  currentPhase?:    'base' | 'build' | 'peak' | 'taper'
 }
 
 /**
@@ -75,9 +76,10 @@ export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAd
 /** Hard guards — no adjustment if any fails. */
 function guardCheck(input: AdjustmentCheckInput): boolean {
   if (input.adjustmentsThisWeek >= MAX_ADJUSTMENTS_PER_WEEK) return false
-  // Taper protection
+  // Taper protection — both weeks-remaining guard and explicit phase guard
   const weeksRemaining = input.totalWeeks - input.currentWeekN
   if (weeksRemaining <= TAPER_PROTECTION_WEEKS) return false
+  if (input.currentPhase === 'taper') return false
   return true
 }
 
@@ -148,7 +150,26 @@ function buildEFDeclineAdjustment(input: AdjustmentCheckInput, efTrend: number):
   const sessions       = input.currentWeekSessions
   const sessionsBefore = sessions.map(s => ({ ...s }))
 
-  // Swap a quality session for easy if EF declining significantly
+  // Peak phase: don't swap quality sessions — add a coach note only
+  if (input.currentPhase === 'peak') {
+    const sessionsAfter = sessions.map(s => {
+      if (s.type === 'quality' || s.type === 'intervals') {
+        return { ...s, coach_note: `EF trending down ${Math.abs(Math.round(efTrend))}%. Stay disciplined on effort ceiling — peak phase, don't add stress.` }
+      }
+      return { ...s }
+    })
+    return {
+      weekN:          input.currentWeekN,
+      trigger:        { type: 'ef_decline', detail: { efTrend, threshold: EF_DECLINE_THRESHOLD_PCT, phase: 'peak' } },
+      adjustmentType: 'flag_for_review',
+      summary:        `Aerobic efficiency down ${Math.abs(Math.round(efTrend))}%. Peak phase — coach note added, no session swap.`,
+      sessionsBefore,
+      sessionsAfter,
+      requiresConfirmation: true,
+    }
+  }
+
+  // Base/build phase: swap quality to easy
   const sessionsAfter = sessions.map(s => {
     if (s.type === 'quality' || s.type === 'intervals') {
       return { ...s, type: 'easy' as const, coach_note: `Swapped to easy — aerobic efficiency trending down. Protect the base.` }
