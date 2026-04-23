@@ -1,6 +1,6 @@
 # Phase 4 — Completion Report
 
-Status: IN PROGRESS
+Status: COMPLETE ✅
 
 ---
 
@@ -21,12 +21,12 @@ Status: IN PROGRESS
 
 | Task | Status | Notes |
 |------|--------|-------|
-| T9: Dead code cleanup | in progress | |
-| T10: Empty/loading/error states | pending | |
-| T11: Copy audit | pending | |
-| T12: Accessibility sweep | pending | |
-| T13: ui-patterns.md update | pending | |
-| T14: Final verification | pending | |
+| T9: Dead code cleanup | ✅ done | Removed saveTheme/applyTheme dead blocks, CalendarOverlay.old.tsx deleted |
+| T10: Empty/loading/error states | ✅ done | All active screens have loading/empty/error coverage |
+| T11: Copy audit | ✅ done | Fatigue warning rewritten to Zona voice; no other active off-brand strings |
+| T12: Accessibility sweep | ✅ done | Back buttons 36→44px (4), week nav 44px min, steppers/close 32→44px, fatigue chips 44px min; focus-visible global |
+| T13: ui-patterns.md update | ✅ done | SectionLabel pattern 16 added; tap target rule added; back arrow size corrected |
+| T14: Final verification | ✅ done | tsc --noEmit clean; all ship criteria met |
 
 ---
 
@@ -45,7 +45,7 @@ Status: IN PROGRESS
 
 - Baseline (Task 1): ✅ clean
 - 4a completion (Task 8): ✅ clean
-- Final (Task 14): pending
+- Final (Task 14): ✅ clean
 
 ---
 
@@ -56,4 +56,4 @@ Status: IN PROGRESS
 - [x] B-002 migration + code fix
 - [x] "Careful Now" section present
 - [x] Personalisation wins landed
-- [ ] Phase 4b complete or documented skips
+- [x] Phase 4b complete or documented skips
