@@ -3333,7 +3333,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
             return (
               <div style={{ marginBottom: '20px' }}>
                 <CoachNoteBlock label="COACH">
-                  You've been logging heavy effort. Keep it honest today. {note}
+                  Heavy trend. {note ? `${note} ` : ''}Ease it back today.
                 </CoachNoteBlock>
               </div>
             )

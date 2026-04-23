@@ -12,3 +12,5 @@ Decisions made autonomously during Phase 4 polish. Low-risk or medium-risk calls
 | 6 | T7 | Hero adverb fatigue aware: only overrides easy/recovery/run, not quality/intervals | Hard sessions should stay hard regardless of fatigue trend — heavy fatigue doesn't change race intent | Low |
 | 7 | T7 | First name in hero: "Russ, you run" — uses firstName prop already passed | Existing prop, zero new data. Friendly without being over-familiar | Low |
 | 8 | T7 | Injury notes only added for achilles, knee, shin splints (top 3 from chip list) | Other injuries (back, hip, plantar) don't have specific running-form advice at this level; would need more precision | Low |
+| 9 | T10 | CoachScreen loading: static placeholder divs accepted (not canonical shimmer) | Loading state IS present and functional. Shimmer refactor would require redesigning the whole CoachScreen report card — out of Phase 4 scope | Low |
+| 10 | T10 | No functional empty/loading/error state gaps found in active screens | All screens have at minimum: loading guard, error inline, empty state message | Low |
