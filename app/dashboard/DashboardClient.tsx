@@ -371,15 +371,19 @@ export default function DashboardClient() {
           localStorage.setItem('strava_token_expires_at', String(tokenData.expires_at))
         }
 
-        // Fetch activities from the past 12 months
+        // Fetch activities from the past 12 months — paginate until exhausted or 5 pages max
         const oneYearAgo = new Date(); oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
         const after = Math.floor(oneYearAgo.getTime() / 1000)
-        const actRes = await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=100`, {
-          headers: { Authorization: `Bearer ${access_token}` },
-        })
-        const activities = await actRes.json()
-        if (!Array.isArray(activities)) { setStravaLoading(false); return }
-
+        const activities: any[] = []
+        for (let page = 1; page <= 5; page++) {
+          const actRes = await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=100&page=${page}`, {
+            headers: { Authorization: `Bearer ${access_token}` },
+          })
+          const batch = await actRes.json()
+          if (!Array.isArray(batch) || batch.length === 0) break
+          activities.push(...batch)
+          if (batch.length < 100) break
+        }
         const { getRuns } = await import('@/lib/strava')
         const runs = getRuns(activities)
         setStravaRuns(runs)
@@ -396,7 +400,7 @@ export default function DashboardClient() {
       if (!user) return
       const { data } = await supabase
         .from('session_completions')
-        .select('week_n, session_day, status, strava_activity_id, strava_activity_name')
+        .select('week_n, session_day, status, strava_activity_id, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag')
         .eq('user_id', user.id)
       if (data) {
         const map: Record<number, Record<string, any>> = {}
@@ -4266,7 +4270,7 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
           <button
             onClick={handleDelete}
             disabled={!checked || loading}
-            style={{ width: '100%', padding: '15px', background: checked && !loading ? 'var(--session-intervals)' : 'var(--session-intervals-soft)', border: 'none', borderRadius: '12px', color: checked && !loading ? '#ffffff' : 'var(--coral)', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, letterSpacing: '0.02em', cursor: checked && !loading ? 'pointer' : 'default', transition: 'background 0.15s, color 0.15s' }}
+            style={{ width: '100%', padding: '15px', background: checked && !loading ? 'var(--session-intervals)' : 'var(--session-intervals-soft)', border: 'none', borderRadius: '12px', color: checked && !loading ? 'var(--bg-primary)' : 'var(--coral)', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, letterSpacing: '0.02em', cursor: checked && !loading ? 'pointer' : 'default', transition: 'background 0.15s, color 0.15s' }}
           >
             {loading ? 'Deleting…' : 'Delete account'}
           </button>

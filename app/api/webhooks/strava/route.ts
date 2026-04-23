@@ -196,12 +196,22 @@ async function triggerAutoAnalysis(userId: string, activity: any, stravaActivity
 
   if (!bestDay) return
 
-  const sessionDay = `week_${week.n}_${bestDay}`
+  // Mark session complete in session_completions so the UI reflects the auto-link immediately
+  await supabase.from('session_completions').upsert({
+    user_id:              userId,
+    week_n:               week.n,
+    session_day:          bestDay,
+    status:               'complete',
+    strava_activity_id:   stravaActivityId,
+    strava_activity_name: activity.name ?? null,
+    strava_activity_km:   activity.distance ? +(activity.distance / 1000).toFixed(1) : null,
+    avg_hr:               activity.average_heartrate ?? null,
+    updated_at:           new Date().toISOString(),
+  }, { onConflict: 'user_id,week_n,session_day' })
 
-  // Call analyse-run via internal fetch (includes AI enrichment)
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'http://localhost:3000'
+  // Call analyse-run via internal fetch (includes AI enrichment + push notification)
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+    ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
 
   try {
     await fetch(`${baseUrl}/api/analyse-run`, {
@@ -214,7 +224,7 @@ async function triggerAutoAnalysis(userId: string, activity: any, stravaActivity
       body: JSON.stringify({
         strava_activity_id: stravaActivityId,
         week_n:             week.n,
-        session_day:        sessionDay,
+        session_day:        bestDay,
       }),
     })
   } catch (err) {

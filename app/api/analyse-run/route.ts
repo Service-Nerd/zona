@@ -6,6 +6,8 @@ import { scoreSession } from '@/lib/coaching/sessionScore'
 import { computeEF, computeEFBaseline } from '@/lib/coaching/efTrend'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildSessionFeedbackPrompt } from '@/lib/coaching/prompts/sessionFeedback'
+import { notifyUser } from '@/lib/webpush'
+import { BRAND } from '@/lib/brand'
 import type { Plan, Session } from '@/types/plan'
 
 // POST /api/analyse-run
@@ -206,6 +208,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Push notification — only on webhook path (user isn't in the app)
+  if (isInternalCall) {
+    const pushBody = feedbackText
+      ?? verdictPushBody(scoreResult.verdict, (activity.distance_m ?? 0) / 1000)
+    void notifyUser(userId, {
+      title: BRAND.push.runAnalysis,
+      body:  pushBody,
+      tag:   'run-analysis',
+      data:  { url: '/dashboard?screen=coach' },
+    })
+  }
+
   return NextResponse.json({
     analysis: {
       ...analysisRow,
@@ -213,4 +227,17 @@ export async function POST(req: NextRequest) {
     },
     score:   scoreResult,
   })
+}
+
+/** Fallback push body when AI feedback is unavailable. */
+function verdictPushBody(verdict: string, distKm: number): string {
+  const dist = distKm > 0 ? ` ${distKm.toFixed(1)}km` : ''
+  switch (verdict) {
+    case 'strong':    return `${dist} in. Looked controlled.`
+    case 'good':      return `${dist} done. Solid work.`
+    case 'ok':        return `${dist} logged. Review your zones.`
+    case 'drifted':   return `${dist} — HR went high. Worth checking.`
+    case 'hard':      return `${dist} — that was a tough one.`
+    default:          return `${dist} logged.`
+  }
 }

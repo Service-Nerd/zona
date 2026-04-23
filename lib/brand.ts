@@ -26,6 +26,7 @@ export const BRAND = {
   /** Push notification titles — each is a coaching voice opportunity, not a label. */
   push: {
     weeklyReport: 'Your week, reviewed.',
+    runAnalysis:  'Run logged.',
   },
 } as const
 

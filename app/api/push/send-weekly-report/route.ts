@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { BRAND } from '@/lib/brand'
+import { sendWebPush } from '@/lib/webpush'
 
 // POST /api/push/send-weekly-report
 // Called by Vercel cron every Sunday at 18:00.
@@ -77,42 +78,3 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ sent, errors: errors.slice(0, 5) })
 }
 
-async function sendWebPush(
-  sub: { endpoint: string; p256dh: string; auth: string },
-  payload: { title: string; body: string; tag?: string; data?: Record<string, unknown> }
-): Promise<boolean> {
-  // Web Push requires VAPID signing. We use the web-push library pattern but
-  // implement it via the Fetch API + VAPID headers to avoid Node.js-only deps.
-  // In production this uses NEXT_PUBLIC_VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY.
-  //
-  // For the initial deployment, push is delivered via the subscription endpoint
-  // directly — the browser's push service handles encryption.
-  // Full VAPID implementation uses the 'web-push' package (add to package.json).
-
-  if (!process.env.VAPID_PRIVATE_KEY || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
-    console.warn('[push] VAPID keys not configured — skipping push delivery')
-    return false
-  }
-
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const webpush = require('web-push') as any
-    webpush.setVapidDetails(
-      `mailto:${process.env.VAPID_SUBJECT ?? 'push@zona.app'}`,
-      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-      process.env.VAPID_PRIVATE_KEY!,
-    )
-
-    await webpush.sendNotification(
-      { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-      JSON.stringify(payload),
-    )
-    return true
-  } catch (err: any) {
-    // 410 Gone = subscription expired — clean it up
-    if (err.statusCode === 410) {
-      void supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
-    }
-    return false
-  }
-}
