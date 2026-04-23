@@ -1769,43 +1769,18 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             </div>
           )}
 
-          {/* ── BOTTOM BLOCK: coach notes — prefer session.coach_notes, fall back to DB guidance ── */}
+          {/* ── WHY THIS SESSION: CoachNoteBlock variant="why" ── */}
           {(session.coach_notes?.filter(Boolean).length > 0 || guidance) && (
-            <div style={{ padding: '14px 18px 4px', borderBottom: '0.5px solid var(--border-col)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: config.color, flexShrink: 0 }} />
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Coach notes</div>
-              </div>
-              {session.coach_notes?.filter(Boolean).length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
-                  {(session.coach_notes as string[]).filter(Boolean).map((note, i) => (
-                    <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                      <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: config.color, marginTop: '6px', flexShrink: 0, opacity: 0.7 }} />
-                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.65 }}>{note}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : guidance ? (
-                <>
-                  {guidance.why && (
-                    <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: guidance.what || guidance.how ? '14px' : '10px', fontStyle: 'italic' }}>
-                      {guidance.why}
-                    </div>
-                  )}
-                  {guidance.what && (
-                    <div style={{ marginBottom: guidance.how ? '12px' : '10px' }}>
-                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>What</div>
-                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{guidance.what}</div>
-                    </div>
-                  )}
-                  {guidance.how && (
-                    <div style={{ marginBottom: '10px' }}>
-                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>How</div>
-                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{guidance.how}</div>
-                    </div>
-                  )}
-                </>
-              ) : null}
+            <div style={{ padding: '14px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
+              <CoachNoteBlock label="WHY THIS SESSION" variant="why">
+                {session.coach_notes?.filter(Boolean).length > 0 ? (
+                  // Structured coach notes from plan JSON
+                  (session.coach_notes as string[]).filter(Boolean).join(' ')
+                ) : guidance ? (
+                  // Fall back to DB guidance
+                  [guidance.why, guidance.what, guidance.how].filter(Boolean).join(' ')
+                ) : null}
+              </CoachNoteBlock>
             </div>
           )}
 
@@ -1876,42 +1851,13 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 {savingRPE && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)' }}>saving…</span>}
               </div>
 
-              {/* RPE — tappable 1–10 buttons */}
+              {/* RPE — RPEScale shared component */}
               <div style={{ marginBottom: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Effort (RPE)</span>
-                  {rpe != null && (
-                    <span style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 600, color: rpe <= 3 ? 'var(--session-green)' : rpe <= 6 ? 'var(--session-easy)' : rpe <= 8 ? 'var(--amber)' : 'var(--coral)', lineHeight: 1 }}>
-                      {rpe}<span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400 }}>/10</span>
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {[1,2,3,4,5,6,7,8,9,10].map(n => {
-                    const isActive = rpe === n
-                    const btnColor = n <= 3 ? 'var(--session-green)' : n <= 6 ? 'var(--session-easy)' : n <= 8 ? 'var(--amber)' : 'var(--coral)'
-                    return (
-                      <button
-                        key={n}
-                        onClick={() => { setRpe(n); saveRPEFatigue(n, fatigueTag) }}
-                        style={{
-                          flex: 1, aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: isActive ? 700 : 400,
-                          borderRadius: '8px', border: `0.5px solid ${isActive ? btnColor : 'var(--border-col)'}`,
-                          background: isActive ? btnColor : 'var(--bg)',
-                          color: isActive ? 'var(--zona-navy)' : 'var(--text-muted)',
-                          cursor: 'pointer', transition: 'all 0.12s', padding: '0',
-                          minWidth: 0,
-                        }}
-                      >
-                        {n}
-                      </button>
-                    )
-                  })}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', marginTop: '5px' }}>
-                  <span>Easy</span><span>Moderate</span><span>Max</span>
-                </div>
+                <RPEScale
+                  value={rpe}
+                  onChange={(n) => { setRpe(n); saveRPEFatigue(n, fatigueTag) }}
+                  hint="On an easy run, a 3–4 is what you want."
+                />
               </div>
 
               {/* Fatigue tags */}
@@ -5064,39 +5010,69 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
 }) {
   const color = getSessionColor(session.type ?? 'easy')
   const typeLabel = getSessionLabel(session.type ?? 'easy')
+  // Date display: "Tuesday · Week 14"
+  const weekEyebrow = session.weekN ? `Week ${session.weekN}` : ''
+  const dayEyebrow  = session.day ?? ''
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '120px' }}>
-      {/* Sticky header — type chip + session title */}
+
+      {/* ── HEADER ROW ────────────────────────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: '12px',
         padding: '14px 16px 12px',
-        borderBottom: '0.5px solid var(--border-col)',
+        borderBottom: `1px solid var(--line)`,
         position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10,
       }}>
+        {/* 36px circle back button */}
         <button onClick={onBack} style={{
-          border: 'none', color, cursor: 'pointer', padding: '0', lineHeight: 1,
-          width: '36px', height: '36px', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', borderRadius: '8px', background: `${color}18`, flexShrink: 0,
+          border: 'none', cursor: 'pointer', padding: '0',
+          width: '36px', height: '36px', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          borderRadius: '50%', background: 'var(--bg-soft)',
+          color: 'var(--ink)',
         }}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M11.5 3.5L6 9L11.5 14.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </button>
+
+        {/* Eyebrow + title */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 600, color, textTransform: 'uppercase', letterSpacing: '0.09em', background: `${color}15`, borderRadius: '5px', padding: '2px 8px', display: 'inline-block', marginBottom: '4px' }}>
-            {typeLabel}
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 600,
+            color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
+            marginBottom: '2px',
+          }}>
+            {[dayEyebrow, weekEyebrow].filter(Boolean).join(' · ')}
           </div>
-          <div style={{ fontSize: '17px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 700,
+            color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.2,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
             {session.title}
           </div>
         </div>
+
+        {/* Session type chip — right aligned */}
+        <div style={{
+          fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+          color, textTransform: 'uppercase', letterSpacing: '0.08em',
+          background: `${color}18`, borderRadius: '100px', padding: '4px 10px',
+          flexShrink: 0,
+        }}>
+          {typeLabel.split(' ')[0]}
+        </div>
       </div>
 
-      {/* Card — left accent border on card, no overflow:hidden needed */}
-      <div style={{ padding: '12px' }}>
+      {/* ── CONTENT ───────────────────────────────────────────────── */}
+      <div style={{ padding: '0 16px' }}>
         <div style={{
-          background: 'var(--card-bg)',
-          borderRadius: '16px',
-          border: '0.5px solid var(--border-col)',
-          borderLeft: `4px solid ${color}`,
+          background: 'var(--card)',
+          borderRadius: 'var(--radius-lg)',
+          border: `1px solid var(--line)`,
+          borderLeft: `3px solid ${color}`,
+          marginTop: '12px',
         }}>
           <SessionPopupInner
             session={session}
