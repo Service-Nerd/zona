@@ -1,6 +1,8 @@
 import { ImageResponse } from 'next/og'
 import { BRAND } from '@/lib/brand'
 
+const OG = BRAND.og
+
 export const runtime = 'edge'
 
 async function loadFont(family: string, weight: number): Promise<ArrayBuffer> {
@@ -28,7 +30,7 @@ export async function GET() {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'flex-end',
-          background: '#0B132B',
+          background: OG.navy,
           padding: '64px 72px',
           position: 'relative',
         }}
@@ -39,7 +41,7 @@ export async function GET() {
             position: 'absolute',
             top: 0, left: 0, bottom: 0,
             width: '6px',
-            background: '#5BC0BE',
+            background: OG.teal,
           }}
         />
 
@@ -49,7 +51,7 @@ export async function GET() {
             fontFamily: 'Space Grotesk',
             fontSize: '52px',
             fontWeight: 700,
-            color: '#5BC0BE',
+            color: OG.teal,
             letterSpacing: '0.06em',
             marginBottom: '20px',
             lineHeight: 1,
@@ -64,7 +66,7 @@ export async function GET() {
             fontFamily: 'Space Grotesk',
             fontSize: '44px',
             fontWeight: 700,
-            color: '#F7F9FB',
+            color: OG.offWhite,
             letterSpacing: '-0.5px',
             lineHeight: 1.15,
             maxWidth: '900px',

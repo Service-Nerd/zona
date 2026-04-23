@@ -23,6 +23,16 @@ export const BRAND = {
   /** Sub-tagline used in login/signup context. Zona doesn't pitch — it states. */
   signupSub: '14 days, no limits. After that, you decide.',
 
+  /**
+   * Raw hex values for next/og ImageResponse — CSS variables don't work there.
+   * Must stay in sync with System B palette in globals.css.
+   */
+  og: {
+    navy:     '#0B132B',
+    teal:     '#5BC0BE',
+    offWhite: '#F7F9FB',
+  },
+
   /** Push notification titles — each is a coaching voice opportunity, not a label. */
   push: {
     weeklyReport: 'Your week, reviewed.',

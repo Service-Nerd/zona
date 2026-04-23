@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { BenchmarkInput } from '@/types/plan'
 import { createClient } from '@/lib/supabase/server'
+import { getUserTier } from '@/lib/trial'
 import { fetchPlanForUser, savePlanForUser, getCurrentWeek } from '@/lib/plan'
 import { applyRecalibration } from '@/lib/plan/ruleEngine'
 
@@ -9,6 +10,9 @@ export async function POST(req: NextRequest) {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const tier = await getUserTier(user.id)
+    if (tier === 'free') return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
     const { benchmark }: { benchmark: BenchmarkInput } = await req.json()
     if (!benchmark?.type || !benchmark?.distance_km || !benchmark?.time) {
