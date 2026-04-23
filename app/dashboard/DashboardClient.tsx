@@ -13,6 +13,12 @@ import { isTrialActive } from '@/lib/trial'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
 import { BRAND } from '@/lib/brand'
+import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
+import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
+import RestraintCard from '@/components/shared/RestraintCard'
+import PlanArc from '@/components/shared/PlanArc'
+import RPEScale from '@/components/shared/RPEScale'
+import SessionCard from '@/components/shared/SessionCard'
 import dynamic from 'next/dynamic'
 const GeneratePlanScreen = dynamic(() => import('./GeneratePlanScreen'), { ssr: false })
 const UpgradeScreen = dynamic(() => import('./UpgradeScreen'), { ssr: false })
@@ -2879,29 +2885,30 @@ function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, 
 
 // ── ADJUSTMENT BANNER ────────────────────────────────────────────────────
 
+// AdjustmentBanner — now wraps PendingAdjustmentBanner with API call logic.
+// State management lives here (and in DashboardClient), UI delegated to the shared component.
 function AdjustmentBanner({ adjustment, onConfirmed, onReverted }: {
   adjustment: any
   onConfirmed?: (plan: any) => void
   onReverted?:  (plan: any) => void
 }) {
-  const [state, setState] = useState<'idle' | 'loading' | 'done'>('idle')
+  const [loading, setLoading] = useState(false)
   const [dismissed, setDismissed] = useState(false)
 
   if (dismissed) return null
 
   async function confirm() {
-    setState('loading')
+    setLoading(true)
     try {
       const res  = await fetch('/api/adjust-plan', { method: 'POST' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       onConfirmed?.(data.plan)
-      setState('done')
-    } catch { setState('idle') }
+    } catch { /* keep visible on error */ } finally { setLoading(false) }
   }
 
   async function revert() {
-    setState('loading')
+    setLoading(true)
     try {
       const res  = await fetch('/api/revert-adjustment', {
         method: 'POST',
@@ -2912,39 +2919,18 @@ function AdjustmentBanner({ adjustment, onConfirmed, onReverted }: {
       if (!res.ok) throw new Error(data.error)
       onReverted?.(data.plan)
       setDismissed(true)
-    } catch { setState('idle') }
+    } catch { /* keep visible on error */ } finally { setLoading(false) }
   }
 
-  if (state === 'done') return null
-
   return (
-    <div style={{ margin: '10px 12px 0', background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--amber)', borderLeft: '3px solid var(--amber)', overflow: 'hidden' }}>
-      <div style={{ padding: '12px 14px' }}>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--amber)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
-          Plan adjustment
-        </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '12px' }}>
-          {adjustment.summary}
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {adjustment.status === 'pending' && (
-            <button
-              onClick={confirm}
-              disabled={state === 'loading'}
-              style={{ flex: 1, padding: '10px', background: 'var(--accent)', border: 'none', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--zona-navy)', cursor: 'pointer' }}
-            >
-              {state === 'loading' ? '…' : 'Apply'}
-            </button>
-          )}
-          <button
-            onClick={revert}
-            disabled={state === 'loading'}
-            style={{ flex: 1, padding: '10px', background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', cursor: 'pointer' }}
-          >
-            {state === 'loading' ? '…' : 'Dismiss'}
-          </button>
-        </div>
-      </div>
+    <div style={{ margin: '0 0 12px' }}>
+      <PendingAdjustmentBanner
+        onConfirm={confirm}
+        onRevert={revert}
+        loading={loading}
+      >
+        {adjustment.summary}
+      </PendingAdjustmentBanner>
     </div>
   )
 }
@@ -3132,39 +3118,273 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
     </div>
   )
 
-  return (
-    <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{ paddingBottom: '8px' }}>
+  // ── Hero display line builder ────────────────────────────────────────
+  // Derives the two-part hero: "[distance]km," (ink) + "[adjective]." (moss)
+  // For rest days: "Today, you rest" / "Do nothing." / "It helps."
+  function getHeroAdverb(type: string): string {
+    const map: Record<string, string> = {
+      easy:      'slowly',
+      recovery:  'slowly',
+      long:      'long and slow',
+      quality:   'at tempo',
+      tempo:     'at tempo',
+      intervals: 'hard',
+      hard:      'hard',
+      race:      'fast',
+      strength:  'with weights',
+      'cross-train': 'easy',
+      cross:     'easy',
+      run:       'slowly',
+    }
+    return map[type] ?? 'steadily'
+  }
 
-      {/* Date + plan context header */}
-      <div style={{ padding: '16px 16px 6px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.4px', lineHeight: 1.1 }}>
-            {now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
-          </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '0.02em' }}>
-            {firstName ? `${firstName} · ` : ''}{(currentWeek as any).label || `Week ${weekNum} of ${totalWeeks}`}
-          </div>
-          {/* Week narrative — phase · sessions done · km target */}
-          {(weekPhaseLabel || totalSessionsThisWeek > 0 || (weeklyKm && weeklyKm > 0)) && (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-              {weekPhaseLabel && <span style={{ color: 'var(--accent)', fontWeight: 500 }}>{weekPhaseLabel}</span>}
-              {weekPhaseLabel && totalSessionsThisWeek > 0 && <span style={{ opacity: 0.4 }}>·</span>}
-              {totalSessionsThisWeek > 0 && <span>{completedSessionsThisWeek}/{totalSessionsThisWeek} done</span>}
-              {totalSessionsThisWeek > 0 && weeklyKm && weeklyKm > 0 && <span style={{ opacity: 0.4 }}>·</span>}
-              {weeklyKm && weeklyKm > 0 && <span>{weeklyKm}km</span>}
-            </div>
-          )}
-        </div>
-        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
-          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1, letterSpacing: '-0.5px' }}>
-            {daysToRace}
-          </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-            days left
-          </div>
+  // ── Coaching note headline (plan-derived, always available) ──────────
+  function getPlanCoachNote(): string {
+    const phase = (currentWeek as any).phase as string | undefined
+    const ws = (currentWeek as any).sessions ?? {}
+    const sessionList = Object.values(ws) as any[]
+    const hasQuality = sessionList.some(s => s && ['quality','tempo','intervals','hard'].includes(s.type))
+    const hasLong    = sessionList.some(s => s && s.type === 'long')
+    if (phase === 'taper') return "Taper week. Back off and trust the work."
+    if (phase === 'peak')  return "Peak week. You're sharp. Don't add more."
+    if (hasQuality && hasLong) return "Quality and long run this week. Hard stuff first, long stuff rested."
+    if (hasQuality) return "Quality session this week. Everything else is recovery."
+    if (hasLong)    return "Long run week. Keep easy runs genuinely easy."
+    return "Steady week. Execute consistently."
+  }
+
+  // ── Zone 2 restraint percent (plan-derived) ──────────────────────────
+  const zone2SessionTypes = new Set(['easy', 'long', 'recovery', 'run'])
+  const completedThisWeek = sessions.filter(s =>
+    s.type !== 'rest' && completions[s.key]?.status === 'complete'
+  )
+  const zone2Done = completedThisWeek.filter(s => zone2SessionTypes.has(s.type))
+  const zone2Percent = completedThisWeek.length >= 2
+    ? Math.round((zone2Done.length / completedThisWeek.length) * 100)
+    : null
+
+  // ── Done sessions for "Done this week" section ───────────────────────
+  const doneSessions = sessions.filter(s =>
+    s.type !== 'rest' && completions[s.key]?.status === 'complete'
+  )
+  const skippedSessions = sessions.filter(s =>
+    s.type !== 'rest' && completions[s.key]?.status === 'skipped'
+  )
+
+  return (
+    <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{ paddingBottom: '32px' }}>
+
+      {/* ── WORDMARK ROW ─────────────────────────────────────────────── */}
+      <div style={{
+        padding: '16px 16px 0',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+      }}>
+        <span style={{
+          fontFamily: 'var(--font-ui)',
+          fontSize: '14px',
+          fontWeight: 800,
+          color: 'var(--ink)',
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+        }}>
+          ZONA
+        </span>
+        {/* Moss dot with soft halo */}
+        <div style={{ position: 'relative', width: '8px', height: '8px', flexShrink: 0 }}>
+          <div style={{
+            position: 'absolute', inset: '-3px',
+            borderRadius: '50%',
+            background: 'var(--moss-soft)',
+          }} />
+          <div style={{
+            position: 'absolute', inset: 0,
+            borderRadius: '50%',
+            background: 'var(--moss)',
+          }} />
         </div>
       </div>
 
+      {/* ── HERO BLOCK ───────────────────────────────────────────────── */}
+      <div style={{ padding: '20px 16px 0' }}>
+
+        {/* Context row: Week N · hairline · 84 days out */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          marginBottom: '12px',
+        }}>
+          <span style={{
+            fontFamily: 'var(--font-ui)',
+            fontSize: '11px',
+            fontWeight: 600,
+            color: 'var(--mute)',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          }}>
+            {weekPhaseLabel ? `${weekPhaseLabel} · ` : ''}Week {weekNum}
+          </span>
+          <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
+          {daysToRace > 0 && (
+            <span style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: '11px',
+              fontWeight: 600,
+              color: 'var(--mute)',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}>
+              {daysToRace}d out
+            </span>
+          )}
+        </div>
+
+        {/* Hero label + display */}
+        {showSessionHero && selectedSession ? (
+          <>
+            <div style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: '15px',
+              fontWeight: 500,
+              color: 'var(--mute)',
+              marginBottom: '4px',
+              lineHeight: 1,
+            }}>
+              Today, you run
+            </div>
+            <div style={{ lineHeight: 1, marginBottom: '16px' }}>
+              {selectedSession.distance != null ? (
+                <>
+                  <span style={{
+                    fontFamily: 'var(--font-ui)',
+                    fontSize: '56px',
+                    fontWeight: 800,
+                    color: 'var(--ink)',
+                    letterSpacing: '-2.5px',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    {selectedSession.distance % 1 === 0
+                      ? selectedSession.distance
+                      : selectedSession.distance.toFixed(1)}km,{' '}
+                  </span>
+                  <br />
+                  <span style={{
+                    fontFamily: 'var(--font-ui)',
+                    fontSize: '56px',
+                    fontWeight: 800,
+                    color: 'var(--moss)',
+                    letterSpacing: '-2.5px',
+                  }}>
+                    {getHeroAdverb(selectedSession.type)}.
+                  </span>
+                </>
+              ) : selectedSession.duration ? (
+                <>
+                  <span style={{
+                    fontFamily: 'var(--font-ui)',
+                    fontSize: '56px',
+                    fontWeight: 800,
+                    color: 'var(--ink)',
+                    letterSpacing: '-2.5px',
+                  }}>
+                    {selectedSession.duration},{' '}
+                  </span>
+                  <br />
+                  <span style={{
+                    fontFamily: 'var(--font-ui)',
+                    fontSize: '56px',
+                    fontWeight: 800,
+                    color: 'var(--moss)',
+                    letterSpacing: '-2.5px',
+                  }}>
+                    {getHeroAdverb(selectedSession.type)}.
+                  </span>
+                </>
+              ) : (
+                <span style={{
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: '40px',
+                  fontWeight: 800,
+                  color: 'var(--ink)',
+                  letterSpacing: '-1.5px',
+                }}>
+                  {selectedSession.title}
+                </span>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: '15px',
+              fontWeight: 500,
+              color: 'var(--mute)',
+              marginBottom: '4px',
+            }}>
+              Today, you rest
+            </div>
+            <div style={{ lineHeight: 1, marginBottom: '16px' }}>
+              <span style={{
+                fontFamily: 'var(--font-ui)',
+                fontSize: '56px',
+                fontWeight: 800,
+                color: 'var(--ink)',
+                letterSpacing: '-2.5px',
+              }}>
+                Do nothing.{' '}
+              </span>
+              <span style={{
+                fontFamily: 'var(--font-ui)',
+                fontSize: '56px',
+                fontWeight: 800,
+                color: 'var(--moss)',
+                letterSpacing: '-2.5px',
+              }}>
+                It helps.
+              </span>
+            </div>
+          </>
+        )}
+
+        {/* Pending adjustment — above coach note, prominent position */}
+        {pendingAdjustment && (
+          <div style={{ marginBottom: '16px' }}>
+            <AdjustmentBanner
+              adjustment={pendingAdjustment}
+              onConfirmed={onAdjustmentConfirmed}
+              onReverted={onAdjustmentReverted}
+            />
+          </div>
+        )}
+
+        {/* Coach note — plan-derived, always available */}
+        {(() => {
+          const note = getPlanCoachNote()
+          const coachLabel = weekPhaseLabel ?? 'PLAN'
+          if (heavyFatigue) {
+            return (
+              <div style={{ marginBottom: '20px' }}>
+                <CoachNoteBlock label="COACH">
+                  You've been logging heavy effort. Keep it honest today. {note}
+                </CoachNoteBlock>
+              </div>
+            )
+          }
+          return (
+            <div style={{ marginBottom: '20px' }}>
+              <CoachNoteBlock label={coachLabel}>
+                {note}
+              </CoachNoteBlock>
+            </div>
+          )
+        })()}
+      </div>
+
+      {/* ── DATE STRIP ───────────────────────────────────────────────── */}
       <DateStrip
         sessions={sessions}
         completions={completions}
@@ -3175,129 +3395,240 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         onWeekChange={onWeekChange}
       />
 
+      {/* ── TODAY'S SESSION ──────────────────────────────────────────── */}
+      <div style={{ padding: '16px 16px 0' }}>
 
+        {/* Section label */}
+        {showSessionHero && selectedSession && (
+          <>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '10px',
+            }}>
+              <span style={{
+                fontFamily: 'var(--font-ui)',
+                fontSize: '10px',
+                fontWeight: 700,
+                color: 'var(--mute)',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}>
+                {selectedSession.today ? "Today's session" : selectedSession.day}
+              </span>
+              {/* Right metric: zone or type */}
+              {(selectedSession.zone || selectedSession.type !== 'rest') && (
+                <span style={{
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: '10px',
+                  color: 'var(--mute-2)',
+                }}>
+                  {selectedSession.zone ?? getSessionLabel(selectedSession.type)}
+                </span>
+              )}
+            </div>
 
-      {/* Fatigue trend — last 5 tagged sessions as a dot trail */}
-      {fatigueHistory.length >= 3 && (
-        <div style={{
-          margin: '8px 12px 0', padding: '8px 12px',
-          background: 'var(--card-bg)', borderRadius: '10px',
-          border: '0.5px solid var(--border-col)',
-          display: 'flex', alignItems: 'center', gap: '10px',
-        }}>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase', flexShrink: 0 }}>
-            Effort trend
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1 }}>
-            {fatigueHistory.map((f, i) => {
-              const isLast = i === fatigueHistory.length - 1
-              return (
-                <div key={i} style={{
-                  width: isLast ? '10px' : '7px',
-                  height: isLast ? '10px' : '7px',
-                  borderRadius: '50%',
-                  background: FATIGUE_COLORS[f.tag] ?? 'var(--border-col)',
-                  opacity: isLast ? 1 : 0.55 + (i / fatigueHistory.length) * 0.35,
-                }} />
-              )
-            })}
-          </div>
-          <span style={{
-            fontFamily: 'var(--font-ui)', fontSize: '10px',
-            color: FATIGUE_COLORS[fatigueHistory[fatigueHistory.length - 1].tag] ?? 'var(--text-muted)',
-            letterSpacing: '0.04em', flexShrink: 0,
+            {/* Session card */}
+            <SessionCard
+              type={selectedSession.type}
+              name={selectedSession.title}
+              detail={[
+                selectedSession.zone,
+                selectedSession.hr_target,
+                selectedSession.pace_target ?? aerobicPace,
+              ].filter(Boolean).join(' · ') || undefined}
+              distanceKm={selectedSession.distance}
+              durationMin={selectedSession.duration
+                ? parseInt(selectedSession.duration)
+                : undefined}
+              state={
+                completions[selectedKey]?.status === 'complete' ? 'done'
+                : completions[selectedKey]?.status === 'skipped' ? 'skipped'
+                : selectedSession.today ? 'current'
+                : 'future'
+              }
+              completion={completions[selectedKey]?.status === 'complete' ? {
+                distanceKm: completions[selectedKey]?.strava_activity_km ?? undefined,
+                avgBpm: completions[selectedKey]?.avg_hr ?? undefined,
+                viaStrava: !!completions[selectedKey]?.strava_activity_id,
+                activityName: completions[selectedKey]?.strava_activity_name ?? undefined,
+              } : undefined}
+              onClick={() => {
+                const isPast = selectedSession.rawDate < now && !selectedSession.today
+                const isFuture = !selectedSession.today && selectedSession.rawDate > now
+                onOpenSession?.({
+                  ...selectedSession,
+                  rawDate: selectedSession.rawDate.toISOString(),
+                  completion: completions[selectedKey],
+                  isPast,
+                  isFuture,
+                  weekN: weekNum,
+                  weekTheme,
+                })
+              }}
+            />
+
+            {/* Primary CTA — only on today's session if not yet done */}
+            {selectedSession.today && !completions[selectedKey]?.status && (
+              <button
+                onClick={() => {
+                  onOpenSession?.({
+                    ...selectedSession,
+                    rawDate: selectedSession.rawDate.toISOString(),
+                    completion: completions[selectedKey],
+                    isPast: false,
+                    isFuture: false,
+                    weekN: weekNum,
+                    weekTheme,
+                  })
+                }}
+                style={{
+                  marginTop: '10px',
+                  width: '100%',
+                  padding: '14px',
+                  background: 'var(--moss)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: 'var(--card)',
+                  letterSpacing: '0.02em',
+                  cursor: 'pointer',
+                }}
+              >
+                Log this session
+              </button>
+            )}
+
+            {/* Manual log — secondary, shown for today or past sessions */}
+            {(selectedSession.today || selectedSession.rawDate < now) && (
+              <button
+                onClick={() => setShowManualLog(true)}
+                style={{
+                  marginTop: '8px',
+                  width: '100%',
+                  padding: '10px',
+                  background: 'none',
+                  border: `1px solid var(--line)`,
+                  borderRadius: 'var(--radius-md)',
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  color: 'var(--mute)',
+                  letterSpacing: '0.04em',
+                  cursor: 'pointer',
+                }}
+              >
+                Log manually
+              </button>
+            )}
+          </>
+        )}
+
+        {/* Rest day — show RestDayCard */}
+        {!showSessionHero && (
+          <RestDayCard
+            session={selectedSession}
+            nextSession={nextRunSession}
+            weekPhase={(currentWeek as any).phase}
+            weekType={(currentWeek as any).type}
+            fitnessLevel={fitnessLevel}
+            firstName={firstName}
+          />
+        )}
+
+      </div>
+
+      {/* ── RESTRAINT CARD ───────────────────────────────────────────── */}
+      {zone2Percent !== null && (
+        <div style={{ padding: '20px 16px 0' }}>
+          <RestraintCard
+            percent={zone2Percent}
+            meta={`${completedThisWeek.length} / ${totalSessionsThisWeek} sessions`}
+            body={
+              <>
+                of your runs were{' '}
+                <strong style={{ color: 'var(--ink)', fontWeight: 600 }}>
+                  Zone 2 sessions
+                </strong>
+                .{' '}
+                {zone2Percent >= 70
+                  ? "That's why you're getting faster."
+                  : zone2Percent >= 50
+                  ? "Keep the easy days easy."
+                  : "Ease back on the effort. Restraint is the training."}
+              </>
+            }
+          />
+        </div>
+      )}
+
+      {/* ── DONE THIS WEEK ───────────────────────────────────────────── */}
+      {(doneSessions.length > 0 || skippedSessions.length > 0) && (
+        <div style={{ padding: '20px 16px 0' }}>
+          <div style={{
+            fontFamily: 'var(--font-ui)',
+            fontSize: '10px',
+            fontWeight: 700,
+            color: 'var(--mute)',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            marginBottom: '10px',
           }}>
-            {fatigueHistory[fatigueHistory.length - 1].tag}
+            Done this week
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {[...doneSessions, ...skippedSessions].map(s => (
+              <SessionCard
+                key={s.key}
+                type={s.type}
+                name={s.title}
+                distanceKm={completions[s.key]?.strava_activity_km ?? s.distance}
+                state={completions[s.key]?.status === 'skipped' ? 'skipped' : 'done'}
+                completion={{
+                  distanceKm: completions[s.key]?.strava_activity_km ?? undefined,
+                  avgBpm: completions[s.key]?.avg_hr ?? undefined,
+                  viaStrava: !!completions[s.key]?.strava_activity_id,
+                  activityName: completions[s.key]?.strava_activity_name ?? undefined,
+                }}
+                onClick={() => {
+                  onOpenSession?.({
+                    ...s,
+                    rawDate: s.rawDate.toISOString(),
+                    completion: completions[s.key],
+                    isPast: true,
+                    isFuture: false,
+                    weekN: weekNum,
+                    weekTheme,
+                  })
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Strava nudge — muted text link if no runs connected */}
+      {stravaRuns.length === 0 && (
+        <div style={{
+          padding: '20px 16px 0',
+          textAlign: 'center',
+        }}>
+          <span style={{
+            fontFamily: 'var(--font-ui)',
+            fontSize: '12px',
+            color: 'var(--mute)',
+          }}>
+            Connect{' '}
+            <span style={{ color: 'var(--strava)', fontWeight: 500 }}>Strava</span>
+            {' '}in Profile for auto-logging after each run.
           </span>
         </div>
       )}
 
-      {/* Pending adjustment banner */}
-      {pendingAdjustment && (
-        <AdjustmentBanner
-          adjustment={pendingAdjustment}
-          onConfirmed={onAdjustmentConfirmed}
-          onReverted={onAdjustmentReverted}
-        />
-      )}
-
-      {/* Week focus — above the session hero */}
-      {weekTheme && (
-        <div style={{ margin: '10px 12px 0', padding: '12px 14px', background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>Week focus</div>
-          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.5 }}>{weekTheme}</div>
-        </div>
-      )}
-
-      {showSessionHero && selectedSession ? (
-        <SessionHero
-          session={selectedSession}
-          completion={completions[selectedKey]}
-          zone2Ceiling={zone2Ceiling}
-          preferredUnits={preferredUnits}
-          preferredMetric={preferredMetric}
-          weekN={weekNum}
-          restingHR={restingHR}
-          maxHR={maxHR}
-          aerobicPace={aerobicPace}
-          onTap={() => {
-            const isPast = selectedSession.rawDate < now && !selectedSession.today
-            const isFuture = !selectedSession.today && selectedSession.rawDate > now
-            onOpenSession?.({
-              ...selectedSession,
-              rawDate: selectedSession.rawDate.toISOString(),
-              completion: completions[selectedKey],
-              isPast,
-              isFuture,
-              weekN: weekNum,
-              weekTheme,
-            })
-          }}
-        />
-      ) : (
-        <RestDayCard
-          session={selectedSession}
-          nextSession={nextRunSession}
-          weekPhase={(currentWeek as any).phase}
-          weekType={(currentWeek as any).type}
-          fitnessLevel={fitnessLevel}
-          firstName={firstName}
-        />
-      )}
-
-      {/* Fatigue note — shown on today's run session when recent effort trend is heavy */}
-      {showSessionHero && selectedSession?.today && heavyFatigue && (
-        <div style={{ margin: '6px 12px 0', padding: '10px 12px', background: 'var(--amber-soft)', border: '0.5px solid var(--amber-mid)', borderRadius: '10px' }}>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--amber)', lineHeight: 1.5 }}>
-            You've been logging heavy effort. Keep it honest today.
-          </span>
-        </div>
-      )}
-
-      {/* Manual log — elevated when no Strava connected, secondary otherwise */}
-      {selectedSession && (selectedSession.today || selectedSession.rawDate < now) && (
-        <button
-          onClick={() => setShowManualLog(true)}
-          style={{
-            margin: '10px 12px 0', width: 'calc(100% - 24px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            background: stravaRuns.length === 0 ? 'var(--accent-soft)' : 'none',
-            border: `0.5px solid ${stravaRuns.length === 0 ? 'var(--accent)' : 'var(--border-col)'}`,
-            borderRadius: '10px', padding: '11px',
-            fontFamily: 'var(--font-ui)', fontSize: '12px',
-            color: stravaRuns.length === 0 ? 'var(--accent)' : 'var(--text-muted)',
-            letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer',
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-            <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-          </svg>
-          Log a run manually
-        </button>
-      )}
-
-      {/* Manual log modal — pre-filled from selected session */}
+      {/* Manual log modal */}
       {showManualLog && (
         <ManualRunModal
           weekN={weekNum}
