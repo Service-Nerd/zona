@@ -38,18 +38,18 @@ const DAY_KEYS   = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'sat
 const INJURIES = ['Achilles', 'Knee', 'Back', 'Hip', 'Shin splints', 'Plantar fasciitis']
 
 const SESSION_COLOURS: Record<string, string> = {
-  easy:           'var(--session-easy)',
-  run:            'var(--session-easy)',
-  long:           'var(--session-long)',
-  quality:        'var(--session-quality)',
-  tempo:          'var(--session-quality)',
-  intervals:      'var(--session-intervals)',
-  hard:           'var(--session-intervals)',
-  race:           'var(--session-race)',
-  recovery:       'var(--session-recovery)',
-  strength:       'var(--session-strength)',
-  'cross-train':  'var(--session-cross)',
-  cross:          'var(--session-cross)',
+  easy:           'var(--s-easy)',
+  run:            'var(--s-easy)',
+  long:           'var(--s-long)',
+  quality:        'var(--s-quality)',
+  tempo:          'var(--s-quality)',
+  intervals:      'var(--s-inter)',
+  hard:           'var(--s-inter)',
+  race:           'var(--s-race)',
+  recovery:       'var(--s-recov)',
+  strength:       'var(--s-strength)',
+  'cross-train':  'var(--s-cross)',
+  cross:          'var(--s-cross)',
 }
 
 const STEP_META: Record<WizardStep, { title: string; subtitle: string }> = {
@@ -76,9 +76,9 @@ function ChipToggle({ label, active, onClick }: { label: string; active: boolean
       style={{
         padding: '9px 16px',
         borderRadius: '10px',
-        border: `0.5px solid ${active ? 'var(--accent)' : 'var(--border-col)'}`,
-        background: active ? 'var(--accent-soft)' : 'none',
-        color: active ? 'var(--accent)' : 'var(--text-secondary)',
+        border: `0.5px solid ${active ? 'var(--moss)' : 'var(--line)'}`,
+        background: active ? 'var(--moss-soft)' : 'none',
+        color: active ? 'var(--moss)' : 'var(--ink-2)',
         fontFamily: 'var(--font-ui)',
         fontSize: '13px',
         cursor: 'pointer',
@@ -96,7 +96,7 @@ function FieldLabel({ children, optional }: { children: React.ReactNode; optiona
     <div style={{
       fontFamily: 'var(--font-ui)',
       fontSize: '11px',
-      color: 'var(--text-muted)',
+      color: 'var(--mute)',
       letterSpacing: '0.08em',
       textTransform: 'uppercase',
       marginBottom: '8px',
@@ -106,7 +106,7 @@ function FieldLabel({ children, optional }: { children: React.ReactNode; optiona
     }}>
       {children}
       {optional && (
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'none', letterSpacing: 0, opacity: 0.7 }}>optional</span>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', textTransform: 'none', letterSpacing: 0, opacity: 0.7 }}>optional</span>
       )}
     </div>
   )
@@ -126,13 +126,13 @@ function StepInput({ value, onChange, placeholder, type = 'text', min, max }: {
       style={{
         width: '100%',
         boxSizing: 'border-box',
-        background: 'var(--input-bg)',
-        border: '0.5px solid var(--border-col)',
+        background: 'var(--bg-soft)',
+        border: '0.5px solid var(--line)',
         borderRadius: '10px',
         padding: '12px 14px',
         fontFamily: 'var(--font-ui)',
         fontSize: '15px',
-        color: 'var(--text-primary)',
+        color: 'var(--ink)',
         outline: 'none',
       }}
     />
@@ -149,7 +149,7 @@ function StepProgress({ current, total }: { current: WizardStep; total: number }
           flex: 1,
           height: '2px',
           borderRadius: '2px',
-          background: n <= current ? 'var(--accent)' : 'var(--border-col)',
+          background: n <= current ? 'var(--moss)' : 'var(--line)',
           transition: 'background 0.3s',
         }} />
       ))}
@@ -160,7 +160,7 @@ function StepProgress({ current, total }: { current: WizardStep; total: number }
 // ─── Confidence badge (paid-only — only rendered when meta.confidence_score present) ─────
 
 function ConfidenceBadge({ score, risks }: { score: number; risks?: string[] }) {
-  const colour = score >= 7 ? 'var(--teal)' : 'var(--amber)'
+  const colour = score >= 7 ? 'var(--moss)' : 'var(--warn)'
   const label  = score >= 7 ? 'Good fit' : score >= 5 ? 'Possible' : 'Challenging'
   const desc   = score >= 7
     ? "Your fitness and timeline line up. This plan will stretch you without breaking you."
@@ -177,15 +177,15 @@ function ConfidenceBadge({ score, risks }: { score: number; risks?: string[] }) 
         margin: '0 auto 12px',
         background: `color-mix(in srgb, ${colour} 8%, transparent)`,
       }}>
-        <span style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: colour }}>{score}</span>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 600, color: colour }}>{score}</span>
       </div>
-      <div style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: colour, marginBottom: '6px' }}>{label}</div>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55, maxWidth: '280px', margin: '0 auto' }}>{desc}</div>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 600, color: colour, marginBottom: '6px' }}>{label}</div>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.55, maxWidth: '280px', margin: '0 auto' }}>{desc}</div>
       {risks && risks.length > 0 && (
-        <div style={{ marginTop: '14px', textAlign: 'left', padding: '12px 14px', background: 'var(--amber-soft)', borderRadius: '10px', border: '0.5px solid var(--amber-mid)' }}>
+        <div style={{ marginTop: '14px', textAlign: 'left', padding: '12px 14px', background: 'var(--warn-bg)', borderRadius: '10px', border: '0.5px solid var(--warn-bg)' }}>
           {risks.map((r, i) => (
-            <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.6, paddingLeft: '10px', position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 0, color: 'var(--amber)' }}>·</span>
+            <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--ink-2)', lineHeight: 1.6, paddingLeft: '10px', position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 0, color: 'var(--warn)' }}>·</span>
               {r}
             </div>
           ))}
@@ -200,7 +200,7 @@ function ConfidenceBadge({ score, risks }: { score: number; risks?: string[] }) 
 function PhaseArc({ weeks }: { weeks: Plan['weeks'] }) {
   const PHASES = ['base', 'build', 'peak', 'taper'] as const
   const phaseColour: Record<string, string> = {
-    base: 'var(--session-easy)', build: 'var(--accent)', peak: 'var(--amber)', taper: 'var(--text-muted)'
+    base: 'var(--s-easy)', build: 'var(--moss)', peak: 'var(--warn)', taper: 'var(--mute)'
   }
 
   const repWeeks = PHASES.map(phase => {
@@ -215,7 +215,7 @@ function PhaseArc({ weeks }: { weeks: Plan['weeks'] }) {
 
   return (
     <>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>
         Plan arc
       </div>
       {repWeeks.map(({ week, phase }) => (
@@ -236,18 +236,18 @@ function WeekCard({ week, phaseLabel, phaseColour }: {
 
   return (
     <div style={{
-      background: 'var(--card-bg)', borderRadius: '12px',
-      border: '0.5px solid var(--border-col)', padding: '14px 16px', marginBottom: '10px',
+      background: 'var(--card)', borderRadius: '12px',
+      border: '0.5px solid var(--line)', padding: '14px 16px', marginBottom: '10px',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500, color: 'var(--ink)' }}>
             {phaseLabel ? `${phaseLabel.charAt(0).toUpperCase()}${phaseLabel.slice(1)} phase` : `Week ${week.n}`}
             {' '}
-            <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '13px' }}>· W{week.n}</span>
+            <span style={{ fontWeight: 400, color: 'var(--mute)', fontSize: '13px' }}>· W{week.n}</span>
           </div>
           {week.label && (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '2px' }}>
               {week.label}
             </div>
           )}
@@ -266,33 +266,33 @@ function WeekCard({ week, phaseLabel, phaseColour }: {
       <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
         {sessionDays.map(([day, session]) => {
           if (!session || session.type === 'rest') return null
-          const dot = SESSION_COLOURS[session.type] ?? 'var(--text-muted)'
+          const dot = SESSION_COLOURS[session.type] ?? 'var(--mute)'
           return (
             <div key={day} style={{
-              fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-secondary)',
+              fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--ink-2)',
               background: 'var(--bg)', borderRadius: '6px', padding: '4px 8px',
               display: 'flex', alignItems: 'center', gap: '5px',
             }}>
               <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: dot, display: 'inline-block', flexShrink: 0 }} />
               <span style={{ textTransform: 'capitalize' }}>{day}</span>
               {session.distance_km
-                ? <span style={{ color: 'var(--text-muted)' }}>{session.distance_km}km</span>
+                ? <span style={{ color: 'var(--mute)' }}>{session.distance_km}km</span>
                 : session.duration_mins
-                  ? <span style={{ color: 'var(--text-muted)' }}>{fmtDurationMins(Number(session.duration_mins))}</span>
+                  ? <span style={{ color: 'var(--mute)' }}>{fmtDurationMins(Number(session.duration_mins))}</span>
                   : null}
             </div>
           )
         })}
       </div>
-      <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '0.5px solid var(--border-col)', display: 'flex', gap: '16px' }}>
+      <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '0.5px solid var(--line)', display: 'flex', gap: '16px' }}>
         {week.weekly_km > 0 && (
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>{week.weekly_km} km</span>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>{week.weekly_km} km</span>
         )}
         {week.long_run_hrs && (
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>Long {week.long_run_hrs}h</span>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>Long {week.long_run_hrs}h</span>
         )}
         {week.badge && (
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--amber)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{week.badge}</span>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{week.badge}</span>
         )}
       </div>
     </div>
@@ -309,24 +309,24 @@ function TeaserCard({ onUpgrade }: { onUpgrade: () => void }) {
       onClick={onUpgrade}
       style={{
         width: '100%', textAlign: 'left', cursor: 'pointer',
-        background: 'var(--card-bg)', borderRadius: '12px',
-        borderTop: '0.5px solid var(--border-col)',
-        borderRight: '0.5px solid var(--border-col)',
-        borderBottom: '0.5px solid var(--border-col)',
-        borderLeft: '3px solid var(--teal)',
+        background: 'var(--card)', borderRadius: '12px',
+        borderTop: '0.5px solid var(--line)',
+        borderRight: '0.5px solid var(--line)',
+        borderBottom: '0.5px solid var(--line)',
+        borderLeft: '3px solid var(--moss)',
         padding: '14px 16px',
         display: 'flex', alignItems: 'center', gap: '12px',
       }}
     >
       <div style={{ flex: 1 }}>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '3px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '3px' }}>
           Want a more personal plan?
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
           Terrain, injury history, training style. Your plan adapts around what matters to you.
         </div>
       </div>
-      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--teal)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--moss)', whiteSpace: 'nowrap', flexShrink: 0 }}>
         Upgrade to personalise →
       </span>
     </button>
@@ -569,25 +569,25 @@ export default function GeneratePlanScreen({
   if (appStep === 'error') {
     return (
       <div style={{ padding: '16px' }}>
-        <button onClick={goBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '8px 0 20px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <button onClick={goBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mute)', padding: '8px 0 20px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px' }}>Back</span>
         </button>
 
-        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--amber)', padding: '20px', marginBottom: '16px' }}>
-          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 500, color: 'var(--amber)', marginBottom: '8px' }}>
+        <div style={{ background: 'var(--card)', borderRadius: '12px', border: '0.5px solid var(--warn)', padding: '20px', marginBottom: '16px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 500, color: 'var(--warn)', marginBottom: '8px' }}>
             Something went wrong building the plan.
           </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.55 }}>
             {error}
           </div>
         </div>
 
         <button onClick={() => setAppStep(lastStep)} style={{
           width: '100%', padding: '14px', borderRadius: '12px',
-          background: 'var(--accent)', border: 'none', cursor: 'pointer',
-          fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 500,
-          color: 'var(--zona-navy)',
+          background: 'var(--moss)', border: 'none', cursor: 'pointer',
+          fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 500,
+          color: 'var(--card)',
         }}>
           Try again
         </button>
@@ -603,7 +603,7 @@ export default function GeneratePlanScreen({
     return (
       <div style={{ paddingBottom: '40px' }}>
         <div style={{ padding: '16px 16px 0' }}>
-          <button onClick={goBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button onClick={goBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mute)', padding: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px' }}>Adjust inputs</span>
           </button>
@@ -611,25 +611,25 @@ export default function GeneratePlanScreen({
 
         <div style={{ padding: '0 16px' }}>
           <div style={{ marginTop: '16px' }}>
-            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px' }}>
               {meta.race_name || 'Your plan'}
             </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', marginTop: '4px' }}>
               {weeks.length} weeks · starts {meta.plan_start} · {meta.race_distance_km}km
             </div>
           </div>
 
           {/* Confidence badge — paid-only; absent on free plans (INV-PLAN-008) */}
           {meta.confidence_score != null && (
-            <div style={{ background: 'var(--card-bg)', borderRadius: '14px', border: '0.5px solid var(--border-col)', padding: '4px 16px 20px', margin: '16px 0' }}>
+            <div style={{ background: 'var(--card)', borderRadius: '14px', border: '0.5px solid var(--line)', padding: '4px 16px 20px', margin: '16px 0' }}>
               <ConfidenceBadge score={meta.confidence_score} risks={meta.confidence_risks} />
             </div>
           )}
 
           {/* Coach intro — paid-only */}
           {meta.coach_intro && (
-            <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', borderLeft: '3px solid var(--teal)', padding: '14px 16px', margin: '16px 0' }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+            <div style={{ background: 'var(--card)', borderRadius: '12px', border: '0.5px solid var(--line)', borderLeft: '3px solid var(--moss)', padding: '14px 16px', margin: '16px 0' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.65 }}>
                 {meta.coach_intro}
               </div>
             </div>
@@ -640,7 +640,7 @@ export default function GeneratePlanScreen({
           </div>
 
           {weeks.length > 4 && (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '4px 0 16px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', textAlign: 'center', padding: '4px 0 16px' }}>
               + {weeks.length - Math.min(4, weeks.length)} more weeks in your plan
             </div>
           )}
@@ -650,11 +650,11 @@ export default function GeneratePlanScreen({
         <div style={{
           position: 'sticky', bottom: 0,
           background: 'var(--bg)',
-          borderTop: '0.5px solid var(--border-col)',
+          borderTop: '0.5px solid var(--line)',
           padding: '12px 16px calc(12px + env(safe-area-inset-bottom))',
         }}>
           {hasExistingPlan && !isSaving && (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', marginBottom: '8px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', textAlign: 'center', marginBottom: '8px' }}>
               This replaces your current plan.
             </div>
           )}
@@ -664,17 +664,17 @@ export default function GeneratePlanScreen({
               disabled={isSaving}
               style={{
                 width: '100%', padding: '15px', borderRadius: '12px',
-                background: isSaving ? 'var(--accent-dim)' : 'var(--accent)',
+                background: isSaving ? 'var(--moss-soft)' : 'var(--moss)',
                 border: 'none', cursor: isSaving ? 'wait' : 'pointer',
-                fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600,
-                color: isSaving ? 'var(--accent)' : 'var(--zona-navy)',
+                fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
+                color: isSaving ? 'var(--moss)' : 'var(--card)',
                 transition: 'all 0.15s',
               }}
             >
               {isSaving ? 'Saving…' : 'Use this plan'}
             </button>
           ) : (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', textAlign: 'center' }}>
               Plan preview — save is not available in this context
             </div>
           )}
@@ -699,7 +699,7 @@ export default function GeneratePlanScreen({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <button onClick={goBack} style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            color: 'var(--text-muted)', padding: 0,
+            color: 'var(--mute)', padding: 0,
             display: 'flex', alignItems: 'center', gap: '6px',
           }}>
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
@@ -709,7 +709,7 @@ export default function GeneratePlanScreen({
               {currentStep === 1 ? 'Back' : `Step ${currentStep - 1}`}
             </span>
           </button>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', letterSpacing: '0.04em' }}>
             {currentStep} / {totalSteps}
           </span>
         </div>
@@ -717,10 +717,10 @@ export default function GeneratePlanScreen({
         <StepProgress current={currentStep} total={totalSteps} />
 
         <div style={{ marginBottom: '28px' }}>
-          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.3px', marginBottom: '6px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: '6px' }}>
             {stepMeta.title}
           </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55 }}>
             {stepMeta.subtitle}
           </div>
         </div>
@@ -756,9 +756,9 @@ export default function GeneratePlanScreen({
                       style={{
                         padding: '9px 16px',
                         borderRadius: '10px',
-                        border: `0.5px solid ${active ? 'var(--accent)' : locked ? 'var(--border-col)' : 'var(--border-col)'}`,
-                        background: active ? 'var(--accent-soft)' : 'none',
-                        color: active ? 'var(--accent)' : locked ? 'var(--text-muted)' : 'var(--text-secondary)',
+                        border: `0.5px solid ${active ? 'var(--moss)' : locked ? 'var(--line)' : 'var(--line)'}`,
+                        background: active ? 'var(--moss-soft)' : 'none',
+                        color: active ? 'var(--moss)' : locked ? 'var(--mute)' : 'var(--ink-2)',
                         fontFamily: 'var(--font-ui)',
                         fontSize: '13px',
                         cursor: 'pointer',
@@ -772,7 +772,7 @@ export default function GeneratePlanScreen({
                     >
                       {d.label}
                       {locked && (
-                        <span style={{ fontSize: '10px', color: 'var(--teal)', letterSpacing: '0.04em' }}>
+                        <span style={{ fontSize: '10px', color: 'var(--moss)', letterSpacing: '0.04em' }}>
                           PAID
                         </span>
                       )}
@@ -781,8 +781,8 @@ export default function GeneratePlanScreen({
                 })}
               </div>
               {!hasPaidAccess && (
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
-                  Marathon and longer require a paid plan. <button onClick={onUpgrade} style={{ background: 'none', border: 'none', color: 'var(--teal)', fontFamily: 'var(--font-ui)', fontSize: '11px', cursor: 'pointer', padding: 0 }}>Start free trial →</button>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '8px' }}>
+                  Marathon and longer require a paid plan. <button onClick={onUpgrade} style={{ background: 'none', border: 'none', color: 'var(--moss)', fontFamily: 'var(--font-ui)', fontSize: '11px', cursor: 'pointer', padding: 0 }}>Start free trial →</button>
                 </div>
               )}
             </div>
@@ -811,7 +811,7 @@ export default function GeneratePlanScreen({
             <div>
               <FieldLabel>Age</FieldLabel>
               <StepInput type="number" value={age} onChange={setAge} placeholder="32" min={14} max={90} />
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '6px' }}>
                 Used to calculate your max heart rate and training zones.
               </div>
             </div>
@@ -831,10 +831,10 @@ export default function GeneratePlanScreen({
             <div>
               <FieldLabel optional>Recent benchmark</FieldLabel>
               <div style={{
-                background: 'var(--card-bg)', borderRadius: '12px',
-                border: '0.5px solid var(--border-col)', padding: '14px 16px',
+                background: 'var(--card)', borderRadius: '12px',
+                border: '0.5px solid var(--line)', padding: '14px 16px',
               }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '12px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--ink-2)', lineHeight: 1.55, marginBottom: '12px' }}>
                   A recent race time or time trial gives us precise pace targets for every session. Without one we use population estimates — still works, less personal.
                 </div>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
@@ -886,7 +886,7 @@ export default function GeneratePlanScreen({
                       placeholder="e.g. 5.2"
                       min={1}
                     />
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '6px' }}>
                       Run as far as you can in exactly 30 minutes on a flat surface. Record the distance.
                     </div>
                   </div>
@@ -921,9 +921,9 @@ export default function GeneratePlanScreen({
                       onClick={() => setDaysOff(prev => active ? prev.filter(x => x !== key) : [...prev, key])}
                       style={{
                         width: '44px', height: '44px', borderRadius: '50%',
-                        border: `0.5px solid ${active ? 'var(--teal)' : 'var(--border-col)'}`,
-                        background: active ? 'var(--accent-soft)' : 'none',
-                        color: active ? 'var(--teal)' : 'var(--text-secondary)',
+                        border: `0.5px solid ${active ? 'var(--moss)' : 'var(--line)'}`,
+                        background: active ? 'var(--moss-soft)' : 'none',
+                        color: active ? 'var(--moss)' : 'var(--ink-2)',
                         fontFamily: 'var(--font-ui)', fontSize: '12px',
                         cursor: 'pointer', transition: 'all 0.15s',
                       }}
@@ -938,7 +938,7 @@ export default function GeneratePlanScreen({
             <div>
               <FieldLabel optional>Max weekday session length (mins)</FieldLabel>
               <StepInput type="number" value={maxWeekday} onChange={setMaxWeekday} placeholder="90" min={30} max={180} />
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '6px' }}>
                 Leave blank for no limit. Applies Monday–Friday only.
               </div>
             </div>
@@ -956,14 +956,14 @@ export default function GeneratePlanScreen({
 
             <div>
               <FieldLabel optional>Resting heart rate</FieldLabel>
-              <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', padding: '14px 16px', marginBottom: '4px' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '12px' }}>
+              <div style={{ background: 'var(--card)', borderRadius: '12px', border: '0.5px solid var(--line)', padding: '14px 16px', marginBottom: '4px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--ink-2)', lineHeight: 1.55, marginBottom: '12px' }}>
                   Refines your Zone 2 ceiling via the Karvonen formula. Check your wearable's overnight average, or measure first thing in the morning before getting up. Skip if you don't know it.
                 </div>
                 <StepInput type="number" value={restingHR} onChange={setRestingHR} placeholder="e.g. 52" min={30} max={100} />
               </div>
               {initialRHR && (
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--teal)', marginTop: '4px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss)', marginTop: '4px' }}>
                   Pre-filled from your profile
                 </div>
               )}
@@ -1027,7 +1027,7 @@ export default function GeneratePlanScreen({
       <div style={{
         flexShrink: 0,
         padding: '12px 16px calc(12px + env(safe-area-inset-bottom))',
-        borderTop: '0.5px solid var(--border-col)',
+        borderTop: '0.5px solid var(--line)',
         background: 'var(--bg)',
       }}>
         <button
@@ -1035,10 +1035,10 @@ export default function GeneratePlanScreen({
           disabled={!canProceed()}
           style={{
             width: '100%', padding: '15px', borderRadius: '12px',
-            background: canProceed() ? 'var(--accent)' : 'var(--accent-dim)',
+            background: canProceed() ? 'var(--moss)' : 'var(--moss-soft)',
             border: 'none', cursor: canProceed() ? 'pointer' : 'not-allowed',
-            fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600,
-            color: canProceed() ? 'var(--zona-navy)' : 'var(--accent)',
+            fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
+            color: canProceed() ? 'var(--card)' : 'var(--moss)',
             transition: 'all 0.15s',
           }}
         >
@@ -1046,7 +1046,7 @@ export default function GeneratePlanScreen({
         </button>
 
         {!canProceed() && currentStep === 1 && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '8px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', textAlign: 'center', marginTop: '8px' }}>
             Date, distance, and goal are required
           </div>
         )}
