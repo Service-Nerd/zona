@@ -1,6 +1,6 @@
 # ADR-004 — Theme System: data-theme Attribute Toggle Only
 
-**Status**: Accepted  
+**Status**: Superseded by ADR-008 — Single light theme only (2026-04-23)  
 **Date**: 2025 (established early in project)
 
 ---

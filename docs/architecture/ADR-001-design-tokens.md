@@ -1,6 +1,7 @@
 # ADR-001 — Design Tokens: System B Palette and globals.css as Single Source
 
 **Status**: Accepted  
+**Superseded for colour values by ADR-007 (2026-04-23); principle retained.**  
 **Date**: 2025 (pre-Zona rebrand)
 
 ---
