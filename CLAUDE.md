@@ -69,7 +69,7 @@ and user_settings. Nothing is hardcoded to a specific person.
 | Dev machine | Mac Mini                      |
 
 - Supabase project ID: `wkppmpsvqkaxbekdgzdm`
-- Vercel app: `https://rts-training-hub.vercel.app`
+- Vercel app: `https://zona.vercel.app`
 - Plan JSON: `https://gist.githubusercontent.com/Service-Nerd/efec07a87f65494f0e078a1ccb136100/raw/rts_plan.json`
   - Always fetched with `cache: 'no-store'`
 
@@ -96,7 +96,7 @@ Single light theme. No dark mode (ADR-008).
 
 **Font tokens:** `var(--font-ui)` and `var(--font-brand)` are the only two font tokens. `--font-display` is NOT a token.
 
-**Legacy aliases:** All System B token names (`--accent`, `--teal`, `--amber`, `--text-primary`, `--card-bg`, `--border-col`, `--session-easy`, etc.) alias to Warm Slate tokens in `globals.css`. Components using old names continue to work. Retire progressively in Phase 2–3.
+**Legacy aliases:** All System B token names (`--accent`, `--teal`, `--amber`, `--text-primary`, `--card-bg`, `--border-col`, `--session-easy`, etc.) alias to Warm Slate tokens in `globals.css`. Components using old names continue to work — four files reverted to legacy aliases by linter post-Phase 3 merge; aliases intentionally retained until those files are updated.
 
 **BANNED:**
 - `#D4501A` (ember orange)
@@ -140,7 +140,7 @@ All colour MUST come from CSS custom properties in `globals.css`. Nothing hardco
 
 **Before building any screen or component**: read `docs/canonical/ui-patterns.md`. Use the prompt template at the bottom of that file. Trigger the `frontend-design` skill for all UI work.
 
-### Active scope (Phase 1 shipped)
+### Active scope (Phases 1–3 shipped)
 
 | Screen | Status |
 |---|---|
@@ -242,19 +242,21 @@ Gate richness (AI labels, coaching voice), never gate access (the plan itself, t
 - ADR-007 and ADR-008 written
 - ADR-001 and ADR-004 marked superseded
 
-**Phase 2 — next (target: May 3)**
+**Phase 2 — shipped**
 - Full visual redesign: Today, Session Detail, Plan screens
 - New components: Restraint card, Plan arc, RPE filling-bar, Coach note block, Pending adjustment card
 
-**Phase 3 — target: May 8**
-- Remaining screens: Me, Coach, Wizard, Upgrade, Benchmark
+**Phase 3 — shipped**
+- Remaining screens: Me, Coach, Wizard, Upgrade, Benchmark redesigned
 - Session type colours consistent across all surfaces
-- All empty/loading/error states handled
+- Note: four files (BenchmarkUpdateScreen, GeneratingCeremony, GeneratePlanScreen, UpgradeScreen) reverted to legacy aliases post-merge; aliases bridged in globals.css
 
-**Phase 4 — target: May 9–10**
-- Hardcoded colour/font cleanup pass
-- Brand voice pass on all static copy
-- Accessibility check
+**Phase 4 — in progress (target: May 10 TestFlight)**
+- B-001: wire BenchmarkUpdateScreen into DashboardClient router (Task 4)
+- B-002: orientation_seen migration — first-plan-only trigger (Task 5)
+- "Careful Now" section label in MeScreen (Task 6)
+- Personalisation wins (Task 7)
+- Polish pass: dead code, empty states, copy, accessibility (Tasks 9–12)
 
 ---
 
@@ -350,6 +352,8 @@ Per-session toggle in expanded card only — saves per session, updates collapse
   - ADR-007: Warm Slate palette *(new)*
   - ADR-008: single light theme only *(new)*
 - Brand alignment: `docs/alignment/brand-product-alignment.md`
+- Phase 4 decisions log: `docs/alignment/phase-4-decisions.md`
+- Phase 4 blockers log: `docs/alignment/phase-4-blockers.md`
 - Brand copy registry: `docs/canonical/brand-copy-alignment.md`
 - Brand & tone of voice: `docs/canonical/brand.md`
 - UX principles: `docs/canonical/ux-principles.md`
