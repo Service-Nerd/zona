@@ -726,7 +726,8 @@ export default function DashboardClient() {
             }}>
               {([
                 { id: 'coach'  as Screen, label: 'Coach',   icon: (a: boolean) => <IconCoach  active={a} /> },
-                { id: (hasPaidAccess ? 'strava' : 'upgrade') as Screen, label: 'Strava',  icon: (a: boolean) => <IconStrava active={a} /> },
+                // Strava screen nav entry removed — admin-only via URL, see brand-product-alignment v2
+                // { id: (hasPaidAccess ? 'strava' : 'upgrade') as Screen, label: 'Strava',  icon: (a: boolean) => <IconStrava active={a} /> },
                 { id: 'me'     as Screen, label: 'Profile', icon: (a: boolean) => <IconMe     active={a} /> },
               ]).map(({ id, label, icon }, i) => {
                 const active = screen === id
