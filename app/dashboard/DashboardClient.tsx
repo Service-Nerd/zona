@@ -271,11 +271,10 @@ export default function DashboardClient() {
           }
         }
 
-        // Welcome screen for migrated users who haven't been onboarded yet.
-        // New users (empty plan) skip this — the wizard Step 1 handles the welcome.
-        if (!data?.has_onboarded && loadedPlan.weeks.length > 0) {
-          setShowWelcome(true)
-        }
+        // Welcome screen retired per brand-product-alignment v2 — migration complete.
+        // if (!data?.has_onboarded && loadedPlan.weeks.length > 0) {
+        //   setShowWelcome(true)
+        // }
 
         // Trial — set trial_started_at on first load if not already set
         let trialStartedAt: string | null = data?.trial_started_at ?? null
