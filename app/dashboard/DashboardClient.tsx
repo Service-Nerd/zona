@@ -183,36 +183,11 @@ export default function DashboardClient() {
       .slice(0, 2)
   })()
 
-  // Register service worker + subscribe to push (paid/trial only, after app ready)
+  // Register service worker on load — subscription requires a user gesture (iOS requirement)
   useEffect(() => {
     if (!hasPaidAccess || !appReady) return
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
-    void (async () => {
-      try {
-        await navigator.serviceWorker.register('/sw.js')
-        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-        if (!vapidKey) return
-
-        // Wait for SW to activate before subscribing — required on iOS
-        const reg = await navigator.serviceWorker.ready
-
-        let sub = await reg.pushManager.getSubscription()
-        if (!sub) {
-          sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(vapidKey),
-          })
-        }
-
-        await fetch('/api/push/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(sub.toJSON()),
-        })
-      } catch {
-        // push setup is non-critical — fail silently
-      }
-    })()
+    if (!('serviceWorker' in navigator)) return
+    void navigator.serviceWorker.register('/sw.js')
   }, [hasPaidAccess, appReady])
 
   useEffect(() => {
@@ -3858,33 +3833,68 @@ function StravaScreen({ runs, loading, connected, raceName, raceDate, raceDistan
   )
 }
 
-// ── PUSH DEBUG ROW (temporary) ────────────────────────────────────────────
+// ── PUSH NOTIFICATIONS ROW ────────────────────────────────────────────────
 
 function PushDebugRow() {
-  const [status, setStatus] = useState<string>('checking…')
+  const [status, setStatus] = useState<'checking' | 'unsupported' | 'subscribed' | 'denied' | 'idle'>('checking')
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     async function check() {
-      if (!('serviceWorker' in navigator)) { setStatus('❌ serviceWorker not supported'); return }
-      if (!('PushManager' in window))      { setStatus('❌ PushManager not supported'); return }
-      const perm = (Notification as any).permission ?? 'unknown'
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-      if (!vapidKey) { setStatus(`⚠️ VAPID key missing — perm: ${perm}`); return }
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) { setStatus('unsupported'); return }
+      const perm = (Notification as any).permission
+      if (perm === 'denied') { setStatus('denied'); return }
       try {
         const regs = await navigator.serviceWorker.getRegistrations()
-        if (!regs.length) { setStatus(`⚠️ No SW registered — perm: ${perm}`); return }
+        if (!regs.length) { setStatus('idle'); return }
         const sub = await regs[0].pushManager.getSubscription()
-        setStatus(sub ? `✅ Subscribed — perm: ${perm}` : `⚠️ No subscription — perm: ${perm}`)
-      } catch (e: any) {
-        setStatus(`❌ Error: ${e.message} — perm: ${perm}`)
-      }
+        setStatus(sub ? 'subscribed' : 'idle')
+      } catch { setStatus('idle') }
     }
     void check()
   }, [])
 
+  async function enablePush() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+    if (!vapidKey) return
+    setLoading(true)
+    try {
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      })
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sub.toJSON()),
+      })
+      setStatus('subscribed')
+    } catch { setStatus((Notification as any).permission === 'denied' ? 'denied' : 'idle') }
+    finally { setLoading(false) }
+  }
+
+  if (status === 'checking' || status === 'unsupported') return null
+
   return (
-    <div style={{ margin: '4px 0', padding: '10px 16px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '10px' }}>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)' }}>Push debug: {status}</div>
+    <div style={{ margin: '4px 0', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '10px', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>Run notifications</div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+            {status === 'subscribed' ? 'Push notifications on' : status === 'denied' ? 'Blocked in device settings' : 'Get notified after each run is analysed'}
+          </div>
+        </div>
+        {status === 'idle' && (
+          <button onClick={enablePush} disabled={loading} style={{ background: 'var(--accent)', color: 'var(--zona-navy)', border: 'none', borderRadius: '8px', padding: '7px 14px', fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
+            {loading ? 'Enabling…' : 'Enable'}
+          </button>
+        )}
+        {status === 'subscribed' && (
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
+        )}
+      </div>
     </div>
   )
 }
