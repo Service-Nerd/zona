@@ -3081,37 +3081,56 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   // ── Hero display line builder ────────────────────────────────────────
   // Derives the two-part hero: "[distance]km," (ink) + "[adjective]." (moss)
   // For rest days: "Today, you rest" / "Do nothing." / "It helps."
+  // Fatigue-aware: heavy trend on easy sessions → "really slowly"
   function getHeroAdverb(type: string): string {
+    if (heavyFatigue && ['easy', 'recovery', 'run'].includes(type)) return 'really slowly'
     const map: Record<string, string> = {
-      easy:      'slowly',
-      recovery:  'slowly',
-      long:      'long and slow',
-      quality:   'at tempo',
-      tempo:     'at tempo',
-      intervals: 'hard',
-      hard:      'hard',
-      race:      'fast',
-      strength:  'with weights',
+      easy:          'slowly',
+      recovery:      'slowly',
+      long:          'long and slow',
+      quality:       'at tempo',
+      tempo:         'at tempo',
+      intervals:     'hard',
+      hard:          'hard',
+      race:          'fast',
+      strength:      'with weights',
       'cross-train': 'easy',
-      cross:     'easy',
-      run:       'slowly',
+      cross:         'easy',
+      run:           'slowly',
     }
     return map[type] ?? 'steadily'
   }
 
-  // ── Coaching note headline (plan-derived, always available) ──────────
+  // ── Coaching note headline (plan-derived + fatigue + injury context) ─
   function getPlanCoachNote(): string {
     const phase = (currentWeek as any).phase as string | undefined
     const ws = (currentWeek as any).sessions ?? {}
     const sessionList = Object.values(ws) as any[]
     const hasQuality = sessionList.some(s => s && ['quality','tempo','intervals','hard'].includes(s.type))
     const hasLong    = sessionList.some(s => s && s.type === 'long')
-    if (phase === 'taper') return "Taper week. Back off and trust the work."
-    if (phase === 'peak')  return "Peak week. You're sharp. Don't add more."
-    if (hasQuality && hasLong) return "Quality and long run this week. Hard stuff first, long stuff rested."
-    if (hasQuality) return "Quality session this week. Everything else is recovery."
-    if (hasLong)    return "Long run week. Keep easy runs genuinely easy."
-    return "Steady week. Execute consistently."
+    const injuries   = (plan.meta as any)?.injury_history as string[] | undefined
+
+    // Fatigue context — prepend when there's a heavy trend
+    const fatiguePrepend = heavyFatigue ? "Heavy effort showing. " : ""
+
+    // Injury context on long run weeks
+    const injuryNote = (() => {
+      if (!hasLong || !injuries?.length) return ""
+      if (injuries.some(i => i.includes('achilles'))) return " Watch the achilles on the long run."
+      if (injuries.some(i => i.includes('knee')))     return " Protect the knee on hills."
+      if (injuries.some(i => i.includes('shin')))     return " Easy on the downhills — shin splints risk."
+      return ""
+    })()
+
+    let base: string
+    if (phase === 'taper') base = "Taper week. Back off and trust the work."
+    else if (phase === 'peak')  base = "Peak week. You're sharp. Don't add more."
+    else if (hasQuality && hasLong) base = "Quality and long run this week. Hard stuff first, long stuff rested."
+    else if (hasQuality) base = "Quality session this week. Everything else is recovery."
+    else if (hasLong)    base = `Long run week. Keep easy runs genuinely easy.${injuryNote}`
+    else base = "Steady week. Execute consistently."
+
+    return fatiguePrepend + base
   }
 
   // ── Zone 2 restraint percent (plan-derived) ──────────────────────────
@@ -3213,7 +3232,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               marginBottom: '4px',
               lineHeight: 1,
             }}>
-              Today, you run
+              {firstName ? `${firstName}, you run` : 'Today, you run'}
             </div>
             <div style={{ lineHeight: 1, marginBottom: '16px' }}>
               {selectedSession.distance != null ? (
@@ -3285,7 +3304,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               color: 'var(--mute)',
               marginBottom: '4px',
             }}>
-              Today, you rest
+              {firstName ? `${firstName}, you rest` : 'Today, you rest'}
             </div>
             <div style={{ lineHeight: 1, marginBottom: '16px' }}>
               <span style={{
