@@ -6,15 +6,50 @@ behavioural rules live here or in /docs.
 
 ---
 
+## Brand
+
+### Positioning
+
+> **ZONA is for runners who always go hard on their easy days — who have a life, a day job, and no business training like professionals.**
+
+Core truth: "You're trying hard. That's the problem."
+
+### The three-line tagline system
+
+| Line | Job | `BRAND` constant | Where it appears |
+|---|---|---|---|
+| **"Training plans that stop you overtraining."** | What ZONA does. Functional, discovery-facing. | `BRAND.appStoreSubtitle` | App Store subtitle, landing page hero, paid ads |
+| **"Slow down. You've got a day job."** | Who ZONA is for. The demographic hook. | `BRAND.tagline` | Login screen, loading screen, OG image, meta description |
+| **"Slow down. You're not Kipchoge."** | How ZONA sounds. Voice/personality moment. | `BRAND.brandStatement` | Login footer, privacy footer, App Store description |
+
+**Rules:**
+- Never mix two taglines on the same surface
+- Never rephrase them — they are locked strings
+- `BRAND.name` is always `'Zona'` — fix any hardcoded instances
+- When in doubt: discovery = #1, in-app = #2, voice moment = #3
+
+**All brand strings and pricing are parameterised in `lib/brand.ts`.** Never hardcode taglines, app name, or pricing values in components.
+
+### Voice rules
+
+Honest, slightly sarcastic, self-aware, encouraging without cringe.
+
+| Works | Doesn't work |
+|---|---|
+| *"Bit keen. Ease it back."* | "You're crushing it!" |
+| *"There it is. Don't ruin it."* | "Ready to conquer your run?" |
+| *"Do nothing. It helps."* | "Beast mode activated" |
+| *"Kept it under control."* | "Based on your data..." |
+| *"Happens. Plan's been shifted."* | "Amazing job today!" |
+| *"HR went high. Worth checking."* | Emojis in functional copy |
+
+One sentence is better than two. Specific beats abstract. Never motivational.
+
+---
+
 ## What Is Zona?
 
 A running training app for non-elite runners who overtrain.
-**Canonical tagline:** "Slow down. You've got a day job." — use on all UI surfaces.
-**Brand statement** (editorial / App Store only): "Slow down. You're not Kipchoge."
-Core truth: "You're trying hard. That's the problem."
-
-**All brand strings and pricing are parameterised in `lib/brand.ts`.** Never hardcode taglines, app name, or pricing values in components. Change once in `lib/brand.ts` — changes everywhere.
-
 Each user brings their own plan — race, distance, training phase. All
 athlete-specific data (race, HR zones, name) lives in the plan JSON
 and user_settings. Nothing is hardcoded to a specific person.
@@ -40,59 +75,53 @@ and user_settings. Nothing is hardcoded to a specific person.
 
 ---
 
-## Design System — System B (LOCKED. NON-NEGOTIABLE.)
+## Design System — Warm Slate (ADR-007)
 
-| Token           | Value     | Usage                        |
-|-----------------|-----------|------------------------------|
-| Navy dark bg    | `#0B132B` | Dark mode background         |
-| Off-white bg    | `#F7F9FB` | Light mode background        |
-| Cards (light)   | `#ffffff`  |                              |
-| Cards (dark)    | `#162040` |                              |
-| Teal            | `#5BC0BE` | CTA / active / zones         |
-| Amber           | `#F2C14E` | Coaching / warnings          |
-| Muted           | `#3A506B` |                              |
-| Borders (light) | `#E2E8F0` |                              |
-| Borders (dark)  | `#1e2e55`  |                              |
+Single light theme. No dark mode (ADR-008).
 
-**Fonts:** Inter (metrics/UI) · Space Grotesk (headings/brand)
+| Token | Value | Usage |
+|---|---|---|
+| `--bg` | `#F3F0EB` | Primary background — warm off-white |
+| `--bg-soft` | `#EDE9E1` | Input fields, inset areas |
+| `--card` | `#FFFFFF` | Card surfaces |
+| `--ink` | `#1A1A1A` | Primary text |
+| `--ink-2` | `#3D3A36` | Secondary text |
+| `--mute` | `#8A857D` | Muted / supporting text |
+| `--moss` | `#6B8E6B` | Primary accent — CTA, active states |
+| `--warn` | `#B8853A` | Coaching, warnings |
+| `--danger` | `#B84545` | Errors only — never in training UI |
+| `--line` | `rgba(26,26,26,0.08)` | Standard borders |
 
-**Font tokens:** `var(--font-ui)` = Inter · `var(--font-brand)` = Space Grotesk. These are the only two font tokens. `--font-display` is NOT a token — any reference to it is a typo; use `var(--font-brand)`.
+**Font:** Inter only — `var(--font-ui)` and `var(--font-brand)` both resolve to Inter. Space Grotesk retired (ADR-007).
+
+**Font tokens:** `var(--font-ui)` and `var(--font-brand)` are the only two font tokens. `--font-display` is NOT a token.
+
+**Legacy aliases:** All System B token names (`--accent`, `--teal`, `--amber`, `--text-primary`, `--card-bg`, `--border-col`, `--session-easy`, etc.) alias to Warm Slate tokens in `globals.css`. Components using old names continue to work. Retire progressively in Phase 2–3.
 
 **BANNED:**
 - `#D4501A` (ember orange)
 - `#f5f2ee` (warm beige)
-- DM Mono
-- DM Sans
+- `#0B132B` (navy) — retired with System B
+- `#5BC0BE` (teal) — replaced by `--moss`
+- DM Mono, DM Sans, Space Grotesk
 - Hardcoded colour values anywhere in components
 - Hardcoded font family strings — use `var(--font-ui)` / `var(--font-brand)` only
 
-All colour MUST come from CSS custom properties in `globals.css`.
-Nothing hardcoded in component files.
+All colour MUST come from CSS custom properties in `globals.css`. Nothing hardcoded in component files.
 
-### Session Type Colour Map
+### Session Type Colour Map (Warm Slate values)
 
-| Type         | Colour  | Hex       |
-|--------------|---------|-----------|
-| easy         | Blue    | `#4A90D9` |
-| long         | Purple  | `#7B68EE` |
-| quality/tempo| Amber   | `#F2C14E` |
-| intervals    | Coral   | `#E05A5A` |
-| race         | Orange  | `#E8833A` |
-| recovery     | Green   | `#5BAD8C` |
-| strength     | Navy    | `#3A506B` |
-| cross-train  | Teal    | `#5BC0BE` |
-| rest         | —       | No accent |
-
----
-
-## Tone of Voice
-
-Honest, slightly sarcastic, self-aware, encouraging without cringe.
-
-- Too fast → *"Bit keen. Ease it back."*
-- Perfect → *"There it is. Don't ruin it."*
-- Rest day → *"Do nothing. It helps."*
-- Post-run good → *"Kept it under control."*
+| Type | Token | Hex |
+|---|---|---|
+| easy | `--s-easy` | `#3D6FB0` |
+| long | `--s-long` | `#5E4FB0` |
+| quality/tempo | `--s-quality` | `#B8853A` |
+| intervals | `--s-inter` | `#B84545` |
+| race | `--s-race` | `#C86A2A` |
+| recovery | `--s-recov` | `#4E8068` |
+| strength | `--s-strength` | `#5A6578` |
+| cross-train | `--s-cross` | `#3D8A88` |
+| rest | — | No accent |
 
 ---
 
@@ -105,18 +134,39 @@ Honest, slightly sarcastic, self-aware, encouraging without cringe.
 - No popups — all interactions navigate to full screens
 - Back arrow always top-left
 - Slide-up sheets: mirrored nav bar at bottom, not top
+- Single light theme — no dark mode, no theme toggle
 
-**Reference aesthetic: Runna + Planzy** — bold metric hierarchy, dark athletic cards, left-accent session type indicators, week-strip navigation, clean session rows. See `docs/canonical/ui-patterns.md` before building any new screen.
+**Reference aesthetic: Runna + Planzy** — bold metric hierarchy, warm athletic cards, left-accent session type indicators, week-strip navigation, clean session rows. See `docs/canonical/ui-patterns.md` before building any new screen.
 
 **Before building any screen or component**: read `docs/canonical/ui-patterns.md`. Use the prompt template at the bottom of that file. Trigger the `frontend-design` skill for all UI work.
+
+### Active scope (Phase 1 shipped)
+
+| Screen | Status |
+|---|---|
+| Today | Active |
+| Session Detail | Active |
+| Plan | Active |
+| Coach | Active (paid/trial only) |
+| Me / Profile | Active |
+| Generate Plan wizard | Active |
+| Upgrade | Active |
+| Login | Active |
+| Strava | **Admin-only via URL** — nav entry removed |
+| Calendar | **Retired** — `CalendarOverlay.old.tsx` |
+| Welcome screen | **Retired** — trigger commented out |
+| Smoke tracker | **Removed** from all UI surfaces |
 
 ---
 
 ## Critical Rules & Known Gotchas
 
-### `applyTheme()` Pattern
-- ONLY toggle `data-theme="dark"` on `<html>`
-- NEVER use `setProperty()` calls — they override the stylesheet cascade and break theming
+### Theme system (ADR-008)
+- **Single light theme. Dark mode removed.**
+- No `data-theme` attribute setting anywhere
+- `applyTheme()` is a no-op — call sites preserved, body retired
+- `rts_theme` localStorage key deprecated and ignored
+- `[data-theme="dark"]` no longer exists in globals.css
 
 ### TypeScript
 - `[...seen]` spread on `Set<string>` fails
@@ -124,7 +174,6 @@ Honest, slightly sarcastic, self-aware, encouraging without cringe.
 
 ### sed replacements
 - Values containing `#` wrapped in double quotes get corrupted
-- e.g. `'#2a2a2a'` becomes `''#2a2a2a''`
 - Always verify output after bulk replacements
 
 ### Strava OAuth
@@ -135,46 +184,82 @@ Honest, slightly sarcastic, self-aware, encouraging without cringe.
 - Auth code expires in ~5 minutes and is single-use
 - Strava client ID: 219980
 
+### Pre-commit Hook
+- Blocks hardcoded hex values in `app/` and `components/` files
+- `globals.css` is excluded at file selection stage (fixed 2026-04-23)
+- Blocks `setProperty()` calls in `app/` and `components/`
+- Blocks DM Mono, DM Sans, Bebas Neue font references
+- Blocks ember orange and warm beige values
+
 ### Global State Pattern
 - Overrides and settings fetched once at `DashboardClient` level
 - Passed as props to child components
 - Avoids duplicate API calls and flash/inconsistency
 
 ### sessionStorage Keys (canonical)
-- `zona_wizard_draft` — wizard form state persisted by `GeneratePlanScreen`. Written on every field change; restored on mount; cleared on `handleUsePlan` success. Enables back-navigation resumption and upgrade-mid-wizard flow. Never rely on this in server or API code — client only.
+- `zona_wizard_draft` — wizard form state persisted by `GeneratePlanScreen`. Written on every field change; restored on mount; cleared on `handleUsePlan` success. Client only.
 
 ### Plan Archive
-- `plan_archive` Supabase table — previous plan stored here before every `savePlanForUser` call. Populated via fire-and-forget `void` insert in `handlePlanSaved` (DashboardClient). Migration: `20260424_plan_archive.sql`. No restore UI at v1 — data protection only. Future plan history screen reads from this table.
+- `plan_archive` Supabase table — previous plan stored before every `savePlanForUser` call. Migration: `20260424_plan_archive.sql`. No restore UI at v1 — data protection only.
 
-### Palette Regression (Most Common Failure)
-- System B palette regressions are the #1 recurring issue
-- The fix: full `globals.css` rewrite + sed-based replacement of all hardcoded values
-- If you see ember orange, warm beige, DM Mono, or DM Sans — stop and fix it
+### Palette Regression
+- Warm Slate is the current system (ADR-007)
+- Legacy aliases bridge old System B token names to new values
+- If you see `#0B132B`, `#5BC0BE`, `#F2C14E`, `#7B68EE` hardcoded in a component — fix it
+- OG image (`app/api/og/route.tsx`) uses `BRAND.og.*` hex values — this is intentional (CSS vars can't work in `next/og`). Those values are marked `DEPRECATED` and will be updated with the Phase 2 OG image redesign.
 
 ### Hybrid Generation Pattern (R23+)
 
-All plan generators (R23 plan generator, R20 reshaper, R24 multi-race, R21 strength) follow the same shape:
+All plan generators follow the same shape:
 
 1. **Deterministic rule engine** produces canonical plan JSON — no AI calls, always succeeds.
-2. **AI enricher** optionally adds voice, coaching copy, and confidence score on top of that JSON.
-3. **Enricher failure is silent** — if Claude times out, returns malformed JSON, or fails validation, the rule-engine output is returned unchanged. The user always gets a plan.
+2. **AI enricher** optionally adds voice, coaching copy, and confidence score.
+3. **Enricher failure is silent** — rule-engine output is returned unchanged if AI fails.
 
-This is the only permitted architecture for plan generation. Binary split (free=template / paid=AI-only) is explicitly rejected. See `docs/architecture/ADR-006-hybrid-generation-pattern.md`.
+See `docs/architecture/ADR-006-hybrid-generation-pattern.md`.
 
 ### Auth at the Route Boundary
 
-`lib/plan/*` modules are pure functions of inputs and a `tier` parameter. They do not import auth helpers, call Supabase, or access `process.env` authentication secrets. The API route is the auth boundary: it calls `hasPaidAccess()`, determines the tier, and passes `tier: 'free' | 'trial' | 'paid'` into `generate(input, tier)`. This keeps plan logic unit-testable and honours ADR-003.
+`lib/plan/*` modules are pure functions of inputs and a `tier` parameter. The API route is the auth boundary. See ADR-003.
 
 ### Free Users Are Never Abandoned
 
-Any feature that locks a free user out of core function — getting a plan, seeing a session, logging a run — is a brand violation. Gate richness (AI labels, coaching voice, confidence score), never gate access (the plan itself, the session card, the log action). ZONA protects runners from themselves; abandonment is not protection.
+Gate richness (AI labels, coaching voice), never gate access (the plan itself, the session card, the log action).
+
+---
+
+## Redesign Progress
+
+**Phase 1 — shipped (branch: redesign/phase-1-tokens)**
+- Warm Slate palette live in `globals.css` (ADR-007)
+- Dark mode removed (ADR-008)
+- Calendar screen retired
+- Welcome screen retired
+- Smoke tracker removed from all UI
+- Strava screen nav entry removed (admin URL still works)
+- All hardcoded `BRAND` string references fixed
+- `BRAND.appStoreSubtitle` and `BRAND.signinSub` added to `lib/brand.ts`
+- ADR-007 and ADR-008 written
+- ADR-001 and ADR-004 marked superseded
+
+**Phase 2 — next (target: May 3)**
+- Full visual redesign: Today, Session Detail, Plan screens
+- New components: Restraint card, Plan arc, RPE filling-bar, Coach note block, Pending adjustment card
+
+**Phase 3 — target: May 8**
+- Remaining screens: Me, Coach, Wizard, Upgrade, Benchmark
+- Session type colours consistent across all surfaces
+- All empty/loading/error states handled
+
+**Phase 4 — target: May 9–10**
+- Hardcoded colour/font cleanup pass
+- Brand voice pass on all static copy
+- Accessibility check
 
 ---
 
 ## Workflow Rules
 
-- Generate complete files + a single `cp` + deploy command
-- No tailing build output before deploy
 - Build-check locally before pushing
 - One release at a time, shipped properly before starting the next
 - All new features tagged FREE or PAID before building begins
@@ -193,8 +278,6 @@ SLC beats MVP. MVP ships minimal-but-unlovable. SLC ships smaller-but-actually-g
 
 ### Prompt template for UI changes
 
-Use this structure when requesting any screen or component change:
-
 ```
 Screen: [screen or component name]
 Change: [what specifically is changing]
@@ -209,9 +292,9 @@ Trigger frontend-design skill.
 
 ## Monetisation Model
 
-Zona uses a **Hybrid Reverse Trial**: 14 days full access for all new users, then graceful downgrade to free tier. Upgrade prompts are triggered by user behaviour (attempting a PAID feature), never by a calendar date.
+Zona uses a **Hybrid Reverse Trial**: 14 days full access for all new users, then graceful downgrade to free tier. Upgrade prompts are triggered by user behaviour, never by a calendar date.
 
-See `docs/canonical/monetisation-strategy.md` for the full model, pricing targets, and trial infrastructure requirements.
+See `docs/canonical/monetisation-strategy.md` for the full model.
 
 ## Feature Tagging
 
@@ -224,7 +307,7 @@ See `docs/canonical/monetisation-strategy.md` for the full model, pricing target
 
 ---
 
-## Session Card Layout (Active Work)
+## Session Card Layout
 
 Required hierarchy:
 1. **TOP:** Run type · Zone · HR target(s) · Estimated pace bracket · Distance + duration
@@ -246,6 +329,7 @@ Per-session toggle in expanded card only — saves per session, updates collapse
 | `docs/contracts/` | All API route and component prop contracts |
 | `docs/architecture/` | Architectural decision records (ADRs) and architecture overview |
 | `docs/releases/` | Release notes and ordered backlog |
+| `docs/alignment/` | Brand-product alignment, redesign phase tracking |
 
 **Before building any new feature**: check `docs/canonical/feature-registry.md` — every feature must be tagged FREE or PAID before implementation begins.
 
@@ -256,8 +340,17 @@ Per-session toggle in expanded card only — saves per session, updates collapse
 - Architecture overview: `docs/architecture/architecture.md`
 - Backlog: `docs/releases/backlog.md`
 - Feature registry (FREE/PAID): `docs/canonical/feature-registry.md`
-- ADRs: `docs/architecture/ADR-*.md` (ADR-001 design tokens, ADR-002 JSON-first, ADR-003 free/paid gates, ADR-004 theme system, ADR-005 subscription payments, ADR-006 hybrid generation)
-- Monetisation strategy: `docs/canonical/monetisation-strategy.md`
+- ADRs: `docs/architecture/ADR-*.md`
+  - ADR-001: design tokens (superseded for colours by ADR-007; principle retained)
+  - ADR-002: JSON-first plan
+  - ADR-003: free/paid gates
+  - ADR-004: theme system (superseded by ADR-008)
+  - ADR-005: subscription payments
+  - ADR-006: hybrid generation pattern
+  - ADR-007: Warm Slate palette *(new)*
+  - ADR-008: single light theme only *(new)*
+- Brand alignment: `docs/alignment/brand-product-alignment.md`
+- Brand copy registry: `docs/canonical/brand-copy-alignment.md`
 - Brand & tone of voice: `docs/canonical/brand.md`
 - UX principles: `docs/canonical/ux-principles.md`
 
