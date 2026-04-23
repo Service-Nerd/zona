@@ -3855,6 +3855,37 @@ function StravaScreen({ runs, loading, connected, raceName, raceDate, raceDistan
   )
 }
 
+// ── PUSH DEBUG ROW (temporary) ────────────────────────────────────────────
+
+function PushDebugRow() {
+  const [status, setStatus] = useState<string>('checking…')
+
+  useEffect(() => {
+    async function check() {
+      if (!('serviceWorker' in navigator)) { setStatus('❌ serviceWorker not supported'); return }
+      if (!('PushManager' in window))      { setStatus('❌ PushManager not supported'); return }
+      const perm = (Notification as any).permission ?? 'unknown'
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      if (!vapidKey) { setStatus(`⚠️ VAPID key missing — perm: ${perm}`); return }
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations()
+        if (!regs.length) { setStatus(`⚠️ No SW registered — perm: ${perm}`); return }
+        const sub = await regs[0].pushManager.getSubscription()
+        setStatus(sub ? `✅ Subscribed — perm: ${perm}` : `⚠️ No subscription — perm: ${perm}`)
+      } catch (e: any) {
+        setStatus(`❌ Error: ${e.message} — perm: ${perm}`)
+      }
+    }
+    void check()
+  }, [])
+
+  return (
+    <div style={{ margin: '4px 0', padding: '10px 16px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '10px' }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)' }}>Push debug: {status}</div>
+    </div>
+  )
+}
+
 // ── STRAVA CONNECTION ROW ─────────────────────────────────────────────────
 
 function StravaConnectionRow() {
@@ -4440,6 +4471,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         {/* Strava powers run matching and post-run coaching analysis */}
         <SectionLabel>Connections</SectionLabel>
         <StravaConnectionRow />
+        <PushDebugRow />
 
         {/* ── Race prep ──────────────────────────────────────────── */}
         <SectionLabel>Race prep</SectionLabel>
