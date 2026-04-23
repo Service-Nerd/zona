@@ -3660,36 +3660,96 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   const raceDateStr = raceDate ? raceDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null
   const daysToRace = raceDate ? Math.max(0, Math.ceil((raceDate.getTime() - Date.now()) / 86400000)) : null
 
+  // Derive done weeks count and deload week numbers from plan
+  const doneWeeksCount = (() => {
+    let count = 0
+    for (let i = 0; i < currentWeekIndex; i++) count++
+    return count
+  })()
+  const deloadWeekNumbers = plan.weeks.reduce<number[]>((acc, wk, i) => {
+    const w = wk as any
+    if (w.type === 'deload' || w.badge === 'deload') acc.push(i + 1)
+    return acc
+  }, [])
+  const raceWeekNumber = (() => {
+    const idx = plan.weeks.findIndex((wk) => (wk as any).type === 'race' || (wk as any).badge === 'race')
+    return idx >= 0 ? idx + 1 : undefined
+  })()
+
+  // Phase label: "base → build → peak → taper" or from plan phases
+  const phaseLabel = (() => {
+    const phases = Array.from(new Set(plan.weeks.map((wk) => (wk as any).phase).filter(Boolean)))
+    const caps: Record<string, string> = { base: 'base', build: 'build', peak: 'peak', taper: 'taper' }
+    return phases.map(p => caps[p] ?? p).join(' → ')
+  })()
+
   return (
-    <div>
-      {/* Race context header — with countdown matching Today screen */}
-      <div style={{ padding: '16px 16px 4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+    <div style={{ paddingBottom: '32px' }}>
+
+      {/* ── HEADER ───────────────────────────────────────────────── */}
+      <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <div>
+          <div style={{
+            fontFamily: 'var(--font-ui)',
+            fontSize: '26px',
+            fontWeight: 800,
+            color: 'var(--ink)',
+            letterSpacing: '-0.8px',
+            lineHeight: 1.1,
+          }}>
+            Your plan
+          </div>
           {raceName && (
-            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.4px', lineHeight: 1.1 }}>
+            <div style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: '13px',
+              color: 'var(--mute)',
+              marginTop: '4px',
+            }}>
               {raceName}
             </div>
           )}
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '0.02em' }}>
-            {raceDateStr ? `${raceDateStr} · ` : ''}Week {weekNum} of {totalWeeks}
-          </div>
         </div>
-        {daysToRace !== null && (
+        {daysToRace !== null && daysToRace > 0 && (
           <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
-            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1, letterSpacing: '-0.5px' }}>
-              {daysToRace}
+            <div style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: '16px',
+              fontWeight: 700,
+              color: 'var(--ink)',
+              letterSpacing: '-0.4px',
+              lineHeight: 1,
+            }}>
+              {daysToRace}d
             </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              days left
+            <div style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: '11px',
+              fontWeight: 600,
+              color: 'var(--mute)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              marginTop: '2px',
+            }}>
+              to {raceName || 'race'}
             </div>
           </div>
         )}
       </div>
 
-      {/* Progress — anchored to header, not floating */}
-      <PlanProgressBar plan={plan} allCompletions={allCompletions} />
+      {/* ── PLAN ARC ─────────────────────────────────────────────── */}
+      <div style={{ padding: '20px 16px 0' }}>
+        <PlanArc
+          totalWeeks={totalWeeks}
+          currentWeek={weekNum}
+          doneWeeks={doneWeeksCount}
+          deloadWeeks={deloadWeekNumbers}
+          raceWeek={raceWeekNumber}
+          phaseLabel={phaseLabel || undefined}
+        />
+      </div>
 
-      {/* This week strip */}
+      {/* ── WEEK SUMMARY ─────────────────────────────────────────── */}
       {(() => {
         const wk = plan.weeks[currentWeekIndex]
         if (!wk) return null
@@ -3704,42 +3764,51 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           }
         })
         const weeklyKm = (wk as any).weekly_km as number | undefined
-        if (total === 0 && !weeklyKm) return null
+        const weekPhase = (wk as any).phase as string | undefined
+        const phaseCap = weekPhase ? ({ base: 'Base', build: 'Build', peak: 'Peak', taper: 'Taper' }[weekPhase] ?? weekPhase) : null
         return (
-          <div style={{ padding: '0 16px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>This week</span>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', opacity: 0.4 }}>·</span>
+          <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {phaseCap && (
+              <span style={{
+                fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+                color: 'var(--moss)', letterSpacing: '0.08em', textTransform: 'uppercase',
+              }}>{phaseCap}</span>
+            )}
+            {phaseCap && <span style={{ color: 'var(--mute-2)', fontSize: '10px' }}>·</span>}
             {total > 0 && (
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: done === total && total > 0 ? 'var(--teal)' : 'var(--text-muted)' }}>
+              <span style={{
+                fontFamily: 'var(--font-ui)', fontSize: '10px',
+                color: done === total && total > 0 ? 'var(--moss)' : 'var(--mute)',
+              }}>
                 {done}/{total} done
               </span>
             )}
             {total > 0 && weeklyKm && weeklyKm > 0 && (
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', opacity: 0.4 }}>·</span>
+              <span style={{ color: 'var(--mute-2)', fontSize: '10px' }}>·</span>
             )}
             {weeklyKm && weeklyKm > 0 && (
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)' }}>{weeklyKm}km target</span>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)' }}>
+                {weeklyKm}km target
+              </span>
             )}
           </div>
         )
       })()}
 
-      {/* Load chart */}
-      <div style={{ padding: '0 12px 12px' }}>
-        <PlanChart weeks={plan.weeks} />
+      {/* ── PLAN CALENDAR (existing component, keeps drag-reorder, tap-to-open) ── */}
+      <div style={{ paddingTop: '12px' }}>
+        <PlanCalendar
+          weeks={plan.weeks}
+          stravaRuns={stravaRuns}
+          allOverrides={allOverrides}
+          allCompletions={allCompletions}
+          onOverrideChange={onOverrideChange}
+          overridesReady={overridesReady}
+          onSessionTap={(session, weekN, weekTheme) => {
+            onOpenSession?.({ ...session, weekN, weekTheme })
+          }}
+        />
       </div>
-
-      <PlanCalendar
-        weeks={plan.weeks}
-        stravaRuns={stravaRuns}
-        allOverrides={allOverrides}
-        allCompletions={allCompletions}
-        onOverrideChange={onOverrideChange}
-        overridesReady={overridesReady}
-        onSessionTap={(session, weekN, weekTheme) => {
-          onOpenSession?.({ ...session, weekN, weekTheme })
-        }}
-      />
     </div>
   )
 }
