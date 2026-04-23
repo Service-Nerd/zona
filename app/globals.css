@@ -60,6 +60,9 @@
   --radius-lg:       16px;
   --radius-xl:       20px;
 
+  /* ── Coach voice ─────────────────────────────────────────────────── */
+  --coach-ink:       #3D2600;   /* warm dark brown — coach copy on --warn-bg only */
+
   /* ── Fixed colours ───────────────────────────────────────────────── */
   --strava:          #FC4C02;
   --strava-soft:     rgba(252,76,2,0.1);
