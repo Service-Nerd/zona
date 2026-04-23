@@ -112,7 +112,7 @@
 | Set `CRON_SECRET` in Vercel | 🔲 | Any secret string — protects `/api/push/send-weekly-report` cron endpoint |
 | Generate VAPID keys and set in Vercel | 🔲 | `npx web-push generate-vapid-keys` → set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (e.g. `mailto:push@zona.app`) |
 | Set `NEXT_PUBLIC_APP_URL` in Vercel | 🔲 | e.g. `https://rts-training-hub.vercel.app` — used by cron to call internal API routes |
-| Register Strava webhook subscription | ✅ | Subscription ID: `342111`. Callback: `https://rts-training-hub.vercel.app/api/webhooks/strava`. To delete: `DELETE https://www.strava.com/api/v3/push_subscriptions/342111` with client_id + client_secret. |
+| Register Strava webhook subscription | ✅ | Subscription ID: `342248`. Callback: `https://rts-training-hub.vercel.app/api/webhooks/strava`. To delete: `DELETE https://www.strava.com/api/v3/push_subscriptions/342248` with client_id + client_secret. |
 
 ---
 
