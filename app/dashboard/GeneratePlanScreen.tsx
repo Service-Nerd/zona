@@ -747,7 +747,7 @@ export default function GeneratePlanScreen({
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
       {/* Header — back button + progress */}
       <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
-        <BackBtn onClick={goBack} />
+        {!(isOnboarding && currentIdx === 0) && <BackBtn onClick={goBack} />}
         <ProgressDots total={sequence.length} current={currentIdx} />
         <div style={{ marginBottom: '28px' }}>
           <h1 style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: '8px', margin: '0 0 8px' }}>
