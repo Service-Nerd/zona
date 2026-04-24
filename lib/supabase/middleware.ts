@@ -21,10 +21,15 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Call getUser() to refresh the session tokens and write updated cookies.
-  // We don't redirect here — DashboardClient handles its own auth state,
-  // and redirecting causes loops when async cookie writes race navigation.
-  await supabase.auth.getUser()
+  // Refresh session tokens and write updated cookies.
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Redirect signed-in users away from auth pages (safe — no loop risk)
+  if (user && request.nextUrl.pathname.startsWith('/auth')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
 
   return supabaseResponse
 }
