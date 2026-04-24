@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { GeneratorInput } from '@/types/plan'
-import { createClient } from '@/lib/supabase/server'
+import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { generate } from '@/lib/plan/generate'
 import { nextMonday, formatDate, weeksBetweenLocal } from '@/lib/plan/length'
@@ -33,12 +33,7 @@ function validate(input: GeneratorInput, planStart: string): string | null {
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createClient()
-    // Read token from Authorization header — client passes it explicitly
-    // because @supabase/ssr cookie sync to the server is unreliable.
-    const authHeader = req.headers.get('Authorization')
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined
-    const { data: { user } } = await supabase.auth.getUser(token)
+    const user = await getUserFromRequest(req)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const tier = await getUserTier(user.id)

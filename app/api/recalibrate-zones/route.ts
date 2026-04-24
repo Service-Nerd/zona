@@ -1,3 +1,4 @@
+import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { NextRequest, NextResponse } from 'next/server'
 import type { BenchmarkInput } from '@/types/plan'
 import { createClient } from '@/lib/supabase/server'
@@ -8,7 +9,7 @@ import { applyRecalibration } from '@/lib/plan/ruleEngine'
 export async function POST(req: NextRequest) {
   try {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getUserFromRequest(req)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const tier = await getUserTier(user.id)

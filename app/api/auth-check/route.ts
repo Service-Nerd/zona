@@ -1,18 +1,14 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 
 // Temporary debug endpoint — remove after auth is confirmed working
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const supabase = createClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
+    const user = await getUserFromRequest(req)
 
     if (!user) {
-      return NextResponse.json({
-        authenticated: false,
-        error: error?.message ?? 'No user returned',
-      })
+      return NextResponse.json({ authenticated: false, error: 'No user returned' })
     }
 
     const tier = await getUserTier(user.id)

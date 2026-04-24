@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { Plan, BenchmarkInput } from '@/types/plan'
+import { authedFetch } from '@/lib/supabase/authedFetch'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -190,7 +191,7 @@ export default function BenchmarkUpdateScreen({
       : { type: 'tt_30min', distance_km: Number(benchmarkTTDist), time: '30:00' }
 
     try {
-      const res = await fetch('/api/recalibrate-zones', {
+      const res = await authedFetch('/api/recalibrate-zones', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ benchmark }),
@@ -328,7 +329,7 @@ export default function BenchmarkUpdateScreen({
               width: '100%', padding: '15px', borderRadius: '12px',
               background: 'var(--accent)', border: 'none', cursor: 'pointer',
               fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600,
-              color: 'var(--zona-navy)',
+              color: 'var(--ink)',
             }}
           >
             Back to plan
@@ -342,7 +343,7 @@ export default function BenchmarkUpdateScreen({
               background: canSubmit() && !loading ? 'var(--accent)' : 'var(--accent-dim)',
               border: 'none', cursor: canSubmit() && !loading ? 'pointer' : 'not-allowed',
               fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600,
-              color: canSubmit() && !loading ? 'var(--zona-navy)' : 'var(--accent)',
+              color: canSubmit() && !loading ? 'var(--ink)' : 'var(--accent)',
               transition: 'all 0.15s',
             }}
           >

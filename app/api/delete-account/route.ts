@@ -1,15 +1,14 @@
-import { createClient as createServerClient } from '@/lib/supabase/server'
+import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 const adminClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-export async function POST() {
-  const supabase = createServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export async function POST(req: NextRequest) {
+  const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const uid = user.id

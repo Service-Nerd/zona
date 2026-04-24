@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { authedFetch } from '@/lib/supabase/authedFetch'
 import { formatDuration, formatPace, hrColour, paceAtHR, getRuns } from '@/lib/strava'
 import type { StravaActivity } from '@/types/plan'
 
@@ -66,7 +67,7 @@ Activity:
 Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note one thing done well and one to focus on next. No fluff.`
 
     try {
-      const res = await fetch('/api/claude', {
+      const res = await authedFetch('/api/claude', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }),
@@ -227,7 +228,7 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
             </div>
             <div style={{ padding: '12px 18px', borderTop: '0.5px solid var(--border-col)', textAlign: 'right' }}>
               <button onClick={() => setPopup(null)} style={{
-                background: 'var(--teal)', color: 'var(--zona-navy)', border: 'none',
+                background: 'var(--moss)', color: 'var(--card)', border: 'none',
                 borderRadius: '8px', padding: '9px 22px',
                 fontFamily: "var(--font-ui)", fontSize: '13px',
                 letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500,

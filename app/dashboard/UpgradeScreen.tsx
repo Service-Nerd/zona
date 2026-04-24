@@ -10,6 +10,7 @@
 
 import { useState } from 'react'
 import { PRICING } from '@/lib/brand'
+import { authedFetch } from '@/lib/supabase/authedFetch'
 
 // Ordered by recurring value — weekly coaching and zone scoring are the ongoing proof of
 // subscription value. AI plans are high at onboarding but low thereafter.
@@ -41,7 +42,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/checkout', {
+      const res = await authedFetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ annual }),
@@ -181,7 +182,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
               fontFamily: 'var(--font-ui)', fontWeight: 600,
               fontSize: '0.625rem', letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              color: 'var(--zona-navy)',
+              color: 'var(--ink)',
               whiteSpace: 'nowrap',
             }}>{PRICING.annual.savingLabel}</div>
             <div style={{
@@ -223,7 +224,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
             background: loading ? 'var(--border-col)' : 'var(--teal)',
             border: 'none', borderRadius: '10px',
             fontFamily: 'var(--font-ui)', fontWeight: 600,
-            fontSize: '1rem', color: 'var(--zona-navy)',
+            fontSize: '1rem', color: 'var(--ink)',
             cursor: loading ? 'default' : 'pointer',
             letterSpacing: '0.02em',
             transition: 'opacity 0.15s',

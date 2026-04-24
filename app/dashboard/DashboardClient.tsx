@@ -7,6 +7,7 @@ import PlanCalendar from '@/components/training/PlanCalendar'
 // Calendar screen retired — CalendarOverlay.tsx renamed to .old.tsx (brand-product-alignment v2)
 import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
+import { authedFetch } from '@/lib/supabase/authedFetch'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
 import { isTrialActive } from '@/lib/trial'
@@ -2866,7 +2867,7 @@ function AdjustmentBanner({ adjustment, onConfirmed, onReverted }: {
   async function confirm() {
     setLoading(true)
     try {
-      const res  = await fetch('/api/confirm-adjustment', {
+      const res  = await authedFetch('/api/confirm-adjustment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adjustment_id: adjustment.id }),
@@ -2880,7 +2881,7 @@ function AdjustmentBanner({ adjustment, onConfirmed, onReverted }: {
   async function revert() {
     setLoading(true)
     try {
-      const res  = await fetch('/api/revert-adjustment', {
+      const res  = await authedFetch('/api/revert-adjustment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adjustment_id: adjustment.id }),
@@ -2924,7 +2925,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied }: {
     setStatus('loading')
     setError(null)
     try {
-      const res  = await fetch('/api/adjust-plan', {
+      const res  = await authedFetch('/api/adjust-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ manual: true }),
@@ -2941,7 +2942,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied }: {
     if (!adjustment) return
     setActionLoading(true)
     try {
-      const res  = await fetch('/api/confirm-adjustment', {
+      const res  = await authedFetch('/api/confirm-adjustment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adjustment_id: adjustment.id }),
@@ -2956,7 +2957,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied }: {
     if (!adjustment) return
     setActionLoading(true)
     try {
-      const res = await fetch('/api/revert-adjustment', {
+      const res = await authedFetch('/api/revert-adjustment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adjustment_id: adjustment.id }),
@@ -4147,7 +4148,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
     setLoading(true)
     setError(null)
     try {
-      const res  = await fetch('/api/weekly-report?force=true', { method: 'POST' })
+      const res  = await authedFetch('/api/weekly-report?force=true', { method: 'POST' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed')
       onReportGenerated?.(data.report)
@@ -4353,7 +4354,7 @@ function PushNotificationsRow() {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
       })
-      await fetch('/api/push/subscribe', {
+      await authedFetch('/api/push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sub.toJSON()),
@@ -4736,7 +4737,7 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/delete-account', { method: 'POST' })
+      const res = await authedFetch('/api/delete-account', { method: 'POST' })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         setError(body.error ?? 'Something went wrong. Try again.')

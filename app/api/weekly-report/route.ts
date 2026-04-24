@@ -1,3 +1,4 @@
+import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
     userId = headerUserId!
   } else {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getUserFromRequest(req)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     userId = user.id
     const tier = await getUserTier(user.id)

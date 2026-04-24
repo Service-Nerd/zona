@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { createClient } from '@/lib/supabase/server'
 import { getUserTier } from '@/lib/trial'
 
@@ -7,9 +8,9 @@ import { getUserTier } from '@/lib/trial'
 // Only paid/trial users can subscribe.
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const supabase = createClient()
 
   const tier = await getUserTier(user.id)
   if (tier === 'free') return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
@@ -44,9 +45,9 @@ export async function POST(req: NextRequest) {
 // Removes a push subscription (user unsubscribed).
 
 export async function DELETE(req: NextRequest) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const supabase = createClient()
 
   const { endpoint } = await req.json()
   if (!endpoint) return NextResponse.json({ error: 'endpoint required' }, { status: 422 })
