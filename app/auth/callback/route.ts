@@ -1,3 +1,5 @@
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
@@ -5,27 +7,32 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
 
   if (code) {
-    // PKCE flow — redirect to dashboard with ?code= intact.
-    // createBrowserClient has detectSessionInUrl=true and flowType="pkce",
-    // so it will call exchangeCodeForSession(code) client-side using the
-    // code verifier already stored in cookies by signInWithOAuth.
-    // Server-side exchange fails because the async cookie write races the
-    // OAuth redirect; client-side is reliable because it reads document.cookie.
-    return NextResponse.redirect(`${origin}/dashboard?code=${code}`)
+    const cookieStore = cookies()
+    // Build the redirect response first — cookies are set on it directly
+    // so they're guaranteed to be sent to the browser with the redirect.
+    const response = NextResponse.redirect(`${origin}/dashboard`)
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll() },
+          setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options as any)
+            )
+          },
+        },
+      }
+    )
+
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error) return response
+
+    console.error('[auth/callback] exchangeCodeForSession failed', error.message)
   }
 
-  // Implicit flow fallback — token is in URL hash, server can't read it.
-  // Shim redirects client-side, Supabase browser client processes the hash.
-  const html = `<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <script>
-      window.location.href = '/dashboard' + window.location.hash
-    </script>
-  </head>
-  <body></body>
-</html>`
-
-  return new NextResponse(html, { headers: { 'Content-Type': 'text/html' } })
+  // No code or exchange failed — back to login
+  return NextResponse.redirect(`${origin}/auth/login`)
 }
