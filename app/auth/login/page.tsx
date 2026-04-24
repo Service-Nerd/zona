@@ -32,7 +32,9 @@ export default function LoginPage() {
     if (mode === 'signin') {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) { setError(error.message); setLoading(false); return }
-      router.push('/dashboard')
+      // Hard navigation ensures auth cookies are fully committed before
+      // the next request — router.push (soft nav) can race the cookie write
+      window.location.href = '/dashboard'
     } else {
       const { error } = await supabase.auth.signUp({
         email, password,
