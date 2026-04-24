@@ -6,10 +6,14 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
 
+  // Diagnostic: log all incoming cookies so we can verify code_verifier is present
+  const cookieStore = cookies()
+  const allCookies = cookieStore.getAll()
+  const cookieNames = allCookies.map(c => c.name).join(', ')
+  console.log('[auth/callback] code present:', !!code)
+  console.log('[auth/callback] cookies received:', cookieNames)
+
   if (code) {
-    const cookieStore = cookies()
-    // Build the redirect response first — cookies are set on it directly
-    // so they're guaranteed to be sent to the browser with the redirect.
     const response = NextResponse.redirect(`${origin}/dashboard`)
 
     const supabase = createServerClient(
@@ -28,11 +32,14 @@ export async function GET(request: Request) {
     )
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
+    console.log('[auth/callback] exchange error:', error?.message ?? 'none')
+
     if (!error) return response
 
-    console.error('[auth/callback] exchangeCodeForSession failed', error.message)
+    // Exchange failed — redirect to login with error visible in URL so we can diagnose
+    const reason = encodeURIComponent(error.message)
+    return NextResponse.redirect(`${origin}/auth/login?auth_error=${reason}`)
   }
 
-  // No code or exchange failed — back to login
-  return NextResponse.redirect(`${origin}/auth/login`)
+  return NextResponse.redirect(`${origin}/auth/login?auth_error=no_code`)
 }
