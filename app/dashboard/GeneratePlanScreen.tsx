@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import type { Plan, GeneratorInput } from '@/types/plan'
 import GeneratingCeremony from '@/components/GeneratingCeremony'
 import { BRAND } from '@/lib/brand'
+import { createClient } from '@/lib/supabase/client'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -585,9 +586,17 @@ export default function GeneratePlanScreen({
     }
 
     try {
+      // Pass the access token explicitly — cookie sync to server is unreliable
+      // with @supabase/ssr; getSession() always returns the in-memory session.
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
       const res  = await fetch('/api/generate-plan', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify(input),
       })
       const data = await res.json()
