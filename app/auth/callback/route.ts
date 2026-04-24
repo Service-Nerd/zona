@@ -1,22 +1,15 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
-  // With implicit flow the token is in the URL hash (#access_token=...)
-  // Server-side redirects strip the hash, so we return an HTML page
-  // that does a client-side redirect, preserving the hash for Supabase to process
-  const html = `<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <script>
-      // Preserve hash and redirect to dashboard
-      window.location.href = '/dashboard' + window.location.hash
-    </script>
-  </head>
-  <body style="background:#0B132B"></body>
-</html>`
+  const { searchParams, origin } = new URL(request.url)
+  const code = searchParams.get('code')
 
-  return new NextResponse(html, {
-    headers: { 'Content-Type': 'text/html' },
-  })
+  if (code) {
+    // PKCE flow — exchange the code for a session (sets auth cookies)
+    const supabase = createClient()
+    await supabase.auth.exchangeCodeForSession(code)
+  }
+
+  return NextResponse.redirect(`${origin}/dashboard`)
 }

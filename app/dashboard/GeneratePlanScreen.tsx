@@ -629,7 +629,7 @@ export default function GeneratePlanScreen({
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
         <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
-          <BackBtn onClick={goBack} />
+          {!isOnboarding && <BackBtn onClick={goBack} />}
         </div>
         <div style={{ flex: 1, padding: '0 20px 24px' }}>
           <div style={{ background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '20px', marginBottom: '16px' }}>
