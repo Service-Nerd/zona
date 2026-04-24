@@ -10,10 +10,14 @@ import { getStravaToken } from '@/lib/strava'
 // Verification token stored in STRAVA_WEBHOOK_VERIFY_TOKEN env var.
 // Service-role Supabase client used — no user session in webhook context.
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Lazily instantiated — env vars are only available at request time, not build time
+let _supabase: ReturnType<typeof createClient> | undefined
+function getSupabase(): any {
+  return (_supabase ??= createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  ))
+}
 
 // ─── GET — Strava subscription verification ───────────────────────────────────
 
@@ -72,11 +76,11 @@ async function enrichAndPersist(event: StravaEvent) {
   }
 
   // Fetch Strava tokens for this user
-  const { data: settings } = await supabase
+  const { data: settings } = await getSupabase()
     .from('user_settings')
     .select('strava_refresh_token')
     .eq('user_id', userId)
-    .single()
+    .single() as { data: { strava_refresh_token: string } | null; error: unknown }
 
   if (!settings?.strava_refresh_token) return
 
@@ -100,7 +104,7 @@ async function enrichAndPersist(event: StravaEvent) {
   const hrSummary = await fetchHRStreamSummary(access_token, event.object_id, userId)
 
   // Upsert into strava_activities
-  const { error } = await supabase.from('strava_activities').upsert({
+  const { error } = await getSupabase().from('strava_activities').upsert({
     user_id:             userId,
     strava_activity_id:  activity.id,
     activity_type:       activity.type,
@@ -134,7 +138,7 @@ async function enrichAndPersist(event: StravaEvent) {
 async function triggerAutoAnalysis(userId: string, activity: any, stravaActivityId: number) {
   if (activity.type !== 'Run' && activity.sport_type !== 'Run') return
 
-  const { data: planRow } = await supabase
+  const { data: planRow } = await getSupabase()
     .from('plans')
     .select('plan_json')
     .eq('user_id', userId)
@@ -197,7 +201,7 @@ async function triggerAutoAnalysis(userId: string, activity: any, stravaActivity
   if (!bestDay) return
 
   // Mark session complete in session_completions so the UI reflects the auto-link immediately
-  await supabase.from('session_completions').upsert({
+  await getSupabase().from('session_completions').upsert({
     user_id:              userId,
     week_n:               week.n,
     session_day:          bestDay,
@@ -239,7 +243,7 @@ async function fetchHRStreamSummary(
 ): Promise<{ inZonePct: number; abovePct: number; belowPct: number } | null> {
   try {
     // Get user's zone boundaries from their current plan
-    const { data: planRow } = await supabase
+    const { data: planRow } = await getSupabase()
       .from('plans')
       .select('plan_json')
       .eq('user_id', userId)
@@ -282,7 +286,7 @@ async function fetchHRStreamSummary(
 async function handleActivityDelete(event: StravaEvent) {
   const userId = await resolveUserId(event.owner_id)
   if (!userId) return
-  await supabase
+  await getSupabase()
     .from('strava_activities')
     .delete()
     .match({ user_id: userId, strava_activity_id: event.object_id })
@@ -290,7 +294,7 @@ async function handleActivityDelete(event: StravaEvent) {
 
 /** Resolves Strava athlete_id → Zona user_id via user_settings. */
 async function resolveUserId(stravaAthleteId: number): Promise<string | null> {
-  const { data } = await supabase
+  const { data } = await getSupabase()
     .from('user_settings')
     .select('user_id')
     .eq('strava_athlete_id', stravaAthleteId)

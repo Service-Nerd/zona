@@ -5,11 +5,6 @@ import Stripe from 'stripe'
 // Stripe webhook docs: https://stripe.com/docs/webhooks
 // Signature verified via stripe.webhooks.constructEvent (timing-safe)
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY not set')
   return new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' })
@@ -28,6 +23,10 @@ function toStatus(stripeStatus: Stripe.Subscription.Status): 'trialing' | 'activ
 }
 
 export async function POST(req: NextRequest) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
   const rawBody = await req.text()
   const sig = req.headers.get('stripe-signature')
 

@@ -6,11 +6,6 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const REVENUECAT_WEBHOOK_SECRET = process.env.REVENUECAT_WEBHOOK_SECRET
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
 function toStatus(eventType: string): 'trialing' | 'active' | 'cancelled' | 'expired' | null {
   switch (eventType) {
     case 'INITIAL_PURCHASE':
@@ -30,6 +25,10 @@ function toStatus(eventType: string): 'trialing' | 'active' | 'cancelled' | 'exp
 }
 
 export async function POST(req: NextRequest) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
   const rawBody = await req.text()
 
   // Verify signature
