@@ -1,20 +1,21 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
 
   if (code) {
-    // PKCE flow — exchange the code for a session (sets auth cookies server-side)
-    const supabase = createClient()
-    await supabase.auth.exchangeCodeForSession(code)
-    return NextResponse.redirect(`${origin}/dashboard`)
+    // PKCE flow — redirect to dashboard with ?code= intact.
+    // createBrowserClient has detectSessionInUrl=true and flowType="pkce",
+    // so it will call exchangeCodeForSession(code) client-side using the
+    // code verifier already stored in cookies by signInWithOAuth.
+    // Server-side exchange fails because the async cookie write races the
+    // OAuth redirect; client-side is reliable because it reads document.cookie.
+    return NextResponse.redirect(`${origin}/dashboard?code=${code}`)
   }
 
-  // Implicit flow — token is in the URL hash which the server can't read.
-  // Return an HTML shim that reads the hash client-side and lets Supabase
-  // process it, then redirects to dashboard.
+  // Implicit flow fallback — token is in URL hash, server can't read it.
+  // Shim redirects client-side, Supabase browser client processes the hash.
   const html = `<!DOCTYPE html>
 <html>
   <head>
