@@ -19,7 +19,7 @@ This table is the authoritative source of what each value currently is.
 |---|---|---|
 | `BRAND.name` | `'Zona'` | Wordmarks, OG image, `<title>` tag |
 | `BRAND.tagline` | `"Slow down. You've got a day job."` | Login, welcome, plan-ready, OG image, loading screen |
-| `BRAND.brandStatement` | `"Slow down. You're not Kipchoge."` | Login footer, App Store description, privacy footer, editorial only |
+| `BRAND.brandStatement` | `"You can't outrun your easy days."` | Privacy footer, App Store description, editorial only (not login — tagline owns that space) |
 | `BRAND.signupSub` | `'14 days, no limits. After that, you decide.'` | Sign-up sub-text only (not sign-in) |
 | `BRAND.push.weeklyReport` | `'Your week, reviewed.'` | Push notification title — weekly report |
 | `BRAND.push.runAnalysis` | `'Run logged.'` | Push notification title — post-run analysis |
@@ -45,7 +45,7 @@ Every screen/component with user-visible copy, what it currently shows, and its 
 | Google button | `'Continue with Google'` / `'Redirecting...'` | Hardcoded UI copy — acceptable |
 | Submit button | `'Sign in'` / `'Create account'` | Hardcoded UI copy — acceptable |
 | Confirm email message | `'Account created — check your email to confirm, or sign in if confirmation is disabled.'` | Hardcoded UI copy — acceptable |
-| Footer line | `"Slow down. You're not Kipchoge."` | **Hardcoded** (should be `BRAND.brandStatement`) |
+| Footer line | ~~removed~~ | Removed 2026-04-24 — tagline already owns this space. Privacy link remains. |
 | Privacy link | `'Privacy Policy'` | Static — acceptable |
 
 ### 2.2 Loading / splash screen (`DashboardClient.tsx` ~line 580)
@@ -146,7 +146,7 @@ Loading copy is intentional brand voice — part of the product experience. Not 
 
 | Surface element | Current value | Source |
 |---|---|---|
-| Footer | `"Slow down. You're not Kipchoge."` | **Hardcoded** (should be `BRAND.brandStatement`) |
+| Footer | `"You can't outrun your easy days."` | `BRAND.brandStatement` ✓ |
 
 ### 2.11 OG image (`app/api/og/route.tsx`)
 
@@ -160,7 +160,7 @@ Loading copy is intentional brand voice — part of the product experience. Not 
 | Tag | Value | Source |
 |---|---|---|
 | `<title>` | `'Zona — Slow down. You've got a day job.'` | `BRAND.name` + `BRAND.tagline` ✓ |
-| `<meta description>` | `"Slow down. You're not Kipchoge."` | `BRAND.brandStatement` ✓ |
+| `<meta description>` | `"You can't outrun your easy days."` | `BRAND.brandStatement` ✓ |
 | OG title | same as `<title>` | ✓ |
 | OG description | same as `<meta description>` | ✓ |
 
@@ -173,10 +173,10 @@ These are the gaps between what the code does and what it should do.
 | # | File | Line(s) | Issue | Severity |
 |---|---|---|---|---|
 | DIV-001 | `app/auth/login/page.tsx` | 73 | `'Zona'` hardcoded — should be `BRAND.name` | Low — functionally identical until name changes |
-| DIV-002 | `app/auth/login/page.tsx` | 224 | `"Slow down. You're not Kipchoge."` hardcoded — should be `BRAND.brandStatement` | Medium — breaks single-source-of-truth |
+| DIV-002 | `app/auth/login/page.tsx` | 224 | ~~`"Slow down. You're not Kipchoge."` hardcoded~~ | ✅ Fixed 2026-04-24 — removed from login entirely |
 | DIV-003 | `app/dashboard/DashboardClient.tsx` | 603 | `'Zona'` wordmark hardcoded in Welcome screen | Low |
 | DIV-004 | `app/dashboard/DashboardClient.tsx` | 871 | `'Zona'` wordmark hardcoded in Plan-ready screen | Low |
-| DIV-005 | `app/privacy/page.tsx` | 262 | `"Slow down. You're not Kipchoge."` hardcoded — should be `BRAND.brandStatement` | Medium |
+| DIV-005 | `app/privacy/page.tsx` | 262 | `"You can't outrun your easy days."` via `BRAND.brandStatement` | ✅ Resolved — now uses canonical constant |
 | DIV-006 | `app/auth/login/page.tsx` | 98 | `'Access your training plan.'` (sign-in sub) has no `BRAND` field — it's the only hardcoded sub with no canonical home | Low — but needs a field if this copy ever changes |
 | DIV-007 | `app/dashboard/DashboardClient.tsx` | 615–619 | Welcome screen body copy doesn't pass Zona voice check — passive and generic | Copy quality — not a code defect |
 | DIV-008 | `app/dashboard/DashboardClient.tsx` | 3598 | Free Coach card body `"we'll tell you exactly"` is slightly salesy | Copy quality — not a code defect |
@@ -195,10 +195,10 @@ These are mechanical substitutions. No design decisions needed.
 | # | File | Change |
 |---|---|---|
 | E-001 | `app/auth/login/page.tsx:73` | Replace `'Zona'` wordmark literal with `{BRAND.name}` |
-| E-002 | `app/auth/login/page.tsx:224` | Replace hardcoded `"Slow down. You're not Kipchoge."` with `{BRAND.brandStatement}` |
+| E-002 | `app/auth/login/page.tsx:224` | ✅ Done — removed from login entirely (2026-04-24) |
 | E-003 | `app/dashboard/DashboardClient.tsx:603` | Replace `'Zona'` with `{BRAND.name}` |
 | E-004 | `app/dashboard/DashboardClient.tsx:871` | Replace `'Zona'` with `{BRAND.name}` |
-| E-005 | `app/privacy/page.tsx:262` | Replace hardcoded brand statement with `{BRAND.brandStatement}` |
+| E-005 | `app/privacy/page.tsx:262` | ✅ Done — using `{BRAND.brandStatement}` (2026-04-24) |
 | E-006 | `lib/brand.ts` | Add `signinSub: 'Access your training plan.'` to `BRAND` object, then wire `app/auth/login/page.tsx:98` to use it |
 
 ### 4.2 Copy quality fixes (DIV-007, DIV-008)

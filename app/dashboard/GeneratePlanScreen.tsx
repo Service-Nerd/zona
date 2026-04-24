@@ -41,6 +41,34 @@ const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const DAY_KEYS   = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 const INJURIES   = ['Achilles', 'Knee', 'Back', 'Hip', 'Shin splints', 'Plantar fasciitis']
 
+const WEEKLY_KM_CHIPS = [
+  { label: 'Under 20', value: 15  },
+  { label: '20–40',    value: 30  },
+  { label: '40–60',    value: 50  },
+  { label: '60–80',    value: 70  },
+  { label: '80–100',   value: 90  },
+  { label: '100+',     value: 115 },
+] as const
+
+const LONGEST_RUN_CHIPS = [
+  { label: 'Under 10km', value: 7  },
+  { label: '10–15km',    value: 12 },
+  { label: '15–20km',    value: 18 },
+  { label: '20–30km',    value: 25 },
+  { label: '30–40km',    value: 35 },
+  { label: '40+km',      value: 45 },
+] as const
+
+const MAX_WEEKDAY_CHIPS: { label: string; value: number | undefined }[] = [
+  { label: '30 min',   value: 30        },
+  { label: '45 min',   value: 45        },
+  { label: '60 min',   value: 60        },
+  { label: '90 min',   value: 90        },
+  { label: '2 hrs',    value: 120       },
+  { label: '3 hrs',    value: 180       },
+  { label: 'No limit', value: undefined },
+]
+
 const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; optional?: boolean }> = {
   'distance':        { title: 'How far?',              subtitle: 'Start with the finish line. Work backwards from there.' },
   'race-details':    { title: 'Tell me about the race.', subtitle: 'Race name is optional. The date is not.' },
@@ -181,6 +209,47 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
   )
 }
 
+// ─── DurationPicker — stepper for hours + minutes ────────────────────────────
+
+function DurationPicker({ hours, mins, onHoursChange, onMinsChange, maxHours = 23 }: {
+  hours: number; mins: number
+  onHoursChange: (v: number) => void; onMinsChange: (v: number) => void
+  maxHours?: number
+}) {
+  const btnStyle: React.CSSProperties = {
+    width: '44px', height: '44px', borderRadius: '8px',
+    border: '1px solid var(--line)', background: 'none',
+    cursor: 'pointer', color: 'var(--ink-2)',
+    fontFamily: 'var(--font-ui)', fontSize: '20px', lineHeight: 1,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  }
+  const valStyle: React.CSSProperties = {
+    fontFamily: 'var(--font-ui)', fontSize: '30px', fontWeight: 600,
+    color: 'var(--ink)', minWidth: '52px', textAlign: 'center', lineHeight: 1,
+  }
+  const unitStyle: React.CSSProperties = {
+    fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)',
+    textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '2px',
+  }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '8px 0' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+        <button style={btnStyle} onClick={() => onHoursChange(Math.min(maxHours, hours + 1))}>+</button>
+        <div style={valStyle}>{hours}</div>
+        <div style={unitStyle}>hrs</div>
+        <button style={btnStyle} onClick={() => onHoursChange(Math.max(0, hours - 1))}>−</button>
+      </div>
+      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', color: 'var(--mute)', fontWeight: 300, paddingBottom: '20px' }}>:</span>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+        <button style={btnStyle} onClick={() => onMinsChange(mins === 59 ? 0 : mins + 1)}>+</button>
+        <div style={valStyle}>{String(mins).padStart(2, '0')}</div>
+        <div style={unitStyle}>min</div>
+        <button style={btnStyle} onClick={() => onMinsChange(mins === 0 ? 59 : mins - 1)}>−</button>
+      </div>
+    </div>
+  )
+}
+
 // Preview components — plan arc + week card
 const PHASES = ['base', 'build', 'peak', 'taper'] as const
 
@@ -277,12 +346,14 @@ function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
 
 export default function GeneratePlanScreen({
   onBack, firstName: _firstName, lastName: _lastName, restingHR: initialRHR,
-  onPlanSaved, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade,
+  dob: initialDob, onDobSave, onPlanSaved, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade,
 }: {
   onBack: () => void
   firstName?: string
   lastName?: string
   restingHR?: number | null
+  dob?: string | null
+  onDobSave?: (dob: string) => Promise<void>
   onPlanSaved?: (plan: Plan) => Promise<void>
   isOnboarding?: boolean
   hasExistingPlan?: boolean
@@ -309,27 +380,30 @@ export default function GeneratePlanScreen({
   // ── Step 3 — Goal ─────────────────────────────────────────────────────────
   const [goal, setGoal] = useState<'finish' | 'time_target' | null>(null)
 
-  // ── Step 4 — Target time (paid/time_target only) ──────────────────────────
-  const [targetTime, setTargetTime] = useState('')
+  // ── Step 4 — Target time ──────────────────────────────────────────────────
+  const [targetHours, setTargetHours] = useState(0)
+  const [targetMins,  setTargetMins]  = useState(0)
 
   // ── Step 5 — Fitness ─────────────────────────────────────────────────────
-  const [age,        setAge]        = useState('')
-  const [weeklyKm,   setWeeklyKm]   = useState('')
-  const [longestRun, setLongestRun] = useState('')
-  const [restingHR,  setRestingHR]  = useState(initialRHR ? String(initialRHR) : '')
+  const [dob,            setDob]            = useState(initialDob ?? '')
+  const [dobError,       setDobError]       = useState<string | null>(null)
+  const [weeklyKmChip,   setWeeklyKmChip]   = useState<string | null>(null)
+  const [longestRunChip, setLongestRunChip] = useState<string | null>(null)
+  const [restingHR,      setRestingHR]      = useState(initialRHR ? String(initialRHR) : '')
 
   // ── Step 6 — Benchmark ───────────────────────────────────────────────────
   const [benchmarkType,    setBenchmarkType]    = useState<'race' | 'tt_30min' | null>(null)
   const [benchmarkDistKm,  setBenchmarkDistKm]  = useState<number | null>(null)
-  const [benchmarkTime,    setBenchmarkTime]    = useState('')
+  const [benchHours,       setBenchHours]       = useState(0)
+  const [benchMins,        setBenchMins]        = useState(0)
   const [benchmarkTTDist,  setBenchmarkTTDist]  = useState('')
 
   // ── Step 7 — Schedule ────────────────────────────────────────────────────
   const [daysAvailable, setDaysAvailable] = useState<number | null>(null)
 
   // ── Step 8 — Constraints ─────────────────────────────────────────────────
-  const [daysOff,     setDaysOff]     = useState<string[]>([])
-  const [maxWeekday,  setMaxWeekday]  = useState('')
+  const [daysOff,        setDaysOff]        = useState<string[]>([])
+  const [maxWeekdayChip, setMaxWeekdayChip] = useState<string | null>(null)
 
   // ── Step 9 — Hard sessions (paid) ────────────────────────────────────────
   const [hardSessions, setHardSessions] = useState<'avoid' | 'neutral' | 'love' | 'overdo' | null>(null)
@@ -353,18 +427,20 @@ export default function GeneratePlanScreen({
       if (s.raceName)        setRaceName(s.raceName)
       if (s.raceDate)        setRaceDate(s.raceDate)
       if (s.goal)            setGoal(s.goal)
-      if (s.targetTime)      setTargetTime(s.targetTime)
-      if (s.age)             setAge(s.age)
-      if (s.weeklyKm)        setWeeklyKm(s.weeklyKm)
-      if (s.longestRun)      setLongestRun(s.longestRun)
+      if (typeof s.targetHours === 'number') setTargetHours(s.targetHours)
+      if (typeof s.targetMins  === 'number') setTargetMins(s.targetMins)
+      if (s.dob)             setDob(s.dob)
+      if (s.weeklyKmChip)    setWeeklyKmChip(s.weeklyKmChip)
+      if (s.longestRunChip)  setLongestRunChip(s.longestRunChip)
       if (s.restingHR)       setRestingHR(s.restingHR)
       if (s.benchmarkType)   setBenchmarkType(s.benchmarkType)
       if (s.benchmarkDistKm) setBenchmarkDistKm(s.benchmarkDistKm)
-      if (s.benchmarkTime)   setBenchmarkTime(s.benchmarkTime)
+      if (typeof s.benchHours === 'number') setBenchHours(s.benchHours)
+      if (typeof s.benchMins  === 'number') setBenchMins(s.benchMins)
       if (s.benchmarkTTDist) setBenchmarkTTDist(s.benchmarkTTDist)
       if (s.daysAvailable)   setDaysAvailable(s.daysAvailable)
       if (Array.isArray(s.daysOff)) setDaysOff(s.daysOff)
-      if (s.maxWeekday)      setMaxWeekday(s.maxWeekday)
+      if (s.maxWeekdayChip)  setMaxWeekdayChip(s.maxWeekdayChip)
       if (s.hardSessions)    setHardSessions(s.hardSessions)
       if (s.trainingStyle)   setTrainingStyle(s.trainingStyle)
       if (s.terrain)         setTerrain(s.terrain)
@@ -380,17 +456,19 @@ export default function GeneratePlanScreen({
     if (typeof appStep !== 'string' || appStep === 'generating' || appStep === 'preview' || appStep === 'error') return
     try {
       sessionStorage.setItem(WIZARD_KEY, JSON.stringify({
-        appStep, distanceKm, raceName, raceDate, goal, targetTime,
-        age, weeklyKm, longestRun, restingHR,
-        benchmarkType, benchmarkDistKm, benchmarkTime, benchmarkTTDist,
-        daysAvailable, daysOff, maxWeekday,
+        appStep, distanceKm, raceName, raceDate, goal,
+        targetHours, targetMins,
+        dob, weeklyKmChip, longestRunChip, restingHR,
+        benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist,
+        daysAvailable, daysOff, maxWeekdayChip,
         hardSessions, trainingStyle, terrain, injuries,
       }))
     } catch {}
-  }, [appStep, distanceKm, raceName, raceDate, goal, targetTime,
-      age, weeklyKm, longestRun, restingHR,
-      benchmarkType, benchmarkDistKm, benchmarkTime, benchmarkTTDist,
-      daysAvailable, daysOff, maxWeekday,
+  }, [appStep, distanceKm, raceName, raceDate, goal,
+      targetHours, targetMins,
+      dob, weeklyKmChip, longestRunChip, restingHR,
+      benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist,
+      daysAvailable, daysOff, maxWeekdayChip,
       hardSessions, trainingStyle, terrain, injuries])
 
   // ── Navigation helpers ────────────────────────────────────────────────────
@@ -440,11 +518,15 @@ export default function GeneratePlanScreen({
       case 'distance':       return distanceKm !== null
       case 'race-details':   return raceDate !== ''
       case 'goal':           return goal !== null
-      case 'target-time':    return targetTime !== ''
-      case 'fitness':
-        return age !== '' && Number(age) >= 14 && Number(age) <= 90 && weeklyKm !== '' && longestRun !== ''
+      case 'target-time':    return targetHours > 0 || targetMins > 0
+      case 'fitness': {
+        if (!dob) return false
+        const ageCheck = Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000)
+        if (ageCheck < 14 || ageCheck > 90) return false
+        return weeklyKmChip !== null && longestRunChip !== null
+      }
       case 'benchmark':
-        if (benchmarkType === 'race')     return !!(benchmarkDistKm && benchmarkTime)
+        if (benchmarkType === 'race')     return !!(benchmarkDistKm && (benchHours > 0 || benchMins > 0))
         if (benchmarkType === 'tt_30min') return benchmarkTTDist !== ''
         return true
       case 'schedule':       return daysAvailable !== null
@@ -464,9 +546,19 @@ export default function GeneratePlanScreen({
     setError(null)
     setPlan(null)
 
+    const ageYears      = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000) : 30
+    const weeklyKmVal   = WEEKLY_KM_CHIPS.find(c => c.label === weeklyKmChip)?.value ?? 30
+    const longestRunVal = LONGEST_RUN_CHIPS.find(c => c.label === longestRunChip)?.value ?? 12
+    const targetTimeStr = goal === 'time_target' && (targetHours > 0 || targetMins > 0)
+      ? `${targetHours}:${String(targetMins).padStart(2, '0')}:00` : undefined
+    const benchTimeStr  = benchHours > 0 || benchMins > 0
+      ? `${benchHours}:${String(benchMins).padStart(2, '0')}:00` : undefined
+    const maxWeekdayVal = maxWeekdayChip
+      ? MAX_WEEKDAY_CHIPS.find(c => c.label === maxWeekdayChip)?.value : undefined
+
     const benchmark = (() => {
-      if (benchmarkType === 'race' && benchmarkDistKm && benchmarkTime)
-        return { type: 'race' as const, distance_km: benchmarkDistKm, time: benchmarkTime }
+      if (benchmarkType === 'race' && benchmarkDistKm && benchTimeStr)
+        return { type: 'race' as const, distance_km: benchmarkDistKm, time: benchTimeStr }
       if (benchmarkType === 'tt_30min' && benchmarkTTDist)
         return { type: 'tt_30min' as const, distance_km: Number(benchmarkTTDist), time: '30:00' }
       return undefined
@@ -477,15 +569,15 @@ export default function GeneratePlanScreen({
       race_distance_km:      distanceKm!,
       race_name:             raceName || undefined,
       goal:                  goal!,
-      target_time:           goal === 'time_target' ? targetTime : undefined,
-      age:                   Number(age),
-      current_weekly_km:     Number(weeklyKm),
-      longest_recent_run_km: Number(longestRun),
+      target_time:           targetTimeStr,
+      age:                   ageYears,
+      current_weekly_km:     weeklyKmVal,
+      longest_recent_run_km: longestRunVal,
       days_available:        daysAvailable!,
       resting_hr:            restingHR ? Number(restingHR) : undefined,
       benchmark,
       days_cannot_train:     daysOff.length ? daysOff : undefined,
-      max_weekday_mins:      maxWeekday ? Number(maxWeekday) : undefined,
+      max_weekday_mins:      maxWeekdayVal,
       training_style:            hasPaidAccess ? (trainingStyle ?? undefined) : undefined,
       hard_session_relationship: hasPaidAccess ? (hardSessions ?? undefined) : undefined,
       injury_history:            hasPaidAccess && injuries.length ? injuries.map(i => i.toLowerCase()) : undefined,
@@ -515,6 +607,7 @@ export default function GeneratePlanScreen({
     if (!plan || !onPlanSaved) return
     setIsSaving(true)
     try {
+      if (dob && onDobSave) await onDobSave(dob).catch(() => {})
       await onPlanSaved(plan)
       sessionStorage.removeItem(WIZARD_KEY)
     } catch { setIsSaving(false) }
@@ -549,7 +642,7 @@ export default function GeneratePlanScreen({
           </div>
           <button
             onClick={() => navigateTo(getLastWizardStep(), 'back')}
-            style={{ width: '100%', padding: '15px', borderRadius: 'var(--radius-md)', background: 'var(--moss)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: '#fff' }}
+            style={{ width: '100%', padding: '15px', borderRadius: 'var(--radius-md)', background: 'var(--moss)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--card)' }}
           >
             Try again
           </button>
@@ -619,7 +712,7 @@ export default function GeneratePlanScreen({
                 background: isSaving ? 'var(--moss-soft)' : 'var(--moss)',
                 border: 'none', cursor: isSaving ? 'wait' : 'pointer',
                 fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
-                color: isSaving ? 'var(--mute)' : '#fff', transition: 'all 0.15s',
+                color: isSaving ? 'var(--mute)' : 'var(--card)', transition: 'all 0.15s',
               }}
             >
               {isSaving ? 'Saving…' : 'Use this plan'}
@@ -701,7 +794,7 @@ export default function GeneratePlanScreen({
           style={{
             width: '100%', padding: '15px', borderRadius: 'var(--radius-md)',
             background: canProceed() ? 'var(--moss)' : 'var(--moss-soft)',
-            color:      canProceed() ? '#fff'         : 'var(--mute)',
+            color:      canProceed() ? 'var(--card)'         : 'var(--mute)',
             border: 'none', cursor: canProceed() ? 'pointer' : 'not-allowed',
             fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
             transition: 'all 0.15s',
@@ -801,30 +894,66 @@ export default function GeneratePlanScreen({
         return (
           <div>
             <FieldLabel>Target time</FieldLabel>
-            <WizardInput value={targetTime} onChange={setTargetTime} placeholder="e.g. 4:30:00" />
-            <FieldNote>Format: h:mm:ss for marathon. mm:ss for 5K/10K.</FieldNote>
+            <DurationPicker
+              hours={targetHours} mins={targetMins}
+              onHoursChange={setTargetHours} onMinsChange={setTargetMins}
+              maxHours={23}
+            />
+            <FieldNote>Be honest. Optimistic targets make bad training plans.</FieldNote>
           </div>
         )
 
       // ── Fitness ────────────────────────────────────────────────────────────
-      case 'fitness':
+      case 'fitness': {
+        const dobAge = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000) : null
+        const dobAgeErr = dob && dobAge !== null
+          ? (dobAge < 14 ? 'Must be 14 or older.' : dobAge > 90 ? 'Date looks off — check the year.' : null)
+          : null
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div>
-              <FieldLabel>Age</FieldLabel>
-              <WizardInput type="number" value={age} onChange={setAge} placeholder="32" min={14} max={90} />
-              <FieldNote>Used to calculate your max heart rate via the Tanaka formula.</FieldNote>
+              <FieldLabel>Date of birth</FieldLabel>
+              <WizardInput
+                type="date"
+                value={dob}
+                onChange={v => { setDob(v); setDobError(null) }}
+              />
+              {(dobError ?? dobAgeErr) && (
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--danger)', marginTop: '6px' }}>
+                  {dobError ?? dobAgeErr}
+                </div>
+              )}
+              <FieldNote>Used to calculate your training zones. Kept private.</FieldNote>
             </div>
             <div>
               <FieldLabel>Average weekly km — last 4 weeks</FieldLabel>
-              <WizardInput type="number" value={weeklyKm} onChange={setWeeklyKm} placeholder="35" min={0} />
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {WEEKLY_KM_CHIPS.map(c => (
+                  <Chip
+                    key={c.label}
+                    label={c.label}
+                    active={weeklyKmChip === c.label}
+                    onClick={() => setWeeklyKmChip(weeklyKmChip === c.label ? null : c.label)}
+                  />
+                ))}
+              </div>
             </div>
             <div>
-              <FieldLabel>Longest run in last 6 weeks (km)</FieldLabel>
-              <WizardInput type="number" value={longestRun} onChange={setLongestRun} placeholder="18" min={0} />
+              <FieldLabel>Longest run in last 6 weeks</FieldLabel>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {LONGEST_RUN_CHIPS.map(c => (
+                  <Chip
+                    key={c.label}
+                    label={c.label}
+                    active={longestRunChip === c.label}
+                    onClick={() => setLongestRunChip(longestRunChip === c.label ? null : c.label)}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         )
+      }
 
       // ── Benchmark ──────────────────────────────────────────────────────────
       case 'benchmark':
@@ -860,7 +989,11 @@ export default function GeneratePlanScreen({
                 </div>
                 <div>
                   <FieldLabel>Finish time</FieldLabel>
-                  <WizardInput value={benchmarkTime} onChange={setBenchmarkTime} placeholder="e.g. 25:30 or 1:52:00" />
+                  <DurationPicker
+                    hours={benchHours} mins={benchMins}
+                    onHoursChange={setBenchHours} onMinsChange={setBenchMins}
+                    maxHours={9}
+                  />
                 </div>
               </div>
             )}
@@ -903,7 +1036,7 @@ export default function GeneratePlanScreen({
                   {n} days
                 </span>
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>
-                  {n === 2 ? 'Minimal' : n === 3 ? 'Light' : n === 4 ? 'Moderate' : n === 5 ? 'Committed' : 'Heavy'}
+                  {n === 2 ? 'Selective.' : n === 3 ? 'Enough.' : n === 4 ? 'Building.' : n === 5 ? 'Race-ready.' : 'All in.'}
                 </span>
               </button>
             ))}
@@ -940,9 +1073,18 @@ export default function GeneratePlanScreen({
               </div>
             </div>
             <div>
-              <FieldLabel optional>Max weekday session (mins)</FieldLabel>
-              <WizardInput type="number" value={maxWeekday} onChange={setMaxWeekday} placeholder="90" min={30} max={180} />
-              <FieldNote>Leave blank for no limit. Applies Monday–Friday only.</FieldNote>
+              <FieldLabel optional>Max weekday session</FieldLabel>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {MAX_WEEKDAY_CHIPS.map(c => (
+                  <Chip
+                    key={c.label}
+                    label={c.label}
+                    active={maxWeekdayChip === c.label}
+                    onClick={() => setMaxWeekdayChip(maxWeekdayChip === c.label ? null : c.label)}
+                  />
+                ))}
+              </div>
+              <FieldNote>Applies Monday–Friday only. Ultra runners: 3 hrs or No limit.</FieldNote>
             </div>
             {!hasPaidAccess && onUpgrade && <TeaserCard onUpgrade={onUpgrade} />}
           </div>

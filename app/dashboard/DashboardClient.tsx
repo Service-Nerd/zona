@@ -123,6 +123,7 @@ export default function DashboardClient() {
   const [preferredMetric, setPreferredMetric] = useState<'distance' | 'duration'>('distance')
   const [restingHR, setRestingHR] = useState<number | null>(null)
   const [maxHR, setMaxHR] = useState<number | null>(null)
+  const [dob, setDob] = useState<string | null>(null)
   const [firstName, setFirstName] = useState<string>('')
   const [lastName, setLastName] = useState<string>('')
   const [profileEmail, setProfileEmail] = useState<string>('')
@@ -146,6 +147,9 @@ export default function DashboardClient() {
 
   // Strava token failure — set when refresh call returns non-200 for a user who had a token
   const [stravaTokenFailed, setStravaTokenFailed] = useState(false)
+
+  // Auth user ID — stored for callbacks that need to write to user_settings
+  const [userId, setUserId] = useState<string | null>(null)
 
   // Impersonation state
   const [impersonating, setImpersonating] = useState<{ userId: string; name: string } | null>(null)
@@ -210,10 +214,11 @@ export default function DashboardClient() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { setStravaLoading(false); setOverridesReady(true); setAppReady(true); return }
+        setUserId(user.id)
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes, subRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
@@ -254,6 +259,7 @@ export default function DashboardClient() {
         // HR data
         if (data?.resting_hr) setRestingHR(data.resting_hr)
         if (data?.max_hr) setMaxHR(data.max_hr)
+        if (data?.date_of_birth) setDob(data.date_of_birth)
 
         // Profile data — prefer DB, fall back to auth provider metadata
         if (data?.first_name) setFirstName(data.first_name)
@@ -617,7 +623,7 @@ export default function DashboardClient() {
             onClick={dismissWelcome}
             style={{
               width: '100%', padding: '16px',
-              background: 'var(--accent)', color: 'var(--zona-navy)',
+              background: 'var(--accent)', color: 'var(--card)',
               border: 'none', borderRadius: '14px',
               fontFamily: 'var(--font-ui)', fontSize: '13px',
               letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -665,12 +671,12 @@ export default function DashboardClient() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           position: 'sticky', top: 0, zIndex: 2000,
         }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--zona-navy)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--card)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             Viewing as {impersonating.name}
           </div>
           <button onClick={exitImpersonation} style={{
             background: 'rgba(0,0,0,0.2)', border: 'none', borderRadius: '6px',
-            color: 'var(--zona-navy)', fontFamily: 'var(--font-ui)', fontSize: '11px',
+            color: 'var(--card)', fontFamily: 'var(--font-ui)', fontSize: '11px',
             letterSpacing: '0.06em', textTransform: 'uppercase', padding: '4px 10px',
             cursor: 'pointer',
           }}>
@@ -691,7 +697,7 @@ export default function DashboardClient() {
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} runAnalysis={runAnalysisMap[activeSessionData?.sessionKey ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
-        {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
+        {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} dob={dob} onDobSave={async (d) => { setDob(d); if (userId) await supabase.from('user_settings').update({ date_of_birth: d }).eq('id', userId) }} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} onBack={() => {
           const hasWizardDraft = typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('zona_wizard_draft')
           setScreen(hasWizardDraft ? 'generate' : 'today')
@@ -731,7 +737,8 @@ export default function DashboardClient() {
               animation: 'slideUp 0.22s cubic-bezier(0.32, 0.72, 0, 1)',
             }}>
               {([
-                { id: 'coach'  as Screen, label: 'Coach',   icon: (a: boolean) => <IconCoach  active={a} /> },
+                // Coach moves to nav bar for paid/trial users — keep in More only for free users
+                ...(hasPaidAccess ? [] : [{ id: 'coach' as Screen, label: 'Coach', icon: (a: boolean) => <IconCoach active={a} /> }]),
                 // Strava screen nav entry removed — admin-only via URL, see brand-product-alignment v2
                 // { id: (hasPaidAccess ? 'strava' : 'upgrade') as Screen, label: 'Strava',  icon: (a: boolean) => <IconStrava active={a} /> },
                 { id: 'me'     as Screen, label: 'Profile', icon: (a: boolean) => <IconMe     active={a} /> },
@@ -776,10 +783,16 @@ export default function DashboardClient() {
 
       {/* ── Bottom nav bar ── */}
       {(() => {
-        const moreActive = showMore || ['strava', 'me', 'coach'].includes(screen)
+        // Hide nav entirely during first-time onboarding — user has no plan to navigate to
+        const isOnboarding = screen === 'generate' && (!plan || plan === EMPTY_PLAN)
+        if (isOnboarding) return null
+
+        const moreActive = showMore || ['strava', 'me', ...(hasPaidAccess ? [] : ['coach'])].includes(screen)
         const navItems: { id: Screen; label: string; icon: (a: boolean) => React.ReactNode }[] = [
           { id: 'today', label: 'Today', icon: (a) => <IconToday active={a} /> },
           { id: 'plan',  label: 'Plan',  icon: (a) => <IconPlan  active={a} /> },
+          // Coach surfaces directly in nav for paid/trial users — it's a core value prop they've paid for
+          ...(hasPaidAccess ? [{ id: 'coach' as Screen, label: 'Coach', icon: (a: boolean) => <IconCoach active={a} /> }] : []),
         ]
         return (
           <div style={{
@@ -921,7 +934,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, onDismiss }: {
           onClick={onDismiss}
           style={{
             width: '100%', padding: '16px',
-            background: 'var(--accent)', color: 'var(--zona-navy)',
+            background: 'var(--accent)', color: 'var(--card)',
             border: 'none', borderRadius: '14px',
             fontFamily: 'var(--font-ui)', fontSize: '13px',
             letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -1071,7 +1084,7 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
             onClick={dismiss}
             style={{
               width: '100%', padding: '16px',
-              background: 'var(--accent)', color: 'var(--zona-navy)',
+              background: 'var(--accent)', color: 'var(--card)',
               border: 'none', borderRadius: '14px',
               fontFamily: 'var(--font-ui)', fontSize: '13px',
               letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -1463,7 +1476,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
         <button onClick={onClose} style={{
           width: '100%', padding: '14px',
           background: reflectResponse ? 'var(--teal)' : 'var(--bg)',
-          color: reflectResponse ? 'var(--zona-navy)' : 'var(--text-muted)',
+          color: reflectResponse ? 'var(--card)' : 'var(--text-muted)',
           border: reflectResponse ? 'none' : '0.5px solid var(--border-col)',
           borderRadius: '12px',
           fontFamily: 'var(--font-ui)', fontSize: '13px',
@@ -1557,7 +1570,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
         <button onClick={onClose} style={{
           width: '100%', padding: '14px',
           background: reflectResponse ? 'var(--teal)' : 'var(--bg)',
-          color: reflectResponse ? 'var(--zona-navy)' : 'var(--text-muted)',
+          color: reflectResponse ? 'var(--card)' : 'var(--text-muted)',
           border: reflectResponse ? 'none' : '0.5px solid var(--border-col)',
           borderRadius: '12px',
           fontFamily: 'var(--font-ui)', fontSize: '13px',
@@ -1618,7 +1631,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               {/* Toggle */}
               <div style={{ display: 'flex', background: 'var(--toggle-inner-bg)', borderRadius: '6px', padding: '2px', width: 'fit-content', border: '0.5px solid var(--border-col)' }}>
                 {(['distance', 'duration'] as const).map(m => (
-                  <button key={m} onClick={() => updateSessionMetric(m === effectiveMetric && isMetricCustom ? null : m)} style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', padding: '3px 9px', borderRadius: '4px', border: 'none', background: effectiveMetric === m ? config.color : 'none', color: effectiveMetric === m ? 'var(--zona-navy)' : 'var(--text-muted)', cursor: 'pointer', fontWeight: 500, transition: 'all 0.15s' }}>
+                  <button key={m} onClick={() => updateSessionMetric(m === effectiveMetric && isMetricCustom ? null : m)} style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', padding: '3px 9px', borderRadius: '4px', border: 'none', background: effectiveMetric === m ? config.color : 'none', color: effectiveMetric === m ? 'var(--card)' : 'var(--text-muted)', cursor: 'pointer', fontWeight: 500, transition: 'all 0.15s' }}>
                     {m === 'distance' ? preferredUnits : 'min'}
                   </button>
                 ))}
@@ -1813,7 +1826,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 if (isRunType) {
                   return (
                     <>
-                      <button onClick={() => setView('complete')} style={{ flex: 1, minWidth: '120px', background: config.color, color: 'var(--zona-navy)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600 }}>
+                      <button onClick={() => setView('complete')} style={{ flex: 1, minWidth: '120px', background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600 }}>
                         Match a Strava run
                       </button>
                       <button onClick={() => setShowManualModal(true)} style={{ flex: 1, minWidth: '100px', background: 'var(--card-bg)', color: config.color, border: `0.5px solid ${config.color}40`, borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500 }}>
@@ -1827,7 +1840,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 } else {
                   return (
                     <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                      <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: config.color, color: 'var(--zona-navy)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}>
+                      <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}>
                         {saving ? 'Saving...' : 'Mark as done'}
                       </button>
                       <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
@@ -1915,7 +1928,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           )}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: 'var(--font-ui)', fontSize: '12px', cursor: 'pointer' }}>Back</button>
-            <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: config.color, color: 'var(--zona-navy)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}>
+            <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Saving...' : 'Confirm complete'}
             </button>
           </div>
@@ -2003,6 +2016,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
 }) {
   const sessionMap = Object.fromEntries(sessions.map(s => [s.displayKey, s]))
   const touchStartX = useRef<number | null>(null)
+  const touchStartY = useRef<number | null>(null)
 
   function getDotColor(key: string): string | null {
     const s = sessionMap[key]
@@ -2013,14 +2027,20 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
     return getSessionColor(s.type)
   }
 
-  function handleTouchStart(e: React.TouchEvent) { touchStartX.current = e.touches[0].clientX }
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
   function handleTouchEnd(e: React.TouchEvent) {
-    if (touchStartX.current === null) return
-    const diff = touchStartX.current - e.changedTouches[0].clientX
-    if (Math.abs(diff) < 60) return
-    if (diff > 0 && weekIndex < totalWeeks - 1) onWeekChange(weekIndex + 1)
-    if (diff < 0 && weekIndex > 0) onWeekChange(weekIndex - 1)
+    if (touchStartX.current === null || touchStartY.current === null) return
+    const diffX = touchStartX.current - e.changedTouches[0].clientX
+    const diffY = touchStartY.current - e.changedTouches[0].clientY
     touchStartX.current = null
+    touchStartY.current = null
+    // Only fire week change if horizontal movement dominates — ignore vertical scrolls
+    if (Math.abs(diffX) < 60 || Math.abs(diffY) > Math.abs(diffX)) return
+    if (diffX > 0 && weekIndex < totalWeeks - 1) onWeekChange(weekIndex + 1)
+    if (diffX < 0 && weekIndex > 0) onWeekChange(weekIndex - 1)
   }
 
   return (
@@ -2083,7 +2103,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
               }}>
                 <span style={{
                   fontFamily: 'var(--font-ui)', fontSize: '13px',
-                  color: isSelected ? 'var(--zona-navy)' : isToday ? 'var(--accent)' : dateNum ? 'var(--text-muted)' : 'var(--text-primary)',
+                  color: isSelected ? 'var(--card)' : isToday ? 'var(--accent)' : dateNum ? 'var(--text-muted)' : 'var(--text-primary)',
                   fontWeight: isToday || isSelected ? 600 : 400,
                 }}>
                   {dateNum}
@@ -2376,7 +2396,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
             <button onClick={handleClose} style={{
               width: '100%', padding: '14px',
               background: reflectResponse ? 'var(--teal)' : 'var(--bg)',
-              color: reflectResponse ? 'var(--zona-navy)' : 'var(--text-muted)',
+              color: reflectResponse ? 'var(--card)' : 'var(--text-muted)',
               border: reflectResponse ? 'none' : '0.5px solid var(--border-col)',
               borderRadius: '12px',
               fontFamily: 'var(--font-ui)', fontSize: '13px',
@@ -2480,7 +2500,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
               style={{
                 width: '100%', padding: '16px',
                 background: hasData ? 'var(--teal)' : 'var(--teal-dim)',
-                color: hasData ? 'var(--zona-navy)' : 'var(--teal)',
+                color: hasData ? 'var(--card)' : 'var(--teal)',
                 border: 'none', borderRadius: '14px',
                 fontFamily: 'var(--font-brand)', fontSize: '14px',
                 fontWeight: 600, letterSpacing: '-0.1px',
@@ -3021,7 +3041,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied }: {
 
       {(status === 'clean' || status === 'error') && (
         <div style={{ flexShrink: 0, padding: '12px 20px calc(12px + env(safe-area-inset-bottom))', borderTop: '1px solid var(--line)', background: 'var(--bg)' }}>
-          <button onClick={onBack} style={{ width: '100%', padding: '15px', borderRadius: 'var(--radius-md)', background: 'var(--moss)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: '#fff' }}>
+          <button onClick={onBack} style={{ width: '100%', padding: '15px', borderRadius: 'var(--radius-md)', background: 'var(--moss)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--card)' }}>
             Back
           </button>
         </div>
@@ -3071,14 +3091,21 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
   // Swipe whole screen = week change
   const touchStartX = useRef<number | null>(null)
-  function onTouchStart(e: React.TouchEvent) { touchStartX.current = e.touches[0].clientX }
+  const touchStartY = useRef<number | null>(null)
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
   function onTouchEnd(e: React.TouchEvent) {
-    if (touchStartX.current === null) return
-    const diff = touchStartX.current - e.changedTouches[0].clientX
-    if (Math.abs(diff) < 60) return
-    if (diff > 0 && weekIndex < totalWeeks - 1) onWeekChange(weekIndex + 1)
-    if (diff < 0 && weekIndex > 0) onWeekChange(weekIndex - 1)
+    if (touchStartX.current === null || touchStartY.current === null) return
+    const diffX = touchStartX.current - e.changedTouches[0].clientX
+    const diffY = touchStartY.current - e.changedTouches[0].clientY
     touchStartX.current = null
+    touchStartY.current = null
+    // Only fire week change if horizontal movement dominates — ignore vertical scrolls
+    if (Math.abs(diffX) < 60 || Math.abs(diffY) > Math.abs(diffX)) return
+    if (diffX > 0 && weekIndex < totalWeeks - 1) onWeekChange(weekIndex + 1)
+    if (diffX < 0 && weekIndex > 0) onWeekChange(weekIndex - 1)
   }
 
   // Build 7-day session list
@@ -3119,7 +3146,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       type: s?.type ?? 'rest',
       date: displayDate,
       rawDate: d,
-      today: key === todayDow,
+      today: key === todayDow && d.toDateString() === now.toDateString(),
       distance: s?.distance_km ?? parsed.distance,
       duration: s?.duration_mins != null ? fmtDurationMins(s.duration_mins) : parsed.duration,
       primary_metric: s?.primary_metric ?? undefined,
@@ -3855,55 +3882,13 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
     <div style={{ paddingBottom: '32px' }}>
 
       {/* ── HEADER ───────────────────────────────────────────────── */}
-      <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{
-            fontFamily: 'var(--font-ui)',
-            fontSize: '26px',
-            fontWeight: 800,
-            color: 'var(--ink)',
-            letterSpacing: '-0.8px',
-            lineHeight: 1.1,
-          }}>
-            Your plan
-          </div>
-          {raceName && (
-            <div style={{
-              fontFamily: 'var(--font-ui)',
-              fontSize: '13px',
-              color: 'var(--mute)',
-              marginTop: '4px',
-            }}>
-              {raceName}
-            </div>
-          )}
-        </div>
-        {daysToRace !== null && daysToRace > 0 && (
-          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '12px' }}>
-            <div style={{
-              fontFamily: 'var(--font-ui)',
-              fontSize: '16px',
-              fontWeight: 700,
-              color: 'var(--ink)',
-              letterSpacing: '-0.4px',
-              lineHeight: 1,
-            }}>
-              {daysToRace}d
-            </div>
-            <div style={{
-              fontFamily: 'var(--font-ui)',
-              fontSize: '11px',
-              fontWeight: 600,
-              color: 'var(--mute)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              marginTop: '2px',
-            }}>
-              to {raceName || 'race'}
-            </div>
-          </div>
-        )}
-      </div>
+      <ScreenHeader
+        title={raceName || 'Your plan'}
+        sub={[
+          `W${weekNum} of ${totalWeeks}`,
+          daysToRace !== null && daysToRace > 0 ? `${daysToRace} days to go` : null,
+        ].filter(Boolean).join(' · ')}
+      />
 
       {/* ── PLAN ARC ─────────────────────────────────────────────── */}
       <div style={{ padding: '20px 16px 0' }}>
@@ -4084,7 +4069,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
 
   return (
     <div>
-      <ScreenHeader title="Coach" sub={firstName ? `${firstName} · W${weekNum}/${totalWeeks}` : `W${weekNum}/${totalWeeks}`} />
+      <ScreenHeader title="Coach" sub={firstName ? `${firstName} · W${weekNum} of ${totalWeeks}` : `W${weekNum} of ${totalWeeks}`} />
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
         {/* Locked report card — mirrors the paid CoachScreen weekly report card anatomy */}
@@ -4175,7 +4160,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
 
   return (
     <div>
-      <ScreenHeader title="Coach" sub={firstName ? `${firstName} · W${weekNum}/${totalWeeks}` : `W${weekNum}/${totalWeeks}`} />
+      <ScreenHeader title="Coach" sub={firstName ? `${firstName} · W${weekNum} of ${totalWeeks}` : `W${weekNum} of ${totalWeeks}`} />
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
         {stravaTokenFailed && !stravaLoading && !runs?.length && (
@@ -4390,7 +4375,7 @@ function PushNotificationsRow() {
           </div>
         </div>
         {status === 'idle' && (
-          <button onClick={enablePush} disabled={loading} style={{ background: 'var(--accent)', color: 'var(--zona-navy)', border: 'none', borderRadius: '8px', padding: '7px 14px', fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
+          <button onClick={enablePush} disabled={loading} style={{ background: 'var(--accent)', color: 'var(--card)', border: 'none', borderRadius: '8px', padding: '7px 14px', fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
             {loading ? 'Enabling…' : 'Enable'}
           </button>
         )}
@@ -4475,7 +4460,7 @@ function StravaConnectionRow() {
             </button>
           ) : (
             <button onClick={() => { window.location.href = `/api/strava/connect?user_id=${userId}` }} disabled={!userId} style={{
-              background: 'var(--strava)', color: 'var(--zona-navy)',
+              background: 'var(--strava)', color: 'var(--card)',
               border: 'none', borderRadius: '8px', padding: '8px 14px',
               fontFamily: 'var(--font-ui)', fontSize: '11px',
               letterSpacing: '0.06em', textTransform: 'uppercase',
@@ -4875,20 +4860,32 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
     <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 8px' }}>
-        <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0, width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)', flexShrink: 0 }}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      <div style={{ padding: '16px 16px 0' }}>
+        <button onClick={onBack} style={{
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: 'var(--text-muted)', padding: 0, marginBottom: '12px',
+          display: 'flex', alignItems: 'center', gap: '6px',
+        }}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px' }}>Back</span>
         </button>
-        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px' }}>
-          {firstName ? `${firstName}'s profile` : 'Profile'}
+        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
+          {firstName || 'Profile'}
         </div>
+        {raceNm && daysToRace > 0 && (
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '3px', letterSpacing: '0.04em' }}>
+            {raceNm} · {daysToRace} days to go
+          </div>
+        )}
       </div>
 
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '40px' }}>
 
         {/* Identity card — avatar + race goal. Name/email live in Profile section below. */}
         <div style={{ background: 'var(--card-bg)', borderRadius: '16px', padding: '16px', border: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-brand)', fontSize: '16px', fontWeight: 600, color: 'var(--zona-navy)', flexShrink: 0 }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-brand)', fontSize: '16px', fontWeight: 600, color: 'var(--card-bg)', flexShrink: 0 }}>
             {initials}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -4936,21 +4933,21 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
           >
             <div>
-              <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.55 }}>Update your benchmark</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.55 }}>Race benchmark</div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>
-                Race result or 30-min TT — recalibrates your zones
+                A recent result refines pace targets for every session
               </div>
             </div>
             <div style={{ color: 'var(--text-muted)', marginLeft: '12px' }}>{chevron}</div>
           </button>
         </div>
 
-        {/* HR payoff callout */}
+        {/* HR payoff callout — Zone 2 ceiling is relevant on easy/long/recovery sessions only */}
         {hrConfigured && z2Ceiling && (
           <div style={{ background: 'var(--accent-soft)', borderRadius: '10px', border: '0.5px solid var(--accent-dim)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', lineHeight: 1.5 }}>
-              Your Zone 2 ceiling is <strong>{z2Ceiling} bpm</strong> — shown on every session card.
+              Your Zone 2 ceiling is <strong>{z2Ceiling} bpm</strong> — shown on easy, long, and recovery sessions.
             </div>
           </div>
         )}
@@ -4958,7 +4955,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           <div style={{ background: 'var(--amber-soft)', borderRadius: '10px', border: '0.5px solid var(--amber-mid)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--amber)', flexShrink: 0 }} />
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--amber)', lineHeight: 1.5 }}>
-              Add your HR data below to personalise every session's HR targets.
+              Set your resting and max HR below to get your Zone 2 ceiling.
             </div>
           </div>
         )}
@@ -5018,26 +5015,6 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
               <div style={{ color: 'var(--text-muted)', marginLeft: '12px' }}>{chevron}</div>
             </button>
           ))}
-        </div>
-
-        {/* ── App settings ───────────────────────────────────────── */}
-        {/* Theme and personal tracking — not training-related */}
-        <SectionLabel>App settings</SectionLabel>
-        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
-          {/* Theme toggle removed per ADR-008 — single light theme only */}
-          {/*
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: smokeTrackerEnabled ? '0.5px solid var(--border-col)' : 'none' }}>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Theme</div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {(['dark', 'light', 'auto'] as const).map(t => (
-                <button key={t} onClick={() => onThemeChange(t)} style={{ borderRadius: '10px', padding: '5px 10px', border: `0.5px solid ${theme === t ? 'var(--accent)' : 'var(--border-col)'}`, background: theme === t ? 'var(--accent-soft)' : 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', color: theme === t ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'capitalize' }}>
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-          */}
-          {/* Smoke tracker removed per brand-product-alignment v2 */}
         </div>
 
         {/* ── Training intelligence (paid/trial only) ──────────── */}
@@ -5104,23 +5081,23 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         )}
 
         {/* ── Careful Now — destructive account actions ───────── */}
-        <SectionLabel>Careful now</SectionLabel>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <SectionLabel>Careful Now</SectionLabel>
+        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
           <button
             onClick={async () => {
               const supabase = createClient()
               await supabase.auth.signOut()
               window.location.href = '/auth/login'
             }}
-            style={{ width: '100%', padding: '12px', background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer' }}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '0.5px solid var(--border-col)', cursor: 'pointer', textAlign: 'left' }}
           >
-            Sign out
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Sign out</span>
           </button>
           <button
             onClick={() => setActiveSection('delete-account')}
-            style={{ width: '100%', padding: '10px', background: 'none', border: 'none', color: 'var(--coral)', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.04em', cursor: 'pointer', opacity: 0.6 }}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
           >
-            Delete account
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--danger)', fontWeight: 500 }}>Delete account</span>
           </button>
         </div>
 

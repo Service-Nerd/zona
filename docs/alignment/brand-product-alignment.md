@@ -24,7 +24,7 @@ ZONA uses three locked brand lines, each with a distinct job. They are not inter
 |---|---|---|---|
 | **"Training plans that stop you overtraining."** | **What ZONA does.** Functional, outward-facing, for discovery surfaces. | `BRAND.appStoreSubtitle` *(to be added)* | App Store subtitle, landing page hero, paid ads, press mentions |
 | **"Slow down. You've got a day job."** | **Who ZONA is for.** Demographic hook, in-app moments. | `BRAND.tagline` | Login screen, loading screen, OG tags, meta description, in-app footer |
-| **"Slow down. You're not Kipchoge."** | **How ZONA sounds.** Voice/personality moment, for brand breath. | `BRAND.brandStatement` | Privacy footer, login footer, about page |
+| **"You can't outrun your easy days."** | **How ZONA sounds.** Training truth, for brand breath. | `BRAND.brandStatement` | Privacy footer, App Store description (not login — tagline owns that space) |
 
 ### Rules for using them
 - Never mix two taglines in the same surface
@@ -131,7 +131,7 @@ Every product decision, every piece of copy, every visual choice should reinforc
 
 | # | Screen | Hero message | Why this slot |
 |---|---|---|---|
-| 1 | Today (new design) | **"Slow down. You're not Kipchoge."** | Immediate brand hit — this is what the app *feels* like |
+| 1 | Today (new design) | **"You can't outrun your easy days."** | Immediate brand hit — this is what the app *feels* like |
 | 2 | Session Detail with coach note | **"A running coach in your pocket. An honest one."** | Shows the intelligence — this isn't a generic plan |
 | 3 | Plan with pending adjustment | **"Miss a session? The plan adapts."** | Addresses the #1 reason people quit apps — life gets in the way |
 | 4 | Weekly restraint card ("78% Zone 2") | **"The work you didn't do is why you're getting faster."** | The counter-intuitive truth — this is the positioning hook |
@@ -180,7 +180,7 @@ Screenshot design is a separate workstream and equal in importance to the redesi
 - Strava screen nav entry removed (component retained, admin URL access)
 - Theme toggle removed from Me screen
 - Hardcoded "Zona" wordmark references → `BRAND.name`
-- Hardcoded "Slow down. You're not Kipchoge." → `BRAND.brandStatement`
+- Hardcoded brand statement references → `BRAND.brandStatement` (now "You can't outrun your easy days.")
 - New `BRAND.appStoreSubtitle` + `BRAND.signinSub` constants added
 - New ADRs written (ADR-005 Warm Slate palette, ADR-006 single-theme-only)
 

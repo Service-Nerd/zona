@@ -160,6 +160,18 @@ D5–D9 resolved above. Key: tagline is "Slow down. You've got a day job." every
 
 ---
 
+## Post-testing UX Backlog (2026-04-24)
+
+Items identified from device testing. Decisions logged in `docs/alignment/phase-4-decisions.md`.
+
+| # | Item | Effort | Priority | Notes |
+|---|------|--------|----------|-------|
+| UX-01 | **Review name/email fields on Profile screen** | S | Low | Name is actively used (greeting, initials, header). Email is a no-op — auth identity can't be changed without re-verification flow. Decision: keep for now; review whether email field should be read-only or removed before launch. |
+| UX-02 | ~~**Branding task: review brandStatement on login footer**~~ | S | Low | ✅ Done. brandStatement updated to "You can't outrun your easy days." Removed from login (tagline owns that space). Kept on privacy footer + meta. |
+| UX-03 | ~~**Header analysis — complete before building**~~ | S | Medium | ✅ Done. Plan: race name as title, week+days as sub. Profile: text back-arrow, first name as title, race sub. Coach: week format aligned. Decisions 19–21. |
+
+---
+
 ## v1 SLC — What Ships, What Doesn't
 
 ### In v1

@@ -20,7 +20,7 @@ Core truth: "You're trying hard. That's the problem."
 |---|---|---|---|
 | **"Training plans that stop you overtraining."** | What ZONA does. Functional, discovery-facing. | `BRAND.appStoreSubtitle` | App Store subtitle, landing page hero, paid ads |
 | **"Slow down. You've got a day job."** | Who ZONA is for. The demographic hook. | `BRAND.tagline` | Login screen, loading screen, OG image, meta description |
-| **"Slow down. You're not Kipchoge."** | How ZONA sounds. Voice/personality moment. | `BRAND.brandStatement` | Login footer, privacy footer, App Store description |
+| **"You can't outrun your easy days."** | How ZONA sounds. Voice/personality moment. | `BRAND.brandStatement` | Privacy footer, App Store description (not login — tagline owns that space) |
 
 **Rules:**
 - Never mix two taglines on the same surface

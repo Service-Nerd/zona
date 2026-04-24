@@ -103,15 +103,15 @@ export default function LoginPage() {
             style={{
               width: '100%',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-              background: loading ? 'var(--border-col)' : 'var(--text-primary)',
-              color: 'var(--zona-navy)',
+              background: 'var(--card-bg)',
+              color: 'var(--text-primary)',
               border: '0.5px solid var(--border-col)',
               borderRadius: '10px',
               padding: '13px 16px',
               fontFamily: 'var(--font-ui)',
               fontSize: '14px', fontWeight: 500,
               cursor: loading ? 'default' : 'pointer',
-              opacity: loading ? 0.6 : 1,
+              opacity: loading ? 0.5 : 1,
               transition: 'opacity 0.15s',
             }}
           >
@@ -177,7 +177,7 @@ export default function LoginPage() {
               disabled={loading || !email || !password || (mode === 'signup' && !ageConfirmed)}
               style={{
                 width: '100%', padding: '13px',
-                background: 'var(--accent)', color: 'var(--zona-navy)',
+                background: 'var(--accent)', color: 'var(--card)',
                 border: 'none', borderRadius: '10px',
                 fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500,
                 cursor: loading || !email || !password || (mode === 'signup' && !ageConfirmed) ? 'default' : 'pointer',
@@ -214,15 +214,7 @@ export default function LoginPage() {
           )}
         </div>
 
-        <div style={{
-          marginTop: '24px', textAlign: 'center',
-          fontFamily: 'var(--font-ui)',
-          fontSize: '10px', color: 'var(--text-muted)',
-          opacity: 0.5, lineHeight: 1.7,
-        }}>
-          {BRAND.brandStatement}
-        </div>
-        <div style={{ marginTop: '10px', textAlign: 'center' }}>
+        <div style={{ marginTop: '24px', textAlign: 'center' }}>
           <a
             href="https://zona.app/privacy"
             target="_blank"

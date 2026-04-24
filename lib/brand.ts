@@ -21,10 +21,11 @@ export const BRAND = {
   tagline: "Slow down. You've got a day job.",
 
   /**
-   * Brand statement. Editorial/voice contexts only — login footer, privacy footer, App Store description.
+   * Brand statement. Editorial/voice contexts only — privacy footer, App Store description.
    * Personality moment, not a feature description. Never use alongside tagline on the same surface.
+   * NOT used on login — tagline already owns that space.
    */
-  brandStatement: "Slow down. You're not Kipchoge.",
+  brandStatement: "You can't outrun your easy days.",
 
   /** Sub-text shown below the sign-in card heading. */
   signinSub: 'Access your training plan.',

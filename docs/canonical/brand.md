@@ -7,13 +7,13 @@
 ## Brand Positioning
 
 **Tagline** (`BRAND.tagline`): "Slow down. You've got a day job."  
-**Brand statement** (`BRAND.brandStatement`, editorial/App Store only): "Slow down. You're not Kipchoge."  
+**Brand statement** (`BRAND.brandStatement`, editorial/App Store only): "You can't outrun your easy days."  
 **Core truth**: "You're trying hard. That's the problem."  
 **Audience**: Non-elite runners who overtrain. They care deeply. That care is the problem.
 
-The tagline names a person, not a training philosophy — it speaks directly to the user's identity. The brand statement is the punchline; used in editorial contexts (App Store description, press, login footer) only. Both acknowledge the user's effort without validating the overtraining.
+The tagline names a person, not a training philosophy — it speaks directly to the user's identity. The brand statement is the training truth; used in editorial contexts (App Store description, press, privacy footer) only. **Not used on the login screen** — the tagline already owns that space; two punchlines dilute both.
 
-> **Tagline decision (backlog D5):** "Slow down. You've got a day job." wins because it identifies the person. "Slow down. You're not Kipchoge." is funnier but describes a feeling. Runna would never say either — that's the point. All canonical strings live in `lib/brand.ts`. Never hardcode.
+> **Tagline decision (backlog D5):** "Slow down. You've got a day job." wins because it identifies the person. All canonical strings live in `lib/brand.ts`. Never hardcode.
 
 ---
 

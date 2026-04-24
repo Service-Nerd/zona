@@ -49,7 +49,7 @@
   8. Submit button
   9. Error message (amber, conditional)
   10. Success message (teal, conditional)
-  11. Footer: "Slow down. You're not Kipchoge." + Privacy Policy link
+  11. Footer: Privacy Policy link only (brand statement removed 2026-04-24)
 - **Data density**: Light
 - **Dynamic copy**: Submit button label, error/success messages, subtitle changes by mode
 - **Loading state**: Google button → "Redirecting…"; form inputs disabled
@@ -530,7 +530,7 @@ Week bars in Today and Plan screens are coloured by week status:
 | Submit (signin idle) | "Sign in" |
 | Submit (signup idle) | "Create account" |
 | Success message | "Account created — check your email to confirm, or sign in if confirmation is disabled." |
-| Footer | "Slow down. You're not Kipchoge." |
+| Footer | Privacy Policy link only |
 | Privacy link | "Privacy Policy" |
 
 ---
