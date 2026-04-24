@@ -214,7 +214,7 @@ export default function DashboardClient() {
     async function fetchSettings() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { window.location.href = '/auth/login'; return }
+        if (!user) return
         setUserId(user.id)
 
         // Fetch overrides + user settings + completions in parallel
@@ -387,7 +387,28 @@ export default function DashboardClient() {
       } catch {}
       finally { setStravaLoading(false) }
     }
-    fetchSettings()
+    // Use onAuthStateChange rather than calling fetchSettings() directly.
+    // This handles both the normal case (existing session → INITIAL_SESSION fires)
+    // and the OAuth PKCE case (?code= in URL → exchange happens in browser →
+    // SIGNED_IN fires after exchange completes). Both events wait for
+    // initializePromise so the session is always ready when we get here.
+    let loaded = false
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && !loaded) {
+        loaded = true
+        if (!session) {
+          window.location.href = '/auth/login'
+          return
+        }
+        // Clean up OAuth code from URL if present
+        if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('code')) {
+          window.history.replaceState({}, '', '/dashboard')
+        }
+        fetchSettings()
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   async function refreshCompletions() {

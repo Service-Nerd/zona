@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { BRAND } from '@/lib/brand'
@@ -8,12 +8,6 @@ import { BRAND } from '@/lib/brand'
 export default function LoginPage() {
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState<string | null>(null)
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const authError = params.get('auth_error')
-    if (authError) setError(`Auth error: ${decodeURIComponent(authError)}`)
-  }, [])
   const [mode, setMode]         = useState<'signin' | 'signup'>('signin')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
