@@ -2,6 +2,7 @@
 
 **Status**: Accepted
 **Date**: 2026-04-25
+**Updated**: 2026-04-25 — scope elevated from plan-generation-only to repo-wide via INV-CFG-001…005 in the architectural-principles skill (see "Repo-wide elevation" section below).
 **Releases**: R23 (rebuild)
 
 ---
@@ -92,3 +93,36 @@ lib/plan/
 | Move numerics to a shared `constants.ts` per concern | Replaces one drift surface with several (`lib/coaching/constants.ts` already exists; this ADR consolidates). |
 | Move numerics into the plan JSON itself | Plans become non-comparable across users; defeats the purpose of a shared coaching framework. |
 | Database-backed config (`coaching_config` table) | Premature for a single-tenant generator. Revisit if multi-coach personalisation becomes a feature. |
+
+---
+
+## Repo-wide elevation (added 2026-04-25)
+
+This ADR initially applied only to plan generation (`lib/plan/*`). Subsequent
+review surfaced that the same principle applies to all coaching numerics
+across the codebase — coaching scoring (`lib/coaching/*`), business-rule
+thresholds, and tuning knobs that govern what the engine prescribes or how
+it scores user behaviour.
+
+The rule is now elevated to a repo-wide architectural invariant via the
+following entries in the `zona-architectural-principles` skill:
+
+- **INV-CFG-001 — Coaching Config Singularity:** every coaching numeric lives
+  in exactly one named place (`GENERATION_CONFIG`, `SESSION_FORMAT`,
+  `PLAN_SIGNATURES`, `FEATURE_GATES`, `lib/coaching/constants.ts` re-exports,
+  `BRAND` / `PRICING`).
+- **INV-CFG-002 — Principle Backstop:** every entry has a corresponding
+  section in `CoachingPrinciples.md`. A numeric without a principle is a defect.
+- **INV-CFG-003 — No Inline Coaching Numerics:** code in `lib/plan/*` and
+  `lib/coaching/*` reads from config. Algorithm-formula and structural
+  constants are exempt.
+- **INV-CFG-004 — Tunability Test:** if a coach could reasonably want to tune
+  it → config. If it's a fact → inline.
+- **INV-CFG-005 — Brand & Pricing Singularity:** brand strings and pricing
+  values live in `lib/brand.ts → BRAND` / `PRICING`.
+
+Plus **M-013** (MUST: all business numerics in named config) and
+**N-013** (NEVER: inline coaching numerics) in the doctrine MUST/NEVER tables.
+
+This ADR remains the authoritative source for *why* the pattern exists; the
+skill invariants make the pattern checkable during code review.

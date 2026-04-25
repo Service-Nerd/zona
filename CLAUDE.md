@@ -218,6 +218,27 @@ All plan generators follow the same shape:
 
 See `docs/architecture/ADR-006-hybrid-generation-pattern.md`.
 
+### Configuration Singularity — No Hardcoded Coaching Numerics
+
+**Doctrine:** Every coaching numeric, business-rule threshold, and tuning knob lives in named configuration. No magic numbers in `lib/plan/*` or `lib/coaching/*`.
+
+| What | Where |
+|---|---|
+| Plan generation numerics (intensity ratios, phase fractions, taper depths, recovery cadences, injury caps, distance/time minimums, rounding precision, all percentages governing what the engine prescribes) | `lib/plan/generationConfig.ts → GENERATION_CONFIG` |
+| Universal warm-up/main/cool-down structure | `lib/plan/sessionFormat.ts → SESSION_FORMAT` |
+| Per-distance plan shape | `lib/plan/planSignatures.ts → PLAN_SIGNATURES` |
+| Option A trial categories | `lib/plan/featureGates.ts → FEATURE_GATES` |
+| Coaching scoring + load thresholds | `lib/coaching/constants.ts` (re-exports from `GENERATION_CONFIG` where overlapping) |
+| Brand strings + pricing | `lib/brand.ts → BRAND`, `BRAND.PRICING` |
+
+**Authority:** Architectural-principles skill (`INV-CFG-001…005`, `M-013`, `N-013`). ADR-009 establishes the pattern for plan generation; INV-CFG elevates it repo-wide.
+
+**Backstop:** Every entry in `GENERATION_CONFIG` has a corresponding section in `docs/canonical/CoachingPrinciples.md` explaining the principle behind the value. A numeric without a principle is a defect.
+
+**Exempt:** Algorithm-formula constants (Daniels VDOT coefficients in `buildPaceFromVDOT`, Tanaka MaxHR `208 − 0.7 × age`) and structural constants (`7` for days/week, JS array indices) stay inline — they are not coaching choices.
+
+**Tunability test (when in doubt):** if a coach could reasonably want to tune it → config. If it's a fact → inline.
+
 ### Auth at the Route Boundary
 
 `lib/plan/*` modules are pure functions of inputs and a `tier` parameter. The API route is the auth boundary. See ADR-003.

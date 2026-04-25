@@ -42,6 +42,7 @@ Use this skill as a fast-injection operating contract, not just a rule catalog.
 | Supabase schema and TypeScript types disagree | Fix migration, regenerate types |
 | Two components handle the same data differently | Unify under one owner |
 | Hardcoded colour/font found in a component | Replace with CSS custom property from globals.css |
+| Hardcoded coaching numeric / threshold / ratio in `lib/plan/*` or `lib/coaching/*` | Promote to `GENERATION_CONFIG` (or sibling config); add corresponding principle in `CoachingPrinciples.md`. INV-CFG-001 / INV-CFG-003. |
 | Feature exists without free/paid tag | Tag it before touching it |
 | Fix requires weakening a contract to make buggy code look valid | The code is wrong |
 | UI interaction has no corresponding API/Supabase path | Flag as architecture gap |
@@ -77,6 +78,7 @@ When remediating defects or evaluating design changes:
 | Feature visible on free tier | Free/paid gate missing in component or API route |
 | Two components show different data for same session | Shared state not lifted; prop or context ownership gap |
 | Supabase migration fails | Check RLS policies and column defaults before pushing |
+| Magic number in `lib/plan/*` or `lib/coaching/*` | Belongs in `GENERATION_CONFIG` (or sibling config); add principle in `CoachingPrinciples.md`. Exempt: algorithm formulas (Daniels VDOT, Tanaka MaxHR) + structural constants (7 days/week). |
 
 ---
 
@@ -167,6 +169,7 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 | M-010 | agent-browser smoke test written for every new screen before release is closed. |
 | M-011 | `docs/contracts/` updated whenever an API route, component prop interface, or Supabase table contract changes. |
 | M-012 | Mobile layout verified (375px viewport) before any release is marked done. |
+| M-013 | All coaching numerics, business-rule thresholds, and tuning knobs live in named configuration (`lib/plan/generationConfig.ts` for plan generation; `lib/coaching/constants.ts` for coaching scoring; `lib/brand.ts` for pricing; `lib/plan/featureGates.ts` for tier gating). Every value has a corresponding entry in `docs/canonical/CoachingPrinciples.md` (or the relevant canonical doc) explaining the principle behind it. ADR-009 establishes this for plan generation; the rule applies repo-wide. |
 
 ### NEVER
 
@@ -184,6 +187,7 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 | N-010 | Never work from a stale file snapshot. Always confirm live file state before editing. |
 | N-011 | Never create a second session colour/label/zone resolver. `session-types.ts` is the sole owner. |
 | N-012 | Never skip the agent-browser journey test before closing a release. |
+| N-013 | Never inline a coaching numeric, threshold, ratio, or tuning constant in `lib/plan/*` or `lib/coaching/*`. Promote to the appropriate config module (`generationConfig.ts`, `constants.ts`, `featureGates.ts`) with a named principle in `CoachingPrinciples.md`. Algorithm-formula constants (Daniels VDOT coefficients, Tanaka MaxHR formula) and structural constants (`7` for days/week, JS array indices) are exempt — they are not coaching choices. When in doubt: if a coach could reasonably want to tune it, it goes in config. |
 
 ---
 
@@ -196,6 +200,18 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 | INV-DS-003 | Single Light Theme (ADR-008) | No dark mode. `data-theme` attribute is not set. `applyTheme()` is a no-op. `[data-theme="dark"]` does not exist in `globals.css`. |
 | INV-DS-004 | Session Colour Consistency | A session type always resolves to exactly one colour across collapsed card, expanded card, calendar, and plan chart. |
 | INV-DS-005 | No Red in Training UI | Red does not appear in training UI — use `--warn` (`#B8853A`) for coaching warnings. `--danger` (`#B84545`) is reserved for errors / destructive actions only. |
+
+---
+
+## 5b. Configuration Singularity Invariants
+
+| ID | Name | Guarantee |
+|---|---|---|
+| INV-CFG-001 | Coaching Config Singularity | Every coaching numeric (intensity ratios, phase fractions, taper depths, recovery cadences, injury caps, fitness thresholds, distance/time minimums, rounding precision, all percentages governing what the engine prescribes) lives in exactly one named place: `lib/plan/generationConfig.ts → GENERATION_CONFIG`. Sibling files for adjacent concerns: `lib/plan/sessionFormat.ts` (warm-up/main/cool-down structure), `lib/plan/planSignatures.ts` (per-distance shape), `lib/plan/featureGates.ts` (Option A categories), `lib/coaching/constants.ts` (post-session scoring + load thresholds — re-exports from `GENERATION_CONFIG` where overlapping). |
+| INV-CFG-002 | Principle Backstop | Every entry in `GENERATION_CONFIG` has a corresponding section in `docs/canonical/CoachingPrinciples.md` explaining the principle behind the value. A numeric without a principle is a defect — either the numeric should be removed, the principle should be added, or both. |
+| INV-CFG-003 | No Inline Coaching Numerics | Code in `lib/plan/*` and `lib/coaching/*` reads from config. No coaching numeric appears as a literal in business-logic code paths. **Algorithm-formula constants** (Daniels VDOT coefficients in `buildPaceFromVDOT`, Tanaka MaxHR `208 − 0.7 × age`) and **structural constants** (`7` for days/week, array indices) are exempt — they are not coaching choices, they are mathematical / structural facts. |
+| INV-CFG-004 | Tunability Test | When in doubt about whether a numeric is "coaching" or "structural": ask if a coach could reasonably want to tune it. If yes → config. If it's a fact (days/week, π, JS-language constraint) → inline. |
+| INV-CFG-005 | Brand & Pricing Singularity | Brand strings (taglines, app name) and pricing values (£, billing frequency, trial length) live in `lib/brand.ts → BRAND` and `lib/brand.ts → PRICING`. Never hardcoded in components, copy, or routes. |
 
 **Warm Slate palette (ADR-007):**
 
