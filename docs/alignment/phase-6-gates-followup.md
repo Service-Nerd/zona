@@ -65,13 +65,16 @@ The existing `hasPaidAccess()` calls map cleanly to `isFeatureAllowed('<key>', t
 
 | Feature | Soft-block copy (ZONA voice) |
 |---|---|
-| `new_plan_generation` | "New plan needs Premium. Your existing one stays as-is." |
 | `dynamic_reshape_r20` | "Reshape needs Premium. The plan you have keeps running." |
 | `ultra_plan_generation` | "Ultras are Premium. 5K through HM are free." |
 | `strava_intelligence` | "Strava analysis needs Premium. You can still log manually." |
-| `ai_coach_notes_new` | "New coach notes need Premium. Existing notes on your plan stay." |
+| `ai_coach_notes_new` | "Your next plan can have AI coaching baked in. The current one stays." |
 
 These need user approval before shipping. Trigger `frontend-design` skill per spec rule 4.
+
+**Removed (R23-D6 resolution, 2026-04-25):** `new_plan_generation` paywall — under
+lenient interpretation, free users may regenerate rule-engine plans freely.
+AI enrichment on new plans is the paid gate (`ai_coach_notes_new`).
 
 ### 6.4 — Trial start trigger
 

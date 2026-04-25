@@ -30,17 +30,23 @@ export const FEATURE_GATES = {
 
   PAID_ONLY_ONGOING: [
     'dynamic_reshape_r20',       // R20 auto + user-initiated reshape
-    'ai_coach_notes_new',        // new coach notes (e.g. after a reshape)
+    'ai_coach_notes_new',        // new coach notes (e.g. after a reshape) — also gates AI enrichment on regenerated plans
     'injury_adaptations_new',    // adaptations applied to new plans or after reshape
     'strava_intelligence',       // run analysis, weekly report, plan adjustment triggers
     'confidence_score',          // R18 confidence scoring
     'ultra_plan_generation',     // 50K and 100K plan generation
-    'new_plan_generation',       // generating a new plan after the trial-era plan
     'strength_sessions_tailored', // R21 tailored strength (when shipped)
   ],
 
+  // Note (R23-D6 resolution, 2026-04-25): `new_plan_generation` was previously
+  // listed here but removed under the lenient interpretation of Option A. Free
+  // users can regenerate rule-engine plans freely; AI enrichment on those new
+  // plans is gated via `ai_coach_notes_new`. To revisit during the planned
+  // free/paid audit. See docs/releases/backlog.md → R23-D6.
+
   FREE_ALWAYS: [
     'generic_plan_templates',    // 5K/10K/HM template plans (no AI)
+    'rule_engine_regeneration',  // free users may regenerate rule-engine plans (R23-D6 lenient)
     'manual_session_completion', // marking a session done without Strava
     'plan_view',                 // reading the existing plan
     'basic_strength_sessions',   // placeholder strength stubs

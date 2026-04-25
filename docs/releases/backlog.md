@@ -282,20 +282,15 @@ The R23 rebuild populates `meta.compressed = true` when the 10% volume cap preve
 
 **Why deferred:** Needs design rationale (`frontend-design` skill) and copy review before shipping. No SLA — users with compressed plans don't experience anything broken; they just get a more conservative ramp.
 
-### R23-D4 — Intensity distribution coaching tune
+### R23-D4 — Intensity distribution: spec target vs Zona audience
 
-**Status:** Deferred — coaching decision required
+**Status:** ✅ Resolved 2026-04-25 — keep current behaviour. To revisit during free/paid audit.
 
-Phase 7 validation shows the engine produces ~90% easy across all distances vs spec targets 75–88%. The gap is consistent: **not enough quality minutes scheduled** relative to easy/long minutes.
+**Decision:** Engine stays at ~90% easy / 10% quality across all distances. Spec target (75–88% easy depending on distance) is from polarised-training research on competitive runners. Zona's target audience is *runners who already train too hard* — being **more conservative than the textbook is the brand position made literal in volume math.** Restraint as the product.
 
-**Two ways to close the gap:**
+If a coaching audit pushes back: the answer is *"yes, less quality than the textbook spec — by design for our audience."*
 
-1. **More quality sessions per week** — bump `QUALITY_SESSIONS_PER_WEEK_MAX.intermediate` from 2 to 3 for build/peak phases. Keeps spec-compliant for experienced runners but contradicts CoachingPrinciples §8 (current rule: max 2 because the 3rd quality session is rarely accommodated by life).
-2. **Longer quality sessions** — extend tempo blocks from 30 min to 45+ min, double interval reps. More quality minutes per session.
-
-**Trade-off:** option 1 is more "polarised training" (more frequent stress); option 2 is more conservative time-on-feet but bigger single sessions. Both move the needle.
-
-**Why deferred:** Coaching philosophy decision, not a refactor. Owner: Russ.
+**Recorded for revisit:** Free/paid audit (TBD). If telemetry shows users dropping off because plans feel under-stimulating, the smallest change is adding a 2nd quality session in build phase for HM/Marathon intermediate+experienced only (one config addition, ~6pp shift). Don't change without signal.
 
 ### R23-D5 — F1: ReshapeScreen 403 has no upgrade CTA
 
@@ -307,22 +302,19 @@ If a free user reaches `screen=reshape` via URL manipulation, the API returns 40
 
 **Why deferred:** Belt-and-braces only. No production user can hit this via supported flows.
 
-### R23-D6 — F2: Free users can generate new plans post-trial (Option A semantic gap)
+### R23-D6 — Free regeneration policy (Option A interpretation)
 
-**Status:** Deferred — **needs product decision**
+**Status:** ✅ Resolved 2026-04-25 — lenient interpretation. To revisit during free/paid audit.
 
-`/api/generate-plan` does not block free users from regenerating. They get rule-engine output (no AI enrichment, no Marathon/50K/100K). This is **today's behaviour** and matches the original feature-registry intent: "Generic plan templates (5K/10K/HM) via rule-based engine — FREE".
+**Decision:** Free users may regenerate rule-engine plans freely. The paid value on regen is the **AI enrichment layer** (gated via `ai_coach_notes_new`), not the act of regenerating itself. Strict interpretation rejected because it creates a UX dead-end (race date passes → plan stuck in the past with no escape). Brand promise *"free users are never abandoned"* takes precedence over the marginal subscription value of locking regeneration.
 
-**Conflict:** Phase 6 follow-up doc (`phase-6-gates-followup.md`) lists `new_plan_generation` as paid-only with drafted paywall copy: *"New plan needs Premium. Your existing one stays as-is."*
+**Code/doc changes shipped:**
+- `lib/plan/featureGates.ts` — removed `new_plan_generation` from `PAID_ONLY_ONGOING`; added `rule_engine_regeneration` to `FREE_ALWAYS`. Comment block records the decision.
+- `docs/canonical/monetisation-strategy.md` — Option A category lists updated; explicit note on regeneration policy added.
+- `docs/canonical/CoachingPrinciples.md` §15 — same alignment.
+- `docs/alignment/phase-6-gates-followup.md` — `new_plan_generation` paywall copy line removed.
 
-**Decision needed:** Strict (free users keep trial-era plan; can't regenerate) or Lenient (free users can regenerate rule-engine plans; AI + ultras stay paid)?
-
-| Strict | Lenient |
-|---|---|
-| Cleaner upsell — "fresh start" is part of premium | Brand promise — free users always have a tailored plan |
-| Code change: detect `is_regeneration` (or existing plan) in route → 403 | No code change — current behaviour |
-
-**Why deferred:** Commercial choice, not a refactor.
+**Recorded for revisit:** Free/paid audit (TBD). If commercial signals warrant tightening (low conversion, "fresh start" emerges as a real subscription motivator), the constrained-strict middle ground is available: gate regen only when the user has an active future-dated plan; allow it once race date has passed. Code change would be a small route addition that compares plan race_date against `now()` before allowing free-tier regen.
 
 ### R23-D7 — `length.ts` cleanup tracking
 
@@ -336,9 +328,8 @@ Items still queued for hands-on attention after the rebuild:
 
 | Item | Owner | Status |
 |---|---|---|
-| Browser-verify Phase 5 + Phase 4.2 + Phase 6.3 changes after Vercel deploy | Russ | Awaiting deploy + manual check |
-| Resolve R23-D4 (intensity distribution) | Russ — coaching call | Open |
-| Resolve R23-D6 (free regeneration policy) | Russ — commercial call | Open |
+| Browser-verify Phase 5 + Phase 4.2 + Phase 6.3 + B1 + B3 changes after Vercel deploy | Russ | Awaiting deploy + manual check |
+| Free/paid audit (revisits R23-D4 + R23-D6 if signals warrant) | Russ | Scheduled when usage data is available |
 
 ---
 

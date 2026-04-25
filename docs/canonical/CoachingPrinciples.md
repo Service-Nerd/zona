@@ -246,8 +246,12 @@ The forward-compat hook for a future paid "zone method selector" feature lives h
 
 **Config.** `lib/plan/featureGates.ts`:
 - `FEATURE_GATES.GRANTED_AT_TRIAL_RETAINED_IN_FREE` — personalised plan, VDOT pace zones, HR zones, AI coach notes that already exist on a plan, full session catalogue, initial injury adaptations
-- `FEATURE_GATES.PAID_ONLY_ONGOING` — dynamic reshape (R20), new AI coach notes, new injury adaptations, Strava intelligence, confidence score, ultra plan generation, new plan generation, tailored strength sessions
-- `FEATURE_GATES.FREE_ALWAYS` — generic plan templates, manual session completion, plan view, basic strength sessions
+- `FEATURE_GATES.PAID_ONLY_ONGOING` — dynamic reshape (R20), new AI coach notes, new injury adaptations, Strava intelligence, confidence score, ultra plan generation, tailored strength sessions
+- `FEATURE_GATES.FREE_ALWAYS` — generic plan templates, rule-engine regeneration (no AI), manual session completion, plan view, basic strength sessions
+
+**Note (R23-D6 resolution, 2026-04-25):** Plan regeneration itself is free —
+users may rerun the wizard at any time. The paid value on regen is the AI
+enrichment layer (gated via `ai_coach_notes_new`), not the act of regenerating.
 
 ---
 

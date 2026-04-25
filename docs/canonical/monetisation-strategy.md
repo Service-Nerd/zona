@@ -38,18 +38,24 @@ Earned during the 14-day trial; remain available after downgrade *for the plan t
 Required to use the PAID feature again *after* the trial ends.
 
 - Dynamic reshape (R20 — auto and user-initiated)
-- AI coach notes on *new* sessions (e.g. after a reshape)
+- AI coach notes on *new* sessions (after a reshape OR on regenerated plans)
 - Injury adaptations applied to *new* plans or after a reshape
 - Strava intelligence (run analysis, weekly report, plan adjustment triggers)
 - Confidence score
-- Ultra plan generation (50K, 100K)
-- New plan generation (after the trial-era plan)
+- Ultra plan generation (50K, 100K — locked at the wizard distance picker)
 - Tailored strength sessions (R21 — when shipped)
+
+**Note on regeneration (R23-D6 resolution, 2026-04-25):** Free users may regenerate
+rule-engine plans freely. The plan they get on regen carries no AI enrichment
+(no AI labels, no coach intro, no confidence score). The paid value on regen is
+the AI layer, not the act of regenerating itself. Revisit during the planned
+free/paid audit if commercial signals warrant tightening.
 
 #### Free always
 Available regardless of trial status.
 
 - Generic plan templates (5K/10K/HM, fixed shapes)
+- Rule-engine plan regeneration (no AI enrichment) — see R23-D6 above
 - Manual session completion
 - Plan view
 - Basic strength sessions (the placeholder stubs)
