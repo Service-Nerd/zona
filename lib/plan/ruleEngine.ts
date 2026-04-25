@@ -394,11 +394,13 @@ function easySession(
   rpe = 4,
   notes?: Session['coach_notes'],
 ): Session {
+  // Round to nearest 0.5 km — cleaner display (11.9 → 12.0; 14.7 → 14.5).
+  const rounded = Math.round(distKm * 2) / 2
   return {
     id: `w${weekN}-${day}`,
     type: 'easy', label, detail: null,
-    ...(metric === 'distance' ? { distance_km: Math.round(distKm * 10) / 10 } : {}),
-    duration_mins: dur(distKm, pace.minPerKmEasy),
+    ...(metric === 'distance' ? { distance_km: rounded } : {}),
+    duration_mins: dur(rounded, pace.minPerKmEasy),
     primary_metric: metric,
     zone: 'Zone 2', hr_target: zones.easyHR,
     pace_target: pace.easyPaceStr, rpe_target: rpe,
@@ -412,11 +414,12 @@ function longSession(
   zones: ZoneTargets, pace: PaceGuide,
   notes?: Session['coach_notes'],
 ): Session {
+  const rounded = Math.round(distKm * 2) / 2
   return {
     id: `w${weekN}-${day}`,
     type: 'easy', label: 'Long run — Zone 2', detail: null,
-    ...(metric === 'distance' ? { distance_km: Math.round(distKm * 10) / 10 } : {}),
-    duration_mins: dur(distKm, pace.minPerKmEasy),
+    ...(metric === 'distance' ? { distance_km: rounded } : {}),
+    duration_mins: dur(rounded, pace.minPerKmEasy),
     primary_metric: metric,
     zone: 'Zone 2', hr_target: zones.easyHR,
     pace_target: pace.easyPaceStr, rpe_target: 4,
@@ -472,11 +475,12 @@ function makeQualitySession(args: {
     ? (notes.slice(0, 3) as [string, string?, string?])
     : undefined
 
+  const rounded = Math.round(distKm * 2) / 2
   return {
     id: `w${weekN}-${day}`,
     type: 'quality', label, detail: null,
-    ...(metric === 'distance' ? { distance_km: Math.round(distKm * 10) / 10 } : {}),
-    duration_mins: dur(distKm, pace.minPerKmQuality),
+    ...(metric === 'distance' ? { distance_km: rounded } : {}),
+    duration_mins: dur(rounded, pace.minPerKmQuality),
     primary_metric: metric,
     zone: 'Zone 3–4', hr_target: zones.qualityHR,
     pace_target: pace.qualityPaceStr,
@@ -500,13 +504,14 @@ function mpLongRunSession(
     voice,
     `Final 30–50% at MP target ${goalPace}.`,
   ]
+  const rounded = Math.round(distKm * 2) / 2
   return {
     id: `w${weekN}-${day}`,
     type: 'easy',  // long run slot — display contract; SessionType drives card colour
     label: catalogueRow.name,
     detail: null,
-    ...(metric === 'distance' ? { distance_km: Math.round(distKm * 10) / 10 } : {}),
-    duration_mins: dur(distKm, pace.minPerKmEasy),
+    ...(metric === 'distance' ? { distance_km: rounded } : {}),
+    duration_mins: dur(rounded, pace.minPerKmEasy),
     primary_metric: metric,
     zone: 'Zone 2–3',
     hr_target: zones.easyHR,
@@ -684,34 +689,61 @@ function buildWeekSessions(
   const sessions: Partial<Record<Day, Session>> = {}
   const used: Day[] = []
 
+  // ── 0. Volume distribution — compute distances FIRST so we can enforce
+  //       the invariant that the long run is always the longest run of the week.
+  //       (Bug fix: previously, low-day-count plans produced easy runs longer
+  //       than the long run because volume = weekly - long fraction got
+  //       crammed into few easy slots.)
+  const longRunPct = GENERATION_CONFIG.LONG_RUN_PCT_OF_WEEKLY_VOLUME[phase]
+  const qualKmPerSession = Math.round(weeklyKm * 0.18 * 10) / 10
+  const totalQualVol     = includeQualityCount * qualKmPerSession
+  const easyCount        = Math.max(0, daysAvailable - 1 - includeQualityCount - adjStrength)
+
+  let longKm = weeklyKm * (longRunPct / 100)
+  let easyKm = easyCount > 0 ? Math.max(0, weeklyKm - longKm - totalQualVol) / easyCount : 0
+
+  // Long-vs-easy invariant: long must be at least 1.25× the easy distance.
+  // When the natural distribution would invert this (low-volume / low-day plans),
+  // redistribute while preserving total weekly volume.
+  const MIN_LONG_TO_EASY_RATIO = 1.25
+  if (easyCount > 0 && longKm < easyKm * MIN_LONG_TO_EASY_RATIO) {
+    // longKm = easyKm × R; total = longKm + easyKm × N + qualVol = weeklyKm
+    //   → easyKm × (R + N) = weeklyKm − qualVol
+    easyKm = (weeklyKm - totalQualVol) / (MIN_LONG_TO_EASY_RATIO + easyCount)
+    longKm = easyKm * MIN_LONG_TO_EASY_RATIO
+  }
+
+  // Apply caps after redistribution.
+  if (weekN <= 2 && input.longest_recent_run_km > 0) {
+    const earlyCap = input.longest_recent_run_km * GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER
+    if (longKm > earlyCap) longKm = earlyCap
+  }
+  longKm = applyLongRunCap(longKm, 0, input)
+
+  // Round to 0.5 km precision (Russ requested cleaner whole-number-ish display).
+  // 11.9 → 12.0, 13.2 → 13.0, 14.7 → 14.5, 8.4 → 8.5.
+  const round05 = (n: number) => Math.round(n * 2) / 2
+  longKm = Math.max(round05(longKm), 5)
+  easyKm = easyCount > 0 ? Math.max(round05(easyKm), 4) : 0
+
   // ── 1. Long run ───────────────────────────────────────────────────────────
-  // Phase-aware fraction of weekly volume, per LONG_RUN_PCT_OF_WEEKLY_VOLUME.
-  // Week 1–2 cap (CoachingPrinciples §9 / spec 3.6): for the first two weeks
-  // of any plan, long run cannot exceed longest_recent_run_km × 1.10.
   // Long-run day preference: Sun by default; user can choose Sat. Falls back to Fri.
   const longDayPref: Day[] = input.preferred_long_run_day === 'sat'
     ? ['sat', 'sun', 'fri']
     : ['sun', 'sat', 'fri']
   const longDay = firstAvailableDay(longDayPref, blocked) ?? 'sun'
-  const longRunPct = GENERATION_CONFIG.LONG_RUN_PCT_OF_WEEKLY_VOLUME[phase]
-  let longKm = Math.round(weeklyKm * (longRunPct / 100) * 10) / 10
-  if (weekN <= 2 && input.longest_recent_run_km > 0) {
-    const earlyCap = input.longest_recent_run_km * GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER
-    if (longKm > earlyCap) longKm = Math.round(earlyCap * 10) / 10
-  }
-  longKm = applyLongRunCap(longKm, 0, input)
 
   // Marathon peak: swap the standard long run for an mp_long_run from the
   // catalogue (race-pace specificity, spec 3.7) — only when goal_pace is set.
   if (phase === 'peak' && distKey === 'MARATHON' && goalPace) {
     const mpRow = catalogue.find(r => r.id === 'mp_long_run')
     if (mpRow && (tier !== 'free' || mpRow.is_free_tier)) {
-      sessions[longDay] = mpLongRunSession(weekN, longDay, Math.max(longKm, 5), metric, zones, pace, mpRow, goalPace)
+      sessions[longDay] = mpLongRunSession(weekN, longDay, longKm, metric, zones, pace, mpRow, goalPace)
     } else {
-      sessions[longDay] = longSession(weekN, longDay, Math.max(longKm, 5), metric, zones, pace)
+      sessions[longDay] = longSession(weekN, longDay, longKm, metric, zones, pace)
     }
   } else {
-    sessions[longDay] = longSession(weekN, longDay, Math.max(longKm, 5), metric, zones, pace)
+    sessions[longDay] = longSession(weekN, longDay, longKm, metric, zones, pace)
   }
   used.push(longDay)
 
@@ -723,7 +755,7 @@ function buildWeekSessions(
   const minDaysBetweenQualities = Math.ceil(GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY / 24)
 
   if (includeQuality && used.length < daysAvailable) {
-    const qualKm = Math.round(weeklyKm * 0.18 * 10) / 10
+    const qualKm = Math.max(round05(qualKmPerSession), 5)
     const preferredCategory = preferredQualityCategory(phase, distKey)
 
     const qualDay = firstAvailableDay(['wed', 'thu', 'tue'], blocked, used.filter(d => dayGap(d, 'wed') < 2))
@@ -753,7 +785,7 @@ function buildWeekSessions(
             catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 1, preferredCategory: altCategory,
           })
           sessions[qual2Day] = makeQualitySession({
-            weekN, day: qual2Day, distKm: Math.max(Math.round(qualKm * 0.8 * 10) / 10, 4), metric, zones, pace,
+            weekN, day: qual2Day, distKm: Math.max(round05(qualKm * 0.8), 4), metric, zones, pace,
             catalogueRow: cat2, phase, fitness, isDeload, goalPace,
           })
           used.push(qual2Day)
@@ -775,18 +807,25 @@ function buildWeekSessions(
   }
 
   // ── 4. Easy runs (fill remaining slots) ───────────────────────────────────
-  const easyCount = daysAvailable - used.length
-  const remainingEasyKm = weeklyKm
-    - (sessions[longDay]?.distance_km ?? (sessions[longDay]?.duration_mins ?? 0) / pace.minPerKmEasy)
-    - (includeQuality ? Math.round(weeklyKm * 0.18) : 0)
-  const perEasyKm = easyCount > 0 ? Math.max(remainingEasyKm / easyCount, 4) : 0
-
-  const easyPreferred: Day[] = ['tue', 'thu', 'fri', 'sat', 'mon', 'wed', 'sun']
-  for (const day of easyPreferred) {
-    if (used.length >= daysAvailable) break
-    if (blocked.has(day) || used.includes(day)) continue
-    sessions[day] = easySession(weekN, day, Math.round(perEasyKm * 10) / 10, metric, zones, pace)
-    used.push(day)
+  // Day-spacing heuristic: at each step, pick the candidate day whose minimum
+  // gap to ANY already-used day is largest. Spreads runs across the week
+  // instead of stacking them. (Bug fix: prior version filled in fixed
+  // easyPreferred order, producing back-to-back runs when blocked days
+  // narrowed the candidate pool — e.g. tue+thu blocked → fri/sat/sun consecutive.)
+  while (used.length < daysAvailable) {
+    const candidates = DAY_ORDER.filter(d => !blocked.has(d) && !used.includes(d))
+    if (candidates.length === 0) break
+    let best: Day = candidates[0]
+    let bestScore = -1
+    for (const c of candidates) {
+      const score = used.length === 0 ? 7 : Math.min(...used.map(u => dayGap(c, u)))
+      if (score > bestScore) {
+        bestScore = score
+        best = c
+      }
+    }
+    sessions[best] = easySession(weekN, best, easyKm, metric, zones, pace)
+    used.push(best)
   }
 
   return sessions
