@@ -280,9 +280,8 @@ function buildVolumeSequence(
     return GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT
   }
 
-  const volumes: number[] = []
+  const volumes: number[] = new Array(totalWeeks).fill(0)
 
-  // Clamp start to a sensible range relative to peak
   // Clamp start volume to a band relative to peakKm.
   // Floor prevents starting too low for the target; ceiling prevents
   // starting too close to peak (no room to ramp).
@@ -291,40 +290,31 @@ function buildVolumeSequence(
   let buildVol = Math.min(Math.max(startKm, initFloor), initCeiling)
   let lastBuildVol = buildVol
 
+  // Pass 1 — fill non-taper weeks (base/build/peak) with the natural ramp +
+  // recovery-week drops. Taper deferred to pass 3 so it can anchor on the
+  // post-cap pre-taper value.
   for (let i = 0; i < totalWeeks; i++) {
     const weekN = i + 1
     const phase = getPhaseForWeek(weekN, phases)
+    if (phase === 'taper') continue
 
-    if (phase === 'taper') {
-      const taperIdx = weekN - taperPhase.start_week  // 0-indexed within taper
-      const preTaper = volumes[taperPhase.start_week - 2] ?? lastBuildVol
-      if (weekN === totalWeeks) {
-        // Race week: shakeouts only — RACE_WEEK_VOLUME_PCT of pre-taper.
-        volumes.push(Math.round(preTaper * GENERATION_CONFIG.RACE_WEEK_VOLUME_PCT / 100))
-      } else {
-        const stepPct = taperConfig.volume_reduction_pct / fullTaperWeeks
-        const reductionPct = stepPct * (taperIdx + 1)
-        volumes.push(Math.round(preTaper * (1 - reductionPct / 100)))
-      }
+    const isDeload = weekN % recoveryFreq === 0 && phase !== 'peak'
+    if (isDeload) {
+      volumes[i] = Math.round(lastBuildVol * recoveryPct)
+      buildVol = lastBuildVol
     } else {
-      const isDeload = weekN % recoveryFreq === 0 && phase !== 'peak'
-      if (isDeload) {
-        volumes.push(Math.round(lastBuildVol * recoveryPct))
-        buildVol = lastBuildVol
-      } else {
-        const allowance = 1 + allowanceForWeek(weekN) / 100
-        const growthFactor = phase === 'peak' ? 1 + (allowance - 1) / 2 : allowance
-        buildVol = Math.min(buildVol * growthFactor, peakKm)
-        volumes.push(Math.round(buildVol))
-        lastBuildVol = buildVol
-      }
+      const allowance = 1 + allowanceForWeek(weekN) / 100
+      const growthFactor = phase === 'peak' ? 1 + (allowance - 1) / 2 : allowance
+      buildVol = Math.min(buildVol * growthFactor, peakKm)
+      volumes[i] = Math.round(buildVol)
+      lastBuildVol = buildVol
     }
   }
 
-  // Post-process: enforce week-on-week cap. Drops are exempt; deload weeks
-  // themselves are exempt (they intentionally drop); taper weeks are exempt
-  // (own logic). After-deload bouncebacks are NOT exempt — this is the
-  // primary effect of the cap (CoachingPrinciples §2).
+  // Pass 2 — enforce week-on-week cap on non-taper weeks. Drops are exempt;
+  // deload weeks themselves are exempt (they intentionally drop). After-deload
+  // bouncebacks are NOT exempt — this is the primary effect of the cap
+  // (CoachingPrinciples §2).
   for (let i = 1; i < volumes.length; i++) {
     const weekN = i + 1
     const phase = getPhaseForWeek(weekN, phases)
@@ -337,6 +327,27 @@ function buildVolumeSequence(
     const maxAllowed = Math.round(volumes[i - 1] * cap)
     if (volumes[i] > maxAllowed) {
       volumes[i] = maxAllowed
+    }
+  }
+
+  // Pass 3 — fill taper weeks using the POST-CAP pre-taper as anchor.
+  // (Bug fix: previously taper ran in pass 1, anchored on the pre-cap pre-taper
+  // value. With the cap reducing real build/peak volumes, the resulting
+  // taper-from-spec-target was visibly smaller than spec because it was applied
+  // to an inflated baseline.)
+  for (let i = 0; i < totalWeeks; i++) {
+    const weekN = i + 1
+    const phase = getPhaseForWeek(weekN, phases)
+    if (phase !== 'taper') continue
+
+    const taperIdx = weekN - taperPhase.start_week
+    const preTaper = volumes[taperPhase.start_week - 2] ?? lastBuildVol
+    if (weekN === totalWeeks) {
+      volumes[i] = Math.round(preTaper * GENERATION_CONFIG.RACE_WEEK_VOLUME_PCT / 100)
+    } else {
+      const stepPct = taperConfig.volume_reduction_pct / fullTaperWeeks
+      const reductionPct = stepPct * (taperIdx + 1)
+      volumes[i] = Math.round(preTaper * (1 - reductionPct / 100))
     }
   }
 
@@ -850,6 +861,30 @@ function buildWeekSessions(
     }
     sessions[best] = easySession(weekN, best, easyKm, metric, zones, pace)
     used.push(best)
+  }
+
+  // ── 5. Honour max_weekday_mins constraint ────────────────────────────────
+  // CoachingPrinciples — "Life-first, plan-second". User's stated weekday time
+  // limit is a hard cap. If a session placed on a weekday exceeds it, reduce
+  // duration to the cap and proportionally reduce distance (pace stays
+  // constant). Accepts a slightly lower total weekly volume in exchange for
+  // honouring the user's schedule reality. Long runs are typically on weekends
+  // so are usually unaffected; if a user picks a weekday long run and the cap
+  // would force it below the long-vs-easy invariant, the cap still wins —
+  // life > coaching ratio.
+  if (input.max_weekday_mins) {
+    const weekdays: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri']
+    const cap = input.max_weekday_mins
+    for (const day of weekdays) {
+      const s = sessions[day]
+      if (!s || !s.duration_mins || s.duration_mins <= cap) continue
+      if (s.type === 'strength' || s.type === 'rest' || s.type === 'race') continue
+      const ratio = cap / s.duration_mins
+      s.duration_mins = cap
+      if (s.distance_km != null) {
+        s.distance_km = roundDistance(s.distance_km * ratio)
+      }
+    }
   }
 
   return sessions

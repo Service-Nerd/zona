@@ -401,7 +401,25 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
               )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px', flexWrap: 'wrap' }}>
-              {session.detail && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.detail}</span>}
+              {/* Structured metrics first (R23+ plans). Falls back to legacy `detail` text for hand-authored gist plans. */}
+              {(session.distance_km != null || session.duration_mins != null) ? (
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                  {[
+                    session.distance_km != null
+                      ? `${session.distance_km % 1 === 0 ? session.distance_km : session.distance_km.toFixed(1)}km`
+                      : null,
+                    session.duration_mins != null
+                      ? (session.duration_mins < 60
+                          ? `${session.duration_mins}min`
+                          : (session.duration_mins % 60 === 0
+                              ? `${Math.floor(session.duration_mins / 60)}h`
+                              : `${Math.floor(session.duration_mins / 60)}h ${session.duration_mins % 60}min`))
+                      : null,
+                  ].filter(Boolean).join(' · ')}
+                </span>
+              ) : session.detail ? (
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.detail}</span>
+              ) : null}
               {isComplete && completion?.strava_activity_name && (
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--strava)' }}>
                   ● {completion.strava_activity_name}{completion.strava_activity_km ? ` · ${completion.strava_activity_km}km` : ''}
