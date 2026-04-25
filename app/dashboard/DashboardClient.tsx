@@ -2082,6 +2082,12 @@ interface SessionEntry {
   today: boolean
   distance?: number
   duration?: string
+  // Canonical fields preserved so SessionPopupInner / composer can read them
+  // when the session is opened from TodayScreen. Without these, the structured
+  // session block doesn't render (composer needs distance_km/duration_mins/label).
+  label?: string
+  distance_km?: number
+  duration_mins?: number
   primary_metric?: 'distance' | 'duration'
   zone?: string
   hr_target?: string
@@ -3236,6 +3242,10 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       today: key === todayDow && d.toDateString() === now.toDateString(),
       distance: s?.distance_km ?? parsed.distance,
       duration: s?.duration_mins != null ? fmtDurationMins(s.duration_mins) : parsed.duration,
+      // Canonical fields preserved for SessionPopupInner / composer
+      label: s?.label ?? undefined,
+      distance_km: s?.distance_km ?? undefined,
+      duration_mins: s?.duration_mins ?? undefined,
       primary_metric: s?.primary_metric ?? undefined,
       zone: s?.zone ?? undefined,
       hr_target: s?.hr_target ?? undefined,

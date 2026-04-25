@@ -666,16 +666,20 @@ function buildWeekSessions(
   const includeQuality = includeQualityCount > 0
   const qualityCountInPeak = includeQualityCount  // legacy variable name for downstream
 
-  // Strength: in base/build 2/week; peak 1-2; taper 1; deload 1 max
-  const strengthTarget = isDeload ? 1
-    : phase === 'taper' ? 1
-    : phase === 'peak' ? (fitness === 'experienced' ? 2 : 1)
-    : 2
-
-  // Hard-session-relationship override
+  // Strength sessions — flagged off until R21 ships full content (CoachingPrinciples
+  // doc + backlog R21). When STRENGTH_ENABLED=false, engine schedules 0 strength
+  // sessions and frees up those day slots for easy runs. Prevents the
+  // "long-run + 2 strength = 3 days used, no easy fillers" failure mode for
+  // low-day-availability plans.
+  const strengthTargetEnabled = GENERATION_CONFIG.STRENGTH_ENABLED
+    ? (isDeload ? 1
+       : phase === 'taper' ? 1
+       : phase === 'peak' ? (fitness === 'experienced' ? 2 : 1)
+       : 2)
+    : 0
   const adjStrength = input.hard_session_relationship === 'avoid'
-    ? Math.min(strengthTarget, 1)
-    : strengthTarget
+    ? Math.min(strengthTargetEnabled, 1)
+    : strengthTargetEnabled
 
   const sessions: Partial<Record<Day, Session>> = {}
   const used: Day[] = []

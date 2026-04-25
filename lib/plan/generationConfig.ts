@@ -64,6 +64,13 @@ export const GENERATION_CONFIG = {
   // full taper weeks BEFORE race week).
   RACE_WEEK_VOLUME_PCT: 18,
 
+  // Strength sessions — flagged off until R21 ships full content.
+  // When false: engine skips strength placement entirely (frees up day slots
+  // for easy fillers, preventing "1 run/week" plans for low-volume runners).
+  // When true: engine schedules 1–2 strength sessions per week per phase (legacy
+  // behaviour). See backlog § R21 — Strength Sessions.
+  STRENGTH_ENABLED: false,
+
   // Quality sessions per taper week. Last entry is always race week (= 0).
   TAPER_QUALITY_PER_WEEK: {
     '5K':       [1, 0],

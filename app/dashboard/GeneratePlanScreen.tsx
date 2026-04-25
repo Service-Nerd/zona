@@ -257,55 +257,97 @@ function DurationPicker({ hours, mins, onHoursChange, onMinsChange, maxHours = 2
   )
 }
 
-// Preview components — plan arc + week card
+// ─── Preview components ──────────────────────────────────────────────────────
+// Plan-overview strip + per-phase summary cards. No horizontal scroll. No
+// "+N more weeks" footer. Every week is represented in the strip; every
+// phase has a card.
+
 const PHASES = ['base', 'build', 'peak', 'taper'] as const
 
-function PhaseArc({ weeks }: { weeks: Plan['weeks'] }) {
-  const phaseColour: Record<string, string> = {
-    base: 'var(--s-easy)', build: 'var(--s-quality)', peak: 'var(--s-inter)', taper: 'var(--s-recov)',
-  }
-  const repWeeks = PHASES.map(phase => {
-    const phaseWks = weeks.filter(w => w.phase === phase)
-    if (!phaseWks.length) return null
-    return { week: phaseWks[Math.floor(phaseWks.length / 2)], phase }
-  }).filter(Boolean) as { week: Plan['weeks'][0]; phase: string }[]
+const PHASE_COLOUR: Record<string, string> = {
+  base:  'var(--s-easy)',
+  build: 'var(--s-quality)',
+  peak:  'var(--s-inter)',
+  taper: 'var(--s-recov)',
+}
 
-  if (!repWeeks.length) return null
+const PHASE_DESCRIPTION: Record<string, string> = {
+  base:  'Aerobic foundation. Easy runs, nothing fancy.',
+  build: 'One quality session a week. Everything else stays easy.',
+  peak:  'Highest volume. Race-specific sharpening.',
+  taper: 'Volume drops. Race week is shakeouts only.',
+}
 
+// Full-width strip — every week as a coloured bar. No scrolling.
+function PreviewPhaseStrip({ weeks }: { weeks: Plan['weeks'] }) {
+  if (!weeks.length) return null
   return (
-    <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', overflowX: 'auto' }}>
-      {repWeeks.map(({ week, phase }) => (
-        <WeekCard key={week.n} week={week} phaseLabel={phase} phaseColour={phaseColour[phase]} />
-      ))}
+    <div>
+      <div style={{ display: 'flex', gap: '2px', height: '32px', alignItems: 'flex-end' }}>
+        {weeks.map(w => {
+          const isRaceWeek = w.type === 'race'
+          const isDeload   = w.badge === 'deload'
+          const colour = isRaceWeek
+            ? 'var(--s-race)'
+            : PHASE_COLOUR[w.phase ?? 'base']
+          return (
+            <div
+              key={w.n}
+              title={`Week ${w.n} · ${w.weekly_km}km · ${w.phase ?? 'base'}${isDeload ? ' · recovery' : ''}${isRaceWeek ? ' · race' : ''}`}
+              style={{
+                flex: 1,
+                height: '100%',
+                borderRadius: '2px',
+                background: colour,
+                opacity: isDeload ? 0.35 : (isRaceWeek ? 1 : 0.85),
+              }}
+            />
+          )
+        })}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          Wk 1
+        </span>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          Race · Wk {weeks.length}
+        </span>
+      </div>
     </div>
   )
 }
 
-function WeekCard({ week, phaseLabel, phaseColour }: {
-  week: Plan['weeks'][0]; phaseLabel?: string; phaseColour?: string
-}) {
-  const sessions = Object.values(week.sessions).filter(Boolean)
+// Per-phase summary card — left accent in phase colour, key stats, character line.
+function PhaseSummaryCard({ phase, weeks }: { phase: string; weeks: Plan['weeks'] }) {
+  if (!weeks.length) return null
+  const startW = weeks[0].n
+  const endW   = weeks[weeks.length - 1].n
+  const peakKm = Math.max(...weeks.map(w => w.weekly_km ?? 0))
+  const colour = PHASE_COLOUR[phase] ?? 'var(--mute)'
+  const description = PHASE_DESCRIPTION[phase] ?? ''
+  const weekRange  = startW === endW ? `Week ${startW}` : `Weeks ${startW}–${endW}`
   return (
-    <div style={{ background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--line)', padding: '14px 16px', minWidth: '140px', flex: '1 1 140px' }}>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: '8px' }}>
-        Week {week.n} · {week.weekly_km ?? '—'}km
-      </div>
-      {phaseLabel && phaseColour && (
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: phaseColour, textTransform: 'uppercase', letterSpacing: '0.08em', border: `1px solid ${phaseColour}`, borderRadius: '20px', padding: '2px 8px', display: 'inline-block', marginBottom: '8px' }}>
-          {phaseLabel}
+    <div style={{
+      display: 'flex', gap: '14px',
+      background: 'var(--card)',
+      border: '1px solid var(--line)',
+      borderLeft: `3px solid ${colour}`,
+      borderRadius: 'var(--radius-md)',
+      padding: '14px 16px',
+      marginBottom: '12px',
+    }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 700, color: 'var(--ink)', textTransform: 'capitalize' }}>
+            {phase}
+          </div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>
+            {weekRange} · peak {peakKm}km
+          </div>
         </div>
-      )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        {sessions.slice(0, 3).map((s: any, i: number) => (
-          <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--ink-2)', lineHeight: 1.4 }}>
-            {s.label ?? s.type}
-          </div>
-        ))}
-        {sessions.length > 3 && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
-            +{sessions.length - 3} more
-          </div>
-        )}
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.5 }}>
+          {description}
+        </div>
       </div>
     </div>
   )
@@ -703,18 +745,19 @@ export default function GeneratePlanScreen({
           )}
 
           <div style={{ margin: '20px 0 0' }}>
-            <PhaseArc weeks={weeks} />
+            <PreviewPhaseStrip weeks={weeks} />
           </div>
 
-          {weeks.slice(0, 4).map(w => (
-            <WeekCard key={w.n} week={w} />
-          ))}
-
-          {weeks.length > 4 && (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', textAlign: 'center', padding: '4px 0 16px' }}>
-              + {weeks.length - 4} more weeks in your plan
+          <div style={{ marginTop: '20px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+              Plan shape
             </div>
-          )}
+            {PHASES.map(phase => {
+              const phaseWeeks = weeks.filter(w => w.phase === phase)
+              if (!phaseWeeks.length) return null
+              return <PhaseSummaryCard key={phase} phase={phase} weeks={phaseWeeks} />
+            })}
+          </div>
         </div>
 
         <div style={{ position: 'sticky', bottom: 0, background: 'var(--bg)', borderTop: '1px solid var(--line)', padding: '12px 20px calc(12px + env(safe-area-inset-bottom))' }}>
