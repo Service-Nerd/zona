@@ -20,6 +20,8 @@ import RestraintCard from '@/components/shared/RestraintCard'
 import PlanArc from '@/components/shared/PlanArc'
 import RPEScale from '@/components/shared/RPEScale'
 import SessionCard from '@/components/shared/SessionCard'
+import { composeSession } from '@/lib/plan/sessionComposer'
+import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import dynamic from 'next/dynamic'
 const GeneratePlanScreen = dynamic(() => import('./GeneratePlanScreen'), { ssr: false })
 const UpgradeScreen = dynamic(() => import('./UpgradeScreen'), { ssr: false })
@@ -131,6 +133,7 @@ export default function DashboardClient() {
 
   // Paid access — default true to avoid flash of locked state during load
   const [hasPaidAccess, setHasPaidAccess] = useState(true)
+  const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null)
   // Trial expired — true when user had a trial that is now over and no active subscription
   const [trialExpired, setTrialExpired] = useState(false)
 
@@ -306,6 +309,15 @@ export default function DashboardClient() {
         const paidAccess = !!(hasActiveSub || isTrialActive(trialStartedAt))
         setHasPaidAccess(paidAccess)
         setTrialExpired(!paidAccess && !!trialStartedAt)
+
+        // Trial countdown — for day-10 nudge banner. Only meaningful while trial active and no active sub.
+        if (trialStartedAt && !hasActiveSub) {
+          const trialEnd = new Date(trialStartedAt).getTime() + 14 * 24 * 60 * 60 * 1000
+          const msLeft = trialEnd - Date.now()
+          setTrialDaysLeft(msLeft > 0 ? Math.ceil(msLeft / (24 * 60 * 60 * 1000)) : 0)
+        } else {
+          setTrialDaysLeft(null)
+        }
 
         // Dynamic adjustments toggle
         if (data?.dynamic_adjustments_enabled === false) setDynamicAdjustmentsEnabled(false)
@@ -708,7 +720,7 @@ export default function DashboardClient() {
       )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} />}
         {screen === 'coach'    && (hasPaidAccess
           ? <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaTokenFailed={stravaTokenFailed} firstName={firstName} onGoToMe={() => setScreen('me')} weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport} />
@@ -717,7 +729,7 @@ export default function DashboardClient() {
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
         {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} hasPaidAccess={hasPaidAccess} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} runAnalysis={runAnalysisMap[activeSessionData?.sessionKey ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} runAnalysis={runAnalysisMap[activeSessionData?.sessionKey ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
         {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} dob={dob} onDobSave={async (d) => { setDob(d); if (userId) await supabase.from('user_settings').update({ date_of_birth: d }).eq('id', userId) }} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} onBack={() => {
@@ -1226,12 +1238,13 @@ function getSkipResponse(reason: string): string {
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
-function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, hasPaidAccess, onUpgrade }: {
+function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, hasPaidAccess, onUpgrade, goalPace }: {
   session: any; weekTheme: string; weekN: number; preloadedRuns: any[]
   onClose: () => void; onSaved?: () => void
   preferredUnits: 'km' | 'mi'; zone2Ceiling: number; preferredMetric?: 'distance' | 'duration'
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
   hasPaidAccess?: boolean; onUpgrade?: () => void
+  goalPace?: string | null
 }) {
   const [view, setView] = useState<'detail' | 'complete' | 'skip' | 'success' | 'reflect' | 'skip-reflect'>('detail')
   const [showManualModal, setShowManualModal] = useState(false)
@@ -1795,6 +1808,56 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>{session.detail}</div>
             </div>
           )}
+
+          {/* ── STRUCTURED SESSION (R23 composer) ── */}
+          {(() => {
+            const catalogueRow = V1_SESSION_CATALOGUE.find(r => r.name === session.label) ?? null
+            const structure = composeSession({ session, catalogueRow, goalPace })
+            // Only render for run-based sessions where the structure is meaningful
+            if (!structure) return null
+            const skipShapes = ['rest', 'race', 'strength']
+            if (skipShapes.includes(structure.shape)) return null
+
+            const partRow = (label: string, mins: number | string, zone: string, body: string, accentColor: string) => (
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '10px' }}>
+                <div style={{ width: '3px', borderRadius: '2px', background: accentColor, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)' }}>{label}</div>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums' }}>
+                      {mins} · {zone}
+                    </div>
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>{body}</div>
+                </div>
+              </div>
+            )
+
+            return (
+              <div style={{ padding: '16px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Session structure</div>
+                {partRow('Warm-up', `${structure.warmup.duration_mins} min`, structure.warmup.zone, structure.warmup.description, 'var(--mute-2)')}
+                {structure.strides && (
+                  <div style={{ marginLeft: '15px', marginBottom: '10px', paddingLeft: '12px', borderLeft: '0.5px dashed var(--line)' }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss)' }}>
+                      Strides — {structure.strides.count} × {structure.strides.duration_secs}s
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.5 }}>{structure.strides.description}</div>
+                  </div>
+                )}
+                {partRow('Main set', `${structure.main.duration_mins} min`, structure.main.zone, structure.main.description, getSessionColor(session.type ?? 'easy'))}
+                {structure.race_pace_segment && (
+                  <div style={{ marginLeft: '15px', marginBottom: '10px', paddingLeft: '12px', borderLeft: '0.5px dashed var(--line)' }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)' }}>
+                      Race-pace — {structure.race_pace_segment.duration_pct}% @ {structure.race_pace_segment.pace_target}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.5 }}>{structure.race_pace_segment.description}</div>
+                  </div>
+                )}
+                {partRow('Cool-down', `${structure.cooldown.duration_mins} min`, structure.cooldown.zone, structure.cooldown.description, 'var(--mute-2)')}
+              </div>
+            )
+          })()}
 
           {/* Week theme — readable, not footnote */}
           {weekTheme && (
@@ -3072,7 +3135,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied }: {
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   stravaRuns: any[]
@@ -3088,6 +3151,8 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   pendingAdjustment?: any | null
   onAdjustmentConfirmed?: (plan: any) => void
   onAdjustmentReverted?: (plan: any) => void
+  trialDaysLeft?: number | null
+  onUpgrade?: () => void
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
@@ -3511,6 +3576,37 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               </span>
             </div>
           </>
+        )}
+
+        {/* Trial nudge — appears when ≤4 days remain (CoachingPrinciples §15, Option A).
+            Calm reminder, not a paywall. The plan stays either way. */}
+        {trialDaysLeft != null && trialDaysLeft > 0 && trialDaysLeft <= 4 && (
+          <div style={{ marginBottom: '16px' }}>
+            <button
+              onClick={onUpgrade}
+              style={{
+                width: '100%', textAlign: 'left', padding: '14px 16px',
+                background: 'var(--card)', border: '1px solid var(--line)',
+                borderLeft: '3px solid var(--moss)',
+                borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px',
+              }}
+            >
+              <div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
+                  {trialDaysLeft === 1
+                    ? 'One day of full access left.'
+                    : `${trialDaysLeft} days of full access left.`}
+                </div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.4 }}>
+                  Plan is yours either way.
+                </div>
+              </div>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss)', whiteSpace: 'nowrap' }}>
+                See plans →
+              </span>
+            </button>
+          </div>
         )}
 
         {/* Pending adjustment — above coach note, prominent position */}
@@ -5269,11 +5365,12 @@ function RunFeedbackCard({ analysis }: { analysis: any }) {
   )
 }
 
-function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, runAnalysis, hasPaidAccess, onUpgrade }: {
+function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, runAnalysis, hasPaidAccess, onUpgrade, goalPace }: {
   session: any; preloadedRuns: any[]; onBack: () => void; onSaved?: () => void
   preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number; preferredMetric?: 'distance' | 'duration'
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
   runAnalysis?: any | null; hasPaidAccess?: boolean; onUpgrade?: () => void
+  goalPace?: string | null
 }) {
   const color = getSessionColor(session.type ?? 'easy')
   const typeLabel = getSessionLabel(session.type ?? 'easy')
@@ -5355,6 +5452,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
             aerobicPace={aerobicPace}
             hasPaidAccess={hasPaidAccess}
             onUpgrade={onUpgrade}
+            goalPace={goalPace}
           />
         </div>
 

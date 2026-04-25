@@ -1,10 +1,10 @@
 // TIER-DIVERGENT — FREE:  8-step wizard (distance → race → goal → fitness → benchmark → schedule → constraints)
-//                  PAID:  12-step wizard adds hard-sessions → training-style → terrain → injuries
+//                  PAID:  11-step wizard adds hard-sessions → terrain → injuries
 // One decision per screen. Slide transitions between steps.
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { Plan, GeneratorInput } from '@/types/plan'
+import type { Plan, GeneratorInput, TrainingAge } from '@/types/plan'
 import GeneratingCeremony from '@/components/GeneratingCeremony'
 import { BRAND } from '@/lib/brand'
 import { createClient } from '@/lib/supabase/client'
@@ -14,7 +14,7 @@ import { createClient } from '@/lib/supabase/client'
 type WizardSubStep =
   | 'distance' | 'race-details' | 'goal' | 'target-time'
   | 'fitness' | 'benchmark' | 'schedule' | 'constraints'
-  | 'hard-sessions' | 'training-style' | 'terrain' | 'injuries'
+  | 'hard-sessions' | 'terrain' | 'injuries'
 
 type AppStep = WizardSubStep | 'generating' | 'preview' | 'error'
 
@@ -70,6 +70,13 @@ const MAX_WEEKDAY_CHIPS: { label: string; value: number | undefined }[] = [
   { label: 'No limit', value: undefined },
 ]
 
+const TRAINING_AGE_CHIPS: { label: string; value: TrainingAge }[] = [
+  { label: '< 6 months',   value: '<6mo'   },
+  { label: '6–18 months',  value: '6-18mo' },
+  { label: '2–5 years',    value: '2-5yr'  },
+  { label: '5+ years',     value: '5yr+'   },
+]
+
 const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; optional?: boolean }> = {
   'distance':        { title: 'How far?',              subtitle: 'Start with the finish line. Work backwards from there.' },
   'race-details':    { title: 'Tell me about the race.', subtitle: 'Race name is optional. The date is not.' },
@@ -80,7 +87,6 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
   'schedule':        { title: 'Your schedule.',         subtitle: "Training has to fit your life. Not the other way around." },
   'constraints':     { title: 'Any hard limits?',       subtitle: 'Days you can never train, or a max time on weekdays. Skip if you\'re flexible.', optional: true },
   'hard-sessions':   { title: 'You and hard sessions.', subtitle: 'Intervals, tempo, threshold. Where do you land?' },
-  'training-style':  { title: 'How should this feel?',  subtitle: 'Your preference shapes how your weeks are structured.' },
   'terrain':         { title: 'Where do you run?',      subtitle: 'Road, trail, or a bit of both. Affects pace targets.' },
   'injuries':        { title: 'Anything to flag?',      subtitle: 'Old injuries that still show up. Skip if you\'re clean.', optional: true },
 }
@@ -91,7 +97,7 @@ function getStepSequence(hasPaidAccess: boolean, goal: 'finish' | 'time_target' 
   const steps: WizardSubStep[] = ['distance', 'race-details', 'goal']
   if (goal === 'time_target') steps.push('target-time')
   steps.push('fitness', 'benchmark', 'schedule', 'constraints')
-  if (hasPaidAccess) steps.push('hard-sessions', 'training-style', 'terrain', 'injuries')
+  if (hasPaidAccess) steps.push('hard-sessions', 'terrain', 'injuries')
   return steps
 }
 
@@ -156,7 +162,7 @@ function FieldLabel({ children, optional }: { children: React.ReactNode; optiona
   )
 }
 
-// Large card-style option (used for goal, hard-sessions, training-style, terrain)
+// Large card-style option (used for goal, hard-sessions, terrain)
 function OptionCard({ label, sub, active, onClick, locked, lockLabel }: {
   label: string; sub?: string; active: boolean; onClick: () => void
   locked?: boolean; lockLabel?: string
@@ -391,12 +397,14 @@ export default function GeneratePlanScreen({
   const [weeklyKmChip,   setWeeklyKmChip]   = useState<string | null>(null)
   const [longestRunChip, setLongestRunChip] = useState<string | null>(null)
   const [restingHR,      setRestingHR]      = useState(initialRHR ? String(initialRHR) : '')
+  const [trainingAge,    setTrainingAge]    = useState<TrainingAge | null>(null)
 
   // ── Step 6 — Benchmark ───────────────────────────────────────────────────
   const [benchmarkType,    setBenchmarkType]    = useState<'race' | 'tt_30min' | null>(null)
   const [benchmarkDistKm,  setBenchmarkDistKm]  = useState<number | null>(null)
   const [benchHours,       setBenchHours]       = useState(0)
   const [benchMins,        setBenchMins]        = useState(0)
+  const [benchmarkDate,    setBenchmarkDate]    = useState('')
   const [benchmarkTTDist,  setBenchmarkTTDist]  = useState('')
 
   // ── Step 7 — Schedule ────────────────────────────────────────────────────
@@ -409,13 +417,10 @@ export default function GeneratePlanScreen({
   // ── Step 9 — Hard sessions (paid) ────────────────────────────────────────
   const [hardSessions, setHardSessions] = useState<'avoid' | 'neutral' | 'love' | 'overdo' | null>(null)
 
-  // ── Step 10 — Training style (paid) ──────────────────────────────────────
-  const [trainingStyle, setTrainingStyle] = useState<'predictable' | 'variety' | 'minimalist' | 'structured' | null>(null)
-
-  // ── Step 11 — Terrain (paid) ──────────────────────────────────────────────
+  // ── Step 10 — Terrain (paid) ──────────────────────────────────────────────
   const [terrain, setTerrain] = useState<'road' | 'trail' | 'mixed' | null>(null)
 
-  // ── Step 12 — Injuries (paid) ────────────────────────────────────────────
+  // ── Step 11 — Injuries (paid) ────────────────────────────────────────────
   const [injuries, setInjuries] = useState<string[]>([])
 
   // ── Restore wizard draft from sessionStorage ──────────────────────────────
@@ -434,20 +439,21 @@ export default function GeneratePlanScreen({
       if (s.weeklyKmChip)    setWeeklyKmChip(s.weeklyKmChip)
       if (s.longestRunChip)  setLongestRunChip(s.longestRunChip)
       if (s.restingHR)       setRestingHR(s.restingHR)
+      if (s.trainingAge)     setTrainingAge(s.trainingAge)
       if (s.benchmarkType)   setBenchmarkType(s.benchmarkType)
       if (s.benchmarkDistKm) setBenchmarkDistKm(s.benchmarkDistKm)
       if (typeof s.benchHours === 'number') setBenchHours(s.benchHours)
       if (typeof s.benchMins  === 'number') setBenchMins(s.benchMins)
       if (s.benchmarkTTDist) setBenchmarkTTDist(s.benchmarkTTDist)
+      if (s.benchmarkDate)   setBenchmarkDate(s.benchmarkDate)
       if (s.daysAvailable)   setDaysAvailable(s.daysAvailable)
       if (Array.isArray(s.daysOff)) setDaysOff(s.daysOff)
       if (s.maxWeekdayChip)  setMaxWeekdayChip(s.maxWeekdayChip)
       if (s.hardSessions)    setHardSessions(s.hardSessions)
-      if (s.trainingStyle)   setTrainingStyle(s.trainingStyle)
       if (s.terrain)         setTerrain(s.terrain)
       if (Array.isArray(s.injuries)) setInjuries(s.injuries)
       // Restore sub-step if it's a valid wizard step name
-      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','fitness','benchmark','schedule','constraints','hard-sessions','training-style','terrain','injuries']
+      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','fitness','benchmark','schedule','constraints','hard-sessions','terrain','injuries']
       if (validSubSteps.includes(s.appStep)) setAppStep(s.appStep)
     } catch {}
   }, [])
@@ -459,18 +465,18 @@ export default function GeneratePlanScreen({
       sessionStorage.setItem(WIZARD_KEY, JSON.stringify({
         appStep, distanceKm, raceName, raceDate, goal,
         targetHours, targetMins,
-        dob, weeklyKmChip, longestRunChip, restingHR,
-        benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist,
+        dob, weeklyKmChip, longestRunChip, restingHR, trainingAge,
+        benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
         daysAvailable, daysOff, maxWeekdayChip,
-        hardSessions, trainingStyle, terrain, injuries,
+        hardSessions, terrain, injuries,
       }))
     } catch {}
   }, [appStep, distanceKm, raceName, raceDate, goal,
       targetHours, targetMins,
-      dob, weeklyKmChip, longestRunChip, restingHR,
-      benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist,
+      dob, weeklyKmChip, longestRunChip, restingHR, trainingAge,
+      benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
       daysAvailable, daysOff, maxWeekdayChip,
-      hardSessions, trainingStyle, terrain, injuries])
+      hardSessions, terrain, injuries])
 
   // ── Navigation helpers ────────────────────────────────────────────────────
 
@@ -533,7 +539,6 @@ export default function GeneratePlanScreen({
       case 'schedule':       return daysAvailable !== null
       case 'constraints':    return true
       case 'hard-sessions':  return true
-      case 'training-style': return true
       case 'terrain':        return true
       case 'injuries':       return true
       default:               return true
@@ -558,10 +563,11 @@ export default function GeneratePlanScreen({
       ? MAX_WEEKDAY_CHIPS.find(c => c.label === maxWeekdayChip)?.value : undefined
 
     const benchmark = (() => {
+      const dateField = benchmarkDate ? { benchmark_date: benchmarkDate } : {}
       if (benchmarkType === 'race' && benchmarkDistKm && benchTimeStr)
-        return { type: 'race' as const, distance_km: benchmarkDistKm, time: benchTimeStr }
+        return { type: 'race' as const, distance_km: benchmarkDistKm, time: benchTimeStr, ...dateField }
       if (benchmarkType === 'tt_30min' && benchmarkTTDist)
-        return { type: 'tt_30min' as const, distance_km: Number(benchmarkTTDist), time: '30:00' }
+        return { type: 'tt_30min' as const, distance_km: Number(benchmarkTTDist), time: '30:00', ...dateField }
       return undefined
     })()
 
@@ -576,10 +582,10 @@ export default function GeneratePlanScreen({
       longest_recent_run_km: longestRunVal,
       days_available:        daysAvailable!,
       resting_hr:            restingHR ? Number(restingHR) : undefined,
+      training_age:          trainingAge ?? undefined,
       benchmark,
       days_cannot_train:     daysOff.length ? daysOff : undefined,
       max_weekday_mins:      maxWeekdayVal,
-      training_style:            hasPaidAccess ? (trainingStyle ?? undefined) : undefined,
       hard_session_relationship: hasPaidAccess ? (hardSessions ?? undefined) : undefined,
       injury_history:            hasPaidAccess && injuries.length ? injuries.map(i => i.toLowerCase()) : undefined,
       terrain:                   hasPaidAccess ? (terrain ?? undefined) : undefined,
@@ -960,6 +966,20 @@ export default function GeneratePlanScreen({
                 ))}
               </div>
             </div>
+            <div>
+              <FieldLabel optional>How long have you been running consistently?</FieldLabel>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {TRAINING_AGE_CHIPS.map(c => (
+                  <Chip
+                    key={c.value}
+                    label={c.label}
+                    active={trainingAge === c.value}
+                    onClick={() => setTrainingAge(trainingAge === c.value ? null : c.value)}
+                  />
+                ))}
+              </div>
+              <FieldNote>Helps us judge how much volume you can handle.</FieldNote>
+            </div>
           </div>
         )
       }
@@ -1012,6 +1032,14 @@ export default function GeneratePlanScreen({
                 <FieldLabel>Distance covered in 30 minutes (km)</FieldLabel>
                 <WizardInput type="number" value={benchmarkTTDist} onChange={setBenchmarkTTDist} placeholder="e.g. 5.2" min={1} />
                 <FieldNote>Run flat-out for exactly 30 minutes and record the distance.</FieldNote>
+              </div>
+            )}
+
+            {benchmarkType !== null && (
+              <div>
+                <FieldLabel optional>When did you run this?</FieldLabel>
+                <WizardInput type="date" value={benchmarkDate} onChange={setBenchmarkDate} />
+                <FieldNote>Older than 6 months? We'll use slightly more conservative pace targets.</FieldNote>
               </div>
             )}
 
@@ -1110,21 +1138,6 @@ export default function GeneratePlanScreen({
               { value: 'overdo',  label: 'I overdo it.',   sub: 'Reign me in. I know I\'ll push too hard if I can.' },
             ] as const).map(o => (
               <OptionCard key={o.value} label={o.label} sub={o.sub} active={hardSessions === o.value} onClick={() => setHardSessions(o.value)} />
-            ))}
-          </div>
-        )
-
-      // ── Training style (paid) ──────────────────────────────────────────────
-      case 'training-style':
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {([
-              { value: 'predictable', label: 'Predictable.', sub: 'Same structure every week. I know what\'s coming.' },
-              { value: 'variety',     label: 'Variety.',     sub: 'Mix it up. Different workouts keep me engaged.' },
-              { value: 'minimalist',  label: 'Minimalist.',  sub: 'Fewer sessions, higher quality. Less is more.' },
-              { value: 'structured',  label: 'Structured.',  sub: 'Everything planned. Nothing improvised. I follow the script.' },
-            ] as const).map(o => (
-              <OptionCard key={o.value} label={o.label} sub={o.sub} active={trainingStyle === o.value} onClick={() => setTrainingStyle(o.value)} />
             ))}
           </div>
         )
