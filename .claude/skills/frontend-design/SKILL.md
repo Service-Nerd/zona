@@ -31,9 +31,10 @@ When this skill is active:
 ## Design Principles (non-negotiable)
 
 ### Visual language
-- Dark-first. Light mode is a polished variant, not the design target.
+- **Warm Slate, single light theme.** No dark mode (ADR-008). `--bg: #F3F0EB` is the design surface.
 - Bold metrics, quiet context. Large numbers. Small muted labels underneath. Value always dominates.
 - Type accent, not flood. Session colours as left borders, dots, chips — never full card backgrounds.
+- Moss is the primary accent (`--moss: #6B8E6B`). Warn/amber is reserved for coaching only.
 - No chrome. No stacked box-shadows. No gradient on gradient. No decorative dividers.
 - No icons unless they carry unique meaning unavailable from text.
 
@@ -60,43 +61,48 @@ When this skill is active:
 
 ---
 
-## Design Token Rules
+## Design Token Rules — Warm Slate (ADR-007)
 
-All values come from CSS custom properties in `globals.css`. Never hardcode.
+All values come from CSS custom properties in `globals.css`. Never hardcode. Single light theme — no dark mode (ADR-008).
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--color-bg` | `#0B132B` dark / `#F7F9FB` light | Background |
-| `--color-card` | `#162040` dark / `#ffffff` light | Card background |
-| `--color-teal` | `#5BC0BE` | CTA, active, zone accent |
-| `--color-amber` | `#F2C14E` | Coaching, warnings |
-| `--color-muted` | `#3A506B` | Secondary text, metadata |
-| `--color-border` | `#1e2e55` dark / `#E2E8F0` light | Borders, dividers |
+| `--bg` | `#F3F0EB` | Primary background — warm off-white |
+| `--bg-soft` | `#EDE9E1` | Input fields, inset areas |
+| `--card` | `#FFFFFF` | Card surfaces |
+| `--ink` | `#1A1A1A` | Primary text |
+| `--ink-2` | `#3D3A36` | Secondary text |
+| `--mute` | `#8A857D` | Muted / supporting text |
+| `--moss` | `#6B8E6B` | Primary accent — CTA, active, completion |
+| `--warn` | `#B8853A` | Coaching warnings only — never zones |
+| `--danger` | `#B84545` | Errors only — never in training UI |
+| `--line` | `rgba(26,26,26,0.08)` | Standard borders |
 
 **Banned permanently:**
 - `#D4501A` (ember orange)
 - `#f5f2ee` (warm beige)
-- DM Mono, DM Sans
+- `#0B132B` (System B navy — retired)
+- `#5BC0BE` (System B teal — retired)
+- DM Mono, DM Sans, Space Grotesk
 - Any hardcoded hex in component files
 
 **Fonts:**
-- Inter — metrics, UI, body
-- Space Grotesk — headings, brand moments
+- Inter only. `var(--font-ui)` and `var(--font-brand)` both resolve to Inter.
 
 ---
 
-## Session Type Colours
+## Session Type Colours (Warm Slate values)
 
-| Type | Colour token | Hex |
-|------|-------------|-----|
-| easy | `--color-session-easy` | `#4A90D9` |
-| long | `--color-session-long` | `#7B68EE` |
-| quality / tempo | `--color-session-quality` | `#F2C14E` |
-| intervals | `--color-session-intervals` | `#E05A5A` |
-| race | `--color-session-race` | `#E8833A` |
-| recovery | `--color-session-recovery` | `#5BAD8C` |
-| strength | `--color-session-strength` | `#3A506B` |
-| cross-train | `--color-session-cross` | `#5BC0BE` |
+| Type | Token | Hex |
+|------|-------|-----|
+| easy | `--s-easy` | `#3D6FB0` |
+| long | `--s-long` | `#5E4FB0` |
+| quality / tempo | `--s-quality` | `#B8853A` |
+| intervals | `--s-inter` | `#B84545` |
+| race | `--s-race` | `#C86A2A` |
+| recovery | `--s-recov` | `#4E8068` |
+| strength | `--s-strength` | `#5A6578` |
+| cross-train | `--s-cross` | `#3D8A88` |
 | rest | — | No accent |
 
 ---
@@ -108,7 +114,7 @@ Before producing any screen, answer:
 1. **What is the single job of this screen?** (If more than one, split.)
 2. **Which `ui-patterns.md` template applies?** (session-list / session-detail / plan-overview / stat-row / week-strip / post-log reflect / other)
 3. **What states need handling?** (loading skeleton / empty / error / authenticated / unauthenticated / edge cases)
-4. **What is the primary CTA?** (One per screen. Full-width teal button or equivalent.)
+4. **What is the primary CTA?** (One per screen. Full-width moss button or equivalent.)
 5. **What does the back/dismiss path look like?** (Back arrow top-left, or mirrored nav bar if sheet.)
 6. **What copy is needed?** (Apply Zona voice. Draft all strings before writing JSX.)
 
@@ -131,12 +137,12 @@ When building any upgrade / paywall screen, use this structure:
 ```
 [← back]
 
-[Headline]          ← Space Grotesk 700, honest/dry tone, not hype
+[Headline]          ← Inter 800, honest/dry tone, not hype
 [Subheading]        ← Inter 400, muted, one sentence
 
 ──────────────────
 
-[Feature list]      ← left accent bars (teal), same pattern as session cards
+[Feature list]      ← left accent bars (moss), same pattern as session cards
   Feature name      ← Inter 600, 0.9375rem
   One-line detail   ← Inter 400, 0.8125rem, muted
 
@@ -148,7 +154,7 @@ When building any upgrade / paywall screen, use this structure:
 [Legal disclosure]  ← Inter 400, 0.75rem, muted — required by Apple:
                        price · billing frequency · trial length · auto-renewal
 
-[Primary CTA]       ← full-width teal button
+[Primary CTA]       ← full-width moss button
 [Secondary path]    ← muted text link below ("Continue with free plan →")
 ```
 

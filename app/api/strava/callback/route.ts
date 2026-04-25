@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { hasPaidAccess } from '@/lib/trial'
+import { getUserTier } from '@/lib/trial'
+import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -17,7 +18,8 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/dashboard?strava=error`)
   }
 
-  if (!await hasPaidAccess(userId)) {
+  const tier = await getUserTier(userId)
+  if (!isFeatureAllowed('strava_intelligence', tier)) {
     return NextResponse.redirect(`${origin}/dashboard?strava=upgrade`)
   }
 

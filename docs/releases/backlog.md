@@ -248,6 +248,100 @@ Rebuild of the rule engine and configuration based on a coaching audit. Architec
 
 ---
 
+## R23 Rebuild — Deferred Items
+
+Captured 2026-04-25 during follow-up audit. Each has a clear next step and ownership.
+
+### R23-D1 — Tier 2 wizard fields (engine consumer required first)
+
+| Field | Status | Engine work needed | Priority |
+|---|---|---|---|
+| `treadmill_primarily` (boolean) | Deferred | (a) bias catalogue selection away from `aerobic_hills` when true; (b) coach note on quality sessions: "outdoor only — skip strides on a treadmill". Touches `selectCatalogueSession` filter and `makeQualitySession` notes. | Medium — affects coaching quality for treadmill users |
+| `longest_run_ever_km` (number) | Deferred — **needs product decision** | No clear engine consumer exists. Options: (a) widen week 1–2 long-run cap to `max(longest_recent × 1.10, longest_ever × 0.7)`; (b) peak-volume sanity check (don't prescribe a long run more than 30% above ever-longest); (c) abandon as a wizard input | Low — feature has no consumer until decision made |
+
+**Why deferred:** Wizard fields without engine consumers add friction with zero value. Each requires a small coaching-design decision before the wizard work is worth shipping.
+
+### R23-D2 — Catalogue lookup for legacy plans
+
+**Status:** Deferred, recommend abandon
+
+The Phase 4.2 session structure block uses `V1_SESSION_CATALOGUE.find(r => r.name === session.label)` to enrich the rendering. Pre-rebuild plans (generated before 2026-04-25) use legacy labels ("Tempo run", "Cruise intervals", "Tempo run — short") — these don't match catalogue names, so the structure block falls back to a generic main-set description.
+
+**Why abandon:** Legacy plans expire as users regenerate. Building a `legacy_label → catalogue.id` mapping table is reverse-engineering work for a shrinking population.
+
+### R23-D3 — Surface `compressed` flag in UI
+
+**Status:** Deferred, needs design rationale
+
+The R23 rebuild populates `meta.compressed = true` when the 10% volume cap prevents a plan reaching its target peak volume (e.g. returning runner with very low starting volume + short plan window). Currently invisible to users.
+
+**Possible UX:**
+- "Plan compressed" eyebrow on Plan screen header
+- Coach note: "Your timeline is tight — we couldn't fully ramp to your target volume. The plan still works, just more conservative than ideal."
+- Restraint card variant on Today screen for compressed plans
+
+**Why deferred:** Needs design rationale (`frontend-design` skill) and copy review before shipping. No SLA — users with compressed plans don't experience anything broken; they just get a more conservative ramp.
+
+### R23-D4 — Intensity distribution coaching tune
+
+**Status:** Deferred — coaching decision required
+
+Phase 7 validation shows the engine produces ~90% easy across all distances vs spec targets 75–88%. The gap is consistent: **not enough quality minutes scheduled** relative to easy/long minutes.
+
+**Two ways to close the gap:**
+
+1. **More quality sessions per week** — bump `QUALITY_SESSIONS_PER_WEEK_MAX.intermediate` from 2 to 3 for build/peak phases. Keeps spec-compliant for experienced runners but contradicts CoachingPrinciples §8 (current rule: max 2 because the 3rd quality session is rarely accommodated by life).
+2. **Longer quality sessions** — extend tempo blocks from 30 min to 45+ min, double interval reps. More quality minutes per session.
+
+**Trade-off:** option 1 is more "polarised training" (more frequent stress); option 2 is more conservative time-on-feet but bigger single sessions. Both move the needle.
+
+**Why deferred:** Coaching philosophy decision, not a refactor. Owner: Russ.
+
+### R23-D5 — F1: ReshapeScreen 403 has no upgrade CTA
+
+**Status:** Deferred — defense-in-depth only
+
+If a free user reaches `screen=reshape` via URL manipulation, the API returns 403 `{ error: 'Subscription required' }`. The screen renders the error message but with no "Upgrade" CTA. Primary gate is the MeScreen UI hide on `hasPaidAccess`, which works correctly.
+
+**Fix:** When `error === 'Subscription required'`, show "See plans" CTA → `setScreen('upgrade')`. Two-line change.
+
+**Why deferred:** Belt-and-braces only. No production user can hit this via supported flows.
+
+### R23-D6 — F2: Free users can generate new plans post-trial (Option A semantic gap)
+
+**Status:** Deferred — **needs product decision**
+
+`/api/generate-plan` does not block free users from regenerating. They get rule-engine output (no AI enrichment, no Marathon/50K/100K). This is **today's behaviour** and matches the original feature-registry intent: "Generic plan templates (5K/10K/HM) via rule-based engine — FREE".
+
+**Conflict:** Phase 6 follow-up doc (`phase-6-gates-followup.md`) lists `new_plan_generation` as paid-only with drafted paywall copy: *"New plan needs Premium. Your existing one stays as-is."*
+
+**Decision needed:** Strict (free users keep trial-era plan; can't regenerate) or Lenient (free users can regenerate rule-engine plans; AI + ultras stay paid)?
+
+| Strict | Lenient |
+|---|---|
+| Cleaner upsell — "fresh start" is part of premium | Brand promise — free users always have a tailored plan |
+| Code change: detect `is_regeneration` (or existing plan) in route → 403 | No code change — current behaviour |
+
+**Why deferred:** Commercial choice, not a refactor.
+
+### R23-D7 — `length.ts` cleanup tracking
+
+**Status:** Resolved this session — `taperWeeks` removed from `DistanceConfig` (Group A2). No further action.
+
+---
+
+## R23 Rebuild — Active Carry-Over
+
+Items still queued for hands-on attention after the rebuild:
+
+| Item | Owner | Status |
+|---|---|---|
+| Browser-verify Phase 5 + Phase 4.2 + Phase 6.3 changes after Vercel deploy | Russ | Awaiting deploy + manual check |
+| Resolve R23-D4 (intensity distribution) | Russ — coaching call | Open |
+| Resolve R23-D6 (free regeneration policy) | Russ — commercial call | Open |
+
+---
+
 ## Post-Launch Roadmap
 
 Ordered by value. Each item needs FREE/PAID tag confirmed in `docs/canonical/feature-registry.md` before build begins.

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
+import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { checkAdjustmentTriggers } from '@/lib/coaching/planAdjustment'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildAdjustmentExplanationPrompt } from '@/lib/coaching/prompts/planAdjustment'
@@ -21,7 +22,9 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const tier = await getUserTier(user.id)
-  if (tier === 'free') return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
+  if (!isFeatureAllowed('dynamic_reshape_r20', tier)) {
+    return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
+  }
 
   // manual: true means user explicitly requested a reshape — bypass the opt-out toggle
   const body = await req.json().catch(() => ({}))

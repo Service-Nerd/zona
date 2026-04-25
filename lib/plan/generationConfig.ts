@@ -59,6 +59,11 @@ export const GENERATION_CONFIG = {
     '100K':     { days: 28, volume_reduction_pct: 60, keep_quality: true },
   },
 
+  // Race week volume — applied to the LAST week of every plan. Shakeouts only;
+  // independent of TAPER_BY_DISTANCE.volume_reduction_pct (which governs the
+  // full taper weeks BEFORE race week).
+  RACE_WEEK_VOLUME_PCT: 18,
+
   // Quality sessions per taper week. Last entry is always race week (= 0).
   TAPER_QUALITY_PER_WEEK: {
     '5K':       [1, 0],

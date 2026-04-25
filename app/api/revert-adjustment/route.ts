@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
+import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { savePlanForUser } from '@/lib/plan'
 import type { Plan } from '@/types/plan'
 
@@ -15,7 +16,9 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const tier = await getUserTier(user.id)
-  if (tier === 'free') return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
+  if (!isFeatureAllowed('dynamic_reshape_r20', tier)) {
+    return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
+  }
 
   const { adjustment_id } = await req.json()
   if (!adjustment_id) return NextResponse.json({ error: 'adjustment_id required' }, { status: 422 })

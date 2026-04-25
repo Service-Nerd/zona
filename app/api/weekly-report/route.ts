@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
+import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { computeWeeklyReportData } from '@/lib/coaching/weeklyReport'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildWeeklyReportPrompt } from '@/lib/coaching/prompts/weeklyReport'
@@ -30,7 +31,9 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     userId = user.id
     const tier = await getUserTier(user.id)
-    if (tier === 'free') return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
+    if (!isFeatureAllowed('strava_intelligence', tier)) {
+      return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
+    }
   }
 
   const force = req.nextUrl.searchParams.get('force') === 'true'

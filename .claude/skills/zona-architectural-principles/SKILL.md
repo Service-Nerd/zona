@@ -69,7 +69,7 @@ When remediating defects or evaluating design changes:
 |---|---|
 | UI shows empty, Supabase has data | API route projection or component prop contract |
 | Session colour wrong | Design token in globals.css or session-type map |
-| Dark/light mode broken | `applyTheme()` in theme util — check `data-theme` on `<html>` only |
+| Theme regression (dark mode reappearing) | ADR-008: dark mode is removed. `applyTheme()` is a no-op. Strip any `data-theme` toggling. |
 | Plan data stale | Gist fetch caching — ensure `cache: 'no-store'` |
 | Strava OAuth fails | Token exchange — check Hoppscotch flow, codes expire in ~5 min |
 | TypeScript build error on Set spread | Use `Array.from(set)` not `[...set]` |
@@ -160,7 +160,7 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 | M-003 | Session type → colour/label/zone mapping lives exclusively in `session-types.ts`. |
 | M-004 | Every new feature tagged `[FREE]` or `[PAID]` in `docs/canonical/feature-registry.md` before build begins. |
 | M-005 | Supabase fetch uses `cache: 'no-store'` for plan data. |
-| M-006 | `applyTheme()` toggles `data-theme="dark"` on `<html>` element only. No `setProperty()` calls for theme switching. |
+| M-006 | Single light theme only (ADR-008). `applyTheme()` is a no-op; do not set `data-theme` attribute. No `setProperty()` calls for theme switching. |
 | M-007 | Global overrides fetch lives in `DashboardClient`. All child screens receive overrides as props. |
 | M-008 | Strava OAuth token exchange via Hoppscotch (POST to `https://www.strava.com/oauth/token`, `application/x-www-form-urlencoded`). Auth codes expire in ~5 min and are single-use. |
 | M-009 | All Supabase schema changes via migration files. Never manual edits to production tables. |
@@ -192,40 +192,41 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 | ID | Name | Guarantee |
 |---|---|---|
 | INV-DS-001 | Token Singularity | Every colour, font, and spacing value has exactly one declaration in `globals.css`. |
-| INV-DS-002 | No Old Palette | Ember orange, warm beige, DM Mono, DM Sans do not exist anywhere in any live surface. |
-| INV-DS-003 | Dark Mode Correctness | `data-theme="dark"` on `<html>` is the sole dark mode switch. No component-level overrides. |
+| INV-DS-002 | No Old Palette | Ember orange, warm beige, System B (navy/teal/amber), DM Mono, DM Sans, Space Grotesk do not exist anywhere in any live surface. |
+| INV-DS-003 | Single Light Theme (ADR-008) | No dark mode. `data-theme` attribute is not set. `applyTheme()` is a no-op. `[data-theme="dark"]` does not exist in `globals.css`. |
 | INV-DS-004 | Session Colour Consistency | A session type always resolves to exactly one colour across collapsed card, expanded card, calendar, and plan chart. |
-| INV-DS-005 | No Red | Red does not appear anywhere in Zona UI — not for errors, warnings, or emphasis. Use Amber `#F2C14E` for warnings. |
+| INV-DS-005 | No Red in Training UI | Red does not appear in training UI — use `--warn` (`#B8853A`) for coaching warnings. `--danger` (`#B84545`) is reserved for errors / destructive actions only. |
 
-**Locked System B palette:**
+**Warm Slate palette (ADR-007):**
 
-| Token | Value |
-|---|---|
-| `--color-bg-primary` | `#0B132B` (Navy — dark bg) |
-| `--color-bg-light` | `#F7F9FB` (Off-white — light bg) |
-| `--color-card-light` | `#ffffff` |
-| `--color-card-dark` | `#162040` |
-| `--color-cta` | `#5BC0BE` (Teal) |
-| `--color-warning` | `#F2C14E` (Amber) |
-| `--color-muted` | `#3A506B` |
-| `--color-border-light` | `#E2E8F0` |
-| `--color-border-dark` | `#1e2e55` |
+| Token | Value | Role |
+|---|---|---|
+| `--bg` | `#F3F0EB` | Primary background — warm off-white |
+| `--bg-soft` | `#EDE9E1` | Input fields, inset areas |
+| `--card` | `#FFFFFF` | Card surfaces |
+| `--ink` | `#1A1A1A` | Primary text |
+| `--ink-2` | `#3D3A36` | Secondary text |
+| `--mute` | `#8A857D` | Muted / supporting text |
+| `--moss` | `#6B8E6B` | Primary accent — CTA, active, completion |
+| `--warn` | `#B8853A` | Coaching warnings only |
+| `--danger` | `#B84545` | Errors only — never in training UI |
+| `--line` | `rgba(26,26,26,0.08)` | Standard borders |
 
-**Session type colours (finalised R23):**
+**Session type colours (Warm Slate values):**
 
 | Session Type | Token | Hex |
 |---|---|---|
-| Easy | `--color-session-easy` | `#4A90D9` |
-| Long | `--color-session-long` | `#7B68EE` |
-| Quality / Tempo | `--color-session-quality` | `#F2C14E` |
-| Intervals | `--color-session-intervals` | `#E05A5A` |
-| Race | `--color-session-race` | `#E8833A` |
-| Recovery | `--color-session-recovery` | `#5BAD8C` |
-| Strength | `--color-session-strength` | `#3A506B` |
-| Cross-train | `--color-session-crosstrain` | `#5BC0BE` |
+| Easy | `--s-easy` | `#3D6FB0` |
+| Long | `--s-long` | `#5E4FB0` |
+| Quality / Tempo | `--s-quality` | `#B8853A` |
+| Intervals | `--s-inter` | `#B84545` |
+| Race | `--s-race` | `#C86A2A` |
+| Recovery | `--s-recov` | `#4E8068` |
+| Strength | `--s-strength` | `#5A6578` |
+| Cross-train | `--s-cross` | `#3D8A88` |
 | Rest | (no accent) | — |
 
-**Fonts:** Inter (metrics/UI), Space Grotesk (headings/brand).
+**Fonts:** Inter only. `var(--font-ui)` and `var(--font-brand)` both resolve to Inter. Space Grotesk retired (ADR-007).
 
 ---
 

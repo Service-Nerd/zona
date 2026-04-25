@@ -32,6 +32,9 @@ export interface GeneratorInput {
   // R23 rebuild — drives returning-runner allowance + reshape decisions
   training_age?: TrainingAge
 
+  // R23 rebuild — preferred long-run weekend day (default Sun if absent)
+  preferred_long_run_day?: 'sat' | 'sun'
+
   // Benchmark — optional, enables VDOT-based pace derivation
   benchmark?: BenchmarkInput
 

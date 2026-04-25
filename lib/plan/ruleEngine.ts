@@ -293,8 +293,8 @@ function buildVolumeSequence(
       const taperIdx = weekN - taperPhase.start_week  // 0-indexed within taper
       const preTaper = volumes[taperPhase.start_week - 2] ?? lastBuildVol
       if (weekN === totalWeeks) {
-        // Race week: shakeouts only — 18% of pre-taper.
-        volumes.push(Math.round(preTaper * 0.18))
+        // Race week: shakeouts only — RACE_WEEK_VOLUME_PCT of pre-taper.
+        volumes.push(Math.round(preTaper * GENERATION_CONFIG.RACE_WEEK_VOLUME_PCT / 100))
       } else {
         const stepPct = taperConfig.volume_reduction_pct / fullTaperWeeks
         const reductionPct = stepPct * (taperIdx + 1)
@@ -684,7 +684,11 @@ function buildWeekSessions(
   // Phase-aware fraction of weekly volume, per LONG_RUN_PCT_OF_WEEKLY_VOLUME.
   // Week 1–2 cap (CoachingPrinciples §9 / spec 3.6): for the first two weeks
   // of any plan, long run cannot exceed longest_recent_run_km × 1.10.
-  const longDay = firstAvailableDay(['sun', 'sat', 'fri'], blocked) ?? 'sun'
+  // Long-run day preference: Sun by default; user can choose Sat. Falls back to Fri.
+  const longDayPref: Day[] = input.preferred_long_run_day === 'sat'
+    ? ['sat', 'sun', 'fri']
+    : ['sun', 'sat', 'fri']
+  const longDay = firstAvailableDay(longDayPref, blocked) ?? 'sun'
   const longRunPct = GENERATION_CONFIG.LONG_RUN_PCT_OF_WEEKLY_VOLUME[phase]
   let longKm = Math.round(weeklyKm * (longRunPct / 100) * 10) / 10
   if (weekN <= 2 && input.longest_recent_run_km > 0) {

@@ -6,17 +6,18 @@ export interface DistanceConfig {
   maxKm: number
   minWeeks: number
   idealWeeks: number
-  taperWeeks: number
   peakKmByLevel: { beginner: number; intermediate: number; experienced: number }
 }
 
+// taperWeeks removed in R23 rebuild — taper duration now sourced from
+// GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey].length (single source of truth).
 export const DISTANCE_CONFIGS: DistanceConfig[] = [
-  { maxKm: 6,        minWeeks: 8,  idealWeeks: 12, taperWeeks: 1, peakKmByLevel: { beginner: 28, intermediate: 38, experienced: 48 } },
-  { maxKm: 12,       minWeeks: 10, idealWeeks: 12, taperWeeks: 1, peakKmByLevel: { beginner: 32, intermediate: 46, experienced: 56 } },
-  { maxKm: 22,       minWeeks: 10, idealWeeks: 14, taperWeeks: 2, peakKmByLevel: { beginner: 38, intermediate: 52, experienced: 65 } },
-  { maxKm: 43,       minWeeks: 14, idealWeeks: 18, taperWeeks: 2, peakKmByLevel: { beginner: 52, intermediate: 65, experienced: 80 } },
-  { maxKm: 55,       minWeeks: 16, idealWeeks: 20, taperWeeks: 2, peakKmByLevel: { beginner: 62, intermediate: 80, experienced: 95 } },
-  { maxKm: Infinity, minWeeks: 18, idealWeeks: 24, taperWeeks: 3, peakKmByLevel: { beginner: 72, intermediate: 90, experienced: 110 } },
+  { maxKm: 6,        minWeeks: 8,  idealWeeks: 12, peakKmByLevel: { beginner: 28, intermediate: 38, experienced: 48 } },
+  { maxKm: 12,       minWeeks: 10, idealWeeks: 12, peakKmByLevel: { beginner: 32, intermediate: 46, experienced: 56 } },
+  { maxKm: 22,       minWeeks: 10, idealWeeks: 14, peakKmByLevel: { beginner: 38, intermediate: 52, experienced: 65 } },
+  { maxKm: 43,       minWeeks: 14, idealWeeks: 18, peakKmByLevel: { beginner: 52, intermediate: 65, experienced: 80 } },
+  { maxKm: 55,       minWeeks: 16, idealWeeks: 20, peakKmByLevel: { beginner: 62, intermediate: 80, experienced: 95 } },
+  { maxKm: Infinity, minWeeks: 18, idealWeeks: 24, peakKmByLevel: { beginner: 72, intermediate: 90, experienced: 110 } },
 ]
 
 export function getDistanceConfig(distanceKm: number): DistanceConfig {

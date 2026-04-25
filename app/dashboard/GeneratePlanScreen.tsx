@@ -352,13 +352,14 @@ function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function GeneratePlanScreen({
-  onBack, firstName: _firstName, lastName: _lastName, restingHR: initialRHR,
+  onBack, firstName: _firstName, lastName: _lastName, restingHR: initialRHR, maxHR: initialMHR,
   dob: initialDob, onDobSave, onPlanSaved, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade,
 }: {
   onBack: () => void
   firstName?: string
   lastName?: string
   restingHR?: number | null
+  maxHR?: number | null
   dob?: string | null
   onDobSave?: (dob: string) => Promise<void>
   onPlanSaved?: (plan: Plan) => Promise<void>
@@ -408,7 +409,8 @@ export default function GeneratePlanScreen({
   const [benchmarkTTDist,  setBenchmarkTTDist]  = useState('')
 
   // ── Step 7 — Schedule ────────────────────────────────────────────────────
-  const [daysAvailable, setDaysAvailable] = useState<number | null>(null)
+  const [daysAvailable,         setDaysAvailable]         = useState<number | null>(null)
+  const [preferredLongRunDay,   setPreferredLongRunDay]   = useState<'sat' | 'sun'>('sun')
 
   // ── Step 8 — Constraints ─────────────────────────────────────────────────
   const [daysOff,        setDaysOff]        = useState<string[]>([])
@@ -447,6 +449,7 @@ export default function GeneratePlanScreen({
       if (s.benchmarkTTDist) setBenchmarkTTDist(s.benchmarkTTDist)
       if (s.benchmarkDate)   setBenchmarkDate(s.benchmarkDate)
       if (s.daysAvailable)   setDaysAvailable(s.daysAvailable)
+      if (s.preferredLongRunDay === 'sat' || s.preferredLongRunDay === 'sun') setPreferredLongRunDay(s.preferredLongRunDay)
       if (Array.isArray(s.daysOff)) setDaysOff(s.daysOff)
       if (s.maxWeekdayChip)  setMaxWeekdayChip(s.maxWeekdayChip)
       if (s.hardSessions)    setHardSessions(s.hardSessions)
@@ -467,7 +470,7 @@ export default function GeneratePlanScreen({
         targetHours, targetMins,
         dob, weeklyKmChip, longestRunChip, restingHR, trainingAge,
         benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
-        daysAvailable, daysOff, maxWeekdayChip,
+        daysAvailable, preferredLongRunDay, daysOff, maxWeekdayChip,
         hardSessions, terrain, injuries,
       }))
     } catch {}
@@ -475,7 +478,7 @@ export default function GeneratePlanScreen({
       targetHours, targetMins,
       dob, weeklyKmChip, longestRunChip, restingHR, trainingAge,
       benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
-      daysAvailable, daysOff, maxWeekdayChip,
+      daysAvailable, preferredLongRunDay, daysOff, maxWeekdayChip,
       hardSessions, terrain, injuries])
 
   // ── Navigation helpers ────────────────────────────────────────────────────
@@ -582,7 +585,9 @@ export default function GeneratePlanScreen({
       longest_recent_run_km: longestRunVal,
       days_available:        daysAvailable!,
       resting_hr:            restingHR ? Number(restingHR) : undefined,
+      max_hr:                initialMHR ?? undefined,
       training_age:          trainingAge ?? undefined,
+      preferred_long_run_day: preferredLongRunDay,
       benchmark,
       days_cannot_train:     daysOff.length ? daysOff : undefined,
       max_weekday_mins:      maxWeekdayVal,
@@ -1056,27 +1061,38 @@ export default function GeneratePlanScreen({
       // ── Schedule ───────────────────────────────────────────────────────────
       case 'schedule':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {[2,3,4,5,6].map(n => (
-              <button
-                key={n}
-                onClick={() => setDaysAvailable(n)}
-                style={{
-                  width: '100%', padding: '18px 20px', borderRadius: 'var(--radius-lg)',
-                  border: `1.5px solid ${daysAvailable === n ? 'var(--moss)' : 'var(--line)'}`,
-                  background: daysAvailable === n ? 'var(--moss-soft)' : 'var(--card)',
-                  textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                }}
-              >
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: daysAvailable === n ? 700 : 500, color: daysAvailable === n ? 'var(--moss)' : 'var(--ink)' }}>
-                  {n} days
-                </span>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>
-                  {n === 2 ? 'Selective.' : n === 3 ? 'Enough.' : n === 4 ? 'Building.' : n === 5 ? 'Race-ready.' : 'All in.'}
-                </span>
-              </button>
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <FieldLabel>Days per week</FieldLabel>
+              {[2,3,4,5,6].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setDaysAvailable(n)}
+                  style={{
+                    width: '100%', padding: '18px 20px', borderRadius: 'var(--radius-lg)',
+                    border: `1.5px solid ${daysAvailable === n ? 'var(--moss)' : 'var(--line)'}`,
+                    background: daysAvailable === n ? 'var(--moss-soft)' : 'var(--card)',
+                    textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  }}
+                >
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: daysAvailable === n ? 700 : 500, color: daysAvailable === n ? 'var(--moss)' : 'var(--ink)' }}>
+                    {n} days
+                  </span>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>
+                    {n === 2 ? 'Selective.' : n === 3 ? 'Enough.' : n === 4 ? 'Building.' : n === 5 ? 'Race-ready.' : 'All in.'}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div>
+              <FieldLabel>Long-run day</FieldLabel>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Chip label="Saturday" active={preferredLongRunDay === 'sat'} onClick={() => setPreferredLongRunDay('sat')} />
+                <Chip label="Sunday" active={preferredLongRunDay === 'sun'} onClick={() => setPreferredLongRunDay('sun')} />
+              </div>
+              <FieldNote>Pick the one your week protects.</FieldNote>
+            </div>
           </div>
         )
 
