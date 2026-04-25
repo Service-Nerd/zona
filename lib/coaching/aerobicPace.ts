@@ -1,6 +1,10 @@
 // Extracted from DashboardClient.tsx — canonical location going forward.
+//
+// Filters Strava runs to the user's Z2 HR band, sourced from
+// GENERATION_CONFIG.ZONES.Z2 (single source of truth — see ADR-009).
 
 import type { StravaActivity } from '@/types/plan'
+import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 
 /** Returns aerobic pace bracket derived from Strava runs in the user's Z2 HR band. */
 export function computeAerobicPace(
@@ -11,8 +15,9 @@ export function computeAerobicPace(
 ): string | null {
   if (!runs || !runs.length || !restingHR || !maxHR) return null
   const hrr = maxHR - restingHR
-  const lo  = Math.round(restingHR + 0.60 * hrr)
-  const hi  = Math.round(restingHR + 0.70 * hrr)
+  const [z2LowPct, z2HighPct] = GENERATION_CONFIG.ZONES.Z2.karvonen_pct
+  const lo = Math.round(restingHR + (z2LowPct  / 100) * hrr)
+  const hi = Math.round(restingHR + (z2HighPct / 100) * hrr)
   const sample = runs
     .filter(r => r.average_heartrate && r.average_heartrate >= lo && r.average_heartrate <= hi
       && r.moving_time > 0 && r.distance > 2000)

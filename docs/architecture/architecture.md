@@ -123,9 +123,9 @@ See `docs/contracts/api/generate-plan.md` for the full route contract.
 
 ## Zone Method
 
-Current implementation uses Karvonen Heart Rate Reserve (HRR) only. See `docs/canonical/zone-rules.md` for the formula and zone mapping.
+Current implementation supports two zone formulas: Karvonen (Heart Rate Reserve) when the user's resting HR is known, % MaxHR otherwise. Both produce the same five named zones (Z1–Z5). Zone constants live in `GENERATION_CONFIG.ZONES` (`lib/plan/generationConfig.ts`); every consumer (rule engine, `aerobicPace.ts`, `coachingFlag.ts`, UI surfaces) reads from this single source. See `docs/canonical/zone-rules.md` for the table.
 
-**Zone method selector** (user-configurable, stored in `user_settings`) is a PAID feature scheduled but unstarted. Until it ships, all zone calculations use Karvonen. No other method is in the codebase.
+**Zone method selector** (user-configurable, stored in `user_settings.zone_method`) is a PAID feature scheduled but unstarted. The forward-compat hook lives in `GENERATION_CONFIG.ZONES`: adding Daniels, Coggan, or Friel is a new key under `ZONES` plus one lookup in `computeZones()`. No engine or consumer change required.
 
 ---
 

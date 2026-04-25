@@ -4,12 +4,12 @@
 
 ---
 
-## Model: Hybrid Reverse Trial
+## Model: Hybrid Reverse Trial (Option A)
 
-Zona uses a **Hybrid Reverse Trial** model.
+Zona uses a **Hybrid Reverse Trial** model with **Option A** downgrade semantics.
 
 1. **Day 0 — Full access**: Every new user gets full access to all features (including PAID tier) for 14 days. No paywall, no friction, no credit card required.
-2. **Day 14 — Graceful downgrade**: After 14 days the account downgrades to the free tier automatically. The user retains all their data. PAID features become gated.
+2. **Day 14 — Graceful downgrade**: After 14 days the account downgrades to the free tier automatically. The user retains all their data **and the plan they built during the trial**. PAID *ongoing intelligence* features become gated.
 3. **Upgrade — behaviour-triggered**: Upgrade prompts appear when the user tries to use a PAID feature, not on a timer and not at midnight on day 14.
 
 ### Why this model
@@ -18,6 +18,41 @@ Zona uses a **Hybrid Reverse Trial** model.
 - Asking for payment before delivering value is the most common conversion killer.
 - A 14-day window gives the product a chance to earn the upgrade, not demand it.
 - Behaviour-triggered prompts respect the user's intent and avoid dark patterns.
+- Option A respects the brand position: free users are never abandoned. The plan they generated is theirs to keep.
+
+### Option A — what stays, what gates, what is always free
+
+Three categories, formalised in `lib/plan/featureGates.ts`:
+
+#### Granted at trial, retained in free
+Earned during the 14-day trial; remain available after downgrade *for the plan that was generated during the trial*.
+
+- Personalised plan (the one generated during trial)
+- VDOT pace zones
+- HR Karvonen zones
+- AI coach notes that already exist on the existing plan's sessions
+- Full session catalogue (the user's existing plan retains its catalogue-sourced sessions)
+- Initial injury adaptations applied at plan creation
+
+#### Paid only — ongoing
+Required to use the PAID feature again *after* the trial ends.
+
+- Dynamic reshape (R20 — auto and user-initiated)
+- AI coach notes on *new* sessions (e.g. after a reshape)
+- Injury adaptations applied to *new* plans or after a reshape
+- Strava intelligence (run analysis, weekly report, plan adjustment triggers)
+- Confidence score
+- Ultra plan generation (50K, 100K)
+- New plan generation (after the trial-era plan)
+- Tailored strength sessions (R21 — when shipped)
+
+#### Free always
+Available regardless of trial status.
+
+- Generic plan templates (5K/10K/HM, fixed shapes)
+- Manual session completion
+- Plan view
+- Basic strength sessions (the placeholder stubs)
 
 ---
 
@@ -58,6 +93,8 @@ Zona uses a **Hybrid Reverse Trial** model.
 | AI coaching (Coach tab) | Session-by-session coaching with plan context |
 | Plan confidence score (R18) | Derived from RPE and completion data |
 | All personalised or intelligent features | Anything requiring user data + AI |
+
+**Note**: under Option A, the *output* of AI plan generation (the plan itself) is retained after the trial. The *ability to generate again* is the paid feature.
 
 ---
 

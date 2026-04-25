@@ -4,6 +4,26 @@
 
 ---
 
+## R23 Rebuild — In Progress
+
+The R23 plan generator is being rebuilt against an updated coaching spec (see `docs/architecture/ADR-009-config-driven-generation.md`, ADR-010, `docs/canonical/CoachingPrinciples.md`). The rebuild is config-driven and catalogue-driven; it does not change tier assignments.
+
+| Concern | Tier (unchanged) |
+|---|---|
+| Plan generation — generic templates | FREE |
+| Plan generation — personalised (rule engine + AI enrichment) | PAID at generation; retained-in-free after trial (Option A) |
+| 5K / 10K / HM plans | FREE |
+| Marathon / 50K / 100K plans | PAID |
+| Dynamic reshape (R20) | PAID — ongoing |
+| Strava intelligence | PAID — ongoing |
+| AI coach notes (new) | PAID — ongoing |
+| Session catalogue — full | granted at trial, retained in free for the trial-era plan |
+| Session catalogue — ultra-specific rows (50K/100K) | PAID only (`is_free_tier = false`) |
+
+See `docs/canonical/monetisation-strategy.md` for the Option A tier categories.
+
+---
+
 ## Shipped Features
 
 | Feature | Tier | Release | Notes |

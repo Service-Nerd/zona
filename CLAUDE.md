@@ -327,7 +327,7 @@ Per-session toggle in expanded card only — saves per session, updates collapse
 
 | Folder | Authority For |
 |---|---|
-| `docs/canonical/` | All domain rules — session types, plan schema, zone rules, coaching rules, feature registry, monetisation strategy, brand, UX principles |
+| `docs/canonical/` | All domain rules — session types, plan schema, zone rules, coaching rules, **CoachingPrinciples (the constitution)**, **session catalogue**, feature registry, monetisation strategy, brand, UX principles |
 | `docs/contracts/` | All API route and component prop contracts |
 | `docs/architecture/` | Architectural decision records (ADRs) and architecture overview |
 | `docs/releases/` | Release notes and ordered backlog |
@@ -342,6 +342,8 @@ Per-session toggle in expanded card only — saves per session, updates collapse
 - Architecture overview: `docs/architecture/architecture.md`
 - Backlog: `docs/releases/backlog.md`
 - Feature registry (FREE/PAID): `docs/canonical/feature-registry.md`
+- Coaching constitution: `docs/canonical/CoachingPrinciples.md`
+- Session catalogue: `docs/canonical/session-catalogue.md`
 - ADRs: `docs/architecture/ADR-*.md`
   - ADR-001: design tokens (superseded for colours by ADR-007; principle retained)
   - ADR-002: JSON-first plan
@@ -349,8 +351,10 @@ Per-session toggle in expanded card only — saves per session, updates collapse
   - ADR-004: theme system (superseded by ADR-008)
   - ADR-005: subscription payments
   - ADR-006: hybrid generation pattern
-  - ADR-007: Warm Slate palette *(new)*
-  - ADR-008: single light theme only *(new)*
+  - ADR-007: Warm Slate palette
+  - ADR-008: single light theme only
+  - ADR-009: config-driven plan generation *(R23 rebuild)*
+  - ADR-010: session catalogue *(R23 rebuild)*
 - Brand alignment: `docs/alignment/brand-product-alignment.md`
 - Phase 4 decisions log: `docs/alignment/phase-4-decisions.md`
 - Phase 4 blockers log: `docs/alignment/phase-4-blockers.md`

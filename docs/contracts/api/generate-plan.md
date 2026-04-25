@@ -24,7 +24,7 @@ Body: GeneratorInput
   current_weekly_km: number       // 4-week average
   longest_recent_run_km: number   // within last 6 weeks
   days_available: number          // 2–6
-  age: number                     // used for Tanaka max HR (208 − 0.7 × age)
+  age: number                     // derived client-side from DOB at generation time; used for Tanaka MaxHR
 }
 ```
 
@@ -36,29 +36,34 @@ Body: GeneratorInput
   fitness_level?: 'beginner' | 'intermediate' | 'experienced'  // derived from data if absent
   resting_hr?: number             // improves Karvonen zone accuracy; falls back to HRmax%
   max_hr?: number                 // derived from age via Tanaka if absent
+  training_age?: '<6mo' | '6-18mo' | '2-5yr' | '5yr+'  // R23 rebuild — drives returning-runner allowance
+  longest_run_ever_km?: number    // R23 rebuild — informs week-1–2 long-run cap
 
   // Benchmark — enables VDOT-based pace targets (Jack Daniels model)
   benchmark?: {
     type: 'race' | 'tt_30min'
     distance_km: number           // race distance OR km covered in 30 min
     time: string                  // finish time e.g. "25:30", "1:52:00". "30:00" for TT.
+    benchmark_date?: string       // ISO date — used to apply stale-benchmark VDOT discount (>6 mo)
   }
 
   // Race
   race_name?: string
-  target_time?: string            // only if goal = 'time_target'. Derives goal_pace_per_km.
+  target_time?: string            // only if goal = 'time_target'. Derives goal_pace_per_km AND drives peak-phase race-pace specificity.
 
   // Schedule
   days_cannot_train?: string[]    // full day names e.g. ['monday', 'friday']
   max_weekday_mins?: number
+  preferred_long_run_day?: 'sat' | 'sun'  // R23 rebuild — soft constraint; default 'sun'
+  treadmill_primarily?: boolean   // R23 rebuild — affects strides and hill-work plausibility
 
-  // Profile (Step 4 — paid/trial only)
-  training_style?: 'predictable' | 'variety' | 'minimalist' | 'structured'
+  // Profile (paid/trial only)
   hard_session_relationship?: 'avoid' | 'neutral' | 'love' | 'overdo'
-  motivation_type?: 'identity' | 'achievement' | 'health' | 'social'
-  injury_history?: string[]       // e.g. ['achilles', 'knee']
+  injury_history?: ('achilles' | 'knee' | 'back' | 'shin_splints' | 'hip_flexor' | 'plantar_fasciitis')[]
   terrain?: 'road' | 'trail' | 'mixed'
   athlete_name?: string
+
+  // Removed in R23 rebuild — `motivation_type`, `training_style`. Server ignores these fields if sent.
 }
 ```
 
@@ -76,6 +81,10 @@ The plan always contains at minimum rule-engine output. For trial/paid users, AI
 week themes, and session coach notes are included. For paid users only: `confidence_score`,
 `confidence_risks`, and `coach_intro` are added. The `meta.tier` field indicates which tier
 produced the plan.
+
+**R23 rebuild additions to `meta`:**
+- `vdot_discount_applied_pct: number` — total VDOT discount applied (3% default + 5% if benchmark stale > 6 months). Surfaced for transparency.
+- `catalogue_session_ids: string[]` — IDs of `session_catalogue` rows referenced by this plan's quality sessions. Useful for recalibration and audit.
 
 ### 401 — Unauthenticated
 

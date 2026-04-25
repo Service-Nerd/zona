@@ -88,11 +88,13 @@ export interface PlanMeta {
   goal?: 'finish' | 'time_target'
   target_time?: string
   days_available?: number
-  training_style?: 'predictable' | 'variety' | 'minimalist' | 'structured'
   hard_session_relationship?: 'avoid' | 'neutral' | 'love' | 'overdo'
-  motivation_type?: 'identity' | 'achievement' | 'health' | 'social'
   injury_history?: string[]
   terrain?: 'road' | 'trail' | 'mixed'
+
+  // Removed in R23 rebuild — `motivation_type` and `training_style`. Existing
+  // saved plans containing these fields remain valid; the fields are ignored.
+  // No backfill, no removal from old rows.
 
   // Generator metadata
   generated_at?: string        // ISO timestamp of generation
@@ -198,6 +200,8 @@ Hand-authored gists use only `type`, `label`, `detail`. The app prefers structur
 | INV-PLAN-007 | `zone` and `hr_target` are always formatted strings (e.g. `"Zone 2"`, `"< 145 bpm"`). Never numeric or object types. The rule engine computes numeric values internally and formats to strings before output. R23 reaffirms this. |
 | INV-PLAN-008 | Free plans (`meta.tier === 'free'`) never carry `confidence_score` or `confidence_risks`. These fields are PAID-only. UI consumers may rely on their absence as a tier signal. `coach_notes` is a tuple of max 3 strings — never more. |
 | INV-PLAN-009 | Sessions on R23+ plans carry a deterministic `id` of the form `w{N}-{day}` (e.g. `w5-wed`). This ID is used by R20 (reshaper) for targeted session updates. Legacy plans (pre-R23) have no session IDs — consumers must handle absence gracefully. |
+| INV-PLAN-010 | Quality session main-set content originates from the `session_catalogue` Supabase table (R23 rebuild onward). The rule engine selects rows; it does not synthesise session strings inline. See `docs/canonical/session-catalogue.md`. |
+| INV-PLAN-011 | Every numeric the generator uses lives in `lib/plan/generationConfig.ts → GENERATION_CONFIG` (or its sibling config modules `sessionFormat.ts`, `planSignatures.ts`, `featureGates.ts`). No magic numbers in `lib/plan/ruleEngine.ts` or any consumer. See `docs/architecture/ADR-009-config-driven-generation.md`. |
 
 ---
 

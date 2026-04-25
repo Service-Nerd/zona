@@ -77,7 +77,7 @@
 |------|--------|-------|
 | Rule-based plan engine | ✅ Shipped | `lib/plan/ruleEngine.ts` + `lib/plan/enrich.ts` + `lib/plan/generate.ts`. Hybrid architecture: rule engine always runs; AI enricher runs for trial/paid (silent fallback). Route rewritten to remove 403 for free users. `lib/trial.ts` adds `getUserTier()`. |
 | Generating Ceremony | ✅ Shipped | `components/GeneratingCeremony.tsx`. Skeleton shimmer + staged ZONA copy + phase-arc reveal (80ms stagger). Tier-divergent: 3-line/1.8s-min for free, 5-line/3.6s-min for paid/trial. Replaces interim spinner. |
-| Wizard tier-divergence | ✅ Shipped | `GeneratePlanScreen` is 3-step for free (teaser card above CTA), 4-step for paid/trial. Error retry and back routing are tier-aware. All hardcoded fonts fixed. Red replaced with amber throughout. |
+| Wizard tier-divergence | ✅ Shipped | R23b: one-question-per-screen sub-step wizard. 8 steps (free) / 12 steps (paid/trial). Teaser card on constraints step for free users. Slide transitions, progress dots, OptionCard selectors. |
 | R0.5 — Onboarding flow | ✅ Shipped | New user → auto-route to wizard (empty plan detection). Wizard state persisted in sessionStorage (survives back-nav + upgrade flow). Upgrade-from-wizard routing: after UpgradeScreen, draft resumes wizard. Plan archive: previous plan archived to `plan_archive` table before overwrite. OrientationScreen shown post-save. Welcome screen bug fixed (new users skip the "Your plan is ready" screen). Migration: `20260424_plan_archive.sql`. |
 
 ---
@@ -98,21 +98,23 @@
 | Item | Status | Notes |
 |------|--------|-------|
 | Apply migration `20260422_trial_started_at.sql` | ✅ | `ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS trial_started_at TIMESTAMPTZ` |
+| Apply 6 coaching migrations in Supabase SQL editor | ✅ | `20260425_run_analysis.sql`, `20260425_weekly_reports.sql`, `20260425_plan_adjustments.sql` (includes strava_activities), `20260425_strava_athlete_id.sql`, `20260425_dynamic_adjustments.sql`, `20260425_push_subscriptions.sql` |
+| Apply migration `20260428_orientation_seen.sql` | 🔲 | `ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS orientation_seen BOOLEAN DEFAULT FALSE` |
+| Set `ANTHROPIC_API_KEY` in Vercel | ❓ confirm | Required for paid/trial plan enrichment (AI labels, coach intro, confidence score) and coaching pipeline (session feedback, weekly report, adjustment explanations). **Free-tier plan generation works without it** — rule engine has no AI dependency. If not set, enricher silently returns rule-engine plan. |
 | Set `STRIPE_PRICE_MONTHLY` + `STRIPE_PRICE_ANNUAL` in Vercel | 🔲 | Price IDs from Stripe dashboard after creating product |
 | Set `STRIPE_SECRET_KEY` in Vercel | 🔲 | Stripe dashboard → Developers → API keys |
-| Set `STRIPE_WEBHOOK_SECRET` in Vercel | 🔲 | Stripe dashboard → Webhooks → add endpoint `https://rts-training-hub.vercel.app/api/webhooks/stripe`, copy signing secret |
+| Set `STRIPE_WEBHOOK_SECRET` in Vercel | 🔲 | Stripe dashboard → Webhooks → add endpoint `https://zona.vercel.app/api/webhooks/stripe`, copy signing secret |
 | Set `REVENUECAT_WEBHOOK_SECRET` in Vercel | 🔲 | RevenueCat dashboard → Integrations → Webhooks → set URL + copy secret |
 | Set `SUPABASE_SERVICE_ROLE_KEY` in Vercel | 🔲 | Supabase dashboard → Settings → API → service_role key (keep secret) |
-| Create Stripe product + price | 🔲 | Product: "Zona Premium", Price: TBD (depends on D4), billing: monthly + annual, 14-day trial |
+| Create Stripe product + price | 🔲 | Product: "Zona Premium", Price: £7.99/month + £59.99/year, 14-day trial |
 | Configure RevenueCat app + entitlement | 🔲 | Link to App Store product ID, set entitlement identifier (e.g. `zona_premium`) |
 | Enrol in Apple Small Business Program | 🔲 | 15% vs 30% cut — do before first live transaction |
 | Point `zona.app/privacy` at live URL | 🔲 | Privacy policy page built, needs custom domain live |
-| Apply 6 coaching migrations in Supabase SQL editor | ✅ | `20260425_run_analysis.sql`, `20260425_weekly_reports.sql`, `20260425_plan_adjustments.sql` (includes strava_activities), `20260425_strava_athlete_id.sql`, `20260425_dynamic_adjustments.sql`, `20260425_push_subscriptions.sql` |
 | Set `STRAVA_WEBHOOK_VERIFY_TOKEN` in Vercel | 🔲 | Any secret string — used to verify Strava webhook subscription challenge |
 | Set `CRON_SECRET` in Vercel | 🔲 | Any secret string — protects `/api/push/send-weekly-report` cron endpoint |
 | Generate VAPID keys and set in Vercel | 🔲 | `npx web-push generate-vapid-keys` → set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (e.g. `mailto:push@zona.app`) |
-| Set `NEXT_PUBLIC_APP_URL` in Vercel | 🔲 | e.g. `https://rts-training-hub.vercel.app` — used by cron to call internal API routes |
-| Register Strava webhook subscription | ✅ | Subscription ID: `342248`. Callback: `https://rts-training-hub.vercel.app/api/webhooks/strava`. To delete: `DELETE https://www.strava.com/api/v3/push_subscriptions/342248` with client_id + client_secret. |
+| Set `NEXT_PUBLIC_APP_URL` in Vercel | 🔲 | `https://zona.vercel.app` — used by cron to call internal API routes |
+| Register Strava webhook subscription | ✅ | Subscription ID: `342248`. Callback: `https://zona.vercel.app/api/webhooks/strava`. To delete: `DELETE https://www.strava.com/api/v3/push_subscriptions/342248` with client_id + client_secret. |
 
 ---
 
@@ -192,6 +194,57 @@ Items identified from device testing. Decisions logged in `docs/alignment/phase-
 | Blockout days (R22) | PAID, post-launch. |
 | Multi-race support (R24) | PAID, post-launch. |
 | Plan generator wizard UI (R23b) | PAID, post-launch. |
+
+---
+
+## R23 Rebuild — In Progress (2026-04-25)
+
+Rebuild of the rule engine and configuration based on a coaching audit. Architectural rebuild, not a tuning job. End state: all coaching constants in a single config file, a session catalogue table replaces generic "quality" sessions, distance-specific plan signatures drive differentiation, universal run format template, feature gates implementing reverse trial Option A.
+
+**Doctrine documents:**
+- `docs/canonical/CoachingPrinciples.md` — the constitution (18 principles)
+- `docs/canonical/session-catalogue.md` — domain doc for the 14 sessions
+- `docs/architecture/ADR-009-config-driven-generation.md`
+- `docs/architecture/ADR-010-session-catalogue.md`
+
+**Decisions captured (2026-04-25):**
+- Marathon stays PAID (not free per spec).
+- Trial start trigger stays on first dashboard load (not first plan generation per spec).
+- HR zones: adopt spec Z1–Z5 straight; display + scoring both at 70% HRR easy cap.
+- Phase distribution: 35/35/15/taper (per spec).
+- Taper duration: 10/14/21/28 days by distance (per spec).
+- Quality cap: max 2 per week (override spec's 3 for experienced).
+- Hard→long gap: 48 h (override spec's 24 h — typo).
+- PlanMeta legacy: hard-remove `motivation_type` and `training_style`.
+- SessionType vs catalogue category: two orthogonal taxonomies kept separate.
+
+**Phases:**
+| Phase | Status |
+|---|---|
+| Phase 0 — Pre-flight audit | ✅ Complete |
+| Phase 0.5 — Documentation updates | ✅ Complete |
+| Phase 1 — Foundation: config + catalogue | ✅ Complete |
+| Phase 2 — Consumer migration | ✅ Complete |
+| Phase 3 — New coaching rules | ✅ Complete (3.1–3.11) |
+| Phase 4 — Universal run format composer | ✅ Logic complete; UI integration deferred (`docs/alignment/phase-4-ui-followup.md`) |
+| Phase 5 — Wizard changes | ⏸ Deferred — see `docs/alignment/phase-5-wizard-followup.md` |
+| Phase 6 — Feature gates (Option A) | ✅ Server-side helper shipped; day-15 UI deferred (`docs/alignment/phase-6-gates-followup.md`) |
+| Phase 7 — Validation matrix | ✅ 11/11 cases pass; intensity dist flagged as known engine gap |
+| Phase 8 — Release wrap | ✅ Complete |
+
+**Known gaps for follow-up:**
+1. Wizard UI updates (Phase 5) — needs browser-in-loop session.
+2. Day-15 transition UI (Phase 6.3) — needs frontend-design skill + browser verification.
+3. Session card UI integration with `composeSession()` (Phase 4.2) — needs design rationale + browser verification.
+4. Intensity distribution gap — engine produces ~90% easy across all distances; spec targets 75–88%. To hit targets the engine would need to schedule more quality minutes (longer quality sessions, or one extra quality session in build phase). Coaching decision; not a regression.
+5. R20 reshape API routes still call `hasPaidAccess()` — could migrate to `isFeatureAllowed('dynamic_reshape_r20')` for clarity.
+
+**Out of scope (confirmed):**
+- R20 reshaping logic (downstream concern; rebuild does not touch).
+- R24 multi-race (not enabled).
+- R21 strength stubs (remain as stubs).
+- INV-PLAN-007 (zone/HR as strings — unchanged).
+- 14-day trial timer mechanism (only the post-trial gate categories change, via Option A).
 
 ---
 

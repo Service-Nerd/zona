@@ -6,7 +6,10 @@ export interface BenchmarkInput {
   type: 'race' | 'tt_30min'
   distance_km: number    // race distance OR distance covered in 30 min
   time: string           // finish time e.g. "25:30", "1:52:00". For tt_30min always "30:00".
+  benchmark_date?: string // ISO date — used to apply stale-benchmark VDOT discount (>6 mo)
 }
+
+export type TrainingAge = '<6mo' | '6-18mo' | '2-5yr' | '5yr+'
 
 // ─── Plan generator input ─────────────────────────────────────────────────────
 // Shared between the API route and the client form — must not import server modules.
@@ -25,6 +28,9 @@ export interface GeneratorInput {
   fitness_level?: 'beginner' | 'intermediate' | 'experienced'
   resting_hr?: number           // optional — improves zone accuracy via Karvonen
   max_hr?: number               // optional — derived from age (Tanaka: 208 − 0.7 × age)
+
+  // R23 rebuild — drives returning-runner allowance + reshape decisions
+  training_age?: TrainingAge
 
   // Benchmark — optional, enables VDOT-based pace derivation
   benchmark?: BenchmarkInput
@@ -159,6 +165,11 @@ export interface PlanMeta {
   goal_pace_per_km?: string               // e.g. "5:04 /km" — target race pace, not a training zone
   recalibration_weeks?: number[]          // week numbers where a benchmark re-test is scheduled
   benchmark?: BenchmarkInput              // stored so recalibration can reference original
+
+  // R23 rebuild — VDOT conservatism + returning runner + compressed flag
+  vdot_discount_applied_pct?: number     // total VDOT discount (3% default + 5% if benchmark stale)
+  training_age?: TrainingAge             // stored for R20 reshaper
+  returning_runner_allowance_active?: boolean  // true if 15%/3wk allowance applied
 }
 
 export interface Plan {

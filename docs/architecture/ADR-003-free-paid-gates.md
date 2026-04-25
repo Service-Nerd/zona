@@ -19,9 +19,9 @@ Gates are enforced in **both** API routes and components. Component-only gates a
 
 ### Tier Definitions
 
-**FREE:**
+**FREE (always):**
 - Generic pre-built plan templates (5K/10K/HM, 8 & 12-week variants)
-- Core session display and theme
+- Core session display
 - Basic profile management
 - No AI, no Strava, no dynamic coaching
 
@@ -32,6 +32,18 @@ Gates are enforced in **both** API routes and components. Component-only gates a
 - Plan reshaping (R20)
 - Confidence scoring (R18)
 - All personalised or intelligent features
+
+### Option A — granted-at-trial, retained-in-free
+
+Three categories, formalised in `lib/plan/featureGates.ts`. See `docs/canonical/monetisation-strategy.md` for the full list.
+
+| Category | Behaviour after trial |
+|---|---|
+| `GRANTED_AT_TRIAL_RETAINED_IN_FREE` | The user keeps using these features against the trial-era artefact (e.g. their personalised plan) |
+| `PAID_ONLY_ONGOING` | Gated when accessed; require an active subscription to use again |
+| `FREE_ALWAYS` | Available regardless of trial status |
+
+The plan a user generates during the trial is theirs to keep. The ongoing intelligence layer (reshape, AI coach notes on new sessions, Strava analysis, confidence score, new plan generation) is the subscription value.
 
 ### Invariant
 

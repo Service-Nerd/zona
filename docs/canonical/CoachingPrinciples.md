@@ -1,0 +1,282 @@
+# Coaching Principles — The Constitution
+
+**Authority**: Every principle in this document is implemented by exactly one named constant in `lib/plan/generationConfig.ts` (or one of the other config modules listed below). Changing a coaching numeric requires updating both this document and the config — they cannot drift.
+
+This document is the *why*. `GENERATION_CONFIG` is the *what*. `lib/plan/ruleEngine.ts` is the *how*.
+
+**Related**:
+- `docs/canonical/coaching-rules.md` — operational rules (when to schedule, how to lay out a week, guard rails)
+- `docs/canonical/zone-rules.md` — HR zone calculation
+- `docs/canonical/session-catalogue.md` — concrete sessions the engine can schedule
+- `docs/architecture/ADR-009-config-driven-generation.md` — why the config exists
+- `docs/architecture/ADR-010-session-catalogue.md` — why the catalogue exists
+
+---
+
+## How to read this document
+
+Each principle has three parts:
+
+- **Principle** — the coaching idea, in plain language.
+- **Why** — the reason. Often a brand position, an injury vector, or a non-elite-specific failure mode.
+- **Config** — the named constant(s) in `lib/plan/generationConfig.ts` (or the related config files) that implement it.
+
+If you are editing a numeric, you are editing this document. If you are editing this document, you are editing a numeric.
+
+---
+
+## 1. Polarised training — protection from grey zone
+
+**Principle.** Most running should be easy. The rest should be genuinely hard. Almost nothing should sit in the middle.
+
+**Why.** Non-elites overtrain by spending too much time in moderate-effort grey zone — runs that feel productive but produce neither aerobic adaptation nor true stress response. The brand position ("Slow down. You've got a day job.") is a statement of this principle. The longer the race, the more skewed toward easy the distribution becomes — ultras are won in Z2.
+
+**Config.** `GENERATION_CONFIG.INTENSITY_DISTRIBUTION` — keyed by race distance. Measured in *minutes*, not kilometres, so time-based plans honour the same ratios.
+
+```
+5K / 10K     → 75% easy / 25% quality
+HM           → 80% easy / 20% quality
+MARATHON     → 82% easy / 18% quality
+50K          → 85% easy / 15% quality
+100K         → 88% easy / 12% quality
+```
+
+---
+
+## 2. The 10% rule — injury prevention through gradual load
+
+**Principle.** Weekly volume increases by no more than 10%. Returning runners with a deep training history get a temporary 15% allowance for the first three weeks.
+
+**Why.** Sudden volume spikes are the most reliable predictor of running injury in non-elite athletes. The 10% rule is a coaching cliché because it works. The returning-runner exception acknowledges that an experienced runner rebuilding from a layoff is not the same as a beginner adding load — they have an aerobic and structural base waiting to be reawakened.
+
+**Config.**
+- `GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT = 10`
+- `GENERATION_CONFIG.RETURNING_RUNNER_ALLOWANCE_PCT = 15`
+- `GENERATION_CONFIG.RETURNING_RUNNER_GRACE_WEEKS = 3`
+
+A returning runner is identified by the wizard inputs `training_age > 2 years` AND `current_weekly_km < (typical for fitness level)`.
+
+---
+
+## 3. Recovery weeks — adaptation happens in rest
+
+**Principle.** Every fourth week is a recovery week — volume drops to 70% of the prior build week. Masters athletes (age ≥ 45) recover every third week instead.
+
+**Why.** Stress + rest = adaptation. Without the rest, the stress accumulates as fatigue and injury. The 4:1 cadence is a non-elite default; masters need more recovery because connective tissue and hormonal recovery slow with age.
+
+**Config.**
+- `GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_STANDARD = 4`
+- `GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_MASTERS = 3`
+- `GENERATION_CONFIG.MASTERS_AGE_THRESHOLD = 45`
+- `GENERATION_CONFIG.RECOVERY_WEEK_VOLUME_PCT = 70`
+
+Age is derived from `user_settings.date_of_birth` at plan generation time.
+
+---
+
+## 4. Phase structure — base, build, peak, taper
+
+**Principle.** Plans progress through four phases. Each phase has a different purpose, a different intensity distribution, and a different long-run fraction.
+
+**Why.** Specificity rises as the race approaches. Early phases build the aerobic engine; later phases sharpen for the demands of the actual race.
+
+**Config.**
+- `GENERATION_CONFIG.PHASE_DISTRIBUTION` — base 35%, build 35%, peak 15%, taper = remainder from `TAPER_BY_DISTANCE`
+- `GENERATION_CONFIG.SPECIFICITY_BY_PHASE` — base/build/peak/taper general:specific ratios
+
+---
+
+## 5. Specificity — sessions resemble race demands as race approaches
+
+**Principle.** Base phase work is general aerobic. Peak phase work looks like the race. Taper is mostly race-pace touches.
+
+**Why.** The body adapts to what it is asked to do. A marathoner who has never run at marathon pace will run their first marathon-pace minutes on race day. The peak phase is where this is fixed.
+
+**Config.** `GENERATION_CONFIG.SPECIFICITY_BY_PHASE`
+
+```
+base   → 100% general / 0% specific
+build  → 70% general  / 30% specific
+peak   → 40% general  / 60% specific
+taper  → 30% general  / 70% specific
+```
+
+Specific work is selected from the catalogue (`session_catalogue.category = 'race_specific'` or `'ultra_specific'`).
+
+---
+
+## 6. Taper — maintain intensity, cut volume, never detrain
+
+**Principle.** Volume drops sharply in the taper. Intensity is kept — quality sessions stay on the schedule, just shorter. The race week is for shakeouts, not training.
+
+**Why.** Detraining shows up within 10 days of stopping intensity. Keeping a single quality session per taper week preserves neuromuscular sharpness without adding fatigue. Volume is cut because volume is the fatigue driver.
+
+**Config.**
+- `GENERATION_CONFIG.TAPER_BY_DISTANCE` — taper duration (days) and volume reduction (% per week) per distance
+- `GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK` — quality session count per taper week, race week always `0`
+
+```
+5K / 10K     → 10 days, 35% reduction, [1, 0]
+HM           → 14 days, 45% reduction, [1, 1, 0]
+MARATHON     → 21 days, 55% reduction, [1, 1, 1, 0]
+50K          → 21 days, 55% reduction, [1, 1, 1, 0]
+100K         → 28 days, 60% reduction, [1, 1, 1, 1, 0]
+```
+
+---
+
+## 7. Hard / easy — never two hard days in a row
+
+**Principle.** A quality session and a long run are both fatiguing. They cannot be back-to-back.
+
+**Why.** Running a long run on heavy legs from a hard session the day before is the most reliable injury vector for non-elite runners with limited recovery time. Standard practice is at least 48 hours between any two stressors.
+
+**Config.**
+- `GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY = 48`
+- `GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG = 48`
+
+Note: the rebuild spec proposed 24 h for the second value. Overridden to 48 h on coaching grounds — for the target audience, 24 h is the typo, not the rule.
+
+---
+
+## 8. Quality session frequency — fitness ceiling
+
+**Principle.** A user's fitness level caps how many quality sessions per week the engine may schedule.
+
+**Why.** A beginner asking for "intermediate" structure breaks down. Quality work requires an aerobic base to absorb it. The ceiling exists so the engine cannot generate a plan that the user is not ready to run.
+
+**Config.** `GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX`
+
+```
+beginner     → 0 (no quality at all in base; light tempo only after week 4)
+intermediate → 2
+experienced  → 2
+```
+
+(Spec proposed 3 for experienced. Overridden to 2 — for the target audience, the third quality session is rarely accommodated by life and consistently produces the symptoms ZONA exists to prevent.)
+
+---
+
+## 9. Long-run rules — fraction of weekly, capped by distance
+
+**Principle.** Long runs scale with weekly volume (so a 30 km/week runner does not get the same long run as a 60 km/week runner). They are also capped by an absolute time ceiling per race distance.
+
+**Why.** A long run that exceeds 35% of weekly volume is a binge — fatigue accumulates faster than aerobic gain. The absolute cap (in minutes, not km) protects against unrealistic time-on-feet for the race.
+
+**Config.**
+- `GENERATION_CONFIG.LONG_RUN_PCT_OF_WEEKLY_VOLUME` — phase-aware (base 28%, build 30%, peak 32%, taper 40%)
+- `GENERATION_CONFIG.LONG_RUN_CAP_MINUTES` — per distance (90/120/135/210/300/420)
+- `GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER = 1.1` — first two weeks may not exceed `longest_recent_run_km × 1.1`
+
+---
+
+## 10. VDOT conservatism — protect users from themselves
+
+**Principle.** Training paces derived from a benchmark are discounted by 3% by default. Stale benchmarks (more than 6 months old) get a further 5% discount.
+
+**Why.** A non-elite runner who PBs a 5K and then trains at 100% of the implied VDOT pace is a runner about to get injured. The discount acknowledges that race-day pace is a peak output, not a sustainable training pace, and that fitness drifts. The signature ZONA move is to err on the side of restraint when in doubt.
+
+**Config.**
+- `GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT = 3`
+- `GENERATION_CONFIG.VDOT_STALE_BENCHMARK_ADDITIONAL_DISCOUNT_PCT = 5`
+- `GENERATION_CONFIG.VDOT_STALE_BENCHMARK_MONTHS = 6`
+
+The applied discount is surfaced in `plan.meta.vdot_discount_applied_pct` so the user can see what the engine did and why.
+
+---
+
+## 11. Pace ranges, not points
+
+**Principle.** Pace targets are always quoted as ranges (e.g. `5:50–6:05 /km`), not point values.
+
+**Why.** A point value is read as a target to hit. A range is read as a band to stay inside. The latter trains the right behaviour: pace discipline, not pace chasing.
+
+**Config.** `GENERATION_CONFIG.USE_PACE_RANGES_NOT_POINTS = true`
+
+---
+
+## 12. Easy-run zone cap — Z2 ceiling
+
+**Principle.** Easy runs are capped at the top of Z2.
+
+**Why.** Z2 is the band where aerobic adaptation happens without accumulating fatigue. Running easy at Z3 looks productive — it is the grey zone the brand is built to prevent.
+
+**Config.** `GENERATION_CONFIG.EASY_RUN_ZONE_CAP = 'Z2_TOP'` — resolves at runtime to the top of `GENERATION_CONFIG.ZONES.Z2` for the user's active zone method.
+
+---
+
+## 13. Fitness classification — VDOT first, volume fallback
+
+**Principle.** Fitness level (`beginner | intermediate | experienced`) is derived from VDOT when a benchmark is available, and from weekly volume + longest recent run otherwise.
+
+**Why.** VDOT is the more accurate signal. Volume-based classification is a pragmatic fallback for the no-benchmark case.
+
+**Config.**
+- `GENERATION_CONFIG.FITNESS_THRESHOLDS.vdot_beginner_max = 35`
+- `GENERATION_CONFIG.FITNESS_THRESHOLDS.vdot_intermediate_max = 50`
+- Volume fallback: in `lib/plan/ruleEngine.ts` `deriveFitnessLevel()`
+
+---
+
+## 14. HR zones — five zones, two formulas, one config
+
+**Principle.** Five named zones (Z1–Z5) with explicit % bands. Karvonen (HR Reserve) when the user's resting HR is known; %MaxHR when only max HR is known.
+
+**Why.** Five zones is the convergent industry standard (Daniels, Friel, Coggan all collapse cleanly to five). Karvonen is more personalised when RHR is captured. The %MaxHR fallback exists so a user without RHR still gets meaningful targets, not a refusal.
+
+**Config.** `GENERATION_CONFIG.ZONES`
+
+```
+Z1 → 50–60% HRR  / 65–70% MHR
+Z2 → 60–70% HRR  / 70–80% MHR
+Z3 → 70–80% HRR  / 80–87% MHR
+Z4 → 80–90% HRR  / 87–93% MHR
+Z5 → 90–100% HRR / 93–100% MHR
+```
+
+The forward-compat hook for a future paid "zone method selector" feature lives here. Adding Daniels, Coggan, or Friel zone tables means adding a new key under `ZONES` and a single `user_settings.zone_method` lookup. See `docs/canonical/zone-rules.md`.
+
+---
+
+## 15. Tier semantics — Option A: granted-at-trial, retained-in-free
+
+**Principle.** What a user gets during their 14-day trial is theirs to keep within the free tier — *for the plan they generated*. Ongoing intelligent features (new plan generation, dynamic reshaping, AI coach notes on new sessions, Strava-derived intelligence) become paid-only at downgrade.
+
+**Why.** The brand position is that free users are never abandoned. Stripping a user's plan after 14 days violates that. But ZONA is also a business — ongoing intelligence is the value the subscription buys. Option A is the line.
+
+**Config.** `lib/plan/featureGates.ts`:
+- `FEATURE_GATES.GRANTED_AT_TRIAL_RETAINED_IN_FREE` — personalised plan, VDOT pace zones, HR zones, AI coach notes that already exist on a plan, full session catalogue, initial injury adaptations
+- `FEATURE_GATES.PAID_ONLY_ONGOING` — dynamic reshape (R20), new AI coach notes, new injury adaptations, Strava intelligence, confidence score, ultra plan generation, new plan generation, tailored strength sessions
+- `FEATURE_GATES.FREE_ALWAYS` — generic plan templates, manual session completion, plan view, basic strength sessions
+
+---
+
+## 16. Universal run format — every run has a shape
+
+**Principle.** Every run prescribed by the engine has a structured warm-up, main set, and cool-down. Quality sessions add strides. Marathon and half-marathon long runs in peak phase add a race-pace segment.
+
+**Why.** Telling a user "run 8 km easy" leaves the question of warm-up and cool-down unanswered. The structured format teaches the right habit and prevents the most common quality-session error (skipping the warm-up and starting cold into intervals).
+
+**Config.** `lib/plan/sessionFormat.ts` exports `SESSION_FORMAT`:
+- 10/80/10 warm-up/main/cool-down split, with minimums
+- Quality warm-up minimum 15 minutes
+- Strides: 4 × 20s for quality
+- Long-run race-pace: 20% of session time at race pace, peak phase, HM and MARATHON only
+
+---
+
+## 17. Plan signatures — distance shapes the plan
+
+**Principle.** Each race distance has a signature: minimum/ideal/maximum weeks, default sessions per week, taper final session, and the catalogue categories that apply.
+
+**Why.** A 5K plan and a 100K plan share almost no structure beyond the four-phase shape. The signature captures the differences without forcing them into the engine's branching logic.
+
+**Config.** `lib/plan/planSignatures.ts` — `PLAN_SIGNATURES` keyed by distance.
+
+---
+
+## 18. The constitution
+
+These eighteen principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+
+If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

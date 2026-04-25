@@ -104,6 +104,23 @@ export const PlanMetaSchema = z.object({
   tier:         z.enum(['free', 'trial', 'paid']).optional(),
   compressed:   z.boolean().optional(),
   coach_intro:  z.string().optional(),
+
+  // R24 — VDOT / zone model fields (these were missing from the schema; added here for completeness)
+  age:                z.number().int().positive().optional(),
+  vdot:               z.number().positive().optional(),
+  goal_pace_per_km:   z.string().optional(),
+  recalibration_weeks: z.array(z.number().int().positive()).optional(),
+  benchmark:          z.object({
+                        type: z.enum(['race', 'tt_30min']),
+                        distance_km: z.number().positive(),
+                        time: z.string(),
+                        benchmark_date: z.string().optional(),
+                      }).optional(),
+
+  // R23 rebuild — VDOT conservatism + returning runner
+  vdot_discount_applied_pct:         z.number().min(0).max(20).optional(),
+  training_age:                      z.enum(['<6mo', '6-18mo', '2-5yr', '5yr+']).optional(),
+  returning_runner_allowance_active: z.boolean().optional(),
 })
 
 // ─── Plan ─────────────────────────────────────────────────────────────────────

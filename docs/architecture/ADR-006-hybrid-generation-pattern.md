@@ -50,9 +50,10 @@ Inputs (race, fitness, schedule)
 
 - Deterministic. Same inputs always produce the same structure.
 - No AI calls.
-- Owns all numeric values: distances, durations, HR targets, zones.
+- Reads all numeric values from `lib/plan/generationConfig.ts` (`GENERATION_CONFIG`), session structure from `lib/plan/sessionFormat.ts`, distance shape from `lib/plan/planSignatures.ts`, and feature gates from `lib/plan/featureGates.ts`. **No magic numbers inline.** See ADR-009 and ADR-010.
+- Selects quality sessions from the `session_catalogue` Supabase table — does not synthesise session strings inline.
 - Produces plans that are complete and correct without enrichment.
-- Applies coaching rules from `docs/canonical/coaching-rules.md`.
+- Applies coaching rules from `docs/canonical/coaching-rules.md` and principles from `docs/canonical/CoachingPrinciples.md`.
 
 ### Enricher responsibilities
 

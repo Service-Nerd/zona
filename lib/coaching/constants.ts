@@ -48,11 +48,14 @@ export const HR_ZONE_TOLERANCE_BPM = 3
 // Max adjustments per week
 export const MAX_ADJUSTMENTS_PER_WEEK = 2
 
-// Quality session minimum gap (hours)
-export const MIN_QUALITY_GAP_HOURS = 48
+// Quality session minimum gap (hours) — re-exported from generationConfig so
+// reshape rules and plan generation read the same source (CoachingPrinciples §7,
+// ADR-009). Single-line wrapper kept for back-compat with existing consumers.
+import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
+export const MIN_QUALITY_GAP_HOURS = GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY
 
 // Taper protection — no adjustments in final N weeks
 export const TAPER_PROTECTION_WEEKS = 3
 
-// Max volume increase per adjustment
-export const MAX_VOLUME_INCREASE_PCT = 10
+// Max volume increase per adjustment — re-exported from generationConfig (§2).
+export const MAX_VOLUME_INCREASE_PCT = GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT
