@@ -387,6 +387,79 @@ Ordered by value. Each item needs FREE/PAID tag confirmed in `docs/canonical/fea
 - Support multiple target races per user (A/B race hierarchy)
 - **Schema path**: Current `meta.race_date` and `meta.race_name` are canonical primary-race fields and remain unchanged. R24 will introduce `meta.races: Race[]` as a non-breaking additive field. `Plan.phases[]` (added in R23) provides the structure for multi-race periodisation — phases can be anchored to different race targets.
 
+### R25 — Historical Run Intelligence
+**Tier:** PAID (`strava_intelligence` gate)  
+**Source:** Russ idea, captured 2026-04-25  
+**Theme:** "How did this run compare to your past self?"
+
+When a Strava run completes, in addition to the existing per-session verdict (Part A — already shipped), Zona finds *similar past runs* in the user's history and surfaces whether they're improving, holding, or regressing. ZONA voice on the surface; rule-based + AI underneath.
+
+#### Part A — already built (no work needed)
+- `/api/analyse-run` runs on every Strava webhook → `enrichAndPersist()` → `triggerAutoAnalysis()` → 4-dimension scoring (HR discipline 50% / distance 25% / pace 15% / EF 10%) + verdict (nailed / close / off_target / concerning) + AI feedback text
+- Post-log reflect view collects RPE + fatigue tag ("how did it feel")
+- Surfaced in `RunFeedbackCard` on session expanded view
+
+#### Part B — new for R25
+
+**Similarity matching.** For the just-logged run, find prior runs in `strava_activities` (last 12 months) where:
+- Distance within ±15%
+- Elevation gain within ±20%
+- (Open: should we also match by *intent* — i.e. session type from the linked plan session — or purely by raw metrics? See design decisions below.)
+
+**Comparison metrics** for each match — and aggregated across the cohort:
+- **Pace delta** — faster / slower at same distance
+- **HR delta at same pace** — lower HR for same effort = aerobic improvement
+- **HR delta at same HR target** — pace at constrained HR
+- **EF (aerobic efficiency)** — pace / HR ratio, trended over time
+
+**Trend detection** across the matched cohort (rolling, last 3–6 months):
+- Improving — pace ↑ at same HR, or HR ↓ at same pace, or EF ↑
+- Holding — within noise band
+- Regressing — opposite direction over multiple sessions
+- Inconclusive — too few similar runs to call
+
+**Surfaces:**
+- New section on `RunFeedbackCard`: *"You've run this kind of session 5 times in the last 4 months. You're trending faster at the same HR — aerobic engine is improving."*
+- Or for regression: *"Same loop in March was 5 bpm lower at this pace. Could be heat, fatigue, or a hard day. Worth watching."*
+- Empty state when insufficient data: *"Not enough history yet. Come back after a few more runs."*
+
+#### Architecture sketch
+
+| Concern | Where it lives |
+|---|---|
+| Similarity query | New helper `lib/coaching/similarRuns.ts` — reads `strava_activities` table |
+| Trend detection | New helper `lib/coaching/runTrend.ts` — extends `efTrend.ts` patterns |
+| Storage | Extend `run_analysis` table with `historical_comparison JSONB` column (or new `run_comparison` table — TBD) |
+| AI prompt | Extend `lib/coaching/prompts/sessionFeedback.ts` to accept historical context |
+| API surface | Extend `/api/analyse-run` to also compute + persist historical comparison; surface via existing `RunFeedbackCard` props |
+| UI | Add comparison block to `RunFeedbackCard` (paid users only) |
+
+#### Design decisions to resolve before build
+
+| # | Question | Options |
+|---|---|---|
+| 1 | What defines "similar"? | (a) Distance + elevation only — pure metric match; (b) Distance + elevation + linked session type ("easy 8K vs easy 8K"); (c) Distance + elevation + observed effort band (RPE / HR zone) |
+| 2 | Minimum cohort size to call a trend? | 3? 5? Below that, return "inconclusive" |
+| 3 | Time window? | 12 months by default, but should it shrink for users with dense Strava history? |
+| 4 | Voice for regression cases? | "Worth checking" framing only, or include possible explanations (heat, fatigue, life stress)? |
+| 5 | Should the comparison be **per-run** (vs the closest matched single past run) or **vs cohort average**? | Per-run = more concrete copy; cohort average = more statistically robust |
+| 6 | Tier: which `strava_intelligence` sub-gate? | All paid, or open to free users with limited cohort (e.g. 3 runs only)? Probably all paid — simpler. |
+
+#### Dependencies + risks
+- Requires reliable `strava_activities` table — currently populated by webhook ✓
+- Requires elevation data — Strava provides `total_elevation_gain` ✓
+- Brand-new users have no historical cohort → empty state must be lovable, not broken
+- "Improvement" can be illusory: hot day, fatigue, route variation. Coaching copy must be cautious — no false confidence
+- Privacy/sensitivity: regression copy can land badly if framed wrong. ZONA voice helps ("Worth checking" not "You got worse")
+
+#### Estimated effort
+~15 hours focused work, probably 2–3 sessions:
+- Similarity helper + trend detection: ~6h
+- DB schema extension + migration: ~1h
+- API integration + AI prompt extension: ~3h
+- UI block on `RunFeedbackCard`: ~3h
+- Browser verification + edge-case testing: ~2h
+
 ---
 
 ## Scoped But Unscheduled
