@@ -54,6 +54,10 @@ MARATHON     → 82% easy / 18% quality
 - `GENERATION_CONFIG.RETURNING_RUNNER_ALLOWANCE_PCT = 15`
 - `GENERATION_CONFIG.RETURNING_RUNNER_GRACE_WEEKS = 3`
 
+**Volume sequence initialisation.** The starting weekly volume is clamped to a band relative to the user's target peak weekly km — too low and the plan never reaches peak; too close to peak and there's no room to ramp.
+- `GENERATION_CONFIG.BUILD_VOL_INIT_FLOOR_VS_PEAK = 35` — floor: starting volume is at least 35% of peakKm.
+- `GENERATION_CONFIG.BUILD_VOL_INIT_CEILING_VS_PEAK = 85` — ceiling: starting volume is at most 85% of peakKm.
+
 A returning runner is identified by the wizard inputs `training_age > 2 years` AND `current_weekly_km < (typical for fitness level)`.
 
 ---
@@ -155,6 +159,10 @@ experienced  → 2
 
 (Spec proposed 3 for experienced. Overridden to 2 — for the target audience, the third quality session is rarely accommodated by life and consistently produces the symptoms ZONA exists to prevent.)
 
+**Quality session sizing:**
+- `GENERATION_CONFIG.QUALITY_SESSION_PCT_OF_WEEKLY = 18` — primary quality session distance as % of weekly volume.
+- `GENERATION_CONFIG.SECONDARY_QUALITY_PCT_OF_PRIMARY = 80` — when two quality sessions are scheduled (peak experienced), the second is 80% of the first. Different stressor profile, slightly less volume.
+
 ---
 
 ## 9. Long-run rules — fraction of weekly, capped by distance
@@ -167,6 +175,8 @@ experienced  → 2
 - `GENERATION_CONFIG.LONG_RUN_PCT_OF_WEEKLY_VOLUME` — phase-aware (base 28%, build 30%, peak 32%, taper 40%)
 - `GENERATION_CONFIG.LONG_RUN_CAP_MINUTES` — per distance (90/120/135/210/300/420)
 - `GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER = 1.1` — first two weeks may not exceed `longest_recent_run_km × 1.1`
+- `GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY = 1.25` — long run must always be ≥ 1.25× the easy session distance. Engine redistributes weekly volume when the natural phase-fraction would invert this (low-volume / low-day-count plans).
+- `GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM` — floor distances per session type (long: 5, easy: 4, quality: 5, secondary_quality: 4). Below these, the session is too short to be coaching-meaningful.
 
 ---
 
@@ -192,6 +202,9 @@ The applied discount is surfaced in `plan.meta.vdot_discount_applied_pct` so the
 **Why.** A point value is read as a target to hit. A range is read as a band to stay inside. The latter trains the right behaviour: pace discipline, not pace chasing.
 
 **Config.** `GENERATION_CONFIG.USE_PACE_RANGES_NOT_POINTS = true`
+
+**Display precision:**
+- `GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM = 0.5` — every session distance rounds to the nearest 0.5 km before display. 11.9 → 12.0; 14.7 → 14.5; 8.4 → 8.5. Whole-number-ish without losing useful precision.
 
 ---
 

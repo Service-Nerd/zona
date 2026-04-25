@@ -245,7 +245,8 @@ function getPhaseForWeek(weekN: number, phases: Phase[]): PhaseType {
 // weekly volume well below typical for fitness level. CoachingPrinciples §2.
 function isReturningRunner(input: GeneratorInput, peakKm: number): boolean {
   const isExperienced = input.training_age === '2-5yr' || input.training_age === '5yr+'
-  const lowVolume    = input.current_weekly_km < peakKm * 0.5
+  const threshold = peakKm * GENERATION_CONFIG.RETURNING_RUNNER_VOLUME_THRESHOLD_PCT / 100
+  const lowVolume = input.current_weekly_km < threshold
   return isExperienced && lowVolume
 }
 
@@ -282,7 +283,12 @@ function buildVolumeSequence(
   const volumes: number[] = []
 
   // Clamp start to a sensible range relative to peak
-  let buildVol = Math.min(Math.max(startKm, peakKm * 0.35), peakKm * 0.85)
+  // Clamp start volume to a band relative to peakKm.
+  // Floor prevents starting too low for the target; ceiling prevents
+  // starting too close to peak (no room to ramp).
+  const initFloor   = peakKm * GENERATION_CONFIG.BUILD_VOL_INIT_FLOOR_VS_PEAK   / 100
+  const initCeiling = peakKm * GENERATION_CONFIG.BUILD_VOL_INIT_CEILING_VS_PEAK / 100
+  let buildVol = Math.min(Math.max(startKm, initFloor), initCeiling)
   let lastBuildVol = buildVol
 
   for (let i = 0; i < totalWeeks; i++) {
@@ -341,9 +347,10 @@ function buildVolumeSequence(
   const peakPhase = phases.find(p => p.name === 'peak')
   let compressed = false
   if (peakPhase) {
+    const peakThreshold = peakKm * GENERATION_CONFIG.PEAK_REACHED_THRESHOLD_PCT / 100
     const peakReached = volumes.some((v, i) => {
       const wn = i + 1
-      return wn >= peakPhase.start_week && wn <= peakPhase.end_week && v >= peakKm * 0.95
+      return wn >= peakPhase.start_week && wn <= peakPhase.end_week && v >= peakThreshold
     })
     compressed = !peakReached
   }
@@ -386,6 +393,14 @@ function dur(distKm: number, minsPerKm: number): number {
   return Math.round(distKm * minsPerKm)
 }
 
+// Round a distance to GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM.
+// Single source for display-friendly distances (matches CoachingPrinciples §11
+// — "specific beats abstract" — but cleaner than 0.1 km precision).
+function roundDistance(distKm: number): number {
+  const p = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+  return Math.round(distKm / p) * p
+}
+
 function easySession(
   weekN: number, day: Day,
   distKm: number, metric: 'distance' | 'duration',
@@ -395,7 +410,7 @@ function easySession(
   notes?: Session['coach_notes'],
 ): Session {
   // Round to nearest 0.5 km — cleaner display (11.9 → 12.0; 14.7 → 14.5).
-  const rounded = Math.round(distKm * 2) / 2
+  const rounded = roundDistance(distKm)
   return {
     id: `w${weekN}-${day}`,
     type: 'easy', label, detail: null,
@@ -414,7 +429,7 @@ function longSession(
   zones: ZoneTargets, pace: PaceGuide,
   notes?: Session['coach_notes'],
 ): Session {
-  const rounded = Math.round(distKm * 2) / 2
+  const rounded = roundDistance(distKm)
   return {
     id: `w${weekN}-${day}`,
     type: 'easy', label: 'Long run — Zone 2', detail: null,
@@ -475,7 +490,7 @@ function makeQualitySession(args: {
     ? (notes.slice(0, 3) as [string, string?, string?])
     : undefined
 
-  const rounded = Math.round(distKm * 2) / 2
+  const rounded = roundDistance(distKm)
   return {
     id: `w${weekN}-${day}`,
     type: 'quality', label, detail: null,
@@ -504,7 +519,7 @@ function mpLongRunSession(
     voice,
     `Final 30–50% at MP target ${goalPace}.`,
   ]
-  const rounded = Math.round(distKm * 2) / 2
+  const rounded = roundDistance(distKm)
   return {
     id: `w${weekN}-${day}`,
     type: 'easy',  // long run slot — display contract; SessionType drives card colour
@@ -560,9 +575,11 @@ function applyInjuryAdjustments(
   let km = weeklyKm
   let quality = allowQuality
 
-  // Knee + shin splints: weekly volume cap reduced to 5% (CoachingPrinciples §12 / coaching-rules §12).
+  // Knee + shin splints: weekly volume cap tightens to INJURY_WEEKLY_INCREASE_CAP_PCT (5%)
+  // from the standard MAX_WEEKLY_VOLUME_INCREASE_PCT (10%). CoachingPrinciples §12.
   if (hasInjury(input, 'knee') || hasInjury(input, 'shin_splints')) {
-    const maxIncrease = prevWeeklyKm * 1.05
+    const cap = 1 + GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT / 100
+    const maxIncrease = prevWeeklyKm * cap
     km = Math.min(km, maxIncrease)
   }
   // Achilles: no quality work (any phase).
@@ -694,23 +711,25 @@ function buildWeekSessions(
   //       (Bug fix: previously, low-day-count plans produced easy runs longer
   //       than the long run because volume = weekly - long fraction got
   //       crammed into few easy slots.)
-  const longRunPct = GENERATION_CONFIG.LONG_RUN_PCT_OF_WEEKLY_VOLUME[phase]
-  const qualKmPerSession = Math.round(weeklyKm * 0.18 * 10) / 10
+  const longRunPct       = GENERATION_CONFIG.LONG_RUN_PCT_OF_WEEKLY_VOLUME[phase]
+  const qualPct          = GENERATION_CONFIG.QUALITY_SESSION_PCT_OF_WEEKLY
+  const qualKmPerSession = weeklyKm * (qualPct / 100)
   const totalQualVol     = includeQualityCount * qualKmPerSession
   const easyCount        = Math.max(0, daysAvailable - 1 - includeQualityCount - adjStrength)
 
   let longKm = weeklyKm * (longRunPct / 100)
   let easyKm = easyCount > 0 ? Math.max(0, weeklyKm - longKm - totalQualVol) / easyCount : 0
 
-  // Long-vs-easy invariant: long must be at least 1.25× the easy distance.
-  // When the natural distribution would invert this (low-volume / low-day plans),
-  // redistribute while preserving total weekly volume.
-  const MIN_LONG_TO_EASY_RATIO = 1.25
-  if (easyCount > 0 && longKm < easyKm * MIN_LONG_TO_EASY_RATIO) {
+  // Long-vs-easy invariant (CoachingPrinciples §9): long must be at least
+  // LONG_RUN_MIN_RATIO_VS_EASY × the easy distance. When the natural
+  // distribution would invert this (low-volume / low-day plans), redistribute
+  // while preserving total weekly volume.
+  const minRatio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
+  if (easyCount > 0 && longKm < easyKm * minRatio) {
     // longKm = easyKm × R; total = longKm + easyKm × N + qualVol = weeklyKm
     //   → easyKm × (R + N) = weeklyKm − qualVol
-    easyKm = (weeklyKm - totalQualVol) / (MIN_LONG_TO_EASY_RATIO + easyCount)
-    longKm = easyKm * MIN_LONG_TO_EASY_RATIO
+    easyKm = (weeklyKm - totalQualVol) / (minRatio + easyCount)
+    longKm = easyKm * minRatio
   }
 
   // Apply caps after redistribution.
@@ -720,11 +739,13 @@ function buildWeekSessions(
   }
   longKm = applyLongRunCap(longKm, 0, input)
 
-  // Round to 0.5 km precision (Russ requested cleaner whole-number-ish display).
-  // 11.9 → 12.0, 13.2 → 13.0, 14.7 → 14.5, 8.4 → 8.5.
-  const round05 = (n: number) => Math.round(n * 2) / 2
-  longKm = Math.max(round05(longKm), 5)
-  easyKm = easyCount > 0 ? Math.max(round05(easyKm), 4) : 0
+  // Round to DISTANCE_ROUNDING_PRECISION_KM. 0.5 km = whole-number-ish display
+  // (11.9 → 12.0, 13.2 → 13.0, 14.7 → 14.5, 8.4 → 8.5).
+  const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+  const roundDist = (n: number) => Math.round(n / precision) * precision
+  const minDist   = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM
+  longKm = Math.max(roundDist(longKm), minDist.long)
+  easyKm = easyCount > 0 ? Math.max(roundDist(easyKm), minDist.easy) : 0
 
   // ── 1. Long run ───────────────────────────────────────────────────────────
   // Long-run day preference: Sun by default; user can choose Sat. Falls back to Fri.
@@ -755,7 +776,7 @@ function buildWeekSessions(
   const minDaysBetweenQualities = Math.ceil(GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY / 24)
 
   if (includeQuality && used.length < daysAvailable) {
-    const qualKm = Math.max(round05(qualKmPerSession), 5)
+    const qualKm = Math.max(roundDist(qualKmPerSession), minDist.quality)
     const preferredCategory = preferredQualityCategory(phase, distKey)
 
     const qualDay = firstAvailableDay(['wed', 'thu', 'tue'], blocked, used.filter(d => dayGap(d, 'wed') < 2))
@@ -766,7 +787,7 @@ function buildWeekSessions(
         catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 0, preferredCategory,
       })
       sessions[qualDay] = makeQualitySession({
-        weekN, day: qualDay, distKm: Math.max(qualKm, 5), metric, zones, pace,
+        weekN, day: qualDay, distKm: qualKm, metric, zones, pace,
         catalogueRow: cat1, phase, fitness, isDeload, goalPace,
       })
       used.push(qualDay)
@@ -784,8 +805,11 @@ function buildWeekSessions(
           const cat2 = selectCatalogueSession({
             catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 1, preferredCategory: altCategory,
           })
+          const secondaryFraction = GENERATION_CONFIG.SECONDARY_QUALITY_PCT_OF_PRIMARY / 100
           sessions[qual2Day] = makeQualitySession({
-            weekN, day: qual2Day, distKm: Math.max(round05(qualKm * 0.8), 4), metric, zones, pace,
+            weekN, day: qual2Day,
+            distKm: Math.max(roundDist(qualKm * secondaryFraction), minDist.secondary_quality),
+            metric, zones, pace,
             catalogueRow: cat2, phase, fitness, isDeload, goalPace,
           })
           used.push(qual2Day)

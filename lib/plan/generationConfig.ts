@@ -71,6 +71,51 @@ export const GENERATION_CONFIG = {
   // behaviour). See backlog § R21 — Strength Sessions.
   STRENGTH_ENABLED: false,
 
+  // ── Quality session sizing ───────────────────────────────────────────────────
+  // Quality session distance as % of weekly volume (single source — was hardcoded
+  // 0.18 in multiple places before). When two quality sessions in a peak week,
+  // the second is scaled down by SECONDARY_QUALITY_PCT_OF_PRIMARY.
+  QUALITY_SESSION_PCT_OF_WEEKLY:    18,
+  SECONDARY_QUALITY_PCT_OF_PRIMARY: 80,
+
+  // ── Volume sequence initialisation ──────────────────────────────────────────
+  // buildVolumeSequence clamps the starting volume to a band relative to peakKm:
+  //   floor = peakKm × FLOOR_PCT/100  (prevents starting too low for the target)
+  //   ceiling = peakKm × CEILING_PCT/100  (prevents starting too close to peak)
+  BUILD_VOL_INIT_FLOOR_VS_PEAK:   35,
+  BUILD_VOL_INIT_CEILING_VS_PEAK: 85,
+
+  // ── Distance display + minimum session distances ────────────────────────────
+  // All session distances round to this precision before display.
+  // 0.5 km = whole-number-ish (12.0, 14.5, 9.0) — clean, not nitpicky.
+  DISTANCE_ROUNDING_PRECISION_KM: 0.5,
+
+  // Floor distances per session type. Below these, the session is too short to
+  // be coaching-meaningful. Engine clamps up.
+  MIN_SESSION_DISTANCE_KM: {
+    long:               5,
+    easy:               4,
+    quality:            5,
+    secondary_quality:  4,
+  },
+
+  // ── Returning runner detection threshold ────────────────────────────────────
+  // A user is detected as a "returning runner" when their training_age > 2 years
+  // AND their current_weekly_km is below this fraction of peakKm. Below this
+  // threshold the body has obvious headroom for the 15% allowance window.
+  RETURNING_RUNNER_VOLUME_THRESHOLD_PCT: 50,  // % of peakKm
+
+  // ── Compressed-plan detection threshold ─────────────────────────────────────
+  // After buildVolumeSequence applies the 10% post-process cap, a plan is
+  // considered "compressed" if peak-phase weeks never reach this fraction of
+  // peakKm. Surfaced via plan.meta.compressed.
+  PEAK_REACHED_THRESHOLD_PCT: 95,  // % of peakKm
+
+  // ── Injury weekly volume cap (knee, shin splints) ──────────────────────────
+  // CoachingPrinciples §12 — for these two injury types, weekly volume cap
+  // tightens from MAX_WEEKLY_VOLUME_INCREASE_PCT (10%) to this stricter limit.
+  INJURY_WEEKLY_INCREASE_CAP_PCT: 5,  // % above previous week's volume
+
   // Quality sessions per taper week. Last entry is always race week (= 0).
   TAPER_QUALITY_PER_WEEK: {
     '5K':       [1, 0],
@@ -107,6 +152,13 @@ export const GENERATION_CONFIG = {
     peak:  32,
     taper: 40,
   },
+
+  // Long run must be at least this multiple of the easy session distance.
+  // Enforces the principle that the long run is always the longest run of the
+  // week. When the natural phase-fraction-based distribution would invert this
+  // (low-volume / low-day-count plans), the engine redistributes volume to
+  // honour this ratio while preserving total weekly km.
+  LONG_RUN_MIN_RATIO_VS_EASY: 1.25,
 
   // Absolute time cap, by race distance.
   LONG_RUN_CAP_MINUTES: {
