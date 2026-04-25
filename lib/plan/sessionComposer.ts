@@ -69,9 +69,15 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
     return zeroStructure('strength', session.duration_mins ?? 45)
   }
 
-  // Determine total duration. Prefer duration_mins; derive from distance if absent.
-  // (ruleEngine writes duration_mins for every running session.)
-  const total = session.duration_mins ?? 0
+  // Determine total duration. Prefer duration_mins; fall back to distance × pace
+  // estimate (6.5 min/km, matching DashboardClient's `~Xmin` heuristic) for
+  // legacy plans where duration_mins is absent but distance_km is present.
+  // Sessions with neither field still return null — there's nothing meaningful
+  // to compose.
+  let total = session.duration_mins ?? 0
+  if (total <= 0 && typeof session.distance_km === 'number' && session.distance_km > 0) {
+    total = Math.round(session.distance_km * 6.5)
+  }
   if (total <= 0) return null
 
   const isQuality = session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals' || session.type === 'hard'
