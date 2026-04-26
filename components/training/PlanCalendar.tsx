@@ -259,17 +259,6 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
         const isMoving = movingDay === key
         const isTarget = !!movingDay && movingDay !== key && !effectiveSessions[key]
 
-        // DEBUG (R23-D-distance-bug): log every session as PlanCalendar renders.
-        // Remove after debugging. Tag with a stable string so we can grep console.
-        if (s) {
-          // eslint-disable-next-line no-console
-          console.log('[ZONA-DEBUG planCalendar]', {
-            week: weekNum, day: key, type: s.type, label: s.label,
-            distance_km: s.distance_km, duration_mins: s.duration_mins,
-            primary_metric: s.primary_metric, detail: s.detail,
-          })
-        }
-
         return (
           <DayRow
             key={key}

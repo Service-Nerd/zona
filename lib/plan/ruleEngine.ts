@@ -605,12 +605,21 @@ function applyInjuryAdjustments(
   return { adjustedKm: km, allowQuality: quality }
 }
 
-function applyLongRunCap(distKm: number, durationMins: number, input: GeneratorInput): number {
-  // Back + plantar fasciitis: long run capped at 120 min.
-  if ((hasInjury(input, 'back') || hasInjury(input, 'plantar_fasciitis')) && durationMins > 120) {
-    return 120 / (durationMins / distKm)
+function applyLongRunCap(distKm: number, paceMinPerKm: number, input: GeneratorInput): number {
+  let result = distKm
+  // Absolute cap per race distance (CoachingPrinciples §9 — protects against
+  // unrealistic time-on-feet for the race).
+  const distKey = raceDistanceKey(input.race_distance_km)
+  const absCapMins = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
+  if (paceMinPerKm > 0 && result * paceMinPerKm > absCapMins) {
+    result = absCapMins / paceMinPerKm
   }
-  return distKm
+  // Injury-specific tighter cap: back + plantar fasciitis cap long run at 120 min.
+  if ((hasInjury(input, 'back') || hasInjury(input, 'plantar_fasciitis'))
+      && paceMinPerKm > 0 && result * paceMinPerKm > 120) {
+    result = 120 / paceMinPerKm
+  }
+  return result
 }
 
 // ─── Week session layout ──────────────────────────────────────────────────────
@@ -748,15 +757,22 @@ function buildWeekSessions(
     const earlyCap = input.longest_recent_run_km * GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER
     if (longKm > earlyCap) longKm = earlyCap
   }
-  longKm = applyLongRunCap(longKm, 0, input)
+  longKm = applyLongRunCap(longKm, pace.minPerKmEasy, input)
 
   // Round to DISTANCE_ROUNDING_PRECISION_KM. 0.5 km = whole-number-ish display
   // (11.9 → 12.0, 13.2 → 13.0, 14.7 → 14.5, 8.4 → 8.5).
   const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
   const roundDist = (n: number) => Math.round(n / precision) * precision
+  const floorDist = (n: number) => Math.floor(n / precision) * precision
   const minDist   = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM
-  longKm = Math.max(roundDist(longKm), minDist.long)
-  easyKm = easyCount > 0 ? Math.max(roundDist(easyKm), minDist.easy) : 0
+  // Long run uses floor-rounding so post-round value never exceeds upstream caps
+  // (longest_recent × 1.10 in weeks 1-2; LONG_RUN_CAP_MINUTES per distance).
+  // Round-nearest would round 8.8 → 9.0 and break the cap by 0.5 km.
+  longKm = Math.max(floorDist(longKm), minDist.long)
+  // Note: `easyKm` here is provisional — it informs the long-vs-easy invariant
+  // above. The actual placement value is re-derived after long/quality/strength
+  // are placed (see § 4) so freed-up volume from un-placed planned sessions
+  // (e.g. qual2 with no eligible day) flows to the easy slots that fill them.
 
   // ── 1. Long run ───────────────────────────────────────────────────────────
   // Long-run day preference: Sun by default; user can choose Sat. Falls back to Fri.
@@ -842,6 +858,39 @@ function buildWeekSessions(
   }
 
   // ── 4. Easy runs (fill remaining slots) ───────────────────────────────────
+  // Re-derive easyKm based on ACTUAL remaining slots and remaining volume.
+  // Why re-derive: the upfront easyKm assumed all planned quality/strength
+  // slots would be placed. When one fails (e.g. qual2 with no eligible day),
+  // the freed slot is filled by an easy run — and the freed volume should
+  // flow to that easy run, not be lost.
+  //
+  // Constraints (CoachingPrinciples §9):
+  //   • Floor: every placed easy session is at least MIN_SESSION_DISTANCE_KM.easy.
+  //     Below this, the session is too short to be coaching-meaningful.
+  //   • Ceiling: easy must not exceed longKm / LONG_RUN_MIN_RATIO_VS_EASY —
+  //     the long run is always the longest run of the week. If the freed volume
+  //     would invert this, cap easy at the ratio limit and let the week run
+  //     slightly under target volume rather than break the principle.
+  //
+  // The floors are self-consistent: minDist.long / minRatio = 5/1.25 = 4 =
+  // minDist.easy, so the cap and floor never collide.
+  const remainingSlots = daysAvailable - used.length
+  if (remainingSlots > 0) {
+    // Mirror sumWeeklyKm: distance metric reads distance_km; duration metric
+    // converts duration_mins back to km via easy pace. Strength has no volume.
+    const placedKm = Object.values(sessions).reduce((sum, s) => {
+      if (!s || s.type === 'strength' || s.type === 'rest') return sum
+      return sum + (s.distance_km ?? (s.duration_mins ?? 0) / pace.minPerKmEasy)
+    }, 0)
+    const remainingVolume = Math.max(0, weeklyKm - placedKm)
+    // Cap rounded DOWN so post-round easyKm cannot exceed longKm/minRatio.
+    // (roundDist uses round-nearest and could otherwise lift easy across the cap,
+    // breaking the long-vs-easy invariant by 0.5 km on the boundary.)
+    const easyCap = Math.floor((longKm / minRatio) / precision) * precision
+    const naturalRounded = roundDist(remainingVolume / remainingSlots)
+    easyKm = Math.max(Math.min(naturalRounded, easyCap), minDist.easy)
+  }
+
   // Day-spacing heuristic: at each step, pick the candidate day whose minimum
   // gap to ANY already-used day is largest. Spreads runs across the week
   // instead of stacking them. (Bug fix: prior version filled in fixed
