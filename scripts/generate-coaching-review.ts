@@ -14,8 +14,8 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
-import { generateRulePlan } from '../lib/plan/ruleEngine'
-import type { GeneratorInput, Plan, Tier } from '../types/plan'
+import { generateRulePlan, type Tier } from '../lib/plan/ruleEngine'
+import type { GeneratorInput, Plan } from '../types/plan'
 
 interface Case {
   id: string
