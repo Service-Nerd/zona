@@ -1,6 +1,8 @@
 # Feature Registry — Zona
 
-**Authority**: Every feature must be tagged FREE or PAID here before implementation begins. Untagged features are build blockers. See `docs/canonical/` for domain rules and `docs/releases/backlog.md` for status and ordering.
+**Job:** What's been built + tier assignments. Single source of truth for "does this exist? is it free or paid?"
+**Pair:** When a backlog item ships, the `/ship` skill appends it here. Forward work lives in `docs/releases/backlog.md`.
+**Rule:** Every feature must be tagged FREE or PAID here before implementation begins. Untagged features are build blockers.
 
 ---
 
@@ -72,60 +74,17 @@ See `docs/canonical/monetisation-strategy.md` for the Option A tier categories.
 | AdjustmentBanner | PAID | 2026-04-25 | Amber left-border banner on Today/Coach screens. Apply/Dismiss buttons. Dismiss calls `/api/revert-adjustment`. |
 | Dynamic adjustments toggle (Me screen) | PAID | 2026-04-25 | Toggle in Me screen settings. Stored as `dynamic_adjustments_enabled` in user_settings. Opt-out only — default on. |
 | Web Push notifications | PAID | 2026-04-25 | `public/sw.js` service worker. `/api/push/subscribe` (POST + DELETE). `/api/push/send-weekly-report` cron (Sundays 18:00 UTC via Vercel cron). push_subscriptions table. VAPID signing via `web-push` npm package. Auto-cleanup of 410 Gone subscriptions. |
-
----
-
----
-
-## Ordered Backlog
-
-### GTM & Commercial (pre-launch, ordered by impact)
-
-| Feature | Tier | Release | Notes |
-|---|---|---|---|
-| Brand constants rollout (GTM-01) | FREE (infra) | GTM | `lib/brand.ts` created. Wire to: login tagline, loading screen, OrientationScreen (replaces "effort-first training"), push notification title, UpgradeScreen pricing labels. No new UI — pure string reference pass. |
-| Copy fixes batch (GTM-02) | FREE | GTM | 7 targeted string replacements. Login signup sub, push title, skip confirm, coach empty state, plan error, teaser CTA, OrientationScreen sub. See backlog for file/line detail. |
-| UpgradeScreen rewrite (GTM-03 + GTM-04) | PAID | GTM | Paywall copy: "Start your subscription", pricing uses `PRICING.annual.savingLabel`. Feature list reordered: weekly report first. Trial-expired variant uses loss framing ("Your zone discipline coaching pauses here"). |
-| Zone discipline teaser — Coach tab, free users (GTM-05) | TIER-DIVERGENT | GTM | Free users see locked zone discipline score category on Coach tab. Blurred state + upgrade CTA. Does not expose paid data. Mirrors wizard teaser card pattern. |
-| Post-session Strava prompt — free users (GTM-06) | TIER-DIVERGENT | GTM | After manual session log, one-line prompt at bottom of reflect view: "Connect Strava to see how your HR compared." Taps to Strava connection / upgrade. |
-| OG / social image (GTM-07) | FREE (ops) | GTM | `/public/og-image.jpg` 1200×630. Brand graphic + tagline. Currently missing — any shared link shows blank preview. |
-
-### GTM & Commercial (post-launch)
-
-| Feature | Tier | Release | Notes |
-|---|---|---|---|
-| Marketing site (GTM-08) | FREE | post-launch | Replace `app/page.tsx` redirect with one-page marketing site. In-app Next.js page (D7). All copy from `lib/brand.ts`. |
-| Trial expiry email + day-11 nudge (GTM-09/10) | PAID | post-launch | Email platform required (Resend or Supabase Edge). Zona-voice copy referencing zone discipline coaching specifically. |
-
-### Product Backlog
-
-| Feature | Tier | Release | Notes |
-|---|---|---|---|
-| Plan Confidence Score | PAID | R18 | Derived from completion + RPE data |
-| Coaching Tips in Supabase | PAID | R19 | Move hardcoded copy to DB; dynamic per user |
-| Dynamic Plan Reshaping (user-initiated) | PAID | R20 | ✅ Complete. Phase-aware reshaping (`currentPhase` guards taper/peak). User-initiated flow: Me → "Reshape plan" → `ReshapeScreen` → analyse → confirm/dismiss. `/api/confirm-adjustment` route. `AdjustmentBanner.confirm()` bug fixed. |
-| Strength Sessions | FREE (stubs) / PAID (dynamic) | R21 | Generator stubs exist; cards render with no content. **Admin-only for v1 launch** — filtered from public plan view until R21 ships full content. |
-| Blockout Days | PAID | R22 | User marks unavailable days; plan reshapes |
-| Plan Generator Wizard UI | PAID | R23b | ✅ Complete. One-question-per-screen sub-step wizard. 8 steps (free) / 12 steps (paid). Slide transition animation. Progress pills. Warm Slate tokens. OptionCard pattern for goal/terrain/style/hard-sessions. |
-| Multi-Race Support | PAID | R24 | A/B race hierarchy |
-
----
-
-## Scoped But Unscheduled
-
-| Feature | Tier | Notes |
-|---|---|---|
-| Estimated race times | PAID | 5K/10K/HM/Marathon — data-driven |
-| Zone method selector | PAID | User chooses HR zone calculation method; stored in Supabase |
-
----
-
-## Parking Lot (Deprioritised)
-
-| Feature | Tier | Notes |
-|---|---|---|
-| Session swap | PAID | Manual session reordering |
-| AM/PM scheduling | PAID | Time-of-day session placement |
+| Brand constants rollout (GTM-01) | FREE (infra) | 2026-04-22 | `lib/brand.ts` wired to login tagline, loading screen, OrientationScreen, push notification title, UpgradeScreen pricing. |
+| Copy fixes batch (GTM-02) | FREE | 2026-04-22 | 7 voice-batch string replacements across login, push, skip confirm, coach empty, plan error, teaser CTA, OrientationScreen sub. |
+| UpgradeScreen rewrite (GTM-03 + GTM-04) | PAID | 2026-04-22 | Paywall copy + pricing labels + reordered feature list (weekly report first). Trial-expired loss-framing variant: "Your coaching has paused" + amber-accented LOSSES list. |
+| Zone discipline teaser — Coach tab (GTM-05) | TIER-DIVERGENT | 2026-04-22 | Free users see locked CoachTeaser (muted report card + dimmed stats + upgrade CTA). Paid users unchanged. |
+| Post-session Strava prompt — free users (GTM-06) | TIER-DIVERGENT | 2026-04-22 | Free users see "Connect Strava to see how your HR compared" below Done in reflect view. Taps to upgrade. |
+| OG / social image (GTM-07) | FREE (ops) | 2026-04-22 | Dynamic `app/api/og/route.tsx` (next/og edge runtime). 1200×630, navy bg, teal accent, wordmark + tagline from BRAND. Layout metadata (title/description/OG/twitter) sourced from lib/brand.ts. |
+| Plan archive (data protection) | FREE (infra) | 2026-04-24 | `plan_archive` Supabase table. Previous plan stored before every `savePlanForUser` call. No restore UI yet — data protection only. Migration: `20260424_plan_archive.sql`. |
+| Account deletion flow | FREE | 2026-04-24 | Me screen → `DeleteAccountScreen` → `/api/delete-account` → cascade delete session_completions + subscriptions + user_settings + auth user. Apple App Store requirement. |
+| R23 plan invariants (constitutional layer) | FREE (infra) | 2026-04-26 | `lib/plan/invariants.ts → validatePlan()` mechanically validates every generated plan against `CoachingPrinciples.md`. Throws on error-severity in dev/test; logs in prod. Three layers, one truth: principle → numeric → mechanical check. |
+| Property-validation harness | FREE (infra) | 2026-04-26 | `scripts/property-validate-plans.ts` sweeps wide input grid (race × fitness × days × volume × injuries). Exit 1 on any violation. Catches edge cases archetype matrix misses. |
+| Coaching review packets | FREE (infra) | 2026-04-26 | `scripts/generate-coaching-review.ts` outputs three canonical test cases (5K/10K/HM) as markdown for Claude Desktop coaching audit. Committed output produces visible diff in coaching language on every engine change. |
 
 ---
 

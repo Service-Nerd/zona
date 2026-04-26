@@ -362,14 +362,27 @@ Per-session toggle in expanded card only — saves per session, updates collapse
 
 ## Documentation
 
-### Canonical Truth
+### Doc System — Where Things Live
+
+Two docs run the work pipeline. Keep them in sync:
+
+| Doc | Job | When it changes |
+|---|---|---|
+| `docs/releases/backlog.md` | **What's left to ship.** Now / Next / Later. Single source of truth for "what should I work on?" | Item added when scoped; item removed when shipped (moves to feature-registry) |
+| `docs/canonical/feature-registry.md` | **What's been built + tier assignments.** Single source of truth for "does this exist? is it free or paid?" | New entry appended to "Shipped Features" table when a backlog item ships |
+
+**The flow:** backlog.md → ship → feature-registry.md. An item lives in exactly one of the two at any time.
+
+**Mechanism:** the `/ship` skill performs the move atomically. After every `git commit`, the assistant checks whether anything shipped and invokes `/ship` if so. Hook in `.claude/settings.local.json` enforces the check.
+
+### Other Canonical Truth
 
 | Folder | Authority For |
 |---|---|
 | `docs/canonical/` | All domain rules — session types, plan schema, zone rules, coaching rules, **CoachingPrinciples (the constitution)**, **session catalogue**, feature registry, monetisation strategy, brand, UX principles |
 | `docs/contracts/` | All API route and component prop contracts |
 | `docs/architecture/` | Architectural decision records (ADRs) and architecture overview |
-| `docs/releases/` | Release notes and ordered backlog |
+| `docs/releases/` | Backlog (what's left). Shipped record lives in `feature-registry.md`. |
 | `docs/alignment/` | Brand-product alignment, redesign phase tracking |
 
 **Before building any new feature**: check `docs/canonical/feature-registry.md` — every feature must be tagged FREE or PAID before implementation begins.
