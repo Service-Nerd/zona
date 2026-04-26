@@ -657,10 +657,10 @@ function buildWeekSessions(
   phases: Phase[],
   tier: Tier,
   catalogue: SessionCatalogueRow[],
+  fitness: FitnessLevel,
   goalPace?: string | null,
 ): Partial<Record<Day, Session>> {
   const blocked = blockedDays(input)
-  const fitness = input.fitness_level as FitnessLevel
 
   if (isRaceWeek) {
     const sessions: Partial<Record<Day, Session>> = {}
@@ -1130,6 +1130,7 @@ export function generateRulePlan(
       weekN, phase, isDeload, isRaceWeek,
       adjustedKm, input, zones, pace, metric, phases,
       tier, catalogue,
+      fitness,
       goalPace,
     )
 

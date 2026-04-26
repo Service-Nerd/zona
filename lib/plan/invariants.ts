@@ -195,6 +195,37 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       }
     }
 
+    // INV-PLAN-QUALITY-EXPECTED — build/peak/taper non-deload weeks with
+    // intermediate/experienced fitness and no quality suppression must place
+    // at least one quality session, unless every eligible day is blocked.
+    // (CoachingPrinciples §1, §6, §8 — quality work drives fitness adaptation
+    // beyond base aerobic capacity. Skipping it across an entire build/peak
+    // phase is a coaching defect, not a tuning choice.)
+    if (!isRaceWeek && w.phase && w.phase !== 'base' && w.type !== 'deload') {
+      const planFitness = plan.meta.fitness_level
+      const hsr = input.hard_session_relationship
+      const hasAchilles = (input.injury_history ?? []).some(i => i.toLowerCase().includes('achilles'))
+      const expectQuality = (planFitness === 'intermediate' || planFitness === 'experienced')
+        && hsr !== 'avoid' && !hasAchilles
+      if (expectQuality) {
+        const eligibleDays: Day[] = ['wed','thu','tue','mon','fri']
+        const blockedSet = new Set((input.days_cannot_train ?? []) as Day[])
+        const anyEligibleUnblocked = eligibleDays.some(d => !blockedSet.has(d))
+        const qualityCount = placedRunning.filter(({ session }) => session.type === 'quality').length
+        if (anyEligibleUnblocked && qualityCount === 0) {
+          violations.push({
+            code: 'INV-PLAN-QUALITY-EXPECTED',
+            principle_ref: 'CoachingPrinciples §1, §6, §8',
+            severity: 'error',
+            week: w.n,
+            message: `${w.phase} week with ${planFitness} fitness expected ≥ 1 quality session; engine placed 0 with eligible day(s) available`,
+            actual: 0,
+            expected: '≥ 1',
+          })
+        }
+      }
+    }
+
     // INV-PLAN-MAX-WEEKDAY-MINS — weekday session duration ≤ user's stated cap
     // (CoachingPrinciples — life-first, plan-second)
     if (input.max_weekday_mins) {

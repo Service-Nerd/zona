@@ -38,6 +38,7 @@ Exit 1 on any violation.
 | `INV-PLAN-LONG-CAP-MINS` | `CoachingPrinciples §9` | error | Long run duration ≤ `LONG_RUN_CAP_MINUTES[distance]`. |
 | `INV-PLAN-WEEK-1-2-LONG-CAP` | `CoachingPrinciples §9` | error | First two weeks: long run ≤ `longest_recent_run × WEEK_1_2_LONG_RUN_CAP_MULTIPLIER` (or floor, whichever is higher). |
 | `INV-PLAN-QUALITY-PER-WEEK` | `CoachingPrinciples §8` | error | Quality session count per week ≤ `QUALITY_SESSIONS_PER_WEEK_MAX[fitness]`. |
+| `INV-PLAN-QUALITY-EXPECTED` | `CoachingPrinciples §1, §6, §8` | error | Build/peak/taper non-deload weeks with intermediate/experienced fitness and no quality suppression must place ≥ 1 quality session (unless every eligible day is blocked). Catches engines that derive fitness in one scope and ignore it in another. |
 | `INV-PLAN-QUALITY-LONG-SPACING` | `CoachingPrinciples §7` | error | Quality session is at least `MIN_HOURS_BETWEEN_QUALITY_AND_LONG / 24` days from the long run. |
 | `INV-PLAN-MAX-WEEKDAY-MINS` | Life-first | error | Every weekday session duration ≤ `input.max_weekday_mins` when the user has set one. |
 
