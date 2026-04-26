@@ -239,6 +239,24 @@ See `docs/architecture/ADR-006-hybrid-generation-pattern.md`.
 
 **Tunability test (when in doubt):** if a coach could reasonably want to tune it → config. If it's a fact → inline.
 
+### Plan Invariants — Constitutional Layer
+
+Every generated plan is mechanically validated against `CoachingPrinciples.md` via `lib/plan/invariants.ts → validatePlan()`. `generateRulePlan()` runs the validator on its output: throws on `error`-severity violations in `NODE_ENV=development` / `test`; logs to `console.error` in production (no user-facing failure).
+
+This closes the gap between "principle written" and "engine respects it". Three layers, one source of truth:
+
+1. **Principle** — `CoachingPrinciples.md`
+2. **Numeric** — `GENERATION_CONFIG`
+3. **Mechanical check** — `validatePlan()`
+
+When all three agree, the engine is provably honouring its constitution.
+
+**Tooling:**
+- `scripts/r23-phase7-validation.ts` — archetype matrix; runs under `NODE_ENV=test` so violations break the suite.
+- `scripts/property-validate-plans.ts` — property sweep across a wide input grid (race × fitness × days × volume × injuries × ...). Catches edge cases the archetype matrix misses. Exit 1 on any violation.
+
+**When changing engine behaviour or adding a coaching principle:** add the invariant to `validatePlan()` in the same commit. See `docs/canonical/plan-invariants.md` for the full registry and the procedure.
+
 ### Auth at the Route Boundary
 
 `lib/plan/*` modules are pure functions of inputs and a `tier` parameter. The API route is the auth boundary. See ADR-003.

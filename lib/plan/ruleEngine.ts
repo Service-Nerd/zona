@@ -14,6 +14,7 @@ import {
   formatDate, addDays, parseDateLocal,
 } from './length'
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
+import { validatePlan, formatViolations } from './invariants'
 import {
   V1_SESSION_CATALOGUE, selectCatalogueSession,
   type SessionCatalogueRow, type CatalogueCategory,
@@ -1211,5 +1212,22 @@ export function generateRulePlan(
     ...(returningRunner ? { returning_runner_allowance_active: true } : {}),
   }
 
-  return { meta, phases, weeks }
+  const plan: Plan = { meta, phases, weeks }
+
+  // Constitutional review — verify the plan honours its own coaching principles.
+  // In dev, throw on errors so the matrix / property tests fail loudly.
+  // In prod, log + return the plan (don't break the user). See lib/plan/invariants.ts.
+  const violations = validatePlan(plan, input)
+  if (violations.length > 0) {
+    const errors = violations.filter(v => v.severity === 'error')
+    if (errors.length > 0) {
+      const msg = `Plan invariant violations:\n${formatViolations(errors)}`
+      if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+        throw new Error(msg)
+      }
+      console.error(msg)
+    }
+  }
+
+  return plan
 }

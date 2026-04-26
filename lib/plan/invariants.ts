@@ -1,0 +1,236 @@
+// Constitutional layer: mechanically verifies that a generated plan honours
+// CoachingPrinciples. Each check is keyed to a principle section so violations
+// trace back to authority. See docs/canonical/plan-invariants.md.
+//
+// Usage:
+//   const violations = validatePlan(plan, input)
+//   if (violations.length > 0) console.error(violations)
+//
+// Wired into generateRulePlan: throws on `error` severity in development;
+// logs in production (does not break the user).
+
+import type { Plan, GeneratorInput, Session } from '@/types/plan'
+import { GENERATION_CONFIG } from './generationConfig'
+
+export type Severity = 'error' | 'warn'
+
+export interface Violation {
+  code: string
+  principle_ref: string
+  severity: Severity
+  week: number
+  day?: string
+  message: string
+  actual: number | string
+  expected: number | string
+}
+
+const DAYS = ['mon','tue','wed','thu','fri','sat','sun'] as const
+type Day = typeof DAYS[number]
+
+function dayGap(a: Day, b: Day): number {
+  const ai = DAYS.indexOf(a), bi = DAYS.indexOf(b)
+  return Math.min(Math.abs(ai - bi), 7 - Math.abs(ai - bi))
+}
+
+function isLongRun(s: Session): boolean {
+  return s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)
+}
+
+function isShakeout(s: Session): boolean {
+  return s.label?.toLowerCase().includes('shakeout') ?? false
+}
+
+function raceDistanceKey(km: number): keyof typeof GENERATION_CONFIG.LONG_RUN_CAP_MINUTES {
+  if (km <= 5)  return '5K'
+  if (km <= 10) return '10K'
+  if (km <= 21.2) return 'HM'
+  if (km <= 42.5) return 'MARATHON'
+  if (km <= 50.5) return '50K'
+  return '100K'
+}
+
+export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
+  const violations: Violation[] = []
+  const minDist = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM
+  const minRatio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
+  const distKey = raceDistanceKey(input.race_distance_km)
+  const longCapMins = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
+  const fitness = input.fitness_level
+  const qualityMaxPerWeek = fitness ? GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX[fitness] : undefined
+  const minHoursQualLong = GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG
+  const minDaysQualLong = Math.ceil(minHoursQualLong / 24)
+
+  for (const w of plan.weeks) {
+    const isRaceWeek = w.type === 'race'
+    const sessions = Object.entries(w.sessions) as [Day, Session | undefined][]
+    const placedRunning = sessions
+      .filter(([, s]) => !!s && s.type !== 'strength' && s.type !== 'rest')
+      .map(([d, s]) => ({ day: d, session: s! }))
+
+    // INV-PLAN-MIN-SESSION-SIZE — every placed session ≥ MIN_SESSION_DISTANCE_KM
+    // (CoachingPrinciples §9 — "Below these, the session is too short to be coaching-meaningful.")
+    for (const { day, session } of placedRunning) {
+      if (session.type === 'race' || isShakeout(session)) continue  // exempt
+      const isLong = isLongRun(session)
+      const expected = isLong ? minDist.long : session.type === 'quality' ? minDist.quality : minDist.easy
+      const dist = session.distance_km ?? 0
+      if (session.distance_km != null && dist < expected) {
+        violations.push({
+          code: 'INV-PLAN-MIN-SESSION-SIZE',
+          principle_ref: 'CoachingPrinciples §9',
+          severity: 'error',
+          week: w.n, day,
+          message: `Session ${session.type} below configured floor`,
+          actual: dist,
+          expected,
+        })
+      }
+      if ((session.duration_mins ?? 0) === 0 && (session.distance_km ?? 0) === 0) {
+        violations.push({
+          code: 'INV-PLAN-EMPTY-SESSION',
+          principle_ref: 'CoachingPrinciples §9',
+          severity: 'error',
+          week: w.n, day,
+          message: 'Placed session has zero distance AND zero duration',
+          actual: 0,
+          expected: '> 0',
+        })
+      }
+    }
+
+    // INV-PLAN-LONG-IS-LONGEST — long ≥ minRatio × any easy run in the same week
+    // (CoachingPrinciples §9 — long run is always the longest run of the week)
+    if (!isRaceWeek) {
+      const long = placedRunning.find(({ session }) => isLongRun(session))
+      const easies = placedRunning.filter(({ session }) =>
+        session.type === 'easy' && !isLongRun(session) && !isShakeout(session))
+      if (long?.session.distance_km != null) {
+        for (const { day, session } of easies) {
+          if (session.distance_km == null) continue
+          if (session.distance_km * minRatio > long.session.distance_km + 0.01) {
+            violations.push({
+              code: 'INV-PLAN-LONG-IS-LONGEST',
+              principle_ref: 'CoachingPrinciples §9',
+              severity: 'error',
+              week: w.n, day,
+              message: `Easy run inverts long-vs-easy ratio (long ${long.session.distance_km} km vs easy ${session.distance_km} km, min ratio ${minRatio})`,
+              actual: long.session.distance_km / session.distance_km,
+              expected: `≥ ${minRatio}`,
+            })
+          }
+        }
+      }
+    }
+
+    // INV-PLAN-LONG-CAP-MINS — long run duration ≤ LONG_RUN_CAP_MINUTES[distance]
+    // (CoachingPrinciples §9 — absolute time ceiling per race distance)
+    const long = placedRunning.find(({ session }) => isLongRun(session))
+    if (long?.session.duration_mins != null && long.session.duration_mins > longCapMins) {
+      violations.push({
+        code: 'INV-PLAN-LONG-CAP-MINS',
+        principle_ref: 'CoachingPrinciples §9',
+        severity: 'error',
+        week: w.n, day: long.day,
+        message: 'Long run duration exceeds absolute cap for race distance',
+        actual: long.session.duration_mins,
+        expected: `≤ ${longCapMins}`,
+      })
+    }
+
+    // INV-PLAN-WEEK-1-2-LONG-CAP — first two weeks: long ≤ longest_recent_run × 1.10
+    // (CoachingPrinciples §9 / spec 3.6). Floor takes precedence when the cap
+    // falls below MIN_SESSION_DISTANCE_KM.long — a session below floor is
+    // not coaching-meaningful, so the engine clamps to floor and accepts the
+    // higher early-week long.
+    if (w.n <= 2 && input.longest_recent_run_km > 0 && long?.session.distance_km != null) {
+      const rawCap = input.longest_recent_run_km * GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER
+      const effectiveCap = Math.max(rawCap, minDist.long)
+      if (long.session.distance_km > effectiveCap + 0.01) {
+        violations.push({
+          code: 'INV-PLAN-WEEK-1-2-LONG-CAP',
+          principle_ref: 'CoachingPrinciples §9',
+          severity: 'error',
+          week: w.n, day: long.day,
+          message: `Week ${w.n} long run exceeds longest_recent_run × ${GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER}`,
+          actual: long.session.distance_km,
+          expected: `≤ ${effectiveCap.toFixed(1)}`,
+        })
+      }
+    }
+
+    // INV-PLAN-QUALITY-PER-WEEK — quality count ≤ QUALITY_SESSIONS_PER_WEEK_MAX[fitness]
+    // (CoachingPrinciples §8)
+    if (qualityMaxPerWeek !== undefined) {
+      const qualityCount = placedRunning.filter(({ session }) => session.type === 'quality').length
+      if (qualityCount > qualityMaxPerWeek) {
+        violations.push({
+          code: 'INV-PLAN-QUALITY-PER-WEEK',
+          principle_ref: 'CoachingPrinciples §8',
+          severity: 'error',
+          week: w.n,
+          message: `Quality session count exceeds fitness ceiling (${fitness})`,
+          actual: qualityCount,
+          expected: `≤ ${qualityMaxPerWeek}`,
+        })
+      }
+    }
+
+    // INV-PLAN-QUALITY-LONG-SPACING — ≥ MIN_HOURS_BETWEEN_QUALITY_AND_LONG between quality and long
+    // (CoachingPrinciples §7 — heavy legs from quality the day before is the most reliable injury vector)
+    if (long) {
+      const qualities = placedRunning.filter(({ session }) => session.type === 'quality')
+      for (const q of qualities) {
+        if (dayGap(q.day, long.day) < minDaysQualLong) {
+          violations.push({
+            code: 'INV-PLAN-QUALITY-LONG-SPACING',
+            principle_ref: 'CoachingPrinciples §7',
+            severity: 'error',
+            week: w.n, day: q.day,
+            message: 'Quality session too close to long run',
+            actual: dayGap(q.day, long.day),
+            expected: `≥ ${minDaysQualLong} day(s)`,
+          })
+        }
+      }
+    }
+
+    // INV-PLAN-MAX-WEEKDAY-MINS — weekday session duration ≤ user's stated cap
+    // (CoachingPrinciples — life-first, plan-second)
+    if (input.max_weekday_mins) {
+      const weekdays: Day[] = ['mon','tue','wed','thu','fri']
+      for (const d of weekdays) {
+        const s = w.sessions[d]
+        if (!s?.duration_mins) continue
+        if (s.duration_mins > input.max_weekday_mins) {
+          violations.push({
+            code: 'INV-PLAN-MAX-WEEKDAY-MINS',
+            principle_ref: 'CoachingPrinciples — life-first',
+            severity: 'error',
+            week: w.n, day: d,
+            message: 'Weekday session duration exceeds user-specified cap',
+            actual: s.duration_mins,
+            expected: `≤ ${input.max_weekday_mins}`,
+          })
+        }
+      }
+    }
+  }
+
+  // Note: week-on-week volume cap (MAX_WEEKLY_VOLUME_INCREASE_PCT) is enforced
+  // by the engine's buildVolumeSequence pass on the planning array. Output sums
+  // can deviate due to session-level floors (e.g. week 1-2 with longest-recent
+  // cap collides with MIN_SESSION_DISTANCE) — those are legitimate. This
+  // invariant lives one layer up; it isn't checkable from the plan output alone.
+
+  return violations
+}
+
+export function formatViolations(violations: Violation[]): string {
+  if (violations.length === 0) return 'No violations.'
+  return violations.map(v =>
+    `[${v.severity.toUpperCase()}] ${v.code} (${v.principle_ref}) — week ${v.week}` +
+    (v.day ? ` ${v.day}` : '') +
+    `: ${v.message}. Got ${v.actual}, expected ${v.expected}.`
+  ).join('\n')
+}
