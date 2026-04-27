@@ -297,12 +297,14 @@ async function handleActivityDelete(event: StravaEvent) {
 
 /** Resolves Strava athlete_id → Zona user_id via user_settings. */
 async function resolveUserId(stravaAthleteId: number): Promise<string | null> {
+  // user_settings PK is `id` (referencing auth.users.id) — not `user_id`.
+  // Same bug pattern as the strava_refresh_token query fixed in 991c617.
   const { data } = await getSupabase()
     .from('user_settings')
-    .select('user_id')
+    .select('id')
     .eq('strava_athlete_id', stravaAthleteId)
-    .single()
-  return data?.user_id ?? null
+    .single() as { data: { id: string } | null; error: unknown }
+  return data?.id ?? null
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
