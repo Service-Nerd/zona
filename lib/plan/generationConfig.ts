@@ -123,6 +123,12 @@ export const GENERATION_CONFIG = {
   // midweek easy run per week. Skipped in race week and deload weeks.
   STRIDES_FIRST_WEEK: 3,
 
+  // ── Race-week shakeout (CoachingPrinciples §30) ────────────────────────────
+  // Race week has no quality session — shakeouts only. Hard cap on duration
+  // and a stride note on the first shakeout preserve neuromuscular sharpness
+  // without adding race-day fatigue.
+  RACE_WEEK_SHAKEOUT_MAX_MINS: 35,
+
   // ── Fresh-from-layoff detection (CoachingPrinciples §29) ───────────────────
   // If weeks_at_current_volume is set and below this threshold, the runner is
   // returning from a layoff and not actually consolidated at their stated

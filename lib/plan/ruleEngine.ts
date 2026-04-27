@@ -739,12 +739,33 @@ function buildWeekSessions(
     const raceDay = firstAvailableDay(['sun', 'sat', 'fri', 'thu', 'wed'], blocked) ?? 'sun'
     sessions[raceDay] = raceSession(weekN, raceDay, input.race_distance_km, raceName)
 
+    // CoachingPrinciples §30 — race-week shakeouts capped at
+    // RACE_WEEK_SHAKEOUT_MAX_MINS. The first shakeout carries a stride note
+    // to preserve neuromuscular sharpness with no fatigue cost.
+    const capMins = GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS
+    const enforceCap = (s: Session): Session => {
+      if (s.duration_mins != null && s.duration_mins > capMins) {
+        const ratio = capMins / s.duration_mins
+        s.duration_mins = capMins
+        if (s.distance_km != null) s.distance_km = roundDistance(s.distance_km * ratio)
+      }
+      return s
+    }
+
     const shakeout1 = firstAvailableDay(['tue', 'wed', 'mon'], blocked, [raceDay])
-    if (shakeout1) sessions[shakeout1] = shakeoutSession(weekN, shakeout1, zones, pace)
+    if (shakeout1) {
+      const s = enforceCap(shakeoutSession(weekN, shakeout1, zones, pace))
+      const existing = s.coach_notes ?? []
+      s.coach_notes = [
+        ...existing.slice(0, 2),
+        '4×100m strides at 5K effort, full recovery between.',
+      ] as [string, string?, string?]
+      sessions[shakeout1] = s
+    }
 
     const shakeout2 = firstAvailableDay(['thu', 'fri'], blocked, [raceDay, shakeout1 ?? raceDay])
     if (shakeout2 && input.days_available >= 3) {
-      sessions[shakeout2] = shakeoutSession(weekN, shakeout2, zones, pace)
+      sessions[shakeout2] = enforceCap(shakeoutSession(weekN, shakeout2, zones, pace))
     }
 
     return sessions

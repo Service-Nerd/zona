@@ -426,8 +426,18 @@ Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) where `startKm` i
 
 ---
 
-## 30. The constitution
+## 30. Race-week shakeout cap and strides
 
-These thirty principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** Race-week shakeouts MUST cap duration at `RACE_WEEK_SHAKEOUT_MAX_MINS` (35 minutes), with RPE ≤ 3. The first shakeout of race week carries a stride coach-note ("4×100m strides at 5K effort, full recovery between.") to preserve neuromuscular sharpness without race-day fatigue cost. The second shakeout (when scheduled) is plain easy — no strides — to keep the day before/of-day arrangement uncluttered.
+
+**Why.** A shakeout is a wake-up for the legs, not training. Anything longer than ~35 minutes has crossed into being a session, and starts to add fatigue the runner cannot recover from before race day. Strides on the earlier shakeout preserve fast-twitch coordination — the runner has rehearsed near-race-pace turnover within 48 hours of the gun, but only for 80 seconds of work. Without strides, six days of taper-pace running can leave the runner feeling flat-footed at the start.
+
+**Config.** `GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS = 35`. Implemented in the race-week branch of `buildWeekSessions()`. Distance is reduced proportionally when the cap binds (preserving easy pace).
+
+---
+
+## 31. The constitution
+
+These thirty-one principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

@@ -184,6 +184,7 @@ Weekly: **29 km**
 
 - **tue** — Easy shakeout · 4km · 27min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 2
   - _Short and relaxed. Wake the legs, nothing more._
+  - _4×100m strides at 5K effort, full recovery between._
 - **thu** — Easy shakeout · 4km · 27min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 2
   - _Short and relaxed. Wake the legs, nothing more._
 - **sun** — Race - Target HM · 21.1km
@@ -267,7 +268,7 @@ Weekly: **29 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T10:29:12.989Z",
+    "generated_at": "2026-04-27T10:30:42.190Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
@@ -1170,7 +1171,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 2,
           "coach_notes": [
-            "Short and relaxed. Wake the legs, nothing more."
+            "Short and relaxed. Wake the legs, nothing more.",
+            "4×100m strides at 5K effort, full recovery between."
           ]
         },
         "thu": {

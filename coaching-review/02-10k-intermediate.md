@@ -156,6 +156,7 @@ Weekly: **18 km**
 
 - **wed** — Easy shakeout · 4km · 26min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 2
   - _Short and relaxed. Wake the legs, nothing more._
+  - _4×100m strides at 5K effort, full recovery between._
 - **fri** — Easy shakeout · 4km · 26min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 2
   - _Short and relaxed. Wake the legs, nothing more._
 - **sun** — Race - Local 10K · 10km
@@ -243,7 +244,7 @@ Weekly: **18 km**
       "knee"
     ],
     "terrain": "road",
-    "generated_at": "2026-04-27T10:29:12.988Z",
+    "generated_at": "2026-04-27T10:30:42.189Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": false,
@@ -998,7 +999,8 @@ Weekly: **18 km**
           "pace_target": "5:51–7:00 /km",
           "rpe_target": 2,
           "coach_notes": [
-            "Short and relaxed. Wake the legs, nothing more."
+            "Short and relaxed. Wake the legs, nothing more.",
+            "4×100m strides at 5K effort, full recovery between."
           ]
         },
         "fri": {
