@@ -460,8 +460,18 @@ Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) where `startKm` i
 
 ---
 
-## 33. The constitution
+## 33. Coach notes by session intent
 
-These thirty-three principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** Coach notes attached to a session MUST be selected by the session's *intent* (the label the runner sees), not by the underlying catalogue row that happened to be selected. When the engine overrides a label (e.g. `goalPaceWeek` re-labels a "Steady aerobic" catalogue row as "10K-pace intervals"), the voice MUST be replaced — not appended — with one that matches the new intent. Banned cross-type combinations: VO2max sessions never get aerobic cues ("Boring is the point", "If it feels productive slow down"); easy/long sessions never get interval cues ("Exit each rep wanting more", "Rep three is the test"); tempo sessions never get sprint cues ("Explosive starts").
+
+**Why.** A non-elite runner can't tell from feel whether 5:00/km is goal pace, threshold pace, or VO2max work — they trust the label and the coach note together. A "10K-pace intervals" session telling them "Boring is the point. If it feels productive, slow down" is incoherent: the label says "race-pace work" and the note says "easy aerobic". They will follow whichever instruction matches their bias on the day, and the engine will have failed twice — once on the prescription, once on the framing.
+
+**Config.** Implemented in `makeQualitySession()` (`lib/plan/ruleEngine.ts`): when `useGoalPace` is true, the engine synthesises a goal-pace voice rather than appending the catalogue's voice. VO2max sessions keep their catalogue voice (the catalogue's vo2max entries are correct). Enforced by `INV-PLAN-COACH-NOTES-MATCH-INTENT` in `lib/plan/invariants.ts`.
+
+---
+
+## 34. The constitution
+
+These thirty-four principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

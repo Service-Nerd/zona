@@ -100,7 +100,7 @@ Weekly: **32 km** · long: 1.1h
 - **mon** — Easy run - Zone 2 · 8km · 51min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
 - **wed** — 10K-pace intervals · 6km · 30min · Zone 3–4 · HR 146–159 bpm · pace 4:54–5:06 /km · RPE 7
-  - _Boring is the point. If it feels productive, slow down._
+  - _10K-pace work. Target 5:00 /km. Controlled, even splits — exit each rep wanting more._
 - **fri** — Easy run - Zone 2 · 8km · 51min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 - **sun** — Long run - Zone 2 · 10km · 64min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 
@@ -113,7 +113,7 @@ Weekly: **35 km** · long: 1.2h
 - **mon** — Easy run - Zone 2 · 8.5km · 55min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
 - **wed** — 10K-pace intervals · 6.5km · 33min · Zone 3–4 · HR 146–159 bpm · pace 4:54–5:06 /km · RPE 7
-  - _Boring is the point. If it feels productive, slow down._
+  - _10K-pace work. Target 5:00 /km. Controlled, even splits — exit each rep wanting more._
 - **fri** — Easy run - Zone 2 · 8.5km · 55min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 - **sun** — Long run - Zone 2 · 11km · 71min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 
@@ -247,7 +247,7 @@ Weekly: **18 km**
       "knee"
     ],
     "terrain": "road",
-    "generated_at": "2026-04-27T12:09:18.069Z",
+    "generated_at": "2026-04-27T12:11:47.370Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": false,
@@ -656,7 +656,7 @@ Weekly: **18 km**
           "pace_target": "4:54–5:06 /km",
           "rpe_target": 7,
           "coach_notes": [
-            "Boring is the point. If it feels productive, slow down."
+            "10K-pace work. Target 5:00 /km. Controlled, even splits — exit each rep wanting more."
           ]
         },
         "fri": {
@@ -726,7 +726,7 @@ Weekly: **18 km**
           "pace_target": "4:54–5:06 /km",
           "rpe_target": 7,
           "coach_notes": [
-            "Boring is the point. If it feels productive, slow down."
+            "10K-pace work. Target 5:00 /km. Controlled, even splits — exit each rep wanting more."
           ]
         },
         "fri": {

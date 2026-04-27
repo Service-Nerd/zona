@@ -567,15 +567,30 @@ function makeQualitySession(args: {
     hrTarget = zones.qualityHR
   }
 
-  // Coach notes: catalogue voice first; goal-pace augmentation in peak when set.
+  // Coach notes — must match the session's actual intent, not the underlying
+  // catalogue row when the label has been overridden.
+  // (CoachingPrinciples §33 — coach notes by session intent.)
   const notes: string[] = []
-  if (catalogueRow?.coach_voice_notes) notes.push(catalogueRow.coach_voice_notes)
-  if (phase === 'peak' && goalPace && !catalogueRow?.coach_voice_notes?.toLowerCase().includes('pace') && !isVo2max) {
-    notes.push(`Race-pace work. Target: ${goalPace}. Controlled — not all-out.`)
+  if (useGoalPace && goalPace) {
+    // Goal-pace override: synthesise a voice that matches the prescription.
+    // Don't carry the catalogue's voice through (it belongs to whichever
+    // category the selector fell back to — usually aerobic for 10K plans
+    // where no 10K-eligible threshold row exists).
+    notes.push(`${distLabel ?? 'Goal'}-pace work. Target ${goalPace}. Controlled, even splits — exit each rep wanting more.`)
+  } else if (isVo2max && catalogueRow?.coach_voice_notes) {
+    // VO2max sessions keep their catalogue voice (the catalogue's vo2max
+    // entries — Three minutes is long, Heroic openers ruin it — are correct).
+    notes.push(catalogueRow.coach_voice_notes)
+  } else if (catalogueRow?.coach_voice_notes) {
+    notes.push(catalogueRow.coach_voice_notes)
+    if (phase === 'peak' && goalPace && !catalogueRow.coach_voice_notes.toLowerCase().includes('pace')) {
+      notes.push(`Race-pace work. Target: ${goalPace}. Controlled — not all-out.`)
+    }
   }
-  const coach_notes = notes.length > 0
-    ? (notes.slice(0, 3) as [string, string?, string?])
-    : undefined
+  const coach_notes = notes.length === 0 ? undefined
+    : notes.length === 1 ? [notes[0]] as [string]
+    : notes.length === 2 ? [notes[0], notes[1]] as [string, string]
+    : [notes[0], notes[1], notes[2]] as [string, string, string]
 
   const rounded = roundDistance(distKm)
   return {

@@ -115,7 +115,7 @@ Weekly: **47 km** · long: 1.7h
 - **tue** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
 - **thu** — HM-pace intervals · 8.5km · 46min · Zone 3–4 · HR 141–154 bpm · pace 5:20–5:34 /km · RPE 7
-  - _Rep three is the test. Not rep one._
+  - _HM-pace work. Target 5:27 /km. Controlled, even splits — exit each rep wanting more._
 - **sat** — Easy run - Zone 2 · 12km · 80min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 15km · 100min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
@@ -137,7 +137,7 @@ Weekly: **40 km** · long: 2h
 - **tue** — Easy run - Zone 2 · 7.5km · 50min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
 - **thu** — HM-pace intervals · 7km · 38min · Zone 3–4 · HR 141–154 bpm · pace 5:20–5:34 /km · RPE 7
-  - _HM pace, not faster. Exit each rep wanting more._
+  - _HM-pace work. Target 5:27 /km. Controlled, even splits — exit each rep wanting more._
 - **sat** — Easy run - Zone 2 · 7.5km · 50min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run with HM-pace finish · 18km · 119min · Zone 2–3 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 6
   - _Easy first. Final third at HM goal pace._
@@ -151,7 +151,7 @@ Weekly: **44 km** · long: 2h
 - **tue** — Easy run - Zone 2 · 9km · 60min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
 - **thu** — HM-pace intervals · 8km · 44min · Zone 3–4 · HR 141–154 bpm · pace 5:20–5:34 /km · RPE 7
-  - _HM pace, not faster. Exit each rep wanting more._
+  - _HM-pace work. Target 5:27 /km. Controlled, even splits — exit each rep wanting more._
 - **sat** — Easy run - Zone 2 · 9km · 60min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run with HM-pace finish · 18km · 119min · Zone 2–3 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 6
   - _Easy first. Final third at HM goal pace._
@@ -272,7 +272,7 @@ Weekly: **29 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T12:09:18.070Z",
+    "generated_at": "2026-04-27T12:11:47.371Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
@@ -753,7 +753,7 @@ Weekly: **29 km**
           "pace_target": "5:20–5:34 /km",
           "rpe_target": 7,
           "coach_notes": [
-            "Rep three is the test. Not rep one."
+            "HM-pace work. Target 5:27 /km. Controlled, even splits — exit each rep wanting more."
           ]
         },
         "tue": {
@@ -893,7 +893,7 @@ Weekly: **29 km**
           "pace_target": "5:20–5:34 /km",
           "rpe_target": 7,
           "coach_notes": [
-            "HM pace, not faster. Exit each rep wanting more."
+            "HM-pace work. Target 5:27 /km. Controlled, even splits — exit each rep wanting more."
           ]
         },
         "tue": {
@@ -967,7 +967,7 @@ Weekly: **29 km**
           "pace_target": "5:20–5:34 /km",
           "rpe_target": 7,
           "coach_notes": [
-            "HM pace, not faster. Exit each rep wanting more."
+            "HM-pace work. Target 5:27 /km. Controlled, even splits — exit each rep wanting more."
           ]
         },
         "tue": {

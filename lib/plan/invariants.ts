@@ -221,6 +221,36 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       }
     }
 
+    // INV-PLAN-COACH-NOTES-MATCH-INTENT — coach notes must match session
+    // label/intent, not leak from the underlying catalogue row.
+    // (CoachingPrinciples §33)
+    for (const { day, session } of placedRunning) {
+      if (session.type !== 'quality') continue
+      const label = (session.label ?? '').toLowerCase()
+      const notes = (session.coach_notes ?? []).join(' ').toLowerCase()
+      const isVo2 = label.includes('vo2max') || label.includes('vo2 max')
+      const isGoalPace = label.includes('-pace intervals') || label.includes('hm-pace') || label.includes('mp ') || label.includes('mp.')
+
+      const banned: { label: string; phrase: string }[] = []
+      if (isVo2 || isGoalPace) {
+        banned.push({ label, phrase: 'boring is the point' })
+        banned.push({ label, phrase: 'if it feels productive' })
+      }
+      for (const b of banned) {
+        if (notes.includes(b.phrase)) {
+          violations.push({
+            code: 'INV-PLAN-COACH-NOTES-MATCH-INTENT',
+            principle_ref: 'CoachingPrinciples §33',
+            severity: 'error',
+            week: w.n, day,
+            message: `"${session.label}" carries note containing "${b.phrase}" — aerobic cue on a quality session`,
+            actual: b.phrase,
+            expected: 'voice matching session intent',
+          })
+        }
+      }
+    }
+
     // INV-PLAN-INJURY-NO-HILLS — runners with hill-restricting injury history
     // (knee, ITB, Achilles, shin, calf, plantar) get no hill sessions in
     // base/build phases. (CoachingPrinciples §21)
