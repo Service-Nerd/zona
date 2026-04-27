@@ -64,6 +64,7 @@ Weekly: **47 km** · long: 1.6h
 Weekly: **50 km** · long: 1.7h
 
 - **tue** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+  - _4×20s strides at 5K effort, full recovery between._
 - **thu** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sat** — Easy run - Zone 2 · 12km · 80min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 15km · 100min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
@@ -84,6 +85,7 @@ Weekly: **35 km** · long: 1.2h
 Weekly: **40 km** · long: 1.4h
 
 - **tue** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+  - _4×20s strides at 5K effort, full recovery between._
 - **thu** — Progressive tempo · 7km · 38min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
   - _Hold back early. Finish honest._
 - **sat** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
@@ -95,6 +97,7 @@ Weekly: **40 km** · long: 1.4h
 Weekly: **43 km** · long: 1.5h
 
 - **tue** — Easy run - Zone 2 · 10.5km · 70min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+  - _4×20s strides at 5K effort, full recovery between._
 - **thu** — Continuous tempo · 8km · 43min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
   - _Sustainable. Same pace at the end as at the start._
 - **sat** — Easy run - Zone 2 · 10.5km · 70min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
@@ -106,6 +109,7 @@ Weekly: **43 km** · long: 1.5h
 Weekly: **47 km** · long: 1.7h
 
 - **tue** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+  - _4×20s strides at 5K effort, full recovery between._
 - **thu** — Cruise intervals · 8.5km · 46min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
   - _Rep three is the test. Not rep one._
 - **sat** — Easy run - Zone 2 · 12km · 80min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
@@ -127,6 +131,7 @@ Weekly: **35 km** · long: 1.2h
 Weekly: **40 km** · long: 2h
 
 - **tue** — Easy run - Zone 2 · 7.5km · 50min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+  - _4×20s strides at 5K effort, full recovery between._
 - **thu** — HM-pace intervals · 7km · 38min · Zone 3–4 · HR 141–154 bpm · pace 5:20–5:34 /km · RPE 7
   - _HM pace, not faster. Exit each rep wanting more._
 - **sat** — Easy run - Zone 2 · 7.5km · 50min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
@@ -140,6 +145,7 @@ Weekly: **40 km** · long: 2h
 Weekly: **44 km** · long: 2h
 
 - **tue** — Easy run - Zone 2 · 9km · 60min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+  - _4×20s strides at 5K effort, full recovery between._
 - **thu** — HM-pace intervals · 8km · 44min · Zone 3–4 · HR 141–154 bpm · pace 5:20–5:34 /km · RPE 7
   - _HM pace, not faster. Exit each rep wanting more._
 - **sat** — Easy run - Zone 2 · 9km · 60min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
@@ -153,6 +159,7 @@ Weekly: **44 km** · long: 2h
 Weekly: **35 km** · long: 1.5h
 
 - **tue** — Easy run - Zone 2 · 7.5km · 50min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+  - _4×20s strides at 5K effort, full recovery between._
 - **thu** — Progressive tempo · 6km · 32min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
   - _Hold back early. Finish honest._
 - **sat** — Easy run - Zone 2 · 7.5km · 50min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
@@ -164,6 +171,7 @@ Weekly: **35 km** · long: 1.5h
 Weekly: **25 km** · long: 1.1h
 
 - **tue** — Easy run - Zone 2 · 5km · 33min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+  - _4×20s strides at 5K effort, full recovery between._
 - **thu** — Progressive tempo · 5km · 27min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
   - _Hold back early. Finish honest._
 - **sat** — Easy run - Zone 2 · 5km · 33min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
@@ -259,7 +267,7 @@ Weekly: **29 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T10:19:57.327Z",
+    "generated_at": "2026-04-27T10:25:32.015Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
@@ -478,7 +486,10 @@ Weekly: **29 km**
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
-          "rpe_target": 4
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
         },
         "sat": {
           "id": "w3-sat",
@@ -610,7 +621,10 @@ Weekly: **29 km**
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
-          "rpe_target": 4
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
         },
         "sat": {
           "id": "w5-sat",
@@ -677,7 +691,10 @@ Weekly: **29 km**
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
-          "rpe_target": 4
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
         },
         "sat": {
           "id": "w6-sat",
@@ -744,7 +761,10 @@ Weekly: **29 km**
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
-          "rpe_target": 4
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
         },
         "sat": {
           "id": "w7-sat",
@@ -880,7 +900,10 @@ Weekly: **29 km**
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
-          "rpe_target": 4
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
         },
         "sat": {
           "id": "w9-sat",
@@ -951,7 +974,10 @@ Weekly: **29 km**
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
-          "rpe_target": 4
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
         },
         "sat": {
           "id": "w10-sat",
@@ -1018,7 +1044,10 @@ Weekly: **29 km**
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
-          "rpe_target": 4
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
         },
         "sat": {
           "id": "w11-sat",
@@ -1085,7 +1114,10 @@ Weekly: **29 km**
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
-          "rpe_target": 4
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
         },
         "sat": {
           "id": "w12-sat",

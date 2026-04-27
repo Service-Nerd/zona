@@ -118,6 +118,11 @@ export const GENERATION_CONFIG = {
   PEAK_OVER_BASE_RATIO: 1.10,            // peak weekly_km / W1 weekly_km
   PEAK_OVERLOAD_MIN_PLAN_WEEKS: 8,       // below this length, ratio not enforced
 
+  // ── Strides on midweek easy (CoachingPrinciples §28) ───────────────────────
+  // From this week onwards, the engine appends a stride coach-note to one
+  // midweek easy run per week. Skipped in race week and deload weeks.
+  STRIDES_FIRST_WEEK: 3,
+
   // ── Injury weekly volume cap (knee, shin splints) ──────────────────────────
   // CoachingPrinciples §12 — for these two injury types, weekly volume cap
   // tightens from MAX_WEEKLY_VOLUME_INCREASE_PCT (10%) to this stricter limit.

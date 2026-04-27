@@ -402,8 +402,18 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. The race-distan
 
 ---
 
-## 28. The constitution
+## 28. Strides on midweek easy
 
-These twenty-eight principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** From `STRIDES_FIRST_WEEK` (week 3) onwards, every non-deload, non-race week appends a stride coach-note to one midweek easy run: "4×20s strides at 5K effort, full recovery between." The stride run is placed midweek (Wed preferred), avoids the day before the long run, and avoids the day after a quality session. Race week and deload weeks are exempt.
+
+**Why.** Strides preserve neuromuscular sharpness — fast turnover, full extension, race-pace mechanics — without adding meaningful fatigue. They are the cheapest fitness asset in coaching: 80 seconds of work for an adaptation that compounds across a build. Without strides, a runner who only ever runs Z2 and threshold loses the ability to run faster than threshold pace efficiently; race day finds them flat-footed at the gun. They belong on an easy day so the legs are fresh enough to execute proper form.
+
+**Config.** `GENERATION_CONFIG.STRIDES_FIRST_WEEK = 3`. Implemented at the end of `buildWeekSessions()` after easy fillers are placed. The stride note is appended to `coach_notes` rather than producing a new session — strides are a 4-minute appendix to a 45-minute easy run, not a session in their own right.
+
+---
+
+## 29. The constitution
+
+These twenty-nine principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

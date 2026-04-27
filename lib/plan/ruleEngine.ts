@@ -1036,6 +1036,42 @@ function buildWeekSessions(
     used.push(best)
   }
 
+  // ── 4b. Strides on a midweek easy run (CoachingPrinciples §28) ────────────
+  // From W3 onwards (skip race week and deloads), pick a midweek easy session
+  // that is NOT the day before the long run, NOT the day after a quality, and
+  // append "4×20s strides at 5K effort, full recovery" as a coach note. This
+  // preserves neuromuscular sharpness without adding fatigue.
+  if (weekN >= GENERATION_CONFIG.STRIDES_FIRST_WEEK
+      && !isRaceWeek
+      && !isDeload) {
+    const stridePreferred: Day[] = ['wed', 'tue', 'thu', 'mon', 'fri']
+    const blockedFromStrides: Set<Day> = new Set()
+    // Don't append to a session on the day before the long run (heavy legs)
+    // or the day after a quality session (recovery day).
+    const longDayIdx = DAY_ORDER.indexOf(longDay)
+    blockedFromStrides.add(DAY_ORDER[(longDayIdx - 1 + 7) % 7])
+    for (const u of used) {
+      const s = sessions[u]
+      if (s?.type === 'quality') {
+        blockedFromStrides.add(DAY_ORDER[(DAY_ORDER.indexOf(u) + 1) % 7])
+      }
+    }
+    for (const d of stridePreferred) {
+      if (blocked.has(d) || blockedFromStrides.has(d)) continue
+      const s = sessions[d]
+      if (!s || s.type !== 'easy') continue
+      if (s.label?.toLowerCase().includes('long') || s.label?.toLowerCase().includes('shakeout')) continue
+      const note = '4×20s strides at 5K effort, full recovery between.'
+      const existing = s.coach_notes ?? []
+      const merged: [string, string?, string?] = [
+        ...existing.slice(0, 2),
+        note,
+      ] as [string, string?, string?]
+      s.coach_notes = merged
+      break  // one stride run per week
+    }
+  }
+
   // ── 5. Honour max_weekday_mins constraint ────────────────────────────────
   // CoachingPrinciples — "Life-first, plan-second". User's stated weekday time
   // limit is a hard cap. If a session placed on a weekday exceeds it, reduce
