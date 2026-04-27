@@ -569,8 +569,30 @@ When neither suggestion applies, the diagnosis is surfaced alone (no false guida
 
 ---
 
-## 42. The constitution
+## 42. VDOT staleness compounds
 
-These forty-two principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** The VDOT conservatism discount (§10) scales with benchmark age. Benchmarks ≤ `VDOT_STALENESS_FRESH_WEEKS` (4 weeks) get the base 3% discount only. Beyond that, +`VDOT_STALENESS_PER_4WK_PCT` (1%) per additional 4-week block, capped at `VDOT_STALENESS_MAX_DISCOUNT_PCT` (7%). Replaces the legacy binary 6-month threshold which jumped from 3% straight to 8%.
+
+**Why.** A 6-week-old benchmark and a 1-week-old benchmark used to get the same 3% discount. A 7-month-old benchmark jumped to 8%. The discontinuity is unrealistic — fitness drift is gradual. A graduated ramp matches actual physiology: a few weeks at low conditioning costs you noticeably less than two months. Capping at 7% prevents the engine from running away with conservatism on very old benchmarks (where the right answer is "ask for a re-test", not "discount more").
+
+**Config.**
+- `GENERATION_CONFIG.VDOT_STALENESS_FRESH_WEEKS = 4`
+- `GENERATION_CONFIG.VDOT_STALENESS_PER_4WK_PCT = 1`
+- `GENERATION_CONFIG.VDOT_STALENESS_MAX_DISCOUNT_PCT = 7`
+
+Worked examples:
+- 0–4 weeks old: 3%
+- 5–8 weeks: 4%
+- 9–12 weeks: 5%
+- 13–16 weeks: 6%
+- 17+ weeks: 7% (cap)
+
+Implemented in `applyVdotDiscount()` (`lib/plan/ruleEngine.ts`). Legacy `VDOT_STALE_BENCHMARK_*` config retained for back-compat with any consumer that hasn't migrated; the new ramp supersedes them in `applyVdotDiscount`.
+
+---
+
+## 43. The constitution
+
+These forty-three principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

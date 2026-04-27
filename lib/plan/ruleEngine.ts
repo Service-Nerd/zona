@@ -138,17 +138,20 @@ function calcVDOTFromBenchmark(b: BenchmarkInput): number {
   return calcVDOT(b.distance_km, mins)
 }
 
-// VDOT conservatism (CoachingPrinciples §10) — protects users from training at
-// peak race-day output. Default 3% discount; +5% if benchmark > 6 months old.
-// Surfaced in plan.meta.vdot_discount_applied_pct so the user can see it.
+// VDOT conservatism (CoachingPrinciples §10, §42) — protects users from
+// training at peak race-day output. Discount = base 3% + staleness ramp,
+// capped at MAX. Surfaced in plan.meta.vdot_discount_applied_pct.
 function applyVdotDiscount(rawVdot: number, b: BenchmarkInput, today: Date): { vdot: number; discountPct: number } {
   let discountPct = GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT
   if (b.benchmark_date) {
     const bDate = parseDateLocal(b.benchmark_date)
-    const monthsAgo = (today.getTime() - bDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
-    if (monthsAgo > GENERATION_CONFIG.VDOT_STALE_BENCHMARK_MONTHS) {
-      discountPct += GENERATION_CONFIG.VDOT_STALE_BENCHMARK_ADDITIONAL_DISCOUNT_PCT
+    const weeksAgo = (today.getTime() - bDate.getTime()) / (1000 * 60 * 60 * 24 * 7)
+    const fresh = GENERATION_CONFIG.VDOT_STALENESS_FRESH_WEEKS
+    if (weeksAgo > fresh) {
+      const extraBlocks = Math.floor((weeksAgo - fresh) / 4) + 1
+      discountPct += extraBlocks * GENERATION_CONFIG.VDOT_STALENESS_PER_4WK_PCT
     }
+    discountPct = Math.min(discountPct, GENERATION_CONFIG.VDOT_STALENESS_MAX_DISCOUNT_PCT)
   }
   return { vdot: rawVdot * (1 - discountPct / 100), discountPct }
 }

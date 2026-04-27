@@ -262,6 +262,14 @@ export const GENERATION_CONFIG = {
   VDOT_STALE_BENCHMARK_ADDITIONAL_DISCOUNT_PCT: 5,
   VDOT_STALE_BENCHMARK_MONTHS: 6,
 
+  // R2/L-03 — staleness compounding. Discount scales with benchmark age:
+  // base discount ≤ FRESH_WEEKS, then +PER_4WK_PCT per additional 4-week
+  // block, capped at MAX_PCT. Replaces the binary 6-month threshold; the
+  // legacy fields above are retained for back-compat with applyRecalibration.
+  VDOT_STALENESS_FRESH_WEEKS:        4,   // ≤ this many weeks: base discount only
+  VDOT_STALENESS_PER_4WK_PCT:        1,   // +1% per additional 4-week block
+  VDOT_STALENESS_MAX_DISCOUNT_PCT:   7,   // cap at 7% total
+
   // ── Pace and zone display rules (CoachingPrinciples §11, §12) ───────────────
   USE_PACE_RANGES_NOT_POINTS: true,
   EASY_RUN_ZONE_CAP: 'Z2_TOP', // resolves to top of ZONES.Z2 at runtime
