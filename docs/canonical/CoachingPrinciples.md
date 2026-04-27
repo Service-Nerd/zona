@@ -549,8 +549,18 @@ When neither suggestion applies, the diagnosis is surfaced alone (no false guida
 
 ---
 
-## 40. The constitution
+## 40. 5K finish-goal long-run cap
 
-These forty principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** For `goal: finish` AND `race_distance_km ≤ 5`, the peak long run is capped at `LONG_RUN_CAP_MINUTES_5K_FINISH` (70 min) rather than the standard `LONG_RUN_CAP_MINUTES['5K']` (90 min). Aerobic development for 5K finish goals comes through frequency + total volume; extended long runs add fatigue without proportional benefit. Time-targeted 5K plans (where the runner is actually racing) keep the standard 90-min cap.
+
+**Why.** Round-2 review flagged Sarah's 84-min peak long run for a 5K finish goal as HM-shaped — too aerobic-development-focused for what she's actually training for. A returning runner targeting a finish-line photo doesn't need a 14-km long run; she needs to reach race day with healthy connective tissue and the confidence she can run 5 km. Sub-cap LRs (35–60 min) accomplish that with less injury risk.
+
+**Config.** `GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_5K_FINISH = 70`. Applied in `applyLongRunCap()`. Standard `LONG_RUN_CAP_MINUTES['5K']` retained for time-targeted 5K plans (where 90 min remains coaching-appropriate as a ceiling).
+
+---
+
+## 41. The constitution
+
+These forty-one principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

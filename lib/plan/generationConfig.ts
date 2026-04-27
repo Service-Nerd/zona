@@ -222,6 +222,11 @@ export const GENERATION_CONFIG = {
     '100K':     420,
   },
 
+  // Tighter cap for finish-goal 5K plans (CoachingPrinciples §40, R2/L-01).
+  // 5K finish-goal runners don't need 84-minute long runs; aerobic development
+  // through frequency + total volume, not extended LRs.
+  LONG_RUN_CAP_MINUTES_5K_FINISH: 70,
+
   // ── Peak long-run race specificity (CoachingPrinciples §24, §35) ──────────
   // Time-targeted plans for HM and longer require race-distance specificity in
   // the long run. Floor (not ceiling) — peak long run must REACH this fraction

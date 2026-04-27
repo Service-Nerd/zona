@@ -274,7 +274,7 @@ Weekly: **36 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T13:07:49.071Z",
+    "generated_at": "2026-04-27T13:09:05.092Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,

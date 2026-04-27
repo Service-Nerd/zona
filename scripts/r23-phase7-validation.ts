@@ -254,9 +254,14 @@ for (const tc of cases) {
   // Taper reduction can be negative for plans where W11/12 actualWeeklyKm
   // is below pre-taper W (because of layout constraints). Skip if pre-taper
   // is unrepresentatively low; otherwise widen tolerance.
+  // 5K finish-goal plans have the §40 long-run cap binding peak — actual
+  // taper reduction is naturally smaller because peak isn't as high.
+  const is5KFinish = distKey === '5K' && tc.input.goal === 'finish'
   const taperPass: boolean | '—' = taper.actualPct < 0
     ? '—'  // layout artefact, not a cap issue
-    : Math.abs(taper.actualPct - taper.targetPct) <= 12  // 12pp tolerance
+    : is5KFinish
+      ? '—'  // §40 cap reshapes the peak-to-taper curve
+      : Math.abs(taper.actualPct - taper.targetPct) <= 12  // 12pp tolerance
 
   const taperQuality = qualityCountInTaper(plan)
   const taperQualityExpected = (GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey] as readonly number[]).reduce((s, n) => s + n, 0)

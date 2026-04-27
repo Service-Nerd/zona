@@ -712,7 +712,11 @@ function applyLongRunCap(distKm: number, paceMinPerKm: number, input: GeneratorI
   // Absolute cap per race distance (CoachingPrinciples §9 — protects against
   // unrealistic time-on-feet for the race).
   const distKey = raceDistanceKey(input.race_distance_km)
-  const absCapMins = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
+  let absCapMins = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
+  // CoachingPrinciples §40 — finish-goal 5K plans get a tighter cap.
+  if (distKey === '5K' && input.goal === 'finish') {
+    absCapMins = Math.min(absCapMins, GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_5K_FINISH)
+  }
   if (paceMinPerKm > 0 && result * paceMinPerKm > absCapMins) {
     result = absCapMins / paceMinPerKm
   }
