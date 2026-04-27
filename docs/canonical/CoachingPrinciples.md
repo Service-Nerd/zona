@@ -392,8 +392,18 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. The race-distan
 
 ---
 
-## 27. The constitution
+## 27. Theme matches prescription
 
-These twenty-seven principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** Week themes are short coaching statements written for the runner. They MUST match what the engine has actually prescribed for that week. "Where the fitness is built" / "highest volume" themes apply only to weeks whose volume exceeds the most recent non-deload week. "Intensity stays" themes apply only to weeks where ≥1 quality session is prescribed. Race week's theme is exclusively "The work is done. Arrive rested.". The label "Race week" is exclusively the final week of the plan; earlier taper weeks use "Taper — trust the work" / "Taper — sharpening" / "Taper — final cut".
+
+**Why.** A theme that contradicts the prescription gives the runner two messages — one from the words, one from the work — and they will believe the words. "Volume drops. Intensity stays." on a week with no intensity teaches the runner to disbelieve the engine's framing on every other week too. The cost of inconsistency is paid permanently in user trust. The standard is: read the theme, look at the week, no surprise.
+
+**Config.** Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) which selects the theme per week with awareness of `actualWeeklyKm`, `qualityCount`, and the prior non-deload weekly volume. `weekLabel()` taper labels extended from 2 to 3 entries so multi-week tapers (HM, marathon) don't reuse "Race week" for the second-to-last week. Enforced by `INV-PLAN-THEME-MATCHES-PRESCRIPTION` in `lib/plan/invariants.ts`.
+
+---
+
+## 28. The constitution
+
+These twenty-eight principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

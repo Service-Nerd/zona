@@ -1071,7 +1071,7 @@ function weekLabel(phase: PhaseType, weekN: number, buildWeekN: number, isDeload
     base:  ['Base — easy start', 'Base — building consistency', 'Base — aerobic development', 'Base — aerobic discipline'],
     build: ['Build — first quality session', 'Build — extending the work', 'Build — raising the ceiling', 'Build — consistency'],
     peak:  ['Peak — highest volume', 'Peak — second peak week', 'Peak — sharpening'],
-    taper: ['Taper — trust the work', 'Race week'],
+    taper: ['Taper — trust the work', 'Taper — sharpening', 'Taper — final cut'],
   }
   const options = labels[phase]
   return options[Math.min(buildWeekN - 1, options.length - 1)]
@@ -1267,11 +1267,30 @@ export function generateRulePlan(
     const weekType: Week['type'] = isRaceWeek ? 'race' : isDeload ? 'deload' : 'normal'
     const badge: Week['badge'] = isRaceWeek ? 'race' : isDeload ? 'deload' : undefined
 
-    const theme = isRaceWeek
-      ? 'The work is done. Arrive rested.'
-      : isRecalibration
-        ? 'Deload week. Run a parkrun or timed 5K — your result sharpens the zones for the next block.'
-        : weekTheme(phase, isDeload)
+    // CoachingPrinciples §27 — theme matches prescription. "Where the fitness
+    // is built" / "highest volume" themes are misleading when peak weekly_km
+    // does not exceed the prior non-deload week. "Intensity stays" themes
+    // mislead in taper weeks with no quality session prescribed.
+    const qualityCount = Object.values(sessions).filter(s => s?.type === 'quality').length
+    const prevNonDeloadWeeklyKm = (() => {
+      for (let j = weeks.length - 1; j >= 0; j--) {
+        if (weeks[j].type !== 'deload') return weeks[j].weekly_km
+      }
+      return 0
+    })()
+
+    let theme: string
+    if (isRaceWeek) {
+      theme = 'The work is done. Arrive rested.'
+    } else if (isRecalibration) {
+      theme = 'Deload week. Run a parkrun or timed 5K — your result sharpens the zones for the next block.'
+    } else if (phase === 'peak' && !isDeload && actualWeeklyKm <= prevNonDeloadWeeklyKm) {
+      theme = 'Consistency. The work is the volume.'
+    } else if (phase === 'taper' && !isDeload && qualityCount === 0) {
+      theme = 'Volume drops. Trust the work you have done.'
+    } else {
+      theme = weekTheme(phase, isDeload)
+    }
 
     weeks.push({
       n: weekN,

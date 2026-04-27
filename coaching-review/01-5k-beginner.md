@@ -113,7 +113,7 @@ Weekly: **26 km** · long: 1.4h
 - **sun** — Long run - Zone 2 · 84min · Zone 2 · HR < 151 bpm · pace 7:30–9:00 /km · RPE 4
 
 ### Week 10 — Taper — trust the work · *taper*
-> Volume drops. Intensity stays. Trust the work you have done.
+> Volume drops. Trust the work you have done.
 
 Weekly: **18 km** · long: 0.9h
 
@@ -198,7 +198,7 @@ Weekly: **13 km**
     "fitness_level": "beginner",
     "goal": "finish",
     "days_available": 3,
-    "generated_at": "2026-04-27T10:17:46.017Z",
+    "generated_at": "2026-04-27T10:19:57.324Z",
     "generator_version": "2.0",
     "tier": "free",
     "compressed": false,
@@ -669,7 +669,7 @@ Weekly: **13 km**
       "n": 10,
       "date": "2026-07-06",
       "label": "Taper — trust the work",
-      "theme": "Volume drops. Intensity stays. Trust the work you have done.",
+      "theme": "Volume drops. Trust the work you have done.",
       "type": "normal",
       "phase": "taper",
       "sessions": {

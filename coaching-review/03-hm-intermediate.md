@@ -122,7 +122,7 @@ Weekly: **35 km** · long: 1.2h
 - **sun** — Long run - Zone 2 · 10.5km · 70min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
 ### Week 9 — Peak — highest volume · *peak*
-> This is where the fitness is built. It will feel hard. That is correct.
+> Consistency. The work is the volume.
 
 Weekly: **40 km** · long: 2h
 
@@ -158,7 +158,7 @@ Weekly: **35 km** · long: 1.5h
 - **sat** — Easy run - Zone 2 · 7.5km · 50min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 13.5km · 90min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
-### Week 12 — Race week · *taper*
+### Week 12 — Taper — sharpening · *taper*
 > Volume drops. Intensity stays. Trust the work you have done.
 
 Weekly: **25 km** · long: 1.1h
@@ -259,7 +259,7 @@ Weekly: **29 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T10:17:46.020Z",
+    "generated_at": "2026-04-27T10:19:57.327Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
@@ -832,7 +832,7 @@ Weekly: **29 km**
       "n": 9,
       "date": "2026-06-29",
       "label": "Peak — highest volume",
-      "theme": "This is where the fitness is built. It will feel hard. That is correct.",
+      "theme": "Consistency. The work is the volume.",
       "type": "normal",
       "phase": "peak",
       "sessions": {
@@ -1040,7 +1040,7 @@ Weekly: **29 km**
     {
       "n": 12,
       "date": "2026-07-20",
-      "label": "Race week",
+      "label": "Taper — sharpening",
       "theme": "Volume drops. Intensity stays. Trust the work you have done.",
       "type": "normal",
       "phase": "taper",

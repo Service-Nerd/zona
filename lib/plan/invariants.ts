@@ -157,6 +157,41 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       }
     }
 
+    // INV-PLAN-THEME-MATCHES-PRESCRIPTION — weekly theme must not contradict
+    // the prescription. "highest volume" / "fitness is built" requires
+    // overload vs prior non-deload week; "intensity stays" requires ≥1
+    // quality session. (CoachingPrinciples §27)
+    {
+      const themeText = (w.theme ?? '').toLowerCase()
+      const qualityCount = Object.values(w.sessions).filter(s => s?.type === 'quality').length
+      const prevNonDeload = plan.weeks.slice(0, plan.weeks.indexOf(w)).reverse().find(p => p.type !== 'deload')
+
+      if ((themeText.includes('highest volume') || themeText.includes('fitness is built'))
+          && prevNonDeload
+          && w.weekly_km <= prevNonDeload.weekly_km) {
+        violations.push({
+          code: 'INV-PLAN-THEME-MATCHES-PRESCRIPTION',
+          principle_ref: 'CoachingPrinciples §27',
+          severity: 'error',
+          week: w.n,
+          message: `Theme implies overload but weekly_km ${w.weekly_km}km ≤ prior non-deload ${prevNonDeload.weekly_km}km`,
+          actual: `${w.weekly_km}km vs ${prevNonDeload.weekly_km}km`,
+          expected: `> ${prevNonDeload.weekly_km}km`,
+        })
+      }
+      if (themeText.includes('intensity stays') && qualityCount === 0) {
+        violations.push({
+          code: 'INV-PLAN-THEME-MATCHES-PRESCRIPTION',
+          principle_ref: 'CoachingPrinciples §27',
+          severity: 'error',
+          week: w.n,
+          message: `Theme says "intensity stays" but week has 0 quality sessions`,
+          actual: 0,
+          expected: '≥ 1 quality session',
+        })
+      }
+    }
+
     // INV-PLAN-INJURY-NO-HILLS — runners with hill-restricting injury history
     // (knee, ITB, Achilles, shin, calf, plantar) get no hill sessions in
     // base/build phases. (CoachingPrinciples §21)
