@@ -248,7 +248,7 @@ Weekly: **18 km**
       "knee"
     ],
     "terrain": "road",
-    "generated_at": "2026-04-27T13:14:04.586Z",
+    "generated_at": "2026-04-27T19:55:25.457Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": false,
@@ -268,7 +268,10 @@ Weekly: **18 km**
       "time": "0:23:30",
       "benchmark_date": "2026-03-15"
     },
-    "training_age": "2-5yr"
+    "training_age": "2-5yr",
+    "prep_time_status": "ok",
+    "prep_time_weeks_available": 11,
+    "prep_time_weeks_required_ok": 10
   },
   "phases": [
     {

@@ -132,16 +132,15 @@ Weekly: **35 km** · long: 1.2h
 ### Week 9 — Peak — consistency · *peak*
 > Consistency. The work is the volume.
 
-Weekly: **40 km** · long: 2.2h
+Weekly: **36 km** · long: 1.7h
 
 - **tue** — Easy run - Zone 2 · 6.5km · 43min · Zone 2 · HR < 141 bpm · pace 6:06–7:17 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
 - **thu** — HM-pace intervals · 7km · 38min · Zone 3–4 · HR 141–154 bpm · pace 5:20–5:34 /km · RPE 7
   - _HM-pace work. Target 5:27 /km. Controlled, even splits — exit each rep wanting more._
 - **sat** — Easy run - Zone 2 · 6.5km · 43min · Zone 2 · HR < 141 bpm · pace 6:06–7:17 /km · RPE 4
-- **sun** — Long run with HM-pace finish · 20km · 134min · Zone 2–3 · HR < 141 bpm · pace 6:06–7:17 /km · RPE 6
-  - _Easy first. Final third at HM goal pace._
-  - _Final third at HM pace: 5:27 /km._
+- **sun** — Long run - Zone 2 · 15.5km · 104min · Zone 2 · HR < 141 bpm · pace 6:06–7:17 /km · RPE 4
+  - _Step-back week. Easy aerobic — let the legs absorb last week's peak before the next push._
 
 ### Week 10 — Peak — consistency · *peak*
 > Consistency. The work is the volume.
@@ -274,7 +273,7 @@ Weekly: **36 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T13:14:04.588Z",
+    "generated_at": "2026-04-27T19:55:25.458Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
@@ -296,7 +295,10 @@ Weekly: **36 km**
       "time": "0:50:30",
       "benchmark_date": "2026-03-08"
     },
-    "training_age": "5-10yr"
+    "training_age": "5-10yr",
+    "prep_time_status": "ok",
+    "prep_time_weeks_available": 13,
+    "prep_time_weeks_required_ok": 12
   },
   "phases": [
     {
@@ -868,18 +870,17 @@ Weekly: **36 km**
         "sun": {
           "id": "w9-sun",
           "type": "easy",
-          "label": "Long run with HM-pace finish",
+          "label": "Long run — Zone 2",
           "detail": null,
-          "distance_km": 20,
-          "duration_mins": 134,
+          "distance_km": 15.5,
+          "duration_mins": 104,
           "primary_metric": "distance",
-          "zone": "Zone 2–3",
+          "zone": "Zone 2",
           "hr_target": "< 141 bpm",
           "pace_target": "6:06–7:17 /km",
-          "rpe_target": 6,
+          "rpe_target": 4,
           "coach_notes": [
-            "Easy first. Final third at HM goal pace.",
-            "Final third at HM pace: 5:27 /km."
+            "Step-back week. Easy aerobic — let the legs absorb last week's peak before the next push."
           ]
         },
         "thu": {
@@ -928,8 +929,8 @@ Weekly: **36 km**
           "rpe_target": 4
         }
       },
-      "long_run_hrs": 2.2,
-      "weekly_km": 40
+      "long_run_hrs": 1.7,
+      "weekly_km": 36
     },
     {
       "n": 10,

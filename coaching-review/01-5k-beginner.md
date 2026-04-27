@@ -209,7 +209,7 @@ Weekly: **13 km**
     "fitness_level": "beginner",
     "goal": "finish",
     "days_available": 3,
-    "generated_at": "2026-04-27T13:14:04.584Z",
+    "generated_at": "2026-04-27T19:55:25.454Z",
     "generator_version": "2.0",
     "tier": "free",
     "compressed": true,
@@ -220,7 +220,10 @@ Weekly: **13 km**
       4
     ],
     "training_age": "2-5yr",
-    "fresh_return_active": true
+    "fresh_return_active": true,
+    "prep_time_status": "ok",
+    "prep_time_weeks_available": 11,
+    "prep_time_weeks_required_ok": 8
   },
   "phases": [
     {
