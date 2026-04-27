@@ -1,6 +1,6 @@
 # Post-fix diff — 2026-04-28 review
 
-Status: HIGH block complete. MEDIUM (M-01..M-04) and LOW (L-01..L-03) **pending human approval before proceeding.**
+Status: **All blocks complete.** HIGH (H-01..H-04), MEDIUM (M-01..M-04), and LOW (L-01..L-03) shipped.
 
 The four HIGH items shipped as a single bundled commit (`f80b0b2`) — see the
 "Commit granularity" note at the bottom for why they weren't split. The
@@ -198,7 +198,7 @@ Not in the canonical review packets but worth noting from the test rig:
 
 ---
 
-## Commit granularity note
+## Commit granularity note (HIGH block)
 
 The four HIGH items shipped as one bundled commit. Justification:
 
@@ -216,3 +216,220 @@ Per-item traceability is preserved in this document, in CoachingPrinciples
 §44–§47, and in the named invariants `INV-PLAN-{PREP-TIME-STATUS-ANNOTATED,
 LR-PROGRESSION-CAP, PEAK-VOLUME-FLOOR-LONG-RACES, PEAK-LR-ALTERNATION}`.
 The bundled commit message enumerates each item explicitly.
+
+---
+
+## MEDIUM block
+
+### M-01 — Marathon taper duration cap — DONE
+**Commit:** `8edd58d`
+**Change:** CoachingPrinciples §49 added — formalises the 1/1/2/3/3/3
+cap on actual taper weeks (before race) for 5K/10K/HM/Marathon/50K/100K.
+Existing config already matched for the first five distances; 100K
+dropped from 4 actual taper weeks (5 entries) to 3 (4 entries).
+`MAX_TAPER_PHASE_WEEKS` promoted to `GENERATION_CONFIG`.
+`INV-PLAN-TAPER-DURATION-CAP` enforces. No regression on the original three
+test cases (their tapers were already at the cap).
+
+### M-02 — Returning-runner allowance communicated — DONE
+**Commit:** `36352f9`
+**Change:** `returning_runner_note` added to plan meta, format mirrors
+`volume_constraint_note`. Two distinct messages:
+  - returning-runner allowance: "weeks 1–3 grow at 15% (vs standard 10%)
+    because training history allows a faster rebuild";
+  - fresh-from-layoff: "week 1 starts at 70% of stated weekly volume
+    because returning to running needs caution, not faster ramp".
+CoachingPrinciples §51 added. `INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT`
+enforces — when either flag is set, the note must be present and non-empty.
+No new config (note content computed from existing constants).
+
+### M-03 — Quality session variety across full plan — DONE
+**Commit:** `1eac245`
+**Change:** Cap = `floor(N/3) + 1` per label across the whole plan;
+goal-pace overrides (`X-pace progression / intervals / sharpener`) are
+exempt as coordinated specificity (§22). Engine post-pass
+`enforceQualityVariety` walks the plan, finds over-represented threshold
+bucket labels, and swaps to less-used same-category alternatives
+(Continuous tempo / Cruise intervals / Progressive tempo) — same physiology
+(T-pace, Z3), only label and coach voice change.
+Build override label varied by phase (build → "X-pace progression" so it
+doesn't share a label with peak's "X-pace intervals", and so it doesn't trip
+§19's "tempo" keyword). `QUALITY_VARIETY_DENOMINATOR` and
+`QUALITY_VARIETY_ALLOWANCE` promoted to `GENERATION_CONFIG`.
+CoachingPrinciples §53 added. `INV-PLAN-QUALITY-VARIETY-FULL-PLAN` enforces.
+
+### M-04 — Long run not more than 60% of weekly volume — DONE
+**Commit:** `1eac245` (bundled with M-03)
+**Change:** No single run may exceed 60% of weekly volume. When the
+prescription would force this, plan downgrades to maintenance; maintenance
+plans relax the invariant (the constraint is already surfaced).
+`LONG_RUN_MAX_PCT_OF_WEEKLY` promoted to `GENERATION_CONFIG`.
+CoachingPrinciples §52 added. `INV-PLAN-LR-MAX-WEEKLY-PCT` enforces.
+
+---
+
+## LOW block
+
+### L-01 — Reject empty/invalid critical inputs — DONE
+**Commit:** `53603cd`
+**Change:** `validateInputFields()` in `lib/plan/inputs.ts` runs at the top
+of `generateRulePlan` (before §44 prep-time). Throws `InputFieldError` on:
+`age` outside 13–90; `resting_hr` outside 30–100 OR === 0; `max_hr` outside
+120–220 OR === 0. The form-default sentinel (resting_hr: 0, the value that
+slipped past in Case 04) is rejected as INVALID — distinct from missing,
+which §50 / L-03 handles. API route catches `InputFieldError` and returns
+422 with field, value, and range so the client can highlight the input.
+CoachingPrinciples §55 added. No plan-output invariant (the validator IS
+the mechanical check). Verified manually that the four edge cases reject
+and a valid input still accepts.
+
+### L-02 — Add Case 04 to regression set — DONE
+**Commit:** `4106979`
+**Change:** Persona added to `scripts/generate-coaching-review.ts`:
+returning runner (`weeks_at_current_volume: 4`), age 47, hip injury,
+4:00 marathon goal, **13 weeks** out (the original review's 11 weeks now
+hits BLOCK after the §44 returning-runner +2 shift; 13 puts the case back
+in the warn zone the review was concerned about). `acknowledged_prep_warning:
+true` so the script generates without throwing. `resting_hr` deliberately
+omitted (the original `resting_hr: 0` is now rejected by §55) to exercise
+the §50 fallback path 2 (`percent_of_max` with surfaced assumption note).
+The generated plan exercises ALL six 2026-04-28 surfaces simultaneously:
+`prep_time_status: 'warned'`, `prep_time_warning`, `prep_time_alternatives`,
+`volume_profile: 'maintenance'`, `compression_classification:
+'constrained_by_inputs'`, `fresh_return_active: true` +
+`returning_runner_note`, `hr_zone_method: 'percent_of_max'` +
+`hr_assumption_note`.
+
+### L-03 — HR data fallbacks with surfaced assumptions — DONE
+**Commit:** `9aec221`
+**Change:** `buildHRZonesWithFallback()` implements four-level fallback
+that NEVER refuses generation over missing HR data:
+  1. max + resting → Karvonen (no note)
+  2. max only → percent of max + assumption note
+  3. resting only → estimate max from Tanaka, then Karvonen + note
+  4. neither → estimate max + percent of max + prominent note
+Plan meta surfaces `hr_zone_method`, `hr_assumption_note` (only when not
+Karvonen), `hr_estimated_max` (only when max was estimated). Composes with
+§55: nonsense values rejected upstream; missing values flow into the
+fallback hierarchy here. CoachingPrinciples §50 added.
+`INV-PLAN-HR-ASSUMPTIONS-SURFACED` enforces (method must be present;
+non-Karvonen methods must surface the assumption note).
+Cases 01–03 all have `max_hr` + `resting_hr` so they land on
+`hr_zone_method: 'karvonen'` with no assumption note — no regression.
+
+---
+
+## Generated plan diffs (MEDIUM + LOW)
+
+### Case 01 — Sarah, 5K beginner finish goal
+- New meta: `hr_zone_method: 'karvonen'` (L-03), `returning_runner_note`
+  describing the fresh-from-layoff 70% start (M-02). Sarah's
+  `fresh_return_active` was already true; M-02 just surfaces the note.
+- No structural plan changes.
+
+### Case 02 — Mark, 10K intermediate sub-50
+- New meta: `hr_zone_method: 'karvonen'` (L-03).
+- W6/W7 quality label: "10K-pace intervals" → **"10K-pace progression"**
+  (M-03 phase-aware override; build phase distinguishes from peak's
+  "X-pace intervals" naming). Same pace, same physiology, same Z3–4, same
+  RPE — only the label and coach voice change.
+
+### Case 03 — Anna, HM intermediate 1:55 goal
+- New meta: `hr_zone_method: 'karvonen'` (L-03).
+- Build quality label "HM-pace intervals" → **"HM-pace progression"**
+  (M-03). W10's peak quality retains "HM-pace intervals" via the catalogue.
+- W9 step-back from H-04 alternation preserved; no changes from the HIGH
+  block delta.
+
+### Case 04 — Mike, marathon time goal, 13 weeks (NEW)
+- Permanent test case added (L-02). Generated under
+  `acknowledged_prep_warning: true`. Plan meta:
+  - `prep_time_status: 'warned'`
+  - `prep_time_warning: "12 weeks is below the recommended 18-week
+    minimum for a time-targeted MARATHON. … Expect maintenance-grade
+    volume rather than a true build."` (note: 12, not 13 — `weeksBetweenLocal`
+    floors the date diff; race is on a Monday-aligned Sun 12 weeks out.)
+  - `prep_time_alternatives: [...]` (race the HM, switch to finish, defer)
+  - `volume_profile: 'maintenance'`
+  - `compression_classification: 'constrained_by_inputs'`
+  - `fresh_return_active: true`
+  - `returning_runner_note: "Fresh-from-layoff start: week 1 begins at 70%
+    of your stated current weekly volume (29 km vs 38 km stated). …"`
+  - `hr_zone_method: 'percent_of_max'`
+  - `hr_assumption_note: "Zones derived from max HR only (no resting HR
+    provided). Karvonen … is more accurate. To refine: measure resting HR
+    first thing in the morning, lying down, for 1 minute."`
+
+---
+
+## Discovered while working (MEDIUM + LOW)
+
+7. **Section numbering of CoachingPrinciples.md has gaps.** Sections jump
+   49 → 51 (no §50 originally — I added L-03 there to fill it) and 53 → 55
+   (gap at §54). The "constitution" finale section bumps each round but
+   doesn't repair gaps. Worth a one-time renumber pass; safe because no
+   code or doc references §54 / earlier missing numbers.
+
+8. **`weeksBetweenLocal` floor-rounds.** Case 04's race date 2026-07-27 is
+   exactly 13 weeks from 2026-04-27 by date arithmetic, but the function's
+   `Math.floor` produces 12 because of the local-time / midnight semantics.
+   The §44 thresholds use the floor result. For Case 04 this is fine
+   (12 ≥ 12 block, < 18 warn → warn), but the prep_time_warning text says
+   "12 weeks" rather than the user-facing "13 weeks out". Worth a docs note
+   on the user-visible round-off, or a refinement to ceil the diff.
+
+9. **Quality-variety post-pass only handles threshold-bucket labels.** The
+   `enforceQualityVariety` swap pool currently only knows three threshold
+   alternatives (Continuous tempo / Cruise intervals / Progressive tempo).
+   If a future review surfaces over-represented VO2max or aerobic-bucket
+   labels, the swap pool needs widening. Property sweep didn't flag any so
+   no current issue.
+
+10. **Goal-pace override label naming convention is now phase-bound.** Build
+   produces "X-pace progression"; peak produces "X-pace intervals"; taper
+   produces "X-pace sharpener" (when it falls through to the override
+   path). This is internally consistent but the `INV-PLAN-RACE-SPECIFIC-
+   EXPOSURE` invariant only checks for "pace" substring — it accepts all
+   three. Worth a docs note in CoachingPrinciples §22 explaining the
+   phase-bound naming so future contributors don't normalise to one label.
+
+11. **`fresh_return_active` and `returning_runner_allowance_active` are
+   mutually exclusive (engine code) but both could in principle activate the
+   `returning_runner_note`.** The note picks between two messages based on
+   `isFreshReturn`. If a future change makes them coexist, the note would
+   only describe one. Low risk — but worth a guard or a note merge if it
+   ever changes.
+
+12. **L-01 input validation has no plan-output invariant.** The validator
+   `validateInputFields` IS the mechanical check (it throws before
+   generation), but a future code path that bypasses it (e.g., a new
+   internal generator that doesn't call generateRulePlan) wouldn't be
+   caught by an output check. The 2026-04-27 round established that all
+   generation paths funnel through `generateRulePlan`; L-01 is safe today
+   but worth a meta-check in `r2-coverage-check.ts` confirming no
+   alternate generators exist.
+
+---
+
+## Final commit list
+
+```
+61f1a22 chore(coaching-review): regenerate cases 01-03 after MEDIUM+LOW block
+4106979 chore(coaching-review): [2026-04-28/L-02] add Case 04 to standard regression set
+9aec221 fix(engine):  [2026-04-28/L-03] HR data fallback hierarchy with surfaced assumptions
+53603cd fix(engine):  [2026-04-28/L-01] reject nonsense critical input fields
+1eac245 fix(engine):  [2026-04-28/M-03,M-04] quality variety across plan + LR weekly-fraction cap
+36352f9 fix(engine):  [2026-04-28/M-02] surface returning_runner_note in plan meta
+8edd58d fix(engine):  [2026-04-28/M-01] cap ultra (100K) taper at 3 weeks before race
+e32f990 docs(coaching-review): post-fix-diff for 2026-04-28 HIGH block
+42cf626 chore(coaching-review): regenerate cases 01-03 after 2026-04-28 HIGH block
+f80b0b2 fix(engine):  [2026-04-28/H-01..H-04] prep-time validation, LR cap, marathon volume floor, peak LR alternation
+```
+
+All commits verified against the full suite at HEAD:
+```
+NODE_ENV=test npx tsx scripts/r23-phase7-validation.ts   → PASS 37 / FAIL 0 / 11/11 cases
+NODE_ENV=test npx tsx scripts/property-validate-plans.ts → 103,680 plans, 0 violations
+NODE_ENV=test npx tsx scripts/r2-coverage-check.ts       → 31 invariants registered + passing
+NODE_ENV=production npx tsx scripts/generate-coaching-review.ts → 5 files (cases 01-04 + INDEX)
+```
