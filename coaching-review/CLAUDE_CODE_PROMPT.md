@@ -12,7 +12,7 @@ This is the reusable driver prompt for executing any coaching review backlog. It
 ## REVIEW_DATE
 
 ```
-2026-04-27
+2026-05-25
 ```
 
 (Update this and only this when running a new round.)
@@ -23,12 +23,12 @@ This is the reusable driver prompt for executing any coaching review backlog. It
 
 You are working on the Zona coaching engine. A senior coach review identified bugs and coaching errors in three generated plans. Your job is to apply all fixes and verify them.
 
-The review round you are working on is **2026-04-27**. All paths below reference that folder.
+The review round you are working on is **2026-05-25**. All paths below reference that folder.
 
 **Read these first, in order:**
-1. `docs/coaching-reviews/README.md` — context on how this loop works
-2. `docs/coaching-reviews/2026-04-27/review.md` — full coach review
-3. `docs/coaching-reviews/2026-04-27/backlog.md` — structured tasks with paste-ready snippets
+1. `docs/coaching-review/README.md` — context on how this loop works
+2. `docs/coaching-review/2026-04-27/review.md` — full coach review
+3. `docs/coaching-review/2026-04-27/backlog.md` — structured tasks with paste-ready snippets
 4. `docs/canonical/CoachingPrinciples.md` — the constitution you'll be amending
 5. `lib/plan/invariants.ts` — where mechanical checks live
 6. `scripts/generate-coaching-review.ts` — the script that regenerates the three test cases
