@@ -217,6 +217,70 @@ function computeZones(mhr: number, rhr?: number): ZoneTargets {
   }
 }
 
+// ─── HR zone fallback hierarchy (CoachingPrinciples §50, L-03) ────────────────
+// Four-level fallback. Composes with §55 (L-01) which rejects out-of-range
+// values; §50 fills MISSING values without refusing to generate.
+
+type HRZoneMethod =
+  | 'karvonen'                    // both max + resting provided
+  | 'karvonen_estimated_max'      // only resting provided; max estimated from age
+  | 'percent_of_max'              // only max provided
+  | 'percent_of_estimated_max'    // neither provided; max estimated from age
+
+interface HRZoneFallbackResult {
+  zones: ZoneTargets
+  derived_max: number
+  method: HRZoneMethod
+  assumption_note?: string
+  estimated_max?: number
+}
+
+function buildHRZonesWithFallback(input: GeneratorInput): HRZoneFallbackResult {
+  // Note: §55 (L-01) ensures any non-zero, non-undefined max_hr / resting_hr
+  // is in physiological range. The checks below treat 0 and undefined alike
+  // as "missing" — the form-default sentinel rejection happens upstream.
+  const hasMax = input.max_hr !== undefined && input.max_hr !== null && input.max_hr > 0
+  const hasResting = input.resting_hr !== undefined && input.resting_hr !== null && input.resting_hr > 0
+
+  if (hasMax && hasResting) {
+    const max = input.max_hr!
+    return {
+      zones: computeZones(max, input.resting_hr!),
+      derived_max: max,
+      method: 'karvonen',
+    }
+  }
+  if (hasMax && !hasResting) {
+    const max = input.max_hr!
+    return {
+      zones: computeZones(max),
+      derived_max: max,
+      method: 'percent_of_max',
+      assumption_note: 'Zones derived from max HR only (no resting HR provided). Karvonen (using both max and resting) is more accurate. To refine: measure resting HR first thing in the morning, lying down, for 1 minute.',
+    }
+  }
+  if (!hasMax && hasResting) {
+    const estMax = tanakaMaxHR(input.age)
+    return {
+      zones: computeZones(estMax, input.resting_hr!),
+      derived_max: estMax,
+      method: 'karvonen_estimated_max',
+      estimated_max: estMax,
+      assumption_note: `Max HR estimated from age (${estMax} bpm using 208 − 0.7 × age). Your true max may differ by ±10 bpm. To refine: note your highest HR during a hard finish or hill effort and update your profile.`,
+    }
+  }
+  // Neither
+  const estMax = tanakaMaxHR(input.age)
+  const zones = computeZones(estMax)
+  return {
+    zones,
+    derived_max: estMax,
+    method: 'percent_of_estimated_max',
+    estimated_max: estMax,
+    assumption_note: `Both max and resting HR missing — zones estimated from age alone (max ≈ ${estMax} bpm, Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). Working approximation. Recommend a HR field test in the first 2 weeks. If easy runs feel consistently too hard or too easy, your true max differs from the estimate — update your inputs.`,
+  }
+}
+
 // ─── Pace guides by fitness level (fallback when no benchmark) ─────────────────
 
 const PACE_GUIDE: Record<FitnessLevel, Omit<PaceGuide, 'source'>> = {
@@ -1517,8 +1581,12 @@ export function generateRulePlan(
   // meta block consumes when ok or warn-acknowledged.
   const prepTime: PrepTimeResult = enforcePrepTime(input as PrepTimeAwareInput, planStartIso)
 
-  // ── Derive max HR, VDOT, fitness level, zones, paces ─────────────────────────
-  const derivedMaxHR = input.max_hr ?? tanakaMaxHR(input.age)
+  // ── Derive zones with HR fallback hierarchy (CoachingPrinciples §50) ────────
+  const hrFallback = buildHRZonesWithFallback(input)
+  const derivedMaxHR = hrFallback.derived_max
+  const zones = hrFallback.zones
+
+  // ── Derive VDOT, fitness level, paces ───────────────────────────────────────
   let vdotDiscountPct = 0
   let vdotRaw: number | undefined
   const vdot: number | undefined = (() => {
@@ -1535,7 +1603,6 @@ export function generateRulePlan(
     ?? deriveFitnessLevel(input.current_weekly_km, input.longest_recent_run_km, vdot)
 
   const rhr = input.resting_hr && input.resting_hr > 0 ? input.resting_hr : undefined
-  const zones = computeZones(derivedMaxHR, rhr)
   const pace: PaceGuide = (vdot !== undefined && vdotRaw !== undefined)
     ? buildPaceFromVDOT(vdot, vdotRaw)
     : buildFallbackPace(fitness)
@@ -1979,6 +2046,13 @@ export function generateRulePlan(
         ? `Fresh-from-layoff start: week 1 begins at ${Math.round(GENERATION_CONFIG.FRESH_RETURN_START_FRACTION * 100)}% of your stated current weekly volume (${Math.round(volumes[0])} km vs ${input.current_weekly_km} km stated). Returning to running needs caution, not faster ramp — the engine prefers a small base to rebuild from. Volume grows at the standard ${GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT}% per week.`
         : `Returning-runner allowance active: weeks 1-${GENERATION_CONFIG.RETURNING_RUNNER_GRACE_WEEKS} grow at ${GENERATION_CONFIG.RETURNING_RUNNER_ALLOWANCE_PCT}% per week (vs the standard ${GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT}%). Your training history allows a faster rebuild because the aerobic and structural base is still there.`,
     } : {}),
+
+    // CoachingPrinciples §50 — HR zone fallback hierarchy (L-03). Surface
+    // which method derived the zones so the runner knows whether their data
+    // was used or estimated.
+    hr_zone_method: hrFallback.method,
+    ...(hrFallback.assumption_note ? { hr_assumption_note: hrFallback.assumption_note } : {}),
+    ...(hrFallback.estimated_max !== undefined ? { hr_estimated_max: hrFallback.estimated_max } : {}),
 
     // CoachingPrinciples §44 — prep-time status surface. 'ok' or 'warned'.
     // 'block' outcomes never reach this code path (PrepTimeError thrown above).

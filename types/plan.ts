@@ -203,6 +203,14 @@ export interface PlanMeta {
   // scaled and why. Present only when the corresponding allowance fired.
   returning_runner_note?: string
 
+  // 2026-04-28 / L-03 — HR data fallback surface (CoachingPrinciples §50).
+  // hr_zone_method names which of the four fallback levels was used; non-Karvonen
+  // methods carry hr_assumption_note. Estimated max is surfaced when computed
+  // from age (Tanaka).
+  hr_zone_method?: 'karvonen' | 'karvonen_estimated_max' | 'percent_of_max' | 'percent_of_estimated_max'
+  hr_assumption_note?: string
+  hr_estimated_max?: number
+
   // 2026-04-28 / H-01 — prep-time validation surface (CoachingPrinciples §44).
   // 'ok' on adequately-resourced plans, 'warned' on plans generated under an
   // acknowledged warn-status timeline. Block-status inputs never reach plan

@@ -49,6 +49,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT',
   'INV-PLAN-QUALITY-VARIETY-FULL-PLAN',
   'INV-PLAN-LR-MAX-WEEKLY-PCT',
+  'INV-PLAN-HR-ASSUMPTIONS-SURFACED',
 ] as const
 
 export interface Violation {
@@ -933,6 +934,33 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           })
         }
       }
+    }
+  }
+
+  // INV-PLAN-HR-ASSUMPTIONS-SURFACED — every plan declares hr_zone_method;
+  // non-Karvonen methods surface hr_assumption_note. (CoachingPrinciples §50)
+  {
+    const method = plan.meta.hr_zone_method
+    if (!method) {
+      violations.push({
+        code: 'INV-PLAN-HR-ASSUMPTIONS-SURFACED',
+        principle_ref: 'CoachingPrinciples §50',
+        severity: 'error',
+        week: 0,
+        message: 'Plan meta missing hr_zone_method — every plan must declare which of the four fallback methods was used',
+        actual: 'undefined',
+        expected: "'karvonen' | 'karvonen_estimated_max' | 'percent_of_max' | 'percent_of_estimated_max'",
+      })
+    } else if (method !== 'karvonen' && !plan.meta.hr_assumption_note) {
+      violations.push({
+        code: 'INV-PLAN-HR-ASSUMPTIONS-SURFACED',
+        principle_ref: 'CoachingPrinciples §50',
+        severity: 'error',
+        week: 0,
+        message: `hr_zone_method is "${method}" but no hr_assumption_note surfaced — non-Karvonen methods MUST include the assumption note`,
+        actual: method,
+        expected: 'method + hr_assumption_note',
+      })
     }
   }
 

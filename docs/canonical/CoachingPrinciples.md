@@ -727,6 +727,36 @@ Enforced by `INV-PLAN-TAPER-DURATION-CAP`.
 
 ---
 
+## 50. HR data fallbacks (assumption surfacing)
+
+**Principle.** The engine MUST generate plans even when HR inputs are incomplete. Missing HR data does not block generation — it triggers a fallback with a surfaced assumption.
+
+Fallback hierarchy:
+
+| Inputs provided | Method | Surfaced note |
+|---|---|---|
+| `max_hr` + `resting_hr` | Karvonen: `Z2 ceiling = resting + (max − resting) × 70%` | None |
+| `max_hr` only | Percent of max: `Z2 ceiling = max × 80%` | "Zones derived from max HR only. Add resting HR for more accurate zones." |
+| `resting_hr` only | Estimate max from age (Tanaka), then Karvonen | "Max HR estimated from age (X bpm). Refine via field test." |
+| Neither | Estimate max from age, percent of max | "Both max and resting HR missing. Zones estimated from age alone. Recommend HR field test in first 2 weeks." |
+
+The engine NEVER refuses to generate due to missing HR inputs. The philosophy: a working coach makes a starting estimate and refines from feedback. The note pushes the runner toward better data without withholding the plan.
+
+**Why.** Case 04 (2026-04-28 review): `resting_hr: 0` got past validation, and the engine still computed a Zone 2 ceiling at 140 bpm using an undisclosed fallback. The runner had no way to know their zones were derived from incomplete data. §55 (L-01) closes the validation hole; §50 closes the silence hole — when fallback fires, the runner is told.
+
+This composes with §55 (input validation): nonsense values (`resting_hr: 0`, `max_hr: 50`) are rejected by §55 as invalid; missing values trigger the fallback hierarchy here. The two cases produce different runner experiences — rejected data prompts the user to fix it; missing data gets an estimate with the caveat surfaced.
+
+Plan meta MUST include:
+- `hr_zone_method` — which of the four methods was used (`karvonen` / `karvonen_estimated_max` / `percent_of_max` / `percent_of_estimated_max`).
+- `hr_assumption_note` — user-facing explanation. Present when method is not `karvonen`.
+- `hr_estimated_max` — the Tanaka-estimated max HR. Present when max was estimated.
+
+**Config.** Implemented in `buildHRZonesWithFallback()` (`lib/plan/ruleEngine.ts`). Boundary percentages (Z2 = 70% Karvonen / 80% MaxHR) are inherited from `GENERATION_CONFIG.ZONES`. No new constants — the four-method classification is a control-flow decision, not a tuning knob.
+
+Enforced by `INV-PLAN-HR-ASSUMPTIONS-SURFACED`. Non-Karvonen methods MUST surface `hr_assumption_note`; if the engine uses a fallback silently, the invariant catches it.
+
+---
+
 ## 51. Returning-runner allowance must be communicated
 
 **Principle.** When the engine activates the returning-runner allowance (§2) OR the fresh-from-layoff start fraction (§29), plan meta MUST surface a `returning_runner_note` that names the change and the reason. Silent mechanism is a coaching defect.
