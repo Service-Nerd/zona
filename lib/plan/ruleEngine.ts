@@ -1530,10 +1530,10 @@ export function generateRulePlan(
       return 'constrained_by_inputs'
     })(),
 
-    // CoachingPrinciples §23 — peak overload classification.
-    // Plans ≥ PEAK_OVERLOAD_MIN_PLAN_WEEKS that fail to reach
-    // PEAK_OVER_BASE_RATIO × W1 volume are surfaced as 'maintenance' so users
-    // know what they're getting; the engine still runs the plan as scheduled.
+    // CoachingPrinciples §23, §38 — peak overload classification + actionable
+    // constraint note. Plans ≥ PEAK_OVERLOAD_MIN_PLAN_WEEKS that fail to reach
+    // PEAK_OVER_BASE_RATIO × W1 volume are surfaced as 'maintenance' with a
+    // diagnosis AND a prescription: which input to change to unlock a build.
     ...(totalWeeks >= GENERATION_CONFIG.PEAK_OVERLOAD_MIN_PLAN_WEEKS
       ? (() => {
           const w1 = weeks[0]?.weekly_km ?? 0
@@ -1542,10 +1542,20 @@ export function generateRulePlan(
           if (ratio >= GENERATION_CONFIG.PEAK_OVER_BASE_RATIO) {
             return { volume_profile: 'build' as const }
           }
+          const diagnosis = `Peak volume ${peakKmActual} km is ${Math.round(ratio * 100)}% of week 1 (${w1} km) — below the ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% overload threshold. Plan maintains current fitness rather than building it.`
+          const suggestions: string[] = []
+          if (input.days_available < 6) {
+            suggestions.push(`increase days_available from ${input.days_available} to ${input.days_available + 1}`)
+          }
+          if (input.max_weekday_mins != null && input.max_weekday_mins < 90) {
+            suggestions.push(`raise max_weekday_mins from ${input.max_weekday_mins} to 90`)
+          }
+          const prescription = suggestions.length > 0
+            ? ` To enable a build profile: ${suggestions.join(', OR ')}.`
+            : ''
           return {
             volume_profile: 'maintenance' as const,
-            volume_constraint_note:
-              `Peak volume ${peakKmActual} km is ${Math.round(ratio * 100)}% of week 1 (${w1} km) — below the ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% overload threshold. Plan maintains current fitness rather than building it.`,
+            volume_constraint_note: diagnosis + prescription,
           }
         })()
       : {}),

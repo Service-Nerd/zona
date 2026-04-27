@@ -39,7 +39,7 @@ Benchmark: 10 km in 0:50:30 (2026-03-08)
 Goal pace: **5:27 /km**
 Volume profile: **maintenance**
 Compression: **constrained_by_inputs**
-> Peak volume 44 km is 102% of week 1 (43 km) — below the 110% overload threshold. Plan maintains current fitness rather than building it.
+> Peak volume 44 km is 102% of week 1 (43 km) — below the 110% overload threshold. Plan maintains current fitness rather than building it. To enable a build profile: increase days_available from 4 to 5, OR raise max_weekday_mins from 75 to 90.
 
 ### Week 1 — Base — easy start · *base*
 > HR discipline. Slower than feels right. That is correct.
@@ -272,13 +272,13 @@ Weekly: **29 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T13:04:40.525Z",
+    "generated_at": "2026-04-27T13:06:07.631Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
     "compression_classification": "constrained_by_inputs",
     "volume_profile": "maintenance",
-    "volume_constraint_note": "Peak volume 44 km is 102% of week 1 (43 km) — below the 110% overload threshold. Plan maintains current fitness rather than building it.",
+    "volume_constraint_note": "Peak volume 44 km is 102% of week 1 (43 km) — below the 110% overload threshold. Plan maintains current fitness rather than building it. To enable a build profile: increase days_available from 4 to 5, OR raise max_weekday_mins from 75 to 90.",
     "age": 42,
     "vdot": 39.5,
     "vdot_training_anchor": 38.4,

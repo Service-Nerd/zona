@@ -525,8 +525,22 @@ Heuristic AND-gates: BOTH thresholds must be hit. Implemented in `generateRulePl
 
 ---
 
-## 38. The constitution
+## 38. Volume constraint notes are prescriptive
 
-These thirty-eight principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** When a plan downgrades to maintenance (§23), the `volume_constraint_note` MUST include both the diagnosis (what's missing and why) and the prescription (which input to change to unlock the build profile). Format: `"{diagnosis}. To enable a build profile: {input changes}."` The engine identifies the actionable inputs (days_available, max_weekday_mins) and surfaces concrete deltas the runner can take to their plan-regen flow.
+
+**Why.** Round-2 review flagged Anna's `volume_constraint_note` as descriptive but not actionable. "Plan maintains current fitness rather than building it" tells the runner there's a problem and not what to do about it. A runner staring at "maintenance" will either accept it (under-trained) or guess at the cause (often guessing wrong). Naming the input change is the difference between a passive notice and an actionable choice — and the engine has perfect information about which inputs are bottlenecks because it just ran the math.
+
+**Config.** Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`). Suggestions:
+- If `days_available < 6` → suggest +1 day.
+- If `max_weekday_mins < 90` → suggest 90.
+
+When neither suggestion applies, the diagnosis is surfaced alone (no false guidance). The bottleneck list expands as new inputs become tunable.
+
+---
+
+## 39. The constitution
+
+These thirty-nine principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.
