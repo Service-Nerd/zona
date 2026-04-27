@@ -248,6 +248,19 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           expected: '≥ 1 quality session',
         })
       }
+      // R2/L-02 — "It will feel hard" / "feel hard" effort copy must coincide
+      // with at least one quality session.
+      if ((themeText.includes('feel hard') || themeText.includes('feels hard')) && qualityCount === 0) {
+        violations.push({
+          code: 'INV-PLAN-THEME-MATCHES-PRESCRIPTION',
+          principle_ref: 'CoachingPrinciples §41',
+          severity: 'error',
+          week: w.n,
+          message: `Theme says "feel hard" but week has 0 quality sessions`,
+          actual: 0,
+          expected: '≥ 1 quality session',
+        })
+      }
     }
 
     // INV-PLAN-COACH-NOTES-MATCH-INTENT — coach notes must match session

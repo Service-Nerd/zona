@@ -559,8 +559,18 @@ When neither suggestion applies, the diagnosis is surfaced alone (no false guida
 
 ---
 
-## 41. The constitution
+## 41. Effort copy matches the work prescribed
 
-These forty-one principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** Theme copy that promises effort ("It will feel hard. That is correct.") MUST appear only on weeks that actually contain ≥1 quality session. An all-easy peak week — common for beginners and finish-goal plans — uses the consistency framing instead. Race week's "The work is done" is exempt (it describes a different state).
+
+**Why.** Round-2 review flagged Sarah's peak weeks (W8/W9, all-easy) reading "It will feel hard. That is correct." A beginner being told to expect hard effort on a Zone 2 run will either push too hard (going beyond Z2 to satisfy the framing — exactly the brand failure) or distrust the engine when the run feels normal-easy. Coaching framing must match the prescription. Hard sessions get hard framing; easy weeks get steady framing.
+
+**Config.** Implemented in `generateRulePlan()` theme selection: peak weeks with `qualityCount === 0` use "Consistency. The work is the volume." regardless of overload status. Enforced by `INV-PLAN-THEME-MATCHES-PRESCRIPTION` extension catching "feel hard" / "feels hard" copy on zero-quality weeks.
+
+---
+
+## 42. The constitution
+
+These forty-two principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

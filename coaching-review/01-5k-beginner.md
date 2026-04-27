@@ -102,7 +102,7 @@ Weekly: **14 km** · long: 0.7h
 - **sun** — Long run - Zone 2 · 44min · Zone 2 · HR < 151 bpm · pace 7:30–9:00 /km · RPE 4
 
 ### Week 8 — Peak — highest volume · *peak*
-> This is where the fitness is built. It will feel hard. That is correct.
+> Consistency. The work is the volume.
 
 Weekly: **17 km** · long: 0.9h
 
@@ -112,7 +112,7 @@ Weekly: **17 km** · long: 0.9h
 - **sun** — Long run - Zone 2 · 52min · Zone 2 · HR < 151 bpm · pace 7:30–9:00 /km · RPE 4
 
 ### Week 9 — Peak — second peak week · *peak*
-> This is where the fitness is built. It will feel hard. That is correct.
+> Consistency. The work is the volume.
 
 Weekly: **18 km** · long: 0.9h
 
@@ -209,7 +209,7 @@ Weekly: **13 km**
     "fitness_level": "beginner",
     "goal": "finish",
     "days_available": 3,
-    "generated_at": "2026-04-27T13:09:05.089Z",
+    "generated_at": "2026-04-27T13:12:28.674Z",
     "generator_version": "2.0",
     "tier": "free",
     "compressed": true,
@@ -599,7 +599,7 @@ Weekly: **13 km**
       "n": 8,
       "date": "2026-06-22",
       "label": "Peak — highest volume",
-      "theme": "This is where the fitness is built. It will feel hard. That is correct.",
+      "theme": "Consistency. The work is the volume.",
       "type": "normal",
       "phase": "peak",
       "sessions": {
@@ -650,7 +650,7 @@ Weekly: **13 km**
       "n": 9,
       "date": "2026-06-29",
       "label": "Peak — second peak week",
-      "theme": "This is where the fitness is built. It will feel hard. That is correct.",
+      "theme": "Consistency. The work is the volume.",
       "type": "normal",
       "phase": "peak",
       "sessions": {

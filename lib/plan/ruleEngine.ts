@@ -1465,14 +1465,16 @@ export function generateRulePlan(
       return 0
     })()
 
+    // CoachingPrinciples §27, §41 — theme matches prescription. Effort-
+    // language ("It will feel hard") only applies when the runner is actually
+    // doing hard work (≥1 quality session). All-easy peak weeks get the
+    // consistency framing.
     let theme: string
     if (isRaceWeek) {
       theme = 'The work is done. Arrive rested.'
     } else if (isRecalibration) {
       theme = 'Deload week. Run a parkrun or timed 5K — your result sharpens the zones for the next block.'
-    } else if (phase === 'peak' && !isDeload && (planIsMaintenance || actualWeeklyKm <= prevNonDeloadWeeklyKm)) {
-      // Maintenance plans use the conservative theme on every peak week —
-      // there's no overload to celebrate. Otherwise apply the per-week check.
+    } else if (phase === 'peak' && !isDeload && (planIsMaintenance || actualWeeklyKm <= prevNonDeloadWeeklyKm || qualityCount === 0)) {
       theme = 'Consistency. The work is the volume.'
     } else if (phase === 'taper' && !isDeload && qualityCount === 0) {
       theme = 'Volume drops. Trust the work you have done.'
