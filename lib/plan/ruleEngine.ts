@@ -1247,7 +1247,16 @@ export function generateRulePlan(
     fitness === 'beginner' || input.race_distance_km >= 50 ? 'duration' : 'distance'
 
   const peakKm = config.peakKmByLevel[fitness]
-  const startKm = input.current_weekly_km
+
+  // CoachingPrinciples §29 — fresh-from-layoff detection. When user has been
+  // at their stated current_weekly_km for fewer than FRESH_RETURN_WEEKS_THRESHOLD
+  // weeks, treat that volume as aspirational and start the plan at
+  // FRESH_RETURN_START_FRACTION × current_weekly_km.
+  const isFreshReturn = input.weeks_at_current_volume !== undefined
+    && input.weeks_at_current_volume < GENERATION_CONFIG.FRESH_RETURN_WEEKS_THRESHOLD
+  const startKm = isFreshReturn
+    ? input.current_weekly_km * GENERATION_CONFIG.FRESH_RETURN_START_FRACTION
+    : input.current_weekly_km
 
   // Recovery cadence — masters (age ≥ 45) recover every 3 weeks (CoachingPrinciples §3).
   // Computed once and shared between volume sequence + week badging so they stay aligned.
@@ -1255,7 +1264,9 @@ export function generateRulePlan(
     ? GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_MASTERS
     : GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_STANDARD
 
-  const returningRunner = isReturningRunner(input, peakKm)
+  // Fresh-return runners get the standard 10% ramp (no allowance) — their
+  // structural base is gone and the cap exists to protect them.
+  const returningRunner = !isFreshReturn && isReturningRunner(input, peakKm)
   const { volumes, compressed: capCompressed } = buildVolumeSequence(
     totalWeeks, phases, startKm, peakKm, input.race_distance_km,
     recoveryFreq, returningRunner,
@@ -1417,6 +1428,7 @@ export function generateRulePlan(
     // R23 rebuild — returning runner + training age
     ...(input.training_age ? { training_age: input.training_age } : {}),
     ...(returningRunner ? { returning_runner_allowance_active: true } : {}),
+    ...(isFreshReturn ? { fresh_return_active: true } : {}),
   }
 
   const plan: Plan = { meta, phases, weeks }

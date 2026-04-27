@@ -123,6 +123,14 @@ export const GENERATION_CONFIG = {
   // midweek easy run per week. Skipped in race week and deload weeks.
   STRIDES_FIRST_WEEK: 3,
 
+  // ── Fresh-from-layoff detection (CoachingPrinciples §29) ───────────────────
+  // If weeks_at_current_volume is set and below this threshold, the runner is
+  // returning from a layoff and not actually consolidated at their stated
+  // current_weekly_km. The engine treats current_weekly_km as aspirational and
+  // starts the plan at FRESH_RETURN_START_FRACTION × current_weekly_km.
+  FRESH_RETURN_WEEKS_THRESHOLD: 8,
+  FRESH_RETURN_START_FRACTION:  0.7,
+
   // ── Injury weekly volume cap (knee, shin splints) ──────────────────────────
   // CoachingPrinciples §12 — for these two injury types, weekly volume cap
   // tightens from MAX_WEEKLY_VOLUME_INCREASE_PCT (10%) to this stricter limit.

@@ -32,6 +32,11 @@ export interface GeneratorInput {
   // R23 rebuild — drives returning-runner allowance + reshape decisions
   training_age?: TrainingAge
 
+  // M-02 — fresh-from-layoff detection. When < FRESH_RETURN_WEEKS_THRESHOLD,
+  // engine treats current_weekly_km as aspirational and starts the plan at
+  // FRESH_RETURN_START_FRACTION × current_weekly_km. (CoachingPrinciples §29)
+  weeks_at_current_volume?: number
+
   // R23 rebuild — preferred long-run weekend day (default Sun if absent)
   preferred_long_run_day?: 'sat' | 'sun'
 
@@ -178,6 +183,7 @@ export interface PlanMeta {
   volume_constraint_note?: string         // human-readable explanation when 'maintenance'
   training_age?: TrainingAge             // stored for R20 reshaper
   returning_runner_allowance_active?: boolean  // true if 15%/3wk allowance applied
+  fresh_return_active?: boolean                  // true if M-02 layoff start-fraction applied
 }
 
 export interface Plan {

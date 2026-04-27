@@ -412,8 +412,22 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. The race-distan
 
 ---
 
-## 29. The constitution
+## 29. Fresh-from-layoff detection
 
-These twenty-nine principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** When a user reports `weeks_at_current_volume < FRESH_RETURN_WEEKS_THRESHOLD`, the engine treats `current_weekly_km` as aspirational rather than consolidated. The plan starts at `FRESH_RETURN_START_FRACTION × current_weekly_km` and ramps at the standard 10% rate (no returning-runner allowance). The `plan.meta.fresh_return_active` flag exposes this so consumers can present a different framing.
+
+**Why.** A runner who says "I'm doing 18 km/week" after a 6-month gap is naming the volume they aspire to, not the volume their tendons and bones have absorbed. Honouring the stated number as if it were sustained volume produces injuries the rest of the constitution exists to prevent. The 70% start fraction is a coaching cliché because it works: it gives the runner a few easy weeks to consolidate before the build's overload begins.
+
+**Config.**
+- `GENERATION_CONFIG.FRESH_RETURN_WEEKS_THRESHOLD = 8`
+- `GENERATION_CONFIG.FRESH_RETURN_START_FRACTION = 0.7`
+
+Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) where `startKm` is computed before `buildVolumeSequence` runs. Mutually exclusive with the existing experienced-low-volume returning-runner allowance — a fresh return needs caution, not a faster ramp. The wizard surfaces `weeks_at_current_volume` as a follow-up to the volume question; a value of `null` means "consolidated" (current behaviour, no fresh-return logic).
+
+---
+
+## 30. The constitution
+
+These thirty principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.
