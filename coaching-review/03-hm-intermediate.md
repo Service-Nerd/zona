@@ -176,8 +176,8 @@ Weekly: **25 km** · long: 1.1h
 
 - **tue** — Easy run - Zone 2 · 5km · 33min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
-- **thu** — Progressive tempo · 5km · 27min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
-  - _Hold back early. Finish honest._
+- **thu** — Goal-pace sharpener · 5km · 27min · Zone 3–4 · HR 141–154 bpm · pace 5:20–5:34 /km · RPE 7
+  - _HM-pace work. Target 5:27 /km. Controlled, even splits — exit each rep wanting more._
 - **sat** — Easy run - Zone 2 · 5km · 33min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 9.5km · 63min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
@@ -272,7 +272,7 @@ Weekly: **29 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T12:25:53.803Z",
+    "generated_at": "2026-04-27T13:02:42.493Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
@@ -1097,17 +1097,17 @@ Weekly: **29 km**
         "thu": {
           "id": "w12-thu",
           "type": "quality",
-          "label": "Progressive tempo",
+          "label": "Goal-pace sharpener",
           "detail": null,
           "distance_km": 5,
           "duration_mins": 27,
           "primary_metric": "distance",
           "zone": "Zone 3–4",
           "hr_target": "141–154 bpm",
-          "pace_target": "5:16–5:31 /km",
+          "pace_target": "5:20–5:34 /km",
           "rpe_target": 7,
           "coach_notes": [
-            "Hold back early. Finish honest."
+            "HM-pace work. Target 5:27 /km. Controlled, even splits — exit each rep wanting more."
           ]
         },
         "tue": {

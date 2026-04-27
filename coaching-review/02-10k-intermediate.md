@@ -148,7 +148,8 @@ Weekly: **30 km** · long: 1.2h
 
 - **mon** — Easy run - Zone 2 · 6.5km · 42min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
-- **wed** — Tempo run - short · 5km · 26min · Zone 3–4 · HR 146–159 bpm · pace 5:06–5:20 /km · RPE 7
+- **wed** — Goal-pace sharpener · 5km · 25min · Zone 3–4 · HR 146–159 bpm · pace 4:54–5:06 /km · RPE 7
+  - _10K-pace work. Target 5:00 /km. Controlled, even splits — exit each rep wanting more._
 - **fri** — Easy run - Zone 2 · 6.5km · 42min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 - **sun** — Long run - Zone 2 · 11.5km · 74min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 
@@ -247,7 +248,7 @@ Weekly: **18 km**
       "knee"
     ],
     "terrain": "road",
-    "generated_at": "2026-04-27T12:25:53.802Z",
+    "generated_at": "2026-04-27T13:02:42.491Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": false,
@@ -927,15 +928,18 @@ Weekly: **18 km**
         "wed": {
           "id": "w10-wed",
           "type": "quality",
-          "label": "Tempo run — short",
+          "label": "Goal-pace sharpener",
           "detail": null,
           "distance_km": 5,
-          "duration_mins": 26,
+          "duration_mins": 25,
           "primary_metric": "distance",
           "zone": "Zone 3–4",
           "hr_target": "146–159 bpm",
-          "pace_target": "5:06–5:20 /km",
-          "rpe_target": 7
+          "pace_target": "4:54–5:06 /km",
+          "rpe_target": 7,
+          "coach_notes": [
+            "10K-pace work. Target 5:00 /km. Controlled, even splits — exit each rep wanting more."
+          ]
         },
         "fri": {
           "id": "w10-fri",

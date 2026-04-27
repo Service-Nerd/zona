@@ -501,8 +501,18 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. Tier selection 
 
 ---
 
-## 36. The constitution
+## 36. Taper quality variety
 
-These thirty-six principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** Within taper phase, no two consecutive quality sessions may share the same label and pace target. The first taper week uses threshold/tempo work; subsequent taper weeks (until race week) prefer race-specific sharpening at goal pace. Race week itself stays shakeout-only (§26).
+
+**Why.** When the round-1 engine ran out of taper-eligible threshold rows (HM has only one: `progressive_tempo`), Anna's W11 and W12 both prescribed identical Progressive tempo at identical pace with identical coach notes. Repetition reads as the engine being lazy. For a runner with `hard_session_relationship: 'love'`, the second tempo run in a row is a signal that no thought went into the prescription — and the runner stops trusting subsequent sessions. Variety isn't a polish feature; it's a credibility feature.
+
+**Config.** Implemented in `buildWeekSessions()`: when `phase === 'taper'` and `taperIdx > 0` and `goalPace` is available, `preferredCategory` swaps from `'threshold'` to `'race_specific'`. New catalogue row `goal_pace_sharpener` (race_specific, taper-eligible across all distances) provides the alternate. Catalogue rows that mark themselves goal-pace via `main_set_structure.work.pace_target === 'goal'` trigger the same prescription override that `goalPaceWeek` does in build/peak. Future: an `INV-PLAN-TAPER-VARIETY` invariant.
+
+---
+
+## 37. The constitution
+
+These thirty-seven principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

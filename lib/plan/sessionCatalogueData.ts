@@ -132,6 +132,17 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     coach_voice_notes: 'Heroic openers ruin it. Even splits.',
   },
   {
+    id: 'goal_pace_sharpener', name: 'Goal-pace sharpener', category: 'race_specific',
+    purpose: 'Short reps at race pace with full recovery. Sharpens neuromuscular pace memory for race day.',
+    phase_eligibility: ['taper'],
+    distance_eligibility: ['5K', '10K', 'HM', 'MARATHON', '50K', '100K'],
+    fitness_level_min: 'intermediate', difficulty_tier: 3,
+    main_set_structure: { type: 'repeats', reps: 3, work: { distance_m: 1000, pace_target: 'goal' }, recovery: { duration_secs: 90, type: 'jog' } },
+    intensity_zones: ['Z3', 'Z4'],
+    typical_duration_min: 25, typical_duration_max: 40, is_free_tier: true,
+    coach_voice_notes: 'Crisp at goal pace. Even splits. Exit each rep wanting more.',
+  },
+  {
     id: 'hm_pace_long_run', name: 'Long run with HM-pace finish', category: 'race_specific',
     purpose: 'HM-specific long run. Easy first, then race pace on legs that are already tired.',
     phase_eligibility: ['peak'],

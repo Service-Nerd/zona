@@ -538,7 +538,11 @@ function makeQualitySession(args: {
   // race-specific. When goalPaceWeek is set and the session is not vo2max,
   // override prescription to goal pace and rename label.
   const isVo2max = catalogueRow?.category === 'vo2max'
-  const useGoalPace = goalPaceWeek === true && !isVo2max && !!goalPace
+  // Catalogue rows can request goal-pace prescription via pace_target: 'goal'
+  // in main_set_structure.work — used by goal_pace_sharpener (taper).
+  const catalogueRowGoalPace = catalogueRow?.category === 'race_specific'
+    && ((catalogueRow.main_set_structure as { work?: { pace_target?: string } }).work?.pace_target === 'goal')
+  const useGoalPace = (goalPaceWeek === true || catalogueRowGoalPace) && !isVo2max && !!goalPace
   const goalCenterMins = useGoalPace ? paceStrToMins(goalPace!) : null
 
   let label: string
@@ -548,7 +552,12 @@ function makeQualitySession(args: {
   let hrTarget: string
 
   if (useGoalPace && goalCenterMins != null) {
-    label = distLabel ? `${distLabel}-pace intervals` : 'Goal-pace cruise intervals'
+    // Override label only when the override is the source of goal-pace.
+    // When the catalogue row already names itself goal-pace work (e.g.
+    // "Goal-pace sharpener"), preserve the catalogue name.
+    label = catalogueRowGoalPace
+      ? (catalogueRow?.name ?? fallbackLabel)
+      : (distLabel ? `${distLabel}-pace intervals` : 'Goal-pace cruise intervals')
     minPerKm = goalCenterMins
     paceTarget = paceBandStr(goalCenterMins, 2)
     zone = 'Zone 3–4'
@@ -956,7 +965,19 @@ function buildWeekSessions(
 
   if (includeQuality && used.length < daysAvailable) {
     const qualKm = Math.max(roundDist(qualKmPerSession), minDist.quality)
-    const preferredCategory = preferredQualityCategory(phase, distKey)
+    // CoachingPrinciples §36 — alternate taper category by index so consecutive
+    // taper weeks vary their stimulus. Even idx → threshold (default), odd idx
+    // → race_specific (sharpener). Race week itself has no quality (§26).
+    let preferredCategory = preferredQualityCategory(phase, distKey)
+    let taperForceSharpener = false
+    if (phase === 'taper') {
+      const taperPhase = phases.find(p => p.name === 'taper')!
+      const taperIdx = weekN - taperPhase.start_week
+      if (taperIdx % 2 === 1) {
+        preferredCategory = 'race_specific'
+        taperForceSharpener = true
+      }
+    }
 
     const qualDay = firstAvailableDay(['wed', 'thu', 'tue'], blocked, used.filter(d => dayGap(d, 'wed') < 2))
       ?? firstAvailableDay(['wed', 'thu', 'tue', 'mon', 'fri'], blocked, used)
@@ -979,10 +1000,24 @@ function buildWeekSessions(
       && (phase === 'build' || phase === 'peak')
 
     if (qualDay && dayGap(qualDay, longDay) >= minDaysBetweenQualLong) {
-      const cat1 = selectCatalogueSession({
-        catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 0, preferredCategory,
-        excludeHillSessions,
-      })
+      // Taper alternation: prefer goal_pace_sharpener directly on odd taper
+      // indices so the selector's deterministic mod doesn't accidentally
+      // re-pick the threshold row (CoachingPrinciples §36).
+      let cat1: SessionCatalogueRow | null
+      if (taperForceSharpener) {
+        cat1 = catalogue.find(r => r.id === 'goal_pace_sharpener'
+          && r.distance_eligibility.includes(distKey)
+          && (tier !== 'free' || r.is_free_tier)
+        ) ?? selectCatalogueSession({
+          catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 0, preferredCategory,
+          excludeHillSessions,
+        })
+      } else {
+        cat1 = selectCatalogueSession({
+          catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 0, preferredCategory,
+          excludeHillSessions,
+        })
+      }
       sessions[qualDay] = makeQualitySession({
         weekN, day: qualDay, distKm: qualKm, metric, zones, pace,
         catalogueRow: cat1, phase, fitness, isDeload, goalPace,

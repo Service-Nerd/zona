@@ -40,6 +40,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RACE-SPECIFIC-LONG-RUN',
   'INV-PLAN-PEAK-OVER-BASE',
   'INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR',
+  'INV-PLAN-TAPER-VARIETY',
 ] as const
 
 export interface Violation {
@@ -671,6 +672,31 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           })
         }
       }
+    }
+  }
+
+  // INV-PLAN-TAPER-VARIETY — no two consecutive taper-phase quality sessions
+  // share the same label + pace target. (CoachingPrinciples §36, R2/M-02)
+  {
+    const taperWeeks = plan.weeks.filter(w => w.phase === 'taper' && w.type !== 'race')
+    let prev: { label: string; pace: string; weekN: number } | null = null
+    for (const tw of taperWeeks) {
+      const quality = Object.values(tw.sessions).find(s => s?.type === 'quality')
+      if (!quality) { prev = null; continue }
+      const label = quality.label ?? ''
+      const pace = quality.pace_target ?? ''
+      if (prev && prev.label === label && prev.pace === pace) {
+        violations.push({
+          code: 'INV-PLAN-TAPER-VARIETY',
+          principle_ref: 'CoachingPrinciples §36',
+          severity: 'error',
+          week: tw.n,
+          message: `W${tw.n} repeats W${prev.weekN}'s taper quality (${label} @ ${pace}). Vary the stimulus.`,
+          actual: label,
+          expected: 'distinct from prior taper week',
+        })
+      }
+      prev = { label, pace, weekN: tw.n }
     }
   }
 
