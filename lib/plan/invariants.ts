@@ -39,6 +39,32 @@ function dayGap(a: Day, b: Day): number {
   return Math.min(Math.abs(ai - bi), 7 - Math.abs(ai - bi))
 }
 
+// Parse "M:SS–M:SS /km" pace string → midpoint in min/km. Used by
+// INV-PLAN-LABEL-MATCHES-PACE pace-band check. Returns null when the string
+// doesn't match (defensive — engine emits ranges, but legacy plans may not).
+function parsePaceMidpoint(s: string): number | null {
+  const m = s.match(/^(\d+):(\d+)\s*[–-]\s*(\d+):(\d+)/)
+  if (!m) {
+    const single = s.match(/^(\d+):(\d+)/)
+    if (!single) return null
+    return parseInt(single[1], 10) + parseInt(single[2], 10) / 60
+  }
+  const fast = parseInt(m[1], 10) + parseInt(m[2], 10) / 60
+  const slow = parseInt(m[3], 10) + parseInt(m[4], 10) / 60
+  return (fast + slow) / 2
+}
+
+// Pace at a given VDOT fraction. Mirror of paceAtFraction in ruleEngine.ts —
+// kept local to avoid an import cycle.
+function paceFromVdot(vdot: number, fraction: number): number {
+  const a = 0.000104, b = 0.182258
+  const c = -4.60 - fraction * vdot
+  const disc = b * b - 4 * a * c
+  if (disc < 0) return 100
+  const v = (-b + Math.sqrt(disc)) / (2 * a)
+  return 1000 / v
+}
+
 // CoachingPrinciples §18 — accept short and full forms. Mirror of the engine
 // parser; kept local so the invariant catches any future drift.
 function parseBlockedDays(input: GeneratorInput): Set<Day> {
@@ -218,9 +244,11 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       }
     }
 
-    // INV-PLAN-LABEL-MATCHES-PACE — VO2max-named sessions land in Z4–Z5;
-    // threshold/tempo/cruise-named sessions land in Z3.
-    // (CoachingPrinciples §19 — session name carries physiological meaning.)
+    // INV-PLAN-LABEL-MATCHES-PACE — session name carries physiological meaning.
+    // Two layers: zone tag must match label, AND prescribed pace must land in
+    // the right physiological band when VDOT is available.
+    // (CoachingPrinciples §19, §10 — VO2max uses raw VDOT; threshold uses
+    // discounted training anchor.)
     for (const { day, session } of placedRunning) {
       if (session.type !== 'quality') continue
       const label = (session.label ?? '').toLowerCase()
@@ -229,6 +257,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       const labelImpliesThreshold = label.includes('threshold') || label.includes('tempo') || label.includes('cruise')
       const zoneIsVo2 = zone.includes('zone 4') || zone.includes('zone 5')
       const zoneIsThreshold = zone.includes('zone 3') && !zone.includes('zone 4')
+
       if (labelImpliesVo2 && !zoneIsVo2) {
         violations.push({
           code: 'INV-PLAN-LABEL-MATCHES-PACE',
@@ -250,6 +279,44 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           actual: session.zone ?? 'unknown',
           expected: 'Zone 3 (or higher)',
         })
+      }
+
+      // Numeric pace check — only when VDOT is on the plan and a pace target
+      // is actually prescribed. Tolerance ±5% (VO2max) / ±3% (threshold) is
+      // looser than the prescription's own ±2%, leaving headroom for display
+      // rounding while still catching whole-band mislabels.
+      if (plan.meta.vdot && session.pace_target) {
+        const mid = parsePaceMidpoint(session.pace_target)
+        if (mid != null) {
+          if (labelImpliesVo2) {
+            const expected = paceFromVdot(plan.meta.vdot, 0.975)
+            if (Math.abs(mid - expected) / expected > 0.05) {
+              violations.push({
+                code: 'INV-PLAN-LABEL-MATCHES-PACE',
+                principle_ref: 'CoachingPrinciples §19',
+                severity: 'error',
+                week: w.n, day,
+                message: `"${session.label}" pace midpoint ${mid.toFixed(2)}/km is not within ±5% of vVO2max ${expected.toFixed(2)}/km (raw VDOT ${plan.meta.vdot})`,
+                actual: mid.toFixed(2),
+                expected: expected.toFixed(2),
+              })
+            }
+          } else if (labelImpliesThreshold && !labelImpliesVo2) {
+            const anchorVdot = plan.meta.vdot_training_anchor ?? plan.meta.vdot
+            const expected = paceFromVdot(anchorVdot, 0.855)
+            if (Math.abs(mid - expected) / expected > 0.03) {
+              violations.push({
+                code: 'INV-PLAN-LABEL-MATCHES-PACE',
+                principle_ref: 'CoachingPrinciples §19',
+                severity: 'error',
+                week: w.n, day,
+                message: `"${session.label}" pace midpoint ${mid.toFixed(2)}/km is not within ±3% of T-pace ${expected.toFixed(2)}/km (training anchor ${anchorVdot})`,
+                actual: mid.toFixed(2),
+                expected: expected.toFixed(2),
+              })
+            }
+          }
+        }
       }
     }
 

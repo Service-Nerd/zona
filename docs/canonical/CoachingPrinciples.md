@@ -180,18 +180,18 @@ experienced  → 2
 
 ---
 
-## 10. VDOT conservatism — protect users from themselves
+## 10. VDOT conservatism — protect users from themselves (selectively)
 
-**Principle.** Training paces derived from a benchmark are discounted by 3% by default. Stale benchmarks (more than 6 months old) get a further 5% discount.
+**Principle.** Training paces derived from a benchmark are discounted by 3% by default for **easy** and **threshold** paces. Stale benchmarks (more than 6 months old) get a further 5% discount. **Interval (VO2max) paces use the raw benchmark VDOT** — no conservatism discount — because under-stimulating VO2max sessions undermines the adaptation they exist to produce.
 
-**Why.** A non-elite runner who PBs a 5K and then trains at 100% of the implied VDOT pace is a runner about to get injured. The discount acknowledges that race-day pace is a peak output, not a sustainable training pace, and that fitness drifts. The signature ZONA move is to err on the side of restraint when in doubt.
+**Why.** A non-elite runner who PBs a 5K and then trains at 100% of the implied VDOT pace on every easy run is a runner about to get injured. The discount on easy and threshold paces acknowledges that race-day pace is a peak output, not a sustainable training pace, and that fitness drifts — exactly where "going hard on the easy days" risk lives. But VO2max sessions are short, structured, with full recovery; they are MEANT to be hard. Discounting them produces under-stimulus and the runner loses the top-end adaptation. The conservatism principle and the polarised-training principle (§1) point the same way: protect easy days fiercely, train VO2max honestly. *(Doctrine clarified 2026-05-25 / R2/H-01 — Stance B.)*
 
 **Config.**
-- `GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT = 3`
+- `GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT = 3`  (applied to easy + threshold paces only)
 - `GENERATION_CONFIG.VDOT_STALE_BENCHMARK_ADDITIONAL_DISCOUNT_PCT = 5`
 - `GENERATION_CONFIG.VDOT_STALE_BENCHMARK_MONTHS = 6`
 
-The applied discount is surfaced in `plan.meta.vdot_discount_applied_pct` so the user can see what the engine did and why.
+Implemented in `buildPaceFromVDOT(discountedVdot, rawVdot)` in `lib/plan/ruleEngine.ts`. Easy/quality paces use `discountedVdot`; interval pace uses `rawVdot`. The applied discount is surfaced in `plan.meta.vdot_discount_applied_pct` so the user can see what the engine did and why.
 
 ---
 

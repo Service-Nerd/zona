@@ -105,13 +105,20 @@ function paceBandStr(centerMins: number, pctTolerance: number): string {
 
 // VDOT training pace fractions (Jack Daniels E/T/I)
 // Easy: 59–74% VO2max. Tempo: 83–88%. Interval (vVO2max): 95–100%.
-function buildPaceFromVDOT(vdot: number): PaceGuide {
-  const eFast = paceAtFraction(vdot, 0.74)
-  const eSlow = paceAtFraction(vdot, 0.59)
-  const tFast = paceAtFraction(vdot, 0.88)
-  const tSlow = paceAtFraction(vdot, 0.83)
-  const iFast = paceAtFraction(vdot, 1.00)  // top of interval band
-  const iSlow = paceAtFraction(vdot, 0.95)  // sustainable interval pace
+//
+// CoachingPrinciples §10 + §19 doctrine (R2/H-01, Stance B): the conservatism
+// discount applies to easy and threshold paces — the bands where "going hard
+// on easy days" risk lives. Interval (VO2max) sessions are short, structured,
+// with full recovery; they are MEANT to be hard. Discounting them produces
+// under-stimulus. So the discounted VDOT drives easy/threshold paces; the raw
+// benchmark VDOT drives interval paces.
+function buildPaceFromVDOT(discountedVdot: number, rawVdot: number): PaceGuide {
+  const eFast = paceAtFraction(discountedVdot, 0.74)
+  const eSlow = paceAtFraction(discountedVdot, 0.59)
+  const tFast = paceAtFraction(discountedVdot, 0.88)
+  const tSlow = paceAtFraction(discountedVdot, 0.83)
+  const iFast = paceAtFraction(rawVdot, 1.00)  // top of interval band, raw VDOT
+  const iSlow = paceAtFraction(rawVdot, 0.95)  // sustainable interval pace, raw VDOT
   const eMid  = (eFast + eSlow) / 2
   const tMid  = (tFast + tSlow) / 2
   const iMid  = (iFast + iSlow) / 2
@@ -1193,7 +1200,7 @@ export function applyRecalibration(
   const mhr = plan.meta.max_hr
   const rhr  = plan.meta.resting_hr > 0 ? plan.meta.resting_hr : undefined
   const zones = computeZones(mhr, rhr)
-  const pace  = buildPaceFromVDOT(vdot)
+  const pace  = buildPaceFromVDOT(vdot, rawVdot)
 
   const updated: Plan = JSON.parse(JSON.stringify(plan))
   updated.meta.vdot                       = Math.round(rawVdot * 10) / 10
@@ -1247,8 +1254,8 @@ export function generateRulePlan(
 
   const rhr = input.resting_hr && input.resting_hr > 0 ? input.resting_hr : undefined
   const zones = computeZones(derivedMaxHR, rhr)
-  const pace: PaceGuide = vdot !== undefined
-    ? buildPaceFromVDOT(vdot)
+  const pace: PaceGuide = (vdot !== undefined && vdotRaw !== undefined)
+    ? buildPaceFromVDOT(vdot, vdotRaw)
     : buildFallbackPace(fitness)
 
   const goalPace = input.goal === 'time_target' && input.target_time

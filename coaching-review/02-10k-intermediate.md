@@ -124,7 +124,7 @@ Weekly: **38 km** · long: 1.3h
 
 - **mon** — Easy run - Zone 2 · 9.5km · 60min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
-- **wed** — Classic VO2max · 7km · 33min · Zone 4–5 · HR 159–185 bpm · pace 4:36–4:47 /km · RPE 7
+- **wed** — Classic VO2max · 7km · 32min · Zone 4–5 · HR 159–185 bpm · pace 4:29–4:40 /km · RPE 7
   - _Three minutes is long. Don't blow rep one._
 - **fri** — Easy run - Zone 2 · 9.5km · 60min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 - **sun** — Long run - Zone 2 · 12km · 77min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
@@ -136,7 +136,7 @@ Weekly: **40 km** · long: 1.5h
 
 - **mon** — Easy run - Zone 2 · 9.5km · 60min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
-- **wed** — Long VO2max · 7.5km · 35min · Zone 4–5 · HR 159–185 bpm · pace 4:36–4:47 /km · RPE 7
+- **wed** — Long VO2max · 7.5km · 34min · Zone 4–5 · HR 159–185 bpm · pace 4:29–4:40 /km · RPE 7
   - _Heroic openers ruin it. Even splits._
 - **fri** — Easy run - Zone 2 · 9.5km · 60min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 - **sun** — Long run - Zone 2 · 13.5km · 87min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
@@ -247,7 +247,7 @@ Weekly: **18 km**
       "knee"
     ],
     "terrain": "road",
-    "generated_at": "2026-04-27T10:34:35.317Z",
+    "generated_at": "2026-04-27T12:07:15.414Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": false,
@@ -790,11 +790,11 @@ Weekly: **18 km**
           "label": "Classic VO2max",
           "detail": null,
           "distance_km": 7,
-          "duration_mins": 33,
+          "duration_mins": 32,
           "primary_metric": "distance",
           "zone": "Zone 4–5",
           "hr_target": "159–185 bpm",
-          "pace_target": "4:36–4:47 /km",
+          "pace_target": "4:29–4:40 /km",
           "rpe_target": 7,
           "coach_notes": [
             "Three minutes is long. Don't blow rep one."
@@ -860,11 +860,11 @@ Weekly: **18 km**
           "label": "Long VO2max",
           "detail": null,
           "distance_km": 7.5,
-          "duration_mins": 35,
+          "duration_mins": 34,
           "primary_metric": "distance",
           "zone": "Zone 4–5",
           "hr_target": "159–185 bpm",
-          "pace_target": "4:36–4:47 /km",
+          "pace_target": "4:29–4:40 /km",
           "rpe_target": 7,
           "coach_notes": [
             "Heroic openers ruin it. Even splits."
