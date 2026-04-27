@@ -14,6 +14,34 @@ import { GENERATION_CONFIG } from './generationConfig'
 
 export type Severity = 'error' | 'warn'
 
+// Registry of every invariant code defined in this file. Used by the meta-check
+// in scripts/r2-coverage-check.ts to assert that each code is mechanically
+// enforced — adding a code here without enforcement (or vice versa) is a defect.
+// (CoachingPrinciples §34, R2/H-04)
+export const INVARIANT_CODES = [
+  'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS',
+  'INV-PLAN-COACH-NOTES-MATCH-INTENT',
+  'INV-PLAN-LABEL-MATCHES-PACE',
+  'INV-PLAN-INJURY-NO-HILLS',
+  'INV-PLAN-RACE-WEEK-SHARPENING',
+  'INV-PLAN-RACE-SPECIFIC-EXPOSURE',
+  'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO',
+  'INV-PLAN-THEME-MATCHES-PRESCRIPTION',
+  'INV-PLAN-MIN-SESSION-SIZE',
+  'INV-PLAN-EMPTY-SESSION',
+  'INV-PLAN-LONG-IS-LONGEST',
+  'INV-PLAN-LONG-CAP-MINS',
+  'INV-PLAN-WEEK-1-2-LONG-CAP',
+  'INV-PLAN-QUALITY-PER-WEEK',
+  'INV-PLAN-QUALITY-LONG-SPACING',
+  'INV-PLAN-QUALITY-EXPECTED',
+  'INV-PLAN-MAX-WEEKDAY-MINS',
+  'INV-PLAN-PEAK-LR-RACE-RATIO',
+  'INV-PLAN-RACE-SPECIFIC-LONG-RUN',
+  'INV-PLAN-PEAK-OVER-BASE',
+  'INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR',
+] as const
+
 export interface Violation {
   code: string
   principle_ref: string

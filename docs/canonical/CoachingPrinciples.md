@@ -470,8 +470,18 @@ Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) where `startKm` i
 
 ---
 
-## 34. The constitution
+## 34. Invariant registry — declared and exercised
 
-These thirty-four principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** Every invariant code emitted from `validatePlan()` MUST appear in `INVARIANT_CODES` (the registry), and every code in the registry MUST be emitted by some branch of `validatePlan()`. The three canonical review-packet cases (`01-5k-beginner`, `02-10k-intermediate`, `03-hm-intermediate`) MUST pass `validatePlan()` with zero error-severity violations under the current engine.
+
+**Why.** Round-1 H-02 added an invariant that didn't catch the regression it was designed for, because the per-week zone check passed while the pace was actually wrong (the discounted-VDOT issue). A registry + canonical-case coverage check is the cheapest mechanical guard against "principle written, invariant added, but no test ever fires it." When a future principle ships, the build fails until the corresponding invariant is wired AND the canonical cases stay clean.
+
+**Config.** `INVARIANT_CODES` constant in `lib/plan/invariants.ts` lists every code. `scripts/r2-coverage-check.ts` reads source, diffs registry vs emitted-code literals, and runs the three canonical cases through `validatePlan()`. Exits 1 on any failure. Run as part of CI pre-merge.
+
+---
+
+## 35. The constitution
+
+These thirty-five principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.
