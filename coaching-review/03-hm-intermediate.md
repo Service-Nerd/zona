@@ -34,9 +34,12 @@ Anna, 42. Runs 4×/week, building toward a target HM in 14 weeks. Goal time 1:55
 ## Plan summary
 
 **13 weeks** · race: Target HM (21.1 km) on 2026-08-03
-Derived fitness: **intermediate** · VDOT 39.5
+Derived fitness: **intermediate** · VDOT 39.5 (training anchor 38.4, 3% conservatism discount)
+Benchmark: 10 km in 0:50:30 (2026-03-08)
 Goal pace: **5:27 /km**
-⚠️ Plan is **compressed** (peak volume below 95% of target peakKm)
+Volume profile: **maintenance**
+Compression: **constrained_by_inputs**
+> Peak volume 44 km is 102% of week 1 (43 km) — below the 110% overload threshold. Plan maintains current fitness rather than building it.
 
 ### Week 1 — Base — easy start · *base*
 > HR discipline. Slower than feels right. That is correct.
@@ -107,6 +110,7 @@ Weekly: **43 km** · long: 1.5h
 > One quality session. Everything else stays easy.
 
 Weekly: **47 km** · long: 1.7h
+> Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a race effort.
 
 - **tue** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
@@ -268,7 +272,7 @@ Weekly: **29 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T10:33:38.380Z",
+    "generated_at": "2026-04-27T10:34:35.318Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,

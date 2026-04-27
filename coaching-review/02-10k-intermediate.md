@@ -34,8 +34,10 @@ Mark, 38. Software engineer, two kids. Runs 4×/week, consistent for 2 years but
 ## Plan summary
 
 **11 weeks** · race: Local 10K (10 km) on 2026-07-20
-Derived fitness: **intermediate** · VDOT 41.2
+Derived fitness: **intermediate** · VDOT 41.2 (training anchor 40, 3% conservatism discount)
+Benchmark: 5 km in 0:23:30 (2026-03-15)
 Goal pace: **5:00 /km**
+Volume profile: **build**
 
 ### Week 1 — Base — easy start · *base*
 > HR discipline. Slower than feels right. That is correct.
@@ -106,6 +108,7 @@ Weekly: **32 km** · long: 1.1h
 > One quality session. Everything else stays easy.
 
 Weekly: **35 km** · long: 1.2h
+> Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a race effort.
 
 - **mon** — Easy run - Zone 2 · 8.5km · 55min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
@@ -244,7 +247,7 @@ Weekly: **18 km**
       "knee"
     ],
     "terrain": "road",
-    "generated_at": "2026-04-27T10:33:38.379Z",
+    "generated_at": "2026-04-27T10:34:35.317Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": false,

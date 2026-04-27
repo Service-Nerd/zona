@@ -30,6 +30,7 @@ Sarah, 30. Returning to running after a 6-month gap due to work travel. Currentl
 
 **11 weeks** · race: Local 5K (5 km) on 2026-07-20
 Derived fitness: **beginner**
+Volume profile: **build**
 
 ### Week 1 — Base — easy start · *base*
 > HR discipline. Slower than feels right. That is correct.
@@ -92,6 +93,7 @@ Weekly: **20 km** · long: 1.1h
 > One quality session. Everything else stays easy.
 
 Weekly: **22 km** · long: 1.1h
+> Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a race effort.
 
 - **wed** — Easy run - Zone 2 · 52min · Zone 2 · HR < 151 bpm · pace 7:30–9:00 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
@@ -206,7 +208,7 @@ Weekly: **13 km**
     "fitness_level": "beginner",
     "goal": "finish",
     "days_available": 3,
-    "generated_at": "2026-04-27T10:33:38.377Z",
+    "generated_at": "2026-04-27T10:34:35.315Z",
     "generator_version": "2.0",
     "tier": "free",
     "compressed": false,

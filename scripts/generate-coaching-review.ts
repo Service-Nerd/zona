@@ -177,9 +177,24 @@ function renderCase(c: Case, plan: Plan): string {
   lines.push('## Plan summary')
   lines.push('')
   lines.push(`**${plan.weeks.length} weeks** · race: ${plan.meta.race_name} (${plan.meta.race_distance_km} km) on ${plan.meta.race_date}`)
-  lines.push(`Derived fitness: **${plan.meta.fitness_level}**` + (plan.meta.vdot ? ` · VDOT ${plan.meta.vdot}` : ''))
+  let fitnessLine = `Derived fitness: **${plan.meta.fitness_level}**`
+  if (plan.meta.vdot) {
+    fitnessLine += ` · VDOT ${plan.meta.vdot}`
+    if (plan.meta.vdot_training_anchor && plan.meta.vdot_training_anchor !== plan.meta.vdot) {
+      fitnessLine += ` (training anchor ${plan.meta.vdot_training_anchor}, ${plan.meta.vdot_discount_applied_pct}% conservatism discount)`
+    }
+  }
+  lines.push(fitnessLine)
+  if (plan.meta.benchmark) {
+    const b = plan.meta.benchmark
+    lines.push(`Benchmark: ${b.distance_km} km in ${b.time}` + (b.benchmark_date ? ` (${b.benchmark_date})` : ''))
+  }
   if (plan.meta.goal_pace_per_km) lines.push(`Goal pace: **${plan.meta.goal_pace_per_km}**`)
-  if (plan.meta.compressed) lines.push(`⚠️ Plan is **compressed** (peak volume below 95% of target peakKm)`)
+  if (plan.meta.volume_profile) lines.push(`Volume profile: **${plan.meta.volume_profile}**`)
+  if (plan.meta.compression_classification && plan.meta.compression_classification !== 'optimal') {
+    lines.push(`Compression: **${plan.meta.compression_classification}**`)
+  }
+  if (plan.meta.volume_constraint_note) lines.push(`> ${plan.meta.volume_constraint_note}`)
   lines.push('')
 
   for (const w of plan.weeks) {
@@ -189,6 +204,7 @@ function renderCase(c: Case, plan: Plan): string {
     if (w.theme) lines.push(`> ${w.theme}`)
     lines.push('')
     lines.push(`Weekly: **${w.weekly_km} km**` + (w.long_run_hrs ? ` · long: ${w.long_run_hrs}h` : ''))
+    if ((w as any).tune_up_callout) lines.push(`> ${(w as any).tune_up_callout}`)
     lines.push('')
     const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
     for (const d of dayOrder) {
