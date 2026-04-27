@@ -166,7 +166,15 @@ export async function POST(req: NextRequest) {
     rule_engine_version:   COACHING_RULE_ENGINE_VERSION,
   }
 
-  void serviceSupabase.from('run_analysis').upsert(analysisRow, { onConflict: 'user_id,strava_activity_id' })
+  // Must await — `void` previously made this fire-and-forget, which on
+  // serverless means the function returns before the upsert completes and
+  // the row never lands. (Same pattern as the strava webhook waitUntil fix.)
+  const upsertRes = await serviceSupabase
+    .from('run_analysis')
+    .upsert(analysisRow, { onConflict: 'user_id,strava_activity_id' })
+  if (upsertRes.error) {
+    console.error('[analyse-run] run_analysis upsert failed', upsertRes.error.message)
+  }
 
   // AI feedback — always runs here (free users are blocked above)
   let feedbackText: string | null = null
