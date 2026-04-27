@@ -34,10 +34,12 @@ interface ZoneTargets {
 }
 
 interface PaceGuide {
-  easyPaceStr:     string   // e.g. "6:00–7:15 /km"
-  qualityPaceStr:  string   // e.g. "5:10–5:25 /km"
-  minPerKmEasy:    number   // midpoint for duration calculations
-  minPerKmQuality: number
+  easyPaceStr:      string   // e.g. "6:00–7:15 /km"
+  qualityPaceStr:   string   // T-pace (threshold) — Z3 cruise intervals, tempo
+  intervalPaceStr:  string   // I-pace (VO2max)   — Z4–Z5 hard repeats
+  minPerKmEasy:     number
+  minPerKmQuality:  number
+  minPerKmInterval: number
   source: 'vdot' | 'fitness_level'
 }
 
@@ -85,19 +87,24 @@ function formatPace(minPerKm: number): string {
 }
 
 // VDOT training pace fractions (Jack Daniels E/T/I)
-// Easy: 59–74% VO2max. Tempo: 83–88%. Interval: 97–100%.
+// Easy: 59–74% VO2max. Tempo: 83–88%. Interval (vVO2max): 95–100%.
 function buildPaceFromVDOT(vdot: number): PaceGuide {
-  const eFast = paceAtFraction(vdot, 0.74)  // faster end of easy
-  const eSlow = paceAtFraction(vdot, 0.59)  // slower end of easy
+  const eFast = paceAtFraction(vdot, 0.74)
+  const eSlow = paceAtFraction(vdot, 0.59)
   const tFast = paceAtFraction(vdot, 0.88)
   const tSlow = paceAtFraction(vdot, 0.83)
+  const iFast = paceAtFraction(vdot, 1.00)  // top of interval band
+  const iSlow = paceAtFraction(vdot, 0.95)  // sustainable interval pace
   const eMid  = (eFast + eSlow) / 2
   const tMid  = (tFast + tSlow) / 2
+  const iMid  = (iFast + iSlow) / 2
   return {
-    easyPaceStr:     `${formatPace(eFast)}–${formatPace(eSlow)} /km`,
-    qualityPaceStr:  `${formatPace(tFast)}–${formatPace(tSlow)} /km`,
-    minPerKmEasy:    eMid,
-    minPerKmQuality: tMid,
+    easyPaceStr:      `${formatPace(eFast)}–${formatPace(eSlow)} /km`,
+    qualityPaceStr:   `${formatPace(tFast)}–${formatPace(tSlow)} /km`,
+    intervalPaceStr:  `${formatPace(iFast)}–${formatPace(iSlow)} /km`,
+    minPerKmEasy:     eMid,
+    minPerKmQuality:  tMid,
+    minPerKmInterval: iMid,
     source: 'vdot',
   }
 }
@@ -185,9 +192,9 @@ function computeZones(mhr: number, rhr?: number): ZoneTargets {
 // ─── Pace guides by fitness level (fallback when no benchmark) ─────────────────
 
 const PACE_GUIDE: Record<FitnessLevel, Omit<PaceGuide, 'source'>> = {
-  beginner:     { easyPaceStr: '7:30–9:00 /km', qualityPaceStr: '6:30–7:30 /km', minPerKmEasy: 8.0,  minPerKmQuality: 7.0  },
-  intermediate: { easyPaceStr: '6:30–7:30 /km', qualityPaceStr: '5:30–6:00 /km', minPerKmEasy: 7.0,  minPerKmQuality: 5.75 },
-  experienced:  { easyPaceStr: '5:45–6:45 /km', qualityPaceStr: '4:45–5:20 /km', minPerKmEasy: 6.25, minPerKmQuality: 5.0  },
+  beginner:     { easyPaceStr: '7:30–9:00 /km', qualityPaceStr: '6:30–7:30 /km', intervalPaceStr: '5:30–6:30 /km', minPerKmEasy: 8.0,  minPerKmQuality: 7.0,  minPerKmInterval: 6.0 },
+  intermediate: { easyPaceStr: '6:30–7:30 /km', qualityPaceStr: '5:30–6:00 /km', intervalPaceStr: '4:30–5:00 /km', minPerKmEasy: 7.0,  minPerKmQuality: 5.75, minPerKmInterval: 4.75 },
+  experienced:  { easyPaceStr: '5:45–6:45 /km', qualityPaceStr: '4:45–5:20 /km', intervalPaceStr: '3:50–4:20 /km', minPerKmEasy: 6.25, minPerKmQuality: 5.0,  minPerKmInterval: 4.05 },
 }
 
 function buildFallbackPace(fitness: FitnessLevel): PaceGuide {
@@ -499,10 +506,20 @@ function makeQualitySession(args: {
 
   const label = catalogueRow?.name ?? fallbackLabel
 
+  // CoachingPrinciples §19 — session label must match prescribed physiology.
+  // VO2max-categorised sessions get true I-pace (Z4–Z5). Threshold and the rest
+  // get T-pace (Z3). The catalogue is the source of truth; the label rides
+  // along but the prescription is what trains the body.
+  const isVo2max = catalogueRow?.category === 'vo2max'
+  const minPerKm = isVo2max ? pace.minPerKmInterval : pace.minPerKmQuality
+  const paceTarget = isVo2max ? pace.intervalPaceStr : pace.qualityPaceStr
+  const zone = isVo2max ? 'Zone 4–5' : 'Zone 3–4'
+  const hrTarget = isVo2max ? zones.intervalsHR : zones.qualityHR
+
   // Coach notes: catalogue voice first; goal-pace augmentation in peak when set.
   const notes: string[] = []
   if (catalogueRow?.coach_voice_notes) notes.push(catalogueRow.coach_voice_notes)
-  if (phase === 'peak' && goalPace && !catalogueRow?.coach_voice_notes?.toLowerCase().includes('pace')) {
+  if (phase === 'peak' && goalPace && !catalogueRow?.coach_voice_notes?.toLowerCase().includes('pace') && !isVo2max) {
     notes.push(`Race-pace work. Target: ${goalPace}. Controlled — not all-out.`)
   }
   const coach_notes = notes.length > 0
@@ -514,10 +531,10 @@ function makeQualitySession(args: {
     id: `w${weekN}-${day}`,
     type: 'quality', label, detail: null,
     ...(metric === 'distance' ? { distance_km: rounded } : {}),
-    duration_mins: dur(rounded, pace.minPerKmQuality),
+    duration_mins: dur(rounded, minPerKm),
     primary_metric: metric,
-    zone: 'Zone 3–4', hr_target: zones.qualityHR,
-    pace_target: pace.qualityPaceStr,
+    zone, hr_target: hrTarget,
+    pace_target: paceTarget,
     rpe_target: isDeload ? 6 : 7,
     ...(coach_notes ? { coach_notes } : {}),
     ...(catalogueRow ? {} : {}),  // future: surface catalogue_id when schema permits

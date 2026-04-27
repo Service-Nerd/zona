@@ -107,6 +107,41 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       }
     }
 
+    // INV-PLAN-LABEL-MATCHES-PACE — VO2max-named sessions land in Z4–Z5;
+    // threshold/tempo/cruise-named sessions land in Z3.
+    // (CoachingPrinciples §19 — session name carries physiological meaning.)
+    for (const { day, session } of placedRunning) {
+      if (session.type !== 'quality') continue
+      const label = (session.label ?? '').toLowerCase()
+      const zone = (session.zone ?? '').toLowerCase()
+      const labelImpliesVo2 = label.includes('vo2max') || label.includes('vo2 max')
+      const labelImpliesThreshold = label.includes('threshold') || label.includes('tempo') || label.includes('cruise')
+      const zoneIsVo2 = zone.includes('zone 4') || zone.includes('zone 5')
+      const zoneIsThreshold = zone.includes('zone 3') && !zone.includes('zone 4')
+      if (labelImpliesVo2 && !zoneIsVo2) {
+        violations.push({
+          code: 'INV-PLAN-LABEL-MATCHES-PACE',
+          principle_ref: 'CoachingPrinciples §19',
+          severity: 'error',
+          week: w.n, day,
+          message: `Session labelled "${session.label}" implies VO2max but zone is "${session.zone}" — rename or re-target pace`,
+          actual: session.zone ?? 'unknown',
+          expected: 'Zone 4 or 5',
+        })
+      }
+      if (labelImpliesThreshold && !labelImpliesVo2 && !zoneIsThreshold && !zoneIsVo2) {
+        violations.push({
+          code: 'INV-PLAN-LABEL-MATCHES-PACE',
+          principle_ref: 'CoachingPrinciples §19',
+          severity: 'error',
+          week: w.n, day,
+          message: `Session labelled "${session.label}" implies threshold but zone is "${session.zone}"`,
+          actual: session.zone ?? 'unknown',
+          expected: 'Zone 3 (or higher)',
+        })
+      }
+    }
+
     // INV-PLAN-MIN-SESSION-SIZE — every placed session ≥ MIN_SESSION_DISTANCE_KM
     // (CoachingPrinciples §9 — "Below these, the session is too short to be coaching-meaningful.")
     for (const { day, session } of placedRunning) {

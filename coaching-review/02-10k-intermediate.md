@@ -116,9 +116,8 @@ Weekly: **35 km** · long: 1.2h
 Weekly: **38 km** · long: 1.3h
 
 - **mon** — Easy run - Zone 2 · 9.5km · 60min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
-- **wed** — Classic VO2max · 7km · 37min · Zone 3–4 · HR 146–159 bpm · pace 5:06–5:20 /km · RPE 7
+- **wed** — Classic VO2max · 7km · 33min · Zone 4–5 · HR 159–185 bpm · pace 4:36–4:47 /km · RPE 7
   - _Three minutes is long. Don't blow rep one._
-  - _Race-pace work. Target: 5:00 /km. Controlled — not all-out._
 - **fri** — Easy run - Zone 2 · 9.5km · 60min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 - **sun** — Long run - Zone 2 · 12km · 77min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 
@@ -128,9 +127,8 @@ Weekly: **38 km** · long: 1.3h
 Weekly: **40 km** · long: 1.5h
 
 - **mon** — Easy run - Zone 2 · 9.5km · 60min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
-- **wed** — Long VO2max · 7.5km · 39min · Zone 3–4 · HR 146–159 bpm · pace 5:06–5:20 /km · RPE 7
+- **wed** — Long VO2max · 7.5km · 35min · Zone 4–5 · HR 159–185 bpm · pace 4:36–4:47 /km · RPE 7
   - _Heroic openers ruin it. Even splits._
-  - _Race-pace work. Target: 5:00 /km. Controlled — not all-out._
 - **fri** — Easy run - Zone 2 · 9.5km · 60min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 - **sun** — Long run - Zone 2 · 13.5km · 87min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 
@@ -238,7 +236,7 @@ Weekly: **18 km**
       "knee"
     ],
     "terrain": "road",
-    "generated_at": "2026-04-27T09:15:09.026Z",
+    "generated_at": "2026-04-27T09:20:53.204Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": false,
@@ -765,15 +763,14 @@ Weekly: **18 km**
           "label": "Classic VO2max",
           "detail": null,
           "distance_km": 7,
-          "duration_mins": 37,
+          "duration_mins": 33,
           "primary_metric": "distance",
-          "zone": "Zone 3–4",
-          "hr_target": "146–159 bpm",
-          "pace_target": "5:06–5:20 /km",
+          "zone": "Zone 4–5",
+          "hr_target": "159–185 bpm",
+          "pace_target": "4:36–4:47 /km",
           "rpe_target": 7,
           "coach_notes": [
-            "Three minutes is long. Don't blow rep one.",
-            "Race-pace work. Target: 5:00 /km. Controlled — not all-out."
+            "Three minutes is long. Don't blow rep one."
           ]
         },
         "fri": {
@@ -833,15 +830,14 @@ Weekly: **18 km**
           "label": "Long VO2max",
           "detail": null,
           "distance_km": 7.5,
-          "duration_mins": 39,
+          "duration_mins": 35,
           "primary_metric": "distance",
-          "zone": "Zone 3–4",
-          "hr_target": "146–159 bpm",
-          "pace_target": "5:06–5:20 /km",
+          "zone": "Zone 4–5",
+          "hr_target": "159–185 bpm",
+          "pace_target": "4:36–4:47 /km",
           "rpe_target": 7,
           "coach_notes": [
-            "Heroic openers ruin it. Even splits.",
-            "Race-pace work. Target: 5:00 /km. Controlled — not all-out."
+            "Heroic openers ruin it. Even splits."
           ]
         },
         "fri": {

@@ -302,8 +302,18 @@ enrichment layer (gated via `ai_coach_notes_new`), not the act of regenerating.
 
 ---
 
-## 19. The constitution
+## 19. Session label integrity — name matches prescribed physiology
 
-These nineteen principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** A session's name carries physiological meaning. If a session is named "VO2max" the prescription MUST land in Z4–Z5 at I-pace (95–100% vVO2max). If it is named "Threshold" / "Tempo" / "Cruise" the prescription MUST land in Z3 at T-pace (83–88% vVO2max). If a session is named after a race distance ("10K-pace intervals", "HM-pace intervals") the prescription MUST land within ±2% of derived goal pace. If the engine cannot satisfy the label given the runner's VDOT, it MUST rename the session to one the prescription does satisfy.
+
+**Why.** A non-elite runner cannot tell from feel whether 5:00/km is VO2max work, threshold, or 10K race pace — they trust the name on the card. Mislabelling trains the wrong system: prescribing T-pace under a "VO2max" label gives the runner threshold adaptations and the false belief they're doing VO2max work. The first time they meet true VO2max pace will be on race day or in a future plan, and it will hurt for the wrong reasons.
+
+**Config.** No numeric — structural rule. Implemented by `makeQualitySession()` in `lib/plan/ruleEngine.ts` which dispatches on `catalogueRow.category`. Enforced by `INV-PLAN-LABEL-MATCHES-PACE` in `lib/plan/invariants.ts`. The `PaceGuide` interface carries `intervalPaceStr` (I-pace) and `qualityPaceStr` (T-pace) as separate bands so the engine can prescribe the correct one for each catalogue category.
+
+---
+
+## 20. The constitution
+
+These twenty principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.
