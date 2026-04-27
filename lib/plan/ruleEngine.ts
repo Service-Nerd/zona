@@ -86,6 +86,23 @@ function formatPace(minPerKm: number): string {
   return `${mins}:${String(secs).padStart(2, '0')}`
 }
 
+// Parse pace string ("5:00 /km" or "5:00") to total minutes-per-km.
+function paceStrToMins(s: string): number | null {
+  const m = s.match(/^(\d+):(\d+)/)
+  if (!m) return null
+  const mins = parseInt(m[1], 10)
+  const secs = parseInt(m[2], 10)
+  if (!Number.isFinite(mins) || !Number.isFinite(secs)) return null
+  return mins + secs / 60
+}
+
+// Band around a centre pace, e.g. paceBandStr(5.00, 2) → "4:54–5:06 /km".
+function paceBandStr(centerMins: number, pctTolerance: number): string {
+  const fast = centerMins * (1 - pctTolerance / 100)
+  const slow = centerMins * (1 + pctTolerance / 100)
+  return `${formatPace(fast)}–${formatPace(slow)} /km`
+}
+
 // VDOT training pace fractions (Jack Daniels E/T/I)
 // Easy: 59–74% VO2max. Tempo: 83–88%. Interval (vVO2max): 95–100%.
 function buildPaceFromVDOT(vdot: number): PaceGuide {
@@ -496,25 +513,52 @@ function makeQualitySession(args: {
   catalogueRow: SessionCatalogueRow | null
   phase: PhaseType; fitness: FitnessLevel; isDeload: boolean
   goalPace: string | null | undefined
+  goalPaceWeek?: boolean
+  distLabel?: string  // e.g. "10K", "HM" — used when goalPaceWeek triggers race-distance-named session
 }): Session {
-  const { weekN, day, distKm, metric, zones, pace, catalogueRow, phase, fitness, isDeload, goalPace } = args
+  const { weekN, day, distKm, metric, zones, pace, catalogueRow, phase, fitness, isDeload, goalPace, goalPaceWeek, distLabel } = args
 
   // Fallback label if no catalogue row matched (e.g. 5K/10K taper week).
   const fallbackLabel = phase === 'taper' ? 'Tempo run — short'
     : phase === 'peak' && fitness !== 'experienced' ? 'Cruise intervals'
     : 'Tempo run'
 
-  const label = catalogueRow?.name ?? fallbackLabel
-
   // CoachingPrinciples §19 — session label must match prescribed physiology.
   // VO2max-categorised sessions get true I-pace (Z4–Z5). Threshold and the rest
-  // get T-pace (Z3). The catalogue is the source of truth; the label rides
-  // along but the prescription is what trains the body.
+  // get T-pace (Z3). VO2max keeps its label even in goal-pace weeks — the
+  // physiology of true I-pace work is too valuable to lose for label specificity.
+  // CoachingPrinciples §22 — second-half quality of time-targeted plans is
+  // race-specific. When goalPaceWeek is set and the session is not vo2max,
+  // override prescription to goal pace and rename label.
   const isVo2max = catalogueRow?.category === 'vo2max'
-  const minPerKm = isVo2max ? pace.minPerKmInterval : pace.minPerKmQuality
-  const paceTarget = isVo2max ? pace.intervalPaceStr : pace.qualityPaceStr
-  const zone = isVo2max ? 'Zone 4–5' : 'Zone 3–4'
-  const hrTarget = isVo2max ? zones.intervalsHR : zones.qualityHR
+  const useGoalPace = goalPaceWeek === true && !isVo2max && !!goalPace
+  const goalCenterMins = useGoalPace ? paceStrToMins(goalPace!) : null
+
+  let label: string
+  let minPerKm: number
+  let paceTarget: string
+  let zone: string
+  let hrTarget: string
+
+  if (useGoalPace && goalCenterMins != null) {
+    label = distLabel ? `${distLabel}-pace intervals` : 'Goal-pace cruise intervals'
+    minPerKm = goalCenterMins
+    paceTarget = paceBandStr(goalCenterMins, 2)
+    zone = 'Zone 3–4'
+    hrTarget = zones.qualityHR
+  } else if (isVo2max) {
+    label = catalogueRow?.name ?? fallbackLabel
+    minPerKm = pace.minPerKmInterval
+    paceTarget = pace.intervalPaceStr
+    zone = 'Zone 4–5'
+    hrTarget = zones.intervalsHR
+  } else {
+    label = catalogueRow?.name ?? fallbackLabel
+    minPerKm = pace.minPerKmQuality
+    paceTarget = pace.qualityPaceStr
+    zone = 'Zone 3–4'
+    hrTarget = zones.qualityHR
+  }
 
   // Coach notes: catalogue voice first; goal-pace augmentation in peak when set.
   const notes: string[] = []
@@ -682,7 +726,8 @@ function buildWeekSessions(
   tier: Tier,
   catalogue: SessionCatalogueRow[],
   fitness: FitnessLevel,
-  goalPace?: string | null,
+  goalPace: string | null | undefined,
+  totalWeeks: number,
 ): Partial<Record<Day, Session>> {
   const blocked = blockedDays(input)
 
@@ -841,6 +886,17 @@ function buildWeekSessions(
         GENERATION_CONFIG.HILL_RESTRICTING_INJURIES.some(k => i.toLowerCase().includes(k))
       )
 
+    // CoachingPrinciples §22 — race-specific exposure for time-targeted goals.
+    // In the second half of a time-targeted plan (build + peak only — base is
+    // for aerobic development, taper has its own logic), prescribe quality at
+    // goal pace and rename to "{distKey}-pace intervals". VO2max sessions are
+    // exempt — true I-pace physiology is preserved at the top of peak.
+    const isSecondHalf = weekN > Math.ceil(totalWeeks / 2)
+    const goalPaceWeek = !!goalPace
+      && input.goal === 'time_target'
+      && isSecondHalf
+      && (phase === 'build' || phase === 'peak')
+
     if (qualDay && dayGap(qualDay, longDay) >= minDaysBetweenQualLong) {
       const cat1 = selectCatalogueSession({
         catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 0, preferredCategory,
@@ -849,6 +905,7 @@ function buildWeekSessions(
       sessions[qualDay] = makeQualitySession({
         weekN, day: qualDay, distKm: qualKm, metric, zones, pace,
         catalogueRow: cat1, phase, fitness, isDeload, goalPace,
+        goalPaceWeek, distLabel: distKey,
       })
       used.push(qualDay)
 
@@ -872,6 +929,7 @@ function buildWeekSessions(
             distKm: Math.max(roundDist(qualKm * secondaryFraction), minDist.secondary_quality),
             metric, zones, pace,
             catalogueRow: cat2, phase, fitness, isDeload, goalPace,
+            goalPaceWeek, distLabel: distKey,
           })
           used.push(qual2Day)
         }
@@ -1168,6 +1226,7 @@ export function generateRulePlan(
       tier, catalogue,
       fitness,
       goalPace,
+      totalWeeks,
     )
 
     const longRunHrs = computeLongRunHrs(sessions, pace)

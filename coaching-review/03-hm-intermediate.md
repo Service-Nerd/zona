@@ -127,7 +127,7 @@ Weekly: **35 km** · long: 1.2h
 Weekly: **40 km** · long: 1.4h
 
 - **tue** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **thu** — HM-pace intervals · 7km · 38min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
+- **thu** — HM-pace intervals · 7km · 38min · Zone 3–4 · HR 141–154 bpm · pace 5:20–5:34 /km · RPE 7
   - _HM pace, not faster. Exit each rep wanting more._
 - **sat** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 12.5km · 83min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
@@ -138,7 +138,7 @@ Weekly: **40 km** · long: 1.4h
 Weekly: **44 km** · long: 1.6h
 
 - **tue** — Easy run - Zone 2 · 11km · 73min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **thu** — HM-pace intervals · 8km · 43min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
+- **thu** — HM-pace intervals · 8km · 44min · Zone 3–4 · HR 141–154 bpm · pace 5:20–5:34 /km · RPE 7
   - _HM pace, not faster. Exit each rep wanting more._
 - **sat** — Easy run - Zone 2 · 11km · 73min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 14km · 93min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
@@ -255,7 +255,7 @@ Weekly: **29 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T09:52:15.623Z",
+    "generated_at": "2026-04-27T10:02:03.429Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
@@ -853,7 +853,7 @@ Weekly: **29 km**
           "primary_metric": "distance",
           "zone": "Zone 3–4",
           "hr_target": "141–154 bpm",
-          "pace_target": "5:16–5:31 /km",
+          "pace_target": "5:20–5:34 /km",
           "rpe_target": 7,
           "coach_notes": [
             "HM pace, not faster. Exit each rep wanting more."
@@ -916,11 +916,11 @@ Weekly: **29 km**
           "label": "HM-pace intervals",
           "detail": null,
           "distance_km": 8,
-          "duration_mins": 43,
+          "duration_mins": 44,
           "primary_metric": "distance",
           "zone": "Zone 3–4",
           "hr_target": "141–154 bpm",
-          "pace_target": "5:16–5:31 /km",
+          "pace_target": "5:20–5:34 /km",
           "rpe_target": 7,
           "coach_notes": [
             "HM pace, not faster. Exit each rep wanting more."

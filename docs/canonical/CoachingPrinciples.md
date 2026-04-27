@@ -332,8 +332,18 @@ enrichment layer (gated via `ai_coach_notes_new`), not the act of regenerating.
 
 ---
 
-## 22. The constitution
+## 22. Race-specific exposure (time-targeted goals)
 
-These twenty-two principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** For `goal: time_target`, the runner needs sustained exposure to goal pace before race day. In the second half of the plan (weeks > ⌈total_weeks/2⌉), the engine MUST prescribe goal pace on the build/peak quality slot, with VO2max sessions exempt (their physiology is too valuable to lose). The session is renamed to a race-distance-specific label (e.g. "10K-pace intervals", "HM-pace intervals") and the prescription lands within ±2% of derived goal pace.
+
+**Why.** A non-elite runner who has never run at goal pace in training will run their first goal-pace metres on race day. They will either go out at the wrong pace (because they don't know what it feels like) or fail to commit to it (because the pace feels alien). Specificity is the simplest fitness lever in coaching: if the race is at pace X, train at pace X. The brand promise is "training plans that stop you overtraining" — but a plan that's so cautious it never visits race pace is a plan that produces a race-day stranger to their target.
+
+**Config.** No numeric — structural rule. Implemented in `buildWeekSessions()` (`lib/plan/ruleEngine.ts`) which sets `goalPaceWeek` when `weekN > ⌈totalWeeks/2⌉`, `goal === 'time_target'`, and the phase is build or peak. `makeQualitySession()` honours the flag by overriding label and pace prescription. Enforced by `INV-PLAN-RACE-SPECIFIC-EXPOSURE` in `lib/plan/invariants.ts`.
+
+---
+
+## 23. The constitution
+
+These twenty-three principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

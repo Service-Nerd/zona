@@ -80,6 +80,9 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   const minHoursQualLong = GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG
   const minDaysQualLong = Math.ceil(minHoursQualLong / 24)
   const blocked = parseBlockedDays(input)
+  const totalWeeks = plan.weeks.length
+  const halfWeek = Math.ceil(totalWeeks / 2)
+  const isTimeTarget = input.goal === 'time_target'
 
   for (const w of plan.weeks) {
     const isRaceWeek = w.type === 'race'
@@ -104,6 +107,29 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           actual: day,
           expected: 'unblocked day',
         })
+      }
+    }
+
+    // INV-PLAN-RACE-SPECIFIC-EXPOSURE — time-targeted plans get race-specific
+    // quality in second-half build/peak weeks. VO2max sessions exempt — their
+    // physiology is too valuable to lose. (CoachingPrinciples §22)
+    if (isTimeTarget && w.n > halfWeek && (w.phase === 'build' || w.phase === 'peak') && w.type !== 'deload') {
+      for (const { day, session } of placedRunning) {
+        if (session.type !== 'quality') continue
+        const label = (session.label ?? '').toLowerCase()
+        const isVo2 = label.includes('vo2max') || label.includes('vo2 max')
+        if (isVo2) continue
+        if (!label.includes('pace')) {
+          violations.push({
+            code: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE',
+            principle_ref: 'CoachingPrinciples §22',
+            severity: 'error',
+            week: w.n, day,
+            message: `Time-targeted plan: second-half ${w.phase} quality "${session.label}" is not goal-pace work`,
+            actual: session.label ?? 'unknown',
+            expected: 'race-distance-named (e.g. "10K-pace intervals")',
+          })
+        }
       }
     }
 
