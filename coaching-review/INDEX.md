@@ -67,6 +67,7 @@ principle that would close it.
 1. [5K beginner — finish goal](./01-5k-beginner.md)
 2. [10K intermediate — sub-50 time goal](./02-10k-intermediate.md)
 3. [Half marathon intermediate — 1:55 time goal](./03-hm-intermediate.md)
+4. [Marathon intermediate — 4:00 time goal, 13 weeks out (warn-acknowledged)](./04-marathon-intermediate.md)
 
 ## How to use this review
 

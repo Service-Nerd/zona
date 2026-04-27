@@ -135,6 +135,63 @@ const cases: Case[] = [
       'Any classic marathon-style mistakes to avoid in an HM build?',
     ],
   },
+  {
+    // 2026-04-28 / L-02 — under-resourced marathon, the case that drove the
+    // 2026-04-28 review. Added to the standard regression set so future
+    // rounds can verify the engine still refuses (without ack) and downgrades
+    // (with ack). Inputs use acknowledged_prep_warning: true so the script
+    // generates a plan; without that flag, generateRulePlan would throw
+    // PrepTimeError 'warn_unacknowledged' (11 weeks < 16-week marathon ok
+    // threshold). Expected meta:
+    //   prep_time_status: 'warned'
+    //   volume_profile: 'maintenance'
+    //   returning_runner_note: present
+    id: '04-marathon-intermediate',
+    title: 'Marathon intermediate — 4:00 time goal, 13 weeks out (warn-acknowledged)',
+    persona:
+      'Mike, 47. Returning runner (4 weeks at current volume) with hip injury history. 4:00 marathon goal, 13 weeks out. Currently 38 km/week, longest recent run 18 km. 4 sessions/week. The case that prompted the 2026-04-28 review: a time-targeted marathon plan should not be possible from this starting point. Engine refuses generation unless acknowledged_prep_warning is set; with acknowledgment, plan generates as maintenance with warnings. (The original review used 11 weeks, which after §44 returning-runner shift now triggers BLOCK; 13 weeks puts the case back in the warn zone the review was concerned about.)',
+    tier: 'paid',
+    input: {
+      race_date: '2026-07-27',
+      race_distance_km: 42.2,
+      race_name: 'Target Marathon',
+      goal: 'time_target',
+      target_time: '4:00:00',
+      age: 47,
+      current_weekly_km: 38,
+      longest_recent_run_km: 18,
+      days_available: 4,
+      days_cannot_train: ['mon', 'wed', 'fri'],
+      preferred_long_run_day: 'sun',
+      max_weekday_mins: 60,
+      // resting_hr deliberately omitted to exercise the §50 fallback (max-only
+      // → percent_of_max). The original review had resting_hr: 0; §55 (L-01)
+      // now rejects that as invalid, so a real Case-04 submission would be
+      // bounced at validation and the runner would either fix the value or
+      // omit it. Omitting it here triggers §50 path 2.
+      max_hr: 175,
+      training_age: '5yr+',
+      // weeks_at_current_volume < 8 triggers the §29 fresh-from-layoff path,
+      // matching the persona's "returning runner with hip injury history".
+      // This shifts the §44 prep-time warn threshold up by 2 weeks (16 → 18),
+      // confirms the warn status, and surfaces the §51 returning_runner_note.
+      weeks_at_current_volume: 4,
+      hard_session_relationship: 'love',
+      injury_history: ['hip'],
+      terrain: 'road',
+      primary_metric: 'distance',
+      acknowledged_prep_warning: true,
+      plan_start: PLAN_START,
+    } as any,
+    questions: [
+      'Is the prep-time warning surfaced clearly in plan meta?',
+      'Does the maintenance downgrade list a sensible alternative (defer race, switch to HM, change goal to finish)?',
+      'Is the returning_runner_note specific about which input was scaled and why?',
+      'For an 11-week marathon, are the peak long runs alternating per §47 (no two consecutive 30km MP-finish weeks)?',
+      'Does the engine respect the hip injury (no hill sessions in base/build)?',
+      'Is the HR fallback note (max-only, percent_of_max) clear enough that the runner knows their resting HR would improve accuracy?',
+    ],
+  },
 ]
 
 function fmtSession(day: string, s: any): string {
