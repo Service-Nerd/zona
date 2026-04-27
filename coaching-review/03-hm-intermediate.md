@@ -268,7 +268,7 @@ Weekly: **29 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T10:32:06.142Z",
+    "generated_at": "2026-04-27T10:33:38.380Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
@@ -783,7 +783,8 @@ Weekly: **29 km**
         }
       },
       "long_run_hrs": 1.7,
-      "weekly_km": 47
+      "weekly_km": 47,
+      "tune_up_callout": "Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a race effort."
     },
     {
       "n": 8,

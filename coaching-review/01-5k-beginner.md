@@ -206,7 +206,7 @@ Weekly: **13 km**
     "fitness_level": "beginner",
     "goal": "finish",
     "days_available": 3,
-    "generated_at": "2026-04-27T10:32:06.139Z",
+    "generated_at": "2026-04-27T10:33:38.377Z",
     "generator_version": "2.0",
     "tier": "free",
     "compressed": false,
@@ -588,7 +588,8 @@ Weekly: **13 km**
         }
       },
       "long_run_hrs": 1.1,
-      "weekly_km": 22
+      "weekly_km": 22,
+      "tune_up_callout": "Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a race effort."
     },
     {
       "n": 8,

@@ -450,8 +450,18 @@ Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) where `startKm` i
 
 ---
 
-## 32. The constitution
+## 32. Tune-up race callout
 
-These thirty-two principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** Plans of `TUNE_UP_MIN_PLAN_WEEKS` (10 weeks) or longer surface an optional tune-up race callout on the latest non-deload build week — the week immediately before peak phase begins. The callout suggests a parkrun PB or local 5K with explicit framing: "use the result as a fitness check, not a race effort." Optional — no session is added; the runner can ignore it.
+
+**Why.** A mid-build benchmark gives the runner a fitness data point at the right moment: enough training has accumulated to feel the gains, but enough plan remains to act on the result (peak still ahead, taper to follow). It also gives the runner a competitive outlet that doesn't disrupt the plan — without this offer, motivated runners often add their own race that derails the build. Surfacing the callout in-plan defuses the "should I race this weekend?" question.
+
+**Config.** `GENERATION_CONFIG.TUNE_UP_MIN_PLAN_WEEKS = 10`. Implemented as `Week.tune_up_callout?: string` set on the latest non-deload build week. UI consumers render this as an opt-in suggestion alongside the week's existing content; the engine never treats it as a session.
+
+---
+
+## 33. The constitution
+
+These thirty-three principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

@@ -117,6 +117,7 @@ export interface Week {
   weekly_km: number
   weekly_duration_mins?: number           // for time-based plans, alongside weekly_km
   race_notes?: string
+  tune_up_callout?: string                // L-01 — optional mid-build tune-up race suggestion
 }
 
 export interface PlanMeta {

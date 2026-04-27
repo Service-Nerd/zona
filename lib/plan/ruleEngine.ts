@@ -1315,6 +1315,21 @@ export function generateRulePlan(
     && w1Km > 0
     && peakMaxKm < w1Km * GENERATION_CONFIG.PEAK_OVER_BASE_RATIO
 
+  // CoachingPrinciples §32 — tune-up race callout. Place on the latest
+  // non-deload build week (the one right before peak begins) for plans of
+  // sufficient length. Optional callout — the runner can use a parkrun
+  // result as a benchmark or skip it entirely.
+  let tuneUpWeekN: number | null = null
+  if (totalWeeks >= GENERATION_CONFIG.TUNE_UP_MIN_PLAN_WEEKS) {
+    const buildPhase = phases.find(p => p.name === 'build')
+    if (buildPhase) {
+      for (let wn = buildPhase.end_week; wn >= buildPhase.start_week; wn--) {
+        const wnIsDeload = wn % recoveryFreq === 0
+        if (!wnIsDeload) { tuneUpWeekN = wn; break }
+      }
+    }
+  }
+
   for (let i = 0; i < totalWeeks; i++) {
     const weekN = i + 1
     const phase = getPhaseForWeek(weekN, phases)
@@ -1393,6 +1408,9 @@ export function generateRulePlan(
       weekly_km: actualWeeklyKm,
       ...(isRaceWeek ? {
         race_notes: `Race day: ${input.race_name ?? 'Target Race'}. Start at Zone 2. The second half is where the race begins.`,
+      } : {}),
+      ...(weekN === tuneUpWeekN ? {
+        tune_up_callout: 'Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a race effort.',
       } : {}),
     })
   }

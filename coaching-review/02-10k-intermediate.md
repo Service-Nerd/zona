@@ -244,7 +244,7 @@ Weekly: **18 km**
       "knee"
     ],
     "terrain": "road",
-    "generated_at": "2026-04-27T10:32:06.141Z",
+    "generated_at": "2026-04-27T10:33:38.379Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": false,
@@ -757,7 +757,8 @@ Weekly: **18 km**
         }
       },
       "long_run_hrs": 1.2,
-      "weekly_km": 35
+      "weekly_km": 35,
+      "tune_up_callout": "Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a race effort."
     },
     {
       "n": 8,

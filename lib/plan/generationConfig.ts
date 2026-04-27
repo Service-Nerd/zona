@@ -123,6 +123,13 @@ export const GENERATION_CONFIG = {
   // midweek easy run per week. Skipped in race week and deload weeks.
   STRIDES_FIRST_WEEK: 3,
 
+  // ── Tune-up race callout (CoachingPrinciples §32) ──────────────────────────
+  // Plans of this length or longer get a mid-build tune-up race suggestion.
+  // Placed on the latest non-deload build week before peak. Optional — the
+  // coach note appears as plan.weeks[i].tune_up_callout, not a separate
+  // session. Users can ignore it without breaking the plan.
+  TUNE_UP_MIN_PLAN_WEEKS: 10,
+
   // ── Race-week shakeout (CoachingPrinciples §30) ────────────────────────────
   // Race week has no quality session — shakeouts only. Hard cap on duration
   // and a stride note on the first shakeout preserve neuromuscular sharpness
