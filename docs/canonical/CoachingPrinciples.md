@@ -727,8 +727,29 @@ Enforced by `INV-PLAN-TAPER-DURATION-CAP`.
 
 ---
 
-## 50. The constitution
+## 51. Returning-runner allowance must be communicated
 
-These fifty principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** When the engine activates the returning-runner allowance (§2) OR the fresh-from-layoff start fraction (§29), plan meta MUST surface a `returning_runner_note` that names the change and the reason. Silent mechanism is a coaching defect.
+
+The note's format mirrors `volume_constraint_note` from §38: one human-readable string, one diagnosis, no jargon. The runner sees their week-1 volume and asks "why does this start so low?" or "why is this jumping faster than I expected?" — the note is the answer.
+
+**Why.** Case 04 (2026-04-28 review) had `returning_runner_allowance_active: true` in plan meta but no user-visible explanation. The maintenance downgrade in round one (§38) does this well — the runner sees `volume_constraint_note` and understands what was sacrificed and why. Returning-runner allowance is the same pattern: a coaching choice the engine made, surfaced in language the runner can read.
+
+The two sub-cases produce different notes:
+
+- **Returning-runner allowance** (§2): training_age > 2 years AND current_weekly_km < threshold. Allowance permits 15% week-on-week growth for the first 3 weeks (vs standard 10%). Note explains the faster ramp.
+- **Fresh-from-layoff** (§29): explicit `weeks_at_current_volume < 8` OR heuristic match. Engine starts week 1 at 70% of the runner's stated current_weekly_km. Note explains the lower start.
+
+The two are mutually exclusive — fresh-return has structural-base concerns the allowance can't share — and the engine selects between them in `generateRulePlan`.
+
+**Config.** Implemented in `generateRulePlan`'s meta block. No new config fields — the note's content is computed from existing constants (`RETURNING_RUNNER_ALLOWANCE_PCT`, `RETURNING_RUNNER_GRACE_WEEKS`, `FRESH_RETURN_START_FRACTION`, `MAX_WEEKLY_VOLUME_INCREASE_PCT`).
+
+Enforced by `INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT` — when either flag is set, the note must be present.
+
+---
+
+## 52. The constitution
+
+These fifty-two principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

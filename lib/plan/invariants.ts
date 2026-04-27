@@ -46,6 +46,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES',
   'INV-PLAN-PEAK-LR-ALTERNATION',
   'INV-PLAN-TAPER-DURATION-CAP',
+  'INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT',
 ] as const
 
 export interface Violation {
@@ -864,6 +865,23 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           expected: `≥ ${Math.round(requiredFloor)}`,
         })
       }
+    }
+  }
+
+  // INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT — when returning_runner_allowance_active
+  // or fresh_return_active is set in plan meta, returning_runner_note must be
+  // present and non-empty. (CoachingPrinciples §51)
+  if (plan.meta.returning_runner_allowance_active || plan.meta.fresh_return_active) {
+    if (!plan.meta.returning_runner_note) {
+      violations.push({
+        code: 'INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT',
+        principle_ref: 'CoachingPrinciples §51',
+        severity: 'error',
+        week: 0,
+        message: 'returning_runner_allowance_active or fresh_return_active is set but returning_runner_note is missing — silent allowance is a coaching defect',
+        actual: 'undefined',
+        expected: 'human-readable note explaining what was scaled and why',
+      })
     }
   }
 

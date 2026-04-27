@@ -197,6 +197,12 @@ export interface PlanMeta {
   returning_runner_allowance_active?: boolean  // true if 15%/3wk allowance applied
   fresh_return_active?: boolean                  // true if M-02 layoff start-fraction applied
 
+  // 2026-04-28 / M-02 — communicate the returning-runner / fresh-return
+  // allowance to the runner. CoachingPrinciples §51. Format mirrors
+  // volume_constraint_note: a single human-readable diagnosis + what was
+  // scaled and why. Present only when the corresponding allowance fired.
+  returning_runner_note?: string
+
   // 2026-04-28 / H-01 — prep-time validation surface (CoachingPrinciples §44).
   // 'ok' on adequately-resourced plans, 'warned' on plans generated under an
   // acknowledged warn-status timeline. Block-status inputs never reach plan

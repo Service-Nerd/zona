@@ -1873,6 +1873,15 @@ export function generateRulePlan(
     ...(returningRunner ? { returning_runner_allowance_active: true } : {}),
     ...(isFreshReturn ? { fresh_return_active: true } : {}),
 
+    // CoachingPrinciples §51 — communicate the allowance / start-fraction
+    // change so the runner knows why their week-1 volume looks the way it
+    // does. Mirrors volume_constraint_note pattern.
+    ...((returningRunner || isFreshReturn) ? {
+      returning_runner_note: isFreshReturn
+        ? `Fresh-from-layoff start: week 1 begins at ${Math.round(GENERATION_CONFIG.FRESH_RETURN_START_FRACTION * 100)}% of your stated current weekly volume (${Math.round(volumes[0])} km vs ${input.current_weekly_km} km stated). Returning to running needs caution, not faster ramp — the engine prefers a small base to rebuild from. Volume grows at the standard ${GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT}% per week.`
+        : `Returning-runner allowance active: weeks 1-${GENERATION_CONFIG.RETURNING_RUNNER_GRACE_WEEKS} grow at ${GENERATION_CONFIG.RETURNING_RUNNER_ALLOWANCE_PCT}% per week (vs the standard ${GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT}%). Your training history allows a faster rebuild because the aerobic and structural base is still there.`,
+    } : {}),
+
     // CoachingPrinciples §44 — prep-time status surface. 'ok' or 'warned'.
     // 'block' outcomes never reach this code path (PrepTimeError thrown above).
     prep_time_status: prepTime.status === 'warn' ? 'warned' : 'ok',
