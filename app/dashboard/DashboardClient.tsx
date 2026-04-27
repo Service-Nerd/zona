@@ -21,6 +21,7 @@ import PlanArc from '@/components/shared/PlanArc'
 import RPEScale from '@/components/shared/RPEScale'
 import SessionCard from '@/components/shared/SessionCard'
 import { composeSession } from '@/lib/plan/sessionComposer'
+import { renderGuidance, guidanceContextFromSession } from '@/lib/plan/renderGuidance'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import dynamic from 'next/dynamic'
 const GeneratePlanScreen = dynamic(() => import('./GeneratePlanScreen'), { ssr: false })
@@ -1875,8 +1876,18 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                   // Structured coach notes from plan JSON
                   (session.coach_notes as string[]).filter(Boolean).join(' ')
                 ) : guidance ? (
-                  // Fall back to DB guidance
-                  [guidance.why, guidance.what, guidance.how].filter(Boolean).join(' ')
+                  // DB guidance with {{token}} substitution — see lib/plan/renderGuidance.ts
+                  // for the supported token vocabulary (zone2_ceiling, session_pace, etc.).
+                  (() => {
+                    const ctx = guidanceContextFromSession({
+                      session,
+                      zone2Ceiling, maxHR, restingHR, goalPace,
+                    })
+                    return [guidance.why, guidance.what, guidance.how]
+                      .map(t => renderGuidance(t, ctx))
+                      .filter(Boolean)
+                      .join(' ')
+                  })()
                 ) : null}
               </CoachNoteBlock>
             </div>
