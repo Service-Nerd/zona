@@ -75,11 +75,14 @@ async function enrichAndPersist(event: StravaEvent) {
     return
   }
 
-  // Fetch Strava tokens for this user
+  // Fetch Strava tokens for this user.
+  // user_settings uses `id` as PK (referencing auth.users.id) — not `user_id`.
+  // Bug fix 2026-04-27: this query previously filtered on user_id, returning
+  // null silently and aborting the entire enrichment pipeline.
   const { data: settings } = await getSupabase()
     .from('user_settings')
     .select('strava_refresh_token')
-    .eq('user_id', userId)
+    .eq('id', userId)
     .single() as { data: { strava_refresh_token: string } | null; error: unknown }
 
   if (!settings?.strava_refresh_token) return
