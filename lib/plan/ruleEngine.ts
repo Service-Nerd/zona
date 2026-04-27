@@ -1833,7 +1833,7 @@ export function generateRulePlan(
       { label: 'Progressive tempo', voice: 'Start at aerobic, finish at threshold. Discipline at the start, honesty at the end.' },
     ]
 
-    for (const [label, positions] of positionsByLabel) {
+    for (const [label, positions] of Array.from(positionsByLabel)) {
       if (isOverride(label)) continue
       if (positions.length <= max) continue
       const overage = positions.length - max
@@ -1843,7 +1843,7 @@ export function generateRulePlan(
 
       // Pick alternative threshold labels under cap.
       const labelCounts = new Map<string, number>()
-      for (const [l, ps] of positionsByLabel) labelCounts.set(l, ps.length)
+      for (const [l, ps] of Array.from(positionsByLabel)) labelCounts.set(l, ps.length)
       const altCandidates = THRESHOLD_ALTS
         .filter(a => a.label !== label)
         .sort((a, b) => (labelCounts.get(a.label) ?? 0) - (labelCounts.get(b.label) ?? 0))

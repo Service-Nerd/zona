@@ -890,7 +890,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     if (totalQuality > 0) {
       const cap = Math.floor(totalQuality / GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR)
         + GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE
-      for (const [label, count] of labelCounts) {
+      for (const [label, count] of Array.from(labelCounts)) {
         if (count > cap) {
           violations.push({
             code: 'INV-PLAN-QUALITY-VARIETY-FULL-PLAN',
