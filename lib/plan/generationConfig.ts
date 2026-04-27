@@ -144,6 +144,13 @@ export const GENERATION_CONFIG = {
   FRESH_RETURN_WEEKS_THRESHOLD: 8,
   FRESH_RETURN_START_FRACTION:  0.7,
 
+  // Heuristic detection (R2/M-03) — when the runner has experienced training
+  // age but very low current volume / longest run, infer fresh-from-layoff
+  // even without the explicit weeks_at_current_volume input. Both thresholds
+  // must be hit; otherwise no inference is made.
+  HEURISTIC_FRESH_RETURN_WEEKLY_KM:  25,
+  HEURISTIC_FRESH_RETURN_LONG_RUN_KM: 10,
+
   // ── Injury weekly volume cap (knee, shin splints) ──────────────────────────
   // CoachingPrinciples §12 — for these two injury types, weekly volume cap
   // tightens from MAX_WEEKLY_VOLUME_INCREASE_PCT (10%) to this stricter limit.

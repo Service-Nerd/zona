@@ -511,8 +511,22 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. Tier selection 
 
 ---
 
-## 37. The constitution
+## 37. Fresh-return heuristic — infer from input shape
 
-These thirty-seven principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** The fresh-from-layoff path (§29) fires either explicitly (`weeks_at_current_volume < FRESH_RETURN_WEEKS_THRESHOLD`) or heuristically: when `training_age` says the runner is experienced (≥ 2 years) but `current_weekly_km < HEURISTIC_FRESH_RETURN_WEEKLY_KM` AND `longest_recent_run_km < HEURISTIC_FRESH_RETURN_LONG_RUN_KM`, the engine infers a layoff and applies the same start-volume reduction. The explicit input is preferred when present; the heuristic is the safety net for runners who don't think to mention a gap.
+
+**Why.** Sarah's persona ("returning to running after a 6-month gap") is exactly the case the engine is supposed to protect. But the wizard collects `current_weekly_km` and `training_age` separately, and a runner self-reporting "18 km/week" after just rebuilding for 4 weeks doesn't think of themselves as returning. The shape of the inputs — experienced background, low current volume, no real long run — is enough to make the call. Conservative inference is better than aggressive default volume in this case; the worst outcome of a false-positive is a slightly easy first three weeks (recoverable). The worst outcome of a false-negative is injury (not recoverable).
+
+**Config.**
+- `GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_WEEKLY_KM = 25`
+- `GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_LONG_RUN_KM = 10`
+
+Heuristic AND-gates: BOTH thresholds must be hit. Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`). The combined `isFreshReturn` flag drives the start-volume reduction and surfaces in `plan.meta.fresh_return_active`.
+
+---
+
+## 38. The constitution
+
+These thirty-eight principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

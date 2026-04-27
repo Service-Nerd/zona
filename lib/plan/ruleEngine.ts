@@ -1329,12 +1329,20 @@ export function generateRulePlan(
 
   const peakKm = config.peakKmByLevel[fitness]
 
-  // CoachingPrinciples §29 — fresh-from-layoff detection. When user has been
-  // at their stated current_weekly_km for fewer than FRESH_RETURN_WEEKS_THRESHOLD
-  // weeks, treat that volume as aspirational and start the plan at
-  // FRESH_RETURN_START_FRACTION × current_weekly_km.
-  const isFreshReturn = input.weeks_at_current_volume !== undefined
+  // CoachingPrinciples §29 — fresh-from-layoff detection. Two paths:
+  //  1. Explicit: weeks_at_current_volume < threshold (the input the wizard
+  //     can surface as a "have you been at this volume long?" question).
+  //  2. Heuristic (R2/M-03): training_age says experienced, but current volume
+  //     and longest recent run are both below floors typical of that
+  //     experience. The mismatch points to a layoff regardless of whether
+  //     the user thought to mention it.
+  const explicitFreshReturn = input.weeks_at_current_volume !== undefined
     && input.weeks_at_current_volume < GENERATION_CONFIG.FRESH_RETURN_WEEKS_THRESHOLD
+  const trainingAgeIsExperienced = input.training_age === '2-5yr' || input.training_age === '5yr+'
+  const heuristicFreshReturn = trainingAgeIsExperienced
+    && input.current_weekly_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_WEEKLY_KM
+    && input.longest_recent_run_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_LONG_RUN_KM
+  const isFreshReturn = explicitFreshReturn || heuristicFreshReturn
   const startKm = isFreshReturn
     ? input.current_weekly_km * GENERATION_CONFIG.FRESH_RETURN_START_FRACTION
     : input.current_weekly_km
