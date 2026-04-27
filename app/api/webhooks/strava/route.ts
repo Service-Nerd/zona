@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { waitUntil } from '@vercel/functions'
 import { NextRequest, NextResponse } from 'next/server'
 import { getStravaToken } from '@/lib/strava'
 
@@ -58,9 +59,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: 'ok' })
   }
 
-  // Fire-and-forget enrichment — return 200 immediately (Strava retries on non-2xx)
-  enrichAndPersist(payload).catch(err =>
-    console.error('[strava-webhook] enrichAndPersist failed', payload.object_id, err)
+  // Strava's webhook timeout is 2s, but the enrichment pipeline (Strava
+  // fetch + HR stream + AI feedback + DB writes) takes 5-15s. waitUntil
+  // tells the serverless runtime to keep the function alive after the
+  // 200 response so the background work actually completes. Fire-and-
+  // forget without waitUntil silently dropped the work — the function
+  // context died at the 200 return.
+  waitUntil(
+    enrichAndPersist(payload).catch(err =>
+      console.error('[strava-webhook] enrichAndPersist failed', payload.object_id, err)
+    )
   )
 
   return NextResponse.json({ status: 'ok' })
