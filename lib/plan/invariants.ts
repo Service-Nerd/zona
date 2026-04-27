@@ -162,8 +162,11 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
 
     // INV-PLAN-RACE-SPECIFIC-EXPOSURE — time-targeted plans get race-specific
     // quality in second-half build/peak weeks. VO2max sessions exempt — their
-    // physiology is too valuable to lose. (CoachingPrinciples §22)
-    if (isTimeTarget && w.n > halfWeek && (w.phase === 'build' || w.phase === 'peak') && w.type !== 'deload') {
+    // physiology is too valuable to lose.
+    // Per-week catch: any non-VO2max quality without "pace" in the label
+    // (CoachingPrinciples §22). The plan-level ratio check below catches the
+    // looseness this guard misses (R2/H-02).
+    if (isTimeTarget && w.n >= halfWeek && (w.phase === 'build' || w.phase === 'peak') && w.type !== 'deload') {
       for (const { day, session } of placedRunning) {
         if (session.type !== 'quality') continue
         const label = (session.label ?? '').toLowerCase()
@@ -566,6 +569,49 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           actual: peakLrKm,
           expected: `≥ ${effectiveRequired.toFixed(1)}`,
         })
+      }
+    }
+  }
+
+  // INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO — plan-level numeric check. For
+  // time-targeted plans, ≥50% of non-VO2max quality in second-half build/peak
+  // weeks must prescribe pace within ±5% of goal pace.
+  // (CoachingPrinciples §22, R2/H-02 — round-1 invariant only checked label
+  // substring; this catches the looseness.)
+  if (isTimeTarget && plan.meta.goal_pace_per_km) {
+    const goalMid = parsePaceMidpoint(plan.meta.goal_pace_per_km)
+    if (goalMid != null) {
+      let nonVo2Quality = 0
+      let goalPaceQuality = 0
+      for (const w of plan.weeks) {
+        if (w.n < halfWeek) continue
+        if (w.phase !== 'build' && w.phase !== 'peak') continue
+        if (w.type === 'deload') continue
+        for (const session of Object.values(w.sessions)) {
+          if (!session || session.type !== 'quality') continue
+          const label = (session.label ?? '').toLowerCase()
+          const isVo2 = label.includes('vo2max') || label.includes('vo2 max')
+          if (isVo2) continue
+          nonVo2Quality++
+          if (!session.pace_target) continue
+          const mid = parsePaceMidpoint(session.pace_target)
+          if (mid == null) continue
+          if (Math.abs(mid - goalMid) / goalMid <= 0.05) goalPaceQuality++
+        }
+      }
+      if (nonVo2Quality > 0) {
+        const ratio = goalPaceQuality / nonVo2Quality
+        if (ratio < 0.5) {
+          violations.push({
+            code: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO',
+            principle_ref: 'CoachingPrinciples §22',
+            severity: 'error',
+            week: 0,
+            message: `Goal-pace ratio in second-half build/peak is ${Math.round(ratio*100)}% (${goalPaceQuality}/${nonVo2Quality}); spec ≥50%`,
+            actual: `${Math.round(ratio*100)}%`,
+            expected: '≥ 50%',
+          })
+        }
       }
     }
   }

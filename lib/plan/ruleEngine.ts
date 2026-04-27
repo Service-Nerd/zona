@@ -945,11 +945,10 @@ function buildWeekSessions(
       )
 
     // CoachingPrinciples §22 — race-specific exposure for time-targeted goals.
-    // In the second half of a time-targeted plan (build + peak only — base is
-    // for aerobic development, taper has its own logic), prescribe quality at
+    // From the half-week onwards (inclusive — R2/H-02), prescribe quality at
     // goal pace and rename to "{distKey}-pace intervals". VO2max sessions are
     // exempt — true I-pace physiology is preserved at the top of peak.
-    const isSecondHalf = weekN > Math.ceil(totalWeeks / 2)
+    const isSecondHalf = weekN >= Math.ceil(totalWeeks / 2)
     const goalPaceWeek = !!goalPace
       && input.goal === 'time_target'
       && isSecondHalf

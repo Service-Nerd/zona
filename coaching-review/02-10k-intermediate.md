@@ -99,7 +99,7 @@ Weekly: **32 km** · long: 1.1h
 
 - **mon** — Easy run - Zone 2 · 8km · 51min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
-- **wed** — Steady aerobic · 6km · 31min · Zone 3–4 · HR 146–159 bpm · pace 5:06–5:20 /km · RPE 7
+- **wed** — 10K-pace intervals · 6km · 30min · Zone 3–4 · HR 146–159 bpm · pace 4:54–5:06 /km · RPE 7
   - _Boring is the point. If it feels productive, slow down._
 - **fri** — Easy run - Zone 2 · 8km · 51min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 - **sun** — Long run - Zone 2 · 10km · 64min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
@@ -247,7 +247,7 @@ Weekly: **18 km**
       "knee"
     ],
     "terrain": "road",
-    "generated_at": "2026-04-27T12:07:15.414Z",
+    "generated_at": "2026-04-27T12:09:18.069Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": false,
@@ -646,14 +646,14 @@ Weekly: **18 km**
         "wed": {
           "id": "w6-wed",
           "type": "quality",
-          "label": "Steady aerobic",
+          "label": "10K-pace intervals",
           "detail": null,
           "distance_km": 6,
-          "duration_mins": 31,
+          "duration_mins": 30,
           "primary_metric": "distance",
           "zone": "Zone 3–4",
           "hr_target": "146–159 bpm",
-          "pace_target": "5:06–5:20 /km",
+          "pace_target": "4:54–5:06 /km",
           "rpe_target": 7,
           "coach_notes": [
             "Boring is the point. If it feels productive, slow down."
