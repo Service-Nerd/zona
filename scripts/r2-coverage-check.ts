@@ -114,17 +114,17 @@ function checkRegistryVsSource(): string[] {
   let m: RegExpExecArray | null
   while ((m = literalRegex.exec(source)) !== null) sourceCodes.add(m[1])
 
-  const registry = new Set(INVARIANT_CODES)
-  for (const code of sourceCodes) {
-    if (!registry.has(code as typeof INVARIANT_CODES[number])) {
+  const registry = new Set<string>(INVARIANT_CODES)
+  sourceCodes.forEach(code => {
+    if (!registry.has(code)) {
       errors.push(`source code ${code} is not in INVARIANT_CODES`)
     }
-  }
-  for (const code of registry) {
+  })
+  registry.forEach(code => {
     if (!sourceCodes.has(code)) {
       errors.push(`INVARIANT_CODES contains ${code} but no validatePlan branch emits it`)
     }
-  }
+  })
   return errors
 }
 

@@ -142,7 +142,7 @@ function calcVDOTFromBenchmark(b: BenchmarkInput): number {
 // training at peak race-day output. Discount = base 3% + staleness ramp,
 // capped at MAX. Surfaced in plan.meta.vdot_discount_applied_pct.
 function applyVdotDiscount(rawVdot: number, b: BenchmarkInput, today: Date): { vdot: number; discountPct: number } {
-  let discountPct = GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT
+  let discountPct: number = GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT
   if (b.benchmark_date) {
     const bDate = parseDateLocal(b.benchmark_date)
     const weeksAgo = (today.getTime() - bDate.getTime()) / (1000 * 60 * 60 * 24 * 7)
@@ -715,7 +715,7 @@ function applyLongRunCap(distKm: number, paceMinPerKm: number, input: GeneratorI
   // Absolute cap per race distance (CoachingPrinciples §9 — protects against
   // unrealistic time-on-feet for the race).
   const distKey = raceDistanceKey(input.race_distance_km)
-  let absCapMins = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
+  let absCapMins: number = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
   // CoachingPrinciples §40 — finish-goal 5K plans get a tighter cap.
   if (distKey === '5K' && input.goal === 'finish') {
     absCapMins = Math.min(absCapMins, GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_5K_FINISH)
