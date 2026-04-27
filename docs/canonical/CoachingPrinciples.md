@@ -356,8 +356,24 @@ Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) which sets `plan.
 
 ---
 
-## 24. The constitution
+## 24. Long-run race specificity (HM and marathon)
 
-These twenty-four principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** Time-targeted plans for HM and longer require race-distance specificity in the long run. For HM, peak long run MUST reach ≥85% of race distance; for marathon, ≥75%. Distances ≤10K have no such minimum (the long run is for aerobic development, not specificity). The absolute `LONG_RUN_CAP_MINUTES` ceiling per distance still wins — the engine never prescribes a long run that exceeds the time cap, even if doing so would satisfy this floor.
+
+**Why.** A runner targeting a 1:55 HM who never runs a long run longer than 15 km will spend 6+ km of their race in genuinely unfamiliar territory. The fatigue profile of running for ~2 hours is fundamentally different from running for 100 minutes — pacing, fuelling, mental discipline. Without exposure to it in training, race day is a new experience. Daniels and Pfitzinger both prescribe long runs at 90–100% of race distance for HM specifically because of this. Capping at 15 km is a compressed-plan symptom; the principle exposes it as such.
+
+**Config.** `GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE` — keyed by race distance:
+```
+HM       → 0.85  (≥17.9 km for a 21.1 km race)
+MARATHON → 0.75  (≥31.7 km for a 42.2 km race)
+```
+
+Implemented in `buildWeekSessions()` peak-phase long-run sizing. The race-distance floor is applied between the early-week cap and the absolute time cap. Enforced by `INV-PLAN-PEAK-LR-RACE-RATIO` in `lib/plan/invariants.ts`.
+
+---
+
+## 25. The constitution
+
+These twenty-five principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

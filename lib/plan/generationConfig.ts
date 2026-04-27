@@ -184,6 +184,17 @@ export const GENERATION_CONFIG = {
     '100K':     420,
   },
 
+  // ── Peak long-run race specificity (CoachingPrinciples §24) ────────────────
+  // Time-targeted plans for HM and longer require race-distance specificity in
+  // the long run. Floor (not ceiling) — peak long run must REACH this fraction
+  // of race distance, capped by LONG_RUN_CAP_MINUTES. Distances ≤10K do not
+  // require race-distance specificity (their long run is for aerobic
+  // development, not specificity).
+  PEAK_LR_RATIO_VS_RACE: {
+    HM:       0.85,
+    MARATHON: 0.75,
+  },
+
   // First two weeks of any plan: long run capped at longest_recent_run_km × this.
   WEEK_1_2_LONG_RUN_CAP_MULTIPLIER: 1.10,
 

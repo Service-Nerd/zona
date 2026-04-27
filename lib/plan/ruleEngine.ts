@@ -827,6 +827,23 @@ function buildWeekSessions(
     const earlyCap = input.longest_recent_run_km * GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER
     if (longKm > earlyCap) longKm = earlyCap
   }
+
+  // CoachingPrinciples §24 — peak long-run race specificity.
+  // Time-targeted HM/marathon plans floor peak long run at PEAK_LR_RATIO_VS_RACE
+  // × race_distance, subject to absolute LONG_RUN_CAP_MINUTES below. Use a
+  // ceil-rounded floor so post-rounding (which floor-rounds for cap safety)
+  // never falls below the principle's threshold.
+  let lrFloorPrinciple = 0
+  if (phase === 'peak'
+      && !isDeload
+      && input.goal === 'time_target'
+      && (distKey === 'HM' || distKey === 'MARATHON')) {
+    const ratio = GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey]
+    const precisionKm = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+    lrFloorPrinciple = Math.ceil((input.race_distance_km * ratio) / precisionKm) * precisionKm
+    if (longKm < lrFloorPrinciple) longKm = lrFloorPrinciple
+  }
+
   longKm = applyLongRunCap(longKm, pace.minPerKmEasy, input)
 
   // Round to DISTANCE_ROUNDING_PRECISION_KM. 0.5 km = whole-number-ish display

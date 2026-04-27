@@ -380,6 +380,43 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // cap collides with MIN_SESSION_DISTANCE) — those are legitimate. This
   // invariant lives one layer up; it isn't checkable from the plan output alone.
 
+  // INV-PLAN-PEAK-LR-RACE-RATIO — time-targeted HM/marathon plans must reach
+  // PEAK_LR_RATIO_VS_RACE × race distance in at least one peak-phase long run.
+  // Subject to LONG_RUN_CAP_MINUTES — if the absolute time cap is below the
+  // ratio floor, the cap wins and the invariant accepts the capped value.
+  // (CoachingPrinciples §24)
+  if (isTimeTarget && (distKey === 'HM' || distKey === 'MARATHON')) {
+    const ratio = GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey]
+    const requiredKm = input.race_distance_km * ratio
+    const peakWeeks = plan.weeks.filter(w => w.phase === 'peak' && w.type !== 'deload')
+    if (peakWeeks.length > 0) {
+      const peakLrKm = Math.max(...peakWeeks.flatMap(w => {
+        const long = Object.values(w.sessions).find(s =>
+          s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)
+        )
+        return long?.distance_km != null ? [long.distance_km] : [0]
+      }))
+      // Time-cap check — if even an unrounded long run at the time cap is below
+      // requiredKm, the cap is binding and the invariant relaxes.
+      const easyMinPerKm = peakLrKm > 0 && peakWeeks[0].long_run_hrs > 0
+        ? (peakWeeks[0].long_run_hrs * 60) / peakLrKm
+        : 7
+      const capKm = longCapMins / Math.max(easyMinPerKm, 1)
+      const effectiveRequired = Math.min(requiredKm, capKm)
+      if (peakLrKm + 0.01 < effectiveRequired) {
+        violations.push({
+          code: 'INV-PLAN-PEAK-LR-RACE-RATIO',
+          principle_ref: 'CoachingPrinciples §24',
+          severity: 'error',
+          week: 0,
+          message: `Peak long run ${peakLrKm}km is below ${effectiveRequired.toFixed(1)}km (${Math.round(ratio * 100)}% of ${input.race_distance_km}km race)`,
+          actual: peakLrKm,
+          expected: `≥ ${effectiveRequired.toFixed(1)}`,
+        })
+      }
+    }
+  }
+
   // INV-PLAN-PEAK-OVER-BASE — plans of PEAK_OVERLOAD_MIN_PLAN_WEEKS weeks or
   // longer must either have peak ≥ PEAK_OVER_BASE_RATIO × W1, or be classified
   // as 'maintenance'. (CoachingPrinciples §23)
