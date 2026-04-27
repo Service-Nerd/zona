@@ -871,19 +871,28 @@ function buildWeekSessions(
     if (longKm > earlyCap) longKm = earlyCap
   }
 
-  // CoachingPrinciples §24 — peak long-run race specificity.
-  // Time-targeted HM/marathon plans floor peak long run at PEAK_LR_RATIO_VS_RACE
-  // × race_distance, subject to absolute LONG_RUN_CAP_MINUTES below. Use a
-  // ceil-rounded floor so post-rounding (which floor-rounds for cap safety)
-  // never falls below the principle's threshold.
+  // CoachingPrinciples §24, §35 — peak long-run race specificity (tiered).
+  // Floor (default) → target (longest_recent supports it) → stretch (persona
+  // signals support more aggressive prescription). Selects the highest tier
+  // the persona qualifies for; LONG_RUN_CAP_MINUTES still wins below.
   let lrFloorPrinciple = 0
   if (phase === 'peak'
       && !isDeload
       && input.goal === 'time_target'
       && (distKey === 'HM' || distKey === 'MARATHON')) {
-    const ratio = GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey]
+    const floorRatio   = GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey]
+    const targetRatio  = GENERATION_CONFIG.PEAK_LR_RATIO_TARGET[distKey]
+    const stretchRatio = GENERATION_CONFIG.PEAK_LR_RATIO_STRETCH[distKey]
+    const recentMeetsFloor = input.longest_recent_run_km >= input.race_distance_km * floorRatio
+    const noRestrictingInjury = !(input.injury_history ?? []).some(i =>
+      GENERATION_CONFIG.HILL_RESTRICTING_INJURIES.some(k => i.toLowerCase().includes(k))
+    )
+    const lovesHard = input.hard_session_relationship === 'love'
+    const tierRatio = (lovesHard && noRestrictingInjury && recentMeetsFloor) ? stretchRatio
+      : recentMeetsFloor ? targetRatio
+      : floorRatio
     const precisionKm = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
-    lrFloorPrinciple = Math.ceil((input.race_distance_km * ratio) / precisionKm) * precisionKm
+    lrFloorPrinciple = Math.ceil((input.race_distance_km * tierRatio) / precisionKm) * precisionKm
     if (longKm < lrFloorPrinciple) longKm = lrFloorPrinciple
   }
 

@@ -132,28 +132,28 @@ Weekly: **35 km** · long: 1.2h
 ### Week 9 — Peak — consistency · *peak*
 > Consistency. The work is the volume.
 
-Weekly: **40 km** · long: 2h
+Weekly: **40 km** · long: 2.2h
 
-- **tue** — Easy run - Zone 2 · 7.5km · 50min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **tue** — Easy run - Zone 2 · 6.5km · 43min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
 - **thu** — HM-pace intervals · 7km · 38min · Zone 3–4 · HR 141–154 bpm · pace 5:20–5:34 /km · RPE 7
   - _HM-pace work. Target 5:27 /km. Controlled, even splits — exit each rep wanting more._
-- **sat** — Easy run - Zone 2 · 7.5km · 50min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **sun** — Long run with HM-pace finish · 18km · 119min · Zone 2–3 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 6
+- **sat** — Easy run - Zone 2 · 6.5km · 43min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sun** — Long run with HM-pace finish · 20km · 133min · Zone 2–3 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 6
   - _Easy first. Final third at HM goal pace._
   - _Final third at HM pace: 5:27 /km._
 
 ### Week 10 — Peak — consistency · *peak*
 > Consistency. The work is the volume.
 
-Weekly: **44 km** · long: 2h
+Weekly: **44 km** · long: 2.2h
 
-- **tue** — Easy run - Zone 2 · 9km · 60min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **tue** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
 - **thu** — HM-pace intervals · 8km · 44min · Zone 3–4 · HR 141–154 bpm · pace 5:20–5:34 /km · RPE 7
   - _HM-pace work. Target 5:27 /km. Controlled, even splits — exit each rep wanting more._
-- **sat** — Easy run - Zone 2 · 9km · 60min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **sun** — Long run with HM-pace finish · 18km · 119min · Zone 2–3 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 6
+- **sat** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sun** — Long run with HM-pace finish · 20km · 133min · Zone 2–3 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 6
   - _Easy first. Final third at HM goal pace._
   - _Final third at HM pace: 5:27 /km._
 
@@ -272,7 +272,7 @@ Weekly: **29 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T12:11:47.371Z",
+    "generated_at": "2026-04-27T12:25:53.803Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
@@ -868,8 +868,8 @@ Weekly: **29 km**
           "type": "easy",
           "label": "Long run with HM-pace finish",
           "detail": null,
-          "distance_km": 18,
-          "duration_mins": 119,
+          "distance_km": 20,
+          "duration_mins": 133,
           "primary_metric": "distance",
           "zone": "Zone 2–3",
           "hr_target": "< 141 bpm",
@@ -901,8 +901,8 @@ Weekly: **29 km**
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
-          "distance_km": 7.5,
-          "duration_mins": 50,
+          "distance_km": 6.5,
+          "duration_mins": 43,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
@@ -917,8 +917,8 @@ Weekly: **29 km**
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
-          "distance_km": 7.5,
-          "duration_mins": 50,
+          "distance_km": 6.5,
+          "duration_mins": 43,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
@@ -926,7 +926,7 @@ Weekly: **29 km**
           "rpe_target": 4
         }
       },
-      "long_run_hrs": 2,
+      "long_run_hrs": 2.2,
       "weekly_km": 40
     },
     {
@@ -942,8 +942,8 @@ Weekly: **29 km**
           "type": "easy",
           "label": "Long run with HM-pace finish",
           "detail": null,
-          "distance_km": 18,
-          "duration_mins": 119,
+          "distance_km": 20,
+          "duration_mins": 133,
           "primary_metric": "distance",
           "zone": "Zone 2–3",
           "hr_target": "< 141 bpm",
@@ -975,8 +975,8 @@ Weekly: **29 km**
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
-          "distance_km": 9,
-          "duration_mins": 60,
+          "distance_km": 8,
+          "duration_mins": 53,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
@@ -991,8 +991,8 @@ Weekly: **29 km**
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
-          "distance_km": 9,
-          "duration_mins": 60,
+          "distance_km": 8,
+          "duration_mins": 53,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
@@ -1000,7 +1000,7 @@ Weekly: **29 km**
           "rpe_target": 4
         }
       },
-      "long_run_hrs": 2,
+      "long_run_hrs": 2.2,
       "weekly_km": 44
     },
     {

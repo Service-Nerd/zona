@@ -210,15 +210,30 @@ export const GENERATION_CONFIG = {
     '100K':     420,
   },
 
-  // ── Peak long-run race specificity (CoachingPrinciples §24) ────────────────
+  // ── Peak long-run race specificity (CoachingPrinciples §24, §35) ──────────
   // Time-targeted plans for HM and longer require race-distance specificity in
   // the long run. Floor (not ceiling) — peak long run must REACH this fraction
   // of race distance, capped by LONG_RUN_CAP_MINUTES. Distances ≤10K do not
   // require race-distance specificity (their long run is for aerobic
   // development, not specificity).
+  //
+  // Three tiers (R2/M-01):
+  //   floor   — default, conservative; engine guarantees this minimum.
+  //   target  — runner's longest_recent_run_km is ≥ floor of race distance.
+  //   stretch — runner has hard_session_relationship: 'love', no injury
+  //             history, and longest_recent_run_km ≥ floor.
+  // Floors are minimums, not targets — when persona supports more, push higher.
   PEAK_LR_RATIO_VS_RACE: {
     HM:       0.85,
     MARATHON: 0.75,
+  },
+  PEAK_LR_RATIO_TARGET: {
+    HM:       0.90,
+    MARATHON: 0.80,
+  },
+  PEAK_LR_RATIO_STRETCH: {
+    HM:       0.95,
+    MARATHON: 0.85,
   },
 
   // First two weeks of any plan: long run capped at longest_recent_run_km × this.

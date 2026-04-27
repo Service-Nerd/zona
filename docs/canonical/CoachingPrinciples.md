@@ -480,8 +480,29 @@ Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) where `startKm` i
 
 ---
 
-## 35. The constitution
+## 35. Persona-aware prescriptions — floors are minimums, not targets
 
-These thirty-five principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** When persona signals support more aggressive prescriptions, the engine SHOULD push higher than the spec floor where doing so doesn't violate other principles. Spec floors are *minimums*, not targets. The first place this applies is the peak long run for time-targeted HM/marathon plans:
+
+- **Floor** (`PEAK_LR_RATIO_VS_RACE`) — conservative default that any plan reaches.
+- **Target** (`PEAK_LR_RATIO_TARGET`) — runner's `longest_recent_run_km` is already at or above the floor of race distance.
+- **Stretch** (`PEAK_LR_RATIO_STRETCH`) — runner has `hard_session_relationship: 'love'`, no `injury_history` from `HILL_RESTRICTING_INJURIES`, AND `longest_recent_run_km ≥ floor`.
+
+The same tiering will eventually apply to weekly volume, quality session frequency, and goal-pace exposure (out of scope for R2 — single application here proves the pattern).
+
+**Why.** Round-2 flagged Anna's peak long run sitting at 18 km — exactly the round-1 §24 floor of 85% × 21.1 km. Anna's `hard_session_relationship: 'love'`, no injury history, and `longest_recent_run_km: 18` clearly support a longer peak long run; an 85% floor that becomes a 85% ceiling is "floor-stopping" — a defect of conservatism, not a virtue. The brand is "Slow down. You've got a day job." for the easy days; on race-prep specificity for an experienced runner explicitly asking for more, restraint becomes under-coaching.
+
+**Config.**
+- `GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE` (HM=0.85, M=0.75) — floor
+- `GENERATION_CONFIG.PEAK_LR_RATIO_TARGET`   (HM=0.90, M=0.80) — target
+- `GENERATION_CONFIG.PEAK_LR_RATIO_STRETCH`  (HM=0.95, M=0.85) — stretch
+
+Implemented in `buildWeekSessions()` peak-phase long-run sizing. Tier selection is deterministic from inputs; the chosen tier is applied via the same ceil-rounding pattern as the floor. `LONG_RUN_CAP_MINUTES` still binds.
+
+---
+
+## 36. The constitution
+
+These thirty-six principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

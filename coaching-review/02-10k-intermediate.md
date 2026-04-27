@@ -247,7 +247,7 @@ Weekly: **18 km**
       "knee"
     ],
     "terrain": "road",
-    "generated_at": "2026-04-27T12:11:47.370Z",
+    "generated_at": "2026-04-27T12:25:53.802Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": false,
