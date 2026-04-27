@@ -33,7 +33,7 @@ Anna, 42. Runs 4×/week, building toward a target HM in 14 weeks. Goal time 1:55
 
 ## Plan summary
 
-**14 weeks** · race: Target HM (21.1 km) on 2026-08-03
+**13 weeks** · race: Target HM (21.1 km) on 2026-08-03
 Derived fitness: **intermediate** · VDOT 38.4
 Goal pace: **5:27 /km**
 ⚠️ Plan is **compressed** (peak volume below 95% of target peakKm)
@@ -43,9 +43,9 @@ Goal pace: **5:27 /km**
 
 Weekly: **43 km** · long: 1.4h
 
-- **mon** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **wed** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **fri** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **tue** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **thu** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sat** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 12.5km · 83min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
 ### Week 2 — Base — building consistency · *base*
@@ -53,9 +53,9 @@ Weekly: **43 km** · long: 1.4h
 
 Weekly: **47 km** · long: 1.6h
 
-- **mon** — Easy run - Zone 2 · 11km · 73min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **wed** — Easy run - Zone 2 · 11km · 73min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **fri** — Easy run - Zone 2 · 11km · 73min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **tue** — Easy run - Zone 2 · 11km · 73min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **thu** — Easy run - Zone 2 · 11km · 73min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sat** — Easy run - Zone 2 · 11km · 73min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 14km · 93min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
 ### Week 3 — Base — aerobic development · *base*
@@ -63,9 +63,9 @@ Weekly: **47 km** · long: 1.6h
 
 Weekly: **50 km** · long: 1.7h
 
-- **mon** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **wed** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **fri** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **tue** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **thu** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sat** — Easy run - Zone 2 · 12km · 80min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 15km · 100min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
 ### Week 4 — Base — recovery week · *base* (deload)
@@ -73,41 +73,42 @@ Weekly: **50 km** · long: 1.7h
 
 Weekly: **35 km** · long: 1.2h
 
-- **mon** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **wed** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **fri** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **tue** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **thu** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sat** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 10.5km · 70min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
-### Week 5 — Base — aerobic discipline · *base*
-> HR discipline. Slower than feels right. That is correct.
+### Week 5 — Build — first quality session · *build*
+> One quality session. Everything else stays easy.
 
-Weekly: **39 km** · long: 1.3h
+Weekly: **40 km** · long: 1.4h
 
-- **mon** — Easy run - Zone 2 · 9km · 60min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **wed** — Easy run - Zone 2 · 9km · 60min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **fri** — Easy run - Zone 2 · 9km · 60min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **sun** — Long run - Zone 2 · 11.5km · 76min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **tue** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **thu** — Progressive tempo · 7km · 38min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
+  - _Hold back early. Finish honest._
+- **sat** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sun** — Long run - Zone 2 · 12.5km · 83min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
-### Week 6 — Build — first quality session · *build*
+### Week 6 — Build — extending the work · *build*
 > One quality session. Everything else stays easy.
 
 Weekly: **43 km** · long: 1.5h
 
-- **mon** — Easy run - Zone 2 · 10.5km · 70min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **wed** — Continuous tempo · 8km · 43min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
+- **tue** — Easy run - Zone 2 · 10.5km · 70min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **thu** — Continuous tempo · 8km · 43min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
   - _Sustainable. Same pace at the end as at the start._
-- **fri** — Easy run - Zone 2 · 10.5km · 70min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sat** — Easy run - Zone 2 · 10.5km · 70min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 13.5km · 90min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
-### Week 7 — Build — extending the work · *build*
+### Week 7 — Build — raising the ceiling · *build*
 > One quality session. Everything else stays easy.
 
 Weekly: **47 km** · long: 1.7h
 
-- **mon** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **wed** — Cruise intervals · 8.5km · 46min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
+- **tue** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **thu** — Cruise intervals · 8.5km · 46min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
   - _Rep three is the test. Not rep one._
-- **fri** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sat** — Easy run - Zone 2 · 12km · 80min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 15km · 100min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
 ### Week 8 — Build — recovery week · *build* (deload)
@@ -115,67 +116,56 @@ Weekly: **47 km** · long: 1.7h
 
 Weekly: **35 km** · long: 1.2h
 
-- **mon** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **wed** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **fri** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **tue** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **thu** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sat** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 10.5km · 70min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
-### Week 9 — Build — consistency · *build*
-> One quality session. Everything else stays easy.
+### Week 9 — Peak — highest volume · *peak*
+> This is where the fitness is built. It will feel hard. That is correct.
 
 Weekly: **40 km** · long: 1.4h
 
-- **mon** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **wed** — Continuous tempo · 7km · 38min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
-  - _Sustainable. Same pace at the end as at the start._
-- **fri** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **tue** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **thu** — HM-pace intervals · 7km · 38min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
+  - _HM pace, not faster. Exit each rep wanting more._
+- **sat** — Easy run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 12.5km · 83min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
-### Week 10 — Peak — highest volume · *peak*
+### Week 10 — Peak — second peak week · *peak*
 > This is where the fitness is built. It will feel hard. That is correct.
 
 Weekly: **44 km** · long: 1.6h
 
-- **mon** — Easy run - Zone 2 · 11km · 73min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **wed** — HM-pace intervals · 8km · 43min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
+- **tue** — Easy run - Zone 2 · 11km · 73min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **thu** — HM-pace intervals · 8km · 43min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
   - _HM pace, not faster. Exit each rep wanting more._
-- **fri** — Easy run - Zone 2 · 11km · 73min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sat** — Easy run - Zone 2 · 11km · 73min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 14km · 93min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
-### Week 11 — Peak — second peak week · *peak*
-> This is where the fitness is built. It will feel hard. That is correct.
-
-Weekly: **47 km** · long: 1.7h
-
-- **mon** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **wed** — HM-pace intervals · 8.5km · 46min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
-  - _HM pace, not faster. Exit each rep wanting more._
-- **fri** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **sun** — Long run - Zone 2 · 15km · 100min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-
-### Week 12 — Taper — trust the work · *taper*
+### Week 11 — Taper — trust the work · *taper*
 > Volume drops. Intensity stays. Trust the work you have done.
 
-Weekly: **37 km** · long: 1.6h
+Weekly: **35 km** · long: 1.5h
 
-- **mon** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **wed** — Progressive tempo · 6.5km · 35min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
+- **tue** — Easy run - Zone 2 · 7.5km · 50min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **thu** — Progressive tempo · 6km · 32min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
   - _Hold back early. Finish honest._
-- **fri** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **sun** — Long run - Zone 2 · 14.5km · 96min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sat** — Easy run - Zone 2 · 7.5km · 50min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sun** — Long run - Zone 2 · 13.5km · 90min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
-### Week 13 — Race week · *taper*
+### Week 12 — Race week · *taper*
 > Volume drops. Intensity stays. Trust the work you have done.
 
-Weekly: **26 km** · long: 1.1h
+Weekly: **25 km** · long: 1.1h
 
-- **mon** — Easy run - Zone 2 · 5.5km · 36min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **wed** — Progressive tempo · 5km · 27min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
+- **tue** — Easy run - Zone 2 · 5km · 33min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **thu** — Progressive tempo · 5km · 27min · Zone 3–4 · HR 141–154 bpm · pace 5:16–5:31 /km · RPE 7
   - _Hold back early. Finish honest._
-- **fri** — Easy run - Zone 2 · 5.5km · 36min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **sun** — Long run - Zone 2 · 10km · 66min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sat** — Easy run - Zone 2 · 5km · 33min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sun** — Long run - Zone 2 · 9.5km · 63min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
-### Week 14 — Race week · *taper* (race)
+### Week 13 — Race week · *taper* (race)
 > The work is done. Arrive rested.
 
 Weekly: **29 km**
@@ -249,14 +239,14 @@ Weekly: **29 km**
     "race_date": "2026-08-03",
     "race_distance_km": 21.1,
     "charity": "",
-    "plan_start": "2026-04-27",
+    "plan_start": "2026-05-04",
     "quit_date": "",
     "resting_hr": 50,
     "max_hr": 180,
     "zone2_ceiling": 141,
     "version": "2.0",
-    "last_updated": "2026-04-26",
-    "notes": "Standard plan — 21.1km, 14 weeks",
+    "last_updated": "2026-04-27",
+    "notes": "Standard plan — 21.1km, 13 weeks",
     "primary_metric": "distance",
     "fitness_level": "intermediate",
     "goal": "time_target",
@@ -265,7 +255,7 @@ Weekly: **29 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-26T15:11:30.203Z",
+    "generated_at": "2026-04-27T09:15:09.026Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
@@ -289,28 +279,28 @@ Weekly: **29 km**
     {
       "name": "base",
       "start_week": 1,
-      "end_week": 5
+      "end_week": 4
     },
     {
       "name": "build",
-      "start_week": 6,
-      "end_week": 9
+      "start_week": 5,
+      "end_week": 8
     },
     {
       "name": "peak",
-      "start_week": 10,
-      "end_week": 11
+      "start_week": 9,
+      "end_week": 10
     },
     {
       "name": "taper",
-      "start_week": 12,
-      "end_week": 14
+      "start_week": 11,
+      "end_week": 13
     }
   ],
   "weeks": [
     {
       "n": 1,
-      "date": "2026-04-27",
+      "date": "2026-05-04",
       "label": "Base — easy start",
       "theme": "HR discipline. Slower than feels right. That is correct.",
       "type": "normal",
@@ -329,8 +319,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "wed": {
-          "id": "w1-wed",
+        "thu": {
+          "id": "w1-thu",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -342,8 +332,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "fri": {
-          "id": "w1-fri",
+        "tue": {
+          "id": "w1-tue",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -355,8 +345,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "mon": {
-          "id": "w1-mon",
+        "sat": {
+          "id": "w1-sat",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -374,7 +364,7 @@ Weekly: **29 km**
     },
     {
       "n": 2,
-      "date": "2026-05-04",
+      "date": "2026-05-11",
       "label": "Base — building consistency",
       "theme": "HR discipline. Slower than feels right. That is correct.",
       "type": "normal",
@@ -393,8 +383,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "wed": {
-          "id": "w2-wed",
+        "thu": {
+          "id": "w2-thu",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -406,8 +396,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "fri": {
-          "id": "w2-fri",
+        "tue": {
+          "id": "w2-tue",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -419,8 +409,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "mon": {
-          "id": "w2-mon",
+        "sat": {
+          "id": "w2-sat",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -438,7 +428,7 @@ Weekly: **29 km**
     },
     {
       "n": 3,
-      "date": "2026-05-11",
+      "date": "2026-05-18",
       "label": "Base — aerobic development",
       "theme": "HR discipline. Slower than feels right. That is correct.",
       "type": "normal",
@@ -457,8 +447,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "wed": {
-          "id": "w3-wed",
+        "thu": {
+          "id": "w3-thu",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -470,8 +460,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "fri": {
-          "id": "w3-fri",
+        "tue": {
+          "id": "w3-tue",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -483,13 +473,13 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "mon": {
-          "id": "w3-mon",
+        "sat": {
+          "id": "w3-sat",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
-          "distance_km": 11.5,
-          "duration_mins": 75,
+          "distance_km": 12,
+          "duration_mins": 80,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
@@ -502,7 +492,7 @@ Weekly: **29 km**
     },
     {
       "n": 4,
-      "date": "2026-05-18",
+      "date": "2026-05-25",
       "label": "Base — recovery week",
       "theme": "Deload week. Run a parkrun or timed 5K — your result sharpens the zones for the next block.",
       "type": "deload",
@@ -522,8 +512,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "wed": {
-          "id": "w4-wed",
+        "thu": {
+          "id": "w4-thu",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -535,8 +525,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "fri": {
-          "id": "w4-fri",
+        "tue": {
+          "id": "w4-tue",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -548,8 +538,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "mon": {
-          "id": "w4-mon",
+        "sat": {
+          "id": "w4-sat",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -567,58 +557,61 @@ Weekly: **29 km**
     },
     {
       "n": 5,
-      "date": "2026-05-25",
-      "label": "Base — aerobic discipline",
-      "theme": "HR discipline. Slower than feels right. That is correct.",
+      "date": "2026-06-01",
+      "label": "Build — first quality session",
+      "theme": "One quality session. Everything else stays easy.",
       "type": "normal",
-      "phase": "base",
+      "phase": "build",
       "sessions": {
         "sun": {
           "id": "w5-sun",
           "type": "easy",
           "label": "Long run — Zone 2",
           "detail": null,
-          "distance_km": 11.5,
-          "duration_mins": 76,
+          "distance_km": 12.5,
+          "duration_mins": 83,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "wed": {
-          "id": "w5-wed",
+        "thu": {
+          "id": "w5-thu",
+          "type": "quality",
+          "label": "Progressive tempo",
+          "detail": null,
+          "distance_km": 7,
+          "duration_mins": 38,
+          "primary_metric": "distance",
+          "zone": "Zone 3–4",
+          "hr_target": "141–154 bpm",
+          "pace_target": "5:16–5:31 /km",
+          "rpe_target": 7,
+          "coach_notes": [
+            "Hold back early. Finish honest."
+          ]
+        },
+        "tue": {
+          "id": "w5-tue",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
-          "distance_km": 9,
-          "duration_mins": 60,
+          "distance_km": 10,
+          "duration_mins": 66,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "fri": {
-          "id": "w5-fri",
+        "sat": {
+          "id": "w5-sat",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
-          "distance_km": 9,
-          "duration_mins": 60,
-          "primary_metric": "distance",
-          "zone": "Zone 2",
-          "hr_target": "< 141 bpm",
-          "pace_target": "6:03–7:13 /km",
-          "rpe_target": 4
-        },
-        "mon": {
-          "id": "w5-mon",
-          "type": "easy",
-          "label": "Easy run — Zone 2",
-          "detail": null,
-          "distance_km": 9,
-          "duration_mins": 60,
+          "distance_km": 10,
+          "duration_mins": 66,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
@@ -626,13 +619,13 @@ Weekly: **29 km**
           "rpe_target": 4
         }
       },
-      "long_run_hrs": 1.3,
-      "weekly_km": 39
+      "long_run_hrs": 1.4,
+      "weekly_km": 40
     },
     {
       "n": 6,
-      "date": "2026-06-01",
-      "label": "Build — first quality session",
+      "date": "2026-06-08",
+      "label": "Build — extending the work",
       "theme": "One quality session. Everything else stays easy.",
       "type": "normal",
       "phase": "build",
@@ -650,8 +643,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "wed": {
-          "id": "w6-wed",
+        "thu": {
+          "id": "w6-thu",
           "type": "quality",
           "label": "Continuous tempo",
           "detail": null,
@@ -666,8 +659,8 @@ Weekly: **29 km**
             "Sustainable. Same pace at the end as at the start."
           ]
         },
-        "fri": {
-          "id": "w6-fri",
+        "tue": {
+          "id": "w6-tue",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -679,8 +672,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "mon": {
-          "id": "w6-mon",
+        "sat": {
+          "id": "w6-sat",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -698,8 +691,8 @@ Weekly: **29 km**
     },
     {
       "n": 7,
-      "date": "2026-06-08",
-      "label": "Build — extending the work",
+      "date": "2026-06-15",
+      "label": "Build — raising the ceiling",
       "theme": "One quality session. Everything else stays easy.",
       "type": "normal",
       "phase": "build",
@@ -717,8 +710,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "wed": {
-          "id": "w7-wed",
+        "thu": {
+          "id": "w7-thu",
           "type": "quality",
           "label": "Cruise intervals",
           "detail": null,
@@ -733,8 +726,8 @@ Weekly: **29 km**
             "Rep three is the test. Not rep one."
           ]
         },
-        "fri": {
-          "id": "w7-fri",
+        "tue": {
+          "id": "w7-tue",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -746,13 +739,13 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "mon": {
-          "id": "w7-mon",
+        "sat": {
+          "id": "w7-sat",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
-          "distance_km": 11.5,
-          "duration_mins": 75,
+          "distance_km": 12,
+          "duration_mins": 80,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
@@ -765,7 +758,7 @@ Weekly: **29 km**
     },
     {
       "n": 8,
-      "date": "2026-06-15",
+      "date": "2026-06-22",
       "label": "Build — recovery week",
       "theme": "Deload week. Run a parkrun or timed 5K — your result sharpens the zones for the next block.",
       "type": "deload",
@@ -785,8 +778,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "wed": {
-          "id": "w8-wed",
+        "thu": {
+          "id": "w8-thu",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -798,8 +791,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "fri": {
-          "id": "w8-fri",
+        "tue": {
+          "id": "w8-tue",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -811,8 +804,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "mon": {
-          "id": "w8-mon",
+        "sat": {
+          "id": "w8-sat",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -830,11 +823,11 @@ Weekly: **29 km**
     },
     {
       "n": 9,
-      "date": "2026-06-22",
-      "label": "Build — consistency",
-      "theme": "One quality session. Everything else stays easy.",
+      "date": "2026-06-29",
+      "label": "Peak — highest volume",
+      "theme": "This is where the fitness is built. It will feel hard. That is correct.",
       "type": "normal",
-      "phase": "build",
+      "phase": "peak",
       "sessions": {
         "sun": {
           "id": "w9-sun",
@@ -849,10 +842,10 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "wed": {
-          "id": "w9-wed",
+        "thu": {
+          "id": "w9-thu",
           "type": "quality",
-          "label": "Continuous tempo",
+          "label": "HM-pace intervals",
           "detail": null,
           "distance_km": 7,
           "duration_mins": 38,
@@ -862,11 +855,11 @@ Weekly: **29 km**
           "pace_target": "5:16–5:31 /km",
           "rpe_target": 7,
           "coach_notes": [
-            "Sustainable. Same pace at the end as at the start."
+            "HM pace, not faster. Exit each rep wanting more."
           ]
         },
-        "fri": {
-          "id": "w9-fri",
+        "tue": {
+          "id": "w9-tue",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -878,8 +871,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "mon": {
-          "id": "w9-mon",
+        "sat": {
+          "id": "w9-sat",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -897,8 +890,8 @@ Weekly: **29 km**
     },
     {
       "n": 10,
-      "date": "2026-06-29",
-      "label": "Peak — highest volume",
+      "date": "2026-07-06",
+      "label": "Peak — second peak week",
       "theme": "This is where the fitness is built. It will feel hard. That is correct.",
       "type": "normal",
       "phase": "peak",
@@ -916,8 +909,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "wed": {
-          "id": "w10-wed",
+        "thu": {
+          "id": "w10-thu",
           "type": "quality",
           "label": "HM-pace intervals",
           "detail": null,
@@ -932,8 +925,8 @@ Weekly: **29 km**
             "HM pace, not faster. Exit each rep wanting more."
           ]
         },
-        "fri": {
-          "id": "w10-fri",
+        "tue": {
+          "id": "w10-tue",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -945,8 +938,8 @@ Weekly: **29 km**
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "mon": {
-          "id": "w10-mon",
+        "sat": {
+          "id": "w10-sat",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
@@ -964,73 +957,6 @@ Weekly: **29 km**
     },
     {
       "n": 11,
-      "date": "2026-07-06",
-      "label": "Peak — second peak week",
-      "theme": "This is where the fitness is built. It will feel hard. That is correct.",
-      "type": "normal",
-      "phase": "peak",
-      "sessions": {
-        "sun": {
-          "id": "w11-sun",
-          "type": "easy",
-          "label": "Long run — Zone 2",
-          "detail": null,
-          "distance_km": 15,
-          "duration_mins": 100,
-          "primary_metric": "distance",
-          "zone": "Zone 2",
-          "hr_target": "< 141 bpm",
-          "pace_target": "6:03–7:13 /km",
-          "rpe_target": 4
-        },
-        "wed": {
-          "id": "w11-wed",
-          "type": "quality",
-          "label": "HM-pace intervals",
-          "detail": null,
-          "distance_km": 8.5,
-          "duration_mins": 46,
-          "primary_metric": "distance",
-          "zone": "Zone 3–4",
-          "hr_target": "141–154 bpm",
-          "pace_target": "5:16–5:31 /km",
-          "rpe_target": 7,
-          "coach_notes": [
-            "HM pace, not faster. Exit each rep wanting more."
-          ]
-        },
-        "fri": {
-          "id": "w11-fri",
-          "type": "easy",
-          "label": "Easy run — Zone 2",
-          "detail": null,
-          "distance_km": 11.5,
-          "duration_mins": 75,
-          "primary_metric": "distance",
-          "zone": "Zone 2",
-          "hr_target": "< 141 bpm",
-          "pace_target": "6:03–7:13 /km",
-          "rpe_target": 4
-        },
-        "mon": {
-          "id": "w11-mon",
-          "type": "easy",
-          "label": "Easy run — Zone 2",
-          "detail": null,
-          "distance_km": 11.5,
-          "duration_mins": 75,
-          "primary_metric": "distance",
-          "zone": "Zone 2",
-          "hr_target": "< 141 bpm",
-          "pace_target": "6:03–7:13 /km",
-          "rpe_target": 4
-        }
-      },
-      "long_run_hrs": 1.7,
-      "weekly_km": 47
-    },
-    {
-      "n": 12,
       "date": "2026-07-13",
       "label": "Taper — trust the work",
       "theme": "Volume drops. Intensity stays. Trust the work you have done.",
@@ -1038,25 +964,25 @@ Weekly: **29 km**
       "phase": "taper",
       "sessions": {
         "sun": {
-          "id": "w12-sun",
+          "id": "w11-sun",
           "type": "easy",
           "label": "Long run — Zone 2",
           "detail": null,
-          "distance_km": 14.5,
-          "duration_mins": 96,
+          "distance_km": 13.5,
+          "duration_mins": 90,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "wed": {
-          "id": "w12-wed",
+        "thu": {
+          "id": "w11-thu",
           "type": "quality",
           "label": "Progressive tempo",
           "detail": null,
-          "distance_km": 6.5,
-          "duration_mins": 35,
+          "distance_km": 6,
+          "duration_mins": 32,
           "primary_metric": "distance",
           "zone": "Zone 3–4",
           "hr_target": "141–154 bpm",
@@ -1066,26 +992,26 @@ Weekly: **29 km**
             "Hold back early. Finish honest."
           ]
         },
-        "fri": {
-          "id": "w12-fri",
+        "tue": {
+          "id": "w11-tue",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
-          "distance_km": 8,
-          "duration_mins": 53,
+          "distance_km": 7.5,
+          "duration_mins": 50,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "mon": {
-          "id": "w12-mon",
+        "sat": {
+          "id": "w11-sat",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
-          "distance_km": 8,
-          "duration_mins": 53,
+          "distance_km": 7.5,
+          "duration_mins": 50,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
@@ -1093,11 +1019,11 @@ Weekly: **29 km**
           "rpe_target": 4
         }
       },
-      "long_run_hrs": 1.6,
-      "weekly_km": 37
+      "long_run_hrs": 1.5,
+      "weekly_km": 35
     },
     {
-      "n": 13,
+      "n": 12,
       "date": "2026-07-20",
       "label": "Race week",
       "theme": "Volume drops. Intensity stays. Trust the work you have done.",
@@ -1105,20 +1031,20 @@ Weekly: **29 km**
       "phase": "taper",
       "sessions": {
         "sun": {
-          "id": "w13-sun",
+          "id": "w12-sun",
           "type": "easy",
           "label": "Long run — Zone 2",
           "detail": null,
-          "distance_km": 10,
-          "duration_mins": 66,
+          "distance_km": 9.5,
+          "duration_mins": 63,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "wed": {
-          "id": "w13-wed",
+        "thu": {
+          "id": "w12-thu",
           "type": "quality",
           "label": "Progressive tempo",
           "detail": null,
@@ -1133,26 +1059,26 @@ Weekly: **29 km**
             "Hold back early. Finish honest."
           ]
         },
-        "fri": {
-          "id": "w13-fri",
+        "tue": {
+          "id": "w12-tue",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
-          "distance_km": 5.5,
-          "duration_mins": 36,
+          "distance_km": 5,
+          "duration_mins": 33,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
           "rpe_target": 4
         },
-        "mon": {
-          "id": "w13-mon",
+        "sat": {
+          "id": "w12-sat",
           "type": "easy",
           "label": "Easy run — Zone 2",
           "detail": null,
-          "distance_km": 5.5,
-          "duration_mins": 36,
+          "distance_km": 5,
+          "duration_mins": 33,
           "primary_metric": "distance",
           "zone": "Zone 2",
           "hr_target": "< 141 bpm",
@@ -1161,10 +1087,10 @@ Weekly: **29 km**
         }
       },
       "long_run_hrs": 1.1,
-      "weekly_km": 26
+      "weekly_km": 25
     },
     {
-      "n": 14,
+      "n": 13,
       "date": "2026-07-27",
       "label": "Race week",
       "theme": "The work is done. Arrive rested.",
@@ -1173,7 +1099,7 @@ Weekly: **29 km**
       "badge": "race",
       "sessions": {
         "sun": {
-          "id": "w14-sun",
+          "id": "w13-sun",
           "type": "race",
           "label": "Race — Target HM",
           "detail": null,
@@ -1185,7 +1111,7 @@ Weekly: **29 km**
           ]
         },
         "tue": {
-          "id": "w14-tue",
+          "id": "w13-tue",
           "type": "easy",
           "label": "Easy shakeout",
           "detail": null,
@@ -1201,7 +1127,7 @@ Weekly: **29 km**
           ]
         },
         "thu": {
-          "id": "w14-thu",
+          "id": "w13-thu",
           "type": "easy",
           "label": "Easy shakeout",
           "detail": null,

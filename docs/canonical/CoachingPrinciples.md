@@ -292,8 +292,18 @@ enrichment layer (gated via `ai_coach_notes_new`), not the act of regenerating.
 
 ---
 
-## 18. The constitution
+## 18. Blocked-day enforcement — life-first scheduling
 
-These eighteen principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** Sessions MUST never be scheduled on days listed in `days_cannot_train`, regardless of week type (base, build, peak, taper, race). Race-week shakeouts MUST be placed on `days_available` only. If race-week scheduling cannot place two shakeouts without using a blocked day, place one shakeout — never violate the constraint to fit a default pattern.
+
+**Why.** "Slow down. You've got a day job." is a literal claim. A user who cannot train on Tuesdays cannot train on Tuesdays in race week either. Hardcoded shakeout patterns (tue/thu) are residue from elite-runner templates and break the brand's core promise — that the plan respects the runner's life. The race week is the most visible week of the plan; getting it wrong undermines trust at the worst moment.
+
+**Config.** No numeric — structural rule. Implemented by `blockedDays()` in `lib/plan/ruleEngine.ts` and enforced by `INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS` in `lib/plan/invariants.ts`. The parser accepts both short forms (`'mon'`) and full forms (`'monday'`) so the engine is robust to wizard, API, and test inputs.
+
+---
+
+## 19. The constitution
+
+These nineteen principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

@@ -385,10 +385,17 @@ function dayGap(a: Day, b: Day): number {
   return Math.min(diff, 7 - diff)
 }
 
+// CoachingPrinciples §18 — accept both short ('mon') and full ('monday') forms.
+// Wizard sends full names; API/test inputs may send short. The parser is the
+// boundary; downstream code treats blocked as Set<Day>.
+const SHORT_DAY_SET: Set<Day> = new Set(DAY_ORDER)
+
 function blockedDays(input: GeneratorInput): Set<Day> {
   const s = new Set<Day>()
   for (const d of input.days_cannot_train ?? []) {
-    const short = FULL_TO_SHORT[d.toLowerCase()]
+    const lower = String(d).toLowerCase()
+    if (SHORT_DAY_SET.has(lower as Day)) { s.add(lower as Day); continue }
+    const short = FULL_TO_SHORT[lower]
     if (short) s.add(short)
   }
   return s

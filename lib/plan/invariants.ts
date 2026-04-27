@@ -28,9 +28,28 @@ export interface Violation {
 const DAYS = ['mon','tue','wed','thu','fri','sat','sun'] as const
 type Day = typeof DAYS[number]
 
+const DAY_SET: Set<Day> = new Set(DAYS)
+const FULL_TO_SHORT_DAY: Record<string, Day> = {
+  monday: 'mon', tuesday: 'tue', wednesday: 'wed', thursday: 'thu',
+  friday: 'fri', saturday: 'sat', sunday: 'sun',
+}
+
 function dayGap(a: Day, b: Day): number {
   const ai = DAYS.indexOf(a), bi = DAYS.indexOf(b)
   return Math.min(Math.abs(ai - bi), 7 - Math.abs(ai - bi))
+}
+
+// CoachingPrinciples §18 — accept short and full forms. Mirror of the engine
+// parser; kept local so the invariant catches any future drift.
+function parseBlockedDays(input: GeneratorInput): Set<Day> {
+  const s = new Set<Day>()
+  for (const d of input.days_cannot_train ?? []) {
+    const lower = String(d).toLowerCase()
+    if (DAY_SET.has(lower as Day)) { s.add(lower as Day); continue }
+    const short = FULL_TO_SHORT_DAY[lower]
+    if (short) s.add(short)
+  }
+  return s
 }
 
 function isLongRun(s: Session): boolean {
@@ -60,6 +79,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   const qualityMaxPerWeek = fitness ? GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX[fitness] : undefined
   const minHoursQualLong = GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG
   const minDaysQualLong = Math.ceil(minHoursQualLong / 24)
+  const blocked = parseBlockedDays(input)
 
   for (const w of plan.weeks) {
     const isRaceWeek = w.type === 'race'
@@ -67,6 +87,25 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     const placedRunning = sessions
       .filter(([, s]) => !!s && s.type !== 'strength' && s.type !== 'rest')
       .map(([d, s]) => ({ day: d, session: s! }))
+
+    // INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS — every placed session lands on an
+    // unblocked day, including in race week.
+    // (CoachingPrinciples §18 — life-first scheduling. Hardcoded race-week
+    //  shakeout patterns broke this in 2026-04-27 review for all three cases.)
+    for (const [day, session] of sessions) {
+      if (!session || session.type === 'rest') continue
+      if (blocked.has(day)) {
+        violations.push({
+          code: 'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS',
+          principle_ref: 'CoachingPrinciples §18',
+          severity: 'error',
+          week: w.n, day,
+          message: 'Session placed on a day listed in days_cannot_train',
+          actual: day,
+          expected: 'unblocked day',
+        })
+      }
+    }
 
     // INV-PLAN-MIN-SESSION-SIZE — every placed session ≥ MIN_SESSION_DISTANCE_KM
     // (CoachingPrinciples §9 — "Below these, the session is too short to be coaching-meaningful.")
