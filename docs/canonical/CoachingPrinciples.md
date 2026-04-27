@@ -539,8 +539,18 @@ When neither suggestion applies, the diagnosis is surfaced alone (no false guida
 
 ---
 
-## 39. The constitution
+## 39. Race-week mid-week easy run for HM/marathon
 
-These thirty-nine principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** For HM and marathon time-targeted plans, race week MUST include one slightly longer easy run (6–8 km for HM, 8–10 km for marathon) on a non-shakeout day, when the runner has `days_available >= 4`. For 10K and below, the existing shakeout-only race week is sufficient. Race day, two shakeouts, and one easy mid-week run = four sessions in race week.
+
+**Why.** Round-2 review flagged Anna's race-week non-race volume at 8 km (two 4 km shakeouts) — too light for an HM taper. The taper-detraining curve takes ~10 days to bite; 7 days of nothing-but-shakeouts in HM/marathon prep removes more aerobic base than necessary. A short easy run mid-week preserves aerobic conditioning at minimal fatigue cost. Standard HM and marathon plans (Daniels, Pfitzinger) include a longer pre-race-week run for exactly this reason.
+
+**Config.** `GENERATION_CONFIG.RACE_WEEK_EASY_KM = { HM: 7, MARATHON: 9 }`. Implemented in the race-week branch of `buildWeekSessions()`. Skipped when `days_available < 4` (the runner is already constraint-limited; adding a fourth session would force a back-to-back).
+
+---
+
+## 40. The constitution
+
+These forty principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

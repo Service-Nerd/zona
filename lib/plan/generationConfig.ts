@@ -130,11 +130,16 @@ export const GENERATION_CONFIG = {
   // session. Users can ignore it without breaking the plan.
   TUNE_UP_MIN_PLAN_WEEKS: 10,
 
-  // ── Race-week shakeout (CoachingPrinciples §30) ────────────────────────────
+  // ── Race-week shakeout (CoachingPrinciples §30, §39) ──────────────────────
   // Race week has no quality session — shakeouts only. Hard cap on duration
   // and a stride note on the first shakeout preserve neuromuscular sharpness
-  // without adding race-day fatigue.
+  // without adding race-day fatigue. For HM/marathon, an additional easy
+  // mid-week run prevents the taper from going too deep.
   RACE_WEEK_SHAKEOUT_MAX_MINS: 35,
+  RACE_WEEK_EASY_KM: {
+    HM:       7,    // 6–8 km easy on a non-shakeout day
+    MARATHON: 9,    // 8–10 km
+  },
 
   // ── Fresh-from-layoff detection (CoachingPrinciples §29) ───────────────────
   // If weeks_at_current_volume is set and below this threshold, the runner is

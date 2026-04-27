@@ -184,13 +184,15 @@ Weekly: **25 km** · long: 1.1h
 ### Week 13 — Race week · *taper* (race)
 > The work is done. Arrive rested.
 
-Weekly: **29 km**
+Weekly: **36 km**
 
 - **tue** — Easy shakeout · 4km · 27min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 2
   - _Short and relaxed. Wake the legs, nothing more._
   - _4×100m strides at 5K effort, full recovery between._
 - **thu** — Easy shakeout · 4km · 27min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 2
   - _Short and relaxed. Wake the legs, nothing more._
+- **sat** — Race-week easy · 7km · 46min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+  - _Conversational. Keep the legs moving without adding fatigue._
 - **sun** — Race - Target HM · 21.1km
   - _Start slower than feels right. First 5 km at Zone 2._
   - _No new shoes, no new food._
@@ -272,7 +274,7 @@ Weekly: **29 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T13:06:07.631Z",
+    "generated_at": "2026-04-27T13:07:49.071Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
@@ -1196,10 +1198,26 @@ Weekly: **29 km**
           "coach_notes": [
             "Short and relaxed. Wake the legs, nothing more."
           ]
+        },
+        "sat": {
+          "id": "w13-sat",
+          "type": "easy",
+          "label": "Race-week easy",
+          "detail": null,
+          "distance_km": 7,
+          "duration_mins": 46,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 141 bpm",
+          "pace_target": "6:03–7:13 /km",
+          "rpe_target": 4,
+          "coach_notes": [
+            "Conversational. Keep the legs moving without adding fatigue."
+          ]
         }
       },
       "long_run_hrs": null,
-      "weekly_km": 29,
+      "weekly_km": 36,
       "race_notes": "Race day: Target HM. Start at Zone 2. The second half is where the race begins."
     }
   ]

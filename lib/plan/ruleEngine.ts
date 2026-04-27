@@ -763,6 +763,7 @@ function buildWeekSessions(
   totalWeeks: number,
 ): Partial<Record<Day, Session>> {
   const blocked = blockedDays(input)
+  const distKey = raceDistanceKey(input.race_distance_km)
 
   if (isRaceWeek) {
     const sessions: Partial<Record<Day, Session>> = {}
@@ -797,12 +798,28 @@ function buildWeekSessions(
       sessions[shakeout2] = enforceCap(shakeoutSession(weekN, shakeout2, zones, pace))
     }
 
+    // CoachingPrinciples §39 — race-week mid-week easy for HM/marathon.
+    // 8 km of total non-race volume is too deep a taper; add one slightly
+    // longer easy run on a remaining available day.
+    const raceWeekEasyKm = (GENERATION_CONFIG.RACE_WEEK_EASY_KM as Record<string, number>)[distKey]
+    if (raceWeekEasyKm != null && input.days_available >= 4) {
+      const used: Day[] = [raceDay]
+      if (shakeout1) used.push(shakeout1)
+      if (sessions[shakeout2 as Day]) used.push(shakeout2 as Day)
+      const easyDay = firstAvailableDay(['sat', 'fri', 'wed', 'mon', 'tue', 'thu'], blocked, used)
+      if (easyDay) {
+        sessions[easyDay] = easySession(weekN, easyDay, raceWeekEasyKm, 'distance', zones, pace,
+          'Race-week easy', 4,
+          ['Conversational. Keep the legs moving without adding fatigue.'])
+      }
+    }
+
     return sessions
   }
 
   // ── Determine which session types to include ──────────────────────────────
   const daysAvailable = Math.min(input.days_available, 7 - blocked.size)
-  const distKey = raceDistanceKey(input.race_distance_km)
+  // distKey is hoisted above the race-week branch for §39 use.
 
   // Quality count for this week — config-driven (CoachingPrinciples §1, §6, §8).
   // Taper retains intensity per TAPER_QUALITY_PER_WEEK[distKey].
