@@ -125,7 +125,7 @@ Weekly: **35 km** · long: 1.2h
 - **sat** — Easy run - Zone 2 · 8km · 53min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 - **sun** — Long run - Zone 2 · 10.5km · 70min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
 
-### Week 9 — Peak — highest volume · *peak*
+### Week 9 — Peak — consistency · *peak*
 > Consistency. The work is the volume.
 
 Weekly: **40 km** · long: 2h
@@ -139,8 +139,8 @@ Weekly: **40 km** · long: 2h
   - _Easy first. Final third at HM goal pace._
   - _Final third at HM pace: 5:27 /km._
 
-### Week 10 — Peak — second peak week · *peak*
-> This is where the fitness is built. It will feel hard. That is correct.
+### Week 10 — Peak — consistency · *peak*
+> Consistency. The work is the volume.
 
 Weekly: **44 km** · long: 2h
 
@@ -267,7 +267,7 @@ Weekly: **29 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T10:27:34.489Z",
+    "generated_at": "2026-04-27T10:29:12.989Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
@@ -851,7 +851,7 @@ Weekly: **29 km**
     {
       "n": 9,
       "date": "2026-06-29",
-      "label": "Peak — highest volume",
+      "label": "Peak — consistency",
       "theme": "Consistency. The work is the volume.",
       "type": "normal",
       "phase": "peak",
@@ -925,8 +925,8 @@ Weekly: **29 km**
     {
       "n": 10,
       "date": "2026-07-06",
-      "label": "Peak — second peak week",
-      "theme": "This is where the fitness is built. It will feel hard. That is correct.",
+      "label": "Peak — consistency",
+      "theme": "Consistency. The work is the volume.",
       "type": "normal",
       "phase": "peak",
       "sessions": {

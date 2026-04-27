@@ -1280,6 +1280,20 @@ export function generateRulePlan(
   // Track phase-local week count for labels
   const phaseWeekCount: Record<PhaseType, number> = { base: 0, build: 0, peak: 0, taper: 0 }
 
+  // CoachingPrinciples §27 — pre-compute peak-overload classification so
+  // theme/label selection in the per-week loop reflects the plan as a whole.
+  const peakWeekIndices: number[] = []
+  for (let i = 0; i < totalWeeks; i++) {
+    if (getPhaseForWeek(i + 1, phases) === 'peak') peakWeekIndices.push(i)
+  }
+  const peakMaxKm = peakWeekIndices.length > 0
+    ? Math.max(...peakWeekIndices.map(i => volumes[i]))
+    : 0
+  const w1Km = volumes[0] ?? 0
+  const planIsMaintenance = totalWeeks >= GENERATION_CONFIG.PEAK_OVERLOAD_MIN_PLAN_WEEKS
+    && w1Km > 0
+    && peakMaxKm < w1Km * GENERATION_CONFIG.PEAK_OVER_BASE_RATIO
+
   for (let i = 0; i < totalWeeks; i++) {
     const weekN = i + 1
     const phase = getPhaseForWeek(weekN, phases)
@@ -1331,7 +1345,9 @@ export function generateRulePlan(
       theme = 'The work is done. Arrive rested.'
     } else if (isRecalibration) {
       theme = 'Deload week. Run a parkrun or timed 5K — your result sharpens the zones for the next block.'
-    } else if (phase === 'peak' && !isDeload && actualWeeklyKm <= prevNonDeloadWeeklyKm) {
+    } else if (phase === 'peak' && !isDeload && (planIsMaintenance || actualWeeklyKm <= prevNonDeloadWeeklyKm)) {
+      // Maintenance plans use the conservative theme on every peak week —
+      // there's no overload to celebrate. Otherwise apply the per-week check.
       theme = 'Consistency. The work is the volume.'
     } else if (phase === 'taper' && !isDeload && qualityCount === 0) {
       theme = 'Volume drops. Trust the work you have done.'
@@ -1342,7 +1358,11 @@ export function generateRulePlan(
     weeks.push({
       n: weekN,
       date: weekDate,
-      label: isRaceWeek ? 'Race week' : weekLabel(phase, weekN, phaseWeekCount[phase], isDeload),
+      label: isRaceWeek
+        ? 'Race week'
+        : (planIsMaintenance && phase === 'peak' && !isDeload)
+          ? 'Peak — consistency'
+          : weekLabel(phase, weekN, phaseWeekCount[phase], isDeload),
       theme,
       type: weekType,
       phase,
