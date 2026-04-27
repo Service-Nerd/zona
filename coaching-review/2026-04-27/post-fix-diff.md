@@ -1,6 +1,6 @@
-# Post-fix diff — 2026-04-27 review, [HIGH] block
+# Post-fix diff — 2026-04-27 review
 
-Status: [HIGH] complete. [MEDIUM] and [LOW] pending human approval.
+Status: [HIGH], [MEDIUM], and [LOW] all complete.
 
 All ten high-priority items shipped as separate commits in `fix(engine): [2026-04-27/H-NN] …` form. Each adds a CoachingPrinciples section, where applicable promotes numerics to `GENERATION_CONFIG`, adds a mechanical invariant in `lib/plan/invariants.ts`, and modifies the engine so the invariant passes. After every commit, the archetype suite (`scripts/r23-phase7-validation.ts` under `NODE_ENV=test`) and the 103,680-plan property sweep (`scripts/property-validate-plans.ts`) both pass.
 
@@ -51,36 +51,76 @@ All ten high-priority items shipped as separate commits in `fix(engine): [2026-0
 2. "Where the fitness is built" theme appeared on peak weeks without overload; "Volume drops. Intensity stays." appeared on taper weeks with no quality.
 Engine now selects theme with awareness of `actualWeeklyKm` vs prior non-deload, and `qualityCount`. Two new themes added. `INV-PLAN-THEME-MATCHES-PRESCRIPTION` enforces. CoachingPrinciples §27 added.
 
+### M-01 — Strides on midweek easy from W3+ — DONE
+**Commit:** `0aabaf9`
+**Change:** Append "4×20s strides at 5K effort, full recovery between." as a coach note on one midweek easy run per non-deload, non-race week from W3 onwards. Stride day avoids the day before the long run and the day after a quality session. `STRIDES_FIRST_WEEK` promoted to `GENERATION_CONFIG`. CoachingPrinciples §28 added.
+
+### M-02 — Fresh-from-layoff detection — DONE
+**Commit:** `d375d5b`
+**Change:** New optional `weeks_at_current_volume` input. When < 8, the engine treats `current_weekly_km` as aspirational and starts the plan at 70% with the standard 10% ramp (no allowance). Mutually exclusive with the existing returning-runner allowance — fresh-return needs caution, not faster ramp. New `plan.meta.fresh_return_active` flag. `FRESH_RETURN_*` promoted to `GENERATION_CONFIG`. CoachingPrinciples §29 added. Capability dormant for the existing test cases (the script doesn't pass the field); wizard can surface it without further code changes.
+
+### M-03 — Reword peak themes for maintenance plans — DONE
+**Commit:** `5f3946d`
+**Change:** H-10 fired the conservative theme only when a single week's volume failed to exceed the prior non-deload week. For Anna's maintenance plan, peak W10 (44 km) was higher than W9 (40 km) so W10 still got "where the fitness is built" despite the plan as a whole producing no overload. Engine now pre-computes `planIsMaintenance` from volumes before the per-week loop; all peak weeks of a maintenance plan use "Consistency. The work is the volume." theme. Peak label switches to "Peak — consistency". (Extends §27.)
+
+### M-04 — Race-week shakeout cap + strides — DONE
+**Commit:** `3cae80d`
+**Change:** Race-week shakeouts cap at 35 minutes (proportional distance reduction when binding). The first shakeout carries a stride coach-note ("4×100m strides at 5K effort, full recovery between."). `RACE_WEEK_SHAKEOUT_MAX_MINS` promoted to `GENERATION_CONFIG`. CoachingPrinciples §30 added.
+
+### M-05 — Differentiated compression classification — DONE
+**Commit:** `29e3399`
+**Change:** Adds `plan.meta.compression_classification: 'optimal' | 'appropriate_for_persona' | 'constrained_by_inputs'`. Beginner + finish goal at modest volume → `appropriate_for_persona` (not a problem). Other compressed cases → `constrained_by_inputs` (action available). Bare `compressed` boolean retained for back-compat. CoachingPrinciples §31 added.
+
+### L-01 — Tune-up race callout — DONE
+**Commit:** `567d095`
+**Change:** Plans of 10+ weeks surface an optional parkrun/5K callout on the latest non-deload build week (right before peak). Data-only — no session added. Callout framed as a fitness check, not a race effort. `TUNE_UP_MIN_PLAN_WEEKS` promoted to `GENERATION_CONFIG`. New `Week.tune_up_callout` field. CoachingPrinciples §32 added.
+
+### L-02 — Surface VDOT, benchmark, profile in summary — DONE
+**Commit:** `5dee24e`
+**Change:** No engine changes — all data was exposed since H-03/H-06/M-05. The review-packet markdown header now renders raw VDOT + training anchor (+ discount %), benchmark, goal pace, volume profile, compression classification, and constraint note. Per-week section also surfaces `tune_up_callout`.
+
 ---
 
 ## Generated plan diffs
 
 ### Case 01 — Sarah, 5K beginner finish goal
 - Plan length 12 → 11 weeks (incidental — happened during H-01 regeneration; the script's date arithmetic for a 2026-07-20 race from 2026-04-27 yields 12 weeks but the engine's compressed-plan logic clamps the build-up). Original review was on the 12-week version.
-- Race week (W11) shakeouts: tue/thu → wed/fri (both unblocked for Sarah).
+- Race week (W11) shakeouts: tue/thu → wed/fri (both unblocked for Sarah). First shakeout now carries "4×100m strides at 5K effort, full recovery between." (M-04).
 - Peak weeks (W8/W9) reach 25/26 km vs W1 20 km — `volume_profile: 'build'`, ≥110% threshold met.
 - Final taper week W10 theme changed: "Volume drops. Intensity stays. Trust the work you have done." → "Volume drops. Trust the work you have done." (no quality session in the week, beginner).
 - W4 deload renamed to deload-row format ("Base — recovery week"); themes carry through correctly.
+- W3+ midweek easy runs carry stride coach-note "4×20s strides at 5K effort, full recovery between." (M-01).
+- W7 (latest non-deload build) carries `tune_up_callout` (L-01).
+- Header now displays VDOT (n/a — no benchmark for Sarah), goal pace (n/a — finish goal), volume profile (build), compression (optimal). No surprises surfaced.
 
 ### Case 02 — Mark, 10K intermediate sub-50
 - Plan length 12 → 11 weeks (same regeneration cause as Sarah).
-- Race week (W11) shakeouts: tue/thu → wed/fri (Mark's blocked days are tue/thu/sat).
+- Race week (W11) shakeouts: tue/thu → wed/fri (Mark's blocked days are tue/thu/sat). First shakeout carries strides note (M-04).
 - W5/W7 quality: "Aerobic with hills" → "Steady aerobic" (knee history excludes hill sessions in build).
 - W7 quality renamed: was "Steady aerobic" T-pace, now "10K-pace intervals @ 4:54–5:06 /km" (second-half goal-pace specificity).
 - W8/W9 (peak): retain VO2max labels but now prescribe true I-pace: "Classic VO2max @ 4:36–4:47 /km Zone 4–5", "Long VO2max @ 4:36–4:47 /km Zone 4–5". Were T-pace under VO2max labels.
+- W3+ midweek easy runs carry stride coach-note (M-01).
+- W7 carries `tune_up_callout` (L-01).
 - `plan.meta.vdot`: 40 → 41.2 (raw, table-comparable).
 - `plan.meta.vdot_training_anchor`: 40 (new — was the surfaced vdot before).
 - `plan.meta.goal_pace_per_km`: "5:00 /km" surfaced.
 - `plan.meta.volume_profile`: 'build'.
+- `plan.meta.compression_classification`: 'optimal'.
+- Header now displays "VDOT 41.2 (training anchor 40, 3% conservatism discount)" + "Benchmark: 5 km in 0:23:30 (2026-03-15)".
 
 ### Case 03 — Anna, HM intermediate 1:55 goal
 - Plan length 14 → 13 weeks (same regeneration cause).
-- Race week (W13) shakeouts: tue/thu (Anna's blocked are mon/wed/fri so tue/thu work).
+- Race week (W13) shakeouts: tue/thu (Anna's blocked are mon/wed/fri so tue/thu work). First shakeout carries strides note (M-04).
+- W9/W10 label: "Peak — highest volume" / "Peak — second peak week" → "Peak — consistency" (M-03 — Anna's plan is `volume_profile: 'maintenance'`).
+- W9/W10 theme: "This is where the fitness is built" → "Consistency. The work is the volume." (M-03).
 - W12 label: "Race week" → "Taper — sharpening" (now correctly identifies that W13 is race week, W12 is the last taper).
 - W10/W11 quality: "Cruise intervals" / "Progressive tempo" → "HM-pace intervals @ 5:20–5:34 /km" (second-half goal-pace specificity).
 - W9/W10 long run: 15 km / 14.5 km flat Z2 → 18 km "Long run with HM-pace finish" with note "Final third at HM pace: 5:27 /km" (race-specific long run, peak phase).
+- W3+ midweek easy runs carry stride coach-note (M-01).
+- W7 (latest build week) carries `tune_up_callout` (L-01).
 - `plan.meta.vdot`: 38.4 → 39.5 (raw).
 - `plan.meta.volume_profile`: 'maintenance' with note "Peak volume 44 km is 102% of week 1 (43 km) — below the 110% overload threshold. Plan maintains current fitness rather than building it."
+- `plan.meta.compression_classification`: 'constrained_by_inputs'.
 
 ---
 
