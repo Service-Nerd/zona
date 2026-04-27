@@ -342,8 +342,22 @@ enrichment layer (gated via `ai_coach_notes_new`), not the act of regenerating.
 
 ---
 
-## 23. The constitution
+## 23. Peak overload requirement
 
-These twenty-three principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** A plan presented as a "build" must produce overload. For plans of `PEAK_OVERLOAD_MIN_PLAN_WEEKS` weeks or longer, peak weekly volume MUST be at least `PEAK_OVER_BASE_RATIO` times week 1 volume. If the engine cannot achieve this overload given the runner's constraints (`days_available`, `max_weekday_mins`, `current_weekly_km` already near peak target, injury caps), it MUST surface `volume_profile = 'maintenance'` with a `volume_constraint_note` explaining why. The plan still runs; the runner is informed of what it is and isn't.
+
+**Why.** A plan whose peak equals its base is a maintenance plan, not a training plan. Selling it as a build is a trust violation: the runner expects to be fitter than they were when they started, and an honest engine says when that isn't possible. This case is most common when `current_weekly_km` is already close to the per-fitness-level target peak — there's nowhere to ramp to. Surfacing it lets the user adjust their inputs (e.g. spend a month consolidating before generating a build plan) instead of running a misleading 14-week loop.
+
+**Config.**
+- `GENERATION_CONFIG.PEAK_OVER_BASE_RATIO = 1.10`
+- `GENERATION_CONFIG.PEAK_OVERLOAD_MIN_PLAN_WEEKS = 8`
+
+Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) which sets `plan.meta.volume_profile` and `plan.meta.volume_constraint_note` after week construction. Enforced by `INV-PLAN-PEAK-OVER-BASE` in `lib/plan/invariants.ts` — the invariant accepts either a passing ratio OR an explicit 'maintenance' classification.
+
+---
+
+## 24. The constitution
+
+These twenty-four principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

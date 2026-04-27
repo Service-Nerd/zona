@@ -380,6 +380,29 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // cap collides with MIN_SESSION_DISTANCE) — those are legitimate. This
   // invariant lives one layer up; it isn't checkable from the plan output alone.
 
+  // INV-PLAN-PEAK-OVER-BASE — plans of PEAK_OVERLOAD_MIN_PLAN_WEEKS weeks or
+  // longer must either have peak ≥ PEAK_OVER_BASE_RATIO × W1, or be classified
+  // as 'maintenance'. (CoachingPrinciples §23)
+  if (totalWeeks >= GENERATION_CONFIG.PEAK_OVERLOAD_MIN_PLAN_WEEKS) {
+    const w1 = plan.weeks[0]?.weekly_km ?? 0
+    const peakWeeks = plan.weeks.filter(w => w.phase === 'peak')
+    if (w1 > 0 && peakWeeks.length > 0) {
+      const peakKm = Math.max(...peakWeeks.map(w => w.weekly_km))
+      const ratio = peakKm / w1
+      if (ratio < GENERATION_CONFIG.PEAK_OVER_BASE_RATIO && plan.meta.volume_profile !== 'maintenance') {
+        violations.push({
+          code: 'INV-PLAN-PEAK-OVER-BASE',
+          principle_ref: 'CoachingPrinciples §23',
+          severity: 'error',
+          week: 0,
+          message: `Peak volume ${peakKm}km is ${Math.round(ratio * 100)}% of W1 ${w1}km — below ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% threshold and not flagged as maintenance`,
+          actual: `${Math.round(ratio * 100)}%`,
+          expected: `≥ ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% or volume_profile=maintenance`,
+        })
+      }
+    }
+  }
+
   // INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR — when a benchmark is present, surfaced
   // VDOT is the raw value (matches Daniels' tables) and is ≥ the training
   // anchor (which has the conservatism discount applied).

@@ -198,10 +198,11 @@ Weekly: **13 km**
     "fitness_level": "beginner",
     "goal": "finish",
     "days_available": 3,
-    "generated_at": "2026-04-27T10:02:03.426Z",
+    "generated_at": "2026-04-27T10:04:33.435Z",
     "generator_version": "2.0",
     "tier": "free",
     "compressed": false,
+    "volume_profile": "build",
     "age": 30,
     "recalibration_weeks": [
       4

@@ -172,6 +172,10 @@ export interface PlanMeta {
 
   // R23 rebuild — VDOT conservatism + returning runner + compressed flag
   vdot_discount_applied_pct?: number     // total VDOT discount (3% default + 5% if benchmark stale)
+
+  // H-06 — peak vs base overload classification (CoachingPrinciples §23)
+  volume_profile?: 'build' | 'maintenance'  // 'build' when peak ≥ 110% of W1; else 'maintenance'
+  volume_constraint_note?: string         // human-readable explanation when 'maintenance'
   training_age?: TrainingAge             // stored for R20 reshaper
   returning_runner_allowance_active?: boolean  // true if 15%/3wk allowance applied
 }

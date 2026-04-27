@@ -111,6 +111,13 @@ export const GENERATION_CONFIG = {
   // peakKm. Surfaced via plan.meta.compressed.
   PEAK_REACHED_THRESHOLD_PCT: 95,  // % of peakKm
 
+  // ── Peak overload requirement (CoachingPrinciples §23) ─────────────────────
+  // A plan that does not exceed PEAK_OVER_BASE_RATIO is downgraded to a
+  // "maintenance" plan rather than presented as a "build". The constitution:
+  // a build that does not produce overload is mislabelled.
+  PEAK_OVER_BASE_RATIO: 1.10,            // peak weekly_km / W1 weekly_km
+  PEAK_OVERLOAD_MIN_PLAN_WEEKS: 8,       // below this length, ratio not enforced
+
   // ── Injury weekly volume cap (knee, shin splints) ──────────────────────────
   // CoachingPrinciples §12 — for these two injury types, weekly volume cap
   // tightens from MAX_WEEKLY_VOLUME_INCREASE_PCT (10%) to this stricter limit.

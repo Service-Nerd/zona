@@ -1295,6 +1295,26 @@ export function generateRulePlan(
     tier,
     compressed: compressed || capCompressed,  // OR-combine: too-short plan OR 10%-cap forced
 
+    // CoachingPrinciples §23 — peak overload classification.
+    // Plans ≥ PEAK_OVERLOAD_MIN_PLAN_WEEKS that fail to reach
+    // PEAK_OVER_BASE_RATIO × W1 volume are surfaced as 'maintenance' so users
+    // know what they're getting; the engine still runs the plan as scheduled.
+    ...(totalWeeks >= GENERATION_CONFIG.PEAK_OVERLOAD_MIN_PLAN_WEEKS
+      ? (() => {
+          const w1 = weeks[0]?.weekly_km ?? 0
+          const peakKmActual = Math.max(...weeks.filter(wk => wk.phase === 'peak').map(wk => wk.weekly_km), 0)
+          const ratio = w1 > 0 ? peakKmActual / w1 : 0
+          if (ratio >= GENERATION_CONFIG.PEAK_OVER_BASE_RATIO) {
+            return { volume_profile: 'build' as const }
+          }
+          return {
+            volume_profile: 'maintenance' as const,
+            volume_constraint_note:
+              `Peak volume ${peakKmActual} km is ${Math.round(ratio * 100)}% of week 1 (${w1} km) — below the ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% overload threshold. Plan maintains current fitness rather than building it.`,
+          }
+        })()
+      : {}),
+
     // VDOT / zone model fields (CoachingPrinciples §10, §20).
     // `vdot` is raw (benchmark-derived) — what users compare against Daniels' tables.
     // `vdot_training_anchor` is the conservatism-discounted value used to derive
