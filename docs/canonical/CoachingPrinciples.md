@@ -382,8 +382,18 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. The race-distan
 
 ---
 
-## 26. The constitution
+## 26. Race-week sharpening (not tempo)
 
-These twenty-six principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** In the final 7 days before race day (race week), any quality session MUST be a sharpening session — short reps at race pace or faster, with full recovery, total work volume ≤5 km. Continuous tempo, threshold intervals, progression runs, hill repeats, and long runs above 50% of peak long run distance are prohibited in race week. Permitted: 3–5×1 km at goal pace with ≥90s recovery, 6×400m at goal pace or slightly faster with ≥60s recovery, 4–6×100m strides appended to a shakeout.
+
+**Why.** Detraining fitness gains take ~10 days; gaining fitness takes ~21. In the 7 days before a race, the runner can lose nothing important by NOT training hard, and they can lose everything (a fresh race-day) by training hard. Tempo and progression runs add fatigue without adding fitness — a directly negative trade. Sharpening reps preserve neuromuscular coordination and pace memory at minimal fatigue cost. The engine must never schedule a fatigue-adding session in race week.
+
+**Config.** `GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distance]` ends with `0` for race week across all distances. Enforced by `INV-PLAN-RACE-WEEK-SHARPENING` in `lib/plan/invariants.ts` — structural guard against future regression.
+
+---
+
+## 27. The constitution
+
+These twenty-seven principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

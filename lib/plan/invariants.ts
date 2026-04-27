@@ -110,6 +110,30 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       }
     }
 
+    // INV-PLAN-RACE-WEEK-SHARPENING — race week (final 7 days) bans tempo,
+    // threshold, progression, hill, and long-run sessions. Permits short
+    // sharpening reps at race pace and shakeouts only.
+    // (CoachingPrinciples §26)
+    if (isRaceWeek) {
+      const RACE_WEEK_BANNED = ['tempo', 'threshold', 'cruise', 'progression', 'hill', 'vo2max', 'vo2 max']
+      for (const { day, session } of placedRunning) {
+        if (session.type !== 'quality') continue
+        const label = (session.label ?? '').toLowerCase()
+        const banned = RACE_WEEK_BANNED.find(b => label.includes(b))
+        if (banned) {
+          violations.push({
+            code: 'INV-PLAN-RACE-WEEK-SHARPENING',
+            principle_ref: 'CoachingPrinciples §26',
+            severity: 'error',
+            week: w.n, day,
+            message: `Race week prescribes prohibited "${banned}" session ("${session.label}") — only sharpening reps allowed`,
+            actual: session.label ?? 'unknown',
+            expected: 'sharpening reps at race pace',
+          })
+        }
+      }
+    }
+
     // INV-PLAN-RACE-SPECIFIC-EXPOSURE — time-targeted plans get race-specific
     // quality in second-half build/peak weeks. VO2max sessions exempt — their
     // physiology is too valuable to lose. (CoachingPrinciples §22)
