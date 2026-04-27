@@ -118,6 +118,47 @@ export const GENERATION_CONFIG = {
   PEAK_OVER_BASE_RATIO: 1.10,            // peak weekly_km / W1 weekly_km
   PEAK_OVERLOAD_MIN_PLAN_WEEKS: 8,       // below this length, ratio not enforced
 
+  // ── Prep-time validation (CoachingPrinciples §44) ──────────────────────────
+  // Minimum weeks of preparation per race distance / goal type. Two-step UX:
+  //   block → refuse generation, list alternatives.
+  //   warn  → refuse unless input.acknowledged_prep_warning === true.
+  //   ok    → proceed.
+  // For goal: 'finish', the warn zone is treated as ok (only block applies).
+  // Returning runners shift all thresholds up by PREP_TIME_RETURNING_RUNNER_SHIFT_WEEKS.
+  PREP_TIME_THRESHOLDS: {
+    '5K':       { block: 4,  warn: 8 },
+    '10K':      { block: 6,  warn: 10 },
+    'HM':       { block: 8,  warn: 12 },
+    'MARATHON': { block: 10, warn: 16 },
+    '50K':      { block: 14, warn: 20 },
+    '100K':     { block: 14, warn: 20 },
+  },
+  PREP_TIME_RETURNING_RUNNER_SHIFT_WEEKS: 2,
+
+  // ── Long-run progression cap (CoachingPrinciples §45) ──────────────────────
+  // Universal — no phase exemption. Long-run distance increase week-on-week
+  // capped at the GREATER of LONG_RUN_PROGRESSION_CAP_PCT (% of prior LR) or
+  // LONG_RUN_PROGRESSION_CAP_ABS_KM (absolute). Step-back from a deload to the
+  // pre-deload distance is permitted within LONG_RUN_DELOAD_STEP_BACK_TOLERANCE_PCT.
+  LONG_RUN_PROGRESSION_CAP_PCT:           20,
+  LONG_RUN_PROGRESSION_CAP_ABS_KM:         5,
+  LONG_RUN_DELOAD_STEP_BACK_TOLERANCE_PCT: 5,
+
+  // ── Peak weekly volume floor for long races (CoachingPrinciples §46) ───────
+  // Time-targeted plans for marathon and ultra need an absolute weekly-volume
+  // floor in peak phase, not just a peak-vs-base ratio. HM and shorter rely on
+  // PEAK_OVER_BASE_RATIO alone. When the floor is unreachable, plan downgrades
+  // to maintenance via the §23 / §38 mechanism.
+  MARATHON_PEAK_VOLUME_FLOOR_RATIO: 1.25,  // ×race_distance — covers 40–43km races
+  ULTRA_50K_PEAK_VOLUME_FLOOR_RATIO: 1.00, // ×race_distance — 43–55km
+  ULTRA_LONG_PEAK_VOLUME_FLOOR_RATIO: 0.80,// ×race_distance — >55km
+  ULTRA_PEAK_VOLUME_FLOOR_CAP_KM:    130,  // absolute cap for >55km
+
+  // ── Peak long-run alternation (CoachingPrinciples §47) ─────────────────────
+  // No two consecutive peak weeks may both carry a peak-level long run.
+  PEAK_LR_ALTERNATION_THRESHOLD_PCT: 90,   // % of peak LR distance defining "peak-level"
+  PEAK_LR_STEPBACK_MAX_PCT:          80,   // % of peak LR distance defining a "step-back" LR
+
   // ── Strides on midweek easy (CoachingPrinciples §28) ───────────────────────
   // From this week onwards, the engine appends a stride coach-note to one
   // midweek easy run per week. Skipped in race week and deload weeks.

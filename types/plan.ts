@@ -37,6 +37,13 @@ export interface GeneratorInput {
   // FRESH_RETURN_START_FRACTION × current_weekly_km. (CoachingPrinciples §29)
   weeks_at_current_volume?: number
 
+  // 2026-04-28 / H-01 — two-step prep-time UX (CoachingPrinciples §44). When
+  // validatePrepTime returns 'warn' and this flag is absent or false, the
+  // engine refuses generation and surfaces alternatives. Setting it true on a
+  // second call signals the runner has seen the warning and accepts the
+  // constraint; the plan is then generated with maintenance-grade expectations.
+  acknowledged_prep_warning?: boolean
+
   // R23 rebuild — preferred long-run weekend day (default Sun if absent)
   preferred_long_run_day?: 'sat' | 'sun'
 
@@ -189,6 +196,16 @@ export interface PlanMeta {
   training_age?: TrainingAge             // stored for R20 reshaper
   returning_runner_allowance_active?: boolean  // true if 15%/3wk allowance applied
   fresh_return_active?: boolean                  // true if M-02 layoff start-fraction applied
+
+  // 2026-04-28 / H-01 — prep-time validation surface (CoachingPrinciples §44).
+  // 'ok' on adequately-resourced plans, 'warned' on plans generated under an
+  // acknowledged warn-status timeline. Block-status inputs never reach plan
+  // construction (PrepTimeError surfaces at the entry point).
+  prep_time_status?: 'ok' | 'warned'
+  prep_time_warning?: string
+  prep_time_alternatives?: string[]
+  prep_time_weeks_available?: number
+  prep_time_weeks_required_ok?: number
 }
 
 export interface Plan {

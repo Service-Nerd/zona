@@ -15,6 +15,7 @@ import {
 } from './length'
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
 import { validatePlan, formatViolations } from './invariants'
+import { enforcePrepTime, type PrepTimeAwareInput, type PrepTimeResult } from './inputs'
 import {
   V1_SESSION_CATALOGUE, selectCatalogueSession,
   type SessionCatalogueRow, type CatalogueCategory,
@@ -1252,6 +1253,180 @@ function sumWeeklyKm(sessions: Partial<Record<Day, Session>>, pace: PaceGuide): 
   return Math.round(total)
 }
 
+// CoachingPrinciples §47 — peak long-run alternation. Applied as a post-pass so
+// the per-week loop stays simple. Walks peak-phase weeks from last to first and
+// marks every other one as a step-back: drop race-pace catalogue specificity,
+// reduce LR distance to ≤ PEAK_LR_STEPBACK_MAX_PCT of the peak-level distance,
+// and rewrite the label / coach notes to a generic long run.
+function applyPeakLongRunAlternation(
+  weeks: Week[],
+  pace: PaceGuide,
+  input: GeneratorInput,
+): void {
+  const peakWeekIdxs: number[] = []
+  for (let i = 0; i < weeks.length; i++) {
+    if (weeks[i].phase === 'peak' && weeks[i].type !== 'deload') peakWeekIdxs.push(i)
+  }
+  if (peakWeekIdxs.length < 2) return  // single peak week — nothing to alternate
+
+  // Find max peak-level LR distance to anchor the step-back fraction.
+  const longRunOf = (w: Week): { day: Day; session: Session } | null => {
+    for (const [d, s] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+      if (s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)) {
+        return { day: d, session: s }
+      }
+    }
+    return null
+  }
+  const peakKms = peakWeekIdxs.map(i => longRunOf(weeks[i])?.session.distance_km ?? 0)
+  const peakMaxLrKm = Math.max(...peakKms, 0)
+  if (peakMaxLrKm <= 0) return
+
+  // §47 only applies to weeks where the long run carries race-pace specificity
+  // (MP-finish / HM-pace). Plans whose peak long runs are flat Zone 2 (5K, 10K,
+  // and finish-goal HM/marathon) don't have the back-to-back overload risk —
+  // they're aerobic, not specific. Skip alternation entirely if no peak LR has
+  // race-pace segments.
+  const labelHasRacePace = (label: string): boolean => {
+    const l = label.toLowerCase()
+    return l.includes('pace') || l.includes(' mp') || l.startsWith('mp') || l.includes('hm-pace')
+  }
+  const anyPeakIsRacePace = peakWeekIdxs.some(i => {
+    const lr = longRunOf(weeks[i])
+    return lr ? labelHasRacePace(lr.session.label ?? '') : false
+  })
+  if (!anyPeakIsRacePace) return
+
+  const stepBackMaxKm = peakMaxLrKm * (GENERATION_CONFIG.PEAK_LR_STEPBACK_MAX_PCT / 100)
+  const exceptionEligible = input.hard_session_relationship === 'love'
+    && (input.injury_history ?? []).length === 0
+    && input.training_age === '5yr+'
+  let exceptionUsed = false
+
+  // Walk from end (last peak = peak-level) backwards. Even offset → peak-level,
+  // odd offset → step-back. Apply to each.
+  for (let offset = 0; offset < peakWeekIdxs.length; offset++) {
+    const idx = peakWeekIdxs[peakWeekIdxs.length - 1 - offset]
+    const w = weeks[idx]
+    if (offset % 2 === 0) continue  // peak-level — leave as the engine produced
+
+    // step-back week. If exception applies and not yet used, the runner can
+    // carry one back-to-back peak set.
+    if (exceptionEligible && !exceptionUsed) {
+      exceptionUsed = true
+      continue
+    }
+
+    const lr = longRunOf(w)
+    if (!lr || lr.session.distance_km == null) continue
+
+    const newKm = Math.min(lr.session.distance_km, stepBackMaxKm)
+    const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+    const minLong = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long
+    const flooredKm = Math.max(Math.floor(newKm / precision) * precision, minLong)
+
+    // Rewrite the session: strip race-specific label and coach notes, restore
+    // the standard "Long run — Zone 2" prescription.
+    lr.session.label = 'Long run — Zone 2'
+    lr.session.zone = 'Zone 2'
+    lr.session.distance_km = flooredKm
+    lr.session.duration_mins = dur(flooredKm, pace.minPerKmEasy)
+    lr.session.rpe_target = 4
+    lr.session.coach_notes = ['Step-back week. Easy aerobic — let the legs absorb last week\'s peak before the next push.']
+
+    // CoachingPrinciples §9 — long must remain ≥ minRatio × any easy. After
+    // reducing the LR, clamp easy runs in this week so the ratio survives.
+    const minRatio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
+    const minEasy = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+    const easyCeiling = flooredKm / minRatio
+    const easyCeilingFloored = Math.floor(easyCeiling / precision) * precision
+    for (const [d, s] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+      if (!s) continue
+      if (d === lr.day) continue
+      if (s.type !== 'easy') continue
+      if (s.distance_km == null) continue
+      if (s.distance_km > easyCeilingFloored) {
+        const newEasy = Math.max(easyCeilingFloored, minEasy)
+        s.distance_km = newEasy
+        s.duration_mins = dur(newEasy, pace.minPerKmEasy)
+      }
+    }
+  }
+
+  // Recompute weekly_km and long_run_hrs on touched weeks.
+  for (const idx of peakWeekIdxs) {
+    weeks[idx].weekly_km = sumWeeklyKm(weeks[idx].sessions, pace)
+    weeks[idx].long_run_hrs = computeLongRunHrs(weeks[idx].sessions, pace)
+  }
+}
+
+// CoachingPrinciples §45 — long-run progression cap. Universal (all phases).
+// Walks the plan after the per-week build and clamps any LR that jumps more
+// than +20% / +5km from the prior week's LR. Step-back from a deload week is
+// permitted up to the pre-deload distance (with §45 tolerance).
+function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide): void {
+  const capPct = GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT / 100
+  const capAbs = GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_ABS_KM
+  const stepBackTol = 1 + GENERATION_CONFIG.LONG_RUN_DELOAD_STEP_BACK_TOLERANCE_PCT / 100
+  const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+  const minLong = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long
+
+  const findLong = (w: Week): { day: Day; session: Session } | null => {
+    for (const [d, s] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+      if (s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)) {
+        return { day: d, session: s }
+      }
+    }
+    return null
+  }
+
+  for (let i = 1; i < weeks.length; i++) {
+    const prev = weeks[i - 1]
+    const curr = weeks[i]
+    if (curr.type === 'race') continue
+
+    const prevLR = findLong(prev)
+    const currLR = findLong(curr)
+    if (!prevLR || !currLR) continue
+    if (prevLR.session.distance_km == null || currLR.session.distance_km == null) continue
+
+    // Step-back from a deload — allow up to pre-deload distance × tolerance.
+    if (prev.type === 'deload') {
+      const preDeloadLR = i >= 2 ? findLong(weeks[i - 2]) : null
+      const preKm = preDeloadLR?.session.distance_km
+      if (preKm != null && currLR.session.distance_km <= preKm * stepBackTol + 0.01) continue
+    }
+
+    const allowedJumpKm = Math.max(prevLR.session.distance_km * capPct, capAbs)
+    const maxAllowedKm = prevLR.session.distance_km + allowedJumpKm
+    if (currLR.session.distance_km - 0.01 > maxAllowedKm) {
+      const newKm = Math.max(Math.floor(maxAllowedKm / precision) * precision, minLong)
+      currLR.session.distance_km = newKm
+      currLR.session.duration_mins = dur(newKm, pace.minPerKmEasy)
+
+      // CoachingPrinciples §9 — clamp easy runs so long-vs-easy ratio survives.
+      const minRatio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
+      const minEasy = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+      const easyCeiling = newKm / minRatio
+      const easyCeilingFloored = Math.floor(easyCeiling / precision) * precision
+      for (const [d, s] of Object.entries(curr.sessions) as [Day, Session | undefined][]) {
+        if (!s) continue
+        if (d === currLR.day) continue
+        if (s.type !== 'easy') continue
+        if (s.distance_km == null) continue
+        if (s.distance_km > easyCeilingFloored) {
+          const newEasy = Math.max(easyCeilingFloored, minEasy)
+          s.distance_km = newEasy
+          s.duration_mins = dur(newEasy, pace.minPerKmEasy)
+        }
+      }
+
+      curr.weekly_km = sumWeeklyKm(curr.sessions, pace)
+      curr.long_run_hrs = computeLongRunHrs(curr.sessions, pace)
+    }
+  }
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export type Tier = 'free' | 'trial' | 'paid'
@@ -1316,6 +1491,12 @@ export function generateRulePlan(
   const planStartIso = planStart ?? formatDate(nextMonday())
   const planStartDate = parseDateLocal(planStartIso)
   const today = formatDate(new Date())
+
+  // CoachingPrinciples §44 — prep-time validation. Runs first so block/warn
+  // outcomes surface before any generation work. Throws PrepTimeError on
+  // block or warn-without-acknowledgment; falls through with a result the
+  // meta block consumes when ok or warn-acknowledged.
+  const prepTime: PrepTimeResult = enforcePrepTime(input as PrepTimeAwareInput, planStartIso)
 
   // ── Derive max HR, VDOT, fitness level, zones, paces ─────────────────────────
   const derivedMaxHR = input.max_hr ?? tanakaMaxHR(input.age)
@@ -1509,6 +1690,40 @@ export function generateRulePlan(
     })
   }
 
+  // CoachingPrinciples §47 — alternate peak long runs (step-back vs peak-level).
+  // Runs first because §47 reduces some peak LRs to step-back distances, which
+  // affects the §45 cap calculation that follows.
+  applyPeakLongRunAlternation(weeks, pace, input)
+
+  // CoachingPrinciples §45 — long-run progression cap. Walks the plan and
+  // clamps any LR that exceeds +20% / +5km from the prior week's LR.
+  applyLongRunProgressionCap(weeks, pace)
+
+  // CoachingPrinciples §27 — themes can drift out of alignment after §47/§45
+  // post-passes shrink a week's weekly_km. Re-derive overload-implying themes
+  // so the §27 invariant doesn't trip on weeks whose volume no longer exceeds
+  // the prior non-deload week.
+  for (let i = 0; i < weeks.length; i++) {
+    const w = weeks[i]
+    if (w.type === 'race' || w.type === 'deload') continue
+    if (w.phase !== 'peak') continue
+    const themeText = (w.theme ?? '').toLowerCase()
+    const overloadImplied = themeText.includes('highest volume')
+      || themeText.includes('fitness is built')
+      || themeText.includes('feel hard')
+      || themeText.includes('feels hard')
+    if (!overloadImplied) continue
+    const prevNonDeload = (() => {
+      for (let j = i - 1; j >= 0; j--) if (weeks[j].type !== 'deload') return weeks[j]
+      return null
+    })()
+    const qualityCount = Object.values(w.sessions).filter(s => s?.type === 'quality').length
+    if (!prevNonDeload || w.weekly_km <= prevNonDeload.weekly_km || qualityCount === 0) {
+      w.theme = 'Consistency. The work is the volume.'
+      w.label = 'Peak — consistency'
+    }
+  }
+
   // ── Meta ────────────────────────────────────────────────────────────────────
   const meta: Plan['meta'] = {
     athlete:          input.athlete_name ?? 'Athlete',
@@ -1556,25 +1771,80 @@ export function generateRulePlan(
       return 'constrained_by_inputs'
     })(),
 
-    // CoachingPrinciples §23, §38 — peak overload classification + actionable
-    // constraint note. Plans ≥ PEAK_OVERLOAD_MIN_PLAN_WEEKS that fail to reach
-    // PEAK_OVER_BASE_RATIO × W1 volume are surfaced as 'maintenance' with a
-    // diagnosis AND a prescription: which input to change to unlock a build.
+    // CoachingPrinciples §23, §38, §45, §46 — peak overload classification +
+    // actionable constraint note. Plans ≥ PEAK_OVERLOAD_MIN_PLAN_WEEKS that fail
+    // to reach EITHER:
+    //   §23 — peak weekly_km ≥ 110% of W1, OR
+    //   §46 — peak weekly_km ≥ marathon/ultra absolute floor (time-targeted), OR
+    //   §24 — peak long run ≥ race-distance ratio (when §45 cap has bitten),
+    // are surfaced as 'maintenance' with a diagnosis AND a prescription.
     ...(totalWeeks >= GENERATION_CONFIG.PEAK_OVERLOAD_MIN_PLAN_WEEKS
       ? (() => {
           const w1 = weeks[0]?.weekly_km ?? 0
           const peakKmActual = Math.max(...weeks.filter(wk => wk.phase === 'peak').map(wk => wk.weekly_km), 0)
           const ratio = w1 > 0 ? peakKmActual / w1 : 0
-          if (ratio >= GENERATION_CONFIG.PEAK_OVER_BASE_RATIO) {
+          const isTimeTarget = input.goal === 'time_target'
+          const distKey = raceDistanceKey(input.race_distance_km)
+          const distKm = input.race_distance_km
+
+          // §46 floor for marathon and ultra (time-target only).
+          let volumeFloor = 0
+          if (isTimeTarget) {
+            if (distKm >= 40 && distKm <= 43) volumeFloor = distKm * GENERATION_CONFIG.MARATHON_PEAK_VOLUME_FLOOR_RATIO
+            else if (distKm > 43 && distKm <= 55) volumeFloor = distKm * GENERATION_CONFIG.ULTRA_50K_PEAK_VOLUME_FLOOR_RATIO
+            else if (distKm > 55) volumeFloor = Math.min(
+              distKm * GENERATION_CONFIG.ULTRA_LONG_PEAK_VOLUME_FLOOR_RATIO,
+              GENERATION_CONFIG.ULTRA_PEAK_VOLUME_FLOOR_CAP_KM,
+            )
+          }
+
+          // §24 long-run floor for HM/marathon (time-target only). Test against
+          // the actual peak LR after post-passes.
+          let longRunFloorKm = 0
+          let actualPeakLrKm = 0
+          if (isTimeTarget && (distKey === 'HM' || distKey === 'MARATHON')) {
+            const ratioCfg = GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey]
+            longRunFloorKm = distKm * ratioCfg
+            for (const wk of weeks) {
+              if (wk.phase !== 'peak' || wk.type === 'deload') continue
+              for (const s of Object.values(wk.sessions)) {
+                if (s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)) {
+                  actualPeakLrKm = Math.max(actualPeakLrKm, s.distance_km ?? 0)
+                }
+              }
+            }
+          }
+
+          const ratioFails  = ratio < GENERATION_CONFIG.PEAK_OVER_BASE_RATIO
+          const volumeFails = volumeFloor > 0 && peakKmActual + 0.01 < volumeFloor
+          const lrFails     = longRunFloorKm > 0 && actualPeakLrKm + 0.01 < longRunFloorKm
+
+          if (!ratioFails && !volumeFails && !lrFails) {
             return { volume_profile: 'build' as const }
           }
-          const diagnosis = `Peak volume ${peakKmActual} km is ${Math.round(ratio * 100)}% of week 1 (${w1} km) — below the ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% overload threshold. Plan maintains current fitness rather than building it.`
+
+          // Build the diagnosis. Multiple failures concatenate.
+          const reasons: string[] = []
+          if (ratioFails) {
+            reasons.push(`Peak volume ${peakKmActual} km is ${Math.round(ratio * 100)}% of week 1 (${w1} km) — below the ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% overload threshold.`)
+          }
+          if (volumeFails) {
+            reasons.push(`Peak weekly volume ${peakKmActual} km is below the ${Math.round(volumeFloor)} km floor for a time-targeted ${distKey} (${Math.round((volumeFloor / distKm) * 100)}% of race distance).`)
+          }
+          if (lrFails) {
+            reasons.push(`Peak long run ${actualPeakLrKm} km is below the ${Math.round(longRunFloorKm * 10) / 10} km floor (${Math.round(GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey as 'HM' | 'MARATHON'] * 100)}% of race distance) — week-on-week long-run cap (§45) prevented reaching the ratio.`)
+          }
+          const diagnosis = reasons.join(' ') + ' Plan maintains current fitness rather than building it.'
+
           const suggestions: string[] = []
           if (input.days_available < 6) {
             suggestions.push(`increase days_available from ${input.days_available} to ${input.days_available + 1}`)
           }
           if (input.max_weekday_mins != null && input.max_weekday_mins < 90) {
             suggestions.push(`raise max_weekday_mins from ${input.max_weekday_mins} to 90`)
+          }
+          if (lrFails || volumeFails) {
+            suggestions.push(`defer the race so the build has more weeks (current ${totalWeeks}, recommended ≥${GENERATION_CONFIG.PREP_TIME_THRESHOLDS[distKey].warn})`)
           }
           const prescription = suggestions.length > 0
             ? ` To enable a build profile: ${suggestions.join(', OR ')}.`
@@ -1602,6 +1872,18 @@ export function generateRulePlan(
     ...(input.training_age ? { training_age: input.training_age } : {}),
     ...(returningRunner ? { returning_runner_allowance_active: true } : {}),
     ...(isFreshReturn ? { fresh_return_active: true } : {}),
+
+    // CoachingPrinciples §44 — prep-time status surface. 'ok' or 'warned'.
+    // 'block' outcomes never reach this code path (PrepTimeError thrown above).
+    prep_time_status: prepTime.status === 'warn' ? 'warned' : 'ok',
+    prep_time_weeks_available: prepTime.weeks_available,
+    prep_time_weeks_required_ok: prepTime.weeks_required_ok,
+    ...(prepTime.status === 'warn' && prepTime.message
+      ? { prep_time_warning: prepTime.message }
+      : {}),
+    ...(prepTime.status === 'warn' && prepTime.alternatives
+      ? { prep_time_alternatives: prepTime.alternatives }
+      : {}),
   }
 
   const plan: Plan = { meta, phases, weeks }

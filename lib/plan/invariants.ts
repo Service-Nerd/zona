@@ -41,6 +41,10 @@ export const INVARIANT_CODES = [
   'INV-PLAN-PEAK-OVER-BASE',
   'INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR',
   'INV-PLAN-TAPER-VARIETY',
+  'INV-PLAN-PREP-TIME-STATUS-ANNOTATED',
+  'INV-PLAN-LR-PROGRESSION-CAP',
+  'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES',
+  'INV-PLAN-PEAK-LR-ALTERNATION',
 ] as const
 
 export interface Violation {
@@ -611,8 +615,10 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // PEAK_LR_RATIO_VS_RACE × race distance in at least one peak-phase long run.
   // Subject to LONG_RUN_CAP_MINUTES — if the absolute time cap is below the
   // ratio floor, the cap wins and the invariant accepts the capped value.
-  // (CoachingPrinciples §24)
-  if (isTimeTarget && (distKey === 'HM' || distKey === 'MARATHON')) {
+  // Subject to §45 (long-run progression cap) — when the cap prevents reaching
+  // the floor, the plan downgrades to maintenance and this invariant relaxes.
+  // (CoachingPrinciples §24, §45)
+  if (isTimeTarget && (distKey === 'HM' || distKey === 'MARATHON') && plan.meta.volume_profile !== 'maintenance') {
     const ratio = GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey]
     const requiredKm = input.race_distance_km * ratio
     const peakWeeks = plan.weeks.filter(w => w.phase === 'peak' && w.type !== 'deload')
@@ -751,6 +757,164 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         actual: plan.meta.vdot,
         expected: `≥ ${plan.meta.vdot_training_anchor}`,
       })
+    }
+  }
+
+  // INV-PLAN-PREP-TIME-STATUS-ANNOTATED — every plan output carries
+  // prep_time_status. (CoachingPrinciples §44 — block-status inputs throw
+  // before reaching this code, so any plan that exists must annotate either
+  // 'ok' or 'warned'.)
+  if (!plan.meta.prep_time_status) {
+    violations.push({
+      code: 'INV-PLAN-PREP-TIME-STATUS-ANNOTATED',
+      principle_ref: 'CoachingPrinciples §44',
+      severity: 'error',
+      week: 0,
+      message: 'Plan meta missing prep_time_status — every plan must surface its prep-time status',
+      actual: 'undefined',
+      expected: "'ok' | 'warned'",
+    })
+  }
+  if (plan.meta.prep_time_status === 'warned'
+      && (!plan.meta.prep_time_warning || !plan.meta.prep_time_alternatives)) {
+    violations.push({
+      code: 'INV-PLAN-PREP-TIME-STATUS-ANNOTATED',
+      principle_ref: 'CoachingPrinciples §44',
+      severity: 'error',
+      week: 0,
+      message: 'Plans generated under warn must surface prep_time_warning and prep_time_alternatives',
+      actual: `warning=${!!plan.meta.prep_time_warning} alternatives=${!!plan.meta.prep_time_alternatives}`,
+      expected: 'both present',
+    })
+  }
+
+  // INV-PLAN-LR-PROGRESSION-CAP — long-run distance increase week-on-week
+  // capped at the GREATER of LONG_RUN_PROGRESSION_CAP_PCT or
+  // LONG_RUN_PROGRESSION_CAP_ABS_KM. Universal — all phases. Step-back to the
+  // pre-deload distance is permitted within DELOAD_STEP_BACK_TOLERANCE_PCT.
+  // (CoachingPrinciples §45)
+  {
+    const capPct = GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT / 100
+    const capAbs = GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_ABS_KM
+    const stepBackTol = 1 + GENERATION_CONFIG.LONG_RUN_DELOAD_STEP_BACK_TOLERANCE_PCT / 100
+    const longRunForWeek = (week: typeof plan.weeks[number]): number | null => {
+      const long = Object.values(week.sessions).find(s =>
+        !!s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)
+      )
+      return long?.distance_km ?? null
+    }
+    for (let i = 1; i < plan.weeks.length; i++) {
+      const prev = plan.weeks[i - 1]
+      const curr = plan.weeks[i]
+      if (curr.type === 'race') continue
+      const prevLR = longRunForWeek(prev)
+      const currLR = longRunForWeek(curr)
+      if (prevLR == null || currLR == null) continue
+      // Step-back from a deload — accept up to pre-deload distance.
+      if (prev.type === 'deload') {
+        const preDeload = i >= 2 ? longRunForWeek(plan.weeks[i - 2]) : null
+        if (preDeload != null && currLR <= preDeload * stepBackTol + 0.01) continue
+      }
+      const allowedJumpKm = Math.max(prevLR * capPct, capAbs)
+      const actualJumpKm = currLR - prevLR
+      if (actualJumpKm > allowedJumpKm + 0.01) {
+        const pctJump = prevLR > 0 ? Math.round((actualJumpKm / prevLR) * 100) : 0
+        violations.push({
+          code: 'INV-PLAN-LR-PROGRESSION-CAP',
+          principle_ref: 'CoachingPrinciples §45',
+          severity: 'error',
+          week: curr.n,
+          message: `W${curr.n} long run ${currLR}km is a ${pctJump}% jump from W${prev.n} (${prevLR}km). Cap is +${GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT}% or +${capAbs}km, whichever is greater.`,
+          actual: `${currLR} (jump +${actualJumpKm.toFixed(1)}km)`,
+          expected: `≤ ${prevLR + allowedJumpKm}km`,
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES — time-targeted marathon and ultra
+  // plans need an absolute peak weekly-volume floor scaled to race distance.
+  // (CoachingPrinciples §46) Maintenance plans are exempt — they accept the
+  // failed floor as an honest constraint and surface it via volume_constraint_note.
+  if (isTimeTarget) {
+    const dist = input.race_distance_km
+    let requiredFloor = 0
+    if (dist >= 40 && dist <= 43) {
+      requiredFloor = dist * GENERATION_CONFIG.MARATHON_PEAK_VOLUME_FLOOR_RATIO
+    } else if (dist > 43 && dist <= 55) {
+      requiredFloor = dist * GENERATION_CONFIG.ULTRA_50K_PEAK_VOLUME_FLOOR_RATIO
+    } else if (dist > 55) {
+      requiredFloor = Math.min(
+        dist * GENERATION_CONFIG.ULTRA_LONG_PEAK_VOLUME_FLOOR_RATIO,
+        GENERATION_CONFIG.ULTRA_PEAK_VOLUME_FLOOR_CAP_KM,
+      )
+    }
+    if (requiredFloor > 0 && plan.meta.volume_profile !== 'maintenance') {
+      const peakWeeks = plan.weeks.filter(w => w.phase === 'peak')
+      const peakKm = peakWeeks.length > 0 ? Math.max(...peakWeeks.map(w => w.weekly_km)) : 0
+      if (peakKm + 0.01 < requiredFloor) {
+        violations.push({
+          code: 'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES',
+          principle_ref: 'CoachingPrinciples §46',
+          severity: 'error',
+          week: 0,
+          message: `Peak weekly volume ${peakKm}km is below the ${Math.round(requiredFloor)}km floor for a ${dist}km time-targeted race. Either increase volume, downgrade to maintenance, or trigger a prep-time warning.`,
+          actual: peakKm,
+          expected: `≥ ${Math.round(requiredFloor)}`,
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-PEAK-LR-ALTERNATION — within peak phase, no two consecutive
+  // weeks may both carry a peak-level long run (≥ PEAK_LR_ALTERNATION_THRESHOLD_PCT
+  // of the plan's peak LR distance AND with race-pace segments).
+  // (CoachingPrinciples §47) Exception: hard_session_relationship: 'love',
+  // no injury_history, training_age '5yr+' may have ONE occurrence per plan.
+  {
+    const peakWeeks = plan.weeks.filter(w => w.phase === 'peak' && w.type !== 'deload')
+    if (peakWeeks.length >= 2) {
+      const peakLrKms = peakWeeks.map(w => {
+        const lr = Object.values(w.sessions).find(s =>
+          !!s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)
+        )
+        return lr?.distance_km ?? 0
+      })
+      const maxPeakLrKm = peakLrKms.length > 0 ? Math.max(...peakLrKms) : 0
+      const threshold = (GENERATION_CONFIG.PEAK_LR_ALTERNATION_THRESHOLD_PCT / 100) * maxPeakLrKm
+      const isPeakLevel = (week: typeof plan.weeks[number]): boolean => {
+        const lr = Object.values(week.sessions).find(s =>
+          !!s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)
+        )
+        if (!lr || lr.distance_km == null) return false
+        if (lr.distance_km + 0.01 < threshold) return false
+        const label = (lr.label ?? '').toLowerCase()
+        const hasRacePace = label.includes('pace') || label.includes(' mp') || label.startsWith('mp') || label.includes('hm-pace')
+        return hasRacePace
+      }
+      const exceptionEligible = input.hard_session_relationship === 'love'
+        && (input.injury_history ?? []).length === 0
+        && input.training_age === '5yr+'
+      let exceptionUsed = false
+      for (let i = 1; i < peakWeeks.length; i++) {
+        const prev = peakWeeks[i - 1]
+        const curr = peakWeeks[i]
+        if (isPeakLevel(prev) && isPeakLevel(curr)) {
+          if (exceptionEligible && !exceptionUsed) {
+            exceptionUsed = true
+            continue
+          }
+          violations.push({
+            code: 'INV-PLAN-PEAK-LR-ALTERNATION',
+            principle_ref: 'CoachingPrinciples §47',
+            severity: 'error',
+            week: curr.n,
+            message: `Peak weeks W${prev.n} and W${curr.n} both carry a peak-level long run (≥${GENERATION_CONFIG.PEAK_LR_ALTERNATION_THRESHOLD_PCT}% of peak distance with race-pace segments). Alternate via step-back or deload.`,
+            actual: `W${prev.n}=${peakLrKms[i - 1]}km, W${curr.n}=${peakLrKms[i]}km`,
+            expected: 'one of them is a step-back or easy long run',
+          })
+        }
+      }
     }
   }
 

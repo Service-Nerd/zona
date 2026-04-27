@@ -591,8 +591,117 @@ Implemented in `applyVdotDiscount()` (`lib/plan/ruleEngine.ts`). Legacy `VDOT_ST
 
 ---
 
-## 43. The constitution
+## 44. Prep-time validation — refusal mechanism
 
-These forty-three principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** Before generating, the engine MUST validate that the runner has adequate preparation time for the chosen race distance and goal type. The engine is not obligated to produce a plan when the inputs cannot support a coachable outcome.
+
+Minimum weeks of preparation by race distance:
+
+| Distance | Block | Warn | OK |
+|---|---|---|---|
+| ≤5K | <4 | 4–7 | ≥8 |
+| 10K | <6 | 6–9 | ≥10 |
+| HM | <8 | 8–11 | ≥12 |
+| Marathon | <10 | 10–15 | ≥16 |
+| Ultra | <14 | 14–19 | ≥20 |
+
+For returning runners (`returning_runner_allowance_active`, `weeks_at_current_volume < FRESH_RETURN_WEEKS_THRESHOLD`, or `fresh_return_active`), shift all thresholds up by 2 weeks.
+
+For `goal: 'finish'`, only `block` thresholds apply. The `warn` zone is treated as `ok`. Finish goals are achievable on shorter timelines than time goals.
+
+When validation returns:
+- **block**: refuse generation. Return error explaining why and listing alternatives: defer race, change distance, change goal to "finish".
+- **warn**: refuse generation unless input includes `acknowledged_prep_warning: true`. Return the warning with alternatives. This is a two-step pattern: first call surfaces the warning, second call (with explicit acknowledgment) generates.
+- **ok**: proceed normally.
+
+Plans generated under a `warn` condition MUST include `prep_time_status: 'warned'`, `prep_time_warning`, and `prep_time_alternatives` in plan meta. Plans generated under `ok` include `prep_time_status: 'ok'`.
+
+**Why.** Brand position: *"Training plans that stop you overtraining."* That positioning is meaningless if the engine produces a time-targeted marathon plan from 11 weeks for a returning runner with hip injury history (case 04, 2026-04-28 review). Marathon builds for intermediates need 16–20 weeks. Compressing that into 11 weeks forces the engine to lie about what it can deliver — race-specific fitness cannot be built in that window. Refusing or warning is the honest coaching answer.
+
+This principle composes with §23 (peak overload requirement). A plan that proceeds under `warn` must still satisfy all other invariants. Failures that result (e.g. inability to reach peak volume floor) flow through existing downgrade mechanisms (`maintenance` label, `volume_constraint_note`).
+
+**Config.**
+- `GENERATION_CONFIG.PREP_TIME_THRESHOLDS` — block / warn weeks per race distance.
+- `GENERATION_CONFIG.PREP_TIME_RETURNING_RUNNER_SHIFT_WEEKS = 2`.
+- `validatePrepTime()` in `lib/plan/inputs.ts`. Called at the top of `generateRulePlan()`.
+
+Enforced by `INV-PLAN-PREP-TIME-STATUS-ANNOTATED` — every plan output carries `prep_time_status`.
+
+---
+
+## 45. Long-run progression cap (universal, no phase exemption)
+
+**Principle.** Long-run distance MUST NOT increase by more than +20% week-on-week OR +5km absolute, whichever is greater. The cap applies in ALL phases — base, build, peak, taper. There is no "specificity allows it" exemption.
+
+The single permitted exception: a long run following a deload week may step back up to the pre-deload long-run distance (within +5%).
+
+**Why.** Case 04 (2026-04-28 review) showed a W5 long run of 10.5km jumping to a W6 long run of 30km — a +185% week-on-week increase, presented in peak phase. The structural justification ("peak demands specificity") is the failure mode: peak phase needs the specificity *because* the runner has been progressively built toward it, not as a substitute. Spike-then-recover is the most reliable injury vector in the audience this engine serves.
+
+When the §24 floor (peak long-run race ratio) cannot be reached without violating this cap, this principle wins and the plan downgrades to `maintenance` with both a `volume_constraint_note` and a `long_run_constraint_note` — the same mechanism used in §23 / §38.
+
+**Config.**
+- `GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT = 20` — % week-on-week.
+- `GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_ABS_KM = 5` — absolute km, whichever is greater.
+- `GENERATION_CONFIG.LONG_RUN_DELOAD_STEP_BACK_TOLERANCE_PCT = 5` — slack when stepping back up to pre-deload distance.
+
+Enforced by `INV-PLAN-LR-PROGRESSION-CAP`. Engine-side: long-run distances are clamped during week-by-week assembly in `generateRulePlan` via `applyLongRunProgressionCap`.
+
+---
+
+## 46. Peak weekly volume floor for marathon and ultra
+
+**Principle.** Time-targeted plans for the marathon and ultra distances need an absolute weekly-volume floor in peak phase, not just a peak-vs-base ratio. The §23 ratio (peak ≥ 110% of W1) ensures growth but allows a peak of 46km for a 42.2km race — the runner is asked to cover further on race day than in any single training week. That is not a build; it is a hope.
+
+Floors:
+
+| Distance | Floor |
+|---|---|
+| Marathon (40–43 km) | ≥125% of race distance |
+| Ultra 50K (43–55 km) | ≥100% of race distance |
+| Ultra >55 km | ≥80% of race distance, capped at 130 km/week |
+| HM and below | No absolute floor (existing peak-vs-base ratio is sufficient) |
+
+Applies to `goal: 'time_target'` only. `goal: 'finish'` plans use the existing peak-vs-base ratio without an absolute floor (finishing the distance does not require carrying that mileage in training).
+
+**Why.** Case 04 (2026-04-28 review): peak weekly volume 45–46km for a 42.2km race. The plan satisfied §23 (it grew over W1) but the absolute floor was below race distance. A coach would say: "your longest week of training is shorter than your race". That is the structural failure §46 prevents.
+
+This composes with §23. Both must be satisfied. If the floor is unreachable given the runner's life constraints (`max_weekday_mins`, `days_available`), the engine downgrades to `maintenance` via the §23 / §38 mechanism — same outcome as a plan that fails the peak-vs-base ratio.
+
+**Config.**
+- `GENERATION_CONFIG.MARATHON_PEAK_VOLUME_FLOOR_RATIO = 1.25`
+- `GENERATION_CONFIG.ULTRA_50K_PEAK_VOLUME_FLOOR_RATIO = 1.0`
+- `GENERATION_CONFIG.ULTRA_LONG_PEAK_VOLUME_FLOOR_RATIO = 0.80`
+- `GENERATION_CONFIG.ULTRA_PEAK_VOLUME_FLOOR_CAP_KM = 130`
+
+Enforced by `INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES`. Maintenance downgrade triggers in `generateRulePlan` meta block.
+
+---
+
+## 47. Peak long-run alternation
+
+**Principle.** Within peak phase, no two consecutive weeks may both contain a peak-level long run. A "peak long run" here means a long run at ≥90% of the plan's peak long-run distance that includes race-pace segments (MP / HM-pace / similar specificity).
+
+Permitted patterns:
+- Peak long run → step-back long run (≤80% of peak distance, no race-pace segments)
+- Peak long run → deload week
+- Peak MP/HM-pace long run → easy long run
+
+Exception: runners with `hard_session_relationship: 'love'`, no `injury_history`, and `training_age: '5yr+'` may have one occurrence of consecutive peak long runs per plan.
+
+**Why.** Case 04 (2026-04-28 review): W6 and W7 were both 30km MP-finish long runs back-to-back. For a 47-year-old returning runner with hip history, two consecutive 30km efforts at marathon-pace specificity is the highest-risk session pattern in the entire plan. Alternation gives connective tissue a window to consolidate the stimulus.
+
+This principle composes with §25 (peak phase requires ≥1 long run with race-pace segments). When peak is 2 weeks, one of the two carries the peak long run and satisfies §25; the other is a step-back. That is acceptable.
+
+**Config.**
+- `GENERATION_CONFIG.PEAK_LR_ALTERNATION_THRESHOLD_PCT = 90` — % of peak long-run distance defining "peak-level".
+- `GENERATION_CONFIG.PEAK_LR_STEPBACK_MAX_PCT = 80` — % of peak distance defining "step-back".
+
+Enforced by `INV-PLAN-PEAK-LR-ALTERNATION`. Engine-side: in peak weeks, if the prior week was a peak long run, the engine substitutes a step-back long run (race-pace segments dropped, distance reduced to ≤80% of peak distance) unless the experienced-no-injury exception applies and has not yet been spent.
+
+---
+
+## 48. The constitution
+
+These forty-eight principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.
