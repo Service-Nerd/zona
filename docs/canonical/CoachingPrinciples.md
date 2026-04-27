@@ -785,8 +785,30 @@ Enforced by `INV-PLAN-QUALITY-VARIETY-FULL-PLAN`. Race-week sharpening reps (sub
 
 ---
 
-## 54. The constitution
+## 55. Critical input validation — reject nonsense values
 
-These fifty-four principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** Critical physiological input fields MUST fall in the acceptable range below. Empty or out-of-range values are rejected at the entry point — `validateInputFields` runs BEFORE prep-time validation (§44).
+
+| Field | Acceptable range |
+|---|---|
+| `age` | 13 – 90 |
+| `resting_hr` | 30 – 100 |
+| `max_hr` | 120 – 220 |
+
+`age` is required. `resting_hr` and `max_hr` are optional and may be absent — but when they are present they must be in range. A value of exactly `0` is treated as invalid (rejected) rather than missing (which the §50 HR-fallback hierarchy would handle). This forces the user to KNOW their data was rejected, rather than the engine silently substituting an estimate.
+
+**Why.** Case 04 (2026-04-28 review): `resting_hr: 0` got past validation, and the engine still computed a Zone 2 ceiling at 140 bpm using an undisclosed fallback. Two failures: (1) a sentinel-zero value got accepted as if it were the runner's actual resting HR; (2) the silent fallback hid the data quality issue from the runner. §55 fixes the first; §50 (L-03) fixes the second.
+
+The reject-vs-fall-back distinction matters: a runner who entered `0` (defaulted form) deserves to be told their HR data is invalid so they can fix it. A runner who entered nothing deserves an estimate with the caveat surfaced (§50). Conflating the two cases breaks both flows.
+
+**Config.** Hardcoded thresholds in `validateInputFields()` (`lib/plan/inputs.ts`). Not in `GENERATION_CONFIG` because these are physiological boundaries, not coaching tuning.
+
+`InputFieldError` thrown on violation. The API route (`app/api/generate-plan/route.ts`) catches it and returns 422 with the offending field, value, and range. Mirrors the §44 PrepTimeError pattern.
+
+---
+
+## 56. The constitution
+
+These fifty-six principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

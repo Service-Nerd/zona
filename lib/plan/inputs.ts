@@ -142,3 +142,69 @@ export function enforcePrepTime(input: PrepTimeAwareInput, planStart: string): P
   }
   return prep
 }
+
+// ─── L-01: critical input field validation (CoachingPrinciples §55) ──────────
+//
+// Reject empty / out-of-physiological-range values for fields the engine
+// cannot fall back on. Distinct from L-03 (HR data fallbacks): L-01 rejects
+// nonsense values (resting_hr: 0, max_hr: 50, age: 0); L-03 fills gaps for
+// MISSING values. A resting_hr: 0 is treated as invalid (rejected here),
+// not as missing (which L-03 would handle).
+
+export interface InputFieldRange {
+  min: number
+  max: number
+}
+
+export class InputFieldError extends Error {
+  field: string
+  value: number
+  range: InputFieldRange
+  constructor(field: string, value: number, range: InputFieldRange) {
+    super(`Invalid input: ${field}=${value} (acceptable range: ${range.min}–${range.max}). Empty or out-of-range physiological inputs are rejected.`)
+    this.name = 'InputFieldError'
+    this.field = field
+    this.value = value
+    this.range = range
+  }
+}
+
+/** Validates the small set of inputs the engine cannot fall back on if they
+ *  are nonsense values. Throws InputFieldError on the first violation. */
+export function validateInputFields(input: GeneratorInput): void {
+  const ranges: Record<string, InputFieldRange> = {
+    age:        { min: 13,  max: 90  },
+    resting_hr: { min: 30,  max: 100 },
+    max_hr:     { min: 120, max: 220 },
+  }
+
+  // age is always required
+  const age = input.age
+  if (typeof age !== 'number' || !Number.isFinite(age)) {
+    throw new InputFieldError('age', Number(age), ranges.age)
+  }
+  if (age < ranges.age.min || age > ranges.age.max) {
+    throw new InputFieldError('age', age, ranges.age)
+  }
+
+  // resting_hr and max_hr are optional. Only validate if provided. A value of
+  // exactly 0 is treated as "not provided" by the existing engine
+  // (`input.resting_hr && input.resting_hr > 0`) — L-01 rejects 0 as invalid
+  // explicitly so the user knows their data was rejected, not silently dropped.
+  if (input.resting_hr !== undefined && input.resting_hr !== null) {
+    if (!Number.isFinite(input.resting_hr) || input.resting_hr === 0) {
+      throw new InputFieldError('resting_hr', input.resting_hr, ranges.resting_hr)
+    }
+    if (input.resting_hr < ranges.resting_hr.min || input.resting_hr > ranges.resting_hr.max) {
+      throw new InputFieldError('resting_hr', input.resting_hr, ranges.resting_hr)
+    }
+  }
+  if (input.max_hr !== undefined && input.max_hr !== null) {
+    if (!Number.isFinite(input.max_hr) || input.max_hr === 0) {
+      throw new InputFieldError('max_hr', input.max_hr, ranges.max_hr)
+    }
+    if (input.max_hr < ranges.max_hr.min || input.max_hr > ranges.max_hr.max) {
+      throw new InputFieldError('max_hr', input.max_hr, ranges.max_hr)
+    }
+  }
+}

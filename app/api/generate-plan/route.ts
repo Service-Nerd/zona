@@ -4,7 +4,7 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { generate } from '@/lib/plan/generate'
 import { nextMonday, formatDate } from '@/lib/plan/length'
-import { PrepTimeError } from '@/lib/plan/inputs'
+import { PrepTimeError, InputFieldError } from '@/lib/plan/inputs'
 
 // ─── Guard rails ──────────────────────────────────────────────────────────────
 //
@@ -48,6 +48,20 @@ export async function POST(req: NextRequest) {
       const plan = await generate(input, tier, planStart)
       return NextResponse.json({ plan })
     } catch (err) {
+      // CoachingPrinciples §55 — critical input validation. Out-of-range
+      // physiological values are rejected at the entry point; surface field +
+      // range so the client can highlight the offending input.
+      if (err instanceof InputFieldError) {
+        return NextResponse.json(
+          {
+            error: err.message,
+            field: err.field,
+            value: err.value,
+            range: err.range,
+          },
+          { status: 422 },
+        )
+      }
       // CoachingPrinciples §44 — prep-time refusal surfaces structured data so
       // the client can render the warning + alternatives and re-submit with
       // acknowledged_prep_warning: true.

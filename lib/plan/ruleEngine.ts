@@ -15,7 +15,7 @@ import {
 } from './length'
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
 import { validatePlan, formatViolations } from './invariants'
-import { enforcePrepTime, type PrepTimeAwareInput, type PrepTimeResult } from './inputs'
+import { enforcePrepTime, validateInputFields, type PrepTimeAwareInput, type PrepTimeResult } from './inputs'
 import {
   V1_SESSION_CATALOGUE, selectCatalogueSession,
   type SessionCatalogueRow, type CatalogueCategory,
@@ -1504,6 +1504,12 @@ export function generateRulePlan(
   const planStartIso = planStart ?? formatDate(nextMonday())
   const planStartDate = parseDateLocal(planStartIso)
   const today = formatDate(new Date())
+
+  // CoachingPrinciples §55 — reject nonsense / out-of-range inputs before
+  // any other logic. Distinct from §44 (prep-time) and §50 (HR fallbacks):
+  // L-01 rejects values that can't be reasoned about (age:0, resting_hr:0,
+  // max_hr:50). Throws InputFieldError.
+  validateInputFields(input)
 
   // CoachingPrinciples §44 — prep-time validation. Runs first so block/warn
   // outcomes surface before any generation work. Throws PrepTimeError on
