@@ -312,8 +312,18 @@ enrichment layer (gated via `ai_coach_notes_new`), not the act of regenerating.
 
 ---
 
-## 20. The constitution
+## 20. VDOT surface — auditable, table-comparable
 
-These twenty principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** The VDOT surfaced on the plan (`meta.vdot`) MUST be the *raw* benchmark-derived value, not the conservatism-discounted training anchor. The discounted anchor is also surfaced, separately, as `meta.vdot_training_anchor`. The gap between the two is `meta.vdot_discount_applied_pct`. Goal pace (`meta.goal_pace_per_km`) is computed from `target_time / race_distance_km` directly — it is the runner's stated target, not a derived training pace.
+
+**Why.** A user who runs a 23:30 5K opens Daniels' Running Formula and sees VDOT ~41. If Zona surfaces VDOT 40 (after a 3% discount) the user thinks the engine has miscalibrated their fitness. They lose trust. The discount is real and important — it produces the slow easy paces the brand exists to defend — but it lives in the *training paces*, not in the headline number. Surfacing both makes the engine's reasoning legible: "your benchmark gives VDOT 41; we're training at the 39.8 anchor for safety."
+
+**Config.** No numeric — structural rule. Implemented in `generateRulePlan()` in `lib/plan/ruleEngine.ts` (raw and discounted both stored). Enforced by `INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR` in `lib/plan/invariants.ts`. The Daniels-Gilbert formula in `calcVDOT()` is intentionally conservative (~0.3 VDOT below his published 5K table at threshold race distances) — this is documented inertia from the published mathematics, not a bug; the table itself is interpolated.
+
+---
+
+## 21. The constitution
+
+These twenty-one principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

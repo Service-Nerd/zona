@@ -34,7 +34,7 @@ Mark, 38. Software engineer, two kids. Runs 4×/week, consistent for 2 years but
 ## Plan summary
 
 **11 weeks** · race: Local 10K (10 km) on 2026-07-20
-Derived fitness: **intermediate** · VDOT 40
+Derived fitness: **intermediate** · VDOT 41.2
 Goal pace: **5:00 /km**
 
 ### Week 1 — Base — easy start · *base*
@@ -236,12 +236,13 @@ Weekly: **18 km**
       "knee"
     ],
     "terrain": "road",
-    "generated_at": "2026-04-27T09:20:53.204Z",
+    "generated_at": "2026-04-27T09:44:15.274Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": false,
     "age": 38,
-    "vdot": 40,
+    "vdot": 41.2,
+    "vdot_training_anchor": 40,
     "vdot_discount_applied_pct": 3,
     "goal_pace_per_km": "5:00 /km",
     "recalibration_weeks": [

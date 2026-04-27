@@ -328,6 +328,24 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // cap collides with MIN_SESSION_DISTANCE) — those are legitimate. This
   // invariant lives one layer up; it isn't checkable from the plan output alone.
 
+  // INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR — when a benchmark is present, surfaced
+  // VDOT is the raw value (matches Daniels' tables) and is ≥ the training
+  // anchor (which has the conservatism discount applied).
+  // (CoachingPrinciples §20 — auditable VDOT surface.)
+  if (input.benchmark && plan.meta.vdot !== undefined && plan.meta.vdot_training_anchor !== undefined) {
+    if (plan.meta.vdot < plan.meta.vdot_training_anchor - 0.05) {
+      violations.push({
+        code: 'INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR',
+        principle_ref: 'CoachingPrinciples §20',
+        severity: 'error',
+        week: 0,
+        message: `Surfaced raw VDOT (${plan.meta.vdot}) is below training anchor (${plan.meta.vdot_training_anchor}) — discount logic inverted`,
+        actual: plan.meta.vdot,
+        expected: `≥ ${plan.meta.vdot_training_anchor}`,
+      })
+    }
+  }
+
   return violations
 }
 

@@ -164,7 +164,8 @@ export interface PlanMeta {
 
   // R24 — VDOT / zone model fields
   age?: number                            // athlete age at time of generation
-  vdot?: number                           // Jack Daniels VDOT score (from benchmark)
+  vdot?: number                           // Jack Daniels VDOT score (raw, benchmark-derived) — matches Daniels' published tables
+  vdot_training_anchor?: number           // discounted VDOT used to derive training paces (CoachingPrinciples §10)
   goal_pace_per_km?: string               // e.g. "5:04 /km" — target race pace, not a training zone
   recalibration_weeks?: number[]          // week numbers where a benchmark re-test is scheduled
   benchmark?: BenchmarkInput              // stored so recalibration can reference original

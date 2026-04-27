@@ -1045,7 +1045,8 @@ export function applyRecalibration(
   const pace  = buildPaceFromVDOT(vdot)
 
   const updated: Plan = JSON.parse(JSON.stringify(plan))
-  updated.meta.vdot                       = Math.round(vdot * 10) / 10
+  updated.meta.vdot                       = Math.round(rawVdot * 10) / 10
+  updated.meta.vdot_training_anchor       = Math.round(vdot * 10) / 10
   updated.meta.benchmark                  = benchmark
   if (discountPct > 0) updated.meta.vdot_discount_applied_pct = discountPct
 
@@ -1079,10 +1080,12 @@ export function generateRulePlan(
   // ── Derive max HR, VDOT, fitness level, zones, paces ─────────────────────────
   const derivedMaxHR = input.max_hr ?? tanakaMaxHR(input.age)
   let vdotDiscountPct = 0
+  let vdotRaw: number | undefined
   const vdot: number | undefined = (() => {
     if (!input.benchmark) return undefined
     const raw = calcVDOTFromBenchmark(input.benchmark)
     if (!Number.isFinite(raw) || raw <= 0) return undefined
+    vdotRaw = raw
     const { vdot: discounted, discountPct } = applyVdotDiscount(raw, input.benchmark, new Date())
     vdotDiscountPct = discountPct
     return discounted
@@ -1224,9 +1227,13 @@ export function generateRulePlan(
     tier,
     compressed: compressed || capCompressed,  // OR-combine: too-short plan OR 10%-cap forced
 
-    // VDOT / zone model fields
+    // VDOT / zone model fields (CoachingPrinciples §10, §20).
+    // `vdot` is raw (benchmark-derived) — what users compare against Daniels' tables.
+    // `vdot_training_anchor` is the conservatism-discounted value used to derive
+    // training paces. The gap is `vdot_discount_applied_pct`.
     age: input.age,
-    ...(vdot !== undefined ? { vdot: Math.round(vdot * 10) / 10 } : {}),
+    ...(vdotRaw !== undefined ? { vdot: Math.round(vdotRaw * 10) / 10 } : {}),
+    ...(vdot !== undefined ? { vdot_training_anchor: Math.round(vdot * 10) / 10 } : {}),
     ...(vdotDiscountPct > 0 ? { vdot_discount_applied_pct: vdotDiscountPct } : {}),
     ...(goalPace ? { goal_pace_per_km: goalPace } : {}),
     ...(recalibrationWeeks.length > 0 ? { recalibration_weeks: recalibrationWeeks } : {}),

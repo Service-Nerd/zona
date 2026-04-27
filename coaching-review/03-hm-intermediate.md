@@ -34,7 +34,7 @@ Anna, 42. Runs 4×/week, building toward a target HM in 14 weeks. Goal time 1:55
 ## Plan summary
 
 **13 weeks** · race: Target HM (21.1 km) on 2026-08-03
-Derived fitness: **intermediate** · VDOT 38.4
+Derived fitness: **intermediate** · VDOT 39.5
 Goal pace: **5:27 /km**
 ⚠️ Plan is **compressed** (peak volume below 95% of target peakKm)
 
@@ -255,12 +255,13 @@ Weekly: **29 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T09:20:53.205Z",
+    "generated_at": "2026-04-27T09:44:15.275Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
     "age": 42,
-    "vdot": 38.4,
+    "vdot": 39.5,
+    "vdot_training_anchor": 38.4,
     "vdot_discount_applied_pct": 3,
     "goal_pace_per_km": "5:27 /km",
     "recalibration_weeks": [
