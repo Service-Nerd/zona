@@ -159,6 +159,21 @@ export const GENERATION_CONFIG = {
   PEAK_LR_ALTERNATION_THRESHOLD_PCT: 90,   // % of peak LR distance defining "peak-level"
   PEAK_LR_STEPBACK_MAX_PCT:          80,   // % of peak LR distance defining a "step-back" LR
 
+  // ── Quality variety across the full plan (CoachingPrinciples §53) ──────────
+  // No single quality-session label may appear more than
+  //   floor(total_quality_sessions / DENOMINATOR) + ALLOWANCE
+  // times across the full plan. Default 1/3 + 1: a 9-quality-session plan caps
+  // each label at 4 occurrences. Extends round-2 M-02 (taper variety) to apply
+  // to base/build/peak as well as taper.
+  QUALITY_VARIETY_DENOMINATOR: 3,
+  QUALITY_VARIETY_ALLOWANCE:   1,
+
+  // ── Long run as fraction of weekly volume (CoachingPrinciples §52) ─────────
+  // No single run may exceed this fraction of the week's total volume. Above
+  // this threshold the week is structurally lopsided — the long run becomes
+  // the only run, weekday training disappears.
+  LONG_RUN_MAX_PCT_OF_WEEKLY: 60,
+
   // ── Strides on midweek easy (CoachingPrinciples §28) ───────────────────────
   // From this week onwards, the engine appends a stride coach-note to one
   // midweek easy run per week. Skipped in race week and deload weeks.

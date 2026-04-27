@@ -748,8 +748,45 @@ Enforced by `INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT` — when either flag is set
 
 ---
 
-## 52. The constitution
+## 52. Long run not more than 60% of weekly volume
 
-These fifty-two principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** No single run in any week may exceed `LONG_RUN_MAX_PCT_OF_WEEKLY` (60%) of that week's total volume. When the long-run prescription would force this, the engine MUST either (a) reduce the long run, (b) raise weekly volume (if the persona allows), or (c) downgrade to maintenance via §38.
+
+**Why.** Case 04 (2026-04-28 review): W6 weekday runs were cut to 4 km each to fit a 30 km long run within the weekly volume cap. The long run was 67% of weekly mileage. A lopsided week is a week that doesn't actually train the runner — the weekday work shrinks to nothing, the long run becomes the *only* run, and the runner arrives at the long run with no aerobic base laid down by the prior days. Recovery from the long run also dominates the entire next week.
+
+The 60% threshold is intentionally below the natural §9 long-run fraction (peak phase = 32% of weekly). The buffer (60% vs 32%) gives the engine room to flex during cap-binding edge cases without auto-tripping. When the buffer is exhausted, the long run is too big *or* the weekly volume is too low, and the constitutional answer is to surface the constraint, not to silently truncate weekday runs to single-digit km.
+
+**Config.**
+- `GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY = 60`
+
+Enforced by `INV-PLAN-LR-MAX-WEEKLY-PCT`. When violated, the engine downgrades to maintenance (composes with §38) and surfaces the cause in `volume_constraint_note`.
+
+---
+
+## 53. Quality session variety across the full plan
+
+**Principle.** No single quality-session label may appear more than `floor(total_quality_sessions / 3) + 1` times across the full plan. Extends §36 (taper variety) to the base / build / peak phases as well.
+
+**Why.** Case 04 (2026-04-28 review): three "Progressive tempo" sessions in 11 weeks (W5, W8, W10) with identical pace targets. Round-2 M-02 caught back-to-back taper repetition; this caught nothing because the repetition straddled build / peak / taper. Variety at the catalogue level is what keeps a plan coachable for the runner who actually has to do it — three identical tempos in the same plan is the engine declining to use the catalogue, not a coaching choice.
+
+The `floor(N / 3) + 1` shape:
+- 3 quality sessions: max 2 of any label.
+- 6 quality sessions: max 3.
+- 9 quality sessions: max 4.
+- 12 quality sessions: max 5.
+
+The +1 allowance prevents tripping plans where the catalogue genuinely has only one good fit for a phase (e.g. HM peak quality is `hm_pace_intervals` per the catalogue — appearing 2-3 times in a 13-week plan is correct, not a defect).
+
+**Config.**
+- `GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR = 3`
+- `GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE = 1`
+
+Enforced by `INV-PLAN-QUALITY-VARIETY-FULL-PLAN`. Race-week sharpening reps (sub-band repeats with no catalogue-named label) are exempt — they're structurally distinct from the broader catalogue.
+
+---
+
+## 54. The constitution
+
+These fifty-four principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

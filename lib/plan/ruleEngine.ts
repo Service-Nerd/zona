@@ -559,9 +559,22 @@ function makeQualitySession(args: {
     // Override label only when the override is the source of goal-pace.
     // When the catalogue row already names itself goal-pace work (e.g.
     // "Goal-pace sharpener"), preserve the catalogue name.
+    //
+    // CoachingPrinciples §53 — vary the override label by phase so a single
+    // race-pace label doesn't dominate the plan. Build phase override gets
+    // a tempo flavour; peak retains the interval-flavoured override (matching
+    // the catalogue's hm_pace_intervals naming, which keeps build/peak
+    // distinguishable for HM/marathon plans).
+    const overrideLabel = !distLabel
+      ? 'Goal-pace cruise intervals'
+      : phase === 'build'
+        ? `${distLabel}-pace progression`
+        : phase === 'taper'
+          ? `${distLabel}-pace sharpener`
+          : `${distLabel}-pace intervals`
     label = catalogueRowGoalPace
       ? (catalogueRow?.name ?? fallbackLabel)
-      : (distLabel ? `${distLabel}-pace intervals` : 'Goal-pace cruise intervals')
+      : overrideLabel
     minPerKm = goalCenterMins
     paceTarget = paceBandStr(goalCenterMins, 2)
     zone = 'Zone 3–4'
@@ -1698,6 +1711,85 @@ export function generateRulePlan(
   // CoachingPrinciples §45 — long-run progression cap. Walks the plan and
   // clamps any LR that exceeds +20% / +5km from the prior week's LR.
   applyLongRunProgressionCap(weeks, pace)
+
+  // CoachingPrinciples §53 — quality variety across the full plan. Catalogue
+  // rotation gets stuck when only one threshold row is eligible for taper
+  // (progressive_tempo) AND for peak (2 candidates, even split). Walk the plan
+  // and rebalance over-represented labels with under-represented same-category
+  // alternatives. Same-category swap preserves the physiology (T-pace, Z3)
+  // and the session shape — only the label and coach voice change.
+  {
+    const cap = (n: number) =>
+      Math.floor(n / GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR)
+        + GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE
+    // Build a tally and a list of (week, day, session) for each label.
+    type QualPos = { week: Week; day: Day; session: Session }
+    const positionsByLabel = new Map<string, QualPos[]>()
+    for (const w of weeks) {
+      if (w.type === 'race') continue
+      for (const [d, s] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+        if (!s || s.type !== 'quality') continue
+        const label = (s.label ?? '').trim()
+        if (!label) continue
+        if (!positionsByLabel.has(label)) positionsByLabel.set(label, [])
+        positionsByLabel.get(label)!.push({ week: w, day: d, session: s })
+      }
+    }
+    const totalQuality = Array.from(positionsByLabel.values()).reduce((a, v) => a + v.length, 0)
+    const max = cap(totalQuality)
+
+    // Find under-represented labels in the same physiology bucket. We bucket by
+    // the session's zone tag — Zone 3 / Zone 3–4 = threshold; Zone 4–5 = vo2max.
+    // Goal-pace overrides (X-pace progression / X-pace intervals / X-pace
+    // sharpener) are skipped — they're a coordinated specificity move per
+    // §22, not catalogue rotation.
+    const isOverride = (label: string): boolean =>
+      /^(\w+)-pace (progression|intervals|sharpener)$/.test(label)
+
+    const physBucket = (s: Session): 'threshold' | 'vo2max' | 'other' => {
+      const zone = (s.zone ?? '').toLowerCase()
+      if (zone.includes('zone 4') || zone.includes('zone 5')) return 'vo2max'
+      if (zone.includes('zone 3')) return 'threshold'
+      return 'other'
+    }
+
+    // Threshold-bucket alternative labels + matching coach voices.
+    const THRESHOLD_ALTS: { label: string; voice: string }[] = [
+      { label: 'Continuous tempo', voice: 'Sustained sub-threshold work. Builds the ceiling.' },
+      { label: 'Cruise intervals', voice: 'Threshold work in repeats. Same effort on rep 3 as rep 1 — that is the test.' },
+      { label: 'Progressive tempo', voice: 'Start at aerobic, finish at threshold. Discipline at the start, honesty at the end.' },
+    ]
+
+    for (const [label, positions] of positionsByLabel) {
+      if (isOverride(label)) continue
+      if (positions.length <= max) continue
+      const overage = positions.length - max
+      const sample = positions[0].session
+      const bucket = physBucket(sample)
+      if (bucket !== 'threshold') continue  // current swap pool covers threshold only
+
+      // Pick alternative threshold labels under cap.
+      const labelCounts = new Map<string, number>()
+      for (const [l, ps] of positionsByLabel) labelCounts.set(l, ps.length)
+      const altCandidates = THRESHOLD_ALTS
+        .filter(a => a.label !== label)
+        .sort((a, b) => (labelCounts.get(a.label) ?? 0) - (labelCounts.get(b.label) ?? 0))
+
+      let swapped = 0
+      // Walk positions in order; skip first `max` (keep them as-is), swap the rest.
+      for (let i = max; i < positions.length && swapped < overage; i++) {
+        const pos = positions[i]
+        // Pick the alt with lowest current count.
+        const alt = altCandidates.find(a => (labelCounts.get(a.label) ?? 0) < max) ?? altCandidates[0]
+        if (!alt) break
+        pos.session.label = alt.label
+        pos.session.coach_notes = [alt.voice]
+        labelCounts.set(label, (labelCounts.get(label) ?? 0) - 1)
+        labelCounts.set(alt.label, (labelCounts.get(alt.label) ?? 0) + 1)
+        swapped++
+      }
+    }
+  }
 
   // CoachingPrinciples §27 — themes can drift out of alignment after §47/§45
   // post-passes shrink a week's weekly_km. Re-derive overload-implying themes

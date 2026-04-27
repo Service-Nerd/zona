@@ -47,6 +47,8 @@ export const INVARIANT_CODES = [
   'INV-PLAN-PEAK-LR-ALTERNATION',
   'INV-PLAN-TAPER-DURATION-CAP',
   'INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT',
+  'INV-PLAN-QUALITY-VARIETY-FULL-PLAN',
+  'INV-PLAN-LR-MAX-WEEKLY-PCT',
 ] as const
 
 export interface Violation {
@@ -864,6 +866,72 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           actual: peakKm,
           expected: `≥ ${Math.round(requiredFloor)}`,
         })
+      }
+    }
+  }
+
+  // INV-PLAN-QUALITY-VARIETY-FULL-PLAN — no single quality-session label may
+  // appear more than floor(total/3) + 1 times across the plan.
+  // (CoachingPrinciples §53) Race-week sharpening reps are excluded.
+  {
+    const labelCounts = new Map<string, number>()
+    let totalQuality = 0
+    for (const w of plan.weeks) {
+      if (w.type === 'race') continue
+      for (const s of Object.values(w.sessions)) {
+        if (!s || s.type !== 'quality') continue
+        const label = (s.label ?? '').trim()
+        if (!label) continue
+        labelCounts.set(label, (labelCounts.get(label) ?? 0) + 1)
+        totalQuality++
+      }
+    }
+    if (totalQuality > 0) {
+      const cap = Math.floor(totalQuality / GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR)
+        + GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE
+      for (const [label, count] of labelCounts) {
+        if (count > cap) {
+          violations.push({
+            code: 'INV-PLAN-QUALITY-VARIETY-FULL-PLAN',
+            principle_ref: 'CoachingPrinciples §53',
+            severity: 'error',
+            week: 0,
+            message: `Quality session label "${label}" appears ${count} times across ${totalQuality} quality sessions; cap is floor(${totalQuality}/${GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR})+${GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE} = ${cap}.`,
+            actual: count,
+            expected: `≤ ${cap}`,
+          })
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-LR-MAX-WEEKLY-PCT — no single run exceeds LONG_RUN_MAX_PCT_OF_WEEKLY
+  // of the week's total volume. Race week and deload weeks exempt — race
+  // week's only run is the race itself; deloads scale everything down together.
+  // (CoachingPrinciples §52) Maintenance plans relax this — the constraint
+  // is already surfaced in volume_constraint_note.
+  if (plan.meta.volume_profile !== 'maintenance') {
+    const cap = GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100
+    for (const w of plan.weeks) {
+      if (w.type === 'race' || w.type === 'deload') continue
+      if (w.weekly_km <= 0) continue
+      for (const [day, s] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+        if (!s) continue
+        if (s.type === 'strength' || s.type === 'rest') continue
+        if (s.distance_km == null) continue
+        const fraction = s.distance_km / w.weekly_km
+        if (fraction > cap + 0.005) {
+          violations.push({
+            code: 'INV-PLAN-LR-MAX-WEEKLY-PCT',
+            principle_ref: 'CoachingPrinciples §52',
+            severity: 'error',
+            week: w.n,
+            day,
+            message: `${s.label ?? 'session'} ${s.distance_km}km is ${Math.round(fraction * 100)}% of weekly volume ${w.weekly_km}km — exceeds ${GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY}% cap. Lopsided week; reduce the long run, raise weekly volume, or downgrade to maintenance.`,
+            actual: `${Math.round(fraction * 100)}%`,
+            expected: `≤ ${GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY}%`,
+          })
+        }
       }
     }
   }
