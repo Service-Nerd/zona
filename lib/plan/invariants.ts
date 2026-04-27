@@ -483,8 +483,9 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       }))
       // Time-cap check — if even an unrounded long run at the time cap is below
       // requiredKm, the cap is binding and the invariant relaxes.
-      const easyMinPerKm = peakLrKm > 0 && peakWeeks[0].long_run_hrs > 0
-        ? (peakWeeks[0].long_run_hrs * 60) / peakLrKm
+      const peakLongRunHrs = peakWeeks[0].long_run_hrs ?? 0
+      const easyMinPerKm = peakLrKm > 0 && peakLongRunHrs > 0
+        ? (peakLongRunHrs * 60) / peakLrKm
         : 7
       const capKm = longCapMins / Math.max(easyMinPerKm, 1)
       const effectiveRequired = Math.min(requiredKm, capKm)

@@ -755,11 +755,9 @@ function buildWeekSessions(
     const shakeout1 = firstAvailableDay(['tue', 'wed', 'mon'], blocked, [raceDay])
     if (shakeout1) {
       const s = enforceCap(shakeoutSession(weekN, shakeout1, zones, pace))
-      const existing = s.coach_notes ?? []
-      s.coach_notes = [
-        ...existing.slice(0, 2),
-        '4×100m strides at 5K effort, full recovery between.',
-      ] as [string, string?, string?]
+      const e0 = s.coach_notes?.[0]
+      const strideNote = '4×100m strides at 5K effort, full recovery between.'
+      s.coach_notes = e0 ? [e0, strideNote] : [strideNote]
       sessions[shakeout1] = s
     }
 
@@ -1083,12 +1081,9 @@ function buildWeekSessions(
       if (!s || s.type !== 'easy') continue
       if (s.label?.toLowerCase().includes('long') || s.label?.toLowerCase().includes('shakeout')) continue
       const note = '4×20s strides at 5K effort, full recovery between.'
-      const existing = s.coach_notes ?? []
-      const merged: [string, string?, string?] = [
-        ...existing.slice(0, 2),
-        note,
-      ] as [string, string?, string?]
-      s.coach_notes = merged
+      const e0 = s.coach_notes?.[0]
+      const e1 = s.coach_notes?.[1]
+      s.coach_notes = e0 && e1 ? [e0, e1, note] : e0 ? [e0, note] : [note]
       break  // one stride run per week
     }
   }
