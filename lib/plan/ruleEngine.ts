@@ -834,9 +834,17 @@ function buildWeekSessions(
     const qualDay = firstAvailableDay(['wed', 'thu', 'tue'], blocked, used.filter(d => dayGap(d, 'wed') < 2))
       ?? firstAvailableDay(['wed', 'thu', 'tue', 'mon', 'fri'], blocked, used)
 
+    // CoachingPrinciples §21 — knee/ITB/Achilles/shin/calf/plantar history
+    // excludes hill sessions in base + build phases. Peak may reintroduce.
+    const excludeHillSessions = (phase === 'base' || phase === 'build')
+      && (input.injury_history ?? []).some(i =>
+        GENERATION_CONFIG.HILL_RESTRICTING_INJURIES.some(k => i.toLowerCase().includes(k))
+      )
+
     if (qualDay && dayGap(qualDay, longDay) >= minDaysBetweenQualLong) {
       const cat1 = selectCatalogueSession({
         catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 0, preferredCategory,
+        excludeHillSessions,
       })
       sessions[qualDay] = makeQualitySession({
         weekN, day: qualDay, distKm: qualKm, metric, zones, pace,
@@ -856,6 +864,7 @@ function buildWeekSessions(
             : preferredCategory
           const cat2 = selectCatalogueSession({
             catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 1, preferredCategory: altCategory,
+            excludeHillSessions,
           })
           const secondaryFraction = GENERATION_CONFIG.SECONDARY_QUALITY_PCT_OF_PRIMARY / 100
           sessions[qual2Day] = makeQualitySession({

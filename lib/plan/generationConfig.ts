@@ -116,6 +116,13 @@ export const GENERATION_CONFIG = {
   // tightens from MAX_WEEKLY_VOLUME_INCREASE_PCT (10%) to this stricter limit.
   INJURY_WEEKLY_INCREASE_CAP_PCT: 5,  // % above previous week's volume
 
+  // ── Injury-aware session selection (CoachingPrinciples §21) ────────────────
+  // Injury keywords that trigger exclusion of hill sessions during base/build
+  // phases. Substrings; matched case-insensitively against injury_history.
+  // Peak phase may reintroduce hills only if the runner has completed build
+  // symptom-free (gated by explicit user check-in — not yet implemented).
+  HILL_RESTRICTING_INJURIES: ['knee', 'itb', 'achilles', 'shin', 'calf', 'plantar'] as readonly string[],
+
   // Quality sessions per taper week. Last entry is always race week (= 0).
   TAPER_QUALITY_PER_WEEK: {
     '5K':       [1, 0],

@@ -202,6 +202,15 @@ export interface CatalogueSelectorArgs {
   weekN:             number
   slotIndex?:        number  // 0 or 1 for second quality session in a peak week
   preferredCategory?: CatalogueCategory
+  // CoachingPrinciples §21 — exclude hill sessions during base/build when set.
+  excludeHillSessions?: boolean
+}
+
+// Hill rows are tagged via main_set_structure.terrain === 'hills' OR id includes 'hill'.
+// Defensive across both since not every future hill row will have terrain set.
+function isHillSession(row: SessionCatalogueRow): boolean {
+  const terrain = (row.main_set_structure as { terrain?: string }).terrain
+  return terrain === 'hills' || row.id.includes('hill')
 }
 
 /**
@@ -216,7 +225,7 @@ export interface CatalogueSelectorArgs {
  * regenerated produces same selection.
  */
 export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCatalogueRow | null {
-  const { catalogue, phase, distanceKey, fitness, tier, weekN, slotIndex = 0, preferredCategory } = args
+  const { catalogue, phase, distanceKey, fitness, tier, weekN, slotIndex = 0, preferredCategory, excludeHillSessions } = args
 
   const userRank = FITNESS_RANK[fitness]
   const tierFilter = (row: SessionCatalogueRow) => tier === 'free' ? row.is_free_tier : true
@@ -225,7 +234,8 @@ export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCata
     row.phase_eligibility.includes(phase) &&
     row.distance_eligibility.includes(distanceKey) &&
     FITNESS_RANK[row.fitness_level_min] <= userRank &&
-    tierFilter(row)
+    tierFilter(row) &&
+    (!excludeHillSessions || !isHillSession(row))
   )
 
   if (baseEligible.length === 0) return null

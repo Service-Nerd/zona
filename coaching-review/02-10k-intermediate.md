@@ -83,8 +83,8 @@ Weekly: **26 km** · long: 0.9h
 Weekly: **29 km** · long: 1h
 
 - **mon** — Easy run - Zone 2 · 7km · 45min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
-- **wed** — Aerobic with hills · 5.5km · 29min · Zone 3–4 · HR 146–159 bpm · pace 5:06–5:20 /km · RPE 7
-  - _Hills lie. Watch the effort, not the pace._
+- **wed** — Steady aerobic · 5.5km · 29min · Zone 3–4 · HR 146–159 bpm · pace 5:06–5:20 /km · RPE 7
+  - _Boring is the point. If it feels productive, slow down._
 - **fri** — Easy run - Zone 2 · 7km · 45min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 - **sun** — Long run - Zone 2 · 9km · 58min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 
@@ -105,8 +105,8 @@ Weekly: **32 km** · long: 1.1h
 Weekly: **35 km** · long: 1.2h
 
 - **mon** — Easy run - Zone 2 · 8.5km · 55min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
-- **wed** — Aerobic with hills · 6.5km · 34min · Zone 3–4 · HR 146–159 bpm · pace 5:06–5:20 /km · RPE 7
-  - _Hills lie. Watch the effort, not the pace._
+- **wed** — Steady aerobic · 6.5km · 34min · Zone 3–4 · HR 146–159 bpm · pace 5:06–5:20 /km · RPE 7
+  - _Boring is the point. If it feels productive, slow down._
 - **fri** — Easy run - Zone 2 · 8.5km · 55min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 - **sun** — Long run - Zone 2 · 11km · 71min · Zone 2 · HR < 146 bpm · pace 5:51–7:00 /km · RPE 4
 
@@ -236,7 +236,7 @@ Weekly: **18 km**
       "knee"
     ],
     "terrain": "road",
-    "generated_at": "2026-04-27T09:44:15.274Z",
+    "generated_at": "2026-04-27T09:52:15.623Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": false,
@@ -560,7 +560,7 @@ Weekly: **18 km**
         "wed": {
           "id": "w5-wed",
           "type": "quality",
-          "label": "Aerobic with hills",
+          "label": "Steady aerobic",
           "detail": null,
           "distance_km": 5.5,
           "duration_mins": 29,
@@ -570,7 +570,7 @@ Weekly: **18 km**
           "pace_target": "5:06–5:20 /km",
           "rpe_target": 7,
           "coach_notes": [
-            "Hills lie. Watch the effort, not the pace."
+            "Boring is the point. If it feels productive, slow down."
           ]
         },
         "fri": {
@@ -694,7 +694,7 @@ Weekly: **18 km**
         "wed": {
           "id": "w7-wed",
           "type": "quality",
-          "label": "Aerobic with hills",
+          "label": "Steady aerobic",
           "detail": null,
           "distance_km": 6.5,
           "duration_mins": 34,
@@ -704,7 +704,7 @@ Weekly: **18 km**
           "pace_target": "5:06–5:20 /km",
           "rpe_target": 7,
           "coach_notes": [
-            "Hills lie. Watch the effort, not the pace."
+            "Boring is the point. If it feels productive, slow down."
           ]
         },
         "fri": {

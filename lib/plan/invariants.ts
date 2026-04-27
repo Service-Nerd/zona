@@ -107,6 +107,32 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       }
     }
 
+    // INV-PLAN-INJURY-NO-HILLS — runners with hill-restricting injury history
+    // (knee, ITB, Achilles, shin, calf, plantar) get no hill sessions in
+    // base/build phases. (CoachingPrinciples §21)
+    if (w.phase === 'base' || w.phase === 'build') {
+      const hasRestricting = (input.injury_history ?? []).some(i => {
+        const lower = i.toLowerCase()
+        return GENERATION_CONFIG.HILL_RESTRICTING_INJURIES.some(k => lower.includes(k))
+      })
+      if (hasRestricting) {
+        for (const { day, session } of placedRunning) {
+          const label = (session.label ?? '').toLowerCase()
+          if (label.includes('hill')) {
+            violations.push({
+              code: 'INV-PLAN-INJURY-NO-HILLS',
+              principle_ref: 'CoachingPrinciples §21',
+              severity: 'error',
+              week: w.n, day,
+              message: `Hill session "${session.label}" prescribed in ${w.phase} phase despite injury_history`,
+              actual: session.label ?? 'unknown',
+              expected: 'no hill session',
+            })
+          }
+        }
+      }
+    }
+
     // INV-PLAN-LABEL-MATCHES-PACE — VO2max-named sessions land in Z4–Z5;
     // threshold/tempo/cruise-named sessions land in Z3.
     // (CoachingPrinciples §19 — session name carries physiological meaning.)
