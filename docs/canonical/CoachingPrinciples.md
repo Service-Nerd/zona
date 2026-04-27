@@ -372,8 +372,18 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. The race-distan
 
 ---
 
-## 25. The constitution
+## 25. Race-specific long run (HM and marathon, time-targeted)
 
-These twenty-five principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** Peak phase of a time-targeted HM or marathon plan MUST contain at least one long run with an embedded race-pace segment. The segment is the final 25–40% of the long run (the runner is already aerobically tired when they hit goal pace, simulating the late-race state). Naming convention: "Long run with HM-pace finish" for HM, "Marathon-pace long run" for marathon. Distances ≤10K do not require this — their long run remains aerobic.
+
+**Why.** Threshold-pace cruise intervals teach pace discipline on fresh legs. Race-pace work on tired legs is a different adaptation: glycogen recruitment under fatigue, mental discipline at hour 1+, the specific feel of holding goal pace when easy pace would feel right. Daniels and Pfitzinger both call this the single most race-specific session for the HM and marathon. Without it, the runner has practised the pace and practised the duration but never together — and race day is the first time those two collide.
+
+**Config.** Catalogue rows `hm_pace_long_run` (HM) and `mp_long_run` (marathon), both `category: 'race_specific'`. Selected in `buildWeekSessions()` peak-phase long-run path when `goal === 'time_target'` and the runner has a derivable goal pace. Implemented via `raceSpecificLongRunSession()`. Enforced by `INV-PLAN-RACE-SPECIFIC-LONG-RUN` in `lib/plan/invariants.ts`.
+
+---
+
+## 26. The constitution
+
+These twenty-six principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

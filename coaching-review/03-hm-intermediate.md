@@ -130,7 +130,9 @@ Weekly: **40 km** · long: 2h
 - **thu** — HM-pace intervals · 7km · 38min · Zone 3–4 · HR 141–154 bpm · pace 5:20–5:34 /km · RPE 7
   - _HM pace, not faster. Exit each rep wanting more._
 - **sat** — Easy run - Zone 2 · 7.5km · 50min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **sun** — Long run - Zone 2 · 18km · 119min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sun** — Long run with HM-pace finish · 18km · 119min · Zone 2–3 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 6
+  - _Easy first. Final third at HM goal pace._
+  - _Final third at HM pace: 5:27 /km._
 
 ### Week 10 — Peak — second peak week · *peak*
 > This is where the fitness is built. It will feel hard. That is correct.
@@ -141,7 +143,9 @@ Weekly: **44 km** · long: 2h
 - **thu** — HM-pace intervals · 8km · 44min · Zone 3–4 · HR 141–154 bpm · pace 5:20–5:34 /km · RPE 7
   - _HM pace, not faster. Exit each rep wanting more._
 - **sat** — Easy run - Zone 2 · 9km · 60min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
-- **sun** — Long run - Zone 2 · 18km · 119min · Zone 2 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 4
+- **sun** — Long run with HM-pace finish · 18km · 119min · Zone 2–3 · HR < 141 bpm · pace 6:03–7:13 /km · RPE 6
+  - _Easy first. Final third at HM goal pace._
+  - _Final third at HM pace: 5:27 /km._
 
 ### Week 11 — Taper — trust the work · *taper*
 > Volume drops. Intensity stays. Trust the work you have done.
@@ -255,7 +259,7 @@ Weekly: **29 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T10:13:08.414Z",
+    "generated_at": "2026-04-27T10:15:52.229Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
@@ -835,15 +839,19 @@ Weekly: **29 km**
         "sun": {
           "id": "w9-sun",
           "type": "easy",
-          "label": "Long run — Zone 2",
+          "label": "Long run with HM-pace finish",
           "detail": null,
           "distance_km": 18,
           "duration_mins": 119,
           "primary_metric": "distance",
-          "zone": "Zone 2",
+          "zone": "Zone 2–3",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
-          "rpe_target": 4
+          "rpe_target": 6,
+          "coach_notes": [
+            "Easy first. Final third at HM goal pace.",
+            "Final third at HM pace: 5:27 /km."
+          ]
         },
         "thu": {
           "id": "w9-thu",
@@ -902,15 +910,19 @@ Weekly: **29 km**
         "sun": {
           "id": "w10-sun",
           "type": "easy",
-          "label": "Long run — Zone 2",
+          "label": "Long run with HM-pace finish",
           "detail": null,
           "distance_km": 18,
           "duration_mins": 119,
           "primary_metric": "distance",
-          "zone": "Zone 2",
+          "zone": "Zone 2–3",
           "hr_target": "< 141 bpm",
           "pace_target": "6:03–7:13 /km",
-          "rpe_target": 4
+          "rpe_target": 6,
+          "coach_notes": [
+            "Easy first. Final third at HM goal pace.",
+            "Final third at HM pace: 5:27 /km."
+          ]
         },
         "thu": {
           "id": "w10-thu",

@@ -585,19 +585,21 @@ function makeQualitySession(args: {
   }
 }
 
-// Marathon-pace long run (CoachingPrinciples §5 + spec 3.7). Easy-first, then
-// MP segment in second half. Uses catalogue voice notes augmented with goal pace.
-function mpLongRunSession(
+// Race-specific long run (CoachingPrinciples §5, §25). Easy-first, then
+// race-pace segment. Used for HM and marathon peak. Catalogue row carries
+// label, voice, and segment ratios; goalPace is appended to the coach note.
+function raceSpecificLongRunSession(
   weekN: number, day: Day, distKm: number,
   metric: 'distance' | 'duration',
   zones: ZoneTargets, pace: PaceGuide,
   catalogueRow: SessionCatalogueRow,
   goalPace: string,
+  finalSegmentLabel: string,  // e.g. "Final 30–50% at MP" or "Final third at HM pace"
 ): Session {
   const voice = catalogueRow.coach_voice_notes ?? 'Easy first. Hit goal pace on tired legs.'
   const coach_notes: [string, string?, string?] = [
     voice,
-    `Final 30–50% at MP target ${goalPace}.`,
+    `${finalSegmentLabel}: ${goalPace}.`,
   ]
   const rounded = roundDistance(distKm)
   return {
@@ -868,12 +870,25 @@ function buildWeekSessions(
     : ['sun', 'sat', 'fri']
   const longDay = firstAvailableDay(longDayPref, blocked) ?? 'sun'
 
-  // Marathon peak: swap the standard long run for an mp_long_run from the
-  // catalogue (race-pace specificity, spec 3.7) — only when goal_pace is set.
-  if (phase === 'peak' && distKey === 'MARATHON' && goalPace) {
+  // Marathon / HM peak: swap the standard long run for a race-specific long
+  // run from the catalogue (CoachingPrinciples §25, ADR-009 spec 3.7) — only
+  // when goal_pace is set and the runner is in a non-deload peak week.
+  const useRaceSpecificLR = phase === 'peak' && !isDeload && goalPace
+  if (useRaceSpecificLR && distKey === 'MARATHON') {
     const mpRow = catalogue.find(r => r.id === 'mp_long_run')
     if (mpRow && (tier !== 'free' || mpRow.is_free_tier)) {
-      sessions[longDay] = mpLongRunSession(weekN, longDay, longKm, metric, zones, pace, mpRow, goalPace)
+      sessions[longDay] = raceSpecificLongRunSession(
+        weekN, longDay, longKm, metric, zones, pace, mpRow, goalPace, 'Final 30–50% at MP'
+      )
+    } else {
+      sessions[longDay] = longSession(weekN, longDay, longKm, metric, zones, pace)
+    }
+  } else if (useRaceSpecificLR && distKey === 'HM') {
+    const hmRow = catalogue.find(r => r.id === 'hm_pace_long_run')
+    if (hmRow && (tier !== 'free' || hmRow.is_free_tier)) {
+      sessions[longDay] = raceSpecificLongRunSession(
+        weekN, longDay, longKm, metric, zones, pace, hmRow, goalPace, 'Final third at HM pace'
+      )
     } else {
       sessions[longDay] = longSession(weekN, longDay, longKm, metric, zones, pace)
     }

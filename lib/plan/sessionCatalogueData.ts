@@ -132,6 +132,17 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     coach_voice_notes: 'Heroic openers ruin it. Even splits.',
   },
   {
+    id: 'hm_pace_long_run', name: 'Long run with HM-pace finish', category: 'race_specific',
+    purpose: 'HM-specific long run. Easy first, then race pace on legs that are already tired.',
+    phase_eligibility: ['peak'],
+    distance_eligibility: ['HM'],
+    fitness_level_min: 'intermediate', difficulty_tier: 4,
+    main_set_structure: { type: 'long_run_with_segment', easy_pct: 65, race_pace_pct: 35, race_pace_zone: 'HM' },
+    intensity_zones: ['Z2', 'Z3'],
+    typical_duration_min: 75, typical_duration_max: 130, is_free_tier: true,
+    coach_voice_notes: 'Easy first. Final third at HM goal pace.',
+  },
+  {
     id: 'mp_long_run', name: 'Marathon-pace long run', category: 'race_specific',
     purpose: 'Race-specific long run. Goal pace gets practised on legs that are already tired.',
     phase_eligibility: ['peak'],
@@ -213,6 +224,14 @@ function isHillSession(row: SessionCatalogueRow): boolean {
   return terrain === 'hills' || row.id.includes('hill')
 }
 
+// Long-run-with-segment rows are race-specific long runs (e.g. mp_long_run,
+// hm_pace_long_run). They live in the catalogue but are selected directly by
+// the long-run path in ruleEngine — never as a quality session.
+function isLongRunSession(row: SessionCatalogueRow): boolean {
+  const t = (row.main_set_structure as { type?: string }).type
+  return t === 'long_run_with_segment'
+}
+
 /**
  * Selects a catalogue row deterministically. Filter chain:
  *   1. phase_eligibility includes phase
@@ -235,6 +254,7 @@ export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCata
     row.distance_eligibility.includes(distanceKey) &&
     FITNESS_RANK[row.fitness_level_min] <= userRank &&
     tierFilter(row) &&
+    !isLongRunSession(row) &&  // long-run-with-segment rows are picked by the long-run path, not as quality
     (!excludeHillSessions || !isHillSession(row))
   )
 

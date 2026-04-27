@@ -380,6 +380,32 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // cap collides with MIN_SESSION_DISTANCE) — those are legitimate. This
   // invariant lives one layer up; it isn't checkable from the plan output alone.
 
+  // INV-PLAN-RACE-SPECIFIC-LONG-RUN — time-targeted HM/marathon plans need
+  // at least one peak-phase long run with race-pace finish.
+  // (CoachingPrinciples §25)
+  if (isTimeTarget && (distKey === 'HM' || distKey === 'MARATHON')) {
+    const peakLongRuns = plan.weeks
+      .filter(w => w.phase === 'peak' && w.type !== 'deload')
+      .flatMap(w => Object.values(w.sessions).filter((s): s is Session =>
+        !!s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)
+      ))
+    const hasRaceSpecific = peakLongRuns.some(s => {
+      const l = (s.label ?? '').toLowerCase()
+      return l.includes('pace') || l.includes(' mp') || l.startsWith('mp')
+    })
+    if (peakLongRuns.length > 0 && !hasRaceSpecific) {
+      violations.push({
+        code: 'INV-PLAN-RACE-SPECIFIC-LONG-RUN',
+        principle_ref: 'CoachingPrinciples §25',
+        severity: 'error',
+        week: 0,
+        message: `Time-targeted ${distKey} plan: no peak long run with race-pace finish (all peak long runs are flat aerobic)`,
+        actual: 0,
+        expected: '≥ 1 race-specific long run',
+      })
+    }
+  }
+
   // INV-PLAN-PEAK-LR-RACE-RATIO — time-targeted HM/marathon plans must reach
   // PEAK_LR_RATIO_VS_RACE × race distance in at least one peak-phase long run.
   // Subject to LONG_RUN_CAP_MINUTES — if the absolute time cap is below the
