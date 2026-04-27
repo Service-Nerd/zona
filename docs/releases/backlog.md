@@ -26,7 +26,6 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 ### C. Vercel env config
 
-- ❓ `ANTHROPIC_API_KEY` — required for paid/trial AI features; free tier works without (rule engine has no AI dependency)
 - 🔲 `STRIPE_SECRET_KEY` — Stripe dashboard → Developers → API keys
 - 🔲 `STRIPE_WEBHOOK_SECRET` — Stripe → Webhooks → add endpoint `https://zona.vercel.app/api/webhooks/stripe`, copy signing secret
 - 🔲 `STRIPE_PRICE_MONTHLY` + `STRIPE_PRICE_ANNUAL` — price IDs from Stripe dashboard after creating product
