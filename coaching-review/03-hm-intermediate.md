@@ -114,7 +114,7 @@ Weekly: **47 km** · long: 1.7h
 
 - **tue** — Easy run - Zone 2 · 11.5km · 75min · Zone 2 · HR < 141 bpm · pace 6:06–7:17 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
-- **thu** — HM-pace intervals · 8.5km · 46min · Zone 3–4 · HR 141–154 bpm · pace 5:20–5:34 /km · RPE 7
+- **thu** — HM-pace progression · 8.5km · 46min · Zone 3–4 · HR 141–154 bpm · pace 5:20–5:34 /km · RPE 7
   - _HM-pace work. Target 5:27 /km. Controlled, even splits — exit each rep wanting more._
 - **sat** — Easy run - Zone 2 · 12km · 80min · Zone 2 · HR < 141 bpm · pace 6:06–7:17 /km · RPE 4
 - **sun** — Long run - Zone 2 · 15km · 100min · Zone 2 · HR < 141 bpm · pace 6:06–7:17 /km · RPE 4
@@ -273,7 +273,7 @@ Weekly: **36 km**
     "hard_session_relationship": "love",
     "injury_history": [],
     "terrain": "trail",
-    "generated_at": "2026-04-27T19:55:25.458Z",
+    "generated_at": "2026-04-27T21:10:56.518Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": true,
@@ -296,6 +296,7 @@ Weekly: **36 km**
       "benchmark_date": "2026-03-08"
     },
     "training_age": "5-10yr",
+    "hr_zone_method": "karvonen",
     "prep_time_status": "ok",
     "prep_time_weeks_available": 13,
     "prep_time_weeks_required_ok": 12
@@ -747,7 +748,7 @@ Weekly: **36 km**
         "thu": {
           "id": "w7-thu",
           "type": "quality",
-          "label": "HM-pace intervals",
+          "label": "HM-pace progression",
           "detail": null,
           "distance_km": 8.5,
           "duration_mins": 46,

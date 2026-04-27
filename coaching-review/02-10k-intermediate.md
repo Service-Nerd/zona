@@ -99,7 +99,7 @@ Weekly: **32 km** · long: 1.1h
 
 - **mon** — Easy run - Zone 2 · 8km · 52min · Zone 2 · HR < 146 bpm · pace 5:54–7:03 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
-- **wed** — 10K-pace intervals · 6km · 30min · Zone 3–4 · HR 146–159 bpm · pace 4:54–5:06 /km · RPE 7
+- **wed** — 10K-pace progression · 6km · 30min · Zone 3–4 · HR 146–159 bpm · pace 4:54–5:06 /km · RPE 7
   - _10K-pace work. Target 5:00 /km. Controlled, even splits — exit each rep wanting more._
 - **fri** — Easy run - Zone 2 · 8km · 52min · Zone 2 · HR < 146 bpm · pace 5:54–7:03 /km · RPE 4
 - **sun** — Long run - Zone 2 · 10km · 65min · Zone 2 · HR < 146 bpm · pace 5:54–7:03 /km · RPE 4
@@ -112,7 +112,7 @@ Weekly: **35 km** · long: 1.2h
 
 - **mon** — Easy run - Zone 2 · 8.5km · 55min · Zone 2 · HR < 146 bpm · pace 5:54–7:03 /km · RPE 4
   - _4×20s strides at 5K effort, full recovery between._
-- **wed** — 10K-pace intervals · 6.5km · 33min · Zone 3–4 · HR 146–159 bpm · pace 4:54–5:06 /km · RPE 7
+- **wed** — 10K-pace progression · 6.5km · 33min · Zone 3–4 · HR 146–159 bpm · pace 4:54–5:06 /km · RPE 7
   - _10K-pace work. Target 5:00 /km. Controlled, even splits — exit each rep wanting more._
 - **fri** — Easy run - Zone 2 · 8.5km · 55min · Zone 2 · HR < 146 bpm · pace 5:54–7:03 /km · RPE 4
 - **sun** — Long run - Zone 2 · 11km · 71min · Zone 2 · HR < 146 bpm · pace 5:54–7:03 /km · RPE 4
@@ -248,7 +248,7 @@ Weekly: **18 km**
       "knee"
     ],
     "terrain": "road",
-    "generated_at": "2026-04-27T19:55:25.457Z",
+    "generated_at": "2026-04-27T21:10:56.517Z",
     "generator_version": "2.0",
     "tier": "paid",
     "compressed": false,
@@ -269,6 +269,7 @@ Weekly: **18 km**
       "benchmark_date": "2026-03-15"
     },
     "training_age": "2-5yr",
+    "hr_zone_method": "karvonen",
     "prep_time_status": "ok",
     "prep_time_weeks_available": 11,
     "prep_time_weeks_required_ok": 10
@@ -650,7 +651,7 @@ Weekly: **18 km**
         "wed": {
           "id": "w6-wed",
           "type": "quality",
-          "label": "10K-pace intervals",
+          "label": "10K-pace progression",
           "detail": null,
           "distance_km": 6,
           "duration_mins": 30,
@@ -720,7 +721,7 @@ Weekly: **18 km**
         "wed": {
           "id": "w7-wed",
           "type": "quality",
-          "label": "10K-pace intervals",
+          "label": "10K-pace progression",
           "detail": null,
           "distance_km": 6.5,
           "duration_mins": 33,

@@ -209,7 +209,7 @@ Weekly: **13 km**
     "fitness_level": "beginner",
     "goal": "finish",
     "days_available": 3,
-    "generated_at": "2026-04-27T19:55:25.454Z",
+    "generated_at": "2026-04-27T21:10:56.515Z",
     "generator_version": "2.0",
     "tier": "free",
     "compressed": true,
@@ -221,6 +221,8 @@ Weekly: **13 km**
     ],
     "training_age": "2-5yr",
     "fresh_return_active": true,
+    "returning_runner_note": "Fresh-from-layoff start: week 1 begins at 70% of your stated current weekly volume (14 km vs 18 km stated). Returning to running needs caution, not faster ramp — the engine prefers a small base to rebuild from. Volume grows at the standard 10% per week.",
+    "hr_zone_method": "karvonen",
     "prep_time_status": "ok",
     "prep_time_weeks_available": 11,
     "prep_time_weeks_required_ok": 8
