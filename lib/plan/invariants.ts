@@ -45,6 +45,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-LR-PROGRESSION-CAP',
   'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES',
   'INV-PLAN-PEAK-LR-ALTERNATION',
+  'INV-PLAN-TAPER-DURATION-CAP',
 ] as const
 
 export interface Violation {
@@ -863,6 +864,34 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           expected: `≥ ${Math.round(requiredFloor)}`,
         })
       }
+    }
+  }
+
+  // INV-PLAN-TAPER-DURATION-CAP — taper phase weeks (including race week) must
+  // not exceed MAX_TAPER_PHASE_WEEKS for the race distance.
+  // (CoachingPrinciples §49)
+  {
+    const distCfgKey = (() => {
+      const km = input.race_distance_km
+      if (km <= 6)  return '5K'
+      if (km <= 12) return '10K'
+      if (km <= 22) return 'HM'
+      if (km <= 43) return 'MARATHON'
+      if (km <= 55) return '50K'
+      return '100K'
+    })() as keyof typeof GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS
+    const cap = GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS[distCfgKey]
+    const taperWeeks = plan.weeks.filter(w => w.phase === 'taper').length
+    if (taperWeeks > cap) {
+      violations.push({
+        code: 'INV-PLAN-TAPER-DURATION-CAP',
+        principle_ref: 'CoachingPrinciples §49',
+        severity: 'error',
+        week: 0,
+        message: `Taper phase is ${taperWeeks} weeks (including race week); cap for ${distCfgKey} is ${cap}. Excess weeks must flow to base or build, not taper.`,
+        actual: taperWeeks,
+        expected: `≤ ${cap}`,
+      })
     }
   }
 

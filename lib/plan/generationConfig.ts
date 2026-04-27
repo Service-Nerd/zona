@@ -210,13 +210,30 @@ export const GENERATION_CONFIG = {
   HILL_RESTRICTING_INJURIES: ['knee', 'itb', 'achilles', 'shin', 'calf', 'plantar'] as readonly string[],
 
   // Quality sessions per taper week. Last entry is always race week (= 0).
+  // Length = total taper-phase weeks INCLUDING race week. Capped per
+  // CoachingPrinciples §49 (taper duration). Length must be ≤ MAX_TAPER_PHASE_WEEKS.
   TAPER_QUALITY_PER_WEEK: {
     '5K':       [1, 0],
     '10K':      [1, 0],
     'HM':       [1, 1, 0],
     'MARATHON': [1, 1, 1, 0],
     '50K':      [1, 1, 1, 0],
-    '100K':     [1, 1, 1, 1, 0],
+    '100K':     [1, 1, 1, 0],
+  },
+
+  // ── Taper duration cap (CoachingPrinciples §49) ────────────────────────────
+  // Maximum total taper-phase weeks INCLUDING race week. Engine cannot allocate
+  // more weeks to taper than these caps; excess weeks flow to base / build.
+  // Round-2 Case 04 review found a 4-week marathon taper detrains and compresses
+  // the build. The cap below holds marathon at 3 actual taper weeks (4 entries),
+  // ultra at 3 (was 4 for 100K).
+  MAX_TAPER_PHASE_WEEKS: {
+    '5K':       2,   // 1 taper + race
+    '10K':      2,
+    'HM':       3,   // 2 taper + race
+    'MARATHON': 4,   // 3 taper + race
+    '50K':      4,
+    '100K':     4,
   },
 
   // ── Hard / easy spacing (CoachingPrinciples §7) ─────────────────────────────

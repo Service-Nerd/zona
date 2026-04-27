@@ -700,8 +700,35 @@ Enforced by `INV-PLAN-PEAK-LR-ALTERNATION`. Engine-side: in peak weeks, if the p
 
 ---
 
-## 48. The constitution
+## 49. Taper duration cap
 
-These forty-eight principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** Taper-phase weeks (INCLUDING race week) MUST NOT exceed the cap per race distance. Beyond the cap, additional taper weeks detrain the runner and compress the build phase further.
+
+| Distance | Total taper weeks (incl. race week) | Actual taper weeks before race |
+|---|---|---|
+| 5K | 2 | 1 |
+| 10K | 2 | 1 |
+| HM | 3 | 2 |
+| Marathon | 4 | 3 |
+| Ultra (50K) | 4 | 3 |
+| Ultra (100K) | 4 | 3 |
+
+The engine MUST NOT allocate more weeks to the taper phase than the cap above. Excess weeks must flow to base or build, where they extend the aerobic engine and the specificity window.
+
+**Why.** Case 04 (2026-04-28 review) showed a 4-week marathon taper compressing the build phase to two weeks of base, two of build, two of peak — a structurally non-coachable timeline. Marathon taper science is settled: 2–3 weeks of reduced volume with maintained intensity. Beyond that, fitness slides faster than freshness rises. The cap stops the engine from using "extra weeks" as taper padding when it should be using them as build.
+
+The 100K timeline previously allowed 4 actual taper weeks (5 total entries). Reduced to 3 actual taper weeks per the same logic — ultras need a slightly different taper rhythm than marathons but not a longer one. The 4th entry was historical.
+
+**Config.**
+- `GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey].length` — total taper-phase weeks. Must be ≤ `MAX_TAPER_PHASE_WEEKS[distKey]`.
+- `GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS` — canonical cap. Authority for the invariant.
+
+Enforced by `INV-PLAN-TAPER-DURATION-CAP`.
+
+---
+
+## 50. The constitution
+
+These fifty principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.
