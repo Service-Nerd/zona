@@ -22,7 +22,7 @@ export interface WeeklyReportData {
   totalKmActual:       number
   totalKmPlanned:      number
   acuteChronicRatio:   number
-  zoneDisciplineScore: number
+  zoneDisciplineScore: number | null   // null when no Strava-analysed HR data
   avgRpe:              number | null   // not computed here — passed in from session_completions
   dominantFlag:        CoachingFlag
   primaryInsight:      InsightPriority
@@ -65,14 +65,14 @@ function dominantFlag(counts: Record<CoachingFlag, number>): CoachingFlag {
  */
 function selectPrimaryInsight(
   ratio: number,
-  zdScore: number,
+  zdScore: number | null,
   shadowPct: number,
   efTrend: number | null,
   sessionsCompleted: number,
 ): InsightPriority {
   if (sessionsCompleted < 2)               return 'low_data'
   if (ratio >= 1.3)                        return 'load_spike'
-  if (zdScore < 70)                        return 'zone_drift'
+  if (zdScore !== null && zdScore < 70)    return 'zone_drift'
   if (shadowPct > 15)                      return 'shadow_load'
   if (efTrend !== null && efTrend < EF_DECLINE_THRESHOLD_PCT) return 'ef_decline'
   return 'solid_week'

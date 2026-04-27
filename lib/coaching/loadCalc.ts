@@ -52,15 +52,19 @@ export function isShadowLoadTriggered(
 }
 
 /**
- * Zone discipline score (0–100).
+ * Zone discipline score (0–100), or null when there's no signal.
  * Weighted average of HR-in-zone% across all sessions.
  * Easy sessions weighted 2× — they're the most commonly violated.
+ *
+ * Returns null when no session has hrInZonePct data — "no signal" is
+ * different from "score zero", and the caller must treat them differently
+ * (a fresh user with no Strava history shouldn't be flagged as freelancing).
  */
 export function zoneDisciplineScore(
   sessions: { sessionType: string; hrInZonePct: number | null }[]
-): number {
+): number | null {
   const scored = sessions.filter(s => s.hrInZonePct !== null)
-  if (!scored.length) return 0
+  if (!scored.length) return null
 
   let totalWeight = 0
   let weightedSum = 0

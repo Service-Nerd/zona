@@ -67,7 +67,7 @@ This week's data:
 - Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned}
 - Volume: ${data.totalKmActual.toFixed(1)}km actual vs ${data.totalKmPlanned.toFixed(1)}km planned
 - Load ratio (vs 4-week avg): ${data.acuteChronicRatio.toFixed(2)}x
-- Zone discipline score: ${data.zoneDisciplineScore}/100
+- Zone discipline score: ${data.zoneDisciplineScore !== null ? `${data.zoneDisciplineScore}/100` : 'no signal (no Strava-analysed sessions yet)'}
 ${data.avgRpe !== null ? `- Avg RPE: ${data.avgRpe.toFixed(1)}\n` : ''}- Dominant coaching flag: ${data.dominantFlag}
 - Primary insight: ${data.primaryInsight}
 

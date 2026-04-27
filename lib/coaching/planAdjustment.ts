@@ -58,7 +58,9 @@ export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAd
     return buildReduceVolumeAdjustment(input, ratio)
   }
 
-  if (zdScore < ZONE_DISCIPLINE_BANDS.loose) {
+  // zdScore === null when there's no Strava-analysed HR data — skip the
+  // zone-drift check entirely. "No signal" is not the same as "freelancing".
+  if (zdScore !== null && zdScore < ZONE_DISCIPLINE_BANDS.loose) {
     return buildZoneDriftAdjustment(input, zdScore)
   }
 
