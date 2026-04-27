@@ -181,6 +181,10 @@ export interface PlanMeta {
   // H-06 — peak vs base overload classification (CoachingPrinciples §23)
   volume_profile?: 'build' | 'maintenance'  // 'build' when peak ≥ 110% of W1; else 'maintenance'
   volume_constraint_note?: string         // human-readable explanation when 'maintenance'
+
+  // M-05 — replace single `compressed` boolean with persona-aware classification.
+  // (CoachingPrinciples §31)
+  compression_classification?: 'optimal' | 'appropriate_for_persona' | 'constrained_by_inputs'
   training_age?: TrainingAge             // stored for R20 reshaper
   returning_runner_allowance_active?: boolean  // true if 15%/3wk allowance applied
   fresh_return_active?: boolean                  // true if M-02 layoff start-fraction applied

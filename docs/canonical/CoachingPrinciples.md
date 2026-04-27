@@ -436,8 +436,22 @@ Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) where `startKm` i
 
 ---
 
-## 31. The constitution
+## 31. Compression classification — three modes
 
-These thirty-one principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+**Principle.** When a plan does not reach its distance-and-fitness peakKm target, the user gets a classification, not a bare warning. Three modes:
+
+- `optimal` — plan reaches its target. No warning.
+- `appropriate_for_persona` — plan falls short of target, but the runner doesn't need more for their goal. The classic case is a beginner with a finish goal: race-day success is reaching the start line healthy, not maximising aerobic capacity.
+- `constrained_by_inputs` — plan falls short and the runner could carry more. Inputs (`days_available`, `max_weekday_mins`, `current_weekly_km` near peak target) prevent overload. The user can increase capacity by adjusting one of these and regenerating.
+
+**Why.** A binary "compressed" flag tells the runner something is wrong but not what or whether to act. For Sarah (beginner, finish goal), nothing is wrong — her plan is the right shape for her aim, even at modest volume. For Mark (intermediate, time goal) hitting the same flag, the runner needs to know which input is the bottleneck so they can decide whether to trade life-flexibility for fitness ceiling. The same warning means different things; surfacing the difference respects the runner's agency.
+
+**Config.** `plan.meta.compression_classification: 'optimal' | 'appropriate_for_persona' | 'constrained_by_inputs'`. Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) using the `compressed` boolean plus the (fitness, goal) pair as the discriminator. The bare `compressed` flag is retained for back-compat with existing UI.
+
+---
+
+## 32. The constitution
+
+These thirty-two principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

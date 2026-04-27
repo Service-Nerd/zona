@@ -1434,6 +1434,16 @@ export function generateRulePlan(
     tier,
     compressed: compressed || capCompressed,  // OR-combine: too-short plan OR 10%-cap forced
 
+    // CoachingPrinciples §31 — differentiated compression classification.
+    // Replaces the bare boolean with persona-aware reasoning.
+    compression_classification: ((): 'optimal' | 'appropriate_for_persona' | 'constrained_by_inputs' => {
+      if (!compressed && !capCompressed) return 'optimal'
+      // Beginner with a finish goal doesn't need more volume — race-day success
+      // is reaching the start line healthy. Compression here is appropriate.
+      if (fitness === 'beginner' && input.goal === 'finish') return 'appropriate_for_persona'
+      return 'constrained_by_inputs'
+    })(),
+
     // CoachingPrinciples §23 — peak overload classification.
     // Plans ≥ PEAK_OVERLOAD_MIN_PLAN_WEEKS that fail to reach
     // PEAK_OVER_BASE_RATIO × W1 volume are surfaced as 'maintenance' so users
