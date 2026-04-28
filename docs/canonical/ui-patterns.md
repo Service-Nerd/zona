@@ -280,7 +280,7 @@ Warm amber block for all coach voice content. Used in TodayScreen and Session De
 
 ```
 ┌─────────────────────────────────────────────┐
-│  [Z] COACH          [timestamp optional]    │
+│  COACH          [timestamp optional]        │
 │                                             │
 │  Keep it easy. Nose breathing the whole     │
 │  way. If you can't talk, slow down.         │
@@ -290,22 +290,21 @@ Warm amber block for all coach voice content. Used in TodayScreen and Session De
 **Structure:**
 - Background: `--warn-bg`
 - Radius: `14px`, padding: `16px 18px`
-- Eyebrow row: `10px 700 --warn uppercase 0.14em tracking` left + timestamp right (`11px 400 --warn 0.6 opacity`)
-- Avatar circle: `22px`, `--ink` background, `--bg` text, `10px 800` initial letter — **hidden in `variant="why"`**
+- Eyebrow row: `10px 700 --warn uppercase 0.14em tracking`. Optional `<AIMark />` prepended when `aiGenerated`. Optional timestamp suffix (`11px 400 --warn 0.6 opacity`)
 - Body: `14px 400 --coach-ink` (default) or `13px 400 --coach-ink` (why variant)
 
 **Props:**
 ```tsx
 label?: string          // default "COACH"
 timestamp?: string      // optional "6:12am"
-initial?: string        // default "Z"
 children: React.ReactNode
 variant?: 'default' | 'why'
+aiGenerated?: boolean   // prepends AIMark to the eyebrow when true
 ```
 
 **Variant rules:**
-- `default` — shows avatar, used for plan-level coaching notes in TodayScreen
-- `why` — no avatar, used in Session Detail "WHY THIS SESSION" section, slightly smaller body text
+- `default` — used for plan-level coaching notes in TodayScreen, slightly larger body
+- `why` — used in Session Detail "WHY THIS SESSION" section, slightly smaller body text
 
 Reference: `components/shared/CoachNoteBlock.tsx`
 
