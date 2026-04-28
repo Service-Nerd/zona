@@ -5759,6 +5759,12 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
 
       {/* ── CONTENT ───────────────────────────────────────────────── */}
       <div style={{ padding: '0 16px' }}>
+        {/* Run analysis sits at the top for completed sessions — the headline
+            content. Pending state shows AIMark working pulse while analyse-run
+            is in flight; real card replaces it when run_analysis lands. */}
+        {hasPaidAccess && analysis && <RunFeedbackCard analysis={analysis} />}
+        {hasPaidAccess && !analysis && isAnalysisPending && <PendingAnalysisCard />}
+
         <div style={{
           background: 'var(--card)',
           borderRadius: 'var(--radius-lg)',
@@ -5786,10 +5792,6 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
             guidance={guidance}
           />
         </div>
-
-        {/* Run analysis — pending state while analyse-run is in flight, then real card */}
-        {hasPaidAccess && analysis && <RunFeedbackCard analysis={analysis} />}
-        {hasPaidAccess && !analysis && isAnalysisPending && <PendingAnalysisCard />}
       </div>
     </div>
   )
