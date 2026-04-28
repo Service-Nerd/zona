@@ -20,8 +20,11 @@ import RestraintCard from '@/components/shared/RestraintCard'
 import PlanArc from '@/components/shared/PlanArc'
 import RPEScale from '@/components/shared/RPEScale'
 import SessionCard from '@/components/shared/SessionCard'
+import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
+import ZoneShapeCard from '@/components/shared/ZoneShapeCard'
 import { composeSession } from '@/lib/plan/sessionComposer'
 import { formatDistance, sumRoundedDistance } from '@/lib/format'
+import { didSessionHitZone, sessionHRBand, zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { renderGuidance, guidanceContextFromSession } from '@/lib/plan/renderGuidance'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import dynamic from 'next/dynamic'
@@ -1273,6 +1276,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null)
   const [claimedIds, setClaimedIds] = useState<Set<number>>(new Set())
   const [loadingClaimed, setLoadingClaimed] = useState(false)
+  const [zoneSheetOpen, setZoneSheetOpen] = useState(false)
   const [rpe, setRpe] = useState<number | null>(null)
   const [fatigueTag, setFatigueTag] = useState<string | null>(null)
   const [savingRPE, setSavingRPE] = useState(false)
@@ -1684,9 +1688,20 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           {/* HR card */}
           {['easy','run','quality','intervals','hard','tempo','race','recovery'].includes(session.type) && (
             <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
-                {session.zone ? session.zone : (session.type === 'quality' || session.type === 'intervals' || session.type === 'hard' ? 'Target HR' : 'Zone 2 ceiling')}
-              </div>
+              <button
+                onClick={() => { if (zoneForSessionType(session.type)) setZoneSheetOpen(true) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '4px',
+                  fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)',
+                  textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px',
+                  background: 'none', border: 'none', padding: 0, cursor: zoneForSessionType(session.type) ? 'pointer' : 'default',
+                }}
+              >
+                {zoneForSessionType(session.type)?.label ?? session.zone ?? 'Target HR'}
+                {zoneForSessionType(session.type) && (
+                  <span style={{ fontSize: '10px', opacity: 0.6 }}>?</span>
+                )}
+              </button>
               {(() => {
                 const hrVal = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling)
                 return (
@@ -2055,6 +2070,14 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           </div>
         </div>
       )}
+
+      {/* Zone education sheet */}
+      {zoneSheetOpen && (() => {
+        const zone = zoneForSessionType(session.type)
+        if (!zone) return null
+        const band = sessionHRBand(session.type, restingHR ?? null, maxHR ?? null)
+        return <ZoneInfoSheet zoneKey={zone.zone} hrBand={band ? { lo: band.lo, hi: band.hi } : null} onClose={() => setZoneSheetOpen(false)} />
+      })()}
     </>
   )
 }
@@ -2655,7 +2678,10 @@ function karvonenZone(
   }
 }
 
-/** Returns the HR string to display for a session type, using Karvonen if available */
+/** Returns the HR string to display for a session, using zoneRules so every
+ *  session type gets the same shape ("Zone X · A–B bpm" or "< X bpm" for Z2).
+ *  Live Karvonen takes precedence over baked plan strings — stale hr_target
+ *  on a regenerated user is the bug, not a feature. */
 function getSessionHRDisplay(
   sessionType: string,
   hr_target: string | undefined,
@@ -2663,21 +2689,16 @@ function getSessionHRDisplay(
   maxHR: number | null,
   zone2Ceiling: number | undefined,
 ): string | null {
-  // Live Karvonen takes precedence over baked plan strings: if the user updated
-  // restingHR/maxHR after plan generation, the baked hr_target is stale.
-  if (sessionType === 'easy' || sessionType === 'run') {
-    const z = karvonenZone(restingHR, maxHR, 60, 70)
-    if (z) return `< ${z.hi} bpm`
-    if (hr_target) return hr_target
-    return zone2Ceiling ? `< ${zone2Ceiling} bpm` : null
+  const band = sessionHRBand(sessionType, restingHR, maxHR)
+  if (band) {
+    return band.zone.zone === 'Z2' ? `< ${band.hi}` : `${band.lo}–${band.hi}`
   }
-  if (sessionType === 'quality' || sessionType === 'intervals' || sessionType === 'hard' || sessionType === 'tempo') {
-    const z = karvonenZone(restingHR, maxHR, 75, 85)
-    if (z) return `${z.lo}–${z.hi} bpm`
-    if (hr_target) return hr_target
-    return null
+  // No HR data — fall back to the baked plan string. Strip "bpm" so callers
+  // can append it themselves (every render site adds its own bpm suffix).
+  if (hr_target) return hr_target.replace(/\s*bpm\s*$/i, '')
+  if ((sessionType === 'easy' || sessionType === 'long' || sessionType === 'recovery' || sessionType === 'run') && zone2Ceiling) {
+    return `< ${zone2Ceiling}`
   }
-  if (hr_target) return hr_target
   return null
 }
 
@@ -2706,11 +2727,11 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
   }, [metricStorageKey, sessionDefault])
 
   const hrDisplay = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling)
-  const hrLabel = session.zone
-    ? session.zone
-    : (session.type === 'quality' || session.type === 'intervals' || session.type === 'hard' || session.type === 'tempo')
-      ? 'Target HR'
-      : 'Zone 2 ceiling'
+  // Same shape for every session type: "Zone X". Falls back to the plan's
+  // session.zone string if the type isn't in our zone map.
+  const hrLabel = zoneForSessionType(session.type)?.label
+    ?? (session.zone as string | undefined)
+    ?? null
   const pace = (session.type === 'easy' || session.type === 'run')
     ? (session.pace_target ?? aerobicPace ?? null)
     : (session.type === 'quality' || session.type === 'intervals' || session.type === 'hard' || session.type === 'tempo')
@@ -3401,14 +3422,19 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
     return fatiguePrepend + base
   }
 
-  // ── Zone 2 restraint percent (plan-derived) ──────────────────────────
-  const zone2SessionTypes = new Set(['easy', 'long', 'recovery', 'run'])
+  // ── Zone discipline (HR-derived) ─────────────────────────────────────
+  // % of completed sessions where avg_hr landed in the session's prescribed
+  // zone band. A perfectly-executed quality session counts as a hit, not
+  // a miss. Sessions without HR data don't count toward the denominator.
   const completedThisWeek = sessions.filter(s =>
     s.type !== 'rest' && completions[s.key]?.status === 'complete'
   )
-  const zone2Done = completedThisWeek.filter(s => zone2SessionTypes.has(s.type))
-  const zone2Percent = completedThisWeek.length >= 2
-    ? Math.round((zone2Done.length / completedThisWeek.length) * 100)
+  const zoneJudgements = completedThisWeek
+    .map(s => didSessionHitZone(s.type, completions[s.key]?.avg_hr ?? null, restingHR ?? null, maxHR ?? null))
+    .filter((v): v is boolean => v !== null)
+  const zoneDisciplineHits = zoneJudgements.filter(v => v).length
+  const zoneDisciplinePercent = zoneJudgements.length >= 2
+    ? Math.round((zoneDisciplineHits / zoneJudgements.length) * 100)
     : null
 
   // ── Done sessions for "Done this week" section ───────────────────────
@@ -3818,29 +3844,34 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
       </div>
 
-      {/* ── RESTRAINT CARD ───────────────────────────────────────────── */}
-      {zone2Percent !== null && (
+      {/* ── ZONE DISCIPLINE CARD ─────────────────────────────────────── */}
+      {zoneDisciplinePercent !== null && (
         <div style={{ padding: '20px 16px 0' }}>
           <RestraintCard
-            percent={zone2Percent}
-            meta={`${completedThisWeek.length} / ${totalSessionsThisWeek} sessions`}
+            percent={zoneDisciplinePercent}
+            meta={`${zoneDisciplineHits} / ${zoneJudgements.length} hit their zone`}
             body={
               <>
-                of your runs were{' '}
+                of your runs landed in the{' '}
                 <strong style={{ color: 'var(--ink)', fontWeight: 600 }}>
-                  Zone 2 sessions
+                  prescribed zone
                 </strong>
                 .{' '}
-                {zone2Percent >= 70
-                  ? "That's why you're getting faster."
-                  : zone2Percent >= 50
-                  ? "Keep the easy days easy."
-                  : "Ease back on the effort. Restraint is the training."}
+                {zoneDisciplinePercent >= 80
+                  ? "Easy was easy. Hard was hard. That's the work."
+                  : zoneDisciplinePercent >= 60
+                  ? "Mostly on target. Watch the drift on easy days."
+                  : "Too much grey-zone running. Hit the zone the session prescribes."}
               </>
             }
           />
         </div>
       )}
+
+      {/* ── ZONE SHAPE CARD ─────────────────────────────────────────── */}
+      <div style={{ padding: '12px 16px 0' }}>
+        <ZoneShapeCard sessions={sessions.filter(s => s.type !== 'rest')} />
+      </div>
 
       {/* ── DONE THIS WEEK ───────────────────────────────────────────── */}
       {(doneSessions.length > 0 || skippedSessions.length > 0) && (
@@ -4684,6 +4715,7 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
   useEffect(() => { setRhr(restingHR ? String(restingHR) : '') }, [restingHR])
   useEffect(() => { setMhr(maxHR ? String(maxHR) : '') }, [maxHR])
   const [saved, setSaved] = useState(false)
+  const [openZone, setOpenZone] = useState<1 | 2 | 3 | 4 | 5 | null>(null)
 
   const rhrNum = parseInt(rhr)
   const mhrNum = parseInt(mhr)
@@ -4754,13 +4786,18 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
             Calculated zones · HRR method
           </div>
           {zones.map(z => (
-            <div key={z.zone} style={{
-              display: 'grid', gridTemplateColumns: '24px 1fr auto',
-              alignItems: 'center', gap: '10px',
-              padding: '9px 10px', borderRadius: '8px',
-              background: 'var(--bg)',
-              border: '0.5px solid var(--border-col)',
-            }}>
+            <button
+              key={z.zone}
+              onClick={() => setOpenZone(z.zone as 1 | 2 | 3 | 4 | 5)}
+              style={{
+                display: 'grid', gridTemplateColumns: '24px 1fr auto',
+                alignItems: 'center', gap: '10px',
+                padding: '9px 10px', borderRadius: '8px',
+                background: 'var(--bg)',
+                border: '0.5px solid var(--border-col)',
+                cursor: 'pointer', textAlign: 'left',
+                width: '100%',
+              }}>
               {/* Zone number */}
               <div style={{
                 width: '24px', height: '24px', borderRadius: '50%',
@@ -4778,10 +4815,18 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: z.colour, whiteSpace: 'nowrap', textAlign: 'right' }}>
                 {z.minHR}–{z.maxHR}
               </div>
-            </div>
+            </button>
           ))}
         </div>
       )}
+
+      {/* Zone education sheet — opened by tap on a zone row */}
+      {openZone && (() => {
+        const z = zones.find(zz => zz.zone === openZone)
+        if (!z) return null
+        const zoneKey = openZone === 1 ? 'Z1' : openZone === 2 ? 'Z2' : openZone === 3 ? 'Z3' : openZone === 4 ? 'Z4-5' : 'Z5'
+        return <ZoneInfoSheet zoneKey={zoneKey} hrBand={{ lo: z.minHR, hi: z.maxHR }} onClose={() => setOpenZone(null)} />
+      })()}
 
       {/* Prompt if incomplete */}
       {zones.length === 0 && (rhr || mhr) && (
@@ -5088,20 +5133,11 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           </button>
         </div>
 
-        {/* HR payoff callout — Zone 2 ceiling is relevant on easy/long/recovery sessions only */}
-        {hrConfigured && z2Ceiling && (
-          <div style={{ background: 'var(--accent-soft)', borderRadius: '10px', border: '0.5px solid var(--accent-dim)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', lineHeight: 1.5 }}>
-              Your Zone 2 ceiling is <strong>{z2Ceiling} bpm</strong> — shown on easy, long, and recovery sessions.
-            </div>
-          </div>
-        )}
         {!hrConfigured && (
           <div style={{ background: 'var(--amber-soft)', borderRadius: '10px', border: '0.5px solid var(--amber-mid)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--amber)', flexShrink: 0 }} />
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--amber)', lineHeight: 1.5 }}>
-              Set your resting and max HR below to get your Zone 2 ceiling.
+              Set your resting and max HR below to see your training zones.
             </div>
           </div>
         )}

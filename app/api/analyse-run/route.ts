@@ -8,6 +8,7 @@ import { scoreSession } from '@/lib/coaching/sessionScore'
 import { computeEF, computeEFBaseline } from '@/lib/coaching/efTrend'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildSessionFeedbackPrompt } from '@/lib/coaching/prompts/sessionFeedback'
+import { zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { notifyUser } from '@/lib/webpush'
 import { BRAND } from '@/lib/brand'
 import type { Plan, Session } from '@/types/plan'
@@ -180,6 +181,7 @@ export async function POST(req: NextRequest) {
   let feedbackText: string | null = null
   if (true) {
     try {
+      const prescribedZone = zoneForSessionType((session as any).type)
       const prompt = buildSessionFeedbackPrompt({
         session,
         weekN: week_n,
@@ -195,6 +197,7 @@ export async function POST(req: NextRequest) {
         efTrendPct,
         rpe:                 completionRes.data?.rpe ?? null,
         fatigueTag:          completionRes.data?.fatigue_tag ?? null,
+        prescribedZoneLabel: prescribedZone?.label ?? null,
       })
 
       const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
