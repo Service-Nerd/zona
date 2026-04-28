@@ -780,7 +780,7 @@ export default function DashboardClient() {
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
         {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} hasPaidAccess={hasPaidAccess} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} runAnalysis={runAnalysisMap[activeSessionData?.sessionKey ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
         {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} dob={dob} onDobSave={async (d) => { setDob(d); if (userId) await supabase.from('user_settings').update({ date_of_birth: d }).eq('id', userId) }} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} onBack={() => {
@@ -1289,11 +1289,12 @@ function getSkipResponse(reason: string): string {
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
-function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, hasPaidAccess, onUpgrade, goalPace, guidance }: {
+function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, stravaLoading, hasPaidAccess, onUpgrade, goalPace, guidance }: {
   session: any; weekTheme: string; weekN: number; preloadedRuns: any[]
   onClose: () => void; onSaved?: () => void
   preferredUnits: 'km' | 'mi'; zone2Ceiling: number; preferredMetric?: 'distance' | 'duration'
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
+  stravaLoading?: boolean
   hasPaidAccess?: boolean; onUpgrade?: () => void
   goalPace?: string | null
   guidance?: any | null
@@ -1448,6 +1449,14 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   // Pace from session structured field → Strava aerobic pace → null (no hardcoded fallback)
   const paceBracket = session.pace_target
     ?? ((session.type === 'easy' || session.type === 'run') ? aerobicPace ?? null : null)
+
+  // Render the pace tile shell (with a skeleton value) while we're still
+  // waiting on Strava-derived aerobicPace. Avoids a layout flash where the
+  // tile pops in a beat after the rest of the card.
+  const paceTileExpected =
+    !paceBracket
+    && (session.type === 'easy' || session.type === 'run')
+    && !!stravaLoading
 
   const color = getSessionColor(session.type)
   const config = { color, label: getSessionLabel(session.type) }
@@ -1769,12 +1778,22 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             </div>
             )
           })()}
-          {/* Pace card */}
+          {/* Pace card — skeleton while Strava-derived aerobic pace is still loading */}
           {paceBracket && (
             <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Est. pace</div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>{paceBracket}</div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>HR-derived estimate</div>
+            </div>
+          )}
+          {!paceBracket && paceTileExpected && (
+            <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Est. pace</div>
+              <div style={{
+                height: '18px', width: '64px', background: 'var(--bg-soft)', borderRadius: '4px',
+                animation: 'ai-mark-pulse 1.6s ease-in-out infinite',
+              }} />
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', marginTop: '6px' }}>HR-derived estimate</div>
             </div>
           )}
           {/* Zone card for strength */}
@@ -5457,66 +5476,189 @@ function AdminScreen({ onBack, onImpersonate }: {
 
 // ── RUN FEEDBACK CARD ─────────────────────────────────────────────────────
 
-function RunFeedbackCard({ analysis }: { analysis: any }) {
-  const verdict     = analysis.verdict as string
-  const score       = analysis.total_score as number
-  const feedback    = analysis.feedback_text as string | null
+// Verdict → colour token + Zona-voice headline. Single source of truth for run-feedback voice.
+// Maps both legacy verdict names (nailed/close/off_target/concerning) and engine names
+// (strong/good/ok/drifted/hard) to keep the surface stable across rule-engine versions.
+function getVerdictVoice(verdict: string): { accent: string; headline: string } {
+  switch (verdict) {
+    case 'nailed':
+    case 'strong':
+      return { accent: 'var(--moss)', headline: "There it is. Don't ruin it." }
+    case 'good':
+      return { accent: 'var(--moss)', headline: 'Kept it under control. Bank it.' }
+    case 'close':
+      return { accent: 'var(--moss)', headline: 'Close. Bit of fine-tuning to do.' }
+    case 'ok':
+      return { accent: 'var(--warn)', headline: "Logged. Worth a look at zones." }
+    case 'off_target':
+    case 'drifted':
+      return { accent: 'var(--warn)', headline: "Drifted off plan. Worth knowing why." }
+    case 'concerning':
+    case 'hard':
+      return { accent: 'var(--warn)', headline: "Bit hot in there. Have a look." }
+    default:
+      return { accent: 'var(--mute)', headline: 'Logged.' }
+  }
+}
 
-  const verdictConfig = {
-    nailed:     { color: 'var(--teal)',   label: 'Nailed it' },
-    close:      { color: 'var(--accent)', label: 'Close' },
-    off_target: { color: 'var(--amber)',  label: 'Off target' },
-    concerning: { color: 'var(--coral)',  label: 'Check this' },
-  }[verdict] ?? { color: 'var(--text-muted)', label: verdict }
-
+// Loading-state sibling of RunFeedbackCard — shown while analyse-run is in flight.
+// Uses the AIMark pulse instead of a spinner (per ui-patterns.md § AIMark).
+function PendingAnalysisCard() {
   return (
-    <div style={{ marginTop: '12px', background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', borderLeft: `3px solid ${verdictConfig.color}`, overflow: 'hidden' }}>
-      {/* Header — sparkle marks AI provenance of feedback_text */}
-      <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <AIMark size={11} color="var(--text-muted)" />
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          Coach
-        </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: verdictConfig.color, background: `${verdictConfig.color}18`, padding: '2px 8px', borderRadius: '20px' }}>
-            {verdictConfig.label}
-          </span>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
-            {score}/100
-          </span>
+    <div style={{
+      marginTop: '12px',
+      background: 'var(--card)',
+      borderRadius: 'var(--radius-lg)',
+      border: '1px solid var(--line)',
+      borderLeft: '3px solid var(--moss)',
+      padding: '16px 18px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+        <AIMark size={12} color="var(--moss)" working />
+        <div style={{
+          fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+          color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.08em',
+        }}>
+          Coach · Working
         </div>
       </div>
-      {/* Score bars */}
-      <div style={{ padding: '12px 14px', display: 'flex', gap: '8px' }}>
-        {[
-          { label: 'HR', value: analysis.hr_discipline_score },
-          { label: 'Distance', value: analysis.distance_score },
-          { label: 'Pace', value: analysis.pace_score },
-          { label: 'Efficiency', value: analysis.ef_score },
-        ].map(({ label, value }) => value !== undefined && (
-          <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
-            <div style={{ width: '100%', height: '4px', background: 'var(--bg)', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${value}%`, background: value >= 80 ? 'var(--teal)' : value >= 60 ? 'var(--accent)' : 'var(--amber)', borderRadius: '2px', transition: 'width 0.4s ease' }} />
-            </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 500 }}>{value}</div>
+      <div style={{
+        fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700,
+        color: 'var(--ink)', letterSpacing: '-0.2px', lineHeight: 1.3,
+        marginBottom: '4px',
+      }}>
+        Reading your run.
+      </div>
+      <div style={{
+        fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
+        color: 'var(--mute)', lineHeight: 1.5,
+      }}>
+        Hold on — about fifteen seconds.
+      </div>
+      {/* Skeleton metric row — hint at what's coming */}
+      <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+        {['HR', 'Distance', 'Pace', 'Efficiency'].map(label => (
+          <div key={label} style={{ flex: 1 }}>
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
+              color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
+              marginBottom: '6px',
+            }}>{label}</div>
+            <div style={{
+              height: '4px', background: 'var(--bg-soft)', borderRadius: '2px',
+              animation: 'ai-mark-pulse 1.6s ease-in-out infinite',
+            }} />
           </div>
         ))}
       </div>
-      {/* AI feedback text */}
-      {feedback && (
-        <div style={{ padding: '0 14px 14px', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-          {feedback}
-        </div>
-      )}
     </div>
   )
 }
 
-function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, runAnalysis, hasPaidAccess, onUpgrade, goalPace, guidance }: {
+function RunFeedbackCard({ analysis }: { analysis: any }) {
+  const verdict  = analysis.verdict as string
+  const score    = analysis.total_score as number
+  const feedback = analysis.feedback_text as string | null
+  const voice    = getVerdictVoice(verdict)
+
+  const metrics: { label: string; value: number | undefined }[] = [
+    { label: 'HR',         value: analysis.hr_discipline_score },
+    { label: 'Distance',   value: analysis.distance_score },
+    { label: 'Pace',       value: analysis.pace_score },
+    { label: 'Efficiency', value: analysis.ef_score },
+  ]
+
+  return (
+    <div style={{
+      marginTop: '12px',
+      background: 'var(--card)',
+      borderRadius: 'var(--radius-lg)',
+      border: '1px solid var(--line)',
+      borderLeft: `3px solid ${voice.accent}`,
+      padding: '16px 18px',
+    }}>
+      {/* Eyebrow row — AIMark in verdict colour, score on the right */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+        <AIMark size={12} color={voice.accent} />
+        <div style={{
+          fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+          color: voice.accent, textTransform: 'uppercase', letterSpacing: '0.08em',
+        }}>
+          Coach
+        </div>
+        <div style={{
+          marginLeft: 'auto',
+          fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600,
+          color: 'var(--mute)',
+          fontVariantNumeric: 'tabular-nums',
+        }}>
+          {score}/100
+        </div>
+      </div>
+
+      {/* Zona-voice headline — the brand moment */}
+      <div style={{
+        fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700,
+        color: 'var(--ink)', letterSpacing: '-0.2px', lineHeight: 1.3,
+        marginBottom: feedback ? '10px' : '16px',
+      }}>
+        {voice.headline}
+      </div>
+
+      {/* AI feedback paragraph — provenance carried by the eyebrow AIMark */}
+      {feedback && (
+        <div style={{
+          fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
+          color: 'var(--ink-2)', lineHeight: 1.55,
+          marginBottom: '16px',
+        }}>
+          {feedback}
+        </div>
+      )}
+
+      {/* Metric quartet — bold value, muted label, thin bar */}
+      <div style={{ display: 'flex', gap: '10px' }}>
+        {metrics.map(({ label, value }) => value !== undefined && (
+          <div key={label} style={{ flex: 1 }}>
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
+              color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
+              marginBottom: '4px',
+            }}>
+              {label}
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700,
+              color: 'var(--ink)', fontVariantNumeric: 'tabular-nums',
+              letterSpacing: '-0.5px', marginBottom: '6px',
+            }}>
+              {value}
+            </div>
+            <div style={{
+              height: '3px', background: 'var(--bg-soft)', borderRadius: '2px',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${value}%`,
+                background: value >= 80 ? 'var(--moss)' : value >= 60 ? 'var(--moss)' : 'var(--warn)',
+                opacity: value >= 80 ? 1 : value >= 60 ? 0.55 : 1,
+                borderRadius: '2px',
+                transition: 'width 0.4s ease',
+              }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, stravaLoading, runAnalysis, hasPaidAccess, onUpgrade, goalPace, guidance }: {
   session: any; preloadedRuns: any[]; onBack: () => void; onSaved?: () => void
   preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number; preferredMetric?: 'distance' | 'duration'
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
+  stravaLoading?: boolean
   runAnalysis?: any | null; hasPaidAccess?: boolean; onUpgrade?: () => void
   goalPace?: string | null
   guidance?: any | null
@@ -5526,6 +5668,44 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
   // Date display: "Tuesday · Week 14"
   const weekEyebrow = session.weekN ? `Week ${session.weekN}` : ''
   const dayEyebrow  = session.day ?? ''
+
+  // Local analysis state — seeded from prop, then polled if a Strava activity
+  // is linked but analysis hasn't landed yet (analyse-run runs in background
+  // ~5–15s after manual link).
+  const supabase = createClient()
+  const [analysis, setAnalysis] = useState<any | null>(runAnalysis ?? null)
+  useEffect(() => { setAnalysis(runAnalysis ?? null) }, [runAnalysis])
+
+  const linkedActivityId = session.completion?.strava_activity_id ?? null
+  const sessionDay       = session.key as string | undefined
+  const isAnalysisPending = !!hasPaidAccess && !!linkedActivityId && !analysis
+
+  useEffect(() => {
+    if (!isAnalysisPending || !sessionDay) return
+    let cancelled = false
+    let attempts  = 0
+    const tick = async () => {
+      if (cancelled) return
+      attempts++
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        const { data } = await supabase
+          .from('run_analysis')
+          .select('session_day, verdict, total_score, feedback_text, hr_in_zone_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score')
+          .eq('user_id', user.id)
+          .eq('session_day', sessionDay)
+          .maybeSingle()
+        if (!cancelled && data) {
+          setAnalysis(data)
+          return
+        }
+      } catch {}
+      if (!cancelled && attempts < 12) setTimeout(tick, 2500)  // up to ~30s
+    }
+    const initial = setTimeout(tick, 2500)
+    return () => { cancelled = true; clearTimeout(initial) }
+  }, [isAnalysisPending, sessionDay])
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '120px' }}>
 
@@ -5599,6 +5779,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
             restingHR={restingHR}
             maxHR={maxHR}
             aerobicPace={aerobicPace}
+            stravaLoading={stravaLoading}
             hasPaidAccess={hasPaidAccess}
             onUpgrade={onUpgrade}
             goalPace={goalPace}
@@ -5606,10 +5787,9 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
           />
         </div>
 
-        {/* Run analysis feedback card — shown after a session is analysed */}
-        {runAnalysis && hasPaidAccess && (
-          <RunFeedbackCard analysis={runAnalysis} />
-        )}
+        {/* Run analysis — pending state while analyse-run is in flight, then real card */}
+        {hasPaidAccess && analysis && <RunFeedbackCard analysis={analysis} />}
+        {hasPaidAccess && !analysis && isAnalysisPending && <PendingAnalysisCard />}
       </div>
     </div>
   )
