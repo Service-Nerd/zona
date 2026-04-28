@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { waitUntil } from '@vercel/functions'
 import { NextRequest, NextResponse } from 'next/server'
-import { getStravaToken } from '@/lib/strava'
+import { getStravaToken, fetchHRStreamSummary } from '@/lib/strava'
 
 // Strava webhook docs: https://developers.strava.com/docs/webhooks/
 //
@@ -112,7 +112,7 @@ async function enrichAndPersist(event: StravaEvent) {
   if (activity.type !== 'Run' && activity.sport_type !== 'Run') return
 
   // Fetch HR stream and compute zone percentages (raw stream discarded after)
-  const hrSummary = await fetchHRStreamSummary(access_token, event.object_id, userId)
+  const hrSummary = await fetchHRStreamSummary(getSupabase(), access_token, event.object_id, userId)
 
   // Upsert into strava_activities
   const { error } = await getSupabase().from('strava_activities').upsert({
@@ -244,53 +244,6 @@ async function triggerAutoAnalysis(userId: string, activity: any, stravaActivity
     })
   } catch (err) {
     console.warn('[strava-webhook] auto-analysis failed', err)
-  }
-}
-
-async function fetchHRStreamSummary(
-  accessToken: string,
-  activityId: number,
-  userId: string,
-): Promise<{ inZonePct: number; abovePct: number; belowPct: number } | null> {
-  try {
-    // Get user's zone boundaries from their current plan
-    const { data: planRow } = await getSupabase()
-      .from('plans')
-      .select('plan_json')
-      .eq('user_id', userId)
-      .single()
-
-    const zone2Ceiling: number | null = planRow?.plan_json?.meta?.zone2_ceiling ?? null
-    const maxHR: number | null        = planRow?.plan_json?.meta?.max_hr ?? null
-
-    const streamRes = await fetch(
-      `https://www.strava.com/api/v3/activities/${activityId}/streams?keys=heartrate,time&key_by_type=true`,
-      { headers: { Authorization: `Bearer ${accessToken}` }, cache: 'no-store' }
-    )
-    if (!streamRes.ok) return null
-
-    const streams = await streamRes.json()
-    const hrData: number[] = streams?.heartrate?.data
-    if (!hrData || !hrData.length) return null
-
-    const ceiling = zone2Ceiling ?? (maxHR ? Math.round(maxHR * 0.76) : null)
-    const floor   = maxHR ? Math.round(maxHR * 0.60) : null
-
-    if (!ceiling) return null
-
-    const total   = hrData.length
-    const inZone  = hrData.filter(hr => (!floor || hr >= floor) && hr <= ceiling).length
-    const above   = hrData.filter(hr => hr > ceiling).length
-    const below   = floor ? hrData.filter(hr => hr < floor).length : 0
-
-    return {
-      inZonePct:  Math.round((inZone / total) * 100 * 100) / 100,
-      abovePct:   Math.round((above  / total) * 100 * 100) / 100,
-      belowPct:   Math.round((below  / total) * 100 * 100) / 100,
-    }
-  } catch (err) {
-    console.warn('[strava-webhook] HR stream fetch failed', err)
-    return null
   }
 }
 

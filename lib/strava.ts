@@ -32,6 +32,58 @@ export async function fetchActivities(accessToken: string, afterDate = '2026-01-
   return data as StravaActivity[]
 }
 
+export interface HRStreamSummary {
+  inZonePct:  number
+  abovePct:   number
+  belowPct:   number
+}
+
+/** Fetches Strava HR stream and computes zone breakdown against the user's plan zones. */
+export async function fetchHRStreamSummary(
+  supabase: any,
+  accessToken: string,
+  activityId: number,
+  userId: string,
+): Promise<HRStreamSummary | null> {
+  try {
+    const { data: planRow } = await supabase
+      .from('plans')
+      .select('plan_json')
+      .eq('user_id', userId)
+      .single()
+
+    const zone2Ceiling: number | null = planRow?.plan_json?.meta?.zone2_ceiling ?? null
+    const maxHR: number | null        = planRow?.plan_json?.meta?.max_hr ?? null
+
+    const streamRes = await fetch(
+      `https://www.strava.com/api/v3/activities/${activityId}/streams?keys=heartrate,time&key_by_type=true`,
+      { headers: { Authorization: `Bearer ${accessToken}` }, cache: 'no-store' }
+    )
+    if (!streamRes.ok) return null
+
+    const streams = await streamRes.json()
+    const hrData: number[] = streams?.heartrate?.data
+    if (!hrData || !hrData.length) return null
+
+    const ceiling = zone2Ceiling ?? (maxHR ? Math.round(maxHR * 0.76) : null)
+    const floor   = maxHR ? Math.round(maxHR * 0.60) : null
+    if (!ceiling) return null
+
+    const total  = hrData.length
+    const inZone = hrData.filter(hr => (!floor || hr >= floor) && hr <= ceiling).length
+    const above  = hrData.filter(hr => hr > ceiling).length
+    const below  = floor ? hrData.filter(hr => hr < floor).length : 0
+
+    return {
+      inZonePct: Math.round((inZone / total) * 100 * 100) / 100,
+      abovePct:  Math.round((above  / total) * 100 * 100) / 100,
+      belowPct:  Math.round((below  / total) * 100 * 100) / 100,
+    }
+  } catch {
+    return null
+  }
+}
+
 export function getRuns(activities: StravaActivity[]) {
   return activities
     .filter(a => a.type === 'Run' || a.sport_type === 'Run')

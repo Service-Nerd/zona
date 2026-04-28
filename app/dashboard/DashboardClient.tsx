@@ -1420,6 +1420,21 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
         avg_hr: status === 'complete' ? (selectedActivity?.average_heartrate ? Math.round(selectedActivity.average_heartrate) : null) : null,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
+
+      // Mirror the webhook flow: enrich strava_activities + trigger run analysis.
+      // Fire-and-forget — the analysis card will appear when the dashboard refetches.
+      if (status === 'complete' && selectedActivity?.id) {
+        void authedFetch('/api/strava/link-activity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            strava_activity_id: selectedActivity.id,
+            week_n: weekN,
+            session_day: session.key,
+          }),
+        }).catch(() => {})
+      }
+
       onSaved?.()
       if (status === 'complete') {
         setView('reflect')
