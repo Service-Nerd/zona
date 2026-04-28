@@ -173,6 +173,12 @@ export default function DashboardClient() {
   // Screen guide state — shows first-load popup per screen
   const [guideScreen, setGuideScreen] = useState<Screen | null>(null)
 
+  // Session guidance pre-loaded once at app boot, keyed by session_type.
+  // Eliminates the in-card pop-in that happened when SessionPopupInner fetched
+  // its own guidance after mount. Empty map until fetched; the map lookup
+  // returning undefined matches the previous "no guidance" render path.
+  const [guidanceMap, setGuidanceMap] = useState<Map<string, any>>(new Map())
+
   const supabase = createClient()
 
   useEffect(() => {
@@ -222,12 +228,24 @@ export default function DashboardClient() {
         setUserId(user.id)
 
         // Fetch overrides + user settings + completions in parallel
-        const [settingsRes, overridesRes, completionsRes, subRes] = await Promise.all([
+        const [settingsRes, overridesRes, completionsRes, subRes, guidanceRes] = await Promise.all([
           supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
+          supabase.from('session_guidance').select('*').order('phase', { ascending: false, nullsFirst: false }),
         ])
+
+        // Build session_type → guidance map. Within each type, the first row
+        // wins — ordering above puts highest-phase non-null first, null last,
+        // matching the previous per-card fetch behaviour.
+        if (guidanceRes.data) {
+          const map = new Map<string, any>()
+          for (const row of guidanceRes.data as any[]) {
+            if (!map.has(row.session_type)) map.set(row.session_type, row)
+          }
+          setGuidanceMap(map)
+        }
 
         if (overridesRes.data) setAllOverrides(overridesRes.data)
         if (completionsRes.data) {
@@ -730,7 +748,7 @@ export default function DashboardClient() {
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
         {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} hasPaidAccess={hasPaidAccess} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} runAnalysis={runAnalysisMap[activeSessionData?.sessionKey ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} runAnalysis={runAnalysisMap[activeSessionData?.sessionKey ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
         {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} dob={dob} onDobSave={async (d) => { setDob(d); if (userId) await supabase.from('user_settings').update({ date_of_birth: d }).eq('id', userId) }} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} onBack={() => {
@@ -1239,13 +1257,14 @@ function getSkipResponse(reason: string): string {
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
-function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, hasPaidAccess, onUpgrade, goalPace }: {
+function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, hasPaidAccess, onUpgrade, goalPace, guidance }: {
   session: any; weekTheme: string; weekN: number; preloadedRuns: any[]
   onClose: () => void; onSaved?: () => void
   preferredUnits: 'km' | 'mi'; zone2Ceiling: number; preferredMetric?: 'distance' | 'duration'
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
   hasPaidAccess?: boolean; onUpgrade?: () => void
   goalPace?: string | null
+  guidance?: any | null
 }) {
   const [view, setView] = useState<'detail' | 'complete' | 'skip' | 'success' | 'reflect' | 'skip-reflect'>('detail')
   const [showManualModal, setShowManualModal] = useState(false)
@@ -1253,7 +1272,6 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null)
   const [claimedIds, setClaimedIds] = useState<Set<number>>(new Set())
   const [loadingClaimed, setLoadingClaimed] = useState(false)
-  const [guidance, setGuidance] = useState<any | null>(null)
   const [rpe, setRpe] = useState<number | null>(null)
   const [fatigueTag, setFatigueTag] = useState<string | null>(null)
   const [savingRPE, setSavingRPE] = useState(false)
@@ -1317,23 +1335,6 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
       onSaved?.()
     } catch {} finally { setSavingRPE(false) }
   }
-
-  // Fetch session guidance from Supabase
-  useEffect(() => {
-    async function loadGuidance() {
-      try {
-        // Try phase-specific first, fall back to null phase
-        const { data } = await supabase
-          .from('session_guidance')
-          .select('*')
-          .eq('session_type', session.type)
-          .order('phase', { ascending: false, nullsFirst: false })
-          .limit(2)
-        if (data && data.length > 0) setGuidance(data[0])
-      } catch {}
-    }
-    if (session.type && session.type !== 'rest') loadGuidance()
-  }, [session.type])
 
   useEffect(() => {
     if (view !== 'complete') return
@@ -1876,18 +1877,11 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                   // Structured coach notes from plan JSON
                   (session.coach_notes as string[]).filter(Boolean).join(' ')
                 ) : guidance ? (
-                  // DB guidance with {{token}} substitution — see lib/plan/renderGuidance.ts
-                  // for the supported token vocabulary (zone2_ceiling, session_pace, etc.).
-                  (() => {
-                    const ctx = guidanceContextFromSession({
-                      session,
-                      zone2Ceiling, maxHR, restingHR, goalPace,
-                    })
-                    return [guidance.why, guidance.what, guidance.how]
-                      .map(t => renderGuidance(t, ctx))
-                      .filter(Boolean)
-                      .join(' ')
-                  })()
+                  // Render only the "why" field — the "what" and "how" fields belong
+                  // to other surfaces, not this WHY THIS SESSION block.
+                  renderGuidance(guidance.why, guidanceContextFromSession({
+                    session, zone2Ceiling, maxHR, restingHR, goalPace,
+                  }))
                 ) : null}
               </CoachNoteBlock>
             </div>
@@ -2668,18 +2662,21 @@ function getSessionHRDisplay(
   maxHR: number | null,
   zone2Ceiling: number | undefined,
 ): string | null {
-  // Generated plan already has a personalised hr_target
-  if (hr_target) return hr_target
+  // Live Karvonen takes precedence over baked plan strings: if the user updated
+  // restingHR/maxHR after plan generation, the baked hr_target is stale.
   if (sessionType === 'easy' || sessionType === 'run') {
     const z = karvonenZone(restingHR, maxHR, 60, 70)
-    if (z) return `< ${z.hi}`
-    return zone2Ceiling ? `< ${zone2Ceiling}` : null
+    if (z) return `< ${z.hi} bpm`
+    if (hr_target) return hr_target
+    return zone2Ceiling ? `< ${zone2Ceiling} bpm` : null
   }
   if (sessionType === 'quality' || sessionType === 'intervals' || sessionType === 'hard' || sessionType === 'tempo') {
     const z = karvonenZone(restingHR, maxHR, 75, 85)
-    if (z) return `${z.lo}–${z.hi}`
+    if (z) return `${z.lo}–${z.hi} bpm`
+    if (hr_target) return hr_target
     return null
   }
+  if (hr_target) return hr_target
   return null
 }
 
@@ -5386,12 +5383,13 @@ function RunFeedbackCard({ analysis }: { analysis: any }) {
   )
 }
 
-function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, runAnalysis, hasPaidAccess, onUpgrade, goalPace }: {
+function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, runAnalysis, hasPaidAccess, onUpgrade, goalPace, guidance }: {
   session: any; preloadedRuns: any[]; onBack: () => void; onSaved?: () => void
   preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number; preferredMetric?: 'distance' | 'duration'
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
   runAnalysis?: any | null; hasPaidAccess?: boolean; onUpgrade?: () => void
   goalPace?: string | null
+  guidance?: any | null
 }) {
   const color = getSessionColor(session.type ?? 'easy')
   const typeLabel = getSessionLabel(session.type ?? 'easy')
@@ -5474,6 +5472,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
             hasPaidAccess={hasPaidAccess}
             onUpgrade={onUpgrade}
             goalPace={goalPace}
+            guidance={guidance}
           />
         </div>
 
