@@ -184,6 +184,11 @@ export default function DashboardClient() {
   // returning undefined matches the previous "no guidance" render path.
   const [guidanceMap, setGuidanceMap] = useState<Map<string, any>>(new Map())
 
+  // Daily coach note — AI-generated, paid/trial only. Null when not yet
+  // fetched, AI failed, or user is free. Today screen renders the rule-based
+  // fallback when null and tier is paid; renders nothing when free.
+  const [dailyCoachNote, setDailyCoachNote] = useState<string | null>(null)
+
   const supabase = createClient()
 
   useEffect(() => {
@@ -216,6 +221,28 @@ export default function DashboardClient() {
     if (!hasPaidAccess || !appReady) return
     if (!('serviceWorker' in navigator)) return
     void navigator.serviceWorker.register('/sw.js')
+  }, [hasPaidAccess, appReady])
+
+  // Daily coach note — paid/trial only. Skip fetch entirely for free users.
+  // Cached daily; the route returns instantly on cache hit, so this only
+  // pays the AI cost once per user per day.
+  useEffect(() => {
+    if (!hasPaidAccess || !appReady) return
+    let cancelled = false
+    async function loadNote() {
+      try {
+        const today = new Date()
+        const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+        const res = await authedFetch(`/api/daily-coach-note?date=${dateStr}`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled && typeof data?.note === 'string') setDailyCoachNote(data.note)
+      } catch {
+        // silent fallback — TodayScreen will use the rule-based note
+      }
+    }
+    loadNote()
+    return () => { cancelled = true }
   }, [hasPaidAccess, appReady])
 
   useEffect(() => {
@@ -744,7 +771,7 @@ export default function DashboardClient() {
       )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} />}
         {screen === 'coach'    && (hasPaidAccess
           ? <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaTokenFailed={stravaTokenFailed} firstName={firstName} onGoToMe={() => setScreen('me')} weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport} preferredUnits={preferredUnits} />
@@ -3187,7 +3214,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied }: {
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   stravaRuns: any[]
@@ -3205,6 +3232,8 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   onAdjustmentReverted?: (plan: any) => void
   trialDaysLeft?: number | null
   onUpgrade?: () => void
+  hasPaidAccess?: boolean
+  dailyCoachNote?: string | null
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
@@ -3679,15 +3708,26 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           </div>
         )}
 
-        {/* Coach note — plan-derived, always available */}
-        {(() => {
-          const note = getPlanCoachNote()
-          const coachLabel = weekPhaseLabel ?? 'PLAN'
+        {/* Coach note — paid/trial only. Free users see no coach card.
+            AI note (cached daily) preferred; rule-based fallback when AI is
+            unavailable so paid users always see something. */}
+        {hasPaidAccess && (() => {
+          const ruleNote = getPlanCoachNote()
+          const coachLabel = weekPhaseLabel ?? 'COACH'
+          if (dailyCoachNote) {
+            return (
+              <div style={{ marginBottom: '20px' }}>
+                <CoachNoteBlock label={coachLabel} aiGenerated>
+                  {dailyCoachNote}
+                </CoachNoteBlock>
+              </div>
+            )
+          }
           if (heavyFatigue) {
             return (
               <div style={{ marginBottom: '20px' }}>
                 <CoachNoteBlock label="COACH">
-                  Heavy trend. {note ? `${note} ` : ''}Ease it back today.
+                  Heavy trend. {ruleNote ? `${ruleNote} ` : ''}Ease it back today.
                 </CoachNoteBlock>
               </div>
             )
@@ -3695,7 +3735,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           return (
             <div style={{ marginBottom: '20px' }}>
               <CoachNoteBlock label={coachLabel}>
-                {note}
+                {ruleNote}
               </CoachNoteBlock>
             </div>
           )
