@@ -135,6 +135,7 @@ All colour MUST come from CSS custom properties in `globals.css`. Nothing hardco
 - Back arrow always top-left
 - Slide-up sheets: mirrored nav bar at bottom, not top
 - Single light theme — no dark mode, no theme toggle
+- **AI provenance is visible** — model-generated content carries the `<AIMark />` glyph (sparkle + accent dot). Working state pulses while AI is in flight; replaces spinners. Apply only to actual model output; never to rule-engine, hand-authored copy, or Strava data. See `ui-patterns.md` § AIMark.
 
 **Reference aesthetic: Runna + Planzy** — bold metric hierarchy, warm athletic cards, left-accent session type indicators, week-strip navigation, clean session rows. See `docs/canonical/ui-patterns.md` before building any new screen.
 

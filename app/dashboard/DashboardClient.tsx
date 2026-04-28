@@ -22,6 +22,7 @@ import RPEScale from '@/components/shared/RPEScale'
 import SessionCard from '@/components/shared/SessionCard'
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import ZoneShapeCard from '@/components/shared/ZoneShapeCard'
+import AIMark from '@/components/shared/AIMark'
 import { composeSession } from '@/lib/plan/sessionComposer'
 import { formatDistance, sumRoundedDistance } from '@/lib/format'
 import { didSessionHitZone, sessionHRBand, zoneForSessionType } from '@/lib/coaching/zoneRules'
@@ -1893,12 +1894,19 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             </div>
           )}
 
-          {/* ── WHY THIS SESSION: CoachNoteBlock variant="why" ── */}
+          {/* ── WHY THIS SESSION: CoachNoteBlock variant="why" ──
+               AI mark only when content came from the plan enricher
+               (session.coach_notes). DB guidance fallback is hand-authored
+               so no mark — provenance honesty. */}
           {(session.coach_notes?.filter(Boolean).length > 0 || guidance) && (
             <div style={{ padding: '14px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
-              <CoachNoteBlock label="WHY THIS SESSION" variant="why">
+              <CoachNoteBlock
+                label="WHY THIS SESSION"
+                variant="why"
+                aiGenerated={(session.coach_notes?.filter(Boolean).length ?? 0) > 0}
+              >
                 {session.coach_notes?.filter(Boolean).length > 0 ? (
-                  // Structured coach notes from plan JSON
+                  // Structured coach notes from plan JSON (AI-generated)
                   (session.coach_notes as string[]).filter(Boolean).join(' ')
                 ) : guidance ? (
                   // Render only the "why" field — the "what" and "how" fields belong
@@ -4357,11 +4365,11 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
           </div>
         )}
 
-        {/* Weekly report card */}
+        {/* Weekly report card — AI-generated headline/body/cta */}
         {reportIsCurrent && weeklyReport?.headline ? (
           <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
-            <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
+            <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <AIMark size={11} color="var(--accent)" />
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>This week</span>
               <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)' }}>W{weekNum}/{totalWeeks}</span>
             </div>
@@ -4452,9 +4460,11 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
               {runs?.length ? (
                 <button
                   onClick={generateReport}
-                  style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}
+                  disabled={loading}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1 }}
                 >
-                  Generate report
+                  {loading && <AIMark size={11} color="var(--accent)" working />}
+                  {loading ? 'Generating' : 'Generate report'}
                 </button>
               ) : (
                 <button onClick={onGoToMe} style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}>
@@ -5406,8 +5416,9 @@ function RunFeedbackCard({ analysis }: { analysis: any }) {
 
   return (
     <div style={{ marginTop: '12px', background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', borderLeft: `3px solid ${verdictConfig.color}`, overflow: 'hidden' }}>
-      {/* Header */}
-      <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+      {/* Header — sparkle marks AI provenance of feedback_text */}
+      <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <AIMark size={11} color="var(--text-muted)" />
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           Coach
         </div>

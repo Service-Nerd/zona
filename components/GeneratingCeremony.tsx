@@ -10,6 +10,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { Plan } from '@/types/plan'
+import AIMark from './shared/AIMark'
 
 // ─── Copy ─────────────────────────────────────────────────────────────────────
 
@@ -244,13 +245,26 @@ export default function GeneratingCeremony({
         {/* ── Headline copy ── */}
         <div style={{ marginBottom: '36px', minHeight: '64px' }}>
           {phase === 'loading' && (
-            <p key={lineIdx} style={{
-              fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 500,
-              color: 'var(--text-primary)', lineHeight: 1.45, margin: 0,
-              animation: 'gc-copy-in 0.45s ease-out',
-            }}>
-              {lines[lineIdx % lines.length]}
-            </p>
+            <>
+              {/* AI mark in working state — signals the ceremony is AI-driven */}
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                marginBottom: '12px',
+              }}>
+                <AIMark size={12} color="var(--teal)" working />
+                <span style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+                  color: 'var(--teal)', letterSpacing: '0.14em', textTransform: 'uppercase',
+                }}>Generating</span>
+              </div>
+              <p key={lineIdx} style={{
+                fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 500,
+                color: 'var(--text-primary)', lineHeight: 1.45, margin: 0,
+                animation: 'gc-copy-in 0.45s ease-out',
+              }}>
+                {lines[lineIdx % lines.length]}
+              </p>
+            </>
           )}
           {phase === 'revealing' && (
             <p style={{

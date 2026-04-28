@@ -192,3 +192,10 @@ html, body {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
 }
+
+/* AIMark working state — gentle pulse signaling AI is in flight. Replaces
+ * the spinner pattern banned by ui-patterns.md. See AIMark.tsx. */
+@keyframes ai-mark-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(0.92); }
+  50%      { opacity: 1;    transform: scale(1.05); }
+}

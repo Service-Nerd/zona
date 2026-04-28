@@ -524,7 +524,51 @@ No spinner. No percentage. The reveal is the payoff — not the wait.
 
 ---
 
-### 16. SectionLabel
+### 16. AIMark
+
+The canonical "this came from AI" glyph. Marks model-generated content; pulses while AI is in flight.
+
+```
+✦  THIS WEEK
+   ↑
+   AIMark — 4-point sparkle + small accent dot, top-right
+```
+
+**Visual anatomy:**
+- 4-point sparkle (main element) + smaller secondary sparkle top-right
+- Default size: `12px` inline; `10px` next to small eyebrow labels; `16px` on its own
+- Default colour: `--moss`; pass `--warn` on coach-amber surfaces; pass the verdict colour for run feedback
+- Working state: `ai-mark-pulse` keyframe — opacity `0.55 → 1` + scale `0.92 → 1.05`, 1.6s loop. Replaces the spinner pattern banned elsewhere.
+
+**Props:**
+```tsx
+size?: number       // default 12
+color?: string      // default 'var(--moss)'
+working?: boolean   // default false — animate when AI is generating
+label?: string      // aria-label override
+```
+
+**When to use:**
+- Run feedback card eyebrow (post-Strava AI feedback text)
+- Weekly report card eyebrow (Claude-generated headline/body/CTA)
+- "WHY THIS SESSION" eyebrow when content comes from `session.coach_notes` (plan-enricher AI)
+- Generating-state CTAs (`Generate report` button while in flight)
+- GeneratingCeremony header during the loading phase
+
+**When NOT to use (provenance honesty):**
+- Rule-engine output (plan structure, session distances, HR zone calcs)
+- Hand-authored copy (zone education sheet, brand strings, voice copy)
+- DB-resident content (session-catalogue guidance fallback)
+- Strava-recorded data (HR, distance, pace, elapsed time)
+- The plan-coach note on Today screen (rule-derived from `getPlanCoachNote()`)
+
+The mark is a claim about provenance, not aesthetics. Mark only what came from a model.
+
+Reference: `components/shared/AIMark.tsx`. Single source of truth — never reimplement the glyph.
+
+---
+
+### 17. SectionLabel
 
 Eyebrow label above a group of related rows. Used to name a category section in list-based screens (MeScreen, settings).
 
@@ -659,7 +703,8 @@ Canonical examples: `GeneratingCeremony.tsx`, `GeneratePlanScreen.tsx`
 | Space Grotesk, DM Mono, DM Sans | `var(--font-ui)` only |
 | `#D4501A`, `#f5f2ee`, `#0B132B`, `#5BC0BE` | Warm Slate tokens |
 | Icons everywhere | Text labels where space allows |
-| Spinner loading states | Skeleton placeholders |
+| Spinner loading states | Skeleton placeholders, or `<AIMark working />` for AI-in-flight |
+| AIMark on rule-engine / hand-authored copy | Mark only model-generated content — provenance honesty |
 | Alert/modal popups | Navigate to full screen |
 | Button tap target < 44px | `width/height: 44px` or `minHeight: 44px` — iOS HIG minimum |
 | Centred-only layouts | Left-aligned with consistent margin |
