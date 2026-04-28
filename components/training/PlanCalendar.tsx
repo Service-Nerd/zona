@@ -5,6 +5,7 @@ import type { Week, Session, StravaActivity } from '@/types/plan'
 import { createClient } from '@/lib/supabase/client'
 import { SESSION_COLORS, SESSION_LABELS } from '@/lib/session-types'
 import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
+import { formatDistance, sumRoundedDistance, type DistanceUnits } from '@/lib/format'
 
 interface Completion {
   session_day: string
@@ -77,9 +78,10 @@ interface Props {
   onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
   onSessionTap: (session: SessionTapPayload, weekN: number, weekTheme: string) => void
   overridesReady?: boolean
+  units?: DistanceUnits
 }
 
-export default function PlanCalendar({ weeks, stravaRuns, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true }: Props) {
+export default function PlanCalendar({ weeks, stravaRuns, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true, units = 'km' }: Props) {
   const [showPast, setShowPast] = useState(false)
   const supabase = createClient()
 
@@ -120,6 +122,7 @@ export default function PlanCalendar({ weeks, stravaRuns, allOverrides, allCompl
         stravaRuns={stravaRuns}
         onSessionTap={onSessionTap}
         onMove={handleMove}
+        units={units}
       />
     )
   }
@@ -151,11 +154,12 @@ export default function PlanCalendar({ weeks, stravaRuns, allOverrides, allCompl
   )
 }
 
-function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSessionTap, onMove }: {
+function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSessionTap, onMove, units }: {
   week: Week; weekNum: number; completions: Completion[]; overrides: { week_n: number; original_day: string; new_day: string }[]
   stravaRuns: StravaActivity[]
   onSessionTap: (session: SessionTapPayload, weekN: number, weekTheme: string) => void
   onMove: (weekN: number, originalDay: string, newDay: string, currentSlot: string) => void
+  units: DistanceUnits
 }) {
   const ws = week.sessions ?? {}
   const weekStartDate = parseLocalDate(week.date)
@@ -183,7 +187,11 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
     }
   })
 
-  const intendedKm = week.weekly_km ?? 0
+  // Intended km = sum of rounded individual session distances, so the week
+  // total matches what the user sees on each session row. Plan JSON's
+  // weekly_km is ignored as a display source for this reason.
+  const sessionDistances = Object.values(ws).map((s: any) => s?.distance_km as number | undefined)
+  const intendedKm = sumRoundedDistance(sessionDistances, units)
   const completionMap: Record<string, Completion> = {}
   completions.forEach(c => { completionMap[c.session_day] = c })
   const actualKm = completions
@@ -232,7 +240,7 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
         <div style={{ textAlign: 'right' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px', justifyContent: 'flex-end' }}>
             {actualKm > 0
-              ? <span style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', color: 'var(--accent)', fontWeight: 600, lineHeight: 1 }}>{actualKm.toFixed(1)}</span>
+              ? <span style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', color: 'var(--accent)', fontWeight: 600, lineHeight: 1 }}>{formatDistance(actualKm, units, { exact: true, noSuffix: true })}</span>
               : intendedKm > 0
               ? <span style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1 }}>{intendedKm}</span>
               : null
@@ -241,7 +249,7 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>/{intendedKm}</span>
             )}
           </div>
-          {intendedKm > 0 && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '2px' }}>{actualKm > 0 ? 'km done' : 'km planned'}</div>}
+          {intendedKm > 0 && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '2px' }}>{actualKm > 0 ? `${units} done` : `${units} planned`}</div>}
         </div>
       </div>
 
@@ -274,6 +282,7 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
             isTarget={isTarget}
             isMoveMode={!!movingDay}
             isLast={i === DOW_ORDER.length - 1}
+            units={units}
             onTap={() => {
               if (isTarget) { handleTargetTap(key); return }
               if (movingDay) { setMovingDay(null); return }
@@ -324,11 +333,12 @@ function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSession
   )
 }
 
-function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isTarget, isMoveMode, isLast, onTap, onMoveIconTap }: {
+function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isTarget, isMoveMode, isLast, onTap, onMoveIconTap, units }: {
   dayKey: string; session: EffectiveSession | undefined; date: Date; isToday: boolean; isPast: boolean; isFuture: boolean
   completion?: Completion; isMovable: boolean; isMoving: boolean; isTarget: boolean
   isMoveMode: boolean; isLast: boolean
   onTap: () => void; onMoveIconTap: () => void
+  units: DistanceUnits
 }) {
   const isComplete = completion?.status === 'complete'
   const isSkipped  = completion?.status === 'skipped'
@@ -406,7 +416,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
                   {[
                     session.distance_km != null
-                      ? `${session.distance_km % 1 === 0 ? session.distance_km : session.distance_km.toFixed(1)}km`
+                      ? formatDistance(session.distance_km, units, { exact: session.type === 'race' })
                       : null,
                     session.duration_mins != null
                       ? (session.duration_mins < 60

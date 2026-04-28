@@ -21,6 +21,7 @@ import PlanArc from '@/components/shared/PlanArc'
 import RPEScale from '@/components/shared/RPEScale'
 import SessionCard from '@/components/shared/SessionCard'
 import { composeSession } from '@/lib/plan/sessionComposer'
+import { formatDistance, sumRoundedDistance } from '@/lib/format'
 import { renderGuidance, guidanceContextFromSession } from '@/lib/plan/renderGuidance'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import dynamic from 'next/dynamic'
@@ -740,9 +741,9 @@ export default function DashboardClient() {
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
         {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} />}
-        {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} />}
+        {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} />}
         {screen === 'coach'    && (hasPaidAccess
-          ? <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaTokenFailed={stravaTokenFailed} firstName={firstName} onGoToMe={() => setScreen('me')} weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport} />
+          ? <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaTokenFailed={stravaTokenFailed} firstName={firstName} onGoToMe={() => setScreen('me')} weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport} preferredUnits={preferredUnits} />
           : <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => setScreen('upgrade')} />
         )}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
@@ -3512,9 +3513,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                     letterSpacing: '-2.5px',
                     fontVariantNumeric: 'tabular-nums',
                   }}>
-                    {selectedSession.distance % 1 === 0
-                      ? selectedSession.distance
-                      : selectedSession.distance.toFixed(1)}km,{' '}
+                    {formatDistance(selectedSession.distance, preferredUnits, { exact: selectedSession.type === 'race' })},{' '}
                   </span>
                   <br />
                   <span style={{
@@ -3716,6 +3715,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 selectedSession.pace_target ?? aerobicPace,
               ].filter(Boolean).join(' · ') || undefined}
               distanceKm={selectedSession.distance}
+              units={preferredUnits}
               durationMin={selectedSession.duration
                 ? parseInt(selectedSession.duration)
                 : undefined}
@@ -3863,6 +3863,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 type={s.type}
                 name={s.title}
                 distanceKm={completions[s.key]?.strava_activity_km ?? s.distance}
+                units={preferredUnits}
                 state={completions[s.key]?.status === 'skipped' ? 'skipped' : 'done'}
                 completion={{
                   distanceKm: completions[s.key]?.strava_activity_km ?? undefined,
@@ -3975,13 +3976,14 @@ function PlanProgressBar({ plan, allCompletions }: { plan: Plan; allCompletions:
   )
 }
 
-function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady }: {
+function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, preferredUnits = 'km' }: {
   plan: Plan; stravaRuns: any[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   allCompletions: Record<number, Record<string, any>>
   onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
   onOpenSession?: (s: any) => void
   overridesReady: boolean
+  preferredUnits?: 'km' | 'mi'
 }) {
   const currentWeekIndex = getCurrentWeekIndex(plan.weeks)
   const weekNum = currentWeekIndex + 1
@@ -4052,7 +4054,12 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
             if (weekCompletions[k]?.status === 'complete' || weekCompletions[k]?.status === 'skipped') done++
           }
         })
-        const weeklyKm = (wk as any).weekly_km as number | undefined
+        // Week target = sum of rounded session distances, so it agrees with
+        // the rounded values displayed on each session row.
+        const weeklyKm = sumRoundedDistance(
+          SESSION_KEYS.map(k => ws[k]?.distance_km as number | undefined),
+          preferredUnits,
+        )
         const weekPhase = (wk as any).phase as string | undefined
         const phaseCap = weekPhase ? ({ base: 'Base', build: 'Build', peak: 'Peak', taper: 'Taper' }[weekPhase] ?? weekPhase) : null
         return (
@@ -4072,12 +4079,12 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
                 {done}/{total} done
               </span>
             )}
-            {total > 0 && weeklyKm && weeklyKm > 0 && (
+            {total > 0 && weeklyKm > 0 && (
               <span style={{ color: 'var(--mute-2)', fontSize: '10px' }}>·</span>
             )}
-            {weeklyKm && weeklyKm > 0 && (
+            {weeklyKm > 0 && (
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)' }}>
-                {weeklyKm}km target
+                {weeklyKm}{preferredUnits} target
               </span>
             )}
           </div>
@@ -4093,6 +4100,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           allCompletions={allCompletions}
           onOverrideChange={onOverrideChange}
           overridesReady={overridesReady}
+          units={preferredUnits}
           onSessionTap={(session, weekN, weekTheme) => {
             onOpenSession?.({ ...session, weekN, weekTheme })
           }}
@@ -4104,14 +4112,15 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
 
 // ── PLAN-BASED COACHING ───────────────────────────────────────────────────
 
-function PlanCoachingCard({ plan, currentWeek }: { plan: Plan; currentWeek: Week }) {
+function PlanCoachingCard({ plan, currentWeek, units = 'km' }: { plan: Plan; currentWeek: Week; units?: 'km' | 'mi' }) {
   const sessions = Object.values((currentWeek as any).sessions ?? {}) as any[]
   const runningSessions = sessions.filter(s => s && s.type && s.type !== 'rest' && s.type !== 'strength')
   const hasQuality = sessions.some(s => s && ['quality','tempo','intervals','hard'].includes(s.type))
   const hasLong    = sessions.some(s => s && s.type === 'long')
   const phase      = (currentWeek as any).phase as string | undefined
   const theme      = (currentWeek as any).theme as string | undefined
-  const weeklyKm   = (currentWeek as any).weekly_km as number | undefined
+  // Sum of rounded session distances — agrees with per-row displays.
+  const weeklyKm   = sumRoundedDistance(sessions.map(s => s?.distance_km as number | undefined), units)
   const weeksToRace = Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
 
   const phaseCap = phase ? ({ base: 'Base', build: 'Build', peak: 'Peak', taper: 'Taper' }[phase] ?? phase) : null
@@ -4177,10 +4186,10 @@ function PlanCoachingCard({ plan, currentWeek }: { plan: Plan; currentWeek: Week
             ))}
           </div>
         )}
-        {weeklyKm && weeklyKm > 0 && (
+        {weeklyKm > 0 && (
           <div style={{ marginTop: '10px', padding: '8px 12px', background: 'var(--bg)', borderRadius: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Target</span>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>{weeklyKm}km this week</span>
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>{weeklyKm}{units} this week</span>
           </div>
         )}
       </div>
@@ -4265,10 +4274,11 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
   )
 }
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed, firstName, onGoToMe, weeklyReport, onReportGenerated }: {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed, firstName, onGoToMe, weeklyReport, onReportGenerated, preferredUnits = 'km' }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaTokenFailed?: boolean; firstName?: string; onGoToMe?: () => void
   weeklyReport?: any | null; onReportGenerated?: (report: any) => void
+  preferredUnits?: 'km' | 'mi'
 }) {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState<string | null>(null)
@@ -4433,7 +4443,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
         )}
 
         {/* Plan notes — always shown below report */}
-        <PlanCoachingCard plan={plan} currentWeek={currentWeek} />
+        <PlanCoachingCard plan={plan} currentWeek={currentWeek} units={preferredUnits} />
 
       </div>
     </div>

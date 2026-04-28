@@ -5,6 +5,7 @@
 // See docs/canonical/ui-patterns.md § SessionCard and docs/alignment/phase-2-decisions.md D-003, D-010.
 
 import { getSessionColor } from '@/lib/session-types'
+import { formatDistance, type DistanceUnits } from '@/lib/format'
 
 type SessionState = 'future' | 'current' | 'done' | 'skipped'
 
@@ -26,6 +27,8 @@ type Props = {
   completion?: CompletionData
   onClick?: () => void
   showDragHandle?: boolean
+  /** User's preferred display units. Plan distances are stored in km. */
+  units?: DistanceUnits
 }
 
 export default function SessionCard({
@@ -38,6 +41,7 @@ export default function SessionCard({
   completion,
   onClick,
   showDragHandle = false,
+  units = 'km',
 }: Props) {
   const accentColor = getSessionColor(type)
   const isDone = state === 'done'
@@ -52,16 +56,14 @@ export default function SessionCard({
     return m > 0 ? `${h}h ${m}min` : `${h}h`
   }
 
-  // Format distance: "10.0km"
-  function fmtDist(km: number): string {
-    return `${km % 1 === 0 ? km : km.toFixed(1)}km`
-  }
-
-  // Right-side metric: prefer completion data if done, else planned
-  const rightDist = isDone && completion?.distanceKm
-    ? fmtDist(completion.distanceKm)
+  // Right-side metric: prefer completion data if done, else planned.
+  // Race day keeps the iconic decimal (21.1 / 13.1) via opts.exact.
+  // Strava-recorded completion km also keeps 1 dp (real recorded data).
+  const isRace = type === 'race'
+  const rightDist = isDone && completion?.distanceKm != null
+    ? formatDistance(completion.distanceKm, units, { exact: true })
     : distanceKm != null
-    ? fmtDist(distanceKm)
+    ? formatDistance(distanceKm, units, { exact: isRace })
     : null
 
   const rightDur = durationMin != null ? fmtDur(durationMin) : null
