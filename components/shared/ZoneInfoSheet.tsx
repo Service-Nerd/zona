@@ -87,12 +87,11 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
           )}
         </div>
 
-        {/* Body */}
-        <div style={{ padding: '16px 20px 8px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <Section label="What it is">{copy.summary}</Section>
-          <Section label="What it feels like">{copy.feel}</Section>
-          <Section label="When you'll see it">{copy.whenYouSeeIt}</Section>
-          <Section label="Why it matters">{copy.why}</Section>
+        {/* Body — three lines, no headers. Voice does the work. */}
+        <div style={{ padding: '18px 20px 8px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <Line>{copy.what}</Line>
+          <Line>{copy.feel}</Line>
+          <Line>{copy.why}</Line>
         </div>
 
         {/* Bottom close — mirrored nav per CLAUDE.md UI principles */}
@@ -122,18 +121,11 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
   )
 }
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+function Line({ children }: { children: React.ReactNode }) {
   return (
-    <div>
-      <div style={{
-        fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-        color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase',
-        marginBottom: '4px',
-      }}>{label}</div>
-      <div style={{
-        fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400,
-        color: 'var(--ink-2)', lineHeight: 1.55,
-      }}>{children}</div>
-    </div>
+    <div style={{
+      fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400,
+      color: 'var(--ink-2)', lineHeight: 1.55,
+    }}>{children}</div>
   )
 }

@@ -1,9 +1,10 @@
 // Zone education copy — single source of truth for "what is this zone?"
 // surfaced in the Profile zones list and the session card tap-explainer.
 //
-// Voice: brand-aligned (CLAUDE.md), honest, no motivational fluff.
-// Each zone has the same shape so a future "all zones" screen can map it
-// directly without per-zone special-casing.
+// Voice rules (docs/canonical/brand.md):
+//   honest, slightly dry, no cringe.
+//   one sentence per idea. specific beats abstract.
+//   no jargon (RPE numbers, VO₂max, fast-twitch). plain English.
 
 import type { ZoneKey } from './zoneRules'
 
@@ -12,13 +13,11 @@ export interface ZoneCopy {
   label: string
   /** Short human name shown in lists. */
   name: string
-  /** One-line summary. */
-  summary: string
-  /** What it feels like — RPE band + pacing test. */
+  /** What it is — one sentence. */
+  what: string
+  /** What it feels like — plain language, no RPE numbers. */
   feel: string
-  /** When the user will see it in their plan. */
-  whenYouSeeIt: string
-  /** Why it matters — coaching rationale. */
+  /** Why it matters — coaching rationale, sharp not textbook. */
   why: string
 }
 
@@ -26,42 +25,37 @@ export const ZONE_COPY: Record<ZoneKey | 'Z1' | 'Z5', ZoneCopy> = {
   'Z1': {
     label: 'Zone 1',
     name: 'Recovery',
-    summary: 'Active recovery. Walking, easy spinning, warm-up before a hard set.',
-    feel: 'RPE 1–2. Effortless. You barely notice you\'re moving.',
-    whenYouSeeIt: 'Warm-ups, cool-downs, recovery walks. Rarely a session in its own right.',
-    why: 'Movement that doesn\'t add fatigue. Useful before and after the work, not as the work.',
+    what: 'Walking pace. Warm-ups, cool-downs, the bit before and after the work.',
+    feel: 'Effortless. You barely notice you\'re moving.',
+    why: 'Movement that doesn\'t cost you anything. Useful around the work, not as the work.',
   },
   'Z2': {
     label: 'Zone 2',
     name: 'Aerobic base',
-    summary: 'Easy aerobic running. Most of your plan lives here.',
-    feel: 'RPE 3–4. Conversational. You can hold full sentences without gasping.',
-    whenYouSeeIt: 'Every easy run, every long run, every recovery run. ~80% of your weekly volume.',
-    why: 'Aerobic adaptation happens here. Run too hard and you train your fast-twitch system instead — that\'s grey-zone running, and it\'s why most amateurs stall.',
+    what: 'Easy aerobic running. Most of your plan lives here.',
+    feel: 'Embarrassingly slow. If you can hold a conversation, you\'re in. If you\'re huffing, slow down.',
+    why: 'This is where the fitness actually builds. Run it too hard and you train the wrong system — that\'s grey-zone running, and it\'s why most amateurs stall.',
   },
   'Z3': {
     label: 'Zone 3',
     name: 'Tempo',
-    summary: 'Comfortably hard. The pace you could hold for an hour if you had to.',
-    feel: 'RPE 5–6. 3-word sentences only. Deliberate, focused.',
-    whenYouSeeIt: 'Tempo runs, longer threshold reps. Once a week at most.',
-    why: 'Raises your lactate threshold — the speed you can hold before things fall apart.',
+    what: 'Comfortably hard. The pace you could just about hold for an hour.',
+    feel: 'Three-word answers only. Deliberate, focused.',
+    why: 'Raises the speed you can hold before things fall apart. One of these a week, not two.',
   },
   'Z4-5': {
     label: 'Zone 4–5',
     name: 'Hard',
-    summary: 'Genuinely hard. Intervals, hill reps, fast finishes.',
-    feel: 'RPE 7–9. Single-word answers. You\'re counting down to the rest.',
-    whenYouSeeIt: 'Interval sessions. Short reps with full recovery between.',
-    why: 'Trains VO₂max and running economy. Has to be hard to count — half-effort intervals are wasted intervals.',
+    what: 'Genuinely hard. Intervals, hill reps, fast finishes.',
+    feel: 'You can\'t talk. You\'re counting down to the rest.',
+    why: 'The top end of your fitness. Has to actually hurt to count — half-effort intervals are wasted intervals.',
   },
   'Z5': {
     label: 'Zone 5',
-    name: 'VO₂ Max',
-    summary: 'Maximum effort. Short, sharp, full-recovery intervals.',
-    feel: 'RPE 9–10. You can\'t talk. You\'re counting down to the rest.',
-    whenYouSeeIt: 'Short reps (30s–3min) with full recovery. Sparingly.',
-    why: 'Top-end fitness. Use it occasionally — it\'s expensive to recover from.',
+    name: 'All-out',
+    what: 'Maximum effort. Short, sharp, full recovery between.',
+    feel: 'You\'re not thinking, you\'re surviving the rep.',
+    why: 'Use it sparingly. Expensive to recover from, easy to overdo.',
   },
 }
 

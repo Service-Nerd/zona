@@ -1686,21 +1686,28 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             </div>
           )}
           {/* HR card */}
-          {['easy','run','quality','intervals','hard','tempo','race','recovery'].includes(session.type) && (
+          {['easy','run','quality','intervals','hard','tempo','race','recovery'].includes(session.type) && (() => {
+            const sessionColor = getSessionColor(session.type)
+            const zoneLabel = zoneForSessionType(session.type)?.label ?? session.zone ?? 'Target HR'
+            const isInteractive = !!zoneForSessionType(session.type)
+            return (
             <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
               <button
-                onClick={() => { if (zoneForSessionType(session.type)) setZoneSheetOpen(true) }}
+                onClick={() => { if (isInteractive) setZoneSheetOpen(true) }}
+                aria-label={isInteractive ? `${zoneLabel} — tap for details` : zoneLabel}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '4px',
-                  fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)',
-                  textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px',
-                  background: 'none', border: 'none', padding: 0, cursor: zoneForSessionType(session.type) ? 'pointer' : 'default',
+                  display: 'inline-flex', alignItems: 'center',
+                  fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
+                  color: sessionColor,
+                  textTransform: 'uppercase', letterSpacing: '0.08em',
+                  background: `${sessionColor}14`,
+                  border: `0.5px solid ${sessionColor}33`,
+                  borderRadius: '100px', padding: '3px 9px',
+                  marginBottom: '6px',
+                  cursor: isInteractive ? 'pointer' : 'default',
                 }}
               >
-                {zoneForSessionType(session.type)?.label ?? session.zone ?? 'Target HR'}
-                {zoneForSessionType(session.type) && (
-                  <span style={{ fontSize: '10px', opacity: 0.6 }}>?</span>
-                )}
+                {zoneLabel}
               </button>
               {(() => {
                 const hrVal = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling)
@@ -1717,7 +1724,8 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 {session.type === 'quality' || session.type === 'intervals' || session.type === 'hard' ? 'Warm up 15 min first' : 'Walk if exceeded'}
               </div>
             </div>
-          )}
+            )
+          })()}
           {/* Pace card */}
           {paceBracket && (
             <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
@@ -4782,8 +4790,18 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
       {/* Calculated zones — read only */}
       {zones.length > 0 && (
         <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {/* System intro — answers "what are my zones?" before the table answers "what are mine?" */}
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
+            color: 'var(--ink-2)', lineHeight: 1.55,
+            padding: '4px 2px 10px',
+            borderBottom: '0.5px solid var(--border-col)',
+            marginBottom: '6px',
+          }}>
+            Five zones. Most of your running stays in Zone 2 — easy, conversational. Some of it pushes into Zone 3 (tempo) or Zone 4–5 (intervals). The grey middle is where amateurs go to stall. Tap a zone to learn more.
+          </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
-            Calculated zones · HRR method
+            Your zones · HRR method
           </div>
           {zones.map(z => (
             <button
