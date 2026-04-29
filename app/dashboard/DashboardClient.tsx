@@ -670,27 +670,12 @@ export default function DashboardClient() {
         gap: '0',
       }}>
         {/* Vetra wordmark */}
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+        <div style={{ marginBottom: '10px' }}>
           <span style={{
             fontFamily: 'var(--font-brand)',
             fontSize: '38px', fontWeight: 500, letterSpacing: '0.08em',
             color: 'var(--accent)', lineHeight: 1,
-          }}>Z</span>
-          {/* Custom O with zone arc */}
-          <svg width="28" height="38" viewBox="0 0 28 38" fill="none" style={{ margin: '0 1px' }}>
-            <text x="14" y="30" textAnchor="middle"
-              fontFamily="var(--font-brand)"
-              fontSize="38" fontWeight="500" letterSpacing="0"
-              fill="var(--accent)">O</text>
-            {/* Zone arc overlay — sits on top right of O */}
-            <path d="M 21 8 A 9 9 0 0 1 26 16" stroke="var(--bg)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-            <path d="M 21 8 A 9 9 0 0 1 26 16" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" fill="none" strokeDasharray="3 3" opacity="0.6" />
-          </svg>
-          <span style={{
-            fontFamily: 'var(--font-brand)',
-            fontSize: '38px', fontWeight: 500, letterSpacing: '0.08em',
-            color: 'var(--accent)', lineHeight: 1,
-          }}>NA</span>
+          }}>{BRAND.name}</span>
         </div>
 
         {/* Tagline */}
@@ -3778,7 +3763,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
         }}>
-          ZONA
+          {BRAND.name.toUpperCase()}
         </span>
         {/* Moss dot with soft halo */}
         <div style={{ position: 'relative', width: '8px', height: '8px', flexShrink: 0 }}>
