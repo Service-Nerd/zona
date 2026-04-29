@@ -74,7 +74,9 @@ After Vercel deploy, verify with agent-browser:
 
 ### Small UX
 
-- 🔲 **UX-01** — Profile screen name/email field review. Name actively used (greeting/initials/header); email is a no-op (can't change without re-verification flow). Decision: read-only or remove
+- 🔲 **UX-01** — Profile screen email field. Me screen rebuilt (2026-04-29); `ProfileSection` still renders email as editable input but saving email is a no-op (no re-verification flow exists). Decision still needed: make read-only or remove the field entirely.
+- 🔲 **UX-02** — Zone discipline tap-to-explain. Load ratio card has a slide-up sheet (shipped 2026-04-29); Zone discipline card does not. Apply same pattern for consistency.
+- 🔲 **UX-03** — Dead `onBack` prop in `MeScreen`. Back button removed; prop retained in signature and call site. Minor cleanup — remove prop and call site.
 
 ---
 
@@ -93,7 +95,7 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 
 ### Scoped but unscheduled
 
-- **Estimated race times** (5K/10K/HM/Marathon, data-driven) — PAID
+
 - **Zone method selector** — user picks HR zone calc method, stored in `user_settings` — PAID
 - **GTM-11 Pricing review** — annual discount currently 37% vs category norm 44–49%. Monthly parameterised in `lib/brand.ts`; can raise to £9.99/month (50% annual discount) without a search-replace. Revisit after first 100 paid conversions
 
@@ -121,7 +123,7 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 ### R23 deferred items still open
 
 - **R23-D1** — Tier 2 wizard fields (`treadmill_primarily`, `longest_run_ever_km`) need engine consumer / product decision before the wizard work is worth shipping
-- **R23-D2** — Catalogue lookup for legacy plans. Recommendation: abandon (legacy plans expire as users regenerate). Confirm decision
+- ✅ **R23-D2** — Catalogue lookup for legacy plans: abandoned. Legacy plans expire naturally as users regenerate; no restore path needed.
 - **R23-D3** — Surface `compressed` flag in UI. Needs design rationale via `frontend-design` skill before shipping
 - ✅ **R23-D5** — ReshapeScreen 403 fixed: MeScreen Reshape button now gates on hasPaidAccess, routes free users to UpgradeScreen. Done 2026-04-29.
 
