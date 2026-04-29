@@ -372,6 +372,17 @@ export const GENERATION_CONFIG = {
     Z4: { karvonen_pct: [80, 90],  maxhr_pct: [87, 93]  },
     Z5: { karvonen_pct: [90, 100], maxhr_pct: [93, 100] },
   },
+
+  // ── Foundation Block (CoachingPrinciples §57) ─────────────────────────────
+  // Pre-plan preparation phase inserted before W1 when the gap between today
+  // and plan_start exceeds GAP_MIN_AUTO_DAYS. Uses negative week indices.
+  FOUNDATION_GAP_NUDGE_DAYS:    7,   // < 7 days: inline nudge only
+  FOUNDATION_GAP_AUTO_DAYS:    28,   // 7–28: auto-generate silently
+  // > 28: offer three-option choice (see foundationBlock.ts)
+  FOUNDATION_MAX_WEEKS:         3,   // max foundation block length (weeks)
+  FOUNDATION_WEEKLY_INCREASE_PCT: 10, // max +% per week within the block
+  FOUNDATION_LONG_RUN_MAX_PCT:   50, // long run cap as % of that week's weekly_km
+  FRESH_RETURN_EFFECTIVE_BASELINE_FRACTION: 0.70, // mirrors FRESH_RETURN_START_FRACTION
 } as const
 
 // Type helpers — derived from the const object so tables and types stay in sync.

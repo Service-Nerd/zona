@@ -3,11 +3,12 @@
 // One decision per screen. Slide transitions between steps.
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Plan, GeneratorInput, TrainingAge } from '@/types/plan'
 import GeneratingCeremony from '@/components/GeneratingCeremony'
 import { BRAND } from '@/lib/brand'
 import { createClient } from '@/lib/supabase/client'
+import { classifyGap, gapDays, generateFoundationBlock } from '@/lib/plan/foundationBlock'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -262,44 +263,57 @@ function DurationPicker({ hours, mins, onHoursChange, onMinsChange, maxHours = 2
 // "+N more weeks" footer. Every week is represented in the strip; every
 // phase has a card.
 
-const PHASES = ['base', 'build', 'peak', 'taper'] as const
+const PHASES = ['foundation', 'base', 'build', 'peak', 'taper'] as const
 
 const PHASE_COLOUR: Record<string, string> = {
-  base:  'var(--s-easy)',
-  build: 'var(--s-quality)',
-  peak:  'var(--s-inter)',
-  taper: 'var(--s-recov)',
+  foundation: 'var(--mute)',
+  base:       'var(--s-easy)',
+  build:      'var(--s-quality)',
+  peak:       'var(--s-inter)',
+  taper:      'var(--s-recov)',
 }
 
 const PHASE_DESCRIPTION: Record<string, string> = {
-  base:  'Aerobic foundation. Easy runs, nothing fancy.',
-  build: 'One quality session a week. Everything else stays easy.',
-  peak:  'Highest volume. Race-specific sharpening.',
-  taper: 'Volume drops. Race week is shakeouts only.',
+  foundation: 'Pre-plan easy running. Easy sessions only — no quality, no strides.',
+  base:       'Aerobic foundation. Easy runs, nothing fancy.',
+  build:      'One quality session a week. Everything else stays easy.',
+  peak:       'Highest volume. Race-specific sharpening.',
+  taper:      'Volume drops. Race week is shakeouts only.',
 }
 
 // Full-width strip — every week as a coloured bar. No scrolling.
 function PreviewPhaseStrip({ weeks }: { weeks: Plan['weeks'] }) {
   if (!weeks.length) return null
+  const foundationCount = weeks.filter(w => w.phase === 'foundation').length
+  const mainWeeks = weeks.filter(w => w.phase !== 'foundation')
   return (
     <div>
+      {foundationCount > 0 && (
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: '6px', letterSpacing: '0.02em' }}>
+          Foundation Block · {foundationCount} {foundationCount === 1 ? 'week' : 'weeks'} before your plan
+        </div>
+      )}
       <div style={{ display: 'flex', gap: '2px', height: '32px', alignItems: 'flex-end' }}>
         {weeks.map(w => {
-          const isRaceWeek = w.type === 'race'
-          const isDeload   = w.badge === 'deload'
+          const isRaceWeek   = w.type === 'race'
+          const isDeload     = w.badge === 'deload'
+          const isFoundation = w.phase === 'foundation'
           const colour = isRaceWeek
             ? 'var(--s-race)'
             : PHASE_COLOUR[w.phase ?? 'base']
           return (
             <div
               key={w.n}
-              title={`Week ${w.n} · ${w.weekly_km}km · ${w.phase ?? 'base'}${isDeload ? ' · recovery' : ''}${isRaceWeek ? ' · race' : ''}`}
+              title={isFoundation
+                ? `Foundation · ${w.weekly_km}km`
+                : `Week ${w.n} · ${w.weekly_km}km · ${w.phase ?? 'base'}${isDeload ? ' · recovery' : ''}${isRaceWeek ? ' · race' : ''}`}
               style={{
                 flex: 1,
-                height: '100%',
+                height: isFoundation ? '60%' : '100%',  // subdued height for foundation
                 borderRadius: '2px',
                 background: colour,
-                opacity: isDeload ? 0.35 : (isRaceWeek ? 1 : 0.85),
+                opacity: isFoundation ? 0.5 : (isDeload ? 0.35 : (isRaceWeek ? 1 : 0.85)),
+                borderBottom: isFoundation ? '1px dashed var(--mute)' : undefined,
               }}
             />
           )
@@ -307,10 +321,10 @@ function PreviewPhaseStrip({ weeks }: { weeks: Plan['weeks'] }) {
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          Wk 1
+          {foundationCount > 0 ? 'Foundation' : 'Wk 1'}
         </span>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          Race · Wk {weeks.length}
+          Race · Wk {mainWeeks.length}
         </span>
       </div>
     </div>
@@ -415,6 +429,11 @@ export default function GeneratePlanScreen({
   const [plan, setPlan]         = useState<Plan | null>(null)
   const [error, setError]       = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  // ── Foundation Block modal (Phase 4 — gap > 28 days) ─────────────────────
+  const [foundationModalOpen, setFoundationModalOpen] = useState(false)
+  // Preserve the last generator input so the foundation block can use it
+  const lastInputRef = useRef<GeneratorInput | null>(null)
 
   // ── Animation state ───────────────────────────────────────────────────────
   const [visible, setVisible]     = useState(true)
@@ -658,11 +677,55 @@ export default function GeneratePlanScreen({
         setAppStep('error')
         return
       }
-      setPlan(data.plan)
+
+      const generatedPlan: Plan = data.plan
+      const today = new Date().toISOString().split('T')[0]
+      const gap = gapDays(today, generatedPlan.meta.plan_start)
+      const gapClass = classifyGap(gap)
+
+      if (gapClass === 'auto') {
+        // Auto-generate foundation block silently, prepend to plan weeks
+        const { weeks: foundationWeeks } = generateFoundationBlock({
+          input,
+          planStartDate: generatedPlan.meta.plan_start,
+          today,
+        })
+        generatedPlan.weeks = [...foundationWeeks, ...generatedPlan.weeks]
+      } else if (gapClass === 'choice') {
+        // Store input so the modal handlers can generate the block on demand
+        lastInputRef.current = input
+        setFoundationModalOpen(true)
+      }
+
+      setPlan(generatedPlan)
     } catch {
       setError('Could not reach the server. Check your connection.')
       setAppStep('error')
     }
+  }
+
+  // ── Foundation Block modal handlers ──────────────────────────────────────
+
+  function handleFoundationAddBlock() {
+    if (!plan || !lastInputRef.current) { setFoundationModalOpen(false); return }
+    const today = new Date().toISOString().split('T')[0]
+    const { weeks: foundationWeeks } = generateFoundationBlock({
+      input: lastInputRef.current,
+      planStartDate: plan.meta.plan_start,
+      today,
+    })
+    setPlan({ ...plan, weeks: [...foundationWeeks, ...plan.weeks] })
+    setFoundationModalOpen(false)
+  }
+
+  function handleFoundationSkip() {
+    setFoundationModalOpen(false)
+  }
+
+  function handleFoundationStartNow() {
+    // No structural change — the plan starts at plan_start as generated.
+    // "Start now" communicates user intent to begin immediately without a block.
+    setFoundationModalOpen(false)
   }
 
   async function handleUsePlan() {
@@ -786,6 +849,61 @@ export default function GeneratePlanScreen({
             </div>
           )}
         </div>
+
+        {/* Foundation Block choice modal — shown when gap > 28 days */}
+        {foundationModalOpen && (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 100,
+            background: 'rgba(26,26,26,0.55)',
+            display: 'flex', alignItems: 'flex-end',
+          }}>
+            <div style={{
+              width: '100%', background: 'var(--card)',
+              borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
+              padding: '24px 20px calc(24px + env(safe-area-inset-bottom))',
+            }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 800, color: 'var(--ink)', marginBottom: '6px' }}>
+                You've got some time.
+              </div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: '24px' }}>
+                Your plan doesn't start for a while. A Foundation Block can ease you in — easy runs only, no pressure.
+              </div>
+
+              <button
+                onClick={handleFoundationAddBlock}
+                style={{
+                  width: '100%', padding: '15px', marginBottom: '10px',
+                  borderRadius: 'var(--radius-md)', background: 'var(--moss)',
+                  border: 'none', cursor: 'pointer',
+                  fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--card)',
+                }}
+              >
+                Add Foundation Block
+              </button>
+              <button
+                onClick={handleFoundationStartNow}
+                style={{
+                  width: '100%', padding: '15px', marginBottom: '10px',
+                  borderRadius: 'var(--radius-md)', background: 'var(--bg-soft)',
+                  border: '1px solid var(--line)', cursor: 'pointer',
+                  fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 500, color: 'var(--ink)',
+                }}
+              >
+                Start plan as-is
+              </button>
+              <button
+                onClick={handleFoundationSkip}
+                style={{
+                  width: '100%', padding: '12px',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)',
+                }}
+              >
+                Decide later
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     )
   }

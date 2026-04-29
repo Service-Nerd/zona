@@ -837,6 +837,54 @@ The reject-vs-fall-back distinction matters: a runner who entered `0` (defaulted
 
 ---
 
+## 57. Foundation Block
+
+The Foundation Block is a pre-plan preparation phase generated when the gap between today and the plan's `plan_start` date exceeds a threshold. It sits **before** Week 1 of the main plan and uses negative week indices (−1, −2, −3…). Weeks in this phase carry `phase: 'foundation'` and are never part of the main plan's periodisation arc.
+
+### When to generate
+
+| Gap | Action |
+|-----|--------|
+| < 7 days | Inline nudge only — "You've got N days before your plan starts. Get moving." No block generated. |
+| 7–28 days | Auto-generate Foundation Block silently. Surface in plan calendar with subdued styling. |
+| > 28 days | Offer the runner a choice: Start Now (plan_start = today, no block) / Add Foundation Block (auto-generated, plan_start unchanged) / Skip (dismiss, re-surface if user revisits wizard). |
+
+### Volume rules
+
+- **Effective baseline** = `fresh_return_active ? stated_current_weekly_km × 0.70 : stated_current_weekly_km`
+- Week 1 of the Foundation Block starts at effective baseline (never above it).
+- Subsequent foundation weeks may increase by a maximum of **+10% per week** (hard cap).
+- The final foundation week must not exceed effective baseline × 1.10 regardless of block length.
+- Long run cap per foundation week: the lesser of `longest_recent_run_km` and 50% of that week's weekly volume.
+- These caps are enforced by `INV-PLAN-FOUNDATION-BLOCK`.
+
+### Session content
+
+Foundation weeks contain only: `easy`, `rest`, `cross-train`. No quality sessions, no tempo, no intervals, no strides.
+
+This is enforced by `INV-PLAN-FOUNDATION-BLOCK`.
+
+### Prep-time integration
+
+When calculating available prep weeks, `preparationWeeks = foundation_weeks + plan_weeks`. This prevents the engine from double-penalising a runner whose gap is large.
+
+### Week numbering
+
+Foundation weeks use `n` values ≤ 0 (e.g., −2, −1, 0 for a 3-week block). Week 1 of the main plan is always `n: 1`. The stride-insertion guard `weekN > 0` (§28) relies on this convention.
+
+### ZONA voice for Foundation Block weeks
+
+- Coach notes use the standard ZONA voice: honest, brief, no hype.
+- Example week themes: "Shake the rust off.", "Building the base.", "Last week before the plan proper. Keep it easy."
+- Never promise fitness gains. Never use motivational language.
+
+### Invariants
+
+- `INV-PLAN-FOUNDATION-BLOCK` — validates that foundation weeks contain no forbidden session types, volume does not exceed effective baseline, and the +10%/week cap is respected.
+- Existing invariants `INV-PLAN-PEAK-OVER-BASE`, `INV-PLAN-LR-PROGRESSION-CAP`, `INV-PLAN-QUALITY-EXPECTED`, and `INV-PLAN-THEME-MATCHES-PRESCRIPTION` all skip foundation-phase weeks.
+
+---
+
 ## 56. The constitution
 
 These fifty-six principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

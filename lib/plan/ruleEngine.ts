@@ -1227,7 +1227,12 @@ function buildWeekSessions(
   // that is NOT the day before the long run, NOT the day after a quality, and
   // append "4×20s strides at 5K effort, full recovery" as a coach note. This
   // preserves neuromuscular sharpness without adding fatigue.
-  if (weekN >= GENERATION_CONFIG.STRIDES_FIRST_WEEK
+  // BUG-FIX-STRIDES: weekN > 0 guards against foundation weeks (weekN ≤ 0).
+  // The STRIDES_FIRST_WEEK (≥3) check already implies this for correctly-numbered
+  // weeks, but the explicit guard prevents misfire if a future caller passes a
+  // foundation-week weekN into this function.
+  if (weekN > 0
+      && weekN >= GENERATION_CONFIG.STRIDES_FIRST_WEEK
       && !isRaceWeek
       && !isDeload) {
     const stridePreferred: Day[] = ['wed', 'tue', 'thu', 'mon', 'fri']

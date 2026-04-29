@@ -155,3 +155,12 @@ Determined by rule engine:
 | `lib/plan/enrich.ts` | AI coaching voice — labels, themes, coach notes, confidence |
 | `lib/plan/generate.ts` | Orchestrator — calls rule engine then enricher |
 | `lib/trial.ts` | Auth boundary — `getUserTier()` |
+| `lib/plan/foundationBlock.ts` | Foundation Block generator — pre-plan prep weeks (client-side, not this route) |
+
+---
+
+## Plan schema — foundation weeks
+
+The `Plan.weeks` array may include foundation-phase weeks with `phase: 'foundation'` and `n ≤ 0`. These are **not produced by this route** — they are prepended client-side by `GeneratePlanScreen` based on the gap between today and `meta.plan_start`. When a plan with foundation weeks is saved via `savePlanForUser`, they persist in the DB as part of `plan_json`.
+
+Foundation week invariants: `INV-PLAN-FOUNDATION-BLOCK` (see `docs/canonical/plan-invariants.md`).

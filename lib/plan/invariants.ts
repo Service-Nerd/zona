@@ -50,6 +50,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-QUALITY-VARIETY-FULL-PLAN',
   'INV-PLAN-LR-MAX-WEEKLY-PCT',
   'INV-PLAN-HR-ASSUMPTIONS-SURFACED',
+  'INV-PLAN-FOUNDATION-BLOCK',
 ] as const
 
 export interface Violation {
@@ -228,7 +229,9 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     // the prescription. "highest volume" / "fitness is built" requires
     // overload vs prior non-deload week; "intensity stays" requires ≥1
     // quality session. (CoachingPrinciples §27)
-    {
+    // Foundation weeks are exempt: their themes describe preparation, not
+    // periodisation progress — overload and quality rules don't apply.
+    if (w.phase !== 'foundation') {
       const themeText = (w.theme ?? '').toLowerCase()
       const qualityCount = Object.values(w.sessions).filter(s => s?.type === 'quality').length
       const prevNonDeload = plan.weeks.slice(0, plan.weeks.indexOf(w)).reverse().find(p => p.type !== 'deload')
@@ -537,7 +540,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     // (CoachingPrinciples §1, §6, §8 — quality work drives fitness adaptation
     // beyond base aerobic capacity. Skipping it across an entire build/peak
     // phase is a coaching defect, not a tuning choice.)
-    if (!isRaceWeek && w.phase && w.phase !== 'base' && w.type !== 'deload') {
+    if (!isRaceWeek && w.phase && w.phase !== 'base' && w.phase !== 'foundation' && w.type !== 'deload') {
       const planFitness = plan.meta.fitness_level
       const hsr = input.hard_session_relationship
       const hasAchilles = (input.injury_history ?? []).some(i => i.toLowerCase().includes('achilles'))
@@ -728,7 +731,9 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // longer must either have peak ≥ PEAK_OVER_BASE_RATIO × W1, or be classified
   // as 'maintenance'. (CoachingPrinciples §23)
   if (totalWeeks >= GENERATION_CONFIG.PEAK_OVERLOAD_MIN_PLAN_WEEKS) {
-    const w1 = plan.weeks[0]?.weekly_km ?? 0
+    // W1 = first non-foundation week (foundation weeks are pre-plan; they must
+    // not be used as the base volume reference for peak overload calculation).
+    const w1 = (plan.weeks.find(w => w.phase !== 'foundation') ?? plan.weeks[0])?.weekly_km ?? 0
     const peakWeeks = plan.weeks.filter(w => w.phase === 'peak')
     if (w1 > 0 && peakWeeks.length > 0) {
       const peakKm = Math.max(...peakWeeks.map(w => w.weekly_km))
@@ -812,6 +817,10 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       const prev = plan.weeks[i - 1]
       const curr = plan.weeks[i]
       if (curr.type === 'race') continue
+      // Foundation → W1 boundary: the transition from the pre-plan block to
+      // the main plan is exempt from progression cap. Foundation volume is
+      // deliberately low; W1 will always appear as a large jump.
+      if (prev.phase === 'foundation' && curr.phase !== 'foundation') continue
       const prevLR = longRunForWeek(prev)
       const currLR = longRunForWeek(curr)
       if (prevLR == null || currLR == null) continue
@@ -1056,6 +1065,68 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             actual: `W${prev.n}=${peakLrKms[i - 1]}km, W${curr.n}=${peakLrKms[i]}km`,
             expected: 'one of them is a step-back or easy long run',
           })
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-FOUNDATION-BLOCK — foundation weeks must contain only easy/rest/
+  // cross-train sessions, must not exceed the effective baseline volume, and
+  // must not increase by more than +10% per week within the block.
+  // (CoachingPrinciples §57)
+  {
+    const foundationWeeks = plan.weeks.filter(w => w.phase === 'foundation')
+    if (foundationWeeks.length > 0) {
+      const forbiddenTypes = new Set(['quality', 'tempo', 'intervals', 'hard', 'long', 'race'])
+      for (const fw of foundationWeeks) {
+        for (const [day, session] of Object.entries(fw.sessions)) {
+          if (!session) continue
+          if (forbiddenTypes.has(session.type)) {
+            violations.push({
+              code: 'INV-PLAN-FOUNDATION-BLOCK',
+              principle_ref: 'CoachingPrinciples §57',
+              severity: 'error',
+              week: fw.n,
+              day: day as Day,
+              message: `Foundation week W${fw.n} contains forbidden session type '${session.type}'. Only easy/rest/cross-train allowed.`,
+              actual: session.type,
+              expected: 'easy | rest | cross-train',
+            })
+          }
+        }
+        // Volume cap: no foundation week may exceed stated current_weekly_km.
+        // (The effective baseline ≤ stated_km, so this is a safe upper bound
+        // without requiring the input object here.)
+        const statedKm = input.current_weekly_km ?? 0
+        if (statedKm > 0 && fw.weekly_km > statedKm * 1.001) {
+          violations.push({
+            code: 'INV-PLAN-FOUNDATION-BLOCK',
+            principle_ref: 'CoachingPrinciples §57',
+            severity: 'error',
+            week: fw.n,
+            message: `Foundation week W${fw.n} volume ${fw.weekly_km}km exceeds stated current_weekly_km ${statedKm}km`,
+            actual: `${fw.weekly_km}km`,
+            expected: `≤ ${statedKm}km`,
+          })
+        }
+      }
+      // +10%/week cap within the foundation block
+      for (let i = 1; i < foundationWeeks.length; i++) {
+        const prev = foundationWeeks[i - 1]
+        const curr = foundationWeeks[i]
+        if (prev.weekly_km > 0) {
+          const maxAllowed = prev.weekly_km * 1.10 + 0.01
+          if (curr.weekly_km > maxAllowed) {
+            violations.push({
+              code: 'INV-PLAN-FOUNDATION-BLOCK',
+              principle_ref: 'CoachingPrinciples §57',
+              severity: 'error',
+              week: curr.n,
+              message: `Foundation block W${curr.n} (${curr.weekly_km}km) increases by more than +10% from W${prev.n} (${prev.weekly_km}km)`,
+              actual: `${curr.weekly_km}km`,
+              expected: `≤ ${(prev.weekly_km * 1.10).toFixed(1)}km`,
+            })
+          }
         }
       }
     }

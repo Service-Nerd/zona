@@ -4140,13 +4140,14 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           preferredUnits,
         )
         const weekPhase = (wk as any).phase as string | undefined
-        const phaseCap = weekPhase ? ({ base: 'Base', build: 'Build', peak: 'Peak', taper: 'Taper' }[weekPhase] ?? weekPhase) : null
+        const phaseCap = weekPhase ? ({ foundation: 'Foundation Block', base: 'Base', build: 'Build', peak: 'Peak', taper: 'Taper' }[weekPhase] ?? weekPhase) : null
         return (
           <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
             {phaseCap && (
               <span style={{
                 fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-                color: 'var(--moss)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                color: weekPhase === 'foundation' ? 'var(--mute)' : 'var(--moss)',
+                letterSpacing: '0.08em', textTransform: 'uppercase',
               }}>{phaseCap}</span>
             )}
             {phaseCap && <span style={{ color: 'var(--mute-2)', fontSize: '10px' }}>·</span>}
@@ -4202,9 +4203,10 @@ function PlanCoachingCard({ plan, currentWeek, units = 'km' }: { plan: Plan; cur
   const weeklyKm   = sumRoundedDistance(sessions.map(s => s?.distance_km as number | undefined), units)
   const weeksToRace = Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
 
-  const phaseCap = phase ? ({ base: 'Base', build: 'Build', peak: 'Peak', taper: 'Taper' }[phase] ?? phase) : null
+  const phaseCap = phase ? ({ foundation: 'Foundation Block', base: 'Base', build: 'Build', peak: 'Peak', taper: 'Taper' }[phase] ?? phase) : null
 
   function getWeekHeadline(): string {
+    if (phase === 'foundation') return "Foundation week. Easy only — no effort required."
     if (phase === 'taper') return "Taper week. Back off and trust the work."
     if (phase === 'peak')  return "Peak week. You're sharp. Don't add more."
     if (hasQuality && hasLong) return "Quality and long run this week. Hard stuff first, long stuff rested."
