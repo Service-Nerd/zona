@@ -188,6 +188,9 @@ export default function DashboardClient() {
   // fetched, AI failed, or user is free. Today screen renders the rule-based
   // fallback when null and tier is paid; renders nothing when free.
   const [dailyCoachNote, setDailyCoachNote] = useState<string | null>(null)
+  // True once the fetch resolves (success or fail). Prevents flashing the
+  // rule-based fallback before the AI note arrives.
+  const [coachNoteSettled, setCoachNoteSettled] = useState(false)
 
   const supabase = createClient()
 
@@ -239,6 +242,8 @@ export default function DashboardClient() {
         if (!cancelled && typeof data?.note === 'string') setDailyCoachNote(data.note)
       } catch {
         // silent fallback — TodayScreen will use the rule-based note
+      } finally {
+        if (!cancelled) setCoachNoteSettled(true)
       }
     }
     loadNote()
@@ -381,7 +386,7 @@ export default function DashboardClient() {
           void (async () => {
             try {
               const [analysisRes, reportRes, adjustmentsRes] = await Promise.all([
-                supabase.from('run_analysis').select('session_day, verdict, total_score, feedback_text, hr_in_zone_pct, ef_trend_pct').eq('user_id', user.id),
+                supabase.from('run_analysis').select('session_day, verdict, total_score, feedback_text, hr_in_zone_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score').eq('user_id', user.id),
                 supabase.from('weekly_reports').select('*').eq('user_id', user.id).order('week_n', { ascending: false }).limit(1).maybeSingle(),
                 supabase.from('plan_adjustments').select('*').eq('user_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
               ])
@@ -771,7 +776,7 @@ export default function DashboardClient() {
       )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} />}
         {screen === 'coach'    && (hasPaidAccess
           ? <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaTokenFailed={stravaTokenFailed} firstName={firstName} onGoToMe={() => setScreen('me')} weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport} preferredUnits={preferredUnits} />
@@ -796,75 +801,6 @@ export default function DashboardClient() {
         <ScreenGuide screen={guideScreen} onDismiss={() => setGuideScreen(null)} />
       )}
 
-      {/* ── More expansion panel ── */}
-      {showMore && (
-        <>
-          {/* Scrim — tap outside to close */}
-          <div
-            onClick={() => setShowMore(false)}
-            style={{ position: 'fixed', inset: 0, zIndex: 2998 }}
-          />
-          {/* Panel — slides up from just above nav */}
-          <div style={{
-            position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-            width: '100%', maxWidth: '480px',
-            paddingBottom: 'calc(max(16px, env(safe-area-inset-bottom)) + 66px)',
-            padding: '0 12px calc(max(16px, env(safe-area-inset-bottom)) + 66px)',
-            zIndex: 2999,
-            pointerEvents: 'none',
-          }}>
-            <div style={{
-              background: 'var(--card-bg)', borderRadius: '16px',
-              border: '0.5px solid var(--border-col)',
-              overflow: 'hidden',
-              boxShadow: '0 -8px 32px rgba(0,0,0,0.12)',
-              pointerEvents: 'auto',
-              animation: 'slideUp 0.22s cubic-bezier(0.32, 0.72, 0, 1)',
-            }}>
-              {([
-                // Coach moves to nav bar for paid/trial users — keep in More only for free users
-                ...(hasPaidAccess ? [] : [{ id: 'coach' as Screen, label: 'Coach', icon: (a: boolean) => <IconCoach active={a} /> }]),
-                // Strava screen nav entry removed — admin-only via URL, see brand-product-alignment v2
-                // { id: (hasPaidAccess ? 'strava' : 'upgrade') as Screen, label: 'Strava',  icon: (a: boolean) => <IconStrava active={a} /> },
-                { id: 'me'     as Screen, label: 'Profile', icon: (a: boolean) => <IconMe     active={a} /> },
-              ]).map(({ id, label, icon }, i) => {
-                const active = screen === id
-                return (
-                  <button
-                    key={id}
-                    onClick={() => {
-                      setScreen(id)
-                      setShowMore(false)
-                      const seen = getSeenGuides()
-                      if (!seen.has(id)) setGuideScreen(id)
-                    }}
-                    style={{
-                      width: '100%', display: 'flex', alignItems: 'center', gap: '14px',
-                      padding: '14px 18px',
-                      background: active ? 'var(--accent-soft)' : 'none',
-                      border: 'none',
-                      borderTop: i > 0 ? '0.5px solid var(--border-col)' : 'none',
-                      cursor: 'pointer', textAlign: 'left',
-                    }}
-                  >
-                    {icon(active)}
-                    <span style={{
-                      fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 500,
-                      color: active ? 'var(--accent)' : 'var(--text-primary)',
-                      flex: 1,
-                    }}>
-                      {label}
-                    </span>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M6 4l4 4-4 4" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </>
-      )}
 
       {/* ── Bottom nav bar ── */}
       {(() => {
@@ -872,12 +808,11 @@ export default function DashboardClient() {
         const isOnboarding = screen === 'generate' && (!plan || plan === EMPTY_PLAN)
         if (isOnboarding) return null
 
-        const moreActive = showMore || ['strava', 'me', ...(hasPaidAccess ? [] : ['coach'])].includes(screen)
         const navItems: { id: Screen; label: string; icon: (a: boolean) => React.ReactNode }[] = [
           { id: 'today', label: 'Today', icon: (a) => <IconToday active={a} /> },
           { id: 'plan',  label: 'Plan',  icon: (a) => <IconPlan  active={a} /> },
-          // Coach surfaces directly in nav for paid/trial users — it's a core value prop they've paid for
-          ...(hasPaidAccess ? [{ id: 'coach' as Screen, label: 'Coach', icon: (a: boolean) => <IconCoach active={a} /> }] : []),
+          { id: 'coach', label: 'Coach', icon: (a) => <IconCoach active={a} /> },
+          { id: 'me',    label: 'Me',    icon: (a) => <IconMe    active={a} /> },
         ]
         return (
           <div style={{
@@ -907,16 +842,6 @@ export default function DashboardClient() {
                 </button>
               )
             })}
-            {/* More button */}
-            <button onClick={() => setShowMore(prev => !prev)} style={{
-              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-              background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
-            }}>
-              <IconMore active={moreActive} />
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: moreActive ? 'var(--accent)' : 'var(--text-muted)' }}>
-                More
-              </span>
-            </button>
           </div>
         )
       })()}
@@ -1580,6 +1505,21 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
         }}>
           {reflectResponse ? 'Done' : 'Skip for now'}
         </button>
+
+        {/* Analysis pending hint — paid users who just linked a Strava activity */}
+        {hasPaidAccess && selectedActivity && (
+          <div style={{
+            marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px',
+            justifyContent: 'center',
+          }}>
+            <AIMark size={10} color="var(--moss)" working />
+            <span style={{
+              fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
+            }}>
+              Coach note on the way — check back in a moment.
+            </span>
+          </div>
+        )}
 
         {/* Strava nudge — free users only, shown after logging a session manually */}
         {!hasPaidAccess && onUpgrade && (
@@ -3248,7 +3188,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied }: {
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   stravaRuns: any[]
@@ -3268,6 +3208,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   onUpgrade?: () => void
   hasPaidAccess?: boolean
   dailyCoachNote?: string | null
+  coachNoteSettled?: boolean
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
@@ -3744,8 +3685,25 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
         {/* Coach note — paid/trial only. Free users see no coach card.
             AI note (cached daily) preferred; rule-based fallback when AI is
-            unavailable so paid users always see something. */}
+            unavailable so paid users always see something.
+            While the fetch is in flight (coachNoteSettled = false) we show a
+            skeleton so the rule-based copy never flashes before the AI note. */}
         {hasPaidAccess && (() => {
+          if (!coachNoteSettled) {
+            return (
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{
+                  background: 'var(--warn-bg)',
+                  borderRadius: '14px',
+                  padding: '16px 18px',
+                }}>
+                  <div style={{ height: '8px', width: '48px', background: 'var(--warn)', opacity: 0.25, borderRadius: '4px', marginBottom: '12px' }} />
+                  <div style={{ height: '10px', background: 'var(--warn)', opacity: 0.12, borderRadius: '4px', marginBottom: '8px', animation: 'ai-mark-pulse 1.6s ease-in-out infinite' }} />
+                  <div style={{ height: '10px', width: '70%', background: 'var(--warn)', opacity: 0.12, borderRadius: '4px', animation: 'ai-mark-pulse 1.6s ease-in-out infinite' }} />
+                </div>
+              </div>
+            )
+          }
           const ruleNote = getPlanCoachNote()
           const coachLabel = weekPhaseLabel ?? 'COACH'
           if (dailyCoachNote) {
@@ -5527,13 +5485,13 @@ function PendingAnalysisCard() {
         color: 'var(--ink)', letterSpacing: '-0.2px', lineHeight: 1.3,
         marginBottom: '4px',
       }}>
-        Reading your run.
+        Analysing your run.
       </div>
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
         color: 'var(--mute)', lineHeight: 1.5,
       }}>
-        Hold on — about fifteen seconds.
+        Coach note on the way.
       </div>
       {/* Skeleton metric row — hint at what's coming */}
       <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
@@ -5671,17 +5629,19 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
 
   // Local analysis state — seeded from prop, then polled if a Strava activity
   // is linked but analysis hasn't landed yet (analyse-run runs in background
-  // ~5–15s after manual link).
+  // ~15–30s after manual link including AI call).
   const supabase = createClient()
   const [analysis, setAnalysis] = useState<any | null>(runAnalysis ?? null)
   useEffect(() => { setAnalysis(runAnalysis ?? null) }, [runAnalysis])
 
-  const linkedActivityId = session.completion?.strava_activity_id ?? null
-  const sessionDay       = session.key as string | undefined
+  const linkedActivityId  = session.completion?.strava_activity_id ?? null
+  const sessionDay        = session.key as string | undefined
   const isAnalysisPending = !!hasPaidAccess && !!linkedActivityId && !analysis
+  const [pollGaveUp, setPollGaveUp] = useState(false)
 
   useEffect(() => {
     if (!isAnalysisPending || !sessionDay) return
+    setPollGaveUp(false)
     let cancelled = false
     let attempts  = 0
     const tick = async () => {
@@ -5701,7 +5661,11 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
           return
         }
       } catch {}
-      if (!cancelled && attempts < 12) setTimeout(tick, 2500)  // up to ~30s
+      if (!cancelled && attempts < 16) {
+        setTimeout(tick, 2500)  // up to ~40s
+      } else if (!cancelled) {
+        setPollGaveUp(true)
+      }
     }
     const initial = setTimeout(tick, 2500)
     return () => { cancelled = true; clearTimeout(initial) }
@@ -5763,7 +5727,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
             content. Pending state shows AIMark working pulse while analyse-run
             is in flight; real card replaces it when run_analysis lands. */}
         {hasPaidAccess && analysis && <RunFeedbackCard analysis={analysis} />}
-        {hasPaidAccess && !analysis && isAnalysisPending && <PendingAnalysisCard />}
+        {hasPaidAccess && !analysis && isAnalysisPending && !pollGaveUp && <PendingAnalysisCard />}
 
         <div style={{
           background: 'var(--card)',

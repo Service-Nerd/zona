@@ -144,7 +144,53 @@ export async function POST(req: NextRequest) {
     efBaseline,
   })
 
-  // Persist analysis
+  // AI feedback — generated before upsert so feedback_text lands in the same row.
+  // Failure is silent; scoring row is written regardless.
+  let feedbackText: string | null = null
+  try {
+    const prescribedZone = zoneForSessionType((session as any).type)
+    const prompt = buildSessionFeedbackPrompt({
+      session,
+      weekN: week_n,
+      plan,
+      verdict:             scoreResult.verdict,
+      totalScore:          scoreResult.totalScore,
+      hrDisciplineScore:   scoreResult.hrDisciplineScore,
+      distanceScore:       scoreResult.distanceScore,
+      actualDistKm:        (activity.distance_m ?? 0) / 1000,
+      actualAvgHr:         activity.avg_hr ?? null,
+      hrInZonePct:         activity.hr_in_zone_pct ?? null,
+      hrAboveCeilingPct:   activity.hr_above_ceiling_pct ?? null,
+      efTrendPct,
+      rpe:                 completionRes.data?.rpe ?? null,
+      fatigueTag:          completionRes.data?.fatigue_tag ?? null,
+      prescribedZoneLabel: prescribedZone?.label ?? null,
+    })
+
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type':    'application/json',
+        'x-api-key':       process.env.ANTHROPIC_API_KEY!,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model:      'claude-haiku-4-5-20251001',
+        max_tokens: 200,
+        messages:   [{ role: 'user', content: prompt }],
+      }),
+    })
+
+    if (aiRes.ok) {
+      const aiData = await aiRes.json()
+      feedbackText = aiData.content?.[0]?.text?.trim() ?? null
+    }
+  } catch {
+    // silent fallback — scoring row still written below
+  }
+
+  // Persist complete row (scores + feedback_text) in one upsert.
+  // Must await — fire-and-forget on serverless means the row never lands.
   const analysisRow = {
     user_id:               userId,
     week_n,
@@ -156,6 +202,7 @@ export async function POST(req: NextRequest) {
     ef_score:              scoreResult.efScore,
     total_score:           scoreResult.totalScore,
     verdict:               scoreResult.verdict,
+    feedback_text:         feedbackText,
     hr_in_zone_pct:        activity.hr_in_zone_pct ?? null,
     hr_above_ceiling_pct:  activity.hr_above_ceiling_pct ?? null,
     hr_below_floor_pct:    activity.hr_below_floor_pct ?? null,
@@ -167,60 +214,11 @@ export async function POST(req: NextRequest) {
     rule_engine_version:   COACHING_RULE_ENGINE_VERSION,
   }
 
-  // Must await — `void` previously made this fire-and-forget, which on
-  // serverless means the function returns before the upsert completes and
-  // the row never lands. (Same pattern as the strava webhook waitUntil fix.)
   const upsertRes = await serviceSupabase
     .from('run_analysis')
     .upsert(analysisRow, { onConflict: 'user_id,strava_activity_id' })
   if (upsertRes.error) {
     console.error('[analyse-run] run_analysis upsert failed', upsertRes.error.message)
-  }
-
-  // AI feedback — always runs here (free users are blocked above)
-  let feedbackText: string | null = null
-  if (true) {
-    try {
-      const prescribedZone = zoneForSessionType((session as any).type)
-      const prompt = buildSessionFeedbackPrompt({
-        session,
-        weekN: week_n,
-        plan,
-        verdict:             scoreResult.verdict,
-        totalScore:          scoreResult.totalScore,
-        hrDisciplineScore:   scoreResult.hrDisciplineScore,
-        distanceScore:       scoreResult.distanceScore,
-        actualDistKm:        (activity.distance_m ?? 0) / 1000,
-        actualAvgHr:         activity.avg_hr ?? null,
-        hrInZonePct:         activity.hr_in_zone_pct ?? null,
-        hrAboveCeilingPct:   activity.hr_above_ceiling_pct ?? null,
-        efTrendPct,
-        rpe:                 completionRes.data?.rpe ?? null,
-        fatigueTag:          completionRes.data?.fatigue_tag ?? null,
-        prescribedZoneLabel: prescribedZone?.label ?? null,
-      })
-
-      const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type':    'application/json',
-          'x-api-key':       process.env.ANTHROPIC_API_KEY!,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model:      'claude-haiku-4-5-20251001',
-          max_tokens: 200,
-          messages:   [{ role: 'user', content: prompt }],
-        }),
-      })
-
-      if (aiRes.ok) {
-        const aiData = await aiRes.json()
-        feedbackText = aiData.content?.[0]?.text?.trim() ?? null
-      }
-    } catch {
-      // silent fallback
-    }
   }
 
   // Push notification — only on webhook path (user isn't in the app)
