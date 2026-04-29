@@ -1,26 +1,38 @@
 {
-  "name": "Zona",
-  "short_name": "Zona",
-  "description": "Effort-first training. Train with intention, adapt with intelligence.",
+  "name": "Vetra",
+  "short_name": "Vetra",
+  "description": "Training plans that stop you overtraining.",
   "start_url": "/dashboard",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0B132B",
-  "theme_color": "#0B132B",
+  "background_color": "#F3F0EB",
+  "theme_color": "#1A1A1A",
+  "categories": ["health", "fitness", "sports"],
+  "lang": "en-GB",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ],
-  "categories": ["health", "fitness", "sports"],
-  "lang": "en-GB"
+  ]
 }

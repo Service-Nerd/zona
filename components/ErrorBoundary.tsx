@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { BRAND } from '@/lib/brand'
 
 interface Props { children: React.ReactNode }
 interface State { hasError: boolean; message: string }
@@ -16,7 +17,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error('[Zona] Uncaught error:', error, info.componentStack)
+    console.error('[Vetra] Uncaught error:', error, info.componentStack)
   }
 
   render() {
@@ -37,7 +38,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       >
         <div style={{ width: '100%', maxWidth: '320px', textAlign: 'center' }}>
           <div style={{ fontSize: '32px', fontWeight: 500, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: '24px' }}>
-            Zona
+            {BRAND.name}
           </div>
           <div style={{ fontSize: '16px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '8px', letterSpacing: '-0.3px' }}>
             Something went wrong.
@@ -49,7 +50,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             onClick={() => window.location.reload()}
             style={{
               background: 'var(--accent)',
-              color: 'var(--zona-navy)',
+              color: 'var(--ink)',
               border: 'none',
               borderRadius: '10px',
               padding: '12px 24px',

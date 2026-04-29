@@ -42,7 +42,7 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
         position: 'fixed', inset: 0, zIndex: 100,
         background: 'rgba(26,26,26,0.4)',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        animation: 'zona-fade-in 0.18s ease-out',
+        animation: 'vetra-fade-in 0.18s ease-out',
       }}
     >
       <div
@@ -55,7 +55,7 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
           paddingTop: '8px',
           maxHeight: '80vh',
           overflowY: 'auto',
-          animation: 'zona-slide-up 0.22s ease-out',
+          animation: 'vetra-slide-up 0.22s ease-out',
         }}
       >
         {/* Drag handle */}
@@ -114,8 +114,8 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
       </div>
 
       <style>{`
-        @keyframes zona-fade-in { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes zona-slide-up { from { transform: translateY(100%) } to { transform: translateY(0) } }
+        @keyframes vetra-fade-in { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes vetra-slide-up { from { transform: translateY(100%) } to { transform: translateY(0) } }
       `}</style>
     </div>
   )

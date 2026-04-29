@@ -86,6 +86,10 @@ Output: "Five days off. Today is a re-entry, not a comeback — keep it short an
 Example 10 — solid form, nothing notable:
 Input: today=easy, last=easy 2 days ago, nailed; no flags
 Output: "Easy day. You know the drill — embarrassingly slow, the whole way."
+
+Example 11 — easy session, zone discipline is the message:
+Input: today=easy (Zone 2), last=easy 1 day ago, off_target, 42% above ceiling
+Output: "Hold the zone today — yesterday's easy wasn't."
 `
 
 export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
@@ -131,7 +135,8 @@ export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
 - Specific beats abstract. Reference one specific fact from the data when possible.
 - Never use: "amazing", "great job", "crushing", "smash", "beast mode", "you've got this", "based on your data", "it seems like", emojis, exclamation marks for routine moments.
 - Always use: short sentences, plain words, the user's actual recent reality.
-- Examples that work: "Bit keen. Ease it back." / "There it is. Don't ruin it." / "Do nothing. It helps." / "Body's talking. Listen to it."
+- Voice anchor for zone-discipline moments: "Hold the zone." — use this or echo its framing when the message is about committing to the prescribed zone for today's session.
+- Examples that work: "Bit keen. Ease it back." / "There it is. Don't ruin it." / "Do nothing. It helps." / "Body's talking. Listen to it." / "Hold the zone."
 - Examples that don't work: "Great session yesterday!" / "Beast mode time!" / "Based on your data, it looks like..."
 
 Your job: write ONE sentence framing today, anchored in a specific fact from below.${input.firstName ? ` You may address ${input.firstName} once if it lands naturally — don't force it.` : ''}

@@ -9,7 +9,15 @@
 **Tagline** (`BRAND.tagline`): "Slow down. You've got a day job."  
 **Brand statement** (`BRAND.brandStatement`, editorial/App Store only): "You can't outrun your easy days."  
 **Core truth**: "You're trying hard. That's the problem."  
-**Audience**: Non-elite runners who overtrain. They care deeply. That care is the problem.
+**Audience**: Non-elite runners who blur their zones. They care deeply — enough to go medium-hard on everything, which means they never truly recover *and* never truly push. That care is the problem.
+
+**The product idea is zone discipline, not just slowing down.** Zona prescribes the zone for each session and holds the user to it — easy when it's easy, hard when it's hard. Most amateur runners collapse this distinction into a grey middle. Zona removes that ambiguity. "Slow down. You've got a day job." names the user's dominant failure mode; it doesn't imply the app is only about running easy.
+
+**In-product voice anchor** (`BRAND.voiceAnchor`): "Hold the zone."  
+Used across push notifications, coach cards, and session prompts. Expresses zone discipline in the moment — the instruction to commit to whatever zone has been prescribed, whether that's easy or hard. Not for marketing; not for the login screen. Product-internal only.
+
+**Secondary brand phrase** (social/content only): "Train within the lines."  
+For social posts, content marketing, and editorial use. Reinforces the zone discipline idea in a more approachable register. Not for primary marketing copy and never used in the product UI — `BRAND.tagline` owns that space.
 
 The tagline names a person, not a training philosophy — it speaks directly to the user's identity. The brand statement is the training truth; used in editorial contexts (App Store description, press, privacy footer) only. **Not used on the login screen** — the tagline already owns that space; two punchlines dilute both.
 

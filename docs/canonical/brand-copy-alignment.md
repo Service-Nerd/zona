@@ -21,6 +21,7 @@ This table is the authoritative source of what each value currently is.
 | `BRAND.tagline` | `"Slow down. You've got a day job."` | Login, welcome, plan-ready, OG image, loading screen |
 | `BRAND.brandStatement` | `"You can't outrun your easy days."` | Privacy footer, App Store description, editorial only (not login — tagline owns that space) |
 | `BRAND.signupSub` | `'14 days, no limits. After that, you decide.'` | Sign-up sub-text only (not sign-in) |
+| `BRAND.voiceAnchor` | `'Hold the zone.'` | In-product only — push notifications, coach cards, session prompts. Not for marketing. |
 | `BRAND.push.weeklyReport` | `'Your week, reviewed.'` | Push notification title — weekly report |
 | `BRAND.push.runAnalysis` | `'Run logged.'` | Push notification title — post-run analysis |
 | `PRICING.annual.savingLabel` | `'Save 37% / year'` | Annual plan pill on UpgradeScreen |
@@ -237,6 +238,7 @@ Not every string belongs in `lib/brand.ts`. Inline UI copy that is contextual, f
 - Generating Ceremony lines (product voice, not brand constants)
 - Screen-specific coaching copy (deload week body, reflect responses)
 - Empty state copy
+- `"Train within the lines."` — social/content phrase only, intentionally not in `BRAND`. If it appears in a component, remove it.
 
 ---
 

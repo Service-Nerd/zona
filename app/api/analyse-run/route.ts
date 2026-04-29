@@ -248,7 +248,7 @@ function verdictPushBody(verdict: string, distKm: number): string {
   switch (verdict) {
     case 'strong':    return `${dist} in. Looked controlled.`
     case 'good':      return `${dist} done. Solid work.`
-    case 'ok':        return `${dist} logged. Review your zones.`
+    case 'ok':        return `${dist} logged. Hold the zone next time.`
     case 'drifted':   return `${dist} — HR went high. Worth checking.`
     case 'hard':      return `${dist} — that was a tough one.`
     default:          return `${dist} logged.`

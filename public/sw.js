@@ -1,4 +1,5 @@
-// Zona Service Worker — handles Web Push notifications
+// Vetra Service Worker — handles Web Push notifications
+// Push-only worker — no asset caching; PWA assets served fresh from network.
 // Registered by app/dashboard/DashboardClient.tsx on mount (paid/trial users only).
 
 self.addEventListener('install', () => self.skipWaiting())
@@ -11,15 +12,15 @@ self.addEventListener('push', (event) => {
   try {
     payload = event.data.json()
   } catch {
-    payload = { title: 'Zona', body: event.data.text() }
+    payload = { title: 'Vetra', body: event.data.text() }
   }
 
-  const title   = payload.title ?? 'Zona'
+  const title   = payload.title ?? 'Vetra'
   const options = {
     body:    payload.body ?? '',
-    icon:    '/icon-192.png',
-    badge:   '/icon-192.png',
-    tag:     payload.tag ?? 'zona-notification',
+    icon:    '/icons/icon-192x192.png',
+    badge:   '/icons/icon-72x72.png',
+    tag:     payload.tag ?? 'zona-notification', // Legacy tag name — user-invisible functional ID
     data:    payload.data ?? {},
     actions: payload.actions ?? [],
     silent:  false,

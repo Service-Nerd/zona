@@ -11,7 +11,7 @@ CTA: "Keep the long run. Cut one easy session entirely."`,
   zone_drift: `
 Headline: "Easy runs weren't easy."
 Body: "Zone 2 discipline dropped below 65% this week — most of it in the easy runs. You're training in no-man's land: hard enough to fatigue, not hard enough to build. The fix is slower, not harder."
-CTA: "If HR climbs past the ceiling on any run this week, walk. Immediately."`,
+CTA: "Hold the zone this week. If HR climbs past the ceiling on any run, walk until it comes down."`,
 
   shadow_load: `
 Headline: "You're running more than the plan says."

@@ -19,6 +19,7 @@ type WizardSubStep =
 
 type AppStep = WizardSubStep | 'generating' | 'preview' | 'error'
 
+// Legacy key name — preserved to avoid wiping active user state. Future: migrate via key translation layer.
 const WIZARD_KEY = 'zona_wizard_draft'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -918,7 +919,7 @@ export default function GeneratePlanScreen({
   const ctaLabel       = isLastStep ? 'Generate my plan →' : 'Continue'
 
   const welcomeOverride = isOnboarding && currentSubStep === 'distance'
-    ? { title: 'Welcome to Zona.', subtitle: "Let's build your plan. Start with the distance." }
+    ? { title: 'Welcome to Vetra.', subtitle: "Let's build your plan. Start with the distance." } // TODO: brand voice review — sentences referencing the product name may benefit from rewording in a follow-up content polish pass.
     : null
 
   const title    = welcomeOverride?.title    ?? stepMeta.title

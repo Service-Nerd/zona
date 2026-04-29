@@ -218,7 +218,7 @@ export default function LoginPage() {
 
         <div style={{ marginTop: '24px', textAlign: 'center' }}>
           <a
-            href="https://zona.app/privacy"
+            href="https://zona.app/privacy" // TODO: update to vetra.run when domain migrates
             target="_blank"
             rel="noopener noreferrer"
             style={{

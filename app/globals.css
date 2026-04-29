@@ -115,7 +115,6 @@
   --zona-muted:      var(--mute);
   --black:           var(--ink);
   --off-black:       var(--ink);
-  --zona-navy:       var(--ink);
 
   /* Surface aliases → warm slate surfaces */
   --bg-primary:      var(--bg);

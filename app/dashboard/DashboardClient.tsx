@@ -669,7 +669,7 @@ export default function DashboardClient() {
         background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
         gap: '0',
       }}>
-        {/* Zona wordmark — O has zone arc */}
+        {/* Vetra wordmark */}
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
           <span style={{
             fontFamily: 'var(--font-brand)',
@@ -716,7 +716,7 @@ export default function DashboardClient() {
         background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
         padding: '32px 24px',
       }}>
-        {/* Zona wordmark */}
+        {/* Vetra wordmark */}
         <div style={{ fontFamily: 'var(--font-brand)', fontSize: '36px', fontWeight: 500, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: '8px' }}>
           {BRAND.name}
         </div>
@@ -730,7 +730,8 @@ export default function DashboardClient() {
             Your plan is ready.
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '12px' }}>
-            Zona keeps track of your sessions, adapts when things shift, and keeps you focused on what matters — finishing.
+            {/* TODO: brand voice review — sentences referencing the product name may benefit from rewording in a follow-up content polish pass. */}
+            Vetra keeps track of your sessions, adapts when things shift, and keeps you focused on what matters — finishing.
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '48px' }}>
             Train with intention. The rest follows.
@@ -827,6 +828,7 @@ export default function DashboardClient() {
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
         {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} dob={dob} onDobSave={async (d) => { setDob(d); if (userId) await supabase.from('user_settings').update({ date_of_birth: d }).eq('id', userId) }} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} onBack={() => {
+          // Legacy key name — preserved to avoid wiping active user state. Future: migrate via key translation layer.
           const hasWizardDraft = typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('zona_wizard_draft')
           setScreen(hasWizardDraft ? 'generate' : 'today')
         }} />}
@@ -1092,6 +1094,7 @@ const GUIDE_CONTENT: Partial<Record<Screen, { title: string; body: string }>> = 
   },
 }
 
+// Legacy key name — preserved to avoid wiping active user state. Future: migrate via key translation layer.
 const GUIDE_SEEN_KEY = 'zona_guide_seen'
 
 function getSeenGuides(): Set<string> {
@@ -1399,7 +1402,7 @@ function getCompletionCopy(type: string): { headline: string; body: string } {
   }
 }
 
-// ── Zona REFLECT RESPONSE ─────────────────────────────────────────────────
+// ── Vetra REFLECT RESPONSE ────────────────────────────────────────────────
 
 function getZonaReflectResponse(sessionType: string, rpe: number | null, fatigueTag: string | null): string {
   if (rpe === null && fatigueTag) {
@@ -1722,7 +1725,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           </div>
         </div>
 
-        {/* Zona response */}
+        {/* Vetra response */}
         <div style={{
           minHeight: '48px', marginBottom: '20px',
           opacity: reflectResponse ? 1 : 0,
@@ -2800,7 +2803,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
               </div>
             </div>
 
-            {/* Zona response */}
+            {/* Vetra response */}
             <div style={{
               minHeight: '48px', marginBottom: '16px',
               opacity: reflectResponse ? 1 : 0,
@@ -3418,16 +3421,16 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied }: {
           Reshape plan
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)', lineHeight: 1.5, marginBottom: '28px' }}>
-          {status === 'loading' ? 'Checking your recent sessions for adjustment signals.' : 'Here\'s what Zona found.'}
+          {status === 'loading' ? 'Checking your recent sessions for adjustment signals.' : 'Here\'s what Vetra found.'}
         </div>
       </div>
 
       <div style={{ flex: 1, padding: '0 20px 24px' }}>
         {status === 'loading' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <style>{`@keyframes zona-shimmer { 0%,100%{opacity:.3} 50%{opacity:.6} }`}</style>
+            <style>{`@keyframes vetra-shimmer { 0%,100%{opacity:.3} 50%{opacity:.6} }`}</style>
             {[1,2,3].map(i => (
-              <div key={i} style={{ height: '64px', borderRadius: '12px', background: 'var(--line-strong)', animation: 'zona-shimmer 1.4s ease-in-out infinite', animationDelay: `${i * 0.1}s` }} />
+              <div key={i} style={{ height: '64px', borderRadius: '12px', background: 'var(--line-strong)', animation: 'vetra-shimmer 1.4s ease-in-out infinite', animationDelay: `${i * 0.1}s` }} />
             ))}
           </div>
         )}
@@ -4987,11 +4990,11 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
         {loadSheetOpen && (
           <div
             onClick={() => setLoadSheetOpen(false)}
-            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'zona-fade-in 0.18s ease-out' }}
+            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'vetra-fade-in 0.18s ease-out' }}
           >
             <div
               onClick={e => e.stopPropagation()}
-              style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '80vh', overflowY: 'auto', animation: 'zona-slide-up 0.22s ease-out' }}
+              style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '80vh', overflowY: 'auto', animation: 'vetra-slide-up 0.22s ease-out' }}
             >
               <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />
 
@@ -5027,8 +5030,8 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             </div>
 
             <style>{`
-              @keyframes zona-fade-in { from { opacity: 0 } to { opacity: 1 } }
-              @keyframes zona-slide-up { from { transform: translateY(100%) } to { transform: translateY(0) } }
+              @keyframes vetra-fade-in { from { opacity: 0 } to { opacity: 1 } }
+              @keyframes vetra-slide-up { from { transform: translateY(100%) } to { transform: translateY(0) } }
             `}</style>
           </div>
         )}
@@ -5037,11 +5040,11 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
         {zoneDisciplineSheetOpen && (
           <div
             onClick={() => setZoneDisciplineSheetOpen(false)}
-            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'zona-fade-in 0.18s ease-out' }}
+            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'vetra-fade-in 0.18s ease-out' }}
           >
             <div
               onClick={e => e.stopPropagation()}
-              style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '80vh', overflowY: 'auto', animation: 'zona-slide-up 0.22s ease-out' }}
+              style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '80vh', overflowY: 'auto', animation: 'vetra-slide-up 0.22s ease-out' }}
             >
               <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />
 
@@ -5077,8 +5080,8 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             </div>
 
             <style>{`
-              @keyframes zona-fade-in { from { opacity: 0 } to { opacity: 1 } }
-              @keyframes zona-slide-up { from { transform: translateY(100%) } to { transform: translateY(0) } }
+              @keyframes vetra-fade-in { from { opacity: 0 } to { opacity: 1 } }
+              @keyframes vetra-slide-up { from { transform: translateY(100%) } to { transform: translateY(0) } }
             `}</style>
           </div>
         )}
@@ -5369,7 +5372,7 @@ function StravaConnectionRow() {
       </div>
       {!isLoading && !connected && (
         <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-          Zona will read your Strava activities to provide coaching insights. No other data is accessed.
+          Vetra will read your Strava activities to provide coaching insights. No other data is accessed.
         </div>
       )}
     </div>
@@ -5957,9 +5960,10 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: '2px' }}>Auto-adjust</div>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                    {/* TODO: brand voice review — sentences referencing the product name may benefit from rewording in a follow-up content polish pass. */}
                     {dynamicAdjustmentsEnabled
-                      ? 'Zona suggests plan changes based on your Strava data.'
-                      : 'Plan stays fixed. Zona tracks data but won\'t suggest changes.'}
+                      ? 'Vetra suggests plan changes based on your Strava data.'
+                      : 'Plan stays fixed. Vetra tracks data but won\'t suggest changes.'}
                   </div>
                 </div>
                 <button
@@ -6109,7 +6113,7 @@ function AdminScreen({ onBack, onImpersonate }: {
 
 // ── RUN FEEDBACK CARD ─────────────────────────────────────────────────────
 
-// Verdict → colour token + Zona-voice headline. Single source of truth for run-feedback voice.
+// Verdict → colour token + Vetra-voice headline. Single source of truth for run-feedback voice.
 // Maps both legacy verdict names (nailed/close/off_target/concerning) and engine names
 // (strong/good/ok/drifted/hard) to keep the surface stable across rule-engine versions.
 function getVerdictVoice(verdict: string): { accent: string; headline: string } {
@@ -6220,7 +6224,7 @@ function RunFeedbackCard({ analysis }: { analysis: any }) {
         </span>
       </div>
 
-      {/* Zona-voice headline */}
+      {/* Vetra-voice headline */}
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 700,
         color: 'var(--coach-ink)', letterSpacing: '-0.1px', lineHeight: 1.4,

@@ -9,7 +9,7 @@
  */
 
 export const BRAND = {
-  name: 'Zona',
+  name: 'Vetra',
 
   /**
    * App Store subtitle (30 chars max). Discovery surfaces: App Store, landing page, paid ads.
@@ -44,6 +44,20 @@ export const BRAND = {
     teal:     '#5BC0BE', // DEPRECATED — retire with Phase 2 OG image update
     offWhite: '#F7F9FB', // DEPRECATED — retire with Phase 2 OG image update
   },
+
+  /**
+   * In-product voice anchor. Use across push notifications, coach cards, and session prompts
+   * where the message is about committing to the prescribed zone — easy or hard.
+   * Not for marketing copy. Not for the login screen. Product-internal only.
+   */
+  voiceAnchor: 'Hold the zone.',
+
+  /**
+   * Secondary brand phrase — social, content, and about pages only.
+   * Never in primary marketing copy. Never in the product UI.
+   * Not a BRAND constant in the code sense — do not reference from components.
+   */
+  secondaryPhrase: 'Train within the lines.',
 
   /** Push notification titles — each is a coaching voice opportunity, not a label. */
   push: {

@@ -10,9 +10,11 @@ behavioural rules live here or in /docs.
 
 ### Positioning
 
-> **ZONA is for runners who always go hard on their easy days — who have a life, a day job, and no business training like professionals.**
+> **ZONA is for runners who blur their zones — who go medium-hard on everything, never truly recover, and never truly push.**
 
 Core truth: "You're trying hard. That's the problem."
+
+Zone discipline is the product idea: commit to the zone you're in. Run easy when it's easy. Run hard when it's hard. The problem isn't that users go too fast — it's that they can't tell the difference between sessions because every run ends up in the same grey middle. Zona removes that ambiguity.
 
 ### The three-line tagline system
 
@@ -27,6 +29,12 @@ Core truth: "You're trying hard. That's the problem."
 - Never rephrase them — they are locked strings
 - `BRAND.name` is always `'Zona'` — fix any hardcoded instances
 - When in doubt: discovery = #1, in-app = #2, voice moment = #3
+
+**In-product voice anchor — `BRAND.voiceAnchor`: "Hold the zone."**
+Use across push notifications, coach cards, and session prompts where the message is about zone commitment. This is the phrase that expresses the product's core discipline in the moment. Not for marketing copy. Not for the login screen.
+
+**Secondary brand phrase (social/content only): "Train within the lines."**
+For social posts and content marketing. More approachable register than the taglines. Never in the product UI — not parameterised in `lib/brand.ts`. If it appears in a component, remove it.
 
 **All brand strings and pricing are parameterised in `lib/brand.ts`.** Never hardcode taglines, app name, or pricing values in components.
 
