@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import './styles/polish-tokens.css'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { BRAND } from '@/lib/brand'
 
@@ -41,9 +42,11 @@ export const metadata: Metadata = {
 // Theme initialisation retired — see ADR-008. Single light theme; no data-theme needed.
 // const themeScript = `...`
 
+const polishMode = process.env.NEXT_PUBLIC_POLISH_MODE === 'true'
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" data-polish={polishMode ? 'on' : 'off'}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />

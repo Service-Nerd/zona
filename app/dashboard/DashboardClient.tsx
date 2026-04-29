@@ -3046,7 +3046,7 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
   )
 
   return (
-    <div onClick={onTap} style={{
+    <div onClick={onTap} className="card-primary" style={{
       margin: '12px 12px 0',
       background: 'var(--card-bg)',
       borderRadius: '16px',
@@ -4948,11 +4948,11 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           ] as const).map((m) => {
             const inner = (
               <>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div className="label-uppercase" style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   {m.label}
                   {m.onTap && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', opacity: 0.6 }}>ⓘ</span>}
                 </div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px', lineHeight: 1, marginBottom: '6px' }}>
+                <div className="num-data" style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px', lineHeight: 1, marginBottom: '6px' }}>
                   {m.value}
                 </div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 500, color: m.subColor, lineHeight: 1.3 }}>
@@ -4962,11 +4962,11 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             )
             const cardStyle = { background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px' }
             return m.onTap ? (
-              <button key={m.label} onClick={m.onTap} style={{ ...cardStyle, textAlign: 'left', cursor: 'pointer', width: '100%' }}>
+              <button key={m.label} onClick={m.onTap} className="card-data" style={{ ...cardStyle, textAlign: 'left', cursor: 'pointer', width: '100%' }}>
                 {inner}
               </button>
             ) : (
-              <div key={m.label} style={cardStyle}>{inner}</div>
+              <div key={m.label} className="card-data" style={cardStyle}>{inner}</div>
             )
           })}
         </div>

@@ -31,6 +31,7 @@ export default function CoachNoteBlock({
 
   return (
     <div
+      className="card-contextual"
       style={{
         background: 'var(--warn-bg)',
         borderRadius: '14px',

@@ -1,0 +1,115 @@
+/*
+ * Polish-mode token overrides
+ * Only applied when [data-polish="on"] is set on <html>.
+ * Controlled by NEXT_PUBLIC_POLISH_MODE env var.
+ * All rules here are additive — never modify base token values.
+ * To roll back: set NEXT_PUBLIC_POLISH_MODE=false and redeploy.
+ */
+
+[data-polish="on"] {
+  /* ── Card surfaces ──────────────────────────────────────────────────── */
+  --card-border-subtle:      rgba(26,26,26,0.06);
+  --card-shadow-subtle:      0 1px 2px rgba(26,26,26,0.04);
+  --card-padding-generous:   18px 20px;
+
+  /* PRIMARY card — tappable, main object on screen */
+  --card-primary-bg:         var(--card);
+  --card-primary-border:     0.5px solid rgba(26,26,26,0.06);
+  --card-primary-shadow:     0 1px 2px rgba(26,26,26,0.04);
+  --card-primary-padding:    18px 20px;
+  --card-primary-radius:     12px;
+
+  /* CONTEXTUAL card — coach notes, hints, system messages */
+  --card-contextual-bg:      var(--bg-soft);
+  --card-contextual-border:  none;
+  --card-contextual-shadow:  none;
+  --card-contextual-padding: 16px 18px;
+  --card-contextual-radius:  10px;
+
+  /* DATA card — stat blocks, metrics, secondary info */
+  --card-data-bg:            var(--bg-soft);
+  --card-data-border:        none;
+  --card-data-shadow:        none;
+  --card-data-padding:       14px 16px;
+  --card-data-radius:        10px;
+
+  /* ── Typography ─────────────────────────────────────────────────────── */
+  --label-tracking:          0.06em;
+  --label-tracking-wide:     0.1em;
+}
+
+/* ── Card class treatments ──────────────────────────────────────────────── */
+
+[data-polish="on"] .card-primary {
+  background:    var(--card-primary-bg);
+  border:        var(--card-primary-border);
+  box-shadow:    var(--card-primary-shadow);
+  padding:       var(--card-primary-padding);
+  border-radius: var(--card-primary-radius);
+}
+
+[data-polish="on"] .card-contextual {
+  background:    var(--card-contextual-bg);
+  border:        var(--card-contextual-border);
+  box-shadow:    var(--card-contextual-shadow);
+  padding:       var(--card-contextual-padding);
+  border-radius: var(--card-contextual-radius);
+}
+
+[data-polish="on"] .card-data {
+  background:    var(--card-data-bg);
+  border:        var(--card-data-border);
+  box-shadow:    var(--card-data-shadow);
+  padding:       var(--card-data-padding);
+  border-radius: var(--card-data-radius);
+}
+
+/* ── Typography treatments ──────────────────────────────────────────────── */
+
+[data-polish="on"] .num-data,
+[data-polish="on"] [data-type="number"] {
+  font-feature-settings: "tnum" 1;
+}
+
+[data-polish="on"] .label-uppercase {
+  letter-spacing: var(--label-tracking);
+}
+
+[data-polish="on"] .label-uppercase-wide {
+  letter-spacing: var(--label-tracking-wide);
+}
+
+[data-polish="on"] .data-split-num {
+  color: var(--moss);
+  font-weight: 600;
+}
+
+/* ── CTA treatments ─────────────────────────────────────────────────────── */
+
+[data-polish="on"] .cta-primary {
+  letter-spacing: 0.01em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+[data-polish="on"] .cta-primary::after {
+  content: "→";
+  font-size: 14px;
+  opacity: 0.7;
+  margin-left: 2px;
+}
+
+[data-polish="on"] .cta-secondary {
+  background:    transparent;
+  border:        0.5px solid rgba(26,26,26,0.15);
+  color:         var(--ink);
+}
+
+/* ── Hairline dividers ──────────────────────────────────────────────────── */
+
+[data-polish="on"] .divider-hairline {
+  height:     0.5px;
+  background: rgba(26,26,26,0.06);
+  margin:     14px 0;
+}

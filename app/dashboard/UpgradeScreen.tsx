@@ -143,6 +143,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
           <button
             onClick={() => handleSubscribe(false)}
             disabled={loading}
+            className="card-primary"
             style={{
               flex: 1, textAlign: 'center',
               background: 'var(--card-bg)',
@@ -165,6 +166,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
           <button
             onClick={() => handleSubscribe(true)}
             disabled={loading}
+            className="card-primary"
             style={{
               flex: 1, textAlign: 'center',
               background: 'var(--card-bg)',
