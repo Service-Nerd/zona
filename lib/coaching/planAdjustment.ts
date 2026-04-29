@@ -7,12 +7,15 @@ import {
   TAPER_PROTECTION_WEEKS,
   MAX_VOLUME_INCREASE_PCT,
   ZONE_DISCIPLINE_BANDS,
+  FATIGUE_HIGH_TAGS,
+  FATIGUE_ACCUMULATION_THRESHOLD,
+  FATIGUE_SOFTENING_LONG_RUN_PCT,
 } from './constants'
 import { acuteChronicRatio, shadowLoadPct, zoneDisciplineScore } from './loadCalc'
 import type { Session, Week } from '@/types/plan'
 
 export type AdjustmentType = 'reduce_volume' | 'swap_session' | 'extend_recovery' | 'reorder_sessions' | 'flag_for_review'
-export type TriggerType    = 'acute_chronic_high' | 'zone_drift' | 'shadow_load' | 'ef_decline' | 'manual'
+export type TriggerType    = 'acute_chronic_high' | 'zone_drift' | 'shadow_load' | 'ef_decline' | 'fatigue_accumulation' | 'manual'
 
 export interface AdjustmentTrigger {
   type:   TriggerType
@@ -40,6 +43,8 @@ export interface AdjustmentCheckInput {
   efTrendPct:       number | null
   adjustmentsThisWeek: number
   currentPhase?:    'base' | 'build' | 'peak' | 'taper'
+  /** Fatigue tags from session_completions, ordered chronologically (oldest first). */
+  recentFatigueTags?: string[]
 }
 
 /**
@@ -49,6 +54,14 @@ export interface AdjustmentCheckInput {
  */
 export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAdjustment | null {
   if (!guardCheck(input)) return null
+
+  // Fatigue accumulation — highest priority (physical stress signal, not Strava-derived)
+  if (input.recentFatigueTags && input.recentFatigueTags.length >= FATIGUE_ACCUMULATION_THRESHOLD) {
+    const lastN = input.recentFatigueTags.slice(-FATIGUE_ACCUMULATION_THRESHOLD)
+    if (lastN.every(t => (FATIGUE_HIGH_TAGS as readonly string[]).includes(t))) {
+      return buildFatigueAdjustment(input, lastN.length)
+    }
+  }
 
   const ratio  = acuteChronicRatio(input.actualKm, input.priorWeeksKm)
   const zdScore = zoneDisciplineScore(input.hrInZoneData)
@@ -184,6 +197,41 @@ function buildEFDeclineAdjustment(input: AdjustmentCheckInput, efTrend: number):
     trigger:        { type: 'ef_decline', detail: { efTrend, threshold: EF_DECLINE_THRESHOLD_PCT } },
     adjustmentType: 'swap_session',
     summary:        `Aerobic efficiency down ${Math.abs(Math.round(efTrend))}% vs baseline. Quality session swapped to easy.`,
+    sessionsBefore,
+    sessionsAfter,
+    requiresConfirmation: true,
+  }
+}
+
+function buildFatigueAdjustment(input: AdjustmentCheckInput, consecutiveCount: number): ProposedAdjustment {
+  const sessions       = input.currentWeekSessions
+  const sessionsBefore = sessions.map(s => ({ ...s }))
+
+  const sessionsAfter = sessions.map(s => {
+    // Swap quality/interval/tempo → easy (same distance/duration, new coach note)
+    if (s.type === 'quality' || s.type === 'intervals' || s.type === 'tempo') {
+      return {
+        ...s,
+        type: 'easy' as const,
+        coach_notes: [`Swapped to easy — ${consecutiveCount} consecutive heavy sessions. Let the adaptation catch up.`] as [string],
+      }
+    }
+    // Reduce long run by 20%
+    if (s.type === 'long' && s.distance_km) {
+      return {
+        ...s,
+        distance_km: Math.round(s.distance_km * FATIGUE_SOFTENING_LONG_RUN_PCT * 10) / 10,
+        coach_notes: [`Shortened — fatigue accumulating. Same aerobic stimulus, less load.`] as [string],
+      }
+    }
+    return { ...s }
+  })
+
+  return {
+    weekN:          input.currentWeekN,
+    trigger:        { type: 'fatigue_accumulation', detail: { consecutiveCount, threshold: FATIGUE_ACCUMULATION_THRESHOLD } },
+    adjustmentType: 'swap_session',
+    summary:        `${consecutiveCount} consecutive heavy sessions. Quality swapped to easy; long run trimmed 20%.`,
     sessionsBefore,
     sessionsAfter,
     requiresConfirmation: true,

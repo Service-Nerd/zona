@@ -1302,6 +1302,10 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
         coaching_flag: flag,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
+      // Trigger 4: fire fatigue-accumulation check after a heavy log (fire-and-forget)
+      if (newTag && ['Heavy', 'Wrecked', 'Cooked'].includes(newTag)) {
+        void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({}) })
+      }
       onSaved?.()
     } catch {} finally { setSavingRPE(false) }
   }
@@ -2385,6 +2389,10 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
         coaching_flag: flag,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
+      // Trigger 4: fire fatigue-accumulation check after a heavy log (fire-and-forget)
+      if (newTag && ['Heavy', 'Wrecked', 'Cooked'].includes(newTag)) {
+        void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({}) })
+      }
     } catch {}
   }
 

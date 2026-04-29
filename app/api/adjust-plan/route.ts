@@ -64,7 +64,9 @@ export async function POST(req: NextRequest) {
     ? plan.phases.find(p => p.start_week <= weekN && weekN <= p.end_week)?.name
     : undefined
 
-  const [analysisRes, prevWeeksRes, adjustmentsThisWeekRes, existingPendingRes] = await Promise.all([
+  const DAY_ORDER: Record<string, number> = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 }
+
+  const [analysisRes, prevWeeksRes, adjustmentsThisWeekRes, existingPendingRes, completionsRes] = await Promise.all([
     serviceSupabase
       .from('run_analysis')
       .select('session_day, hr_in_zone_pct, actual_load_km, planned_load_km, ef_trend_pct')
@@ -92,9 +94,27 @@ export async function POST(req: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
+    // Recent fatigue tags for Trigger 4 (fatigue_accumulation)
+    serviceSupabase
+      .from('session_completions')
+      .select('week_n, session_day, fatigue_tag')
+      .eq('user_id', user.id)
+      .eq('status', 'complete')
+      .not('fatigue_tag', 'is', null)
+      .order('week_n', { ascending: false })
+      .limit(10),
   ])
 
   const analyses = analysisRes.data ?? []
+
+  // Sort completions chronologically (oldest first) for consecutive-tag detection
+  const recentFatigueTags: string[] = (completionsRes.data ?? [])
+    .slice()
+    .sort((a: any, b: any) => {
+      if (a.week_n !== b.week_n) return a.week_n - b.week_n
+      return (DAY_ORDER[a.session_day] ?? 99) - (DAY_ORDER[b.session_day] ?? 99)
+    })
+    .map((c: any) => c.fatigue_tag as string)
 
   // Return existing pending adjustment instead of creating a duplicate
   if (existingPendingRes.data) {
@@ -146,6 +166,7 @@ export async function POST(req: NextRequest) {
     efTrendPct,
     adjustmentsThisWeek,
     currentPhase,
+    recentFatigueTags,
   })
 
   if (!proposed) {

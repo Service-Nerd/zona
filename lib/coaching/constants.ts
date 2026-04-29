@@ -48,6 +48,11 @@ export const HR_ZONE_TOLERANCE_BPM = 3
 // Max adjustments per week
 export const MAX_ADJUSTMENTS_PER_WEEK = 2
 
+// Fatigue-accumulation trigger (Trigger 4 — CoachingPrinciples §R20-T4)
+export const FATIGUE_HIGH_TAGS = ['Heavy', 'Wrecked', 'Cooked'] as const
+export const FATIGUE_ACCUMULATION_THRESHOLD = 3   // consecutive sessions before softening fires
+export const FATIGUE_SOFTENING_LONG_RUN_PCT = 0.80 // long run reduced to 80% (20% cut)
+
 // Quality session minimum gap (hours) — re-exported from generationConfig so
 // reshape rules and plan generation read the same source (CoachingPrinciples §7,
 // ADR-009). Single-line wrapper kept for back-compat with existing consumers.
