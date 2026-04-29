@@ -4902,6 +4902,8 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   const sc   = sessionsContext(sessionsCompleted, sessionsPlanned)
   const wtrc = weeksContext(weeksToRace)
 
+  const [loadSheetOpen, setLoadSheetOpen] = useState(false)
+
   // ── Dynamic coach headline ──────────────────────────────────────────
   function getCoachHeadline(): string {
     const behind = (sessionsPlanned ?? 0) - (sessionsCompleted ?? 0)
@@ -4931,39 +4933,104 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               value: currentScore !== null ? `${currentScore}%` : '—',
               sub: scoreBodyCopy(currentScore).split('.')[0],
               subColor: currentScore !== null && currentScore >= 80 ? 'var(--moss)' : currentScore !== null && currentScore >= 60 ? 'var(--ink-2)' : currentScore !== null ? 'var(--warn)' : 'var(--mute)',
+              onTap: undefined as (() => void) | undefined,
             },
             {
               label: 'Load ratio',
               value: loadRatio !== null ? `${loadRatio.toFixed(2)}x` : '—',
               sub: lrc.label,
               subColor: lrc.color,
+              onTap: () => setLoadSheetOpen(true),
             },
             {
               label: 'Sessions',
               value: sessionsCompleted !== null && sessionsPlanned !== null ? `${sessionsCompleted}/${sessionsPlanned}` : '—',
               sub: sc.label,
               subColor: sc.color,
+              onTap: undefined,
             },
             {
               label: 'Weeks left',
               value: weeksToRace > 0 ? String(weeksToRace) : 'Race',
               sub: wtrc.label,
               subColor: wtrc.color,
+              onTap: undefined,
             },
-          ] as const).map((m) => (
-            <div key={m.label} style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px' }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
-                {m.label}
+          ] as const).map((m) => {
+            const inner = (
+              <>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  {m.label}
+                  {m.onTap && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', opacity: 0.6 }}>ⓘ</span>}
+                </div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px', lineHeight: 1, marginBottom: '6px' }}>
+                  {m.value}
+                </div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 500, color: m.subColor, lineHeight: 1.3 }}>
+                  {m.sub}
+                </div>
+              </>
+            )
+            const cardStyle = { background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px' }
+            return m.onTap ? (
+              <button key={m.label} onClick={m.onTap} style={{ ...cardStyle, textAlign: 'left', cursor: 'pointer', width: '100%' }}>
+                {inner}
+              </button>
+            ) : (
+              <div key={m.label} style={cardStyle}>{inner}</div>
+            )
+          })}
+        </div>
+
+        {/* ── LOAD RATIO SHEET ────────────────────────────────────────── */}
+        {loadSheetOpen && (
+          <div
+            onClick={() => setLoadSheetOpen(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'zona-fade-in 0.18s ease-out' }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '80vh', overflowY: 'auto', animation: 'zona-slide-up 0.22s ease-out' }}
+            >
+              <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />
+
+              <div style={{ padding: '0 20px 4px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Load ratio
+                </div>
+                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.15 }}>
+                  Your training load balance
+                </div>
+                {loadRatio !== null && (
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: lrc.color, marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>
+                    {loadRatio.toFixed(2)}x — {lrc.label}
+                  </div>
+                )}
               </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px', lineHeight: 1, marginBottom: '6px' }}>
-                {m.value}
+
+              <div style={{ padding: '18px 20px 8px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {[
+                  'Compares this week\'s training load to your rolling average over the past four weeks. A ratio of 1.0 means you\'re doing exactly what your body is used to.',
+                  'Under 0.8 — you\'re doing less than normal, which is fine for recovery weeks. Between 0.8 and 1.3 is the safe build zone. Above 1.3 means this week is harder than your recent baseline.',
+                  'Big spikes in load are where injuries happen and where performance dips. Consistent load, week over week, is how fitness actually builds.',
+                ].map((text, i) => (
+                  <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>{text}</div>
+                ))}
               </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 500, color: m.subColor, lineHeight: 1.3 }}>
-                {m.sub}
+
+              <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: '8px' }}>
+                <button onClick={() => setLoadSheetOpen(false)} style={{ width: '100%', padding: '12px', background: 'var(--bg-soft)', border: 'none', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', cursor: 'pointer', letterSpacing: '0.04em' }}>
+                  Close
+                </button>
               </div>
             </div>
-          ))}
-        </div>
+
+            <style>{`
+              @keyframes zona-fade-in { from { opacity: 0 } to { opacity: 1 } }
+              @keyframes zona-slide-up { from { transform: translateY(100%) } to { transform: translateY(0) } }
+            `}</style>
+          </div>
+        )}
 
         {/* ── 3. AI WEEKLY REPORT — CoachNoteBlock amber pattern ─────── */}
         <div style={{
