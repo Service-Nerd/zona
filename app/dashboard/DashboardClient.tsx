@@ -5628,45 +5628,37 @@ function PendingAnalysisCard() {
   return (
     <div style={{
       marginTop: '12px',
-      background: 'var(--card)',
-      borderRadius: 'var(--radius-lg)',
-      border: '1px solid var(--line)',
-      borderLeft: '3px solid var(--moss)',
+      background: 'var(--warn-bg)',
+      borderRadius: '14px',
       padding: '16px 18px',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-        <AIMark size={12} color="var(--moss)" working />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px' }}>
+        <AIMark size={10} color="var(--warn)" working />
         <div style={{
           fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-          color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.08em',
+          color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em',
         }}>
           Coach · Working
         </div>
       </div>
       <div style={{
-        fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700,
-        color: 'var(--ink)', letterSpacing: '-0.2px', lineHeight: 1.3,
-        marginBottom: '4px',
+        fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400,
+        color: 'var(--coach-ink)', lineHeight: 1.55,
+        marginBottom: '16px',
       }}>
-        Analysing your run.
-      </div>
-      <div style={{
-        fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
-        color: 'var(--mute)', lineHeight: 1.5,
-      }}>
-        Coach note on the way.
+        Analysing your run. Coach note on the way.
       </div>
       {/* Skeleton metric row — hint at what's coming */}
-      <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+      <div style={{ display: 'flex', gap: '10px' }}>
         {['HR', 'Distance', 'Pace', 'Efficiency'].map(label => (
           <div key={label} style={{ flex: 1 }}>
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
-              color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
+              color: 'var(--warn)', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.08em',
               marginBottom: '6px',
             }}>{label}</div>
             <div style={{
-              height: '4px', background: 'var(--bg-soft)', borderRadius: '2px',
+              height: '3px', background: 'rgba(61,38,0,0.12)', borderRadius: '2px',
               animation: 'ai-mark-pulse 1.6s ease-in-out infinite',
             }} />
           </div>
@@ -5692,46 +5684,45 @@ function RunFeedbackCard({ analysis }: { analysis: any }) {
   return (
     <div style={{
       marginTop: '12px',
-      background: 'var(--card)',
-      borderRadius: 'var(--radius-lg)',
-      border: '1px solid var(--line)',
-      borderLeft: `3px solid ${voice.accent}`,
+      background: 'var(--warn-bg)',
+      borderRadius: '14px',
       padding: '16px 18px',
     }}>
-      {/* Eyebrow row — AIMark in verdict colour, score on the right */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-        <AIMark size={12} color={voice.accent} />
-        <div style={{
+      {/* Eyebrow — matches CoachNoteBlock exactly, score right-aligned */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px' }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: '5px',
           fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-          color: voice.accent, textTransform: 'uppercase', letterSpacing: '0.08em',
+          color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em', lineHeight: 1,
         }}>
+          <AIMark size={10} color="var(--warn)" />
           Coach
-        </div>
-        <div style={{
+        </span>
+        <span style={{
           marginLeft: 'auto',
-          fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600,
-          color: 'var(--mute)',
+          fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 600,
+          color: 'var(--coach-ink)', opacity: 0.5,
           fontVariantNumeric: 'tabular-nums',
         }}>
           {score}/100
-        </div>
+        </span>
       </div>
 
-      {/* Zona-voice headline — the brand moment */}
+      {/* Zona-voice headline */}
       <div style={{
-        fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700,
-        color: 'var(--ink)', letterSpacing: '-0.2px', lineHeight: 1.3,
-        marginBottom: feedback ? '10px' : '16px',
+        fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 700,
+        color: 'var(--coach-ink)', letterSpacing: '-0.1px', lineHeight: 1.4,
+        marginBottom: feedback ? '8px' : '14px',
       }}>
         {voice.headline}
       </div>
 
-      {/* AI feedback paragraph — provenance carried by the eyebrow AIMark */}
+      {/* AI feedback paragraph */}
       {feedback && (
         <div style={{
           fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
-          color: 'var(--ink-2)', lineHeight: 1.55,
-          marginBottom: '16px',
+          color: 'var(--coach-ink)', lineHeight: 1.55,
+          marginBottom: '14px',
         }}>
           {feedback}
         </div>
@@ -5743,27 +5734,27 @@ function RunFeedbackCard({ analysis }: { analysis: any }) {
           <div key={label} style={{ flex: 1 }}>
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
-              color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
+              color: 'var(--warn)', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.08em',
               marginBottom: '4px',
             }}>
               {label}
             </div>
             <div style={{
-              fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700,
-              color: 'var(--ink)', fontVariantNumeric: 'tabular-nums',
+              fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 700,
+              color: 'var(--coach-ink)', fontVariantNumeric: 'tabular-nums',
               letterSpacing: '-0.5px', marginBottom: '6px',
             }}>
               {value}
             </div>
             <div style={{
-              height: '3px', background: 'var(--bg-soft)', borderRadius: '2px',
+              height: '3px', background: 'rgba(61,38,0,0.12)', borderRadius: '2px',
               overflow: 'hidden',
             }}>
               <div style={{
                 height: '100%',
                 width: `${value}%`,
-                background: value >= 80 ? 'var(--moss)' : value >= 60 ? 'var(--moss)' : 'var(--warn)',
-                opacity: value >= 80 ? 1 : value >= 60 ? 0.55 : 1,
+                background: value >= 80 ? 'var(--moss)' : 'var(--warn)',
+                opacity: value >= 80 ? 0.8 : value >= 60 ? 0.55 : 1,
                 borderRadius: '2px',
                 transition: 'width 0.4s ease',
               }} />
