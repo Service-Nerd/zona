@@ -779,7 +779,18 @@ export default function DashboardClient() {
         {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} />}
         {screen === 'coach'    && (hasPaidAccess
-          ? <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaTokenFailed={stravaTokenFailed} firstName={firstName} onGoToMe={() => setScreen('me')} weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport} preferredUnits={preferredUnits} />
+          ? <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaTokenFailed={stravaTokenFailed} firstName={firstName} onGoToMe={() => setScreen('me')} weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport} preferredUnits={preferredUnits} zoneDisciplinePercent={(() => {
+              const wn = getCurrentWeekIndex(plan.weeks) + 1
+              const comps = allCompletions[wn] ?? {}
+              const wSessions = Object.entries((currentWeek as any).sessions ?? {})
+                .map(([day, s]: [string, any]) => ({ ...(s as any), key: day }))
+                .filter((s: any) => s?.type && s.type !== 'rest')
+              const judgements = wSessions
+                .filter((s: any) => comps[s.key]?.status === 'complete')
+                .map((s: any) => didSessionHitZone(s.type, comps[s.key]?.avg_hr ?? null, restingHR ?? null, maxHR ?? null))
+                .filter((v): v is boolean => v !== null)
+              return judgements.length >= 2 ? Math.round(judgements.filter(v => v).length / judgements.length * 100) : null
+            })()} />
           : <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => setScreen('upgrade')} />
         )}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
@@ -4365,11 +4376,12 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
   )
 }
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed, firstName, onGoToMe, weeklyReport, onReportGenerated, preferredUnits = 'km' }: {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed, firstName, onGoToMe, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaTokenFailed?: boolean; firstName?: string; onGoToMe?: () => void
   weeklyReport?: any | null; onReportGenerated?: (report: any) => void
   preferredUnits?: 'km' | 'mi'
+  zoneDisciplinePercent?: number | null
 }) {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState<string | null>(null)
@@ -4377,11 +4389,13 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
   const weekNum    = getCurrentWeekIndex(plan.weeks) + 1
   const totalWeeks = plan.weeks.length
   const reportIsCurrent = weeklyReport?.week_n === weekNum
-  // If the cached report is from last week, use its score as the reference
+  // Live score from completions (passed in from DashboardClient — requires Strava HR data).
+  // Falls back to the most recent report score if no live data is available.
+  const currentScore: number | null =
+    zoneDisciplinePercent ?? (reportIsCurrent ? (weeklyReport.zone_discipline_score ?? null) : null)
+  // If the cached report is from last week, surface it as a reference point
   const lastWeekScore: number | null =
     weeklyReport?.week_n === weekNum - 1 ? (weeklyReport.zone_discipline_score ?? null) : null
-  // Current week score only when report is for this week
-  const currentScore: number | null = reportIsCurrent ? (weeklyReport.zone_discipline_score ?? null) : null
 
   // Tracked km from Strava runs this week
   const trackedKm: number | null = (() => {
@@ -4418,7 +4432,12 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
 
   // ── Score body copy ──────────────────────────────────────────────────────
   function scoreBodyCopy(score: number | null): string {
-    if (score === null) return "No HR data yet. Connect Strava to start tracking this."
+    if (score === null) {
+      // Don't mention Strava if already connected — just need more sessions with HR data
+      return runs?.length
+        ? "Need at least two sessions with HR data this week to score."
+        : "Connect Strava in Profile to start tracking this."
+    }
     if (score >= 80) return "Easy was easy. Hard was hard. That's the work."
     if (score >= 60) return "Getting there. A few easy sessions went a bit hard."
     return "Easy days ran too hot. The fix is slower, not harder."
