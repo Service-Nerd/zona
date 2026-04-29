@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { Week, Session, StravaActivity } from '@/types/plan'
+import type { Week, Session } from '@/types/plan'
 import { createClient } from '@/lib/supabase/client'
 import { SESSION_COLORS, SESSION_LABELS } from '@/lib/session-types'
 import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
@@ -72,7 +72,6 @@ const loadMoreStyle: React.CSSProperties = {
 
 interface Props {
   weeks: Week[]
-  stravaRuns: StravaActivity[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   allCompletions: Record<number, Record<string, Completion>>
   onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
@@ -81,7 +80,7 @@ interface Props {
   units?: DistanceUnits
 }
 
-export default function PlanCalendar({ weeks, stravaRuns, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true, units = 'km' }: Props) {
+export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true, units = 'km' }: Props) {
   const [showPast, setShowPast] = useState(false)
   const supabase = createClient()
 
@@ -119,7 +118,6 @@ export default function PlanCalendar({ weeks, stravaRuns, allOverrides, allCompl
         weekNum={weekNum}
         completions={Object.values(allCompletions[weekNum] ?? {})}
         overrides={allOverrides.filter(o => o.week_n === weekNum)}
-        stravaRuns={stravaRuns}
         onSessionTap={onSessionTap}
         onMove={handleMove}
         units={units}
@@ -154,9 +152,8 @@ export default function PlanCalendar({ weeks, stravaRuns, allOverrides, allCompl
   )
 }
 
-function WeekCard({ week, weekNum, completions, overrides, stravaRuns, onSessionTap, onMove, units }: {
+function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove, units }: {
   week: Week; weekNum: number; completions: Completion[]; overrides: { week_n: number; original_day: string; new_day: string }[]
-  stravaRuns: StravaActivity[]
   onSessionTap: (session: SessionTapPayload, weekN: number, weekTheme: string) => void
   onMove: (weekN: number, originalDay: string, newDay: string, currentSlot: string) => void
   units: DistanceUnits

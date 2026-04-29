@@ -9,7 +9,6 @@
 ```typescript
 interface Props {
   weeks: Week[]
-  stravaRuns: StravaActivity[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   allCompletions: Record<number, Record<string, any>>   // keyed by week number, then day
   onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
@@ -60,6 +59,5 @@ After writing, calls `onOverrideChange` to update parent state. The parent (`Das
 
 ## Known Issues
 
-- `stravaRuns` prop is typed as `any[]` — should be `StravaActivity[]`. Tech debt.
 - `allCompletions` values are typed as `any` — should be `Completion`. Tech debt.
 - `TYPE_ACCENT` colour map in `PlanCalendar` is a local duplicate of `session-types.ts`. Violates D-16. Should be removed and replaced with a call to `session-types.ts`. Tech debt.
