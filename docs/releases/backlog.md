@@ -22,19 +22,19 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 - 🔲 **Sign in with Apple** — Apple §5.1.1d, mandatory because Google OAuth is present
 - 🔲 **StoreKit 2 integration** — implement purchase + receipt validation. Alternative: apply for External Purchase Entitlement (slow, not guaranteed)
-- 🔲 **Migration `20260428_orientation_seen.sql`** — `ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS orientation_seen BOOLEAN DEFAULT FALSE`
+- ✅ **Migration `orientation_seen`** — column exists in `user_settings`, read on load + written on completion. Done.
 
 ### C. Vercel env config
 
-- 🔲 `STRIPE_SECRET_KEY` — Stripe dashboard → Developers → API keys
-- 🔲 `STRIPE_WEBHOOK_SECRET` — Stripe → Webhooks → add endpoint `https://zona.vercel.app/api/webhooks/stripe`, copy signing secret
-- 🔲 `STRIPE_PRICE_MONTHLY` + `STRIPE_PRICE_ANNUAL` — price IDs from Stripe dashboard after creating product
-- 🔲 `REVENUECAT_WEBHOOK_SECRET` — RevenueCat dashboard → Integrations → Webhooks
-- 🔲 `SUPABASE_SERVICE_ROLE_KEY` — Supabase → Settings → API → service_role (keep secret)
-- 🔲 `STRAVA_WEBHOOK_VERIFY_TOKEN` — any secret string for webhook subscription challenge
-- 🔲 `CRON_SECRET` — protects `/api/push/send-weekly-report` cron endpoint
-- 🔲 `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` — generate via `npx web-push generate-vapid-keys`. Subject e.g. `mailto:push@zona.app`
-- 🔲 `NEXT_PUBLIC_APP_URL` — `https://zona.vercel.app`, used by cron to call internal API routes
+- ✅ `SUPABASE_SERVICE_ROLE_KEY` — confirmed present
+- ✅ `STRAVA_WEBHOOK_VERIFY_TOKEN` — confirmed present
+- ✅ `CRON_SECRET` — confirmed present
+- ✅ `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` — confirmed present
+- ✅ `NEXT_PUBLIC_APP_URL` — confirmed present
+- 🔲 `STRIPE_SECRET_KEY` — needs Stripe product setup first
+- 🔲 `STRIPE_WEBHOOK_SECRET` — needs Stripe webhook endpoint created
+- 🔲 `STRIPE_PRICE_MONTHLY` + `STRIPE_PRICE_ANNUAL` — needs Stripe product + price IDs
+- 🔲 `REVENUECAT_WEBHOOK_SECRET` — needs RevenueCat app setup first
 
 ### D. External setup
 
@@ -67,9 +67,9 @@ Ordered by GTM impact. Each needs FREE/PAID tag confirmed before build.
 
 After Vercel deploy, verify with agent-browser:
 
-1. 🔲 **Phase 5 — Wizard UI updates** — see `docs/alignment/phase-5-wizard-followup.md`
+1. ✅ **Phase 5 — Wizard UI updates** — `training_age`, `preferred_long_run_day`, `benchmarkDate` wired; new injuries (Shin splints, Plantar fasciitis, Hip) in list; `motivation_type` + `training_style` removed
 2. 🔲 **Phase 6.3 — Day-15 transition UI** — needs `frontend-design` skill. See `docs/alignment/phase-6-gates-followup.md`
-3. 🔲 **Phase 4.2 — Session card integration with `composeSession()`** — see `docs/alignment/phase-4-ui-followup.md`
+3. ✅ **Phase 4.2 — Session card integration with `composeSession()`** — wired in DashboardClient; warm-up/main/cool-down rendered with left-accent bars
 4. 🔲 **Browser-verify B1 + B3 changes**
 
 ### Small UX
@@ -125,7 +125,7 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 - 🔲 **Tier-divergent rendering utility** — once a second tier-divergent component lands (after `GeneratingCeremony.tsx`), centralise the `tier` prop pattern into shared context or typed convention. Document in `ui-patterns.md`
 - 🔲 **API contract docs** — missing `docs/contracts/api/` entries for 10 routes: `analyse-run`, `adjust-plan`, `confirm-adjustment`, `checkout`, `recalibrate-zones`, `revert-adjustment`, `delete-account`, `weekly-report`, `push/subscribe`, `push/send-weekly-report`. Write after UX rework — shapes may change
 - 🔲 **Plan history UI** — data is archived to `plan_archive` table (migration `20260424`); browse + restore UI deferred. Schema has `race_name`, `race_date`, `archived_at` for future list display
-- 🔲 **R20 reshape API gating** — still calls `hasPaidAccess()` directly; could migrate to `isFeatureAllowed('dynamic_reshape_r20')` for clarity
+- ✅ **R20 reshape API gating** — all API routes use `isFeatureAllowed()` not `hasPaidAccess()` directly. Done.
 
 ---
 

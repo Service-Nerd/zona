@@ -151,6 +151,9 @@ export default function DashboardClient() {
   const [weeklyReport, setWeeklyReport] = useState<any | null>(null)
   const [pendingAdjustment, setPendingAdjustment] = useState<any | null>(null)
 
+  // Trigger 3: missed session prompt — shown once per session on app open
+  const [missedSessionPrompt, setMissedSessionPrompt] = useState<{ weekN: number; day: string; session: any } | null>(null)
+
   // Post-wizard orientation — shown once after first-ever plan generation (B-002)
   const [showOrientation, setShowOrientation] = useState(false)
   const [orientationSeen, setOrientationSeen] = useState(false)
@@ -285,13 +288,13 @@ export default function DashboardClient() {
         }
 
         if (overridesRes.data) setAllOverrides(overridesRes.data)
+        const completionsMap: Record<number, Record<string, any>> = {}
         if (completionsRes.data) {
-          const map: Record<number, Record<string, any>> = {}
           completionsRes.data.forEach((r: any) => {
-            if (!map[r.week_n]) map[r.week_n] = {}
-            map[r.week_n][r.session_day] = r
+            if (!completionsMap[r.week_n]) completionsMap[r.week_n] = {}
+            completionsMap[r.week_n][r.session_day] = r
           })
-          setAllCompletions(map)
+          setAllCompletions(completionsMap)
         }
 
         if (settingsRes.error) console.error('user_settings query failed:', settingsRes.error)
@@ -307,6 +310,30 @@ export default function DashboardClient() {
           setScreen('generate')
         } else {
           setPlan(loadedPlan)
+        }
+
+        // Trigger 3: miss detection — past days this week with a scheduled session and no completion
+        if (loadedPlan.weeks.length > 0) {
+          const WEEK_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+          const jsDay    = new Date().getDay() // 0=Sun…6=Sat
+          const todayKey = jsDay === 0 ? 'sun' : WEEK_DAYS[jsDay - 1]
+          const todayIdx = WEEK_DAYS.indexOf(todayKey)
+          const wIdx     = getCurrentWeekIndex(loadedPlan.weeks)
+          const wN       = wIdx + 1
+          const week     = loadedPlan.weeks[wIdx]
+          const thisWeekCompletions = completionsMap[wN] ?? {}
+          if (week) {
+            for (const dayKey of WEEK_DAYS) {
+              const dayIdx = WEEK_DAYS.indexOf(dayKey)
+              if (dayIdx >= todayIdx) break // today or future
+              const s = (week.sessions as any)[dayKey]
+              if (!s || s.type === 'rest') continue
+              if (!thisWeekCompletions[dayKey]) {
+                setMissedSessionPrompt({ weekN: wN, day: dayKey, session: { ...s, key: dayKey } })
+                break // one at a time
+              }
+            }
+          }
         }
 
         // Admin flag
@@ -812,6 +839,50 @@ export default function DashboardClient() {
         <ScreenGuide screen={guideScreen} onDismiss={() => setGuideScreen(null)} />
       )}
 
+      {/* Trigger 3: missed session prompt */}
+      {missedSessionPrompt && (
+        <MissedSessionSheet
+          day={missedSessionPrompt.day}
+          session={missedSessionPrompt.session}
+          weekN={missedSessionPrompt.weekN}
+          onSkip={async (reason) => {
+            setMissedSessionPrompt(null)
+            // Mark as skipped with the given reason
+            try {
+              const { data: { user } } = await supabase.auth.getUser()
+              if (!user) return
+              await supabase.from('session_completions').upsert({
+                user_id: user.id,
+                week_n: missedSessionPrompt.weekN,
+                session_day: missedSessionPrompt.day,
+                status: 'skipped',
+                fatigue_tag: reason,
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'user_id,week_n,session_day' })
+              // Trigger 2: fire skip adjustment (except "Too tired" — absorbed)
+              if (reason !== 'Too tired') {
+                void authedFetch('/api/adjust-plan', {
+                  method: 'POST',
+                  body: JSON.stringify({
+                    skipReason: reason,
+                    sessionType: missedSessionPrompt.session.type,
+                    sessionDay: missedSessionPrompt.day,
+                  }),
+                })
+              }
+            } catch {}
+            void refreshCompletions()
+          }}
+          onDidIt={() => {
+            // Open the session so the user can log it properly
+            setActiveSessionData(missedSessionPrompt.session)
+            setScreen('session')
+            setMissedSessionPrompt(null)
+          }}
+          onDismiss={() => setMissedSessionPrompt(null)}
+        />
+      )}
+
 
       {/* ── Bottom nav bar ── */}
       {(() => {
@@ -1038,6 +1109,168 @@ function markGuideSeen(screen: string) {
   } catch {}
 }
 
+// ── MOVE SESSION VIEW (Trigger 1) ────────────────────────────────────────────
+
+const MOVE_DAY_LABELS: { key: string; label: string }[] = [
+  { key: 'mon', label: 'Mon' }, { key: 'tue', label: 'Tue' }, { key: 'wed', label: 'Wed' },
+  { key: 'thu', label: 'Thu' }, { key: 'fri', label: 'Fri' }, { key: 'sat', label: 'Sat' },
+  { key: 'sun', label: 'Sun' },
+]
+
+function MoveSessionView({
+  fromDay, sessionLabel, onMove, onBack,
+}: {
+  fromDay: string
+  sessionLabel: string
+  onMove: (toDay: string) => void
+  onBack: () => void
+}) {
+  const [moving, setMoving] = useState(false)
+  return (
+    <div style={{ padding: '16px 18px 24px' }}>
+      <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', marginBottom: 16 }}>
+        Move <strong style={{ color: 'var(--ink)' }}>{sessionLabel}</strong> to:
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 20 }}>
+        {MOVE_DAY_LABELS.map(({ key, label }) => {
+          const isCurrent = key === fromDay
+          return (
+            <button
+              key={key}
+              disabled={isCurrent || moving}
+              onClick={async () => {
+                setMoving(true)
+                await onMove(key)
+                setMoving(false)
+              }}
+              style={{
+                padding: '10px 4px', borderRadius: 8,
+                background: isCurrent ? 'var(--bg-soft)' : 'var(--card)',
+                border: isCurrent ? '0.5px solid var(--line)' : '0.5px solid var(--moss)',
+                fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: isCurrent ? 400 : 600,
+                color: isCurrent ? 'var(--mute)' : 'var(--moss)',
+                cursor: isCurrent ? 'default' : 'pointer',
+                opacity: moving ? 0.5 : 1,
+              }}
+            >
+              {label}
+            </button>
+          )
+        })}
+      </div>
+      <p style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: 16 }}>
+        The plan will check hard/easy alternation and flag any conflicts.
+      </p>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', cursor: 'pointer' }}>
+        ← Back
+      </button>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── MISSED SESSION SHEET (Trigger 3) ─────────────────────────────────────────
+
+const DAY_LABELS: Record<string, string> = {
+  mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday',
+  fri: 'Friday', sat: 'Saturday', sun: 'Sunday',
+}
+
+function MissedSessionSheet({
+  day, session, weekN, onSkip, onDidIt, onDismiss,
+}: {
+  day: string
+  session: any
+  weekN: number
+  onSkip: (reason: string) => void
+  onDidIt: () => void
+  onDismiss: () => void
+}) {
+  const [visible, setVisible] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setVisible(true), 10); return () => clearTimeout(t) }, [])
+  const dayLabel = DAY_LABELS[day] ?? day
+
+  return (
+    <div
+      onClick={onDismiss}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 200,
+        background: visible ? 'rgba(26,26,26,0.45)' : 'transparent',
+        transition: 'background 0.2s',
+        display: 'flex', alignItems: 'flex-end',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 480, margin: '0 auto',
+          background: 'var(--card)', borderRadius: '20px 20px 0 0',
+          padding: '24px 20px 36px',
+          transform: visible ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
+        }}
+      >
+        {/* Drag handle */}
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--line)', margin: '0 auto 20px' }} />
+
+        <p style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--mute)', marginBottom: 6 }}>
+          Missed session
+        </p>
+        <p style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>
+          {session.label ?? 'Session'} — {dayLabel}
+        </p>
+        <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', marginBottom: 24 }}>
+          Looks like {dayLabel}&apos;s session wasn&apos;t logged. What happened?
+        </p>
+
+        {/* Skip reason buttons */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+          {(['Injury / illness', 'Too tired', 'Life got busy', 'Bad weather'] as const).map(reason => (
+            <button
+              key={reason}
+              onClick={() => onSkip(reason)}
+              style={{
+                padding: '12px 10px', borderRadius: 10,
+                border: '0.5px solid var(--line)', background: 'var(--bg-soft)',
+                fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500,
+                color: 'var(--ink)', cursor: 'pointer', textAlign: 'left',
+              }}
+            >
+              {reason}
+            </button>
+          ))}
+        </div>
+
+        {/* I actually did it */}
+        <button
+          onClick={onDidIt}
+          style={{
+            width: '100%', padding: '13px 0', borderRadius: 100,
+            background: 'var(--moss)', border: 'none',
+            fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
+            color: 'var(--card)', cursor: 'pointer', marginBottom: 8,
+          }}
+        >
+          I actually ran it →
+        </button>
+
+        <button
+          onClick={onDismiss}
+          style={{
+            width: '100%', padding: '10px 0', background: 'transparent', border: 'none',
+            fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', cursor: 'pointer',
+          }}
+        >
+          Dismiss
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => void }) {
   const content = GUIDE_CONTENT[screen]
   const [visible, setVisible] = useState(false)
@@ -1235,7 +1468,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   goalPace?: string | null
   guidance?: any | null
 }) {
-  const [view, setView] = useState<'detail' | 'complete' | 'skip' | 'success' | 'reflect' | 'skip-reflect'>('detail')
+  const [view, setView] = useState<'detail' | 'complete' | 'skip' | 'success' | 'reflect' | 'skip-reflect' | 'move'>('detail')
   const [showManualModal, setShowManualModal] = useState(false)
   const [saving, setSaving] = useState(false)
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null)
@@ -1302,9 +1535,13 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
         coaching_flag: flag,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
-      // Trigger 4: fire fatigue-accumulation check after a heavy log (fire-and-forget)
+      // Trigger 4: fatigue accumulation check after heavy log
       if (newTag && ['Heavy', 'Wrecked', 'Cooked'].includes(newTag)) {
         void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({}) })
+      }
+      // Trigger 5: RPE disconnect check — fires when RPE ≥ 8 on easy/long session
+      if (newRpe != null && newRpe >= 8 && (session.type === 'easy' || session.type === 'long')) {
+        void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({ rpe: newRpe, sessionType: session.type }) })
       }
       onSaved?.()
     } catch {} finally { setSavingRPE(false) }
@@ -1580,6 +1817,13 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                       user_id: user.id, week_n: weekN, session_day: session.key,
                       status: 'skipped', fatigue_tag: reason, updated_at: new Date().toISOString(),
                     }, { onConflict: 'user_id,week_n,session_day' })
+                    // Trigger 2: skip with reason — fire adjustment check (not "Too tired" — absorbed)
+                    if (reason !== 'Too tired') {
+                      void authedFetch('/api/adjust-plan', {
+                        method: 'POST',
+                        body: JSON.stringify({ skipReason: reason, sessionType: session.type, sessionDay: session.key }),
+                      })
+                    }
                     onSaved?.()
                   }
                 } catch {}
@@ -1970,9 +2214,16 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                       <button onClick={() => setShowManualModal(true)} style={{ flex: 1, minWidth: '100px', background: 'var(--card-bg)', color: config.color, border: `0.5px solid ${config.color}40`, borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500 }}>
                         Log manually
                       </button>
-                      <button onClick={() => setView('skip')} style={{ width: '100%', background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '11px', fontFamily: 'var(--font-ui)', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
-                        Skip this session
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                        <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '11px', fontFamily: 'var(--font-ui)', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                          Skip
+                        </button>
+                        {!isPast && session.key && (
+                          <button onClick={() => setView('move')} style={{ flex: 1, background: 'none', color: 'var(--mute)', border: '0.5px solid var(--line)', borderRadius: '10px', padding: '11px', fontFamily: 'var(--font-ui)', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                            Move
+                          </button>
+                        )}
+                      </div>
                     </>
                   )
                 } else {
@@ -2089,6 +2340,24 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
       )}
 
       {/* Skip view */}
+      {view === 'move' && session.key && (
+        <MoveSessionView
+          fromDay={session.key}
+          sessionLabel={session.label ?? 'session'}
+          onMove={async (toDay) => {
+            try {
+              await authedFetch('/api/adjust-plan', {
+                method: 'POST',
+                body: JSON.stringify({ fromDay: session.key, toDay }),
+              })
+            } catch {}
+            onSaved?.()
+            onClose()
+          }}
+          onBack={() => setView('detail')}
+        />
+      )}
+
       {view === 'skip' && (
         <div style={{ padding: '16px 18px 24px' }}>
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '20px' }}>
@@ -2389,9 +2658,13 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
         coaching_flag: flag,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
-      // Trigger 4: fire fatigue-accumulation check after a heavy log (fire-and-forget)
+      // Trigger 4: fatigue accumulation
       if (newTag && ['Heavy', 'Wrecked', 'Cooked'].includes(newTag)) {
         void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({}) })
+      }
+      // Trigger 5: RPE disconnect
+      if (newRpe != null && newRpe >= 8 && (sessionType === 'easy' || sessionType === 'long')) {
+        void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({ rpe: newRpe, sessionType }) })
       }
     } catch {}
   }

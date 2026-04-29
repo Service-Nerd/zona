@@ -26,12 +26,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
   }
 
-  // manual: true means user explicitly requested a reshape — bypass the opt-out toggle
-  const body = await req.json().catch(() => ({}))
-  const isManual = body?.manual === true
+  // Parse body signals
+  const body        = await req.json().catch(() => ({}))
+  const isManual    = body?.manual === true
+  // Trigger 5: RPE disconnect
+  const rpeSignal: { rpe: number; sessionType: string } | undefined =
+    body?.rpe != null && body?.sessionType ? { rpe: body.rpe, sessionType: body.sessionType } : undefined
+  // Trigger 2: Skip with reason
+  const skipSignalRaw: { reason: string; sessionType: string; sessionDay: string } | undefined =
+    body?.skipReason ? { reason: body.skipReason, sessionType: body.sessionType ?? 'easy', sessionDay: body.sessionDay ?? 'mon' } : undefined
+  // Trigger 1: Session reorder
+  const reorderSignal: { fromDay: string; toDay: string } | undefined =
+    body?.fromDay && body?.toDay ? { fromDay: body.fromDay, toDay: body.toDay } : undefined
+
+  // Explicit user signals bypass the opt-out toggle
+  const isExplicitSignal = !!(skipSignalRaw || reorderSignal)
 
   // Respect the user's dynamic adjustments opt-out for automatic triggers only
-  if (!isManual) {
+  if (!isManual && !isExplicitSignal) {
     const { data: settings } = await supabase
       .from('user_settings')
       .select('dynamic_adjustments_enabled')
@@ -155,6 +167,10 @@ export async function POST(req: NextRequest) {
 
   const currentWeekSessions = Object.values(week.sessions).filter(Boolean) as any[]
 
+  const skipSignal = skipSignalRaw
+    ? { ...skipSignalRaw, weekSessionsByDay: week.sessions as Record<string, any> }
+    : undefined
+
   const proposed = checkAdjustmentTriggers({
     currentWeekN:         weekN,
     totalWeeks:           plan.weeks.length,
@@ -167,6 +183,9 @@ export async function POST(req: NextRequest) {
     adjustmentsThisWeek,
     currentPhase,
     recentFatigueTags,
+    rpeSignal,
+    skipSignal,
+    reorderSignal,
   })
 
   if (!proposed) {
