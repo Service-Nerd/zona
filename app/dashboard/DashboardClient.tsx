@@ -806,7 +806,7 @@ export default function DashboardClient() {
         {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} />}
         {screen === 'coach'    && (hasPaidAccess
-          ? <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaConnected={stravaConnected} stravaTokenFailed={stravaTokenFailed} firstName={firstName} onGoToMe={() => setScreen('me')} weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport} preferredUnits={preferredUnits} zoneDisciplinePercent={(() => {
+          ? <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaConnected={stravaConnected} stravaTokenFailed={stravaTokenFailed} firstName={firstName} weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport} preferredUnits={preferredUnits} zoneDisciplinePercent={(() => {
               const wn = getCurrentWeekIndex(plan.weeks) + 1
               const comps = allCompletions[wn] ?? {}
               const wSessions = Object.entries((currentWeek as any).sessions ?? {})
@@ -821,7 +821,7 @@ export default function DashboardClient() {
           : <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => setScreen('upgrade')} />
         )}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
-        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} />}
+        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} onBack={() => setScreen('today')} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
@@ -3818,11 +3818,13 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               fontFamily: 'var(--font-ui)',
               fontSize: '11px',
               fontWeight: 600,
-              color: 'var(--mute)',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
+              color: 'var(--moss)',
+              letterSpacing: '0.04em',
+              background: 'var(--moss-soft)',
+              borderRadius: '20px',
+              padding: '3px 9px',
             }}>
-              {daysToRace}d out
+              {daysToRace} days out
             </span>
           )}
         </div>
@@ -3838,7 +3840,11 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               marginBottom: '4px',
               lineHeight: 1,
             }}>
-              {firstName ? `${firstName}, you run` : 'Today, you run'}
+              {(() => {
+                const h = new Date().getHours()
+                const greeting = h >= 5 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 22 ? 'Good evening' : 'Evening'
+                return firstName ? `${greeting}, ${firstName}` : greeting
+              })()}
             </div>
             <div style={{ lineHeight: 1, marginBottom: '16px' }}>
               {selectedSession.distance != null ? (
@@ -3908,7 +3914,11 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               color: 'var(--mute)',
               marginBottom: '4px',
             }}>
-              {firstName ? `${firstName}, you rest` : 'Today, you rest'}
+              {(() => {
+                const h = new Date().getHours()
+                const greeting = h >= 5 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 22 ? 'Good evening' : 'Evening'
+                return firstName ? `${greeting}, ${firstName}` : greeting
+              })()}
             </div>
             <div style={{ lineHeight: 1, marginBottom: '16px' }}>
               <span style={{
@@ -4391,16 +4401,17 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
     <div style={{ paddingBottom: '32px' }}>
 
       {/* ── HEADER ───────────────────────────────────────────────── */}
-      <ScreenHeader
-        title={raceName || 'Your plan'}
-        sub={[
-          `W${weekNum} of ${totalWeeks}`,
-          daysToRace !== null && daysToRace > 0 ? `${daysToRace} days to go` : null,
-        ].filter(Boolean).join(' · ')}
-      />
+      <ScreenHeader title="Your plan" sub={`W${weekNum} of ${totalWeeks}`} />
+
+      {/* ── RACE NAME HEADING ────────────────────────────────────── */}
+      {raceName && (
+        <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.2 }}>
+          {raceName}
+        </div>
+      )}
 
       {/* ── PLAN ARC ─────────────────────────────────────────────── */}
-      <div style={{ padding: '20px 16px 0' }}>
+      <div style={{ padding: '0 16px 0' }}>
         <PlanArc
           totalWeeks={totalWeeks}
           currentWeek={weekNum}
@@ -4789,10 +4800,10 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
   )
 }
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, onGoToMe, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent }: {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaConnected: boolean
-  stravaTokenFailed?: boolean; firstName?: string; onGoToMe?: () => void
+  stravaTokenFailed?: boolean; firstName?: string
   weeklyReport?: any | null; onReportGenerated?: (report: any) => void
   preferredUnits?: 'km' | 'mi'
   zoneDisciplinePercent?: number | null
@@ -4891,99 +4902,64 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   const sc   = sessionsContext(sessionsCompleted, sessionsPlanned)
   const wtrc = weeksContext(weeksToRace)
 
+  // ── Dynamic coach headline ──────────────────────────────────────────
+  function getCoachHeadline(): string {
+    const behind = (sessionsPlanned ?? 0) - (sessionsCompleted ?? 0)
+    const name = firstName ? `, ${firstName}` : ''
+    if (loadRatio !== null && loadRatio >= 1.3) return `Ease up this week${name}`
+    if (sessionsCompleted !== null && sessionsPlanned !== null && behind >= 2) return `Let's catch up${name}`
+    if (sessionsCompleted !== null && sessionsPlanned !== null && behind <= 0) return `You're on track${name}`
+    return `Here's your week${name}`
+  }
+
   return (
     <div>
-      <ScreenHeader
-        title="Coach"
-        sub={firstName ? `${firstName} · W${weekNum} of ${totalWeeks}` : `W${weekNum} of ${totalWeeks}`}
-      />
+      <ScreenHeader title="Your coach" sub={`W${weekNum} of ${totalWeeks}`} />
+
       <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '32px' }}>
 
-        {/* ── 1. ZONE DISCIPLINE SCORE — hero card, always visible ─────── */}
-        <div style={{
-          background: 'var(--card)',
-          borderRadius: 'var(--radius-lg)',
-          border: '1px solid var(--line)',
-          padding: '20px',
-        }}>
-          {/* Eyebrow */}
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
-            Zone discipline
-          </div>
-          {/* Metric pair */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px', marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-              <span style={{
-                fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800,
-                letterSpacing: '-1.5px', fontVariantNumeric: 'tabular-nums',
-                color: currentScore !== null ? 'var(--ink)' : 'var(--mute)',
-                lineHeight: 1,
-              }}>
-                {currentScore !== null ? currentScore : '—'}
-              </span>
-              {currentScore !== null && (
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 600, color: 'var(--moss)', lineHeight: 1 }}>%</span>
-              )}
-            </div>
-            {lastWeekScore !== null && (
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', paddingBottom: '6px' }}>
-                Last week: {lastWeekScore}%
-              </span>
-            )}
-          </div>
-          {/* Body */}
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.55 }}>
-            {scoreBodyCopy(currentScore)}
-          </div>
+        {/* ── DYNAMIC HEADLINE ─────────────────────────────────────────── */}
+        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.2, paddingTop: '4px' }}>
+          {getCoachHeadline()}
         </div>
 
-        {/* ── 2. METRICS ROW — load ratio / sessions / weeks to race ──── */}
-        <div style={{
-          background: 'var(--card)',
-          borderRadius: 'var(--radius-lg)',
-          border: '1px solid var(--line)',
-          display: 'flex',
-        }}>
-          {(
-            [
-              {
-                value: loadRatio !== null ? `${loadRatio.toFixed(2)}x` : '—',
-                label: 'Load ratio',
-                context: lrc.label,
-                contextColor: lrc.color,
-              },
-              {
-                value: sessionsCompleted !== null && sessionsPlanned !== null
-                  ? `${sessionsCompleted}/${sessionsPlanned}`
-                  : '—',
-                label: 'Sessions',
-                context: sc.label,
-                contextColor: sc.color,
-              },
-              {
-                value: weeksToRace > 0 ? String(weeksToRace) : 'Race',
-                label: 'Weeks out',
-                context: wtrc.label,
-                contextColor: wtrc.color,
-              },
-            ] as const
-          ).map((m, i, arr) => (
-            <div
-              key={m.label}
-              style={{
-                flex: 1,
-                padding: '16px 12px',
-                borderRight: i < arr.length - 1 ? '1px solid var(--line)' : undefined,
-              }}
-            >
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+        {/* ── STATS 2×2 GRID ───────────────────────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          {([
+            {
+              label: 'Zone discipline',
+              value: currentScore !== null ? `${currentScore}%` : '—',
+              sub: scoreBodyCopy(currentScore).split('.')[0],
+              subColor: currentScore !== null && currentScore >= 80 ? 'var(--moss)' : currentScore !== null && currentScore >= 60 ? 'var(--ink-2)' : currentScore !== null ? 'var(--warn)' : 'var(--mute)',
+            },
+            {
+              label: 'Load ratio',
+              value: loadRatio !== null ? `${loadRatio.toFixed(2)}x` : '—',
+              sub: lrc.label,
+              subColor: lrc.color,
+            },
+            {
+              label: 'Sessions',
+              value: sessionsCompleted !== null && sessionsPlanned !== null ? `${sessionsCompleted}/${sessionsPlanned}` : '—',
+              sub: sc.label,
+              subColor: sc.color,
+            },
+            {
+              label: 'Weeks left',
+              value: weeksToRace > 0 ? String(weeksToRace) : 'Race',
+              sub: wtrc.label,
+              subColor: wtrc.color,
+            },
+          ] as const).map((m) => (
+            <div key={m.label} style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
                 {m.label}
               </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 700, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', lineHeight: 1, marginBottom: '4px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px', lineHeight: 1, marginBottom: '6px' }}>
                 {m.value}
               </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: m.contextColor, fontWeight: 500 }}>
-                {m.context}
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 500, color: m.subColor, lineHeight: 1.3 }}>
+                {m.sub}
               </div>
             </div>
           ))}
@@ -5006,18 +4982,12 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             </span>
           </div>
 
-          {/* Strava token failed — single inline mention, non-blocking */}
+          {/* Strava token failed — inline mention, reconnect via Profile */}
           {stravaTokenFailed && !stravaLoading && (
-            <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+            <div style={{ marginBottom: '12px' }}>
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--coach-ink)', opacity: 0.7 }}>
-                Strava connection expired.
+                Strava connection expired. Reconnect in Profile.
               </span>
-              <button
-                onClick={onGoToMe}
-                style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', background: 'none', border: '1px solid var(--warn)', borderRadius: '20px', padding: '3px 10px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, opacity: 0.8 }}
-              >
-                Reconnect
-              </button>
             </div>
           )}
 
@@ -5643,7 +5613,7 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
   )
 }
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onUpgrade, hasPaidAccess, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, onBack, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   resetPhrase: string; onSaveMental: (v: string) => void
@@ -5659,6 +5629,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   onOpenReshape?: () => void
   onUpgrade?: () => void
   hasPaidAccess?: boolean
+  trialDaysLeft?: number | null
   dynamicAdjustmentsEnabled?: boolean
   onDynamicAdjustmentsChange?: (enabled: boolean) => void
 }) {
@@ -5673,7 +5644,6 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   if (activeSection === 'fueling')        return <FuelingTab onBack={() => setActiveSection('main')} />
   if (activeSection === 'delete-account') return <DeleteAccountScreen onBack={() => setActiveSection('main')} />
 
-  const daysToRace = plan?.meta?.race_date ? Math.max(0, Math.ceil((new Date(plan.meta.race_date).getTime() - Date.now()) / 86400000)) : 0
   const hasPlan = !!(plan?.meta?.race_name)
 
   // Compute Zone 2 ceiling for display — mirrors DashboardClient logic
@@ -5688,51 +5658,39 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
     </svg>
   )
 
+  // Tier label: Trial / Pro / Free
+  const tierLabel = hasPaidAccess
+    ? ((trialDaysLeft ?? 0) > 0 ? 'Trial' : 'Pro')
+    : 'Free'
+
+  // Plan progress for read-only training section
+  const currentWeekIndex = getCurrentWeekIndex(plan.weeks)
+  const weekNum    = currentWeekIndex + 1
+  const totalWeeks = plan.weeks.length
+  const raceDateFormatted = plan?.meta?.race_date
+    ? new Date(plan.meta.race_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null
+
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto' }}>
 
-      {/* Header */}
-      <div style={{ padding: '16px 16px 0' }}>
-        <button onClick={onBack} style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          color: 'var(--text-muted)', padding: 0, marginBottom: '12px',
-          display: 'flex', alignItems: 'center', gap: '6px',
-        }}>
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-            <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px' }}>Back</span>
-        </button>
-        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
-          {firstName || 'Profile'}
-        </div>
-        {raceNm && daysToRace > 0 && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '3px', letterSpacing: '0.04em' }}>
-            {raceNm} · {daysToRace} days to go
-          </div>
-        )}
-      </div>
+      {/* Header — tab destination, no back button */}
+      <ScreenHeader title="Your profile" />
 
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '40px' }}>
 
-        {/* Identity card — avatar + race goal. Name/email live in Profile section below. */}
-        <div style={{ background: 'var(--card-bg)', borderRadius: '16px', padding: '16px', border: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-brand)', fontSize: '16px', fontWeight: 600, color: 'var(--card-bg)', flexShrink: 0 }}>
+        {/* Identity card — avatar + name + tier */}
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', padding: '16px', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--moss)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-brand)', fontSize: '16px', fontWeight: 600, color: 'var(--card)', flexShrink: 0 }}>
             {initials}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            {hasPlan ? (
-              <>
-                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {plan.meta.race_name}
-                </div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', marginTop: '4px', letterSpacing: '0.02em' }}>
-                  {daysToRace} days to go
-                </div>
-              </>
-            ) : (
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)' }}>No race set</div>
-            )}
+            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {[firstName, lastName].filter(Boolean).join(' ') || 'Your name'}
+            </div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '3px' }}>
+              {tierLabel}
+            </div>
           </div>
         </div>
 
@@ -5743,6 +5701,22 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         {/* ── Your training ──────────────────────────────────────── */}
         {/* Plan · HR data · display preferences — everything that shapes session cards */}
         <SectionLabel>Your training</SectionLabel>
+
+        {/* Read-only plan overview */}
+        {hasPlan && (
+          <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+            {[
+              { label: 'Current race', value: plan.meta.race_name },
+              { label: 'Race date',    value: raceDateFormatted ?? '—' },
+              { label: 'Plan',         value: `W${weekNum} of ${totalWeeks}` },
+            ].map(({ label, value }, i, arr) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : undefined }}>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>{label}</span>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', textAlign: 'right', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Plan + benchmark actions */}
         <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
