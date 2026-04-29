@@ -68,7 +68,7 @@ Ordered by GTM impact. Each needs FREE/PAID tag confirmed before build.
 After Vercel deploy, verify with agent-browser:
 
 1. ✅ **Phase 5 — Wizard UI updates** — `training_age`, `preferred_long_run_day`, `benchmarkDate` wired; new injuries (Shin splints, Plantar fasciitis, Hip) in list; `motivation_type` + `training_style` removed
-2. 🔲 **Phase 6.3 — Day-15 transition UI** — needs `frontend-design` skill. See `docs/alignment/phase-6-gates-followup.md`
+2. ✅ **Phase 6.3 — Day-15 transition UI** — shipped 2026-04-29
 3. ✅ **Phase 4.2 — Session card integration with `composeSession()`** — wired in DashboardClient; warm-up/main/cool-down rendered with left-accent bars
 4. 🔲 **Browser-verify B1 + B3 changes**
 
@@ -110,9 +110,7 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 
 ## Tech Debt
 
-- 🔲 `PlanCalendar` `stravaRuns` prop — accepted but unused in WeekCard. Remove or wire up
 - 🔲 **Tier-divergent rendering utility** — once a second tier-divergent component lands (after `GeneratingCeremony.tsx`), centralise the `tier` prop pattern into shared context or typed convention. Document in `ui-patterns.md`
-- 🔲 **API contract docs** — missing `docs/contracts/api/` entries for 10 routes: `analyse-run`, `adjust-plan`, `confirm-adjustment`, `checkout`, `recalibrate-zones`, `revert-adjustment`, `delete-account`, `weekly-report`, `push/subscribe`, `push/send-weekly-report`. Write after UX rework — shapes may change
 - 🔲 **Plan history UI** — data is archived to `plan_archive` table (migration `20260424`); browse + restore UI deferred. Schema has `race_name`, `race_date`, `archived_at` for future list display
 - ✅ **R20 reshape API gating** — all API routes use `isFeatureAllowed()` not `hasPaidAccess()` directly. Done.
 
@@ -125,7 +123,7 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 - **R23-D1** — Tier 2 wizard fields (`treadmill_primarily`, `longest_run_ever_km`) need engine consumer / product decision before the wizard work is worth shipping
 - **R23-D2** — Catalogue lookup for legacy plans. Recommendation: abandon (legacy plans expire as users regenerate). Confirm decision
 - **R23-D3** — Surface `compressed` flag in UI. Needs design rationale via `frontend-design` skill before shipping
-- **R23-D5** — ReshapeScreen 403 missing upgrade CTA. Defense-in-depth only — no production user can hit this via supported flows. Two-line fix when picked up
+- ✅ **R23-D5** — ReshapeScreen 403 fixed: MeScreen Reshape button now gates on hasPaidAccess, routes free users to UpgradeScreen. Done 2026-04-29.
 
 ### R25 design decisions to resolve before build
 
