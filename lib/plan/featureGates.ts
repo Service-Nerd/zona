@@ -36,6 +36,7 @@ export const FEATURE_GATES = {
     'confidence_score',          // R18 confidence scoring
     'ultra_plan_generation',     // 50K and 100K plan generation
     'strength_sessions_tailored', // R21 tailored strength (when shipped)
+    'race_time_estimates',        // estimated race times from VDOT / Strava aerobic pace
   ],
 
   // Note (R23-D6 resolution, 2026-04-25): `new_plan_generation` was previously

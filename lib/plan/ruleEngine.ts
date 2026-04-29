@@ -50,7 +50,7 @@ interface PaceGuide {
 // ─── VDOT model (Jack Daniels) ────────────────────────────────────────────────
 
 // Parse "H:MM:SS", "MM:SS", or "H:MM" → total minutes
-function parseBenchmarkTime(time: string): number {
+export function parseBenchmarkTime(time: string): number {
   const parts = time.split(':').map(Number)
   if (parts.length === 3) return parts[0] * 60 + parts[1] + parts[2] / 60
   if (parts.length === 2) return parts[0] + parts[1] / 60
@@ -58,7 +58,7 @@ function parseBenchmarkTime(time: string): number {
 }
 
 // Jack Daniels VDOT formula: VDOT from any race result
-function calcVDOT(distanceKm: number, timeMinutes: number): number {
+export function calcVDOT(distanceKm: number, timeMinutes: number): number {
   if (!Number.isFinite(timeMinutes) || timeMinutes <= 0) return NaN
   const v = (distanceKm * 1000) / timeMinutes  // metres per minute
   const utilization = 0.8
@@ -69,7 +69,7 @@ function calcVDOT(distanceKm: number, timeMinutes: number): number {
 }
 
 // Velocity (m/min) at a given fraction of VDOT — quadratic solve
-function velocityAtFraction(vdot: number, fraction: number): number {
+export function velocityAtFraction(vdot: number, fraction: number): number {
   const a = 0.000104
   const b = 0.182258
   const c = -4.60 - fraction * vdot
@@ -151,7 +151,7 @@ function calcVDOTFromBenchmark(b: BenchmarkInput): number {
 // VDOT conservatism (CoachingPrinciples §10, §42) — protects users from
 // training at peak race-day output. Discount = base 3% + staleness ramp,
 // capped at MAX. Surfaced in plan.meta.vdot_discount_applied_pct.
-function applyVdotDiscount(rawVdot: number, b: BenchmarkInput, today: Date): { vdot: number; discountPct: number } {
+export function applyVdotDiscount(rawVdot: number, b: BenchmarkInput, today: Date): { vdot: number; discountPct: number } {
   let discountPct: number = GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT
   if (b.benchmark_date) {
     const bDate = parseDateLocal(b.benchmark_date)
