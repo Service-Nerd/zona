@@ -5,15 +5,17 @@ import type { CoachingFlag } from './coachingFlag'
 export type InsightPriority = 'load_spike' | 'zone_drift' | 'shadow_load' | 'ef_decline' | 'solid_week' | 'low_data'
 
 export interface WeeklyReportInput {
-  weekN:              number
-  sessionsCompleted:  number
-  sessionsPlanned:    number
-  actualKm:           number
-  plannedKm:          number
-  priorWeeksKm:       number[]         // last 4 weeks actual, most-recent first
-  sessionFlagCounts:  Record<CoachingFlag, number>
-  hrInZoneData:       { sessionType: string; hrInZonePct: number | null }[]
-  efTrendPct:         number | null    // % change vs baseline
+  weekN:                  number
+  sessionsCompleted:      number
+  sessionsPlanned:        number
+  sessionsPlannedToDate:  number       // sessions due by today (mid-week context)
+  actualKm:               number
+  plannedKm:              number
+  plannedKmToDate:        number       // km due by today (mid-week context)
+  priorWeeksKm:           number[]     // last 4 weeks actual, most-recent first
+  sessionFlagCounts:      Record<CoachingFlag, number>
+  hrInZoneData:           { sessionType: string; hrInZonePct: number | null }[]
+  efTrendPct:             number | null // % change vs baseline
 }
 
 export interface WeeklyReportData {
@@ -44,7 +46,7 @@ export function computeWeeklyReportData(input: WeeklyReportInput): WeeklyReportD
     zoneDisciplineScore: zdScore,
     avgRpe:              null,
     dominantFlag:        dominant,
-    primaryInsight:      selectPrimaryInsight(ratio, zdScore, shadow, input.efTrendPct, input.sessionsCompleted),
+    primaryInsight:      selectPrimaryInsight(ratio, zdScore, shadow, input.efTrendPct, input.sessionsCompleted, input.sessionsPlannedToDate),
   }
 }
 
@@ -69,8 +71,11 @@ function selectPrimaryInsight(
   shadowPct: number,
   efTrend: number | null,
   sessionsCompleted: number,
+  sessionsPlannedToDate: number,
 ): InsightPriority {
-  if (sessionsCompleted < 2)               return 'low_data'
+  // low_data: only fire when 2+ sessions were due by today but fewer than 2 logged.
+  // Early-week (0–1 sessions due) never counts as low data — there's nothing to have done yet.
+  if (sessionsCompleted < 2 && sessionsPlannedToDate >= 2) return 'low_data'
   if (ratio >= 1.3)                        return 'load_spike'
   if (zdScore !== null && zdScore < 70)    return 'zone_drift'
   if (shadowPct > 15)                      return 'shadow_load'

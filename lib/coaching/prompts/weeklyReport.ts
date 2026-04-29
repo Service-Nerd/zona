@@ -39,6 +39,9 @@ export function buildWeeklyReportPrompt(
   plan: Plan,
   weekN: number,
   firstName?: string,
+  dayOfWeek?: string,
+  sessionsPlannedToDate?: number,
+  plannedKmToDate?: number,
 ): string {
   const weeksToRace = plan.meta.race_date
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
@@ -49,8 +52,17 @@ export function buildWeeklyReportPrompt(
 
   const example = FEW_SHOT_EXAMPLES[data.primaryInsight] ?? FEW_SHOT_EXAMPLES.solid_week!
 
-  return `You are a direct, no-fluff running coach writing a weekly check-in. Honest, slightly dry, never cheerleader. Use "you" throughout.${firstName ? ` Address ${firstName} naturally if appropriate (once, max).` : ''}
+  // Mid-week context: show sessions/km vs what was due by today, not the full week target
+  const isMidWeek = dayOfWeek !== undefined && dayOfWeek !== 'Sunday'
+  const sessionLine = (isMidWeek && sessionsPlannedToDate !== undefined)
+    ? `Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned} this week (${sessionsPlannedToDate} due by ${dayOfWeek})`
+    : `Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned}`
+  const volumeLine = (isMidWeek && plannedKmToDate !== undefined)
+    ? `Volume: ${data.totalKmActual.toFixed(1)}km actual vs ${plannedKmToDate.toFixed(1)}km due by ${dayOfWeek} (${data.totalKmPlanned.toFixed(1)}km full-week target)`
+    : `Volume: ${data.totalKmActual.toFixed(1)}km actual vs ${data.totalKmPlanned.toFixed(1)}km planned`
 
+  return `You are a direct, no-fluff running coach writing a weekly check-in. Honest, slightly dry, never cheerleader. Use "you" throughout.${firstName ? ` Address ${firstName} naturally if appropriate (once, max).` : ''}
+${isMidWeek ? ` Important: it is currently ${dayOfWeek} — this is a mid-week report. Evaluate against what was due by today, not the full week target.` : ''}
 Output format — exactly three fields:
 Headline: [one punchy sentence, 8 words max]
 Body: [2–3 sentences, specific and data-driven]
@@ -64,8 +76,8 @@ Race: ${raceContext}
 Week: ${weekN} of ${plan.weeks.length}
 
 This week's data:
-- Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned}
-- Volume: ${data.totalKmActual.toFixed(1)}km actual vs ${data.totalKmPlanned.toFixed(1)}km planned
+- ${sessionLine}
+- ${volumeLine}
 - Load ratio (vs 4-week avg): ${data.acuteChronicRatio.toFixed(2)}x
 - Zone discipline score: ${data.zoneDisciplineScore !== null ? `${data.zoneDisciplineScore}/100` : 'no signal (no Strava-analysed sessions yet)'}
 ${data.avgRpe !== null ? `- Avg RPE: ${data.avgRpe.toFixed(1)}\n` : ''}- Dominant coaching flag: ${data.dominantFlag}

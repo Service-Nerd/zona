@@ -111,13 +111,35 @@ export async function POST(req: NextRequest) {
     .slice(0, 4)
     .map(([, km]) => km)
 
+  const DAY_ORDER_REPORT = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+  const DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+  // How far through the week are we? (0 = Monday, 6 = Sunday)
+  const weekStart       = new Date(week.date)
+  weekStart.setHours(0, 0, 0, 0)
+  const todayMidnight   = new Date(); todayMidnight.setHours(0, 0, 0, 0)
+  const dayIndex        = Math.min(Math.max(Math.floor((todayMidnight.getTime() - weekStart.getTime()) / 86_400_000), 0), 6)
+  const dayOfWeek       = DAY_LABELS[dayIndex]
+  const daysDueByToday  = DAY_ORDER_REPORT.slice(0, dayIndex + 1)
+
+  // Total sessions and km planned for the full week
   const sessionsPlanned = Object.keys(week.sessions).filter(d => {
     const s = week.sessions[d as keyof typeof week.sessions]
     return s && s.type !== 'rest'
   }).length
+  const plannedKm = week.weekly_km ?? 0
+
+  // Sessions and km that were due by today (for mid-week comparison)
+  const sessionsPlannedToDate = daysDueByToday.filter(d => {
+    const s = week.sessions[d as keyof typeof week.sessions]
+    return s && s.type !== 'rest'
+  }).length
+  const plannedKmToDate = daysDueByToday.reduce((sum, d) => {
+    const s = week.sessions[d as keyof typeof week.sessions]
+    return sum + (s?.distance_km ?? 0)
+  }, 0)
 
   const sessionsCompleted = completions.filter((c: any) => c.status === 'complete').length
-  const plannedKm         = week.weekly_km ?? 0
 
   const flagCounts = { ok: 0, watch: 0, flag: 0 }
   completions.forEach((c: any) => {
@@ -141,8 +163,10 @@ export async function POST(req: NextRequest) {
     weekN,
     sessionsCompleted,
     sessionsPlanned,
+    sessionsPlannedToDate,
     actualKm:         thisWeekKm,
     plannedKm,
+    plannedKmToDate,
     priorWeeksKm,
     sessionFlagCounts: flagCounts,
     hrInZoneData,
@@ -163,6 +187,9 @@ export async function POST(req: NextRequest) {
       plan,
       weekN,
       settingsRes.data?.first_name ?? undefined,
+      dayOfWeek,
+      sessionsPlannedToDate,
+      plannedKmToDate,
     )
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
