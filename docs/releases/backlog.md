@@ -75,7 +75,6 @@ After Vercel deploy, verify with agent-browser:
 ### Small UX
 
 - 🔲 **UX-01** — Profile screen email field. Me screen rebuilt (2026-04-29); `ProfileSection` still renders email as editable input but saving email is a no-op (no re-verification flow exists). Decision still needed: make read-only or remove the field entirely.
-- 🔲 **UX-02** — Zone discipline tap-to-explain. Load ratio card has a slide-up sheet (shipped 2026-04-29); Zone discipline card does not. Apply same pattern for consistency.
 - 🔲 **UX-03** — Dead `onBack` prop in `MeScreen`. Back button removed; prop retained in signature and call site. Minor cleanup — remove prop and call site.
 
 ---
