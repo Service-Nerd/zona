@@ -20,6 +20,9 @@ import type { Plan } from '@/types/plan'
 //   force    — true to regenerate today's note even if cached.
 
 const DOW_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const
+const DOW_OFFSET: Record<string, number> = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 }
+// Strength sessions are excluded from coaching logic until the feature is built out.
+const EXCLUDED_SESSION_TYPES = ['strength']
 
 export async function GET(req: NextRequest) {
   const supabase = createClient()
@@ -85,25 +88,33 @@ export async function GET(req: NextRequest) {
   // Today's session (by day-of-week from the local date param)
   const dayOfWeek = new Date(noteDate + 'T00:00:00Z').getUTCDay()  // 0=Sun..6=Sat
   const dowKey    = DOW_KEYS[dayOfWeek]
-  const todaySession = (week.sessions as any)?.[dowKey] ?? null
+  // Treat strength as a rest day for coaching purposes — feature not yet built out.
+  const rawTodaySession = (week.sessions as any)?.[dowKey] ?? null
+  const todaySession = EXCLUDED_SESSION_TYPES.includes(rawTodaySession?.type) ? null : rawTodaySession
   const todayDayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dayOfWeek]
   const todayZone = zoneForSessionType(todaySession?.type)
 
-  // Last completed session (most recent in completions list)
   const completions = completionsRes.data ?? []
-  const lastCompleted = completions.find((c: any) => c.status === 'complete')
+
+  // Last completed non-strength session — find, then look up type from plan to confirm
+  const lastCompleted = completions.find((c: any) => {
+    if (c.status !== 'complete') return false
+    const lcWeekCheck = plan.weeks[c.week_n - 1] as any
+    const lcSessionCheck = lcWeekCheck?.sessions?.[c.session_day]
+    return !EXCLUDED_SESSION_TYPES.includes(lcSessionCheck?.type)
+  })
 
   let lastSession: any = null
   if (lastCompleted) {
-    const noteDateMs = new Date(noteDate + 'T00:00:00Z').getTime()
-    const completedMs = lastCompleted.updated_at
-      ? new Date(lastCompleted.updated_at).getTime()
-      : noteDateMs
-    const daysAgo = Math.max(1, Math.round((noteDateMs - completedMs) / 86400000))
-    // Look up session type from the plan
-    const lcWeek = plan.weeks[lastCompleted.week_n - 1] as any
-    const lcSession = lcWeek?.sessions?.[lastCompleted.session_day] ?? null
-    // Match analysis row (most recent for that session)
+    // daysAgo from the session's actual planned date, not the log timestamp
+    const noteDateMs  = new Date(noteDate + 'T00:00:00Z').getTime()
+    const lcWeek      = plan.weeks[lastCompleted.week_n - 1] as any
+    const lcSession   = lcWeek?.sessions?.[lastCompleted.session_day] ?? null
+    const weekStart   = lcWeek?.date ? new Date(lcWeek.date + 'T00:00:00Z').getTime() : noteDateMs
+    const dayOffset   = DOW_OFFSET[lastCompleted.session_day] ?? 0
+    const sessionMs   = weekStart + dayOffset * 86_400_000
+    const daysAgo     = Math.max(1, Math.round((noteDateMs - sessionMs) / 86_400_000))
+    // Match analysis row
     const analysis = (analysisRes.data ?? []).find(
       (a: any) => a.week_n === lastCompleted.week_n && a.session_day === lastCompleted.session_day
     )
@@ -117,9 +128,14 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Fatigue trend — last 3 tags
+  // Fatigue trend — last 3 non-strength tags
   const recentTags = completions
-    .filter((c: any) => c.fatigue_tag)
+    .filter((c: any) => {
+      if (!c.fatigue_tag) return false
+      const w = plan.weeks[c.week_n - 1] as any
+      const s = w?.sessions?.[c.session_day]
+      return !EXCLUDED_SESSION_TYPES.includes(s?.type)
+    })
     .slice(0, 3)
     .map((c: any) => c.fatigue_tag as string)
   const heavyFatigueTrend = recentTags.length >= 3 &&

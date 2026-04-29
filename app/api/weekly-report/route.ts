@@ -122,24 +122,30 @@ export async function POST(req: NextRequest) {
   const dayOfWeek       = DAY_LABELS[dayIndex]
   const daysDueByToday  = DAY_ORDER_REPORT.slice(0, dayIndex + 1)
 
+  // Strength sessions excluded from coaching logic until that feature is built out.
+  const isCountableSession = (s: any) => s && s.type !== 'rest' && s.type !== 'strength'
+
   // Total sessions and km planned for the full week
   const sessionsPlanned = Object.keys(week.sessions).filter(d => {
-    const s = week.sessions[d as keyof typeof week.sessions]
-    return s && s.type !== 'rest'
+    return isCountableSession(week.sessions[d as keyof typeof week.sessions])
   }).length
   const plannedKm = week.weekly_km ?? 0
 
   // Sessions and km that were due by today (for mid-week comparison)
   const sessionsPlannedToDate = daysDueByToday.filter(d => {
-    const s = week.sessions[d as keyof typeof week.sessions]
-    return s && s.type !== 'rest'
+    return isCountableSession(week.sessions[d as keyof typeof week.sessions])
   }).length
   const plannedKmToDate = daysDueByToday.reduce((sum, d) => {
     const s = week.sessions[d as keyof typeof week.sessions]
+    if (!isCountableSession(s)) return sum
     return sum + (s?.distance_km ?? 0)
   }, 0)
 
-  const sessionsCompleted = completions.filter((c: any) => c.status === 'complete').length
+  const sessionsCompleted = completions.filter((c: any) => {
+    if (c.status !== 'complete') return false
+    const s = week.sessions[c.session_day as keyof typeof week.sessions]
+    return isCountableSession(s)
+  }).length
 
   const flagCounts = { ok: 0, watch: 0, flag: 0 }
   completions.forEach((c: any) => {
