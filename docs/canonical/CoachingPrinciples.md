@@ -372,6 +372,46 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. The race-distan
 
 ---
 
+## 24b. Long-run structure — 5K/10K peak phase (time-targeted)
+
+**Principle.** For time-targeted 5K and 10K plans, the final two peak weeks embed two pace segments in the long run. The middle 20% of the run is at marathon pace (≈79% VDOT); the final 30% is at HM pace (≈84% VDOT). Both segments must be faster than the aerobic body of the run but substantially slower than race pace — the intent is to teach sustained effort under fatigue, not to simulate 5K race speed. Outside the final two peak weeks, the long run remains purely aerobic.
+
+**Why.** 5K and 10K runners often do all their long runs at Z2 and all their quality sessions at VO2max or threshold — the two extremes, nothing in between. The result is a runner who can grind long or go short-hard but has no ability to hold a sustained faster-than-easy pace at the end of a run when glycogen is depleted. Marathon pace is a physiological stimulus that specifically trains fat oxidation and glycogen economy without the muscle damage of full-race-pace intervals. HM pace at the finish, on tired legs, is the closest transferable simulation for the final 2K of a hard 10K. This is a specificity insertion, not a pace-work session.
+
+**Config.** `GENERATION_CONFIG.LR_5K10K_PEAK_MID_SEGMENT_PCT` (0.20), `LR_5K10K_PEAK_FINAL_SEGMENT_PCT` (0.30), `LR_5K10K_PEAK_MID_PACE` (`'marathonPaceStr'`), `LR_5K10K_PEAK_FINAL_PACE` (`'hmPaceStr'`). Pace strings derived from `PaceGuide.marathonPaceStr` / `PaceGuide.hmPaceStr`. Applied in `buildWeekSessions()` when `distKey ∈ ['5K','10K']` and the week is in the final two peak weeks. Enforced by `INV-PLAN-5K10K-LR-PACE-CAP`.
+
+---
+
+## 24c. Long-run structure — build-phase Z2 ceiling (5K/10K, time-targeted)
+
+**Principle.** In build-phase long runs for time-targeted 5K and 10K plans, the middle 10% of the run includes a short Z2-ceiling reminder segment — a brief emphasis on running at the top of Zone 2 rather than drifting above it. This is not a pace segment; it carries no time target. It is a mindfulness cue embedded in the session note: "Zone 2 ceiling — if HR exceeds this, walk 30 seconds." Total session type remains `easy`; zone tag stays Z1–Z2.
+
+**Why.** Build-phase long runs are the most common place where runners inadvertently drift into Zone 3 — aerobically comfortable but metabolically expensive. For a 5K runner doing a 90-minute long run, the last 20 minutes at Z3 costs them three days of residual fatigue that shows up in the Tuesday interval session. The Z2-ceiling reminder is a soft structural cue, not a hard physiological stimulus. It respects the session's aerobic intent while nudging execution quality.
+
+**Config.** `GENERATION_CONFIG.LR_BUILD_Z2_CEILING_SEGMENT_PCT` (0.10). Applied as a coach note segment in `buildWeekSessions()` build-phase long-run path when `distKey ∈ ['5K','10K']`. No invariant — this is a notes-layer cue, not a structural constraint.
+
+---
+
+## 24d. Long-run structure — finish-goal late-peak (5K/10K, finish-goal)
+
+**Principle.** For finish-goal (non-time-targeted) 5K and 10K plans, the final two peak weeks embed a 10% easy-effort negative-split segment at the very end of the long run — run slightly faster than the aerobic body of the run, but with full effort control (no pace target). Session note: "Negative-split finish — last 10%, go by feel, slightly faster than the run's easy pace." This is not a pace-segment; it is a proprioception and confidence drill.
+
+**Why.** Finish-goal runners are not targeting a time but they still benefit from closing a long run with intention rather than attrition. The negative-split finish teaches the runner that they have a gear they haven't used — that running faster at the end of a run is a skill, not luck. It also provides a low-stakes rehearsal for late-race acceleration without the injury risk of a hard effort on tired legs.
+
+**Config.** `GENERATION_CONFIG.LR_FINISH_GOAL_LATE_PEAK_SEGMENT_PCT` (0.10). Applied as a session description note in `buildWeekSessions()` when `goal === 'finish'` and `distKey ∈ ['5K','10K']` and the week is in the final two peak weeks. Enforced by `INV-PLAN-FINISH-GOAL-LR-CAP`.
+
+---
+
+## 24e. Long-run structure — ultra-marathon (protected aerobic)
+
+**Principle.** For ultra-marathon plans (50K and above), long runs are always pure aerobic — Zone 1–2, no embedded pace segments, no Z2-ceiling cues, no negative-split finishes. The long run's sole job in ultra preparation is time-on-feet and glycogen management training. Any pace-overlay on an ultra long run is a coaching defect.
+
+**Why.** Ultra training stress is fundamentally different from road-racing training: the total weekly volume is higher, the long run already constitutes extreme duration, and the marginal fatigue cost of pace stimulation on a 3–4 hour run is disproportionately large. Pfitzinger's ultra-specific guidance and the ITRA/UTMB approach both converge on the same principle: ultra-distance training is about fatigue resistance, not pace range. Pace specificity lives entirely in the quality sessions. The long run is recovery-constrained time-on-feet.
+
+**Config.** No config key — this is a structural prohibition. When `distKey ∈ ['50K','100K']`, the engine must not add any pace-segment field or pace-segment note to the long run, regardless of `goal` or phase. Enforced by `INV-PLAN-ULTRA-NO-PACE-SEGMENTS`.
+
+---
+
 ## 25. Race-specific long run (HM and marathon, time-targeted)
 
 **Principle.** Peak phase of a time-targeted HM or marathon plan MUST contain at least one long run with an embedded race-pace segment. The segment is the final 25–40% of the long run (the runner is already aerobically tired when they hit goal pace, simulating the late-race state). Naming convention: "Long run with HM-pace finish" for HM, "Marathon-pace long run" for marathon. Distances ≤10K do not require this — their long run remains aerobic.

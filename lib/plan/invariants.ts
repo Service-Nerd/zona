@@ -51,6 +51,10 @@ export const INVARIANT_CODES = [
   'INV-PLAN-LR-MAX-WEEKLY-PCT',
   'INV-PLAN-HR-ASSUMPTIONS-SURFACED',
   'INV-PLAN-FOUNDATION-BLOCK',
+  'INV-PLAN-5K10K-LR-PACE-CAP',
+  'INV-PLAN-BUILD-LR-SEGMENT-CAP',
+  'INV-PLAN-FINISH-GOAL-LR-CAP',
+  'INV-PLAN-ULTRA-NO-PACE-SEGMENTS',
 ] as const
 
 export interface Violation {
@@ -1023,7 +1027,15 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // of the plan's peak LR distance AND with race-pace segments).
   // (CoachingPrinciples §47) Exception: hard_session_relationship: 'love',
   // no injury_history, training_age '5yr+' may have ONE occurrence per plan.
+  //
+  // Scoped to HM and marathon only. 5K/10K peak LR pace segments (§24b) do
+  // not trigger alternation — recovery demand is different at shorter distances.
   {
+    const distKeyAlt = raceDistanceKey(input.race_distance_km)
+    if (distKeyAlt !== 'HM' && distKeyAlt !== 'MARATHON') {
+      // Not applicable — skip alternation check for shorter distances.
+    } else
+    {
     const peakWeeks = plan.weeks.filter(w => w.phase === 'peak' && w.type !== 'deload')
     if (peakWeeks.length >= 2) {
       const peakLrKms = peakWeeks.map(w => {
@@ -1067,6 +1079,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           })
         }
       }
+    }
     }
   }
 
@@ -1127,6 +1140,107 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
               expected: `≤ ${(prev.weekly_km * 1.10).toFixed(1)}km`,
             })
           }
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-5K10K-LR-PACE-CAP — for time-targeted 5K/10K plans, any embedded
+  // lr_segment_pace on a long run in the final two peak weeks must be ≤ HM pace
+  // (≈84% VDOT). Prevents the engine from accidentally prescribing race-pace
+  // segments at 5K intensity on an easy session.
+  // (CoachingPrinciples §24b)
+  if (isTimeTarget && (distKey === '5K' || distKey === '10K') && plan.meta.vdot) {
+    const hmCeilingPerKm = paceFromVdot(plan.meta.vdot * 0.97, 0.84)
+    const taperPh = plan.weeks.find(w => w.phase === 'taper')
+    for (const w of plan.weeks) {
+      if (w.phase !== 'peak' || w.type === 'deload') continue
+      const weekN = w.n
+      const weeksUntilTaper = taperPh ? taperPh.n - weekN : 999
+      if (weeksUntilTaper > 2) continue
+      for (const [day, s] of Object.entries(w.sessions) as [string, Session | undefined][]) {
+        if (!s || !isLongRun(s) || !s.lr_segment_pace) continue
+        const segMid = parsePaceMidpoint(s.lr_segment_pace)
+        if (segMid != null && segMid < hmCeilingPerKm - 0.05) {
+          violations.push({
+            code: 'INV-PLAN-5K10K-LR-PACE-CAP',
+            principle_ref: 'CoachingPrinciples §24b',
+            severity: 'error',
+            week: w.n, day,
+            message: `5K/10K peak long-run lr_segment_pace ${s.lr_segment_pace} midpoint ${segMid.toFixed(2)}/km is faster than HM ceiling ${hmCeilingPerKm.toFixed(2)}/km — segments must not exceed HM pace`,
+            actual: segMid.toFixed(2),
+            expected: `≥ ${hmCeilingPerKm.toFixed(2)} (≤ HM pace)`,
+          })
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-BUILD-LR-SEGMENT-CAP — for time-targeted 5K/10K build-phase long
+  // runs, the Z2-ceiling note segment is a notes-layer cue only (no lr_segment_pace).
+  // This invariant guards that no structural pace segment leaks into build-phase
+  // long runs for short distances.
+  // (CoachingPrinciples §24c)
+  if (isTimeTarget && (distKey === '5K' || distKey === '10K')) {
+    for (const w of plan.weeks) {
+      if (w.phase !== 'build' || w.type === 'deload') continue
+      for (const [day, s] of Object.entries(w.sessions) as [string, Session | undefined][]) {
+        if (!s || !isLongRun(s)) continue
+        if (s.lr_segment_pace) {
+          violations.push({
+            code: 'INV-PLAN-BUILD-LR-SEGMENT-CAP',
+            principle_ref: 'CoachingPrinciples §24c',
+            severity: 'error',
+            week: w.n, day,
+            message: `5K/10K time-targeted build-phase long run must not carry lr_segment_pace — §24c is notes-only`,
+            actual: s.lr_segment_pace,
+            expected: 'undefined (no pace segment in build)',
+          })
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-FINISH-GOAL-LR-CAP — finish-goal long runs must never carry
+  // lr_segment_pace regardless of phase or distance. §24d prescribes a feel-based
+  // negative-split note, not a pace target.
+  // (CoachingPrinciples §24d)
+  if (input.goal === 'finish') {
+    for (const w of plan.weeks) {
+      for (const [day, s] of Object.entries(w.sessions) as [string, Session | undefined][]) {
+        if (!s || !isLongRun(s)) continue
+        if (s.lr_segment_pace) {
+          violations.push({
+            code: 'INV-PLAN-FINISH-GOAL-LR-CAP',
+            principle_ref: 'CoachingPrinciples §24d',
+            severity: 'error',
+            week: w.n, day,
+            message: `Finish-goal long run must not carry lr_segment_pace — §24d prescribes feel-based negative-split only`,
+            actual: s.lr_segment_pace,
+            expected: 'undefined (no pace target for finish-goal LR)',
+          })
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-ULTRA-NO-PACE-SEGMENTS — ultra (50K+) long runs must never carry
+  // lr_segment_pace. Ultra training is pure aerobic time-on-feet.
+  // (CoachingPrinciples §24e)
+  if (distKey === '50K' || distKey === '100K') {
+    for (const w of plan.weeks) {
+      for (const [day, s] of Object.entries(w.sessions) as [string, Session | undefined][]) {
+        if (!s || !isLongRun(s)) continue
+        if (s.lr_segment_pace) {
+          violations.push({
+            code: 'INV-PLAN-ULTRA-NO-PACE-SEGMENTS',
+            principle_ref: 'CoachingPrinciples §24e',
+            severity: 'error',
+            week: w.n, day,
+            message: `Ultra long run must not carry lr_segment_pace — ultra training is pure aerobic time-on-feet (§24e)`,
+            actual: s.lr_segment_pace,
+            expected: 'undefined (no pace segments on ultra long runs)',
+          })
         }
       }
     }

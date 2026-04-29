@@ -109,6 +109,9 @@ export interface Session {
   rpe_target?: number                     // 1–10
   /** Why this session + what to watch for. Max 3 items. */
   coach_notes?: [string, string?, string?]
+  /** Pace string for an embedded long-run pace segment (e.g. "5:45–6:05 /km"). Present only
+   *  on long runs that carry a structural pace segment per §24b/§24d. Used by invariant checks. */
+  lr_segment_pace?: string
 }
 
 export interface Week {

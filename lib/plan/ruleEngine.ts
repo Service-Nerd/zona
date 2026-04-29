@@ -41,6 +41,9 @@ interface PaceGuide {
   minPerKmEasy:     number
   minPerKmQuality:  number
   minPerKmInterval: number
+  // Long run segment paces (CoachingPrinciples §24b, §24c, §24d)
+  marathonPaceStr:  string | null  // ~79% VDOT; null for beginners
+  hmPaceStr:        string | null  // ~84% VDOT; null for beginners
   source: 'vdot' | 'fitness_level'
 }
 
@@ -120,6 +123,10 @@ function buildPaceFromVDOT(discountedVdot: number, rawVdot: number): PaceGuide {
   const tSlow = paceAtFraction(discountedVdot, 0.83)
   const iFast = paceAtFraction(rawVdot, 1.00)  // top of interval band, raw VDOT
   const iSlow = paceAtFraction(rawVdot, 0.95)  // sustainable interval pace, raw VDOT
+  // Marathon (~79% VDOT) and HM (~84% VDOT) segment paces. Both use discounted
+  // VDOT (same conservatism doctrine as easy/threshold). §24b/§24c/§24d.
+  const mpMins = paceAtFraction(discountedVdot, 0.79)
+  const hmMins = paceAtFraction(discountedVdot, 0.84)
   const eMid  = (eFast + eSlow) / 2
   const tMid  = (tFast + tSlow) / 2
   const iMid  = (iFast + iSlow) / 2
@@ -130,6 +137,8 @@ function buildPaceFromVDOT(discountedVdot: number, rawVdot: number): PaceGuide {
     minPerKmEasy:     eMid,
     minPerKmQuality:  tMid,
     minPerKmInterval: iMid,
+    marathonPaceStr:  paceBandStr(mpMins, 3),
+    hmPaceStr:        paceBandStr(hmMins, 3),
     source: 'vdot',
   }
 }
@@ -283,14 +292,26 @@ function buildHRZonesWithFallback(input: GeneratorInput): HRZoneFallbackResult {
 
 // ─── Pace guides by fitness level (fallback when no benchmark) ─────────────────
 
-const PACE_GUIDE: Record<FitnessLevel, Omit<PaceGuide, 'source'>> = {
+const PACE_GUIDE: Record<FitnessLevel, Omit<PaceGuide, 'source' | 'marathonPaceStr' | 'hmPaceStr'>> = {
   beginner:     { easyPaceStr: '7:30–9:00 /km', qualityPaceStr: '6:30–7:30 /km', intervalPaceStr: '5:30–6:30 /km', minPerKmEasy: 8.0,  minPerKmQuality: 7.0,  minPerKmInterval: 6.0 },
   intermediate: { easyPaceStr: '6:30–7:30 /km', qualityPaceStr: '5:30–6:00 /km', intervalPaceStr: '4:30–5:00 /km', minPerKmEasy: 7.0,  minPerKmQuality: 5.75, minPerKmInterval: 4.75 },
   experienced:  { easyPaceStr: '5:45–6:45 /km', qualityPaceStr: '4:45–5:20 /km', intervalPaceStr: '3:50–4:20 /km', minPerKmEasy: 6.25, minPerKmQuality: 5.0,  minPerKmInterval: 4.05 },
 }
 
 function buildFallbackPace(fitness: FitnessLevel): PaceGuide {
-  return { ...PACE_GUIDE[fitness], source: 'fitness_level' }
+  const base = PACE_GUIDE[fitness]
+  // Marathon and HM segment paces derived from quality pace midpoint + offset.
+  // Beginners: null — no pace segments prescribed. (CoachingPrinciples §24b)
+  let marathonPaceStr: string | null = null
+  let hmPaceStr:       string | null = null
+  if (fitness === 'intermediate') {
+    marathonPaceStr = paceBandStr(base.minPerKmQuality + 0.50,       3)  // +30s/km
+    hmPaceStr       = paceBandStr(base.minPerKmQuality + 0.25,       3)  // +15s/km
+  } else if (fitness === 'experienced') {
+    marathonPaceStr = paceBandStr(base.minPerKmQuality + (25 / 60),  3)  // +25s/km
+    hmPaceStr       = paceBandStr(base.minPerKmQuality + (12 / 60),  3)  // +12s/km
+  }
+  return { ...base, marathonPaceStr, hmPaceStr, source: 'fitness_level' }
 }
 
 // ─── Phase distribution ───────────────────────────────────────────────────────
@@ -811,6 +832,76 @@ function applyLongRunCap(distKm: number, paceMinPerKm: number, input: GeneratorI
 
 // ─── Week session layout ──────────────────────────────────────────────────────
 
+// §24b — 5K/10K time-targeted, final two peak weeks: long run with two pace
+// segments (middle 20% at marathon pace, final 30% at HM pace).
+// (CoachingPrinciples §24b)
+function fiveKTenKPeakLongRunSession(
+  weekN: number, day: Day, distKm: number,
+  metric: 'distance' | 'duration',
+  zones: ZoneTargets, pace: PaceGuide,
+): Session {
+  const midPct   = GENERATION_CONFIG.LR_5K10K_PEAK_MID_SEGMENT_PCT    // 0.20
+  const finalPct = GENERATION_CONFIG.LR_5K10K_PEAK_FINAL_SEGMENT_PCT   // 0.30
+  const midKm    = Math.round(distKm * midPct * 10) / 10
+  const finalKm  = Math.round(distKm * finalPct * 10) / 10
+  const mpStr    = pace.marathonPaceStr ?? 'marathon pace'
+  const hmStr    = pace.hmPaceStr ?? 'HM pace'
+  const easyPct  = Math.round((1 - midPct - finalPct) * 100)
+  const coach_notes: [string, string?, string?] = [
+    `Easy for the first ${easyPct}%. Let the aerobic base work.`,
+    `Middle ${Math.round(midPct * 100)}% (≈${midKm} km) at marathon pace: ${mpStr}. Controlled — not a tempo session.`,
+    `Final ${Math.round(finalPct * 100)}% (≈${finalKm} km) at HM pace: ${hmStr}. This is the work. Exit feeling like you had more.`,
+  ]
+  const rounded = roundDistance(distKm)
+  return {
+    id: `w${weekN}-${day}`,
+    type: 'easy',
+    label: 'Long run — marathon pace + HM-pace finish',
+    detail: null,
+    ...(metric === 'distance' ? { distance_km: rounded } : {}),
+    duration_mins: dur(rounded, pace.minPerKmEasy),
+    primary_metric: metric,
+    zone: 'Zone 2–3',
+    hr_target: zones.easyHR,
+    pace_target: pace.easyPaceStr,
+    rpe_target: 6,
+    coach_notes,
+    ...(pace.hmPaceStr ? { lr_segment_pace: pace.hmPaceStr } : {}),
+  }
+}
+
+// §24d — 5K/10K finish-goal, final two peak weeks: long run with a 10%
+// negative-split finish (no pace target — proprioception drill).
+// (CoachingPrinciples §24d)
+function finishGoalPeakLongRunSession(
+  weekN: number, day: Day, distKm: number,
+  metric: 'distance' | 'duration',
+  zones: ZoneTargets, pace: PaceGuide,
+): Session {
+  const finalPct  = GENERATION_CONFIG.LR_FINISH_GOAL_LATE_PEAK_SEGMENT_PCT  // 0.10
+  const finalKm   = Math.round(distKm * finalPct * 10) / 10
+  const easyPct   = Math.round((1 - finalPct) * 100)
+  const coach_notes: [string, string?, string?] = [
+    `Zone 2 throughout. Conversational for the first ${easyPct}%.`,
+    `Negative-split finish — last ${Math.round(finalPct * 100)}% (≈${finalKm} km): go by feel, slightly faster than your easy pace. No pace target — proprioception, not pace.`,
+  ]
+  const rounded = roundDistance(distKm)
+  return {
+    id: `w${weekN}-${day}`,
+    type: 'easy',
+    label: 'Long run — negative-split finish',
+    detail: null,
+    ...(metric === 'distance' ? { distance_km: rounded } : {}),
+    duration_mins: dur(rounded, pace.minPerKmEasy),
+    primary_metric: metric,
+    zone: 'Zone 2',
+    hr_target: zones.easyHR,
+    pace_target: pace.easyPaceStr,
+    rpe_target: 5,
+    coach_notes,
+  }
+}
+
 // Maps phase → preferred catalogue category for the *quality* session slot.
 // CoachingPrinciples §5 — specificity rises as race approaches.
 //
@@ -1054,7 +1145,30 @@ function buildWeekSessions(
       sessions[longDay] = longSession(weekN, longDay, longKm, metric, zones, pace)
     }
   } else {
-    sessions[longDay] = longSession(weekN, longDay, longKm, metric, zones, pace)
+    // §24b / §24c / §24d — structured long-run variants for 5K/10K plans.
+    const is5K10K = distKey === '5K' || distKey === '10K'
+    const taperPhaseObj = phases.find(p => p.name === 'taper')
+    const weeksUntilTaper = taperPhaseObj ? taperPhaseObj.start_week - weekN : 999
+    const isFinalTwoPeak  = phase === 'peak' && !isDeload && weeksUntilTaper <= 2
+
+    if (is5K10K && input.goal === 'time_target' && isFinalTwoPeak) {
+      // §24b — final two peak weeks: marathon pace + HM-pace finish
+      sessions[longDay] = fiveKTenKPeakLongRunSession(weekN, longDay, longKm, metric, zones, pace)
+    } else if (is5K10K && input.goal === 'finish' && isFinalTwoPeak) {
+      // §24d — final two peak weeks: negative-split finish
+      sessions[longDay] = finishGoalPeakLongRunSession(weekN, longDay, longKm, metric, zones, pace)
+    } else {
+      sessions[longDay] = longSession(weekN, longDay, longKm, metric, zones, pace)
+      // §24c — build phase: Z2-ceiling note on 5K/10K time-targeted long runs
+      if (is5K10K && input.goal === 'time_target' && phase === 'build' && !isDeload) {
+        const s = sessions[longDay]!
+        const ceilingNote = 'Zone 2 ceiling — if HR starts climbing, back off to a walk for 30 seconds before resuming.'
+        const existing = s.coach_notes
+        s.coach_notes = existing
+          ? [existing[0], ceilingNote, existing[1]] as [string, string?, string?]
+          : [ceilingNote]
+      }
+    }
   }
   used.push(longDay)
 
@@ -1407,14 +1521,15 @@ function applyPeakLongRunAlternation(
     const minLong = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long
     const flooredKm = Math.max(Math.floor(newKm / precision) * precision, minLong)
 
-    // Rewrite the session: strip race-specific label and coach notes, restore
-    // the standard "Long run — Zone 2" prescription.
+    // Rewrite the session: strip race-specific label, coach notes, and pace
+    // segment fields; restore the standard "Long run — Zone 2" prescription.
     lr.session.label = 'Long run — Zone 2'
     lr.session.zone = 'Zone 2'
     lr.session.distance_km = flooredKm
     lr.session.duration_mins = dur(flooredKm, pace.minPerKmEasy)
     lr.session.rpe_target = 4
     lr.session.coach_notes = ['Step-back week. Easy aerobic — let the legs absorb last week\'s peak before the next push.']
+    delete (lr.session as any).lr_segment_pace
 
     // CoachingPrinciples §9 — long must remain ≥ minRatio × any easy. After
     // reducing the LR, clamp easy runs in this week so the ratio survives.

@@ -373,6 +373,19 @@ export const GENERATION_CONFIG = {
     Z5: { karvonen_pct: [90, 100], maxhr_pct: [93, 100] },
   },
 
+  // ── Long run segment sizing (CoachingPrinciples §24b, §24c, §24d) ──────────
+  // Segment = the final fraction of long run distance prescribed at a faster pace.
+  // "mid peak"   = all peak weeks except final 2 before taper
+  // "final peak" = last 2 peak weeks before taper
+  // Change 3 (finish-goal) applies to the final non-deload peak week only (singular).
+  // Pace keys reference PaceGuide fields — looked up at session-build time.
+  LR_5K10K_PEAK_MID_SEGMENT_PCT:       0.20,              // last 20% at marathon pace
+  LR_5K10K_PEAK_FINAL_SEGMENT_PCT:     0.30,              // last 30% at HM pace
+  LR_5K10K_PEAK_MID_PACE:              'marathonPaceStr' as const,
+  LR_5K10K_PEAK_FINAL_PACE:            'hmPaceStr'       as const,
+  LR_BUILD_Z2_CEILING_SEGMENT_PCT:     0.10,              // last 10% at Z2 ceiling (build)
+  LR_FINISH_GOAL_LATE_PEAK_SEGMENT_PCT: 0.10,             // last 10% at Z2 ceiling (finish-goal final peak)
+
   // ── Foundation Block (CoachingPrinciples §57) ─────────────────────────────
   // Pre-plan preparation phase inserted before W1 when the gap between today
   // and plan_start exceeds GAP_MIN_AUTO_DAYS. Uses negative week indices.
