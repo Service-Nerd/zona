@@ -4903,6 +4903,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   const wtrc = weeksContext(weeksToRace)
 
   const [loadSheetOpen, setLoadSheetOpen] = useState(false)
+  const [zoneDisciplineSheetOpen, setZoneDisciplineSheetOpen] = useState(false)
 
   // ── Dynamic coach headline ──────────────────────────────────────────
   function getCoachHeadline(): string {
@@ -4933,7 +4934,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               value: currentScore !== null ? `${currentScore}%` : '—',
               sub: scoreBodyCopy(currentScore).split('.')[0],
               subColor: currentScore !== null && currentScore >= 80 ? 'var(--moss)' : currentScore !== null && currentScore >= 60 ? 'var(--ink-2)' : currentScore !== null ? 'var(--warn)' : 'var(--mute)',
-              onTap: undefined as (() => void) | undefined,
+              onTap: () => setZoneDisciplineSheetOpen(true),
             },
             {
               label: 'Load ratio',
@@ -5020,6 +5021,56 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
 
               <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: '8px' }}>
                 <button onClick={() => setLoadSheetOpen(false)} style={{ width: '100%', padding: '12px', background: 'var(--bg-soft)', border: 'none', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', cursor: 'pointer', letterSpacing: '0.04em' }}>
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <style>{`
+              @keyframes zona-fade-in { from { opacity: 0 } to { opacity: 1 } }
+              @keyframes zona-slide-up { from { transform: translateY(100%) } to { transform: translateY(0) } }
+            `}</style>
+          </div>
+        )}
+
+        {/* ── ZONE DISCIPLINE SHEET ───────────────────────────────────── */}
+        {zoneDisciplineSheetOpen && (
+          <div
+            onClick={() => setZoneDisciplineSheetOpen(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'zona-fade-in 0.18s ease-out' }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '80vh', overflowY: 'auto', animation: 'zona-slide-up 0.22s ease-out' }}
+            >
+              <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />
+
+              <div style={{ padding: '0 20px 4px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Zone discipline
+                </div>
+                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.15 }}>
+                  Hitting the prescribed zone
+                </div>
+                {currentScore !== null && (
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: currentScore >= 80 ? 'var(--moss)' : currentScore >= 60 ? 'var(--ink-2)' : 'var(--warn)', marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>
+                    {currentScore}% this week
+                  </div>
+                )}
+              </div>
+
+              <div style={{ padding: '18px 20px 8px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {[
+                  'Each session in your plan has a prescribed zone — Zone 2 for easy runs, Zone 3 for tempo, Zone 4–5 for intervals. Zone discipline measures how many of your completed sessions actually landed in that zone.',
+                  'Running easy days too hard is the most common training mistake. It doesn\'t feel like much in the moment, but it blunts the aerobic benefit and leaves you too tired to push when the hard sessions arrive.',
+                  'A score above 80% means easy was easy and hard was hard. That\'s the structure that builds fitness. Below 60% usually means the easy days are drifting into grey-zone territory — hard enough to add fatigue, not hard enough to drive adaptation.',
+                ].map((text, i) => (
+                  <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>{text}</div>
+                ))}
+              </div>
+
+              <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: '8px' }}>
+                <button onClick={() => setZoneDisciplineSheetOpen(false)} style={{ width: '100%', padding: '12px', background: 'var(--bg-soft)', border: 'none', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', cursor: 'pointer', letterSpacing: '0.04em' }}>
                   Close
                 </button>
               </div>
