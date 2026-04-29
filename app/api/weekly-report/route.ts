@@ -147,6 +147,17 @@ export async function POST(req: NextRequest) {
     return isCountableSession(s)
   }).length
 
+  // Remaining scheduled sessions after today — so the AI knows they're already in the plan
+  const remainingSessionLabels = DAY_ORDER_REPORT.slice(dayIndex + 1)
+    .map(d => {
+      const s = week.sessions[d as keyof typeof week.sessions]
+      if (!isCountableSession(s)) return null
+      const label = DAY_LABELS[DAY_ORDER_REPORT.indexOf(d)]
+      const km = (s as any)?.distance_km ? ` (${(s as any).distance_km}km)` : ''
+      return `${label}: ${(s as any)?.type}${km}`
+    })
+    .filter(Boolean) as string[]
+
   const flagCounts = { ok: 0, watch: 0, flag: 0 }
   completions.forEach((c: any) => {
     const f = c.coaching_flag as keyof typeof flagCounts
@@ -196,6 +207,7 @@ export async function POST(req: NextRequest) {
       dayOfWeek,
       sessionsPlannedToDate,
       plannedKmToDate,
+      remainingSessionLabels,
     )
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
