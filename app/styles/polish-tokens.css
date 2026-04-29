@@ -113,3 +113,18 @@
   background: rgba(26,26,26,0.06);
   margin:     14px 0;
 }
+
+/* ── Wordmark treatments ────────────────────────────────────────────────── */
+
+/* Splash screen — brand identity: lowercase, tighter tracking */
+[data-polish="on"] .wordmark-splash {
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+}
+
+/* Today header — navigation chrome: lighter weight, smaller, wider tracking */
+[data-polish="on"] .wordmark-today {
+  font-weight: 600;
+  font-size:   12px;
+  letter-spacing: 0.14em;
+}

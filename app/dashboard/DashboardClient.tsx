@@ -671,7 +671,7 @@ export default function DashboardClient() {
       }}>
         {/* Vetra wordmark */}
         <div style={{ marginBottom: '10px' }}>
-          <span style={{
+          <span className="wordmark-splash" style={{
             fontFamily: 'var(--font-brand)',
             fontSize: '38px', fontWeight: 500, letterSpacing: '0.08em',
             color: 'var(--accent)', lineHeight: 1,
@@ -3755,7 +3755,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         alignItems: 'center',
         gap: '6px',
       }}>
-        <span style={{
+        <span className="wordmark-today" style={{
           fontFamily: 'var(--font-ui)',
           fontSize: '14px',
           fontWeight: 800,
