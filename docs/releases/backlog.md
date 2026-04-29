@@ -70,7 +70,7 @@ After Vercel deploy, verify with agent-browser:
 1. ✅ **Phase 5 — Wizard UI updates** — `training_age`, `preferred_long_run_day`, `benchmarkDate` wired; new injuries (Shin splints, Plantar fasciitis, Hip) in list; `motivation_type` + `training_style` removed
 2. ✅ **Phase 6.3 — Day-15 transition UI** — shipped 2026-04-29
 3. ✅ **Phase 4.2 — Session card integration with `composeSession()`** — wired in DashboardClient; warm-up/main/cool-down rendered with left-accent bars
-4. 🔲 **Browser-verify B1 + B3 changes**
+4. ✅ **Browser-verify B1 + B3 changes** — confirmed working 2026-04-29
 
 ### Small UX
 
