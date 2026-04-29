@@ -85,22 +85,11 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 | # | Title | Tier | Effort | Notes |
 |---|-------|------|--------|-------|
 | **R22** | **Blockout days** — user marks days unavailable, plan reshapes around them | PAID | M | Bundle with R20 parked triggers — uses same reshape engine |
-| **R20-parked** | **Five plan-adaptation triggers** — infra exists, nothing generates them yet (`docs/alignment/plan-adjustments-parked.md`) | PAID | per-trigger | Breakdown below |
 | **R18** | **Plan confidence score** — derive from session completion + RPE. R17 coaching flags are the per-session atom this aggregates | PAID | M | Display on dashboard or plan screen |
 | **R25** | **Historical run intelligence** — "how does this run compare to your past self?" Similarity matching + trend detection on cohort | PAID | ~15h (2–3 sessions) | 6 design decisions to resolve first (appendix) |
 | **R24** | **Multi-race support** (A/B race hierarchy) | PAID | L | Non-breaking additive: `meta.races: Race[]` on top of existing `meta.race_date`/`race_name` |
 | **R21** | **Strength sessions** — flesh out stubs (currently admin-only/hidden) | FREE display / PAID dynamic | M | |
 | **R19** | **Coaching tips in Supabase** — move hardcoded copy to a table for dynamic, user-specific messages | PAID | S | |
-
-### R20 parked triggers — phasing
-
-| Trigger | Description | Target |
-|---|---|---|
-| Session move → rebalance | User drags session to new day; hard/easy alternation preserved | v1.1 |
-| Skip with reason | User marks skipped + reason; plan responds (make up / push / absorb) | v1.2 |
-| Silent miss detection | Day passes with no log; morning-after prompt | v1.2 |
-| Fatigue-driven softening | 3+ consecutive Heavy/Wrecked logs → soften upcoming sessions | v1.3 |
-| RPE disconnect | RPE 8+ on easy run → coach note only (no plan change) | v1.3 |
 
 ### Scoped but unscheduled
 
