@@ -4192,7 +4192,9 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
 
 // ── PLAN-BASED COACHING ───────────────────────────────────────────────────
 
-function PlanCoachingCard({ plan, currentWeek, units = 'km' }: { plan: Plan; currentWeek: Week; units?: 'km' | 'mi' }) {
+function PlanCoachingCard({ plan, currentWeek, units = 'km', trackedKm }: {
+  plan: Plan; currentWeek: Week; units?: 'km' | 'mi'; trackedKm?: number | null
+}) {
   const sessions = Object.values((currentWeek as any).sessions ?? {}) as any[]
   const runningSessions = sessions.filter(s => s && s.type && s.type !== 'rest' && s.type !== 'strength')
   const hasQuality = sessions.some(s => s && ['quality','tempo','intervals','hard'].includes(s.type))
@@ -4235,52 +4237,60 @@ function PlanCoachingCard({ plan, currentWeek, units = 'km' }: { plan: Plan; cur
 
   const items = getWeekItems()
 
+  const doneDisplay = trackedKm != null && trackedKm > 0
+    ? `${trackedKm.toFixed(1)}${units} done`
+    : null
+
   return (
-    <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
       {/* Header */}
-      <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Plan notes</span>
+      <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Plan notes</span>
         {phaseCap && (
-          <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--accent)', background: 'var(--accent-soft)', padding: '2px 8px', borderRadius: '20px', border: '0.5px solid var(--accent-dim)' }}>
+          <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--moss)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             {phaseCap}
           </span>
         )}
       </div>
       {/* Body */}
-      <div style={{ padding: '14px 16px' }}>
-        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.35, marginBottom: '10px', letterSpacing: '-0.2px' }}>
+      <div style={{ padding: '16px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.35, marginBottom: theme || items.length > 0 ? '10px' : 0, letterSpacing: '-0.2px' }}>
           {getWeekHeadline()}
         </div>
         {theme && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '12px', fontStyle: 'italic' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.6, marginBottom: items.length > 0 ? '12px' : 0, fontStyle: 'italic' }}>
             {theme}
           </div>
         )}
         {items.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: weeklyKm ? '12px' : '0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {items.map((item, i) => (
-              <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--accent)', marginTop: '6px', flexShrink: 0, opacity: 0.7 }} />
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.65 }}>{item}</div>
+              <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.65 }}>
+                {item}
               </div>
             ))}
           </div>
         )}
-        {weeklyKm > 0 && (
-          <div style={{ marginTop: '10px', padding: '8px 12px', background: 'var(--bg)', borderRadius: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Target</span>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>{weeklyKm}{units} this week</span>
-          </div>
-        )}
       </div>
-      {/* Strava nudge */}
-      <div style={{ padding: '10px 16px', borderTop: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--strava)', flexShrink: 0 }} />
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-          Connect <span style={{ color: 'var(--strava)' }}>Strava</span> in Profile to get coaching notes after each run.
-        </span>
-      </div>
+      {/* Distance footer — target + done together so the gap is visible */}
+      {weeklyKm > 0 && (
+        <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)' }}>
+            {weeklyKm}{units} target
+          </span>
+          {doneDisplay && (
+            <>
+              <span style={{ color: 'var(--line-strong)', fontSize: '12px' }}>·</span>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--moss)', fontWeight: 500 }}>
+                {doneDisplay}
+              </span>
+            </>
+          )}
+          {!doneDisplay && (
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>no runs logged yet</span>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -4366,9 +4376,30 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
 
   const weekNum    = getCurrentWeekIndex(plan.weeks) + 1
   const totalWeeks = plan.weeks.length
-
-  // Check if report is for current week
   const reportIsCurrent = weeklyReport?.week_n === weekNum
+  // If the cached report is from last week, use its score as the reference
+  const lastWeekScore: number | null =
+    weeklyReport?.week_n === weekNum - 1 ? (weeklyReport.zone_discipline_score ?? null) : null
+  // Current week score only when report is for this week
+  const currentScore: number | null = reportIsCurrent ? (weeklyReport.zone_discipline_score ?? null) : null
+
+  // Tracked km from Strava runs this week
+  const trackedKm: number | null = (() => {
+    if (!runs?.length) return null
+    const weekStart = parseLocalDate((currentWeek as any).date)
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekEnd.getDate() + 7)
+    const total = runs
+      .filter(r => { const d = new Date(r.start_date); return d >= weekStart && d < weekEnd })
+      .reduce((sum, r) => sum + (r.distance ?? 0) / 1000, 0)
+    return total > 0 ? parseFloat(total.toFixed(1)) : null
+  })()
+
+  // Metrics derived from report or defaults
+  const loadRatio: number | null       = reportIsCurrent ? (weeklyReport?.acute_chronic_ratio ?? null) : null
+  const sessionsCompleted: number | null = reportIsCurrent ? (weeklyReport?.sessions_completed ?? null) : null
+  const sessionsPlanned: number | null   = reportIsCurrent ? (weeklyReport?.sessions_planned ?? null) : null
+  const weeksToRace = Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
 
   async function generateReport() {
     setLoading(true)
@@ -4385,148 +4416,246 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
     }
   }
 
+  // ── Score body copy ──────────────────────────────────────────────────────
+  function scoreBodyCopy(score: number | null): string {
+    if (score === null) return "No HR data yet. Connect Strava to start tracking this."
+    if (score >= 80) return "Easy was easy. Hard was hard. That's the work."
+    if (score >= 60) return "Getting there. A few easy sessions went a bit hard."
+    return "Easy days ran too hot. The fix is slower, not harder."
+  }
+
+  // ── Load ratio context ──────────────────────────────────────────────────
+  function loadRatioContext(ratio: number | null): { label: string; color: string } {
+    if (ratio === null) return { label: '—', color: 'var(--mute)' }
+    if (ratio >= 1.3)   return { label: 'overloading', color: 'var(--danger)' }
+    if (ratio < 0.8)    return { label: 'underloaded', color: 'var(--warn)' }
+    return { label: 'balanced', color: 'var(--moss)' }
+  }
+
+  // ── Sessions context ────────────────────────────────────────────────────
+  function sessionsContext(done: number | null, planned: number | null): { label: string; color: string } {
+    if (done === null || planned === null) return { label: '—', color: 'var(--mute)' }
+    const behind = planned - done
+    if (behind <= 0) return { label: 'complete', color: 'var(--moss)' }
+    if (done / planned >= 0.7) return { label: 'on track', color: 'var(--moss)' }
+    return { label: `${behind} behind`, color: 'var(--warn)' }
+  }
+
+  // ── Weeks to race context ───────────────────────────────────────────────
+  function weeksContext(weeks: number): { label: string; color: string } {
+    if (weeks === 0) return { label: 'race week', color: 'var(--warn)' }
+    if (weeks === 1) return { label: '1 week left', color: 'var(--warn)' }
+    return { label: `${weeks} weeks left`, color: 'var(--mute)' }
+  }
+
+  const lrc  = loadRatioContext(loadRatio)
+  const sc   = sessionsContext(sessionsCompleted, sessionsPlanned)
+  const wtrc = weeksContext(weeksToRace)
+
   return (
     <div>
-      <ScreenHeader title="Coach" sub={firstName ? `${firstName} · W${weekNum} of ${totalWeeks}` : `W${weekNum} of ${totalWeeks}`} />
-      <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <ScreenHeader
+        title="Coach"
+        sub={firstName ? `${firstName} · W${weekNum} of ${totalWeeks}` : `W${weekNum} of ${totalWeeks}`}
+      />
+      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '32px' }}>
 
-        {stravaTokenFailed && !stravaLoading && !runs?.length && (
-          <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--amber-mid)', padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>Strava connection expired.</span>
-            <button onClick={onGoToMe} style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '5px 12px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
-              Reconnect in Profile
-            </button>
+        {/* ── 1. ZONE DISCIPLINE SCORE — hero card, always visible ─────── */}
+        <div style={{
+          background: 'var(--card)',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--line)',
+          padding: '20px',
+        }}>
+          {/* Eyebrow */}
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>
+            Zone discipline
           </div>
-        )}
-
-        {/* Weekly report card — AI-generated headline/body/cta */}
-        {reportIsCurrent && weeklyReport?.headline ? (
-          <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
-            <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <AIMark size={11} color="var(--accent)" />
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>This week</span>
-              <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)' }}>W{weekNum}/{totalWeeks}</span>
+          {/* Metric pair */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+              <span style={{
+                fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800,
+                letterSpacing: '-1.5px', fontVariantNumeric: 'tabular-nums',
+                color: currentScore !== null ? 'var(--ink)' : 'var(--mute)',
+                lineHeight: 1,
+              }}>
+                {currentScore !== null ? currentScore : '—'}
+              </span>
+              {currentScore !== null && (
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 600, color: 'var(--moss)', lineHeight: 1 }}>%</span>
+              )}
             </div>
-            <div style={{ padding: '16px' }}>
-              <div style={{ fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.3px', lineHeight: 1.3, marginBottom: '10px' }}>
+            {lastWeekScore !== null && (
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', paddingBottom: '6px' }}>
+                Last week: {lastWeekScore}%
+              </span>
+            )}
+          </div>
+          {/* Body */}
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.55 }}>
+            {scoreBodyCopy(currentScore)}
+          </div>
+        </div>
+
+        {/* ── 2. METRICS ROW — load ratio / sessions / weeks to race ──── */}
+        <div style={{
+          background: 'var(--card)',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--line)',
+          display: 'flex',
+        }}>
+          {(
+            [
+              {
+                value: loadRatio !== null ? `${loadRatio.toFixed(2)}x` : '—',
+                label: 'Load ratio',
+                context: lrc.label,
+                contextColor: lrc.color,
+              },
+              {
+                value: sessionsCompleted !== null && sessionsPlanned !== null
+                  ? `${sessionsCompleted}/${sessionsPlanned}`
+                  : '—',
+                label: 'Sessions',
+                context: sc.label,
+                contextColor: sc.color,
+              },
+              {
+                value: weeksToRace > 0 ? String(weeksToRace) : 'Race',
+                label: 'Weeks out',
+                context: wtrc.label,
+                contextColor: wtrc.color,
+              },
+            ] as const
+          ).map((m, i, arr) => (
+            <div
+              key={m.label}
+              style={{
+                flex: 1,
+                padding: '16px 12px',
+                borderRight: i < arr.length - 1 ? '1px solid var(--line)' : undefined,
+              }}
+            >
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+                {m.label}
+              </div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 700, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', lineHeight: 1, marginBottom: '4px' }}>
+                {m.value}
+              </div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: m.contextColor, fontWeight: 500 }}>
+                {m.context}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── 3. AI WEEKLY REPORT — CoachNoteBlock amber pattern ─────── */}
+        <div style={{
+          background: 'var(--warn-bg)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '16px 18px',
+        }}>
+          {/* Eyebrow */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
+            <AIMark size={11} color="var(--warn)" working={loading} />
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+              This week
+            </span>
+            <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', opacity: 0.6 }}>
+              W{weekNum}/{totalWeeks}
+            </span>
+          </div>
+
+          {/* Strava token failed — single inline mention, non-blocking */}
+          {stravaTokenFailed && !stravaLoading && (
+            <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--coach-ink)', opacity: 0.7 }}>
+                Strava connection expired.
+              </span>
+              <button
+                onClick={onGoToMe}
+                style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', background: 'none', border: '1px solid var(--warn)', borderRadius: '20px', padding: '3px 10px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, opacity: 0.8 }}
+              >
+                Reconnect
+              </button>
+            </div>
+          )}
+
+          {/* Content states */}
+          {loading ? (
+            /* Loading skeleton */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+              {[85, 100, 70].map((w, i) => (
+                <div
+                  key={i}
+                  style={{ height: '13px', background: 'rgba(184,133,58,0.18)', borderRadius: '4px', width: `${w}%` }}
+                />
+              ))}
+            </div>
+          ) : reportIsCurrent && weeklyReport?.headline ? (
+            /* Report content */
+            <div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 600, color: 'var(--coach-ink)', letterSpacing: '-0.3px', lineHeight: 1.3, marginBottom: weeklyReport.body ? '10px' : 0 }}>
                 {weeklyReport.headline}
               </div>
               {weeklyReport.body && (
-                <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: weeklyReport.cta ? '12px' : 0 }}>
+                <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.7, margin: 0, marginBottom: weeklyReport.cta ? '12px' : 0 }}>
                   {weeklyReport.body}
                 </p>
               )}
               {weeklyReport.cta && (
-                <div style={{ padding: '10px 12px', background: 'var(--accent-soft)', borderRadius: '10px', border: '0.5px solid var(--accent-dim)' }}>
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', fontWeight: 500 }}>{weeklyReport.cta}</span>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--coach-ink)', lineHeight: 1.5, fontStyle: 'italic', marginBottom: 0 }}>
+                  {weeklyReport.cta}
                 </div>
               )}
-            </div>
-            {/* Stats row */}
-            {(weeklyReport.zone_discipline_score !== null || weeklyReport.acute_chronic_ratio !== null) && (
-              <div style={{ padding: '10px 16px', borderTop: '0.5px solid var(--border-col)', display: 'flex', gap: '16px' }}>
-                {weeklyReport.zone_discipline_score !== null && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Zone discipline</span>
-                    <span style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: weeklyReport.zone_discipline_score >= 80 ? 'var(--teal)' : weeklyReport.zone_discipline_score >= 60 ? 'var(--accent)' : 'var(--amber)' }}>
-                      {weeklyReport.zone_discipline_score}
-                    </span>
-                  </div>
-                )}
-                {weeklyReport.acute_chronic_ratio !== null && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Load ratio</span>
-                    <span style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: weeklyReport.acute_chronic_ratio >= 1.3 ? 'var(--amber)' : 'var(--teal)' }}>
-                      {Number(weeklyReport.acute_chronic_ratio).toFixed(2)}x
-                    </span>
-                  </div>
-                )}
-                {weeklyReport.sessions_completed !== null && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Sessions</span>
-                    <span style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {weeklyReport.sessions_completed}/{weeklyReport.sessions_planned}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          // Loading skeleton or generate prompt
-          loading ? (
-            <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', padding: '20px' }}>
-              {[90, 100, 70].map((w, i) => (
-                <div key={i} style={{ height: '12px', background: 'var(--bg)', borderRadius: '4px', marginBottom: i < 2 ? '10px' : 0, width: `${w}%` }} />
-              ))}
             </div>
           ) : (
-            <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', padding: '20px' }}>
-              <div style={{ fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
-                {weeklyReport ? 'Report from last week.' : 'No report yet this week.'}
+            /* No report yet — prompt without nagging */
+            <div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--coach-ink)', marginBottom: '8px' }}>
+                {weeklyReport && !reportIsCurrent ? "Last week\u2019s report is below." : 'No report yet this week.'}
               </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '14px' }}>
-                {runs?.length
-                  ? 'Log a few sessions first. The report needs something to work with.'
-                  : 'Connect Strava to get weekly coaching insights based on your actual training data.'}
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.6, opacity: 0.75 }}>
+                {!runs?.length && !stravaTokenFailed
+                  ? 'Connect Strava in Profile to get zone and load data.'
+                  : 'Generate a report to see how this week is tracking.'}
               </div>
-
-              {/* Zone discipline score explainer — shown before first report so new users know what they're working toward */}
-              <div style={{ borderTop: '0.5px solid var(--border-col)', paddingTop: '14px', marginBottom: '16px' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Zone discipline score</div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                  How often your easy days actually stayed easy — measured against your Zone 2 HR ceiling. Coaches spend careers fixing this one thing.
-                </div>
-                <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                  {[
-                    { label: '80+',    note: 'Clean base work.',       color: 'var(--teal)' },
-                    { label: '60–79',  note: 'Getting there.',         color: 'var(--accent)' },
-                    { label: 'Below 60', note: 'Easy days too hot.',   color: 'var(--amber)' },
-                  ].map(({ label, note, color }) => (
-                    <div key={label} style={{ flex: 1 }}>
-                      <div style={{ fontFamily: 'var(--font-brand)', fontSize: '13px', fontWeight: 600, color, marginBottom: '2px' }}>{label}</div>
-                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{note}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {runs?.length ? (
-                <button
-                  onClick={generateReport}
-                  disabled={loading}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1 }}
-                >
-                  {loading && <AIMark size={11} color="var(--accent)" working />}
-                  {loading ? 'Generating' : 'Generate report'}
-                </button>
-              ) : (
-                <button onClick={onGoToMe} style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--accent)', background: 'var(--accent-soft)', border: 'none', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer' }}>
-                  Connect Strava in Profile
-                </button>
-              )}
             </div>
-          )
-        )}
+          )}
 
-        {error && (
-          <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--amber)', padding: '12px 14px' }}>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--amber)' }}>{error}</span>
+          {/* Error */}
+          {error && (
+            <div style={{ marginTop: '10px', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--danger)', opacity: 0.85 }}>
+              {error}
+            </div>
+          )}
+
+          {/* CTA button — inside the card, state-labelled */}
+          <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              onClick={generateReport}
+              disabled={loading}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
+                color: 'var(--warn)',
+                background: 'rgba(184,133,58,0.12)',
+                border: 'none',
+                borderRadius: '20px',
+                padding: '8px 16px',
+                cursor: loading ? 'wait' : 'pointer',
+                opacity: loading ? 0.6 : 1,
+              }}
+            >
+              {loading && <AIMark size={10} color="var(--warn)" working />}
+              {loading ? 'Generating' : (reportIsCurrent && weeklyReport?.headline ? 'Refresh' : 'Generate report')}
+            </button>
           </div>
-        )}
+        </div>
 
-        {/* Regenerate button when report exists */}
-        {reportIsCurrent && weeklyReport?.headline && !loading && (
-          <button
-            onClick={generateReport}
-            style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', background: 'none', border: '0.5px solid var(--border-col)', borderRadius: '20px', padding: '8px 16px', cursor: 'pointer', alignSelf: 'center' }}
-          >
-            Regenerate
-          </button>
-        )}
-
-        {/* Plan notes — always shown below report */}
-        <PlanCoachingCard plan={plan} currentWeek={currentWeek} units={preferredUnits} />
+        {/* ── 4. PLAN NOTES — always shown ────────────────────────────── */}
+        <PlanCoachingCard plan={plan} currentWeek={currentWeek} units={preferredUnits} trackedKm={trackedKm} />
 
       </div>
     </div>
