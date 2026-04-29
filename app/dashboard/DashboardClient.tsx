@@ -806,7 +806,7 @@ export default function DashboardClient() {
         {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} />}
         {screen === 'coach'    && (hasPaidAccess
-          ? <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaTokenFailed={stravaTokenFailed} firstName={firstName} onGoToMe={() => setScreen('me')} weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport} preferredUnits={preferredUnits} zoneDisciplinePercent={(() => {
+          ? <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaConnected={stravaConnected} stravaTokenFailed={stravaTokenFailed} firstName={firstName} onGoToMe={() => setScreen('me')} weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport} preferredUnits={preferredUnits} zoneDisciplinePercent={(() => {
               const wn = getCurrentWeekIndex(plan.weeks) + 1
               const comps = allCompletions[wn] ?? {}
               const wSessions = Object.entries((currentWeek as any).sessions ?? {})
@@ -4603,7 +4603,7 @@ type RaceTimeData = {
   stravaQualifyingRunCount?: number
 }
 
-function RaceTimesCard() {
+function RaceTimesCard({ stravaConnected }: { stravaConnected: boolean }) {
   const [data, setData]       = useState<RaceTimeData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState<string | null>(null)
@@ -4647,7 +4647,9 @@ function RaceTimesCard() {
             No estimate yet.
           </div>
           <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.6, margin: 0 }}>
-            Add a benchmark result in Profile, or connect Strava and complete a few easy runs.
+            {stravaConnected
+              ? 'Add a benchmark result in Profile, or complete a few easy runs with Strava.'
+              : 'Add a benchmark result in Profile, or connect Strava and complete a few easy runs.'}
           </p>
         </div>
       ) : (
@@ -4685,9 +4687,11 @@ function RaceTimesCard() {
 
           {(data.state === 3 || data.state === 4) && (
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.55, margin: '12px 0 0' }}>
-              {data.upgradeCtaType === 'benchmark'
-                ? 'Log a benchmark result in Profile to improve accuracy.'
-                : 'Add a benchmark or complete aerobic runs with Strava to improve accuracy.'}
+              {data.state === 3
+                ? 'Log a benchmark result in Profile for a higher-confidence estimate.'
+                : stravaConnected
+                  ? 'Log a benchmark result in Profile to improve accuracy.'
+                  : 'Add a benchmark in Profile, or connect Strava and complete a few easy runs.'}
             </p>
           )}
         </>
@@ -4785,8 +4789,9 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
   )
 }
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed, firstName, onGoToMe, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent }: {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, onGoToMe, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
+  stravaConnected: boolean
   stravaTokenFailed?: boolean; firstName?: string; onGoToMe?: () => void
   weeklyReport?: any | null; onReportGenerated?: (report: any) => void
   preferredUnits?: 'km' | 'mi'
@@ -5099,7 +5104,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
         <PlanCoachingCard plan={plan} currentWeek={currentWeek} units={preferredUnits} trackedKm={trackedKm} />
 
         {/* ── 5. RACE PROJECTIONS ──────────────────────────────────────── */}
-        <RaceTimesCard />
+        <RaceTimesCard stravaConnected={stravaConnected} />
 
       </div>
     </div>
