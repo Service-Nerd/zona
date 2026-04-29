@@ -4383,8 +4383,9 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
   preferredUnits?: 'km' | 'mi'
   zoneDisciplinePercent?: number | null
 }) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState<string | null>(null)
+  const [loading, setLoading]           = useState(false)
+  const [error, setError]               = useState<string | null>(null)
+  const [refreshBlocked, setRefreshBlocked] = useState(false)
 
   const weekNum    = getCurrentWeekIndex(plan.weeks) + 1
   const totalWeeks = plan.weeks.length
@@ -4418,11 +4419,16 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
   async function generateReport() {
     setLoading(true)
     setError(null)
+    setRefreshBlocked(false)
     try {
       const res  = await authedFetch('/api/weekly-report?force=true', { method: 'POST' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed')
-      onReportGenerated?.(data.report)
+      if (data.refresh_blocked) {
+        setRefreshBlocked(true)
+      } else {
+        onReportGenerated?.(data.report)
+      }
     } catch {
       setError('Could not generate report. Check your connection.')
     } finally {
@@ -4651,25 +4657,32 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaTokenFailed
           )}
 
           {/* CTA button — inside the card, state-labelled */}
-          <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
-            <button
-              onClick={generateReport}
-              disabled={loading}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-                color: 'var(--warn)',
-                background: 'rgba(184,133,58,0.12)',
-                border: 'none',
-                borderRadius: '20px',
-                padding: '8px 16px',
-                cursor: loading ? 'wait' : 'pointer',
-                opacity: loading ? 0.6 : 1,
-              }}
-            >
-              {loading && <AIMark size={10} color="var(--warn)" working />}
-              {loading ? 'Generating' : (reportIsCurrent && weeklyReport?.headline ? 'Refresh' : 'Generate report')}
-            </button>
+          <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+            {refreshBlocked && (
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>
+                Already refreshed today.
+              </span>
+            )}
+            <div style={{ marginLeft: 'auto' }}>
+              <button
+                onClick={generateReport}
+                disabled={loading || refreshBlocked}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
+                  color: 'var(--warn)',
+                  background: 'rgba(184,133,58,0.12)',
+                  border: 'none',
+                  borderRadius: '20px',
+                  padding: '8px 16px',
+                  cursor: (loading || refreshBlocked) ? 'default' : 'pointer',
+                  opacity: (loading || refreshBlocked) ? 0.4 : 1,
+                }}
+              >
+                {loading && <AIMark size={10} color="var(--warn)" working />}
+                {loading ? 'Generating' : (reportIsCurrent && weeklyReport?.headline ? 'Refresh' : 'Generate report')}
+              </button>
+            </div>
           </div>
         </div>
 

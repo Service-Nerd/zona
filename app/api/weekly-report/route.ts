@@ -60,17 +60,19 @@ export async function POST(req: NextRequest) {
   if (!week) return NextResponse.json({ error: 'No current week in plan' }, { status: 404 })
 
   // Check existing report
-  if (!force) {
-    const { data: existing } = await serviceSupabase
-      .from('weekly_reports')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('week_n', weekN)
-      .maybeSingle()
+  const { data: existing } = await serviceSupabase
+    .from('weekly_reports')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('week_n', weekN)
+    .maybeSingle()
 
-    if (existing?.headline) {
-      return NextResponse.json({ report: existing, cached: true })
-    }
+  const todayUTC       = new Date().toISOString().slice(0, 10)
+  const generatedToday = existing?.generated_at?.slice(0, 10) === todayUTC
+
+  // Return cache if: no force requested, OR already regenerated today (once-per-day cap).
+  if (existing?.headline && (!force || generatedToday)) {
+    return NextResponse.json({ report: existing, cached: true, refresh_blocked: force && generatedToday })
   }
 
   // Fetch completions and run_analysis for this week in parallel
