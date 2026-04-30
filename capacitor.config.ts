@@ -31,14 +31,14 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      // The web app already renders its own loading screen (wordmark +
-      // tagline) while it fetches settings — we only need the native splash
-      // to cover the brief webview boot, then get out of the way. iOS
-      // LaunchScreen.storyboard also shows the Vetra mark before this fires.
-      launchShowDuration: 300,
+      // Hold the splash long enough to cover the initial network fetch from
+      // Vercel — the webview shows nothing until the response is in.
+      launchShowDuration: 2000,
       launchAutoHide: true,
-      launchFadeOutDuration: 200,
+      launchFadeOutDuration: 250,
       backgroundColor: '#F3F0EB',
+      iosSpinnerStyle: 'small',
+      spinnerColor: '#6B8E6B',
       showSpinner: false,
     },
   },
