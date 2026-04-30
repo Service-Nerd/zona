@@ -28,6 +28,17 @@ const config: CapacitorConfig = {
     // dashboard happens client-side via Supabase, no full reload needed.
     url: 'https://rts-training-hub.vercel.app/dashboard',
     cleartext: false,
+    // Hosts the webview is allowed to navigate to. Without these,
+    // Capacitor opens any non-server-host navigation in Safari — which
+    // breaks Supabase OAuth (Google) and Strava OAuth, since the user
+    // ends up authenticated in Safari instead of returning to the app.
+    allowNavigation: [
+      'accounts.google.com',
+      '*.googleapis.com',
+      '*.googleusercontent.com',
+      '*.supabase.co',
+      'www.strava.com',
+    ],
   },
   ios: {
     contentInset: 'automatic',
