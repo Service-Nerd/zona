@@ -4389,7 +4389,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
     <div style={{ paddingBottom: '32px' }}>
 
       {/* ── HEADER ───────────────────────────────────────────────── */}
-      <ScreenHeader title="Your plan" sub={`W${weekNum} of ${totalWeeks}`} />
+      <ScreenHeader title="Your plan" />
 
       {/* ── RACE NAME HEADING ────────────────────────────────────── */}
       {raceName && (
@@ -5452,6 +5452,14 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
   return (
     <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
 
+      {/* Header — parallels Race benchmark row: title + sublabel framing */}
+      <div style={{ padding: '14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
+        <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.55 }}>Heart rate zones</div>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>
+          How hard. Training zones set from your resting and max HR.
+        </div>
+      </div>
+
       {/* Editable HR inputs */}
       <div style={{ padding: '14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
@@ -5847,7 +5855,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             <div>
               <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.55 }}>Race benchmark</div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>
-                A recent result refines pace targets for every session
+                How fast. Pace targets calibrated from a recent race.
               </div>
             </div>
             <div style={{ color: 'var(--text-muted)', marginLeft: '12px' }}>{chevron}</div>

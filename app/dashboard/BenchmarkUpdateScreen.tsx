@@ -64,11 +64,34 @@ function StepInput({ value, onChange, placeholder, type = 'text', min }: {
   )
 }
 
-// ─── Current zones summary ────────────────────────────────────────────────────
+// ─── Pace band extraction ─────────────────────────────────────────────────────
 
-function CurrentZonesSummary({ plan }: { plan: Plan }) {
+// Pull the first easy + quality pace_target from the plan so the panel shows
+// the actual bands the user is currently training to (not synthesised values).
+function getPaceBands(plan: Plan): { easy: string | null; quality: string | null } {
+  let easy: string | null = null
+  let quality: string | null = null
+  for (const week of plan.weeks) {
+    for (const session of Object.values(week.sessions)) {
+      if (!session) continue
+      if (!easy && (session.type === 'easy' || session.type === 'long' || session.type === 'recovery')) {
+        if (session.pace_target) easy = session.pace_target
+      }
+      if (!quality && (session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals')) {
+        if (session.pace_target) quality = session.pace_target
+      }
+      if (easy && quality) return { easy, quality }
+    }
+  }
+  return { easy, quality }
+}
+
+// ─── Current pace summary ─────────────────────────────────────────────────────
+
+function CurrentPaceSummary({ plan }: { plan: Plan }) {
   const { meta } = plan
   const hasVDOT = meta.vdot !== undefined
+  const { easy, quality } = getPaceBands(plan)
 
   return (
     <div style={{
@@ -76,7 +99,7 @@ function CurrentZonesSummary({ plan }: { plan: Plan }) {
       border: '0.5px solid var(--border-col)', padding: '16px',
     }}>
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }}>
-        Current zones
+        Current pace
       </div>
 
       {hasVDOT && (
@@ -90,9 +113,8 @@ function CurrentZonesSummary({ plan }: { plan: Plan }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {[
-          { label: 'Zone 2 ceiling', value: `< ${meta.zone2_ceiling} bpm` },
-          { label: 'Max HR',         value: `${meta.max_hr} bpm` },
-          ...(meta.resting_hr ? [{ label: 'Resting HR', value: `${meta.resting_hr} bpm` }] : []),
+          ...(easy    ? [{ label: 'Easy pace',    value: easy }]    : []),
+          ...(quality ? [{ label: 'Quality pace', value: quality }] : []),
         ].map(({ label, value }) => (
           <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)' }}>{label}</span>
@@ -106,17 +128,18 @@ function CurrentZonesSummary({ plan }: { plan: Plan }) {
           marginTop: '12px', paddingTop: '12px', borderTop: '0.5px solid var(--border-col)',
           fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5,
         }}>
-          Zones are based on age estimates. A benchmark test will make them personal.
+          Pace targets are estimated until you race. A recent result makes them yours.
         </div>
       )}
     </div>
   )
 }
 
-// ─── Updated zones result ─────────────────────────────────────────────────────
+// ─── Updated pace result ──────────────────────────────────────────────────────
 
-function UpdatedZonesResult({ plan, weeksUpdated }: { plan: Plan; weeksUpdated: number }) {
+function UpdatedPaceResult({ plan, weeksUpdated }: { plan: Plan; weeksUpdated: number }) {
   const { meta } = plan
+  const { easy, quality } = getPaceBands(plan)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <div style={{
@@ -125,7 +148,7 @@ function UpdatedZonesResult({ plan, weeksUpdated }: { plan: Plan; weeksUpdated: 
         padding: '16px',
       }}>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--teal)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '10px' }}>
-          Zones updated
+          Pace updated
         </div>
         {meta.vdot !== undefined && (
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '12px' }}>
@@ -137,8 +160,8 @@ function UpdatedZonesResult({ plan, weeksUpdated }: { plan: Plan; weeksUpdated: 
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {[
-            { label: 'Zone 2 ceiling', value: `< ${meta.zone2_ceiling} bpm` },
-            { label: 'Max HR',         value: `${meta.max_hr} bpm` },
+            ...(easy    ? [{ label: 'Easy pace',    value: easy }]    : []),
+            ...(quality ? [{ label: 'Quality pace', value: quality }] : []),
           ].map(({ label, value }) => (
             <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)' }}>{label}</span>
@@ -227,10 +250,10 @@ export default function BenchmarkUpdateScreen({
 
         <div style={{ marginBottom: '28px' }}>
           <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.3px', marginBottom: '6px' }}>
-            Update your zones.
+            Update pace targets.
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-            You've done the work. Let's make sure your targets reflect it.
+            You've done the work. Let's make sure your paces reflect it.
           </div>
         </div>
       </div>
@@ -238,10 +261,10 @@ export default function BenchmarkUpdateScreen({
       {/* Body */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-        <CurrentZonesSummary plan={plan} />
+        <CurrentPaceSummary plan={plan} />
 
         {result ? (
-          <UpdatedZonesResult plan={result.plan} weeksUpdated={result.weeksUpdated} />
+          <UpdatedPaceResult plan={result.plan} weeksUpdated={result.weeksUpdated} />
         ) : (
           <>
             {/* Benchmark type selection */}
@@ -347,7 +370,7 @@ export default function BenchmarkUpdateScreen({
               transition: 'all 0.15s',
             }}
           >
-            {loading ? 'Recalibrating…' : 'Recalibrate zones'}
+            {loading ? 'Recalibrating…' : 'Recalibrate paces'}
           </button>
         )}
       </div>
