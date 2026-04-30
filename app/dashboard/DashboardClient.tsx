@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Plan, Week } from '@/types/plan'
 import PlanChart from '@/components/training/PlanChart'
 import PlanCalendar from '@/components/training/PlanCalendar'
@@ -116,6 +117,9 @@ function IconMe({ active }: { active: boolean }) {
 // ── Layout shell ──────────────────────────────────────────────────────────
 
 export default function DashboardClient() {
+  // router.replace stays inside the WKWebView — window.location.href triggers
+  // Capacitor's external-navigation handler, which on iOS opens Safari.
+  const router = useRouter()
   const [plan, setPlan] = useState<Plan | null>(null)
   const [showWelcome, setShowWelcome] = useState(false)
   const [screen, setScreen] = useState<Screen>('today')
@@ -493,7 +497,7 @@ export default function DashboardClient() {
       if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && !loaded) {
         loaded = true
         if (!session) {
-          window.location.href = '/auth/login'
+          router.replace('/auth/login')
           return
         }
         // Clean up OAuth code from URL if present
@@ -5532,6 +5536,7 @@ function ProfileSection({ firstName, lastName, email, onSave }: {
 // ── ME SCREEN ─────────────────────────────────────────────────────────────
 
 function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
+  const router = useRouter()
   const [checked, setChecked] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -5549,7 +5554,7 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
       }
       const supabase = createClient()
       await supabase.auth.signOut()
-      window.location.href = '/auth/login'
+      router.replace('/auth/login')
     } catch {
       setError('Something went wrong. Try again.')
       setLoading(false)
@@ -5636,6 +5641,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   dynamicAdjustmentsEnabled?: boolean
   onDynamicAdjustmentsChange?: (enabled: boolean) => void
 }) {
+  const router = useRouter()
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling' | 'delete-account'>('main')
 
   const raceDistKm = plan?.meta?.race_distance_km ?? 0
@@ -5890,7 +5896,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             onClick={async () => {
               const supabase = createClient()
               await supabase.auth.signOut()
-              window.location.href = '/auth/login'
+              router.replace('/auth/login')
             }}
             style={{ width: '100%', display: 'flex', alignItems: 'center', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '0.5px solid var(--border-col)', cursor: 'pointer', textAlign: 'left' }}
           >
