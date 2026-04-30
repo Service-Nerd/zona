@@ -22,7 +22,11 @@ const config: CapacitorConfig = {
   // remote page rendering on-brand instead of showing the default black.
   backgroundColor: '#F3F0EB',
   server: {
-    url: 'https://rts-training-hub.vercel.app',
+    // Open directly at /dashboard so we skip the '/' -> '/dashboard'
+    // server-side redirect, which forces a second webview load (and a
+    // black flash between the two). Auth-gated routing inside the
+    // dashboard happens client-side via Supabase, no full reload needed.
+    url: 'https://rts-training-hub.vercel.app/dashboard',
     cleartext: false,
   },
   ios: {
