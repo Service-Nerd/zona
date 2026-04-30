@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import './styles/polish-tokens.css'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import CapacitorBoot from '@/components/CapacitorBoot'
 import { BRAND } from '@/lib/brand'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://rts-training-hub.vercel.app'
@@ -60,7 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body><ErrorBoundary>{children}</ErrorBoundary></body>
+      <body><ErrorBoundary>{children}</ErrorBoundary><CapacitorBoot /></body>
     </html>
   )
 }

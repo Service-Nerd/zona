@@ -31,14 +31,13 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      // Hold the splash long enough to cover the initial network fetch from
-      // Vercel — the webview shows nothing until the response is in.
-      launchShowDuration: 2000,
+      // Splash holds until the web app calls SplashScreen.hide() on mount
+      // (see components/CapacitorBoot.tsx). The 10s timeout is just a
+      // safety net for cold starts on slow networks or boot failures.
+      launchShowDuration: 10000,
       launchAutoHide: true,
-      launchFadeOutDuration: 250,
+      launchFadeOutDuration: 200,
       backgroundColor: '#F3F0EB',
-      iosSpinnerStyle: 'small',
-      spinnerColor: '#6B8E6B',
       showSpinner: false,
     },
   },
