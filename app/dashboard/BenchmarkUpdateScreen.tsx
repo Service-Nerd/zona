@@ -88,55 +88,6 @@ function getPaceBands(plan: Plan): { easy: string | null; quality: string | null
   return { easy, quality }
 }
 
-// ─── Current pace summary ─────────────────────────────────────────────────────
-
-function CurrentPaceSummary({ plan }: { plan: Plan }) {
-  const { meta } = plan
-  const hasVDOT = meta.vdot !== undefined
-  const { easy, quality } = getPaceBands(plan)
-
-  return (
-    <div style={{
-      background: 'var(--card-bg)', borderRadius: '12px',
-      border: '0.5px solid var(--border-col)', padding: '16px',
-    }}>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }}>
-        Current pace
-      </div>
-
-      {hasVDOT && (
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '12px' }}>
-          <span style={{ fontFamily: 'var(--font-brand)', fontSize: '28px', fontWeight: 600, color: 'var(--teal)' }}>
-            {meta.vdot}
-          </span>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)' }}>VDOT</span>
-        </div>
-      )}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {[
-          ...(easy    ? [{ label: 'Easy pace',    value: easy }]    : []),
-          ...(quality ? [{ label: 'Quality pace', value: quality }] : []),
-        ].map(({ label, value }) => (
-          <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)' }}>{label}</span>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{value}</span>
-          </div>
-        ))}
-      </div>
-
-      {!hasVDOT && (
-        <div style={{
-          marginTop: '12px', paddingTop: '12px', borderTop: '0.5px solid var(--border-col)',
-          fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5,
-        }}>
-          Pace targets are estimated until you race. A recent result makes them yours.
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ─── Updated pace result ──────────────────────────────────────────────────────
 
 function UpdatedPaceResult({ plan, weeksUpdated, stravaConnected }: { plan: Plan; weeksUpdated: number; stravaConnected: boolean }) {
@@ -269,12 +220,11 @@ export default function BenchmarkUpdateScreen({
       {/* Body */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-        <CurrentPaceSummary plan={plan} />
-
         {result ? (
           <UpdatedPaceResult plan={result.plan} weeksUpdated={result.weeksUpdated} stravaConnected={stravaConnected} />
         ) : (
           <>
+            <RaceTimesCard stravaConnected={stravaConnected} />
             {/* Benchmark type selection */}
             <div>
               <FieldLabel>New benchmark</FieldLabel>
