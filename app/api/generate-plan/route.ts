@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { GeneratorInput } from '@/types/plan'
+import type { GeneratorInput, Plan } from '@/types/plan'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
-import { generate } from '@/lib/plan/generate'
+import { generateRulePlan } from '@/lib/plan/ruleEngine'
+import { enrich } from '@/lib/plan/enrich'
 import { nextMonday, formatDate } from '@/lib/plan/length'
 import { PrepTimeError, InputFieldError } from '@/lib/plan/inputs'
 
@@ -44,9 +45,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: guardError }, { status: 422 })
     }
 
+    // Rule engine runs synchronously and may throw validation errors that
+    // need a 422 status — must run before opening a stream.
+    let rulePlan: Plan
     try {
-      const plan = await generate(input, tier, planStart)
-      return NextResponse.json({ plan })
+      rulePlan = generateRulePlan(input, tier, planStart)
     } catch (err) {
       // CoachingPrinciples §55 — critical input validation. Out-of-range
       // physiological values are rejected at the entry point; surface field +
@@ -78,6 +81,37 @@ export async function POST(req: NextRequest) {
       }
       throw err
     }
+
+    // Free tier: no enrichment, return immediately as before.
+    if (tier === 'free') {
+      return NextResponse.json({ plan: rulePlan })
+    }
+
+    // Trial/paid: stream NDJSON. Send the rule plan immediately so the
+    // ceremony can begin reveal while the enricher is still running. Send
+    // the enriched plan when ready (silent fallback to rule plan on failure).
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        controller.enqueue(encoder.encode(JSON.stringify({ type: 'rule_plan', plan: rulePlan }) + '\n'))
+        let finalPlan: Plan = rulePlan
+        try {
+          finalPlan = await enrich(rulePlan, input, tier)
+        } catch (e) {
+          console.error('[generate-plan] enrich threw unexpectedly', e)
+        }
+        controller.enqueue(encoder.encode(JSON.stringify({ type: 'final_plan', plan: finalPlan }) + '\n'))
+        controller.close()
+      },
+    })
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'application/x-ndjson; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+        'X-Accel-Buffering': 'no',
+      },
+    })
 
   } catch (e) {
     console.error('generate-plan error:', e)

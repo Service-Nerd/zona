@@ -624,7 +624,7 @@ export default function GeneratePlanScreen({
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
 
-      const res  = await fetch('/api/generate-plan', {
+      const res = await fetch('/api/generate-plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -632,33 +632,82 @@ export default function GeneratePlanScreen({
         },
         body: JSON.stringify(input),
       })
-      const data = await res.json()
+
       if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
         setError(data.error ?? 'Something went wrong building the plan.')
         setAppStep('error')
         return
       }
 
-      const generatedPlan: Plan = data.plan
-      const today = new Date().toISOString().split('T')[0]
-      const gap = gapDays(today, generatedPlan.meta.plan_start)
-      const gapClass = classifyGap(gap)
-
-      if (gapClass === 'auto') {
-        // Auto-generate foundation block silently, prepend to plan weeks
-        const { weeks: foundationWeeks } = generateFoundationBlock({
-          input,
-          planStartDate: generatedPlan.meta.plan_start,
-          today,
-        })
-        generatedPlan.weeks = [...foundationWeeks, ...generatedPlan.weeks]
-      } else if (gapClass === 'choice') {
-        // Store input so the modal handlers can generate the block on demand
-        lastInputRef.current = input
-        setFoundationModalOpen(true)
+      // Foundation-block decisions depend on plan_start, which the rule engine
+      // sets and the enricher never touches — safe to compute once on the
+      // first plan we receive (rule_plan or final JSON for free tier).
+      let foundationApplied = false
+      const applyFoundationIfNeeded = (incoming: Plan): Plan => {
+        if (foundationApplied) return incoming
+        foundationApplied = true
+        const today = new Date().toISOString().split('T')[0]
+        const gap = gapDays(today, incoming.meta.plan_start)
+        const gapClass = classifyGap(gap)
+        if (gapClass === 'auto') {
+          const { weeks: foundationWeeks } = generateFoundationBlock({
+            input,
+            planStartDate: incoming.meta.plan_start,
+            today,
+          })
+          return { ...incoming, weeks: [...foundationWeeks, ...incoming.weeks] }
+        }
+        if (gapClass === 'choice') {
+          lastInputRef.current = input
+          setFoundationModalOpen(true)
+        }
+        return incoming
       }
 
-      setPlan(generatedPlan)
+      const contentType = res.headers.get('content-type') ?? ''
+
+      // Free tier: server returns plain JSON with the rule plan only.
+      if (!contentType.includes('ndjson')) {
+        const data = await res.json()
+        setPlan(applyFoundationIfNeeded(data.plan as Plan))
+        return
+      }
+
+      // Trial/paid: NDJSON stream — rule_plan first, then final_plan.
+      // Setting the plan as soon as rule_plan arrives lets the ceremony
+      // begin its reveal while the enricher is still running.
+      const reader = res.body!.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        let nl = buffer.indexOf('\n')
+        while (nl !== -1) {
+          const line = buffer.slice(0, nl).trim()
+          buffer = buffer.slice(nl + 1)
+          nl = buffer.indexOf('\n')
+          if (!line) continue
+          const msg = JSON.parse(line) as { type: 'rule_plan' | 'final_plan'; plan: Plan }
+          if (msg.type === 'rule_plan') {
+            setPlan(applyFoundationIfNeeded(msg.plan))
+          } else if (msg.type === 'final_plan') {
+            // Foundation weeks (n <= 0) are added client-side and never
+            // present in the enricher's payload. Preserve whatever is on
+            // the current plan state — it accounts for both auto-added and
+            // user-added foundation blocks.
+            const enriched = msg.plan
+            setPlan(current => {
+              if (!current) return enriched
+              const foundationWeeks = current.weeks.filter(w => w.n <= 0)
+              return { ...enriched, weeks: [...foundationWeeks, ...enriched.weeks] }
+            })
+          }
+        }
+      }
     } catch {
       setError('Could not reach the server. Check your connection.')
       setAppStep('error')

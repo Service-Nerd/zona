@@ -84,7 +84,7 @@ export async function enrich(plan: Plan, input: GeneratorInput, tier: Tier): Pro
         'anthropic-beta': 'prompt-caching-2024-07-31',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: plan.weeks.length <= 12 ? 6000 : plan.weeks.length <= 20 ? 10000 : 14000,
         system: [
           {
