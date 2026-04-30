@@ -925,6 +925,29 @@ Foundation weeks use `n` values ≤ 0 (e.g., −2, −1, 0 for a 3-week block). 
 
 ---
 
+## 58. Past-self comparison — cohort similarity matching
+
+**Principle.** Generic coaching ("HR was high, ease back") is weaker than self-referenced coaching ("your usual easy 10ks sit at HR 145, today was 156"). The strongest mirror coaching can offer is comparison to the user's own past, not to the prescription. Past-self comparison surfaces three things the prescription alone cannot: slow drift (zone discipline eroding over weeks), genuine adaptation (same pace, lower HR), and one-off bad days (today vs the user's own baseline, not the population's).
+
+**Why.** ZONA's brand thesis — *"you're trying hard, that's the problem"* — assumes the user has run patterns that reveal their own truth. Comparing today's run to the user's median for similar runs is the most honest version of that mirror. Generic feedback is replaceable by any LLM; self-referenced feedback is a defensible coaching layer.
+
+**Config.** `lib/coaching/constants.ts → COHORT_SIMILARITY`:
+
+```
+DISTANCE_TOLERANCE_PCT  → 15      (±15% — tolerates session-day variance, preserves type purity)
+MIN_COHORT_SIZE         → 3       (below this, the sample is noise)
+WINDOW_DAYS_DEFAULT     → 365     (captures seasonal patterns)
+WINDOW_DAYS_DENSE       → 180     (shrinks to 6 months for dense users)
+DENSE_THRESHOLD         → 30      (runs in last 6 months that triggers dense window)
+HR_BAND_BREAKPOINTS     → { low: 145, mid: 165 }  (three-bucket effort classification)
+```
+
+**How.** Two-axis match (cut #1): same distance band (±`DISTANCE_TOLERANCE_PCT`) and same HR band per `HR_BAND_BREAKPOINTS`. Cohort summary statistics injected into the run-feedback AI prompt for narrative voice; the AI never invents the comparison — it formats deterministic numbers. Hybrid generation pattern (ADR-006): rule engine produces the cohort summary, AI enrichment uses it for voice, AI failure is silent. Three-axis match (adding `session.type`) deferred to cuts #2/#3.
+
+**Surface.** `RunFeedbackCard` (`DashboardClient.tsx`), where `run_analysis.feedback_text` already renders below the completed session. AIMark provenance unchanged — the AI is still the author of the paragraph, the cohort numbers just inform it.
+
+---
+
 ## 56. The constitution
 
 These fifty-six principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

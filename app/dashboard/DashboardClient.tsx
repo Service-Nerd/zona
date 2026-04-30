@@ -1974,7 +1974,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           {paceBracket && (
             <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Est. pace</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>{paceBracket}</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>~{paceBracket}</div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>HR-derived estimate</div>
             </div>
           )}
@@ -2025,11 +2025,20 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                           {effectiveMetric === 'distance' ? `${estimatedDistance ?? '—'}${preferredUnits}` : (estimatedDuration ?? '—')}
                         </span>
                       )}
-                      {(plannedZone || session.hr_target) && (
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                          {[plannedZone, session.hr_target].filter(Boolean).join(' · ')}
-                        </span>
-                      )}
+                      {(() => {
+                        // Single source of truth: live Karvonen via getSessionHRDisplay,
+                        // matching the session-card hero. Falls back to baked hr_target
+                        // when restingHR/maxHR are missing. CoachingPrinciples §14, ADR-009.
+                        const hrVal = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling)
+                        const hrStr = hrVal ? `${hrVal} bpm` : null
+                        const line  = [plannedZone, hrStr].filter(Boolean).join(' · ')
+                        if (!line) return null
+                        return (
+                          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                            {line}
+                          </span>
+                        )
+                      })()}
                       {session.rpe_target != null && (
                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)' }}>
                           RPE {session.rpe_target}
@@ -2098,17 +2107,37 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             const skipShapes = ['rest', 'race', 'strength']
             if (skipShapes.includes(structure.shape)) return null
 
-            const partRow = (label: string, mins: number | string, zone: string, body: string, accentColor: string) => (
+            const partRow = (label: string, mins: number | string, zone: string, body: string, accentColor: string, isMain = false) => (
               <div style={{ display: 'flex', gap: '12px', marginBottom: '10px' }}>
-                <div style={{ width: '3px', borderRadius: '2px', background: accentColor, flexShrink: 0 }} />
+                <div style={{
+                  width: isMain ? '4px' : '3px',
+                  borderRadius: '2px',
+                  background: accentColor,
+                  flexShrink: 0,
+                }} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)' }}>{label}</div>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: isMain ? '3px' : '2px' }}>
+                    <div style={{
+                      fontFamily: 'var(--font-ui)',
+                      fontSize: isMain ? '14px' : '13px',
+                      fontWeight: isMain ? 700 : 600,
+                      color: 'var(--ink)',
+                    }}>{label}</div>
+                    <div style={{
+                      fontFamily: 'var(--font-ui)',
+                      fontSize: isMain ? '13px' : '12px',
+                      color: isMain ? 'var(--ink-2)' : 'var(--mute)',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}>
                       {mins} · {zone}
                     </div>
                   </div>
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>{body}</div>
+                  <div style={{
+                    fontFamily: 'var(--font-ui)',
+                    fontSize: isMain ? '13px' : '12px',
+                    color: isMain ? 'var(--ink-2)' : 'var(--mute)',
+                    lineHeight: 1.5,
+                  }}>{body}</div>
                 </div>
               </div>
             )
@@ -2125,7 +2154,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.5 }}>{structure.strides.description}</div>
                   </div>
                 )}
-                {partRow('Main set', `${structure.main.duration_mins} min`, structure.main.zone, structure.main.description, getSessionColor(session.type ?? 'easy'))}
+                {partRow('Main set', `${structure.main.duration_mins} min`, structure.main.zone, structure.main.description, getSessionColor(session.type ?? 'easy'), true)}
                 {structure.race_pace_segment && (
                   <div style={{ marginLeft: '15px', marginBottom: '10px', paddingLeft: '12px', borderLeft: '0.5px dashed var(--line)' }}>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)' }}>
@@ -2164,8 +2193,13 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 ) : guidance ? (
                   // Render only the "why" field — the "what" and "how" fields belong
                   // to other surfaces, not this WHY THIS SESSION block.
+                  // Use live Karvonen Z2 ceiling (matches session-card source of truth)
+                  // rather than the baked plan.meta.zone2_ceiling, which can drift after
+                  // restingHR/maxHR updates. Falls back to the baked value when HR data missing.
                   renderGuidance(guidance.why, guidanceContextFromSession({
-                    session, zone2Ceiling, maxHR, restingHR, goalPace,
+                    session,
+                    zone2Ceiling: sessionHRBand('easy', restingHR ?? null, maxHR ?? null)?.hi ?? zone2Ceiling,
+                    maxHR, restingHR, goalPace,
                   }))
                 ) : null}
               </CoachNoteBlock>
@@ -2191,8 +2225,31 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 )
               }
               if (isComplete || isSkipped) {
+                // Conditional primary: once an RPE has been set (either from a
+                // previous log or just now via the RPEScale above), elevate the
+                // Update log CTA from ghost to moss-filled primary so it reads
+                // as the obvious next tap. Gate is `rpe != null` — same state
+                // the RPEScale writes via setRpe.
+                const isRpeSet = rpe != null
                 return (
-                  <button onClick={() => isRunType ? setView('complete') : saveCompletion('complete')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', cursor: 'pointer', letterSpacing: '0.04em' }}>
+                  <button
+                    onClick={() => isRunType ? setView('complete') : saveCompletion('complete')}
+                    style={{
+                      flex: 1,
+                      background: isRpeSet ? 'var(--moss)' : 'none',
+                      color:      isRpeSet ? 'var(--card)' : 'var(--text-muted)',
+                      border:     isRpeSet ? 'none'        : '0.5px solid var(--border-col)',
+                      borderRadius: '10px',
+                      padding: '13px',
+                      fontFamily: 'var(--font-ui)',
+                      fontSize: '12px',
+                      fontWeight: isRpeSet ? 600 : 400,
+                      letterSpacing: isRpeSet ? '0.06em' : '0.04em',
+                      textTransform: isRpeSet ? 'uppercase' : 'none',
+                      cursor: 'pointer',
+                      transition: 'background 0.18s ease, color 0.18s ease, letter-spacing 0.18s ease',
+                    }}
+                  >
                     Update log
                   </button>
                 )
@@ -6129,11 +6186,103 @@ function PendingAnalysisCard() {
   )
 }
 
-function RunFeedbackCard({ analysis }: { analysis: any }) {
+/** One-line explanation per sub-score, derived from analysis row data. */
+function buildScoreExplanations(
+  analysis: any,
+  paceTarget: string | null,
+  actualAvgSpeedMs: number | null,
+): { label: string; value: number | undefined; line: string }[] {
+  // HR
+  const inZone = analysis.hr_in_zone_pct as number | null | undefined
+  const above  = analysis.hr_above_ceiling_pct as number | null | undefined
+  const below  = analysis.hr_below_floor_pct as number | null | undefined
+  let hrLine: string
+  if (inZone === null || inZone === undefined) {
+    hrLine = 'No HR data.'
+  } else {
+    const inZoneText = `${Math.round(inZone)}% in zone`
+    if (above != null && above > 10) {
+      hrLine = `${inZoneText}, ${Math.round(above)}% above ceiling.`
+    } else if (below != null && below > 15) {
+      hrLine = `${inZoneText}, ${Math.round(below)}% below floor.`
+    } else {
+      hrLine = `${inZoneText}.`
+    }
+  }
+
+  // Distance
+  const planned = analysis.planned_load_km as number | null | undefined
+  const actual  = analysis.actual_load_km  as number | null | undefined
+  let distLine: string
+  if (planned == null || actual == null) {
+    distLine = 'No distance data.'
+  } else if (Math.abs(actual - planned) < 0.3) {
+    distLine = `Hit the planned distance — ${actual.toFixed(1)}km.`
+  } else if (actual > planned) {
+    distLine = `Planned ${planned.toFixed(1)}km, ran ${actual.toFixed(1)}km.`
+  } else {
+    distLine = `Planned ${planned.toFixed(1)}km, ran ${actual.toFixed(1)}km — short.`
+  }
+
+  // Pace
+  let paceLine: string
+  if (paceTarget && actualAvgSpeedMs && actualAvgSpeedMs > 0) {
+    const sec = 1000 / actualAvgSpeedMs
+    const m = Math.floor(sec / 60)
+    const s = Math.round(sec % 60)
+    paceLine = `Target ${paceTarget}, ran ${m}:${String(s).padStart(2, '0')}/km.`
+  } else if (paceTarget) {
+    paceLine = `Target ${paceTarget}.`
+  } else if (analysis.pace_score != null) {
+    if (analysis.pace_score >= 80)      paceLine = 'On target.'
+    else if (analysis.pace_score >= 60) paceLine = 'Slightly off target.'
+    else                                paceLine = 'Off target.'
+  } else {
+    paceLine = 'No pace data.'
+  }
+
+  // Efficiency
+  const trend = analysis.ef_trend_pct as number | null | undefined
+  let efLine: string
+  if (trend == null) {
+    efLine = 'No baseline yet — need a few similar runs.'
+  } else if (trend >= 0) {
+    efLine = `${trend.toFixed(1)}% above your baseline.`
+  } else {
+    efLine = `${Math.abs(trend).toFixed(1)}% below your baseline.`
+  }
+
+  return [
+    { label: 'HR',         value: analysis.hr_discipline_score, line: hrLine },
+    { label: 'Distance',   value: analysis.distance_score,      line: distLine },
+    { label: 'Pace',       value: analysis.pace_score,          line: paceLine },
+    { label: 'Efficiency', value: analysis.ef_score,            line: efLine },
+  ]
+}
+
+/** Bar verdict label — bands aligned to VERDICT_BANDS in lib/coaching/constants.ts. */
+function scoreBandLabel(value: number): string {
+  if (value >= 80) return 'On target'
+  if (value >= 60) return 'Close'
+  if (value >= 40) return 'Slightly off'
+  return 'Off target'
+}
+
+function RunFeedbackCard({
+  analysis,
+  paceTarget = null,
+  actualAvgSpeedMs = null,
+}: {
+  analysis: any
+  paceTarget?: string | null
+  actualAvgSpeedMs?: number | null
+}) {
   const verdict  = analysis.verdict as string
   const score    = analysis.total_score as number
   const feedback = analysis.feedback_text as string | null
   const voice    = getVerdictVoice(verdict)
+  const [expanded, setExpanded] = useState(false)
+  const explanations = buildScoreExplanations(analysis, paceTarget, actualAvgSpeedMs)
 
   const metrics: { label: string; value: number | undefined }[] = [
     { label: 'HR',         value: analysis.hr_discipline_score },
@@ -6159,14 +6308,34 @@ function RunFeedbackCard({ analysis }: { analysis: any }) {
           <AIMark size={10} color="var(--warn)" />
           Coach
         </span>
-        <span style={{
-          marginLeft: 'auto',
-          fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 600,
-          color: 'var(--coach-ink)', opacity: 0.5,
-          fontVariantNumeric: 'tabular-nums',
-        }}>
+        <button
+          type="button"
+          onClick={() => setExpanded(e => !e)}
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Hide score breakdown' : 'Show score breakdown'}
+          style={{
+            marginLeft: 'auto',
+            background: 'transparent',
+            border: 'none',
+            padding: '2px 4px',
+            margin: '-2px -4px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 600,
+            color: 'var(--coach-ink)', opacity: 0.5,
+            fontVariantNumeric: 'tabular-nums',
+            cursor: 'pointer',
+          }}
+        >
           {score}/100
-        </span>
+          <span style={{
+            fontSize: '9px',
+            display: 'inline-block',
+            transform: expanded ? 'rotate(180deg)' : 'none',
+            transition: 'transform 0.18s',
+          }}>▾</span>
+        </button>
       </div>
 
       {/* Vetra-voice headline */}
@@ -6220,9 +6389,50 @@ function RunFeedbackCard({ analysis }: { analysis: any }) {
                 transition: 'width 0.4s ease',
               }} />
             </div>
+            {/* Verbal backup for the bar colour */}
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
+              color: 'var(--warn)', opacity: 0.7,
+              textTransform: 'uppercase', letterSpacing: '0.08em',
+              whiteSpace: 'nowrap',
+              marginTop: '5px',
+            }}>
+              {scoreBandLabel(value)}
+            </div>
           </div>
         ))}
       </div>
+
+      {/* Expanded breakdown — one line per sub-score, derived from analysis row */}
+      {expanded && (
+        <div style={{
+          marginTop: '14px',
+          paddingTop: '14px',
+          borderTop: '1px solid rgba(61,38,0,0.10)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+        }}>
+          {explanations.map(({ label, value, line }) => value !== undefined && (
+            <div key={label} style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
+                color: 'var(--warn)', opacity: 0.7,
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+                width: '78px', flexShrink: 0,
+              }}>
+                {label}
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 400,
+                color: 'var(--coach-ink)', lineHeight: 1.45,
+              }}>
+                {line}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -6341,7 +6551,21 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
         {/* Run analysis sits at the top for completed sessions — the headline
             content. Pending state shows AIMark working pulse while analyse-run
             is in flight; real card replaces it when run_analysis lands. */}
-        {hasPaidAccess && analysis && <RunFeedbackCard analysis={analysis} />}
+        {hasPaidAccess && analysis && (() => {
+          // Look up the linked Strava activity in preloadedRuns to surface its
+          // avg_speed for the Pace explanation. Activity ID lives on the
+          // analysis row; preloadedRuns is the StravaActivity[] already prefetched.
+          const linkedAct = Array.isArray(preloadedRuns)
+            ? preloadedRuns.find((r: any) => r.id === analysis.strava_activity_id)
+            : null
+          return (
+            <RunFeedbackCard
+              analysis={analysis}
+              paceTarget={session.pace_target ?? null}
+              actualAvgSpeedMs={linkedAct?.average_speed ?? null}
+            />
+          )
+        })()}
         {hasPaidAccess && !analysis && isAnalysisPending && !pollGaveUp && <PendingAnalysisCard />}
 
         <div style={{

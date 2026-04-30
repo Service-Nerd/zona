@@ -64,3 +64,21 @@ export const TAPER_PROTECTION_WEEKS = 3
 
 // Max volume increase per adjustment — re-exported from generationConfig (§2).
 export const MAX_VOLUME_INCREASE_PCT = GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT
+
+// Cohort similarity matching — past-self comparison (R25 cut #1)
+// CoachingPrinciples §58. Two-axis match for cut #1: distance band + HR band.
+// Three-axis (adding session.type) deferred to cuts #2/#3 which need richer cohort filtering.
+export const COHORT_SIMILARITY = {
+  /** Distance match window — runs within ±N% of target distance count as similar. */
+  DISTANCE_TOLERANCE_PCT: 15,
+  /** Minimum past similar runs before comparison fires. Below this, sample is noise. */
+  MIN_COHORT_SIZE: 3,
+  /** Default lookback window. Captures seasonal patterns. */
+  WINDOW_DAYS_DEFAULT: 365,
+  /** Shrunk window for dense users — recent history is more representative. */
+  WINDOW_DAYS_DENSE: 180,
+  /** Cohort size in last 6 months that triggers dense-window switch. */
+  DENSE_THRESHOLD: 30,
+  /** HR band breakpoints — three-bucket effort classification (low / mid / high). */
+  HR_BAND_BREAKPOINTS: { low: 145, mid: 165 },
+} as const

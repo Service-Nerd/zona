@@ -1,5 +1,6 @@
 import type { Session, Plan } from '@/types/plan'
 import type { Verdict } from '../sessionScore'
+import type { CohortSummary } from '../runHistory'
 
 export interface SessionFeedbackPromptInput {
   session: Session
@@ -20,6 +21,8 @@ export interface SessionFeedbackPromptInput {
   prescribedZoneLabel?: string | null
   /** Prescribed HR band — for quality/intervals where the session has a target range, not just a ceiling. */
   prescribedHrBand?: { lo: number; hi: number } | null
+  /** Past-self cohort summary (R25 cut #1) — null when fewer than MIN_COHORT_SIZE similar runs exist. */
+  cohortContext?: CohortSummary | null
 }
 
 // Few-shot examples — Zona voice: honest, dry, no cringe.
@@ -59,7 +62,7 @@ Output: "Cut it 2km short and HR drifted above Zone 2 in the back half — proba
 export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): string {
   const { session, weekN, plan, verdict, totalScore, hrDisciplineScore, distanceScore,
     actualDistKm, actualAvgHr, hrInZonePct, hrAboveCeilingPct, efTrendPct, rpe, fatigueTag,
-    prescribedZoneLabel, prescribedHrBand } = input
+    prescribedZoneLabel, prescribedHrBand, cohortContext } = input
 
   const weeksToRace = plan.meta.race_date
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
@@ -84,6 +87,19 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
     ? `Aerobic efficiency: ${efTrendPct > 0 ? '+' : ''}${efTrendPct.toFixed(1)}% vs baseline`
     : ''
 
+  // Past-self cohort block (CoachingPrinciples §58). Empty string when no cohort.
+  const cohortBlock = cohortContext
+    ? `
+Past-self cohort — your last ${cohortContext.cohortSize} similar runs (matched on distance ±15% and HR band):
+- Avg HR: ${cohortContext.avgHr ?? '—'} bpm
+- Avg pace: ${cohortContext.avgPaceSecPerKm ? formatPaceSec(cohortContext.avgPaceSecPerKm) : '—'}
+- Avg in-zone: ${cohortContext.avgInZonePct !== null ? `${cohortContext.avgInZonePct}%` : '—'}
+- Typical distance: ${cohortContext.medianDistanceKm.toFixed(1)}km
+
+If today's numbers diverge meaningfully from this cohort (HR ±5 bpm, pace ±10s/km, in-zone ±15%), reference the comparison directly in your feedback. Don't speculate causes — observation only.
+`
+    : ''
+
   return `You are a direct, no-fluff running coach giving session feedback. Your tone is honest, slightly dry, and never cringe-worthy cheerleader. One paragraph only — 2–4 sentences max. Use "you" throughout. Reference specific numbers from the data.
 
 Voice anchor for zone-discipline moments: "Hold the zone." — use this phrase or echo its framing when the feedback is about committing to (or failing to commit to) the prescribed zone. It applies to all session types: easy days (hold Zone 2), hard days (hit the band, don't coast), long runs (don't drift).
@@ -103,6 +119,12 @@ ${efLine ? efLine + '\n' : ''}RPE: ${rpe !== null ? rpe : 'not logged'}
 Fatigue: ${fatigueTag ?? 'not logged'}
 Score: ${totalScore}/100 (HR discipline: ${hrDisciplineScore}, distance: ${distanceScore})
 Verdict: ${verdict}
-
+${cohortBlock}
 Write 2–4 sentences of honest, specific feedback. No headers. No bullet points. Plain text only.`
+}
+
+function formatPaceSec(secPerKm: number): string {
+  const m = Math.floor(secPerKm / 60)
+  const s = Math.round(secPerKm % 60)
+  return `${m}:${String(s).padStart(2, '0')}/km`
 }

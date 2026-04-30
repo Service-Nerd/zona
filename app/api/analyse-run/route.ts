@@ -6,8 +6,9 @@ import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { scoreSession } from '@/lib/coaching/sessionScore'
 import { computeEF, computeEFBaseline } from '@/lib/coaching/efTrend'
-import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
+import { COACHING_RULE_ENGINE_VERSION, COHORT_SIMILARITY } from '@/lib/coaching/constants'
 import { buildSessionFeedbackPrompt } from '@/lib/coaching/prompts/sessionFeedback'
+import { fetchRunHistory, findSimilarRuns, summariseCohort, pickWindowDays } from '@/lib/coaching/runHistory'
 import { zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { notifyUser } from '@/lib/webpush'
 import { BRAND } from '@/lib/brand'
@@ -144,6 +145,30 @@ export async function POST(req: NextRequest) {
     efBaseline,
   })
 
+  // Past-self cohort comparison (R25 cut #1, CoachingPrinciples §58).
+  // Deterministic — fetch history, filter by similarity, summarise.
+  // AI prompt receives the summary; failure here is silent (cohortSummary stays null).
+  let cohortSummary = null
+  try {
+    const fullHistory = await fetchRunHistory(serviceSupabase, userId, COHORT_SIMILARITY.WINDOW_DAYS_DEFAULT)
+    const sixMonthsAgo = new Date()
+    sixMonthsAgo.setDate(sixMonthsAgo.getDate() - COHORT_SIMILARITY.WINDOW_DAYS_DENSE)
+    const recentCount = fullHistory.filter(r => r.startDate >= sixMonthsAgo).length
+    const window = pickWindowDays(recentCount)
+    const cohort = window === COHORT_SIMILARITY.WINDOW_DAYS_DENSE
+      ? fullHistory.filter(r => r.startDate >= sixMonthsAgo)
+      : fullHistory
+    const similar = findSimilarRuns(cohort, {
+      distanceKm: (activity.distance_m ?? 0) / 1000,
+      avgHr:      activity.avg_hr ?? null,
+    }, new Date(activity.start_date))
+    if (similar.length >= COHORT_SIMILARITY.MIN_COHORT_SIZE) {
+      cohortSummary = summariseCohort(similar)
+    }
+  } catch (err) {
+    console.warn('[analyse-run] cohort similarity failed', err)
+  }
+
   // AI feedback — generated before upsert so feedback_text lands in the same row.
   // Failure is silent; scoring row is written regardless.
   let feedbackText: string | null = null
@@ -165,6 +190,7 @@ export async function POST(req: NextRequest) {
       rpe:                 completionRes.data?.rpe ?? null,
       fatigueTag:          completionRes.data?.fatigue_tag ?? null,
       prescribedZoneLabel: prescribedZone?.label ?? null,
+      cohortContext:       cohortSummary,
     })
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
