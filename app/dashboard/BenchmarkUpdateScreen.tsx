@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import type { Plan, BenchmarkInput } from '@/types/plan'
 import { authedFetch } from '@/lib/supabase/authedFetch'
+import { DurationPicker } from '@/components/shared/DurationPicker'
+import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -137,7 +139,7 @@ function CurrentPaceSummary({ plan }: { plan: Plan }) {
 
 // ─── Updated pace result ──────────────────────────────────────────────────────
 
-function UpdatedPaceResult({ plan, weeksUpdated }: { plan: Plan; weeksUpdated: number }) {
+function UpdatedPaceResult({ plan, weeksUpdated, stravaConnected }: { plan: Plan; weeksUpdated: number; stravaConnected: boolean }) {
   const { meta } = plan
   const { easy, quality } = getPaceBands(plan)
   return (
@@ -171,6 +173,8 @@ function UpdatedPaceResult({ plan, weeksUpdated }: { plan: Plan; weeksUpdated: n
         </div>
       </div>
 
+      <RaceTimesCard stravaConnected={stravaConnected} />
+
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center' }}>
         {weeksUpdated} remaining {weeksUpdated === 1 ? 'week' : 'weeks'} updated.
       </div>
@@ -183,15 +187,18 @@ function UpdatedPaceResult({ plan, weeksUpdated }: { plan: Plan; weeksUpdated: n
 export default function BenchmarkUpdateScreen({
   onBack,
   plan,
+  stravaConnected,
   onUpdated,
 }: {
   onBack: () => void
   plan: Plan
+  stravaConnected: boolean
   onUpdated: (plan: Plan) => void
 }) {
   const [benchmarkType, setBenchmarkType] = useState<'race' | 'tt_30min' | null>(null)
   const [benchmarkDistKm, setBenchmarkDistKm] = useState<number | null>(null)
-  const [benchmarkTime, setBenchmarkTime] = useState('')
+  const [benchHours, setBenchHours] = useState(0)
+  const [benchMins, setBenchMins] = useState(0)
   const [benchmarkTTDist, setBenchmarkTTDist] = useState('')
 
   const [loading, setLoading] = useState(false)
@@ -199,7 +206,7 @@ export default function BenchmarkUpdateScreen({
   const [result, setResult] = useState<{ plan: Plan; weeksUpdated: number } | null>(null)
 
   function canSubmit() {
-    if (benchmarkType === 'race') return benchmarkDistKm !== null && benchmarkTime !== ''
+    if (benchmarkType === 'race') return benchmarkDistKm !== null && (benchHours > 0 || benchMins > 0)
     if (benchmarkType === 'tt_30min') return benchmarkTTDist !== ''
     return false
   }
@@ -209,8 +216,9 @@ export default function BenchmarkUpdateScreen({
     setLoading(true)
     setError(null)
 
+    const benchTimeStr = `${benchHours}:${String(benchMins).padStart(2, '0')}:00`
     const benchmark: BenchmarkInput = benchmarkType === 'race'
-      ? { type: 'race', distance_km: benchmarkDistKm!, time: benchmarkTime }
+      ? { type: 'race', distance_km: benchmarkDistKm!, time: benchTimeStr }
       : { type: 'tt_30min', distance_km: Number(benchmarkTTDist), time: '30:00' }
 
     try {
@@ -264,7 +272,7 @@ export default function BenchmarkUpdateScreen({
         <CurrentPaceSummary plan={plan} />
 
         {result ? (
-          <UpdatedPaceResult plan={result.plan} weeksUpdated={result.weeksUpdated} />
+          <UpdatedPaceResult plan={result.plan} weeksUpdated={result.weeksUpdated} stravaConnected={stravaConnected} />
         ) : (
           <>
             {/* Benchmark type selection */}
@@ -300,10 +308,10 @@ export default function BenchmarkUpdateScreen({
                   </div>
                   <div>
                     <FieldLabel>Finish time</FieldLabel>
-                    <StepInput
-                      value={benchmarkTime}
-                      onChange={setBenchmarkTime}
-                      placeholder="e.g. 24:15 or 1:49:30"
+                    <DurationPicker
+                      hours={benchHours} mins={benchMins}
+                      onHoursChange={setBenchHours} onMinsChange={setBenchMins}
+                      maxHours={9}
                     />
                   </div>
                 </div>
@@ -342,31 +350,32 @@ export default function BenchmarkUpdateScreen({
       <div style={{
         flexShrink: 0,
         padding: '12px 16px calc(12px + env(safe-area-inset-bottom))',
-        borderTop: '0.5px solid var(--border-col)',
+        borderTop: '1px solid var(--line)',
         background: 'var(--bg)',
       }}>
         {result ? (
           <button
             onClick={onBack}
             style={{
-              width: '100%', padding: '15px', borderRadius: '12px',
-              background: 'var(--accent)', border: 'none', cursor: 'pointer',
-              fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600,
-              color: 'var(--ink)',
+              width: '100%', padding: '15px', borderRadius: 'var(--radius-md)',
+              background: 'var(--moss)', border: 'none', cursor: 'pointer',
+              fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
+              color: 'var(--card)',
+              transition: 'all 0.15s',
             }}
           >
             Back to plan
           </button>
         ) : (
           <button
-            onClick={handleRecalibrate}
+            onClick={canSubmit() && !loading ? handleRecalibrate : undefined}
             disabled={!canSubmit() || loading}
             style={{
-              width: '100%', padding: '15px', borderRadius: '12px',
-              background: canSubmit() && !loading ? 'var(--accent)' : 'var(--accent-dim)',
+              width: '100%', padding: '15px', borderRadius: 'var(--radius-md)',
+              background: canSubmit() && !loading ? 'var(--moss)' : 'var(--moss-soft)',
+              color:      canSubmit() && !loading ? 'var(--card)' : 'var(--mute)',
               border: 'none', cursor: canSubmit() && !loading ? 'pointer' : 'not-allowed',
-              fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600,
-              color: canSubmit() && !loading ? 'var(--ink)' : 'var(--accent)',
+              fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
               transition: 'all 0.15s',
             }}
           >
