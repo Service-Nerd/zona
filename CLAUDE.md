@@ -103,11 +103,27 @@ The iOS app is a Capacitor wrapper around the Vercel-hosted web app, not a stand
 
 **Local dev against a local Next.js server:** temporarily edit `capacitor.config.ts` to set `server.url` to `http://<your-mac-ip>:3000` and `cleartext: true`, then `npm run dev` and `npx cap run ios`. Don't commit the local URL.
 
+**Native plugins installed:**
+- `@capacitor/splash-screen` — splash hold + manual hide on web mount (CapacitorBoot.tsx)
+- `@capacitor/status-bar` — warm-slate background, dark text, webview below status bar
+- `@capacitor/browser` — opens OAuth URLs in SFSafariViewController (Google blocks WKWebView with `disallowed_useragent`)
+- `@capacitor/app` — listens for deep-link returns (`appUrlOpen` event)
+- `@capacitor/push-notifications` — registers for APNs and posts the device token to `/api/push/subscribe` with `platform: 'ios'`
+
+**Auth on native:** custom URL scheme `app.vetra.ios://auth-callback` is registered in `Info.plist`. Supabase OAuth runs with `skipBrowserRedirect: true`, the URL is opened via `Browser.open()`, and the callback is exchanged for a session in `CapacitorBoot.tsx`'s `appUrlOpen` listener. The same scheme should be reused for Strava OAuth when it's ported off `window.location.href`.
+
+**Push notifications status:**
+- *Layers 1 + 2 (engineering)*: done. Client registers via `@capacitor/push-notifications`, backend has `platform` column on `push_subscriptions`, `/api/push/subscribe` accepts both shapes, `/api/push/send-weekly-report` branches by platform. iOS sends route through `lib/apnpush.ts` (uses the `apn` npm package).
+- *Layer 3 (Apple-side wiring)*: outstanding, gated on Apple Developer approval. Needs:
+  - Push Notifications capability enabled in the Apple Developer portal for `app.vetra.ios`
+  - APNs key generated (.p8 file) and downloaded
+  - Vercel env vars: `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY` (full .p8 contents), `APNS_TOPIC=app.vetra.ios`, `APNS_PRODUCTION=1` for prod
+  - Push Notifications capability added to the Xcode project's App target
+  - First test on a real device — simulator doesn't receive APNs
+
 **Native plugins still to add (see backlog):**
-- `@capacitor/push-notifications` — APNs push (replaces web-push for iOS); needs `push_subscriptions.platform` column + iOS branch in `/api/push/send-weekly-report`
-- `@capacitor-community/apple-sign-in` — Sign in with Apple, bridged to Supabase Auth
-- `@revenuecat/purchases-capacitor` — StoreKit 2 via RevenueCat
-- `@capacitor/status-bar`, `@capacitor/keyboard`, `@capacitor/app` — basic UX polish + deep link handling
+- `@capacitor-community/apple-sign-in` — Sign in with Apple, bridged to Supabase Auth (gated on Apple Dev account)
+- `@revenuecat/purchases-capacitor` — StoreKit 2 via RevenueCat (gated on Apple Dev + RevenueCat setup)
 
 ---
 

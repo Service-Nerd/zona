@@ -20,17 +20,19 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 ### B. Engineering blockers
 
-- 🔲 **Native shell — Capacitor iOS** — gates everything else in this section; Next.js + Vercel is web-only and cannot ship to App Store. Sub-tasks:
-  - Install `@capacitor/core`, `@capacitor/cli`, `@capacitor/ios`; `npx cap init` with bundle ID (e.g. `app.vetra.ios`) and app name from `BRAND.name`
-  - `npx cap add ios` — bootstraps the native Xcode project at `./ios/`
-  - Decide load strategy: `server.url` pointing at the Vercel deployment (keeps API routes + SSR + dynamic OG; simplest) vs static export bundled into the app (Apple-friendlier, but loses server-side bits and complicates auth callbacks). Recommend `server.url` for v1 — same architecture as Runna/Strava-like apps.
-  - Asset pipeline: app icon + splash via `@capacitor/assets` from `public/icon-1024.png`. PWA assets shipped in `1d0b4fe` are reusable.
-  - `@capacitor/status-bar`, `@capacitor/keyboard`, `@capacitor/app` (deep links), `@capacitor/preferences` for any local-only state
-  - Push notifications: replace web-push with `@capacitor/push-notifications` + APNs. `push_subscriptions` table needs a `platform` column (`web` | `ios`) and `/api/push/send-weekly-report` needs an iOS branch using APNs (or hand off to a service like OneSignal / Firebase). VAPID keys stay for web.
-  - Deep links / Universal Links — Strava OAuth callback, Supabase magic-link, Stripe checkout return must all open the native app. Needs `apple-app-site-association` file at the domain root + associated-domain entitlement.
-  - Build pipeline — Xcode signing certificate, provisioning profile, App Store Connect API key for CI uploads. Keep Vercel as the JS host; iOS builds happen on Mac/Mac CI runner.
-- 🔲 **Sign in with Apple** — Apple §5.1.1d, mandatory because Google OAuth is present. Use `@capacitor-community/apple-sign-in` plugin; bridge to Supabase Auth with the returned identity token. Depends on Capacitor shell.
-- 🔲 **StoreKit 2 integration** — via `@revenuecat/purchases-capacitor`. Webhook → Supabase `subscriptions` table (per project memory). Stripe path stays for `app.vetra.io` web users. Alternative: apply for External Purchase Entitlement (slow, not guaranteed). Depends on Capacitor shell + RevenueCat app setup.
+- ✅ **Native shell — Capacitor iOS** — bootstrapped. App boots in simulator with Vetra icon + splash, status bar polished (warm slate, dark text), splash auto-hides on web mount via `CapacitorBoot.tsx`, OAuth deep-link infrastructure in place via `app.vetra.ios://auth-callback` URL scheme. Plugins installed: `splash-screen`, `status-bar`, `browser`, `app`, `push-notifications`. `server.url` strategy with `allowNavigation` whitelist for OAuth providers. See `CLAUDE.md` § Native shell.
+- ✅ **Google OAuth on native** — opens via SFSafariViewController (`@capacitor/browser`); returns through custom URL scheme; `CapacitorBoot.tsx` exchanges the code and `router.replace`s to `/dashboard`. Same pattern reusable for Strava (still on `window.location.href`).
+- 🔲 **Strava OAuth on native** — currently uses `window.location.href` from `MeScreen` Strava connect button (DashboardClient.tsx line ~5234). Should be ported to the same SFSafariViewController + URL-scheme pattern Google uses. Low risk, ~30 min.
+- 🔲 **Sign in with Apple** — Apple §5.1.1d, mandatory because Google OAuth is present. Use `@capacitor-community/apple-sign-in` plugin; bridge to Supabase Auth with the returned identity token. Depends on Apple Developer approval (signing entitlement).
+- 🔲 **StoreKit 2 integration** — via `@revenuecat/purchases-capacitor`. Webhook → Supabase `subscriptions` table (per project memory). Stripe path stays for web users. Alternative: apply for External Purchase Entitlement (slow, not guaranteed). Depends on Apple Dev + RevenueCat app setup.
+- 🔄 **Push notifications** — engineering done (layers 1 + 2): `@capacitor/push-notifications` plugin registers the device, `/api/push/subscribe` accepts `{ platform: 'ios', token }`, `lib/apnpush.ts` sends via APNs (using `apn` npm package), `/api/push/send-weekly-report` branches by platform. Migration `20260430_push_platform.sql` adds `platform` column. **Outstanding (layer 3, gated on Apple Dev):**
+  - Enable Push Notifications capability in Apple Developer portal for `app.vetra.ios`
+  - Generate APNs key (.p8) in Apple Developer portal; download once (Apple won't show it again)
+  - Add the Push Notifications capability to the Xcode App target (Signing & Capabilities)
+  - Vercel env vars: `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY` (full .p8 contents — include the `-----BEGIN PRIVATE KEY-----` headers), `APNS_TOPIC=app.vetra.ios`, `APNS_PRODUCTION=1` for production builds (omit / set to `0` for sandbox testing)
+  - Test on a real device — the iOS Simulator can't receive live APNs, only simulated payloads via drag-and-drop .apns files
+- 🔲 **Universal Links** (defer until production domain is live) — replace custom URL schemes with `https://` deep links. Needs `apple-app-site-association` file at the domain root + Associated Domains entitlement in Xcode. Better trust + UX than custom schemes; not blocking v1.
+- 🔲 **Build / signing pipeline** — Xcode signing certificate, provisioning profile, App Store Connect API key for CI uploads. Vercel keeps hosting JS; iOS builds happen on the Mac. Gated on Apple Dev.
 - ✅ **Migration `orientation_seen`** — column exists in `user_settings`, read on load + written on completion. Done.
 
 ### C. Vercel env config
@@ -44,6 +46,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 - 🔲 `STRIPE_WEBHOOK_SECRET` — needs Stripe webhook endpoint created
 - 🔲 `STRIPE_PRICE_MONTHLY` + `STRIPE_PRICE_ANNUAL` — needs Stripe product + price IDs
 - 🔲 `REVENUECAT_WEBHOOK_SECRET` — needs RevenueCat app setup first
+- 🔲 `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC`, `APNS_PRODUCTION` — needs Apple Developer approval + APNs key generated
 
 ### D. External setup
 

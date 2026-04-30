@@ -5105,6 +5105,20 @@ function PushNotificationsRow() {
 
   useEffect(() => {
     async function check() {
+      // Native: ask the plugin whether iOS already granted permission.
+      const { Capacitor } = await import('@capacitor/core')
+      if (Capacitor.isNativePlatform()) {
+        const { PushNotifications } = await import('@capacitor/push-notifications')
+        try {
+          const perm = await PushNotifications.checkPermissions()
+          if (perm.receive === 'denied')  { setStatus('denied'); return }
+          if (perm.receive === 'granted') { setStatus('subscribed'); return }
+          setStatus('idle')
+        } catch { setStatus('idle') }
+        return
+      }
+
+      // Web: rely on the service worker / PushManager check.
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) { setStatus('unsupported'); return }
       const perm = (Notification as any).permission
       if (perm === 'denied') { setStatus('denied'); return }
@@ -5119,10 +5133,53 @@ function PushNotificationsRow() {
   }, [])
 
   async function enablePush() {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
-    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-    if (!vapidKey) return
     setLoading(true)
+    const { Capacitor } = await import('@capacitor/core')
+
+    // Native iOS path: request permission, register, send the device token
+    // returned via the `registration` event up to /api/push/subscribe.
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const { PushNotifications } = await import('@capacitor/push-notifications')
+        const perm = await PushNotifications.requestPermissions()
+        if (perm.receive !== 'granted') {
+          setStatus('denied')
+          return
+        }
+        // Resolve once APNs hands back a device token (or errors).
+        await new Promise<void>((resolve, reject) => {
+          let settled = false
+          const settle = (fn: () => void) => { if (!settled) { settled = true; fn() } }
+          PushNotifications.addListener('registration', async (token) => {
+            try {
+              await authedFetch('/api/push/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ platform: 'ios', token: token.value }),
+              })
+              settle(resolve)
+            } catch (err) {
+              settle(() => reject(err))
+            }
+          })
+          PushNotifications.addListener('registrationError', (err) => {
+            settle(() => reject(new Error(err.error)))
+          })
+          PushNotifications.register().catch((err) => settle(() => reject(err)))
+        })
+        setStatus('subscribed')
+      } catch {
+        setStatus('idle')
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
+    // Web path: existing service-worker + VAPID flow.
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) { setLoading(false); return }
+    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+    if (!vapidKey) { setLoading(false); return }
     try {
       const reg = await navigator.serviceWorker.ready
       const sub = await reg.pushManager.subscribe({
