@@ -18,12 +18,29 @@ const config: CapacitorConfig = {
   appId: 'app.vetra.ios',
   appName: 'Vetra',
   webDir: 'public',
+  // Warm Slate (--bg) — keeps the gap between the splash dismissing and the
+  // remote page rendering on-brand instead of showing the default black.
+  backgroundColor: '#F3F0EB',
   server: {
     url: 'https://rts-training-hub.vercel.app',
     cleartext: false,
   },
   ios: {
     contentInset: 'automatic',
+    backgroundColor: '#F3F0EB',
+  },
+  plugins: {
+    SplashScreen: {
+      // Hold the splash long enough to cover the initial network fetch from
+      // Vercel — the webview shows nothing until the response is in.
+      launchShowDuration: 2000,
+      launchAutoHide: true,
+      launchFadeOutDuration: 250,
+      backgroundColor: '#F3F0EB',
+      iosSpinnerStyle: 'small',
+      spinnerColor: '#6B8E6B',
+      showSpinner: false,
+    },
   },
 }
 
