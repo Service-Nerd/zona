@@ -2,8 +2,20 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
 import { createClient } from '@/lib/supabase/client'
 import { BRAND } from '@/lib/brand'
+
+// Custom URL scheme registered in ios/App/App/Info.plist. Google OAuth
+// requires SFSafariViewController on iOS (WKWebView is blocked with
+// disallowed_useragent), so on native we open the OAuth URL via
+// @capacitor/browser and return through this scheme. The deep link
+// listener in components/CapacitorBoot.tsx completes the auth.
+//
+// Manual one-time setup: this redirect URL must be added in the Supabase
+// dashboard at Authentication -> URL Configuration -> Redirect URLs.
+const NATIVE_AUTH_CALLBACK = 'app.vetra.ios://auth-callback'
 
 export default function LoginPage() {
   const [loading, setLoading]   = useState(false)
@@ -18,6 +30,30 @@ export default function LoginPage() {
 
   async function signInWithGoogle() {
     setLoading(true); setError(null)
+
+    if (Capacitor.isNativePlatform()) {
+      // Open Google OAuth in SafariViewController via @capacitor/browser.
+      // Google blocks WKWebView (disallowed_useragent) but accepts SFSafari.
+      // Returns to the app via the registered custom URL scheme; the deep
+      // link listener in CapacitorBoot finishes the code exchange.
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: NATIVE_AUTH_CALLBACK,
+          skipBrowserRedirect: true,
+        },
+      })
+      if (error || !data?.url) {
+        setError(error?.message ?? 'Could not start Google sign-in.')
+        setLoading(false)
+        return
+      }
+      await Browser.open({ url: data.url, presentationStyle: 'popover' })
+      // Loading stays true — the deep link handler navigates the user away.
+      return
+    }
+
+    // Web (browser / PWA): Supabase performs the redirect itself.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback` },
