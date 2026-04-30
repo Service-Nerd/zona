@@ -66,20 +66,48 @@ and user_settings. Nothing is hardcoded to a specific person.
 
 ## Tech Stack
 
-| Layer       | Tech                          |
-|-------------|-------------------------------|
-| Frontend    | Next.js (App Router)          |
-| Backend     | Supabase                      |
-| Deployment  | Vercel                        |
-| Plan data   | GitHub Gist (JSON)            |
-| Auth        | Supabase Auth                 |
-| Fitness API | Strava (free tier)            |
-| Dev machine | Mac Mini                      |
+| Layer        | Tech                          |
+|--------------|-------------------------------|
+| Frontend     | Next.js (App Router)          |
+| Backend      | Supabase                      |
+| Deployment   | Vercel                        |
+| Native shell | Capacitor (iOS) — see below   |
+| Plan data    | GitHub Gist (JSON)            |
+| Auth         | Supabase Auth                 |
+| Fitness API  | Strava (free tier)            |
+| Dev machine  | Mac Mini                      |
 
 - Supabase project ID: `wkppmpsvqkaxbekdgzdm`
-- Vercel app: `https://zona.vercel.app`
+- Vercel app: `https://rts-training-hub.vercel.app` (Vercel project rename to `vetra` is on the backlog)
 - Plan JSON: `https://gist.githubusercontent.com/Service-Nerd/efec07a87f65494f0e078a1ccb136100/raw/rts_plan.json`
   - Always fetched with `cache: 'no-store'`
+
+### Native shell — Capacitor
+
+The iOS app is a Capacitor wrapper around the Vercel-hosted web app, not a standalone native build.
+
+| Setting | Value |
+|---|---|
+| Bundle ID | `app.vetra.ios` |
+| App name | `Vetra` (sourced from `BRAND.name`) |
+| Strategy | `server.url` → loads Next.js from Vercel; native plugins layered on top |
+| Config | `capacitor.config.ts` (root) |
+| Native project | `ios/` (committed; build artifacts gitignored by `ios/.gitignore`) |
+
+**Why server.url, not static export:** Next.js API routes, SSR, dynamic OG, and Supabase auth callbacks all need a running server. Same JS code ships to web and iOS.
+
+**Common commands:**
+- `npx cap sync ios` — copy web assets + plugin updates into the iOS project (run after adding/updating Capacitor plugins)
+- `npx cap open ios` — open the Xcode project
+- `npx cap run ios` — build and run on simulator (requires Xcode)
+
+**Local dev against a local Next.js server:** temporarily edit `capacitor.config.ts` to set `server.url` to `http://<your-mac-ip>:3000` and `cleartext: true`, then `npm run dev` and `npx cap run ios`. Don't commit the local URL.
+
+**Native plugins still to add (see backlog):**
+- `@capacitor/push-notifications` — APNs push (replaces web-push for iOS); needs `push_subscriptions.platform` column + iOS branch in `/api/push/send-weekly-report`
+- `@capacitor-community/apple-sign-in` — Sign in with Apple, bridged to Supabase Auth
+- `@revenuecat/purchases-capacitor` — StoreKit 2 via RevenueCat
+- `@capacitor/status-bar`, `@capacitor/keyboard`, `@capacitor/app` — basic UX polish + deep link handling
 
 ---
 
