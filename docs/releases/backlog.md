@@ -20,8 +20,17 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 ### B. Engineering blockers
 
-- 🔲 **Sign in with Apple** — Apple §5.1.1d, mandatory because Google OAuth is present
-- 🔲 **StoreKit 2 integration** — implement purchase + receipt validation. Alternative: apply for External Purchase Entitlement (slow, not guaranteed)
+- 🔲 **Native shell — Capacitor iOS** — gates everything else in this section; Next.js + Vercel is web-only and cannot ship to App Store. Sub-tasks:
+  - Install `@capacitor/core`, `@capacitor/cli`, `@capacitor/ios`; `npx cap init` with bundle ID (e.g. `app.vetra.ios`) and app name from `BRAND.name`
+  - `npx cap add ios` — bootstraps the native Xcode project at `./ios/`
+  - Decide load strategy: `server.url` pointing at the Vercel deployment (keeps API routes + SSR + dynamic OG; simplest) vs static export bundled into the app (Apple-friendlier, but loses server-side bits and complicates auth callbacks). Recommend `server.url` for v1 — same architecture as Runna/Strava-like apps.
+  - Asset pipeline: app icon + splash via `@capacitor/assets` from `public/icon-1024.png`. PWA assets shipped in `1d0b4fe` are reusable.
+  - `@capacitor/status-bar`, `@capacitor/keyboard`, `@capacitor/app` (deep links), `@capacitor/preferences` for any local-only state
+  - Push notifications: replace web-push with `@capacitor/push-notifications` + APNs. `push_subscriptions` table needs a `platform` column (`web` | `ios`) and `/api/push/send-weekly-report` needs an iOS branch using APNs (or hand off to a service like OneSignal / Firebase). VAPID keys stay for web.
+  - Deep links / Universal Links — Strava OAuth callback, Supabase magic-link, Stripe checkout return must all open the native app. Needs `apple-app-site-association` file at the domain root + associated-domain entitlement.
+  - Build pipeline — Xcode signing certificate, provisioning profile, App Store Connect API key for CI uploads. Keep Vercel as the JS host; iOS builds happen on Mac/Mac CI runner.
+- 🔲 **Sign in with Apple** — Apple §5.1.1d, mandatory because Google OAuth is present. Use `@capacitor-community/apple-sign-in` plugin; bridge to Supabase Auth with the returned identity token. Depends on Capacitor shell.
+- 🔲 **StoreKit 2 integration** — via `@revenuecat/purchases-capacitor`. Webhook → Supabase `subscriptions` table (per project memory). Stripe path stays for `app.vetra.io` web users. Alternative: apply for External Purchase Entitlement (slow, not guaranteed). Depends on Capacitor shell + RevenueCat app setup.
 - ✅ **Migration `orientation_seen`** — column exists in `user_settings`, read on load + written on completion. Done.
 
 ### C. Vercel env config
