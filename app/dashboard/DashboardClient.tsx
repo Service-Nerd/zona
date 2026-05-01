@@ -817,12 +817,25 @@ export default function DashboardClient() {
               const liveSessionsCompleted = wSessions.filter(
                 (s: any) => comps[s.key]?.status === 'complete'
               ).length
-              const judgements = wSessions
+              // Zone discipline — time-weighted hr_in_zone_pct, same formula
+              // as the TodayScreen RestraintCard so the two surfaces never
+              // disagree about the same week.
+              const analysisRows = wSessions
                 .filter((s: any) => comps[s.key]?.status === 'complete')
-                .map((s: any) => didSessionHitZone(s.type, comps[s.key]?.avg_hr ?? null, restingHR ?? null, maxHR ?? null))
-                .filter((v): v is boolean => v !== null)
-              const zoneDisciplinePercent = judgements.length >= 2
-                ? Math.round(judgements.filter(v => v).length / judgements.length * 100)
+                .map((s: any) => {
+                  const a = runAnalysisMap?.[s.key]
+                  if (!a || a.hr_in_zone_pct == null) return null
+                  return {
+                    inZone: a.hr_in_zone_pct as number,
+                    weight: (a.actual_load_km as number | null) ?? 1,
+                  }
+                })
+                .filter((v: any): v is { inZone: number; weight: number } => v !== null)
+              const zoneDisciplinePercent = analysisRows.length >= 1
+                ? Math.round(
+                    analysisRows.reduce((s: number, r: any) => s + r.inZone * r.weight, 0)
+                    / analysisRows.reduce((s: number, r: any) => s + r.weight, 0)
+                  )
                 : null
               return (
                 <CoachScreen

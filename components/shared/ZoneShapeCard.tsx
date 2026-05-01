@@ -163,8 +163,12 @@ export default function ZoneShapeCard({ sessions, analyses }: Props) {
 }
 
 function formatMins(m: number): string {
-  if (m < 60) return `${m}m`
-  const h = Math.floor(m / 60)
-  const r = m % 60
-  return r === 0 ? `${h}h` : `${h}h ${r}m`
+  // Inputs may be fractional minutes (when actuals are computed from
+  // pct × duration weights). Round at the boundary so legend cells and
+  // the total in the title never show "1.18m"-style decimals.
+  const r = Math.max(0, Math.round(m))
+  if (r < 60) return `${r}m`
+  const h = Math.floor(r / 60)
+  const rem = r % 60
+  return rem === 0 ? `${h}h` : `${h}h ${rem}m`
 }
