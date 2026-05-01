@@ -17,7 +17,7 @@ import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
 import { BRAND } from '@/lib/brand'
 import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
 import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
-import RestraintCard from '@/components/shared/RestraintCard'
+import RestraintCard, { RestraintCardSkeleton } from '@/components/shared/RestraintCard'
 import PlanArc from '@/components/shared/PlanArc'
 import RPEScale from '@/components/shared/RPEScale'
 import SessionCard from '@/components/shared/SessionCard'
@@ -153,6 +153,11 @@ export default function DashboardClient() {
 
   // Coaching data — run analysis + weekly report + pending adjustments
   const [runAnalysisMap, setRunAnalysisMap] = useState<Record<string, any>>({})  // keyed by session_day
+  // Tracks whether the run_analysis fetch has completed (success OR empty).
+  // Lets downstream UI distinguish "still loading" from "definitely no data"
+  // — used to show a skeleton instead of letting the RestraintCard pop in
+  // a beat after the rest of the Today screen renders.
+  const [runAnalysisReady, setRunAnalysisReady] = useState(false)
   const [weeklyReport, setWeeklyReport] = useState<any | null>(null)
   const [pendingAdjustment, setPendingAdjustment] = useState<any | null>(null)
 
@@ -436,6 +441,7 @@ export default function DashboardClient() {
               if (reportRes.data) setWeeklyReport(reportRes.data)
               if (adjustmentsRes.data) setPendingAdjustment(adjustmentsRes.data)
             } catch {}
+            finally { setRunAnalysisReady(true) }
           })()
         }
 
@@ -800,7 +806,7 @@ export default function DashboardClient() {
       )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} />}
         {screen === 'coach'    && (hasPaidAccess
           ? (() => {
@@ -3571,7 +3577,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied }: {
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   stravaRuns: any[]
@@ -3583,6 +3589,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   zone2Ceiling: number
   onManualSaved?: () => void
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
+  stravaLoading?: boolean
   firstName?: string
   pendingAdjustment?: any | null
   onAdjustmentConfirmed?: (plan: any) => void
@@ -3593,6 +3600,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   dailyCoachNote?: string | null
   coachNoteSettled?: boolean
   runAnalysisMap?: Record<string, any>
+  runAnalysisReady?: boolean
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
@@ -4186,14 +4194,25 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               )}
             </div>
 
-            {/* Session card */}
+            {/* Session card.
+                Pace fallback chain: plan-baked pace_target → live aerobicPace
+                (computed from Strava history) → '—' placeholder while Strava
+                runs are still loading and an aerobic pace is expected. The
+                placeholder reserves the slot so the detail line doesn't
+                reflow when aerobicPace lands a beat later. */}
+            {(() => {
+              const expectsAerobicPace = (selectedSession.type === 'easy' || selectedSession.type === 'run') && !selectedSession.pace_target
+              const paceForDetail = selectedSession.pace_target
+                ?? aerobicPace
+                ?? (expectsAerobicPace && stravaLoading ? '—' : null)
+              return (
             <SessionCard
               type={selectedSession.type}
               name={selectedSession.title}
               detail={[
                 selectedSession.zone,
                 selectedSession.hr_target,
-                selectedSession.pace_target ?? aerobicPace,
+                paceForDetail,
               ].filter(Boolean).join(' · ') || undefined}
               distanceKm={selectedSession.distance}
               units={preferredUnits}
@@ -4226,6 +4245,8 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 })
               }}
             />
+              )
+            })()}
 
             {/* Primary CTA — only on today's session if not yet done */}
             {selectedSession.today && !completions[selectedKey]?.status && (
@@ -4300,28 +4321,49 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       </div>
 
       {/* ── ZONE DISCIPLINE CARD ─────────────────────────────────────── */}
-      {zoneDisciplinePercent !== null && (
-        <div style={{ padding: '20px 16px 0' }}>
-          <RestraintCard
-            percent={zoneDisciplinePercent}
-            meta={`across ${zoneDisciplineHits} ${zoneDisciplineHits === 1 ? 'run' : 'runs'}`}
-            body={
-              <>
-                of your time was spent in{' '}
-                <strong style={{ color: 'var(--ink)', fontWeight: 600 }}>
-                  Zone 2
-                </strong>
-                .{' '}
-                {zoneDisciplinePercent >= 80
-                  ? "Easy was easy. That's the work."
-                  : zoneDisciplinePercent >= 60
-                  ? "Mostly on target. Watch the drift on easy days."
-                  : "Too much grey-zone running. The fix is slower, not harder."}
-              </>
-            }
-          />
-        </div>
-      )}
+      {/* Title flips based on week phase: "is going" while the week is
+          still active, "went" once the end-of-week boundary passes. */}
+      {(() => {
+        const weekStart = parseLocalDate((currentWeek as any).date)
+        const weekEnd   = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 7)
+        const weekIsOver = new Date() >= weekEnd
+        const weekLabel  = weekIsOver ? 'How this week went' : 'How this week is going'
+
+        // Skeleton path: there are completed runs to score this week, but
+        // run_analysis hasn't loaded yet. Render the card shell so the
+        // Today screen layout doesn't reflow when the data lands.
+        if (!runAnalysisReady && completedThisWeek.length > 0 && zoneDisciplinePercent === null) {
+          return (
+            <div style={{ padding: '20px 16px 0' }}>
+              <RestraintCardSkeleton label={weekLabel} />
+            </div>
+          )
+        }
+        if (zoneDisciplinePercent === null) return null
+        return (
+          <div style={{ padding: '20px 16px 0' }}>
+            <RestraintCard
+              label={weekLabel}
+              percent={zoneDisciplinePercent}
+              meta={`across ${zoneDisciplineHits} ${zoneDisciplineHits === 1 ? 'run' : 'runs'}`}
+              body={
+                <>
+                  of your time was spent in{' '}
+                  <strong style={{ color: 'var(--ink)', fontWeight: 600 }}>
+                    Zone 2
+                  </strong>
+                  .{' '}
+                  {zoneDisciplinePercent >= 80
+                    ? "Easy was easy. That's the work."
+                    : zoneDisciplinePercent >= 60
+                    ? "Mostly on target. Watch the drift on easy days."
+                    : "Too much grey-zone running. The fix is slower, not harder."}
+                </>
+              }
+            />
+          </div>
+        )
+      })()}
 
       {/* ── ZONE SHAPE CARD ─────────────────────────────────────────── */}
       {/* Actual analyses for completed runs in the week. When ≥1 analysed
