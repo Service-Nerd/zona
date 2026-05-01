@@ -677,9 +677,26 @@ export default function DashboardClient() {
   }, [restingHR, maxHR, plan])
 
   // Aerobic pace derived from Strava runs in user's Z2 HR band
-  const aerobicPace = useMemo(() =>
+  // Aerobic pace is derived from Strava runs in the user's Z2 band — a
+  // network-bound input that can lag behind first paint when Strava is
+  // slow (the 2s splash safety timer caps how long we wait). Cache the
+  // last computed value in localStorage so subsequent paints have an
+  // immediate, stable value while fresh data is fetched.
+  const liveAerobicPace = useMemo(() =>
     computeAerobicPace(stravaRuns, restingHR, maxHR, preferredUnits),
   [stravaRuns, restingHR, maxHR, preferredUnits])
+  const PACE_CACHE_KEY = 'rts_aerobic_pace_cache'
+  const [cachedAerobicPace, setCachedAerobicPace] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    try { return localStorage.getItem(PACE_CACHE_KEY) } catch { return null }
+  })
+  useEffect(() => {
+    if (liveAerobicPace && liveAerobicPace !== cachedAerobicPace) {
+      try { localStorage.setItem(PACE_CACHE_KEY, liveAerobicPace) } catch {}
+      setCachedAerobicPace(liveAerobicPace)
+    }
+  }, [liveAerobicPace, cachedAerobicPace])
+  const aerobicPace = liveAerobicPace ?? cachedAerobicPace
 
   const now = new Date()
   const raceDate = plan?.meta?.race_date ? new Date(plan.meta.race_date) : null
