@@ -1708,6 +1708,11 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   // Pace from session structured field → Strava aerobic pace → null (no hardcoded fallback)
   const paceBracket = session.pace_target
     ?? ((session.type === 'easy' || session.type === 'run') ? aerobicPace ?? null : null)
+  // Tile label tells the user where the value came from. Plan-prescribed
+  // ranges aren't HR-derived; only aerobicPace is.
+  const paceSource: 'plan' | 'aerobic' | null = session.pace_target
+    ? 'plan'
+    : ((session.type === 'easy' || session.type === 'run') && aerobicPace ? 'aerobic' : null)
 
   // Render the pace tile shell (with a skeleton value) while we're still
   // waiting on Strava-derived aerobicPace. Avoids a layout flash where the
@@ -2064,7 +2069,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Est. pace</div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>~{paceBracket}</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>HR-derived estimate</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>{paceSource === 'plan' ? 'Pace target' : 'HR-derived estimate'}</div>
             </div>
           )}
           {!paceBracket && paceTileExpected && (
@@ -2277,8 +2282,19 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 aiGenerated={(session.coach_notes?.filter(Boolean).length ?? 0) > 0}
               >
                 {session.coach_notes?.filter(Boolean).length > 0 ? (
-                  // Structured coach notes from plan JSON (AI-generated)
-                  (session.coach_notes as string[]).filter(Boolean).join(' ')
+                  // Structured coach notes from plan JSON (AI-generated). Pass through
+                  // renderGuidance so {{token}} placeholders the enricher emitted resolve
+                  // to live values (Z2 ceiling, session HR, etc.) rather than carrying
+                  // stale baked literals after the athlete updates restingHR/maxHR.
+                  // Pre-tokenised legacy plans pass through unchanged (no tokens, no-op).
+                  renderGuidance(
+                    (session.coach_notes as string[]).filter(Boolean).join(' '),
+                    guidanceContextFromSession({
+                      session,
+                      zone2Ceiling: sessionHRBand('easy', restingHR ?? null, maxHR ?? null)?.hi ?? zone2Ceiling,
+                      maxHR, restingHR, goalPace,
+                    }),
+                  )
                 ) : guidance ? (
                   // Render only the "why" field — the "what" and "how" fields belong
                   // to other surfaces, not this WHY THIS SESSION block.
@@ -5943,21 +5959,22 @@ function ProfileSection({ firstName, lastName, email, onSave }: {
 }) {
   const [fn, setFn] = useState(firstName)
   const [ln, setLn] = useState(lastName)
-  const [em, setEm] = useState(email)
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => { setFn(firstName) }, [firstName])
   useEffect(() => { setLn(lastName) }, [lastName])
-  useEffect(() => { setEm(email) }, [email])
 
-  const isDirty = fn !== firstName || ln !== lastName || em !== email
+  // Email is read-only — it's the auth identity, owned by the OAuth provider.
+  // Changing it requires a re-verification flow we don't have, so the field
+  // is shown for orientation only ("which account am I logged in with?").
+  const isDirty = fn !== firstName || ln !== lastName
   const isValid = fn.trim().length > 0 || ln.trim().length > 0
 
   async function handleSave() {
     if (!isValid) return
     setSaving(true)
-    await onSave(fn.trim(), ln.trim(), em.trim())
+    await onSave(fn.trim(), ln.trim(), email)
     setSaved(true)
     setSaving(false)
     setTimeout(() => setSaved(false), 2000)
@@ -5991,7 +6008,14 @@ function ProfileSection({ firstName, lastName, email, onSave }: {
       </div>
       <div>
         <label style={labelStyle}>Email</label>
-        <input type="email" placeholder="you@example.com" value={em} onChange={e => setEm(e.target.value)} style={inputStyle} />
+        <input
+          type="email"
+          value={email}
+          readOnly
+          tabIndex={-1}
+          aria-readonly="true"
+          style={{ ...inputStyle, background: 'var(--bg-soft)', color: 'var(--text-muted)', cursor: 'default' }}
+        />
       </div>
       <button
         onClick={handleSave}

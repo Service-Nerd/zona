@@ -62,6 +62,7 @@ Inputs (race, fitness, schedule)
 - Adds `meta.confidence_score`, `meta.confidence_risks`, and `meta.coach_intro`.
 - Adds `week.theme` copy in ZONA voice.
 - **Must not change any numeric value** (distance, duration, HR targets, zone strings).
+- **Must not bake numeric values into `coach_notes` text.** When a coach note refers to a numeric the athlete might change later (HR ceilings, HR targets, paces, zones, distances, durations, RPE), the enricher emits a `{{token}}` placeholder from the vocabulary in `lib/plan/renderGuidance.ts`. The render layer substitutes the live value at display time via `renderGuidance()`, so notes stay correct after the athlete updates `resting_hr`, `max_hr`, or other inputs. Baking a literal (e.g. "Keep HR below 154 bpm") is a defect — the prompt forbids it and the render path strips orphan `{{...}}` as a safety net, but new contributors must respect this invariant when editing the enricher prompt.
 - Validates Claude output with Zod. Any validation failure → silent fallback to rule-engine output.
 
 ### Entry point

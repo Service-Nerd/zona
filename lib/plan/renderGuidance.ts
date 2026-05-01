@@ -45,20 +45,33 @@ export interface GuidanceContext {
   session_label?: string | null
 }
 
-const TOKEN_RE = /\{\{(\w+)(?:\|([^}]*))?\}\}/g
+// Tolerant of optional whitespace inside braces ({{ token }} as well as {{token}})
+// — the AI enricher has been observed to add stray spaces.
+const TOKEN_RE = /\{\{\s*(\w+)\s*(?:\|([^}]*))?\}\}/g
+// Catches anything that looks like an orphan template token after substitution
+// (malformed braces the main regex couldn't parse). Belt-and-braces against
+// raw `{{...}}` ever reaching the user.
+const ORPHAN_RE = /\{\{[^}]*\}?\}?/g
 
 export function renderGuidance(
   text: string | null | undefined,
   ctx: GuidanceContext,
 ): string {
   if (!text) return ''
-  return text.replace(TOKEN_RE, (_match, token: string, fallback: string | undefined) => {
+  const substituted = text.replace(TOKEN_RE, (_match, token: string, fallback: string | undefined) => {
     const value = (ctx as Record<string, unknown>)[token]
     if (value === undefined || value === null || value === '') {
       return fallback ?? ''
     }
     return String(value)
   })
+  // Strip any orphaned template syntax, then collapse the double spaces that
+  // empty substitutions leave behind ("Run for  minutes" → "Run for minutes").
+  return substituted
+    .replace(ORPHAN_RE, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\s+([.,;:!?])/g, '$1')
+    .trim()
 }
 
 /** Build a context from a Session and the dashboard's HR/zone props. Omits
