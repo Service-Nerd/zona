@@ -424,7 +424,7 @@ export default function DashboardClient() {
               try { await authedFetch('/api/pre-session-readiness') } catch {}
 
               const [analysisRes, reportRes, adjustmentsRes] = await Promise.all([
-                supabase.from('run_analysis').select('session_day, verdict, total_score, feedback_text, hr_in_zone_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score').eq('user_id', user.id),
+                supabase.from('run_analysis').select('session_day, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km').eq('user_id', user.id),
                 supabase.from('weekly_reports').select('*').eq('user_id', user.id).order('week_n', { ascending: false }).limit(1).maybeSingle(),
                 supabase.from('plan_adjustments').select('*').eq('user_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
               ])
@@ -800,21 +800,43 @@ export default function DashboardClient() {
       )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} />}
         {screen === 'coach'    && (hasPaidAccess
-          ? <CoachScreen plan={plan} currentWeek={currentWeek} runs={stravaRuns} stravaLoading={stravaLoading} stravaConnected={stravaConnected} stravaTokenFailed={stravaTokenFailed} firstName={firstName} weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport} preferredUnits={preferredUnits} zoneDisciplinePercent={(() => {
+          ? (() => {
               const wn = getCurrentWeekIndex(plan.weeks) + 1
               const comps = allCompletions[wn] ?? {}
               const wSessions = Object.entries((currentWeek as any).sessions ?? {})
                 .map(([day, s]: [string, any]) => ({ ...(s as any), key: day }))
-                .filter((s: any) => s?.type && s.type !== 'rest')
+                .filter((s: any) => s?.type && s.type !== 'rest' && s.type !== 'strength')
+              // Live sessions count — reads from allCompletions, not the cached
+              // weekly_reports row. The cache is generated once-per-day and
+              // its sessions_completed value goes stale every time a user
+              // logs another run. UI count must match what the user just did.
+              const liveSessionsPlanned   = wSessions.length
+              const liveSessionsCompleted = wSessions.filter(
+                (s: any) => comps[s.key]?.status === 'complete'
+              ).length
               const judgements = wSessions
                 .filter((s: any) => comps[s.key]?.status === 'complete')
                 .map((s: any) => didSessionHitZone(s.type, comps[s.key]?.avg_hr ?? null, restingHR ?? null, maxHR ?? null))
                 .filter((v): v is boolean => v !== null)
-              return judgements.length >= 2 ? Math.round(judgements.filter(v => v).length / judgements.length * 100) : null
-            })()} />
+              const zoneDisciplinePercent = judgements.length >= 2
+                ? Math.round(judgements.filter(v => v).length / judgements.length * 100)
+                : null
+              return (
+                <CoachScreen
+                  plan={plan} currentWeek={currentWeek} runs={stravaRuns}
+                  stravaLoading={stravaLoading} stravaConnected={stravaConnected}
+                  stravaTokenFailed={stravaTokenFailed} firstName={firstName}
+                  weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport}
+                  preferredUnits={preferredUnits}
+                  zoneDisciplinePercent={zoneDisciplinePercent}
+                  liveSessionsCompleted={liveSessionsCompleted}
+                  liveSessionsPlanned={liveSessionsPlanned}
+                />
+              )
+            })()
           : <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => setScreen('upgrade')} />
         )}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
@@ -3536,7 +3558,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied }: {
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   stravaRuns: any[]
@@ -3557,6 +3579,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   hasPaidAccess?: boolean
   dailyCoachNote?: string | null
   coachNoteSettled?: boolean
+  runAnalysisMap?: Record<string, any>
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
@@ -3790,20 +3813,33 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
     return fatiguePrepend + base
   }
 
-  // ── Zone discipline (HR-derived) ─────────────────────────────────────
-  // % of completed sessions where avg_hr landed in the session's prescribed
-  // zone band. A perfectly-executed quality session counts as a hit, not
-  // a miss. Sessions without HR data don't count toward the denominator.
+  // ── Zone discipline (HR-derived, time-weighted) ──────────────────────
+  // Show actual % of time spent in the prescribed zone, weighted by run
+  // distance. Replaces the earlier binary per-session check on avg_hr,
+  // which could pass a run that drifted high but averaged out across
+  // walking. Time-weighted matches what the per-session AI analysis says.
+  // Sessions without run_analysis data (no Strava/HK HR stream) are
+  // excluded from the denominator.
   const completedThisWeek = sessions.filter(s =>
     s.type !== 'rest' && completions[s.key]?.status === 'complete'
   )
-  const zoneJudgements = completedThisWeek
-    .map(s => didSessionHitZone(s.type, completions[s.key]?.avg_hr ?? null, restingHR ?? null, maxHR ?? null))
-    .filter((v): v is boolean => v !== null)
-  const zoneDisciplineHits = zoneJudgements.filter(v => v).length
-  const zoneDisciplinePercent = zoneJudgements.length >= 2
-    ? Math.round((zoneDisciplineHits / zoneJudgements.length) * 100)
+  const analysisRows = completedThisWeek
+    .map(s => {
+      const a = runAnalysisMap?.[s.key]
+      if (!a || a.hr_in_zone_pct == null) return null
+      return {
+        inZone: a.hr_in_zone_pct as number,
+        weight: (a.actual_load_km as number | null) ?? 1,
+      }
+    })
+    .filter((v): v is { inZone: number; weight: number } => v !== null)
+  const zoneDisciplinePercent = analysisRows.length >= 1
+    ? Math.round(
+        analysisRows.reduce((s, r) => s + r.inZone * r.weight, 0)
+        / analysisRows.reduce((s, r) => s + r.weight, 0)
+      )
     : null
+  const zoneDisciplineHits = analysisRows.length
 
   // ── Done sessions for "Done this week" section ───────────────────────
   const doneSessions = sessions.filter(s =>
@@ -4255,19 +4291,19 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         <div style={{ padding: '20px 16px 0' }}>
           <RestraintCard
             percent={zoneDisciplinePercent}
-            meta={`${zoneDisciplineHits} / ${zoneJudgements.length} hit their zone`}
+            meta={`across ${zoneDisciplineHits} ${zoneDisciplineHits === 1 ? 'run' : 'runs'}`}
             body={
               <>
-                of your runs landed in the{' '}
+                of your time was spent in{' '}
                 <strong style={{ color: 'var(--ink)', fontWeight: 600 }}>
-                  prescribed zone
+                  Zone 2
                 </strong>
                 .{' '}
                 {zoneDisciplinePercent >= 80
-                  ? "Easy was easy. Hard was hard. That's the work."
+                  ? "Easy was easy. That's the work."
                   : zoneDisciplinePercent >= 60
                   ? "Mostly on target. Watch the drift on easy days."
-                  : "Too much grey-zone running. Hit the zone the session prescribes."}
+                  : "Too much grey-zone running. The fix is slower, not harder."}
               </>
             }
           />
@@ -4275,8 +4311,34 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       )}
 
       {/* ── ZONE SHAPE CARD ─────────────────────────────────────────── */}
+      {/* Actual analyses for completed runs in the week. When ≥1 analysed
+          run is available, ZoneShapeCard shows actual time-in-zone instead
+          of the prescribed shape — honest about what happened, not what
+          was planned. */}
       <div style={{ padding: '12px 16px 0' }}>
-        <ZoneShapeCard sessions={sessions.filter(s => s.type !== 'rest')} />
+        <ZoneShapeCard
+          sessions={sessions.filter(s => s.type !== 'rest')}
+          analyses={completedThisWeek
+            .map(s => {
+              const a = runAnalysisMap?.[s.key]
+              if (!a || a.hr_in_zone_pct == null) return null
+              const distKm = (a.actual_load_km as number | null)
+                ?? completions[s.key]?.strava_activity_km
+                ?? s.distance ?? null
+              if (!distKm) return null
+              // Estimate minutes from distance — used purely as a weight.
+              // ~6.5 min/km is a reasonable easy-pace average; exact value
+              // doesn't matter since each row's weight is proportional.
+              const durationMins = distKm * 6.5
+              return {
+                inZonePct:       a.hr_in_zone_pct as number,
+                aboveCeilingPct: (a.hr_above_ceiling_pct as number | null) ?? 0,
+                belowFloorPct:   (a.hr_below_floor_pct as number | null) ?? 0,
+                durationMins,
+              }
+            })
+            .filter((v): v is NonNullable<typeof v> => v !== null)}
+        />
       </div>
 
       {/* ── DONE THIS WEEK ───────────────────────────────────────────── */}
@@ -4744,13 +4806,15 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
   )
 }
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent }: {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, liveSessionsCompleted, liveSessionsPlanned }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaConnected: boolean
   stravaTokenFailed?: boolean; firstName?: string
   weeklyReport?: any | null; onReportGenerated?: (report: any) => void
   preferredUnits?: 'km' | 'mi'
   zoneDisciplinePercent?: number | null
+  liveSessionsCompleted?: number
+  liveSessionsPlanned?: number
 }) {
   const [loading, setLoading]           = useState(false)
   const [error, setError]               = useState<string | null>(null)
@@ -4781,8 +4845,14 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
 
   // Metrics derived from report or defaults
   const loadRatio: number | null       = reportIsCurrent ? (weeklyReport?.acute_chronic_ratio ?? null) : null
-  const sessionsCompleted: number | null = reportIsCurrent ? (weeklyReport?.sessions_completed ?? null) : null
-  const sessionsPlanned: number | null   = reportIsCurrent ? (weeklyReport?.sessions_planned ?? null) : null
+  // Sessions count: prefer live values from completions state. The cached
+  // weekly_reports row snapshots count at generation time and the route's
+  // once-per-day cache cap blocks force-refresh, so the cached value goes
+  // stale every time a user logs another run.
+  const sessionsCompleted: number | null = liveSessionsCompleted
+    ?? (reportIsCurrent ? (weeklyReport?.sessions_completed ?? null) : null)
+  const sessionsPlanned: number | null   = liveSessionsPlanned
+    ?? (reportIsCurrent ? (weeklyReport?.sessions_planned ?? null) : null)
   const weeksToRace = Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
 
   async function generateReport() {

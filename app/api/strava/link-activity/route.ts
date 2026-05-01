@@ -4,6 +4,7 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getStravaToken, fetchHRStreamSummary } from '@/lib/strava'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
+import { tryEnrichHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
 
 // POST /api/strava/link-activity
 // Called when a user manually links a Strava activity to a planned session.
@@ -62,9 +63,20 @@ export async function POST(req: NextRequest) {
 
   const hrSummary = await fetchHRStreamSummary(supabase, access_token, strava_activity_id, user.id)
 
+  // HealthKit-primary architecture: if the user already has a HealthKit row
+  // for this workout, patch it in place rather than create a duplicate.
+  const consolidation = await tryEnrichHealthKitRow(supabase, user.id, activity, hrSummary)
+  if (consolidation.enriched) {
+    return NextResponse.json({ ok: true, mode: 'enriched_healthkit' })
+  }
+
+  // No HealthKit row — fall back to creating a Strava-sourced row and
+  // firing analysis. This is the path for users who haven't connected
+  // HealthKit (or whose iOS sync hasn't run yet).
   const { error: upsertErr } = await supabase.from('strava_activities').upsert({
     user_id:              user.id,
     strava_activity_id:   activity.id,
+    source:               'strava',
     activity_type:        activity.type,
     sport_type:           activity.sport_type,
     name:                 activity.name,
@@ -89,7 +101,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to persist activity' }, { status: 500 })
   }
 
-  // Trigger analysis via internal call (same pattern as the webhook).
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL
     ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
 
@@ -107,5 +118,5 @@ export async function POST(req: NextRequest) {
     console.warn('[link-activity] analyse-run trigger failed', err)
   }
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, mode: 'created_strava' })
 }

@@ -9,7 +9,7 @@ import { computeEF, computeEFBaseline } from '@/lib/coaching/efTrend'
 import { COACHING_RULE_ENGINE_VERSION, COHORT_SIMILARITY } from '@/lib/coaching/constants'
 import { buildSessionFeedbackPrompt } from '@/lib/coaching/prompts/sessionFeedback'
 import { fetchRunHistory, findSimilarRuns, summariseCohort, pickWindowDays } from '@/lib/coaching/runHistory'
-import { zoneForSessionType } from '@/lib/coaching/zoneRules'
+import { zoneForSessionType, sessionHRBand } from '@/lib/coaching/zoneRules'
 import { notifyUser } from '@/lib/webpush'
 import { BRAND } from '@/lib/brand'
 import type { Plan, Session } from '@/types/plan'
@@ -71,8 +71,11 @@ export async function POST(req: NextRequest) {
     ? activityQuery.eq('strava_activity_id', strava_activity_id)
     : activityQuery.eq('apple_health_uuid', apple_health_uuid!)
 
-  // Fetch activity, plan, completions in parallel
-  const [activityRes, planRes, completionRes, recentActivitiesRes] = await Promise.all([
+  // Fetch activity, plan, completions, settings in parallel.
+  // user_settings.resting_hr + max_hr drive the live Karvonen band — must
+  // match the session-card UI (which reads the same source) so feedback
+  // doesn't quote a different ceiling than the user sees on screen.
+  const [activityRes, planRes, completionRes, recentActivitiesRes, settingsRes] = await Promise.all([
     activityFiltered.single(),
     serviceSupabase
       .from('plans')
@@ -92,6 +95,11 @@ export async function POST(req: NextRequest) {
       .eq('user_id', userId)
       .order('start_date', { ascending: false })
       .limit(20),
+    serviceSupabase
+      .from('user_settings')
+      .select('resting_hr, max_hr')
+      .eq('id', userId)
+      .single(),
   ])
 
   const activity = activityRes.data
@@ -185,6 +193,12 @@ export async function POST(req: NextRequest) {
   let feedbackText: string | null = null
   try {
     const prescribedZone = zoneForSessionType((session as any).type)
+    // Live Karvonen band from user_settings — single source of truth shared
+    // with the UI. Falls back to plan.meta.zone2_ceiling inside the prompt
+    // when restingHR/maxHR are missing.
+    const restingHR = settingsRes.data?.resting_hr ?? null
+    const maxHR     = settingsRes.data?.max_hr     ?? null
+    const liveBand  = sessionHRBand((session as any).type, restingHR, maxHR)
     const prompt = buildSessionFeedbackPrompt({
       session,
       weekN: week_n,
@@ -201,6 +215,7 @@ export async function POST(req: NextRequest) {
       rpe:                 completionRes.data?.rpe ?? null,
       fatigueTag:          completionRes.data?.fatigue_tag ?? null,
       prescribedZoneLabel: prescribedZone?.label ?? null,
+      prescribedHrBand:    liveBand ? { lo: liveBand.lo, hi: liveBand.hi } : null,
       cohortContext:       cohortSummary,
     })
 

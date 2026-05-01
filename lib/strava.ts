@@ -70,16 +70,28 @@ export function bucketHRSamples(hrData: number[], zones: HRZones): HRStreamSumma
   }
 }
 
-/** Reads the user's plan zones (zone2_ceiling, max_hr) from the plans table. */
+/** Reads the user's HR zones. Source of truth: live user_settings.resting_hr
+ *  + user_settings.max_hr (Karvonen 70% ceiling). Falls back to the baked
+ *  plan.meta.zone2_ceiling when user_settings HR is missing — that path
+ *  exists for users who haven't set HR in profile yet. The plan-meta value
+ *  can drift after a user updates their resting/max HR; reading live
+ *  user_settings keeps the bucketing in lockstep with what the UI shows. */
 export async function getUserHRZones(supabase: any, userId: string): Promise<HRZones> {
-  const { data: planRow } = await supabase
-    .from('plans')
-    .select('plan_json')
-    .eq('user_id', userId)
-    .single()
+  const [settingsRes, planRes] = await Promise.all([
+    supabase.from('user_settings').select('resting_hr, max_hr').eq('id', userId).single(),
+    supabase.from('plans').select('plan_json').eq('user_id', userId).single(),
+  ])
+  const restingHR = settingsRes.data?.resting_hr ?? null
+  const maxHR     = settingsRes.data?.max_hr     ?? planRes.data?.plan_json?.meta?.max_hr ?? null
+  if (restingHR && maxHR) {
+    return {
+      zone2Ceiling: Math.round(restingHR + 0.70 * (maxHR - restingHR)),
+      maxHR,
+    }
+  }
   return {
-    zone2Ceiling: planRow?.plan_json?.meta?.zone2_ceiling ?? null,
-    maxHR:        planRow?.plan_json?.meta?.max_hr ?? null,
+    zone2Ceiling: planRes.data?.plan_json?.meta?.zone2_ceiling ?? null,
+    maxHR,
   }
 }
 

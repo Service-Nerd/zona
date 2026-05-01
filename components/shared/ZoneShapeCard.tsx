@@ -1,9 +1,14 @@
-// ZoneShapeCard — shows this week's prescribed time-in-zone distribution
-// as a horizontal stacked bar. Makes the polarised shape (mostly Z2,
-// some Z3/Z4-5) legible at a glance.
+// ZoneShapeCard — shows this week's time-in-zone distribution as a
+// horizontal stacked bar.
 //
-// Phase 1: prescribed-only (each session's duration → prescribed zone).
-// A future iteration could overlay actual HR distribution from completions.
+// When `analyses` rows are available (≥1 completed run with HR analysis),
+// renders ACTUAL time-in-zone — weighted aggregate across runs. Three
+// buckets: below Z2 (Z1), in Z2, above Z2 (Z3+). The HR bucketing only
+// produces these three categories, so we don't sub-bucket Z3 vs Z4-5.
+//
+// Falls back to PRESCRIBED shape (mapping session.type → its prescribed
+// zone) when no analyses are provided — useful as the empty-state view
+// before any runs are completed in the week.
 
 'use client'
 
@@ -11,40 +16,71 @@ import { zoneForSessionType, type ZoneKey } from '@/lib/coaching/zoneRules'
 
 type Session = { type?: string; duration_mins?: number; distance_km?: number }
 
+export interface ZoneShapeAnalysis {
+  inZonePct:       number
+  aboveCeilingPct: number
+  belowFloorPct:   number
+  durationMins:    number
+}
+
 interface Props {
   sessions: Session[]
+  /** Actual time-in-zone data from completed-run analyses. Empty / omitted
+   *  means we fall back to prescribed shape. */
+  analyses?: ZoneShapeAnalysis[]
 }
 
 const ZONE_ORDER: ZoneKey[] = ['Z2', 'Z3', 'Z4-5']
-const ZONE_COLOUR: Record<ZoneKey, string> = {
-  'Z1': 'var(--s-recov)',
-  'Z2': 'var(--s-easy)',
-  'Z3': 'var(--s-quality)',
+const ACTUAL_ORDER = ['Z1', 'Z2', 'Z3+'] as const
+type ActualKey = typeof ACTUAL_ORDER[number]
+
+const ZONE_COLOUR: Record<ZoneKey | ActualKey, string> = {
+  'Z1':   'var(--s-recov)',
+  'Z2':   'var(--s-easy)',
+  'Z3':   'var(--s-quality)',
+  'Z3+':  'var(--s-quality)',
   'Z4-5': 'var(--s-inter)',
 }
-const ZONE_LABEL: Record<ZoneKey, string> = {
-  'Z1': 'Z1',
-  'Z2': 'Z2',
-  'Z3': 'Z3',
+const ZONE_LABEL: Record<ZoneKey | ActualKey, string> = {
+  'Z1':   'Z1',
+  'Z2':   'Z2',
+  'Z3':   'Z3',
+  'Z3+':  'Z3+',
   'Z4-5': 'Z4–5',
 }
 
-export default function ZoneShapeCard({ sessions }: Props) {
-  // Tally minutes per zone. Sessions without a duration but with a distance
-  // get a coarse estimate (~6.5 min/km easy pace). Better than dropping
-  // them silently — most plans include both.
-  const minutesByZone: Record<ZoneKey, number> = { 'Z1': 0, 'Z2': 0, 'Z3': 0, 'Z4-5': 0 }
-  for (const s of sessions) {
-    const zone = zoneForSessionType(s?.type)
-    if (!zone) continue
-    const mins = s.duration_mins
-      ?? (s.distance_km != null ? Math.round(s.distance_km * 6.5) : null)
-    if (mins == null || mins <= 0) continue
-    minutesByZone[zone.zone] += mins
+export default function ZoneShapeCard({ sessions, analyses }: Props) {
+  const hasActual = (analyses?.length ?? 0) >= 1
+
+  // Build bucket → minutes map, with the right keys for the active mode.
+  const order: readonly (ZoneKey | ActualKey)[] = hasActual ? ACTUAL_ORDER : ZONE_ORDER
+  const minutesByZone: Record<string, number> = {}
+  for (const k of order) minutesByZone[k] = 0
+
+  if (hasActual) {
+    // Time-weighted actual: minutes(zone) = sum over runs of pct(zone) × duration.
+    for (const a of analyses!) {
+      minutesByZone['Z1']  += (a.belowFloorPct   / 100) * a.durationMins
+      minutesByZone['Z2']  += (a.inZonePct       / 100) * a.durationMins
+      minutesByZone['Z3+'] += (a.aboveCeilingPct / 100) * a.durationMins
+    }
+  } else {
+    // Prescribed shape — map each session.type to its prescribed zone.
+    // Sessions without a duration fall back to a coarse 6.5 min/km estimate.
+    for (const s of sessions) {
+      const zone = zoneForSessionType(s?.type)
+      if (!zone) continue
+      const mins = s.duration_mins
+        ?? (s.distance_km != null ? Math.round(s.distance_km * 6.5) : null)
+      if (mins == null || mins <= 0) continue
+      minutesByZone[zone.zone] += mins
+    }
   }
 
-  const total = ZONE_ORDER.reduce((sum, k) => sum + minutesByZone[k], 0)
+  const total = order.reduce((sum, k) => sum + minutesByZone[k], 0)
   if (total === 0) return null
+
+  const titleLabel = hasActual ? 'Actual zone time' : 'Planned shape'
 
   return (
     <div style={{
@@ -60,7 +96,7 @@ export default function ZoneShapeCard({ sessions }: Props) {
         <div style={{
           fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
           color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase',
-        }}>This week's shape</div>
+        }}>{titleLabel}</div>
         <div style={{
           fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 500,
           color: 'var(--mute)', fontVariantNumeric: 'tabular-nums',
@@ -73,7 +109,7 @@ export default function ZoneShapeCard({ sessions }: Props) {
         overflow: 'hidden', background: 'var(--bg-soft)',
         marginBottom: '12px',
       }}>
-        {ZONE_ORDER.map(k => {
+        {order.map(k => {
           const pct = (minutesByZone[k] / total) * 100
           if (pct === 0) return null
           return (
@@ -94,7 +130,7 @@ export default function ZoneShapeCard({ sessions }: Props) {
       <div style={{
         display: 'flex', justifyContent: 'space-between', gap: '12px',
       }}>
-        {ZONE_ORDER.map(k => {
+        {order.map(k => {
           const mins = minutesByZone[k]
           const pct = Math.round((mins / total) * 100)
           return (
@@ -117,7 +153,7 @@ export default function ZoneShapeCard({ sessions }: Props) {
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '10px',
                 color: 'var(--mute)', fontVariantNumeric: 'tabular-nums',
-              }}>{formatMins(mins)}</div>
+              }}>{formatMins(Math.round(mins))}</div>
             </div>
           )
         })}

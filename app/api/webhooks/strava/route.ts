@@ -3,6 +3,7 @@ import { waitUntil } from '@vercel/functions'
 import { NextRequest, NextResponse } from 'next/server'
 import { getStravaToken, fetchHRStreamSummary } from '@/lib/strava'
 import { autoMatchAndAnalyse, getInternalBaseUrl } from '@/lib/coaching/autoAnalyse'
+import { tryEnrichHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
 
 // Strava webhook docs: https://developers.strava.com/docs/webhooks/
 //
@@ -114,6 +115,25 @@ async function enrichAndPersist(event: StravaEvent) {
 
   // Fetch HR stream and compute zone percentages (raw stream discarded after)
   const hrSummary = await fetchHRStreamSummary(getSupabase(), access_token, event.object_id, userId)
+
+  // HealthKit-primary: if iOS already ingested this workout, enrich the HK
+  // row in place instead of inserting a Strava duplicate. Skip the auto-
+  // match path too — HK ingest already triggered analysis on the same
+  // session_completion. Falls through to the legacy create path when no HK
+  // row matches (Strava-only users, or webhook firing before HK sync).
+  const consolidation = await tryEnrichHealthKitRow(
+    getSupabase(),
+    userId,
+    {
+      id:           activity.id,
+      start_date:   activity.start_date,
+      distance:     activity.distance,
+      name:         activity.name,
+      suffer_score: activity.suffer_score ?? null,
+    },
+    hrSummary,
+  )
+  if (consolidation.enriched) return
 
   // Upsert into strava_activities
   const { error } = await getSupabase().from('strava_activities').upsert({
