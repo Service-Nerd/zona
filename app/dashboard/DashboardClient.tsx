@@ -132,6 +132,12 @@ export default function DashboardClient() {
   const [resetPhrase, setResetPhrase] = useState('')
   const [theme, setTheme] = useState<'dark' | 'light' | 'auto'>('light')
   const [appReady, setAppReady] = useState(false)
+  // Splash holds until critical first-paint data is in: run_analysis (for
+  // the "How this week is going" card) and Strava activities (for the
+  // session-card aerobic-pace slot). Flipped by a 2s safety timeout if
+  // Strava is slow — better to drop into the UI with a skeleton than to
+  // hang the splash on an unreachable third party.
+  const [stravaSafetyExpired, setStravaSafetyExpired] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [preferredUnits, setPreferredUnits] = useState<'km' | 'mi'>('km')
   const [preferredMetric, setPreferredMetric] = useState<'distance' | 'duration'>('distance')
@@ -218,6 +224,15 @@ export default function DashboardClient() {
       setScreen('upgrade')
       window.history.replaceState({}, '', '/dashboard')
     }
+  }, [])
+
+  // Strava safety timer: if the activities fetch hasn't settled within 2s
+  // of mount, release the splash anyway. Strava can be slow / unreachable
+  // and we'd rather render the Today screen with a brief pace skeleton
+  // than hang the splash indefinitely.
+  useEffect(() => {
+    const t = setTimeout(() => setStravaSafetyExpired(true), 2000)
+    return () => clearTimeout(t)
   }, [])
 
   const initials = (() => {
@@ -418,31 +433,35 @@ export default function DashboardClient() {
         // Orientation seen flag (B-002) — true means we've shown it before, don't show again
         if (data?.orientation_seen) setOrientationSeen(true)
 
-        // Coaching data — run analysis, weekly report, pending adjustments (paid/trial only)
+        // Coaching data — run analysis, weekly report, pending adjustments (paid/trial only).
+        // Awaited inline now (was fire-and-forget) so the splash can hold
+        // until run_analysis is in hand — prevents the "How this week is
+        // going" card from popping in a beat after the Today screen lands.
+        // Free users skip the fetch entirely and flip ready immediately.
         if (paidAccess) {
-          void (async () => {
-            try {
-              // Pre-flight: pre-session readiness check.
-              // Fires HealthKit RHR/HRV/sleep deviations into a pending plan_adjustment
-              // row before we read the table below. Silent failure — readiness is one of
-              // many adjustment paths and shouldn't block the rest of the dashboard data.
-              try { await authedFetch('/api/pre-session-readiness') } catch {}
+          try {
+            // Pre-flight: pre-session readiness check.
+            // Fires HealthKit RHR/HRV/sleep deviations into a pending plan_adjustment
+            // row before we read the table below. Silent failure — readiness is one of
+            // many adjustment paths and shouldn't block the rest of the dashboard data.
+            try { await authedFetch('/api/pre-session-readiness') } catch {}
 
-              const [analysisRes, reportRes, adjustmentsRes] = await Promise.all([
-                supabase.from('run_analysis').select('session_day, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km').eq('user_id', user.id),
-                supabase.from('weekly_reports').select('*').eq('user_id', user.id).order('week_n', { ascending: false }).limit(1).maybeSingle(),
-                supabase.from('plan_adjustments').select('*').eq('user_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
-              ])
-              if (analysisRes.data) {
-                const map: Record<string, any> = {}
-                analysisRes.data.forEach((r: any) => { map[r.session_day] = r })
-                setRunAnalysisMap(map)
-              }
-              if (reportRes.data) setWeeklyReport(reportRes.data)
-              if (adjustmentsRes.data) setPendingAdjustment(adjustmentsRes.data)
-            } catch {}
-            finally { setRunAnalysisReady(true) }
-          })()
+            const [analysisRes, reportRes, adjustmentsRes] = await Promise.all([
+              supabase.from('run_analysis').select('session_day, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km').eq('user_id', user.id),
+              supabase.from('weekly_reports').select('*').eq('user_id', user.id).order('week_n', { ascending: false }).limit(1).maybeSingle(),
+              supabase.from('plan_adjustments').select('*').eq('user_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+            ])
+            if (analysisRes.data) {
+              const map: Record<string, any> = {}
+              analysisRes.data.forEach((r: any) => { map[r.session_day] = r })
+              setRunAnalysisMap(map)
+            }
+            if (reportRes.data) setWeeklyReport(reportRes.data)
+            if (adjustmentsRes.data) setPendingAdjustment(adjustmentsRes.data)
+          } catch {}
+          finally { setRunAnalysisReady(true) }
+        } else {
+          setRunAnalysisReady(true)
         }
 
         setOverridesReady(true)
@@ -677,8 +696,14 @@ export default function DashboardClient() {
     position: 'relative',
   }
 
-  // Loading screen — shown until overrides + settings are fetched
-  if (!appReady) {
+  // Splash holds until everything that drives Today's first paint is in:
+  // settings/overrides (appReady), run_analysis (runAnalysisReady — gates
+  // the "How this week is going" card), and Strava activities (gates the
+  // session-card aerobic-pace slot). The 2s safety timer releases the
+  // Strava gate so an unreachable Strava can't hang the splash.
+  const stravaGateOpen = !stravaLoading || stravaSafetyExpired
+  const bootReady = appReady && runAnalysisReady && stravaGateOpen
+  if (!bootReady) {
     return (
       <div style={{
         minHeight: '100dvh', display: 'flex', flexDirection: 'column',
