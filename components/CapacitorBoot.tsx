@@ -41,6 +41,20 @@ export default function CapacitorBoot() {
     StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {})
     SplashScreen.hide().catch(() => {})
 
+    // Foreground HealthKit sync. Pulls new runs + recovery samples since last
+    // sync and posts them to the backend. Silent failure — readiness signal
+    // and ingest are paid features that degrade gracefully when HealthKit
+    // isn't authorized or the plugin isn't installed yet (Phase G).
+    void (async () => {
+      try {
+        const { syncOnAppOpen } = await import('@/lib/health/clientSync')
+        await syncOnAppOpen()
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[capacitor-boot] HealthKit sync skipped', err instanceof Error ? err.message : err)
+      }
+    })()
+
     let removeListener: (() => void) | undefined
 
     CapApp.addListener('appUrlOpen', async ({ url }) => {

@@ -2,7 +2,7 @@
 
 **Method:** POST  
 **Auth:** Bearer token (paid/trial). Internal cron path: `x-service-key` + `x-user-id` headers bypass auth check.  
-**Gate:** `strava_intelligence` — returns 403 for free tier.
+**Gate:** `activity_intelligence` — returns 403 for free tier.
 
 ## Query params
 

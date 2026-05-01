@@ -396,6 +396,24 @@ export const GENERATION_CONFIG = {
   FOUNDATION_WEEKLY_INCREASE_PCT: 10, // max +% per week within the block
   FOUNDATION_LONG_RUN_MAX_PCT:   50, // long run cap as % of that week's weekly_km
   FRESH_RETURN_EFFECTIVE_BASELINE_FRACTION: 0.70, // mirrors FRESH_RETURN_START_FRACTION
+
+  // ── Pre-session readiness signal (CoachingPrinciples §59) ───────────────────
+  // The only adjustment trigger that fires BEFORE a run, not after. Composite
+  // of three weak signals (RHR / HRV / sleep) — any one fires the soften.
+  // Dormant until the user has 14 days of HealthKit samples (silent for new
+  // users — no false-positive pollution while the baseline accrues).
+  READINESS: {
+    /** RHR (bpm) at or above baseline + this delta fires. */
+    RHR_ELEVATION_BPM:       7,
+    /** HRV (ms) at or below baseline − N standard deviations fires. */
+    HRV_DECLINE_SD:          1,
+    /** Sleep below this many hours on the night before quality/long fires. */
+    SLEEP_THRESHOLD_HOURS:   5,
+    /** Rolling baseline window (days). */
+    BASELINE_WINDOW_DAYS:    14,
+    /** Long-run distance multiplier when readiness softens (15% trim). */
+    LONG_RUN_SOFTEN_PCT:     0.85,
+  },
 } as const
 
 // Type helpers — derived from the const object so tables and types stay in sync.

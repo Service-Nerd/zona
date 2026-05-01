@@ -18,7 +18,7 @@ export function computeEF(activity: StravaActivity): number | null {
 export function computeEFBaseline(
   sessionType: string,
   recentActivities: StravaActivity[],
-  excludeActivityId?: number,
+  excludeActivityId?: number | string,
 ): number | null {
   const qualifying = recentActivities
     .filter(a => {

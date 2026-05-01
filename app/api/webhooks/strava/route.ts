@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { waitUntil } from '@vercel/functions'
 import { NextRequest, NextResponse } from 'next/server'
 import { getStravaToken, fetchHRStreamSummary } from '@/lib/strava'
+import { autoMatchAndAnalyse, getInternalBaseUrl } from '@/lib/coaching/autoAnalyse'
 
 // Strava webhook docs: https://developers.strava.com/docs/webhooks/
 //
@@ -117,6 +118,7 @@ async function enrichAndPersist(event: StravaEvent) {
   // Upsert into strava_activities
   const { error } = await getSupabase().from('strava_activities').upsert({
     user_id:             userId,
+    source:              'strava',
     strava_activity_id:  activity.id,
     activity_type:       activity.type,
     sport_type:          activity.sport_type,
@@ -143,108 +145,26 @@ async function enrichAndPersist(event: StravaEvent) {
   }
 
   // Auto-match to a planned session and trigger analysis
-  await triggerAutoAnalysis(userId, activity, event.object_id)
-}
-
-async function triggerAutoAnalysis(userId: string, activity: any, stravaActivityId: number) {
-  if (activity.type !== 'Run' && activity.sport_type !== 'Run') return
-
-  const { data: planRow } = await getSupabase()
-    .from('plans')
-    .select('plan_json')
-    .eq('user_id', userId)
-    .single()
-
-  const plan = planRow?.plan_json
-  if (!plan?.weeks?.length) return
-
-  // Dynamically import match logic to avoid edge-runtime issues
-  const { findMatchCandidates, autoSelectMatch } = await import('@/lib/coaching/sessionMatch')
-  const { getCurrentWeekIndex } = await import('@/lib/plan')
-
-  const weekIndex = getCurrentWeekIndex(plan.weeks)
-  const week      = plan.weeks[weekIndex]
-  if (!week) return
-
-  const activityDate = new Date(activity.start_date)
-
-  // Build flat list of planned sessions with dates
-  const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
-  const weekStartDate = new Date(week.date)
-
-  const plannedSessions = days
-    .map((day, idx) => {
-      const session = week.sessions[day]
-      if (!session) return null
-      const sessionDate = new Date(weekStartDate)
-      sessionDate.setDate(weekStartDate.getDate() + idx)
-      return { session, day, sessionDate }
-    })
-    .filter(Boolean) as { session: any; day: string; sessionDate: Date }[]
-
-  if (!plannedSessions.length) return
-
-  // Find best match
-  const allActivities = [{ ...activity, id: stravaActivityId }]
-  const candidates = findMatchCandidates(
-    plannedSessions[0].session,  // Pass first session to get nearby activities
-    activityDate,
-    allActivities,
+  await autoMatchAndAnalyse(
+    getSupabase(),
+    userId,
+    {
+      id:                   event.object_id,
+      type:                 activity.type,
+      sport_type:           activity.sport_type,
+      start_date:           activity.start_date,
+      distance:             activity.distance,
+      moving_time:          activity.moving_time,
+      elapsed_time:         activity.elapsed_time,
+      total_elevation_gain: activity.total_elevation_gain,
+      average_heartrate:    activity.average_heartrate,
+      max_heartrate:        activity.max_heartrate,
+      average_speed:        activity.average_speed,
+      name:                 activity.name,
+    },
+    { source: 'strava', stravaActivityId: event.object_id },
+    getInternalBaseUrl(),
   )
-
-  // Find which planned session best matches this activity
-  let bestDay: string | null = null
-  let bestScore = 0
-
-  for (const { session, day, sessionDate } of plannedSessions) {
-    const sessionCandidates = findMatchCandidates(session, sessionDate, allActivities)
-    const match = autoSelectMatch(sessionCandidates)
-    if (match && sessionCandidates[0]?.confidence === 'high') {
-      bestDay   = day
-      bestScore = 1
-      break
-    }
-    if (sessionCandidates.length && sessionCandidates[0]?.confidence === 'medium' && bestScore === 0) {
-      bestDay   = day
-    }
-  }
-
-  if (!bestDay) return
-
-  // Mark session complete in session_completions so the UI reflects the auto-link immediately
-  await getSupabase().from('session_completions').upsert({
-    user_id:              userId,
-    week_n:               week.n,
-    session_day:          bestDay,
-    status:               'complete',
-    strava_activity_id:   stravaActivityId,
-    strava_activity_name: activity.name ?? null,
-    strava_activity_km:   activity.distance ? +(activity.distance / 1000).toFixed(1) : null,
-    avg_hr:               activity.average_heartrate ?? null,
-    updated_at:           new Date().toISOString(),
-  }, { onConflict: 'user_id,week_n,session_day' })
-
-  // Call analyse-run via internal fetch (includes AI enrichment + push notification)
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
-    ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
-
-  try {
-    await fetch(`${baseUrl}/api/analyse-run`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-service-key': process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        'x-user-id':     userId,
-      },
-      body: JSON.stringify({
-        strava_activity_id: stravaActivityId,
-        week_n:             week.n,
-        session_day:        bestDay,
-      }),
-    })
-  } catch (err) {
-    console.warn('[strava-webhook] auto-analysis failed', err)
-  }
 }
 
 async function handleActivityDelete(event: StravaEvent) {

@@ -65,6 +65,10 @@ export const TAPER_PROTECTION_WEEKS = 3
 // Max volume increase per adjustment — re-exported from generationConfig (§2).
 export const MAX_VOLUME_INCREASE_PCT = GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT
 
+// Pre-session readiness signal — re-export from generationConfig (CoachingPrinciples §59).
+// Single source of truth: the trigger thresholds live in GENERATION_CONFIG.READINESS.
+export const READINESS = GENERATION_CONFIG.READINESS
+
 // Cohort similarity matching — past-self comparison (R25 cut #1)
 // CoachingPrinciples §58. Two-axis match for cut #1: distance band + HR band.
 // Three-axis (adding session.type) deferred to cuts #2/#3 which need richer cohort filtering.

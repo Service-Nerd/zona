@@ -948,6 +948,41 @@ HR_BAND_BREAKPOINTS     → { low: 145, mid: 165 }  (three-bucket effort classif
 
 ---
 
+## 59. Pre-session readiness — composite RHR / HRV / sleep signal
+
+**Principle.** Every existing adjustment trigger fires *after* a run, when the damage is already done. The body broadcasts whether it can absorb today's planned load *before* the user laces up — overnight RHR, HRV, and sleep duration are the three weakest individual signals coaching can use, and the strongest when voted together. A composite that fires when any one of the three deviates from the user's personal baseline lets the engine catch a bad-recovery day on a quality or long session and soften it before the user grinds through it.
+
+**Why.** ZONA's product thesis is that runners blur their zones because they can't tell the difference between sessions. The same applies to days. A user whose HRV is down 1 SD, RHR is up 7 bpm, and slept 5 hours is *not* the same user the plan was written for at this moment. Forcing them through a tempo session compounds fatigue and drags subsequent easy days into the grey middle. Softening today, on this day's data, is the cleanest expression of "hold the zone you're actually in." It is also the only adjustment trigger that pre-empts the run rather than reacting to it.
+
+**Config.** `lib/plan/generationConfig.ts → GENERATION_CONFIG.READINESS` (re-exported via `lib/coaching/constants.ts → READINESS`):
+
+```
+RHR_ELEVATION_BPM     → 7      (today RHR ≥ baseline + 7 bpm fires)
+HRV_DECLINE_SD        → 1      (today HRV ≤ baseline − 1 SD fires)
+SLEEP_THRESHOLD_HOURS → 5      (last night < 5 h fires; absolute, no baseline needed)
+BASELINE_WINDOW_DAYS  → 14     (rolling window over which RHR / HRV baseline is established)
+LONG_RUN_SOFTEN_PCT   → 0.85   (long-run distance × this on a fired day; 15% trim)
+```
+
+**How.** Source: `health_daily_samples` table populated by the iOS HealthKit sync (`/api/health/samples`). On TodayScreen mount the dashboard calls `/api/pre-session-readiness`, which:
+
+1. Loads today's planned session. Returns null if it isn't quality / intervals / tempo / long.
+2. Loads the last 14 days of samples plus today's sample.
+3. Calls `computeReadiness()` (`lib/coaching/readinessBaseline.ts`) — pure mean + standard-deviation kernel.
+4. Returns `hasBaseline: false` and exits silently when fewer than 14 days of RHR + HRV samples exist (no false-positive pollution while the baseline accrues — new users see nothing).
+5. When at least one of the three signals fires, runs the proposal through `checkAdjustmentTriggers` with only `readinessSignal` populated. The trigger sits **above zone_drift** in the priority order because it pre-empts the day.
+6. Soften, never auto-skip:
+   - `quality` / `intervals` / `tempo` → swap to easy.
+   - `long` → trim by `LONG_RUN_SOFTEN_PCT`.
+7. Coach copy uses `BRAND.voiceAnchor` ("Hold the zone.") because this is the moment that tests the user's commitment to zone discipline.
+8. Persisted to `plan_adjustments` as a pending row; the existing `AdjustmentBanner` UI surfaces it. Idempotent — a second mount on the same day returns the existing pending row rather than writing a duplicate.
+
+**Tier.** PAID (`activity_intelligence`). The free tier still reads its plan and logs sessions; this is the mid-day "your plan adapts to your body" intelligence the subscription pays for.
+
+**Surface.** TodayScreen, above the Coach note block (mirrors post-run `AdjustmentBanner` placement). User accepts → softening applied; user rejects → row reverts. Same flow as every other pending adjustment.
+
+---
+
 ## 56. The constitution
 
 These fifty-six principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

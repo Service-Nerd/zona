@@ -58,5 +58,7 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Vetra reads your runs and recovery signals (resting heart rate, HRV, sleep) to provide coaching feedback. Vetra never writes to Apple Health.</string>
 </dict>
 </plist>

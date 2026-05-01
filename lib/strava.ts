@@ -38,6 +38,51 @@ export interface HRStreamSummary {
   belowPct:   number
 }
 
+export interface HRZones {
+  /** Top of Zone 2 (per plan). If null, falls back to 76% of maxHR. */
+  zone2Ceiling: number | null
+  /** Max HR (per plan). Used to derive the Z2 floor (60%). If null, no floor enforced. */
+  maxHR:        number | null
+}
+
+/**
+ * Pure zone-bucketing kernel: given an array of HR samples and the user's plan zones,
+ * returns the in/above/below percentages.
+ *
+ * Source-agnostic — used by both Strava streams (1Hz) and HealthKit HR samples
+ * (variable interval). Equal-weight bucketing per sample.
+ */
+export function bucketHRSamples(hrData: number[], zones: HRZones): HRStreamSummary | null {
+  if (!hrData?.length) return null
+  const ceiling = zones.zone2Ceiling ?? (zones.maxHR ? Math.round(zones.maxHR * 0.76) : null)
+  const floor   = zones.maxHR ? Math.round(zones.maxHR * 0.60) : null
+  if (!ceiling) return null
+
+  const total  = hrData.length
+  const inZone = hrData.filter(hr => (!floor || hr >= floor) && hr <= ceiling).length
+  const above  = hrData.filter(hr => hr > ceiling).length
+  const below  = floor ? hrData.filter(hr => hr < floor).length : 0
+
+  return {
+    inZonePct: Math.round((inZone / total) * 100 * 100) / 100,
+    abovePct:  Math.round((above  / total) * 100 * 100) / 100,
+    belowPct:  Math.round((below  / total) * 100 * 100) / 100,
+  }
+}
+
+/** Reads the user's plan zones (zone2_ceiling, max_hr) from the plans table. */
+export async function getUserHRZones(supabase: any, userId: string): Promise<HRZones> {
+  const { data: planRow } = await supabase
+    .from('plans')
+    .select('plan_json')
+    .eq('user_id', userId)
+    .single()
+  return {
+    zone2Ceiling: planRow?.plan_json?.meta?.zone2_ceiling ?? null,
+    maxHR:        planRow?.plan_json?.meta?.max_hr ?? null,
+  }
+}
+
 /** Fetches Strava HR stream and computes zone breakdown against the user's plan zones. */
 export async function fetchHRStreamSummary(
   supabase: any,
@@ -46,14 +91,7 @@ export async function fetchHRStreamSummary(
   userId: string,
 ): Promise<HRStreamSummary | null> {
   try {
-    const { data: planRow } = await supabase
-      .from('plans')
-      .select('plan_json')
-      .eq('user_id', userId)
-      .single()
-
-    const zone2Ceiling: number | null = planRow?.plan_json?.meta?.zone2_ceiling ?? null
-    const maxHR: number | null        = planRow?.plan_json?.meta?.max_hr ?? null
+    const zones = await getUserHRZones(supabase, userId)
 
     const streamRes = await fetch(
       `https://www.strava.com/api/v3/activities/${activityId}/streams?keys=heartrate,time&key_by_type=true`,
@@ -63,22 +101,7 @@ export async function fetchHRStreamSummary(
 
     const streams = await streamRes.json()
     const hrData: number[] = streams?.heartrate?.data
-    if (!hrData || !hrData.length) return null
-
-    const ceiling = zone2Ceiling ?? (maxHR ? Math.round(maxHR * 0.76) : null)
-    const floor   = maxHR ? Math.round(maxHR * 0.60) : null
-    if (!ceiling) return null
-
-    const total  = hrData.length
-    const inZone = hrData.filter(hr => (!floor || hr >= floor) && hr <= ceiling).length
-    const above  = hrData.filter(hr => hr > ceiling).length
-    const below  = floor ? hrData.filter(hr => hr < floor).length : 0
-
-    return {
-      inZonePct: Math.round((inZone / total) * 100 * 100) / 100,
-      abovePct:  Math.round((above  / total) * 100 * 100) / 100,
-      belowPct:  Math.round((below  / total) * 100 * 100) / 100,
-    }
+    return bucketHRSamples(hrData, zones)
   } catch {
     return null
   }

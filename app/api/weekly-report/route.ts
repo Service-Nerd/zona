@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     userId = user.id
     const tier = await getUserTier(user.id)
-    if (!isFeatureAllowed('strava_intelligence', tier)) {
+    if (!isFeatureAllowed('activity_intelligence', tier)) {
       return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
     }
   }

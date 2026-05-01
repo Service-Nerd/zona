@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   }
 
   const tier = await getUserTier(userId)
-  if (!isFeatureAllowed('strava_intelligence', tier)) {
+  if (!isFeatureAllowed('activity_intelligence', tier)) {
     return NextResponse.redirect(`${origin}/dashboard?strava=upgrade`)
   }
 

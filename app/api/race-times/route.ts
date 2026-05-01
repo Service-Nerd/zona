@@ -72,6 +72,44 @@ function vdotFromAerobicSpeedMs(avgSpeedMs: number): number {
   return vo2 / 0.65
 }
 
+const VO2_DIVERGENCE_FLAG_PCT = 10
+
+interface VO2CrossCheck {
+  healthKitVO2Max:    number
+  vdotDerivedVO2Max:  number
+  divergencePct:      number
+  flagged:            boolean
+}
+
+async function computeVO2CrossCheck(
+  supabase: any,
+  userId: string,
+  vdot: number,
+): Promise<VO2CrossCheck | null> {
+  try {
+    const { data } = await supabase
+      .from('health_daily_samples')
+      .select('vo2_max, sample_date')
+      .eq('user_id', userId)
+      .not('vo2_max', 'is', null)
+      .order('sample_date', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const hkVO2: number | null = (data as any)?.vo2_max ?? null
+    if (!hkVO2 || hkVO2 <= 0) return null
+    const vdotVO2     = vdot * 0.65
+    const divergence  = Math.abs(hkVO2 - vdotVO2) / vdotVO2 * 100
+    return {
+      healthKitVO2Max:   parseFloat(hkVO2.toFixed(1)),
+      vdotDerivedVO2Max: parseFloat(vdotVO2.toFixed(1)),
+      divergencePct:     parseFloat(divergence.toFixed(1)),
+      flagged:           divergence > VO2_DIVERGENCE_FLAG_PCT,
+    }
+  } catch {
+    return null
+  }
+}
+
 export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -106,6 +144,13 @@ export async function GET(req: NextRequest) {
     const benchmarkMins = parseBenchmarkTime((meta.benchmark as BenchmarkInput).time)
     const rawVdot       = calcVDOT((meta.benchmark as BenchmarkInput).distance_km, benchmarkMins)
 
+    // HealthKit VO2-max sanity check. Compare the latest Watch-derived VO2 max
+    // against the VDOT-derived estimate (VO2max ≈ VDOT × 0.65). >10% divergence
+    // is a flag for review — same person, two methods, two answers means one
+    // of them is stale (benchmark old, or Watch estimate noisy). Field exposed
+    // on the response; UI surface lands when R18 confidence score ships.
+    const vo2MaxCrossCheck = await computeVO2CrossCheck(serviceSupabase, user.id, discountedVdot)
+
     return NextResponse.json({
       state:      1,
       confidence: 'high' as const,
@@ -114,6 +159,7 @@ export async function GET(req: NextRequest) {
       vdot:       parseFloat(discountedVdot.toFixed(1)),
       discountPct,
       distances:  projectRaceTimes(discountedVdot),
+      vo2MaxCrossCheck,
       upgradeCtaType: null,
     })
   }

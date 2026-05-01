@@ -32,7 +32,7 @@ export const FEATURE_GATES = {
     'dynamic_reshape_r20',       // R20 auto + user-initiated reshape
     'ai_coach_notes_new',        // new coach notes (e.g. after a reshape) — also gates AI enrichment on regenerated plans
     'injury_adaptations_new',    // adaptations applied to new plans or after reshape
-    'strava_intelligence',       // run analysis, weekly report, plan adjustment triggers
+    'activity_intelligence',     // run analysis, weekly report, plan adjustment triggers (HealthKit + Strava)
     'confidence_score',          // R18 confidence scoring
     'ultra_plan_generation',     // 50K and 100K plan generation
     'strength_sessions_tailored', // R21 tailored strength (when shipped)

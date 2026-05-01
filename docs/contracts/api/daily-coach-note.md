@@ -2,7 +2,7 @@
 
 **Method:** GET  
 **Auth:** Supabase session required. Returns 401 if unauthenticated.  
-**Gate:** `strava_intelligence` (PAID_ONLY_ONGOING). Returns 403 for free users. Client-side gate skips the fetch entirely for free users.
+**Gate:** `activity_intelligence` (PAID_ONLY_ONGOING). Returns 403 for free users. Client-side gate skips the fetch entirely for free users.
 
 ## Query parameters
 

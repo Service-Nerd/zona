@@ -10,8 +10,10 @@ import {
   FATIGUE_HIGH_TAGS,
   FATIGUE_ACCUMULATION_THRESHOLD,
   FATIGUE_SOFTENING_LONG_RUN_PCT,
+  READINESS,
 } from './constants'
 import { acuteChronicRatio, shadowLoadPct, zoneDisciplineScore } from './loadCalc'
+import { BRAND } from '@/lib/brand'
 import type { Session } from '@/types/plan'
 
 export type AdjustmentType = 'reduce_volume' | 'swap_session' | 'extend_recovery' | 'reorder_sessions' | 'flag_for_review'
@@ -23,6 +25,7 @@ export type TriggerType    =
   | 'fatigue_accumulation'
   | 'skip_with_reason'
   | 'session_reorder'
+  | 'readiness_signal'
   | 'manual'
 
 export interface AdjustmentTrigger {
@@ -74,6 +77,20 @@ export interface AdjustmentCheckInput {
    * The reorder check bypasses taper protection — it's always user-initiated.
    */
   reorderSignal?: { fromDay: string; toDay: string }
+  /**
+   * Pre-session readiness signal — composite of RHR / HRV / sleep deviations
+   * from the user's 14-day baseline. Fires only on quality/long days, only
+   * when `hasBaseline` is true. The only signal that fires *before* the run.
+   * See CoachingPrinciples §59.
+   */
+  readinessSignal?: {
+    sessionType:    string
+    sessionDay:     string
+    isElevatedRHR:  boolean
+    isLowHRV:       boolean
+    isShortSleep:   boolean
+    hasBaseline:    boolean
+  }
 }
 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
@@ -84,7 +101,10 @@ const HILL_TYPES = new Set(['hills', 'hill_repeats'])
 
 /**
  * Checks automatic triggers and returns at most one proposed adjustment.
- * Priority: skip > fatigue > load ratio > zone_drift > shadow_load > ef_decline > RPE disconnect.
+ * Priority: skip > reorder > fatigue > load ratio > readiness > zone_drift >
+ * shadow_load > ef_decline > RPE disconnect.
+ * Readiness sits above zone_drift because it fires pre-session — earliest in
+ * the user's day (CoachingPrinciples §59).
  * Returns null if no adjustment warranted or guards prevent it.
  */
 export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAdjustment | null {
@@ -116,6 +136,17 @@ export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAd
 
   if (ratio >= LOAD_RATIO.watch) {
     return buildReduceVolumeAdjustment(input, ratio)
+  }
+
+  // Readiness signal — fires above zone_drift because it pre-empts the day.
+  // Only triggers on quality/long; soften (not skip).
+  if (
+    input.readinessSignal
+    && input.readinessSignal.hasBaseline
+    && (input.readinessSignal.isElevatedRHR || input.readinessSignal.isLowHRV || input.readinessSignal.isShortSleep)
+    && HARD_TYPES.has(input.readinessSignal.sessionType)
+  ) {
+    return buildReadinessAdjustment(input, input.readinessSignal)
   }
 
   if (zdScore !== null && zdScore < ZONE_DISCIPLINE_BANDS.loose) {
@@ -305,6 +336,68 @@ function buildRpeDisconnectAdjustment(input: AdjustmentCheckInput, rpe: number, 
     sessionsBefore,
     sessionsAfter,
     requiresConfirmation: false,
+  }
+}
+
+/**
+ * Pre-session readiness adjustment.
+ * Composite of RHR / HRV / sleep deviations from 14-day baseline. Soften only —
+ * never auto-skip. Coach copy uses BRAND.voiceAnchor ("Hold the zone.") because
+ * this is the moment that tests the user's commitment to zone discipline.
+ */
+function buildReadinessAdjustment(
+  input: AdjustmentCheckInput,
+  signal: NonNullable<AdjustmentCheckInput['readinessSignal']>,
+): ProposedAdjustment {
+  const sessions       = input.currentWeekSessions
+  const sessionsBefore = sessions.map(s => ({ ...s }))
+
+  const reasons: string[] = []
+  if (signal.isElevatedRHR) reasons.push('resting HR up')
+  if (signal.isLowHRV)      reasons.push('HRV down')
+  if (signal.isShortSleep)  reasons.push('short sleep')
+  const reasonStr = reasons.join(' + ')
+
+  // Caller (/api/pre-session-readiness) passes only today's session in
+  // currentWeekSessions, so this map only modifies the target session by
+  // construction. Type-based filter belt-and-braces.
+  const sessionsAfter = sessions.map(s => {
+    if (s.type === 'quality' || s.type === 'intervals' || s.type === 'tempo') {
+      return {
+        ...s,
+        type: 'easy' as const,
+        coach_notes: [`${BRAND.voiceAnchor} Recovery signals are off (${reasonStr}). Easy day instead — the quality is on the bench.`] as [string],
+      }
+    }
+    if (s.type === 'long' && s.distance_km) {
+      return {
+        ...s,
+        distance_km: Math.round(s.distance_km * READINESS.LONG_RUN_SOFTEN_PCT * 10) / 10,
+        coach_notes: [`${BRAND.voiceAnchor} Trimmed today (${reasonStr}). Body's not ready for the full distance.`] as [string],
+      }
+    }
+    return { ...s }
+  })
+
+  const adjustmentType: AdjustmentType = signal.sessionType === 'long' ? 'reduce_volume' : 'swap_session'
+  const summary = signal.sessionType === 'long'
+    ? `Recovery signals off (${reasonStr}). Long run trimmed ${Math.round((1 - READINESS.LONG_RUN_SOFTEN_PCT) * 100)}%.`
+    : `Recovery signals off (${reasonStr}). Quality swapped to easy.`
+
+  return {
+    weekN:          input.currentWeekN,
+    trigger:        { type: 'readiness_signal', detail: {
+      sessionType:   signal.sessionType,
+      sessionDay:    signal.sessionDay,
+      isElevatedRHR: signal.isElevatedRHR,
+      isLowHRV:      signal.isLowHRV,
+      isShortSleep:  signal.isShortSleep,
+    } },
+    adjustmentType,
+    summary,
+    sessionsBefore,
+    sessionsAfter,
+    requiresConfirmation: true,
   }
 }
 

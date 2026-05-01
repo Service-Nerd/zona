@@ -36,20 +36,25 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     userId = user.id
     tier   = await getUserTier(user.id)
-    if (!isFeatureAllowed('strava_intelligence', tier)) {
+    if (!isFeatureAllowed('activity_intelligence', tier)) {
       return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
     }
   }
 
   const body = await req.json()
-  const { strava_activity_id, week_n, session_day } = body as {
-    strava_activity_id: number
+  const { strava_activity_id, apple_health_uuid, week_n, session_day } = body as {
+    strava_activity_id?: number
+    apple_health_uuid?:  string
     week_n: number
     session_day: string
   }
 
-  if (!strava_activity_id || week_n == null || !session_day) {
-    return NextResponse.json({ error: 'strava_activity_id, week_n, session_day required' }, { status: 422 })
+  // Source ref: exactly one of strava_activity_id / apple_health_uuid must be set
+  if (week_n == null || !session_day) {
+    return NextResponse.json({ error: 'week_n, session_day required' }, { status: 422 })
+  }
+  if (!strava_activity_id && !apple_health_uuid) {
+    return NextResponse.json({ error: 'strava_activity_id or apple_health_uuid required' }, { status: 422 })
   }
 
   const serviceSupabase = createServiceClient(
@@ -57,14 +62,18 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  // Activity lookup uses whichever ID was provided
+  const activityQuery = serviceSupabase
+    .from('strava_activities')
+    .select('*')
+    .eq('user_id', userId)
+  const activityFiltered = strava_activity_id
+    ? activityQuery.eq('strava_activity_id', strava_activity_id)
+    : activityQuery.eq('apple_health_uuid', apple_health_uuid!)
+
   // Fetch activity, plan, completions in parallel
   const [activityRes, planRes, completionRes, recentActivitiesRes] = await Promise.all([
-    serviceSupabase
-      .from('strava_activities')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('strava_activity_id', strava_activity_id)
-      .single(),
+    activityFiltered.single(),
     serviceSupabase
       .from('plans')
       .select('plan_json')
@@ -79,7 +88,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle(),
     serviceSupabase
       .from('strava_activities')
-      .select('avg_speed, avg_hr, activity_type, sport_type, start_date')
+      .select('id, strava_activity_id, apple_health_uuid, avg_speed, avg_hr, activity_type, sport_type, start_date')
       .eq('user_id', userId)
       .order('start_date', { ascending: false })
       .limit(20),
@@ -99,9 +108,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Planned session not found' }, { status: 404 })
   }
 
-  // Compute EF baseline from recent activities of same session type
+  // Compute EF baseline from recent activities of same session type.
+  // Use the strava_activities row UUID as the EF activity ID — source-agnostic
+  // and stable across both Strava and HealthKit rows.
   const recentActivities = (recentActivitiesRes.data ?? []).map((a: any) => ({
-    id: a.strava_activity_id,
+    id: a.id,
     name: '',
     type: a.activity_type ?? 'Run',
     sport_type: a.sport_type ?? 'Run',
@@ -115,7 +126,7 @@ export async function POST(req: NextRequest) {
   }))
 
   const activityForEF = {
-    id: activity.strava_activity_id,
+    id: activity.id,
     name: activity.name ?? '',
     type: activity.activity_type ?? 'Run',
     sport_type: activity.sport_type ?? 'Run',
@@ -129,7 +140,7 @@ export async function POST(req: NextRequest) {
   }
 
   const efValue    = computeEF(activityForEF)
-  const efBaseline = computeEFBaseline(session.type, recentActivities, strava_activity_id)
+  const efBaseline = computeEFBaseline(session.type, recentActivities, activity.id)
   const efTrendPct = efValue !== null && efBaseline !== null
     ? ((efValue - efBaseline) / efBaseline) * 100
     : null
@@ -217,11 +228,13 @@ export async function POST(req: NextRequest) {
 
   // Persist complete row (scores + feedback_text) in one upsert.
   // Must await — fire-and-forget on serverless means the row never lands.
-  const analysisRow = {
+  // Source-aware ID: write the column matching the source, leave the other null.
+  const analysisRow: Record<string, unknown> = {
     user_id:               userId,
     week_n,
     session_day,
-    strava_activity_id,
+    strava_activity_id:    strava_activity_id ?? null,
+    apple_health_uuid:     apple_health_uuid  ?? null,
     hr_discipline_score:   scoreResult.hrDisciplineScore,
     distance_score:        scoreResult.distanceScore,
     pace_score:            scoreResult.paceScore,
@@ -240,9 +253,12 @@ export async function POST(req: NextRequest) {
     rule_engine_version:   COACHING_RULE_ENGINE_VERSION,
   }
 
+  const conflictTarget = strava_activity_id
+    ? 'user_id,strava_activity_id'
+    : 'user_id,apple_health_uuid'
   const upsertRes = await serviceSupabase
     .from('run_analysis')
-    .upsert(analysisRow, { onConflict: 'user_id,strava_activity_id' })
+    .upsert(analysisRow, { onConflict: conflictTarget })
   if (upsertRes.error) {
     console.error('[analyse-run] run_analysis upsert failed', upsertRes.error.message)
   }

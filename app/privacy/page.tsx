@@ -123,6 +123,11 @@ export default function PrivacyPage() {
           <P>Your Strava access token is stored securely in your account. You can disconnect Strava at any time from the Profile screen — this deletes the stored token immediately.</P>
         </Section>
 
+        <Section title="Apple Health">
+          <P>If you connect Apple Health (iOS app only), Vetra requests <strong>read-only</strong> access to your runs and recovery signals: workouts, heart rate, resting heart rate, heart rate variability, sleep duration, and VO₂ max. We use this data to coach your training and detect days when your body needs a softer session.</P>
+          <P>Apple Health authorisation is managed entirely by iOS. Vetra never writes to Apple Health, never reads any other health categories, and stores only the summary values needed for coaching (e.g. one resting heart rate per day) — not raw sample streams. You can disconnect at any time from the Profile screen, or revoke access from iOS Settings → Privacy → Health → Vetra.</P>
+        </Section>
+
         <Section title="How we use your data">
           <ul style={{ margin: '0 0 16px', padding: '0 0 0 20px' }}>
             {[

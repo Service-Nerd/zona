@@ -417,6 +417,12 @@ export default function DashboardClient() {
         if (paidAccess) {
           void (async () => {
             try {
+              // Pre-flight: pre-session readiness check.
+              // Fires HealthKit RHR/HRV/sleep deviations into a pending plan_adjustment
+              // row before we read the table below. Silent failure — readiness is one of
+              // many adjustment paths and shouldn't block the rest of the dashboard data.
+              try { await authedFetch('/api/pre-session-readiness') } catch {}
+
               const [analysisRes, reportRes, adjustmentsRes] = await Promise.all([
                 supabase.from('run_analysis').select('session_day, verdict, total_score, feedback_text, hr_in_zone_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score').eq('user_id', user.id),
                 supabase.from('weekly_reports').select('*').eq('user_id', user.id).order('week_n', { ascending: false }).limit(1).maybeSingle(),
@@ -5371,6 +5377,132 @@ function StravaConnectionRow() {
   )
 }
 
+/**
+ * Apple Health connect row — iOS-native only, hidden on web.
+ * Mirrors StravaConnectionRow shape; HealthKit auth is plugin-based (no OAuth
+ * redirect), so the connect button calls the plugin directly.
+ */
+function AppleHealthConnectionRow() {
+  const [isNative, setIsNative] = useState(false)
+  const [connectedAt, setConnectedAt] = useState<string | null | undefined>(undefined)  // undefined = checking
+  const [busy, setBusy] = useState(false)
+  const supabase = createClient()
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (!Capacitor.isNativePlatform()) { setConnectedAt(null); return }
+        setIsNative(true)
+      } catch {
+        setConnectedAt(null)
+        return
+      }
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setConnectedAt(null); return }
+      const { data } = await supabase
+        .from('user_settings')
+        .select('healthkit_connected_at')
+        .eq('id', user.id)
+        .single()
+      setConnectedAt((data as any)?.healthkit_connected_at ?? null)
+    })()
+  }, [])
+
+  // Hidden on web
+  if (!isNative) return null
+
+  async function connect() {
+    setBusy(true)
+    try {
+      const { requestHealthKitAuth, syncOnAppOpen } = await import('@/lib/health/clientSync')
+      const granted = await requestHealthKitAuth()
+      if (!granted) return
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const nowIso = new Date().toISOString()
+      await supabase.from('user_settings').upsert({
+        id: user.id,
+        healthkit_connected_at: nowIso,
+        updated_at: nowIso,
+      })
+      setConnectedAt(nowIso)
+      // First sync — best-effort, don't block UI
+      void syncOnAppOpen().catch(() => {})
+    } catch {
+      // Plugin not yet installed (Phase G); button remains in not-connected state
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function disconnect() {
+    setBusy(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('user_settings').upsert({
+        id: user.id,
+        healthkit_connected_at: null,
+        updated_at: new Date().toISOString(),
+      })
+      setConnectedAt(null)
+    } finally { setBusy(false) }
+  }
+
+  const isLoading = connectedAt === undefined
+  const connected = !!connectedAt
+
+  return (
+    <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(107,142,107,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--moss)' }} />
+          </div>
+          <div>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Apple Health</div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', marginTop: '1px', color: isLoading ? 'var(--text-muted)' : connected ? 'var(--teal)' : 'var(--text-muted)' }}>
+              {isLoading ? 'checking...' : connected ? 'Connected' : 'Not connected'}
+            </div>
+          </div>
+        </div>
+
+        {!isLoading && (
+          connected ? (
+            <button onClick={disconnect} disabled={busy} style={{
+              background: 'none', border: '0.5px solid var(--border-col)',
+              borderRadius: '8px', padding: '6px 12px',
+              fontFamily: 'var(--font-ui)', fontSize: '11px',
+              color: 'var(--text-muted)', letterSpacing: '0.06em',
+              textTransform: 'uppercase', cursor: 'pointer',
+              opacity: busy ? 0.6 : 1,
+            }}>
+              {busy ? 'Saving...' : 'Disconnect'}
+            </button>
+          ) : (
+            <button onClick={connect} disabled={busy} style={{
+              background: 'var(--moss)', color: 'var(--card)',
+              border: 'none', borderRadius: '8px', padding: '8px 14px',
+              fontFamily: 'var(--font-ui)', fontSize: '11px',
+              letterSpacing: '0.06em', textTransform: 'uppercase',
+              cursor: busy ? 'wait' : 'pointer',
+              opacity: busy ? 0.6 : 1,
+            }}>
+              {busy ? 'Connecting...' : 'Connect'}
+            </button>
+          )
+        )}
+      </div>
+      {!isLoading && !connected && (
+        <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+          Vetra reads your runs from Apple Health to coach you. Read-only — Vetra never writes to Apple Health.
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── SMOKE TOGGLE ──────────────────────────────────────────────────────────
 
 function SmokeToggle({ enabled, quitDate, onChange }: {
@@ -5415,6 +5547,72 @@ function calculateZones(restingHR: number, maxHR: number) {
     minHR: Math.round(restingHR + (d.pctMin / 100) * hrr),
     maxHR: Math.round(restingHR + (d.pctMax / 100) * hrr),
   }))
+}
+
+/**
+ * Apple Health one-tap prefill button — gated by Capacitor.isNativePlatform().
+ * Renders only on iOS native shell (web/PWA users see nothing).
+ *
+ * The actual HealthKit plugin call lives in lib/health/clientSync.ts, which the
+ * iOS native build wires up (Phase G). Until then the dynamic import fails
+ * silently and the button is a no-op — no broken behaviour on PWA, no crash.
+ */
+function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number, mhr: number) => void }) {
+  const [isNative, setIsNative] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [err,  setErr]  = useState<string | null>(null)
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (Capacitor.isNativePlatform()) setIsNative(true)
+      } catch {
+        // not running in Capacitor — leave hidden
+      }
+    })()
+  }, [])
+
+  if (!isNative) return null
+
+  async function handleClick() {
+    setBusy(true)
+    setErr(null)
+    try {
+      const { fetchAppleHealthHRSnapshot } = await import('@/lib/health/clientSync')
+      const snapshot = await fetchAppleHealthHRSnapshot()
+      if (!snapshot) {
+        setErr('No data — open Apple Health and let your Watch sync')
+        return
+      }
+      onPrefill(snapshot.restingHR, snapshot.maxHR)
+    } catch (e) {
+      setErr('Apple Health unavailable')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: '12px' }}>
+      <button onClick={handleClick} disabled={busy}
+        style={{
+          width: '100%', padding: '10px',
+          background: 'var(--bg)',
+          border: '0.5px solid var(--moss)',
+          borderRadius: '8px', cursor: busy ? 'wait' : 'pointer',
+          fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em',
+          color: 'var(--moss)', textAlign: 'center',
+        }}>
+        {busy ? 'Reading Apple Health…' : 'Use your Apple Health values'}
+      </button>
+      {err && (
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px', textAlign: 'center' }}>
+          {err}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function HRZonesSection({ restingHR, maxHR, onSave }: {
@@ -5469,6 +5667,7 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
 
       {/* Editable HR inputs */}
       <div style={{ padding: '14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
+        <AppleHealthPrefillButton onPrefill={(r, m) => { setRhr(String(r)); setMhr(String(m)) }} />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
           <div>
             <label style={labelStyle}>Resting HR</label>
@@ -5915,9 +6114,13 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         </div>
 
         {/* ── Connections ────────────────────────────────────────── */}
-        {/* Strava powers run matching and post-run coaching analysis */}
+        {/* Apple Health (iOS) is the primary v1 data source — runs, RHR, HRV, sleep, VO2 max.
+            Strava remains an optional secondary import. */}
         <SectionLabel>Connections</SectionLabel>
-        <StravaConnectionRow />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <AppleHealthConnectionRow />
+          <StravaConnectionRow />
+        </div>
         {hasPaidAccess && <PushNotificationsRow />}
 
         {/* ── Race prep ──────────────────────────────────────────── */}
