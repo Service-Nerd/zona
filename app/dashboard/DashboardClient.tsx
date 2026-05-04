@@ -4970,15 +4970,12 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
           </span>
         </button>
 
-        {/* Locked race projections stub */}
-        <button
-          onClick={onUpgrade}
-          style={{ width: '100%', textAlign: 'left', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px', cursor: 'pointer' }}
-        >
+        {/* Locked race projections stub — display only, not a CTA */}
+        <div style={{ width: '100%', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px', opacity: 0.5 }}>
             Race projections
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', opacity: 0.25, marginBottom: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', opacity: 0.25 }}>
             {(['5K', '10K', 'HM', 'Marathon'] as const).map((label, i) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < 3 ? '1px solid var(--line)' : undefined }}>
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink)' }}>{label}</span>
@@ -4986,10 +4983,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
               </div>
             ))}
           </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--moss)', fontWeight: 600 }}>
-            Upgrade to see your times →
-          </div>
-        </button>
+        </div>
 
       </div>
     </div>
@@ -5485,40 +5479,6 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           </div>
         )}
 
-        {/* ── R30 ZONE DRIFT PATTERN — rule-engine, no AI ─────────────── */}
-        {/* Suppressed by R29 (race window). 14-day dismiss window checked here. */}
-        {(() => {
-          if (!zoneDriftPattern || isRaceWindow) return null
-          if (zoneDriftDismissedAt) {
-            const daysSince = (Date.now() - new Date(zoneDriftDismissedAt).getTime()) / 86_400_000
-            if (daysSince <= 14) return null
-          }
-          return (
-            <div style={{
-              background: 'var(--card)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--line)',
-              borderLeft: '3px solid var(--warn)',
-              padding: '16px 18px',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
-                  Easy days running hot
-                </span>
-                <button
-                  onClick={onDismissZoneDrift}
-                  style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 400, color: 'var(--mute)', background: 'none', border: 'none', padding: '0', cursor: 'pointer', flexShrink: 0 }}
-                >
-                  Dismiss
-                </button>
-              </div>
-              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.6, margin: 0 }}>
-                {zoneDriftPattern.count} of your last {zoneDriftPattern.total} easy sessions crept above Zone 2. If easy isn&apos;t easy, hard can&apos;t be hard.
-              </p>
-            </div>
-          )
-        })()}
-
         {/* ── 3. AI WEEKLY REPORT — CoachNoteBlock amber pattern ─────── */}
         <div style={{
           background: 'var(--warn-bg)',
@@ -5621,6 +5581,40 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             </button>
           </div>
         </div>
+
+        {/* ── R30 ZONE DRIFT PATTERN — rule-engine, no AI ─────────────── */}
+        {/* Suppressed by R29 (race window). 14-day dismiss window checked here. */}
+        {(() => {
+          if (!zoneDriftPattern || isRaceWindow) return null
+          if (zoneDriftDismissedAt) {
+            const daysSince = (Date.now() - new Date(zoneDriftDismissedAt).getTime()) / 86_400_000
+            if (daysSince <= 14) return null
+          }
+          return (
+            <div style={{
+              background: 'var(--card)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--line)',
+              borderLeft: '3px solid var(--warn)',
+              padding: '16px 18px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                  Easy days running hot
+                </span>
+                <button
+                  onClick={onDismissZoneDrift}
+                  style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 400, color: 'var(--mute)', background: 'none', border: 'none', padding: '0', cursor: 'pointer', flexShrink: 0 }}
+                >
+                  Dismiss
+                </button>
+              </div>
+              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.6, margin: 0 }}>
+                {zoneDriftPattern.count} of your last {zoneDriftPattern.total} easy sessions crept above Zone 2. If easy isn&apos;t easy, hard can&apos;t be hard.
+              </p>
+            </div>
+          )
+        })()}
 
         {/* ── 4. PLAN NOTES — always shown ────────────────────────────── */}
         <PlanCoachingCard plan={plan} currentWeek={currentWeek} units={preferredUnits} trackedKm={trackedKm} />
