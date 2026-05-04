@@ -169,6 +169,9 @@ export default function DashboardClient() {
   // R28 phase-end summary + R29 race readiness — pre-fetched cached rows, generated on-demand in CoachScreen
   const [phaseSummary, setPhaseSummary] = useState<{ content: string; generated_at: string; phase_ended: string; transition_week_n: number } | null>(null)
   const [raceReadinessNote, setRaceReadinessNote] = useState<{ content: string; generated_at: string } | null>(null)
+  // R30 zone drift pattern + R32 recalibration — dismiss timestamps from user_settings
+  const [zoneDriftDismissedAt, setZoneDriftDismissedAt]         = useState<string | null>(null)
+  const [benchmarkRecalDismissedAt, setBenchmarkRecalDismissedAt] = useState<string | null>(null)
 
   // Next session after activeSessionData — passed to SessionScreen for the "Up next" row.
   // Scans remaining days in the same week, then the first day of the next week.
@@ -329,7 +332,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes, subRes, guidanceRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
@@ -467,6 +470,10 @@ export default function DashboardClient() {
 
         // Orientation seen flag (B-002) — true means we've shown it before, don't show again
         if (data?.orientation_seen) setOrientationSeen(true)
+
+        // R30 + R32 dismiss timestamps — gate the coaching cards in CoachScreen
+        if (data?.zone_drift_dismissed_at) setZoneDriftDismissedAt(data.zone_drift_dismissed_at)
+        if (data?.benchmark_recal_dismissed_at) setBenchmarkRecalDismissedAt(data.benchmark_recal_dismissed_at)
 
         // Coaching data — run analysis, weekly report, pending adjustments (paid/trial only).
         // Awaited inline now (was fire-and-forget) so the splash can hold
@@ -928,6 +935,49 @@ export default function DashboardClient() {
                     / analysisRows.reduce((s: number, r: any) => s + r.weight, 0)
                   )
                 : null
+
+              // R30 — zone drift pattern detection.
+              // Join runAnalysisMap with plan sessions to identify easy/recovery rows,
+              // then check the most recent 8 for hr_in_zone_pct < 60%.
+              const allEasyRecoveryRows = Object.entries(runAnalysisMap ?? {})
+                .map(([sessionDay, analysis]: [string, any]) => {
+                  if (analysis.hr_in_zone_pct == null) return null
+                  if (analysis.source === 'manual') return null
+                  const m = sessionDay.match(/^week_(\d+)_([a-z]+)$/)
+                  if (!m) return null
+                  const weekN    = parseInt(m[1], 10)
+                  const dayShort = m[2].slice(0, 3)
+                  const weekData = plan.weeks.find((w: any) => w.n === weekN)
+                  const sType    = (weekData?.sessions as any)?.[dayShort]?.type ?? null
+                  if (sType !== 'easy' && sType !== 'recovery') return null
+                  return { weekN, hr_in_zone_pct: analysis.hr_in_zone_pct as number }
+                })
+                .filter((r): r is { weekN: number; hr_in_zone_pct: number } => r !== null)
+                .sort((a, b) => b.weekN - a.weekN)
+                .slice(0, 8)
+              const zoneDriftCount   = allEasyRecoveryRows.filter(r => r.hr_in_zone_pct < 60).length
+              const zoneDriftPattern = allEasyRecoveryRows.length >= 4 && zoneDriftCount >= 4
+                ? { count: zoneDriftCount, total: allEasyRecoveryRows.length }
+                : null
+
+              // R30 dismiss handler — 14-day window
+              async function dismissZoneDrift() {
+                const { data: { user: u } } = await supabase.auth.getUser()
+                if (!u) return
+                const now = new Date().toISOString()
+                setZoneDriftDismissedAt(now)
+                await supabase.from('user_settings').upsert({ id: u.id, zone_drift_dismissed_at: now, updated_at: now })
+              }
+
+              // R32 dismiss handler — 21-day window
+              async function dismissBenchmarkRecal() {
+                const { data: { user: u } } = await supabase.auth.getUser()
+                if (!u) return
+                const now = new Date().toISOString()
+                setBenchmarkRecalDismissedAt(now)
+                await supabase.from('user_settings').upsert({ id: u.id, benchmark_recal_dismissed_at: now, updated_at: now })
+              }
+
               return (
                 <CoachScreen
                   plan={plan} currentWeek={currentWeek} runs={stravaRuns}
@@ -942,6 +992,12 @@ export default function DashboardClient() {
                   onPhaseSummaryGenerated={setPhaseSummary as any}
                   raceReadinessNote={raceReadinessNote}
                   onRaceReadinessGenerated={setRaceReadinessNote}
+                  zoneDriftPattern={zoneDriftPattern}
+                  zoneDriftDismissedAt={zoneDriftDismissedAt}
+                  onDismissZoneDrift={dismissZoneDrift}
+                  benchmarkRecalDismissedAt={benchmarkRecalDismissedAt}
+                  onDismissRecal={dismissBenchmarkRecal}
+                  onOpenBenchmark={() => setScreen('benchmark')}
                 />
               )
             })()
@@ -4915,7 +4971,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
   )
 }
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, liveSessionsCompleted, liveSessionsPlanned, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated }: {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, liveSessionsCompleted, liveSessionsPlanned, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaConnected: boolean
   stravaTokenFailed?: boolean; firstName?: string
@@ -4929,6 +4985,14 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   onPhaseSummaryGenerated?: (s: { content: string; generated_at: string; phase_ended: string; transition_week_n: number }) => void
   raceReadinessNote?: { content: string; generated_at: string } | null
   onRaceReadinessGenerated?: (n: { content: string; generated_at: string }) => void
+  // R30 zone drift pattern
+  zoneDriftPattern?: { count: number; total: number } | null
+  zoneDriftDismissedAt?: string | null
+  onDismissZoneDrift?: () => void
+  // R32 recalibration nudge (passed through to RaceTimesCard)
+  benchmarkRecalDismissedAt?: string | null
+  onDismissRecal?: () => void
+  onOpenBenchmark?: () => void
 }) {
   const [loading, setLoading]           = useState(false)
   const [error, setError]               = useState<string | null>(null)
@@ -5335,6 +5399,40 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           </div>
         )}
 
+        {/* ── R30 ZONE DRIFT PATTERN — rule-engine, no AI ─────────────── */}
+        {/* Suppressed by R29 (race window). 14-day dismiss window checked here. */}
+        {(() => {
+          if (!zoneDriftPattern || isRaceWindow) return null
+          if (zoneDriftDismissedAt) {
+            const daysSince = (Date.now() - new Date(zoneDriftDismissedAt).getTime()) / 86_400_000
+            if (daysSince <= 14) return null
+          }
+          return (
+            <div style={{
+              background: 'var(--card)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--line)',
+              borderLeft: '3px solid var(--warn)',
+              padding: '16px 18px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                  Pattern detected
+                </span>
+                <button
+                  onClick={onDismissZoneDrift}
+                  style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 400, color: 'var(--mute)', background: 'none', border: 'none', padding: '0', cursor: 'pointer', flexShrink: 0 }}
+                >
+                  Dismiss
+                </button>
+              </div>
+              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.6, margin: 0 }}>
+                {zoneDriftPattern.count} of your last {zoneDriftPattern.total} easy sessions ran above Zone 2. Easy days running hot limits what the hard sessions can do.
+              </p>
+            </div>
+          )
+        })()}
+
         {/* ── 3. AI WEEKLY REPORT — CoachNoteBlock amber pattern ─────── */}
         <div style={{
           background: 'var(--warn-bg)',
@@ -5444,7 +5542,12 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
         <PlanCoachingCard plan={plan} currentWeek={currentWeek} units={preferredUnits} trackedKm={trackedKm} />
 
         {/* ── 5. RACE PROJECTIONS ──────────────────────────────────────── */}
-        <RaceTimesCard stravaConnected={stravaConnected} />
+        <RaceTimesCard
+          stravaConnected={stravaConnected}
+          benchmarkRecalDismissedAt={benchmarkRecalDismissedAt}
+          onOpenBenchmark={onOpenBenchmark}
+          onDismissRecal={onDismissRecal}
+        />
 
       </div>
     </div>

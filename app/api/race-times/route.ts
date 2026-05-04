@@ -49,6 +49,63 @@ function projectRaceTimes(vdot: number) {
   })
 }
 
+// Find the RACE_FRACTIONS entry closest to the athlete's actual race distance.
+// Used to project a target-race-specific estimate + baseline delta (R31).
+function closestStandardRace(distanceKm: number) {
+  return RACE_FRACTIONS.reduce((best, r) =>
+    Math.abs(r.distanceKm - distanceKm) < Math.abs(best.distanceKm - distanceKm) ? r : best
+  )
+}
+
+function projectForDistance(vdot: number, distanceKm: number): number {
+  const { fraction } = closestStandardRace(distanceKm)
+  const velocityMperMin = velocityAtFraction(vdot, fraction)
+  const timeSeconds     = Math.round((distanceKm * 1000) / velocityMperMin * 60)
+  return timeSeconds
+}
+
+function formatDelta(deltaSeconds: number): string {
+  const abs = Math.abs(deltaSeconds)
+  const m   = Math.floor(abs / 60)
+  const s   = Math.round(abs % 60)
+  if (m > 0 && s > 0) return `${m}m ${s}s`
+  if (m > 0)          return `${m}m`
+  return `${s}s`
+}
+
+// Build the R31 target object: projected time for the athlete's specific race
+// distance, compared against the plan-creation VDOT baseline.
+// Returns null when baseline is unavailable (plan generated before R23 added meta.vdot).
+function buildTarget(
+  currentVdot:   number,
+  planRaceDistKm: number,
+  planRaceName:   string,
+  baselineVdot:   number | null,
+): {
+  distanceKm:     number
+  raceName:       string
+  currentSeconds: number
+  baselineSeconds: number | null
+  deltaSeconds:   number | null
+  deltaFormatted: string | null
+  improved:       boolean | null
+} {
+  const currentSeconds  = projectForDistance(currentVdot, planRaceDistKm)
+  const baselineSeconds = baselineVdot ? projectForDistance(baselineVdot, planRaceDistKm) : null
+  const deltaSeconds    = baselineSeconds !== null ? baselineSeconds - currentSeconds : null
+  const significant     = deltaSeconds !== null && Math.abs(deltaSeconds) >= 30
+
+  return {
+    distanceKm:     planRaceDistKm,
+    raceName:       planRaceName,
+    currentSeconds,
+    baselineSeconds,
+    deltaSeconds:   significant ? deltaSeconds : null,
+    deltaFormatted: significant ? formatDelta(deltaSeconds!) : null,
+    improved:       significant ? deltaSeconds! > 0 : null,
+  }
+}
+
 // State 4 bracket: fitness_level × training_age → estimated VDOT midpoint, then −5% conservative discount
 function bracketVdot(fitnessLevel: string | undefined, trainingAge: string | undefined): number | null {
   const table: Record<string, Record<string, number>> = {
@@ -137,6 +194,18 @@ export async function GET(req: NextRequest) {
   const meta = plan.meta
   const today = new Date()
 
+  // Plan age in weeks — needed for R32 recalibration trigger (minimum 4 weeks)
+  const planAgeWeeks = meta.plan_start
+    ? Math.floor((today.getTime() - new Date(meta.plan_start).getTime()) / (7 * 24 * 60 * 60 * 1000))
+    : 0
+
+  // Baseline VDOT — the raw VDOT stored at plan generation time.
+  // Used to compute the R31 improvement delta. May be absent on legacy plans
+  // generated before R23 added meta.vdot.
+  const baselineVdot: number | null = meta.vdot ?? null
+  const raceDistKm  = meta.race_distance_km ?? 0
+  const raceName    = meta.race_name ?? 'Your race'
+
   // ── State 1: benchmark in plan meta ─────────────────────────────────────
   if (meta.vdot && meta.benchmark) {
     const { vdot: discountedVdot, discountPct } = applyVdotDiscount(meta.vdot, meta.benchmark as BenchmarkInput, today)
@@ -151,6 +220,19 @@ export async function GET(req: NextRequest) {
     // on the response; UI surface lands when R18 confidence score ships.
     const vo2MaxCrossCheck = await computeVO2CrossCheck(serviceSupabase, user.id, discountedVdot)
 
+    // R31: target race delta (baseline VDOT = plan.meta.vdot pre-discount for fair comparison)
+    const target = raceDistKm > 0
+      ? buildTarget(discountedVdot, raceDistKm, raceName, baselineVdot)
+      : null
+
+    // R32: recalibration signal — benchmark is already high-quality, suggest recal if
+    // the current (discounted) VDOT meaningfully exceeds the plan-creation baseline
+    const recalibrationSuggested = !!(
+      baselineVdot &&
+      discountedVdot > baselineVdot + 3 &&
+      planAgeWeeks >= 4
+    )
+
     return NextResponse.json({
       state:      1,
       confidence: 'high' as const,
@@ -159,6 +241,8 @@ export async function GET(req: NextRequest) {
       vdot:       parseFloat(discountedVdot.toFixed(1)),
       discountPct,
       distances:  projectRaceTimes(discountedVdot),
+      target,
+      recalibrationSuggested,
       vo2MaxCrossCheck,
       upgradeCtaType: null,
     })
@@ -206,6 +290,19 @@ export async function GET(req: NextRequest) {
         ? 'From your aerobic runs'
         : `From ${runCount} aerobic run${runCount > 1 ? 's' : ''} — add more to improve accuracy`
 
+      // R31: target race delta
+      const target = raceDistKm > 0
+        ? buildTarget(derivedVdot, raceDistKm, raceName, baselineVdot)
+        : null
+
+      // R32: suggest recalibration if Strava-derived VDOT beats plan baseline by ≥3 points
+      const recalibrationSuggested = !!(
+        baselineVdot &&
+        derivedVdot > baselineVdot + 3 &&
+        planAgeWeeks >= 4 &&
+        runCount >= 3  // need at least 3 runs for a reliable signal
+      )
+
       return NextResponse.json({
         state,
         confidence,
@@ -214,13 +311,15 @@ export async function GET(req: NextRequest) {
         vdot:       parseFloat(derivedVdot.toFixed(1)),
         discountPct: 0,
         distances:  projectRaceTimes(derivedVdot),
+        target,
+        recalibrationSuggested,
         stravaQualifyingRunCount: runCount,
         upgradeCtaType: 'benchmark',  // prompt to add a benchmark for higher confidence
       })
     }
   }
 
-  // ── State 4: wizard bracket ──────────────────────────────────────────────
+  // ── State 4: wizard bracket — no R31/R32 (static estimate, can't show improvement)
   const bracketV = bracketVdot(meta.fitness_level, meta.training_age)
   if (bracketV !== null) {
     return NextResponse.json({
@@ -231,17 +330,21 @@ export async function GET(req: NextRequest) {
       vdot:        parseFloat(bracketV.toFixed(1)),
       discountPct:  5,
       distances:   projectRaceTimes(bracketV),
+      target:      null,   // no baseline comparison on bracket estimate
+      recalibrationSuggested: false,
       upgradeCtaType: 'both',  // both benchmark and Strava improve this
     })
   }
 
   // ── State 5: no signal ───────────────────────────────────────────────────
   return NextResponse.json({
-    state:           5,
-    confidence:      null,
-    label:           null,
-    source:          'none',
-    distances:       null,
-    upgradeCtaType:  'both',
+    state:                 5,
+    confidence:            null,
+    label:                 null,
+    source:                'none',
+    distances:             null,
+    target:                null,
+    recalibrationSuggested: false,
+    upgradeCtaType:        'both',
   })
 }
