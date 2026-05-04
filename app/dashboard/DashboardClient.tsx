@@ -5218,15 +5218,20 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           borderLeft:   '3px solid var(--moss)',
           padding:      '16px 18px',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <AICoachChip />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AICoachChip />
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
+                Your AI coach
+              </span>
+            </div>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums' }}>
               {sessionsCompleted
                 ? `W${weekNum} · ${sessionsCompleted} session${sessionsCompleted !== 1 ? 's' : ''}`
                 : `W${weekNum} of ${totalWeeks}`}
             </span>
           </div>
-          <p style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3, margin: 0 }}>
+          <p style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3, margin: '10px 0 0' }}>
             {getCoachHeadline()}
           </p>
         </div>

@@ -25,6 +25,10 @@ const RACE_FRACTIONS: { label: string; distanceKm: number; fraction: number }[] 
   { label: 'Marathon', distanceKm: 42.195,  fraction: 0.792 },
 ]
 
+// Daniels VDOT is validated only up to marathon distance.
+// Beyond this, fatigue, terrain, and pacing strategy dominate — extrapolation is misleading.
+const VDOT_MAX_DISTANCE_KM = 42.195
+
 // Strava qualifying aerobic run window (weeks)
 const STRAVA_WINDOW_WEEKS = 6
 // High-confidence run count threshold
@@ -57,7 +61,9 @@ function closestStandardRace(distanceKm: number) {
   )
 }
 
-function projectForDistance(vdot: number, distanceKm: number): number {
+// Returns null for ultra distances — VDOT doesn't extrapolate reliably beyond marathon.
+function projectForDistance(vdot: number, distanceKm: number): number | null {
+  if (distanceKm > VDOT_MAX_DISTANCE_KM) return null
   const { fraction } = closestStandardRace(distanceKm)
   const velocityMperMin = velocityAtFraction(vdot, fraction)
   const timeSeconds     = Math.round((distanceKm * 1000) / velocityMperMin * 60)
@@ -75,34 +81,52 @@ function formatDelta(deltaSeconds: number): string {
 
 // Build the R31 target object: projected time for the athlete's specific race
 // distance, compared against the plan-creation VDOT baseline.
-// Returns null when baseline is unavailable (plan generated before R23 added meta.vdot).
+// Returns ultraDistance:true for distances beyond marathon — VDOT doesn't apply there.
 function buildTarget(
-  currentVdot:   number,
+  currentVdot:    number,
   planRaceDistKm: number,
   planRaceName:   string,
   baselineVdot:   number | null,
 ): {
-  distanceKm:     number
-  raceName:       string
-  currentSeconds: number
+  distanceKm:      number
+  raceName:        string
+  ultraDistance:   boolean
+  currentSeconds:  number | null
   baselineSeconds: number | null
-  deltaSeconds:   number | null
-  deltaFormatted: string | null
-  improved:       boolean | null
+  deltaSeconds:    number | null
+  deltaFormatted:  string | null
+  improved:        boolean | null
 } {
-  const currentSeconds  = projectForDistance(currentVdot, planRaceDistKm)
+  const currentSeconds = projectForDistance(currentVdot, planRaceDistKm)
+
+  // Ultra distance — VDOT extrapolation breaks down beyond marathon.
+  // Return a marker so the UI can show an honest note instead of a misleading time.
+  if (currentSeconds === null) {
+    return {
+      distanceKm:      planRaceDistKm,
+      raceName:        planRaceName,
+      ultraDistance:   true,
+      currentSeconds:  null,
+      baselineSeconds: null,
+      deltaSeconds:    null,
+      deltaFormatted:  null,
+      improved:        null,
+    }
+  }
+
   const baselineSeconds = baselineVdot ? projectForDistance(baselineVdot, planRaceDistKm) : null
   const deltaSeconds    = baselineSeconds !== null ? baselineSeconds - currentSeconds : null
   const significant     = deltaSeconds !== null && Math.abs(deltaSeconds) >= 30
 
   return {
-    distanceKm:     planRaceDistKm,
-    raceName:       planRaceName,
+    distanceKm:      planRaceDistKm,
+    raceName:        planRaceName,
+    ultraDistance:   false,
     currentSeconds,
     baselineSeconds,
-    deltaSeconds:   significant ? deltaSeconds : null,
-    deltaFormatted: significant ? formatDelta(deltaSeconds!) : null,
-    improved:       significant ? deltaSeconds! > 0 : null,
+    deltaSeconds:    significant ? deltaSeconds : null,
+    deltaFormatted:  significant ? formatDelta(deltaSeconds!) : null,
+    improved:        significant ? deltaSeconds! > 0 : null,
   }
 }
 

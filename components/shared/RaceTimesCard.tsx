@@ -15,7 +15,8 @@ import { authedFetch } from '@/lib/supabase/authedFetch'
 type TargetRace = {
   distanceKm:      number
   raceName:        string
-  currentSeconds:  number
+  ultraDistance:   boolean
+  currentSeconds:  number | null
   baselineSeconds: number | null
   deltaSeconds:    number | null
   deltaFormatted:  string | null
@@ -143,20 +144,29 @@ export function RaceTimesCard({
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--ink-2)', marginBottom: '8px' }}>
                 {data.target.raceName}
               </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px', lineHeight: 1 }}>
-                  {formatTime(data.target.currentSeconds)}
-                </span>
-                {/* Delta chip — only shown when improvement/regression is significant */}
-                {data.target.deltaFormatted && data.target.improved !== null && (
-                  <span style={{
-                    fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600,
-                    color: data.target.improved ? 'var(--moss)' : 'var(--warn)',
-                  }}>
-                    {data.target.improved ? '↑' : '↓'} {data.target.deltaFormatted} since plan start
+
+              {data.target.ultraDistance ? (
+                /* Ultra distances can't be projected from VDOT — honest note instead of a wrong number */
+                <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55, margin: 0 }}>
+                  Ultra finish times depend on terrain, conditions, and pacing — not pace-based formulas.
+                  The projections below are still accurate for your training.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px', lineHeight: 1 }}>
+                    {data.target.currentSeconds !== null ? formatTime(data.target.currentSeconds) : '—'}
                   </span>
-                )}
-              </div>
+                  {/* Delta chip — only shown when improvement/regression is significant */}
+                  {data.target.deltaFormatted && data.target.improved !== null && (
+                    <span style={{
+                      fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600,
+                      color: data.target.improved ? 'var(--moss)' : 'var(--warn)',
+                    }}>
+                      {data.target.improved ? '↑' : '↓'} {data.target.deltaFormatted} since plan start
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
