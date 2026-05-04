@@ -667,11 +667,125 @@ Timed AI coaching moments that appear on the Coach screen in specific windows. T
 
 **Gating:** PAID / TRIAL (activity_intelligence gate). Free users: card is not shown and no API call is made (CoachTeaser component shown instead).
 
+**AICoachChip colour on these cards:**
+- Both variants use `<AICoachChip color="moss">` — chip always stays moss on `--card` / `--bg-soft` surfaces (Pattern 16b)
+- The *label text* (not the chip) carries the variant accent: `--moss` for Phase Summary, `--s-race` for Race Readiness
+- Do not change label text to `--mute` — the colour is intentional and distinguishes the card type at a glance
+
 **Rules:**
 - Never show both variants simultaneously
 - Neither variant shows a "locked" shell for free users — timed moments with no user-accessible retry
-- `AIMark` is always present (provenance honesty — model output)
+- `AICoachChip` is always present (provenance honesty — model output)
 - No refresh button — the note is generated once per phase transition / race date and cached
+
+---
+
+### 19. Stats 2×2 Grid
+
+Four metric cells in a 2-column grid. Used on the Coach screen for Zone discipline, Load ratio, Sessions, and Weeks left.
+
+```
+┌─────────────────┬─────────────────┐
+│  ZONE DISC. ⓘ  │  LOAD RATIO ⓘ  │
+│  84%            │  1.12x          │
+│  Good week      │  Steady build   │
+├─────────────────┼─────────────────┤
+│  SESSIONS       │  WEEKS LEFT     │
+│  3/5            │  8              │
+│  On track       │  Build phase    │
+└─────────────────┴─────────────────┘
+```
+
+**Structure:**
+- Grid: `display: grid`, `gridTemplateColumns: '1fr 1fr'`, `gap: 8px`
+- Each cell: `--card` background, `1px solid --line` border, `var(--radius-lg)`, `16px` padding
+- Eyebrow: `10px 700 --mute uppercase 0.08em tracking`
+- Interactive cells (have a drill-down sheet): rendered as `<button>`, eyebrow includes `ⓘ` marker at `11px` in `--moss`
+- Static cells: rendered as `<div>`, no `ⓘ` marker
+- Value: `28px 800 tabular-nums --ink` — distinct from Pattern 4 (Stat Row 24px) because the 2×2 grid has square cells not horizontal strips
+- Sub-label: `11px 500`, colour reflects verdict: `--moss` (good), `--ink-2` (neutral), `--warn` (caution)
+
+**Interactive cells tap to a slide-up sheet** with:
+- Drag indicator: `36×4px` pill, `--line`, `margin: 6px auto 18px`
+- Sheet header: eyebrow + 24px/600 title + current value in verdict colour
+- Body: 3 paragraphs explaining the metric, `15px 400 --ink-2`, `1.55` line-height
+- Sticky footer: full-width close button, `--bg-soft` background, `--ink` text
+
+**Keyframes:** `vetra-fade-in` (backdrop) and `vetra-slide-up` (panel) are defined once in `globals.css` — never inline in JSX.
+
+**Rule:** Only Zone discipline and Load ratio are interactive. Sessions and Weeks left are static — same card style, no button, no ⓘ.
+
+---
+
+### 20. Action List Card
+
+A grouped list of tappable rows inside a single card. Used in MeScreen for plan actions, display prefs, race prep, training intelligence, and the Careful Now section.
+
+```
+┌─────────────────────────────────────────┐
+│  Row label                          [›] │  ← 13px 500 --ink
+│  Supporting detail                      │  ← 12px 400 --mute
+├─────────────────────────────────────────┤
+│  Row label                          [›] │
+│  Supporting detail                      │
+└─────────────────────────────────────────┘
+```
+
+**Structure:**
+- Container: `--card` background, `var(--radius-lg)` radius, `1px solid --line` border, `overflow: hidden`
+- Row padding: `14px 16px`
+- Row divider: `1px solid --line` — never `0.5px`
+- Primary label: `13px 500 --ink`, `var(--font-ui)`
+- Supporting detail: `12px 400 --mute`, `var(--font-ui)`
+- Chevron: `--mute` colour, `marginLeft: 12px`, right-aligned
+
+**Toggle variant** (for boolean settings like Auto-adjust):
+- Row has no chevron — replaced by a `44×26px` pill toggle
+- Toggle on: `--moss` background; off: `--line` background
+- Thumb: `20×20px` white circle, `3px` inset, transitions with `left 0.2s`
+
+**Segmented selector variant** (for km/mi, distance/duration):
+- Small pill buttons, `10px` radius, `5px 12px` padding
+- Active: `1px solid --moss`, `--moss-soft` background, `--moss` text
+- Inactive: `1px solid --line`, transparent background, `--mute` text
+
+**Warning card variant** (e.g. HR not configured):
+- `--warn-bg` background, `1px solid --line` border, `10px` radius
+- Dot: `6px` circle, `--warn` fill
+- Text: `12px 400 --coach-ink` — warm dark brown on amber, never `--warn` colour on `--warn-bg`
+
+**Rules:**
+- Always `var(--card)` not `var(--card-bg)` — banned alias
+- Always `1px` borders not `0.5px`
+- Always `var(--radius-lg)` not hardcoded `12px`
+- Nested toggle or selector buttons may use `10px` radius (pill shape) — distinct from card container
+
+---
+
+## Cross-Screen Consistency Rules
+
+Every screen must honour these invariants before shipping. Check against this list when auditing.
+
+| Signal | Canonical value | Common violation |
+|--------|----------------|-----------------|
+| ScreenHeader font | `26px 800 --font-ui --ink` | 22px/500 or `--font-brand` |
+| Content horizontal padding | `0 16px` | `0 12px` in Me/Strava screens |
+| Card border | `1px solid var(--line)` | `0.5px solid var(--border-col)` |
+| Card radius | `var(--radius-lg)` | Hardcoded `12px` |
+| Card background | `var(--card)` | `var(--card-bg)` |
+| Primary text | `var(--ink)` | `var(--text-primary)` |
+| Secondary text | `var(--ink-2)` | `var(--text-secondary)` |
+| Muted text | `var(--mute)` | `var(--text-muted)` |
+| Primary accent | `var(--moss)` | `var(--accent)` or `var(--teal)` |
+| Active toggle | `var(--moss)` background | `var(--accent)` |
+| Inactive toggle | `var(--line)` background | `var(--border-col)` |
+| Session type ownership | `lib/session-types.ts` token | Hardcoded hex or `--session-*` alias |
+| AI provenance chip | `<AICoachChip>` — moss on card/bg-soft, warn on warn-bg | Bare `AIMark` without chip |
+| Eyebrow / section label | `10px 700 --mute uppercase 0.08em` | Varies |
+| Coach amber surface text | `var(--coach-ink)` | `var(--warn)` or `var(--amber)` |
+| Slide-up sheet keyframes | Defined once in `globals.css` | Inline `<style>` in JSX |
+
+**When you change a shared pattern**, update the relevant entry in this table AND the corresponding Pattern section above in the same commit. Patterns are the reference — not a description of what happens to exist.
 
 ---
 

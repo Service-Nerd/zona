@@ -192,6 +192,17 @@ html, body {
   to   { transform: translateY(0); }
 }
 
+/* Slide-up sheet backdrop + panel — used by Coach stats sheets */
+@keyframes vetra-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes vetra-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
 /* AIMark working state — gentle pulse signaling AI is in flight. Replaces
  * the spinner pattern banned by ui-patterns.md. See AIMark.tsx. */
 @keyframes ai-mark-pulse {

@@ -4833,7 +4833,7 @@ function PlanCoachingCard({ plan, currentWeek, units = 'km', trackedKm }: {
     <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
       {/* Header */}
       <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>This week</span>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Week notes</span>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', opacity: 0.6 }}>· Your training plan</span>
         {phaseCap && (
           <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--moss)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
@@ -4962,7 +4962,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
               See your zone discipline score
             </div>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
-              Weekly report, session feedback, plan adjustments — all from your Strava data.
+              Zone score and weekly coaching. Needs Strava.
             </div>
           </div>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--moss)', whiteSpace: 'nowrap', flexShrink: 0 }}>
@@ -5373,10 +5373,6 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               </div>
             </div>
 
-            <style>{`
-              @keyframes vetra-fade-in { from { opacity: 0 } to { opacity: 1 } }
-              @keyframes vetra-slide-up { from { transform: translateY(100%) } to { transform: translateY(0) } }
-            `}</style>
           </div>
         )}
 
@@ -5423,10 +5419,6 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               </div>
             </div>
 
-            <style>{`
-              @keyframes vetra-fade-in { from { opacity: 0 } to { opacity: 1 } }
-              @keyframes vetra-slide-up { from { transform: translateY(100%) } to { transform: translateY(0) } }
-            `}</style>
           </div>
         )}
 
@@ -5442,7 +5434,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             {/* Eyebrow */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
               <AICoachChip working={specialCardLoading && !localRaceReadiness} />
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--s-race)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
                 Race readiness
               </span>
               <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
@@ -5521,7 +5513,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                 </button>
               </div>
               <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.6, margin: 0 }}>
-                {zoneDriftPattern.count} of your last {zoneDriftPattern.total} easy sessions ran above Zone 2. Easy days running hot limits what the hard sessions can do.
+                {zoneDriftPattern.count} of your last {zoneDriftPattern.total} easy sessions crept above Zone 2. If easy isn&apos;t easy, hard can&apos;t be hard.
               </p>
             </div>
           )
@@ -5603,32 +5595,30 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           )}
 
           {/* CTA button — inside the card, state-labelled */}
-          <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <div style={{ marginTop: '16px' }}>
             {refreshBlocked && (
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', display: 'block', marginBottom: '8px' }}>
                 Already refreshed today.
               </span>
             )}
-            <div style={{ marginLeft: 'auto' }}>
-              <button
-                onClick={generateReport}
-                disabled={loading || refreshBlocked}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-                  color: 'var(--warn)',
-                  background: 'rgba(184,133,58,0.12)',
-                  border: 'none',
-                  borderRadius: '20px',
-                  padding: '8px 16px',
-                  cursor: (loading || refreshBlocked) ? 'default' : 'pointer',
-                  opacity: (loading || refreshBlocked) ? 0.4 : 1,
-                }}
-              >
-                {loading && <AIMark size={10} color="var(--warn)" working />}
-                {loading ? 'Generating' : (reportIsCurrent && weeklyReport?.headline ? 'Refresh' : 'Generate report')}
-              </button>
-            </div>
+            <button
+              onClick={generateReport}
+              disabled={loading || refreshBlocked}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
+                color: 'var(--warn)',
+                background: 'rgba(184,133,58,0.12)',
+                border: 'none',
+                borderRadius: '20px',
+                padding: '8px 16px',
+                cursor: (loading || refreshBlocked) ? 'default' : 'pointer',
+                opacity: (loading || refreshBlocked) ? 0.4 : 1,
+              }}
+            >
+              {loading && <AIMark size={10} color="var(--warn)" working />}
+              {loading ? 'Generating' : (reportIsCurrent && weeklyReport?.headline ? 'Refresh' : 'Generate report')}
+            </button>
           </div>
         </div>
 
@@ -6512,7 +6502,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
       {/* Header — tab destination, no back button */}
       <ScreenHeader title="Your profile" />
 
-      <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '40px' }}>
+      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '40px' }}>
 
         {/* Identity card — avatar + name + tier */}
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', padding: '16px', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -6554,39 +6544,39 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         )}
 
         {/* Plan + benchmark actions */}
-        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           <button
             onClick={onOpenGenerate}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '0.5px solid var(--border-col)', cursor: 'pointer', textAlign: 'left' }}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}
           >
             <div>
-              <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.55 }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>
                 {hasPlan ? 'Change your plan' : 'Generate a plan'}
               </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>
                 {hasPlan ? 'Build a new plan around a different race or goal' : 'Choose a template or build a custom plan'}
               </div>
             </div>
-            <div style={{ color: 'var(--text-muted)', marginLeft: '12px' }}>{chevron}</div>
+            <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
           </button>
           <button
             onClick={onOpenBenchmark}
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
           >
             <div>
-              <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.55 }}>Race benchmark</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>Race benchmark</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>
                 How fast. Pace targets calibrated from a recent race.
               </div>
             </div>
-            <div style={{ color: 'var(--text-muted)', marginLeft: '12px' }}>{chevron}</div>
+            <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
           </button>
         </div>
 
         {!hrConfigured && (
-          <div style={{ background: 'var(--amber-soft)', borderRadius: '10px', border: '0.5px solid var(--amber-mid)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--amber)', flexShrink: 0 }} />
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--amber)', lineHeight: 1.5 }}>
+          <div style={{ background: 'var(--warn-bg)', borderRadius: '10px', border: '1px solid var(--line)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--warn)', flexShrink: 0 }} />
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--coach-ink)', lineHeight: 1.5 }}>
               Set your resting and max HR below to see your training zones.
             </div>
           </div>
@@ -6595,16 +6585,16 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         <HRZonesSection restingHR={restingHR} maxHR={maxHR} onSave={onHRChange} />
 
         {/* Display preferences — grouped with training since they affect session cards */}
-        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           {/* Units */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--line)' }}>
             <div>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Distance units</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Pace brackets and distances</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.55 }}>Distance units</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>Pace brackets and distances</div>
             </div>
             <div style={{ display: 'flex', gap: '6px' }}>
               {(['km', 'mi'] as const).map(u => (
-                <button key={u} onClick={() => onUnitsChange(u)} style={{ borderRadius: '10px', padding: '5px 12px', border: `0.5px solid ${preferredUnits === u ? 'var(--accent)' : 'var(--border-col)'}`, background: preferredUnits === u ? 'var(--accent-soft)' : 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', color: preferredUnits === u ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <button key={u} onClick={() => onUnitsChange(u)} style={{ borderRadius: '10px', padding: '5px 12px', border: `1px solid ${preferredUnits === u ? 'var(--moss)' : 'var(--line)'}`, background: preferredUnits === u ? 'var(--moss-soft)' : 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', color: preferredUnits === u ? 'var(--moss)' : 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   {u}
                 </button>
               ))}
@@ -6613,12 +6603,12 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           {/* Session display */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
             <div>
-              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>Session display</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Default metric on session cards</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.55 }}>Session display</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>Default metric on session cards</div>
             </div>
             <div style={{ display: 'flex', gap: '6px' }}>
               {(['distance', 'duration'] as const).map(m => (
-                <button key={m} onClick={() => onMetricChange(m)} style={{ borderRadius: '10px', padding: '5px 12px', border: `0.5px solid ${preferredMetric === m ? 'var(--accent)' : 'var(--border-col)'}`, background: preferredMetric === m ? 'var(--accent-soft)' : 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', color: preferredMetric === m ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'capitalize', letterSpacing: '0.04em' }}>
+                <button key={m} onClick={() => onMetricChange(m)} style={{ borderRadius: '10px', padding: '5px 12px', border: `1px solid ${preferredMetric === m ? 'var(--moss)' : 'var(--line)'}`, background: preferredMetric === m ? 'var(--moss-soft)' : 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', color: preferredMetric === m ? 'var(--moss)' : 'var(--mute)', textTransform: 'capitalize', letterSpacing: '0.04em' }}>
                   {m}
                 </button>
               ))}
@@ -6638,17 +6628,17 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
 
         {/* ── Race prep ──────────────────────────────────────────── */}
         <SectionLabel>Race prep</SectionLabel>
-        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           {[
-            { id: 'mental'  as const, label: 'Mental toolkit', sub: '6 tools for when it gets dark at km 70', color: 'var(--session-easy)' },
-            { id: 'fueling' as const, label: 'Fueling plan',   sub: 'Gel + hydration protocol for race day',  color: 'var(--accent)' },
+            { id: 'mental'  as const, label: 'Mental toolkit', sub: '6 tools for when it gets dark at km 70', color: 'var(--s-easy)' },
+            { id: 'fueling' as const, label: 'Fueling plan',   sub: 'Gel + hydration protocol for race day',  color: 'var(--moss)' },
           ].map(({ id, label, sub, color }, i, arr) => (
-            <button key={id} onClick={() => setActiveSection(id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: i < arr.length - 1 ? '0.5px solid var(--border-col)' : 'none', cursor: 'pointer', textAlign: 'left' }}>
+            <button key={id} onClick={() => setActiveSection(id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : 'none', cursor: 'pointer', textAlign: 'left' }}>
               <div>
-                <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.55 }}>{label}</div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>{label}</div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color, marginTop: '2px' }}>{sub}</div>
               </div>
-              <div style={{ color: 'var(--text-muted)', marginLeft: '12px' }}>{chevron}</div>
+              <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
             </button>
           ))}
         </div>
@@ -6657,28 +6647,27 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         {hasPaidAccess && onDynamicAdjustmentsChange && (
           <>
             <SectionLabel>Training intelligence</SectionLabel>
-            <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+            <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
               {/* Reshape plan — manual trigger. Free users see upgrade prompt. */}
               <button
                 onClick={hasPaidAccess ? onOpenReshape : onUpgrade}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '0.5px solid var(--border-col)', cursor: 'pointer', textAlign: 'left' }}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}
               >
                 <div>
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2px' }}>Reshape plan</div>
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2px' }}>Reshape plan</div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
                     {hasPaidAccess
                       ? 'Check your recent sessions for adjustment signals now'
                       : 'Reshape needs Premium. The plan you have keeps running.'}
                   </div>
                 </div>
-                <div style={{ color: 'var(--text-muted)', marginLeft: '12px' }}>{chevron}</div>
+                <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
               </button>
               {/* Dynamic adjustments toggle */}
               <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: '2px' }}>Auto-adjust</div>
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                    {/* TODO: brand voice review — sentences referencing the product name may benefit from rewording in a follow-up content polish pass. */}
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', lineHeight: 1.4, marginBottom: '2px' }}>Auto-adjust</div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
                     {dynamicAdjustmentsEnabled
                       ? 'Vetra suggests plan changes based on your Strava data.'
                       : 'Plan stays fixed. Vetra tracks data but won\'t suggest changes.'}
@@ -6688,7 +6677,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                   onClick={() => onDynamicAdjustmentsChange(!dynamicAdjustmentsEnabled)}
                   style={{
                     width: '44px', height: '26px', borderRadius: '13px', border: 'none', cursor: 'pointer',
-                    background: dynamicAdjustmentsEnabled ? 'var(--accent)' : 'var(--border-col)',
+                    background: dynamicAdjustmentsEnabled ? 'var(--moss)' : 'var(--line)',
                     position: 'relative', flexShrink: 0, transition: 'background 0.2s',
                   }}
                   aria-label="Toggle dynamic adjustments"
@@ -6709,28 +6698,28 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         {isAdmin && (
           <>
             <SectionLabel>Admin</SectionLabel>
-            <button onClick={onOpenAdmin} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--accent-mid)', cursor: 'pointer', textAlign: 'left' }}>
+            <button onClick={onOpenAdmin} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--moss-mid)', cursor: 'pointer', textAlign: 'left' }}>
               <div>
-                <div style={{ fontSize: '13px', color: 'var(--accent)', lineHeight: 1.55 }}>User management</div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>Impersonate · view plans</div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--moss)', lineHeight: 1.55 }}>User management</div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>Impersonate · view plans</div>
               </div>
-              <div style={{ color: 'var(--accent)', marginLeft: '12px' }}>{chevron}</div>
+              <div style={{ color: 'var(--moss)', marginLeft: '12px' }}>{chevron}</div>
             </button>
           </>
         )}
 
         {/* ── Careful Now — destructive account actions ───────── */}
         <SectionLabel>Careful Now</SectionLabel>
-        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           <button
             onClick={async () => {
               const supabase = createClient()
               await supabase.auth.signOut()
               router.replace('/auth/login')
             }}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '0.5px solid var(--border-col)', cursor: 'pointer', textAlign: 'left' }}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}
           >
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Sign out</span>
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', fontWeight: 500 }}>Sign out</span>
           </button>
           <button
             onClick={() => setActiveSection('delete-account')}
