@@ -2,7 +2,7 @@
 // Renders the coach voice card in amber-warm style.
 // See docs/canonical/ui-patterns.md § CoachNoteBlock and docs/alignment/phase-2-decisions.md D-001.
 
-import AIMark from './AIMark'
+import AICoachChip from './AICoachChip'
 
 type Props = {
   /** Eyebrow label — default "COACH" */
@@ -38,40 +38,47 @@ export default function CoachNoteBlock({
         padding: isWhy ? '14px 16px' : '16px 18px',
       }}
     >
-      {/* Top row: eyebrow only — the label is the visual anchor */}
+      {/* Top row: chip (AI) or label (rule-engine) + optional timestamp */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '6px',
           marginBottom: '10px',
         }}
       >
-        {/* Eyebrow: "✦ COACH · 6:12am" — sparkle prepended when AI-generated */}
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '5px',
-            fontFamily: 'var(--font-ui)',
-            fontSize: '10px',
-            fontWeight: 700,
-            color: 'var(--warn)',
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            lineHeight: 1,
-          }}
-        >
-          {aiGenerated && <AIMark size={10} color="var(--warn)" />}
-          <span>
-            {label}
-            {timestamp && (
-              <span style={{ fontWeight: 400, opacity: 0.65 }}>
-                {' '}·{' '}{timestamp}
-              </span>
-            )}
+        {aiGenerated
+          ? <AICoachChip color="warn" />
+          : (
+            <span
+              style={{
+                fontFamily:    'var(--font-ui)',
+                fontSize:      '10px',
+                fontWeight:    700,
+                color:         'var(--warn)',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                lineHeight:    1,
+              }}
+            >
+              {label}
+            </span>
+          )
+        }
+        {timestamp && (
+          <span
+            style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize:   '10px',
+              fontWeight: 400,
+              color:      'var(--warn)',
+              opacity:    0.65,
+              lineHeight: 1,
+            }}
+          >
+            · {timestamp}
           </span>
-        </span>
+        )}
       </div>
 
       {/* Body copy — warm dark brown on warm amber background */}

@@ -24,6 +24,7 @@ import SessionCard from '@/components/shared/SessionCard'
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import ZoneShapeCard from '@/components/shared/ZoneShapeCard'
 import AIMark from '@/components/shared/AIMark'
+import AICoachChip from '@/components/shared/AICoachChip'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { composeSession } from '@/lib/plan/sessionComposer'
 import { formatDistance, sumRoundedDistance } from '@/lib/format'
@@ -5158,6 +5159,18 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   const [loadSheetOpen, setLoadSheetOpen] = useState(false)
   const [zoneDisciplineSheetOpen, setZoneDisciplineSheetOpen] = useState(false)
 
+  // ── Option E: first-open coach intro card ───────────────────────────
+  // One-time card that sets the user's mental model of the AI coach.
+  // Persisted in localStorage so it survives tab changes and reloads.
+  const [coachIntroSeen, setCoachIntroSeen] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true // SSR: don't flash
+    return localStorage.getItem('zona_coach_intro_seen') === 'true'
+  })
+  function dismissCoachIntro() {
+    if (typeof window !== 'undefined') localStorage.setItem('zona_coach_intro_seen', 'true')
+    setCoachIntroSeen(true)
+  }
+
   // ── Dynamic coach headline ──────────────────────────────────────────
   function getCoachHeadline(): string {
     const behind = (sessionsPlanned ?? 0) - (sessionsCompleted ?? 0)
@@ -5178,6 +5191,43 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
         <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.2, paddingTop: '4px' }}>
           {getCoachHeadline()}
         </div>
+
+        {/* ── OPTION E: FIRST-OPEN COACH INTRO ────────────────────────── */}
+        {/* Shown once to set the user's mental model. localStorage-gated. */}
+        {!coachIntroSeen && (
+          <div style={{
+            background:   'var(--card)',
+            borderRadius: 'var(--radius-lg)',
+            border:       '1px solid var(--line)',
+            borderLeft:   '3px solid var(--moss)',
+            padding:      '16px 18px',
+          }}>
+            <div style={{ marginBottom: '10px' }}>
+              <AICoachChip />
+            </div>
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.6, margin: '0 0 14px' }}>
+              Reads your sessions, zones, and training load. When something&apos;s worth saying, it shows up here.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={dismissCoachIntro}
+                style={{
+                  fontFamily:   'var(--font-ui)',
+                  fontSize:     '13px',
+                  fontWeight:   600,
+                  color:        'var(--moss)',
+                  background:   'rgba(107,142,107,0.10)',
+                  border:       'none',
+                  borderRadius: '20px',
+                  padding:      '7px 16px',
+                  cursor:       'pointer',
+                }}
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── STATS 2×2 GRID ───────────────────────────────────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -5346,8 +5396,8 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             padding: '16px 18px',
           }}>
             {/* Eyebrow */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-              <AIMark size={11} color="var(--s-race)" working={specialCardLoading && !localRaceReadiness} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <AICoachChip working={specialCardLoading && !localRaceReadiness} />
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--s-race)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
                 Race readiness
               </span>
@@ -5379,8 +5429,8 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             padding: '16px 18px',
           }}>
             {/* Eyebrow */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-              <AIMark size={11} color="var(--moss)" working={specialCardLoading && !localPhaseSummary} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <AICoachChip working={specialCardLoading && !localPhaseSummary} />
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
                 Phase complete
               </span>
@@ -5440,8 +5490,8 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           padding: '16px 18px',
         }}>
           {/* Eyebrow */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
-            <AIMark size={11} color="var(--warn)" working={loading} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+            <AICoachChip working={loading} color="warn" />
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
               This week
             </span>

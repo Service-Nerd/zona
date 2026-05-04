@@ -567,6 +567,43 @@ Reference: `components/shared/AIMark.tsx`. Single source of truth — never reim
 
 ---
 
+### 16b. AICoachChip
+
+The legible version of AIMark for eyebrow contexts where the AI signal needs to be scannable at a glance. Wraps AIMark in a pill chip with the text label "AI Coach" or "thinking…" during generation.
+
+```
+[✦ AI Coach]      ← moss pill, 11px 600, rounded, 3px 8px padding
+[✦ thinking…]     ← same pill, animated sparkle while generating
+```
+
+**Use instead of bare AIMark** on:
+- Coach screen AI card eyebrows (weekly report, phase summary, race readiness)
+- `CoachNoteBlock` when `aiGenerated={true}` — replaces the standalone sparkle
+- Any new AI-generated content card that needs a clearly legible provenance signal
+
+**Colour variants:**
+
+| Prop | Surface | Text | Background |
+|---|---|---|---|
+| `color="moss"` (default) | `--card`, `--bg-soft` | `var(--moss)` | `rgba(107,142,107,0.10)` |
+| `color="warn"` | `--warn-bg` | `var(--warn)` | `rgba(184,133,58,0.15)` |
+
+**Rules:**
+- Always moss on standard card surfaces — consistent AI identity regardless of card accent colour
+- Warn variant only on `--warn-bg` surfaces to avoid colour clash
+- Working state: AIMark pulses + text reads "thinking…"
+- Do NOT use on rule-engine output, hand-authored copy, or Strava data (same rule as AIMark)
+
+**Props:**
+```tsx
+working?: boolean         // default false — "thinking…" text + pulsing icon
+color?:   'moss' | 'warn' // default 'moss'
+```
+
+Reference: `components/shared/AICoachChip.tsx`
+
+---
+
 ### 17. SectionLabel
 
 Eyebrow label above a group of related rows. Used to name a category section in list-based screens (MeScreen, settings).
