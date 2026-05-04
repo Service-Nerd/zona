@@ -6860,13 +6860,7 @@ function PendingAnalysisCard() {
       padding: '16px 18px',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px' }}>
-        <AIMark size={10} color="var(--warn)" working />
-        <div style={{
-          fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-          color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em',
-        }}>
-          Coach · Working
-        </div>
+        <AICoachChip working color="warn" />
       </div>
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400,
@@ -6906,14 +6900,8 @@ function LockedCoachingPreview({ onUpgrade }: { onUpgrade?: () => void }) {
       padding: '16px 18px',
       border: '1px solid var(--line)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px' }}>
-        <AIMark size={10} color="var(--mute)" />
-        <div style={{
-          fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-          color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.14em',
-        }}>
-          Coach
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px', opacity: 0.4 }}>
+        <AICoachChip />
       </div>
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
@@ -6944,14 +6932,8 @@ function GaveUpCard() {
       borderRadius: '14px',
       padding: '16px 18px',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px' }}>
-        <AIMark size={10} color="var(--mute)" />
-        <div style={{
-          fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-          color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.14em',
-        }}>
-          Coach
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px', opacity: 0.4 }}>
+        <AICoachChip />
       </div>
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
@@ -7076,16 +7058,9 @@ function RunFeedbackCard({
       borderRadius: '14px',
       padding: '16px 18px',
     }}>
-      {/* Eyebrow — matches CoachNoteBlock exactly; score chip hidden for manual rows */}
+      {/* Eyebrow — Kit chip + optional score chip (hidden for manual rows) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px' }}>
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: '5px',
-          fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-          color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em', lineHeight: 1,
-        }}>
-          <AIMark size={10} color="var(--warn)" />
-          Coach
-        </span>
+        <AICoachChip color="warn" />
         {!isManual && score !== null && (
           <button
             type="button"

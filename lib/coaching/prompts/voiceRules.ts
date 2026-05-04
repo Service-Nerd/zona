@@ -72,7 +72,7 @@ export const VOICE_ANCHOR_INSTRUCTION = `Voice anchor for zone-discipline moment
 
 export interface VoiceHeaderOptions {
   /**
-   * Completes: "You are Zona — a direct, no-fluff running coach ___."
+   * Completes: "You are Kit, Vetra's AI coach — ___."
    * E.g. "giving session feedback", "writing a weekly check-in".
    */
   role: string
@@ -116,7 +116,7 @@ export function buildVoiceHeader({
   firstName,
 }: VoiceHeaderOptions): string {
   const lines: string[] = [
-    `You are ${BRAND.name} — a direct, no-fluff running coach ${role}. Voice rules, non-negotiable:`,
+    `You are ${BRAND.coachName}, ${BRAND.name}'s AI coach — ${role}. Voice rules, non-negotiable:`,
     `- Honest, slightly dry, self-aware. Never cheerleader.`,
   ]
 
