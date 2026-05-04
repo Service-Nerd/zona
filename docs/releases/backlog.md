@@ -118,6 +118,246 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 | **R19** | **Coaching tips in Supabase** — move hardcoded copy to a table for dynamic, user-specific messages | PAID | S | **Don't pick up without a product trigger.** Scoped 2026-05-01: current hardcoded copy (`getCompletionCopy`, `getZonaReflectResponse` in `DashboardClient.tsx`; `ZONE_COPY` in `lib/coaching/zoneCopy.ts`) branches on session type + RPE — both already known client-side. No user segmentation exists, so the migration alone doesn't unlock "dynamic per user" — it just adds a DB read + fallback path. Worth building only when there's a real driver: a non-engineer copy editor, an A/B test you actually want to run, or the first cohort that genuinely needs different copy (e.g. beginner vs intermediate). Until then, two switch statements are the right level of abstraction. |
 | **R26** | **Background load (HealthKit)** — count daily step / non-run active minutes against the chronic side of `acuteChronicRatio`. Fixes the false-negative case where a user with a 15k-step day-job is carrying invisible load the plan can't see | PAID | M | Calibration risk — active job vs recovery walks vs cross-train all look the same in step count. Needs a tunable damping factor before it's safe to act on. New field `nonRunActiveMins` on the load calc; surface separately on weekly report before feeding into the trigger |
 | **R27** | **Cycle-aware coaching (HealthKit)** — phase-aware notes for female users using HealthKit menstrual data. Closes a class of false-positive readiness flags from the v1 readiness signal (luteal-phase RHR is naturally elevated). Single coaching note per phase shift, not full periodisation | PAID | L | Real differentiator vs Strava/Runna/Planzy. Voice work needed first — matter-of-fact, not patronising. Needs opt-in flow in wizard or MeScreen. Tier sub-decision: gate behind PAID or include free as a brand moat |
+| **R28** | **Phase-end summary** | PAID | S | See spec below |
+| **R29** | **Pre-race readiness summary** | PAID | S | See spec below |
+| **R30** | **Pattern intelligence — zone drift detector** | PAID | M | See spec below |
+| **R31** | **Live race time estimate** | PAID | M | See spec below |
+| **R32** | **Benchmark recalibration offer** | PAID | M | See spec below |
+
+---
+
+### R28 — Phase-end summary
+
+**What it is:** When the plan transitions between training phases (base → build → build → peak → peak → taper), an AI-generated chapter-close summary fires on the Coach screen. One card, one time per phase transition, Zona voice.
+
+**Trigger:** First load of Coach screen where `currentWeek.phase !== previousWeek.phase` AND no `phase_summaries` row exists for `(user_id, phase_just_ended, week_n_of_transition)`.
+
+**Data used:**
+- `run_analysis` rows for all sessions in the phase just completed: `zone_discipline` (avg % in zone), `ef_trend_pct` (EF start vs end), `actual_load_km` (total km)
+- `session_completions` for the same window: completion rate (sessions completed / sessions planned)
+- `plan.weeks` to identify which weeks belong to the phase
+
+**What the user sees (Coach screen):**
+
+```
+╔══════════════════════════════════════╗
+║  ✦ PHASE COMPLETE                    ║
+║  Base · 4 weeks                      ║
+║                                      ║
+║  Zone discipline improved from 52%   ║
+║  to 79%. Aerobic pace moved 17s/km   ║
+║  faster. You ran 94% of scheduled    ║
+║  sessions. The base is there — build ║
+║  phase starts harder, for a reason.  ║
+╚══════════════════════════════════════╝
+```
+
+Honest failure version:
+```
+╔══════════════════════════════════════╗
+║  ✦ BASE PHASE DONE                   ║
+║  4 weeks                             ║
+║                                      ║
+║  Zone discipline sat around 61% —    ║
+║  most easy runs ran warm. Build      ║
+║  phase won't work if that continues. ║
+║  The target for the next block: pull ║
+║  easy days back under the ceiling.   ║
+╚══════════════════════════════════════╝
+```
+
+**Storage:** New table `phase_summaries (user_id UUID, phase_ended TEXT, transition_week_n INTEGER, content TEXT, generated_at TIMESTAMPTZ, ai_model TEXT)`, PRIMARY KEY `(user_id, phase_ended, transition_week_n)`.
+
+**Route:** `POST /api/phase-summary` — computes phase aggregates, calls Claude, stores row, returns `{ content }`. Called once from CoachScreen on phase-change detection.
+
+**Display:** Pinned card at top of Coach screen for 7 days after generation. After 7 days, replaced by regular weekly report flow. Uses `AIMark` eyebrow. Warm `--warn-bg` surface (same as RunFeedbackCard — "coaching" visual register).
+
+**Gating:** PAID. Silent fallback (no card) if AI fails. Free users: no card.
+
+**Marketing copy:** "Vetra tells you what each training block achieved — before the next one starts."
+
+---
+
+### R29 — Pre-race readiness summary
+
+**What it is:** A dedicated AI assessment generated once, 10–14 days before race day. Lives on the Coach screen. The most emotionally charged moment in a runner's training cycle — Vetra meets them there with data.
+
+**Trigger:** `daysToRace` between 10 and 14. Generated once (idempotent) and cached. Regenerates if user has a different race date (new plan).
+
+**Data used:**
+- `run_analysis` rows for entire plan: avg `hr_in_zone_pct` for easy/long sessions (zone discipline over full plan), `ef_trend_pct` from first to last week (fitness arc), total `actual_load_km`
+- `session_completions`: completion rate across the plan, recent RPE trend (last 3 weeks)
+- `plan.meta.race_name`, `plan.meta.race_distance_km`, `daysToRace`
+- `plan.meta.race_date` — to detect stale cached summaries (regenerate if race_date changed)
+
+**What the user sees (Coach screen):**
+
+Good shape version:
+```
+╔══════════════════════════════════════╗
+║  ✦ RACE READINESS                    ║
+║  [Race Name] · 12 days out           ║
+║                                      ║
+║  You've run 81% of your sessions in  ║
+║  Zone 2. Aerobic efficiency improved ║
+║  11% over 10 weeks. The work is done.║
+║  The next 12 days are about keeping  ║
+║  what you've built. Don't add to it. ║
+╚══════════════════════════════════════╝
+```
+
+Needs-warning version:
+```
+╔══════════════════════════════════════╗
+║  ✦ RACE READINESS                    ║
+║  [Race Name] · 12 days out           ║
+║                                      ║
+║  RPE on easy days has been elevated  ║
+║  the last 3 weeks. You're carrying   ║
+║  some fatigue. Protect the taper —   ║
+║  the fitness is there, but you need  ║
+║  the legs fresh on the day.          ║
+╚══════════════════════════════════════╝
+```
+
+No data yet / short training window:
+```
+╔══════════════════════════════════════╗
+║  ✦ RACE READINESS                    ║
+║  [Race Name] · 12 days out           ║
+║                                      ║
+║  12 days out. The training window    ║
+║  is closed — no gains from here.     ║
+║  Run easy, sleep well, stay off your ║
+║  feet. Your job is to show up fresh. ║
+╚══════════════════════════════════════╝
+```
+
+**Storage:** New table `race_readiness_notes (user_id UUID, race_date DATE, content TEXT, days_to_race INTEGER, generated_at TIMESTAMPTZ, ai_model TEXT)`, PRIMARY KEY `(user_id, race_date)`.
+
+**Route:** `POST /api/race-readiness` — aggregates plan data, calls Claude, stores row, returns `{ content }`. Called once from CoachScreen when `daysToRace` ∈ [10, 14] and no row exists for this `(user_id, race_date)`.
+
+**Display:** Pinned card at top of Coach screen from generation until race day. Replaces the regular weekly report headline during taper. After race day, removed. Uses `AIMark` eyebrow + distinct card accent — race colour (`--s-race`).
+
+**Gating:** PAID. No-data fallback: generate with general taper guidance only. Free users see a locked card shell: "Race readiness analysis — available with Vetra Premium."
+
+**Marketing copy:** "Vetra reads your last 10 weeks and tells you, honestly, whether you're ready."
+
+---
+
+### R30 — Pattern intelligence (zone drift detector)
+
+**What it is:** Cross-session pattern detection on the Coach screen. Not reactive to a single run — fires when a trend is confirmed across ≥ 4 sessions. The product's core thesis made visible in data.
+
+**Trigger:** On Coach screen load, aggregate last 8 easy/recovery sessions. If ≥ 4 of them show `hr_in_zone_pct < 60%`, fire the pattern card. Resets after 14 days or when the pattern breaks (≥ 3 consecutive in-zone sessions).
+
+**What the user sees (Coach screen):**
+
+```
+╔══════════════════════════════════════╗
+║  ✦ PATTERN DETECTED                  ║
+║                                      ║
+║  4 of your last 6 easy runs went     ║
+║  above Zone 2. Average overshoot:    ║
+║  11 bpm. That's not a bad day —      ║
+║  that's a habit. Your hard sessions  ║
+║  are paying for it.                  ║
+╚══════════════════════════════════════╝
+```
+
+Quality session undercooked pattern (flip side):
+```
+╔══════════════════════════════════════╗
+║  ✦ PATTERN DETECTED                  ║
+║                                      ║
+║  Your last 3 quality sessions show   ║
+║  RPE under 6. The work isn't landing ║
+║  if you don't push into the zone.    ║
+║  Controlled discomfort is the point. ║
+╚══════════════════════════════════════╝
+```
+
+**Storage:** `pattern_notes` table — or reuse an aggregated compute on Coach screen load with a `pattern_dismissed_at` timestamp on `user_settings` (simpler). Pattern card shows until dismissed or pattern breaks.
+
+**Route:** Rule-engine detection is deterministic (no AI). One-liner copy generation via Claude on pattern confirmation. Or fully rule-engine if pattern copy is pre-written (faster, cheaper, more consistent with Zona voice). Recommend: rule-engine first, AI upgrade later.
+
+**Gating:** PAID. Requires ≥ 4 analysed sessions (auto-gated by data availability).
+
+**Dependencies:** Needs real `run_analysis` data — ships naturally after HealthKit primary lands (broad data).
+
+**Marketing copy:** "Vetra spots the patterns you can't see. 4 easy runs too hard in a row isn't a bad day — it's a habit."
+
+---
+
+### R31 — Live race time estimate
+
+**What it is:** A predicted finish time for the target race, updated weekly based on actual training data. Shown on the Coach screen. The number moves as fitness changes — that's the product.
+
+**How it's calculated:**
+1. Take the user's current effective aerobic pace (already computed in `lib/coaching/aerobicPace.ts`)
+2. Apply VDOT regression: aerobic pace at Zone 2 HR → current VDOT → predicted race time for the target distance
+3. Compare to wizard-derived baseline VDOT (from benchmark run at plan creation)
+4. Delta = "improved X seconds/km since week 1"
+
+**What the user sees (Coach screen, prominent placement):**
+
+```
+╔══════════════════════════════════════╗
+║  ESTIMATED FINISH                    ║
+║  [Race Name] · 6 weeks              ║
+║                                      ║
+║  1:53:20                             ║  ← large, bold, Inter 800
+║  ↑ 4m40s faster than at week 1      ║  ← moss green delta
+║                                      ║
+║  Based on your last 6 weeks         ║  ← muted, 11px
+╚══════════════════════════════════════╝
+```
+
+Regressed version (honest):
+```
+║  1:56:40                             ║
+║  ↓ 1m20s slower than week 3         ║  ← warn amber
+║  Elevated RPE on easy days —        ║
+║  zone discipline is the lever.       ║
+```
+
+**Storage:** `race_time_estimates` table — `(user_id, week_n, estimated_seconds, vdot, baseline_vdot, delta_seconds, generated_at)`. Written weekly alongside the weekly report.
+
+**Gating:** PAID. Requires aerobic pace data (≥ 3 analysed sessions). Free users see a locked tile: "Your predicted finish time — available with Vetra Premium."
+
+**Dependencies:** `lib/coaching/aerobicPace.ts` (exists), VDOT tables (partially in `app/api/race-times/route.ts` — reuse). Simplest implementation: no AI call, pure math. AI adds the one-line narrative only.
+
+**Marketing copy (App Store):** "Your predicted finish time updates every week as you train. Most apps give you a number at signup and forget about it."
+
+---
+
+### R32 — Benchmark recalibration offer
+
+**What it is:** After 4–6 weeks of training data, when measured aerobic pace has shifted meaningfully vs the wizard-set baseline, offer the user a one-tap recalibration. Updates zone targets without regenerating the full plan.
+
+**Trigger:** `aerobicPaceImprovedByMoreThan10sPerKm` AND at least 4 weeks into the plan AND user hasn't recalibrated in the last 3 weeks.
+
+**What the user sees (Me screen — Benchmark section, or Coach screen nudge):**
+
+```
+╔══════════════════════════════════════╗
+║  Your training zones may have moved  ║
+║                                      ║
+║  Your aerobic pace has improved by   ║
+║  ~14s/km over 5 weeks. Your current  ║
+║  Zone 2 ceiling may be set too low.  ║
+║                                      ║
+║  [Recalibrate zones →]               ║
+╚══════════════════════════════════════╝
+```
+
+Tap → BenchmarkUpdateScreen pre-filled with the new suggested values. User confirms → `user_settings.resting_hr / max_hr` updated → zone targets recalculate live across all session cards.
+
+**Gating:** PAID. The offer is a nudge card — never auto-applies.
+
+**Dependencies:** `aerobicPace.ts` (exists), `BenchmarkUpdateScreen` (exists), `user_settings` update path (exists). Clean pickup once HealthKit data makes aerobic pace reliable.
+
+**Marketing copy:** "Vetra notices when your fitness has moved and offers to recalibrate your zones. The plan stays current."
 
 ### Scoped but unscheduled
 

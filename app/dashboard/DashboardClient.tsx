@@ -166,6 +166,9 @@ export default function DashboardClient() {
   const [runAnalysisReady, setRunAnalysisReady] = useState(false)
   const [weeklyReport, setWeeklyReport] = useState<any | null>(null)
   const [pendingAdjustment, setPendingAdjustment] = useState<any | null>(null)
+  // R28 phase-end summary + R29 race readiness — pre-fetched cached rows, generated on-demand in CoachScreen
+  const [phaseSummary, setPhaseSummary] = useState<{ content: string; generated_at: string; phase_ended: string; transition_week_n: number } | null>(null)
+  const [raceReadinessNote, setRaceReadinessNote] = useState<{ content: string; generated_at: string } | null>(null)
 
   // Next session after activeSessionData — passed to SessionScreen for the "Up next" row.
   // Scans remaining days in the same week, then the first day of the next week.
@@ -478,10 +481,16 @@ export default function DashboardClient() {
             // many adjustment paths and shouldn't block the rest of the dashboard data.
             try { await authedFetch('/api/pre-session-readiness') } catch {}
 
-            const [analysisRes, reportRes, adjustmentsRes] = await Promise.all([
+            const [analysisRes, reportRes, adjustmentsRes, phaseSummaryRes, raceReadinessRes] = await Promise.all([
               supabase.from('run_analysis').select('session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km').eq('user_id', user.id),
               supabase.from('weekly_reports').select('*').eq('user_id', user.id).order('week_n', { ascending: false }).limit(1).maybeSingle(),
               supabase.from('plan_adjustments').select('*').eq('user_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+              // R28 — most recent phase-end summary (CoachScreen validates against current transition)
+              supabase.from('phase_summaries').select('content, generated_at, phase_ended, transition_week_n').eq('user_id', user.id).order('generated_at', { ascending: false }).limit(1).maybeSingle(),
+              // R29 — race readiness note for the plan's race date
+              loadedPlan.meta.race_date
+                ? supabase.from('race_readiness_notes').select('content, generated_at').eq('user_id', user.id).eq('race_date', loadedPlan.meta.race_date).maybeSingle()
+                : Promise.resolve({ data: null, error: null }),
             ])
             if (analysisRes.data) {
               const map: Record<string, any> = {}
@@ -490,6 +499,8 @@ export default function DashboardClient() {
             }
             if (reportRes.data) setWeeklyReport(reportRes.data)
             if (adjustmentsRes.data) setPendingAdjustment(adjustmentsRes.data)
+            if (phaseSummaryRes.data) setPhaseSummary(phaseSummaryRes.data as any)
+            if (raceReadinessRes.data) setRaceReadinessNote(raceReadinessRes.data as any)
           } catch {}
           finally { setRunAnalysisReady(true) }
         } else {
@@ -927,6 +938,10 @@ export default function DashboardClient() {
                   zoneDisciplinePercent={zoneDisciplinePercent}
                   liveSessionsCompleted={liveSessionsCompleted}
                   liveSessionsPlanned={liveSessionsPlanned}
+                  phaseSummary={phaseSummary}
+                  onPhaseSummaryGenerated={setPhaseSummary as any}
+                  raceReadinessNote={raceReadinessNote}
+                  onRaceReadinessGenerated={setRaceReadinessNote}
                 />
               )
             })()
@@ -4900,7 +4915,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
   )
 }
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, liveSessionsCompleted, liveSessionsPlanned }: {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, liveSessionsCompleted, liveSessionsPlanned, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaConnected: boolean
   stravaTokenFailed?: boolean; firstName?: string
@@ -4909,6 +4924,11 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   zoneDisciplinePercent?: number | null
   liveSessionsCompleted?: number
   liveSessionsPlanned?: number
+  // R28 phase-end summary + R29 race readiness
+  phaseSummary?: { content: string; generated_at: string; phase_ended: string; transition_week_n: number } | null
+  onPhaseSummaryGenerated?: (s: { content: string; generated_at: string; phase_ended: string; transition_week_n: number }) => void
+  raceReadinessNote?: { content: string; generated_at: string } | null
+  onRaceReadinessGenerated?: (n: { content: string; generated_at: string }) => void
 }) {
   const [loading, setLoading]           = useState(false)
   const [error, setError]               = useState<string | null>(null)
@@ -4948,6 +4968,67 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   const sessionsPlanned: number | null   = liveSessionsPlanned
     ?? (reportIsCurrent ? (weeklyReport?.sessions_planned ?? null) : null)
   const weeksToRace = Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
+
+  // ── R28 / R29 detection ─────────────────────────────────────────────────
+  const daysToRace = Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / 86_400_000)
+  const isRaceWindow = daysToRace >= 0 && daysToRace <= 14
+
+  // Phase transition: compare current week's phase with previous week's phase
+  const prevWeek = plan.weeks.find((w: any) => w.n === weekNum - 1)
+  const currentPhase: string | null = (currentWeek as any).phase ?? null
+  const prevPhase: string | null    = (prevWeek as any)?.phase ?? null
+  const phaseJustChanged = !!(currentPhase && prevPhase && currentPhase !== prevPhase)
+  const phaseEnded       = phaseJustChanged ? prevPhase! : null
+  const transitionWeekN  = phaseJustChanged ? weekNum : null
+
+  // Validate cached phase summary against current transition (stale rows from prior phases are ignored)
+  const cachedPhaseSummaryValid =
+    phaseSummary?.phase_ended === phaseEnded &&
+    phaseSummary?.transition_week_n === transitionWeekN
+
+  // Mutual exclusion: R29 suppresses R28
+  const showRaceCard  = isRaceWindow
+  const showPhaseCard = phaseJustChanged && !isRaceWindow
+
+  // Local state — pre-seeded from DashboardClient pre-fetch, updated after generation
+  const [localPhaseSummary,  setLocalPhaseSummary]  = useState<{ content: string; generated_at: string } | null>(
+    cachedPhaseSummaryValid && phaseSummary ? { content: phaseSummary.content, generated_at: phaseSummary.generated_at } : null
+  )
+  const [localRaceReadiness, setLocalRaceReadiness] = useState<{ content: string; generated_at: string } | null>(
+    raceReadinessNote ?? null
+  )
+  const [specialCardLoading, setSpecialCardLoading] = useState(false)
+
+  // Auto-generate on mount when conditions are met and no cached content exists
+  useEffect(() => {
+    async function maybeGenerate() {
+      if (showRaceCard && !localRaceReadiness) {
+        setSpecialCardLoading(true)
+        try {
+          const res  = await authedFetch('/api/race-readiness', { method: 'POST' })
+          if (res.ok) {
+            const data = await res.json()
+            const note = { content: data.content, generated_at: new Date().toISOString() }
+            setLocalRaceReadiness(note)
+            onRaceReadinessGenerated?.(note)
+          }
+        } catch { /* silent */ } finally { setSpecialCardLoading(false) }
+      } else if (showPhaseCard && !localPhaseSummary && phaseEnded && transitionWeekN) {
+        setSpecialCardLoading(true)
+        try {
+          const res  = await authedFetch('/api/phase-summary', { method: 'POST', body: JSON.stringify({ phase_ended: phaseEnded, transition_week_n: transitionWeekN }) })
+          if (res.ok) {
+            const data = await res.json()
+            const summary = { content: data.content, generated_at: new Date().toISOString(), phase_ended: phaseEnded!, transition_week_n: transitionWeekN! }
+            setLocalPhaseSummary(summary)
+            onPhaseSummaryGenerated?.(summary)
+          }
+        } catch { /* silent */ } finally { setSpecialCardLoading(false) }
+      }
+    }
+    void maybeGenerate()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // fire once on mount — conditions are stable for the lifetime of this screen
 
   async function generateReport() {
     setLoading(true)
@@ -5188,6 +5269,69 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               @keyframes vetra-fade-in { from { opacity: 0 } to { opacity: 1 } }
               @keyframes vetra-slide-up { from { transform: translateY(100%) } to { transform: translateY(0) } }
             `}</style>
+          </div>
+        )}
+
+        {/* ── R29 RACE READINESS — shows daysToRace 0–14, suppresses R28 ── */}
+        {showRaceCard && (localRaceReadiness || specialCardLoading) && (
+          <div style={{
+            background: 'var(--card)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--line)',
+            borderLeft: '3px solid var(--s-race)',
+            padding: '16px 18px',
+          }}>
+            {/* Eyebrow */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+              <AIMark size={11} color="var(--s-race)" working={specialCardLoading && !localRaceReadiness} />
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--s-race)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                Race readiness
+              </span>
+              <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
+                {daysToRace === 0 ? 'Race day' : `${daysToRace}d to go`}
+              </span>
+            </div>
+            {specialCardLoading && !localRaceReadiness ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[90, 100, 75].map((w, i) => (
+                  <div key={i} style={{ height: '13px', background: 'rgba(200,106,42,0.12)', borderRadius: '4px', width: `${w}%` }} />
+                ))}
+              </div>
+            ) : localRaceReadiness ? (
+              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.65, margin: 0 }}>
+                {localRaceReadiness.content}
+              </p>
+            ) : null}
+          </div>
+        )}
+
+        {/* ── R28 PHASE SUMMARY — shows first week of new phase, suppressed by R29 ── */}
+        {showPhaseCard && (localPhaseSummary || specialCardLoading) && (
+          <div style={{
+            background: 'var(--bg-soft)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--line)',
+            borderLeft: '3px solid var(--moss)',
+            padding: '16px 18px',
+          }}>
+            {/* Eyebrow */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+              <AIMark size={11} color="var(--moss)" working={specialCardLoading && !localPhaseSummary} />
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                Phase complete
+              </span>
+            </div>
+            {specialCardLoading && !localPhaseSummary ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[85, 100, 70].map((w, i) => (
+                  <div key={i} style={{ height: '13px', background: 'rgba(107,142,107,0.12)', borderRadius: '4px', width: `${w}%` }} />
+                ))}
+              </div>
+            ) : localPhaseSummary ? (
+              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.65, margin: 0 }}>
+                {localPhaseSummary.content}
+              </p>
+            ) : null}
           </div>
         )}
 

@@ -596,6 +596,48 @@ Reference: `components/shared/SectionLabel.tsx` (if extracted) or inline in `Das
 
 ---
 
+### 18. SpecialCoachCard
+
+Timed AI coaching moments that appear on the Coach screen in specific windows. Two variants share the same anatomy but carry different visual language to distinguish them from the persistent weekly report card.
+
+**Variants:**
+
+| Variant | Trigger | Surface | Left accent | Eyebrow colour |
+|---|---|---|---|---|
+| Phase Summary (R28) | First week of a new plan phase | `--bg-soft` | `3px var(--moss)` | `--moss` |
+| Race Readiness (R29) | `daysToRace ∈ [0, 14]` | `--card` | `3px var(--s-race)` | `--s-race` |
+
+**Mutual exclusion:** R29 always suppresses R28. Both can never appear simultaneously.
+
+**Anatomy (both variants):**
+```
+[3px left accent border]
+  [AIMark · PHASE COMPLETE / RACE READINESS · 10px 700 uppercase · counter right-aligned (days to go)]
+  ─────────────────────────────────────
+  [2–3 sentence AI coaching text · 15px 400 --ink · 1.65 line-height]
+```
+
+**Loading state:** Skeleton shimmer — three lines at 85% / 100% / 70% width, background `rgba(accent, 0.12)`. `<AIMark working />` pulses in the eyebrow row.
+
+**Positioning on Coach screen:** Inserted directly above the weekly report amber card, below the 2×2 stats grid. No vertical gap beyond the parent `gap: 12px`.
+
+**Generation flow:**
+1. CoachScreen mounts → `useEffect` fires once
+2. If condition is met and no cached content passed from DashboardClient → calls `/api/race-readiness` or `/api/phase-summary`
+3. API routes are idempotent (PK on `user_id + race_date` / `user_id + phase_ended + transition_week_n`)
+4. Content stored in `race_readiness_notes` / `phase_summaries` tables
+5. Subsequent screen opens return cached content instantly (no AI call)
+
+**Gating:** PAID / TRIAL (activity_intelligence gate). Free users: card is not shown and no API call is made (CoachTeaser component shown instead).
+
+**Rules:**
+- Never show both variants simultaneously
+- Neither variant shows a "locked" shell for free users — timed moments with no user-accessible retry
+- `AIMark` is always present (provenance honesty — model output)
+- No refresh button — the note is generated once per phase transition / race date and cached
+
+---
+
 ## Screen Templates
 
 ### Today Screen
