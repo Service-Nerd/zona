@@ -9,6 +9,8 @@
 //   - Working state changes text to "thinking…" + pulses the icon.
 //   - Use AIMark internally. Never reimplement the glyph.
 //   - Use only where content is genuinely model-generated (same rule as AIMark).
+//   - When onClick is provided the chip becomes a tappable button (navigates to Coach).
+//     Pass title="…" for a hover/long-press tooltip — defaults to "{coachName} is your AI coach".
 //
 // Reference: docs/canonical/ui-patterns.md § AICoachChip (Pattern 19)
 
@@ -24,32 +26,72 @@ interface AICoachChipProps {
    * 'warn' — for --warn-bg surfaces (CoachNoteBlock, weekly report card).
    */
   color?: 'moss' | 'warn'
+  /**
+   * When provided, the chip becomes interactive — tapping navigates to the Coach tab.
+   * Omit on the Coach screen itself (already there).
+   */
+  onClick?: () => void
+  /**
+   * Tooltip shown on hover (desktop) and long-press (iOS).
+   * Defaults to "{coachName} is your AI coach".
+   */
+  title?: string
 }
 
-export default function AICoachChip({ working = false, color = 'moss' }: AICoachChipProps) {
+export default function AICoachChip({
+  working  = false,
+  color    = 'moss',
+  onClick,
+  title,
+}: AICoachChipProps) {
   const isMoss    = color === 'moss'
   const textColor = isMoss ? 'var(--moss)' : 'var(--warn)'
   const bgColor   = isMoss ? 'rgba(107,142,107,0.10)' : 'rgba(184,133,58,0.15)'
+  const tooltip   = title ?? `${BRAND.coachName} is your AI coach`
+
+  const sharedStyle: React.CSSProperties = {
+    display:       'inline-flex',
+    alignItems:    'center',
+    gap:           '4px',
+    fontFamily:    'var(--font-ui)',
+    fontSize:      '11px',
+    fontWeight:    600,
+    color:         textColor,
+    background:    bgColor,
+    borderRadius:  '10px',
+    padding:       '3px 8px',
+    lineHeight:    1,
+    flexShrink:    0,
+    letterSpacing: '0.01em',
+  }
+
+  const label = working ? `${BRAND.coachName} thinking` : BRAND.coachName
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        title={tooltip}
+        aria-label={label}
+        style={{
+          ...sharedStyle,
+          cursor: 'pointer',
+          border: 'none',
+        }}
+      >
+        <AIMark size={9} color={textColor} working={working} />
+        {working ? 'thinking…' : BRAND.coachName}
+      </button>
+    )
+  }
 
   return (
     <span
       role="img"
-      aria-label={working ? `${BRAND.coachName} thinking` : BRAND.coachName}
-      style={{
-        display:        'inline-flex',
-        alignItems:     'center',
-        gap:            '4px',
-        fontFamily:     'var(--font-ui)',
-        fontSize:       '11px',
-        fontWeight:     600,
-        color:          textColor,
-        background:     bgColor,
-        borderRadius:   '10px',
-        padding:        '3px 8px',
-        lineHeight:     1,
-        flexShrink:     0,
-        letterSpacing:  '0.01em',
-      }}
+      aria-label={label}
+      title={tooltip}
+      style={sharedStyle}
     >
       <AIMark size={9} color={textColor} working={working} />
       {working ? 'thinking…' : BRAND.coachName}

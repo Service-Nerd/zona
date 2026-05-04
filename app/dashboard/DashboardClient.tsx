@@ -899,7 +899,7 @@ export default function DashboardClient() {
       )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} />}
         {screen === 'coach'    && (hasPaidAccess
           ? (() => {
@@ -1007,7 +1007,7 @@ export default function DashboardClient() {
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
         {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
         {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} dob={dob} onDobSave={async (d) => { setDob(d); if (userId) await supabase.from('user_settings').update({ date_of_birth: d }).eq('id', userId) }} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} onBack={() => {
@@ -3688,7 +3688,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied }: {
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   stravaRuns: any[]
@@ -3712,6 +3712,8 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   coachNoteSettled?: boolean
   runAnalysisMap?: Record<string, any>
   runAnalysisReady?: boolean
+  /** Navigates to the Coach tab — wired to Kit chip on AI-generated notes. */
+  onOpenCoach?: () => void
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
@@ -4235,7 +4237,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           if (dailyCoachNote) {
             return (
               <div style={{ marginBottom: '20px' }}>
-                <CoachNoteBlock label={coachLabel} aiGenerated>
+                <CoachNoteBlock label={coachLabel} aiGenerated onChipClick={onOpenCoach}>
                   {dailyCoachNote}
                 </CoachNoteBlock>
               </div>
@@ -6851,7 +6853,7 @@ function getVerdictVoice(verdict: string): { accent: string; headline: string } 
 
 // Loading-state sibling of RunFeedbackCard — shown while analyse-run is in flight.
 // Uses the AIMark pulse instead of a spinner (per ui-patterns.md § AIMark).
-function PendingAnalysisCard() {
+function PendingAnalysisCard({ onOpenCoach }: { onOpenCoach?: () => void }) {
   return (
     <div style={{
       marginTop: '12px',
@@ -6860,7 +6862,7 @@ function PendingAnalysisCard() {
       padding: '16px 18px',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px' }}>
-        <AICoachChip working color="warn" />
+        <AICoachChip working color="warn" onClick={onOpenCoach} />
       </div>
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400,
@@ -6891,7 +6893,7 @@ function PendingAnalysisCard() {
 
 // Shown for free users on completed sessions — communicates the value of
 // coaching without exposing any actual coaching data (INV-GATE-005).
-function LockedCoachingPreview({ onUpgrade }: { onUpgrade?: () => void }) {
+function LockedCoachingPreview({ onUpgrade, onOpenCoach }: { onUpgrade?: () => void; onOpenCoach?: () => void }) {
   return (
     <div style={{
       marginTop: '12px',
@@ -6901,7 +6903,7 @@ function LockedCoachingPreview({ onUpgrade }: { onUpgrade?: () => void }) {
       border: '1px solid var(--line)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px', opacity: 0.4 }}>
-        <AICoachChip />
+        <AICoachChip onClick={onOpenCoach} />
       </div>
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
@@ -6924,7 +6926,7 @@ function LockedCoachingPreview({ onUpgrade }: { onUpgrade?: () => void }) {
 
 // Shown when polling gives up after ~40s — keeps the card slot visible
 // with a calm fallback rather than silently disappearing.
-function GaveUpCard() {
+function GaveUpCard({ onOpenCoach }: { onOpenCoach?: () => void }) {
   return (
     <div style={{
       marginTop: '12px',
@@ -6933,7 +6935,7 @@ function GaveUpCard() {
       padding: '16px 18px',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px', opacity: 0.4 }}>
-        <AICoachChip />
+        <AICoachChip onClick={onOpenCoach} />
       </div>
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
@@ -7031,10 +7033,12 @@ function RunFeedbackCard({
   analysis,
   paceTarget = null,
   actualAvgSpeedMs = null,
+  onOpenCoach,
 }: {
   analysis: any
   paceTarget?: string | null
   actualAvgSpeedMs?: number | null
+  onOpenCoach?: () => void
 }) {
   const verdict    = analysis.verdict as string
   const score      = analysis.total_score as number | null
@@ -7060,7 +7064,7 @@ function RunFeedbackCard({
     }}>
       {/* Eyebrow — Kit chip + optional score chip (hidden for manual rows) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px' }}>
-        <AICoachChip color="warn" />
+        <AICoachChip color="warn" onClick={onOpenCoach} />
         {!isManual && score !== null && (
           <button
             type="button"
@@ -7192,12 +7196,14 @@ function RunFeedbackCard({
   )
 }
 
-function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, stravaLoading, runAnalysis, hasPaidAccess, onUpgrade, goalPace, guidance, nextSession }: {
+function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, stravaLoading, runAnalysis, hasPaidAccess, onUpgrade, onOpenCoach, goalPace, guidance, nextSession }: {
   session: any; preloadedRuns: any[]; onBack: () => void; onSaved?: () => void
   preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number; preferredMetric?: 'distance' | 'duration'
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
   stravaLoading?: boolean
   runAnalysis?: any | null; hasPaidAccess?: boolean; onUpgrade?: () => void
+  /** Navigates to the Coach tab — wired to the Kit chip so users can always find out who Kit is. */
+  onOpenCoach?: () => void
   goalPace?: string | null
   guidance?: any | null
   /** Next scheduled session in the plan — shown as an "Up next" row below the feedback card. */
@@ -7359,6 +7365,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
                 analysis={analysis}
                 paceTarget={session.pace_target ?? null}
                 actualAvgSpeedMs={linkedAct?.average_speed ?? null}
+                onOpenCoach={onOpenCoach}
               />
               {/* Unlink — only shown when an activity is actually linked (not manual rows) */}
               {analysis.source !== 'manual' && <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -7407,12 +7414,12 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
             </>
           )
         })()}
-        {hasPaidAccess && !analysis && isAnalysisPending && !pollGaveUp && <PendingAnalysisCard />}
-        {hasPaidAccess && !analysis && isAnalysisPending && pollGaveUp && <GaveUpCard />}
+        {hasPaidAccess && !analysis && isAnalysisPending && !pollGaveUp && <PendingAnalysisCard onOpenCoach={onOpenCoach} />}
+        {hasPaidAccess && !analysis && isAnalysisPending && pollGaveUp && <GaveUpCard onOpenCoach={onOpenCoach} />}
 
         {/* Locked coaching preview — free users who have completed the session */}
         {!hasPaidAccess && isComplete && session.type !== 'rest' && session.type !== 'strength' && (
-          <LockedCoachingPreview onUpgrade={onUpgrade} />
+          <LockedCoachingPreview onUpgrade={onUpgrade} onOpenCoach={onOpenCoach} />
         )}
 
         {/* Up next — next scheduled session in the week, shown below the feedback card */}
