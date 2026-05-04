@@ -4894,6 +4894,27 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
       <ScreenHeader title="Coach" sub={firstName ? `${firstName} · W${weekNum} of ${totalWeeks}` : `W${weekNum} of ${totalWeeks}`} />
       <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
+        {/* Locked Kit identity — dimmed preview of the coach identity card */}
+        <div style={{
+          background:   'var(--card)',
+          borderRadius: 'var(--radius-lg)',
+          border:       '1px solid var(--line)',
+          borderLeft:   '3px solid var(--moss)',
+          padding:      '16px 18px',
+          opacity:      0.45,
+          pointerEvents: 'none',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <AICoachChip />
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
+              W{weekNum} of {totalWeeks}
+            </span>
+          </div>
+          <p style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3, margin: 0 }}>
+            Kit reads your sessions and surfaces what&apos;s worth knowing.
+          </p>
+        </div>
+
         {/* Locked report card — mirrors the paid CoachScreen weekly report card anatomy */}
         <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
           <div style={{ padding: '12px 14px 10px', borderBottom: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -5187,9 +5208,25 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
 
       <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '32px' }}>
 
-        {/* ── DYNAMIC HEADLINE ─────────────────────────────────────────── */}
-        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.2, paddingTop: '4px' }}>
-          {getCoachHeadline()}
+        {/* ── KIT COACH IDENTITY — persistent presence, replaces headline ── */}
+        <div style={{
+          background:   'var(--card)',
+          borderRadius: 'var(--radius-lg)',
+          border:       '1px solid var(--line)',
+          borderLeft:   '3px solid var(--moss)',
+          padding:      '16px 18px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <AICoachChip />
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums' }}>
+              {sessionsCompleted
+                ? `W${weekNum} · ${sessionsCompleted} session${sessionsCompleted !== 1 ? 's' : ''}`
+                : `W${weekNum} of ${totalWeeks}`}
+            </span>
+          </div>
+          <p style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3, margin: 0 }}>
+            {getCoachHeadline()}
+          </p>
         </div>
 
         {/* ── OPTION E: FIRST-OPEN COACH INTRO ────────────────────────── */}
@@ -5206,7 +5243,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               <AICoachChip />
             </div>
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.6, margin: '0 0 14px' }}>
-              Reads your sessions, zones, and training load. When something&apos;s worth saying, it shows up here.
+              Kit watches your training. Says something when it&apos;s worth saying.
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button

@@ -12,6 +12,13 @@ export const BRAND = {
   name: 'Vetra',
 
   /**
+   * The AI coach's name. Used in AICoachChip, CoachNoteBlock, coach identity card,
+   * and anywhere the AI coach is named in-product. Change here → changes everywhere.
+   * Never hardcode 'Kit' in components — always reference BRAND.coachName.
+   */
+  coachName: 'Kit',
+
+  /**
    * App Store subtitle (30 chars max). Discovery surfaces: App Store, landing page, paid ads.
    * Functional and outward-facing — describes what Zona does.
    */

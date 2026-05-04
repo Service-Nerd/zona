@@ -13,6 +13,7 @@
 // Reference: docs/canonical/ui-patterns.md § AICoachChip (Pattern 19)
 
 import AIMark from './AIMark'
+import { BRAND } from '@/lib/brand'
 
 interface AICoachChipProps {
   /** Animated pulse — use while AI is generating. Shows "thinking…" label. */
@@ -33,7 +34,7 @@ export default function AICoachChip({ working = false, color = 'moss' }: AICoach
   return (
     <span
       role="img"
-      aria-label={working ? 'AI Coach thinking' : 'AI Coach'}
+      aria-label={working ? `${BRAND.coachName} thinking` : BRAND.coachName}
       style={{
         display:        'inline-flex',
         alignItems:     'center',
@@ -51,7 +52,7 @@ export default function AICoachChip({ working = false, color = 'moss' }: AICoach
       }}
     >
       <AIMark size={9} color={textColor} working={working} />
-      {working ? 'thinking…' : 'AI Coach'}
+      {working ? 'thinking…' : BRAND.coachName}
     </span>
   )
 }
