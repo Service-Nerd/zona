@@ -1,5 +1,6 @@
 import type { Plan } from '@/types/plan'
 import type { InsightPriority, WeeklyReportData } from '../weeklyReport'
+import { buildVoiceHeader } from './voiceRules'
 
 // Few-shot examples — Zona voice for each insight type
 const FEW_SHOT_EXAMPLES: Partial<Record<InsightPriority, string>> = {
@@ -21,7 +22,7 @@ CTA: "This week: no unplanned runs. Run exactly what's in the plan, no more."`,
   ef_decline: `
 Headline: "Your engine is getting less efficient."
 Body: "Aerobic efficiency dropped 10% vs your 4-week average — you're working harder for the same speed. That's a fatigue signal. It usually means recovery has been compromised somewhere: sleep, extra activity, or just accumulated load."
-CTA: "Swap one quality session for an easy run this week. Let the legs breathe."`,
+CTA: "Don't chase pace or effort in the easy sessions this week — let the legs breathe."`,
 
   solid_week: `
 Headline: "Solid week."
@@ -30,9 +31,15 @@ CTA: "Keep the same structure next week."`,
 
   low_data: `
 Headline: "Not enough data yet."
-Body: "Only one run logged this week — can't say much that's useful from one data point. Get the sessions in and the picture gets clearer."
-CTA: "Log the rest of this week's sessions."`,
+Body: "Only one run logged this week — can't say much that's useful from one data point. Get the sessions done and the picture gets clearer."
+CTA: "Get the sessions done this week — the picture gets clearer."`,
 }
+
+// Mid-week variant for solid_week — "good start" framing, not "solid week" (week isn't done).
+const SOLID_WEEK_MIDWEEK_EXAMPLE = `
+Headline: "Good start — stay the course."
+Body: "Zone discipline is up, load is on track, and there's nothing alarming in the data so far. The back half of the week is still to come — don't let a good start become a reason to push harder."
+CTA: "Keep the same structure through the rest of the week."`
 
 export function buildWeeklyReportPrompt(
   data: WeeklyReportData,
@@ -43,6 +50,7 @@ export function buildWeeklyReportPrompt(
   sessionsPlannedToDate?: number,
   plannedKmToDate?: number,
   remainingScheduledSessions?: string[],
+  missedSessionTypes?: string[],
 ): string {
   const weeksToRace = plan.meta.race_date
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
@@ -51,10 +59,13 @@ export function buildWeeklyReportPrompt(
     ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${plan.meta.race_distance_km}km)` : ''}${weeksToRace !== null ? `, ${weeksToRace} weeks away` : ''}`
     : 'target race'
 
-  const example = FEW_SHOT_EXAMPLES[data.primaryInsight] ?? FEW_SHOT_EXAMPLES.solid_week!
-
   // Mid-week context: show sessions/km vs what was due by today, not the full week target
   const isMidWeek = dayOfWeek !== undefined && dayOfWeek !== 'Sunday'
+
+  // Use mid-week solid_week variant when reporting partway through a clean week
+  const example = (isMidWeek && data.primaryInsight === 'solid_week')
+    ? SOLID_WEEK_MIDWEEK_EXAMPLE
+    : (FEW_SHOT_EXAMPLES[data.primaryInsight] ?? FEW_SHOT_EXAMPLES.solid_week!)
   const sessionLine = (isMidWeek && sessionsPlannedToDate !== undefined)
     ? `Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned} this week (${sessionsPlannedToDate} due by ${dayOfWeek})`
     : `Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned}`
@@ -66,9 +77,21 @@ export function buildWeeklyReportPrompt(
     ? `\n- Remaining sessions already in the plan: ${remainingScheduledSessions.join(', ')}`
     : ''
 
-  return `You are a direct, no-fluff running coach writing a weekly check-in. Honest, slightly dry, never cheerleader. Use "you" throughout.${firstName ? ` Address ${firstName} naturally if appropriate (once, max).` : ''}
-${isMidWeek ? ` Important: it is currently ${dayOfWeek} — this is a mid-week report. Evaluate against what was due by today, not the full week target.` : ''}
+  const missedLine = (missedSessionTypes && missedSessionTypes.length > 0)
+    ? `\n- Missed sessions so far: ${missedSessionTypes.join(', ')}`
+    : ''
+
+  const voiceHeader = buildVoiceHeader({
+    role: 'writing a weekly check-in',
+    // Output format is complex (three labelled fields) — specified separately below.
+    outputConstraint: null,
+    firstName,
+  })
+
+  return `${voiceHeader}
+${isMidWeek ? `\nImportant: it is currently ${dayOfWeek} — this is a mid-week report. Evaluate against what was due by today, not the full week target.` : ''}
 Critical rule: the athlete's sessions are already scheduled in their training plan — never suggest they need to "schedule", "block time", or "plan" their runs. The plan is fixed; the only question is execution.
+
 Output format — exactly three fields:
 Headline: [one punchy sentence, 8 words max]
 Body: [2–3 sentences, specific and data-driven]
@@ -83,9 +106,9 @@ Week: ${weekN} of ${plan.weeks.length}
 
 This week's data:
 - ${sessionLine}
-- ${volumeLine}${remainingLine}
+- ${volumeLine}${remainingLine}${missedLine}
 - Load ratio (vs 4-week avg): ${data.acuteChronicRatio.toFixed(2)}x
-- Zone discipline score: ${data.zoneDisciplineScore !== null ? `${data.zoneDisciplineScore}/100` : 'no signal (no Strava-analysed sessions yet)'}
+- Zone discipline score: ${data.zoneDisciplineScore !== null ? `${data.zoneDisciplineScore}/100 (70+ = healthy; below 65 = zone drift concern)` : 'no signal (no Strava-analysed sessions yet)'}
 ${data.avgRpe !== null ? `- Avg RPE: ${data.avgRpe.toFixed(1)}\n` : ''}- Dominant coaching flag: ${data.dominantFlag}
 - Primary insight: ${data.primaryInsight}
 

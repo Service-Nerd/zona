@@ -8,6 +8,7 @@ import { buildDailyCoachNotePrompt } from '@/lib/coaching/prompts/dailyCoachNote
 import { zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { getCurrentWeekIndex } from '@/lib/plan'
 import type { Plan } from '@/types/plan'
+import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 
 // GET /api/daily-coach-note?date=YYYY-MM-DD
 // Auth-gated (paid/trial). Returns the cached daily note if it exists; else
@@ -155,9 +156,10 @@ export async function GET(req: NextRequest) {
 
   const promptInput = {
     todayDayName,
-    todaySessionType: todaySession?.type ?? null,
-    todayZoneLabel: todayZone?.label ?? null,
-    todayDistanceKm: todaySession?.distance_km ?? null,
+    todaySessionType:  todaySession?.type ?? null,
+    todaySessionLabel: todaySession?.label ?? null,
+    todayZoneLabel:    todayZone?.label ?? null,
+    todayDistanceKm:   todaySession?.distance_km ?? null,
     lastSession,
     weekPhase: (week as any).phase as string | null,
     weekN,
@@ -182,7 +184,7 @@ export async function GET(req: NextRequest) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model:      'claude-haiku-4-5-20251001',
+        model:      ANTHROPIC_MODEL,
         max_tokens: 80,
         messages:   [{ role: 'user', content: prompt }],
       }),
@@ -213,7 +215,7 @@ export async function GET(req: NextRequest) {
       note_date:    noteDate,
       content,
       generated_at: new Date().toISOString(),
-      ai_model:     'claude-haiku-4-5-20251001',
+      ai_model:     ANTHROPIC_MODEL,
     }, { onConflict: 'user_id,note_date' })
 
   return NextResponse.json({ note: content, cached: false })

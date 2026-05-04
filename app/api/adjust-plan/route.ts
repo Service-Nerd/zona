@@ -10,6 +10,7 @@ import { buildAdjustmentExplanationPrompt } from '@/lib/coaching/prompts/planAdj
 import { getCurrentWeekIndex } from '@/lib/plan'
 import { savePlanForUser } from '@/lib/plan'
 import type { Plan } from '@/types/plan'
+import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 
 // POST /api/adjust-plan
 // Auth-gated (paid/trial). Checks adjustment triggers for the current week.
@@ -204,7 +205,7 @@ export async function POST(req: NextRequest) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model:      'claude-haiku-4-5-20251001',
+        model:      ANTHROPIC_MODEL,
         max_tokens: 150,
         messages:   [{ role: 'user', content: prompt }],
       }),

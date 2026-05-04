@@ -1,18 +1,19 @@
-// dailyCoachNote prompt — generates the one-sentence Z coach note shown
+// dailyCoachNote prompt — generates the one-sentence coach note shown
 // at the top of the Today screen for paid/trial users. Anchored in this
 // user's last few days, not generic week-phase strings.
 //
-// Voice authority: docs/canonical/brand.md (honest, slightly dry, never
-// cheerleader, no emojis, one sentence). Few-shot examples below pull
-// directly from brand.md.
-//
-// Output contract: exactly one sentence. No quotes. No prefix.
+// Voice: sourced from voiceRules.ts (buildVoiceHeader) — do not inline
+// voice instructions here. Output contract: exactly one sentence. No quotes.
+
+import { buildVoiceHeader } from './voiceRules'
 
 export interface DailyCoachNoteInput {
   /** "Tuesday" — for natural reference if the model wants it. */
   todayDayName: string
   /** Today's session type ("easy", "long", "rest", etc.) — or null if no plan today. */
   todaySessionType: string | null
+  /** Today's session label from the plan — e.g. "Easy 10km", "Threshold intervals". Null on rest days. */
+  todaySessionLabel: string | null
   /** Today's prescribed zone label, e.g. "Zone 2", "Zone 3". Null on rest days. */
   todayZoneLabel: string | null
   /** Today's distance in km if applicable. */
@@ -90,18 +91,27 @@ Output: "Easy day. You know the drill — embarrassingly slow, the whole way."
 Example 11 — easy session, zone discipline is the message:
 Input: today=easy (Zone 2), last=easy 1 day ago, off_target, 42% above ceiling
 Output: "Hold the zone today — yesterday's easy wasn't."
+
+Example 12 — no recent sessions logged (new user or gap after a break):
+Input: today=easy, no recent sessions
+Output: "Nothing from the last few days to go on — start easy and find your legs before you push them."
+
+Example 13 — quality session today, last was easy and nailed, no flags:
+Input: today=quality (Zone 3), last=easy 2 days ago, nailed; no flags
+Output: "Easy sorted two days ago. Now make the tempo count — hit the band from the first km."
 `
 
 export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
   const facts: string[] = []
 
-  // Today
+  // Today — surface day name, session label and zone so the model has full context
   if (input.todaySessionType === 'rest' || !input.todaySessionType) {
-    facts.push('Today: rest day')
+    facts.push(`Today (${input.todayDayName}): rest day`)
   } else {
-    const dist = input.todayDistanceKm ? `${Math.round(input.todayDistanceKm)}km ` : ''
-    const zone = input.todayZoneLabel ? ` (${input.todayZoneLabel})` : ''
-    facts.push(`Today: ${dist}${input.todaySessionType}${zone}`)
+    const dist  = input.todayDistanceKm ? `${Math.round(input.todayDistanceKm)}km ` : ''
+    const zone  = input.todayZoneLabel ? ` (${input.todayZoneLabel})` : ''
+    const label = input.todaySessionLabel ? ` — "${input.todaySessionLabel}"` : ''
+    facts.push(`Today (${input.todayDayName}): ${dist}${input.todaySessionType}${zone}${label}`)
   }
 
   // Last session
@@ -128,18 +138,15 @@ export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
   if (input.heavyFatigueTrend) facts.push('Pattern: heavy/wrecked fatigue tag in 2+ of last 3 sessions')
   if (input.consecutiveNailed >= 2) facts.push(`Pattern: ${input.consecutiveNailed} nailed sessions in a row`)
 
-  return `You are Zona — a direct, no-fluff running coach. Voice rules from brand.md, non-negotiable:
+  const voiceHeader = buildVoiceHeader({
+    role: 'writing a one-sentence daily coach note',
+    outputConstraint: 'One sentence. Always. No headers, no quotes around the output.',
+    firstName: input.firstName,
+  })
 
-- Honest, slightly dry, self-aware. Never cheerleader.
-- One sentence. Always. No headers, no quotes around the output.
-- Specific beats abstract. Reference one specific fact from the data when possible.
-- Never use: "amazing", "great job", "crushing", "smash", "beast mode", "you've got this", "based on your data", "it seems like", emojis, exclamation marks for routine moments.
-- Always use: short sentences, plain words, the user's actual recent reality.
-- Voice anchor for zone-discipline moments: "Hold the zone." — use this or echo its framing when the message is about committing to the prescribed zone for today's session.
-- Examples that work: "Bit keen. Ease it back." / "There it is. Don't ruin it." / "Do nothing. It helps." / "Body's talking. Listen to it." / "Hold the zone."
-- Examples that don't work: "Great session yesterday!" / "Beast mode time!" / "Based on your data, it looks like..."
+  return `${voiceHeader}
 
-Your job: write ONE sentence framing today, anchored in a specific fact from below.${input.firstName ? ` You may address ${input.firstName} once if it lands naturally — don't force it.` : ''}
+Your job: write ONE sentence framing today, anchored in a specific fact from below.
 
 ${FEW_SHOT_EXAMPLES}
 
@@ -147,5 +154,5 @@ Now write the daily coach note for this athlete:
 
 ${facts.join('\n')}
 
-Output: one sentence in Zona voice, anchored in the most relevant fact above. No quotes. No prefix. Just the sentence.`
+Output: one sentence in the voice described above, anchored in the most relevant fact above. No quotes. No prefix. Just the sentence.`
 }

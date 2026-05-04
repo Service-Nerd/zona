@@ -1,4 +1,5 @@
 import type { ProposedAdjustment } from '../planAdjustment'
+import { buildVoiceHeader } from './voiceRules'
 
 // Few-shot examples — Zona voice for adjustment explanations.
 // IMPORTANT: examples illustrate TONE only. Numbers in examples are
@@ -16,6 +17,14 @@ Output: "Easy-run discipline came in at 52/100 — too much time above Zone 2. A
 Example 3 — swap_session / ef_decline:
 Trigger detail: EF trend -11%
 Output: "Aerobic efficiency is down 11% from your baseline — that's a fatigue signal, not a fitness problem. Swapped Thursday's intervals for an easy run. You'll get the intervals back next week. Don't argue with the data."
+
+Example 4 — user_skip / injury signal:
+Trigger detail: { session: "intervals", reason: "calf_tightness" }
+Output: "Skipped the intervals — calf tightness isn't worth pushing through on a speed session. Moved it back; the work comes when the leg does."
+
+Example 5 — sparse trigger detail:
+Trigger detail: {}
+Output: "Load and effort signals didn't line up this week. Pulled the easy sessions back slightly to give the legs room to absorb it."
 `
 
 export function buildAdjustmentExplanationPrompt(adjustment: ProposedAdjustment): string {
@@ -29,7 +38,12 @@ export function buildAdjustmentExplanationPrompt(adjustment: ProposedAdjustment)
     .map(s => `${s.type} — ${s.distance_km ? s.distance_km + 'km' : s.duration_mins ? s.duration_mins + 'min' : 'flexible'}`)
     .join(', ')
 
-  return `You are a direct, no-fluff running coach explaining a plan adjustment. One paragraph, 2–3 sentences. Honest, dry tone. Use "you" throughout. Be specific about what changed and why.
+  const voiceHeader = buildVoiceHeader({
+    role: 'explaining a plan adjustment',
+    outputConstraint: 'One paragraph, 1–3 sentences. Fewer is fine if the trigger is simple.',
+  })
+
+  return `${voiceHeader}
 
 HARD RULES — anti-confabulation:
 1. The ONLY metrics you may quote are those present in the "Trigger detail" JSON below. Do not invent percentages, run counts, weekly totals, paces, or HR numbers.
@@ -47,5 +61,5 @@ Adjustment type: ${adjustmentType}
 Summary: ${summary}
 Sessions changed: ${changedSessions || 'none (flag only)'}
 
-Write 2–3 sentences explaining the change. Plain text only. No headers. Numbers only from Trigger detail.`
+Write 1–3 sentences explaining the change. Fewer is fine if the trigger is simple. Plain text only. No headers. Numbers only from Trigger detail.`
 }

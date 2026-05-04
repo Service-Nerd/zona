@@ -1,28 +1,32 @@
 import type { Session, Plan } from '@/types/plan'
 import type { Verdict } from '../sessionScore'
 import type { CohortSummary } from '../runHistory'
+import { buildVoiceHeader } from './voiceRules'
 
 export interface SessionFeedbackPromptInput {
   session: Session
   weekN: number
   plan: Plan
   verdict: Verdict
-  totalScore: number
-  hrDisciplineScore: number
-  distanceScore: number
   actualDistKm: number
   actualAvgHr: number | null
+  /** Actual average pace in seconds per km — derived from avg_speed. Null if unavailable. */
+  actualPaceSecPerKm?: number | null
   hrInZonePct: number | null
   hrAboveCeilingPct: number | null
   efTrendPct: number | null
   rpe: number | null
   fatigueTag: string | null
+  /** Training phase at time of session — e.g. "base", "build", "peak", "taper". */
+  weekPhase?: string | null
   /** Prescribed zone label for this session — e.g. "Zone 2", "Zone 3", "Zone 4–5". */
   prescribedZoneLabel?: string | null
   /** Prescribed HR band — for quality/intervals where the session has a target range, not just a ceiling. */
   prescribedHrBand?: { lo: number; hi: number } | null
   /** Past-self cohort summary (R25 cut #1) — null when fewer than MIN_COHORT_SIZE similar runs exist. */
   cohortContext?: CohortSummary | null
+  /** True when this is the athlete's first ever analysed session — prompt gets a softer welcome frame. */
+  isFirstAnalysis?: boolean
 }
 
 // Few-shot examples — Zona voice: honest, dry, no cringe.
@@ -57,12 +61,26 @@ Output: "Hit the band on every rep. That's the work. Now eat, sleep, and let the
 Example 7 — long run, drifted hot:
 Input: Long run (Zone 2, ≤148), 18km planned / 16km actual, avg HR 156, 41% in zone, RPE 5, verdict: close
 Output: "Cut it 2km short and HR drifted above Zone 2 in the back half — probably connected. Long runs fall apart when you start too fast. Next one: start slower than you think you need to, especially the first 5km."
+
+Example 8 — easy run, no HR recorded:
+Input: Easy run (Zone 2), 9km, HR: not recorded, RPE 5, verdict: close
+Output: "No HR data — RPE 5 on an easy run is a hair high. Easy effort should feel almost embarrassingly slow. Get the HR monitor on next time: without it, you're guessing at a zone you can't see."
+
+Example 9 — recovery run, nailed:
+Input: Recovery (Zone 1, ≤130), 5km, avg HR 128, 87% in zone, RPE 2, verdict: nailed
+Output: "Recovery done right — HR stayed low, effort was genuinely easy. These feel pointless, which is exactly the point. Don't make them harder."
+
+Example 10 — first ever analysed session, easy run, solid:
+Input: Easy run (Zone 2, ≤148), 7km, avg HR 144, 88% in zone, RPE 4, verdict: nailed. FIRST SESSION.
+Output: "Good start. HR stayed where it needed to and effort was honest — that's the whole job on an easy day. The picture gets clearer each run from here."
 `
 
 export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): string {
-  const { session, weekN, plan, verdict, totalScore, hrDisciplineScore, distanceScore,
-    actualDistKm, actualAvgHr, hrInZonePct, hrAboveCeilingPct, efTrendPct, rpe, fatigueTag,
-    prescribedZoneLabel, prescribedHrBand, cohortContext } = input
+  const { session, weekN, plan, verdict,
+    actualDistKm, actualAvgHr, actualPaceSecPerKm, hrInZonePct, hrAboveCeilingPct,
+    efTrendPct, rpe, fatigueTag, weekPhase,
+    prescribedZoneLabel, prescribedHrBand, cohortContext,
+    isFirstAnalysis } = input
 
   const weeksToRace = plan.meta.race_date
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
@@ -100,24 +118,34 @@ If today's numbers diverge meaningfully from this cohort (HR ±5 bpm, pace ±10s
 `
     : ''
 
-  return `You are a direct, no-fluff running coach giving session feedback. Your tone is honest, slightly dry, and never cringe-worthy cheerleader. One paragraph only — 2–4 sentences max. Use "you" throughout. Reference specific numbers from the data.
+  const voiceHeader = buildVoiceHeader({
+    role: 'giving session feedback',
+    outputConstraint: 'One paragraph only — 2–4 sentences max.',
+  })
 
-Voice anchor for zone-discipline moments: "Hold the zone." — use this phrase or echo its framing when the feedback is about committing to (or failing to commit to) the prescribed zone. It applies to all session types: easy days (hold Zone 2), hard days (hit the band, don't coast), long runs (don't drift).
+  const paceLine = actualPaceSecPerKm
+    ? `Actual pace: ${formatPaceSec(actualPaceSecPerKm)}/km avg`
+    : ''
+
+  const firstRunNote = isFirstAnalysis
+    ? '\nFirst session context: This is the athlete\'s first ever analysed run. Keep the welcome implicit — one sentence that acknowledges a start, then get specific about the data. No hype. No "welcome to the journey" framing.\n'
+    : ''
+
+  return `${voiceHeader}
 
 ${FEW_SHOT_EXAMPLES}
-
+${firstRunNote}
 Now write feedback for this session:
 
 Race context: ${raceContext}
-Week: ${weekN} of ${plan.weeks.length}
+Week: ${weekN} of ${plan.weeks.length}${weekPhase ? ` — ${weekPhase} phase` : ''}
 
 Session type: ${session.type} (${session.label})
 Planned distance: ${session.distance_km ? `${session.distance_km}km` : 'not set'}
 Actual distance: ${actualDistKm.toFixed(1)}km
-${hrLine}
+${paceLine ? paceLine + '\n' : ''}${hrLine}
 ${efLine ? efLine + '\n' : ''}RPE: ${rpe !== null ? rpe : 'not logged'}
 Fatigue: ${fatigueTag ?? 'not logged'}
-Score: ${totalScore}/100 (HR discipline: ${hrDisciplineScore}, distance: ${distanceScore})
 Verdict: ${verdict}
 ${cohortBlock}
 Write 2–4 sentences of honest, specific feedback. No headers. No bullet points. Plain text only.`

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { Week, Session } from '@/types/plan'
 import { createClient } from '@/lib/supabase/client'
+import { authedFetch } from '@/lib/supabase/authedFetch'
 import { SESSION_COLORS, SESSION_LABELS } from '@/lib/session-types'
 import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
 import { formatDistance, sumRoundedDistance, type DistanceUnits } from '@/lib/format'
@@ -106,6 +107,15 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
       await supabase.from('session_overrides').insert({
         user_id: user.id, week_n: weekN, original_day: originalDay, new_day: newDay,
         updated_at: new Date().toISOString(),
+      })
+      // Trigger 1: session_reorder — fires the hard/easy adjacency check in
+      // /api/adjust-plan and writes a plan_adjustments row when a violation is
+      // detected. Plan-screen Move is the only surface that can produce this
+      // signal now that SessionPopupInner's Move was removed. Paid-only; the
+      // route 403s for free users and the call no-ops.
+      void authedFetch('/api/adjust-plan', {
+        method: 'POST',
+        body: JSON.stringify({ fromDay: originalDay, toDay: newDay }),
       })
     }
   }

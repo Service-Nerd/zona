@@ -8,6 +8,7 @@
 import type { Plan, GeneratorInput } from '@/types/plan'
 import { EnrichedPlanSchema } from './schema'
 import type { Tier } from './ruleEngine'
+import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 
 // ─── System prompt (cached via prompt-caching-2024-07-31 beta) ───────────────
 
@@ -109,7 +110,7 @@ export async function enrich(plan: Plan, input: GeneratorInput, tier: Tier): Pro
         'anthropic-beta': 'prompt-caching-2024-07-31',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: ANTHROPIC_MODEL,
         max_tokens: plan.weeks.length <= 12 ? 6000 : plan.weeks.length <= 20 ? 10000 : 14000,
         system: [
           {

@@ -9,6 +9,7 @@ import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildWeeklyReportPrompt } from '@/lib/coaching/prompts/weeklyReport'
 import { getCurrentWeekIndex } from '@/lib/plan'
 import type { Plan } from '@/types/plan'
+import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 
 // POST /api/weekly-report
 // Auth-gated (paid/trial). Computes this week's coaching report.
@@ -149,6 +150,19 @@ export async function POST(req: NextRequest) {
     return isCountableSession(s)
   }).length
 
+  // Sessions that were due by today but not completed — gives AI context on missed work
+  const completedDays = new Set(
+    completions
+      .filter((c: any) => c.status === 'complete')
+      .map((c: any) => c.session_day as string)
+  )
+  const missedSessionTypes = daysDueByToday
+    .filter(d => {
+      if (!isCountableSession(week.sessions[d as keyof typeof week.sessions])) return false
+      return !completedDays.has(d)
+    })
+    .map(d => (week.sessions[d as keyof typeof week.sessions] as any)?.type ?? 'run')
+
   // Remaining scheduled sessions after today — so the AI knows they're already in the plan
   const remainingSessionLabels = DAY_ORDER_REPORT.slice(dayIndex + 1)
     .map(d => {
@@ -210,6 +224,7 @@ export async function POST(req: NextRequest) {
       sessionsPlannedToDate,
       plannedKmToDate,
       remainingSessionLabels,
+      missedSessionTypes,
     )
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
@@ -220,7 +235,7 @@ export async function POST(req: NextRequest) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model:      'claude-haiku-4-5-20251001',
+        model:      ANTHROPIC_MODEL,
         max_tokens: 300,
         messages:   [{ role: 'user', content: prompt }],
       }),
@@ -253,7 +268,7 @@ export async function POST(req: NextRequest) {
     body,
     cta,
     generated_at:         new Date().toISOString(),
-    ai_model:             'claude-haiku-4-5-20251001',
+    ai_model:             ANTHROPIC_MODEL,
     rule_engine_version:  COACHING_RULE_ENGINE_VERSION,
   }
 

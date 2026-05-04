@@ -10,6 +10,7 @@ import { COACHING_RULE_ENGINE_VERSION, COHORT_SIMILARITY } from '@/lib/coaching/
 import { buildSessionFeedbackPrompt } from '@/lib/coaching/prompts/sessionFeedback'
 import { fetchRunHistory, findSimilarRuns, summariseCohort, pickWindowDays } from '@/lib/coaching/runHistory'
 import { zoneForSessionType, sessionHRBand } from '@/lib/coaching/zoneRules'
+import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import { notifyUser } from '@/lib/webpush'
 import { BRAND } from '@/lib/brand'
 import type { Plan, Session } from '@/types/plan'
@@ -71,11 +72,12 @@ export async function POST(req: NextRequest) {
     ? activityQuery.eq('strava_activity_id', strava_activity_id)
     : activityQuery.eq('apple_health_uuid', apple_health_uuid!)
 
-  // Fetch activity, plan, completions, settings in parallel.
+  // Fetch activity, plan, completions, settings, and prior analysis count in parallel.
   // user_settings.resting_hr + max_hr drive the live Karvonen band — must
   // match the session-card UI (which reads the same source) so feedback
   // doesn't quote a different ceiling than the user sees on screen.
-  const [activityRes, planRes, completionRes, recentActivitiesRes, settingsRes] = await Promise.all([
+  // priorAnalysisRes count: detects first-ever session so the prompt can frame it appropriately.
+  const [activityRes, planRes, completionRes, recentActivitiesRes, settingsRes, priorAnalysisRes] = await Promise.all([
     activityFiltered.single(),
     serviceSupabase
       .from('plans')
@@ -100,10 +102,17 @@ export async function POST(req: NextRequest) {
       .select('resting_hr, max_hr')
       .eq('id', userId)
       .single(),
+    serviceSupabase
+      .from('run_analysis')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId),
   ])
 
-  const activity = activityRes.data
-  const plan     = planRes.data?.plan_json as Plan | null
+  const activity        = activityRes.data
+  const plan            = planRes.data?.plan_json as Plan | null
+  // isFirstAnalysis: true when the user has no prior run_analysis rows (count = 0).
+  // The prompt uses this to soften the welcome without hype.
+  const isFirstAnalysis = (priorAnalysisRes.count ?? 1) === 0
   if (!activity || !plan) {
     return NextResponse.json({ error: 'Activity or plan not found' }, { status: 404 })
   }
@@ -199,24 +208,28 @@ export async function POST(req: NextRequest) {
     const restingHR = settingsRes.data?.resting_hr ?? null
     const maxHR     = settingsRes.data?.max_hr     ?? null
     const liveBand  = sessionHRBand((session as any).type, restingHR, maxHR)
+    // Pace: avg_speed is in m/s → convert to sec/km for the prompt
+    const avgSpeedMs = activity.avg_speed ?? 0
+    const actualPaceSecPerKm = avgSpeedMs > 0 ? Math.round(1000 / avgSpeedMs) : null
+
     const prompt = buildSessionFeedbackPrompt({
       session,
-      weekN: week_n,
+      weekN:               week_n,
       plan,
       verdict:             scoreResult.verdict,
-      totalScore:          scoreResult.totalScore,
-      hrDisciplineScore:   scoreResult.hrDisciplineScore,
-      distanceScore:       scoreResult.distanceScore,
       actualDistKm:        (activity.distance_m ?? 0) / 1000,
+      actualPaceSecPerKm,
       actualAvgHr:         activity.avg_hr ?? null,
       hrInZonePct:         activity.hr_in_zone_pct ?? null,
       hrAboveCeilingPct:   activity.hr_above_ceiling_pct ?? null,
       efTrendPct,
       rpe:                 completionRes.data?.rpe ?? null,
       fatigueTag:          completionRes.data?.fatigue_tag ?? null,
+      weekPhase:           (week as any).phase ?? null,
       prescribedZoneLabel: prescribedZone?.label ?? null,
       prescribedHrBand:    liveBand ? { lo: liveBand.lo, hi: liveBand.hi } : null,
       cohortContext:       cohortSummary,
+      isFirstAnalysis,
     })
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
@@ -227,7 +240,7 @@ export async function POST(req: NextRequest) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model:      'claude-haiku-4-5-20251001',
+        model:      ANTHROPIC_MODEL,
         max_tokens: 200,
         messages:   [{ role: 'user', content: prompt }],
       }),
@@ -283,7 +296,7 @@ export async function POST(req: NextRequest) {
     const pushBody = feedbackText
       ?? verdictPushBody(scoreResult.verdict, (activity.distance_m ?? 0) / 1000)
     void notifyUser(userId, {
-      title: BRAND.push.runAnalysis,
+      title: verdictPushTitle(scoreResult.verdict),
       body:  pushBody,
       tag:   'run-analysis',
       data:  { url: '/dashboard?screen=coach' },
@@ -309,5 +322,16 @@ function verdictPushBody(verdict: string, distKm: number): string {
     case 'drifted':   return `${dist} — HR went high. Worth checking.`
     case 'hard':      return `${dist} — that was a tough one.`
     default:          return `${dist} logged.`
+  }
+}
+
+/** Verdict-based push title — coaching voice in the lock screen, not a generic label. */
+function verdictPushTitle(verdict: string): string {
+  switch (verdict) {
+    case 'nailed':     return 'Run nailed.'
+    case 'close':      return 'Close. Worth a look.'
+    case 'off_target': return 'Drifted off plan.'
+    case 'concerning': return 'Worth checking.'
+    default:           return BRAND.push.runAnalysis
   }
 }
