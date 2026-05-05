@@ -252,7 +252,10 @@ export default function LoginPage() {
           )}
         </div>
 
-        <div style={{ marginTop: '24px', textAlign: 'center' }}>
+        <div style={{
+          marginTop: '24px', textAlign: 'center',
+          display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px',
+        }}>
           <a
             href="https://zona.app/privacy" // TODO: update to vetra.run when domain migrates
             target="_blank"
@@ -265,6 +268,24 @@ export default function LoginPage() {
             }}
           >
             Privacy Policy
+          </a>
+          <span style={{
+            fontFamily: 'var(--font-ui)',
+            fontSize: '10px', color: 'var(--text-muted)',
+            opacity: 0.4,
+          }}>·</span>
+          <a
+            href="https://zona.app/terms" // TODO: update to vetra.run when domain migrates
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: '10px', color: 'var(--text-muted)',
+              opacity: 0.4, textDecoration: 'underline',
+              textUnderlineOffset: '2px',
+            }}
+          >
+            Terms of Service
           </a>
         </div>
       </div>
