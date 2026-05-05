@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
     serviceSupabase.from('user_settings').select('first_name, resting_hr, max_hr').eq('id', userId).single(),
     serviceSupabase
       .from('session_completions')
-      .select('week_n, session_day, status, rpe, fatigue_tag, avg_hr, updated_at')
+      .select('week_n, session_day, status, rpe, fatigue_tag, avg_hr, updated_at, apple_health_uuid, strava_activity_id')
       .eq('user_id', userId)
       .order('updated_at', { ascending: false, nullsFirst: false })
       .limit(8),
@@ -107,14 +107,34 @@ export async function GET(req: NextRequest) {
 
   let lastSession: any = null
   if (lastCompleted) {
-    // daysAgo from the session's actual planned date, not the log timestamp
     const noteDateMs  = new Date(noteDate + 'T00:00:00Z').getTime()
     const lcWeek      = plan.weeks[lastCompleted.week_n - 1] as any
     const lcSession   = lcWeek?.sessions?.[lastCompleted.session_day] ?? null
-    const weekStart   = lcWeek?.date ? new Date(lcWeek.date + 'T00:00:00Z').getTime() : noteDateMs
-    const dayOffset   = DOW_OFFSET[lastCompleted.session_day] ?? 0
-    const sessionMs   = weekStart + dayOffset * 86_400_000
-    const daysAgo     = Math.max(1, Math.round((noteDateMs - sessionMs) / 86_400_000))
+
+    // Resolve actual run date from the linked activity (Apple Health primary, Strava secondary).
+    // Falls back to the planned session date only when the completion has no linked activity.
+    let actualRunMs: number | null = null
+    if (lastCompleted.apple_health_uuid || lastCompleted.strava_activity_id) {
+      const baseQuery = serviceSupabase
+        .from('strava_activities')
+        .select('start_date')
+        .eq('user_id', userId)
+      const { data: activity } = lastCompleted.apple_health_uuid
+        ? await baseQuery.eq('apple_health_uuid', lastCompleted.apple_health_uuid).maybeSingle()
+        : await baseQuery.eq('strava_activity_id', lastCompleted.strava_activity_id).maybeSingle()
+      if (activity?.start_date) {
+        const activityDayMs = new Date((activity.start_date as string).slice(0, 10) + 'T00:00:00Z').getTime()
+        actualRunMs = activityDayMs
+      }
+    }
+
+    if (actualRunMs == null) {
+      const weekStart = lcWeek?.date ? new Date(lcWeek.date + 'T00:00:00Z').getTime() : noteDateMs
+      const dayOffset = DOW_OFFSET[lastCompleted.session_day] ?? 0
+      actualRunMs     = weekStart + dayOffset * 86_400_000
+    }
+
+    const daysAgo = Math.max(1, Math.round((noteDateMs - actualRunMs) / 86_400_000))
     // Match analysis row
     const analysis = (analysisRes.data ?? []).find(
       (a: any) => a.week_n === lastCompleted.week_n && a.session_day === lastCompleted.session_day
