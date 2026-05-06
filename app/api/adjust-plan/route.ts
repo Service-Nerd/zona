@@ -16,6 +16,28 @@ import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 // Auth-gated (paid/trial). Checks adjustment triggers for the current week.
 // If a trigger fires: saves to plan_adjustments (status: pending).
 // Auto-applies low-risk adjustments; requires confirmation for significant ones.
+//
+// Every successful engine evaluation also stamps user_settings with the check
+// time and outcome — powers the "Last checked …" line in the Me screen so the
+// feature is visible even when it has nothing to suggest. Early-exit paths
+// (subscription required / user_disabled / no plan) intentionally do NOT
+// stamp, since the engine never ran.
+
+// Typed loosely on purpose: SupabaseClient generics are awkward to thread
+// through, and this helper is internal to this route.
+async function recordAdjustmentCheck(
+  serviceSupabase: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  userId: string,
+  foundChange: boolean,
+): Promise<void> {
+  await serviceSupabase
+    .from('user_settings')
+    .update({
+      last_adjustment_check_at:           new Date().toISOString(),
+      last_adjustment_check_found_change: foundChange,
+    })
+    .eq('id', userId)
+}
 
 export async function POST(req: NextRequest) {
   const supabase = createClient()
@@ -131,6 +153,7 @@ export async function POST(req: NextRequest) {
 
   // Return existing pending adjustment instead of creating a duplicate
   if (existingPendingRes.data) {
+    await recordAdjustmentCheck(serviceSupabase, user.id, true)
     return NextResponse.json({ adjustment: existingPendingRes.data, requires_confirmation: true })
   }
 
@@ -190,6 +213,7 @@ export async function POST(req: NextRequest) {
   })
 
   if (!proposed) {
+    await recordAdjustmentCheck(serviceSupabase, user.id, false)
     return NextResponse.json({ adjustment: null, message: 'No adjustment needed' })
   }
 
@@ -253,6 +277,7 @@ export async function POST(req: NextRequest) {
     await savePlanForUser(user.id, updatedPlan, supabase)
   }
 
+  await recordAdjustmentCheck(serviceSupabase, user.id, true)
   return NextResponse.json({ adjustment: inserted, requires_confirmation: proposed.requiresConfirmation })
 }
 

@@ -158,6 +158,11 @@ export default function DashboardClient() {
   // Feature 3 — dynamic adjustments opt-in
   const [dynamicAdjustmentsEnabled, setDynamicAdjustmentsEnabled] = useState(true)
 
+  // Last engine evaluation — drives the "Last checked …" line on the Me screen.
+  // Stamped by /api/adjust-plan on every successful run (manual or auto).
+  const [lastAdjustmentCheckAt, setLastAdjustmentCheckAt]                   = useState<string | null>(null)
+  const [lastAdjustmentCheckFoundChange, setLastAdjustmentCheckFoundChange] = useState<boolean | null>(null)
+
   // Coaching data — run analysis + weekly report + pending adjustments
   const [runAnalysisMap, setRunAnalysisMap] = useState<Record<string, any>>({})  // keyed by session_day
   // Tracks whether the run_analysis fetch has completed (success OR empty).
@@ -333,7 +338,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes, subRes, guidanceRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
@@ -468,6 +473,12 @@ export default function DashboardClient() {
 
         // Dynamic adjustments toggle
         if (data?.dynamic_adjustments_enabled === false) setDynamicAdjustmentsEnabled(false)
+
+        // Last adjustment-engine evaluation — drives the "Last checked …" line.
+        if (data?.last_adjustment_check_at) setLastAdjustmentCheckAt(data.last_adjustment_check_at)
+        if (typeof data?.last_adjustment_check_found_change === 'boolean') {
+          setLastAdjustmentCheckFoundChange(data.last_adjustment_check_found_change)
+        }
 
         // Orientation seen flag (B-002) — true means we've shown it before, don't show again
         if (data?.orientation_seen) setOrientationSeen(true)
@@ -1005,7 +1016,7 @@ export default function DashboardClient() {
           : <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => setScreen('upgrade')} />
         )}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
-        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} />}
+        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
@@ -1016,7 +1027,7 @@ export default function DashboardClient() {
           setScreen(hasWizardDraft ? 'generate' : 'today')
         }} />}
         {screen === 'benchmark' && plan && <BenchmarkUpdateScreen plan={plan} stravaConnected={stravaConnected} onBack={() => setScreen('me')} onUpdated={(updatedPlan) => { setPlan(updatedPlan) }} />}
-        {screen === 'reshape'   && <ReshapeScreen plan={plan} onBack={() => setScreen('me')} onReshapeApplied={(updatedPlan) => { setPlan(updatedPlan); setPendingAdjustment(null); setScreen('today') }} />}
+        {screen === 'reshape'   && <ReshapeScreen plan={plan} onBack={() => setScreen('me')} onReshapeApplied={(updatedPlan) => { setPlan(updatedPlan); setPendingAdjustment(null); setScreen('today') }} onChecked={(foundChange) => { setLastAdjustmentCheckAt(new Date().toISOString()); setLastAdjustmentCheckFoundChange(foundChange) }} />}
       </div>
 
       {/* Screen guide — first-load popup */}
@@ -3546,10 +3557,13 @@ function AdjustmentBanner({ adjustment, onConfirmed, onReverted }: {
 // ── ReshapeScreen ─────────────────────────────────────────────────────────────
 // User-initiated plan reshape. Calls /api/adjust-plan with manual:true, shows result.
 
-function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied }: {
+function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked }: {
   plan: Plan | null
   onBack: () => void
   onReshapeApplied: (plan: any) => void
+  /** Fired after a successful engine evaluation (manual run). Lets the parent
+   *  refresh the "Last checked …" line on the Me screen without a re-fetch. */
+  onChecked?: (foundChange: boolean) => void
 }) {
   const [status, setStatus]               = useState<'loading' | 'found' | 'clean' | 'error'>('loading')
   const [adjustment, setAdjustment]       = useState<any | null>(null)
@@ -3570,8 +3584,8 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied }: {
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Something went wrong.'); setStatus('error'); return }
       if (data.skipped) { setError('Dynamic adjustments are turned off in your settings.'); setStatus('error'); return }
-      if (data.adjustment) { setAdjustment(data.adjustment); setStatus('found') }
-      else setStatus('clean')
+      if (data.adjustment) { setAdjustment(data.adjustment); setStatus('found'); onChecked?.(true) }
+      else { setStatus('clean'); onChecked?.(false) }
     } catch { setError('Could not reach the server. Check your connection.'); setStatus('error') }
   }
 
@@ -6431,7 +6445,7 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
   )
 }
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   resetPhrase: string; onSaveMental: (v: string) => void
@@ -6450,9 +6464,27 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   trialDaysLeft?: number | null
   dynamicAdjustmentsEnabled?: boolean
   onDynamicAdjustmentsChange?: (enabled: boolean) => void
+  lastAdjustmentCheckAt?: string | null
+  lastAdjustmentCheckFoundChange?: boolean | null
 }) {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling' | 'delete-account'>('main')
+  // Plan adjustments — "What we watch for" disclosure
+  const [adjustmentsDisclosureOpen, setAdjustmentsDisclosureOpen] = useState(false)
+
+  // "Last checked N days ago" — null when the engine has never run for this user.
+  const lastCheckedLabel: string | null = (() => {
+    if (!lastAdjustmentCheckAt) return null
+    const ms        = Date.now() - new Date(lastAdjustmentCheckAt).getTime()
+    const days      = Math.floor(ms / 86_400_000)
+    const hours     = Math.floor(ms / 3_600_000)
+    if (hours < 1)   return 'just now'
+    if (hours < 24)  return 'today'
+    if (days === 1)  return 'yesterday'
+    if (days < 7)    return `${days} days ago`
+    if (days < 14)   return 'last week'
+    return `${Math.floor(days / 7)} weeks ago`
+  })()
 
   const raceDistKm = plan?.meta?.race_distance_km ?? 0
   const raceNm     = plan?.meta?.race_name ?? ''
@@ -6637,33 +6669,51 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           ))}
         </div>
 
-        {/* ── Training intelligence (paid/trial only) ──────────── */}
+        {/* ── Plan adjustments (paid/trial only) ───────────────────
+             One engine, two controls: Auto-adjust runs it on a schedule,
+             Check now runs it on demand. The "Last checked" line and the
+             "What we watch for" disclosure exist to make this engine
+             visible — without them users can't tell what they're paying for. */}
         {hasPaidAccess && onDynamicAdjustmentsChange && (
           <>
-            <SectionLabel>Training intelligence</SectionLabel>
+            <SectionLabel>Plan adjustments</SectionLabel>
             <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-              {/* Reshape plan — manual trigger. Free users see upgrade prompt. */}
+
+              {/* Last checked status — top of the card so the engine's activity is visible at a glance. */}
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', background: 'var(--bg-soft)' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '3px' }}>
+                  Last checked
+                </div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', lineHeight: 1.4 }}>
+                  {lastCheckedLabel === null
+                    ? 'Not yet — tap Check now to run.'
+                    : lastAdjustmentCheckFoundChange
+                      ? `${lastCheckedLabel.charAt(0).toUpperCase() + lastCheckedLabel.slice(1)} · 1 change suggested`
+                      : `${lastCheckedLabel.charAt(0).toUpperCase() + lastCheckedLabel.slice(1)} · No changes needed`}
+                </div>
+              </div>
+
+              {/* Check now — manual run of the same engine Auto-adjust schedules. */}
               <button
-                onClick={hasPaidAccess ? onOpenReshape : onUpgrade}
+                onClick={onOpenReshape}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}
               >
                 <div>
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2px' }}>Reshape plan</div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2px' }}>Check now</div>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
-                    {hasPaidAccess
-                      ? 'Check your recent sessions for adjustment signals now'
-                      : 'Reshape needs Premium. The plan you have keeps running.'}
+                    Run the adjustment check on demand.
                   </div>
                 </div>
                 <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
               </button>
-              {/* Dynamic adjustments toggle */}
-              <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+
+              {/* Auto-adjust toggle — schedules the same engine. */}
+              <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', borderBottom: '1px solid var(--line)' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', lineHeight: 1.4, marginBottom: '2px' }}>Auto-adjust</div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2px' }}>Auto-adjust</div>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
                     {dynamicAdjustmentsEnabled
-                      ? 'Vetra suggests plan changes based on your Strava data.'
+                      ? 'Vetra checks automatically and suggests changes when something looks off.'
                       : 'Plan stays fixed. Vetra tracks data but won\'t suggest changes.'}
                   </div>
                 </div>
@@ -6674,7 +6724,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                     background: dynamicAdjustmentsEnabled ? 'var(--moss)' : 'var(--line)',
                     position: 'relative', flexShrink: 0, transition: 'background 0.2s',
                   }}
-                  aria-label="Toggle dynamic adjustments"
+                  aria-label="Toggle auto-adjust"
                 >
                   <div style={{
                     position: 'absolute', top: '3px',
@@ -6684,6 +6734,24 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                   }} />
                 </button>
               </div>
+
+              {/* What we watch for — disclosure. Broad strokes only; the trigger
+                  taxonomy (acute:chronic, EF decline, etc.) lives in the engine. */}
+              <button
+                onClick={() => setAdjustmentsDisclosureOpen(o => !o)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                aria-expanded={adjustmentsDisclosureOpen}
+              >
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.4 }}>
+                  What we watch for
+                </div>
+                <div style={{ color: 'var(--mute)', marginLeft: '12px', transform: adjustmentsDisclosureOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>{chevron}</div>
+              </button>
+              {adjustmentsDisclosureOpen && (
+                <div style={{ padding: '0 16px 16px', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.6 }}>
+                  Fatigue accumulating across sessions, easy runs creeping above Zone 2, load spikes against your recent weeks, missed or rearranged sessions, and post-session effort that doesn&apos;t match what was planned. When the picture is clear, you&apos;ll see a suggested change here.
+                </div>
+              )}
             </div>
           </>
         )}

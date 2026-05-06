@@ -30,6 +30,7 @@ type FitnessLevel = 'beginner' | 'intermediate' | 'experienced'
 interface ZoneTargets {
   zone2Ceiling: number
   easyHR: string
+  shakeoutHR: string
   qualityHR: string
   intervalsHR: string
 }
@@ -201,6 +202,7 @@ function computeZones(mhr: number, rhr?: number): ZoneTargets {
     // Karvonen (HR Reserve) — more personalised
     const hrr = mhr - rhr
     const k = (pct: number) => Math.round(rhr + (pct / 100) * hrr)
+    const z1Top    = k(Z.Z1.karvonen_pct[1])  // top of Z1 → shakeout ceiling
     const z2Top    = k(Z.Z2.karvonen_pct[1])  // top of Z2 → easy ceiling
     const z3Low    = k(Z.Z3.karvonen_pct[0])  // Z3 low → quality low
     const z3Top    = k(Z.Z3.karvonen_pct[1])  // Z3 top → quality high
@@ -208,12 +210,14 @@ function computeZones(mhr: number, rhr?: number): ZoneTargets {
     return {
       zone2Ceiling: z2Top,
       easyHR:       `< ${z2Top} bpm`,
+      shakeoutHR:   `< ${z1Top} bpm`,
       qualityHR:    `${z3Low}–${z3Top} bpm`,
       intervalsHR:  `${z4Low}–${mhr} bpm`,
     }
   }
   // %MaxHR — used when resting HR not provided
   const m = (pct: number) => Math.round((pct / 100) * mhr)
+  const z1Top = m(Z.Z1.maxhr_pct[1])
   const z2Top = m(Z.Z2.maxhr_pct[1])
   const z3Low = m(Z.Z3.maxhr_pct[0])
   const z3Top = m(Z.Z3.maxhr_pct[1])
@@ -221,6 +225,7 @@ function computeZones(mhr: number, rhr?: number): ZoneTargets {
   return {
     zone2Ceiling: z2Top,
     easyHR:       `< ${z2Top} bpm`,
+    shakeoutHR:   `< ${z1Top} bpm`,
     qualityHR:    `${z3Low}–${z3Top} bpm`,
     intervalsHR:  `${z4Low}–${mhr} bpm`,
   }
@@ -770,8 +775,11 @@ function raceSession(weekN: number, day: Day, distKm: number, raceName: string):
 }
 
 function shakeoutSession(weekN: number, day: Day, zones: ZoneTargets, pace: PaceGuide): Session {
-  return easySession(weekN, day, 4, 'distance', zones, pace, 'Easy shakeout', 2,
+  const session = easySession(weekN, day, 4, 'distance', zones, pace, 'Easy shakeout', 2,
     ['Short and relaxed. Wake the legs, nothing more.'])
+  session.zone = 'Zone 1'
+  session.hr_target = zones.shakeoutHR
+  return session
 }
 
 // ─── Injury adjustments ───────────────────────────────────────────────────────

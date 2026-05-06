@@ -124,7 +124,7 @@ function UpdatedPaceResult({ plan, weeksUpdated, stravaConnected }: { plan: Plan
         </div>
       </div>
 
-      <RaceTimesCard stravaConnected={stravaConnected} />
+      <RaceTimesCard variant="result" stravaConnected={stravaConnected} />
 
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center' }}>
         {weeksUpdated} remaining {weeksUpdated === 1 ? 'week' : 'weeks'} updated.
@@ -224,7 +224,7 @@ export default function BenchmarkUpdateScreen({
           <UpdatedPaceResult plan={result.plan} weeksUpdated={result.weeksUpdated} stravaConnected={stravaConnected} />
         ) : (
           <>
-            <RaceTimesCard stravaConnected={stravaConnected} />
+            <RaceTimesCard variant="anchor" stravaConnected={stravaConnected} />
             {/* Benchmark type selection */}
             <div>
               <FieldLabel>New benchmark</FieldLabel>

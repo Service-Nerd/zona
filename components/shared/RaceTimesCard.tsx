@@ -1,16 +1,24 @@
 'use client'
 
-// Race projections card. Shown on the Coach screen (paid/trial).
-// Fetches /api/race-times on mount.
+// Race projections card. Same data, three surfaces:
+//   - Coach screen (variant="status")  — canonical home; "Where you stand today".
+//   - Benchmark entry (variant="anchor") — "Where you are now", anchor for the
+//                                          recalibrate form rendered below it.
+//   - Benchmark result (variant="result") — post-update confirmation.
+//
+// Fetches /api/race-times on mount. All copy lives in raceProjectionsCopy.ts —
+// nothing user-facing is hardcoded in this component.
 //
 // R31 — target race shown at top with improvement delta vs plan-creation baseline.
 // R32 — recalibration nudge shown at bottom when fitness has moved significantly.
+//       Only rendered on variant="status" (the other variants ARE recalibration).
 //
 // TIER: server route gates by tier; on free this won't be rendered (the Coach
 // screen swaps in CoachTeaser, and the benchmark flow is paid-only).
 
 import { useEffect, useState } from 'react'
 import { authedFetch } from '@/lib/supabase/authedFetch'
+import { RACE_PROJECTIONS_COPY, type RaceProjectionsVariant } from './raceProjectionsCopy'
 
 type TargetRace = {
   distanceKm:      number
@@ -45,11 +53,14 @@ function formatTime(totalSeconds: number): string {
 }
 
 export function RaceTimesCard({
+  variant = 'status',
   stravaConnected,
   benchmarkRecalDismissedAt,
   onOpenBenchmark,
   onDismissRecal,
 }: {
+  /** Surface this card is rendered on — drives copy framing. Defaults to `status` (Coach screen). */
+  variant?:                   RaceProjectionsVariant
   stravaConnected:           boolean
   benchmarkRecalDismissedAt?: string | null
   onOpenBenchmark?:          () => void
@@ -58,6 +69,7 @@ export function RaceTimesCard({
   const [data, setData]       = useState<RaceTimeData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState<string | null>(null)
+  const copy = RACE_PROJECTIONS_COPY[variant]
 
   useEffect(() => {
     authedFetch('/api/race-times')
@@ -69,9 +81,11 @@ export function RaceTimesCard({
       .finally(() => setLoading(false))
   }, [])
 
-  // R32: recal nudge is visible when route suggests it AND user hasn't dismissed
-  // recently (within 21 days).
+  // R32: recal nudge is visible when (a) variant supports it — only `status`
+  // does, since `anchor`/`result` ARE the recalibrate flow — (b) the route
+  // suggests it, and (c) the user hasn't dismissed recently (within 21 days).
   const showRecalNudge = (() => {
+    if (!copy.recal) return false
     if (!data?.recalibrationSuggested || !onOpenBenchmark) return false
     if (!benchmarkRecalDismissedAt) return true
     const dismissedMs = new Date(benchmarkRecalDismissedAt).getTime()
@@ -93,7 +107,7 @@ export function RaceTimesCard({
   return (
     <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '20px' }}>
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
-        Race projections
+        {copy.eyebrow}
       </div>
 
       {loading ? (
@@ -106,12 +120,10 @@ export function RaceTimesCard({
       ) : error || !data || data.state === 5 ? (
         <div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500, color: 'var(--ink-2)', marginBottom: '6px' }}>
-            No estimate yet.
+            {copy.empty.heading}
           </div>
           <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.6, margin: 0 }}>
-            {stravaConnected
-              ? 'Add a benchmark result in Profile, or complete a few easy runs with Strava.'
-              : 'Add a benchmark result in Profile, or connect Strava and complete a few easy runs.'}
+            {stravaConnected ? copy.empty.bodyWithStrava : copy.empty.bodyWithoutStrava}
           </p>
         </div>
 
@@ -192,25 +204,29 @@ export function RaceTimesCard({
           </div>
 
           {/* Low-confidence prompt */}
-          {(data.state === 3 || data.state === 4) && (
-            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.55, margin: '12px 0 0' }}>
-              {data.state === 3
-                ? 'Log a benchmark result in Profile for a higher-confidence estimate.'
-                : stravaConnected
-                  ? 'Log a benchmark result in Profile to improve accuracy.'
-                  : 'Add a benchmark in Profile, or connect Strava and complete a few easy runs.'}
-            </p>
-          )}
+          {(data.state === 3 || data.state === 4) && (() => {
+            const message = data.state === 3
+              ? copy.lowConf.withBenchmark
+              : stravaConnected
+                ? copy.lowConf.withoutBenchmarkStrava
+                : copy.lowConf.withoutBenchmarkNoStrava
+            if (!message) return null
+            return (
+              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.55, margin: '12px 0 0' }}>
+                {message}
+              </p>
+            )
+          })()}
 
           {/* ── R32: recalibration nudge ─────────────────────────────── */}
-          {showRecalNudge && (
+          {showRecalNudge && copy.recal && (
             <div style={{
               marginTop: '16px',
               paddingTop: '14px',
               borderTop: '1px solid var(--line)',
             }}>
               <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.6, margin: '0 0 10px' }}>
-                Aerobic fitness has moved since plan start. Your training zones may be set too low for where you are now.
+                {copy.recal.body}
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <button
@@ -222,7 +238,7 @@ export function RaceTimesCard({
                     cursor: 'pointer',
                   }}
                 >
-                  Update zones →
+                  {copy.recal.cta}
                 </button>
                 <button
                   onClick={onDismissRecal}
@@ -232,7 +248,7 @@ export function RaceTimesCard({
                     padding: '0', cursor: 'pointer',
                   }}
                 >
-                  Not now
+                  {copy.recal.dismiss}
                 </button>
               </div>
             </div>
