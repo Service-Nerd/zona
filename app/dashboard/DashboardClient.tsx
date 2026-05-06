@@ -4316,7 +4316,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
             {(() => {
               const expectsAerobicPace = (selectedSession.type === 'easy' || selectedSession.type === 'run') && !selectedSession.pace_target
               const paceForDetail = selectedSession.pace_target
-                ?? aerobicPace
+                ?? (expectsAerobicPace ? aerobicPace : null)
                 ?? (expectsAerobicPace && stravaLoading ? '—' : null)
               return (
             <SessionCard

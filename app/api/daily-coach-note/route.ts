@@ -135,12 +135,14 @@ export async function GET(req: NextRequest) {
     }
 
     const daysAgo = Math.max(1, Math.round((noteDateMs - actualRunMs) / 86_400_000))
+    const lastRunDayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date(actualRunMs).getUTCDay()]
     // Match analysis row
     const analysis = (analysisRes.data ?? []).find(
       (a: any) => a.week_n === lastCompleted.week_n && a.session_day === lastCompleted.session_day
     )
     lastSession = {
       daysAgo,
+      dayName: lastRunDayName,
       type: lcSession?.type ?? 'run',
       verdict: analysis?.verdict ?? null,
       hrAboveCeilingPct: analysis?.hr_above_ceiling_pct ?? null,

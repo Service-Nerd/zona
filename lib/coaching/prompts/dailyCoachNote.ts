@@ -22,6 +22,7 @@ export interface DailyCoachNoteInput {
   /** Most recent completed session — what happened last time they ran. */
   lastSession: {
     daysAgo: number                 // 1 = yesterday, 2 = day before, etc.
+    dayName: string                 // 'Sunday', 'Monday', etc. — the actual weekday of the run
     type: string                    // 'easy', 'quality', etc.
     verdict: string | null          // 'nailed' / 'close' / 'off_target' / 'concerning' / null
     hrAboveCeilingPct: number | null  // % of run above Z2 ceiling (drift signal)
@@ -92,6 +93,10 @@ Example 11 — easy session, zone discipline is the message:
 Input: today=easy (Zone 2), last=easy 1 day ago, off_target, 42% above ceiling
 Output: "Hold the zone today — yesterday's easy wasn't."
 
+Example 11b — gap of 2+ days with a ceiling violation (use the day name, NOT "yesterday"):
+Input: today=easy, last=easy on Sunday (2 days ago), off_target, 23% above ceiling
+Output: "Sunday's easy ran hot — keep this one in the zone from the first km."
+
 Example 12 — no recent sessions logged (new user or gap after a break):
 Input: today=easy, no recent sessions
 Output: "Nothing from the last few days to go on — start easy and find your legs before you push them."
@@ -114,10 +119,13 @@ export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
     facts.push(`Today (${input.todayDayName}): ${dist}${input.todaySessionType}${zone}${label}`)
   }
 
-  // Last session
+  // Last session — when daysAgo > 1, anchor on the day name so the model
+  // doesn't paraphrase the few-shot examples and call it "yesterday".
   if (input.lastSession) {
     const ls = input.lastSession
-    const ago = ls.daysAgo === 1 ? 'yesterday' : `${ls.daysAgo} days ago`
+    const ago = ls.daysAgo === 1
+      ? 'yesterday'
+      : `on ${ls.dayName} (${ls.daysAgo} days ago)`
     const parts: string[] = [`${ls.type} ${ago}`]
     if (ls.verdict) parts.push(`verdict: ${ls.verdict}`)
     if (ls.hrAboveCeilingPct !== null && ls.hrAboveCeilingPct > 15) parts.push(`${Math.round(ls.hrAboveCeilingPct)}% above zone ceiling`)
@@ -147,6 +155,10 @@ export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
   return `${voiceHeader}
 
 Your job: write ONE sentence framing today, anchored in a specific fact from below.
+
+Critical rules:
+- Only say "yesterday" when the fact line literally says "yesterday". For any other gap, use the day name (e.g. "Sunday's easy") or the count ("two days ago"). Never invent a day relationship that isn't in the facts.
+- The athlete may have done non-running training (e.g. strength) since their last run — only the last run is in the facts. Don't claim they ran on a day not listed below.
 
 ${FEW_SHOT_EXAMPLES}
 
