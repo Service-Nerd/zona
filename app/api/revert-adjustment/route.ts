@@ -69,13 +69,23 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // Save updated plan and mark adjustment reverted in parallel
+  // Resetting last_adjustment_check_found_change here too (see same comment
+  // in confirm-adjustment): reverting is the resolution of a pending change,
+  // so the Me-screen flag should reflect "nothing pending" after this runs.
+  const nowIso = new Date().toISOString()
   await Promise.all([
     savePlanForUser(user.id, updatedPlan, supabase),
     serviceSupabase
       .from('plan_adjustments')
-      .update({ status: 'reverted', reverted_at: new Date().toISOString() })
+      .update({ status: 'reverted', reverted_at: nowIso })
       .eq('id', adjustment_id),
+    serviceSupabase
+      .from('user_settings')
+      .update({
+        last_adjustment_check_at:           nowIso,
+        last_adjustment_check_found_change: false,
+      })
+      .eq('id', user.id),
   ])
 
   return NextResponse.json({ plan: updatedPlan })

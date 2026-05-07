@@ -106,6 +106,10 @@ After Vercel deploy, verify with agent-browser:
 
 *(no open items — see feature-registry for shipped AI provenance work)*
 
+### Plan adjustments
+
+- 🔲 **PROFILE-ADJ-02 — Surface auto-applied changes in a recent-activity log** *(scoped 7 May 2026)* — three engine triggers (zone drift, RPE disconnect, shadow load low ratio) carry `requiresConfirmation: false`, so they write `plan_adjustments` rows with `status='auto_applied'` and silently update the plan. The user has no UI to see what the engine did or why. PROFILE-ADJ-01 fixed the misleading "1 change suggested" copy that showed for these silent changes; this item is the bigger fix — a small "Recent tweaks" log on the Me screen (or inline above the Plan adjustments section) that lists the last 3–5 auto-applied changes with their summary. Tier: PAID. Effort ~1 day. Read from `plan_adjustments` where `status='auto_applied'` ordered by created_at desc.
+
 ### Post-run journey
 
 - 🔲 **POST-RUN-02 — APNs wiring for the link-time push** *(unblocked once Apple Dev approves)* — POST-RUN-01 shipped the full journey on web push. iOS receives the same payload via `notifyUser` once APNs goes live. Needs: APNs key (.p8) + Vercel env vars (`APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC=app.vetra.ios`, `APNS_PRODUCTION=1`); Push Notifications capability added to the Xcode App target; first test on a real device. The push payload + deep-link parsing already work — this is purely the Apple-side wiring tracked under iOS push setup.

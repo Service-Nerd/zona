@@ -65,12 +65,25 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // Resetting last_adjustment_check_found_change here too: previously this
+  // route only flipped the plan_adjustments row, leaving the Me-screen flag
+  // stale at "1 change suggested" forever. The next /api/adjust-plan run
+  // would eventually correct it, but in the meantime Me lied. Now: confirming
+  // a pending adjustment is itself the resolution — flag goes false.
+  const nowIso = new Date().toISOString()
   await Promise.all([
     savePlanForUser(user.id, updatedPlan, supabase),
     serviceSupabase
       .from('plan_adjustments')
-      .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+      .update({ status: 'confirmed', confirmed_at: nowIso })
       .eq('id', adjustment_id),
+    serviceSupabase
+      .from('user_settings')
+      .update({
+        last_adjustment_check_at:           nowIso,
+        last_adjustment_check_found_change: false,
+      })
+      .eq('id', user.id),
   ])
 
   return NextResponse.json({ plan: updatedPlan })
