@@ -24,7 +24,7 @@ import SessionCard from '@/components/shared/SessionCard'
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import ZoneShapeCard from '@/components/shared/ZoneShapeCard'
 import AIMark from '@/components/shared/AIMark'
-import AICoachChip from '@/components/shared/AICoachChip'
+import CoachByline from '@/components/shared/CoachByline'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { composeSession } from '@/lib/plan/sessionComposer'
 import { formatDistance, sumRoundedDistance } from '@/lib/format'
@@ -4922,7 +4922,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
           pointerEvents: 'none',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <AICoachChip />
+            <CoachByline />
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
               W{weekNum} of {totalWeeks}
             </span>
@@ -5228,12 +5228,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           padding:      '16px 18px',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AICoachChip />
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
-                Your AI coach
-              </span>
-            </div>
+            <CoachByline />
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums' }}>
               {sessionsCompleted
                 ? `W${weekNum} · ${sessionsCompleted} session${sessionsCompleted !== 1 ? 's' : ''}`
@@ -5255,7 +5250,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             padding:      '16px 18px',
           }}>
             <div style={{ marginBottom: '10px' }}>
-              <AICoachChip />
+              <CoachByline />
             </div>
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.6, margin: '0 0 14px' }}>
               Kit watches your training. Says something when it&apos;s worth saying.
@@ -5439,12 +5434,12 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             borderLeft: '3px solid var(--s-race)',
             padding: '16px 18px',
           }}>
-            {/* Eyebrow */}
+            {/* Eyebrow — byline + countdown */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <AICoachChip working={specialCardLoading && !localRaceReadiness} />
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--s-race)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
-                Race readiness
-              </span>
+              <CoachByline
+                working={specialCardLoading && !localRaceReadiness}
+                role="Race readiness"
+              />
               <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
                 {daysToRace === 0 ? 'Race day' : `${daysToRace}d to go`}
               </span>
@@ -5472,12 +5467,12 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             borderLeft: '3px solid var(--moss)',
             padding: '16px 18px',
           }}>
-            {/* Eyebrow */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <AICoachChip working={specialCardLoading && !localPhaseSummary} />
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
-                Phase complete
-              </span>
+            {/* Eyebrow — byline carries the topic */}
+            <div style={{ marginBottom: '12px' }}>
+              <CoachByline
+                working={specialCardLoading && !localPhaseSummary}
+                role="Phase complete"
+              />
             </div>
             {specialCardLoading && !localPhaseSummary ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -5499,12 +5494,9 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           borderRadius: 'var(--radius-lg)',
           padding: '16px 18px',
         }}>
-          {/* Eyebrow */}
+          {/* Eyebrow — byline + week counter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-            <AICoachChip working={loading} color="warn" />
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
-              This week
-            </span>
+            <CoachByline working={loading} color="warn" role="This week" />
             <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', opacity: 0.6 }}>
               W{weekNum}/{totalWeeks}
             </span>
@@ -6908,22 +6900,30 @@ function getVerdictVoice(verdict: string): { accent: string; headline: string } 
 }
 
 // Loading-state sibling of RunFeedbackCard — shown while analyse-run is in flight.
-// Uses the AIMark pulse instead of a spinner (per ui-patterns.md § AIMark).
+// Uses the CoachByline pulse instead of a spinner (per ui-patterns.md § CoachByline).
+// Rendered on a white card with moss rail to match the post-completion AI card —
+// the thing that's coming is the LLM read of your run.
 function PendingAnalysisCard({ onOpenCoach }: { onOpenCoach?: () => void }) {
   return (
     <div style={{
+      position: 'relative',
       marginTop: '12px',
-      background: 'var(--warn-bg)',
+      background: 'var(--card)',
       borderRadius: '14px',
-      padding: '16px 18px',
+      border: '1px solid var(--line)',
+      padding: '14px 16px 14px 22px',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px' }}>
-        <AICoachChip working color="warn" onClick={onOpenCoach} />
+      <span aria-hidden="true" style={{
+        position: 'absolute', left: '8px', top: '14px', bottom: '14px',
+        width: '3px', borderRadius: '2px', background: 'var(--moss)',
+      }} />
+      <div style={{ marginBottom: '12px' }}>
+        <CoachByline working role="Reading your run" onClick={onOpenCoach} />
       </div>
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400,
-        color: 'var(--coach-ink)', lineHeight: 1.55,
-        marginBottom: '16px',
+        color: 'var(--ink-2)', lineHeight: 1.55,
+        marginBottom: '14px',
       }}>
         Analysing your run — usually takes 15–30 seconds.
       </div>
@@ -6933,11 +6933,11 @@ function PendingAnalysisCard({ onOpenCoach }: { onOpenCoach?: () => void }) {
           <div key={label} style={{ flex: 1 }}>
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
-              color: 'var(--warn)', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.08em',
+              color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
               marginBottom: '6px',
             }}>{label}</div>
             <div style={{
-              height: '3px', background: 'rgba(61,38,0,0.12)', borderRadius: '2px',
+              height: '3px', background: 'var(--line)', borderRadius: '2px',
               animation: 'ai-mark-pulse 1.6s ease-in-out infinite',
             }} />
           </div>
@@ -6958,8 +6958,8 @@ function LockedCoachingPreview({ onUpgrade, onOpenCoach }: { onUpgrade?: () => v
       padding: '16px 18px',
       border: '1px solid var(--line)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px', opacity: 0.4 }}>
-        <AICoachChip onClick={onOpenCoach} />
+      <div style={{ marginBottom: '10px', opacity: 0.4 }}>
+        <CoachByline onClick={onOpenCoach} />
       </div>
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
@@ -6990,8 +6990,8 @@ function GaveUpCard({ onOpenCoach }: { onOpenCoach?: () => void }) {
       borderRadius: '14px',
       padding: '16px 18px',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px', opacity: 0.4 }}>
-        <AICoachChip onClick={onOpenCoach} />
+      <div style={{ marginBottom: '8px', opacity: 0.4 }}>
+        <CoachByline onClick={onOpenCoach} />
       </div>
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
@@ -7112,143 +7112,162 @@ function RunFeedbackCard({
   ]
 
   return (
-    <div style={{
-      marginTop: '12px',
-      background: 'var(--warn-bg)',
-      borderRadius: '14px',
-      padding: '16px 18px',
-    }}>
-      {/* Eyebrow — Kit chip + optional score chip (hidden for manual rows) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '10px' }}>
-        <AICoachChip color="warn" onClick={onOpenCoach} />
-        {!isManual && score !== null && (
-          <button
-            type="button"
-            onClick={() => setExpanded(e => !e)}
-            aria-expanded={expanded}
-            aria-label={expanded ? 'Hide score breakdown' : 'Show score breakdown'}
-            style={{
-              marginLeft: 'auto',
-              background: 'transparent',
-              border: 'none',
-              padding: '2px 4px',
-              margin: '-2px -4px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 600,
-              color: 'var(--coach-ink)', opacity: 0.5,
-              fontVariantNumeric: 'tabular-nums',
-              cursor: 'pointer',
-            }}
-          >
-            {score}/100
-            <span style={{
-              fontSize: '9px',
-              display: 'inline-block',
-              transform: expanded ? 'rotate(180deg)' : 'none',
-              transition: 'transform 0.18s',
-            }}>▾</span>
-          </button>
-        )}
-      </div>
-
-      {/* Vetra-voice headline */}
+    <>
+      {/* Verdict card — rule-derived headline + (metrics if !isManual). No AI mark.
+       *  AI-VIS-01: the LLM paragraph used to live here too — provenance was muddy.
+       *  Now split into a separate AI card below. */}
       <div style={{
-        fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 700,
-        color: 'var(--coach-ink)', letterSpacing: '-0.1px', lineHeight: 1.4,
-        marginBottom: feedback ? '8px' : '14px',
+        marginTop: '12px',
+        background: 'var(--warn-bg)',
+        borderRadius: '14px',
+        padding: '16px 18px',
       }}>
-        {voice.headline}
-      </div>
-
-      {/* AI feedback paragraph */}
-      {feedback && (
-        <div style={{
-          fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
-          color: 'var(--coach-ink)', lineHeight: 1.55,
-          marginBottom: '14px',
-        }}>
-          {feedback}
-        </div>
-      )}
-
-      {/* Metric quartet — hidden for manual rows (no activity data to score) */}
-      {!isManual && <div style={{ display: 'flex', gap: '10px' }}>
-        {metrics.map(({ label, value }) => value !== undefined && (
-          <div key={label} style={{ flex: 1 }}>
-            <div style={{
-              fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
-              color: 'var(--warn)', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.08em',
-              marginBottom: '4px',
-            }}>
-              {label}
-            </div>
-            <div style={{
-              fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 700,
-              color: 'var(--coach-ink)', fontVariantNumeric: 'tabular-nums',
-              letterSpacing: '-0.5px', marginBottom: '6px',
-            }}>
-              {value}
-            </div>
-            <div style={{
-              height: '3px', background: 'rgba(61,38,0,0.12)', borderRadius: '2px',
-              overflow: 'hidden',
-            }}>
-              <div style={{
-                height: '100%',
-                width: `${value}%`,
-                background: value >= 80 ? 'var(--moss)' : 'var(--warn)',
-                opacity: value >= 80 ? 0.8 : value >= 60 ? 0.55 : 1,
-                borderRadius: '2px',
-                transition: 'width 0.4s ease',
-              }} />
-            </div>
-            {/* Verbal backup for the bar colour */}
-            <div style={{
-              fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
-              color: 'var(--warn)', opacity: 0.7,
-              textTransform: 'uppercase', letterSpacing: '0.08em',
-              whiteSpace: 'nowrap',
-              marginTop: '5px',
-            }}>
-              {scoreBandLabel(value)}
-            </div>
+        {/* Top row — score toggle (right-aligned), only when !isManual && score !== null */}
+        {!isManual && score !== null && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
+            <button
+              type="button"
+              onClick={() => setExpanded(e => !e)}
+              aria-expanded={expanded}
+              aria-label={expanded ? 'Hide score breakdown' : 'Show score breakdown'}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                padding: '2px 4px',
+                margin: '-2px -4px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 600,
+                color: 'var(--coach-ink)', opacity: 0.5,
+                fontVariantNumeric: 'tabular-nums',
+                cursor: 'pointer',
+              }}
+            >
+              {score}/100
+              <span style={{
+                fontSize: '9px',
+                display: 'inline-block',
+                transform: expanded ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.18s',
+              }}>▾</span>
+            </button>
           </div>
-        ))}
-      </div>}
+        )}
 
-      {/* Expanded breakdown — one line per sub-score, derived from analysis row */}
-      {!isManual && expanded && (
+        {/* Vetra-voice headline */}
         <div style={{
-          marginTop: '14px',
-          paddingTop: '14px',
-          borderTop: '1px solid rgba(61,38,0,0.10)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
+          fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 700,
+          color: 'var(--coach-ink)', letterSpacing: '-0.1px', lineHeight: 1.4,
+          marginBottom: !isManual ? '14px' : 0,
         }}>
-          {explanations.map(({ label, value, line }) => value !== undefined && (
-            <div key={label} style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+          {voice.headline}
+        </div>
+
+        {/* Metric quartet — hidden for manual rows (no activity data to score) */}
+        {!isManual && <div style={{ display: 'flex', gap: '10px' }}>
+          {metrics.map(({ label, value }) => value !== undefined && (
+            <div key={label} style={{ flex: 1 }}>
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
-                color: 'var(--warn)', opacity: 0.7,
-                textTransform: 'uppercase', letterSpacing: '0.08em',
-                width: '78px', flexShrink: 0,
+                color: 'var(--warn)', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.08em',
+                marginBottom: '4px',
               }}>
                 {label}
               </div>
               <div style={{
-                fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 400,
-                color: 'var(--coach-ink)', lineHeight: 1.45,
+                fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 700,
+                color: 'var(--coach-ink)', fontVariantNumeric: 'tabular-nums',
+                letterSpacing: '-0.5px', marginBottom: '6px',
               }}>
-                {line}
+                {value}
+              </div>
+              <div style={{
+                height: '3px', background: 'rgba(61,38,0,0.12)', borderRadius: '2px',
+                overflow: 'hidden',
+              }}>
+                <div style={{
+                  height: '100%',
+                  width: `${value}%`,
+                  background: value >= 80 ? 'var(--moss)' : 'var(--warn)',
+                  opacity: value >= 80 ? 0.8 : value >= 60 ? 0.55 : 1,
+                  borderRadius: '2px',
+                  transition: 'width 0.4s ease',
+                }} />
+              </div>
+              {/* Verbal backup for the bar colour */}
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
+                color: 'var(--warn)', opacity: 0.7,
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+                whiteSpace: 'nowrap',
+                marginTop: '5px',
+              }}>
+                {scoreBandLabel(value)}
               </div>
             </div>
           ))}
+        </div>}
+
+        {/* Expanded breakdown — one line per sub-score, derived from analysis row */}
+        {!isManual && expanded && (
+          <div style={{
+            marginTop: '14px',
+            paddingTop: '14px',
+            borderTop: '1px solid rgba(61,38,0,0.10)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}>
+            {explanations.map(({ label, value, line }) => value !== undefined && (
+              <div key={label} style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                <div style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
+                  color: 'var(--warn)', opacity: 0.7,
+                  textTransform: 'uppercase', letterSpacing: '0.08em',
+                  width: '78px', flexShrink: 0,
+                }}>
+                  {label}
+                </div>
+                <div style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 400,
+                  color: 'var(--coach-ink)', lineHeight: 1.45,
+                }}>
+                  {line}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* AI card — LLM-generated read of your run. Only renders when feedback exists.
+       *  White card + moss rail + CoachByline = the canonical "this is from Kit" treatment. */}
+      {feedback && (
+        <div style={{
+          position: 'relative',
+          marginTop: '8px',
+          background: 'var(--card)',
+          borderRadius: '14px',
+          border: '1px solid var(--line)',
+          padding: '14px 16px 14px 22px',
+        }}>
+          <span aria-hidden="true" style={{
+            position: 'absolute', left: '8px', top: '14px', bottom: '14px',
+            width: '3px', borderRadius: '2px', background: 'var(--moss)',
+          }} />
+          <div style={{ marginBottom: '10px' }}>
+            <CoachByline color="moss" role="Read of your run" onClick={onOpenCoach} />
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
+            color: 'var(--ink-2)', lineHeight: 1.55,
+          }}>
+            {feedback}
+          </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 

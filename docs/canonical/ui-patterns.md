@@ -289,17 +289,21 @@ Warm amber block for all coach voice content. Used in TodayScreen and Session De
 
 **Structure:**
 - Background: `--warn-bg`
-- Radius: `14px`, padding: `16px 18px`
-- Eyebrow row: `10px 700 --warn uppercase 0.14em tracking`. Optional `<AIMark />` prepended when `aiGenerated`. Optional timestamp suffix (`11px 400 --warn 0.6 opacity`)
+- Radius: `14px`, padding: `16px 18px` (extra `8px` left padding when `aiGenerated`, to clear the rail)
+- Eyebrow row:
+  - When `aiGenerated`: a `<CoachByline color="warn" />` (Pattern 16b) — the byline carries authorship
+  - Otherwise: `10px 700 --warn uppercase 0.14em tracking` label, optional timestamp suffix (`10px 400 --warn 0.65 opacity`)
+- AI-provenance rail: a 3px `--warn` left rail at `left: 8px` when `aiGenerated` (matches the AI-card pattern)
 - Body: `14px 400 --coach-ink` (default) or `13px 400 --coach-ink` (why variant)
 
 **Props:**
 ```tsx
-label?: string          // default "COACH"
+label?: string          // default "COACH" (only used when !aiGenerated)
 timestamp?: string      // optional "6:12am"
 children: React.ReactNode
 variant?: 'default' | 'why'
-aiGenerated?: boolean   // prepends AIMark to the eyebrow when true
+aiGenerated?: boolean   // shows CoachByline + 3px warn rail when true
+onChipClick?: () => void // when aiGenerated, makes the byline tap → Coach
 ```
 
 **Variant rules:**
@@ -547,12 +551,12 @@ working?: boolean   // default false — animate when AI is generating
 label?: string      // aria-label override
 ```
 
-**When to use:**
-- Run feedback card eyebrow (post-Strava AI feedback text)
-- Weekly report card eyebrow (Claude-generated headline/body/CTA)
-- "WHY THIS SESSION" eyebrow when content comes from `session.coach_notes` (plan-enricher AI)
+**Where it lives in the product:** Almost every in-product use of AIMark now sits inside a `<CoachByline>` (Pattern 16b) — anchored to the Kit avatar's bottom-right corner in a small `--card`-coloured circle. Rendering AIMark standalone is reserved for non-byline contexts:
 - Generating-state CTAs (`Generate report` button while in flight)
 - GeneratingCeremony header during the loading phase
+- Inline metric placeholders (skeleton row pulse on the analysis loading state)
+
+For new AI-content cards, prefer `<CoachByline>` over a bare AIMark — the avatar anchors the glyph and reads as authorship rather than decoration.
 
 **When NOT to use (provenance honesty):**
 - Rule-engine output (plan structure, session distances, HR zone calcs)
@@ -567,40 +571,53 @@ Reference: `components/shared/AIMark.tsx`. Single source of truth — never reim
 
 ---
 
-### 16b. AICoachChip
+### 16b. CoachByline
 
-The legible version of AIMark for eyebrow contexts where the AI signal needs to be scannable at a glance. Wraps AIMark in a pill chip with the text label "AI Coach" or "thinking…" during generation.
+The canonical AI-coach authorship signal. A 22px Kit avatar with the AIMark sparkle anchored to its bottom-right, paired with a name + role line. Replaces the older `AICoachChip` pill — the chip read as a category tag, not as authorship. The byline gives provenance a face (same trick Granola, Notion AI, and Superhuman use).
 
 ```
-[✦ AI Coach]      ← moss pill, 11px 600, rounded, 3px 8px padding
-[✦ thinking…]     ← same pill, animated sparkle while generating
+[K✦] Kit                 ← 22px avatar (moss/warn gradient) + name 13px 700
+     YOUR COACH          ← role line 10px 600 uppercase (default "YOUR COACH")
 ```
 
-**Use instead of bare AIMark** on:
-- Coach screen AI card eyebrows (weekly report, phase summary, race readiness)
-- `CoachNoteBlock` when `aiGenerated={true}` — replaces the standalone sparkle
-- Any new AI-generated content card that needs a clearly legible provenance signal
+The AIMark sits in a small `--card`-coloured circle anchored to the avatar's bottom-right corner so it's identifiable at a glance, even pulsing during generation.
+
+**Use** on every AI-generated content surface:
+- Daily coach note (Today)
+- Weekly report (Coach)
+- Race readiness, Phase summary (Coach)
+- Run feedback LLM card (Session detail)
+- Plan adjustment (PendingAdjustmentBanner)
+- `CoachNoteBlock` when `aiGenerated={true}` — replaces the eyebrow label
+- Any new AI surface
 
 **Colour variants:**
 
-| Prop | Surface | Text | Background |
+| Prop | Surface | Avatar gradient | Role-line colour |
 |---|---|---|---|
-| `color="moss"` (default) | `--card`, `--bg-soft` | `var(--moss)` | `rgba(107,142,107,0.10)` |
-| `color="warn"` | `--warn-bg` | `var(--warn)` | `rgba(184,133,58,0.15)` |
+| `color="moss"` (default) | `--card`, `--bg-soft` | `--moss` → `#5A7C5A` | `var(--moss)` |
+| `color="warn"` | `--warn-bg` | `--warn` → `#9A6F2A` | `var(--warn)` |
 
 **Rules:**
-- Always moss on standard card surfaces — consistent AI identity regardless of card accent colour
+- Always moss on standard card surfaces — consistent Kit identity regardless of card accent colour
 - Warn variant only on `--warn-bg` surfaces to avoid colour clash
-- Working state: AIMark pulses + text reads "thinking…"
-- Do NOT use on rule-engine output, hand-authored copy, or Strava data (same rule as AIMark)
+- Working state pulses the avatar's sparkle and adds " · thinking" to the role line — replaces the spinner pattern banned by ui-patterns.md
+- Use the `role` prop to convey the topic of the surface (e.g. `role="Race readiness"`, `role="Read of your run"`, `role="This week"`). Default is "YOUR COACH"
+- Do NOT use on rule-engine output, race projections, hand-authored copy, or Strava data (same rule as AIMark)
+- Provide `onClick={() => setScreen('coach')}` on every surface that isn't the Coach screen itself — the byline is the user's tap-target back to Kit's home
 
 **Props:**
 ```tsx
-working?: boolean         // default false — "thinking…" text + pulsing icon
-color?:   'moss' | 'warn' // default 'moss'
+working?: boolean          // default false — "· thinking" + pulsing sparkle
+color?:   'moss' | 'warn'  // default 'moss'
+role?:    string           // default 'YOUR COACH' — short topic label, auto-uppercased
+onClick?: () => void       // when set, byline becomes a tappable button
+title?:   string           // tooltip on hover/long-press
 ```
 
-Reference: `components/shared/AICoachChip.tsx`
+**Companion: AI-card left rail.** Cards that contain LLM output should pair the byline with a 3px left rail in the matching accent colour (moss on `--card`, warn on `--warn-bg`). The rail is an absolutely-positioned span at `left: 8px, top: paddingY, bottom: paddingY, width: 3px`. Linear/Arc-style accent — cheapest scalable "this card is coached" signal. Already baked into `CoachNoteBlock` and `PendingAdjustmentBanner`; replicate inline on bespoke AI cards (e.g. the run-feedback split).
+
+Reference: `components/shared/CoachByline.tsx`
 
 ---
 
@@ -649,12 +666,12 @@ Timed AI coaching moments that appear on the Coach screen in specific windows. T
 **Anatomy (both variants):**
 ```
 [3px left accent border]
-  [AIMark · PHASE COMPLETE / RACE READINESS · 10px 700 uppercase · counter right-aligned (days to go)]
+  [<CoachByline role="Phase complete" /> or <CoachByline role="Race readiness" /> · counter right-aligned (days to go on Race Readiness only)]
   ─────────────────────────────────────
   [2–3 sentence AI coaching text · 15px 400 --ink · 1.65 line-height]
 ```
 
-**Loading state:** Skeleton shimmer — three lines at 85% / 100% / 70% width, background `rgba(accent, 0.12)`. `<AIMark working />` pulses in the eyebrow row.
+**Loading state:** Skeleton shimmer — three lines at 85% / 100% / 70% width, background `rgba(accent, 0.12)`. `<CoachByline working />` pulses the avatar's sparkle in the eyebrow row.
 
 **Positioning on Coach screen:** Inserted directly above the weekly report amber card, below the 2×2 stats grid. No vertical gap beyond the parent `gap: 12px`.
 
@@ -667,15 +684,15 @@ Timed AI coaching moments that appear on the Coach screen in specific windows. T
 
 **Gating:** PAID / TRIAL (activity_intelligence gate). Free users: card is not shown and no API call is made (CoachTeaser component shown instead).
 
-**AICoachChip colour on these cards:**
-- Both variants use `<AICoachChip color="moss">` — chip always stays moss on `--card` / `--bg-soft` surfaces (Pattern 16b)
-- The *label text* (not the chip) carries the variant accent: `--moss` for Phase Summary, `--s-race` for Race Readiness
-- Do not change label text to `--mute` — the colour is intentional and distinguishes the card type at a glance
+**CoachByline on these cards:**
+- Both variants use `<CoachByline color="moss" role="…" />` — byline always stays moss on `--card` / `--bg-soft` surfaces (Pattern 16b)
+- The *card-level left accent* (not the byline) carries the variant theme: `--moss` for Phase Summary, `--s-race` for Race Readiness
+- The byline's `role` prop names the topic (`"Phase complete"` / `"Race readiness"`) — replaces the older eyebrow label
 
 **Rules:**
 - Never show both variants simultaneously
 - Neither variant shows a "locked" shell for free users — timed moments with no user-accessible retry
-- `AICoachChip` is always present (provenance honesty — model output)
+- `CoachByline` is always present (provenance honesty — model output)
 - No refresh button — the note is generated once per phase transition / race date and cached
 
 ---
@@ -780,7 +797,7 @@ Every screen must honour these invariants before shipping. Check against this li
 | Active toggle | `var(--moss)` background | `var(--accent)` |
 | Inactive toggle | `var(--line)` background | `var(--border-col)` |
 | Session type ownership | `lib/session-types.ts` token | Hardcoded hex or `--session-*` alias |
-| AI provenance chip | `<AICoachChip>` — moss on card/bg-soft, warn on warn-bg | Bare `AIMark` without chip |
+| AI provenance signal | `<CoachByline>` — moss on card/bg-soft, warn on warn-bg, pair with 3px left rail on AI cards | Bare `AIMark` without byline; old `AICoachChip` pill |
 | Eyebrow / section label | `10px 700 --mute uppercase 0.08em` | Varies |
 | Coach amber surface text | `var(--coach-ink)` | `var(--warn)` or `var(--amber)` |
 | Slide-up sheet keyframes | Defined once in `globals.css` | Inline `<style>` in JSX |

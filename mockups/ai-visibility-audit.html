@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vetra · AI visibility audit + mockup</title>
+<style>
+  :root {
+    --bg:        #F3F0EB;
+    --bg-soft:   #EDE9E1;
+    --card:      #FFFFFF;
+    --ink:       #1A1A1A;
+    --ink-2:     #3D3A36;
+    --mute:      #8A857D;
+    --line:      rgba(26,26,26,0.08);
+    --line-strong: rgba(26,26,26,0.15);
+    --moss:      #6B8E6B;
+    --moss-soft: rgba(107,142,107,0.10);
+    --moss-mid:  rgba(107,142,107,0.25);
+    --warn:      #B8853A;
+    --warn-bg:   #F5EBD4;
+    --coach-ink: #3D2600;
+    --s-easy:    #3D6FB0;
+    --s-long:    #5E4FB0;
+    --s-quality: #B8853A;
+    --s-race:    #C86A2A;
+    --s-recov:   #4E8068;
+    --font-ui:   'Inter', sans-serif;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-ui);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  .page {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 56px 32px 96px;
+  }
+
+  /* ───── Header ───── */
+  .header { margin-bottom: 56px; }
+  .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.16em;
+    color: var(--moss); text-transform: uppercase; margin-bottom: 12px;
+  }
+  h1 {
+    font-family: var(--font-ui);
+    font-size: 44px; font-weight: 800; line-height: 1.05;
+    letter-spacing: -0.02em; margin: 0 0 16px;
+  }
+  .lede {
+    font-size: 17px; line-height: 1.55; color: var(--ink-2);
+    max-width: 720px; margin: 0;
+  }
+
+  /* ───── Section ───── */
+  section { margin-bottom: 64px; }
+  h2 {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.18em;
+    color: var(--mute); text-transform: uppercase;
+    border-top: 1px solid var(--line);
+    padding-top: 18px; margin: 0 0 28px;
+  }
+  h3 {
+    font-size: 22px; font-weight: 700; letter-spacing: -0.01em;
+    margin: 0 0 8px;
+  }
+  p.note {
+    font-size: 14px; line-height: 1.6; color: var(--ink-2);
+    max-width: 720px; margin: 0 0 24px;
+  }
+
+  /* ───── Findings table ───── */
+  table.findings {
+    width: 100%; border-collapse: collapse;
+    background: var(--card);
+    border-radius: 14px; overflow: hidden;
+    border: 1px solid var(--line);
+    font-size: 13px;
+  }
+  table.findings th, table.findings td {
+    padding: 14px 16px; text-align: left;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  table.findings th {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.14em;
+    color: var(--mute); text-transform: uppercase;
+    background: var(--bg-soft);
+  }
+  table.findings tr:last-child td { border-bottom: none; }
+  table.findings td { color: var(--ink-2); line-height: 1.5; }
+  table.findings td.surface { font-weight: 600; color: var(--ink); }
+  .pill {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+    text-transform: uppercase; line-height: 1.5;
+  }
+  .pill.ok       { background: var(--moss-soft); color: var(--moss); }
+  .pill.gap      { background: rgba(184,69,69,0.10); color: #B84545; }
+  .pill.partial  { background: var(--warn-bg); color: var(--warn); }
+
+  /* ───── Recommendation cards ───── */
+  .recs {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  }
+  .rec {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 16px; padding: 24px;
+  }
+  .rec .num {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.16em;
+    color: var(--moss); text-transform: uppercase; margin-bottom: 12px;
+  }
+  .rec h4 {
+    font-size: 18px; font-weight: 700; margin: 0 0 10px;
+    line-height: 1.25; letter-spacing: -0.01em;
+  }
+  .rec p { font-size: 13px; line-height: 1.55; color: var(--ink-2); margin: 0 0 12px; }
+  .rec .tradeoff {
+    font-size: 11px; color: var(--mute); border-top: 1px dashed var(--line);
+    padding-top: 10px; margin-top: 10px;
+  }
+  .rec .tradeoff b { color: var(--ink-2); font-weight: 700; }
+
+  /* ───── Mockup grid ───── */
+  .compare {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 28px;
+    margin-top: 24px;
+  }
+  .col-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.18em;
+    color: var(--mute); text-transform: uppercase; margin-bottom: 12px;
+  }
+  .col-label.before { color: #B84545; }
+  .col-label.after  { color: var(--moss); }
+
+  /* ───── Phone frame ───── */
+  .phone {
+    width: 380px; margin: 0 auto;
+    background: var(--bg);
+    border-radius: 32px;
+    border: 1px solid var(--line-strong);
+    padding: 14px;
+    box-shadow: 0 20px 60px -20px rgba(26,26,26,0.18);
+  }
+  .phone-screen {
+    background: var(--bg);
+    border-radius: 22px;
+    padding: 20px 18px 24px;
+  }
+  .phone-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 22px;
+  }
+  .phone-title {
+    font-size: 26px; font-weight: 800; letter-spacing: -0.02em;
+  }
+  .phone-sub {
+    font-size: 12px; color: var(--mute); font-weight: 500;
+  }
+
+  /* ───── Card primitives ───── */
+  .card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+  .card.warn-bg { background: var(--warn-bg); }
+
+  .card-eyebrow {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 10px;
+  }
+  .eyebrow-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+    color: var(--warn); text-transform: uppercase;
+  }
+  .eyebrow-time { font-size: 10px; color: var(--warn); opacity: 0.65; }
+
+  /* ───── Existing AICoachChip (the BEFORE state) ───── */
+  .chip-old {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600; color: var(--warn);
+    background: rgba(184,133,58,0.15);
+    border-radius: 10px; padding: 3px 8px; line-height: 1;
+  }
+  .chip-old.moss { color: var(--moss); background: var(--moss-soft); }
+
+  /* ───── NEW AI provenance badge (the AFTER state) ───── */
+  /* Honest, restrained, but unmissable: a thin moss left-rail on the card,
+     plus a properly-scaled coach pill with avatar dot. */
+  .ai-card {
+    position: relative;
+    padding-left: 22px;            /* room for the rail */
+  }
+  .ai-card::before {
+    content: '';
+    position: absolute;
+    left: 8px; top: 16px; bottom: 16px;
+    width: 3px; border-radius: 2px;
+    background: var(--moss);
+  }
+  .ai-card.warn-bg::before { background: var(--warn); }
+
+  .coach-byline {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px;
+  }
+  .coach-avatar {
+    position: relative;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--moss) 0%, #5A7C5A 100%);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: white; font-size: 11px; font-weight: 700; letter-spacing: -0.02em;
+    flex-shrink: 0;
+  }
+  .coach-avatar.warn {
+    background: linear-gradient(135deg, var(--warn) 0%, #9A6F2A 100%);
+  }
+  .coach-avatar svg {
+    position: absolute;
+    bottom: -3px; right: -3px;
+    background: var(--card);
+    border-radius: 50%; padding: 2px;
+  }
+  .coach-name {
+    display: flex; flex-direction: column; line-height: 1.15;
+  }
+  .coach-name .who {
+    font-size: 13px; font-weight: 700; color: var(--ink);
+    letter-spacing: -0.005em;
+  }
+  .coach-name .what {
+    font-size: 10px; font-weight: 600; color: var(--moss);
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .coach-name .what.warn { color: var(--warn); }
+
+  /* Working-state shimmer */
+  .coach-name .what.working::after {
+    content: '· thinking';
+    margin-left: 4px;
+    opacity: 0.65;
+    animation: pulse-text 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse-text {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.85; }
+  }
+
+  /* Tap hint on the right of the byline */
+  .coach-tap {
+    margin-left: auto;
+    font-size: 11px; color: var(--moss); font-weight: 600;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .coach-tap.warn { color: var(--warn); }
+
+  /* ───── Body text ───── */
+  .headline {
+    font-size: 17px; font-weight: 600; line-height: 1.35;
+    letter-spacing: -0.01em; margin: 0 0 8px;
+    color: var(--coach-ink);
+  }
+  .headline.ink { color: var(--ink); }
+  .body {
+    font-size: 14px; font-weight: 400; line-height: 1.55;
+    color: var(--coach-ink); margin: 0 0 12px;
+  }
+  .body.ink { color: var(--ink-2); }
+  .cta-row {
+    font-size: 12px; font-weight: 600; color: var(--warn);
+    border-top: 1px solid rgba(184,133,58,0.20);
+    padding-top: 10px; margin-top: 4px;
+  }
+
+  /* ───── Run feedback gap demo ───── */
+  .run-card-old, .run-card-new {
+    background: var(--card); border-radius: 14px; padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+  .verdict {
+    font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 8px;
+  }
+  .feedback {
+    font-size: 13px; line-height: 1.55; color: var(--ink-2); margin-bottom: 14px;
+  }
+  .metric-row {
+    display: flex; gap: 10px; margin-top: 8px;
+  }
+  .metric {
+    flex: 1; background: var(--bg-soft); border-radius: 8px;
+    padding: 8px 10px; font-size: 11px;
+  }
+  .metric .ml { color: var(--mute); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 9px; margin-bottom: 4px; }
+  .metric .mv { font-size: 14px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* ───── Adjustment card ───── */
+  .adj-old, .adj-new { padding: 16px 18px; border-radius: 14px; margin-bottom: 12px; background: var(--card); }
+  .adj-eyebrow-old { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .bang {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--warn); color: white;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800;
+  }
+  .adj-label { font-size: 10px; font-weight: 700; color: var(--warn); letter-spacing: 0.14em; text-transform: uppercase; }
+  .adj-body { font-size: 13px; line-height: 1.55; color: var(--coach-ink); }
+  .adj-action {
+    margin-top: 12px; display: inline-block;
+    font-size: 12px; font-weight: 600; color: var(--moss);
+  }
+
+  /* ───── Inline confidence chip ───── */
+  .confidence {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 600; color: var(--moss);
+    background: var(--moss-soft); border-radius: 6px;
+    padding: 2px 6px; line-height: 1.4;
+    margin-left: 6px;
+  }
+
+  /* ───── Annotations ───── */
+  .annotations {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    margin-top: 28px;
+  }
+  .anno {
+    background: var(--bg-soft); border-radius: 12px; padding: 16px;
+    font-size: 12px; color: var(--ink-2); line-height: 1.55;
+  }
+  .anno b { color: var(--ink); display: block; margin-bottom: 4px; font-size: 13px; }
+
+  /* ───── Footer / closing ───── */
+  .closing {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 16px; padding: 28px;
+    font-size: 14px; line-height: 1.6; color: var(--ink-2);
+  }
+  .closing b { color: var(--ink); }
+
+  /* ───── Sparkle icon styles ───── */
+  .sparkle { display: inline-block; vertical-align: middle; }
+
+  @media (max-width: 920px) {
+    .compare { grid-template-columns: 1fr; }
+    .recs    { grid-template-columns: 1fr; }
+    .annotations { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="header">
+    <div class="eyebrow">Product engineering review · 6 May 2026</div>
+    <h1>Vetra's AI is doing the work, but hiding the receipts.</h1>
+    <p class="lede">
+      Six surfaces in the app are LLM-generated. Five wear a 9px sparkle and a
+      four-letter pill. Two don't wear anything at all. For paid features that
+      cost real money on the API and real money on the user's card, the
+      provenance is too quiet — restraint has crossed into invisibility.
+    </p>
+  </header>
+
+  <!-- ───── 1. AUDIT ───── -->
+  <section>
+    <h2>1 · Where AI lives in the app today</h2>
+    <p class="note">
+      Source: grep across <code>app/</code> and <code>components/</code> for
+      <code>AIMark</code>, <code>AICoachChip</code>, and the API routes that call
+      Anthropic. Marked status reflects what the <em>user</em> sees, not what's
+      true under the hood.
+    </p>
+
+    <table class="findings">
+      <thead>
+        <tr>
+          <th style="width:24%">Surface</th>
+          <th style="width:18%">API route</th>
+          <th style="width:14%">Marked?</th>
+          <th>How it reads on screen</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="surface">Daily coach note (Today)</td>
+          <td><code>/api/daily-coach-note</code></td>
+          <td><span class="pill ok">Marked</span></td>
+          <td>Kit chip in eyebrow, amber card. Clear.</td>
+        </tr>
+        <tr>
+          <td class="surface">Weekly report (Coach)</td>
+          <td><code>/api/weekly-report</code></td>
+          <td><span class="pill ok">Marked</span></td>
+          <td>Kit chip + amber card. CTA to refresh shows pulsing sparkle.</td>
+        </tr>
+        <tr>
+          <td class="surface">Why this session (Detail)</td>
+          <td>Plan enricher (paid)</td>
+          <td><span class="pill partial">Conditional</span></td>
+          <td>Marked when content is from enricher, unmarked when DB-fallback. Honest, but easy to miss.</td>
+        </tr>
+        <tr>
+          <td class="surface">Race readiness (Coach)</td>
+          <td><code>/api/race-readiness</code></td>
+          <td><span class="pill ok">Marked</span></td>
+          <td>Kit chip + race-orange eyebrow.</td>
+        </tr>
+        <tr>
+          <td class="surface">Phase summary (Coach)</td>
+          <td><code>/api/phase-summary</code></td>
+          <td><span class="pill ok">Marked</span></td>
+          <td>Kit chip + moss eyebrow.</td>
+        </tr>
+        <tr>
+          <td class="surface">Run feedback (post-run)</td>
+          <td><code>/api/analyse-run</code></td>
+          <td><span class="pill gap">Gap</span></td>
+          <td>The headline is rule-derived, the paragraph below it is LLM. No mark distinguishes them. Reads as anonymous app copy.</td>
+        </tr>
+        <tr>
+          <td class="surface">Plan adjustment</td>
+          <td><code>/api/adjust-plan</code></td>
+          <td><span class="pill gap">Gap</span></td>
+          <td>Eyebrow is a red "!" warning circle. Looks like an error from the system, not a coach explaining a decision.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ───── 2. THE VERDICT ───── -->
+  <section>
+    <h2>2 · The verdict, after 20 years of shipping</h2>
+    <p class="note">
+      The current <code>AICoachChip</code> is well-engineered — a single source of
+      truth, honest provenance rules, working-state pulse instead of a spinner.
+      That part is right. What's wrong is the <em>scale</em> of it. A 9-pixel
+      sparkle next to a 4-letter brand name (Kit) at 11px font weight, hidden
+      above an eyebrow label, will not register on a phone in sunlight after a
+      run. It registers as decoration.
+    </p>
+    <p class="note">
+      Two compounding problems make it worse:
+    </p>
+    <ul class="note" style="padding-left:20px;">
+      <li><b>The chip is a label, not a byline.</b> "Kit" is a name, but there's no person attached. It reads as a category tag, not as authorship. Users don't think "Kit wrote this" — they think "this is the Kit section".</li>
+      <li><b>The two highest-value AI surfaces aren't marked at all.</b> Run feedback (every session) and plan adjustments (the one thing competitors can't replicate) — the moments where a user might think <em>"this is why I pay"</em> — are the moments with no provenance.</li>
+    </ul>
+    <p class="note">
+      Memory note from your past sessions: "bias high on visibility for value-add UI; default louder than feels right." That instinct is correct. We are currently calibrated for the design awards, not the user.
+    </p>
+  </section>
+
+  <!-- ───── 3. RECOMMENDATIONS ───── -->
+  <section>
+    <h2>3 · Three recommendations, ranked by leverage</h2>
+
+    <div class="recs">
+
+      <div class="rec">
+        <div class="num">Recommendation 1</div>
+        <h4>Promote the chip to a coach byline.</h4>
+        <p>
+          Replace the 11px pill with a proper byline: 22px Kit avatar, name on top,
+          role on bottom ("KIT · YOUR COACH"), a small live sparkle anchored to
+          the avatar. Same restraint, but now reads as authored content, not a
+          tag. The avatar gives provenance a face — the same trick Granola, Notion
+          AI and Superhuman use.
+        </p>
+        <div class="tradeoff">
+          <b>Tradeoff:</b> Costs ~16px of vertical card space.
+          Pays for itself by making the AI feature legible from arm's length.
+        </div>
+      </div>
+
+      <div class="rec">
+        <h4>Add a 3px moss left-rail to AI cards.</h4>
+        <div class="num">Recommendation 2</div>
+        <p>
+          A thin vertical accent down the left edge of every card whose body is
+          model-generated. Same colour token as the avatar (moss / warn). Cheap
+          to render, instantly telegraphs "this card is coached, the next one
+          isn't". Linear and Arc both use this for AI-modified content. It also
+          replaces the "!" warning eyebrow on adjustments — they're advice, not
+          alerts.
+        </p>
+        <div class="tradeoff">
+          <b>Tradeoff:</b> Adds another structural rule to enforce. Worth it: the
+          rail is the cheapest-possible signal that scales to every future AI
+          surface without redesign.
+        </div>
+      </div>
+
+      <div class="rec">
+        <div class="num">Recommendation 3</div>
+        <h4>Mark the two unmarked surfaces, today.</h4>
+        <p>
+          Run feedback paragraph and plan adjustments are both LLM output and
+          both currently anonymous. Wrap each in a CoachNoteBlock-equivalent
+          with the new byline. Run feedback gets a moss byline (post-session
+          read). Plan adjustments get a warn byline (decision needed) — but as
+          coach voice, not as system alert. The "!" circle goes.
+        </p>
+        <div class="tradeoff">
+          <b>Tradeoff:</b> Two component changes, ~1 day. Highest-impact
+          visibility win in the codebase right now.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ───── 4. MOCKUP ───── -->
+  <section>
+    <h2>4 · Mockup · Coach screen, before & after</h2>
+    <p class="note">
+      Top: the current Coach screen as the audit found it. Bottom: the same
+      screen with all three recommendations applied. Same palette, same
+      typography, no new colours, no gradients beyond a single subtle
+      avatar gradient. The body copy is real Vetra voice.
+    </p>
+
+    <div class="compare">
+
+      <!-- ─── BEFORE ─── -->
+      <div>
+        <div class="col-label before">Before · current build</div>
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="phone-header">
+              <div class="phone-title">Coach</div>
+              <div class="phone-sub">Week 4 · Build</div>
+            </div>
+
+            <!-- Weekly report (marked but quiet) -->
+            <div class="card warn-bg">
+              <div class="card-eyebrow">
+                <span class="chip-old">
+                  <svg width="9" height="9" viewBox="0 0 14 14" class="sparkle"><path d="M5 1 L6 5 L10 6 L6 7 L5 11 L4 7 L0 6 L4 5 Z" fill="#B8853A"/><path d="M11 9 L11.4 10.6 L13 11 L11.4 11.4 L11 13 L10.6 11.4 L9 11 L10.6 10.6 Z" fill="#B8853A"/></svg>
+                  Kit
+                </span>
+                <span class="eyebrow-label">Weekly report</span>
+              </div>
+              <p class="headline">You held the easy days. That's the whole point.</p>
+              <p class="body">Average HR on Tuesday and Thursday stayed inside Z2. Long run drifted in the last 3km but you'd already done the work. Keep doing the boring runs boringly.</p>
+              <div class="cta-row">Refresh report</div>
+            </div>
+
+            <!-- Plan adjustment (UNMARKED — currently a !) -->
+            <div class="adj-old">
+              <div class="adj-eyebrow-old">
+                <span class="bang">!</span>
+                <span class="adj-label">Plan adjusted</span>
+              </div>
+              <p class="adj-body">Tomorrow's tempo has been moved to Saturday. Resting HR has been elevated for three days — pushing through a 6×1k tempo on top of that is the textbook way to start an injury. Easy run instead.</p>
+              <div class="adj-action">Review change →</div>
+            </div>
+
+            <!-- Race projections (UNMARKED — pure VDOT, fine) -->
+            <div class="card">
+              <div class="card-eyebrow">
+                <span class="eyebrow-label" style="color:var(--mute)">Race projections</span>
+              </div>
+              <p class="headline ink" style="font-size:15px;">Half marathon · 1:48:30</p>
+              <p class="body ink" style="font-size:12px;">Based on last 4 weeks of Strava. ±2:30 confidence band.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="annotations" style="grid-template-columns:1fr;">
+          <div class="anno">
+            <b>Why it's quiet</b>
+            The Kit chip is 11px, the sparkle is 9px, both sit above the eyebrow
+            label rather than as the eyebrow itself. Two competing labels, neither
+            wins.
+          </div>
+          <div class="anno">
+            <b>The adjustment problem</b>
+            Reads like an error toast. The "!" is a system-warning convention.
+            But the body is coaching prose — a coach explaining a decision.
+            Wrong eyebrow grammar.
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── AFTER ─── -->
+      <div>
+        <div class="col-label after">After · proposed</div>
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="phone-header">
+              <div class="phone-title">Coach</div>
+              <div class="phone-sub">Week 4 · Build</div>
+            </div>
+
+            <!-- NEW: Weekly report with byline + rail -->
+            <div class="card warn-bg ai-card">
+              <div class="coach-byline">
+                <span class="coach-avatar warn">
+                  K
+                  <svg width="10" height="10" viewBox="0 0 14 14"><path d="M5 1 L6 5 L10 6 L6 7 L5 11 L4 7 L0 6 L4 5 Z" fill="#B8853A"/><path d="M11 9 L11.4 10.6 L13 11 L11.4 11.4 L11 13 L10.6 11.4 L9 11 L10.6 10.6 Z" fill="#B8853A"/></svg>
+                </span>
+                <div class="coach-name">
+                  <span class="who">Kit</span>
+                  <span class="what warn">Weekly report</span>
+                </div>
+                <span class="coach-tap warn">Refresh →</span>
+              </div>
+              <p class="headline">You held the easy days. That's the whole point.</p>
+              <p class="body">Average HR on Tuesday and Thursday stayed inside Z2. Long run drifted in the last 3km but you'd already done the work. Keep doing the boring runs boringly.</p>
+            </div>
+
+            <!-- NEW: Adjustment as coach voice, not alert -->
+            <div class="card warn-bg ai-card">
+              <div class="coach-byline">
+                <span class="coach-avatar warn">K
+                  <svg width="10" height="10" viewBox="0 0 14 14"><path d="M5 1 L6 5 L10 6 L6 7 L5 11 L4 7 L0 6 L4 5 Z" fill="#B8853A"/><path d="M11 9 L11.4 10.6 L13 11 L11.4 11.4 L11 13 L10.6 11.4 L9 11 L10.6 10.6 Z" fill="#B8853A"/></svg>
+                </span>
+                <div class="coach-name">
+                  <span class="who">Kit</span>
+                  <span class="what warn">Moved your tempo</span>
+                </div>
+              </div>
+              <p class="body">Resting HR's been up three days. Stacking a 6×1k tempo on top of that is the textbook way to start an injury. I've shifted it to Saturday and put an easy 8k tomorrow instead.</p>
+              <div class="cta-row">Review · Undo</div>
+            </div>
+
+            <!-- Race projections — unchanged (correctly unmarked, this is VDOT) -->
+            <div class="card">
+              <div class="card-eyebrow">
+                <span class="eyebrow-label" style="color:var(--mute)">Race projections</span>
+              </div>
+              <p class="headline ink" style="font-size:15px;">Half marathon · 1:48:30</p>
+              <p class="body ink" style="font-size:12px;">Based on last 4 weeks of Strava. ±2:30 confidence band.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="annotations" style="grid-template-columns:1fr;">
+          <div class="anno">
+            <b>The byline</b>
+            22px avatar + name + role. The eyebrow no longer competes with a
+            chip — it <em>is</em> the chip. AIMark sparkle is anchored to the
+            avatar in a 10px white circle so it's always identifiable at a
+            glance, even pulsing during generation.
+          </div>
+          <div class="anno">
+            <b>The left rail</b>
+            3px moss/warn rail down every coached card. Cheap, scalable to
+            every future AI surface, replaces the need for explicit "this is
+            AI" badging on cards where a byline already says so.
+          </div>
+          <div class="anno">
+            <b>Adjustment grammar fixed</b>
+            The "!" is gone. Same content, but framed as Kit explaining a
+            decision: "Moved your tempo." That's coach voice. The amber card
+            still signals advisory weight without crying wolf.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───── 5. SECOND MOCKUP — RUN FEEDBACK ───── -->
+  <section>
+    <h2>5 · Mockup · Post-run feedback (the worst current gap)</h2>
+    <p class="note">
+      Run feedback is the AI surface every paying user sees most often — once
+      per session. Today the LLM paragraph is a faceless block of body copy
+      sandwiched between a rule-derived headline and a metric strip. It's
+      legitimately invisible.
+    </p>
+
+    <div class="compare">
+
+      <div>
+        <div class="col-label before">Before</div>
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="phone-header">
+              <div class="phone-title">Easy 8k</div>
+              <div class="phone-sub">Tuesday · done</div>
+            </div>
+
+            <div class="run-card-old">
+              <p class="verdict">Kept it under control.</p>
+              <p class="feedback">
+                HR averaged 138 against a Z2 cap of 142, and you held it for the
+                last 2km even when the climb came in. That's the discipline win.
+                The middle kilometre drifted to 145 for about 90 seconds — worth
+                noticing but not fixing.
+              </p>
+              <div class="metric-row">
+                <div class="metric"><div class="ml">HR</div><div class="mv">138</div></div>
+                <div class="metric"><div class="ml">Pace</div><div class="mv">5:42</div></div>
+                <div class="metric"><div class="ml">Dist</div><div class="mv">8.0k</div></div>
+                <div class="metric"><div class="ml">EF</div><div class="mv">1.82</div></div>
+              </div>
+            </div>
+
+            <div class="anno" style="margin-top:14px;">
+              <b>What's wrong</b>
+              The verdict ("Kept it under control") is rule-derived. The
+              paragraph below it is the LLM. Nothing distinguishes them. The
+              user thinks the whole thing is an automated boilerplate.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="col-label after">After</div>
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="phone-header">
+              <div class="phone-title">Easy 8k</div>
+              <div class="phone-sub">Tuesday · done</div>
+            </div>
+
+            <!-- Verdict stays clean — it's rule output -->
+            <div class="run-card-new">
+              <p class="verdict">Kept it under control.</p>
+              <div class="metric-row">
+                <div class="metric"><div class="ml">HR</div><div class="mv">138</div></div>
+                <div class="metric"><div class="ml">Pace</div><div class="mv">5:42</div></div>
+                <div class="metric"><div class="ml">Dist</div><div class="mv">8.0k</div></div>
+                <div class="metric"><div class="ml">EF</div><div class="mv">1.82</div></div>
+              </div>
+            </div>
+
+            <!-- LLM block — separated, marked, signed -->
+            <div class="card ai-card" style="margin-bottom:14px;">
+              <div class="coach-byline">
+                <span class="coach-avatar">K
+                  <svg width="10" height="10" viewBox="0 0 14 14"><path d="M5 1 L6 5 L10 6 L6 7 L5 11 L4 7 L0 6 L4 5 Z" fill="#6B8E6B"/><path d="M11 9 L11.4 10.6 L13 11 L11.4 11.4 L11 13 L10.6 11.4 L9 11 L10.6 10.6 Z" fill="#6B8E6B"/></svg>
+                </span>
+                <div class="coach-name">
+                  <span class="who">Kit</span>
+                  <span class="what">Read of your run</span>
+                </div>
+              </div>
+              <p class="body ink" style="margin-bottom:0;">
+                You held 138 against a Z2 cap of 142, and stayed there for the
+                last 2km even when the climb came in. That's the discipline
+                win. Middle kilometre drifted to 145 for about 90 seconds —
+                worth noticing but not fixing.
+              </p>
+            </div>
+
+            <div class="anno" style="margin-top:0;">
+              <b>What changed</b>
+              Rule output (verdict + metrics) stays in its own card.
+              LLM output gets its own card with byline and rail.
+              Two different sources, two different visual treatments,
+              one honest hierarchy.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ───── 6. CLOSING ───── -->
+  <section>
+    <h2>6 · Cost to ship</h2>
+    <div class="closing">
+      <p style="margin:0 0 12px;">
+        Three component edits: <b>AICoachChip</b> (replace pill with byline),
+        <b>CoachNoteBlock</b> (add the moss/warn left-rail), <b>RunFeedbackCard</b> &amp;
+        <b>PendingAdjustmentBanner</b> (wrap the LLM paragraph / replace the "!" eyebrow).
+      </p>
+      <p style="margin:0 0 12px;">
+        One new shared primitive: <b>CoachByline</b> — avatar + name + role + optional working state.
+        Lives next to <code>AICoachChip.tsx</code>. <code>AICoachChip</code> can stay
+        deprecated-but-aliased so existing call sites don't break the build.
+      </p>
+      <p style="margin:0;">
+        Estimate: <b>1 engineer-day</b> for the components, <b>0.5 day</b> for the
+        rollout across the six surfaces, <b>0.5 day</b> for the regression sweep.
+        Two days end-to-end, one TestFlight build, and the AI features finally
+        look like the thing the user is paying for.
+      </p>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>

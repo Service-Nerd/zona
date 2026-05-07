@@ -1,11 +1,17 @@
 // PendingAdjustmentBanner — Zona Phase 2 shared component
 // Hero-level feature — this is the proof point for "the plan adapts to your life."
-// Visual: warm amber banner, "!" icon, action row with confirm + revert.
+// Visual: warm amber banner, CoachByline eyebrow, action row with confirm + revert.
 // API calls live in the parent. This component is pure UI.
 // See docs/canonical/ui-patterns.md § PendingAdjustmentBanner.
+//
+// AI-VIS-01: replaced the "!" warning circle eyebrow with a CoachByline.
+// Plan adjustments are coach advice (model output), not system alerts. The
+// byline tells users this is an AI suggestion they can accept or revert.
+
+import CoachByline from './CoachByline'
 
 type Props = {
-  /** Banner heading — default "Plan adjusted" */
+  /** Byline role line — default "PLAN ADJUSTED". Use coach voice (e.g. "MOVED YOUR TEMPO"). */
   title?: string
   /** Description of what changed */
   children: React.ReactNode
@@ -24,72 +30,45 @@ export default function PendingAdjustmentBanner({
   onRevert,
   loading = false,
 }: Props) {
+  const verticalPadding   = 14
+  const horizontalPadding = 16
+
   return (
     <div
       style={{
-        background: 'var(--warn-bg)',
+        position:     'relative',
+        background:   'var(--warn-bg)',
         borderRadius: '14px',
-        padding: '14px 16px',
+        padding:      `${verticalPadding}px ${horizontalPadding}px ${verticalPadding}px ${horizontalPadding + 8}px`,
       }}
     >
-      {/* Eyebrow row: icon + label */}
-      <div
+      {/* AI provenance left-rail */}
+      <span
+        aria-hidden="true"
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          marginBottom: '8px',
+          position:     'absolute',
+          left:         '8px',
+          top:          `${verticalPadding}px`,
+          bottom:       `${verticalPadding}px`,
+          width:        '3px',
+          borderRadius: '2px',
+          background:   'var(--warn)',
         }}
-      >
-        {/* "!" icon circle */}
-        <div
-          style={{
-            width: '18px',
-            height: '18px',
-            borderRadius: '50%',
-            background: 'var(--warn)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <span
-            style={{
-              fontFamily: 'var(--font-ui)',
-              fontSize: '11px',
-              fontWeight: 800,
-              color: 'var(--card)',
-              lineHeight: 1,
-            }}
-          >
-            !
-          </span>
-        </div>
+      />
 
-        {/* Eyebrow label */}
-        <span
-          style={{
-            fontFamily: 'var(--font-ui)',
-            fontSize: '10px',
-            fontWeight: 700,
-            color: 'var(--warn)',
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-          }}
-        >
-          {title}
-        </span>
+      {/* Byline eyebrow */}
+      <div style={{ marginBottom: '10px' }}>
+        <CoachByline color="warn" role={title} />
       </div>
 
       {/* Body */}
       <div
         style={{
           fontFamily: 'var(--font-ui)',
-          fontSize: '13px',
+          fontSize:   '13px',
           fontWeight: 400,
           lineHeight: 1.55,
-          color: 'var(--coach-ink)',
+          color:      'var(--coach-ink)',
           marginBottom: '14px',
         }}
       >
@@ -103,18 +82,18 @@ export default function PendingAdjustmentBanner({
           onClick={onConfirm}
           disabled={loading}
           style={{
-            flex: 1,
-            padding: '10px 0',
-            background: loading ? 'var(--warn-bg)' : 'var(--warn)',
-            border: 'none',
+            flex:         1,
+            padding:      '10px 0',
+            background:   loading ? 'var(--warn-bg)' : 'var(--warn)',
+            border:       'none',
             borderRadius: '100px',
-            fontFamily: 'var(--font-ui)',
-            fontSize: '13px',
-            fontWeight: 600,
-            color: 'var(--card)',
-            cursor: loading ? 'default' : 'pointer',
-            opacity: loading ? 0.6 : 1,
-            transition: 'opacity 0.15s',
+            fontFamily:   'var(--font-ui)',
+            fontSize:     '13px',
+            fontWeight:   600,
+            color:        'var(--card)',
+            cursor:       loading ? 'default' : 'pointer',
+            opacity:      loading ? 0.6 : 1,
+            transition:   'opacity 0.15s',
           }}
         >
           {loading ? '…' : 'Confirm'}
@@ -125,18 +104,18 @@ export default function PendingAdjustmentBanner({
           onClick={onRevert}
           disabled={loading}
           style={{
-            flex: 1,
-            padding: '10px 0',
-            background: 'transparent',
-            border: '1px solid rgba(61,38,0,0.2)',
+            flex:         1,
+            padding:      '10px 0',
+            background:   'transparent',
+            border:       '1px solid rgba(61,38,0,0.2)',
             borderRadius: '100px',
-            fontFamily: 'var(--font-ui)',
-            fontSize: '13px',
-            fontWeight: 500,
-            color: 'var(--coach-ink)',
-            cursor: loading ? 'default' : 'pointer',
-            opacity: loading ? 0.6 : 1,
-            transition: 'opacity 0.15s',
+            fontFamily:   'var(--font-ui)',
+            fontSize:     '13px',
+            fontWeight:   500,
+            color:        'var(--coach-ink)',
+            cursor:       loading ? 'default' : 'pointer',
+            opacity:      loading ? 0.6 : 1,
+            transition:   'opacity 0.15s',
           }}
         >
           Revert

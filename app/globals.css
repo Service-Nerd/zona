@@ -209,3 +209,10 @@ html, body {
   0%, 100% { opacity: 0.55; transform: scale(0.92); }
   50%      { opacity: 1;    transform: scale(1.05); }
 }
+
+/* CoachByline working state — pulses the "· thinking" suffix on the role
+ * line while the AI is generating. See CoachByline.tsx. */
+@keyframes coach-byline-thinking {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 0.85; }
+}

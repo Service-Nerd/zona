@@ -12,7 +12,7 @@ export const BRAND = {
   name: 'Vetra',
 
   /**
-   * The AI coach's name. Used in AICoachChip, CoachNoteBlock, coach identity card,
+   * The AI coach's name. Used in CoachByline, CoachNoteBlock, coach identity card,
    * and anywhere the AI coach is named in-product. Change here → changes everywhere.
    * Never hardcode 'Kit' in components — always reference BRAND.coachName.
    */
