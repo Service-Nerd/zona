@@ -104,14 +104,7 @@ After Vercel deploy, verify with agent-browser:
 
 ### AI visibility & provenance
 
-- ✅ **AI-VIS-01 — Coach byline redesign + close two provenance gaps** *(shipped 7 May 2026)* — audit on 6 May 2026 found six LLM-generated surfaces in the product. Five were marked with the 9px `AIMark` + 11px `AICoachChip` pill (too quiet; read as a tag, not authorship). Two were unmarked: **run feedback paragraph** (`/api/analyse-run`, `RunFeedbackCard`) and **plan adjustment summary** (`/api/adjust-plan`, `PendingAdjustmentBanner`, previously flagged with a `!` warning circle). Aligns with `feedback_visibility_value_add` — "default louder than feels right." Tier: PAID polish. Delivered:
-  - ✅ New `components/shared/CoachByline.tsx` — 22px Kit avatar (moss/warn gradient) + name + role, AIMark anchored to avatar's bottom-right in a `--card`-coloured circle; working-state pulses the sparkle and appends "· thinking" to the role line
-  - ✅ 3px moss/warn left-rail baked into `CoachNoteBlock` and `PendingAdjustmentBanner`; replicated inline on the run-feedback AI card and `PendingAnalysisCard`
-  - ✅ Replaced every `AICoachChip` site with `CoachByline` across all six surfaces (daily coach note, weekly report, race readiness, phase summary, coach identity card, run feedback). `AICoachChip.tsx` deleted — no remaining callers
-  - ✅ Run-feedback LLM split into its own white-bg + moss-rail card with the byline, separate from the rule-derived verdict/metrics card on `--warn-bg`
-  - ✅ `!` eyebrow on `PendingAdjustmentBanner` replaced with the warn-variant byline + warn rail — it now reads as coach advice, not a system alert
-  - ✅ `docs/canonical/ui-patterns.md` § AIMark & § AICoachChip rewritten to § CoachByline (Pattern 16b); cross-screen rule table updated; CoachNoteBlock and SpecialCoachCard sections updated to reference the byline
-  - **Reference artefacts:** mockup at `mockups/ai-visibility-audit.html`; memory `project_ai_visibility_audit.md`
+*(no open items — see feature-registry for shipped AI provenance work)*
 
 ---
 
