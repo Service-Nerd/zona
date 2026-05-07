@@ -78,21 +78,40 @@ export async function autoMatchAndAnalyse(
   // the matcher's date/distance/HR fields matter for matching.
   const allActivities = [activity] as any
 
+  // POST-RUN-01: silent auto-link only at high confidence (≥70). Medium
+  // candidates are deliberately ignored — wrong link is worse than a picker
+  // tap. Activity still lands in `strava_activities` upstream, so the user
+  // sees it in the manual picker as fallback.
   let bestDay: string | null = null
-  let bestScore = 0
   for (const { session, sessionDate, day } of plannedSessions) {
     const sessionCandidates = findMatchCandidates(session, sessionDate, allActivities)
     const match = autoSelectMatch(sessionCandidates)
     if (match && sessionCandidates[0]?.confidence === 'high') {
-      bestDay   = day
-      bestScore = 1
+      bestDay = day
       break
-    }
-    if (sessionCandidates.length && sessionCandidates[0]?.confidence === 'medium' && bestScore === 0) {
-      bestDay   = day
     }
   }
   if (!bestDay) return
+
+  // POST-RUN-01 race-condition guard: never clobber an existing user-manual
+  // link, and never re-fire push/analyse for an activity we've already linked.
+  const { data: existing } = await supabase
+    .from('session_completions')
+    .select('strava_activity_id, apple_health_uuid')
+    .eq('user_id', userId)
+    .eq('week_n', week.n)
+    .eq('session_day', bestDay)
+    .maybeSingle()
+
+  if (existing) {
+    const existingRef: number | string | null =
+      existing.strava_activity_id ?? existing.apple_health_uuid ?? null
+    if (existingRef != null) {
+      // Either same activity (idempotent) or a different user-chosen link
+      // (don't overwrite). Either way: this auto-flow is done.
+      return
+    }
+  }
 
   const completionRow: Record<string, unknown> = {
     user_id:              userId,
@@ -114,6 +133,34 @@ export async function autoMatchAndAnalyse(
     completionRow,
     { onConflict: 'user_id,week_n,session_day' }
   )
+
+  // POST-RUN-01 link-time push. Fires immediately on confident auto-link, so
+  // the user is brought back BEFORE the LLM round-trip — the wait gets covered
+  // by RPE entry inside the Post-Run screen instead of a silent 30s gap.
+  // Replaces the older post-analysis push (now removed from /api/analyse-run).
+  try {
+    const { notifyUser } = await import('@/lib/webpush')
+    const distKm = activity.distance / 1000
+    const distLabel = distKm > 0
+      ? (distKm < 10 ? `${distKm.toFixed(1)}K` : `${Math.round(distKm)}K`)
+      : 'your run'
+    const dayNames: Record<string, string> = {
+      mon: 'Monday',  tue: 'Tuesday',  wed: 'Wednesday',
+      thu: 'Thursday', fri: 'Friday',   sat: 'Saturday',  sun: 'Sunday',
+    }
+    const dayName = dayNames[bestDay] ?? bestDay
+    const body = distKm > 0
+      ? `How did ${dayName}'s ${distLabel} feel?`
+      : `How did ${dayName}'s run feel?`
+    void notifyUser(userId, {
+      title: 'Run linked.',
+      body,
+      tag:   'run-linked',
+      data:  { url: `/dashboard?screen=post-run&weekN=${week.n}&sessionDay=${bestDay}` },
+    })
+  } catch (err) {
+    console.warn('[auto-analyse] link push failed', err)
+  }
 
   const analyseBody: Record<string, unknown> = {
     week_n:      week.n,

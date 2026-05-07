@@ -1,6 +1,6 @@
 'use client'
 
-// Native-shell boot helper. Three jobs:
+// Native-shell boot helper. Four jobs:
 //
 // 1. Hide the splash. The Capacitor splash auto-hides after a generous
 //    fallback timeout (capacitor.config.ts), but on cold-starts WebKit can
@@ -15,6 +15,12 @@
 //    iOS routes the URL into the app via App.appUrlOpen — we exchange the
 //    code for a Supabase session, dismiss the SafariViewController, and
 //    navigate to the dashboard.
+//
+// 4. Handle push-notification taps (POST-RUN-01). When user taps a push from
+//    APNs, @capacitor/push-notifications fires pushNotificationActionPerformed
+//    with the payload's data.url — we route to that path. Same shape as web
+//    push (data.url = /dashboard?screen=post-run&weekN=14&sessionDay=tue).
+//    Gated on APNs going live; harmless until then.
 //
 // On the web (browser / PWA), Capacitor.isNativePlatform() is false and
 // every plugin call below is a no-op. Safe to mount unconditionally.
@@ -55,7 +61,8 @@ export default function CapacitorBoot() {
       }
     })()
 
-    let removeListener: (() => void) | undefined
+    let removeUrlListener: (() => void) | undefined
+    let removePushListener: (() => void) | undefined
 
     CapApp.addListener('appUrlOpen', async ({ url }) => {
       if (!url.startsWith(NATIVE_AUTH_CALLBACK_PREFIX)) return
@@ -77,10 +84,27 @@ export default function CapacitorBoot() {
       }
       router.replace('/dashboard')
     }).then((handle) => {
-      removeListener = () => handle.remove()
+      removeUrlListener = () => handle.remove()
     }).catch(() => {})
 
-    return () => { removeListener?.() }
+    // POST-RUN-01: route push-notification taps to the URL in their payload.
+    // Wrapped in a dynamic import so web bundles don't pay for it.
+    void (async () => {
+      try {
+        const { PushNotifications } = await import('@capacitor/push-notifications')
+        const handle = await PushNotifications.addListener('pushNotificationActionPerformed', (event: any) => {
+          const url = event?.notification?.data?.url
+          if (typeof url === 'string' && url.startsWith('/')) {
+            router.replace(url)
+          }
+        })
+        removePushListener = () => handle.remove()
+      } catch {
+        // Plugin not installed or platform not supported — silent.
+      }
+    })()
+
+    return () => { removeUrlListener?.(); removePushListener?.() }
   }, [router])
 
   return null

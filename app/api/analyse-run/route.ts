@@ -11,8 +11,6 @@ import { buildSessionFeedbackPrompt } from '@/lib/coaching/prompts/sessionFeedba
 import { fetchRunHistory, findSimilarRuns, summariseCohort, pickWindowDays } from '@/lib/coaching/runHistory'
 import { zoneForSessionType, sessionHRBand } from '@/lib/coaching/zoneRules'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
-import { notifyUser } from '@/lib/webpush'
-import { BRAND } from '@/lib/brand'
 import type { Plan, Session } from '@/types/plan'
 
 // POST /api/analyse-run
@@ -291,17 +289,9 @@ export async function POST(req: NextRequest) {
     console.error('[analyse-run] run_analysis upsert failed', upsertRes.error.message)
   }
 
-  // Push notification — only on webhook path (user isn't in the app)
-  if (isInternalCall) {
-    const pushBody = feedbackText
-      ?? verdictPushBody(scoreResult.verdict, (activity.distance_m ?? 0) / 1000)
-    void notifyUser(userId, {
-      title: verdictPushTitle(scoreResult.verdict),
-      body:  pushBody,
-      tag:   'run-analysis',
-      data:  { url: '/dashboard?screen=coach' },
-    })
-  }
+  // POST-RUN-01: removed. The link-time push from autoMatchAndAnalyse already
+  // pulled the user into the Post-Run screen, where the analysis morphs from
+  // pending → RunFeedbackCard in place. A second push 15–30s later was noise.
 
   return NextResponse.json({
     analysis: {
@@ -312,26 +302,3 @@ export async function POST(req: NextRequest) {
   })
 }
 
-/** Fallback push body when AI feedback is unavailable. */
-function verdictPushBody(verdict: string, distKm: number): string {
-  const dist = distKm > 0 ? ` ${distKm.toFixed(1)}km` : ''
-  switch (verdict) {
-    case 'strong':    return `${dist} in. Looked controlled.`
-    case 'good':      return `${dist} done. Solid work.`
-    case 'ok':        return `${dist} logged. Hold the zone next time.`
-    case 'drifted':   return `${dist} — HR went high. Worth checking.`
-    case 'hard':      return `${dist} — that was a tough one.`
-    default:          return `${dist} logged.`
-  }
-}
-
-/** Verdict-based push title — coaching voice in the lock screen, not a generic label. */
-function verdictPushTitle(verdict: string): string {
-  switch (verdict) {
-    case 'nailed':     return 'Run nailed.'
-    case 'close':      return 'Close. Worth a look.'
-    case 'off_target': return 'Drifted off plan.'
-    case 'concerning': return 'Worth checking.'
-    default:           return BRAND.push.runAnalysis
-  }
-}

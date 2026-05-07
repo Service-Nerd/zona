@@ -36,7 +36,24 @@ const GeneratePlanScreen = dynamic(() => import('./GeneratePlanScreen'), { ssr: 
 const UpgradeScreen = dynamic(() => import('./UpgradeScreen'), { ssr: false })
 const BenchmarkUpdateScreen = dynamic(() => import('./BenchmarkUpdateScreen'), { ssr: false })
 
-type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'admin' | 'generate' | 'upgrade' | 'benchmark' | 'reshape'
+type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'admin' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run'
+
+/**
+ * Data passed to PostRunScreen — the destination screen for a Strava-linked
+ * session completion. Replaces the old Reflect sheet for the linked path.
+ *
+ * `pendingActivityId` is set when the user just selected an activity in the
+ * picker and the link hasn't been committed yet (PostRunScreen fires
+ * /api/strava/link-activity on mount). On deep-link or retroactive entry,
+ * the link already exists so this is null.
+ */
+type PostRunData = {
+  session: any
+  weekN: number
+  pendingActivityId: number | null
+  /** Display info for the linked-activity confirmation row */
+  linkedActivity: { name: string; km: number | null } | null
+}
 
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - base64String.length % 4) % 4)
@@ -127,6 +144,7 @@ export default function DashboardClient() {
   const [showMe, setShowMe] = useState(false)
   const [showMore, setShowMore] = useState(false)
   const [activeSessionData, setActiveSessionData] = useState<any | null>(null)
+  const [activePostRunData, setActivePostRunData] = useState<PostRunData | null>(null)
   const [quitDays, setQuitDays] = useState<number | null>(null)
   const [smokeTrackerEnabled, setSmokeTrackerEnabled] = useState(false)
   const [quitDate, setQuitDate] = useState<string>('')
@@ -257,6 +275,11 @@ export default function DashboardClient() {
 
   const supabase = createClient()
 
+  // Deep-link target for POST-RUN-01 push notifications. Captured on mount;
+  // applied by a separate effect once `plan` has loaded (we need the plan to
+  // resolve the session by week_n + session_day).
+  const pendingDeepLinkRef = useRef<{ weekN: number; sessionDay: string } | null>(null)
+
   useEffect(() => {
     // Handle strava OAuth redirect result
     const params = new URLSearchParams(window.location.search)
@@ -266,6 +289,18 @@ export default function DashboardClient() {
     }
     if (params.get('strava') === 'upgrade') {
       setScreen('upgrade')
+      window.history.replaceState({}, '', '/dashboard')
+    }
+
+    // POST-RUN-01: push-notification deep link.
+    // Web push payload uses data.url = /dashboard?screen=post-run&weekN=14&sessionDay=tue
+    // The "Run linked" push lands the user here; we resolve the session once the plan loads.
+    if (params.get('screen') === 'post-run') {
+      const weekN      = parseInt(params.get('weekN') ?? '', 10)
+      const sessionDay = params.get('sessionDay') ?? ''
+      if (Number.isFinite(weekN) && sessionDay) {
+        pendingDeepLinkRef.current = { weekN, sessionDay }
+      }
       window.history.replaceState({}, '', '/dashboard')
     }
   }, [])
@@ -278,6 +313,41 @@ export default function DashboardClient() {
     const t = setTimeout(() => setStravaSafetyExpired(true), 2000)
     return () => clearTimeout(t)
   }, [])
+
+  // POST-RUN-01: apply the deep-link target once the plan has loaded.
+  // Resolves week_n + session_day to a session object and routes the user
+  // straight into PostRunScreen. Fires once and clears the ref.
+  useEffect(() => {
+    if (!plan || plan === EMPTY_PLAN || !pendingDeepLinkRef.current) return
+    const { weekN, sessionDay } = pendingDeepLinkRef.current
+    pendingDeepLinkRef.current = null
+
+    const week = plan.weeks?.find((w: any) => w.n === weekN)
+    if (!week) return
+    const session = (week.sessions as Record<string, any> | undefined)?.[sessionDay]
+    if (!session) return
+
+    // Build the same shape TodayScreen passes via onOpenSession — see lines
+    // around 913 (`setActiveSessionData` callback) and the SessionScreen prop
+    // usage in `runAnalysisMap[activeSessionData?.key]`.
+    const enrichedSession = {
+      ...session,
+      key:       sessionDay,
+      day:       sessionDay,
+      weekN,
+      weekTheme: week.theme ?? '',
+    }
+
+    // Look up the linked-activity display info from runAnalysisMap or completion.
+    // Best-effort — PostRunScreen will hydrate further from the DB on mount.
+    setActivePostRunData({
+      session:           enrichedSession,
+      weekN,
+      pendingActivityId: null,  // already linked by webhook
+      linkedActivity:    null,  // PostRunScreen reads from session_completions if needed
+    })
+    setScreen('post-run')
+  }, [plan])
 
   const initials = (() => {
     if (firstName || lastName) {
@@ -747,6 +817,29 @@ export default function DashboardClient() {
   const liveAerobicPace = useMemo(() =>
     computeAerobicPace(stravaRuns, restingHR, maxHR, preferredUnits),
   [stravaRuns, restingHR, maxHR, preferredUnits])
+
+  // POST-RUN-01: high-confidence Strava match for the active session, computed
+  // client-side so "Mark complete" can skip the picker when there's an obvious
+  // candidate. Mirrors the webhook's silent auto-link path. Null when no match.
+  const activeAutoMatch = useMemo(() => {
+    if (!activeSessionData || !plan || plan === EMPTY_PLAN) return null
+    if (!stravaRuns || !stravaRuns.length) return null
+    const week = (plan.weeks as any[] | undefined)?.find((w: any) => w.n === activeSessionData.weekN)
+    if (!week?.date) return null
+    const dayKey = activeSessionData.key as string
+    const offsets: Record<string, number> = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 }
+    const sessionDate = parseLocalDate(week.date)
+    sessionDate.setDate(sessionDate.getDate() + (offsets[dayKey] ?? 0))
+    try {
+      // findMatchCandidates is pure — safe to call client-side
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { findMatchCandidates } = require('@/lib/coaching/sessionMatch')
+      const candidates = findMatchCandidates(activeSessionData, sessionDate, stravaRuns)
+      return candidates[0]?.confidence === 'high' ? candidates[0].activity : null
+    } catch {
+      return null
+    }
+  }, [activeSessionData, plan, stravaRuns])
   const PACE_CACHE_KEY = 'rts_aerobic_pace_cache'
   const [cachedAerobicPace, setCachedAerobicPace] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null
@@ -910,7 +1003,7 @@ export default function DashboardClient() {
       )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} />}
         {screen === 'coach'    && (hasPaidAccess
           ? (() => {
@@ -1018,7 +1111,8 @@ export default function DashboardClient() {
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
         {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatchedActivity={activeAutoMatch} />}
+        {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={runAnalysisMap[activePostRunData.session?.key ?? ''] ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
         {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} dob={dob} onDobSave={async (d) => { setDob(d); if (userId) await supabase.from('user_settings').update({ date_of_birth: d }).eq('id', userId) }} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} onBack={() => {
@@ -1596,7 +1690,7 @@ function getSkipResponse(reason: string): string {
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
-function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, stravaLoading, hasPaidAccess, onUpgrade, goalPace, guidance }: {
+function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, stravaLoading, hasPaidAccess, onUpgrade, goalPace, guidance, onLinkedComplete, autoMatchedActivity }: {
   session: any; weekTheme: string; weekN: number; preloadedRuns: any[]
   onClose: () => void; onSaved?: () => void
   preferredUnits: 'km' | 'mi'; zone2Ceiling: number; preferredMetric?: 'distance' | 'duration'
@@ -1605,6 +1699,19 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   hasPaidAccess?: boolean; onUpgrade?: () => void
   goalPace?: string | null
   guidance?: any | null
+  /**
+   * Called instead of opening the Reflect view when a Strava-linked completion
+   * is confirmed. Closes the popup and routes the user to PostRunScreen, where
+   * the LLM "Read of your run" + RPE/fatigue collection happens. POST-RUN-01.
+   */
+  onLinkedComplete?: (data: PostRunData) => void
+  /**
+   * High-confidence (≥70) Strava activity match for this session — computed
+   * by the parent from `preloadedRuns` + plan dates. When present, the "Mark
+   * complete" button skips the activity picker and routes straight to
+   * PostRunScreen. Picker still shown when null. POST-RUN-01.
+   */
+  autoMatchedActivity?: any | null
 }) {
   const [view, setView] = useState<'detail' | 'complete' | 'skip' | 'success' | 'reflect' | 'skip-reflect'>('detail')
   const [showManualModal, setShowManualModal] = useState(false)
@@ -1723,36 +1830,72 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
     return actDate >= fiveDaysAgo
   })
 
-  async function saveCompletion(status: 'complete' | 'skipped') {
+  async function saveCompletion(status: 'complete' | 'skipped', overrideActivity?: any) {
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+      // POST-RUN-01: override path lets the on-demand matcher pass an activity
+      // synchronously (state updates are async — using selectedActivity alone
+      // would race the next render).
+      const activity = overrideActivity ?? selectedActivity
       await supabase.from('session_completions').upsert({
         user_id: user.id,
         week_n: weekN,
         session_day: session.key,
         status,
-        strava_activity_id: status === 'complete' ? (selectedActivity?.id ?? null) : null,
-        strava_activity_name: status === 'complete' ? (selectedActivity?.name ?? null) : null,
-        strava_activity_km: status === 'complete' ? (selectedActivity ? +(selectedActivity.distance / 1000).toFixed(1) : null) : null,
-        avg_hr: status === 'complete' ? (selectedActivity?.average_heartrate ? Math.round(selectedActivity.average_heartrate) : null) : null,
+        strava_activity_id: status === 'complete' ? (activity?.id ?? null) : null,
+        strava_activity_name: status === 'complete' ? (activity?.name ?? null) : null,
+        strava_activity_km: status === 'complete' ? (activity ? +(activity.distance / 1000).toFixed(1) : null) : null,
+        avg_hr: status === 'complete' ? (activity?.average_heartrate ? Math.round(activity.average_heartrate) : null) : null,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
 
-      // Stage the activity link — fired when the reflect screen closes so RPE
-      // and fatigue are already written to the DB when analyse-run reads them.
-      if (status === 'complete' && selectedActivity?.id) {
-        pendingLinkRef.current = selectedActivity.id
+      // Stage the activity link. For the manual-link path through Reflect this
+      // ref fires on Reflect close (legacy flow). For the new POST-RUN-01 path
+      // it's handed to PostRunScreen via onLinkedComplete and fired on mount.
+      if (status === 'complete' && activity?.id) {
+        pendingLinkRef.current = activity.id
       }
 
       onSaved?.()
       if (status === 'complete') {
+        // POST-RUN-01: Strava-linked completions route to PostRunScreen — the
+        // LLM analysis is the focal payoff, not a tap-back-to-find-it artifact.
+        // Manual completions (no activity) still flow through the Reflect view.
+        if (activity?.id && onLinkedComplete) {
+          pendingLinkRef.current = null  // PostRunScreen takes ownership of the link fire
+          onLinkedComplete({
+            session,
+            weekN,
+            pendingActivityId: activity.id,
+            linkedActivity: {
+              name: activity.name ?? 'Strava run',
+              km: typeof activity.distance === 'number'
+                ? activity.distance / 1000
+                : null,
+            },
+          })
+          return
+        }
         setView('reflect')
       } else {
         setView('skip-reflect')
       }
     } catch {} finally { setSaving(false) }
+  }
+
+  // POST-RUN-01: when the parent has computed a high-confidence Strava match
+  // for this session, skip the picker entirely and go straight to PostRunScreen.
+  // Falls back to the manual picker when no match (or for non-run sessions).
+  function handleMarkComplete() {
+    const isRun = ['easy', 'run', 'quality', 'race'].includes(session.type)
+    if (!isRun) { void saveCompletion('complete'); return }
+    if (autoMatchedActivity) {
+      void saveCompletion('complete', autoMatchedActivity)
+      return
+    }
+    setView('complete')
   }
 
 
@@ -2426,7 +2569,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 const isRpeSet = rpe != null
                 return (
                   <button
-                    onClick={() => isRunType ? setView('complete') : saveCompletion('complete')}
+                    onClick={handleMarkComplete}
                     style={{
                       flex: 1,
                       background: isRpeSet ? 'var(--moss)' : 'none',
@@ -2451,7 +2594,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 if (isRunType) {
                   return (
                     <>
-                      <button onClick={() => setView('complete')} style={{ flex: 1, minWidth: '120px', background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600 }}>
+                      <button onClick={handleMarkComplete} style={{ flex: 1, minWidth: '120px', background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600 }}>
                         Match a Strava run
                       </button>
                       <button onClick={() => setShowManualModal(true)} style={{ flex: 1, minWidth: '100px', background: 'var(--card-bg)', color: config.color, border: `0.5px solid ${config.color}40`, borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500 }}>
@@ -3702,7 +3845,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked }: {
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   stravaRuns: any[]
@@ -3728,6 +3871,8 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   runAnalysisReady?: boolean
   /** Navigates to the Coach tab — wired to Kit chip on AI-generated notes. */
   onOpenCoach?: () => void
+  /** POST-RUN-01: route the retroactive RPE nudge into PostRunScreen. */
+  onOpenPostRun?: (data: PostRunData) => void
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
@@ -3743,6 +3888,52 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   // Completions for this week — derived from shared allCompletions prop
   const completions = allCompletions[weekNum] ?? {}
   const [showManualLog, setShowManualLog] = useState(false)
+
+  // POST-RUN-01: retroactive RPE nudges. Sessions auto-completed via the
+  // webhook (strava_activity_id set, status='complete') but missing RPE in the
+  // last 7 days. Tap → PostRunScreen with the analysis pre-loaded. Capped at
+  // 3 to avoid burying Today.
+  const missingRpeNudges = useMemo(() => {
+    if (!plan?.weeks?.length) return []
+    const now    = new Date()
+    const cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const days   = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+    const dayNames = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+    type Nudge = {
+      session: any; weekN: number; dayKey: string
+      dayName: string; distKm: number | null
+      stravaActivityId: number | null; stravaActivityName: string | null
+      sessionDate: Date
+    }
+    const result: Nudge[] = []
+    for (const week of plan.weeks) {
+      const weekStart = parseLocalDate((week as any).date)
+      days.forEach((dayKey, idx) => {
+        const completion = allCompletions[week.n]?.[dayKey]
+        if (!completion) return
+        if (completion.status !== 'complete') return
+        if (completion.rpe != null) return
+        if (!completion.strava_activity_id && !completion.apple_health_uuid) return
+        const sessionDate = new Date(weekStart)
+        sessionDate.setDate(sessionDate.getDate() + idx)
+        if (sessionDate < cutoff || sessionDate > now) return
+        const session = (week.sessions as Record<string, any> | undefined)?.[dayKey]
+        if (!session) return
+        result.push({
+          session,
+          weekN:               week.n,
+          dayKey,
+          dayName:             dayNames[idx],
+          distKm:              completion.strava_activity_km ?? null,
+          stravaActivityId:    completion.strava_activity_id ?? null,
+          stravaActivityName:  completion.strava_activity_name ?? null,
+          sessionDate,
+        })
+      })
+    }
+    // Most recent first, max 3
+    return result.sort((a, b) => b.sessionDate.getTime() - a.sessionDate.getTime()).slice(0, 3)
+  }, [plan, allCompletions])
 
   // Derive this week's overrides from shared prop — no fetch needed
   const overrides = useMemo(() => {
@@ -4446,6 +4637,64 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         )}
 
       </div>
+
+      {/* ── RETROACTIVE RPE NUDGES (POST-RUN-01) ─────────────────────── */}
+      {/* For paid users only — sessions auto-linked from Strava that the user
+       *  never came back to rate. One subtle row per missing RPE; tap routes
+       *  to PostRunScreen so they can add it now. Capped at 3. */}
+      {hasPaidAccess && missingRpeNudges.length > 0 && onOpenPostRun && (
+        <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {missingRpeNudges.map(nudge => {
+            const distLabel = nudge.distKm != null
+              ? `${nudge.distKm < 10 ? nudge.distKm.toFixed(1) : Math.round(nudge.distKm)}${preferredUnits === 'mi' ? 'mi' : 'K'}`
+              : 'run'
+            return (
+              <button
+                key={`${nudge.weekN}-${nudge.dayKey}`}
+                onClick={() => onOpenPostRun({
+                  session: { ...nudge.session, key: nudge.dayKey, day: nudge.dayName, weekN: nudge.weekN },
+                  weekN:   nudge.weekN,
+                  pendingActivityId: null,  // already linked
+                  linkedActivity: nudge.stravaActivityName ? {
+                    name: nudge.stravaActivityName,
+                    km:   nudge.distKm,
+                  } : null,
+                })}
+                style={{
+                  display:      'flex',
+                  alignItems:   'center',
+                  gap:          '10px',
+                  width:        '100%',
+                  background:   'var(--bg-soft)',
+                  border:       'none',
+                  borderRadius: '12px',
+                  padding:      '12px 14px',
+                  cursor:       'pointer',
+                  textAlign:    'left',
+                }}
+              >
+                <span aria-hidden="true" style={{
+                  width: '6px', height: '6px', borderRadius: '50%',
+                  background: 'var(--moss)', flexShrink: 0,
+                }} />
+                <span style={{
+                  flex: 1, minWidth: 0,
+                  fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500,
+                  color: 'var(--ink-2)', lineHeight: 1.4,
+                }}>
+                  Tell Kit how {nudge.dayName}&apos;s {distLabel} felt
+                </span>
+                <span aria-hidden="true" style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '14px',
+                  color: 'var(--moss)', fontWeight: 600, flexShrink: 0,
+                }}>
+                  →
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* ── ZONE DISCIPLINE CARD ─────────────────────────────────────── */}
       {/* Title flips based on week phase: "is going" while the week is
@@ -7271,7 +7520,7 @@ function RunFeedbackCard({
   )
 }
 
-function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, stravaLoading, runAnalysis, hasPaidAccess, onUpgrade, onOpenCoach, goalPace, guidance, nextSession }: {
+function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, stravaLoading, runAnalysis, hasPaidAccess, onUpgrade, onOpenCoach, goalPace, guidance, nextSession, onLinkedComplete, autoMatchedActivity }: {
   session: any; preloadedRuns: any[]; onBack: () => void; onSaved?: () => void
   preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number; preferredMetric?: 'distance' | 'duration'
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
@@ -7283,6 +7532,10 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
   guidance?: any | null
   /** Next scheduled session in the plan — shown as an "Up next" row below the feedback card. */
   nextSession?: { type: string; day: string; distanceKm?: number | null; label?: string | null } | null
+  /** POST-RUN-01: route a Strava-linked completion to the new PostRunScreen. */
+  onLinkedComplete?: (data: PostRunData) => void
+  /** POST-RUN-01: pre-computed high-confidence Strava match for this session. */
+  autoMatchedActivity?: any | null
 }) {
   const color = getSessionColor(session.type ?? 'easy')
   const typeLabel = getSessionLabel(session.type ?? 'easy')
@@ -7549,8 +7802,406 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
             onUpgrade={onUpgrade}
             goalPace={goalPace}
             guidance={guidance}
+            onLinkedComplete={onLinkedComplete}
+            autoMatchedActivity={autoMatchedActivity}
           />
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ── POST-RUN SCREEN (POST-RUN-01) ─────────────────────────────────────────
+//
+// Destination screen for a Strava-linked completion. Replaces the old Reflect
+// sheet for the linked path. Three jobs on one surface:
+//   1. Confirm the linked Strava activity (header row + "change" escape)
+//   2. Show the LLM "Read of your run" (PendingAnalysisCard → RunFeedbackCard)
+//   3. Collect RPE + fatigue inline (auto-save on every interaction)
+//
+// "Done" returns the user to Today only after they've actually seen the
+// analysis. Manual completions (no Strava activity) keep the existing Reflect
+// sheet — no auto-link, no LLM, no need for a dedicated screen.
+
+function PostRunScreen({
+  data,
+  onBack,
+  onSaved,
+  preferredUnits = 'km',
+  zone2Ceiling = 145,
+  hasPaidAccess,
+  onOpenCoach,
+  runAnalysis,
+  aerobicPace,
+  goalPace,
+}: {
+  data: PostRunData
+  onBack: () => void
+  onSaved?: () => void
+  preferredUnits?: 'km' | 'mi'
+  zone2Ceiling?: number
+  hasPaidAccess?: boolean
+  onOpenCoach?: () => void
+  /** Latest analysis row from the parent's runAnalysisMap. May be null while polling. */
+  runAnalysis?: any | null
+  aerobicPace?: string | null
+  goalPace?: string | null
+}) {
+  const supabase = createClient()
+  const { session, weekN, pendingActivityId, linkedActivity } = data
+
+  // Local analysis state — seeded from prop, then polled until run_analysis lands.
+  const [analysis, setAnalysis] = useState<any | null>(runAnalysis ?? null)
+  useEffect(() => { setAnalysis(runAnalysis ?? null) }, [runAnalysis])
+
+  const [rpe, setRpe]                       = useState<number | null>(null)
+  const [fatigueTag, setFatigueTag]         = useState<string | null>(null)
+  const [savingRPE, setSavingRPE]           = useState(false)
+  const [pollGaveUp, setPollGaveUp]         = useState(false)
+  const [linkFired, setLinkFired]           = useState(false)
+  const [hydratedActivity, setHydratedActivity] = useState<PostRunData['linkedActivity']>(null)
+  const sessionDay = session?.key as string | undefined
+
+  // ── Hydrate RPE/fatigue + linked activity from existing completion ──
+  // On deep-link entry the parent passes linkedActivity=null; we read it from
+  // session_completions here. On manual-link entry the parent has it already.
+  useEffect(() => {
+    let cancelled = false
+    async function loadCompletion() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        const { data: row } = await supabase
+          .from('session_completions')
+          .select('rpe, fatigue_tag, strava_activity_name, strava_activity_km')
+          .eq('user_id', user.id)
+          .eq('week_n', weekN)
+          .eq('session_day', sessionDay)
+          .maybeSingle()
+        if (!cancelled && row) {
+          if (row.rpe != null) setRpe(row.rpe as number)
+          if (row.fatigue_tag) setFatigueTag(row.fatigue_tag as string)
+          if (!linkedActivity && (row.strava_activity_name || row.strava_activity_km)) {
+            setHydratedActivity({
+              name: (row.strava_activity_name as string | null) ?? 'Strava run',
+              km:   (row.strava_activity_km as number | null) ?? null,
+            })
+          }
+        }
+      } catch {}
+    }
+    if (sessionDay) void loadCompletion()
+    return () => { cancelled = true }
+  }, [sessionDay, weekN, supabase, linkedActivity])
+
+  // Display source for the linked-activity row — prop wins when present.
+  const displayActivity = linkedActivity ?? hydratedActivity
+
+  // ── Fire link-activity once on mount when a fresh activity is staged ──
+  // This commits the Strava → session_completions link AND triggers analyse-run
+  // server-side. Idempotent on the server (autoMatchAndAnalyse is a no-op when
+  // the link already exists), so safe even if the webhook beat us to it.
+  useEffect(() => {
+    if (!pendingActivityId || linkFired) return
+    setLinkFired(true)
+    void authedFetch('/api/strava/link-activity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        strava_activity_id: pendingActivityId,
+        week_n:             weekN,
+        session_day:        sessionDay,
+      }),
+    }).catch(() => {})
+  }, [pendingActivityId, linkFired, weekN, sessionDay])
+
+  // ── Poll run_analysis until it lands (mirrors SessionScreen behaviour) ──
+  const isAnalysisPending = !!hasPaidAccess && !analysis && !pollGaveUp
+  useEffect(() => {
+    if (!isAnalysisPending || !sessionDay) return
+    let cancelled = false
+    let attempts  = 0
+    const tick = async () => {
+      if (cancelled) return
+      attempts++
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        const { data: row } = await supabase
+          .from('run_analysis')
+          .select('session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score')
+          .eq('user_id', user.id)
+          .eq('session_day', sessionDay)
+          .maybeSingle()
+        if (!cancelled && row) {
+          setAnalysis(row)
+          onSaved?.()
+          return
+        }
+      } catch {}
+      if (!cancelled && attempts < 16) {
+        setTimeout(tick, 2500)  // up to ~40s
+      } else if (!cancelled) {
+        setPollGaveUp(true)
+      }
+    }
+    const initial = setTimeout(tick, 2500)
+    return () => { cancelled = true; clearTimeout(initial) }
+  }, [isAnalysisPending, sessionDay, supabase, onSaved])
+
+  // ── RPE / fatigue auto-save (mirrors SessionPopupInner.saveRPEFatigue) ──
+  async function saveRPEFatigue(newRpe: number | null, newTag: string | null) {
+    setSavingRPE(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const flag = getCoachingFlag({
+        sessionType: session.type,
+        rpe:         newRpe,
+        avgHr:       null,
+        zone2Ceiling,
+      })
+      await supabase.from('session_completions').upsert({
+        user_id:       user.id,
+        week_n:        weekN,
+        session_day:   sessionDay,
+        status:        'complete',
+        rpe:           newRpe,
+        fatigue_tag:   newTag,
+        coaching_flag: flag,
+        updated_at:    new Date().toISOString(),
+      }, { onConflict: 'user_id,week_n,session_day' })
+      // Trigger 4: fatigue accumulation check
+      if (newTag && ['Heavy', 'Wrecked', 'Cooked'].includes(newTag)) {
+        void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({}) })
+      }
+      // Trigger 5: RPE disconnect check on easy/long
+      if (newRpe != null && newRpe >= 8 && (session.type === 'easy' || session.type === 'long')) {
+        void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({ rpe: newRpe, sessionType: session.type }) })
+      }
+      onSaved?.()
+    } catch {} finally { setSavingRPE(false) }
+  }
+
+  const distLabel = displayActivity?.km != null
+    ? `${displayActivity.km.toFixed(1)}${preferredUnits === 'mi' ? 'mi' : 'km'}`
+    : ''
+  const sessionLabel = getSessionLabel(session.type ?? 'easy')
+  const dayLabel     = session.day ?? ''
+  const weekLabel    = session.weekN ?? weekN
+  const paceTarget   = session.pace_target
+    ?? ((session.type === 'easy' || session.type === 'run') ? aerobicPace ?? null : null)
+    ?? goalPace ?? null
+
+  return (
+    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '120px' }}>
+      {/* ── HEADER ─────────────────────────────────────────────────── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '12px',
+        padding: '14px 16px 12px',
+        position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10,
+        borderBottom: '1px solid var(--line)',
+      }}>
+        <button onClick={onBack} style={{
+          width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-soft)',
+          border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'var(--ink)', flexShrink: 0,
+        }} aria-label="Back to Today">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+            color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
+            marginBottom: '2px',
+          }}>
+            Run logged · W{weekLabel}
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '20px', fontWeight: 800,
+            color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.2,
+          }}>
+            {sessionLabel}{dayLabel ? ` · ${dayLabel}` : ''}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+        {/* ── LINKED ACTIVITY CONFIRMATION ─────────────────────────── */}
+        {displayActivity && (
+          <div style={{
+            background: 'var(--bg-soft)',
+            borderRadius: '12px',
+            padding: '12px 14px',
+            display: 'flex', alignItems: 'center', gap: '10px',
+          }}>
+            {/* Strava-style chip */}
+            <div style={{
+              width: '8px', height: '8px', borderRadius: '50%',
+              background: 'var(--moss)', flexShrink: 0,
+            }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+                color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
+                marginBottom: '2px',
+              }}>
+                Linked from Strava
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500,
+                color: 'var(--ink)', lineHeight: 1.3,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {displayActivity.name}{distLabel ? ` · ${distLabel}` : ''}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── AI CARD — pending or done ───────────────────────────── */}
+        {hasPaidAccess && analysis && (
+          <RunFeedbackCard
+            analysis={analysis}
+            paceTarget={paceTarget}
+            actualAvgSpeedMs={null}
+            onOpenCoach={onOpenCoach}
+          />
+        )}
+        {hasPaidAccess && !analysis && !pollGaveUp && (
+          <PendingAnalysisCard onOpenCoach={onOpenCoach} />
+        )}
+        {hasPaidAccess && !analysis && pollGaveUp && (
+          <GaveUpCard onOpenCoach={onOpenCoach} />
+        )}
+
+        {/* ── HOW DID IT FEEL? ────────────────────────────────────── */}
+        <div style={{
+          background: 'var(--card)',
+          borderRadius: '14px',
+          border: '1px solid var(--line)',
+          padding: '16px 18px',
+        }}>
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 700,
+            color: 'var(--ink)', letterSpacing: '-0.2px', marginBottom: '4px',
+          }}>
+            How did it feel?
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
+            marginBottom: '18px', lineHeight: 1.5,
+          }}>
+            Effort and body state. That&apos;s all I need.
+          </div>
+
+          {/* RPE 1–10 */}
+          <div style={{ marginBottom: '18px' }}>
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)',
+              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px',
+            }}>
+              Effort (RPE)
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {[1,2,3,4,5,6,7,8,9,10].map(n => {
+                const isActive = rpe === n
+                const col = rpeColour(n)
+                return (
+                  <button
+                    key={n}
+                    onClick={() => {
+                      const newRpe = isActive ? null : n
+                      setRpe(newRpe)
+                      void saveRPEFatigue(newRpe, fatigueTag)
+                    }}
+                    disabled={savingRPE}
+                    style={{
+                      flex: 1, aspectRatio: '1', borderRadius: '8px',
+                      border: `1px solid ${isActive ? col : 'var(--line)'}`,
+                      background: isActive ? `color-mix(in srgb, ${col} 18%, transparent)` : 'var(--card)',
+                      color: isActive ? col : 'var(--mute)',
+                      fontFamily: 'var(--font-ui)', fontSize: '13px',
+                      fontWeight: isActive ? 700 : 400,
+                      cursor: 'pointer', transition: 'all 0.12s',
+                    }}
+                  >
+                    {n}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Fatigue tags */}
+          <div>
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)',
+              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px',
+            }}>
+              Body state
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {(['Fresh', 'Fine', 'Heavy', 'Wrecked'] as const).map(tag => {
+                const isActive = fatigueTag === tag
+                const tagColor = tag === 'Fresh'  ? 'var(--moss)'
+                              : tag === 'Fine'   ? 'var(--s-easy)'
+                              : tag === 'Heavy'  ? 'var(--warn)'
+                              : 'var(--danger)'
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => {
+                      const newTag = isActive ? null : tag
+                      setFatigueTag(newTag)
+                      void saveRPEFatigue(rpe, newTag)
+                    }}
+                    disabled={savingRPE}
+                    style={{
+                      fontFamily: 'var(--font-ui)', fontSize: '12px',
+                      padding: '8px 18px',
+                      borderRadius: '20px',
+                      border: `1px solid ${isActive ? tagColor : 'var(--line)'}`,
+                      background: isActive ? `color-mix(in srgb, ${tagColor} 12%, transparent)` : 'transparent',
+                      color: isActive ? tagColor : 'var(--mute)',
+                      cursor: 'pointer',
+                      fontWeight: isActive ? 600 : 400,
+                      transition: 'all 0.12s',
+                    }}
+                  >
+                    {tag}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* ── DONE ──────────────────────────────────────────────────── */}
+        <button
+          onClick={onBack}
+          style={{
+            width: '100%',
+            padding: '14px',
+            background: 'var(--moss)',
+            color: 'var(--card)',
+            border: 'none',
+            borderRadius: '12px',
+            fontFamily: 'var(--font-ui)',
+            fontSize: '13px',
+            fontWeight: 600,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+            transition: 'opacity 0.15s',
+            marginTop: '4px',
+          }}
+        >
+          Done
+        </button>
       </div>
     </div>
   )
