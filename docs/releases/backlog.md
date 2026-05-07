@@ -108,15 +108,7 @@ After Vercel deploy, verify with agent-browser:
 
 ### Post-run journey
 
-- ✅ **POST-RUN-01 — Webhook-led post-run journey + Post-Run screen** *(shipped 7 May 2026)* — old journey buried the Run Analysis behind a manual activity-picker → Reflect → bounce-to-Today → re-tap-session. Now: webhook auto-links high-confidence Strava activities, push tells user "Run linked. How did Tuesday's 8K feel?", deep link lands them on the new PostRunScreen where the LLM Read of your run morphs in place while they fill RPE. Tier: PAID. Delivered:
-  - ✅ `PostRunScreen` component — linked-activity header + RunFeedbackCard/PendingAnalysisCard as focal payoff + RPE/fatigue inline + Done → Today. Replaces Reflect for Strava-linked completions; manual completions keep existing Reflect.
-  - ✅ Deep link wiring — `DashboardClient` parses `?screen=post-run&weekN=…&sessionDay=…` on mount, defers routing until plan loads. `CapacitorBoot` adds `pushNotificationActionPerformed` listener to route iOS push taps via `data.url`.
-  - ✅ Push trigger moved to link time in `autoMatchAndAnalyse` — `"Run linked."` / `"How did <day>'s <distance> feel?"`. Post-analysis push (`analyse-run/route.ts`) removed as redundant.
-  - ✅ Confidence threshold raised to ≥70 — medium (40–69) candidates no longer trigger silent auto-link or push. User sees the activity in the picker as fallback.
-  - ✅ On-demand matcher — `findMatchCandidates` runs client-side in `DashboardClient`. "Mark complete" routes straight to PostRunScreen when a high-confidence match exists; falls back to the picker otherwise.
-  - ✅ Retroactive RPE nudge on Today — surfaces up to 3 sessions in the last 7 days that are auto-completed but missing RPE. Tap → PostRunScreen with analysis pre-loaded.
-  - ✅ Race-condition guard in `autoMatchAndAnalyse` — no-ops when the target session_completions row already has a Strava or HealthKit ref. Covers user-mid-Reflect-when-webhook-fires + idempotent webhook re-fires.
-  - 🔲 **APNs wiring** — still gated on Apple Dev approval (tracked under iOS push). Web push works today via `notifyUser`; iOS receives the same payload once APNs goes live.
+- 🔲 **POST-RUN-02 — APNs wiring for the link-time push** *(unblocked once Apple Dev approves)* — POST-RUN-01 shipped the full journey on web push. iOS receives the same payload via `notifyUser` once APNs goes live. Needs: APNs key (.p8) + Vercel env vars (`APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC=app.vetra.ios`, `APNS_PRODUCTION=1`); Push Notifications capability added to the Xcode App target; first test on a real device. The push payload + deep-link parsing already work — this is purely the Apple-side wiring tracked under iOS push setup.
 
 ---
 
