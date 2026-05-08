@@ -2851,20 +2851,19 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '0 8px', gap: '2px' }}>
         {DOW_ORDER.map(key => {
           const s = sessionMap[key]
-          const isSelected = s?.key === selectedKey && s?.type !== 'rest'
+          const isSelected = key === selectedKey
           const isToday = s?.today ?? false
           const dotColor = getDotColor(key)
           const dateNum = s ? s.rawDate.getDate().toString() : ''
-          const hasEntry = !!s
 
           return (
             <button
               key={key}
-              onClick={() => hasEntry && onSelect(s?.key ?? key)}
+              onClick={() => onSelect(key)}
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
                 padding: '4px 2px', background: 'none', border: 'none',
-                cursor: hasEntry ? 'pointer' : 'default', borderRadius: '12px',
+                cursor: 'pointer', borderRadius: '12px',
               }}
             >
               {/* Day letter */}
@@ -4015,30 +4014,33 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
     }
   }), [effectiveWs, weekIndex])
 
-  // Default selected day
+  // Default selected day. selectedKey holds the calendar day (displayKey),
+  // not the session's originalDay — otherwise a moved session and the now-empty
+  // origin day collide on the same key and the lookup picks the wrong entry.
   const [selectedKey, setSelectedKey] = useState<string>(() => {
     const t = sessions.find(s => s.today)
-    if (t) return t.key
+    if (t) return t.displayKey
     const next = sessions.find(s => s.rawDate >= now && effectiveWs[s.displayKey] && effectiveWs[s.displayKey].type !== 'rest')
-    if (next) return next.key
+    if (next) return next.displayKey
     const last = [...sessions].reverse().find(s => effectiveWs[s.displayKey])
-    return last?.key ?? 'mon'
+    return last?.displayKey ?? 'mon'
   })
 
   // Reset selected key on week change
   useEffect(() => {
     const t = sessions.find(s => s.today)
-    if (t) { setSelectedKey(t.key); return }
+    if (t) { setSelectedKey(t.displayKey); return }
     const next = sessions.find(s => s.rawDate >= now && effectiveWs[s.displayKey] && effectiveWs[s.displayKey].type !== 'rest')
-    if (next) { setSelectedKey(next.key); return }
+    if (next) { setSelectedKey(next.displayKey); return }
     const last = [...sessions].reverse().find(s => effectiveWs[s.displayKey])
-    if (last) setSelectedKey(last.key)
+    if (last) setSelectedKey(last.displayKey)
   }, [weekIndex, overridesReady, sessions])
 
-  const selectedSession = sessions.find(s => s.key === selectedKey && s.type !== 'rest')
-    ?? sessions.find(s => s.key === selectedKey)
-    ?? null
+  const selectedSession = sessions.find(s => s.displayKey === selectedKey) ?? null
   const selectedEntry = selectedSession ? effectiveWs[selectedSession.displayKey] : null
+  // Completion lookups must use the session's originalDay (stable id), not the
+  // calendar day — completions are keyed by originalDay so they survive moves.
+  const selectedCompletionKey = selectedSession?.key ?? ''
 
   const RUN_TYPES = ['run', 'easy', 'quality', 'race']
   const isRunDay      = selectedEntry && RUN_TYPES.includes(selectedEntry.type)
@@ -4538,16 +4540,16 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 ? parseInt(selectedSession.duration)
                 : undefined}
               state={
-                completions[selectedKey]?.status === 'complete' ? 'done'
-                : completions[selectedKey]?.status === 'skipped' ? 'skipped'
+                completions[selectedCompletionKey]?.status === 'complete' ? 'done'
+                : completions[selectedCompletionKey]?.status === 'skipped' ? 'skipped'
                 : selectedSession.today ? 'current'
                 : 'future'
               }
-              completion={completions[selectedKey]?.status === 'complete' ? {
-                distanceKm: completions[selectedKey]?.strava_activity_km ?? undefined,
-                avgBpm: completions[selectedKey]?.avg_hr ?? undefined,
-                viaStrava: !!completions[selectedKey]?.strava_activity_id,
-                activityName: completions[selectedKey]?.strava_activity_name ?? undefined,
+              completion={completions[selectedCompletionKey]?.status === 'complete' ? {
+                distanceKm: completions[selectedCompletionKey]?.strava_activity_km ?? undefined,
+                avgBpm: completions[selectedCompletionKey]?.avg_hr ?? undefined,
+                viaStrava: !!completions[selectedCompletionKey]?.strava_activity_id,
+                activityName: completions[selectedCompletionKey]?.strava_activity_name ?? undefined,
               } : undefined}
               onClick={() => {
                 const isPast = selectedSession.rawDate < now && !selectedSession.today
@@ -4555,7 +4557,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 onOpenSession?.({
                   ...selectedSession,
                   rawDate: selectedSession.rawDate.toISOString(),
-                  completion: completions[selectedKey],
+                  completion: completions[selectedCompletionKey],
                   isPast,
                   isFuture,
                   weekN: weekNum,
@@ -4567,13 +4569,13 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
             })()}
 
             {/* Primary CTA — only on today's session if not yet done */}
-            {selectedSession.today && !completions[selectedKey]?.status && (
+            {selectedSession.today && !completions[selectedCompletionKey]?.status && (
               <button
                 onClick={() => {
                   onOpenSession?.({
                     ...selectedSession,
                     rawDate: selectedSession.rawDate.toISOString(),
-                    completion: completions[selectedKey],
+                    completion: completions[selectedCompletionKey],
                     isPast: false,
                     isFuture: false,
                     weekN: weekNum,
