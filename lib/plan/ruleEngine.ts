@@ -2595,6 +2595,119 @@ export function generateRulePlan(
   }
 
   // ── Meta ────────────────────────────────────────────────────────────────────
+  // ── Volume profile composition ──────────────────────────────────────────────
+  // Two independent triggers can downgrade a plan to 'maintenance':
+  //   (a) §23/§38/§45/§46 — peak doesn't actually overload (ratio / floor / LR fails)
+  //   (b) §52 (low-day extension) — too few days/wk for a structurally-sound plan
+  // Compute each separately, then compose. The note from (a) is more specific,
+  // so it wins when both fire; (b)'s note is the fallback.
+
+  // §23 result — runs only on plans long enough for overload to be a coherent
+  // requirement. Returns { volume_profile, volume_constraint_note? }.
+  const peakOverloadResult: { volume_profile: 'build' | 'maintenance'; volume_constraint_note?: string } | null =
+    totalWeeks >= GENERATION_CONFIG.PEAK_OVERLOAD_MIN_PLAN_WEEKS
+      ? (() => {
+          const w1 = weeks[0]?.weekly_km ?? 0
+          const peakKmActual = Math.max(...weeks.filter(wk => wk.phase === 'peak').map(wk => wk.weekly_km), 0)
+          const ratio = w1 > 0 ? peakKmActual / w1 : 0
+          const isTimeTarget = input.goal === 'time_target'
+          const distKey = raceDistanceKey(input.race_distance_km)
+          const distKm = input.race_distance_km
+
+          // §46 floor for marathon and ultra (time-target only).
+          let volumeFloor = 0
+          if (isTimeTarget) {
+            if (distKm >= 40 && distKm <= 43) volumeFloor = distKm * GENERATION_CONFIG.MARATHON_PEAK_VOLUME_FLOOR_RATIO
+            else if (distKm > 43 && distKm <= 55) volumeFloor = distKm * GENERATION_CONFIG.ULTRA_50K_PEAK_VOLUME_FLOOR_RATIO
+            else if (distKm > 55) volumeFloor = Math.min(
+              distKm * GENERATION_CONFIG.ULTRA_LONG_PEAK_VOLUME_FLOOR_RATIO,
+              GENERATION_CONFIG.ULTRA_PEAK_VOLUME_FLOOR_CAP_KM,
+            )
+          }
+
+          // §24 long-run floor for HM/marathon (time-target only).
+          let longRunFloorKm = 0
+          let actualPeakLrKm = 0
+          if (isTimeTarget && (distKey === 'HM' || distKey === 'MARATHON')) {
+            const ratioCfg = GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey]
+            longRunFloorKm = distKm * ratioCfg
+            for (const wk of weeks) {
+              if (wk.phase !== 'peak' || wk.type === 'deload') continue
+              for (const s of Object.values(wk.sessions)) {
+                if (s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)) {
+                  actualPeakLrKm = Math.max(actualPeakLrKm, s.distance_km ?? 0)
+                }
+              }
+            }
+          }
+
+          const ratioFails  = ratio < GENERATION_CONFIG.PEAK_OVER_BASE_RATIO
+          const volumeFails = volumeFloor > 0 && peakKmActual + 0.01 < volumeFloor
+          const lrFails     = longRunFloorKm > 0 && actualPeakLrKm + 0.01 < longRunFloorKm
+
+          if (!ratioFails && !volumeFails && !lrFails) {
+            return { volume_profile: 'build' as const }
+          }
+
+          const reasons: string[] = []
+          if (ratioFails) {
+            reasons.push(`Peak volume ${peakKmActual} km is ${Math.round(ratio * 100)}% of week 1 (${w1} km) — below the ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% overload threshold.`)
+          }
+          if (volumeFails) {
+            reasons.push(`Peak weekly volume ${peakKmActual} km is below the ${Math.round(volumeFloor)} km floor for a time-targeted ${distKey} (${Math.round((volumeFloor / distKm) * 100)}% of race distance).`)
+          }
+          if (lrFails) {
+            reasons.push(`Peak long run ${actualPeakLrKm} km is below the ${Math.round(longRunFloorKm * 10) / 10} km floor (${Math.round(GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey as 'HM' | 'MARATHON'] * 100)}% of race distance) — week-on-week long-run cap (§45) prevented reaching the ratio.`)
+          }
+          const diagnosis = reasons.join(' ') + ' Plan maintains current fitness rather than building it.'
+
+          const suggestions: string[] = []
+          if (input.days_available < 6) {
+            suggestions.push(`increase days_available from ${input.days_available} to ${input.days_available + 1}`)
+          }
+          if (input.max_weekday_mins != null && input.max_weekday_mins < 90) {
+            suggestions.push(`raise max_weekday_mins from ${input.max_weekday_mins} to 90`)
+          }
+          if (lrFails || volumeFails) {
+            suggestions.push(`defer the race so the build has more weeks (current ${totalWeeks}, recommended ≥${GENERATION_CONFIG.PREP_TIME_THRESHOLDS[distKey].warn})`)
+          }
+          const prescription = suggestions.length > 0
+            ? ` To enable a build profile: ${suggestions.join(', OR ')}.`
+            : ''
+          return {
+            volume_profile: 'maintenance' as const,
+            volume_constraint_note: diagnosis + prescription,
+          }
+        })()
+      : null
+
+  // §52 (low-day extension) — structural maintenance trigger. Three triggers:
+  //   1. days_available <= 2: any 2-day plan. The §9 ratio (long ≥ 1.25× easy)
+  //      forces LR ≥ ~56% of weekly volume on 2 sessions, leaving no room
+  //      under the §52 60% cap. Maintenance is the honest framing.
+  //   2. days_available < days_required_ok for the distance (e.g. 3 days for
+  //      marathon, where ok=4): the runner is below the recommended training
+  //      frequency for build-grade adaptation.
+  //   3. validator returned 'warn' (means user acknowledged a sub-recommended
+  //      time-targeted plan): same outcome as case 2, just gated on time goal.
+  // All three resolve to: maintenance + a constraint note.
+  const daysLowMaintenance = input.days_available <= 2
+    || input.days_available < daysCheck.days_required_ok
+    || daysCheck.status === 'warn'
+  const daysLowNote = daysLowMaintenance
+    ? `Plan generated as maintenance — ${input.days_available} day${input.days_available === 1 ? '' : 's'}/week is ${
+        input.days_available <= 2 ? 'too few sessions to avoid structurally lopsided weeks (long run dominates weekly volume)' : `below the recommended ${daysCheck.days_required_ok}-day-minimum for a ${raceDistanceKey(input.race_distance_km)} build`
+      }. Plan maintains current fitness rather than building it. To enable a build profile: increase days_available to ${Math.max(daysCheck.days_required_ok, 3)}.`
+    : null
+
+  // Compose final values. §23's note wins (more specific) when both trigger.
+  const finalVolumeProfile: 'build' | 'maintenance' | undefined =
+    (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance)
+      ? 'maintenance'
+      : peakOverloadResult?.volume_profile  // 'build' or undefined
+  const finalVolumeNote: string | undefined =
+    peakOverloadResult?.volume_constraint_note ?? (daysLowMaintenance ? daysLowNote ?? undefined : undefined)
+
   const meta: Plan['meta'] = {
     athlete:          input.athlete_name ?? 'Athlete',
     handle:           '',
@@ -2641,99 +2754,11 @@ export function generateRulePlan(
       return 'constrained_by_inputs'
     })(),
 
-    // CoachingPrinciples §23, §38, §45, §46 — peak overload classification +
-    // actionable constraint note. Plans ≥ PEAK_OVERLOAD_MIN_PLAN_WEEKS that fail
-    // to reach EITHER:
-    //   §23 — peak weekly_km ≥ 110% of W1, OR
-    //   §46 — peak weekly_km ≥ marathon/ultra absolute floor (time-targeted), OR
-    //   §24 — peak long run ≥ race-distance ratio (when §45 cap has bitten),
-    // are surfaced as 'maintenance' with a diagnosis AND a prescription.
-    ...(totalWeeks >= GENERATION_CONFIG.PEAK_OVERLOAD_MIN_PLAN_WEEKS
-      ? (() => {
-          const w1 = weeks[0]?.weekly_km ?? 0
-          const peakKmActual = Math.max(...weeks.filter(wk => wk.phase === 'peak').map(wk => wk.weekly_km), 0)
-          const ratio = w1 > 0 ? peakKmActual / w1 : 0
-          const isTimeTarget = input.goal === 'time_target'
-          const distKey = raceDistanceKey(input.race_distance_km)
-          const distKm = input.race_distance_km
-
-          // §46 floor for marathon and ultra (time-target only).
-          let volumeFloor = 0
-          if (isTimeTarget) {
-            if (distKm >= 40 && distKm <= 43) volumeFloor = distKm * GENERATION_CONFIG.MARATHON_PEAK_VOLUME_FLOOR_RATIO
-            else if (distKm > 43 && distKm <= 55) volumeFloor = distKm * GENERATION_CONFIG.ULTRA_50K_PEAK_VOLUME_FLOOR_RATIO
-            else if (distKm > 55) volumeFloor = Math.min(
-              distKm * GENERATION_CONFIG.ULTRA_LONG_PEAK_VOLUME_FLOOR_RATIO,
-              GENERATION_CONFIG.ULTRA_PEAK_VOLUME_FLOOR_CAP_KM,
-            )
-          }
-
-          // §24 long-run floor for HM/marathon (time-target only). Test against
-          // the actual peak LR after post-passes.
-          let longRunFloorKm = 0
-          let actualPeakLrKm = 0
-          if (isTimeTarget && (distKey === 'HM' || distKey === 'MARATHON')) {
-            const ratioCfg = GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey]
-            longRunFloorKm = distKm * ratioCfg
-            for (const wk of weeks) {
-              if (wk.phase !== 'peak' || wk.type === 'deload') continue
-              for (const s of Object.values(wk.sessions)) {
-                if (s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)) {
-                  actualPeakLrKm = Math.max(actualPeakLrKm, s.distance_km ?? 0)
-                }
-              }
-            }
-          }
-
-          const ratioFails  = ratio < GENERATION_CONFIG.PEAK_OVER_BASE_RATIO
-          const volumeFails = volumeFloor > 0 && peakKmActual + 0.01 < volumeFloor
-          const lrFails     = longRunFloorKm > 0 && actualPeakLrKm + 0.01 < longRunFloorKm
-
-          if (!ratioFails && !volumeFails && !lrFails) {
-            return { volume_profile: 'build' as const }
-          }
-
-          // Build the diagnosis. Multiple failures concatenate.
-          const reasons: string[] = []
-          if (ratioFails) {
-            reasons.push(`Peak volume ${peakKmActual} km is ${Math.round(ratio * 100)}% of week 1 (${w1} km) — below the ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% overload threshold.`)
-          }
-          if (volumeFails) {
-            reasons.push(`Peak weekly volume ${peakKmActual} km is below the ${Math.round(volumeFloor)} km floor for a time-targeted ${distKey} (${Math.round((volumeFloor / distKm) * 100)}% of race distance).`)
-          }
-          if (lrFails) {
-            reasons.push(`Peak long run ${actualPeakLrKm} km is below the ${Math.round(longRunFloorKm * 10) / 10} km floor (${Math.round(GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey as 'HM' | 'MARATHON'] * 100)}% of race distance) — week-on-week long-run cap (§45) prevented reaching the ratio.`)
-          }
-          const diagnosis = reasons.join(' ') + ' Plan maintains current fitness rather than building it.'
-
-          const suggestions: string[] = []
-          if (input.days_available < 6) {
-            suggestions.push(`increase days_available from ${input.days_available} to ${input.days_available + 1}`)
-          }
-          if (input.max_weekday_mins != null && input.max_weekday_mins < 90) {
-            suggestions.push(`raise max_weekday_mins from ${input.max_weekday_mins} to 90`)
-          }
-          if (lrFails || volumeFails) {
-            suggestions.push(`defer the race so the build has more weeks (current ${totalWeeks}, recommended ≥${GENERATION_CONFIG.PREP_TIME_THRESHOLDS[distKey].warn})`)
-          }
-          const prescription = suggestions.length > 0
-            ? ` To enable a build profile: ${suggestions.join(', OR ')}.`
-            : ''
-          return {
-            volume_profile: 'maintenance' as const,
-            volume_constraint_note: diagnosis + prescription,
-          }
-        })()
-      : {}),
-
-    // CoachingPrinciples §52 (low-day) — sub-recommended days/wk on a
-    // time-targeted plan: force maintenance profile. Spread AFTER the §23
-    // IIFE so this override always wins. The §52 violation is a structural
-    // certainty for these inputs (LR can't fit under the 60% cap on so few
-    // sessions), so the engine commits to the honest framing up-front.
-    ...(daysCheck.status === 'warn' ? {
-      volume_profile: 'maintenance' as const,
-    } : {}),
+    // CoachingPrinciples §23/§38/§45/§46 (peak overload) + §52 (low-day) —
+    // composed maintenance trigger. See peakOverloadResult / daysLowMaintenance
+    // computation above the meta block for the full rule set.
+    ...(finalVolumeProfile ? { volume_profile: finalVolumeProfile } : {}),
+    ...(finalVolumeNote    ? { volume_constraint_note: finalVolumeNote } : {}),
 
     // VDOT / zone model fields (CoachingPrinciples §10, §20).
     // `vdot` is raw (benchmark-derived) — what users compare against Daniels' tables.
