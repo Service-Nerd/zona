@@ -5,7 +5,7 @@ import { getUserTier } from '@/lib/trial'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { enrich } from '@/lib/plan/enrich'
 import { nextMonday, formatDate } from '@/lib/plan/length'
-import { PrepTimeError, InputFieldError } from '@/lib/plan/inputs'
+import { PrepTimeError, DaysAvailableError, InputFieldError } from '@/lib/plan/inputs'
 
 // ─── Guard rails ──────────────────────────────────────────────────────────────
 //
@@ -74,6 +74,21 @@ export async function POST(req: NextRequest) {
             error: err.message,
             reason: err.reason,
             prep: err.prep,
+            requires_acknowledgment: err.reason === 'warn_unacknowledged',
+          },
+          { status: 422 },
+        )
+      }
+      // CoachingPrinciples §52 (low-day) — days-availability refusal. Same
+      // shape as PrepTimeError so the client renders both the same way:
+      // either a hard refusal with alternatives, or a warning the runner
+      // must acknowledge to proceed (resubmit with acknowledged_days_warning).
+      if (err instanceof DaysAvailableError) {
+        return NextResponse.json(
+          {
+            error: err.message,
+            reason: err.reason,
+            days: err.days,
             requires_acknowledgment: err.reason === 'warn_unacknowledged',
           },
           { status: 422 },

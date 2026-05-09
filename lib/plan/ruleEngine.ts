@@ -15,7 +15,7 @@ import {
 } from './length'
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
 import { validatePlan, formatViolations } from './invariants'
-import { enforcePrepTime, validateInputFields, type PrepTimeAwareInput, type PrepTimeResult } from './inputs'
+import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
 import {
   V1_SESSION_CATALOGUE, selectCatalogueSession,
   type SessionCatalogueRow, type CatalogueCategory,
@@ -2250,6 +2250,13 @@ export function generateRulePlan(
   // max_hr:50). Throws InputFieldError.
   validateInputFields(input)
 
+  // CoachingPrinciples §52 (low-day extension) — days-availability gate.
+  // Refuses inputs where days/week is below the per-distance minimum
+  // (marathon and ultras require ≥3, ideally ≥4). Throws DaysAvailableError
+  // on block / warn-unacknowledged. Runs before prep-time so the more
+  // structural infeasibility surfaces first.
+  const daysCheck: DaysAvailableResult = enforceDaysAvailable(input as PrepTimeAwareInput)
+
   // CoachingPrinciples §44 — prep-time validation. Runs first so block/warn
   // outcomes surface before any generation work. Throws PrepTimeError on
   // block or warn-without-acknowledgment; falls through with a result the
@@ -2719,6 +2726,15 @@ export function generateRulePlan(
         })()
       : {}),
 
+    // CoachingPrinciples §52 (low-day) — sub-recommended days/wk on a
+    // time-targeted plan: force maintenance profile. Spread AFTER the §23
+    // IIFE so this override always wins. The §52 violation is a structural
+    // certainty for these inputs (LR can't fit under the 60% cap on so few
+    // sessions), so the engine commits to the honest framing up-front.
+    ...(daysCheck.status === 'warn' ? {
+      volume_profile: 'maintenance' as const,
+    } : {}),
+
     // VDOT / zone model fields (CoachingPrinciples §10, §20).
     // `vdot` is raw (benchmark-derived) — what users compare against Daniels' tables.
     // `vdot_training_anchor` is the conservatism-discounted value used to derive
@@ -2762,6 +2778,19 @@ export function generateRulePlan(
       : {}),
     ...(prepTime.status === 'warn' && prepTime.alternatives
       ? { prep_time_alternatives: prepTime.alternatives }
+      : {}),
+
+    // CoachingPrinciples §52 (low-day) — days-availability status surface.
+    // Same shape as prep-time. 'warned' means the runner acknowledged a
+    // sub-recommended days/wk for a time-target plan; the engine continues
+    // but the plan is downgraded to maintenance via volume_profile below.
+    days_available_status: daysCheck.status === 'warn' ? 'warned' : 'ok',
+    days_required_ok: daysCheck.days_required_ok,
+    ...(daysCheck.status === 'warn' && daysCheck.message
+      ? { days_available_warning: daysCheck.message }
+      : {}),
+    ...(daysCheck.status === 'warn' && daysCheck.alternatives
+      ? { days_available_alternatives: daysCheck.alternatives }
       : {}),
 
     // V1/V2/V4/V5 audit trail — only emitted when at least one rule fired.

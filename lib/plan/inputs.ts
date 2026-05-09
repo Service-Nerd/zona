@@ -22,12 +22,25 @@ export interface PrepTimeResult {
   shifted_for_returning_runner: boolean
 }
 
-/** GeneratorInput extension — `acknowledged_prep_warning` is a transient input
- *  field consumed by validatePrepTime. Lives in this module rather than the
- *  shared types/plan.ts to keep the validator's UX-flow concept colocated.
+export interface DaysAvailableResult {
+  status: PrepTimeStatus
+  message?: string
+  alternatives?: string[]
+  days_available: number
+  days_required_ok: number
+  days_required_block: number
+  shifted_for_returning_runner: boolean
+}
+
+/** GeneratorInput extension — `acknowledged_prep_warning` and
+ *  `acknowledged_days_warning` are transient input fields consumed by
+ *  validatePrepTime / validateDaysAvailable. Live in this module rather
+ *  than shared types/plan.ts to keep the validator's UX-flow concept
+ *  colocated.
  */
 export interface PrepTimeAwareInput extends GeneratorInput {
   acknowledged_prep_warning?: boolean
+  acknowledged_days_warning?: boolean
 }
 
 /** Throw when the engine should not produce a plan due to prep-time. The API
@@ -40,6 +53,20 @@ export class PrepTimeError extends Error {
     this.name = 'PrepTimeError'
     this.reason = reason
     this.prep = prep
+  }
+}
+
+/** Throw when the engine should not produce a plan due to days-availability.
+ *  The API route catches this and returns 422 with the structured `days`
+ *  payload. Mirrors PrepTimeError. */
+export class DaysAvailableError extends Error {
+  reason: 'block' | 'warn_unacknowledged'
+  days: DaysAvailableResult
+  constructor(reason: 'block' | 'warn_unacknowledged', days: DaysAvailableResult) {
+    super(days.message ?? 'Days-availability validation refused generation')
+    this.name = 'DaysAvailableError'
+    this.reason = reason
+    this.days = days
   }
 }
 
@@ -141,6 +168,100 @@ export function enforcePrepTime(input: PrepTimeAwareInput, planStart: string): P
     throw new PrepTimeError('warn_unacknowledged', prep)
   }
   return prep
+}
+
+// ─── Days-availability gate ───────────────────────────────────────────────────
+// CoachingPrinciples §52 (low-day extension). Refuses inputs where the
+// minimum days/wk for the chosen race distance cannot support a coachable
+// plan — long-distance training (marathon and ultras) cannot be built on
+// 2 days/wk without producing structurally lopsided weeks.
+//
+// Returning runners shift the block threshold up by one day, mirroring
+// PREP_TIME's returning-runner shift.
+
+function daysAlternativesFor(
+  distKey: keyof typeof GENERATION_CONFIG.DAYS_AVAILABILITY_THRESHOLDS,
+  daysAvailable: number,
+  okThreshold: number,
+  input: GeneratorInput,
+): string[] {
+  const alts: string[] = []
+  const shortcuts: Record<typeof distKey, string | null> = {
+    'MARATHON': 'half marathon',
+    '50K':      'marathon',
+    '100K':     'marathon',
+    'HM':       '10K',
+    '10K':      null,
+    '5K':       null,
+  }
+  alts.push(`Increase your training days from ${daysAvailable} to ${okThreshold} per week.`)
+  const shorter = shortcuts[distKey]
+  if (shorter) {
+    alts.push(`Race the ${shorter} at this event instead — it's trainable on ${daysAvailable} days/wk.`)
+  }
+  if (input.goal === 'time_target') {
+    alts.push(`Switch goal to "finish" — finish goals tolerate lower training frequencies.`)
+  }
+  return alts
+}
+
+/** Pre-generation check. See CoachingPrinciples §52 (low-day extension). */
+export function validateDaysAvailable(input: GeneratorInput): DaysAvailableResult {
+  const days = input.days_available
+  const distKey = thresholdsKey(input.race_distance_km)
+  const thresholds = GENERATION_CONFIG.DAYS_AVAILABILITY_THRESHOLDS[distKey]
+  const isReturning = isReturningForPrepTime(input)
+  const shift = isReturning ? GENERATION_CONFIG.DAYS_AVAILABILITY_RETURNING_RUNNER_SHIFT : 0
+  const blockAt = thresholds.block + shift
+  const warnAt  = thresholds.warn  + shift
+  const okAt    = thresholds.ok    + shift
+
+  if (days < blockAt) {
+    return {
+      status: 'block',
+      message: `${days} days/week is not enough for a ${distKey}. Minimum is ${blockAt} days/wk${shift ? ' for a returning runner' : ''}; ${okAt}+ recommended.`,
+      alternatives: daysAlternativesFor(distKey, days, okAt, input),
+      days_available: days,
+      days_required_ok: okAt,
+      days_required_block: blockAt,
+      shifted_for_returning_runner: isReturning,
+    }
+  }
+
+  // For finish goals, the warn zone is treated as ok — finish-goal training
+  // tolerates lower frequencies (matches the PREP_TIME pattern).
+  if (days < okAt && input.goal === 'time_target') {
+    return {
+      status: 'warn',
+      message: `${days} days/week is below the recommended ${okAt}-day minimum for a time-targeted ${distKey}. The plan can be generated as maintenance-grade — expect to finish, not to hit the time goal.`,
+      alternatives: daysAlternativesFor(distKey, days, okAt, input),
+      days_available: days,
+      days_required_ok: okAt,
+      days_required_block: blockAt,
+      shifted_for_returning_runner: isReturning,
+    }
+  }
+
+  return {
+    status: 'ok',
+    days_available: days,
+    days_required_ok: okAt,
+    days_required_block: blockAt,
+    shifted_for_returning_runner: isReturning,
+  }
+}
+
+/** Convenience wrapper — applies the validator and throws DaysAvailableError
+ *  on block / warn-unacknowledged. Used at the top of generateRulePlan(). */
+export function enforceDaysAvailable(input: PrepTimeAwareInput): DaysAvailableResult {
+  const days = validateDaysAvailable(input)
+  if (days.status === 'block') {
+    throw new DaysAvailableError('block', days)
+  }
+  if (days.status === 'warn' && !input.acknowledged_days_warning) {
+    throw new DaysAvailableError('warn_unacknowledged', days)
+  }
+  return days
 }
 
 // ─── L-01: critical input field validation (CoachingPrinciples §55) ──────────

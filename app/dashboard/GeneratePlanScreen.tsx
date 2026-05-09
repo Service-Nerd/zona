@@ -9,6 +9,7 @@ import GeneratingCeremony from '@/components/GeneratingCeremony'
 import { BRAND } from '@/lib/brand'
 import { createClient } from '@/lib/supabase/client'
 import { classifyGap, gapDays, generateFoundationBlock } from '@/lib/plan/foundationBlock'
+import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -502,6 +503,17 @@ export default function GeneratePlanScreen({
       benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
       daysAvailable, preferredLongRunDay, daysOff, maxWeekdayChip,
       hardSessions, terrain, injuries])
+
+  // Clear an out-of-range daysAvailable when distance changes to a stricter
+  // tier (e.g. user picks 2 days for 10K, then goes back and switches to
+  // marathon — block threshold is 3, so the prior selection is invalid).
+  // Without this the disabled-button stays styled-selected.
+  useEffect(() => {
+    if (daysAvailable == null || distanceKm == null) return
+    const distKey = raceDistanceKey(distanceKm)
+    const blockAt = GENERATION_CONFIG.DAYS_AVAILABILITY_THRESHOLDS[distKey].block
+    if (daysAvailable < blockAt) setDaysAvailable(null)
+  }, [distanceKm, daysAvailable])
 
   // ── Navigation helpers ────────────────────────────────────────────────────
 
@@ -1230,31 +1242,68 @@ export default function GeneratePlanScreen({
         )
 
       // ── Schedule ───────────────────────────────────────────────────────────
-      case 'schedule':
+      case 'schedule': {
+        // Per-distance days/wk thresholds — surface block/warn at click-time
+        // rather than letting a 422 reach the user. Mirrors the validator in
+        // lib/plan/inputs.ts (validateDaysAvailable). For finish-goal, the
+        // warn zone is treated as ok.
+        const dDistKey = distanceKm ? raceDistanceKey(distanceKm) : null
+        const dThresh  = dDistKey ? GENERATION_CONFIG.DAYS_AVAILABILITY_THRESHOLDS[dDistKey] : null
+        const dayState = (n: number): { state: 'blocked' | 'warn' | 'ok'; hint: string | null } => {
+          if (!dThresh) return { state: 'ok', hint: null }
+          if (n < dThresh.block) {
+            return { state: 'blocked', hint: `Not enough for a ${dDistKey}. Needs ${dThresh.block}+ days/wk.` }
+          }
+          if (n < dThresh.ok && goal === 'time_target') {
+            return { state: 'warn', hint: `Will train for completion, not time. Recommended: ${dThresh.ok} days/wk.` }
+          }
+          return { state: 'ok', hint: null }
+        }
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <FieldLabel>Days per week</FieldLabel>
-              {[2,3,4,5,6].map(n => (
-                <button
-                  key={n}
-                  onClick={() => setDaysAvailable(n)}
-                  style={{
-                    width: '100%', padding: '18px 20px', borderRadius: 'var(--radius-lg)',
-                    border: `1.5px solid ${daysAvailable === n ? 'var(--moss)' : 'var(--line)'}`,
-                    background: daysAvailable === n ? 'var(--moss-soft)' : 'var(--card)',
-                    textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  }}
-                >
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: daysAvailable === n ? 700 : 500, color: daysAvailable === n ? 'var(--moss)' : 'var(--ink)' }}>
-                    {n} days
-                  </span>
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>
-                    {n === 2 ? 'Selective.' : n === 3 ? 'Enough.' : n === 4 ? 'Building.' : n === 5 ? 'Race-ready.' : 'All in.'}
-                  </span>
-                </button>
-              ))}
+              {[2,3,4,5,6].map(n => {
+                const ds = dayState(n)
+                const blocked = ds.state === 'blocked'
+                const warn    = ds.state === 'warn'
+                const selected = daysAvailable === n
+                return (
+                  <button
+                    key={n}
+                    onClick={() => { if (!blocked) setDaysAvailable(n) }}
+                    disabled={blocked}
+                    aria-disabled={blocked}
+                    style={{
+                      width: '100%', padding: '18px 20px', borderRadius: 'var(--radius-lg)',
+                      border: `1.5px solid ${
+                        selected ? 'var(--moss)'
+                        : warn   ? 'var(--warn)'
+                        : 'var(--line)'
+                      }`,
+                      background: selected ? 'var(--moss-soft)' : 'var(--card)',
+                      textAlign: 'left', cursor: blocked ? 'not-allowed' : 'pointer',
+                      opacity: blocked ? 0.4 : 1,
+                      transition: 'all 0.15s',
+                      display: 'flex', flexDirection: 'column', gap: '4px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: selected ? 700 : 500, color: selected ? 'var(--moss)' : 'var(--ink)' }}>
+                        {n} days
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>
+                        {n === 2 ? 'Selective.' : n === 3 ? 'Enough.' : n === 4 ? 'Building.' : n === 5 ? 'Race-ready.' : 'All in.'}
+                      </span>
+                    </div>
+                    {ds.hint && (
+                      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: blocked ? 'var(--danger)' : 'var(--warn)' }}>
+                        {ds.hint}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
             <div>
               <FieldLabel>Long-run day</FieldLabel>
@@ -1266,6 +1315,7 @@ export default function GeneratePlanScreen({
             </div>
           </div>
         )
+      }
 
       // ── Constraints ────────────────────────────────────────────────────────
       case 'constraints':

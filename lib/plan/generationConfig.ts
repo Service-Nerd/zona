@@ -446,6 +446,30 @@ export const GENERATION_CONFIG = {
   // doesn't need a separate guidance block).
   PRE_PLAN_BUFFER_WEEKS_THRESHOLD: 4,
 
+  // ── Days-availability gate (CoachingPrinciples §52, low-day extension) ────
+  // Per-distance minimum days/week thresholds. Mirrors PREP_TIME_THRESHOLDS
+  // pattern: block (refuse generation), warn (refuse unless acknowledged;
+  // generates as maintenance), ok (no friction).
+  //
+  // Coaching rationale: with too few sessions per week, the long run is
+  // forced to dominate weekly volume — the §52 LR/weekly cap (60%) becomes
+  // structurally unsatisfiable. For long-distance training, ≥3 days/wk is
+  // the floor below which the engine cannot produce a coherent plan; ≥4 is
+  // ideal. For shorter races (5K/10K), 2 days remains viable.
+  //
+  // Returning runners shift block up by one day — coming back from a layoff
+  // on minimum days is a higher injury risk than a consolidated runner on
+  // the same cadence.
+  DAYS_AVAILABILITY_THRESHOLDS: {
+    '5K':       { block: 1, warn: 1, ok: 2 },
+    '10K':      { block: 1, warn: 1, ok: 2 },
+    'HM':       { block: 2, warn: 2, ok: 3 },
+    'MARATHON': { block: 3, warn: 3, ok: 4 },
+    '50K':      { block: 3, warn: 3, ok: 4 },
+    '100K':     { block: 3, warn: 3, ok: 4 },
+  },
+  DAYS_AVAILABILITY_RETURNING_RUNNER_SHIFT: 1,
+
   // ── V1 simultaneous volume + quality intro split tolerance ────────────────
   // If week N introduces the first quality session of the plan AND the volume
   // step from N-1 to N exceeds this fraction (1.05 = 5%), the engine holds

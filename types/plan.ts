@@ -224,6 +224,17 @@ export interface PlanMeta {
   prep_time_weeks_available?: number
   prep_time_weeks_required_ok?: number
 
+  // CoachingPrinciples §52 (low-day extension) — days-availability gate.
+  // 'ok' on adequately-resourced plans, 'warned' on plans generated under
+  // an acknowledged sub-recommended days/wk. Block-status inputs never
+  // reach plan construction (DaysAvailableError surfaces at the entry point).
+  // (`days_available` itself is already declared above as part of the
+  // athlete profile; surfaced here only as warning/alternatives.)
+  days_available_status?: 'ok' | 'warned'
+  days_required_ok?: number
+  days_available_warning?: string
+  days_available_alternatives?: string[]
+
   // Audit trail of automatic post-pass corrections the engine made to honour
   // coaching rules (e.g. V1 simultaneous-stimulus split, V2 vo2max onset
   // shift, V5 stimulus regression escalation). One entry per rule fired —
