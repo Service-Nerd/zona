@@ -109,8 +109,11 @@ The iOS app is a Capacitor wrapper around the Vercel-hosted web app, not a stand
 - `@capacitor/browser` — opens OAuth URLs in SFSafariViewController (Google blocks WKWebView with `disallowed_useragent`)
 - `@capacitor/app` — listens for deep-link returns (`appUrlOpen` event)
 - `@capacitor/push-notifications` — registers for APNs and posts the device token to `/api/push/subscribe` with `platform: 'ios'`
+- `@capacitor-community/apple-sign-in` — Sign in with Apple via ASAuthorizationController, returns inline (no browser hop). Bridged to Supabase via `signInWithIdToken({ provider: 'apple', token, nonce })`. Entitlement: `com.apple.developer.applesignin` in `App.entitlements`.
 
 **Auth on native:** custom URL scheme `app.vetra.ios://auth-callback` is registered in `Info.plist`. Supabase OAuth runs with `skipBrowserRedirect: true`, the URL is opened via `Browser.open()`, and the callback is exchanged for a session in `CapacitorBoot.tsx`'s `appUrlOpen` listener. The same scheme should be reused for Strava OAuth when it's ported off `window.location.href`.
+
+**Sign in with Apple — name handoff (don't break this):** Apple returns the user's `givenName` + `familyName` *only* on the very first authorization — privacy design — and never again on subsequent sign-ins. The login handler in `app/auth/login/page.tsx` (`signInWithApple`) captures these from the plugin response and persists them via `supabase.auth.updateUser({ data: { full_name } })` immediately after `signInWithIdToken` succeeds. The existing pre-fill in `DashboardClient.tsx:495–505` then reads `user.user_metadata.full_name` and writes first/last to `user_settings` automatically — same path Google uses. If you change the login flow, keep this `updateUser` call: skipping it leaves Profile blank forever with no way to recover the name from Apple.
 
 **Push notifications status:**
 - *Layers 1 + 2 (engineering)*: done. Client registers via `@capacitor/push-notifications`, backend has `platform` column on `push_subscriptions`, `/api/push/subscribe` accepts both shapes, `/api/push/send-weekly-report` branches by platform. iOS sends route through `lib/apnpush.ts` (uses the `apn` npm package).
@@ -122,8 +125,7 @@ The iOS app is a Capacitor wrapper around the Vercel-hosted web app, not a stand
   - First test on a real device — simulator doesn't receive APNs
 
 **Native plugins still to add (see backlog):**
-- `@capacitor-community/apple-sign-in` — Sign in with Apple, bridged to Supabase Auth (gated on Apple Dev account)
-- `@revenuecat/purchases-capacitor` — StoreKit 2 via RevenueCat (gated on Apple Dev + RevenueCat setup)
+- `@revenuecat/purchases-capacitor` — StoreKit 2 via RevenueCat (gated on RevenueCat setup)
 
 ---
 
