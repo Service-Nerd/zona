@@ -1632,6 +1632,553 @@ function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide): void {
   }
 }
 
+// ─── V1–V7 post-pass rules ────────────────────────────────────────────────────
+// Each helper runs after weeks/sessions are built, mutates the weeks array
+// (and a shared ruleAdjustments audit list) in place, and returns nothing.
+// The patterns mirror applyLongRunProgressionCap / applyPeakLongRunAlternation:
+// pure functions of the plan state, no I/O, deterministic. Running order
+// matters — see the call-site comments in generateRulePlan.
+
+import type { RuleAdjustment } from '@/types/plan'
+
+// Helper: append a coach note to a session, respecting the 3-element tuple cap
+// declared in the schema. If the session already has 3 notes, the new note is
+// dropped — better to lose a propagation note than to break a structurally
+// important note (catalogue voice, segment pace target).
+function appendCoachNote(s: Session, note: string): void {
+  const existing = s.coach_notes ?? []
+  // Avoid exact duplicates so V3 propagation doesn't double-up if applied twice.
+  if (existing.some(n => n === note)) return
+  if (existing.length >= 3) return
+  if (existing.length === 0)      s.coach_notes = [note]
+  else if (existing.length === 1) s.coach_notes = [existing[0]!, note]
+  else                            s.coach_notes = [existing[0]!, existing[1], note]
+}
+
+// Helper: find the first non-rest, non-strength session of a week, in mon→sun
+// order. Used by V3 + V7 — they want "the first thing the runner sees" for
+// that week, not the long run / quality slot specifically.
+function firstActiveSession(week: Week): Session | null {
+  for (const d of DAY_ORDER) {
+    const s = week.sessions[d]
+    if (!s) continue
+    if (s.type === 'strength' || s.type === 'rest') continue
+    return s
+  }
+  return null
+}
+
+// Helper: identify the long-run session in a week (mirrors findLong inside
+// applyLongRunProgressionCap). Returns null if none.
+function longRunOfWeek(week: Week): { day: Day; session: Session } | null {
+  for (const [d, s] of Object.entries(week.sessions) as [Day, Session | undefined][]) {
+    if (s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)) {
+      return { day: d, session: s }
+    }
+  }
+  return null
+}
+
+// V5 — map a quality-session label to a STIMULUS_RANK key. Substring match,
+// case-insensitive. Returns null when the label doesn't fit any known bucket
+// (should never happen for engine-generated labels — defensive).
+function classifyStimulus(session: Session): keyof typeof GENERATION_CONFIG.STIMULUS_RANK | null {
+  const label = (session.label ?? '').toLowerCase()
+  const zone  = (session.zone  ?? '').toLowerCase()
+  // VO2max is unambiguous — drives off both label and zone.
+  if (label.includes('vo2') || zone.includes('zone 4–5') || zone.includes('zone 5')) return 'vo2max'
+  // Goal-pace and tempo both sit at rank 4 (race_pace / tempo). Distinguish for
+  // the audit log; rank is identical so escalation logic isn't affected.
+  if (label.includes('-pace') || label.includes('goal pace') || label.includes('sharpener')) return 'race_pace'
+  if (label.includes('tempo') || label.includes('cruise') || label.includes('threshold') || label.includes('progressive')) return 'tempo'
+  if (label.includes('hill'))  return 'hills'
+  if (label.includes('strid')) return 'strides'
+  if (label.includes('aerobic') || label.includes('steady')) return 'steady_aerobic'
+  return null
+}
+
+// V1 — simultaneous volume step + first quality intro.
+// Coaching rationale: introducing a new stress (the first quality session) on
+// top of a meaningful volume bump compounds adaptation load. Either hold the
+// volume bump for a week or delay quality by a week. Resolution chosen here:
+// hold volume constant in the bump week (option 1 from the spec) — preserves
+// the build's session-mix intent and is mechanically simpler than reshuffling
+// quality across weeks.
+//
+// Mechanics: scales EASY runs only (not the long run, not quality). The long
+// run is the structural anchor for §45/§47 cascades and for the
+// long-is-longest invariant; shrinking it here would break those. The
+// long-run growth is governed by §45's own progression cap, not V1.
+// If easy-only scaling can't reach the prior-week target, V1 partially
+// reduces — better to leave the easy load slightly elevated than break the
+// long-run cap chain.
+function applyV1VolumeQualityStimulusSplit(
+  weeks: Week[],
+  pace: PaceGuide,
+  adjustments: RuleAdjustment[],
+): void {
+  const threshold = 1 + GENERATION_CONFIG.V1_VOLUME_QUALITY_SPLIT_THRESHOLD_PCT / 100
+  const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+  const minEasy   = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+  const minRatio  = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
+
+  // Locate the first week containing a quality session.
+  let firstQualityIdx = -1
+  for (let i = 0; i < weeks.length; i++) {
+    const hasQuality = Object.values(weeks[i].sessions).some(s => s?.type === 'quality')
+    if (hasQuality) { firstQualityIdx = i; break }
+  }
+  if (firstQualityIdx <= 0) return  // no quality, or it's in week 1 (no prior week to compare)
+
+  const curr = weeks[firstQualityIdx]
+  const prev = weeks[firstQualityIdx - 1]
+  if (curr.type === 'race' || curr.type === 'deload') return
+  if (curr.weekly_km <= prev.weekly_km * threshold) return  // bump is small enough
+
+  // Identify the long-run session — it is excluded from scaling.
+  const lr = longRunOfWeek(curr)
+
+  // Sum easy-only volume (excluding long run, quality, strength, rest).
+  // Easy = type 'easy' AND NOT the long run.
+  const easyKm = Object.entries(curr.sessions).reduce((sum, [d, s]) => {
+    if (!s || s.type !== 'easy') return sum
+    if (lr && d === lr.day) return sum  // long-run excluded
+    return sum + (s.distance_km ?? (s.duration_mins ?? 0) / pace.minPerKmEasy)
+  }, 0)
+
+  if (easyKm <= 0) return  // no easies to scale
+
+  // §52 guard — V1 must not shrink weekly so much that LR / weekly exceeds the
+  // 60% lopsidedness cap. Compute a floor on weekly_target so the ratio
+  // survives, with a precision-aligned safety margin so post-rounding
+  // reconstruction (sumWeeklyKm) doesn't drop us below the floor. If
+  // prev_weekly is already below this floor, V1 partial-applies (lands at
+  // the floor, not at prev) — better to leave easy slightly elevated than
+  // to break §52.
+  const lrKm = lr?.session.distance_km ?? 0
+  const lrMaxPctOfWeekly = GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100
+  // Round the floor UP to the next km — sumWeeklyKm rounds the final total to
+  // an integer, which can bring us back below the strict floor by up to 1 km.
+  const weeklyFloorFromLR = lrKm > 0 ? Math.ceil(lrKm / lrMaxPctOfWeekly) + 1 : 0
+  const targetWeeklyKm = Math.max(prev.weekly_km, weeklyFloorFromLR)
+  if (targetWeeklyKm >= curr.weekly_km) return  // would leave plan unchanged or grow it
+
+  // Compute easy-target so total weekly = targetWeeklyKm.
+  // weekly = quality + long + easy_total + recovery. Only easy_total moves.
+  const fixedKm = (curr.weekly_km - easyKm)  // quality + long + recovery — held constant
+  const easyTargetKm = Math.max(0, targetWeeklyKm - fixedKm)
+  if (easyTargetKm >= easyKm) return  // already under target — nothing to do
+
+  const scale = easyTargetKm / easyKm
+  // Easy ceiling per §9: easy ≤ long / minRatio. Apply both the V1 scale and
+  // this ceiling. V1 should never raise easy above where the existing engine
+  // already left it, only lower; so the floor is `minEasy`, the ceiling is
+  // pre-existing distance × scale, and the §9-derived ceiling is layered on
+  // top.
+  const easyCeilingFromLR = lr?.session.distance_km != null
+    ? Math.floor((lr.session.distance_km / minRatio) / precision) * precision
+    : Infinity
+
+  for (const [d, s] of Object.entries(curr.sessions) as [Day, Session | undefined][]) {
+    if (!s || s.type !== 'easy') continue
+    if (lr && d === lr.day) continue
+    if (s.distance_km == null) continue
+    const scaled = Math.max(
+      Math.min(
+        Math.round(s.distance_km * scale / precision) * precision,
+        easyCeilingFromLR,
+      ),
+      minEasy,
+    )
+    s.distance_km = scaled
+    s.duration_mins = dur(scaled, pace.minPerKmEasy)
+  }
+  const newWeekly = sumWeeklyKm(curr.sessions, pace)
+  curr.weekly_km = newWeekly
+  curr.long_run_hrs = computeLongRunHrs(curr.sessions, pace)
+
+  adjustments.push({
+    rule:           'V1-volume-quality-split',
+    violation:      `Week ${curr.n} introduced the first quality session AND stepped volume up from ${prev.weekly_km} to ${curr.weekly_km} km (>${GENERATION_CONFIG.V1_VOLUME_QUALITY_SPLIT_THRESHOLD_PCT}% bump).`,
+    resolution:     `Held weekly volume at ${newWeekly} km (target ${prev.weekly_km}) by trimming easy runs; long run + quality preserved.`,
+    weeks_affected: [curr.n],
+  })
+}
+
+// V2 — VO2max onset must allow at least VO2MAX_ONSET_MIN_ADAPTATION_WEEKS
+// weeks of build/peak before taper. Applies only to races ≤ 21km — the
+// catalogue does not produce vo2max sessions for marathon+ (no rows with
+// distance_eligibility containing MARATHON/50K/100K), so the rule is a no-op
+// for those distances.
+//
+// Resolution: if the first vo2max session lands later than the deadline,
+// swap day-positions with the latest non-VO2 quality session that sits at or
+// before the deadline. Preserves total quality count and weekday placements.
+function applyV2Vo2MaxOnsetTiming(
+  weeks: Week[],
+  raceDistanceKm: number,
+  phases: Phase[],
+  adjustments: RuleAdjustment[],
+): void {
+  if (raceDistanceKm > 21) return  // V2 limited to short races per spec
+
+  const taperPhase = phases.find(p => p.name === 'taper')
+  if (!taperPhase) return
+  // Earliest week index (0-based) where the first vo2max session is allowed
+  // to land. weekN <= deadline ⇒ compliant.
+  const taperWeeks = (weeks.length - taperPhase.start_week) + 1
+  const deadlineWeekN = weeks.length - taperWeeks - GENERATION_CONFIG.VO2MAX_ONSET_MIN_ADAPTATION_WEEKS
+  if (deadlineWeekN < 1) return  // plan too short — nothing to enforce
+
+  // Scan for the first vo2max session and the latest pre-deadline non-vo2 quality.
+  let firstVo2Pos: { weekIdx: number; day: Day } | null = null
+  for (let i = 0; i < weeks.length; i++) {
+    for (const [d, s] of Object.entries(weeks[i].sessions) as [Day, Session | undefined][]) {
+      if (s && s.type === 'quality' && classifyStimulus(s) === 'vo2max') {
+        firstVo2Pos = { weekIdx: i, day: d }
+        break
+      }
+    }
+    if (firstVo2Pos) break
+  }
+  if (!firstVo2Pos) return  // catalogue produced no vo2max for this plan
+  if (weeks[firstVo2Pos.weekIdx].n <= deadlineWeekN) return  // already compliant
+
+  // V2 must not break peak-phase race-specific exposure (§22). If the vo2max
+  // currently lives in peak phase, moving it earlier would force a non-peak-
+  // suitable session (e.g. an aerobic-category build session) into peak.
+  // For short races (5K/10K) the catalogue intentionally places vo2max only
+  // in peak phase — there is no build-phase quality of comparable rank to
+  // swap in. Accept the late vo2 placement and log it; do not break §22.
+  const fromWeek = weeks[firstVo2Pos.weekIdx]
+  if (fromWeek.phase === 'peak') {
+    adjustments.push({
+      rule:           'V2-vo2max-onset-timing',
+      violation:      `First VO2max session is in week ${fromWeek.n}; spec target was week ≤${deadlineWeekN} (≥${GENERATION_CONFIG.VO2MAX_ONSET_MIN_ADAPTATION_WEEKS} adaptation weeks before taper).`,
+      resolution:     `No swap — catalogue places VO2max only in peak phase for this race distance. Late placement accepted to preserve §22 race-specific exposure.`,
+      weeks_affected: [fromWeek.n],
+    })
+    return
+  }
+
+  // Find latest non-vo2 quality session at or before deadline week. Restrict
+  // swap candidates to sessions whose stimulus rank is at or above tempo (rank
+  // 4) — pulling a low-rank aerobic session forward into the deadline weeks
+  // is a no-op for the V2 rationale (the runner still doesn't get vo2max
+  // adaptation early enough). Threshold/race-pace sessions provide useful
+  // adaptation overlap and are physiologically suitable in either week slot.
+  let swapTarget: { weekIdx: number; day: Day } | null = null
+  for (let i = weeks.length - 1; i >= 0; i--) {
+    if (weeks[i].n > deadlineWeekN) continue
+    if (weeks[i].type === 'race' || weeks[i].type === 'deload') continue
+    for (const [d, s] of Object.entries(weeks[i].sessions) as [Day, Session | undefined][]) {
+      if (!s || s.type !== 'quality') continue
+      const stim = classifyStimulus(s)
+      if (stim === 'vo2max') continue
+      if (!stim) continue
+      const rank = GENERATION_CONFIG.STIMULUS_RANK[stim]
+      if (rank < GENERATION_CONFIG.STIMULUS_RANK.tempo) continue
+      swapTarget = { weekIdx: i, day: d }
+      break
+    }
+    if (swapTarget) break
+  }
+  if (!swapTarget) return  // no suitable swap candidate — leave plan unchanged
+
+  const toWeek = weeks[swapTarget.weekIdx]
+  const vo2Session     = fromWeek.sessions[firstVo2Pos.day]!
+  const targetSession  = toWeek.sessions[swapTarget.day]!
+
+  // Swap session objects between the two day-slots. Update IDs to match new
+  // (week, day) so deterministic-ID invariant (INV-PLAN-009) survives.
+  vo2Session.id    = `w${toWeek.n}-${swapTarget.day}`
+  targetSession.id = `w${fromWeek.n}-${firstVo2Pos.day}`
+  toWeek.sessions[swapTarget.day]   = vo2Session
+  fromWeek.sessions[firstVo2Pos.day] = targetSession
+
+  // Add the adaptation-window coach note onto the (now-earlier) vo2 session.
+  appendCoachNote(
+    vo2Session,
+    'VO2max work requires 4–6 weeks to produce measurable adaptation. This session marks the start of that window.',
+  )
+
+  adjustments.push({
+    rule:           'V2-vo2max-onset-timing',
+    violation:      `First VO2max session was placed in week ${fromWeek.n}; latest compliant week is ${deadlineWeekN} (need ≥${GENERATION_CONFIG.VO2MAX_ONSET_MIN_ADAPTATION_WEEKS} adaptation weeks before taper).`,
+    resolution:     `Swapped VO2max session to week ${toWeek.n} (${swapTarget.day}); displaced quality moved to week ${fromWeek.n}.`,
+    weeks_affected: [fromWeek.n, toWeek.n].sort((a, b) => a - b),
+  })
+}
+
+// V3 — propagate the meta-level HR-estimation note into session-level coach
+// notes when the zones were derived from an estimated max HR. Targets:
+//   • every session in Week 1
+//   • the first session of each phase transition (base→build, build→peak,
+//     peak→taper)
+// Skipped on sessions whose week is already a recalibration week (the deload
+// already carries the recalibration prompt — duplicate would be noise).
+const HR_ESTIMATED_NOTE = 'HR zones in this plan are estimated from age. Run the first session by feel (RPE 4 = conversational, easy). If your HR sits consistently above or below target at that effort, flag it for zone recalibration.'
+
+function applyV3HrEstimationNotePropagation(
+  weeks: Week[],
+  hrZoneMethod: string | undefined,
+  recalibrationWeeks: number[] | undefined,
+): void {
+  if (hrZoneMethod !== 'percent_of_estimated_max') return
+  const recalSet = new Set(recalibrationWeeks ?? [])
+
+  // Week 1 — every active session.
+  if (weeks.length > 0 && !recalSet.has(weeks[0].n)) {
+    for (const s of Object.values(weeks[0].sessions)) {
+      if (!s || s.type === 'strength' || s.type === 'rest' || s.type === 'race') continue
+      appendCoachNote(s, HR_ESTIMATED_NOTE)
+    }
+  }
+
+  // Phase transitions — first active session of the new phase.
+  for (let i = 1; i < weeks.length; i++) {
+    const prev = weeks[i - 1]
+    const curr = weeks[i]
+    if (curr.phase === prev.phase) continue
+    if (recalSet.has(curr.n)) continue
+    const first = firstActiveSession(curr)
+    if (first) appendCoachNote(first, HR_ESTIMATED_NOTE)
+  }
+}
+
+// V4 — long run distance must not repeat identically across more than
+// LR_MAX_CONSECUTIVE_REPEATS non-deload weeks. Walks the plan, tracks runs of
+// identical LR distance through non-deload weeks, and increments by
+// LR_REPEAT_INCREMENT_KM on the third (and subsequent) consecutive week.
+// Capped per race-distance multiplier so we don't push a 10K plan to a 25km
+// long run by accident.
+//
+// Deload weeks reset the counter (they intentionally drop) and are themselves
+// never modified. Race week is excluded.
+function applyV4LongRunRepeatCeiling(
+  weeks: Week[],
+  input: GeneratorInput,
+  pace: PaceGuide,
+  adjustments: RuleAdjustment[],
+): void {
+  const raceDistanceKm = input.race_distance_km
+  const distKey = raceDistanceKey(raceDistanceKm)
+  const incrementKm = GENERATION_CONFIG.LR_REPEAT_INCREMENT_KM
+  const maxRepeats  = GENERATION_CONFIG.LR_MAX_CONSECUTIVE_REPEATS
+  const cap = raceDistanceKm <= 21
+    ? raceDistanceKm * GENERATION_CONFIG.LR_RACE_DISTANCE_MULT_SHORT
+    : raceDistanceKm * GENERATION_CONFIG.LR_RACE_DISTANCE_MULT_LONG
+  const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+
+  // Time-based absolute cap. 5K finish-goal plans use a tighter cap per §40.
+  let timeCapMins: number = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
+  if (distKey === '5K' && input.goal === 'finish') {
+    timeCapMins = Math.min(timeCapMins, GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_5K_FINISH)
+  }
+
+  // §52 long-run-as-fraction-of-weekly cap — V4 must not push LR above this
+  // ratio. Mirrors LONG_RUN_MAX_PCT_OF_WEEKLY (60%).
+  const lrMaxPctOfWeekly = GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100
+
+  // Streak state: tracks the last-seen non-deload LR distance and how many
+  // consecutive non-deload weeks have carried that exact distance.
+  let streakDist: number | null = null
+  let streakCount = 0
+  const incrementedWeeks: number[] = []
+
+  for (let i = 0; i < weeks.length; i++) {
+    const w = weeks[i]
+    if (w.type === 'race') continue
+    if (w.type === 'deload') {
+      // Deload resets the streak — the post-deload week starts fresh.
+      streakDist = null
+      streakCount = 0
+      continue
+    }
+    const lr = longRunOfWeek(w)
+    if (!lr || lr.session.distance_km == null) {
+      streakDist = null
+      streakCount = 0
+      continue
+    }
+    const dist = lr.session.distance_km
+    if (streakDist != null && Math.abs(dist - streakDist) < 0.05) {
+      streakCount++
+      if (streakCount > maxRepeats) {
+        // Increment this week's LR. The streak's tracked distance also
+        // advances so subsequent weeks compare against the new floor.
+        const proposed = dist + incrementKm
+        const newKm = Math.min(
+          Math.round(proposed / precision) * precision,
+          Math.floor(cap / precision) * precision,
+        )
+        if (newKm <= dist + 0.01) continue  // capped out; no-op
+
+        // Safety guards — V4 must not break other invariants. If applying
+        // the increment would breach any of these, skip this week (the
+        // repeat continues, but no other rule fires).
+        const newWeekly = w.weekly_km + (newKm - dist)
+        const newLrMins = newKm * pace.minPerKmEasy
+        if (newLrMins > timeCapMins) continue                      // §40/§9 absolute time cap
+        if (newKm / newWeekly > lrMaxPctOfWeekly + 0.005) continue // §52 LR/weekly cap (0.005 tolerance for rounding)
+
+        lr.session.distance_km = newKm
+        lr.session.duration_mins = dur(newKm, pace.minPerKmEasy)
+        w.weekly_km = sumWeeklyKm(w.sessions, pace)
+        w.long_run_hrs = computeLongRunHrs(w.sessions, pace)
+        streakDist = newKm
+        streakCount = 1  // fresh streak so the increment doesn't fire again next week
+        incrementedWeeks.push(w.n)
+      }
+    } else {
+      streakDist = dist
+      streakCount = 1
+    }
+  }
+
+  if (incrementedWeeks.length > 0) {
+    adjustments.push({
+      rule:           'V4-long-run-repeat-ceiling',
+      violation:      `Long run distance repeated identically across more than ${maxRepeats} consecutive non-deload weeks.`,
+      resolution:     `Incremented long run by ${incrementKm} km on weeks ${incrementedWeeks.join(', ')} (capped at race × ${raceDistanceKm <= 21 ? GENERATION_CONFIG.LR_RACE_DISTANCE_MULT_SHORT : GENERATION_CONFIG.LR_RACE_DISTANCE_MULT_LONG}).`,
+      weeks_affected: incrementedWeeks,
+    })
+  }
+}
+
+// V5 — quality-session stimulus progression within the build phase.
+// Walks build-phase quality sessions in order. If session N's stimulus rank
+// is ≤ session N-1's rank, escalate session N to the next rank (when a
+// suitable replacement exists in the catalogue / engine vocabulary).
+// Exception: a quality session immediately following a deload week is
+// allowed to regress — the deload resets the ladder.
+//
+// Escalation map (current → escalated): each transition keeps the session
+// distance and HR target identical, only the label / zone / pace changes
+// to match the new physiology. Implemented as a label rewrite + zone bump,
+// not a full session regeneration — keeps the change minimal.
+function applyV5StimulusProgression(
+  weeks: Week[],
+  raceDistanceKm: number,
+  pace: PaceGuide,
+  zones: ZoneTargets,
+  adjustments: RuleAdjustment[],
+): void {
+  // Collect build-phase quality positions in week-order.
+  type Pos = { weekIdx: number; day: Day; session: Session; rank: number; afterDeload: boolean }
+  const positions: Pos[] = []
+  for (let i = 0; i < weeks.length; i++) {
+    const w = weeks[i]
+    if (w.phase !== 'build') continue
+    if (w.type === 'race' || w.type === 'deload') continue
+    const afterDeload = i > 0 && weeks[i - 1].type === 'deload'
+    for (const [d, s] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+      if (!s || s.type !== 'quality') continue
+      const key = classifyStimulus(s)
+      if (!key) continue
+      positions.push({
+        weekIdx: i, day: d, session: s, rank: GENERATION_CONFIG.STIMULUS_RANK[key], afterDeload,
+      })
+    }
+  }
+  if (positions.length < 2) return
+
+  const escalatedWeeks: number[] = []
+  // VO2max only meaningful for short races (catalogue eligibility).
+  const canEscalateToVo2 = raceDistanceKm <= 12
+
+  for (let k = 1; k < positions.length; k++) {
+    const curr = positions[k]
+    const prev = positions[k - 1]
+    if (curr.afterDeload) continue  // deload resets the ladder
+    // Only true regressions trigger escalation. Equal-rank consolidation
+    // (e.g. tempo → tempo for marathon plans where the catalogue has no
+    // rank-5 vo2max for marathon) is normal coaching and should not be
+    // forced upward — there is no upward path in the catalogue.
+    if (curr.rank >= prev.rank) continue
+
+    // Pick a target rank: one above prev. Choose label class by target rank.
+    const targetRank = prev.rank + 1
+    let escalated = false
+    if (targetRank <= 4) {
+      // Bump to tempo (or stay at tempo if already there but ranks tied).
+      // Mechanically: rewrite to a "Continuous tempo" / threshold session.
+      const s = curr.session
+      s.label        = 'Continuous tempo'
+      s.zone         = 'Zone 3'
+      s.hr_target    = zones.qualityHR
+      s.pace_target  = pace.qualityPaceStr
+      s.coach_notes  = ['Sustainable. Same pace at the end as at the start.']
+      curr.rank = GENERATION_CONFIG.STIMULUS_RANK.tempo
+      escalated = true
+    } else if (targetRank === 5 && canEscalateToVo2) {
+      const s = curr.session
+      s.label        = 'Classic VO2max'
+      s.zone         = 'Zone 4–5'
+      s.hr_target    = zones.intervalsHR
+      s.pace_target  = pace.intervalPaceStr
+      s.coach_notes  = ['Three minutes is long. Don\'t blow rep one.']
+      curr.rank = GENERATION_CONFIG.STIMULUS_RANK.vo2max
+      escalated = true
+    }
+    if (escalated) escalatedWeeks.push(weeks[curr.weekIdx].n)
+  }
+
+  if (escalatedWeeks.length > 0) {
+    adjustments.push({
+      rule:           'V5-stimulus-progression',
+      violation:      'Build-phase quality session(s) regressed in stimulus rank vs the prior quality.',
+      resolution:     `Escalated quality on weeks ${escalatedWeeks.join(', ')} to maintain progressive build-phase stimulus.`,
+      weeks_affected: escalatedWeeks,
+    })
+  }
+}
+
+// V7 — taper rationale coach note. Adds a coach note to the first session of
+// the first taper week (excluding race week) explaining why the taper length
+// is what it is. Coaching rationale: athletes mistrust short tapers ("only
+// one week?") and over-taper long ones ("three weeks is too much rest").
+// A direct sentence about why it's the right length pre-empts both.
+function applyV7TaperRationale(
+  weeks: Week[],
+  raceDistanceKm: number,
+): void {
+  const firstTaperIdx = weeks.findIndex(w => w.phase === 'taper' && w.type !== 'race')
+  if (firstTaperIdx < 0) return
+  const target = firstActiveSession(weeks[firstTaperIdx])
+  if (!target) return
+
+  let note: string
+  if (raceDistanceKm <= 21) {
+    note = 'One week taper is appropriate for a short race. More would risk arriving flat. Trust the work.'
+  } else if (raceDistanceKm <= 50) {
+    note = 'Two week taper allows adaptation to consolidate without losing sharpness. Intensity stays, volume drops.'
+  } else {
+    note = 'Three week taper. Your aerobic base is what carries you — arriving rested matters more than last-minute fitness.'
+  }
+  appendCoachNote(target, note)
+}
+
+// V6 — emit pre-plan buffer guidance when prep_time_weeks_available exceeds
+// prep_time_weeks_required by more than the threshold. Returns the guidance
+// block (or null) — the caller attaches it to the plan.
+function buildV6PrePlanGuidance(
+  prepTime: PrepTimeResult,
+  planStartIso: string,
+  todayIso: string,
+): { buffer_weeks: number; guidance: string; week_estimate: string } | null {
+  const available = prepTime.weeks_available
+  const required  = prepTime.weeks_required_ok
+  if (typeof available !== 'number' || typeof required !== 'number') return null
+  const buffer = available - required
+  if (buffer <= GENERATION_CONFIG.PRE_PLAN_BUFFER_WEEKS_THRESHOLD) return null
+  return {
+    buffer_weeks: buffer,
+    guidance: 'Maintain your current weekly volume. Include 2–3 easy aerobic sessions per week. No quality or interval work. Arrive at Week 1 healthy and consistent.',
+    week_estimate: `${todayIso} → ${planStartIso}`,
+  }
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export type Tier = 'free' | 'trial' | 'paid'
@@ -1913,6 +2460,29 @@ export function generateRulePlan(
   // clamps any LR that exceeds +20% / +5km from the prior week's LR.
   applyLongRunProgressionCap(weeks, pace)
 
+  // ── V1–V7 post-passes ───────────────────────────────────────────────────────
+  // Order matters:
+  //   V2 first — moves vo2max sessions earlier; downstream V5 reads the new
+  //     placements when checking build-phase stimulus progression.
+  //   V5 next — escalates regressing build-phase quality before V1 inspects
+  //     the "first quality" position (V5 may have rewritten the label, but
+  //     never moves which week it lives in).
+  //   V1 — checks first-quality-session week vs prior-week volume bump and
+  //     scales non-quality sessions down. Does not touch quality.
+  //   V4 — long-run repeat ceiling. Mutates LR distances; runs after the §45
+  //     cap so it doesn't fight LR clamping.
+  //   V3 — propagates HR-estimation note into session coach_notes.
+  //   V7 — taper rationale note on first taper-week session.
+  // V6 (pre_plan block) is constructed below alongside meta — it doesn't
+  // mutate weeks.
+  const ruleAdjustments: RuleAdjustment[] = []
+  applyV2Vo2MaxOnsetTiming(weeks, input.race_distance_km, phases, ruleAdjustments)
+  applyV5StimulusProgression(weeks, input.race_distance_km, pace, zones, ruleAdjustments)
+  applyV1VolumeQualityStimulusSplit(weeks, pace, ruleAdjustments)
+  applyV4LongRunRepeatCeiling(weeks, input, pace, ruleAdjustments)
+  applyV3HrEstimationNotePropagation(weeks, hrFallback.method, recalibrationWeeks)
+  applyV7TaperRationale(weeks, input.race_distance_km)
+
   // CoachingPrinciples §53 — quality variety across the full plan. Catalogue
   // rotation gets stuck when only one threshold row is eligible for taper
   // (progressive_tempo) AND for peak (2 candidates, even split). Walk the plan
@@ -2193,9 +2763,21 @@ export function generateRulePlan(
     ...(prepTime.status === 'warn' && prepTime.alternatives
       ? { prep_time_alternatives: prepTime.alternatives }
       : {}),
+
+    // V1/V2/V4/V5 audit trail — only emitted when at least one rule fired.
+    ...(ruleAdjustments.length > 0 ? { rule_adjustments: ruleAdjustments } : {}),
   }
 
-  const plan: Plan = { meta, phases, weeks }
+  // V6 — pre-plan buffer guidance. Attached at plan top-level (sibling to
+  // weeks/phases/meta) per spec. Informational only; no session data.
+  const prePlan = buildV6PrePlanGuidance(prepTime, planStartIso, today)
+
+  const plan: Plan = {
+    meta,
+    phases,
+    weeks,
+    ...(prePlan ? { pre_plan: prePlan } : {}),
+  }
 
   // Constitutional review — verify the plan honours its own coaching principles.
   // In dev, throw on errors so the matrix / property tests fail loudly.

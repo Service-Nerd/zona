@@ -121,14 +121,29 @@ export const PlanMetaSchema = z.object({
   vdot_discount_applied_pct:         z.number().min(0).max(20).optional(),
   training_age:                      z.enum(['<6mo', '6-18mo', '2-5yr', '5yr+']).optional(),
   returning_runner_allowance_active: z.boolean().optional(),
+
+  // Audit trail of post-pass rule firings (V1, V2, V4, V5, V7 etc.)
+  rule_adjustments: z.array(z.object({
+    rule:           z.string(),
+    violation:      z.string(),
+    resolution:     z.string(),
+    weeks_affected: z.array(z.number().int().positive()),
+  })).optional(),
+})
+
+export const PrePlanGuidanceSchema = z.object({
+  buffer_weeks:  z.number().int().nonnegative(),
+  guidance:      z.string(),
+  week_estimate: z.string(),
 })
 
 // ─── Plan ─────────────────────────────────────────────────────────────────────
 
 export const PlanSchema = z.object({
-  meta:   PlanMetaSchema,
-  phases: z.array(PhaseSchema).optional(),
-  weeks:  z.array(WeekSchema),
+  meta:     PlanMetaSchema,
+  phases:   z.array(PhaseSchema).optional(),
+  weeks:    z.array(WeekSchema),
+  pre_plan: PrePlanGuidanceSchema.optional(),
 })
 
 // ─── Enricher output schema ───────────────────────────────────────────────────

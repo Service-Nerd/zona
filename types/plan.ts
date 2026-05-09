@@ -223,6 +223,30 @@ export interface PlanMeta {
   prep_time_alternatives?: string[]
   prep_time_weeks_available?: number
   prep_time_weeks_required_ok?: number
+
+  // Audit trail of automatic post-pass corrections the engine made to honour
+  // coaching rules (e.g. V1 simultaneous-stimulus split, V2 vo2max onset
+  // shift, V5 stimulus regression escalation). One entry per rule fired —
+  // human-readable, intended for debugging and post-hoc review.
+  rule_adjustments?: RuleAdjustment[]
+}
+
+/** Audit entry for a post-pass rule that fired during plan generation. */
+export interface RuleAdjustment {
+  rule: string                   // e.g. 'V1-volume-quality-split'
+  violation: string              // human-readable description of what was wrong
+  resolution: string             // what was done about it
+  weeks_affected: number[]       // 1-indexed week numbers
+}
+
+/** Pre-plan buffer guidance — present when prep_time_weeks_available significantly
+ *  exceeds prep_time_weeks_required (CoachingPrinciples §44 extension).
+ *  Informational only — not a session block. */
+export interface PrePlanGuidance {
+  buffer_weeks: number
+  guidance: string
+  /** Approximate ISO date range, e.g. "2026-01-05 → 2026-03-30". */
+  week_estimate: string
 }
 
 export interface Plan {
@@ -230,6 +254,8 @@ export interface Plan {
   /** Phase distribution — present on R23+ plans; absent on legacy gist plans. */
   phases?: Phase[]
   weeks: Week[]
+  /** Optional pre-plan buffer guidance — emitted when buffer > threshold. */
+  pre_plan?: PrePlanGuidance
 }
 
 export interface StravaActivity {

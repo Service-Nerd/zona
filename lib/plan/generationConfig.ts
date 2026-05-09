@@ -397,6 +397,63 @@ export const GENERATION_CONFIG = {
   FOUNDATION_LONG_RUN_MAX_PCT:   50, // long run cap as % of that week's weekly_km
   FRESH_RETURN_EFFECTIVE_BASELINE_FRACTION: 0.70, // mirrors FRESH_RETURN_START_FRACTION
 
+  // ── Stimulus rank — quality session escalation order (V5) ──────────────────
+  // Numeric stimulus rank used to validate progressive escalation of quality
+  // sessions through the build phase. A later quality session must NOT regress
+  // below the previous one in rank, except immediately following a deload week
+  // (recovery resets the ladder). Coaching rationale: build-phase progression
+  // is what produces adaptation — repeating tempo → tempo → tempo or stepping
+  // back from hills to strides wastes the build window.
+  // Keys match the canonical labels emitted by the catalogue / quality session
+  // builders. `match()` lookup in ruleEngine.ts maps free-text labels onto
+  // these keys via substring match.
+  STIMULUS_RANK: {
+    strides:        1,
+    easy:           1,
+    steady_aerobic: 2,
+    hills:          3,
+    tempo:          4,
+    race_pace:      4,
+    vo2max:         5,
+  },
+
+  // ── VO2max onset timing (V2, race ≤ 21km only) ─────────────────────────────
+  // VO2max work needs ~4–6 weeks to produce measurable adaptation. The first
+  // VO2max session must therefore appear no later than:
+  //   total_weeks − taper_weeks − VO2MAX_ONSET_MIN_ADAPTATION_WEEKS
+  // i.e. there must be at least N weeks of build/peak following the first
+  // VO2max session before taper begins. Below this window, the engine swaps
+  // an earlier non-VO2 quality with a VO2 session.
+  VO2MAX_ONSET_MIN_ADAPTATION_WEEKS: 5,
+
+  // ── Long-run consecutive-repeat ceiling (V4) ───────────────────────────────
+  // Long run distance must not repeat identically across more than
+  // LR_MAX_CONSECUTIVE_REPEATS non-deload weeks. Beyond that, the third
+  // (and subsequent) week increments by LR_REPEAT_INCREMENT_KM. Capped so
+  // the long run does not exceed race_distance × multiplier.
+  // Coaching rationale: a flat long run across 4+ build weeks is a sign the
+  // engine has stalled. Modest progression (+1km) is a stronger stimulus than
+  // pure repetition without over-extending.
+  LR_MAX_CONSECUTIVE_REPEATS: 2,
+  LR_REPEAT_INCREMENT_KM:     1,
+  LR_RACE_DISTANCE_MULT_SHORT: 1.8,  // ≤ 21km races
+  LR_RACE_DISTANCE_MULT_LONG:  2.0,  // > 21km races
+
+  // ── Pre-plan buffer guidance threshold (V6) ────────────────────────────────
+  // When prep_time_weeks_available − prep_time_weeks_required > this, emit a
+  // pre_plan block on the plan with maintenance guidance for the buffer
+  // period. Below this, no narrative output (the plan starts later but
+  // doesn't need a separate guidance block).
+  PRE_PLAN_BUFFER_WEEKS_THRESHOLD: 4,
+
+  // ── V1 simultaneous volume + quality intro split tolerance ────────────────
+  // If week N introduces the first quality session of the plan AND the volume
+  // step from N-1 to N exceeds this fraction (1.05 = 5%), the engine holds
+  // volume constant in week N. Coaching rationale: introducing a new stress
+  // (quality) on top of a meaningful volume bump compounds adaptation load.
+  // Better to land one stimulus at a time.
+  V1_VOLUME_QUALITY_SPLIT_THRESHOLD_PCT: 5,
+
   // ── Pre-session readiness signal (CoachingPrinciples §59) ───────────────────
   // The only adjustment trigger that fires BEFORE a run, not after. Composite
   // of three weak signals (RHR / HRV / sleep) — any one fires the soften.
