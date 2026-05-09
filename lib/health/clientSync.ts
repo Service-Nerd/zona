@@ -83,10 +83,10 @@ export const SAMPLES_LOOKBACK = SAMPLES_LOOKBACK_DAYS
 // ─── Plugin-backed entry points ────────────────────────────────────────────
 
 export interface AppleHealthHRSnapshot {
-  /** Resting HR (bpm) — from `restingHeartRate` quantity type, latest sample. */
-  restingHR: number
-  /** Max HR (bpm) — highest HR sample observed across recent workouts (last 90 days). */
-  maxHR:     number
+  /** Resting HR (bpm) — from `restingHeartRate` quantity type, latest sample. Null if no samples. */
+  restingHR: number | null
+  /** Max HR (bpm) — highest HR sample observed across recent workouts (last 90 days). Null if no samples. */
+  maxHR:     number | null
 }
 
 /**
@@ -132,11 +132,16 @@ export async function fetchAppleHealthHRSnapshot(): Promise<AppleHealthHRSnapsho
   ])
 
   const rhrLatest = rhrRes.samples[0]?.value
-  if (!rhrLatest || rhrLatest <= 0) return null
-  const maxHR = hrRes.samples.reduce((m, s) => Math.max(m, s.value || 0), 0)
-  if (!maxHR || maxHR <= 0) return null
+  const restingHR = rhrLatest && rhrLatest > 0 ? Math.round(rhrLatest) : null
 
-  return { restingHR: Math.round(rhrLatest), maxHR: Math.round(maxHR) }
+  const maxHRRaw = hrRes.samples.reduce((m, s) => Math.max(m, s.value || 0), 0)
+  const maxHR    = maxHRRaw > 0 ? Math.round(maxHRRaw) : null
+
+  // Return null only when we have nothing at all. Partial data is useful — a
+  // user with passive RHR from their watch but no recent workouts shouldn't
+  // get blocked from pre-filling the value we did read.
+  if (restingHR == null && maxHR == null) return null
+  return { restingHR, maxHR }
 }
 
 /**

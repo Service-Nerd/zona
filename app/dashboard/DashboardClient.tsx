@@ -6314,7 +6314,7 @@ function calculateZones(restingHR: number, maxHR: number) {
  * iOS native build wires up (Phase G). Until then the dynamic import fails
  * silently and the button is a no-op — no broken behaviour on PWA, no crash.
  */
-function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number, mhr: number) => void }) {
+function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number | null, mhr: number | null) => void }) {
   const [isNative, setIsNative] = useState(false)
   const [busy, setBusy] = useState(false)
   const [err,  setErr]  = useState<string | null>(null)
@@ -6343,6 +6343,13 @@ function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number, mhr:
         return
       }
       onPrefill(snapshot.restingHR, snapshot.maxHR)
+      // Soft-warn if we only got one of the two — pre-fill still happened, but
+      // the user should know why the other field is still empty.
+      if (snapshot.restingHR == null) {
+        setErr('Got max HR, but no resting HR yet')
+      } else if (snapshot.maxHR == null) {
+        setErr('Got resting HR, but no max HR yet — a workout adds this')
+      }
     } catch (e) {
       setErr('Apple Health unavailable')
     } finally {
@@ -6424,7 +6431,7 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
 
       {/* Editable HR inputs */}
       <div style={{ padding: '14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
-        <AppleHealthPrefillButton onPrefill={(r, m) => { setRhr(String(r)); setMhr(String(m)) }} />
+        <AppleHealthPrefillButton onPrefill={(r, m) => { if (r != null) setRhr(String(r)); if (m != null) setMhr(String(m)) }} />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
           <div>
             <label style={labelStyle}>Resting HR</label>
