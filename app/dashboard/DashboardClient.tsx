@@ -6163,7 +6163,13 @@ function AppleHealthConnectionRow() {
     try {
       const { requestHealthKitAuth, syncOnAppOpen } = await import('@/lib/health/clientSync')
       const granted = await requestHealthKitAuth()
-      if (!granted) return
+      if (!granted) {
+        // User denied at the iOS permission sheet, OR HealthKit unavailable
+        // (web/Android), OR the framework isn't linked in Xcode. Caller can
+        // distinguish by whether requestHealthKitAuth threw vs returned false.
+        console.warn('[HealthKit] auth not granted (denial, unavailable, or framework not linked)')
+        return
+      }
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const nowIso = new Date().toISOString()
@@ -6174,9 +6180,14 @@ function AppleHealthConnectionRow() {
       })
       setConnectedAt(nowIso)
       // First sync — best-effort, don't block UI
-      void syncOnAppOpen().catch(() => {})
-    } catch {
-      // Plugin not yet installed (Phase G); button remains in not-connected state
+      void syncOnAppOpen().catch((e) => {
+        console.warn('[HealthKit] first sync after connect failed:', e)
+      })
+    } catch (e) {
+      // Most likely the plugin failed to load or HealthKit.framework isn't
+      // linked. Without this log the connect button silently does nothing,
+      // which makes it impossible to debug from the Xcode console.
+      console.warn('[HealthKit] connect failed:', e)
     } finally {
       setBusy(false)
     }
