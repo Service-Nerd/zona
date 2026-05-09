@@ -26,12 +26,6 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 - 🔲 **Strava OAuth on native** *(deprioritised — no longer a launch blocker; Apple Health handles primary data path)* — currently uses `window.location.href` from `MeScreen` Strava connect button (DashboardClient.tsx line ~5234). Port to the same SFSafariViewController + URL-scheme pattern Google uses when we revisit Strava as the secondary source. Low risk, ~30 min.
 - 🔲 **Strava as secondary source** *(post-launch)* — once HealthKit is primary, keep Strava OAuth + webhook + `strava_activities` writes alive but optional. Dedupe rule: if a HealthKit workout and a Strava activity match within ±5 min and ±5% distance, prefer the source with HR stream data; otherwise prefer HealthKit (always present on iOS). Apply for Strava API approval in parallel — not blocking v1.
 - 🔲 **StoreKit 2 integration** — via `@revenuecat/purchases-capacitor`. Webhook → Supabase `subscriptions` table (per project memory). Stripe path stays for web users. Alternative: apply for External Purchase Entitlement (slow, not guaranteed). Apple Dev approved 2026-05-08; now gated only on RevenueCat app setup (in progress, see §D).
-- 🔄 **Push notifications** — engineering done (layers 1 + 2): `@capacitor/push-notifications` plugin registers the device, `/api/push/subscribe` accepts `{ platform: 'ios', token }`, `lib/apnpush.ts` sends via APNs (using `apn` npm package), `/api/push/send-weekly-report` branches by platform. Migration `20260430_push_platform.sql` adds `platform` column. **Outstanding (layer 3):**
-  - ✅ Enable Push Notifications capability in Apple Developer portal for `app.vetra.ios` (2026-05-08)
-  - ✅ Generate APNs key (.p8) in Apple Developer portal; downloaded 2026-05-08 (key + Key ID + Team ID held by user)
-  - 🔲 Add the Push Notifications capability to the Xcode App target (Signing & Capabilities)
-  - 🔲 Vercel env vars: `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY` (full .p8 contents — include the `-----BEGIN PRIVATE KEY-----` headers), `APNS_TOPIC=app.vetra.ios`, `APNS_PRODUCTION=1` for production builds (omit / set to `0` for sandbox testing) — values in hand from key generation, ready to paste
-  - 🔲 Test on a real device — the iOS Simulator can't receive live APNs, only simulated payloads via drag-and-drop .apns files
 - 🔲 **Universal Links** (defer until production domain is live) — replace custom URL schemes with `https://` deep links. Needs `apple-app-site-association` file at the domain root + Associated Domains entitlement in Xcode. Associated Domains capability enabled in Apple Developer portal 2026-05-08; awaiting custom domain. Better trust + UX than custom schemes; not blocking v1.
 - 🔲 **Build / signing pipeline** — Xcode signing certificate, provisioning profile, App Store Connect API key for CI uploads. Vercel keeps hosting JS; iOS builds happen on the Mac. Gated on Apple Dev.
 - ✅ **Migration `orientation_seen`** — column exists in `user_settings`, read on load + written on completion. Done.
@@ -47,7 +41,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 - 🔲 `STRIPE_WEBHOOK_SECRET` — needs Stripe webhook endpoint created
 - 🔲 `STRIPE_PRICE_MONTHLY` + `STRIPE_PRICE_ANNUAL` — needs Stripe product + price IDs
 - 🔲 `REVENUECAT_WEBHOOK_SECRET` — needs RevenueCat app setup first
-- 🔲 `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC`, `APNS_PRODUCTION` — APNs key generated 2026-05-08, values in hand; needs paste into Vercel
+- ✅ `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC`, `APNS_PRODUCTION` — pasted into Vercel 2026-05-09 (sandbox; flip `APNS_PRODUCTION` to `1` for TestFlight builds)
 
 ### D. External setup
 
@@ -98,8 +92,6 @@ After Vercel deploy, verify with agent-browser:
 - 🔲 **PROFILE-ADJ-02 — Surface auto-applied changes in a recent-activity log** *(scoped 7 May 2026)* — three engine triggers (zone drift, RPE disconnect, shadow load low ratio) carry `requiresConfirmation: false`, so they write `plan_adjustments` rows with `status='auto_applied'` and silently update the plan. The user has no UI to see what the engine did or why. PROFILE-ADJ-01 fixed the misleading "1 change suggested" copy that showed for these silent changes; this item is the bigger fix — a small "Recent tweaks" log on the Me screen (or inline above the Plan adjustments section) that lists the last 3–5 auto-applied changes with their summary. Tier: PAID. Effort ~1 day. Read from `plan_adjustments` where `status='auto_applied'` ordered by created_at desc.
 
 ### Post-run journey
-
-- 🔲 **POST-RUN-02 — APNs wiring for the link-time push** *(unblocked once Apple Dev approves)* — POST-RUN-01 shipped the full journey on web push. iOS receives the same payload via `notifyUser` once APNs goes live. Needs: APNs key (.p8) + Vercel env vars (`APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC=app.vetra.ios`, `APNS_PRODUCTION=1`); Push Notifications capability added to the Xcode App target; first test on a real device. The push payload + deep-link parsing already work — this is purely the Apple-side wiring tracked under iOS push setup.
 
 ---
 

@@ -115,14 +115,7 @@ The iOS app is a Capacitor wrapper around the Vercel-hosted web app, not a stand
 
 **Sign in with Apple — name handoff (don't break this):** Apple returns the user's `givenName` + `familyName` *only* on the very first authorization — privacy design — and never again on subsequent sign-ins. The login handler in `app/auth/login/page.tsx` (`signInWithApple`) captures these from the plugin response and persists them via `supabase.auth.updateUser({ data: { full_name } })` immediately after `signInWithIdToken` succeeds. The existing pre-fill in `DashboardClient.tsx:495–505` then reads `user.user_metadata.full_name` and writes first/last to `user_settings` automatically — same path Google uses. If you change the login flow, keep this `updateUser` call: skipping it leaves Profile blank forever with no way to recover the name from Apple.
 
-**Push notifications status:**
-- *Layers 1 + 2 (engineering)*: done. Client registers via `@capacitor/push-notifications`, backend has `platform` column on `push_subscriptions`, `/api/push/subscribe` accepts both shapes, `/api/push/send-weekly-report` branches by platform. iOS sends route through `lib/apnpush.ts` (uses the `apn` npm package).
-- *Layer 3 (Apple-side wiring)*: outstanding, gated on Apple Developer approval. Needs:
-  - Push Notifications capability enabled in the Apple Developer portal for `app.vetra.ios`
-  - APNs key generated (.p8 file) and downloaded
-  - Vercel env vars: `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY` (full .p8 contents), `APNS_TOPIC=app.vetra.ios`, `APNS_PRODUCTION=1` for prod
-  - Push Notifications capability added to the Xcode project's App target
-  - First test on a real device — simulator doesn't receive APNs
+**Push notifications:** fully wired end-to-end on iOS native (2026-05-09). Client registers via `@capacitor/push-notifications`, backend has `platform` column on `push_subscriptions`, `/api/push/subscribe` accepts both web (VAPID) and iOS (APNs token) shapes, iOS sends route through `lib/apnpush.ts` (uses the `apn` npm package). Apple Dev portal capability + APNs .p8 key + Xcode target capability + Vercel env vars (`APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC=app.vetra.ios`, `APNS_PRODUCTION`) all in place. Simulator-validated registration; TestFlight build will exercise the production APNs server (set `APNS_PRODUCTION=1` in Vercel before that build — sandbox tokens are rejected by the production server and vice versa).
 
 **Native plugins still to add (see backlog):**
 - `@revenuecat/purchases-capacitor` — StoreKit 2 via RevenueCat (gated on RevenueCat setup)
