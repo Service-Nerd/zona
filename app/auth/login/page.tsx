@@ -14,9 +14,8 @@ import { BRAND } from '@/lib/brand'
 // listener in components/CapacitorBoot.tsx completes the auth.
 //
 // Sign in with Apple on native uses ASAuthorizationController via the
-// @capacitor-community/apple-sign-in plugin (no browser hop), so it
-// returns inline rather than through this URL — same scheme is reused
-// only as the formal redirectURI value Apple wants in the request.
+// @capawesome/capacitor-apple-sign-in plugin (no browser hop), so it
+// returns inline rather than through this URL.
 //
 // Manual one-time setup: this redirect URL must be added in the Supabase
 // dashboard at Authentication -> URL Configuration -> Redirect URLs.
@@ -50,23 +49,23 @@ export default function LoginPage() {
 
     if (Capacitor.isNativePlatform()) {
       try {
-        const { SignInWithApple } = await import('@capacitor-community/apple-sign-in')
+        const { AppleSignIn, SignInScope } = await import('@capawesome/capacitor-apple-sign-in')
 
         // Apple wants SHA-256 of the raw nonce in the authorize call;
         // Supabase needs the *raw* nonce to verify the returned id_token.
         const rawNonce = generateNonce()
         const hashedNonce = await sha256Hex(rawNonce)
 
-        const result = await SignInWithApple.authorize({
-          // Native client_id is the bundle ID. Supabase Apple provider must
-          // include this as an allowed client ID alongside the web Service ID.
-          clientId: 'app.vetra.ios',
-          redirectURI: NATIVE_AUTH_CALLBACK,
-          scopes: 'email name',
+        // iOS path: no clientId/redirectUrl needed — the plugin uses the
+        // bundle ID + entitlement directly. Supabase Apple provider must
+        // have `app.vetra.ios` listed in Authorized Client IDs so the
+        // id_token's audience claim verifies.
+        const result = await AppleSignIn.signIn({
+          scopes: [SignInScope.Email, SignInScope.FullName],
           nonce: hashedNonce,
         })
 
-        const identityToken = result?.response?.identityToken
+        const identityToken = result?.idToken
         if (!identityToken) {
           setError('Apple did not return an identity token.')
           setLoading(false)
@@ -89,8 +88,8 @@ export default function LoginPage() {
         // the existing pre-fill in DashboardClient picks it up the same way
         // it does for Google. Skipping this step leaves Profile fields blank
         // forever with no way to recover the name from Apple.
-        const fn = (result.response.givenName || '').trim()
-        const ln = (result.response.familyName || '').trim()
+        const fn = (result.givenName || '').trim()
+        const ln = (result.familyName || '').trim()
         const fullName = [fn, ln].filter(Boolean).join(' ')
         if (fullName) {
           await supabase.auth.updateUser({ data: { full_name: fullName } })

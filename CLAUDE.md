@@ -109,7 +109,7 @@ The iOS app is a Capacitor wrapper around the Vercel-hosted web app, not a stand
 - `@capacitor/browser` — opens OAuth URLs in SFSafariViewController (Google blocks WKWebView with `disallowed_useragent`)
 - `@capacitor/app` — listens for deep-link returns (`appUrlOpen` event)
 - `@capacitor/push-notifications` — registers for APNs and posts the device token to `/api/push/subscribe` with `platform: 'ios'`
-- `@capacitor-community/apple-sign-in` — Sign in with Apple via ASAuthorizationController, returns inline (no browser hop). Bridged to Supabase via `signInWithIdToken({ provider: 'apple', token, nonce })`. Entitlement: `com.apple.developer.applesignin` in `App.entitlements`.
+- `@capawesome/capacitor-apple-sign-in` — Sign in with Apple via ASAuthorizationController, returns inline (no browser hop). Bridged to Supabase via `signInWithIdToken({ provider: 'apple', token, nonce })`. Entitlement: `com.apple.developer.applesignin` in `App.entitlements`. **Don't switch to `@capacitor-community/apple-sign-in`** — it's still on Capacitor 7 and conflicts with `@capgo/capacitor-health@8.x` over `capacitor-swift-pm` (the SPM resolver fails: one wants `7.x`, the other wants `8.x`). Capawesome's plugin requires `@capacitor/core >=8` and resolves cleanly.
 
 **Auth on native:** custom URL scheme `app.vetra.ios://auth-callback` is registered in `Info.plist`. Supabase OAuth runs with `skipBrowserRedirect: true`, the URL is opened via `Browser.open()`, and the callback is exchanged for a session in `CapacitorBoot.tsx`'s `appUrlOpen` listener. The same scheme should be reused for Strava OAuth when it's ported off `window.location.href`.
 
