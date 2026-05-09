@@ -451,20 +451,29 @@ export default function DashboardClient() {
           setPlan(loadedPlan)
         }
 
-        // Trigger 3: miss detection — past days this week with a scheduled session and no completion
+        // Trigger 3: miss detection — past days this week with a scheduled session and no completion.
+        // Compare actual calendar dates, not day-of-week indices: a plan that
+        // hasn't started yet has its first week's Mon-Fri in the calendar
+        // future, which the day-of-week-only check would falsely flag as
+        // "missed". Same logic protects the in-flight current week — only
+        // sessions whose calendar date is strictly before today can be missed.
         if (loadedPlan.weeks.length > 0) {
           const WEEK_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
-          const jsDay    = new Date().getDay() // 0=Sun…6=Sat
-          const todayKey = jsDay === 0 ? 'sun' : WEEK_DAYS[jsDay - 1]
-          const todayIdx = WEEK_DAYS.indexOf(todayKey)
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
           const wIdx     = getCurrentWeekIndex(loadedPlan.weeks)
           const wN       = wIdx + 1
           const week     = loadedPlan.weeks[wIdx]
           const thisWeekCompletions = completionsMap[wN] ?? {}
           if (week) {
+            const weekStart = parseLocalDate((week as any).date)
             for (const dayKey of WEEK_DAYS) {
               const dayIdx = WEEK_DAYS.indexOf(dayKey)
-              if (dayIdx >= todayIdx) break // today or future
+              // Calendar date for this day within the current week. Plan weeks
+              // start on Monday by convention; mon = weekStart + 0, sun = +6.
+              const dayDate = new Date(weekStart)
+              dayDate.setDate(weekStart.getDate() + dayIdx)
+              if (dayDate >= today) break // today or future — not missable
               const s = (week.sessions as any)[dayKey]
               if (!s || s.type === 'rest') continue
               if (!thisWeekCompletions[dayKey]) {
