@@ -5955,11 +5955,19 @@ function PushNotificationsRow() {
           setStatus('denied')
           return
         }
-        // Resolve once APNs hands back a device token (or errors).
+        // Resolve once APNs hands back a device token (or errors). Time out
+        // after 30s so the button can't hang forever — APNs registration in
+        // the simulator silently fails on older macOS/iOS combos (needs
+        // macOS 13+ and iOS 16+ simulator runtime), and we want feedback
+        // either way.
         await new Promise<void>((resolve, reject) => {
           let settled = false
           const settle = (fn: () => void) => { if (!settled) { settled = true; fn() } }
+          const timeoutId = setTimeout(() => {
+            settle(() => reject(new Error('APNs registration timed out after 30s — simulator may not support push, or APNs sandbox is unreachable')))
+          }, 30_000)
           PushNotifications.addListener('registration', async (token) => {
+            clearTimeout(timeoutId)
             try {
               await authedFetch('/api/push/subscribe', {
                 method: 'POST',
@@ -5972,12 +5980,19 @@ function PushNotificationsRow() {
             }
           })
           PushNotifications.addListener('registrationError', (err) => {
+            clearTimeout(timeoutId)
             settle(() => reject(new Error(err.error)))
           })
-          PushNotifications.register().catch((err) => settle(() => reject(err)))
+          PushNotifications.register().catch((err) => {
+            clearTimeout(timeoutId)
+            settle(() => reject(err))
+          })
         })
         setStatus('subscribed')
-      } catch {
+      } catch (err) {
+        // Most common cause on simulator: APNs sandbox unreachable.
+        // Surface the reason in the console so it's debuggable from Xcode.
+        console.warn('[push] iOS registration failed:', err instanceof Error ? err.message : err)
         setStatus('idle')
       } finally {
         setLoading(false)
