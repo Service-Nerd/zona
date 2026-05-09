@@ -3971,10 +3971,21 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
   // Build 7-day session list
   const now = new Date()
+  now.setHours(0, 0, 0, 0)
   const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][now.getDay()]
   const weekStartDate = parseLocalDate((currentWeek as any).date)
   const todayStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
   const ws = (currentWeek as any).sessions ?? {}
+
+  // Pre-start state: viewing the first plan week before its start date.
+  // Plans created with a future start date land here on the first open and
+  // need different framing — the regular session hero would render the
+  // first session ("5km, slowly.") as if today, which falsely implies the
+  // user should be running. Gated on weekIndex === 0 so a user swiping to
+  // future weeks for a peek doesn't trip the pre-start view.
+  const planStartDate = parseLocalDate((plan.weeks[0] as any).date)
+  const daysToPlanStart = Math.max(0, Math.ceil((planStartDate.getTime() - now.getTime()) / 86400000))
+  const planNotStarted = planStartDate > now && weekIndex === 0
 
   // Apply overrides — memoised so it recomputes when overrides state changes
   // Each entry carries originalDay so completion lookups always use the stable key
@@ -4272,7 +4283,54 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         </div>
 
         {/* Hero label + display */}
-        {showSessionHero && selectedSession ? (
+        {planNotStarted ? (
+          <>
+            <div style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: '15px',
+              fontWeight: 500,
+              color: 'var(--mute)',
+              marginBottom: '4px',
+              lineHeight: 1,
+            }}>
+              {(() => {
+                const h = new Date().getHours()
+                const greeting = h >= 5 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 22 ? 'Good evening' : 'Evening'
+                return firstName ? `${greeting}, ${firstName}` : greeting
+              })()}
+            </div>
+            <div style={{ lineHeight: 1, marginBottom: '12px' }}>
+              <span style={{
+                fontFamily: 'var(--font-ui)',
+                fontSize: '56px',
+                fontWeight: 800,
+                color: 'var(--ink)',
+                letterSpacing: '-2.5px',
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                {daysToPlanStart === 1 ? 'Tomorrow.' : `${daysToPlanStart} days.`}
+              </span>
+              <br />
+              <span style={{
+                fontFamily: 'var(--font-ui)',
+                fontSize: '56px',
+                fontWeight: 800,
+                color: 'var(--moss)',
+                letterSpacing: '-2.5px',
+              }}>
+                Until then, rest up.
+              </span>
+            </div>
+            <div style={{
+              fontFamily: 'var(--font-ui)',
+              fontSize: '13px',
+              color: 'var(--mute)',
+              marginBottom: '20px',
+            }}>
+              Plan begins {planStartDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}.
+            </div>
+          </>
+        ) : showSessionHero && selectedSession ? (
           <>
             <div style={{
               fontFamily: 'var(--font-ui)',
