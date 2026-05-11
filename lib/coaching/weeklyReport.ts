@@ -6,18 +6,20 @@ export type InsightPriority = 'load_spike' | 'zone_drift' | 'shadow_load' | 'ef_
 
 /**
  * A single session selected from the week to be named explicitly in the report
- * body — the one that pulled the week's signal down hardest. Null when no
- * session crosses the concern threshold (week was clean enough that naming a
- * specific session would be artificial).
+ * body. Either the session that pulled the signal down hardest ('concerning')
+ * or — when the week was clean — the standout positive session ('standout').
+ * Null when neither applies (week was unremarkable in both directions).
  */
 export interface SpotlightSession {
   dayLabel:    string                 // 'Wednesday'
   type:        string                 // 'easy', 'quality', 'long', etc.
   distanceKm:  number | null
   totalScore:  number | null          // 0–100
-  verdict:     string | null          // 'off_target' | 'concerning' | ...
+  verdict:     string | null          // 'off_target' | 'concerning' | 'nailed' | ...
   hrInZonePct: number | null
   efTrendPct:  number | null          // % vs 4-week baseline
+  /** Whether this session is being called out as a problem or a positive anchor. */
+  polarity:    'concerning' | 'standout'
 }
 
 /** Row shape consumed by pickSpotlightSession. Mirrors run_analysis select. */
@@ -42,13 +44,17 @@ const DAY_TITLE: Record<string, string> = {
 /**
  * Picks one session per week to name explicitly in the report body.
  *
- * Selection rule: lowest total_score, gated to verdicts that already encode
- * "this didn't go well" — 'off_target' or 'concerning'. The verdict bands in
- * constants.ts are the single source of truth for the threshold; we never
- * duplicate the numeric here.
+ * Selection logic (in order):
+ *   1. Concerning — lowest total_score, gated to verdicts 'off_target' or
+ *      'concerning'. The session that pulled the week down hardest.
+ *   2. Standout — when no concerning session exists, the HIGHEST total_score,
+ *      gated to verdict 'nailed' (the same VERDICT_BANDS.nailed threshold).
+ *      Gives the model a positive anchor on clean weeks rather than a generic
+ *      "solid week" message.
+ *   3. Null — neither bucket has a qualifying session. Week was unremarkable.
  *
- * Returns null when no session is concerning — the AI is then left to write a
- * clean-week message without inventing a problem session.
+ * Reuses VERDICT_BANDS semantics implicitly via the verdict string — never
+ * duplicates the numeric threshold (single source of truth in constants.ts).
  */
 export function pickSpotlightSession(
   analyses: RunAnalysisRow[],
@@ -60,15 +66,32 @@ export function pickSpotlightSession(
   const scored = analyses.filter(a => a.total_score != null)
   if (!scored.length) return null
 
+  // Try concerning first — the down-pull is the more actionable coaching signal.
   const worst = [...scored].sort(
     (a, b) => (a.total_score as number) - (b.total_score as number),
   )[0]
-  if (!worst) return null
+  if (worst && (worst.verdict === 'off_target' || worst.verdict === 'concerning')) {
+    return toSpotlight(worst, week, weekN, 'concerning')
+  }
 
-  const isConcerning = worst.verdict === 'off_target' || worst.verdict === 'concerning'
-  if (!isConcerning) return null
+  // Fall back to standout — pick the highest-scoring nailed session as a positive anchor.
+  const best = [...scored].sort(
+    (a, b) => (b.total_score as number) - (a.total_score as number),
+  )[0]
+  if (best && best.verdict === 'nailed') {
+    return toSpotlight(best, week, weekN, 'standout')
+  }
 
-  const dayKey  = worst.session_day.replace(`week_${weekN}_`, '')
+  return null
+}
+
+function toSpotlight(
+  row: RunAnalysisRow,
+  week: { sessions: Record<string, { type: string; distance_km?: number | null } | null | undefined> },
+  weekN: number,
+  polarity: 'concerning' | 'standout',
+): SpotlightSession | null {
+  const dayKey  = row.session_day.replace(`week_${weekN}_`, '')
   const session = week.sessions[dayKey]
   if (!session) return null
 
@@ -76,10 +99,11 @@ export function pickSpotlightSession(
     dayLabel:    DAY_TITLE[dayKey] ?? dayKey,
     type:        session.type,
     distanceKm:  session.distance_km ?? null,
-    totalScore:  worst.total_score,
-    verdict:     worst.verdict,
-    hrInZonePct: worst.hr_in_zone_pct != null ? Number(worst.hr_in_zone_pct) : null,
-    efTrendPct:  worst.ef_trend_pct  != null ? Number(worst.ef_trend_pct)  : null,
+    totalScore:  row.total_score,
+    verdict:     row.verdict,
+    hrInZonePct: row.hr_in_zone_pct != null ? Number(row.hr_in_zone_pct) : null,
+    efTrendPct:  row.ef_trend_pct  != null ? Number(row.ef_trend_pct)  : null,
+    polarity,
   }
 }
 

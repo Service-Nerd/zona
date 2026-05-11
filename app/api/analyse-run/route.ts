@@ -9,6 +9,7 @@ import { computeEF, computeEFBaseline } from '@/lib/coaching/efTrend'
 import { COACHING_RULE_ENGINE_VERSION, COHORT_SIMILARITY } from '@/lib/coaching/constants'
 import { buildSessionFeedbackPrompt } from '@/lib/coaching/prompts/sessionFeedback'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
+import { computeHrStreamSummary } from '@/lib/coaching/streamAnalysis'
 import { fetchRunHistory, findSimilarRuns, summariseCohort, pickWindowDays } from '@/lib/coaching/runHistory'
 import { zoneForSessionType, sessionHRBand } from '@/lib/coaching/zoneRules'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
@@ -230,6 +231,12 @@ export async function POST(req: NextRequest) {
       cohortContext:       cohortSummary,
       isFirstAnalysis,
       athleteContext:      buildAthleteContext({ plan }),
+      streamSummary:       computeHrStreamSummary(
+        // raw_payload.hrSamples is HealthKit-only today (see lib/health/adapter.ts).
+        // Returns null on Strava-sourced runs or sample-starved data.
+        (activity.raw_payload as { hrSamples?: Array<{ valueBpm: number; timestamp: string }> } | null)?.hrSamples ?? null,
+        activity.moving_time_s ?? 0,
+      ),
     })
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {

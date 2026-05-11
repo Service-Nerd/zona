@@ -77,8 +77,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ report: existing, cached: true, refresh_blocked: force && generatedToday })
   }
 
-  // Fetch completions and run_analysis for this week in parallel
-  const [completionsRes, analysisRes, prevWeeksRes] = await Promise.all([
+  // Fetch completions, run_analysis, and previous week's report in parallel
+  const [completionsRes, analysisRes, prevWeeksRes, prevReportRes] = await Promise.all([
     serviceSupabase
       .from('session_completions')
       .select('week_n, session_day, status, rpe, fatigue_tag, avg_hr, coaching_flag')
@@ -95,11 +95,27 @@ export async function POST(req: NextRequest) {
       .eq('user_id', userId)
       .order('week_n', { ascending: false })
       .limit(40),
+    // AI-DEPTH-04: conversation memory — pull last week's headline + body so the
+    // model can reference progress or repeat-issues. Null on week 1 or when the
+    // previous report had a silent AI fallback (headline/body null).
+    weekN > 1
+      ? serviceSupabase
+          .from('weekly_reports')
+          .select('headline, body')
+          .eq('user_id', userId)
+          .eq('week_n', weekN - 1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ])
 
   const completions     = completionsRes.data ?? []
   const analyses        = analysisRes.data ?? []
   const prevRawWeeks    = prevWeeksRes.data ?? []
+  // AI-DEPTH-04 — only pass when both fields are present. Partial reports
+  // (one field null from silent AI fallback) aren't worth referencing.
+  const previousReport  = prevReportRes.data?.headline && prevReportRes.data?.body
+    ? { headline: prevReportRes.data.headline as string, body: prevReportRes.data.body as string }
+    : null
 
   // Aggregate weekly load from run_analysis
   const weekLoadMap: Record<number, number> = {}
@@ -243,6 +259,7 @@ export async function POST(req: NextRequest) {
       missedSessionTypes,
       spotlight,
       buildAthleteContext({ plan }),
+      previousReport,
     )
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {

@@ -41,6 +41,12 @@ Headline: "Good start — stay the course."
 Body: "Zone discipline is up, load is on track, and there's nothing alarming in the data so far. The back half of the week is still to come — don't let a good start become a reason to push harder."
 CTA: "Keep the same structure through the rest of the week."`
 
+/** AI-DEPTH-04 — previous week's coaching, fed into this week's prompt for continuity. */
+export interface PreviousReportSummary {
+  headline: string
+  body:     string
+}
+
 export function buildWeeklyReportPrompt(
   data: WeeklyReportData,
   plan: Plan,
@@ -53,6 +59,7 @@ export function buildWeeklyReportPrompt(
   missedSessionTypes?: string[],
   spotlight?: SpotlightSession | null,
   athleteContext?: string,
+  previousReport?: PreviousReportSummary | null,
 ): string {
   const weeksToRace = plan.meta.race_date
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
@@ -83,23 +90,42 @@ export function buildWeeklyReportPrompt(
     ? `\n- Missed sessions so far: ${missedSessionTypes.join(', ')}`
     : ''
 
-  const spotlightBlock = spotlight
+  // AI-DEPTH-04 — last week's coaching, rendered as compact context so the model
+  // can reference progress (improvement) or repeat-issue (regression) at most once.
+  const previousReportBlock = previousReport
     ? `
 
-Spotlight session (the single session that pulled this week's signal down hardest):
-- Day: ${spotlight.dayLabel}
-- Session: ${spotlight.type}${spotlight.distanceKm != null ? ` (${spotlight.distanceKm}km planned)` : ''}
-- Score: ${spotlight.totalScore}/100, verdict: ${spotlight.verdict}${
-        spotlight.hrInZonePct != null
-          ? `\n- Time in prescribed zone: ${spotlight.hrInZonePct.toFixed(0)}%`
-          : ''
-      }${
-        spotlight.efTrendPct != null
-          ? `\n- Aerobic efficiency vs 4-week baseline: ${spotlight.efTrendPct >= 0 ? '+' : ''}${spotlight.efTrendPct.toFixed(1)}%`
-          : ''
-      }
+Last week's coaching (for continuity only):
+- Headline: "${previousReport.headline}"
+- Body: "${previousReport.body}"
 
-Naming rule: in the Body, name this session explicitly by day and type at least once — e.g. "${spotlight.dayLabel}'s ${spotlight.type} run". Use only the numbers listed above; do not invent pace, splits, or HR values that aren't in this block.`
+Continuity rule: you may reference last week's coaching at most ONCE in the Body, and only when this week's data tracks against it — i.e. the issue improved, persisted, or got worse. Never reference it gratuitously. If this week's data is unrelated to last week's story, do not mention it at all.`
+    : ''
+
+  const spotlightBlock = spotlight
+    ? (() => {
+        const header = spotlight.polarity === 'concerning'
+          ? 'Spotlight session (the single session that pulled this week\'s signal down hardest):'
+          : 'Spotlight session (the standout session of the week — use as a positive anchor):'
+
+        const dataLines = [
+          `- Day: ${spotlight.dayLabel}`,
+          `- Session: ${spotlight.type}${spotlight.distanceKm != null ? ` (${spotlight.distanceKm}km planned)` : ''}`,
+          `- Score: ${spotlight.totalScore}/100, verdict: ${spotlight.verdict}`,
+          spotlight.hrInZonePct != null
+            ? `- Time in prescribed zone: ${spotlight.hrInZonePct.toFixed(0)}%`
+            : null,
+          spotlight.efTrendPct != null
+            ? `- Aerobic efficiency vs 4-week baseline: ${spotlight.efTrendPct >= 0 ? '+' : ''}${spotlight.efTrendPct.toFixed(1)}%`
+            : null,
+        ].filter(Boolean).join('\n')
+
+        const namingRule = spotlight.polarity === 'concerning'
+          ? `Naming rule: in the Body, name this session explicitly by day and type at least once — e.g. "${spotlight.dayLabel}'s ${spotlight.type} run". This is what went wrong. Use only the numbers listed above; do not invent pace, splits, or HR values that aren't in this block.`
+          : `Naming rule: in the Body, name this session as the anchor of the week — e.g. "${spotlight.dayLabel}'s ${spotlight.type} run set the bar" or "${spotlight.dayLabel}'s ${spotlight.type} was the one that mattered". Don't over-celebrate — one line of credit, then move on. Use only the numbers listed above.`
+
+        return `\n\n${header}\n${dataLines}\n\n${namingRule}`
+      })()
     : ''
 
   const voiceHeader = buildVoiceHeader({
@@ -131,7 +157,7 @@ This week's data:
 - Load ratio (vs 4-week avg): ${data.acuteChronicRatio.toFixed(2)}x
 - Zone discipline score: ${data.zoneDisciplineScore !== null ? `${data.zoneDisciplineScore}/100 (70+ = healthy; below 65 = zone drift concern)` : 'no signal (no Strava-analysed sessions yet)'}
 ${data.avgRpe !== null ? `- Avg RPE: ${data.avgRpe.toFixed(1)}\n` : ''}- Dominant coaching flag: ${data.dominantFlag}
-- Primary insight: ${data.primaryInsight}${spotlightBlock}
+- Primary insight: ${data.primaryInsight}${previousReportBlock}${spotlightBlock}
 
 Write the three fields above. No extra commentary. No headers. No markdown.`
 }

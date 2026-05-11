@@ -1,6 +1,7 @@
 import type { Session, Plan } from '@/types/plan'
 import type { Verdict } from '../sessionScore'
 import type { CohortSummary } from '../runHistory'
+import type { HrStreamSummary } from '../streamAnalysis'
 import { buildVoiceHeader } from './voiceRules'
 
 export interface SessionFeedbackPromptInput {
@@ -29,6 +30,8 @@ export interface SessionFeedbackPromptInput {
   isFirstAnalysis?: boolean
   /** Pre-built athlete profile block (from buildAthleteContext). Empty string when no traits captured. */
   athleteContext?: string
+  /** AI-DEPTH-02 — back-third-vs-first-third HR drift summary. Null on Strava-sourced runs (no per-sample HR persisted yet) and on sample-starved runs. */
+  streamSummary?: HrStreamSummary | null
 }
 
 // Few-shot examples — Zona voice: honest, dry, no cringe.
@@ -82,7 +85,7 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
     actualDistKm, actualAvgHr, actualPaceSecPerKm, hrInZonePct, hrAboveCeilingPct,
     efTrendPct, rpe, fatigueTag, weekPhase,
     prescribedZoneLabel, prescribedHrBand, cohortContext,
-    isFirstAnalysis, athleteContext } = input
+    isFirstAnalysis, athleteContext, streamSummary } = input
 
   const weeksToRace = plan.meta.race_date
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
@@ -105,6 +108,20 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
 
   const efLine = efTrendPct !== null
     ? `Aerobic efficiency: ${efTrendPct > 0 ? '+' : ''}${efTrendPct.toFixed(1)}% vs baseline`
+    : ''
+
+  // AI-DEPTH-02 — HR drift across the run. Surfaces back-third fade that the
+  // aggregate hr_in_zone_pct figure hides. Null block when no usable stream
+  // (Strava-sourced or sample-starved).
+  const streamBlock = streamSummary
+    ? `
+HR drift across the run (back third vs first third):
+- First third avg HR: ${streamSummary.firstThirdAvgHr} bpm
+- Last third avg HR: ${streamSummary.lastThirdAvgHr} bpm
+- Drift: ${streamSummary.hrDriftBpm >= 0 ? '+' : ''}${streamSummary.hrDriftBpm} bpm (${streamSummary.hrDriftPct >= 0 ? '+' : ''}${(streamSummary.hrDriftPct * 100).toFixed(1)}%)${streamSummary.sparse ? '\n- Sample density: sparse — treat as a hint, not a hard signal' : ''}
+
+Drift rule: when the absolute drift is ≥ 10 bpm or ≥ 7%, reference it directly as a back-third fade in your feedback (e.g. "HR drifted 14 bpm in the back third — the fade started after the halfway mark"). Below those thresholds, only mention drift if it's the dominant story. Do not invent causes — observation only.
+`
     : ''
 
   // Past-self cohort block (CoachingPrinciples §58). Empty string when no cohort.
@@ -149,7 +166,7 @@ ${paceLine ? paceLine + '\n' : ''}${hrLine}
 ${efLine ? efLine + '\n' : ''}RPE: ${rpe !== null ? rpe : 'not logged'}
 Fatigue: ${fatigueTag ?? 'not logged'}
 Verdict: ${verdict}
-${cohortBlock}
+${streamBlock}${cohortBlock}
 Write 2–4 sentences of honest, specific feedback. No headers. No bullet points. Plain text only.`
 }
 
