@@ -47,6 +47,9 @@ export interface DailyCoachNoteInput {
 
   /** Pre-built athlete profile block (from buildAthleteContext). Empty string when no traits captured. */
   athleteContext?: string
+
+  /** AI-DEPTH-10 — most recent weekly report's headline+body. Lets the daily note reference the week's coaching story when today's session connects to it. Null on first week or silent-fallback weeks. */
+  previousWeeklyReport?: { headline: string; body: string } | null
 }
 
 // Few-shot examples — Zona voice anchored. Each shows a specific recent
@@ -155,8 +158,16 @@ export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
     firstName: input.firstName,
   })
 
+  const previousWeeklyBlock = input.previousWeeklyReport
+    ? `
+Recent weekly coaching (use only if today connects to it — never reference gratuitously):
+- Headline: "${input.previousWeeklyReport.headline}"
+- Body: "${input.previousWeeklyReport.body}"
+`
+    : ''
+
   return `${voiceHeader}
-${input.athleteContext ?? ''}
+${input.athleteContext ?? ''}${previousWeeklyBlock}
 Your job: write ONE sentence framing today, anchored in a specific fact from below.
 
 Critical rules:

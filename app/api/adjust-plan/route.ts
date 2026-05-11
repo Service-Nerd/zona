@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
 
   const DAY_ORDER: Record<string, number> = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 }
 
-  const [analysisRes, prevWeeksRes, adjustmentsThisWeekRes, existingPendingRes, completionsRes] = await Promise.all([
+  const [analysisRes, prevWeeksRes, adjustmentsThisWeekRes, existingPendingRes, completionsRes, lastResolvedAdjustmentRes] = await Promise.all([
     serviceSupabase
       .from('run_analysis')
       .select('session_day, hr_in_zone_pct, actual_load_km, planned_load_km, ef_trend_pct')
@@ -139,6 +139,17 @@ export async function POST(req: NextRequest) {
       .not('fatigue_tag', 'is', null)
       .order('week_n', { ascending: false })
       .limit(10),
+    // AI-DEPTH-10 — connective tissue. Most recent non-pending adjustment
+    // (confirmed / auto_applied / reverted) so the new explanation can
+    // reference continuity or contradiction with what just happened.
+    serviceSupabase
+      .from('plan_adjustments')
+      .select('summary, trigger_type, adjustment_type, week_n, created_at, status')
+      .eq('user_id', user.id)
+      .in('status', ['confirmed', 'auto_applied', 'reverted'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ])
 
   const analyses = analysisRes.data ?? []
@@ -221,7 +232,23 @@ export async function POST(req: NextRequest) {
   // AI explanation — silent fallback to rule-based summary
   let explanationText: string = proposed.summary
   try {
-    const prompt  = buildAdjustmentExplanationPrompt(proposed, buildAthleteContext({ plan }))
+    // AI-DEPTH-10 — pass the most recent non-pending adjustment as continuity context.
+    // Null when this is the user's first adjustment ever.
+    const previousAdjustment = lastResolvedAdjustmentRes.data
+      ? {
+          summary:        lastResolvedAdjustmentRes.data.summary as string,
+          triggerType:    lastResolvedAdjustmentRes.data.trigger_type as string,
+          adjustmentType: lastResolvedAdjustmentRes.data.adjustment_type as string,
+          status:         lastResolvedAdjustmentRes.data.status as string,
+          daysAgo: Math.max(
+            0,
+            Math.round(
+              (Date.now() - new Date(lastResolvedAdjustmentRes.data.created_at as string).getTime()) / 86_400_000,
+            ),
+          ),
+        }
+      : null
+    const prompt  = buildAdjustmentExplanationPrompt(proposed, buildAthleteContext({ plan }), previousAdjustment)
     const aiRes   = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {

@@ -32,6 +32,13 @@ export interface SessionFeedbackPromptInput {
   athleteContext?: string
   /** AI-DEPTH-02 — back-third-vs-first-third HR drift summary. Null on Strava-sourced runs (no per-sample HR persisted yet) and on sample-starved runs. */
   streamSummary?: HrStreamSummary | null
+  /** AI-DEPTH-10 — most recent prior analysed session of the SAME type (single specific run, distinct from the averaged cohort). Null when no same-type analysis exists in history. */
+  previousSimilarSession?: {
+    dayLabel:    string
+    daysAgo:     number
+    verdict:     string | null
+    hrInZonePct: number | null
+  } | null
 }
 
 // Few-shot examples — Zona voice: honest, dry, no cringe.
@@ -85,7 +92,7 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
     actualDistKm, actualAvgHr, actualPaceSecPerKm, hrInZonePct, hrAboveCeilingPct,
     efTrendPct, rpe, fatigueTag, weekPhase,
     prescribedZoneLabel, prescribedHrBand, cohortContext,
-    isFirstAnalysis, athleteContext, streamSummary } = input
+    isFirstAnalysis, athleteContext, streamSummary, previousSimilarSession } = input
 
   const weeksToRace = plan.meta.race_date
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
@@ -108,6 +115,19 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
 
   const efLine = efTrendPct !== null
     ? `Aerobic efficiency: ${efTrendPct > 0 ? '+' : ''}${efTrendPct.toFixed(1)}% vs baseline`
+    : ''
+
+  // AI-DEPTH-10 — last same-type session. Distinct from the averaged cohort:
+  // this is a single specific prior run the model can name by day + days-ago.
+  // Use sparingly — only when this session's outcome connects to the previous.
+  const previousSimilarBlock = previousSimilarSession
+    ? `
+Most recent same-type session (single specific run, not averaged):
+- ${previousSimilarSession.dayLabel}, ${previousSimilarSession.daysAgo} day${previousSimilarSession.daysAgo === 1 ? '' : 's'} ago
+- Verdict: ${previousSimilarSession.verdict ?? 'unknown'}${previousSimilarSession.hrInZonePct != null ? `, ${previousSimilarSession.hrInZonePct.toFixed(0)}% in zone` : ''}
+
+Continuity rule: reference this run ONLY if today's outcome continues, reverses, or directly contrasts it — e.g. "Tuesday's easy nailed, this one drifted" or "second easy in a row that ran hot". Otherwise ignore. Never reference gratuitously.
+`
     : ''
 
   // AI-DEPTH-02 — HR drift across the run. Surfaces back-third fade that the
@@ -166,7 +186,7 @@ ${paceLine ? paceLine + '\n' : ''}${hrLine}
 ${efLine ? efLine + '\n' : ''}RPE: ${rpe !== null ? rpe : 'not logged'}
 Fatigue: ${fatigueTag ?? 'not logged'}
 Verdict: ${verdict}
-${streamBlock}${cohortBlock}
+${previousSimilarBlock}${streamBlock}${cohortBlock}
 Write 2–4 sentences of honest, specific feedback. No headers. No bullet points. Plain text only.`
 }
 

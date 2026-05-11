@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
   // match the session-card UI (which reads the same source) so feedback
   // doesn't quote a different ceiling than the user sees on screen.
   // priorAnalysisRes count: detects first-ever session so the prompt can frame it appropriately.
-  const [activityRes, planRes, completionRes, recentActivitiesRes, settingsRes, priorAnalysisRes] = await Promise.all([
+  const [activityRes, planRes, completionRes, recentActivitiesRes, settingsRes, priorAnalysisRes, recentAnalysesRes] = await Promise.all([
     activityFiltered.single(),
     serviceSupabase
       .from('plans')
@@ -106,6 +106,17 @@ export async function POST(req: NextRequest) {
       .from('run_analysis')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId),
+    // AI-DEPTH-10 — most recent analysed sessions, used to find the last
+    // SAME-TYPE session for continuity ("Tuesday's easy 4 days ago: nailed").
+    // Distinct from the R25 cohort (averaged across many similar runs) — this
+    // is a single specific prior run the model can name. Excludes the row
+    // being analysed right now (matched by week_n + session_day).
+    serviceSupabase
+      .from('run_analysis')
+      .select('week_n, session_day, verdict, hr_in_zone_pct, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(20),
   ])
 
   const activity        = activityRes.data
@@ -197,6 +208,39 @@ export async function POST(req: NextRequest) {
     console.warn('[analyse-run] cohort similarity failed', err)
   }
 
+  // AI-DEPTH-10 — resolve the most recent prior session of the SAME type by
+  // walking recent run_analysis rows, looking up each one's type from the plan,
+  // and picking the first match that isn't the current row.
+  const DAY_NAME: Record<string, string> = {
+    mon: 'Monday',    tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday',
+    fri: 'Friday',    sat: 'Saturday', sun: 'Sunday',
+    monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday', thursday: 'Thursday',
+    friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday',
+  }
+  let previousSimilarSession: {
+    dayLabel:    string
+    daysAgo:     number
+    verdict:     string | null
+    hrInZonePct: number | null
+  } | null = null
+  for (const row of recentAnalysesRes.data ?? []) {
+    // Skip the row being analysed right now
+    if (row.week_n === week_n && row.session_day === session_day) continue
+    const priorWeek    = plan.weeks.find(w => w.n === row.week_n)
+    const priorDayKey  = (row.session_day as string).replace(`week_${row.week_n}_`, '')
+    const priorSession = priorWeek?.sessions?.[priorDayKey as keyof typeof priorWeek.sessions]
+    if (!priorSession || priorSession.type !== session.type) continue
+    const createdMs = new Date(row.created_at as string).getTime()
+    const daysAgo   = Math.max(1, Math.round((Date.now() - createdMs) / 86_400_000))
+    previousSimilarSession = {
+      dayLabel:    DAY_NAME[priorDayKey] ?? priorDayKey,
+      daysAgo,
+      verdict:     (row.verdict as string | null) ?? null,
+      hrInZonePct: row.hr_in_zone_pct != null ? Number(row.hr_in_zone_pct) : null,
+    }
+    break
+  }
+
   // AI feedback — generated before upsert so feedback_text lands in the same row.
   // Failure is silent; scoring row is written regardless.
   let feedbackText: string | null = null
@@ -231,6 +275,7 @@ export async function POST(req: NextRequest) {
       cohortContext:       cohortSummary,
       isFirstAnalysis,
       athleteContext:      buildAthleteContext({ plan }),
+      previousSimilarSession,
       streamSummary:       computeHrStreamSummary(
         // raw_payload.hrSamples is HealthKit-only today (see lib/health/adapter.ts).
         // Returns null on Strava-sourced runs or sample-starved data.

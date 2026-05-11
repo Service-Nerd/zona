@@ -27,9 +27,19 @@ Trigger detail: {}
 Output: "Load and effort signals didn't line up this week. Pulled the easy sessions back slightly to give the legs room to absorb it."
 `
 
+/** AI-DEPTH-10 — most recent non-pending adjustment, for continuity framing. */
+export interface PreviousAdjustmentSummary {
+  summary:        string
+  triggerType:    string
+  adjustmentType: string
+  status:         string
+  daysAgo:        number
+}
+
 export function buildAdjustmentExplanationPrompt(
   adjustment: ProposedAdjustment,
   athleteContext?: string,
+  previousAdjustment?: PreviousAdjustmentSummary | null,
 ): string {
   const { trigger, adjustmentType, summary, sessionsBefore, sessionsAfter } = adjustment
 
@@ -46,8 +56,17 @@ export function buildAdjustmentExplanationPrompt(
     outputConstraint: 'One paragraph, 1–3 sentences. Fewer is fine if the trigger is simple.',
   })
 
+  const previousAdjustmentBlock = previousAdjustment
+    ? `
+
+Previous adjustment context (for continuity only):
+- ${previousAdjustment.daysAgo} day(s) ago — ${previousAdjustment.adjustmentType} (${previousAdjustment.triggerType}, ${previousAdjustment.status}): "${previousAdjustment.summary}"
+
+Continuity rule: reference the previous adjustment ONLY if this new one continues, contradicts, or repeats it — e.g. "second time this month" or "last time we softened the long run, this time we're swapping intervals." Otherwise ignore it. Never reference gratuitously.`
+    : ''
+
   return `${voiceHeader}
-${athleteContext ?? ''}
+${athleteContext ?? ''}${previousAdjustmentBlock}
 HARD RULES — anti-confabulation:
 1. The ONLY metrics you may quote are those present in the "Trigger detail" JSON below. Do not invent percentages, run counts, weekly totals, paces, or HR numbers.
 2. Do not invent specifics about individual sessions ("three easy runs", "Wednesday's tempo") unless they are explicitly listed in "Sessions changed".

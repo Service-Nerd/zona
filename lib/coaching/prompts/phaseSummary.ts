@@ -11,6 +11,8 @@ export interface PhaseSummaryPromptInput {
   firstName?: string | null
   /** Pre-built athlete profile block (from buildAthleteContext). Empty string when no traits captured. */
   athleteContext?: string
+  /** AI-DEPTH-10 — the prior phase summary, used for continuity framing across transitions. Null on first transition. */
+  previousPhaseSummary?: { phaseEnded: string; content: string } | null
 }
 
 const PHASE_LABELS: Record<string, string> = {
@@ -25,7 +27,7 @@ export function buildPhaseSummaryPrompt(input: PhaseSummaryPromptInput): string 
   const {
     phaseEnded, phaseNewName, totalWeeksInPhase,
     avgZoneDisciplinePct, efTrendPct, completionRate,
-    totalLoadKm, firstName, athleteContext,
+    totalLoadKm, firstName, athleteContext, previousPhaseSummary,
   } = input
 
   const phaseEndedLabel = PHASE_LABELS[phaseEnded] ?? phaseEnded
@@ -65,8 +67,17 @@ Write a 2–3 sentence phase-end coaching note. Rules:
 - Never say "phase is complete" or "congratulations". Just speak to what the data shows.
 - No markdown. Plain text only.`
 
+  const previousPhaseBlock = previousPhaseSummary
+    ? `
+
+Previous phase summary (use only for continuity, never quote verbatim):
+- End of ${PHASE_LABELS[previousPhaseSummary.phaseEnded] ?? previousPhaseSummary.phaseEnded} phase: "${previousPhaseSummary.content}"
+
+Continuity rule: reference the previous phase summary ONCE if the trajectory tracks against it — e.g. zone discipline that was a problem in the last phase has improved (or persisted), or fitness that built in the last phase is now being sharpened. Never reference it gratuitously.`
+    : ''
+
   return `${voiceHeader}
-${athleteContext ?? ''}
+${athleteContext ?? ''}${previousPhaseBlock}
 ${dataBlock}
 ${instructions}`
 }

@@ -59,8 +59,8 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Build context: plan + last completions + run_analysis + first_name
-  const [planRes, settingsRes, completionsRes, analysisRes] = await Promise.all([
+  // Build context: plan + last completions + run_analysis + first_name + last weekly report
+  const [planRes, settingsRes, completionsRes, analysisRes, lastWeeklyRes] = await Promise.all([
     serviceSupabase.from('plans').select('plan_json').eq('user_id', userId).single(),
     serviceSupabase.from('user_settings').select('first_name, resting_hr, max_hr').eq('id', userId).single(),
     serviceSupabase
@@ -75,6 +75,18 @@ export async function GET(req: NextRequest) {
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(5),
+    // AI-DEPTH-10 — connective tissue. The daily note may reference the
+    // most recent weekly report's headline when today's session connects
+    // to it (e.g. weekly said "easy ran hot", today is easy → "hold the
+    // zone today"). Both fields required — silent-fallback weeks skip.
+    serviceSupabase
+      .from('weekly_reports')
+      .select('headline, body, week_n')
+      .eq('user_id', userId)
+      .not('headline', 'is', null)
+      .order('week_n', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ])
 
   const plan = planRes.data?.plan_json as Plan | null
@@ -194,6 +206,9 @@ export async function GET(req: NextRequest) {
     consecutiveNailed,
     firstName: settingsRes.data?.first_name ?? null,
     athleteContext: buildAthleteContext({ plan }),
+    previousWeeklyReport: lastWeeklyRes.data?.headline && lastWeeklyRes.data?.body
+      ? { headline: lastWeeklyRes.data.headline as string, body: lastWeeklyRes.data.body as string }
+      : null,
   }
 
   // Generate via Claude — silent fallback to null on failure

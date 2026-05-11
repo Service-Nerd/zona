@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Fetch plan + run_analysis for the completed phase ──────────────────
-  const [planRes, settingsRes, analysisRes, completionsRes] = await Promise.all([
+  const [planRes, settingsRes, analysisRes, completionsRes, lastPhaseSummaryRes] = await Promise.all([
     serviceSupabase.from('plans').select('plan_json').eq('user_id', user.id).single(),
     serviceSupabase.from('user_settings').select('first_name').eq('id', user.id).single(),
     serviceSupabase
@@ -70,6 +70,17 @@ export async function POST(req: NextRequest) {
       .from('session_completions')
       .select('week_n, status, session_type')
       .eq('user_id', user.id),
+    // AI-DEPTH-10 — connective tissue across phase transitions. Most recent
+    // prior phase summary so the new one can frame "base → build" against
+    // what was said when "foundation → base" was written. Null on first phase.
+    serviceSupabase
+      .from('phase_summaries')
+      .select('phase_ended, content, transition_week_n')
+      .eq('user_id', user.id)
+      .lt('transition_week_n', transition_week_n)
+      .order('transition_week_n', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ])
 
   const plan = planRes.data?.plan_json as Plan | null
@@ -126,6 +137,12 @@ export async function POST(req: NextRequest) {
     totalLoadKm,
     firstName,
     athleteContext: buildAthleteContext({ plan }),
+    previousPhaseSummary: lastPhaseSummaryRes.data
+      ? {
+          phaseEnded: lastPhaseSummaryRes.data.phase_ended as string,
+          content:    lastPhaseSummaryRes.data.content as string,
+        }
+      : null,
   })
 
   let content: string | null = null
