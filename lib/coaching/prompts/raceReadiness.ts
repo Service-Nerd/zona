@@ -18,6 +18,8 @@ export interface RaceReadinessPromptInput {
   // Current phase — lets the prompt know whether user is actually in taper
   currentPhase: string | null           // 'taper' | 'peak' | etc.
   firstName?: string | null
+  /** Pre-built athlete profile block (from buildAthleteContext). Empty string when no traits captured. */
+  athleteContext?: string
 }
 
 export function buildRaceReadinessPrompt(input: RaceReadinessPromptInput): string {
@@ -25,7 +27,7 @@ export function buildRaceReadinessPrompt(input: RaceReadinessPromptInput): strin
     raceName, raceDistanceKm, daysToRace,
     totalPlannedSessions, completedSessions,
     avgZoneDisciplinePct, efTrendPct, totalLoadKm,
-    recentEasyRpe, currentPhase, firstName,
+    recentEasyRpe, currentPhase, firstName, athleteContext,
   } = input
 
   const voiceHeader = buildVoiceHeader({
@@ -73,7 +75,7 @@ Write a 2–3 sentence pre-race readiness assessment. Rules:
 - No markdown. Plain text only.`
 
   return `${voiceHeader}
-
+${athleteContext ?? ''}
 ${dataBlock}
 ${instructions}`
 }

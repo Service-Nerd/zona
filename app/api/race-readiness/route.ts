@@ -4,7 +4,8 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { buildRaceReadinessPrompt } from '@/lib/coaching/prompts/raceReadiness'
-import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
+import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import type { Plan } from '@/types/plan'
 
 // POST /api/race-readiness
@@ -180,6 +181,7 @@ export async function POST(req: NextRequest) {
     recentEasyRpe,
     currentPhase,
     firstName,
+    athleteContext: buildAthleteContext({ plan }),
   })
 
   let content: string | null = null
@@ -192,7 +194,7 @@ export async function POST(req: NextRequest) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model:      ANTHROPIC_MODEL,
+        model:      ANTHROPIC_MODEL_DEEP,
         max_tokens: 200,
         messages:   [{ role: 'user', content: prompt }],
       }),
@@ -217,7 +219,7 @@ export async function POST(req: NextRequest) {
       race_date,
       content,
       days_to_race: daysToRace,
-      ai_model:     ANTHROPIC_MODEL,
+      ai_model:     ANTHROPIC_MODEL_DEEP,
     })
 
   if (insertErr) {

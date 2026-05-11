@@ -8,6 +8,7 @@ import { scoreSession } from '@/lib/coaching/sessionScore'
 import { computeEF, computeEFBaseline } from '@/lib/coaching/efTrend'
 import { COACHING_RULE_ENGINE_VERSION, COHORT_SIMILARITY } from '@/lib/coaching/constants'
 import { buildSessionFeedbackPrompt } from '@/lib/coaching/prompts/sessionFeedback'
+import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { fetchRunHistory, findSimilarRuns, summariseCohort, pickWindowDays } from '@/lib/coaching/runHistory'
 import { zoneForSessionType, sessionHRBand } from '@/lib/coaching/zoneRules'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
@@ -228,6 +229,7 @@ export async function POST(req: NextRequest) {
       prescribedHrBand:    liveBand ? { lo: liveBand.lo, hi: liveBand.hi } : null,
       cohortContext:       cohortSummary,
       isFirstAnalysis,
+      athleteContext:      buildAthleteContext({ plan }),
     })
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {

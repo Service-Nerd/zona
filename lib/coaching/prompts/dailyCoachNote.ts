@@ -44,6 +44,9 @@ export interface DailyCoachNoteInput {
 
   /** Optional first name — model may use once, naturally. */
   firstName: string | null
+
+  /** Pre-built athlete profile block (from buildAthleteContext). Empty string when no traits captured. */
+  athleteContext?: string
 }
 
 // Few-shot examples — Zona voice anchored. Each shows a specific recent
@@ -153,7 +156,7 @@ export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
   })
 
   return `${voiceHeader}
-
+${input.athleteContext ?? ''}
 Your job: write ONE sentence framing today, anchored in a specific fact from below.
 
 Critical rules:

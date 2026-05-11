@@ -1,5 +1,5 @@
 import type { Plan } from '@/types/plan'
-import type { InsightPriority, WeeklyReportData } from '../weeklyReport'
+import type { InsightPriority, SpotlightSession, WeeklyReportData } from '../weeklyReport'
 import { buildVoiceHeader } from './voiceRules'
 
 // Few-shot examples — Zona voice for each insight type
@@ -51,6 +51,8 @@ export function buildWeeklyReportPrompt(
   plannedKmToDate?: number,
   remainingScheduledSessions?: string[],
   missedSessionTypes?: string[],
+  spotlight?: SpotlightSession | null,
+  athleteContext?: string,
 ): string {
   const weeksToRace = plan.meta.race_date
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
@@ -81,6 +83,25 @@ export function buildWeeklyReportPrompt(
     ? `\n- Missed sessions so far: ${missedSessionTypes.join(', ')}`
     : ''
 
+  const spotlightBlock = spotlight
+    ? `
+
+Spotlight session (the single session that pulled this week's signal down hardest):
+- Day: ${spotlight.dayLabel}
+- Session: ${spotlight.type}${spotlight.distanceKm != null ? ` (${spotlight.distanceKm}km planned)` : ''}
+- Score: ${spotlight.totalScore}/100, verdict: ${spotlight.verdict}${
+        spotlight.hrInZonePct != null
+          ? `\n- Time in prescribed zone: ${spotlight.hrInZonePct.toFixed(0)}%`
+          : ''
+      }${
+        spotlight.efTrendPct != null
+          ? `\n- Aerobic efficiency vs 4-week baseline: ${spotlight.efTrendPct >= 0 ? '+' : ''}${spotlight.efTrendPct.toFixed(1)}%`
+          : ''
+      }
+
+Naming rule: in the Body, name this session explicitly by day and type at least once — e.g. "${spotlight.dayLabel}'s ${spotlight.type} run". Use only the numbers listed above; do not invent pace, splits, or HR values that aren't in this block.`
+    : ''
+
   const voiceHeader = buildVoiceHeader({
     role: 'writing a weekly check-in',
     // Output format is complex (three labelled fields) — specified separately below.
@@ -89,7 +110,7 @@ export function buildWeeklyReportPrompt(
   })
 
   return `${voiceHeader}
-${isMidWeek ? `\nImportant: it is currently ${dayOfWeek} — this is a mid-week report. Evaluate against what was due by today, not the full week target.` : ''}
+${athleteContext ?? ''}${isMidWeek ? `\nImportant: it is currently ${dayOfWeek} — this is a mid-week report. Evaluate against what was due by today, not the full week target.` : ''}
 Critical rule: the athlete's sessions are already scheduled in their training plan — never suggest they need to "schedule", "block time", or "plan" their runs. The plan is fixed; the only question is execution.
 
 Output format — exactly three fields:
@@ -110,7 +131,7 @@ This week's data:
 - Load ratio (vs 4-week avg): ${data.acuteChronicRatio.toFixed(2)}x
 - Zone discipline score: ${data.zoneDisciplineScore !== null ? `${data.zoneDisciplineScore}/100 (70+ = healthy; below 65 = zone drift concern)` : 'no signal (no Strava-analysed sessions yet)'}
 ${data.avgRpe !== null ? `- Avg RPE: ${data.avgRpe.toFixed(1)}\n` : ''}- Dominant coaching flag: ${data.dominantFlag}
-- Primary insight: ${data.primaryInsight}
+- Primary insight: ${data.primaryInsight}${spotlightBlock}
 
 Write the three fields above. No extra commentary. No headers. No markdown.`
 }

@@ -5,6 +5,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { buildDailyCoachNotePrompt } from '@/lib/coaching/prompts/dailyCoachNote'
+import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { getCurrentWeekIndex } from '@/lib/plan'
 import type { Plan } from '@/types/plan'
@@ -192,6 +193,7 @@ export async function GET(req: NextRequest) {
     heavyFatigueTrend,
     consecutiveNailed,
     firstName: settingsRes.data?.first_name ?? null,
+    athleteContext: buildAthleteContext({ plan }),
   }
 
   // Generate via Claude — silent fallback to null on failure

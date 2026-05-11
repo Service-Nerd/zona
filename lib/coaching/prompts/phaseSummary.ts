@@ -9,6 +9,8 @@ export interface PhaseSummaryPromptInput {
   completionRate: number | null         // sessions completed / sessions planned (0–1)
   totalLoadKm: number | null            // total actual km logged in phase
   firstName?: string | null
+  /** Pre-built athlete profile block (from buildAthleteContext). Empty string when no traits captured. */
+  athleteContext?: string
 }
 
 const PHASE_LABELS: Record<string, string> = {
@@ -23,7 +25,7 @@ export function buildPhaseSummaryPrompt(input: PhaseSummaryPromptInput): string 
   const {
     phaseEnded, phaseNewName, totalWeeksInPhase,
     avgZoneDisciplinePct, efTrendPct, completionRate,
-    totalLoadKm, firstName,
+    totalLoadKm, firstName, athleteContext,
   } = input
 
   const phaseEndedLabel = PHASE_LABELS[phaseEnded] ?? phaseEnded
@@ -64,7 +66,7 @@ Write a 2–3 sentence phase-end coaching note. Rules:
 - No markdown. Plain text only.`
 
   return `${voiceHeader}
-
+${athleteContext ?? ''}
 ${dataBlock}
 ${instructions}`
 }

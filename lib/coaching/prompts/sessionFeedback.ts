@@ -27,6 +27,8 @@ export interface SessionFeedbackPromptInput {
   cohortContext?: CohortSummary | null
   /** True when this is the athlete's first ever analysed session — prompt gets a softer welcome frame. */
   isFirstAnalysis?: boolean
+  /** Pre-built athlete profile block (from buildAthleteContext). Empty string when no traits captured. */
+  athleteContext?: string
 }
 
 // Few-shot examples — Zona voice: honest, dry, no cringe.
@@ -80,7 +82,7 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
     actualDistKm, actualAvgHr, actualPaceSecPerKm, hrInZonePct, hrAboveCeilingPct,
     efTrendPct, rpe, fatigueTag, weekPhase,
     prescribedZoneLabel, prescribedHrBand, cohortContext,
-    isFirstAnalysis } = input
+    isFirstAnalysis, athleteContext } = input
 
   const weeksToRace = plan.meta.race_date
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
@@ -132,7 +134,7 @@ If today's numbers diverge meaningfully from this cohort (HR ±5 bpm, pace ±10s
     : ''
 
   return `${voiceHeader}
-
+${athleteContext ?? ''}
 ${FEW_SHOT_EXAMPLES}
 ${firstRunNote}
 Now write feedback for this session:

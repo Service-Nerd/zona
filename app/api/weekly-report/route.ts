@@ -4,12 +4,13 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
-import { computeWeeklyReportData } from '@/lib/coaching/weeklyReport'
+import { computeWeeklyReportData, pickSpotlightSession } from '@/lib/coaching/weeklyReport'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildWeeklyReportPrompt } from '@/lib/coaching/prompts/weeklyReport'
+import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { getCurrentWeekIndex } from '@/lib/plan'
 import type { Plan } from '@/types/plan'
-import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 
 // POST /api/weekly-report
 // Auth-gated (paid/trial). Computes this week's coaching report.
@@ -209,6 +210,21 @@ export async function POST(req: NextRequest) {
   // Merge avgRpe back in
   const reportDataWithRpe = { ...reportData, avgRpe }
 
+  // Identify the single session that pulled the week's signal down hardest, if any.
+  // Null when no session is concerning — the prompt then writes a clean-week message
+  // without inventing a problem.
+  const spotlight = pickSpotlightSession(
+    analyses.map((a: any) => ({
+      session_day:    a.session_day,
+      total_score:    a.total_score,
+      verdict:        a.verdict,
+      hr_in_zone_pct: a.hr_in_zone_pct,
+      ef_trend_pct:   a.ef_trend_pct,
+    })),
+    week,
+    weekN,
+  )
+
   // AI report generation — silent fallback to null
   let headline: string | null = null
   let body:     string | null = null
@@ -225,6 +241,8 @@ export async function POST(req: NextRequest) {
       plannedKmToDate,
       remainingSessionLabels,
       missedSessionTypes,
+      spotlight,
+      buildAthleteContext({ plan }),
     )
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
@@ -235,7 +253,7 @@ export async function POST(req: NextRequest) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model:      ANTHROPIC_MODEL,
+        model:      ANTHROPIC_MODEL_DEEP,
         max_tokens: 300,
         messages:   [{ role: 'user', content: prompt }],
       }),
@@ -268,7 +286,7 @@ export async function POST(req: NextRequest) {
     body,
     cta,
     generated_at:         new Date().toISOString(),
-    ai_model:             ANTHROPIC_MODEL,
+    ai_model:             ANTHROPIC_MODEL_DEEP,
     rule_engine_version:  COACHING_RULE_ENGINE_VERSION,
   }
 

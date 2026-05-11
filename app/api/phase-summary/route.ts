@@ -4,7 +4,8 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { buildPhaseSummaryPrompt } from '@/lib/coaching/prompts/phaseSummary'
-import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
+import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import type { Plan } from '@/types/plan'
 
 // POST /api/phase-summary
@@ -124,6 +125,7 @@ export async function POST(req: NextRequest) {
     completionRate,
     totalLoadKm,
     firstName,
+    athleteContext: buildAthleteContext({ plan }),
   })
 
   let content: string | null = null
@@ -136,7 +138,7 @@ export async function POST(req: NextRequest) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model:      ANTHROPIC_MODEL,
+        model:      ANTHROPIC_MODEL_DEEP,
         max_tokens: 150,
         messages:   [{ role: 'user', content: prompt }],
       }),
@@ -161,7 +163,7 @@ export async function POST(req: NextRequest) {
       phase_ended,
       transition_week_n,
       content,
-      ai_model:          ANTHROPIC_MODEL,
+      ai_model:          ANTHROPIC_MODEL_DEEP,
     })
 
   if (insertErr) {

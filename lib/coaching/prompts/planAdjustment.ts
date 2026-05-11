@@ -27,7 +27,10 @@ Trigger detail: {}
 Output: "Load and effort signals didn't line up this week. Pulled the easy sessions back slightly to give the legs room to absorb it."
 `
 
-export function buildAdjustmentExplanationPrompt(adjustment: ProposedAdjustment): string {
+export function buildAdjustmentExplanationPrompt(
+  adjustment: ProposedAdjustment,
+  athleteContext?: string,
+): string {
   const { trigger, adjustmentType, summary, sessionsBefore, sessionsAfter } = adjustment
 
   const changedSessions = sessionsAfter
@@ -44,7 +47,7 @@ export function buildAdjustmentExplanationPrompt(adjustment: ProposedAdjustment)
   })
 
   return `${voiceHeader}
-
+${athleteContext ?? ''}
 HARD RULES — anti-confabulation:
 1. The ONLY metrics you may quote are those present in the "Trigger detail" JSON below. Do not invent percentages, run counts, weekly totals, paces, or HR numbers.
 2. Do not invent specifics about individual sessions ("three easy runs", "Wednesday's tempo") unless they are explicitly listed in "Sessions changed".

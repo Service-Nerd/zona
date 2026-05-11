@@ -7,10 +7,11 @@ import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { checkAdjustmentTriggers } from '@/lib/coaching/planAdjustment'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildAdjustmentExplanationPrompt } from '@/lib/coaching/prompts/planAdjustment'
+import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { getCurrentWeekIndex } from '@/lib/plan'
 import { savePlanForUser } from '@/lib/plan'
 import type { Plan } from '@/types/plan'
-import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 
 // POST /api/adjust-plan
 // Auth-gated (paid/trial). Checks adjustment triggers for the current week.
@@ -220,7 +221,7 @@ export async function POST(req: NextRequest) {
   // AI explanation — silent fallback to rule-based summary
   let explanationText: string = proposed.summary
   try {
-    const prompt  = buildAdjustmentExplanationPrompt(proposed)
+    const prompt  = buildAdjustmentExplanationPrompt(proposed, buildAthleteContext({ plan }))
     const aiRes   = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -229,7 +230,7 @@ export async function POST(req: NextRequest) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model:      ANTHROPIC_MODEL,
+        model:      ANTHROPIC_MODEL_DEEP,
         max_tokens: 150,
         messages:   [{ role: 'user', content: prompt }],
       }),
