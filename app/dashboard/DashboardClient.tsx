@@ -27,7 +27,7 @@ import AIMark from '@/components/shared/AIMark'
 import CoachByline from '@/components/shared/CoachByline'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { composeSession } from '@/lib/plan/sessionComposer'
-import { formatDistance, sumRoundedDistance } from '@/lib/format'
+import { formatDistance, sumRoundedDistance, resolveSessionMetric } from '@/lib/format'
 import { didSessionHitZone, sessionHRBand, zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { renderGuidance, guidanceContextFromSession } from '@/lib/plan/renderGuidance'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
@@ -160,6 +160,10 @@ export default function DashboardClient() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [preferredUnits, setPreferredUnits] = useState<'km' | 'mi'>('km')
   const [preferredMetric, setPreferredMetric] = useState<'distance' | 'duration'>('distance')
+  // Per-session metric overrides, mirrored from localStorage (`rts_metric_*`).
+  // Drives the metric resolver on collapsed cards so they stay in sync with
+  // the per-session toggle in SessionPopupInner. Keyed `${weekN}_${sessionKey}`.
+  const [sessionMetricOverrides, setSessionMetricOverrides] = useState<Record<string, 'distance' | 'duration'>>({})
   const [restingHR, setRestingHR] = useState<number | null>(null)
   const [maxHR, setMaxHR] = useState<number | null>(null)
   const [dob, setDob] = useState<string | null>(null)
@@ -303,6 +307,40 @@ export default function DashboardClient() {
       }
       window.history.replaceState({}, '', '/dashboard')
     }
+
+    // Hydrate per-session metric overrides from localStorage so the resolver
+    // on collapsed SessionCards / DayRows matches the SessionScreen toggle.
+    // The keys are written by SessionPopupInner.updateSessionMetric as
+    // `rts_metric_${weekN}_${sessionKey}`.
+    try {
+      const map: Record<string, 'distance' | 'duration'> = {}
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (!key || !key.startsWith('rts_metric_')) continue
+        const value = localStorage.getItem(key)
+        if (value === 'distance' || value === 'duration') {
+          map[key.slice('rts_metric_'.length)] = value
+        }
+      }
+      setSessionMetricOverrides(map)
+    } catch {}
+  }, [])
+
+  // Keep the override map in sync with the per-session toggle. Called by
+  // SessionPopupInner whenever it writes localStorage. Passing null clears
+  // the override (back to plan default / global).
+  const handleSessionMetricChange = useCallback((weekN: number, sessionKey: string, metric: 'distance' | 'duration' | null) => {
+    setSessionMetricOverrides(prev => {
+      const k = `${weekN}_${sessionKey}`
+      if (metric == null) {
+        if (!(k in prev)) return prev
+        const next = { ...prev }
+        delete next[k]
+        return next
+      }
+      if (prev[k] === metric) return prev
+      return { ...prev, [k]: metric }
+    })
   }, [])
 
   // Strava safety timer: if the activities fetch hasn't settled within 2s
@@ -1012,8 +1050,8 @@ export default function DashboardClient() {
       )}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} />}
-        {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} />}
+        {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} />}
         {screen === 'coach'    && (hasPaidAccess
           ? (() => {
               const wn = getCurrentWeekIndex(plan.weeks) + 1
@@ -1120,7 +1158,7 @@ export default function DashboardClient() {
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
         {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatchedActivity={activeAutoMatch} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatchedActivity={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={runAnalysisMap[activePostRunData.session?.key ?? ''] ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
         {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} dob={dob} onDobSave={async (d) => { setDob(d); if (userId) await supabase.from('user_settings').update({ date_of_birth: d }).eq('id', userId) }} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
@@ -1699,10 +1737,11 @@ function getSkipResponse(reason: string): string {
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
-function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, stravaLoading, hasPaidAccess, onUpgrade, goalPace, guidance, onLinkedComplete, autoMatchedActivity }: {
+function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, restingHR, maxHR, aerobicPace, stravaLoading, hasPaidAccess, onUpgrade, goalPace, guidance, onLinkedComplete, autoMatchedActivity }: {
   session: any; weekTheme: string; weekN: number; preloadedRuns: any[]
   onClose: () => void; onSaved?: () => void
   preferredUnits: 'km' | 'mi'; zone2Ceiling: number; preferredMetric?: 'distance' | 'duration'
+  onSessionMetricChange?: (weekN: number, sessionKey: string, metric: 'distance' | 'duration' | null) => void
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
   stravaLoading?: boolean
   hasPaidAccess?: boolean; onUpgrade?: () => void
@@ -1758,6 +1797,9 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
       if (m) localStorage.setItem(metricStorageKey, m)
       else localStorage.removeItem(metricStorageKey)
     } catch {}
+    // Lift to DashboardClient so the collapsed SessionCards / PlanCalendar
+    // pick up the change immediately, not only on the next mount.
+    onSessionMetricChange?.(weekN, session.key, m)
   }
 
   const isPast = session.isPast
@@ -3853,9 +3895,10 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked }: {
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
+  sessionMetricOverrides: Record<string, 'distance' | 'duration'>
   stravaRuns: any[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   overridesReady: boolean
@@ -4603,6 +4646,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               ].filter(Boolean).join(' · ') || undefined}
               distanceKm={selectedSession.distance}
               units={preferredUnits}
+              metric={resolveSessionMetric(weekNum, selectedSession.key, selectedSession.primary_metric, sessionMetricOverrides, preferredMetric)}
               durationMin={selectedSession.duration
                 ? parseInt(selectedSession.duration)
                 : undefined}
@@ -4862,7 +4906,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 type={s.type}
                 name={s.title}
                 distanceKm={completions[s.key]?.strava_activity_km ?? s.distance}
+                durationMin={s.duration_mins}
                 units={preferredUnits}
+                metric={resolveSessionMetric(weekNum, s.key, s.primary_metric, sessionMetricOverrides, preferredMetric)}
                 state={completions[s.key]?.status === 'skipped' ? 'skipped' : 'done'}
                 completion={{
                   distanceKm: completions[s.key]?.strava_activity_km ?? undefined,
@@ -4975,7 +5021,7 @@ function PlanProgressBar({ plan, allCompletions }: { plan: Plan; allCompletions:
   )
 }
 
-function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, preferredUnits = 'km' }: {
+function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, preferredUnits = 'km', preferredMetric = 'distance', sessionMetricOverrides = {} }: {
   plan: Plan; stravaRuns: any[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   allCompletions: Record<number, Record<string, any>>
@@ -4983,6 +5029,8 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   onOpenSession?: (s: any) => void
   overridesReady: boolean
   preferredUnits?: 'km' | 'mi'
+  preferredMetric?: 'distance' | 'duration'
+  sessionMetricOverrides?: Record<string, 'distance' | 'duration'>
 }) {
   const currentWeekIndex = getCurrentWeekIndex(plan.weeks)
   const weekNum = currentWeekIndex + 1
@@ -5101,6 +5149,8 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           onOverrideChange={onOverrideChange}
           overridesReady={overridesReady}
           units={preferredUnits}
+          preferredMetric={preferredMetric}
+          sessionMetricOverrides={sessionMetricOverrides}
           onSessionTap={(session, weekN, weekTheme) => {
             onOpenSession?.({ ...session, weekN, weekTheme })
           }}
@@ -7653,9 +7703,12 @@ function RunFeedbackCard({
   )
 }
 
-function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, restingHR, maxHR, aerobicPace, stravaLoading, runAnalysis, hasPaidAccess, onUpgrade, onOpenCoach, goalPace, guidance, nextSession, onLinkedComplete, autoMatchedActivity }: {
+function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, restingHR, maxHR, aerobicPace, stravaLoading, runAnalysis, hasPaidAccess, onUpgrade, onOpenCoach, goalPace, guidance, nextSession, onLinkedComplete, autoMatchedActivity }: {
   session: any; preloadedRuns: any[]; onBack: () => void; onSaved?: () => void
   preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number; preferredMetric?: 'distance' | 'duration'
+  /** Lifts per-session metric toggle into DashboardClient so collapsed cards
+   *  stay in sync without waiting for a localStorage re-read on next mount. */
+  onSessionMetricChange?: (weekN: number, sessionKey: string, metric: 'distance' | 'duration' | null) => void
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
   stravaLoading?: boolean
   runAnalysis?: any | null; hasPaidAccess?: boolean; onUpgrade?: () => void
@@ -7927,6 +7980,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
             preferredUnits={preferredUnits ?? 'km'}
             zone2Ceiling={zone2Ceiling ?? 145}
             preferredMetric={preferredMetric}
+            onSessionMetricChange={onSessionMetricChange}
             restingHR={restingHR}
             maxHR={maxHR}
             aerobicPace={aerobicPace}

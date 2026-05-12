@@ -5,7 +5,7 @@
 // See docs/canonical/ui-patterns.md § SessionCard and docs/alignment/phase-2-decisions.md D-003, D-010.
 
 import { getSessionColor } from '@/lib/session-types'
-import { formatDistance, type DistanceUnits } from '@/lib/format'
+import { formatDistance, type DistanceUnits, type SessionMetric } from '@/lib/format'
 
 type SessionState = 'future' | 'current' | 'done' | 'skipped'
 
@@ -29,6 +29,10 @@ type Props = {
   showDragHandle?: boolean
   /** User's preferred display units. Plan distances are stored in km. */
   units?: DistanceUnits
+  /** Which metric to render. Resolve via `resolveSessionMetric` upstream so
+   *  per-session overrides → plan primary_metric → global preference cascade
+   *  is consistent with the session detail screen. Defaults to 'distance'. */
+  metric?: SessionMetric
 }
 
 export default function SessionCard({
@@ -42,6 +46,7 @@ export default function SessionCard({
   onClick,
   showDragHandle = false,
   units = 'km',
+  metric = 'distance',
 }: Props) {
   const accentColor = getSessionColor(type)
   const isDone = state === 'done'
@@ -56,17 +61,22 @@ export default function SessionCard({
     return m > 0 ? `${h}h ${m}min` : `${h}h`
   }
 
-  // Right-side metric: prefer completion data if done, else planned.
+  // Right-side metric: render the metric the caller chose. Falls back to the
+  // other one if the chosen value isn't available (e.g. session has distance
+  // but no duration), so the card never goes blank. Completion km wins over
+  // planned km when present.
   // Race day keeps the iconic decimal (21.1 / 13.1) via opts.exact.
-  // Strava-recorded completion km also keeps 1 dp (real recorded data).
   const isRace = type === 'race'
-  const rightDist = isDone && completion?.distanceKm != null
+  const distText = isDone && completion?.distanceKm != null
     ? formatDistance(completion.distanceKm, units, { exact: true })
     : distanceKm != null
     ? formatDistance(distanceKm, units, { exact: isRace })
     : null
+  const durText = durationMin != null ? fmtDur(durationMin) : null
 
-  const rightDur = durationMin != null ? fmtDur(durationMin) : null
+  const rightValue = metric === 'duration'
+    ? (durText ?? distText)
+    : (distText ?? durText)
 
   return (
     <div
@@ -210,7 +220,7 @@ export default function SessionCard({
               textAlign: 'right',
             }}
           >
-            {rightDist && (
+            {rightValue && (
               <div
                 style={{
                   fontFamily: 'var(--font-ui)',
@@ -222,21 +232,7 @@ export default function SessionCard({
                   lineHeight: 1,
                 }}
               >
-                {rightDist}
-              </div>
-            )}
-            {rightDur && (
-              <div
-                style={{
-                  fontFamily: 'var(--font-ui)',
-                  fontSize: '11px',
-                  fontWeight: 400,
-                  color: 'var(--mute-2)',
-                  marginTop: rightDist ? '3px' : 0,
-                  lineHeight: 1,
-                }}
-              >
-                {rightDur}
+                {rightValue}
               </div>
             )}
           </div>

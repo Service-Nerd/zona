@@ -45,3 +45,28 @@ export function sumRoundedDistance(
     return sum + Math.round(value)
   }, 0)
 }
+
+export type SessionMetric = 'distance' | 'duration'
+
+/** Map of per-session metric overrides, keyed as `${weekN}_${sessionKey}`
+ *  to match the localStorage key shape `rts_metric_${weekN}_${session.key}`. */
+export type SessionMetricOverrides = Record<string, SessionMetric>
+
+/** Resolve which metric a session should display, in priority order:
+ *    1. Per-session override (user toggled it in the session detail screen)
+ *    2. Plan-baked `primary_metric` (engine chose, e.g. duration for long runs)
+ *    3. Global preference from MeScreen
+ *    4. 'distance' fallback
+ */
+export function resolveSessionMetric(
+  weekN: number,
+  sessionKey: string,
+  sessionPrimaryMetric: SessionMetric | undefined,
+  overrides: SessionMetricOverrides,
+  global: SessionMetric | undefined,
+): SessionMetric {
+  return overrides[`${weekN}_${sessionKey}`]
+    ?? sessionPrimaryMetric
+    ?? global
+    ?? 'distance'
+}

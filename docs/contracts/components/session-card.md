@@ -137,7 +137,14 @@ Duration > 60 minutes must display as `Xh` or `XhYY` — never as raw minutes.
 ## Toggle Behaviour
 
 - **Global toggle** (Me screen): sets `preferredMetric` in `user_settings`. All collapsed cards respect this.
-- **Per-session toggle** (expanded card only): overrides the global for that session. Persists in localStorage keyed by session identifier. Updates the collapsed card for that session only.
+- **Per-session toggle** (expanded card only): overrides the global for that session. Persists in localStorage keyed `rts_metric_${weekN}_${sessionKey}`. Updates the collapsed card for that session only.
+- **Resolution precedence** on every collapsed card (`SessionCard`, `PlanCalendar` DayRow): `resolveSessionMetric(weekN, sessionKey, session.primary_metric, sessionMetricOverrides, preferredMetric)` from `lib/format.ts`:
+  1. Per-session override (user toggled it in SessionScreen)
+  2. Plan-baked `primary_metric` (engine chose, e.g. duration for long runs)
+  3. Global `preferredMetric` from MeScreen
+  4. `'distance'` fallback
+- The resolved metric is the *only* one rendered on the collapsed card. If the chosen metric's value is missing on the session, the card falls back to the other so it never goes blank.
+- The override map is hydrated into `DashboardClient` state on mount by scanning localStorage for `rts_metric_*` keys, and kept in sync via an `onSessionMetricChange` callback fired from `SessionPopupInner.updateSessionMetric`.
 
 ---
 
