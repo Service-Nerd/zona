@@ -34,7 +34,8 @@ import { SplashScreen } from '@capacitor/splash-screen'
 import { StatusBar, Style } from '@capacitor/status-bar'
 import { createClient } from '@/lib/supabase/client'
 
-const NATIVE_AUTH_CALLBACK_PREFIX = 'app.vetra.ios://auth-callback'
+const NATIVE_AUTH_CALLBACK_PREFIX   = 'app.vetra.ios://auth-callback'
+const NATIVE_STRAVA_CALLBACK_PREFIX = 'app.vetra.ios://strava-callback'
 
 export default function CapacitorBoot() {
   const router = useRouter()
@@ -65,6 +66,18 @@ export default function CapacitorBoot() {
     let removePushListener: (() => void) | undefined
 
     CapApp.addListener('appUrlOpen', async ({ url }) => {
+      // Strava OAuth return — `/api/strava/callback` already wrote tokens to
+      // user_settings; we just close the in-app browser and bounce to the
+      // dashboard with the status query param so existing UI handlers fire
+      // (MeScreen → StravaConnectionRow useEffect reads `?strava=connected`).
+      if (url.startsWith(NATIVE_STRAVA_CALLBACK_PREFIX)) {
+        Browser.close().catch(() => {})
+        const parsed = new URL(url)
+        const strava = parsed.searchParams.get('strava') ?? 'error'
+        router.replace(`/dashboard?strava=${strava}`)
+        return
+      }
+
       if (!url.startsWith(NATIVE_AUTH_CALLBACK_PREFIX)) return
       // SFSafariViewController stays open until we close it; do it before
       // the route transition so the user doesn't see the OAuth page flash.

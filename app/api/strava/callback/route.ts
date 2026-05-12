@@ -3,24 +3,46 @@ import { createClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 
+// Native callback prefix — same scheme registered in iOS Info.plist for the
+// Google OAuth flow. The Capacitor app catches anything at this URL via
+// `appUrlOpen` and routes it (see components/CapacitorBoot.tsx).
+const NATIVE_STRAVA_CALLBACK = 'app.vetra.ios://strava-callback'
+
+/**
+ * Build the success/failure redirect URL based on origin platform.
+ * Web flows land back at /dashboard?strava=…; native flows land at the
+ * custom URL scheme, which iOS forwards into the app.
+ */
+function buildRedirect(origin: string, platform: 'ios' | null, status: string): string {
+  return platform === 'ios'
+    ? `${NATIVE_STRAVA_CALLBACK}?strava=${status}`
+    : `${origin}/dashboard?strava=${status}`
+}
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const error = searchParams.get('error')
-  const userId = searchParams.get('state')
+  const rawState = searchParams.get('state') ?? ''
+
+  // State is "userId" (web, legacy) or "userId|ios" (native). Parse both.
+  const [userId, platformTag] = rawState.includes('|')
+    ? rawState.split('|')
+    : [rawState, null]
+  const platform: 'ios' | null = platformTag === 'ios' ? 'ios' : null
 
   if (error || !code) {
-    return NextResponse.redirect(`${origin}/dashboard?strava=denied`)
+    return NextResponse.redirect(buildRedirect(origin, platform, 'denied'))
   }
 
   if (!userId) {
     console.error('Strava callback: no user ID in state param')
-    return NextResponse.redirect(`${origin}/dashboard?strava=error`)
+    return NextResponse.redirect(buildRedirect(origin, platform, 'error'))
   }
 
   const tier = await getUserTier(userId)
   if (!isFeatureAllowed('activity_intelligence', tier)) {
-    return NextResponse.redirect(`${origin}/dashboard?strava=upgrade`)
+    return NextResponse.redirect(buildRedirect(origin, platform, 'upgrade'))
   }
 
   try {
@@ -60,9 +82,9 @@ export async function GET(request: Request) {
 
     if (upsertError) throw new Error(`Upsert failed: ${upsertError.message}`)
 
-    return NextResponse.redirect(`${origin}/dashboard?strava=connected`)
+    return NextResponse.redirect(buildRedirect(origin, platform, 'connected'))
   } catch (e) {
     console.error('Strava callback error:', e)
-    return NextResponse.redirect(`${origin}/dashboard?strava=error`)
+    return NextResponse.redirect(buildRedirect(origin, platform, 'error'))
   }
 }

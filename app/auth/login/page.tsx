@@ -372,7 +372,7 @@ export default function LoginPage() {
           display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px',
         }}>
           <a
-            href="https://zona.app/privacy" // TODO: update to vetra.run when domain migrates
+            href="/privacy"
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -390,7 +390,7 @@ export default function LoginPage() {
             opacity: 0.4,
           }}>·</span>
           <a
-            href="https://zona.app/terms" // TODO: update to vetra.run when domain migrates
+            href="/terms"
             target="_blank"
             rel="noopener noreferrer"
             style={{

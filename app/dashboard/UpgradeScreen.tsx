@@ -199,15 +199,49 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
           </button>
         </div>
 
-        {/* Legal */}
-        <p style={{
+        {/* Legal disclosure — Apple §3.1.2(a) compliant.
+            Must cover: per-period prices, trial conversion, Apple-ID charge,
+            renewal terms, cancellation path, links to Terms + Privacy.
+            Submission-blocking on iOS — copy length is intentional. Brand
+            voice is allowed to break here; this is a compliance surface. */}
+        <div style={{
           fontFamily: 'var(--font-ui)', fontWeight: 400,
           fontSize: '0.6875rem', color: 'var(--text-muted)',
-          margin: '14px 0 0', textAlign: 'center', lineHeight: 1.5,
+          margin: '14px 0 0', textAlign: 'center', lineHeight: 1.55,
         }}>
-          Auto-renews. Cancel any time.{' '}
-          14-day free trial included on first subscription.
-        </p>
+          <p style={{ margin: 0 }}>
+            {PRICING.monthly.label} or {PRICING.annual.label} ({PRICING.annual.perMonthDisplay} equivalent).
+            New subscribers get {PRICING.trialDays} days free — the first payment is charged at the
+            end of the trial unless you cancel.
+          </p>
+          <p style={{ margin: '8px 0 0' }}>
+            Payment is charged to your Apple ID at confirmation of purchase. Subscription auto-renews
+            at the end of each period unless turned off at least 24 hours before renewal. Manage or
+            cancel any time in your Apple ID account settings.
+          </p>
+          <div style={{
+            marginTop: '10px',
+            display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px',
+          }}>
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+            >
+              Terms of Service
+            </a>
+            <span aria-hidden="true">·</span>
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+            >
+              Privacy Policy
+            </a>
+          </div>
+        </div>
 
         {/* Error state */}
         {error && (

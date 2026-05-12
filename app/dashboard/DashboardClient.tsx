@@ -6242,7 +6242,23 @@ function StravaConnectionRow() {
               {disconnecting ? 'Disconnecting...' : 'Disconnect'}
             </button>
           ) : (
-            <button onClick={() => { window.location.href = `/api/strava/connect?user_id=${userId}` }} disabled={!userId} style={{
+            <button onClick={async () => {
+              if (!userId) return
+              // Native: open Strava OAuth in SFSafariViewController. Returns
+              // via the app.vetra.ios://strava-callback deep link (handled in
+              // CapacitorBoot.tsx). `platform=ios` param threads through to
+              // the OAuth state so the callback knows where to redirect back.
+              // Web: legacy full-page redirect. Dynamic Capacitor import
+              // keeps the web bundle from paying for the native shims.
+              const { Capacitor } = await import('@capacitor/core')
+              if (Capacitor.isNativePlatform()) {
+                const { Browser } = await import('@capacitor/browser')
+                const url = `${window.location.origin}/api/strava/connect?user_id=${userId}&platform=ios`
+                await Browser.open({ url, presentationStyle: 'popover' })
+                return
+              }
+              window.location.href = `/api/strava/connect?user_id=${userId}`
+            }} disabled={!userId} style={{
               background: 'var(--strava)', color: 'var(--card)',
               border: 'none', borderRadius: '8px', padding: '8px 14px',
               fontFamily: 'var(--font-ui)', fontSize: '11px',
