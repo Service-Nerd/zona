@@ -1,7 +1,7 @@
-# UI Patterns — Zona Visual Language
+# UI Patterns — Vetra Visual Language
 
 **Reference aesthetic**: Runna · Planzy  
-**Authority**: This document defines layout patterns, component anatomy, spacing, and typography rules for all Zona screens. Read before building any new screen or component.
+**Authority**: This document defines layout patterns, component anatomy, spacing, and typography rules for all Vetra screens. Read before building any new screen or component.
 
 **Design system**: Warm Slate (ADR-007). Single light theme. No dark mode (ADR-008). All tokens from `globals.css`.
 
@@ -37,7 +37,7 @@ All type uses **Inter** only. `var(--font-ui)` and `var(--font-brand)` both reso
 | Metric medium | `--font-ui` | 700 | 17px | Session card distance |
 | Metric small | `--font-ui` | 400 | 11px | Session card duration — `--mute-2` |
 | Muted / hint | `--font-ui` | 400 | 12px | `--mute` — timestamps, metadata |
-| Wordmark | `--font-ui` | 800 | 14px | ZONA nav wordmark |
+| Wordmark | `--font-ui` | 800 | 14px | VETRA nav wordmark |
 
 ### Metric Pair Pattern (Runna-style)
 
@@ -495,15 +495,15 @@ Used after any session is logged or skipped. Highest-emotion moment — treat it
 Rules:
 - Completion confirmation always shown at top
 - RPEScale component used for effort input
-- Zona voice response fades in (`opacity 0→1`, `translateY(6px)→0`, 350ms) after any selection
+- Vetra voice response fades in (`opacity 0→1`, `translateY(6px)→0`, 350ms) after any selection
 - CTA shifts ghost → solid `--moss` once response appears
 - Skip always available — run is already saved
 - Never auto-dismiss
 
-Zona voice rules:
+Vetra voice rules:
 - One sentence only
 - Session-type-aware: RPE 8 on easy = flag it; RPE 8 on intervals = endorse it
-- Canonical response matrix: `getZonaReflectResponse()` in `DashboardClient.tsx`
+- Canonical response matrix: `getReflectResponse()` in `DashboardClient.tsx`
 
 ---
 
@@ -811,7 +811,7 @@ Every screen must honour these invariants before shipping. Check against this li
 ### Today Screen
 
 ```
-[ZONA wordmark · moss dot]
+[VETRA wordmark · moss dot]
 
 [Context row: phase · week · Xd out]
 [Today, you run]
@@ -940,7 +940,7 @@ Screen: RestraintCard in TodayScreen
 Change: Show Zone 2 discipline percent derived from session types this week
 SLC:
   Simple — single stat card, percent + one-sentence interpretation
-  Lovable — large 44px number, moss % sign, Zona voice body copy
+  Lovable — large 44px number, moss % sign, Vetra voice body copy
   Complete — hidden when <2 sessions completed, 100% edge case handled
 Trigger frontend-design skill.
 ```

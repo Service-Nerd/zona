@@ -1,4 +1,4 @@
-// CoachNoteBlock — Zona Phase 2 shared component
+// CoachNoteBlock — Vetra Phase 2 shared component
 // Renders the coach voice card in amber-warm style.
 // See docs/canonical/ui-patterns.md § CoachNoteBlock and docs/alignment/phase-2-decisions.md D-001.
 //

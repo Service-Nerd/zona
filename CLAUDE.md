@@ -1,8 +1,10 @@
-# CLAUDE.md — Zona Project Intelligence
+# CLAUDE.md — Vetra Project Intelligence
 
-This is the single source of truth for the Zona codebase.
+This is the single source of truth for the Vetra codebase.
 Read this before touching anything. All design, architecture, and
 behavioural rules live here or in /docs.
+
+> **Brand name history:** the product was launched internally as "Zona" and renamed to "Vetra" in 2026. The brand may rename again. Therefore: **never hardcode any brand name in code — always reference `BRAND.name` from `lib/brand.ts`**. In docs and comments, use the current name ("Vetra"). Older docs may still reference "Zona"; treat those as the same product.
 
 ---
 
@@ -10,24 +12,24 @@ behavioural rules live here or in /docs.
 
 ### Positioning
 
-> **ZONA is for runners who blur their zones — who go medium-hard on everything, never truly recover, and never truly push.**
+> **Vetra is for runners who blur their zones — who go medium-hard on everything, never truly recover, and never truly push.**
 
 Core truth: "You're trying hard. That's the problem."
 
-Zone discipline is the product idea: commit to the zone you're in. Run easy when it's easy. Run hard when it's hard. The problem isn't that users go too fast — it's that they can't tell the difference between sessions because every run ends up in the same grey middle. Zona removes that ambiguity.
+Zone discipline is the product idea: commit to the zone you're in. Run easy when it's easy. Run hard when it's hard. The problem isn't that users go too fast — it's that they can't tell the difference between sessions because every run ends up in the same grey middle. Vetra removes that ambiguity.
 
 ### The three-line tagline system
 
 | Line | Job | `BRAND` constant | Where it appears |
 |---|---|---|---|
-| **"Training plans that stop you overtraining."** | What ZONA does. Functional, discovery-facing. | `BRAND.appStoreSubtitle` | App Store subtitle, landing page hero, paid ads |
-| **"Slow down. You've got a day job."** | Who ZONA is for. The demographic hook. | `BRAND.tagline` | Login screen, loading screen, OG image, meta description |
-| **"You can't outrun your easy days."** | How ZONA sounds. Voice/personality moment. | `BRAND.brandStatement` | Privacy footer, App Store description (not login — tagline owns that space) |
+| **"Training plans that stop you overtraining."** | What the app does. Functional, discovery-facing. | `BRAND.appStoreSubtitle` | App Store subtitle, landing page hero, paid ads |
+| **"Slow down. You've got a day job."** | Who the app is for. The demographic hook. | `BRAND.tagline` | Login screen, loading screen, OG image, meta description |
+| **"You can't outrun your easy days."** | How the brand sounds. Voice/personality moment. | `BRAND.brandStatement` | Privacy footer, App Store description (not login — tagline owns that space) |
 
 **Rules:**
 - Never mix two taglines on the same surface
 - Never rephrase them — they are locked strings
-- `BRAND.name` is always `'Zona'` — fix any hardcoded instances
+- `BRAND.name` is `'Vetra'` (parameterised — may change again). Never hardcode a brand name in any component, comment, or prompt. Interpolate from `BRAND.name`.
 - When in doubt: discovery = #1, in-app = #2, voice moment = #3
 
 **In-product voice anchor — `BRAND.voiceAnchor`: "Hold the zone."**
@@ -55,7 +57,7 @@ One sentence is better than two. Specific beats abstract. Never motivational.
 
 ---
 
-## What Is Zona?
+## What Is Vetra?
 
 A running training app for non-elite runners who overtrain.
 Each user brings their own plan — race, distance, training phase. All
@@ -381,7 +383,7 @@ Trigger frontend-design skill.
 
 ## Monetisation Model
 
-Zona uses a **Hybrid Reverse Trial**: 14 days full access for all new users, then graceful downgrade to free tier. Upgrade prompts are triggered by user behaviour, never by a calendar date.
+Vetra uses a **Hybrid Reverse Trial**: 14 days full access for all new users, then graceful downgrade to free tier. Upgrade prompts are triggered by user behaviour, never by a calendar date.
 
 See `docs/canonical/monetisation-strategy.md` for the full model.
 

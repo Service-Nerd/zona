@@ -23,7 +23,7 @@ Status: COMPLETE ✅
 |------|--------|-------|
 | T9: Dead code cleanup | ✅ done | Removed saveTheme/applyTheme dead blocks, CalendarOverlay.old.tsx deleted |
 | T10: Empty/loading/error states | ✅ done | All active screens have loading/empty/error coverage |
-| T11: Copy audit | ✅ done | Fatigue warning rewritten to Zona voice; no other active off-brand strings |
+| T11: Copy audit | ✅ done | Fatigue warning rewritten to Vetra voice; no other active off-brand strings |
 | T12: Accessibility sweep | ✅ done | Back buttons 36→44px (4), week nav 44px min, steppers/close 32→44px, fatigue chips 44px min; focus-visible global |
 | T13: ui-patterns.md update | ✅ done | SectionLabel pattern 16 added; tap target rule added; back arrow size corrected |
 | T14: Final verification | ✅ done | tsc --noEmit clean; all ship criteria met |

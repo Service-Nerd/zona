@@ -1,7 +1,7 @@
 // TIER-DIVERGENT — FREE: 3-line ceremony, 1.8s minimum before reveal
 //                  PAID/TRIAL: 5-line ceremony, 3.6s minimum (enricher runs longer)
 //
-// This is the signature ZONA loading moment. Not a loading state — a ceremony.
+// This is the signature Vetra loading moment. Not a loading state — a ceremony.
 // The copy does the work. The skeleton shows the plan's shape before content arrives.
 // The reveal draws the plan phase-by-phase, then hands off to the full preview.
 //

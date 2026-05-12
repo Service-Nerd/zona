@@ -52,7 +52,7 @@ export interface DailyCoachNoteInput {
   previousWeeklyReport?: { headline: string; body: string } | null
 }
 
-// Few-shot examples — Zona voice anchored. Each shows a specific recent
+// Few-shot examples — Vetra voice anchored. Each shows a specific recent
 // reality being acknowledged in one sentence. NEVER generic phase strings.
 const FEW_SHOT_EXAMPLES = `
 Example 1 — yesterday's easy ran hot, today is also easy:

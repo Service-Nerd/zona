@@ -18,9 +18,9 @@ The UI component stays in place. It will simply never render under normal use un
 
 > "The plan adapts to your life."
 
-When a runner's actual behaviour deviates from the plan — moving sessions, skipping, missing, showing fatigue, drifting out of their zones — ZONA should propose plan changes that keep the overall structure working. The user reviews each proposal and either Confirms or Reverts.
+When a runner's actual behaviour deviates from the plan — moving sessions, skipping, missing, showing fatigue, drifting out of their zones — VETRA should propose plan changes that keep the overall structure working. The user reviews each proposal and either Confirms or Reverts.
 
-This is the core product differentiator vs. Runna, which gives you a plan and leaves it. ZONA should be alive.
+This is the core product differentiator vs. Runna, which gives you a plan and leaves it. VETRA should be alive.
 
 ---
 

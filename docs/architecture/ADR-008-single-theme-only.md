@@ -12,7 +12,7 @@ ADR-004 established `applyTheme()` as the mechanism for toggling between light, 
 
 This worked. But maintaining two complete visual states (light + dark) for every screen, every component, and every redesign iteration doubles the visual QA surface. For a solo developer shipping a redesign under a hard May 10 deadline, that cost is real.
 
-More importantly: the brand positioning resolved in `docs/alignment/brand-product-alignment.md` anchors Zona aesthetically in the Warm Slate palette — warm, analogue, unhurried. Warm Slate is a light theme. Forcing a dark-mode equivalent of `#F3F0EB` and `#6B8E6B` produces something that neither fits the palette nor has been designed. It would be guesswork at scale.
+More importantly: the brand positioning resolved in `docs/alignment/brand-product-alignment.md` anchors Vetra aesthetically in the Warm Slate palette — warm, analogue, unhurried. Warm Slate is a light theme. Forcing a dark-mode equivalent of `#F3F0EB` and `#6B8E6B` produces something that neither fits the palette nor has been designed. It would be guesswork at scale.
 
 Dark mode is not a user need that has been expressed in feedback. It was an assumption. This ADR retires that assumption.
 
@@ -20,7 +20,7 @@ Dark mode is not a user need that has been expressed in feedback. It was an assu
 
 ## Decision
 
-Zona runs on a single light theme. Dark mode is removed.
+Vetra runs on a single light theme. Dark mode is removed.
 
 ### Implementation
 
@@ -43,7 +43,7 @@ Zona runs on a single light theme. Dark mode is removed.
 1. **One theme = one visual QA path.** Every screen redesigned in Phase 2 and 3 needs to look correct in exactly one state. This halves the visual regression surface.
 2. **Warm Slate is a light palette by definition.** There is no designed dark mode for Warm Slate. Shipping a speculative dark mode would mean shipping untested, undesigned surfaces.
 3. **No user-expressed demand.** No feedback, no support request, no review mentions dark mode as a need. It was added by developer preference, not user need.
-4. **The brand call is consistent.** Light, warm, calm, unhurried. Dark athletic dashboards are Runna's space. Zona's space is restraint — which is easier to achieve with a warm light surface.
+4. **The brand call is consistent.** Light, warm, calm, unhurried. Dark athletic dashboards are Runna's space. Vetra's space is restraint — which is easier to achieve with a warm light surface.
 5. **Reversible.** If dark mode proves to be a real user need post-launch, it can be reintroduced via a `[data-theme="dark"]` block in globals.css and a preference toggle in settings. Nothing structural is lost.
 
 ---

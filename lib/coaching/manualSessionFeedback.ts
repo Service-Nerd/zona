@@ -69,7 +69,7 @@ export function deriveManualVerdict(
 
 /**
  * One-line coaching note derived from session type + RPE + fatigue tag.
- * Mirrors the register of getZonaReflectResponse in DashboardClient —
+ * Mirrors the register of getReflectResponse in DashboardClient —
  * honest, dry, no cringe. Falls back to a fatigue-only note when RPE
  * is null (shouldn't happen in practice, but defensive).
  */

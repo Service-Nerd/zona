@@ -31,7 +31,7 @@ lib/plan/
   planSignatures.ts     ← per-distance plan shape
   featureGates.ts       ← Option A trial → free downgrade categories
   ruleEngine.ts         ← reads from the four files above; emits Plan JSON
-  enrich.ts             ← reads ruleEngine output; layers ZONA voice
+  enrich.ts             ← reads ruleEngine output; layers VETRA voice
   generate.ts           ← entry point (tier-aware)
 ```
 
@@ -51,7 +51,7 @@ lib/plan/
 
 ### What does not live in `GENERATION_CONFIG`
 
-- **Voice copy.** Coach notes, week themes, brand strings live in their existing homes (`lib/brand.ts`, ZONA voice in the catalogue table, AI enricher).
+- **Voice copy.** Coach notes, week themes, brand strings live in their existing homes (`lib/brand.ts`, VETRA voice in the catalogue table, AI enricher).
 - **User input shape.** `GeneratorInput` stays in `types/plan.ts`.
 - **Plan output schema.** `Plan`, `Week`, `Session` interfaces stay in `types/plan.ts`; Zod schemas stay in `lib/plan/schema.ts` (INV-PLAN-007 unchanged — `zone` and `hr_target` remain string-typed).
 

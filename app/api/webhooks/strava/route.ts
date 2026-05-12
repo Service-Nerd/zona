@@ -196,7 +196,7 @@ async function handleActivityDelete(event: StravaEvent) {
     .match({ user_id: userId, strava_activity_id: event.object_id })
 }
 
-/** Resolves Strava athlete_id → Zona user_id via user_settings. */
+/** Resolves Strava athlete_id → Vetra user_id via user_settings. */
 async function resolveUserId(stravaAthleteId: number): Promise<string | null> {
   // user_settings PK is `id` (referencing auth.users.id) — not `user_id`.
   // Same bug pattern as the strava_refresh_token query fixed in 991c617.

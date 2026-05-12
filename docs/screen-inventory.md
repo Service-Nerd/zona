@@ -1,4 +1,4 @@
-# ZONA Screen Inventory
+# VETRA Screen Inventory
 *Date: 2026-04-23 — Read-only audit. No changes proposed.*
 
 ---
@@ -9,7 +9,7 @@
 |---|---|---|---|---|
 | Login | app/auth/login/page.tsx | `/auth/login` | Email/password and Google OAuth signin/signup | Public |
 | Privacy Policy | app/privacy/page.tsx | `/privacy` | Legal/privacy documentation | Public |
-| Loading | app/dashboard/DashboardClient.tsx | Initial page load | Zona wordmark + spinner during settings fetch | Authenticated |
+| Loading | app/dashboard/DashboardClient.tsx | Initial page load | Vetra wordmark + spinner during settings fetch | Authenticated |
 | Welcome | app/dashboard/DashboardClient.tsx | First login after plan creation | Onboarding message for migrated users with existing plans | Authenticated |
 | Orientation | app/dashboard/DashboardClient.tsx | After plan generation via `setShowOrientation()` | Post-generation walkthrough: race info, first session, Z2 ceiling | Authenticated |
 | Today | app/dashboard/DashboardClient.tsx | `screen='today'` (default) | Current week's sessions, weekly stats, smoke tracker, pending adjustments | Both |
@@ -37,9 +37,9 @@
 `app/auth/login/page.tsx`
 
 - **Layout**: Full screen centered
-- **Header**: Zona wordmark + tagline (no nav)
+- **Header**: Vetra wordmark + tagline (no nav)
 - **Content blocks** (top to bottom):
-  1. Zona wordmark ("Zona") + tagline (BRAND.tagline)
+  1. Vetra wordmark ("Vetra") + tagline (BRAND.tagline)
   2. Google OAuth button
   3. "or" divider
   4. Sign in / Sign up toggle (two-segment control)
@@ -62,7 +62,7 @@
 `app/privacy/page.tsx`
 
 - **Layout**: Full screen scrollable document
-- **Header**: Zona wordmark + back link
+- **Header**: Vetra wordmark + back link
 - **Content blocks**:
   1. Title + "Last updated: April 2026"
   2. Who we are
@@ -90,7 +90,7 @@
 - **Layout**: Full screen centered
 - **Header**: None
 - **Content blocks**:
-  1. Animated Zona wordmark (custom Z + O with zone arc + NA)
+  1. Animated Vetra wordmark (custom Z + O with zone arc + NA)
   2. Tagline
 - **Data density**: Light
 - **Dynamic copy**: None
@@ -103,10 +103,10 @@
 `app/dashboard/DashboardClient.tsx`
 
 - **Layout**: Full screen centered
-- **Header**: Zona wordmark + tagline
+- **Header**: Vetra wordmark + tagline
 - **Content blocks**:
   1. Headline: "Your plan is ready."
-  2. Body: "Zona keeps track of your sessions…"
+  2. Body: "Vetra keeps track of your sessions…"
   3. Inspirational text: "Train with intention. The rest follows."
   4. CTA: "Let's go"
 - **Data density**: Light
@@ -119,7 +119,7 @@
 `app/dashboard/DashboardClient.tsx`
 
 - **Layout**: Full screen centered
-- **Header**: Zona wordmark + tagline
+- **Header**: Vetra wordmark + tagline
 - **Content blocks**:
   1. Headline: "{firstName}, your plan is set."
   2. Subheading: "{weeks} weeks. One session at a time."
@@ -513,7 +513,7 @@ Week bars in Today and Plan screens are coloured by week status:
 
 | Element | String |
 |---|---|
-| Wordmark | "Zona" |
+| Wordmark | "Vetra" |
 | Tagline | `{BRAND.tagline}` → "Slow down. You've got a day job." |
 | Sign in title | "Sign in" |
 | Sign in subtitle | "Access your training plan." |
@@ -556,7 +556,7 @@ Week bars in Today and Plan screens are coloured by week status:
 | 2 | "Be honest." | "The plan only works if these numbers are real. Flattering yourself here just means a harder race." |
 | 3 | "Your schedule." | "Training has to fit your life. Not the other way around." |
 | 4 | "A bit more detail." | "Terrain, injury history, training preferences. Skip what doesn't apply." |
-| 1 (onboarding) | "Welcome to Zona." | "Let's build your plan. Start with the finish line." |
+| 1 (onboarding) | "Welcome to Vetra." | "Let's build your plan. Start with the finish line." |
 
 **Step 1 — Race**
 

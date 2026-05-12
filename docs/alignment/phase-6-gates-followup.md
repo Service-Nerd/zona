@@ -53,7 +53,7 @@ The existing `hasPaidAccess()` calls map cleanly to `isFeatureAllowed('<key>', t
 
 **Day-10 in-app message** — banner on Today screen, calm copy, dismissible.
 - Trigger: trial day 10 (4 days remaining). Compute via `trial_started_at + 10 days < now()`.
-- Copy candidate (ZONA voice): "Four days left at full access. Plan is yours either way."
+- Copy candidate (VETRA voice): "Four days left at full access. Plan is yours either way."
 - Style: amber-accent banner, NOT modal (UI principle N-004).
 
 **Day-15 soft transition** — full-screen route, NOT modal.
@@ -63,7 +63,7 @@ The existing `hasPaidAccess()` calls map cleanly to `isFeatureAllowed('<key>', t
 
 **Paywall copy for gated actions** — already exists in UpgradeScreen. Drafts for new gates:
 
-| Feature | Soft-block copy (ZONA voice) |
+| Feature | Soft-block copy (VETRA voice) |
 |---|---|
 | `dynamic_reshape_r20` | "Reshape needs Premium. The plan you have keeps running." |
 | `ultra_plan_generation` | "Ultras are Premium. 5K through HM are free." |

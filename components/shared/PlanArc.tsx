@@ -1,4 +1,4 @@
-// PlanArc — Zona Phase 2 shared component
+// PlanArc — Vetra Phase 2 shared component
 // Horizontal 32px progression strip showing plan weeks as bars.
 // Done · Current · Future · Deload · Race week variants.
 // See docs/canonical/ui-patterns.md § PlanArc.

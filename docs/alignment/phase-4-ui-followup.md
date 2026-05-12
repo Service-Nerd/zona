@@ -46,7 +46,7 @@ MIDDLE: STRUCTURED DESCRIPTION ← new from composer
         • Main set — 5 × 3 min Z4–Z5 / 2 min jog
         • Cool-down — 5 min Z1
 ─────────────────────────────────────────────
-BOTTOM: Coach notes (1–3 bullets, ZONA voice)
+BOTTOM: Coach notes (1–3 bullets, VETRA voice)
         (already exists)
 ─────────────────────────────────────────────
 ```

@@ -1,4 +1,4 @@
-// PendingAdjustmentBanner — Zona Phase 2 shared component
+// PendingAdjustmentBanner — Vetra Phase 2 shared component
 // Hero-level feature — this is the proof point for "the plan adapts to your life."
 // Visual: warm amber banner, CoachByline eyebrow, action row with confirm + revert.
 // API calls live in the parent. This component is pure UI.

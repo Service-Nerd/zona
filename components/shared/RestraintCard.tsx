@@ -1,4 +1,4 @@
-// RestraintCard — Zona Phase 2 shared component
+// RestraintCard — Vetra Phase 2 shared component
 // The brand's counter-intuitive moment: showing restraint as progress.
 // "78% of your runs stayed in Zone 2. That's why you're getting faster."
 // See docs/canonical/ui-patterns.md § RestraintCard and docs/alignment/phase-2-decisions.md D-005.

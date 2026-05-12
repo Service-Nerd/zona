@@ -1,7 +1,7 @@
 import type { ProposedAdjustment } from '../planAdjustment'
 import { buildVoiceHeader } from './voiceRules'
 
-// Few-shot examples — Zona voice for adjustment explanations.
+// Few-shot examples — Vetra voice for adjustment explanations.
 // IMPORTANT: examples illustrate TONE only. Numbers in examples are
 // representative; Claude must NOT borrow them when writing for a
 // real adjustment. The hard rule below enforces this.

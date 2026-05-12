@@ -56,7 +56,7 @@ Look for `motivation_type` and `training_style` references in:
 
 ### Copy (5.6)
 
-Every new field needs ZONA voice. Drafts below — follow brand rules from `docs/canonical/brand.md`:
+Every new field needs VETRA voice. Drafts below — follow brand rules from `docs/canonical/brand.md`:
 
 | Field | Question | Help text |
 |---|---|---|

@@ -8,7 +8,7 @@
 
 ## Context
 
-Plan generation for Zona must serve two user segments with fundamentally different cost profiles:
+Plan generation for Vetra must serve two user segments with fundamentally different cost profiles:
 
 - **Free users** need a working plan immediately. An AI call per plan is financially unsustainable at free tier scale, and any AI dependency makes the free path fragile — if Claude is unavailable, free users get nothing.
 - **Trial and paid users** expect personalised coaching voice, a confidence score, and session-level reasoning. A generic template is not an acceptable experience at the price point.
@@ -17,7 +17,7 @@ Two alternatives were considered and rejected:
 
 1. **Binary split (free = fixed template, paid = full AI generation)**: The free path is structurally inferior and the gap is obvious to users. More importantly, the two code paths diverge over time — the rule engine and the AI prompt drift independently, producing plans that feel like different products.
 
-2. **Full AI with paywall**: Makes the free path a hard wall. Free users who can't afford a subscription get no plan. This violates the brand principle that ZONA protects all runners — not just those who pay.
+2. **Full AI with paywall**: Makes the free path a hard wall. Free users who can't afford a subscription get no plan. This violates the brand principle that VETRA protects all runners — not just those who pay.
 
 ---
 
@@ -57,10 +57,10 @@ Inputs (race, fitness, schedule)
 
 ### Enricher responsibilities
 
-- Replaces generic labels with ZONA-voice copy.
+- Replaces generic labels with VETRA-voice copy.
 - Adds `coach_notes` per session.
 - Adds `meta.confidence_score`, `meta.confidence_risks`, and `meta.coach_intro`.
-- Adds `week.theme` copy in ZONA voice.
+- Adds `week.theme` copy in VETRA voice.
 - **Must not change any numeric value** (distance, duration, HR targets, zone strings).
 - **Must not bake numeric values into `coach_notes` text.** When a coach note refers to a numeric the athlete might change later (HR ceilings, HR targets, paces, zones, distances, durations, RPE), the enricher emits a `{{token}}` placeholder from the vocabulary in `lib/plan/renderGuidance.ts`. The render layer substitutes the live value at display time via `renderGuidance()`, so notes stay correct after the athlete updates `resting_hr`, `max_hr`, or other inputs. Baking a literal (e.g. "Keep HR below 154 bpm") is a defect — the prompt forbids it and the render path strips orphan `{{...}}` as a safety net, but new contributors must respect this invariant when editing the enricher prompt.
 - Validates Claude output with Zod. Any validation failure → silent fallback to rule-engine output.

@@ -41,7 +41,7 @@ export interface SessionFeedbackPromptInput {
   } | null
 }
 
-// Few-shot examples — Zona voice: honest, dry, no cringe.
+// Few-shot examples — Vetra voice: honest, dry, no cringe.
 // Coverage: easy hot, easy nailed, quality nailed, quality drifted easy,
 // quality overcooked, intervals nailed, intervals undercooked, long drift.
 // The voice frames "right zone for the session", not "always Zone 2".

@@ -1,4 +1,4 @@
-# UX Principles — Zona
+# UX Principles — Vetra
 
 **Authority**: This document defines the UX philosophy, design mandate, and flow principles that govern all screen and feature design. Read before building any new screen. Cross-reference `docs/canonical/ui-patterns.md` for component-level patterns and `docs/canonical/brand.md` for tone and visual rules.
 
@@ -21,7 +21,7 @@ If the technical approach would compromise the UX, the technical approach change
 
 ## Reverse Trial UX Principles
 
-Zona uses a Hybrid Reverse Trial model (see `docs/canonical/monetisation-strategy.md`). The UX rules for this model:
+Vetra uses a Hybrid Reverse Trial model (see `docs/canonical/monetisation-strategy.md`). The UX rules for this model:
 
 ### 1. Full experience on first open
 

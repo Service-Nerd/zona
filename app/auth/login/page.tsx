@@ -187,7 +187,7 @@ export default function LoginPage() {
     >
       <div style={{ width: '100%', maxWidth: '340px' }}>
 
-        {/* Zona wordmark */}
+        {/* Brand wordmark — text sourced from BRAND.name */}
         <div style={{ marginBottom: '48px', textAlign: 'center' }}>
           <div style={{
             fontFamily: 'var(--font-brand)',

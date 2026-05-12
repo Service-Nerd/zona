@@ -2,13 +2,13 @@
 
 **Status**: Accepted  
 **Superseded for colour values by ADR-007 (2026-04-23); principle retained.**  
-**Date**: 2025 (pre-Zona rebrand)
+**Date**: 2025 (pre-Vetra rebrand)
 
 ---
 
 ## Context
 
-The original Zona palette (Ember orange `#D4501A`, warm beige `#f5f2ee`, DM Mono, DM Sans) was scattered across components as hardcoded values. During a deliberate rebrand to System B (navy, off-white, teal, amber), the lack of centralisation caused palette regressions on every AI-assisted session — the most frequent and wasteful failure mode in the project's history.
+The original Vetra palette (Ember orange `#D4501A`, warm beige `#f5f2ee`, DM Mono, DM Sans) was scattered across components as hardcoded values. During a deliberate rebrand to System B (navy, off-white, teal, amber), the lack of centralisation caused palette regressions on every AI-assisted session — the most frequent and wasteful failure mode in the project's history.
 
 ---
 

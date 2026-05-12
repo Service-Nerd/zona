@@ -112,6 +112,22 @@ export interface Session {
   /** Pace string for an embedded long-run pace segment (e.g. "5:45–6:05 /km"). Present only
    *  on long runs that carry a structural pace segment per §24b/§24d. Used by invariant checks. */
   lr_segment_pace?: string
+
+  // ─── AI-DEPTH-07 additive fields (2026-05-12) ──────────────────────────────
+  // Schema-only — engine does not populate these yet. Reserved for AI-DEPTH-08
+  // (post-race reshape) and future depth work. All optional; absence = legacy
+  // behaviour. Consumers must tolerate undefined.
+
+  /** Pivotal session flag — set true on long runs, race-pace tempos, planned
+   *  tune-ups. AI-DEPTH-08 uses this to know which sessions to defend during
+   *  a post-race reshape. */
+  key_session?: boolean
+  /** Embedded run-walk strategy for the session, e.g. "9:1 from km 10" or
+   *  "5:1 throughout". Free-form; displayed verbatim. Marathon / ultra primarily. */
+  run_walk_strategy?: string
+  /** In-session fueling protocol, e.g. "gel every 25 min from km 10" or
+   *  "60g carb/hr, sip water at every aid station". Free-form; displayed verbatim. */
+  fueling_protocol?: string
 }
 
 export interface Week {
@@ -128,6 +144,59 @@ export interface Week {
   weekly_duration_mins?: number           // for time-based plans, alongside weekly_km
   race_notes?: string
   tune_up_callout?: string                // L-01 — optional mid-build tune-up race suggestion
+
+  /** AI-DEPTH-07 — race-day result captured into the plan on the race week.
+   *  Populated post-event (by an explicit log-result action; not by Strava
+   *  webhooks). Consumed by AI-DEPTH-08 (post-race reshape) and any future
+   *  retrospective surfaces. Null/undefined = race not yet run or not logged. */
+  result_embedded?: RaceResult | null
+}
+
+/** AI-DEPTH-07 — race-day result envelope.
+ *
+ *  Captures both telemetry (splits, HR drift) and diagnostics (what worked,
+ *  what broke, fueling outcome). Telemetry fields can be auto-populated from
+ *  Strava / HealthKit on the race-week activity; diagnostic fields are
+ *  runner-written reflection. All fields optional — partial captures are valid.
+ *
+ *  Lives on `Week.result_embedded` for the race week. Distinct from
+ *  `meta.benchmark` (which is a forward-looking VDOT input, not a backward-
+ *  looking outcome).
+ */
+export interface RaceResult {
+  /** Finish time, formatted "h:mm:ss" or "mm:ss" (e.g. "4:32:17", "21:48"). */
+  finish_time?: string
+  /** Actual distance covered, km. May differ from the planned race_distance_km
+   *  (course re-measure, partial-finish, DNF early). */
+  distance_km?: number
+  /** ISO date the race was run. May differ from plan.meta.race_date on rescheduled events. */
+  date?: string
+  /** Per-segment splits. Pace strings (e.g. "5:24 /km") + optional HR per split.
+   *  Either per-km, per-mile, or per-named-segment depending on what the source provides. */
+  splits?: Array<{ km: number; pace: string; hr?: number }>
+  /** Average HR across the race, bpm. */
+  avg_hr?: number
+  /** Peak HR, bpm. */
+  max_hr?: number
+  /** Cardiac drift: % increase in HR between first and second half at comparable pace.
+   *  Positive = drift up (typical); negative = strong even-effort. */
+  hr_drift_pct?: number
+  /** Runner-rated overall effort, 1–10. */
+  rpe?: number
+  /** High-level outcome bucket. Drives post-race reshape branching when AI-DEPTH-08 ships. */
+  outcome?: 'on_target' | 'off_target' | 'dnf' | 'pb'
+  /** Free-form runner reflection — sole field for unstructured notes. */
+  notes?: string
+  /** Fueling outcome — what worked, what didn't, where it broke down.
+   *  Used by AI-DEPTH-08 to propose `fueling_protocol` updates for future plans. */
+  fueling_outcome?: string
+  /** Pacing/strategy outcome — went out hard, even split, faded at km X, etc.
+   *  Used by AI-DEPTH-08 to propose `run_walk_strategy` or pacing adjustments. */
+  strategy_outcome?: string
+  /** Free-form: what specifically went well. */
+  what_worked?: string
+  /** Free-form: what specifically broke. */
+  what_broke?: string
 }
 
 export interface PlanMeta {

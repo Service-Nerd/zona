@@ -103,7 +103,7 @@ A scheduled session row in the plan JSON carries a `SessionType` (e.g. `quality`
 
 - Generator now requires a Supabase fetch during plan generation. Cached at request scope; the catalogue is small (<100 rows expected lifetime). RLS is read-anonymous for catalogue rows tagged `is_free_tier = true`; paid-only rows require the user's session.
 - Catalogue rows tagged `is_free_tier = false` (50K/100K-specific sessions) are visible only to paid users. Free users requesting an ultra plan are blocked at the API layer (Phase 6 feature gate), not by an empty catalogue at the engine layer.
-- `coach_voice_notes` must be in ZONA voice. Phase 1 drafts all 14 strings for explicit approval before seeding. Voice changes are a content task, not an engineering task — but they still go through the migration mechanism for auditability.
+- `coach_voice_notes` must be in VETRA voice. Phase 1 drafts all 14 strings for explicit approval before seeding. Voice changes are a content task, not an engineering task — but they still go through the migration mechanism for auditability.
 
 ---
 

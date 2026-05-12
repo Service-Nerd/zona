@@ -1,5 +1,5 @@
 /**
- * Canonical Zona voice rules for all coaching prompts.
+ * Canonical brand voice rules for all coaching prompts.
  *
  * Import from here. Never inline voice instructions in individual prompt files.
  * All four prompt builders (session feedback, weekly report, daily coach note,
@@ -15,7 +15,7 @@ import { BRAND } from '@/lib/brand'
 // ---------------------------------------------------------------------------
 
 /**
- * Words and phrases that must never appear in any Zona coaching output.
+ * Words and phrases that must never appear in any coaching output.
  * Sourced from the brand.md voice table (right column — "Doesn't work").
  */
 export const VOICE_BANNED_PHRASES = [
@@ -99,7 +99,7 @@ export interface VoiceHeaderOptions {
 }
 
 /**
- * Builds the canonical Zona voice instruction block for the opening of any
+ * Builds the canonical brand voice instruction block for the opening of any
  * coaching prompt. Guarantees consistent tone, banned-word list, and voice
  * examples across all four surfaces.
  *

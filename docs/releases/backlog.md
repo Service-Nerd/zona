@@ -1,4 +1,4 @@
-# Backlog — Zona
+# Backlog — Vetra
 
 **Job:** What's left to ship. Single source of truth for "what should I work on?"
 **Pair:** When an item ships, the `/ship` skill moves it to `docs/canonical/feature-registry.md` "Shipped Features" table. An item lives in exactly one of the two.
@@ -45,7 +45,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 ### D. External setup
 
-- 🔲 **Stripe product + price** — "Zona Premium", £7.99/month + £59.99/year, 14-day trial
+- 🔲 **Stripe product + price** — "Vetra Premium", £7.99/month + £59.99/year, 14-day trial
 - 🔲 **RevenueCat app + entitlement** — link to App Store product ID, set entitlement identifier (e.g. `zona_premium`)
 - 🔲 **Apple Small Business Program** — 15% vs 30% cut, enrol before first live transaction. Deferred 2026-05-08 — not visible in App Store Connect UI yet (likely gated on Paid Applications Agreement signing). Direct URL: https://appstoreconnect.apple.com/business
 - 🔲 **Custom domain** — point `zona.app/privacy` at live URL
@@ -66,7 +66,7 @@ Ordered by GTM impact. Each needs FREE/PAID tag confirmed before build.
 
 | # | Item | Effort | Tier | Notes |
 |---|------|--------|------|-------|
-| GTM-08 | **Marketing site** (`app/page.tsx`) — replace dashboard redirect with one-page site: overtraining thesis, ZONA voice, single CTA. Uses `lib/brand.ts` for all copy. Screenshots: session card, reflect view, coach screen | M | FREE | High — must exist before any paid acquisition or press |
+| GTM-08 | **Marketing site** (`app/page.tsx`) — replace dashboard redirect with one-page site: overtraining thesis, VETRA voice, single CTA. Uses `lib/brand.ts` for all copy. Screenshots: session card, reflect view, coach screen | M | FREE | High — must exist before any paid acquisition or press |
 | GTM-09 | **Trial expiry email** (day 14) — "Your zone coaching pauses today." Requires email platform (Resend or Supabase Edge + SMTP) | M | PAID | High |
 | GTM-10 | **Trial nudge email** (day 11) — "3 days of full access left." Same infra as GTM-09, ships together | S | PAID | Medium |
 
@@ -111,7 +111,7 @@ After Vercel deploy, verify with agent-browser:
 
 - 🔲 **AI-DEPTH-08 — Post-race reshape route** *(scoped 2026-05-11)* — biggest item from the audit. Closest analogue to Russ's manual v2.4→v3.0 rewrite after Goring Gap. New `POST /api/post-race-reshape` consuming a structured race-result entry (you'd build the UI to log a finish: time, splits, HR drift, what went wrong/right, kit + fueling outcomes). Hybrid pattern per ADR-006: rule engine proposes structural changes (taper restructure, key_session flags, fueling protocol updates, run-walk strategy when a race day exposed a need), Claude-Sonnet adds voice and per-session coach notes. **Needs ANTHROPIC_MODEL_DEEP (Sonnet) — Haiku will fall over on plan-shaped reasoning.** Lift the `TAPER_PROTECTION_WEEKS` guard conditionally when a post-race reshape is the explicit trigger (currently any week within the taper window is locked). Tier: PAID — extends `dynamic_reshape_r20` gate. Effort: L (~2–3 weeks). Depends on AI-DEPTH-07.
 
-- 🔲 **AI-DEPTH-09 — Coach chat (deferred indefinitely)** *(scoped 2026-05-11)* — original audit Step-5 (injury/equipment diagnosis) was recommended for deferral on three grounds: liability surface, off-brand (Zona is zone discipline, not shoe lacing), and the kit-and-blister advice from Russ's manual session wasn't where the real coaching value lived. If a paid-tier freeform chat is later considered, it slots here as a new gate `coach_chat`. Effort: L. Out of scope until product strategy explicitly invites it.
+- 🔲 **AI-DEPTH-09 — Coach chat (deferred indefinitely)** *(scoped 2026-05-11)* — original audit Step-5 (injury/equipment diagnosis) was recommended for deferral on three grounds: liability surface, off-brand (Vetra is zone discipline, not shoe lacing), and the kit-and-blister advice from Russ's manual session wasn't where the real coaching value lived. If a paid-tier freeform chat is later considered, it slots here as a new gate `coach_chat`. Effort: L. Out of scope until product strategy explicitly invites it.
 
 ### Plan adjustments
 
@@ -132,7 +132,7 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 | **R18** | **Plan confidence score** — derive from session completion + RPE. R17 coaching flags are the per-session atom this aggregates. Logically downstream of R25 — pairs naturally as the next item once the comparison engine ships | PAID | M | Display on dashboard or plan screen |
 | **R24** | **Multi-race support** (A/B race hierarchy) | PAID | L | Non-breaking additive: `meta.races: Race[]` on top of existing `meta.race_date`/`race_name` |
 | **R21** | **Strength sessions** — flesh out stubs (currently admin-only/hidden) | FREE display / PAID dynamic | M | |
-| **R19** | **Coaching tips in Supabase** — move hardcoded copy to a table for dynamic, user-specific messages | PAID | S | **Don't pick up without a product trigger.** Scoped 2026-05-01: current hardcoded copy (`getCompletionCopy`, `getZonaReflectResponse` in `DashboardClient.tsx`; `ZONE_COPY` in `lib/coaching/zoneCopy.ts`) branches on session type + RPE — both already known client-side. No user segmentation exists, so the migration alone doesn't unlock "dynamic per user" — it just adds a DB read + fallback path. Worth building only when there's a real driver: a non-engineer copy editor, an A/B test you actually want to run, or the first cohort that genuinely needs different copy (e.g. beginner vs intermediate). Until then, two switch statements are the right level of abstraction. |
+| **R19** | **Coaching tips in Supabase** — move hardcoded copy to a table for dynamic, user-specific messages | PAID | S | **Don't pick up without a product trigger.** Scoped 2026-05-01: current hardcoded copy (`getCompletionCopy`, `getReflectResponse` in `DashboardClient.tsx`; `ZONE_COPY` in `lib/coaching/zoneCopy.ts`) branches on session type + RPE — both already known client-side. No user segmentation exists, so the migration alone doesn't unlock "dynamic per user" — it just adds a DB read + fallback path. Worth building only when there's a real driver: a non-engineer copy editor, an A/B test you actually want to run, or the first cohort that genuinely needs different copy (e.g. beginner vs intermediate). Until then, two switch statements are the right level of abstraction. |
 | **R26** | **Background load (HealthKit)** — count daily step / non-run active minutes against the chronic side of `acuteChronicRatio`. Fixes the false-negative case where a user with a 15k-step day-job is carrying invisible load the plan can't see | PAID | M | Calibration risk — active job vs recovery walks vs cross-train all look the same in step count. Needs a tunable damping factor before it's safe to act on. New field `nonRunActiveMins` on the load calc; surface separately on weekly report before feeding into the trigger |
 | **R27** | **Cycle-aware coaching (HealthKit)** — phase-aware notes for female users using HealthKit menstrual data. Closes a class of false-positive readiness flags from the v1 readiness signal (luteal-phase RHR is naturally elevated). Single coaching note per phase shift, not full periodisation | PAID | L | Real differentiator vs Strava/Runna/Planzy. Voice work needed first — matter-of-fact, not patronising. Needs opt-in flow in wizard or MeScreen. Tier sub-decision: gate behind PAID or include free as a brand moat |
 ### Scoped but unscheduled
@@ -181,7 +181,7 @@ All six locked. Implementation spec:
 1. ✅ **Similarity definition:** three-axis match — distance within ±15%, same `session.type`, same observed HR band (low/mid/high). Distance alone is too loose; type alone misses the "went too hard on easy" case.
 2. ✅ **Minimum cohort size:** 3 for similarity (post-run line, Today pre-run band), 5 for trend detection (Coach screen). Trend claim is stronger so requires more signal.
 3. ✅ **Time window:** 12-month default; auto-shrink to 6 months when cohort > 30 in the last 6 months. **Source under HealthKit pivot:** cohort reads from `strava_activities` table source-mixed — HKWorkout history (every Apple Watch user has months) plus Strava activities for users who connect both. Pre-pivot text said "dense Strava users"; replace with "dense HealthKit + Strava users." The 6-month threshold is more commonly hit under HealthKit primary because HKWorkout coverage is broader than Strava ever was.
-4. ✅ **Voice for regression:** neutral observation only, no cause speculation. Matches existing ZONA voice rule ("honest, slightly sarcastic, never motivational"). Example: *"Pace at Z2 has slipped 8s/km over 6 weeks. Worth checking sleep and load."* Causes belong to the user.
+4. ✅ **Voice for regression:** neutral observation only, no cause speculation. Matches existing VETRA voice rule ("honest, slightly sarcastic, never motivational"). Example: *"Pace at Z2 has slipped 8s/km over 6 weeks. Worth checking sleep and load."* Causes belong to the user.
 5. ✅ **Per-run vs cohort:** both, surfaced separately. Per-run for similarity (post-run line + Today band: "this run vs your last 5"). Cohort average for trend (Coach screen: "your Z2 pace has improved 12s/km"). Don't conflate.
 6. ✅ **Tier gate:** fully PAID. Slots into the existing `PAID_ONLY_ONGOING` gate in `lib/plan/featureGates.ts:31` — exactly the "ongoing intelligence layer" pattern that gate exists for. Free users get the plan; paid users get intelligence about how they're running it.
 

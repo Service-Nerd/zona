@@ -1,6 +1,6 @@
 # Plan Schema — Canonical Reference
 
-**Authority**: This document defines the canonical JSON shape for Zona training plans (GitHub Gist format) and the TypeScript interfaces. Any field addition requires an update here first, then the TypeScript interfaces in `types/plan.ts`, then downstream consumers.
+**Authority**: This document defines the canonical JSON shape for Vetra training plans (GitHub Gist format) and the TypeScript interfaces. Any field addition requires an update here first, then the TypeScript interfaces in `types/plan.ts`, then downstream consumers.
 
 ---
 
@@ -34,6 +34,14 @@ export interface Session {
   pace_target?: string                     // e.g. "6:30–7:00 /km"
   rpe_target?: number                      // 1–10
   coach_notes?: [string, string?, string?] // max 3 bullet points — plain coaching language (INV-PLAN-008)
+  lr_segment_pace?: string                 // long-run embedded pace segment, e.g. "5:45–6:05 /km" (§24b/§24d)
+
+  // AI-DEPTH-07 (2026-05-12) — schema-only additive fields. Engine does not
+  // populate these yet; reserved for AI-DEPTH-08 (post-race reshape) and
+  // related depth work. All optional; consumers must tolerate undefined.
+  key_session?: boolean                    // pivotal session marker — long runs, race-pace tempos, tune-ups
+  run_walk_strategy?: string               // e.g. "9:1 from km 10"
+  fueling_protocol?: string                // e.g. "gel every 25 min from km 10"
 }
 ```
 
@@ -55,6 +63,28 @@ export interface Week {
   weekly_km: number
   weekly_duration_mins?: number   // for time-based plans, alongside weekly_km
   race_notes?: string
+  tune_up_callout?: string        // L-01 — optional mid-build tune-up race suggestion
+
+  // AI-DEPTH-07 — race-day result captured into the plan on the race week.
+  // Populated post-event; consumed by AI-DEPTH-08 (post-race reshape).
+  result_embedded?: RaceResult | null
+}
+
+export interface RaceResult {
+  finish_time?: string                                                       // "4:32:17"
+  distance_km?: number                                                       // actual distance covered
+  date?: string                                                              // ISO
+  splits?: Array<{ km: number; pace: string; hr?: number }>                  // per-segment splits
+  avg_hr?: number
+  max_hr?: number
+  hr_drift_pct?: number                                                      // first-half vs second-half drift
+  rpe?: number                                                               // 1–10
+  outcome?: 'on_target' | 'off_target' | 'dnf' | 'pb'
+  notes?: string                                                             // free-form runner reflection
+  fueling_outcome?: string                                                   // → AI-DEPTH-08 fueling_protocol updates
+  strategy_outcome?: string                                                  // → AI-DEPTH-08 pacing/run-walk updates
+  what_worked?: string
+  what_broke?: string
 }
 ```
 
@@ -107,7 +137,7 @@ export interface PlanMeta {
   // R23 — hybrid generation fields (added 2026-04-21)
   tier?: 'free' | 'trial' | 'paid'  // tier at which plan was generated
   compressed?: boolean               // true if available weeks < ideal plan length for distance
-  coach_intro?: string               // PAID only — enricher-generated intro paragraph in ZONA voice
+  coach_intro?: string               // PAID only — enricher-generated intro paragraph in VETRA voice
 }
 
 export interface Phase {
@@ -127,7 +157,7 @@ export interface Plan {
 
 ## Two-Tier Session Data Model
 
-Zona supports two session data formats. Structured is preferred; legacy is fallback only.
+Vetra supports two session data formats. Structured is preferred; legacy is fallback only.
 
 ### Structured Fields (generator output — R23 onwards)
 

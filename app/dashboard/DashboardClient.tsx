@@ -194,6 +194,11 @@ export default function DashboardClient() {
   const [runAnalysisReady, setRunAnalysisReady] = useState(false)
   const [weeklyReport, setWeeklyReport] = useState<any | null>(null)
   const [pendingAdjustment, setPendingAdjustment] = useState<any | null>(null)
+  // PROFILE-ADJ-02 — last 5 silent/auto-applied plan_adjustments rows, for the
+  // "Recent tweaks" card on MeScreen. Read-only surface — the rows are written
+  // by /api/adjust-plan when a trigger fires with requiresConfirmation=false
+  // (zone_drift, rpe_disconnect, readiness_signal). Always an array; never null.
+  const [recentAutoAdjustments, setRecentAutoAdjustments] = useState<any[]>([])
   // R28 phase-end summary + R29 race readiness — pre-fetched cached rows, generated on-demand in CoachScreen
   const [phaseSummary, setPhaseSummary] = useState<{ content: string; generated_at: string; phase_ended: string; transition_week_n: number } | null>(null)
   const [raceReadinessNote, setRaceReadinessNote] = useState<{ content: string; generated_at: string } | null>(null)
@@ -617,10 +622,13 @@ export default function DashboardClient() {
             // many adjustment paths and shouldn't block the rest of the dashboard data.
             try { await authedFetch('/api/pre-session-readiness') } catch {}
 
-            const [analysisRes, reportRes, adjustmentsRes, phaseSummaryRes, raceReadinessRes] = await Promise.all([
+            const [analysisRes, reportRes, adjustmentsRes, autoAdjustmentsRes, phaseSummaryRes, raceReadinessRes] = await Promise.all([
               supabase.from('run_analysis').select('session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km').eq('user_id', user.id),
               supabase.from('weekly_reports').select('*').eq('user_id', user.id).order('week_n', { ascending: false }).limit(1).maybeSingle(),
               supabase.from('plan_adjustments').select('*').eq('user_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+              // PROFILE-ADJ-02 — most recent silent/auto-applied tweaks for the MeScreen log.
+              // 5-row cap balances "see what changed" against vertical density on the screen.
+              supabase.from('plan_adjustments').select('id, trigger_type, summary, created_at, week_n').eq('user_id', user.id).eq('status', 'auto_applied').order('created_at', { ascending: false }).limit(5),
               // R28 — most recent phase-end summary (CoachScreen validates against current transition)
               supabase.from('phase_summaries').select('content, generated_at, phase_ended, transition_week_n').eq('user_id', user.id).order('generated_at', { ascending: false }).limit(1).maybeSingle(),
               // R29 — race readiness note for the plan's race date
@@ -635,6 +643,7 @@ export default function DashboardClient() {
             }
             if (reportRes.data) setWeeklyReport(reportRes.data)
             if (adjustmentsRes.data) setPendingAdjustment(adjustmentsRes.data)
+            if (Array.isArray(autoAdjustmentsRes.data)) setRecentAutoAdjustments(autoAdjustmentsRes.data)
             if (phaseSummaryRes.data) setPhaseSummary(phaseSummaryRes.data as any)
             if (raceReadinessRes.data) setRaceReadinessNote(raceReadinessRes.data as any)
           } catch {}
@@ -1156,7 +1165,7 @@ export default function DashboardClient() {
           : <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => setScreen('upgrade')} />
         )}
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
-        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} />}
+        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentAutoAdjustments={recentAutoAdjustments} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatchedActivity={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={runAnalysisMap[activePostRunData.session?.key ?? ''] ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
@@ -1680,7 +1689,7 @@ function getCompletionCopy(type: string): { headline: string; body: string } {
 
 // ── Vetra REFLECT RESPONSE ────────────────────────────────────────────────
 
-function getZonaReflectResponse(sessionType: string, rpe: number | null, fatigueTag: string | null): string {
+function getReflectResponse(sessionType: string, rpe: number | null, fatigueTag: string | null): string {
   if (rpe === null && fatigueTag) {
     if (fatigueTag === 'Fresh') return "Legs felt good. That's what easy days are for."
     if (fatigueTag === 'Fine') return "Solid. Nothing to worry about."
@@ -2050,7 +2059,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                   const newRpe = isActive ? null : n
                   setRpe(newRpe)
                   saveRPEFatigue(newRpe, fatigueTag)
-                  setReflectResponse(getZonaReflectResponse(session.type, newRpe, fatigueTag))
+                  setReflectResponse(getReflectResponse(session.type, newRpe, fatigueTag))
                 }} style={{
                   flex: 1, aspectRatio: '1', borderRadius: '8px',
                   border: `0.5px solid ${isActive ? col : 'var(--border-col)'}`,
@@ -2076,7 +2085,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                   const newTag = isActive ? null : tag
                   setFatigueTag(newTag)
                   saveRPEFatigue(rpe, newTag)
-                  if (!reflectResponse) setReflectResponse(getZonaReflectResponse(session.type, rpe, newTag))
+                  if (!reflectResponse) setReflectResponse(getReflectResponse(session.type, rpe, newTag))
                 }} style={{
                   fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '8px 18px',
                   borderRadius: '20px',
@@ -3167,7 +3176,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
                     <button key={n} onClick={() => {
                       const newRpe = active ? null : n
                       setRpe(newRpe)
-                      const resp = getZonaReflectResponse(sessionType ?? '', newRpe, fatigueTag)
+                      const resp = getReflectResponse(sessionType ?? '', newRpe, fatigueTag)
                       setReflectResponse(resp || null)
                       saveReflect(newRpe, fatigueTag)
                     }} style={{
@@ -3195,7 +3204,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
                       const newTag = active ? null : tag
                       setFatigueTag(newTag)
                       if (!reflectResponse) {
-                        const resp = getZonaReflectResponse(sessionType ?? '', rpe, newTag)
+                        const resp = getReflectResponse(sessionType ?? '', rpe, newTag)
                         setReflectResponse(resp || null)
                       }
                       saveReflect(rpe, newTag)
@@ -6838,7 +6847,7 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
   )
 }
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentAutoAdjustments }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   resetPhrase: string; onSaveMental: (v: string) => void
@@ -6865,11 +6874,50 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
    * engine auto-applies a change silently. Drives the tappable "View change" copy.
    */
   hasPendingAdjustment?: boolean
+  /**
+   * PROFILE-ADJ-02 — most recent silent/auto-applied plan_adjustments rows
+   * (status='auto_applied') for the "Recent tweaks" log. Sorted newest-first,
+   * up to 5 entries. Rendered inline above "Check now" so users can see what
+   * the engine quietly did on their behalf. Empty array → card is hidden.
+   */
+  recentAutoAdjustments?: Array<{ id: string; trigger_type: string; summary: string; created_at: string; week_n: number }>
 }) {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling' | 'delete-account'>('main')
   // Plan adjustments — "What we watch for" disclosure
   const [adjustmentsDisclosureOpen, setAdjustmentsDisclosureOpen] = useState(false)
+
+  // Relative-time formatter for the Recent tweaks log and the Last checked row.
+  // Same vocabulary so the card reads as a coherent timeline ("today", "yesterday",
+  // "3 days ago", etc.). Lives on the component so it can't drift from lastCheckedLabel.
+  const formatRelative = (iso: string): string => {
+    const ms    = Date.now() - new Date(iso).getTime()
+    const days  = Math.floor(ms / 86_400_000)
+    const hours = Math.floor(ms / 3_600_000)
+    if (hours < 1)   return 'just now'
+    if (hours < 24)  return 'today'
+    if (days === 1)  return 'yesterday'
+    if (days < 7)    return `${days} days ago`
+    if (days < 14)   return 'last week'
+    return `${Math.floor(days / 7)} weeks ago`
+  }
+
+  // PROFILE-ADJ-02 — short, plain-English label for each engine trigger.
+  // The DB stores trigger_type as a snake_case taxonomy ("zone_drift",
+  // "rpe_disconnect", etc.); this maps to the runner-facing language. Falls
+  // back to "Plan tweak" if an unknown trigger lands in the table (forward-compat
+  // for new trigger types we haven't taught the UI about yet).
+  const triggerLabel = (trigger: string): string => {
+    switch (trigger) {
+      case 'zone_drift':        return 'Zone drift'
+      case 'rpe_disconnect':    return 'Effort signal'
+      case 'shadow_load':       return 'Shadow load'
+      case 'acute_chronic_high':return 'Load spike'
+      case 'ef_decline':        return 'Efficiency dip'
+      case 'manual':            return 'Manual'
+      default:                  return 'Plan tweak'
+    }
+  }
 
   // "Last checked N days ago" — null when the engine has never run for this user.
   const lastCheckedLabel: string | null = (() => {
@@ -7114,6 +7162,44 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                         ? `${lastCheckedLabel.charAt(0).toUpperCase() + lastCheckedLabel.slice(1)} · Plan tweaked`
                         : `${lastCheckedLabel.charAt(0).toUpperCase() + lastCheckedLabel.slice(1)} · No changes needed`}
                   </div>
+                </div>
+              )}
+
+              {/* PROFILE-ADJ-02 — Recent tweaks log.
+                  Lists silent/auto-applied changes (zone drift, effort signal,
+                  shadow load). Hidden when the engine has never auto-applied
+                  anything — the "Last checked" line above already covers the
+                  "engine has been running" message in that case.
+
+                  Read-only by design: each row is a record of what was already
+                  done, not a confirmation prompt. The pending-change card at
+                  the top is the only tappable adjustment surface. */}
+              {recentAutoAdjustments && recentAutoAdjustments.length > 0 && (
+                <div style={{ borderBottom: '1px solid var(--line)' }}>
+                  <div style={{ padding: '14px 16px 8px', fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Recent tweaks
+                  </div>
+                  {recentAutoAdjustments.map((adj, i) => (
+                    <div
+                      key={adj.id}
+                      style={{
+                        padding: '10px 16px 12px',
+                        borderTop: i === 0 ? 'none' : '1px solid var(--line)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px', marginBottom: '4px' }}>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)' }}>
+                          {triggerLabel(adj.trigger_type)}
+                        </div>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', flexShrink: 0 }}>
+                          {formatRelative(adj.created_at)}
+                        </div>
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', lineHeight: 1.5 }}>
+                        {adj.summary}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 

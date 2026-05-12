@@ -7,7 +7,7 @@
 
 ## Context
 
-Zona requires a subscription payment system before App Store submission. Two surfaces need handling:
+Vetra requires a subscription payment system before App Store submission. Two surfaces need handling:
 
 - **iOS (App Store)**: Apple §3.1.1 mandates all in-app digital purchases route through StoreKit. Direct Stripe calls from a WKWebView-wrapped app are not permitted.
 - **Web (direct)**: Users who sign up via the web (or browser on iOS) can pay through Stripe without Apple involvement.

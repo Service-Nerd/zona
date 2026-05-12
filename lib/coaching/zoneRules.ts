@@ -3,7 +3,7 @@
 // zone-discipline metric, the post-run feedback prompt, and the zone
 // education sheet.
 //
-// Doctrine: Zona's coaching is polarised (CoachingPrinciples §1). Most
+// Doctrine: Vetra's coaching is polarised (CoachingPrinciples §1). Most
 // running is easy (Z2). The hard stuff is genuinely hard (Z3 / Z4-5). The
 // "right zone for the session" frames the app, not "always Z2".
 
@@ -20,8 +20,8 @@ export interface ZoneBand {
   pct: [number, number]
 }
 
-/** Map a session.type to its prescribed zone. Falls back to Z2 — Zona is a
- *  polarised app, easy is the default for any unknown session type. */
+/** Map a session.type to its prescribed zone. Falls back to Z2 — this is a
+ *  polarised training app, so easy is the default for any unknown session type. */
 export function zoneForSessionType(sessionType: string | undefined): ZoneBand | null {
   switch (sessionType) {
     case 'easy':

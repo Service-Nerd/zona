@@ -29,6 +29,11 @@ export const SessionSchema = z.object({
   pace_target:    z.string().optional(),
   rpe_target:     z.number().int().min(1).max(10).optional(),
   coach_notes:    z.tuple([z.string(), z.string().optional(), z.string().optional()]).optional(),
+  lr_segment_pace: z.string().optional(),
+  // AI-DEPTH-07 — additive depth fields (schema-only; engine doesn't populate yet)
+  key_session:        z.boolean().optional(),
+  run_walk_strategy:  z.string().optional(),
+  fueling_protocol:   z.string().optional(),
 })
 
 // ─── Week ─────────────────────────────────────────────────────────────────────
@@ -38,6 +43,30 @@ export const WeekTypeSchema = z.enum([
 ])
 
 export const DayKeySchema = z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])
+
+// AI-DEPTH-07 — race-day result envelope, attached to the race Week.
+// All fields optional — partial captures are valid (e.g. user logs finish time
+// + a sentence on what went wrong; splits arrive later from Strava webhook).
+export const RaceResultSchema = z.object({
+  finish_time:      z.string().optional(),
+  distance_km:      z.number().nonnegative().optional(),
+  date:             z.string().optional(),
+  splits:           z.array(z.object({
+                      km:   z.number().nonnegative(),
+                      pace: z.string(),
+                      hr:   z.number().positive().optional(),
+                    })).optional(),
+  avg_hr:           z.number().positive().optional(),
+  max_hr:           z.number().positive().optional(),
+  hr_drift_pct:     z.number().optional(),
+  rpe:              z.number().int().min(1).max(10).optional(),
+  outcome:          z.enum(['on_target', 'off_target', 'dnf', 'pb']).optional(),
+  notes:            z.string().optional(),
+  fueling_outcome:  z.string().optional(),
+  strategy_outcome: z.string().optional(),
+  what_worked:      z.string().optional(),
+  what_broke:       z.string().optional(),
+})
 
 export const WeekSchema = z.object({
   n:                    z.number().int().positive(),
@@ -52,6 +81,11 @@ export const WeekSchema = z.object({
   weekly_km:            z.number().nonnegative(),
   weekly_duration_mins: z.number().nonnegative().optional(),
   race_notes:           z.string().optional(),
+  tune_up_callout:      z.string().optional(),
+  // AI-DEPTH-07 — populated post-event on the race week. `.nullable()` so an
+  // explicit "race not yet run" sentinel is representable; `.optional()` so
+  // legacy plans without the field still parse.
+  result_embedded:      RaceResultSchema.nullable().optional(),
 })
 
 // ─── Phase ────────────────────────────────────────────────────────────────────
@@ -174,7 +208,8 @@ export const EnrichedPlanSchema = z.object({
 
 // ─── Inferred types (use these in lib/plan/* — do not import from types/plan.ts here) ──
 
-export type PlanSchemaType    = z.infer<typeof PlanSchema>
-export type PhaseSchemaType   = z.infer<typeof PhaseSchema>
-export type WeekSchemaType    = z.infer<typeof WeekSchema>
-export type SessionSchemaType = z.infer<typeof SessionSchema>
+export type PlanSchemaType       = z.infer<typeof PlanSchema>
+export type PhaseSchemaType      = z.infer<typeof PhaseSchema>
+export type WeekSchemaType       = z.infer<typeof WeekSchema>
+export type SessionSchemaType    = z.infer<typeof SessionSchema>
+export type RaceResultSchemaType = z.infer<typeof RaceResultSchema>

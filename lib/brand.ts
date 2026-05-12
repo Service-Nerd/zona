@@ -20,7 +20,7 @@ export const BRAND = {
 
   /**
    * App Store subtitle (30 chars max). Discovery surfaces: App Store, landing page, paid ads.
-   * Functional and outward-facing — describes what Zona does.
+   * Functional and outward-facing — describes what the app does.
    */
   appStoreSubtitle: 'Training plans that stop you overtraining.',
 
@@ -37,7 +37,7 @@ export const BRAND = {
   /** Sub-text shown below the sign-in card heading. */
   signinSub: 'Access your training plan.',
 
-  /** Sub-tagline used in signup context only. Zona doesn't pitch — it states. */
+  /** Sub-tagline used in signup context only. The brand doesn't pitch — it states. */
   signupSub: '14 days, no limits. After that, you decide.',
 
   /**
