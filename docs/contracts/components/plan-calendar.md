@@ -44,16 +44,29 @@ interface Props {
 - Sessions are rendered in `mon–sun` order regardless of plan JSON key order.
 - Overrides are applied before render: `original_day` sessions appear at `new_day` slots. Overridden slots show the moved session.
 - Rest sessions and empty days render a rest label — they are not tappable.
-- Sessions can be moved via a drag handle (≡ icon). Move mode shows "tap a day to move" hint and highlights valid target slots.
+- Sessions can be moved via a drag handle (≡ icon). Move mode shows "tap an empty day to move, or another session to swap" hint and highlights two kinds of target slots:
+  - **Move target** (empty slot — rest day or undefined day): dashed teal outline, body text reads "Move here". On tap, the source session moves into the slot and the rest placeholder disappears.
+  - **Swap target** (another non-rest, uncompleted, unskipped session): solid teal outline, source session label tinted teal with "tap to swap" hint and `⇄` glyph on the right. On tap, the two sessions exchange slots in one atomic write.
+- Completed and skipped sessions never become targets in move mode.
 
 ## Supabase Writes
 
-`PlanCalendar` writes session overrides directly to Supabase:
+`PlanCalendar` writes session overrides directly to Supabase. Two flows:
 
+**Move** (drop into an empty slot):
 ```
 session_overrides.delete where user_id = userId AND week_n = weekN AND (original_day OR new_day match)
 session_overrides.insert { user_id, week_n, original_day, new_day, updated_at }
 ```
+
+**Swap** (exchange two non-rest sessions):
+```
+session_overrides.delete where user_id = userId AND week_n = weekN AND original_day IN (sourceOriginal, targetOriginal)
+session_overrides.insert ≤2 rows — one per session whose new slot differs from its original day.
+  A session "going home" (original_day equals its new slot) gets no override row.
+```
+
+Both flows then `POST /api/adjust-plan { fromDay: sourceOriginal, toDay: newSlot }` to trigger the hard/easy adjacency check (paid-only; route 403s for free users).
 
 After writing, calls `onOverrideChange` to update parent state. The parent (`DashboardClient`) is the source of truth for `allOverrides`.
 

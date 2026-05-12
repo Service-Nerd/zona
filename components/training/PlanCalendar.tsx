@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { SESSION_COLORS, SESSION_LABELS } from '@/lib/session-types'
 import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
-import { formatDistance, sumRoundedDistance, type DistanceUnits } from '@/lib/format'
+import { formatDistance, sumRoundedDistance, resolveSessionMetric, type DistanceUnits, type SessionMetric, type SessionMetricOverrides } from '@/lib/format'
 
 interface Completion {
   session_day: string
@@ -79,9 +79,13 @@ interface Props {
   onSessionTap: (session: SessionTapPayload, weekN: number, weekTheme: string) => void
   overridesReady?: boolean
   units?: DistanceUnits
+  /** Global distance/duration preference from MeScreen. */
+  preferredMetric?: SessionMetric
+  /** Per-session metric overrides from SessionScreen toggle, keyed `${weekN}_${sessionKey}`. */
+  sessionMetricOverrides?: SessionMetricOverrides
 }
 
-export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true, units = 'km' }: Props) {
+export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true, units = 'km', preferredMetric = 'distance', sessionMetricOverrides = {} }: Props) {
   const [showPast, setShowPast] = useState(false)
   const supabase = createClient()
 
@@ -120,6 +124,54 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
     }
   }
 
+  async function handleSwap(
+    weekN: number,
+    sourceOriginal: string, sourceSlot: string,
+    targetOriginal: string, targetSlot: string,
+  ) {
+    if (sourceSlot === targetSlot) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // Drop any existing override rows for either session in this week — we're
+    // about to recompute both. Each session ends up either at its original day
+    // (no override row) or with a single fresh override pointing to its new slot.
+    let updated = allOverrides.filter(o =>
+      !(o.week_n === weekN && (o.original_day === sourceOriginal || o.original_day === targetOriginal))
+    )
+    if (sourceOriginal !== targetSlot) {
+      updated = [...updated, { week_n: weekN, original_day: sourceOriginal, new_day: targetSlot }]
+    }
+    if (targetOriginal !== sourceSlot) {
+      updated = [...updated, { week_n: weekN, original_day: targetOriginal, new_day: sourceSlot }]
+    }
+    onOverrideChange(updated)
+
+    await supabase.from('session_overrides')
+      .delete().eq('user_id', user.id).eq('week_n', weekN)
+      .in('original_day', [sourceOriginal, targetOriginal])
+
+    const ts = new Date().toISOString()
+    const inserts: Array<{ user_id: string; week_n: number; original_day: string; new_day: string; updated_at: string }> = []
+    if (sourceOriginal !== targetSlot) {
+      inserts.push({ user_id: user.id, week_n: weekN, original_day: sourceOriginal, new_day: targetSlot, updated_at: ts })
+    }
+    if (targetOriginal !== sourceSlot) {
+      inserts.push({ user_id: user.id, week_n: weekN, original_day: targetOriginal, new_day: sourceSlot, updated_at: ts })
+    }
+    if (inserts.length) {
+      await supabase.from('session_overrides').insert(inserts)
+    }
+
+    // Trigger adjacency check for the source's new slot. The target also moved
+    // but firing once is enough to surface hard/easy violations introduced by
+    // the swap; the adjuster looks at the whole week.
+    void authedFetch('/api/adjust-plan', {
+      method: 'POST',
+      body: JSON.stringify({ fromDay: sourceOriginal, toDay: targetSlot }),
+    })
+  }
+
   function renderWeek({ week, weekNum }: { week: Week; weekNum: number }) {
     return (
       <WeekCard
@@ -130,7 +182,10 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
         overrides={allOverrides.filter(o => o.week_n === weekNum)}
         onSessionTap={onSessionTap}
         onMove={handleMove}
+        onSwap={handleSwap}
         units={units}
+        preferredMetric={preferredMetric}
+        sessionMetricOverrides={sessionMetricOverrides}
       />
     )
   }
@@ -162,11 +217,14 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
   )
 }
 
-function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove, units }: {
+function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove, onSwap, units, preferredMetric, sessionMetricOverrides }: {
   week: Week; weekNum: number; completions: Completion[]; overrides: { week_n: number; original_day: string; new_day: string }[]
   onSessionTap: (session: SessionTapPayload, weekN: number, weekTheme: string) => void
   onMove: (weekN: number, originalDay: string, newDay: string, currentSlot: string) => void
+  onSwap: (weekN: number, sourceOriginal: string, sourceSlot: string, targetOriginal: string, targetSlot: string) => void
   units: DistanceUnits
+  preferredMetric: SessionMetric
+  sessionMetricOverrides: SessionMetricOverrides
 }) {
   const ws = week.sessions ?? {}
   const weekStartDate = parseLocalDate(week.date)
@@ -213,8 +271,21 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   function handleTargetTap(targetKey: string) {
     setMovingDay(prev => {
       if (!prev) return null
-      const originalDay = effectiveSessions[prev]?.originalDay ?? prev
-      onMove(weekNum, originalDay, targetKey, prev)
+      const sourceSession = effectiveSessions[prev]
+      if (!sourceSession) return null
+      const sourceOriginal = sourceSession.originalDay ?? prev
+      const targetSession = effectiveSessions[targetKey]
+      const targetCompletion = targetSession ? completionMap[targetSession.originalDay ?? targetKey] : undefined
+      const targetIsSwappable = !!targetSession
+        && targetSession.type !== 'rest'
+        && targetCompletion?.status !== 'complete'
+        && targetCompletion?.status !== 'skipped'
+      if (targetIsSwappable && targetSession) {
+        const targetOriginal = targetSession.originalDay ?? targetKey
+        onSwap(weekNum, sourceOriginal, prev, targetOriginal, targetKey)
+      } else {
+        onMove(weekNum, sourceOriginal, targetKey, prev)
+      }
       return null
     })
   }
@@ -238,7 +309,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
         <div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: isCurrent ? 'var(--accent)' : 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>
             W{weekNum} · {formatDateRange(weekStartDate)}
-            {movingDay && <span style={{ color: 'var(--accent)', marginLeft: '8px' }}>· tap a day to move session</span>}
+            {movingDay && <span style={{ color: 'var(--accent)', marginLeft: '8px' }}>· tap an empty day to move, or another session to swap</span>}
           </div>
           <div style={{ fontFamily: 'var(--font-brand)', fontSize: '13px', fontWeight: 500, color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)' }}>
             {week.label ?? ''}
@@ -272,7 +343,17 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
         const isFuture = d > now && !isToday
         const isMovable = !!s && s.type !== 'rest' && !isComplete && !isSkipped
         const isMoving = movingDay === key
-        const isTarget = !!movingDay && movingDay !== key && !effectiveSessions[key]
+        // In move mode, every other day is a potential target. Two flavours:
+        //   - move target  → empty slot (no session, or only a rest placeholder)
+        //   - swap target  → another non-rest, uncompleted session, which we'll
+        //                    exchange slots with on tap.
+        const isMoveTarget = !!movingDay && movingDay !== key && (!s || s.type === 'rest')
+        const isSwapTarget = !!movingDay && movingDay !== key && !!s && s.type !== 'rest' && !isComplete && !isSkipped
+        // Per-session metric override is keyed by originalDay (where the user
+        // tapped the toggle in SessionPopupInner), not by display slot.
+        const resolvedMetric: SessionMetric = s
+          ? resolveSessionMetric(weekNum, s.originalDay ?? key, s.primary_metric, sessionMetricOverrides, preferredMetric)
+          : preferredMetric
 
         return (
           <DayRow
@@ -286,12 +367,14 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
             completion={completion}
             isMovable={isMovable}
             isMoving={isMoving}
-            isTarget={isTarget}
+            isMoveTarget={isMoveTarget}
+            isSwapTarget={isSwapTarget}
             isMoveMode={!!movingDay}
             isLast={i === DOW_ORDER.length - 1}
             units={units}
+            metric={resolvedMetric}
             onTap={() => {
-              if (isTarget) { handleTargetTap(key); return }
+              if (isMoveTarget || isSwapTarget) { handleTargetTap(key); return }
               if (movingDay) { setMovingDay(null); return }
               if (!s || s.type === 'rest') return
               onSessionTap({
@@ -340,17 +423,20 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   )
 }
 
-function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isTarget, isMoveMode, isLast, onTap, onMoveIconTap, units }: {
+function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isMoveTarget, isSwapTarget, isMoveMode, isLast, onTap, onMoveIconTap, units, metric }: {
   dayKey: string; session: EffectiveSession | undefined; date: Date; isToday: boolean; isPast: boolean; isFuture: boolean
-  completion?: Completion; isMovable: boolean; isMoving: boolean; isTarget: boolean
+  completion?: Completion; isMovable: boolean; isMoving: boolean
+  isMoveTarget: boolean; isSwapTarget: boolean
   isMoveMode: boolean; isLast: boolean
   onTap: () => void; onMoveIconTap: () => void
   units: DistanceUnits
+  metric: SessionMetric
 }) {
   const isComplete = completion?.status === 'complete'
   const isSkipped  = completion?.status === 'skipped'
   const hasSession = !!session && session.type !== 'rest'
   const isRestType = !session || session.type === 'rest'
+  const isTarget = isMoveTarget || isSwapTarget
   const accent = session ? (SESSION_COLORS[session.type] ?? 'var(--text-muted)') : 'transparent'
 
   return (
@@ -367,7 +453,12 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
           : 'transparent',
         cursor: (hasSession || isTarget) ? 'pointer' : 'default',
         opacity: isMoving ? 0.7 : isMoveMode && !isTarget && !isMoving ? 0.4 : isSkipped ? 0.5 : isPast && !isComplete && hasSession ? 0.45 : 1,
-        outline: isTarget ? '1px dashed var(--teal-dim)' : isMoving ? '1px solid var(--teal-mid)' : 'none',
+        // dashed = move (empty slot); solid = swap (occupied slot); solid on the source while moving.
+        outline: isMoveTarget
+          ? '1px dashed var(--teal-dim)'
+          : isSwapTarget || isMoving
+          ? '1px solid var(--teal-mid)'
+          : 'none',
         outlineOffset: '-1px',
         transition: 'background 0.15s, opacity 0.15s',
         userSelect: 'none',
@@ -383,14 +474,14 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
         </div>
       </div>
 
-      {isTarget ? (
+      {isMoveTarget ? (
         <div style={{ width: '3px', height: '34px', borderRadius: '2px', background: 'var(--teal-mid)', marginRight: '12px', flexShrink: 0 }} />
       ) : (
-        <div style={{ width: '3px', height: hasSession ? '34px' : '16px', borderRadius: '2px', background: isComplete ? 'var(--accent)' : isSkipped ? 'var(--border-col)' : isMoving ? 'var(--accent)' : accent, marginRight: '12px', flexShrink: 0 }} />
+        <div style={{ width: '3px', height: hasSession ? '34px' : '16px', borderRadius: '2px', background: isComplete ? 'var(--accent)' : isSkipped ? 'var(--border-col)' : isMoving || isSwapTarget ? 'var(--accent)' : accent, marginRight: '12px', flexShrink: 0 }} />
       )}
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        {isTarget ? (
+        {isMoveTarget ? (
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--accent)', letterSpacing: '0.04em' }}>
             Move here
           </div>
@@ -399,12 +490,13 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
               <div style={{
                 fontSize: '15px', fontWeight: 500,
-                color: isMoving ? 'var(--accent)' : isSkipped ? 'var(--text-muted)' : isFuture ? 'var(--text-secondary)' : 'var(--text-primary)',
+                color: isMoving || isSwapTarget ? 'var(--accent)' : isSkipped ? 'var(--text-muted)' : isFuture ? 'var(--text-secondary)' : 'var(--text-primary)',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 flex: 1, minWidth: 0,
               }}>
                 {session.label ?? ''}
                 {isMoving && <span style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.7 }}>moving...</span>}
+                {isSwapTarget && <span style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.7 }}>tap to swap</span>}
               </div>
               {!isMoving && SESSION_LABELS[session.type] && (
                 <span style={{
@@ -418,23 +510,28 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
               )}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px', flexWrap: 'wrap' }}>
-              {/* Structured metrics first (R23+ plans). Falls back to legacy `detail` text for hand-authored gist plans. */}
-              {(session.distance_km != null || session.duration_mins != null) ? (
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
-                  {[
-                    session.distance_km != null
-                      ? formatDistance(session.distance_km, units, { exact: session.type === 'race' })
-                      : null,
-                    session.duration_mins != null
-                      ? (session.duration_mins < 60
-                          ? `${session.duration_mins}min`
-                          : (session.duration_mins % 60 === 0
-                              ? `${Math.floor(session.duration_mins / 60)}h`
-                              : `${Math.floor(session.duration_mins / 60)}h ${session.duration_mins % 60}min`))
-                      : null,
-                  ].filter(Boolean).join(' · ')}
-                </span>
-              ) : session.detail ? (
+              {/* Structured metric (R23+ plans). Render only the chosen metric;
+                  fall back to the other if the chosen one is missing on this
+                  session. Legacy `detail` text remains the fallback for
+                  hand-authored gist plans with no structured fields. */}
+              {(session.distance_km != null || session.duration_mins != null) ? (() => {
+                const distStr = session.distance_km != null
+                  ? formatDistance(session.distance_km, units, { exact: session.type === 'race' })
+                  : null
+                const durStr = session.duration_mins != null
+                  ? (session.duration_mins < 60
+                      ? `${session.duration_mins}min`
+                      : (session.duration_mins % 60 === 0
+                          ? `${Math.floor(session.duration_mins / 60)}h`
+                          : `${Math.floor(session.duration_mins / 60)}h ${session.duration_mins % 60}min`))
+                  : null
+                const value = metric === 'duration' ? (durStr ?? distStr) : (distStr ?? durStr)
+                return value ? (
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                    {value}
+                  </span>
+                ) : null
+              })() : session.detail ? (
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.detail}</span>
               ) : null}
               {isComplete && completion?.strava_activity_name && (
@@ -452,6 +549,9 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
         {isComplete && !isMoveMode && <span style={{ color: 'var(--accent)', fontSize: '14px' }}>✓</span>}
         {hasSession && !isComplete && !isSkipped && !isMoveMode && (
           <span style={{ color: 'var(--text-muted)', fontSize: '16px' }}>›</span>
+        )}
+        {isSwapTarget && (
+          <span style={{ color: 'var(--accent)', fontSize: '15px', lineHeight: 1 }} aria-label="Swap with this session">⇄</span>
         )}
         {isMovable && !isMoveMode && (
           <button
