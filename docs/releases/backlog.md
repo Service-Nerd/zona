@@ -14,7 +14,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 ### A. Legal & Apple compliance
 
 - ✅ **Terms of Service** — draft shipped at `app/terms/page.tsx` (mirrors `/privacy` structure, brand voice, covers both Stripe-web and Apple-IAP subscription paths, England & Wales governing law). Linked from pre-login screen alongside privacy. **Approved by user 2026-05-05.** Hosting at the production URL is gated on the custom-domain task below — same blocker as `/privacy`.
-- 🔲 **Privacy policy hosted** — page is built (`/privacy`); needs to be live at `zona.app/privacy` before submission
+- 🔲 **Privacy policy hosted** — page is built (`/privacy`); needs to be live at `vetra.app/privacy` (or whatever custom domain lands) before submission
 - 🔄 **Subscription terms disclosure UI** — partial. `UpgradeScreen` line 208–209 shows *"Auto-renews. Cancel any time. 14-day free trial included on first subscription."* Apple §3.1.2(a) wants more: per-period price tied to each option, functional links to Terms + Privacy, *"Payment will be charged to Apple ID at confirmation of purchase"*, explicit renewal/cancellation language. Strengthen on UpgradeScreen pre-submission.
 - 🔄 **App Store Connect setup** — partial (2026-05-08). Done: app record created (Bundle ID `app.vetra.ios`), subscription group `Vetra Premium`, monthly product `vetra_premium_monthly` (£7.99), annual product `vetra_premium_annual` (£59.99), 14-day free trial configured on both. Outstanding: screenshots for all required device sizes, App Store description, keywords, per-product Review Information.
 - 🔲 **DSA trader compliance** — EU Digital Services Act requires Apple to display verified trader contact info on EU listings. Selling subscriptions = trader by default. Apple needs trader name, deliverable street address (no PO Box), phone, email — all become public on EU App Store listings. Decide on address strategy (home / virtual office / Ltd registered office) before declaring. Blocks EU distribution only — not US/UK ship. Deferred 2026-05-08.
@@ -46,9 +46,9 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 ### D. External setup
 
 - 🔲 **Stripe product + price** — "Vetra Premium", £7.99/month + £59.99/year, 14-day trial
-- 🔲 **RevenueCat app + entitlement** — link to App Store product ID, set entitlement identifier (e.g. `zona_premium`)
+- 🔲 **RevenueCat app + entitlement** — link to App Store product IDs (`vetra_premium_monthly`, `vetra_premium_annual` — already created in App Store Connect), set entitlement identifier `vetra_premium`
 - 🔲 **Apple Small Business Program** — 15% vs 30% cut, enrol before first live transaction. Deferred 2026-05-08 — not visible in App Store Connect UI yet (likely gated on Paid Applications Agreement signing). Direct URL: https://appstoreconnect.apple.com/business
-- 🔲 **Custom domain** — point `zona.app/privacy` at live URL
+- 🔲 **Custom domain** — buy + point a Vetra-branded domain (e.g. `vetra.app`, `vetra.run`) at the Vercel deployment. Unblocks: `/privacy` hosting, `/terms` hosting, Universal Links (needs `apple-app-site-association` file at domain root), OG image canonical URL, GTM-08 marketing site go-live, paid acquisition / press / sharing surface. Single biggest external blocker for v1 launch — most other "🔲" items chain off this.
 
 ### E. Pre-submission QA
 
@@ -66,7 +66,7 @@ Ordered by GTM impact. Each needs FREE/PAID tag confirmed before build.
 
 | # | Item | Effort | Tier | Notes |
 |---|------|--------|------|-------|
-| GTM-08 | **Marketing site** (`app/page.tsx`) — replace dashboard redirect with one-page site: overtraining thesis, VETRA voice, single CTA. Uses `lib/brand.ts` for all copy. Screenshots: session card, reflect view, coach screen | M | FREE | High — must exist before any paid acquisition or press |
+| GTM-08 🔄 | **Marketing site** (`app/page.tsx`) — **built and dark-launched 2026-05-12**. One-page site rendered: top nav, hero with `BRAND.appStoreSubtitle` headline + voice-anchor pill, overtraining thesis section ("Every run ends up in the same grey middle"), three pillar cards, three pure-CSS product mockups (session card / reflect view / Kit weekly note), closing `BRAND.brandStatement` moment, footer with Privacy + Terms. All copy via `BRAND.*` — no hardcoded brand strings. Gated behind `MARKETING_SITE_ENABLED` env flag; defaults to legacy redirect-to-dashboard so production discovery is unchanged. **Flip env to `"true"` in Vercel when custom domain + TestFlight are both ready.** Future enhancement (deferred): waitlist email capture for iPhone-only pre-launch visitors (~1h via Supabase `waitlist` table). | M | FREE | High — must exist before any paid acquisition or press |
 | GTM-09 | **Trial expiry email** (day 14) — "Your zone coaching pauses today." Requires email platform (Resend or Supabase Edge + SMTP) | M | PAID | High |
 | GTM-10 | **Trial nudge email** (day 11) — "3 days of full access left." Same infra as GTM-09, ships together | S | PAID | Medium |
 
@@ -149,7 +149,8 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 
 ### Ops
 
-- **Rename Vercel project** from `zona-service-nerds-projects` → `zona` or `zona-app` when name available. Update `NEXT_PUBLIC_APP_URL`, `CLAUDE.md`, this file, `app/api/checkout/route.ts` fallback
+- **Rename Vercel project** from `zona-service-nerds-projects` → `vetra` (or `vetra-app` if taken) when name available. Update `NEXT_PUBLIC_APP_URL`, `CLAUDE.md`, this file, `app/api/checkout/route.ts` fallback.
+- **Update local git remote URL** — GitHub repo moved from `Service-Nerd/rts-training-hub` → `Service-Nerd/zona` (verified via push redirect notice 2026-05-12). Pushes still succeed via redirect, but the local origin URL is stale. Fix: `git remote set-url origin https://github.com/Service-Nerd/zona.git`. Ideally the GitHub repo gets a second rename to `vetra` to align with the brand — bundle both into one operation.
 
 ---
 
