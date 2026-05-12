@@ -64,6 +64,34 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   return bytes.buffer
 }
 
+// ── Race countdown formatter ──────────────────────────────────────────────
+//
+// Runners think in weeks (training plans are weekly). Raw "63 days out" is
+// harder to scale mentally than "9 weeks out". Close to race day the unit
+// flips — "5 days" is more useful than "0 weeks 5 days". This helper picks
+// the unit by proximity:
+//
+//   1 day        →  "1 day"
+//   5 days       →  "5 days"
+//   7 days       →  "1 week"
+//   8 days       →  "1 week, 1 day"
+//   14 days      →  "2 weeks"
+//   65 days      →  "9 weeks, 2 days"
+//   ≤ 0 days     →  "" (caller decides what to render for race day / past)
+//
+// Caller is responsible for gating on `days > 0` — Today screen hides the
+// row on race day, MeScreen suppresses the suffix block.
+function formatRaceCountdown(days: number, opts?: { suffix?: string }): string {
+  if (days <= 0) return ''
+  const suffix = opts?.suffix ? ` ${opts.suffix}` : ''
+  if (days < 7) return `${days} ${days === 1 ? 'day' : 'days'}${suffix}`
+  const weeks = Math.floor(days / 7)
+  const rem   = days % 7
+  const wPart = `${weeks} ${weeks === 1 ? 'week' : 'weeks'}`
+  if (rem === 0) return `${wPart}${suffix}`
+  return `${wPart}, ${rem} ${rem === 1 ? 'day' : 'days'}${suffix}`
+}
+
 // ── Icons ─────────────────────────────────────────────────────────────────
 
 function IconToday({ active }: { active: boolean }) {
@@ -1345,7 +1373,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, onDismiss }: {
             <div style={{ fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>{raceName}</div>
             {raceDateStr && (
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                {raceDateStr}{daysToRace !== null ? ` · ${daysToRace} days` : ''}
+                {raceDateStr}{daysToRace !== null && daysToRace > 0 ? ` · ${formatRaceCountdown(daysToRace)}` : ''}
               </div>
             )}
           </div>
@@ -4329,7 +4357,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               borderRadius: '20px',
               padding: '3px 9px',
             }}>
-              {daysToRace} days out
+              {formatRaceCountdown(daysToRace, { suffix: 'out' })}
             </span>
           )}
         </div>
