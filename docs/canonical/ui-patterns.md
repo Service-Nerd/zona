@@ -1,7 +1,7 @@
-# UI Patterns — Vetra Visual Language
+# UI Patterns — Zonna Visual Language
 
 **Reference aesthetic**: Runna · Planzy  
-**Authority**: This document defines layout patterns, component anatomy, spacing, and typography rules for all Vetra screens. Read before building any new screen or component.
+**Authority**: This document defines layout patterns, component anatomy, spacing, and typography rules for all Zonna screens. Read before building any new screen or component.
 
 **Design system**: Warm Slate (ADR-007). Single light theme. No dark mode (ADR-008). All tokens from `globals.css`.
 
@@ -37,7 +37,7 @@ All type uses **Inter** only. `var(--font-ui)` and `var(--font-brand)` both reso
 | Metric medium | `--font-ui` | 700 | 17px | Session card distance |
 | Metric small | `--font-ui` | 400 | 11px | Session card duration — `--mute-2` |
 | Muted / hint | `--font-ui` | 400 | 12px | `--mute` — timestamps, metadata |
-| Wordmark | `--font-ui` | 800 | 14px | VETRA nav wordmark |
+| Wordmark | `--font-ui` | 800 | 14px | ZONNA nav wordmark |
 
 ### Metric Pair Pattern (Runna-style)
 
@@ -495,12 +495,12 @@ Used after any session is logged or skipped. Highest-emotion moment — treat it
 Rules:
 - Completion confirmation always shown at top
 - RPEScale component used for effort input
-- Vetra voice response fades in (`opacity 0→1`, `translateY(6px)→0`, 350ms) after any selection
+- Zonna voice response fades in (`opacity 0→1`, `translateY(6px)→0`, 350ms) after any selection
 - CTA shifts ghost → solid `--moss` once response appears
 - Skip always available — run is already saved
 - Never auto-dismiss
 
-Vetra voice rules:
+Zonna voice rules:
 - One sentence only
 - Session-type-aware: RPE 8 on easy = flag it; RPE 8 on intervals = endorse it
 - Canonical response matrix: `getReflectResponse()` in `DashboardClient.tsx`
@@ -728,7 +728,7 @@ Four metric cells in a 2-column grid. Used on the Coach screen for Zone discipli
 - Body: 3 paragraphs explaining the metric, `15px 400 --ink-2`, `1.55` line-height
 - Sticky footer: full-width close button, `--bg-soft` background, `--ink` text
 
-**Keyframes:** `vetra-fade-in` (backdrop) and `vetra-slide-up` (panel) are defined once in `globals.css` — never inline in JSX.
+**Keyframes:** `vetra-fade-in` (backdrop) and `vetra-slide-up` (panel) are defined once in `globals.css` — never inline in JSX. (Keyframe names retained from a prior rebrand pending CSS-token rename — backlog BRAND-06.)
 
 **Rule:** Only Zone discipline and Load ratio are interactive. Sessions and Weeks left are static — same card style, no button, no ⓘ.
 
@@ -811,7 +811,7 @@ Every screen must honour these invariants before shipping. Check against this li
 ### Today Screen
 
 ```
-[VETRA wordmark · moss dot]
+[ZONNA wordmark · moss dot]
 
 [Context row: phase · week · Xd out]
 [Today, you run]
@@ -940,7 +940,7 @@ Screen: RestraintCard in TodayScreen
 Change: Show Zone 2 discipline percent derived from session types this week
 SLC:
   Simple — single stat card, percent + one-sentence interpretation
-  Lovable — large 44px number, moss % sign, Vetra voice body copy
+  Lovable — large 44px number, moss % sign, Zonna voice body copy
   Complete — hidden when <2 sessions completed, 100% edge case handled
 Trigger frontend-design skill.
 ```

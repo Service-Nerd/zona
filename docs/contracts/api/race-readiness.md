@@ -19,7 +19,7 @@ Empty (`{}`) — all data derived from the user's plan and Supabase coaching rec
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `content` | `string` | 2–3 sentence AI pre-race readiness assessment in Vetra voice |
+| `content` | `string` | 2–3 sentence AI pre-race readiness assessment in Zonna voice |
 | `cached` | `boolean` | `true` if returned from the `race_readiness_notes` cache, `false` if freshly generated |
 
 ## Error responses

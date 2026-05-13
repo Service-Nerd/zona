@@ -58,7 +58,7 @@ CREATE TABLE session_catalogue (
   typical_duration_min  INT NOT NULL,                -- minutes, lower bound
   typical_duration_max  INT NOT NULL,                -- minutes, upper bound
   is_free_tier          BOOLEAN DEFAULT TRUE,        -- false → paid-only
-  coach_voice_notes     TEXT,                        -- VETRA voice, nullable
+  coach_voice_notes     TEXT,                        -- ZONNA voice, nullable
   created_at            TIMESTAMPTZ DEFAULT NOW()
 );
 ```
@@ -135,9 +135,9 @@ Among eligible rows the selector is **deterministic for a given week**: the inde
 
 ---
 
-## VETRA voice notes
+## ZONNA voice notes
 
-Every catalogue row carries `coach_voice_notes`, a short string in VETRA voice that becomes the session's `coach_notes` in the plan JSON when the AI enricher is unavailable. The enricher may overwrite with longer-form copy for paid/trial users.
+Every catalogue row carries `coach_voice_notes`, a short string in ZONNA voice that becomes the session's `coach_notes` in the plan JSON when the AI enricher is unavailable. The enricher may overwrite with longer-form copy for paid/trial users.
 
 Voice rules (from `docs/canonical/brand.md`):
 

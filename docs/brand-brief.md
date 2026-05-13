@@ -1,4 +1,4 @@
-# Vetra — Brand Brief
+# Zonna — Brand Brief
 
 **Compiled:** 2026-05-13
 **Source:** Extracted from `lib/brand.ts`, `app/globals.css`, `docs/canonical/`, `docs/alignment/`, `package.json`, `public/manifest.json`, `assets/*.svg`, `README.md`.
@@ -9,25 +9,25 @@
 ## 1. Product Summary
 
 ### App name
-**Vetra** — current and canonical. Brand was launched internally as "Zona" and renamed to "Vetra" in 2026. The brand may rename again, so all brand strings are parameterised in `lib/brand.ts → BRAND.name`. Nothing brand-related is hardcoded in components.
+**Zonna** — current and canonical. Brand was launched internally as "Zona" and renamed to "Zonna" in 2026. The brand may rename again, so all brand strings are parameterised in `lib/brand.ts → BRAND.name`. Nothing brand-related is hardcoded in components.
 
 ### Bundle / identifiers
-- iOS bundle ID: `app.vetra.ios`
-- PWA manifest name: `Vetra`
-- npm package name: `vetra`
+- iOS bundle ID: `app.zonna.ios`
+- PWA manifest name: `Zonna`
+- npm package name: `zonna`
 - App Store subtitle (30 chars): **"Training plans that stop you overtraining."**
 
 ### One-line description
 A running training app that stops non-elite runners from overtraining.
 
 ### Core idea (positioning sentence — internal only, doesn't ship verbatim)
-> "Vetra is for runners who always go hard on their easy days — who have a life, a day job, and no business training like professionals."
+> "Zonna is for runners who always go hard on their easy days — who have a life, a day job, and no business training like professionals."
 
 ### Core truth
 > "You're trying hard. That's the problem."
 
 ### Product idea
-Zone discipline. The app prescribes the zone for each session and holds the user to it — easy when it's easy, hard when it's hard. Most amateur runners collapse this distinction into a "grey middle." Vetra removes that ambiguity.
+Zone discipline. The app prescribes the zone for each session and holds the user to it — easy when it's easy, hard when it's hard. Most amateur runners collapse this distinction into a "grey middle." Zonna removes that ambiguity.
 
 ### Core functionality (shipped, verified against `docs/canonical/feature-registry.md`)
 - **Plan generation** — rule-engine templates (FREE: 5K/10K/HM); AI-enriched plans for trial/paid (marathon/50K/100K paid-only)
@@ -40,7 +40,7 @@ Zone discipline. The app prescribes the zone for each session and holds the user
 - **Foundation block** — automatic prep weeks when plan start is >7 days out
 - **AI coach "Kit"** — single coach persona; appears via `<CoachByline />` (avatar + sparkle) on every AI-generated surface
 - **Push notifications** — web push (VAPID) and iOS (APNs); verdict-based titles
-- **Native iOS shell** — Capacitor wrapper around Vercel-hosted Next.js app; bundle ID `app.vetra.ios`
+- **Native iOS shell** — Capacitor wrapper around Vercel-hosted Next.js app; bundle ID `app.zonna.ios`
 - **Apple + Google sign-in**; Strava OAuth via SFSafariViewController
 
 ### Tech stack (for context)
@@ -75,7 +75,7 @@ Next.js 14 (App Router) · Supabase (auth + DB) · Vercel hosting · Tailwind CS
 - Missed sessions are a feature of adult life, not a failure
 - Their body knows more than their watch
 
-### The gap Vetra closes
+### The gap Zonna closes
 > They think they need more training. They actually need more restraint and a plan that bends with their life.
 
 ### What success feels like
@@ -101,7 +101,7 @@ Quiet weekly proof: "78% of your runs were Zone 2. That's why you're getting fas
 ### Supporting brand strings
 | Constant | Value | Use |
 |---|---|---|
-| `BRAND.name` | `Vetra` | Wordmarks, `<title>`, OG, anywhere the name appears |
+| `BRAND.name` | `Zonna` | Wordmarks, `<title>`, OG, anywhere the name appears |
 | `BRAND.coachName` | `Kit` | AI coach identity across all coach surfaces |
 | `BRAND.signinSub` | `Access your training plan.` | Sub under login heading |
 | `BRAND.signupSub` | `14 days, no limits. After that, you decide.` | Sub under signup heading |
@@ -132,10 +132,10 @@ Quiet weekly proof: "78% of your runs were Zone 2. That's why you're getting fas
 - Emoji-laden — no emojis in functional copy
 - Passive-aggressive about missed sessions
 - False-urgent (`"You need to run today!"`)
-- "Here at Vetra, we believe..." — the app states, it doesn't pitch
+- "Here at Zonna, we believe..." — the app states, it doesn't pitch
 
 ### Canonical voice examples
-| Situation | Vetra says |
+| Situation | Zonna says |
 |---|---|
 | Ran too fast | *"Bit keen. Ease it back."* |
 | Perfect execution | *"There it is. Don't ruin it."* |
@@ -241,7 +241,7 @@ Quiet weekly proof: "78% of your runs were Zone 2. That's why you're getting fas
 | Body | 400 | 14px | Description, coach note |
 | Card secondary | 400 | 12px | Zone, type, supporting detail |
 | Section label | 700 | 10px | Uppercase 0.08em — eyebrows |
-| Wordmark | 800 | 14px | VETRA nav wordmark |
+| Wordmark | 800 | 14px | ZONNA nav wordmark |
 
 ### Logo and icon
 
@@ -264,7 +264,7 @@ Read: a target / a zone / a discipline marker / a runner inside the line. Visual
 - Favicons 16/32
 - Source SVGs in `public/icons/source/`: light, dark, maskable
 
-**No wordmark logo file exists yet.** The "Vetra" wordmark currently lives only as styled text (Inter 800, 14px) in the nav bar and on login/loading screens.
+**No wordmark logo file exists yet.** The "Zonna" wordmark currently lives only as styled text (Inter 800, 14px) in the nav bar and on login/loading screens.
 
 ### Visual principles (`docs/canonical/brand.md`, `ui-patterns.md`)
 - **Warm, grounded, athletic.** No decoration for decoration's sake.
@@ -288,16 +288,16 @@ Stays legible as a tiny target — outer ink ring + moss centre dot on warm-slat
 
 ### Named competitors (from `docs/alignment/brand-product-alignment.md`)
 
-| Competitor | What they do well | Where Vetra wins |
+| Competitor | What they do well | Where Zonna wins |
 |---|---|---|
-| **Runna** | Polished UI, good plan generation, strong brand | Runna assumes you'll follow the plan as written. Vetra assumes you won't, and adapts. Runna has no point of view on effort — it just gives you sessions. Vetra tells you when you're overcooking. Vetra costs less. |
+| **Runna** | Polished UI, good plan generation, strong brand | Runna assumes you'll follow the plan as written. Zonna assumes you won't, and adapts. Runna has no point of view on effort — it just gives you sessions. Zonna tells you when you're overcooking. Zonna costs less. |
 | **Coopah** | (Listed by user; not detailed in repo) | (No internal contrast text exists.) |
 | **Planzy** | (Listed by user; cited as a design reference, not a direct competitor.) | — |
 | **A free plan (magazine / PDF)** | Zero cost, simple | No adaptation. No feedback. No conscience. Skips a week → the plan doesn't know. |
 | **Nothing (running on feel)** | Freedom. No app. | "You've been running on feel for years. Has it worked? If yes, carry on. If not, maybe it's time to listen to someone else." |
 
-### The gap Vetra fills that none of them do
-None of the named competitors **call the user out for overtraining**. None enforce zone discipline as a product idea. None reshape the plan when life gets in the way. Vetra's edge is the *opinion* it has on the user's effort, not just the sessions it prescribes.
+### The gap Zonna fills that none of them do
+None of the named competitors **call the user out for overtraining**. None enforce zone discipline as a product idea. None reshape the plan when life gets in the way. Zonna's edge is the *opinion* it has on the user's effort, not just the sessions it prescribes.
 
 ### How to frame the price
 - "Less than the shoes you ruin by pushing too hard."
@@ -326,14 +326,14 @@ None of the named competitors **call the user out for overtraining**. None enfor
 
 | Asset | Path | Notes |
 |---|---|---|
-| Icon (light) | `assets/icon-only.svg`, `public/icons/source/vetra-icon-light.svg` | 1024×1024, ring + dot |
+| Icon (light) | `assets/icon-only.svg`, `public/icons/source/zonna-icon-light.svg` | 1024×1024, ring + dot |
 | Splash | `assets/splash.svg`, `public/icons/source/` | 2732×2732 |
-| Icon (dark) | `public/icons/source/vetra-icon-dark.svg` | Dark-variant source |
-| Icon (maskable) | `public/icons/source/vetra-icon-maskable.svg` | Android maskable source |
+| Icon (dark) | `public/icons/source/zonna-icon-dark.svg` | Dark-variant source |
+| Icon (maskable) | `public/icons/source/zonna-icon-maskable.svg` | Android maskable source |
 | PWA icons | `public/icons/icon-*.png` | Standard PWA sizes 72–512, plus maskables |
 | Favicon | `public/icons/favicon-16x16.png`, `favicon-32x32.png` | |
 | Apple touch icon | `public/icons/apple-touch-icon.png` | 180px |
-| PWA manifest | `public/manifest.json` | Name = "Vetra", description = `BRAND.appStoreSubtitle`, theme `#1A1A1A`, bg `#F3F0EB` |
+| PWA manifest | `public/manifest.json` | Name = "Zonna", description = `BRAND.appStoreSubtitle`, theme `#1A1A1A`, bg `#F3F0EB` |
 | Apple sign-in logo | `public/apple-logo.svg` | Auth UI |
 | Google sign-in logo | `public/google-logo.svg` | Auth UI |
 | OG image generator | `app/api/og/route.tsx` | Dynamic 1200×630; **currently uses retired navy/teal palette (marked DEPRECATED in `lib/brand.ts → og`)** — pending Warm Slate redesign |
@@ -349,13 +349,13 @@ None of the named competitors **call the user out for overtraining**. None enfor
 These are the holes a designer should expect to fill.
 
 ### Visual identity gaps
-1. **No wordmark logo file.** "Vetra" exists only as styled Inter 800 text. A dedicated wordmark — possibly with the ring-and-dot lockup — is missing.
+1. **No wordmark logo file.** "Zonna" exists only as styled Inter 800 text. A dedicated wordmark — possibly with the ring-and-dot lockup — is missing.
 2. **No logo lockup variants.** Stacked, horizontal, monochrome, reversed-on-dark versions are all missing.
 3. **OG / social image is still on the retired navy + teal palette.** Marked `DEPRECATED` in `lib/brand.ts → og`. Needs Warm Slate redesign (1200×630).
 4. **No marketing site visuals.** Landing page (intended at `zonarun.app` per the alignment doc — note: the URL still uses the old "zona" brand) has no design.
 5. **No App Store screenshot designs.** The narrative arc is locked (5 screens — see `brand-product-alignment.md §7`) but no visual templates exist.
 6. **No print, sticker, t-shirt, or sponsor-asset treatments.** Founder runs Race to the Stones for Make-A-Wish UK on 11 July 2026 — no event-day brand kit.
-7. **No motion guidelines.** Pulse and fade timings exist in CSS (`ai-mark-pulse`, `vetra-slide-up`); no broader motion language defined.
+7. **No motion guidelines.** Pulse and fade timings exist in CSS (`ai-mark-pulse`, `zonna-slide-up`); no broader motion language defined.
 8. **No iconography set beyond Strava/Apple/Google logos.** UI icons are inline SVG inside components; no library exists.
 
 ### Brand-system gaps
@@ -364,7 +364,7 @@ These are the holes a designer should expect to fill.
 11. **No brand-launch narrative.** Launch plan exists; brand-story copy (origin, mission, founder bio for App Store / press) does not.
 
 ### Naming / governance
-12. **Old brand still leaks in two places:** the Supabase project ID is `wkppmpsvqkaxbekdgzdm` and Vercel project name is `rts-training-hub` — rename to `vetra` is on the backlog. The intended marketing domain `zonarun.app` is mentioned in older docs; needs an updated decision now that the brand is Vetra (likely `vetra.run`, `vetraapp.com`, etc.).
+12. **Old brand still leaks in two places:** the Supabase project ID is `wkppmpsvqkaxbekdgzdm` and Vercel project name is `rts-training-hub` — rename to `zonna` is on the backlog. The intended marketing domain `zonarun.app` is mentioned in older docs; needs an updated decision now that the brand is Zonna (likely `zonna.run`, `zonnaapp.com`, etc.).
 13. **`BRAND.appStoreSubtitle` is 41 chars.** App Store hard limit is 30. Needs trimming before submission (e.g. "Plans that stop overtraining.")
 14. **Coopah** is named as a competitor in this brief at the user's request, but **no internal contrast text exists for it in the repo**. Needs a researched position statement.
 
@@ -380,7 +380,7 @@ These are the holes a designer should expect to fill.
 
 | Field | Value |
 |---|---|
-| **Brand name** | Vetra |
+| **Brand name** | Zonna |
 | **Coach (AI) name** | Kit |
 | **What it is** | Training plans that stop you overtraining |
 | **Who it's for** | Adult runners (25–65+) with a day job who go medium-hard on everything |

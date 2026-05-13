@@ -1,6 +1,6 @@
 # Plan Schema — Canonical Reference
 
-**Authority**: This document defines the canonical JSON shape for Vetra training plans (GitHub Gist format) and the TypeScript interfaces. Any field addition requires an update here first, then the TypeScript interfaces in `types/plan.ts`, then downstream consumers.
+**Authority**: This document defines the canonical JSON shape for Zonna training plans (GitHub Gist format) and the TypeScript interfaces. Any field addition requires an update here first, then the TypeScript interfaces in `types/plan.ts`, then downstream consumers.
 
 ---
 
@@ -137,7 +137,7 @@ export interface PlanMeta {
   // R23 — hybrid generation fields (added 2026-04-21)
   tier?: 'free' | 'trial' | 'paid'  // tier at which plan was generated
   compressed?: boolean               // true if available weeks < ideal plan length for distance
-  coach_intro?: string               // PAID only — enricher-generated intro paragraph in VETRA voice
+  coach_intro?: string               // PAID only — enricher-generated intro paragraph in ZONNA voice
 }
 
 export interface Phase {
@@ -157,7 +157,7 @@ export interface Plan {
 
 ## Two-Tier Session Data Model
 
-Vetra supports two session data formats. Structured is preferred; legacy is fallback only.
+Zonna supports two session data formats. Structured is preferred; legacy is fallback only.
 
 ### Structured Fields (generator output — R23 onwards)
 

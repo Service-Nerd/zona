@@ -1,10 +1,10 @@
-# CLAUDE.md — Vetra Project Intelligence
+# CLAUDE.md — Zonna Project Intelligence
 
-This is the single source of truth for the Vetra codebase.
+This is the single source of truth for the Zonna codebase.
 Read this before touching anything. All design, architecture, and
 behavioural rules live here or in /docs.
 
-> **Brand name history:** the product was launched internally as "Zona" and renamed to "Vetra" in 2026. The brand may rename again. Therefore: **never hardcode any brand name in code — always reference `BRAND.name` from `lib/brand.ts`**. In docs and comments, use the current name ("Vetra"). Older docs may still reference "Zona"; treat those as the same product.
+> **Brand name history:** the product was launched internally as "Zona", renamed to "Vetra" in early 2026, and renamed again to "Zonna" in May 2026. The brand may rename again. Therefore: **never hardcode any brand name in code — always reference `BRAND.name` from `lib/brand.ts`**. In docs and comments, use the current name ("Zonna"). Older docs (ADRs, phase logs, dated audits) may still reference "Zona" or "Vetra"; treat those as the same product.
 
 ---
 
@@ -12,11 +12,11 @@ behavioural rules live here or in /docs.
 
 ### Positioning
 
-> **Vetra is for runners who blur their zones — who go medium-hard on everything, never truly recover, and never truly push.**
+> **Zonna is for runners who blur their zones — who go medium-hard on everything, never truly recover, and never truly push.**
 
 Core truth: "You're trying hard. That's the problem."
 
-Zone discipline is the product idea: commit to the zone you're in. Run easy when it's easy. Run hard when it's hard. The problem isn't that users go too fast — it's that they can't tell the difference between sessions because every run ends up in the same grey middle. Vetra removes that ambiguity.
+Zone discipline is the product idea: commit to the zone you're in. Run easy when it's easy. Run hard when it's hard. The problem isn't that users go too fast — it's that they can't tell the difference between sessions because every run ends up in the same grey middle. Zonna removes that ambiguity.
 
 ### The three-line tagline system
 
@@ -29,7 +29,7 @@ Zone discipline is the product idea: commit to the zone you're in. Run easy when
 **Rules:**
 - Never mix two taglines on the same surface
 - Never rephrase them — they are locked strings
-- `BRAND.name` is `'Vetra'` (parameterised — may change again). Never hardcode a brand name in any component, comment, or prompt. Interpolate from `BRAND.name`.
+- `BRAND.name` is `'Zonna'` (parameterised — may change again). Never hardcode a brand name in any component, comment, or prompt. Interpolate from `BRAND.name`.
 - When in doubt: discovery = #1, in-app = #2, voice moment = #3
 
 **In-product voice anchor — `BRAND.voiceAnchor`: "Hold the zone."**
@@ -57,7 +57,7 @@ One sentence is better than two. Specific beats abstract. Never motivational.
 
 ---
 
-## What Is Vetra?
+## What Is Zonna?
 
 A running training app for non-elite runners who overtrain.
 Each user brings their own plan — race, distance, training phase. All
@@ -80,7 +80,7 @@ and user_settings. Nothing is hardcoded to a specific person.
 | Dev machine  | Mac Mini                      |
 
 - Supabase project ID: `wkppmpsvqkaxbekdgzdm`
-- Vercel app: `https://rts-training-hub.vercel.app` (Vercel project rename to `vetra` is on the backlog)
+- Vercel app: `https://rts-training-hub.vercel.app` (Vercel project rename to `zonna` is on the backlog)
 - Plan JSON: `https://gist.githubusercontent.com/Service-Nerd/efec07a87f65494f0e078a1ccb136100/raw/rts_plan.json`
   - Always fetched with `cache: 'no-store'`
 
@@ -90,8 +90,8 @@ The iOS app is a Capacitor wrapper around the Vercel-hosted web app, not a stand
 
 | Setting | Value |
 |---|---|
-| Bundle ID | `app.vetra.ios` |
-| App name | `Vetra` (sourced from `BRAND.name`) |
+| Bundle ID | `app.zonna.ios` |
+| App name | `Zonna` (sourced from `BRAND.name`) |
 | Strategy | `server.url` → loads Next.js from Vercel; native plugins layered on top |
 | Config | `capacitor.config.ts` (root) |
 | Native project | `ios/` (committed; build artifacts gitignored by `ios/.gitignore`) |
@@ -113,11 +113,11 @@ The iOS app is a Capacitor wrapper around the Vercel-hosted web app, not a stand
 - `@capacitor/push-notifications` — registers for APNs and posts the device token to `/api/push/subscribe` with `platform: 'ios'`
 - `@capawesome/capacitor-apple-sign-in` — Sign in with Apple via ASAuthorizationController, returns inline (no browser hop). Bridged to Supabase via `signInWithIdToken({ provider: 'apple', token, nonce })`. Entitlement: `com.apple.developer.applesignin` in `App.entitlements`. **Don't switch to `@capacitor-community/apple-sign-in`** — it's still on Capacitor 7 and conflicts with `@capgo/capacitor-health@8.x` over `capacitor-swift-pm` (the SPM resolver fails: one wants `7.x`, the other wants `8.x`). Capawesome's plugin requires `@capacitor/core >=8` and resolves cleanly.
 
-**Auth on native:** custom URL scheme `app.vetra.ios://auth-callback` is registered in `Info.plist`. Supabase OAuth runs with `skipBrowserRedirect: true`, the URL is opened via `Browser.open()`, and the callback is exchanged for a session in `CapacitorBoot.tsx`'s `appUrlOpen` listener. The same scheme should be reused for Strava OAuth when it's ported off `window.location.href`.
+**Auth on native:** custom URL scheme `app.zonna.ios://auth-callback` is registered in `Info.plist`. Supabase OAuth runs with `skipBrowserRedirect: true`, the URL is opened via `Browser.open()`, and the callback is exchanged for a session in `CapacitorBoot.tsx`'s `appUrlOpen` listener. The same scheme should be reused for Strava OAuth when it's ported off `window.location.href`.
 
 **Sign in with Apple — name handoff (don't break this):** Apple returns the user's `givenName` + `familyName` *only* on the very first authorization — privacy design — and never again on subsequent sign-ins. The login handler in `app/auth/login/page.tsx` (`signInWithApple`) captures these from the plugin response and persists them via `supabase.auth.updateUser({ data: { full_name } })` immediately after `signInWithIdToken` succeeds. The existing pre-fill in `DashboardClient.tsx:495–505` then reads `user.user_metadata.full_name` and writes first/last to `user_settings` automatically — same path Google uses. If you change the login flow, keep this `updateUser` call: skipping it leaves Profile blank forever with no way to recover the name from Apple.
 
-**Push notifications:** fully wired end-to-end on iOS native (2026-05-09). Client registers via `@capacitor/push-notifications`, backend has `platform` column on `push_subscriptions`, `/api/push/subscribe` accepts both web (VAPID) and iOS (APNs token) shapes, iOS sends route through `lib/apnpush.ts` (uses the `apn` npm package). Apple Dev portal capability + APNs .p8 key + Xcode target capability + Vercel env vars (`APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC=app.vetra.ios`, `APNS_PRODUCTION`) all in place. Simulator-validated registration; TestFlight build will exercise the production APNs server (set `APNS_PRODUCTION=1` in Vercel before that build — sandbox tokens are rejected by the production server and vice versa).
+**Push notifications:** fully wired end-to-end on iOS native (2026-05-09). Client registers via `@capacitor/push-notifications`, backend has `platform` column on `push_subscriptions`, `/api/push/subscribe` accepts both web (VAPID) and iOS (APNs token) shapes, iOS sends route through `lib/apnpush.ts` (uses the `apn` npm package). Apple Dev portal capability + APNs .p8 key + Xcode target capability + Vercel env vars (`APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC=app.zonna.ios`, `APNS_PRODUCTION`) all in place. Simulator-validated registration; TestFlight build will exercise the production APNs server (set `APNS_PRODUCTION=1` in Vercel before that build — sandbox tokens are rejected by the production server and vice versa).
 
 **Native plugins still to add (see backlog):**
 - `@revenuecat/purchases-capacitor` — StoreKit 2 via RevenueCat (gated on RevenueCat setup)
@@ -383,7 +383,7 @@ Trigger frontend-design skill.
 
 ## Monetisation Model
 
-Vetra uses a **Hybrid Reverse Trial**: 14 days full access for all new users, then graceful downgrade to free tier. Upgrade prompts are triggered by user behaviour, never by a calendar date.
+Zonna uses a **Hybrid Reverse Trial**: 14 days full access for all new users, then graceful downgrade to free tier. Upgrade prompts are triggered by user behaviour, never by a calendar date.
 
 See `docs/canonical/monetisation-strategy.md` for the full model.
 

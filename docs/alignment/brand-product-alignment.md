@@ -1,4 +1,4 @@
-# VETRA — Brand & Product Alignment
+# ZONNA — Brand & Product Alignment
 
 **Status:** Locked 2026-04-23 (v2)
 **Supersedes:** All prior informal positioning notes
@@ -6,37 +6,37 @@
 
 ---
 
-## 1. What VETRA is
+## 1. What ZONNA is
 
-**VETRA is a running training app that stops non-elite runners from overtraining.**
+**ZONNA is a running training app that stops non-elite runners from overtraining.**
 
 It's for people who've been running long enough to know they should be getting faster, but aren't — because they go too hard on their easy days, skip their plan when life gets busy, and then wonder why they're tired and injured instead of race-ready.
 
-VETRA is the app that tells you to slow down. And then proves it's working.
+ZONNA is the app that tells you to slow down. And then proves it's working.
 
 ---
 
 ## 2. The tagline system
 
-VETRA uses three locked brand lines, each with a distinct job. They are not interchangeable.
+ZONNA uses three locked brand lines, each with a distinct job. They are not interchangeable.
 
 | Line | Job | BRAND constant | Where it lives |
 |---|---|---|---|
-| **"Training plans that stop you overtraining."** | **What VETRA does.** Functional, outward-facing, for discovery surfaces. | `BRAND.appStoreSubtitle` *(to be added)* | App Store subtitle, landing page hero, paid ads, press mentions |
-| **"Slow down. You've got a day job."** | **Who VETRA is for.** Demographic hook, in-app moments. | `BRAND.tagline` | Login screen, loading screen, OG tags, meta description, in-app footer |
-| **"You can't outrun your easy days."** | **How VETRA sounds.** Training truth, for brand breath. | `BRAND.brandStatement` | Privacy footer, App Store description (not login — tagline owns that space) |
+| **"Training plans that stop you overtraining."** | **What ZONNA does.** Functional, outward-facing, for discovery surfaces. | `BRAND.appStoreSubtitle` *(to be added)* | App Store subtitle, landing page hero, paid ads, press mentions |
+| **"Slow down. You've got a day job."** | **Who ZONNA is for.** Demographic hook, in-app moments. | `BRAND.tagline` | Login screen, loading screen, OG tags, meta description, in-app footer |
+| **"You can't outrun your easy days."** | **How ZONNA sounds.** Training truth, for brand breath. | `BRAND.brandStatement` | Privacy footer, App Store description (not login — tagline owns that space) |
 
 ### Rules for using them
 - Never mix two taglines in the same surface
 - Never rephrase them. They're locked strings
 - When in doubt about which applies, default to: discovery = #1, in-app = #2, voice moment = #3
-- `BRAND.name` is always "Vetra" — fix any hardcoded instances
+- `BRAND.name` is always "Zonna" — fix any hardcoded instances
 
 ---
 
 ## 3. Positioning sentence
 
-> **VETRA is for runners who always go hard on their easy days — who have a life, a day job, and no business training like professionals.**
+> **ZONNA is for runners who always go hard on their easy days — who have a life, a day job, and no business training like professionals.**
 
 This is the internal positioning sentence. It doesn't appear verbatim in the app, but every design decision and piece of copy should be able to trace back to it.
 
@@ -68,7 +68,7 @@ This is the internal positioning sentence. It doesn't appear verbatim in the app
 - Missed sessions are a feature of adult life, not a failure
 - Their body knows more than their watch
 
-### The gap VETRA lives in
+### The gap ZONNA lives in
 > **They think they need more training. They actually need more restraint and a plan that bends with their life.**
 
 Every product decision, every piece of copy, every visual choice should reinforce this gap and resolve it for the user.
@@ -77,16 +77,16 @@ Every product decision, every piece of copy, every visual choice should reinforc
 
 ## 5. Competitors, positioned honestly
 
-| App | What they do well | Where VETRA beats them |
+| App | What they do well | Where ZONNA beats them |
 |---|---|---|
-| **Runna** | Polished UI, good plan generation, strong brand | Runna assumes you'll follow the plan as written. VETRA assumes you won't, and adapts. Also: Runna has no point of view on effort — it just gives you sessions. VETRA tells you when you're overcooking. |
+| **Runna** | Polished UI, good plan generation, strong brand | Runna assumes you'll follow the plan as written. ZONNA assumes you won't, and adapts. Also: Runna has no point of view on effort — it just gives you sessions. ZONNA tells you when you're overcooking. |
 | **A free plan (magazine / PDF)** | Zero cost, simple | No adaptation. No feedback. No conscience. If you skip a week, the plan doesn't know. |
-| **Nothing** (run on feel) | Freedom. No app | VETRA's pitch here is: "You've been running on feel for years. Has it worked? If yes, carry on. If not, maybe it's time to listen to someone else." |
+| **Nothing** (run on feel) | Freedom. No app | ZONNA's pitch here is: "You've been running on feel for years. Has it worked? If yes, carry on. If not, maybe it's time to listen to someone else." |
 
-### Why the user picks VETRA over these three
-- **vs. Runna:** VETRA is more honest. It tells you when you've pushed too hard. It reshapes the plan when you miss a week. It costs less.
-- **vs. a free plan:** VETRA is alive. It knows what you did and what you didn't.
-- **vs. nothing:** VETRA removes the cognitive load of deciding what to do every day — without pretending you're going to train like a pro.
+### Why the user picks ZONNA over these three
+- **vs. Runna:** ZONNA is more honest. It tells you when you've pushed too hard. It reshapes the plan when you miss a week. It costs less.
+- **vs. a free plan:** ZONNA is alive. It knows what you did and what you didn't.
+- **vs. nothing:** ZONNA removes the cognitive load of deciding what to do every day — without pretending you're going to train like a pro.
 
 ---
 
@@ -110,18 +110,18 @@ Every product decision, every piece of copy, every visual choice should reinforc
 ## 7. App Store listing — the narrative
 
 ### Title
-**Vetra**
+**Zonna**
 
 ### Subtitle (30 chars max)
 **Training plans that stop you overtraining.**
 *(Locked as `BRAND.appStoreSubtitle`.)*
 
 ### Description opening (first 170 chars — what shows before "read more")
-> Most runners train too hard on their easy days. Vetra is the app that tells you to slow down. Built for runners with a day job, a life, and a race on the horizon.
+> Most runners train too hard on their easy days. Zonna is the app that tells you to slow down. Built for runners with a day job, a life, and a race on the horizon.
 
 ### Full description structure
 1. Opening hook (above)
-2. "What Vetra does" — 4 bullet points
+2. "What Zonna does" — 4 bullet points
 3. "Who it's for" — one paragraph, speaks directly to the target user
 4. "What makes it different" — Runna / Strava / generic-plan contrast, softly
 5. Free vs Paid breakdown
@@ -147,7 +147,7 @@ Screenshot design is a separate workstream and equal in importance to the redesi
 - **One sentence is better than two.** Restraint in copy mirrors restraint in training.
 - **Never motivational.** Never "you got this." Never "crush your goals." Never "beast mode."
 - **Specific over abstract.** "You were at 165bpm on an easy run" beats "you went too hard."
-- **Self-deprecation is welcome** — VETRA is the app that admits it knows you won't follow the plan perfectly, and that's fine.
+- **Self-deprecation is welcome** — ZONNA is the app that admits it knows you won't follow the plan perfectly, and that's fine.
 - **Humour lives in one-liners, not paragraphs.** Don't stack jokes.
 
 ### Copy patterns that work
@@ -163,7 +163,7 @@ Screenshot design is a separate workstream and equal in importance to the redesi
 - "You're crushing it"
 - "Ready to conquer your next run?"
 - Emojis in anything functional
-- "Here at VETRA, we believe..."
+- "Here at ZONNA, we believe..."
 - Any variant of "you got this"
 
 ---
@@ -179,7 +179,7 @@ Screenshot design is a separate workstream and equal in importance to the redesi
 - Smoke tracker removed
 - Strava screen nav entry removed (component retained, admin URL access)
 - Theme toggle removed from Me screen
-- Hardcoded "Vetra" wordmark references → `BRAND.name`
+- Hardcoded "Zonna" wordmark references → `BRAND.name`
 - Hardcoded brand statement references → `BRAND.brandStatement` (now "You can't outrun your easy days.")
 - New `BRAND.appStoreSubtitle` + `BRAND.signinSub` constants added
 - New ADRs written (ADR-005 Warm Slate palette, ADR-006 single-theme-only)
@@ -260,9 +260,9 @@ These are the design decisions that follow from the positioning above, and shoul
 2. **The pending adjustment card is a hero feature, not a utility.** Treat it accordingly — it's the proof point for "the plan adapts to your life."
 3. **The restraint stat ("78% in Zone 2") is the single most distinctive moment in the weekly summary.** It's the counter-intuitive thing that sells the app. Don't bury it.
 4. **The coach voice is the product.** Every instance of coach copy is a marketing asset. Treat them as such.
-5. **Data density should decrease, not increase.** Runna is denser. Garmin is denser. VETRA wins by showing less.
+5. **Data density should decrease, not increase.** Runna is denser. Garmin is denser. ZONNA wins by showing less.
 6. **Visual "polish" should never override copy clarity.** If a beautiful layout pushes the coach voice into 12pt muted grey, the layout is wrong.
-7. **The free tier must feel honest.** A free Vetra user should get a plan that works, not a crippled experience that screams "upgrade." The upgrade pitch is: *"you want the app to know you better."*
+7. **The free tier must feel honest.** A free Zonna user should get a plan that works, not a crippled experience that screams "upgrade." The upgrade pitch is: *"you want the app to know you better."*
 
 ---
 
@@ -281,5 +281,6 @@ These are the design decisions that follow from the positioning above, and shoul
 |---|---|---|
 | 2026-04-23 | Initial creation. Positioning, launch plan, and design implications locked. | Russ + Claude |
 | 2026-04-23 | v2: added three-line tagline system; widened target audience by removing age bracket; confirmed full-scope redesign (visual + new components in one push); added hardcoding fixes and BRAND constant additions to Phase 1. | Russ + Claude |
+| 2026-05-13 | Rebrand Vetra → Zonna. `BRAND.name` flipped in `lib/brand.ts`; new `<Wordmark>` component with NN-moss device wired into 8 surfaces; concentric-rings icon system replaces ring+dot mark; iOS bundle ID `app.vetra.ios` → `app.zonna.ios` with `lib/native.ts` as the single source of truth for deep links; OG image rebuilt against Warm Slate; user-visible body copy and internal comments swept; current-truth docs (canonical, contracts, brand-brief, this doc) updated. Historical docs (ADRs, phase logs, dated audits) left intact. Three-line tagline system, positioning sentence, voice rules, and pricing all unchanged. Rebrand follow-ups tracked as `BRAND-01` … `BRAND-13` in `docs/releases/backlog.md`. | Russ + Claude |
 
 ---

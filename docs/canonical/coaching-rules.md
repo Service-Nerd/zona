@@ -423,7 +423,7 @@ Enforced before the engine runs. See `app/api/generate-plan/route.ts → validat
 | Over-constrained schedule | Simplify plan |
 | Weekday time < 45 min | Simplify sessions |
 
-Refusals return a 422 with a Vetra-voice explanation. Adjustments are silent.
+Refusals return a 422 with a Zonna-voice explanation. Adjustments are silent.
 
 ---
 

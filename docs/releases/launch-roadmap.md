@@ -1,6 +1,6 @@
-# Launch Roadmap — Vetra v1 iOS
+# Launch Roadmap — Zonna v1 iOS
 
-**Job:** Get Vetra approved on the App Store. Everything else waits.
+**Job:** Get Zonna approved on the App Store. Everything else waits.
 **Source:** distilled from `backlog.md` NOW section + dependency mapping.
 **Status:** assembled 2026-05-12. Update as items land.
 
@@ -71,7 +71,7 @@ These gate the longest dependency chains. Without answers, downstream work stall
 
 | Decision | Options | Blocks |
 |---|---|---|
-| **Domain name** | `vetra.app` (Google HSTS-locked TLD, ~£15/yr) / `vetra.run` (~£40/yr) / something else | Privacy hosting, Universal Links, GTM-08 go-live, OG image, paid acquisition |
+| **Domain name** | `zonna.app` (Google HSTS-locked TLD, ~£15/yr) / `zonna.run` (~£40/yr) / something else | Privacy hosting, Universal Links, GTM-08 go-live, OG image, paid acquisition |
 | **DSA EU trader strategy** | Home address / virtual office / Ltd registered office / defer EU launch | EU App Store availability (US/UK ship doesn't need this) |
 | **Beta testers** | Pick 5–10 people for TestFlight internal track | TestFlight beta phase — can't start without testers |
 | **Web checkout at launch?** | Defer Stripe to v1.1 / ship Stripe alongside iOS | Stripe product setup, Stripe env vars, web upgrade flow QA |
@@ -86,7 +86,7 @@ External setup; can all run concurrently. Each is a partial-day task + waiting p
 | Task | Owner | Effort | Notes |
 |---|---|---|---|
 | Buy domain | Russ | 30 min + DNS propagation (1–48h) | Once decided. Point at Vercel project. |
-| RevenueCat account + app + entitlement | Russ | ~2h | Link to existing ASC products (`vetra_premium_monthly`, `vetra_premium_annual`). Set entitlement ID `vetra_premium`. Configure webhook → Supabase. |
+| RevenueCat account + app + entitlement | Russ | ~2h | Link to existing ASC products (`zonna_premium_monthly`, `zonna_premium_annual`). Set entitlement ID `zonna_premium`. Configure webhook → Supabase. |
 | Apple Dev signing certificates + provisioning profiles | Russ | ~1h | Required before any TestFlight build. App Store Connect API key for CI uploads (Vercel doesn't build iOS — Mac does). |
 | Retry Apple Small Business Program enrolment | Russ | 30 min | Direct URL: https://appstoreconnect.apple.com/business |
 | (Optional) Apply for DSA EU trader info | Russ | depends on strategy chosen | Only if shipping EU at v1. |
@@ -141,7 +141,7 @@ Cosmetic but submission-blocking.
 |---|---|
 | **Final asset upload to App Store Connect** | Screenshots, description, keywords, Review Information. Per-product Review Information for each subscription. |
 | **Submit for review** | First review is usually 24–48h. Renewals can take 1–7 days. |
-| **Review feedback handling** | Apple rejections are common on first submission. Most likely reasons for Vetra: (1) subscription disclosure not strong enough — fix copy and resubmit; (2) HealthKit usage description too vague — already mitigated by current Info.plist text; (3) demo account needed if reviewer can't easily test paid tier — provide one in Review Notes. |
+| **Review feedback handling** | Apple rejections are common on first submission. Most likely reasons for Zonna: (1) subscription disclosure not strong enough — fix copy and resubmit; (2) HealthKit usage description too vague — already mitigated by current Info.plist text; (3) demo account needed if reviewer can't easily test paid tier — provide one in Review Notes. |
 | **Approval → release** | Choose: manual release (you flip the switch) vs auto-release on approval. Recommend **manual** — gives a buffer to do final smoke on the live store binary before traffic flows. |
 
 ---

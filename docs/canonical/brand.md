@@ -1,6 +1,6 @@
-# Brand — Vetra
+# Brand — Zonna
 
-**Authority**: This document defines Vetra's tone of voice, visual principles, and brand rules. These rules apply to all copy, UI decisions, and feature design. When in doubt: honest, calm, useful.
+**Authority**: This document defines Zonna's tone of voice, visual principles, and brand rules. These rules apply to all copy, UI decisions, and feature design. When in doubt: honest, calm, useful.
 
 ---
 
@@ -11,7 +11,7 @@
 **Core truth**: "You're trying hard. That's the problem."  
 **Audience**: Non-elite runners who blur their zones. They care deeply — enough to go medium-hard on everything, which means they never truly recover *and* never truly push. That care is the problem.
 
-**The product idea is zone discipline, not just slowing down.** Vetra prescribes the zone for each session and holds the user to it — easy when it's easy, hard when it's hard. Most amateur runners collapse this distinction into a grey middle. Vetra removes that ambiguity. "Slow down. You've got a day job." names the user's dominant failure mode; it doesn't imply the app is only about running easy.
+**The product idea is zone discipline, not just slowing down.** Zonna prescribes the zone for each session and holds the user to it — easy when it's easy, hard when it's hard. Most amateur runners collapse this distinction into a grey middle. Zonna removes that ambiguity. "Slow down. You've got a day job." names the user's dominant failure mode; it doesn't imply the app is only about running easy.
 
 **In-product voice anchor** (`BRAND.voiceAnchor`): "Hold the zone."  
 Used across push notifications, coach cards, and session prompts. Expresses zone discipline in the moment — the instruction to commit to whatever zone has been prescribed, whether that's easy or hard. Not for marketing; not for the login screen. Product-internal only.
@@ -32,11 +32,11 @@ Honest, slightly sarcastic, self-aware, encouraging without cringe.
 - **Not a cheerleader.** Never over-celebrate. Never use exclamation marks to paper over ordinary moments.
 - **Not harsh.** Dry ≠ cold. The app cares — it just doesn't perform caring.
 - **Not vague.** "Nice work!" means nothing. "Kept it under control." means something.
-- **One sentence.** Vetra voice responses are always one sentence. No paragraphs.
+- **One sentence.** Zonna voice responses are always one sentence. No paragraphs.
 
 ### Voice Examples
 
-| Situation | Vetra says |
+| Situation | Zonna says |
 |-----------|-----------|
 | Ran too fast | *"Bit keen. Ease it back."* |
 | Perfect execution | *"There it is. Don't ruin it."* |
@@ -80,7 +80,7 @@ This is a design gate, not a guideline.
 
 | Rule | Detail |
 |------|--------|
-| No red in the training UI | Red implies danger or failure. Vetra uses amber for warnings, coral for high-intensity sessions. Form validation errors may use `--vetra-red` (`#ff7777`) only. |
+| No red in the training UI | Red implies danger or failure. Zonna uses amber for warnings, coral for high-intensity sessions. Form validation errors may use `--vetra-red` (`#ff7777`) only — alias name retained from a prior rebrand pending CSS-token rename (backlog BRAND-06). |
 | No popups | All interactions navigate to full screens. Modal overlays only for destructive confirmations (delete, disconnect). Never for information. |
 | Back arrow top-left | Navigation is always predictable and reversible. |
 | One job per screen | Each screen has exactly one primary purpose. No dashboards. No noise. |
@@ -90,7 +90,7 @@ This is a design gate, not a guideline.
 
 ### What this looks like in practice
 
-| Pattern | Vetra does | Vetra does NOT do |
+| Pattern | Zonna does | Zonna does NOT do |
 |---------|-----------|------------------|
 | Upgrade prompts | Contextual, inline, triggered by action | Banners, countdown timers, forced modals |
 | Session feedback | Post-log reflect — calm, invited | Celebratory popups, confetti, toast stacks |

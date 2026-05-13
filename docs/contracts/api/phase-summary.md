@@ -29,7 +29,7 @@
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `content` | `string` | 2–3 sentence AI coaching summary in Vetra voice |
+| `content` | `string` | 2–3 sentence AI coaching summary in Zonna voice |
 | `cached` | `boolean` | `true` if returned from the `phase_summaries` cache, `false` if freshly generated |
 
 ## Error responses

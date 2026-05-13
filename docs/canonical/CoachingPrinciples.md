@@ -157,7 +157,7 @@ intermediate → 2
 experienced  → 2
 ```
 
-(Spec proposed 3 for experienced. Overridden to 2 — for the target audience, the third quality session is rarely accommodated by life and consistently produces the symptoms VETRA exists to prevent.)
+(Spec proposed 3 for experienced. Overridden to 2 — for the target audience, the third quality session is rarely accommodated by life and consistently produces the symptoms ZONNA exists to prevent.)
 
 **Quality session sizing:**
 - `GENERATION_CONFIG.QUALITY_SESSION_PCT_OF_WEEKLY = 18` — primary quality session distance as % of weekly volume.
@@ -255,7 +255,7 @@ The forward-compat hook for a future paid "zone method selector" feature lives h
 
 **Principle.** What a user gets during their 14-day trial is theirs to keep within the free tier — *for the plan they generated*. Ongoing intelligent features (new plan generation, dynamic reshaping, AI coach notes on new sessions, Strava-derived intelligence) become paid-only at downgrade.
 
-**Why.** The brand position is that free users are never abandoned. Stripping a user's plan after 14 days violates that. But VETRA is also a business — ongoing intelligence is the value the subscription buys. Option A is the line.
+**Why.** The brand position is that free users are never abandoned. Stripping a user's plan after 14 days violates that. But ZONNA is also a business — ongoing intelligence is the value the subscription buys. Option A is the line.
 
 **Config.** `lib/plan/featureGates.ts`:
 - `FEATURE_GATES.GRANTED_AT_TRIAL_RETAINED_IN_FREE` — personalised plan, VDOT pace zones, HR zones, AI coach notes that already exist on a plan, full session catalogue, initial injury adaptations
@@ -316,7 +316,7 @@ enrichment layer (gated via `ai_coach_notes_new`), not the act of regenerating.
 
 **Principle.** The VDOT surfaced on the plan (`meta.vdot`) MUST be the *raw* benchmark-derived value, not the conservatism-discounted training anchor. The discounted anchor is also surfaced, separately, as `meta.vdot_training_anchor`. The gap between the two is `meta.vdot_discount_applied_pct`. Goal pace (`meta.goal_pace_per_km`) is computed from `target_time / race_distance_km` directly — it is the runner's stated target, not a derived training pace.
 
-**Why.** A user who runs a 23:30 5K opens Daniels' Running Formula and sees VDOT ~41. If Vetra surfaces VDOT 40 (after a 3% discount) the user thinks the engine has miscalibrated their fitness. They lose trust. The discount is real and important — it produces the slow easy paces the brand exists to defend — but it lives in the *training paces*, not in the headline number. Surfacing both makes the engine's reasoning legible: "your benchmark gives VDOT 41; we're training at the 39.8 anchor for safety."
+**Why.** A user who runs a 23:30 5K opens Daniels' Running Formula and sees VDOT ~41. If Zonna surfaces VDOT 40 (after a 3% discount) the user thinks the engine has miscalibrated their fitness. They lose trust. The discount is real and important — it produces the slow easy paces the brand exists to defend — but it lives in the *training paces*, not in the headline number. Surfacing both makes the engine's reasoning legible: "your benchmark gives VDOT 41; we're training at the 39.8 anchor for safety."
 
 **Config.** No numeric — structural rule. Implemented in `generateRulePlan()` in `lib/plan/ruleEngine.ts` (raw and discounted both stored). Enforced by `INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR` in `lib/plan/invariants.ts`. The Daniels-Gilbert formula in `calcVDOT()` is intentionally conservative (~0.3 VDOT below his published 5K table at threshold race distances) — this is documented inertia from the published mathematics, not a bug; the table itself is interpolated.
 
@@ -912,9 +912,9 @@ When calculating available prep weeks, `preparationWeeks = foundation_weeks + pl
 
 Foundation weeks use `n` values ≤ 0 (e.g., −2, −1, 0 for a 3-week block). Week 1 of the main plan is always `n: 1`. The stride-insertion guard `weekN > 0` (§28) relies on this convention.
 
-### VETRA voice for Foundation Block weeks
+### ZONNA voice for Foundation Block weeks
 
-- Coach notes use the standard VETRA voice: honest, brief, no hype.
+- Coach notes use the standard ZONNA voice: honest, brief, no hype.
 - Example week themes: "Shake the rust off.", "Building the base.", "Last week before the plan proper. Keep it easy."
 - Never promise fitness gains. Never use motivational language.
 
@@ -929,7 +929,7 @@ Foundation weeks use `n` values ≤ 0 (e.g., −2, −1, 0 for a 3-week block). 
 
 **Principle.** Generic coaching ("HR was high, ease back") is weaker than self-referenced coaching ("your usual easy 10ks sit at HR 145, today was 156"). The strongest mirror coaching can offer is comparison to the user's own past, not to the prescription. Past-self comparison surfaces three things the prescription alone cannot: slow drift (zone discipline eroding over weeks), genuine adaptation (same pace, lower HR), and one-off bad days (today vs the user's own baseline, not the population's).
 
-**Why.** VETRA's brand thesis — *"you're trying hard, that's the problem"* — assumes the user has run patterns that reveal their own truth. Comparing today's run to the user's median for similar runs is the most honest version of that mirror. Generic feedback is replaceable by any LLM; self-referenced feedback is a defensible coaching layer.
+**Why.** ZONNA's brand thesis — *"you're trying hard, that's the problem"* — assumes the user has run patterns that reveal their own truth. Comparing today's run to the user's median for similar runs is the most honest version of that mirror. Generic feedback is replaceable by any LLM; self-referenced feedback is a defensible coaching layer.
 
 **Config.** `lib/coaching/constants.ts → COHORT_SIMILARITY`:
 
@@ -952,7 +952,7 @@ HR_BAND_BREAKPOINTS     → { low: 145, mid: 165 }  (three-bucket effort classif
 
 **Principle.** Every existing adjustment trigger fires *after* a run, when the damage is already done. The body broadcasts whether it can absorb today's planned load *before* the user laces up — overnight RHR, HRV, and sleep duration are the three weakest individual signals coaching can use, and the strongest when voted together. A composite that fires when any one of the three deviates from the user's personal baseline lets the engine catch a bad-recovery day on a quality or long session and soften it before the user grinds through it.
 
-**Why.** VETRA's product thesis is that runners blur their zones because they can't tell the difference between sessions. The same applies to days. A user whose HRV is down 1 SD, RHR is up 7 bpm, and slept 5 hours is *not* the same user the plan was written for at this moment. Forcing them through a tempo session compounds fatigue and drags subsequent easy days into the grey middle. Softening today, on this day's data, is the cleanest expression of "hold the zone you're actually in." It is also the only adjustment trigger that pre-empts the run rather than reacting to it.
+**Why.** ZONNA's product thesis is that runners blur their zones because they can't tell the difference between sessions. The same applies to days. A user whose HRV is down 1 SD, RHR is up 7 bpm, and slept 5 hours is *not* the same user the plan was written for at this moment. Forcing them through a tempo session compounds fatigue and drags subsequent easy days into the grey middle. Softening today, on this day's data, is the cleanest expression of "hold the zone you're actually in." It is also the only adjustment trigger that pre-empts the run rather than reacting to it.
 
 **Config.** `lib/plan/generationConfig.ts → GENERATION_CONFIG.READINESS` (re-exported via `lib/coaching/constants.ts → READINESS`):
 

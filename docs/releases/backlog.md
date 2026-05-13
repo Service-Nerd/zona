@@ -1,4 +1,4 @@
-# Backlog — Vetra
+# Backlog — Zonna
 
 **Job:** What's left to ship. Single source of truth for "what should I work on?"
 **Pair:** When an item ships, the `/ship` skill moves it to `docs/canonical/feature-registry.md` "Shipped Features" table. An item lives in exactly one of the two.
@@ -14,13 +14,13 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 ### A. Legal & Apple compliance
 
 - ✅ **Terms of Service** — draft shipped at `app/terms/page.tsx` (mirrors `/privacy` structure, brand voice, covers both Stripe-web and Apple-IAP subscription paths, England & Wales governing law). Linked from pre-login screen alongside privacy. **Approved by user 2026-05-05.** Hosting at the production URL is gated on the custom-domain task below — same blocker as `/privacy`.
-- 🔲 **Privacy policy hosted** — page is built (`/privacy`); needs to be live at `vetra.app/privacy` (or whatever custom domain lands) before submission
-- 🔄 **App Store Connect setup** — partial (2026-05-08). Done: app record created (Bundle ID `app.vetra.ios`), subscription group `Vetra Premium`, monthly product `vetra_premium_monthly` (£7.99), annual product `vetra_premium_annual` (£59.99), 14-day free trial configured on both. Outstanding: screenshots for all required device sizes, App Store description, keywords, per-product Review Information.
+- 🔲 **Privacy policy hosted** — page is built (`/privacy`); needs to be live at `zonna.app/privacy` (or whatever custom domain lands) before submission
+- 🔄 **App Store Connect setup** — partial (2026-05-08). Done: app record created (Bundle ID `app.zonna.ios`), subscription group `Zonna Premium`, monthly product `zonna_premium_monthly` (£7.99), annual product `zonna_premium_annual` (£59.99), 14-day free trial configured on both. Outstanding: screenshots for all required device sizes, App Store description, keywords, per-product Review Information.
 - 🔲 **DSA trader compliance** — EU Digital Services Act requires Apple to display verified trader contact info on EU listings. Selling subscriptions = trader by default. Apple needs trader name, deliverable street address (no PO Box), phone, email — all become public on EU App Store listings. Decide on address strategy (home / virtual office / Ltd registered office) before declaring. Blocks EU distribution only — not US/UK ship. Deferred 2026-05-08.
 
 ### B. Engineering blockers
 
-- ✅ **Native shell — Capacitor iOS** — bootstrapped. App boots in simulator with Vetra icon + splash, status bar polished (warm slate, dark text), splash auto-hides on web mount via `CapacitorBoot.tsx`, OAuth deep-link infrastructure in place via `app.vetra.ios://auth-callback` URL scheme. Plugins installed: `splash-screen`, `status-bar`, `browser`, `app`, `push-notifications`. `server.url` strategy with `allowNavigation` whitelist for OAuth providers. See `CLAUDE.md` § Native shell.
+- ✅ **Native shell — Capacitor iOS** — bootstrapped. App boots in simulator with Zonna icon + splash, status bar polished (warm slate, dark text), splash auto-hides on web mount via `CapacitorBoot.tsx`, OAuth deep-link infrastructure in place via `app.zonna.ios://auth-callback` URL scheme. Plugins installed: `splash-screen`, `status-bar`, `browser`, `app`, `push-notifications`. `server.url` strategy with `allowNavigation` whitelist for OAuth providers. See `CLAUDE.md` § Native shell.
 - ✅ **Google OAuth on native** — opens via SFSafariViewController (`@capacitor/browser`); returns through custom URL scheme; `CapacitorBoot.tsx` exchanges the code and `router.replace`s to `/dashboard`. Same pattern reusable for Strava (still on `window.location.href`).
 - 🔲 **Strava as secondary source** *(post-launch)* — once HealthKit is primary, keep Strava OAuth + webhook + `strava_activities` writes alive but optional. Dedupe rule: if a HealthKit workout and a Strava activity match within ±5 min and ±5% distance, prefer the source with HR stream data; otherwise prefer HealthKit (always present on iOS). Apply for Strava API approval in parallel — not blocking v1.
 - 🔲 **StoreKit 2 integration** — via `@revenuecat/purchases-capacitor`. Webhook → Supabase `subscriptions` table (per project memory). Stripe path stays for web users. Alternative: apply for External Purchase Entitlement (slow, not guaranteed). Apple Dev approved 2026-05-08; now gated only on RevenueCat app setup (in progress, see §D).
@@ -43,10 +43,10 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 ### D. External setup
 
-- 🔲 **Stripe product + price** — "Vetra Premium", £7.99/month + £59.99/year, 14-day trial
-- 🔲 **RevenueCat app + entitlement** — link to App Store product IDs (`vetra_premium_monthly`, `vetra_premium_annual` — already created in App Store Connect), set entitlement identifier `vetra_premium`
+- 🔲 **Stripe product + price** — "Zonna Premium", £7.99/month + £59.99/year, 14-day trial
+- 🔲 **RevenueCat app + entitlement** — link to App Store product IDs (`zonna_premium_monthly`, `zonna_premium_annual` — already created in App Store Connect), set entitlement identifier `zonna_premium`
 - 🔲 **Apple Small Business Program** — 15% vs 30% cut, enrol before first live transaction. Deferred 2026-05-08 — not visible in App Store Connect UI yet (likely gated on Paid Applications Agreement signing). Direct URL: https://appstoreconnect.apple.com/business
-- 🔲 **Custom domain** — buy + point a Vetra-branded domain (e.g. `vetra.app`, `vetra.run`) at the Vercel deployment. Unblocks: `/privacy` hosting, `/terms` hosting, Universal Links (needs `apple-app-site-association` file at domain root), OG image canonical URL, GTM-08 marketing site go-live, paid acquisition / press / sharing surface. Single biggest external blocker for v1 launch — most other "🔲" items chain off this.
+- 🔲 **Custom domain** — buy + point a Zonna-branded domain (e.g. `zonna.app`, `zonna.run`) at the Vercel deployment. Unblocks: `/privacy` hosting, `/terms` hosting, Universal Links (needs `apple-app-site-association` file at domain root), OG image canonical URL, GTM-08 marketing site go-live, paid acquisition / press / sharing surface. Single biggest external blocker for v1 launch — most other "🔲" items chain off this.
 
 ### E. Pre-submission QA
 
@@ -87,11 +87,11 @@ After Vercel deploy, verify with agent-browser:
 
 ### AI coaching depth
 
-*Surfaced by 2026-05-11 manual coaching audit (Russ's Goring Gap 53km debrief vs. what Vetra would have produced). Three highest-leverage items shipped that day as AI-DEPTH-01 (see feature-registry). Remaining gaps below — ordered by impact ÷ effort.*
+*Surfaced by 2026-05-11 manual coaching audit (Russ's Goring Gap 53km debrief vs. what Zonna would have produced). Three highest-leverage items shipped that day as AI-DEPTH-01 (see feature-registry). Remaining gaps below — ordered by impact ÷ effort.*
 
 - 🔄 **AI-DEPTH-02 — HealthKit per-km splits + HR-over-time analysis** *(scoped 2026-05-11; HR-drift component shipped 2026-05-11 as AI-DEPTH-02a)* — **HR-drift component shipped** as `lib/coaching/streamAnalysis.ts` → `computeHrStreamSummary()`. Computes first-third vs last-third avg HR + drift bpm + drift % from `raw_payload.hrSamples` on HealthKit-sourced `strava_activities` rows. Fed into `buildSessionFeedbackPrompt` with a thresholded reference rule (≥10 bpm or ≥7% surfaces directly; sparse-sample flag downgrades confidence). **Still pending (AI-DEPTH-02b):** per-km splits analysis. HealthKit doesn't natively give per-km splits — would need to bucket the HR + distance samples into 1-km windows server-side. For Strava-sourced activities, pull `splits_metric` at link time when API access lands (`app/api/webhooks/strava/route.ts` enrichment step). Strava also doesn't currently persist per-sample HR (only bucketed zones) — `streamSummary` is null for Strava-sourced runs until that pipeline lands. Effort remaining: S–M (~3 days for splits + Strava ingestion). No schema change required for HK side; Strava-side needs raw stream persistence on webhook ingest.
 
-- 🔲 **AI-DEPTH-03 — Multi-month trend block (same-effort run comparison)** *(scoped 2026-05-11)* — extends `lib/coaching/runHistory.ts` from single-comparison cohorts (R25 cut #1, already shipped) to a trend series. New `/api/coaching/trend?metric=hr_at_z2_pace&window=12w` returns a sparse series of same-effort runs over time, e.g. *"Long-run avg HR at 5:40/km pace, Feb 166 → May 149."* Surfaces on Coach screen as a third stat card or under the existing weekly report. Tier: PAID. Effort: M (~1 week). The manual audit caught this trend explicitly — Russ's long-run HR dropped 17 bpm at the same pace from Feb to May, which is exactly the kind of signal Vetra has the data for but no surface to show. Dependency: HealthKit data breadth (already there).
+- 🔲 **AI-DEPTH-03 — Multi-month trend block (same-effort run comparison)** *(scoped 2026-05-11)* — extends `lib/coaching/runHistory.ts` from single-comparison cohorts (R25 cut #1, already shipped) to a trend series. New `/api/coaching/trend?metric=hr_at_z2_pace&window=12w` returns a sparse series of same-effort runs over time, e.g. *"Long-run avg HR at 5:40/km pace, Feb 166 → May 149."* Surfaces on Coach screen as a third stat card or under the existing weekly report. Tier: PAID. Effort: M (~1 week). The manual audit caught this trend explicitly — Russ's long-run HR dropped 17 bpm at the same pace from Feb to May, which is exactly the kind of signal Zonna has the data for but no surface to show. Dependency: HealthKit data breadth (already there).
 
 - ✅ **AI-DEPTH-04 — Conversation memory across weekly reports** *(shipped 2026-05-11)* — see feature-registry entry AI-DEPTH-02. Previous week's `weekly_reports.headline` + `body` now fetched in `app/api/weekly-report/route.ts` and passed to `buildWeeklyReportPrompt` as a `PreviousReportSummary` block. Prompt instructs at most one reference, only when this week's data tracks against last week's story (improvement or repeat-issue). Week 1 and silent-fallback weeks skip the fetch via conditional `Promise.resolve({ data: null })`. Closes the "every report fires standalone, no continuity" gap.
 
@@ -107,7 +107,7 @@ After Vercel deploy, verify with agent-browser:
 
 - 🔲 **AI-DEPTH-08 — Post-race reshape route** *(scoped 2026-05-11; unblocked by AI-DEPTH-07 shipping 2026-05-12)* — biggest item from the audit. Closest analogue to Russ's manual v2.4→v3.0 rewrite after Goring Gap. New `POST /api/post-race-reshape` consuming a structured race-result entry (you'd build the UI to log a finish: time, splits, HR drift, what went wrong/right, kit + fueling outcomes). Hybrid pattern per ADR-006: rule engine proposes structural changes (taper restructure, key_session flags, fueling protocol updates, run-walk strategy when a race day exposed a need), Claude-Sonnet adds voice and per-session coach notes. **Needs ANTHROPIC_MODEL_DEEP (Sonnet) — Haiku will fall over on plan-shaped reasoning.** Lift the `TAPER_PROTECTION_WEEKS` guard conditionally when a post-race reshape is the explicit trigger (currently any week within the taper window is locked). Tier: PAID — extends `dynamic_reshape_r20` gate. Effort: L (~2–3 weeks). Schema scaffolding (`Session.key_session`/`run_walk_strategy`/`fueling_protocol`, `Week.result_embedded`, `RaceResult` type) shipped 2026-05-12.
 
-- 🔲 **AI-DEPTH-09 — Coach chat (deferred indefinitely)** *(scoped 2026-05-11)* — original audit Step-5 (injury/equipment diagnosis) was recommended for deferral on three grounds: liability surface, off-brand (Vetra is zone discipline, not shoe lacing), and the kit-and-blister advice from Russ's manual session wasn't where the real coaching value lived. If a paid-tier freeform chat is later considered, it slots here as a new gate `coach_chat`. Effort: L. Out of scope until product strategy explicitly invites it.
+- 🔲 **AI-DEPTH-09 — Coach chat (deferred indefinitely)** *(scoped 2026-05-11)* — original audit Step-5 (injury/equipment diagnosis) was recommended for deferral on three grounds: liability surface, off-brand (Zonna is zone discipline, not shoe lacing), and the kit-and-blister advice from Russ's manual session wasn't where the real coaching value lived. If a paid-tier freeform chat is later considered, it slots here as a new gate `coach_chat`. Effort: L. Out of scope until product strategy explicitly invites it.
 
 ### Plan adjustments
 
@@ -147,12 +147,32 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 
 ### Ops
 
-- **Rename Vercel project** from `zona-service-nerds-projects` → `vetra` (or `vetra-app` if taken) when name available. Update `NEXT_PUBLIC_APP_URL`, `CLAUDE.md`, this file, `app/api/checkout/route.ts` fallback.
-- **Update local git remote URL** — GitHub repo moved from `Service-Nerd/rts-training-hub` → `Service-Nerd/zona` (verified via push redirect notice 2026-05-12). Pushes still succeed via redirect, but the local origin URL is stale. Fix: `git remote set-url origin https://github.com/Service-Nerd/zona.git`. Ideally the GitHub repo gets a second rename to `vetra` to align with the brand — bundle both into one operation.
+- **Rename Vercel project** from `zona-service-nerds-projects` → `zonna` (or `zonna-app` if taken) when name available. Update `NEXT_PUBLIC_APP_URL`, `CLAUDE.md`, this file, `app/api/checkout/route.ts` fallback.
+- **Update local git remote URL** — GitHub repo moved from `Service-Nerd/rts-training-hub` → `Service-Nerd/zona` (verified via push redirect notice 2026-05-12). Pushes still succeed via redirect, but the local origin URL is stale. Fix: `git remote set-url origin https://github.com/Service-Nerd/zona.git`. Ideally the GitHub repo gets a second rename to `zonna` to align with the brand — bundle both into one operation.
 
 ---
 
 ## Tech Debt
+
+### Rebrand follow-ups (Vetra → Zonna, May 2026)
+
+The Vetra → Zonna rename (commits `fda3ff6` + `ba469df`) is complete in code, native shell, icons, OG image, and current-truth docs. The items below are non-blocking hygiene and decisions that can land any time post-launch.
+
+- 🔲 **BRAND-01 — Domain decision + rollout** *(P1, ~30 min in code + DNS)* — pick the public domain (`zonna.run` / `zonna.app` / other). Currently live: `zona.app`. Once decided: update `support@zona.app` mailtos in `app/privacy/page.tsx` + `app/terms/page.tsx`, the `<strong>zona.app</strong>` body references, the VAPID subject in `lib/webpush.ts:32`, and the migration-target comment in `capacitor.config.ts:11`. Plus DNS + Vercel custom domain + email forwarding.
+- 🔲 **BRAND-02 — Vercel project rename** *(P3, ~2 min)* — currently `rts-training-hub`. Rename via Vercel dashboard. Affects preview URLs only — code-side: nothing.
+- 🔲 **BRAND-03 — Supabase project rename (cosmetic)** *(P3, ~1 min, optional)* — Supabase project display name can be renamed but the ID `wkppmpsvqkaxbekdgzdm` is permanent. Purely cosmetic.
+- 🔲 **BRAND-04 — npm package rename** *(P3, ~1 min)* — `package.json:2` still says `"name": "vetra"`. Rename to `"zonna"` whenever convenient. Triggers `package-lock.json` regeneration on next install.
+- 🔲 **BRAND-05 — Remove old `app.vetra.ios` allowlist entries** *(P2, ~5 min)* — once the new bundle ID is verified in TestFlight, remove the lingering `app.vetra.ios` entries from Apple Developer portal, Supabase Auth Redirect URLs, Supabase Apple provider Authorized Client IDs, Google OAuth iOS bundle IDs.
+- 🔲 **BRAND-06 — CSS keyframe + alias rename** *(P3, ~20 min)* — `globals.css` still defines `--vetra-amber`, `--vetra-red`, `@keyframes vetra-fade-in`, `@keyframes vetra-slide-up`. `DashboardClient.tsx` (`vetra-shimmer` inline) and `ZoneInfoSheet.tsx` reference these. Rename to `--zonna-*` / `zonna-*` and update all callsites. No user-visible impact. Bundle with another `globals.css` cleanup pass. Currently documented in `brand.md` and `ui-patterns.md` with explicit "name retained pending BRAND-06" notes.
+- 🔲 **BRAND-07 — Legacy storage key migration** *(P3, ~1 hr)* — `lib/health/clientSync.ts:26` uses `vetra_healthkit_last_sync_ts`; `DashboardClient.tsx` + `GeneratePlanScreen.tsx` use `zona_wizard_draft`, `zona_guide_seen`, `zona_coach_intro_seen`. Renaming wipes user state. Write a one-time read-old → write-new → delete-old migration on app boot. Low priority — these are functional IDs invisible to users.
+- 🔲 **BRAND-08-pwa — Regenerate PWA icon PNGs** *(P2, ~5 min)* — `public/icons/icon-*.png` still rendered from the old ring+dot mark. Need to regenerate from the new concentric-rings SVG so PWA install / favicon / Add-to-Home Screen use the new design. iOS app icon (Capacitor) already done — this is web-only.
+- 🔲 **BRAND-09 — App Store screenshot templates** *(P2, ~2 days)* — when screenshots get built, ensure they use the Zonna wordmark with NN-moss device. Per `brand-product-alignment.md §7`, the 5-screenshot narrative arc is locked but the visuals don't exist yet.
+- 🔲 **BRAND-10 — Update `mockups/ai-visibility-audit.html`** *(P3, ~2 min, optional)* — still references Vetra. Outside the build, kept for design context. Update or archive on next visit to that file.
+- 🔲 **BRAND-11 — Convention reminder** *(P3, 0 min)* — new SQL migrations should use "Zonna voice" in comments. Committed migrations are immutable history; don't edit them.
+- 🔲 **BRAND-12 — Rebrand `scripts/generate-coaching-review.ts`** *(P3, ~10 min)* — hardcoded "Zona" in the Claude Desktop prompt template. Refactor to import `BRAND.name`.
+- 🔲 **BRAND-13 — Rename GitHub repo `zona` → `zonna`** *(P3, ~5 min)* — currently push goes via the redirect (`zona` → was renamed from `rts-training-hub`; now stale). After rename: `git remote set-url origin https://github.com/Service-Nerd/zonna.git` locally.
+
+### General
 
 - 🔲 **Tier-divergent rendering utility** — once a second tier-divergent component lands (after `GeneratingCeremony.tsx`), centralise the `tier` prop pattern into shared context or typed convention. Document in `ui-patterns.md`
 - 🔲 **Plan history UI** — data is archived to `plan_archive` table (migration `20260424`); browse + restore UI deferred. Schema has `race_name`, `race_date`, `archived_at` for future list display
@@ -178,7 +198,7 @@ All six locked. Implementation spec:
 1. ✅ **Similarity definition:** three-axis match — distance within ±15%, same `session.type`, same observed HR band (low/mid/high). Distance alone is too loose; type alone misses the "went too hard on easy" case.
 2. ✅ **Minimum cohort size:** 3 for similarity (post-run line, Today pre-run band), 5 for trend detection (Coach screen). Trend claim is stronger so requires more signal.
 3. ✅ **Time window:** 12-month default; auto-shrink to 6 months when cohort > 30 in the last 6 months. **Source under HealthKit pivot:** cohort reads from `strava_activities` table source-mixed — HKWorkout history (every Apple Watch user has months) plus Strava activities for users who connect both. Pre-pivot text said "dense Strava users"; replace with "dense HealthKit + Strava users." The 6-month threshold is more commonly hit under HealthKit primary because HKWorkout coverage is broader than Strava ever was.
-4. ✅ **Voice for regression:** neutral observation only, no cause speculation. Matches existing VETRA voice rule ("honest, slightly sarcastic, never motivational"). Example: *"Pace at Z2 has slipped 8s/km over 6 weeks. Worth checking sleep and load."* Causes belong to the user.
+4. ✅ **Voice for regression:** neutral observation only, no cause speculation. Matches existing ZONNA voice rule ("honest, slightly sarcastic, never motivational"). Example: *"Pace at Z2 has slipped 8s/km over 6 weeks. Worth checking sleep and load."* Causes belong to the user.
 5. ✅ **Per-run vs cohort:** both, surfaced separately. Per-run for similarity (post-run line + Today band: "this run vs your last 5"). Cohort average for trend (Coach screen: "your Z2 pace has improved 12s/km"). Don't conflate.
 6. ✅ **Tier gate:** fully PAID. Slots into the existing `PAID_ONLY_ONGOING` gate in `lib/plan/featureGates.ts:31` — exactly the "ongoing intelligence layer" pattern that gate exists for. Free users get the plan; paid users get intelligence about how they're running it.
 

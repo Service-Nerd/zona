@@ -1,6 +1,6 @@
-# Brand Copy Alignment — Vetra
+# Brand Copy Alignment — Zonna
 
-**Authority**: This document is the single reference for every user-visible copy string in Vetra.
+**Authority**: This document is the single reference for every user-visible copy string in Zonna.
 It maps canonical values → surfaces → divergences → execution list.
 
 When `lib/brand.ts` and this doc disagree, `lib/brand.ts` is the truth. Fix this doc.
@@ -17,7 +17,7 @@ This table is the authoritative source of what each value currently is.
 
 | Field | Current value | Usage context |
 |---|---|---|
-| `BRAND.name` | `'Vetra'` | Wordmarks, OG image, `<title>` tag |
+| `BRAND.name` | `'Zonna'` | Wordmarks, OG image, `<title>` tag |
 | `BRAND.tagline` | `"Slow down. You've got a day job."` | Login, welcome, plan-ready, OG image, loading screen |
 | `BRAND.brandStatement` | `"You can't outrun your easy days."` | Privacy footer, App Store description, editorial only (not login — tagline owns that space) |
 | `BRAND.signupSub` | `'14 days, no limits. After that, you decide.'` | Sign-up sub-text only (not sign-in) |
@@ -39,7 +39,7 @@ Every screen/component with user-visible copy, what it currently shows, and its 
 
 | Surface element | Current value | Source |
 |---|---|---|
-| Wordmark | `'Vetra'` | **Hardcoded** (should be `BRAND.name`) |
+| Wordmark | `'Zonna'` | **Hardcoded** (should be `BRAND.name`) |
 | Under wordmark | `"Slow down. You've got a day job."` | `BRAND.tagline` ✓ |
 | Sign-in sub | `'Access your training plan.'` | **Hardcoded** (no `BRAND` field exists) |
 | Sign-up sub | `'14 days, no limits. After that, you decide.'` | `BRAND.signupSub` ✓ |
@@ -53,24 +53,24 @@ Every screen/component with user-visible copy, what it currently shows, and its 
 
 | Surface element | Current value | Source |
 |---|---|---|
-| Wordmark | `'Vetra'` | **Hardcoded** (should be `BRAND.name`) |
+| Wordmark | `'Zonna'` | **Hardcoded** (should be `BRAND.name`) |
 | Tagline | `"Slow down. You've got a day job."` | `BRAND.tagline` ✓ |
 
 ### 2.3 Welcome screen — first login (`DashboardClient.tsx` ~line 593)
 
 | Surface element | Current value | Source |
 |---|---|---|
-| Wordmark | `'Vetra'` | **Hardcoded** |
+| Wordmark | `'Zonna'` | **Hardcoded** |
 | Tagline | `"Slow down. You've got a day job."` | `BRAND.tagline` ✓ |
 | Headline | `'Your plan is ready.'` | Hardcoded — contextual UI copy, acceptable |
-| Body 1 | `'Vetra keeps track of your sessions, adapts when things shift, and keeps you focused on what matters — finishing.'` | Hardcoded — **review: verbose, passive, generic** |
-| Body 2 | `'Train with intention. The rest follows.'` | Hardcoded — **review: doesn't sound like Vetra voice** |
+| Body 1 | `'Zonna keeps track of your sessions, adapts when things shift, and keeps you focused on what matters — finishing.'` | Hardcoded — **review: verbose, passive, generic** |
+| Body 2 | `'Train with intention. The rest follows.'` | Hardcoded — **review: doesn't sound like Zonna voice** |
 
 ### 2.4 Plan-ready screen (`DashboardClient.tsx` ~line 860)
 
 | Surface element | Current value | Source |
 |---|---|---|
-| Wordmark | `'Vetra'` | **Hardcoded** |
+| Wordmark | `'Zonna'` | **Hardcoded** |
 | Tagline | `"Slow down. You've got a day job."` | `BRAND.tagline` ✓ |
 | Headline | `'{firstName}, your plan is set.'` / `'Your plan is set.'` | Hardcoded — contextual, acceptable |
 | Sub | `'{n} weeks. One session at a time.'` | Hardcoded — acceptable |
@@ -106,7 +106,7 @@ Loading copy is intentional brand voice — part of the product experience. Not 
 | FREE | "Working out your schedule." → "The 10% rule applies. Even now." → "Building in the deload weeks." → "Almost done." |
 | Reveal | `"There it is. Don't ruin it."` |
 
-**Voice check**: All lines pass. Dry, direct, Vetra-correct.
+**Voice check**: All lines pass. Dry, direct, Zonna-correct.
 
 ### 2.7 Free Coach screen (locked state) (`DashboardClient.tsx` ~line 3587)
 
@@ -118,7 +118,7 @@ Loading copy is intentional brand voice — part of the product experience. Not 
 | Upsell CTA sub | `'Weekly report, session feedback, plan adjustments — all from your Strava data.'` |
 | Upsell button | `'Upgrade →'` |
 
-**Voice check**: Card body is wordy and features `"we'll tell you exactly"` — slightly salesy, doesn't sound like Vetra. Flagged for review.
+**Voice check**: Card body is wordy and features `"we'll tell you exactly"` — slightly salesy, doesn't sound like Zonna. Flagged for review.
 
 ### 2.8 Deload week coaching (`DashboardClient.tsx` ~line 2772)
 
@@ -160,7 +160,7 @@ Loading copy is intentional brand voice — part of the product experience. Not 
 
 | Tag | Value | Source |
 |---|---|---|
-| `<title>` | `'Vetra — Slow down. You've got a day job.'` | `BRAND.name` + `BRAND.tagline` ✓ |
+| `<title>` | `'Zonna — Slow down. You've got a day job.'` | `BRAND.name` + `BRAND.tagline` ✓ |
 | `<meta description>` | `"You can't outrun your easy days."` | `BRAND.brandStatement` ✓ |
 | OG title | same as `<title>` | ✓ |
 | OG description | same as `<meta description>` | ✓ |
@@ -173,13 +173,13 @@ These are the gaps between what the code does and what it should do.
 
 | # | File | Line(s) | Issue | Severity |
 |---|---|---|---|---|
-| DIV-001 | `app/auth/login/page.tsx` | 73 | `'Vetra'` hardcoded — should be `BRAND.name` | Low — functionally identical until name changes |
+| DIV-001 | `app/auth/login/page.tsx` | 73 | `'Zonna'` hardcoded — should be `BRAND.name` | Low — functionally identical until name changes |
 | DIV-002 | `app/auth/login/page.tsx` | 224 | ~~`"Slow down. You're not Kipchoge."` hardcoded~~ | ✅ Fixed 2026-04-24 — removed from login entirely |
-| DIV-003 | `app/dashboard/DashboardClient.tsx` | 603 | `'Vetra'` wordmark hardcoded in Welcome screen | Low |
-| DIV-004 | `app/dashboard/DashboardClient.tsx` | 871 | `'Vetra'` wordmark hardcoded in Plan-ready screen | Low |
+| DIV-003 | `app/dashboard/DashboardClient.tsx` | 603 | `'Zonna'` wordmark hardcoded in Welcome screen | Low |
+| DIV-004 | `app/dashboard/DashboardClient.tsx` | 871 | `'Zonna'` wordmark hardcoded in Plan-ready screen | Low |
 | DIV-005 | `app/privacy/page.tsx` | 262 | `"You can't outrun your easy days."` via `BRAND.brandStatement` | ✅ Resolved — now uses canonical constant |
 | DIV-006 | `app/auth/login/page.tsx` | 98 | `'Access your training plan.'` (sign-in sub) has no `BRAND` field — it's the only hardcoded sub with no canonical home | Low — but needs a field if this copy ever changes |
-| DIV-007 | `app/dashboard/DashboardClient.tsx` | 615–619 | Welcome screen body copy doesn't pass Vetra voice check — passive and generic | Copy quality — not a code defect |
+| DIV-007 | `app/dashboard/DashboardClient.tsx` | 615–619 | Welcome screen body copy doesn't pass Zonna voice check — passive and generic | Copy quality — not a code defect |
 | DIV-008 | `app/dashboard/DashboardClient.tsx` | 3598 | Free Coach card body `"we'll tell you exactly"` is slightly salesy | Copy quality — not a code defect |
 | DIV-009 | `docs/canonical/brand.md` | 9 | Listed tagline was old brand statement — **fixed in same commit as this doc** | ✅ Fixed |
 
@@ -195,10 +195,10 @@ These are mechanical substitutions. No design decisions needed.
 
 | # | File | Change |
 |---|---|---|
-| E-001 | `app/auth/login/page.tsx:73` | Replace `'Vetra'` wordmark literal with `{BRAND.name}` |
+| E-001 | `app/auth/login/page.tsx:73` | Replace `'Zonna'` wordmark literal with `{BRAND.name}` |
 | E-002 | `app/auth/login/page.tsx:224` | ✅ Done — removed from login entirely (2026-04-24) |
-| E-003 | `app/dashboard/DashboardClient.tsx:603` | Replace `'Vetra'` with `{BRAND.name}` |
-| E-004 | `app/dashboard/DashboardClient.tsx:871` | Replace `'Vetra'` with `{BRAND.name}` |
+| E-003 | `app/dashboard/DashboardClient.tsx:603` | Replace `'Zonna'` with `{BRAND.name}` |
+| E-004 | `app/dashboard/DashboardClient.tsx:871` | Replace `'Zonna'` with `{BRAND.name}` |
 | E-005 | `app/privacy/page.tsx:262` | ✅ Done — using `{BRAND.brandStatement}` (2026-04-24) |
 | E-006 | `lib/brand.ts` | Add `signinSub: 'Access your training plan.'` to `BRAND` object, then wire `app/auth/login/page.tsx:98` to use it |
 
@@ -208,8 +208,8 @@ These require copy decisions, not just code changes. Treat as product work.
 
 | # | Location | Current | Issue | Suggested alternative |
 |---|---|---|---|---|
-| E-007 | Welcome screen body 1 | `'Vetra keeps track of your sessions, adapts when things shift, and keeps you focused on what matters — finishing.'` | Two clauses, passive, generic — could be any fitness app | `'Your plan does the thinking. You do the running.'` |
-| E-007 | Welcome screen body 2 | `'Train with intention. The rest follows.'` | Sounds like a yoga studio, not Vetra | `'Don't overthink it. Just do today's session.'` |
+| E-007 | Welcome screen body 1 | `'Zonna keeps track of your sessions, adapts when things shift, and keeps you focused on what matters — finishing.'` | Two clauses, passive, generic — could be any fitness app | `'Your plan does the thinking. You do the running.'` |
+| E-007 | Welcome screen body 2 | `'Train with intention. The rest follows.'` | Sounds like a yoga studio, not Zonna | `'Don't overthink it. Just do today's session.'` |
 | E-008 | Free Coach card body | `"Connect Strava and run a few sessions. We'll tell you exactly what's working — and what isn't."` | `"we'll tell you exactly"` is salesy; `"We'll"` is implicit AI promise | `"Run a few sessions. We'll tell you whether you're doing the easy ones too hard."` (or drop the card body entirely — the upsell CTA carries the message) |
 
 ### 4.3 Pre-App Store copy review
@@ -220,7 +220,7 @@ These items are acceptable now but need a pass before App Store submission.
 |---|---|---|
 | E-009 | UpgradeScreen legal copy | `'Auto-renews. Cancel any time. 14-day free trial included on first subscription.'` — Apple requires specific subscription terms disclosure. Exact wording needs legal/compliance review. |
 | E-010 | `BRAND.signupSub` | `'14 days, no limits. After that, you decide.'` — `"no limits"` must be accurate for the free tier. Confirm the free tier is genuinely uncapped during the trial (it is — trial users get full paid access). |
-| E-011 | App Store description | Will need a version of `BRAND.brandStatement` + feature bullets. Not written yet. Write against Vetra voice when App Store Connect setup begins. |
+| E-011 | App Store description | Will need a version of `BRAND.brandStatement` + feature bullets. Not written yet. Write against Zonna voice when App Store Connect setup begins. |
 
 ---
 

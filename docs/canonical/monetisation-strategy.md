@@ -1,12 +1,12 @@
-# Monetisation Strategy — Vetra
+# Monetisation Strategy — Zonna
 
-**Authority**: This document defines the monetisation model, tier definitions, and product principles governing how Vetra is sold. All feature build decisions must be evaluated against the FREE/PAID split defined here. Cross-reference `docs/canonical/feature-registry.md` for the full feature list and tier assignments.
+**Authority**: This document defines the monetisation model, tier definitions, and product principles governing how Zonna is sold. All feature build decisions must be evaluated against the FREE/PAID split defined here. Cross-reference `docs/canonical/feature-registry.md` for the full feature list and tier assignments.
 
 ---
 
 ## Model: Hybrid Reverse Trial (Option A)
 
-Vetra uses a **Hybrid Reverse Trial** model with **Option A** downgrade semantics.
+Zonna uses a **Hybrid Reverse Trial** model with **Option A** downgrade semantics.
 
 1. **Day 0 — Full access**: Every new user gets full access to all features (including PAID tier) for 14 days. No paywall, no friction, no credit card required.
 2. **Day 14 — Graceful downgrade**: After 14 days the account downgrades to the free tier automatically. The user retains all their data **and the plan they built during the trial**. PAID *ongoing intelligence* features become gated.

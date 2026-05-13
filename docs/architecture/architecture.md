@@ -1,8 +1,8 @@
-# Architecture — Vetra
+# Architecture — Zonna
 
 ## System Overview
 
-Vetra is a Next.js App Router application backed by Supabase,
+Zonna is a Next.js App Router application backed by Supabase,
 deployed on Vercel. Training plan data lives in a GitHub Gist
 (JSON), fetched fresh on each request. Strava provides run
 data via OAuth.
