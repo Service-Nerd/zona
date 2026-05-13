@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
+import { NATIVE_STRAVA_CALLBACK } from '@/lib/native'
 
-// Native callback prefix — same scheme registered in iOS Info.plist for the
-// Google OAuth flow. The Capacitor app catches anything at this URL via
+// NATIVE_STRAVA_CALLBACK is the same scheme registered in iOS Info.plist for
+// the Google OAuth flow. The Capacitor app catches anything at this URL via
 // `appUrlOpen` and routes it (see components/CapacitorBoot.tsx).
-const NATIVE_STRAVA_CALLBACK = 'app.vetra.ios://strava-callback'
 
 /**
  * Build the success/failure redirect URL based on origin platform.

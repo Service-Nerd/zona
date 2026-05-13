@@ -1,5 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Zonna brand mark — concentric zone rings, light variant. -->
+  <!-- Source of truth for colour tokens: app/globals.css. SVG cannot reference -->
+  <!-- CSS variables directly; resolved hex values mirror those tokens. -->
+
+  <!-- var(--bg) -->
   <rect width="1024" height="1024" rx="225" fill="#F3F0EB"/>
-  <circle cx="512" cy="512" r="320" fill="none" stroke="#1A1A1A" stroke-width="36"/>
-  <circle cx="512" cy="512" r="68" fill="#6B8E6B"/>
+
+  <!-- Zone 5 (outermost) — var(--ink) @ 0.15 opacity -->
+  <circle cx="512" cy="512" r="440" fill="none" stroke="#1A1A1A" stroke-opacity="0.15" stroke-width="26"/>
+  <!-- Zone 4 — var(--ink) @ 0.28 opacity -->
+  <circle cx="512" cy="512" r="355" fill="none" stroke="#1A1A1A" stroke-opacity="0.28" stroke-width="26"/>
+  <!-- Zone 3 — var(--ink) @ 0.45 opacity -->
+  <circle cx="512" cy="512" r="270" fill="none" stroke="#1A1A1A" stroke-opacity="0.45" stroke-width="26"/>
+  <!-- Zone 2 — var(--moss) full opacity -->
+  <circle cx="512" cy="512" r="185" fill="none" stroke="#6B8E6B" stroke-width="26"/>
+  <!-- Zone 1 (centre) — var(--moss) solid fill -->
+  <circle cx="512" cy="512" r="80" fill="#6B8E6B"/>
 </svg>

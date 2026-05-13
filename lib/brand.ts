@@ -9,7 +9,7 @@
  */
 
 export const BRAND = {
-  name: 'Vetra',
+  name: 'Zonna',
 
   /**
    * The AI coach's name. Used in CoachByline, CoachNoteBlock, coach identity card,
@@ -21,8 +21,9 @@ export const BRAND = {
   /**
    * App Store subtitle (30 chars max). Discovery surfaces: App Store, landing page, paid ads.
    * Functional and outward-facing — describes what the app does.
+   * Length budget: 29/30 chars. Do not exceed without re-trimming.
    */
-  appStoreSubtitle: 'Training plans that stop you overtraining.',
+  appStoreSubtitle: 'Plans that stop overtraining.',
 
   /** Primary tagline. Use on login, loading, OG image, in-app footer moments. Names the user. */
   tagline: "Slow down. You've got a day job.",
@@ -41,15 +42,22 @@ export const BRAND = {
   signupSub: '14 days, no limits. After that, you decide.',
 
   /**
-   * Raw hex values for next/og ImageResponse — CSS variables don't work there.
-   * DEPRECATED — remove once OG image regenerated with Warm Slate palette (see ADR-007).
-   * These reference the retired System B palette; kept only to avoid breaking the OG route
-   * before the visual update lands in Phase 2.
+   * Resolved hex values for the next/og ImageResponse route. @vercel/og runs in
+   * the edge runtime without a DOM, so CSS custom properties from globals.css
+   * cannot resolve there — these values mirror the Warm Slate tokens 1:1 and
+   * must be kept in sync with app/globals.css.
+   *
+   * Token mapping:
+   *   bg   ← var(--bg)
+   *   ink  ← var(--ink)
+   *   moss ← var(--moss)
+   *   mute ← var(--mute)
    */
   og: {
-    navy:     '#0B132B', // DEPRECATED — retire with Phase 2 OG image update
-    teal:     '#5BC0BE', // DEPRECATED — retire with Phase 2 OG image update
-    offWhite: '#F7F9FB', // DEPRECATED — retire with Phase 2 OG image update
+    bg:   '#F3F0EB',
+    ink:  '#1A1A1A',
+    moss: '#6B8E6B',
+    mute: '#8A857D',
   },
 
   /**

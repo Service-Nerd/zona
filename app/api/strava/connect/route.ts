@@ -4,8 +4,9 @@ import { NextResponse } from 'next/server'
 //
 // Native variant: clients on iOS pass `?platform=ios`. We encode that into
 // Strava's opaque `state` param ("userId|ios"). The callback decodes it and
-// redirects to the `app.vetra.ios://strava-callback` deep link instead of the
-// in-browser `/dashboard?strava=connected` URL — same pattern as Google OAuth.
+// redirects to the NATIVE_STRAVA_CALLBACK deep link (see lib/native.ts)
+// instead of the in-browser `/dashboard?strava=connected` URL — same pattern
+// as Google OAuth.
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const userId = searchParams.get('user_id')

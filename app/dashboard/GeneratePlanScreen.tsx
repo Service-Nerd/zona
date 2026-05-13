@@ -940,7 +940,7 @@ export default function GeneratePlanScreen({
   const ctaLabel       = isLastStep ? 'Generate my plan →' : 'Continue'
 
   const welcomeOverride = isOnboarding && currentSubStep === 'distance'
-    ? { title: 'Welcome to Vetra.', subtitle: "Let's build your plan. Start with the distance." } // TODO: brand voice review — sentences referencing the product name may benefit from rewording in a follow-up content polish pass.
+    ? { title: `Welcome to ${BRAND.name}.`, subtitle: "Let's build your plan. Start with the distance." } // TODO: brand voice review — sentences referencing the product name may benefit from rewording in a follow-up content polish pass.
     : null
 
   const title    = welcomeOverride?.title    ?? stepMeta.title

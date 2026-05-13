@@ -3,7 +3,7 @@
 // zone-discipline metric, the post-run feedback prompt, and the zone
 // education sheet.
 //
-// Doctrine: Vetra's coaching is polarised (CoachingPrinciples §1). Most
+// Doctrine: Zonna's coaching is polarised (CoachingPrinciples §1). Most
 // running is easy (Z2). The hard stuff is genuinely hard (Z3 / Z4-5). The
 // "right zone for the session" frames the app, not "always Z2".
 

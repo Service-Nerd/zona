@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Zonna brand mark — maskable variant. -->
+  <!-- 20% safe-zone padding: all rings scaled to 80% so Android maskable -->
+  <!-- cropping (which can clip up to 20% on any side) cannot reach the mark. -->
+  <!-- Background fills to the canvas edge — no rounded corners; the OS applies -->
+  <!-- whatever mask it wants. Colour tokens live in app/globals.css. -->
+
+  <!-- var(--bg) — fills to edge for maskable cropping -->
+  <rect width="1024" height="1024" fill="#F3F0EB"/>
+
+  <!-- Zone 5 (outermost, 80% safe-zone scale) — var(--ink) @ 0.15 opacity -->
+  <circle cx="512" cy="512" r="352" fill="none" stroke="#1A1A1A" stroke-opacity="0.15" stroke-width="22"/>
+  <!-- Zone 4 — var(--ink) @ 0.28 opacity -->
+  <circle cx="512" cy="512" r="284" fill="none" stroke="#1A1A1A" stroke-opacity="0.28" stroke-width="22"/>
+  <!-- Zone 3 — var(--ink) @ 0.45 opacity -->
+  <circle cx="512" cy="512" r="216" fill="none" stroke="#1A1A1A" stroke-opacity="0.45" stroke-width="22"/>
+  <!-- Zone 2 — var(--moss) full opacity -->
+  <circle cx="512" cy="512" r="148" fill="none" stroke="#6B8E6B" stroke-width="22"/>
+  <!-- Zone 1 (centre) — var(--moss) solid fill -->
+  <circle cx="512" cy="512" r="64" fill="#6B8E6B"/>
+</svg>

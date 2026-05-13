@@ -1,4 +1,4 @@
-// SessionCard — Vetra Phase 2 shared component
+// SessionCard — Zonna Phase 2 shared component
 // Runna-style: left accent bar + content block + right metadata.
 // Handles four states: future (default), current, done, skipped.
 // Session colour always from lib/session-types — never duplicated here.

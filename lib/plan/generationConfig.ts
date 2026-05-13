@@ -262,7 +262,7 @@ export const GENERATION_CONFIG = {
   // ── Quality session frequency (CoachingPrinciples §8) ───────────────────────
   // OVERRIDE — rebuild spec proposed 3 for experienced. Set to 2 on the basis
   // that the third quality session is rarely accommodated by life and consistently
-  // produces the symptoms Vetra exists to prevent. See CoachingPrinciples §8.
+  // produces the symptoms Zonna exists to prevent. See CoachingPrinciples §8.
   QUALITY_SESSIONS_PER_WEEK_MAX: {
     beginner:     0,
     intermediate: 2,
@@ -330,7 +330,7 @@ export const GENERATION_CONFIG = {
   WEEK_1_2_LONG_RUN_CAP_MULTIPLIER: 1.10,
 
   // ── VDOT conservatism (CoachingPrinciples §10) ──────────────────────────────
-  // The signature Vetra move: err on the side of restraint when in doubt.
+  // The signature Zonna move: err on the side of restraint when in doubt.
   VDOT_CONSERVATIVE_DISCOUNT_PCT: 3,
   VDOT_STALE_BENCHMARK_ADDITIONAL_DISCOUNT_PCT: 5,
   VDOT_STALE_BENCHMARK_MONTHS: 6,

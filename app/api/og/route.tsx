@@ -1,9 +1,21 @@
 import { ImageResponse } from 'next/og'
 import { BRAND } from '@/lib/brand'
 
-const OG = BRAND.og
-
 export const runtime = 'edge'
+
+/**
+ * OG image generator — Warm Slate palette + Zonna wordmark.
+ *
+ * Architecture:
+ * - All copy sourced from BRAND.* constants (lib/brand.ts) — never hardcoded.
+ * - Colour values sourced from BRAND.og (lib/brand.ts), which mirrors the
+ *   Warm Slate tokens in app/globals.css. @vercel/og runs in the edge runtime
+ *   without a DOM so CSS custom properties don't resolve here; BRAND.og is
+ *   the single source of truth for the resolved hex values this route uses.
+ * - The double-letter accent position is derived from BRAND.name at runtime;
+ *   if a future rename removes the doubled letters the wordmark falls back to
+ *   plain rendering.
+ */
 
 async function loadFont(family: string, weight: number): Promise<ArrayBuffer> {
   const css = await fetch(
@@ -16,10 +28,32 @@ async function loadFont(family: string, weight: number): Promise<ArrayBuffer> {
   return fetch(url).then(r => r.arrayBuffer())
 }
 
+function splitOnDoubleLetter(name: string): [string, string, string] | null {
+  const lower = name.toLowerCase()
+  for (let i = 0; i < lower.length - 1; i++) {
+    if (lower[i] === lower[i + 1]) {
+      return [name.slice(0, i), name.slice(i, i + 2), name.slice(i + 2)]
+    }
+  }
+  return null
+}
+
 export async function GET() {
-  const [spaceGrotesk] = await Promise.all([
-    loadFont('Space Grotesk', 700),
+  const [interBlack, interRegular] = await Promise.all([
+    loadFont('Inter', 800),
+    loadFont('Inter', 400),
   ])
+
+  const split = splitOnDoubleLetter(BRAND.name)
+  const wordmark = split
+    ? (
+        <span>
+          {split[0]}
+          <span style={{ color: BRAND.og.moss }}>{split[1]}</span>
+          {split[2]}
+        </span>
+      )
+    : <span>{BRAND.name}</span>
 
   return new ImageResponse(
     (
@@ -29,47 +63,60 @@ export async function GET() {
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'flex-end',
-          background: OG.navy,
+          justifyContent: 'space-between',
+          background: BRAND.og.bg,
           padding: '64px 72px',
           position: 'relative',
+          fontFamily: 'Inter',
         }}
       >
-        {/* Left accent bar — mirrors session card visual language */}
-        <div
+        {/* Decorative concentric-rings watermark — anchored right, partially -->
+            off-canvas so the mark feels embedded rather than placed. */}
+        <svg
+          viewBox="0 0 1024 1024"
+          width={620}
+          height={620}
           style={{
             position: 'absolute',
-            top: 0, left: 0, bottom: 0,
-            width: '6px',
-            background: OG.teal,
-          }}
-        />
-
-        {/* Wordmark */}
-        <div
-          style={{
-            fontFamily: 'Space Grotesk',
-            fontSize: '52px',
-            fontWeight: 700,
-            color: OG.teal,
-            letterSpacing: '0.06em',
-            marginBottom: '20px',
-            lineHeight: 1,
+            right: -140,
+            top: 5,
+            opacity: 0.08,
           }}
         >
-          {BRAND.name}
-        </div>
+          {/* All rings at single watermark opacity 0.08 (applied at svg level). */}
+          <circle cx={512} cy={512} r={440} fill="none" stroke={BRAND.og.ink} strokeWidth={26} />
+          <circle cx={512} cy={512} r={355} fill="none" stroke={BRAND.og.ink} strokeWidth={26} />
+          <circle cx={512} cy={512} r={270} fill="none" stroke={BRAND.og.ink} strokeWidth={26} />
+          <circle cx={512} cy={512} r={185} fill="none" stroke={BRAND.og.ink} strokeWidth={26} />
+          <circle cx={512} cy={512} r={80} fill={BRAND.og.ink} />
+        </svg>
 
-        {/* Tagline */}
+        {/* Top-left: wordmark with NN moss device */}
         <div
           style={{
-            fontFamily: 'Space Grotesk',
-            fontSize: '44px',
-            fontWeight: 700,
-            color: OG.offWhite,
-            letterSpacing: '-0.5px',
-            lineHeight: 1.15,
-            maxWidth: '900px',
+            fontFamily: 'Inter',
+            fontSize: 48,
+            fontWeight: 800,
+            color: BRAND.og.ink,
+            letterSpacing: '-0.03em',
+            lineHeight: 1,
+            display: 'flex',
+          }}
+        >
+          {wordmark}
+        </div>
+
+        {/* Bottom-left: tagline in --mute */}
+        <div
+          style={{
+            fontFamily: 'Inter',
+            fontSize: 24,
+            fontWeight: 400,
+            color: BRAND.og.mute,
+            letterSpacing: '-0.01em',
+            lineHeight: 1.25,
+            maxWidth: 760,
+            display: 'flex',
           }}
         >
           {BRAND.tagline}
@@ -80,12 +127,8 @@ export async function GET() {
       width: 1200,
       height: 630,
       fonts: [
-        {
-          name: 'Space Grotesk',
-          data: spaceGrotesk,
-          style: 'normal',
-          weight: 700,
-        },
+        { name: 'Inter', data: interBlack,   style: 'normal', weight: 800 },
+        { name: 'Inter', data: interRegular, style: 'normal', weight: 400 },
       ],
     }
   )

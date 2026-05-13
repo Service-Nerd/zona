@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BRAND, PRICING } from '@/lib/brand'
+import { Wordmark } from '@/components/ui/Wordmark'
 
 export const metadata: Metadata = {
   title: `Terms of Service — ${BRAND.name}`,
@@ -28,15 +29,7 @@ export default function TermsPage() {
         background: 'var(--bg)',
         zIndex: 10,
       }}>
-        <span style={{
-          fontFamily: 'var(--font-brand)',
-          fontSize: '20px',
-          fontWeight: 500,
-          letterSpacing: '0.08em',
-          color: 'var(--accent)',
-        }}>
-          {BRAND.name}
-        </span>
+        <Wordmark size="sm" />
         <Link
           href="/auth/login"
           style={{
@@ -107,8 +100,8 @@ export default function TermsPage() {
         </Section>
 
         <Section title="Who we are">
-          <P>{BRAND.name} is operated by Russ (service-nerd), based in the United Kingdom. The service is available at <strong>zona.app</strong> {/* TODO: update to vetra.run when domain migrates */} and via the App Store and Google Play.</P>
-          <P>Contact: <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update to vetra.run when domain migrates */}.</P>
+          <P>{BRAND.name} is operated by Russ (service-nerd), based in the United Kingdom. The service is available at <strong>zona.app</strong> {/* TODO: update domain when migration target decided */} and via the App Store and Google Play.</P>
+          <P>Contact: <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update domain when migration target decided */}.</P>
         </Section>
 
         <Section title="Your account">
@@ -229,7 +222,7 @@ export default function TermsPage() {
             marginTop: '16px',
           }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px', fontWeight: 500 }}>{BRAND.name}</div>
-            {/* TODO: update to vetra.run when domain migrates */}
+            {/* TODO: update domain when migration target decided */}
             <A href="mailto:support@zona.app">support@zona.app</A>
           </div>
         </Section>

@@ -25,6 +25,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { BRAND } from '@/lib/brand'
+import { Wordmark } from '@/components/ui/Wordmark'
 
 export const dynamic = 'force-dynamic'  // auth check must run per-request
 
@@ -50,12 +51,7 @@ export default async function Home() {
         padding: '20px 24px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <div style={{
-          fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600,
-          letterSpacing: '0.06em', color: 'var(--ink)',
-        }}>
-          {BRAND.name}
-        </div>
+        <Wordmark size="sm" />
         <Link href="/auth/login" style={{
           fontSize: '14px', fontWeight: 500, color: 'var(--ink-2)',
           textDecoration: 'none', padding: '8px 14px',

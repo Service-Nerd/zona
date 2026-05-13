@@ -1,4 +1,4 @@
-// RPEScale — Vetra Phase 2 shared component
+// RPEScale — Zonna Phase 2 shared component
 // 10-square filling RPE selector. Squares 1..(value-1) filled dark, square (value) moss selected.
 // See docs/canonical/ui-patterns.md § RPEScale and docs/alignment/phase-2-decisions.md D-007.
 

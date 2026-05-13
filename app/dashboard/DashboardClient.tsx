@@ -15,6 +15,7 @@ import { isTrialActive } from '@/lib/trial'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
 import { BRAND } from '@/lib/brand'
+import { Wordmark } from '@/components/ui/Wordmark'
 import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
 import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
 import RestraintCard, { RestraintCardSkeleton } from '@/components/shared/RestraintCard'
@@ -967,13 +968,9 @@ export default function DashboardClient() {
         background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
         gap: '0',
       }}>
-        {/* Vetra wordmark */}
+        {/* Brand wordmark — Wordmark component sources text from BRAND.name */}
         <div style={{ marginBottom: '10px' }}>
-          <span className="wordmark-splash" style={{
-            fontFamily: 'var(--font-brand)',
-            fontSize: '38px', fontWeight: 500, letterSpacing: '0.08em',
-            color: 'var(--accent)', lineHeight: 1,
-          }}>{BRAND.name}</span>
+          <Wordmark size="md" className="wordmark-splash" />
         </div>
 
         {/* Tagline */}
@@ -999,9 +996,9 @@ export default function DashboardClient() {
         background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
         padding: '32px 24px',
       }}>
-        {/* Vetra wordmark */}
-        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '36px', fontWeight: 500, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: '8px' }}>
-          {BRAND.name}
+        {/* Brand wordmark — Wordmark component sources text from BRAND.name */}
+        <div style={{ marginBottom: '8px' }}>
+          <Wordmark size="md" />
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '48px' }}>
           {BRAND.tagline}
@@ -1014,7 +1011,7 @@ export default function DashboardClient() {
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '12px' }}>
             {/* TODO: brand voice review — sentences referencing the product name may benefit from rewording in a follow-up content polish pass. */}
-            Vetra keeps track of your sessions, adapts when things shift, and keeps you focused on what matters — finishing.
+            {BRAND.name} keeps track of your sessions, adapts when things shift, and keeps you focused on what matters — finishing.
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '48px' }}>
             Train with intention. The rest follows.
@@ -1349,9 +1346,9 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, onDismiss }: {
       background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
       padding: '32px 24px',
     }}>
-      {/* Brand mark */}
-      <div style={{ fontFamily: 'var(--font-brand)', fontSize: '32px', fontWeight: 500, letterSpacing: '0.08em', color: 'var(--accent)', marginBottom: '6px' }}>
-        {BRAND.name}
+      {/* Brand mark — Wordmark component sources text from BRAND.name */}
+      <div style={{ marginBottom: '6px' }}>
+        <Wordmark size="md" />
       </div>
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
         {BRAND.tagline}
@@ -1715,7 +1712,7 @@ function getCompletionCopy(type: string): { headline: string; body: string } {
   }
 }
 
-// ── Vetra REFLECT RESPONSE ────────────────────────────────────────────────
+// ── Zonna REFLECT RESPONSE ────────────────────────────────────────────────
 
 function getReflectResponse(sessionType: string, rpe: number | null, fatigueTag: string | null): string {
   if (rpe === null && fatigueTag) {
@@ -2127,7 +2124,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           </div>
         </div>
 
-        {/* Vetra response */}
+        {/* Zonna response */}
         <div style={{
           minHeight: '48px', marginBottom: '20px',
           opacity: reflectResponse ? 1 : 0,
@@ -3249,7 +3246,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
               </div>
             </div>
 
-            {/* Vetra response */}
+            {/* Zonna response */}
             <div style={{
               minHeight: '48px', marginBottom: '16px',
               opacity: reflectResponse ? 1 : 0,
@@ -3870,7 +3867,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked }: {
           Reshape plan
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)', lineHeight: 1.5, marginBottom: '28px' }}>
-          {status === 'loading' ? 'Checking your recent sessions for adjustment signals.' : 'Here\'s what Vetra found.'}
+          {status === 'loading' ? 'Checking your recent sessions for adjustment signals.' : `Here's what ${BRAND.name} found.`}
         </div>
       </div>
 
@@ -4300,16 +4297,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         alignItems: 'center',
         gap: '6px',
       }}>
-        <span className="wordmark-today" style={{
-          fontFamily: 'var(--font-ui)',
-          fontSize: '14px',
-          fontWeight: 800,
-          color: 'var(--ink)',
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-        }}>
-          {BRAND.name.toUpperCase()}
-        </span>
+        <Wordmark size="xs" className="wordmark-today" />
         {/* Moss dot with soft halo */}
         <div style={{ position: 'relative', width: '8px', height: '8px', flexShrink: 0 }}>
           <div style={{
@@ -6273,8 +6261,8 @@ function StravaConnectionRow() {
             <button onClick={async () => {
               if (!userId) return
               // Native: open Strava OAuth in SFSafariViewController. Returns
-              // via the app.vetra.ios://strava-callback deep link (handled in
-              // CapacitorBoot.tsx). `platform=ios` param threads through to
+              // via NATIVE_STRAVA_CALLBACK (see lib/native.ts) — handled in
+              // CapacitorBoot.tsx. `platform=ios` param threads through to
               // the OAuth state so the callback knows where to redirect back.
               // Web: legacy full-page redirect. Dynamic Capacitor import
               // keeps the web bundle from paying for the native shims.
@@ -6301,7 +6289,7 @@ function StravaConnectionRow() {
       </div>
       {!isLoading && !connected && (
         <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-          Vetra will read your Strava activities to provide coaching insights. No other data is accessed.
+          {BRAND.name} will read your Strava activities to provide coaching insights. No other data is accessed.
         </div>
       )}
     </div>
@@ -6438,7 +6426,7 @@ function AppleHealthConnectionRow() {
       </div>
       {!isLoading && !connected && (
         <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-          Vetra reads your runs from Apple Health to coach you. Read-only — Vetra never writes to Apple Health.
+          {BRAND.name} reads your runs from Apple Health to coach you. Read-only — {BRAND.name} never writes to Apple Health.
         </div>
       )}
     </div>
@@ -7267,8 +7255,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2px' }}>Auto-adjust</div>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
                     {dynamicAdjustmentsEnabled
-                      ? 'Vetra checks automatically and suggests changes when something looks off.'
-                      : 'Plan stays fixed. Vetra tracks data but won\'t suggest changes.'}
+                      ? `${BRAND.name} checks automatically and suggests changes when something looks off.`
+                      : `Plan stays fixed. ${BRAND.name} tracks data but won't suggest changes.`}
                   </div>
                 </div>
                 <button
@@ -7436,7 +7424,7 @@ function AdminScreen({ onBack, onImpersonate }: {
 
 // ── RUN FEEDBACK CARD ─────────────────────────────────────────────────────
 
-// Verdict → colour token + Vetra-voice headline. Single source of truth for run-feedback voice.
+// Verdict → colour token + Zonna-voice headline. Single source of truth for run-feedback voice.
 // Maps both legacy verdict names (nailed/close/off_target/concerning) and engine names
 // (strong/good/ok/drifted/hard) to keep the surface stable across rule-engine versions.
 function getVerdictVoice(verdict: string): { accent: string; headline: string } {
@@ -7717,7 +7705,7 @@ function RunFeedbackCard({
           </div>
         )}
 
-        {/* Vetra-voice headline */}
+        {/* Zonna-voice headline */}
         <div style={{
           fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 700,
           color: 'var(--coach-ink)', letterSpacing: '-0.1px', lineHeight: 1.4,

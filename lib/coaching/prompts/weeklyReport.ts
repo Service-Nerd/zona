@@ -2,7 +2,7 @@ import type { Plan } from '@/types/plan'
 import type { InsightPriority, SpotlightSession, WeeklyReportData } from '../weeklyReport'
 import { buildVoiceHeader } from './voiceRules'
 
-// Few-shot examples — Vetra voice for each insight type
+// Few-shot examples — Zonna voice for each insight type
 const FEW_SHOT_EXAMPLES: Partial<Record<InsightPriority, string>> = {
   load_spike: `
 Headline: "You did too much."

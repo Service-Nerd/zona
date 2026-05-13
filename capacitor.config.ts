@@ -8,15 +8,18 @@ import type { CapacitorConfig } from '@capacitor/cli'
 // webDir is required by Capacitor but is not what the app serves at runtime —
 // `public` is fine. server.url overrides it.
 //
-// Update server.url when migrating to the custom domain (vetra.app).
+// Update server.url when migrating to the custom domain (target TBD).
 //
 // Local development: temporarily change server.url to your dev machine, e.g.
 //   url: 'http://192.168.x.x:3000', cleartext: true
 // Then run `npm run dev` and `npx cap run ios`.
 
 const config: CapacitorConfig = {
-  appId: 'app.vetra.ios',
-  appName: 'Vetra',
+  // appId must equal NATIVE_BUNDLE_ID in lib/native.ts. Build-tooling cannot
+  // import TS so the literal lives here; keep in sync on any rename.
+  // appName mirrors BRAND.name from lib/brand.ts for the same reason.
+  appId: 'app.zonna.ios',
+  appName: 'Zonna',
   webDir: 'public',
   // Warm Slate (--bg) — keeps the gap between the splash dismissing and the
   // remote page rendering on-brand instead of showing the default black.

@@ -1,7 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- Zonna brand mark — concentric zone rings, light variant. -->
-  <!-- Served as the root icon for the web app. Source of truth for colour -->
-  <!-- tokens: app/globals.css. Mirrors public/icons/source/zonna-icon-light.svg. -->
+  <!-- Zonna brand mark — light variant. Source SVG for the PWA / iOS icon. -->
+  <!-- Colour tokens live in app/globals.css; resolved hex values mirror them. -->
 
   <!-- var(--bg) -->
   <rect width="1024" height="1024" rx="225" fill="#F3F0EB"/>

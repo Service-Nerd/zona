@@ -6,20 +6,21 @@ import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
 import { createClient } from '@/lib/supabase/client'
 import { BRAND } from '@/lib/brand'
+import { NATIVE_AUTH_CALLBACK } from '@/lib/native'
+import { Wordmark } from '@/components/ui/Wordmark'
 
-// Custom URL scheme registered in ios/App/App/Info.plist. Google OAuth
-// requires SFSafariViewController on iOS (WKWebView is blocked with
-// disallowed_useragent), so on native we open the OAuth URL via
-// @capacitor/browser and return through this scheme. The deep link
-// listener in components/CapacitorBoot.tsx completes the auth.
+// NATIVE_AUTH_CALLBACK is the custom URL scheme registered in
+// ios/App/App/Info.plist. Google OAuth requires SFSafariViewController on iOS
+// (WKWebView is blocked with disallowed_useragent), so on native we open the
+// OAuth URL via @capacitor/browser and return through this scheme. The deep
+// link listener in components/CapacitorBoot.tsx completes the auth.
 //
 // Sign in with Apple on native uses ASAuthorizationController via the
 // @capawesome/capacitor-apple-sign-in plugin (no browser hop), so it
 // returns inline rather than through this URL.
 //
-// Manual one-time setup: this redirect URL must be added in the Supabase
+// Manual one-time setup: NATIVE_AUTH_CALLBACK must be added in the Supabase
 // dashboard at Authentication -> URL Configuration -> Redirect URLs.
-const NATIVE_AUTH_CALLBACK = 'app.vetra.ios://auth-callback'
 
 function generateNonce(): string {
   const arr = new Uint8Array(16)
@@ -58,7 +59,7 @@ export default function LoginPage() {
 
         // iOS path: no clientId/redirectUrl needed — the plugin uses the
         // bundle ID + entitlement directly. Supabase Apple provider must
-        // have `app.vetra.ios` listed in Authorized Client IDs so the
+        // have NATIVE_BUNDLE_ID listed in Authorized Client IDs so the
         // id_token's audience claim verifies.
         const result = await AppleSignIn.signIn({
           scopes: [SignInScope.Email, SignInScope.FullName],
@@ -187,14 +188,11 @@ export default function LoginPage() {
     >
       <div style={{ width: '100%', maxWidth: '340px' }}>
 
-        {/* Brand wordmark — text sourced from BRAND.name */}
+        {/* Brand wordmark — Wordmark component sources text from BRAND.name */}
         <div style={{ marginBottom: '48px', textAlign: 'center' }}>
-          <div style={{
-            fontFamily: 'var(--font-brand)',
-            fontSize: '40px', fontWeight: 500,
-            letterSpacing: '0.08em', color: 'var(--accent)',
-            lineHeight: 1, marginBottom: '8px',
-          }}>{BRAND.name}</div>
+          <div style={{ marginBottom: '8px' }}>
+            <Wordmark size="md" />
+          </div>
           <div style={{
             fontFamily: 'var(--font-ui)',
             fontSize: '11px', color: 'var(--text-muted)',

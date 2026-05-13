@@ -72,7 +72,7 @@ export const VOICE_ANCHOR_INSTRUCTION = `Voice anchor for zone-discipline moment
 
 export interface VoiceHeaderOptions {
   /**
-   * Completes: "You are Kit, Vetra's AI coach — ___."
+   * Completes: "You are Kit, Zonna's AI coach — ___." (string is built from BRAND.coachName + BRAND.name; this docstring tracks the current state.)
    * E.g. "giving session feedback", "writing a weekly check-in".
    */
   role: string

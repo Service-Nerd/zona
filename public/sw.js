@@ -1,6 +1,10 @@
-// Vetra Service Worker — handles Web Push notifications
+// Zonna Service Worker — handles Web Push notifications
 // Push-only worker — no asset caching; PWA assets served fresh from network.
 // Registered by app/dashboard/DashboardClient.tsx on mount (paid/trial users only).
+//
+// Brand-name limitation: this file runs in the Service Worker JS context and
+// cannot import from lib/brand.ts. The literal 'Zonna' below must be kept in
+// sync with BRAND.name. If BRAND.name changes, update the two locations below.
 
 self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()))
@@ -12,10 +16,10 @@ self.addEventListener('push', (event) => {
   try {
     payload = event.data.json()
   } catch {
-    payload = { title: 'Vetra', body: event.data.text() }
+    payload = { title: 'Zonna', body: event.data.text() } // must match BRAND.name
   }
 
-  const title   = payload.title ?? 'Vetra'
+  const title   = payload.title ?? 'Zonna' // must match BRAND.name
   const options = {
     body:    payload.body ?? '',
     icon:    '/icons/icon-192x192.png',

@@ -1,7 +1,9 @@
 {
-  "name": "Vetra",
-  "short_name": "Vetra",
-  "description": "Training plans that stop you overtraining.",
+  "_comment_brand": "name + short_name mirror BRAND.name; description mirrors BRAND.appStoreSubtitle. Source: lib/brand.ts. Keep this file in sync when BRAND constants change — JSON cannot import them.",
+  "_comment_colors": "theme_color = var(--ink), background_color = var(--bg). Source: app/globals.css.",
+  "name": "Zonna",
+  "short_name": "Zonna",
+  "description": "Plans that stop overtraining.",
   "start_url": "/dashboard",
   "display": "standalone",
   "orientation": "portrait",

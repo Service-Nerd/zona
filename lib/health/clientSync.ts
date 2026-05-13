@@ -17,7 +17,7 @@
  *   1. `npx cap sync ios`
  *   2. Xcode → App target → Signing & Capabilities → + Capability → HealthKit
  *   3. (For real device / TestFlight) enable HealthKit entitlement on
- *      app.vetra.ios in the Apple Developer portal.
+ *      NATIVE_BUNDLE_ID (see lib/native.ts) in the Apple Developer portal.
  */
 
 import { authedFetch } from '@/lib/supabase/authedFetch'

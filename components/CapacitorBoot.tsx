@@ -11,7 +11,7 @@
 //    sits below the status bar (not overlaid).
 //
 // 3. Handle the OAuth deep link. Google OAuth opens in SafariViewController
-//    (Browser.open) and returns via app.vetra.ios://auth-callback?code=XXX.
+//    (Browser.open) and returns via NATIVE_AUTH_CALLBACK?code=XXX.
 //    iOS routes the URL into the app via App.appUrlOpen — we exchange the
 //    code for a Supabase session, dismiss the SafariViewController, and
 //    navigate to the dashboard.
@@ -33,9 +33,10 @@ import { Browser } from '@capacitor/browser'
 import { SplashScreen } from '@capacitor/splash-screen'
 import { StatusBar, Style } from '@capacitor/status-bar'
 import { createClient } from '@/lib/supabase/client'
-
-const NATIVE_AUTH_CALLBACK_PREFIX   = 'app.vetra.ios://auth-callback'
-const NATIVE_STRAVA_CALLBACK_PREFIX = 'app.vetra.ios://strava-callback'
+import {
+  NATIVE_AUTH_CALLBACK   as NATIVE_AUTH_CALLBACK_PREFIX,
+  NATIVE_STRAVA_CALLBACK as NATIVE_STRAVA_CALLBACK_PREFIX,
+} from '@/lib/native'
 
 export default function CapacitorBoot() {
   const router = useRouter()

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
+import { Wordmark } from '@/components/ui/Wordmark'
 
 export const metadata: Metadata = {
   title: `Privacy Policy — ${BRAND.name}`,
@@ -28,15 +29,7 @@ export default function PrivacyPage() {
         background: 'var(--bg)',
         zIndex: 10,
       }}>
-        <span style={{
-          fontFamily: 'var(--font-brand)',
-          fontSize: '20px',
-          fontWeight: 500,
-          letterSpacing: '0.08em',
-          color: 'var(--accent)',
-        }}>
-          {BRAND.name}
-        </span>
+        <Wordmark size="sm" />
         <Link
           href="/auth/login"
           style={{
@@ -89,7 +82,7 @@ export default function PrivacyPage() {
             lineHeight: 1.7,
             margin: '0 0 8px',
           }}>
-            We built Vetra to help you train smarter, not to harvest your data. This policy explains what we collect, why, and what you can do about it. Plain English throughout — no legal fog.
+            We built {BRAND.name} to help you train smarter, not to harvest your data. This policy explains what we collect, why, and what you can do about it. Plain English throughout — no legal fog.
           </p>
           <div style={{
             fontFamily: 'var(--font-ui)',
@@ -102,8 +95,8 @@ export default function PrivacyPage() {
         </div>
 
         <Section title="Who we are">
-          <P>Vetra is a running training application operated by Russ (service-nerd). The app is available at <strong>zona.app</strong> {/* TODO: update to vetra.run when domain migrates */} and via the App Store and Google Play.</P>
-          <P>For any privacy-related queries, contact us at <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update to vetra.run when domain migrates */}.</P>
+          <P>{BRAND.name} is a running training application operated by Russ (service-nerd). The app is available at <strong>zona.app</strong> {/* TODO: update domain when migration target decided */} and via the App Store and Google Play.</P>
+          <P>For any privacy-related queries, contact us at <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update domain when migration target decided */}.</P>
         </Section>
 
         <Section title="What we collect">
@@ -119,20 +112,20 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="Strava">
-          <P>If you connect Strava, Vetra requests read-only access to your Strava activities. Specifically: <strong>Vetra will read your Strava activities to provide coaching insights.</strong> We do not write to Strava, we do not access your social connections, and we do not share your Strava data with third parties.</P>
+          <P>If you connect Strava, {BRAND.name} requests read-only access to your Strava activities. Specifically: <strong>{BRAND.name} will read your Strava activities to provide coaching insights.</strong> We do not write to Strava, we do not access your social connections, and we do not share your Strava data with third parties.</P>
           <P>Your Strava access token is stored securely in your account. You can disconnect Strava at any time from the Profile screen — this deletes the stored token immediately.</P>
         </Section>
 
         <Section title="Apple Health">
-          <P>If you connect Apple Health (iOS app only), Vetra requests <strong>read-only</strong> access to your runs and recovery signals: workouts, heart rate, resting heart rate, heart rate variability, sleep duration, and VO₂ max. We use this data to coach your training and detect days when your body needs a softer session.</P>
-          <P>Apple Health authorisation is managed entirely by iOS. Vetra never writes to Apple Health, never reads any other health categories, and stores only the summary values needed for coaching (e.g. one resting heart rate per day) — not raw sample streams. You can disconnect at any time from the Profile screen, or revoke access from iOS Settings → Privacy → Health → Vetra.</P>
+          <P>If you connect Apple Health (iOS app only), {BRAND.name} requests <strong>read-only</strong> access to your runs and recovery signals: workouts, heart rate, resting heart rate, heart rate variability, sleep duration, and VO₂ max. We use this data to coach your training and detect days when your body needs a softer session.</P>
+          <P>Apple Health authorisation is managed entirely by iOS. {BRAND.name} never writes to Apple Health, never reads any other health categories, and stores only the summary values needed for coaching (e.g. one resting heart rate per day) — not raw sample streams. You can disconnect at any time from the Profile screen, or revoke access from iOS Settings → Privacy → Health → {BRAND.name}.</P>
         </Section>
 
         <Section title="How we use your data">
           <ul style={{ margin: '0 0 16px', padding: '0 0 0 20px' }}>
             {[
               'To generate and display your personalised training plan',
-              'To provide session-level coaching feedback (effort flags, Vetra voice responses)',
+              `To provide session-level coaching feedback (effort flags, ${BRAND.name} voice responses)`,
               'To display your progress over time (session history, fatigue trends)',
               'To connect your Strava activities to your training plan',
               'To send transactional emails (account confirmation, password reset)',
@@ -155,7 +148,7 @@ export default function PrivacyPage() {
           <SubHead>Anthropic (Claude AI)</SubHead>
           <P>When you use the AI coaching features, session data is sent to Anthropic's API to generate a coaching response. Anthropic does not use API inputs to train their models by default. <A href="https://www.anthropic.com/privacy">Anthropic privacy policy →</A></P>
           <SubHead>Strava</SubHead>
-          <P>If connected, Strava activity data is fetched via the Strava API and stored in your Vetra account. <A href="https://www.strava.com/legal/privacy">Strava privacy policy →</A></P>
+          <P>If connected, Strava activity data is fetched via the Strava API and stored in your {BRAND.name} account. <A href="https://www.strava.com/legal/privacy">Strava privacy policy →</A></P>
           <SubHead>Vercel</SubHead>
           <P>The app is hosted on Vercel. Request logs may be retained by Vercel per their standard policies. <A href="https://vercel.com/legal/privacy-policy">Vercel privacy policy →</A></P>
         </Section>
@@ -185,7 +178,7 @@ export default function PrivacyPage() {
               }}>{item}</li>
             ))}
           </ul>
-          <P>To exercise any of these rights, email <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update to vetra.run when domain migrates */}. We will respond within 30 days.</P>
+          <P>To exercise any of these rights, email <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update domain when migration target decided */}. We will respond within 30 days.</P>
         </Section>
 
         <Section title="Your rights (CCPA)">
@@ -206,26 +199,26 @@ export default function PrivacyPage() {
               }}>{item}</li>
             ))}
           </ul>
-          <P>To exercise these rights, email <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update to vetra.run when domain migrates */}.</P>
+          <P>To exercise these rights, email <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update domain when migration target decided */}.</P>
         </Section>
 
         <Section title="Account deletion">
           <P>You can delete your account at any time from the Profile screen in the app. Deletion is permanent and removes all associated data: your plan, session history, Strava connection, and account credentials.</P>
-          <P>If you are unable to delete via the app, email <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update to vetra.run when domain migrates */} and we will delete your account within 7 days.</P>
+          <P>If you are unable to delete via the app, email <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update domain when migration target decided */} and we will delete your account within 7 days.</P>
         </Section>
 
         <Section title="Children">
-          <P>Vetra is not directed at children under 13. We do not knowingly collect personal data from anyone under 13. If you believe a child under 13 has provided us with personal data, please contact <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update to vetra.run when domain migrates */} and we will delete it promptly.</P>
+          <P>{BRAND.name} is not directed at children under 13. We do not knowingly collect personal data from anyone under 13. If you believe a child under 13 has provided us with personal data, please contact <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update domain when migration target decided */} and we will delete it promptly.</P>
         </Section>
 
         <Section title="Cookies and local storage">
-          <P>Vetra uses browser local storage (not cookies) to persist your theme preference and Strava session token on your device. This data stays on your device and is not transmitted to our servers.</P>
+          <P>{BRAND.name} uses browser local storage (not cookies) to persist your theme preference and Strava session token on your device. This data stays on your device and is not transmitted to our servers.</P>
           <P>We do not use tracking cookies or third-party advertising cookies.</P>
         </Section>
 
         <Section title="Changes to this policy">
           <P>If we make material changes to this policy, we will notify you by email or via an in-app notice before the changes take effect. The "last updated" date at the top of this page reflects the most recent revision.</P>
-          <P>Continued use of Vetra after changes constitutes acceptance of the updated policy.</P>
+          <P>Continued use of {BRAND.name} after changes constitutes acceptance of the updated policy.</P>
         </Section>
 
         <Section title="Contact">
@@ -238,7 +231,7 @@ export default function PrivacyPage() {
             marginTop: '16px',
           }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px', fontWeight: 500 }}>{BRAND.name}</div>
-            {/* TODO: update to vetra.run when domain migrates */}
+            {/* TODO: update domain when migration target decided */}
             <A href="mailto:support@zona.app">support@zona.app</A>
           </div>
         </Section>

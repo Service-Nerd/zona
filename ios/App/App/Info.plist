@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Vetra</string>
+	<string>Zonna</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -24,10 +24,10 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>app.vetra.ios</string>
+			<string>app.zonna.ios</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>app.vetra.ios</string>
+				<string>app.zonna.ios</string>
 			</array>
 		</dict>
 	</array>
@@ -36,7 +36,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Vetra reads your runs and recovery signals (resting heart rate, HRV, sleep) to provide coaching feedback. Vetra never writes to Apple Health.</string>
+	<string>Zonna reads your runs and recovery signals (resting heart rate, HRV, sleep) to provide coaching feedback. Zonna never writes to Apple Health.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

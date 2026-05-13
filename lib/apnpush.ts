@@ -10,7 +10,7 @@ import type { PushPayload } from './webpush'
 //   APNS_KEY_ID       — 10-char key ID from Apple Developer portal
 //   APNS_TEAM_ID      — 10-char team ID from Apple Developer membership page
 //   APNS_PRIVATE_KEY  — full .p8 file contents (multi-line string)
-//   APNS_TOPIC        — the iOS bundle ID (app.vetra.ios)
+//   APNS_TOPIC        — the iOS bundle ID (must equal NATIVE_BUNDLE_ID in lib/native.ts)
 //   APNS_PRODUCTION   — '1' once shipping; missing/empty uses sandbox
 //
 // Without these the helper logs a warning and returns false — keeps the
