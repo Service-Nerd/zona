@@ -1,6 +1,7 @@
 {
   "_comment_brand": "name + short_name mirror BRAND.name; description mirrors BRAND.appStoreSubtitle. Source: lib/brand.ts. Keep this file in sync when BRAND constants change — JSON cannot import them.",
   "_comment_colors": "theme_color = var(--ink), background_color = var(--bg). Source: app/globals.css.",
+  "_comment_icons": "PWA icon PNGs in public/icons/ are still the legacy ring-and-dot design — regeneration into the new concentric-rings mark is tracked as BRAND-08-pwa in the backlog.",
   "name": "Zonna",
   "short_name": "Zonna",
   "description": "Plans that stop overtraining.",

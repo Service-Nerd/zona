@@ -4,28 +4,28 @@
   <!-- variants for each device size. Colour tokens live in app/globals.css; -->
   <!-- SVG cannot reference CSS variables so resolved hex values mirror them. -->
 
-  <!-- var(--bg) -->
+  <!-- token-bg -->
   <rect width="2732" height="2732" fill="#F3F0EB"/>
 
   <!-- Icon (rings) — centred horizontally at x=1366, shifted up to y=1180 to -->
   <!-- leave room for the wordmark below. Radii are the master 1024-icon radii -->
   <!-- (440/355/270/185/80) scaled 1.5x to suit the larger splash canvas. -->
 
-  <!-- Zone 5 (outermost) — var(--ink) @ 0.15 opacity -->
+  <!-- Zone 5 (outermost) — token-ink @ 0.15 opacity -->
   <circle cx="1366" cy="1180" r="660" fill="none" stroke="#1A1A1A" stroke-opacity="0.15" stroke-width="39"/>
-  <!-- Zone 4 — var(--ink) @ 0.28 opacity -->
+  <!-- Zone 4 — token-ink @ 0.28 opacity -->
   <circle cx="1366" cy="1180" r="533" fill="none" stroke="#1A1A1A" stroke-opacity="0.28" stroke-width="39"/>
-  <!-- Zone 3 — var(--ink) @ 0.45 opacity -->
+  <!-- Zone 3 — token-ink @ 0.45 opacity -->
   <circle cx="1366" cy="1180" r="405" fill="none" stroke="#1A1A1A" stroke-opacity="0.45" stroke-width="39"/>
-  <!-- Zone 2 — var(--moss) full opacity -->
+  <!-- Zone 2 — token-moss full opacity -->
   <circle cx="1366" cy="1180" r="278" fill="none" stroke="#6B8E6B" stroke-width="39"/>
-  <!-- Zone 1 (centre) — var(--moss) solid fill -->
+  <!-- Zone 1 (centre) — token-moss solid fill -->
   <circle cx="1366" cy="1180" r="120" fill="#6B8E6B"/>
 
   <!-- Wordmark — Inter 800, 120px, letter-spacing -0.04em (-4.8 at 120px). -->
   <!-- Positioned with ~60px clear of the icon bottom edge (icon bottom y=1840). -->
   <!-- Baseline at y=2030 gives ~60px of breathing room above the cap-line. -->
-  <!-- "Zo" + "a" rendered in var(--ink); "nn" tspan in var(--moss). -->
+  <!-- "Zo" + "a" rendered in token-ink; "nn" tspan in token-moss. -->
   <!-- The brand string is duplicated here because static SVG cannot import -->
   <!-- from lib/brand.ts at build time; keep in sync if BRAND.name changes. -->
   <text x="1366" y="2030"

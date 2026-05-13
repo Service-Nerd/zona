@@ -1,18 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- Zonna brand mark — dark variant. Outer rings invert to var(--bg) on var(--ink). -->
+  <!-- Zonna brand mark — dark variant. Outer rings invert to token-bg on token-ink. -->
   <!-- Colour tokens live in app/globals.css; resolved hex values mirror them. -->
 
-  <!-- var(--ink) -->
+  <!-- token-ink -->
   <rect width="1024" height="1024" rx="225" fill="#1A1A1A"/>
 
-  <!-- Zone 5 (outermost) — var(--bg) @ 0.15 opacity -->
+  <!-- Zone 5 (outermost) — token-bg @ 0.15 opacity -->
   <circle cx="512" cy="512" r="440" fill="none" stroke="#F3F0EB" stroke-opacity="0.15" stroke-width="26"/>
-  <!-- Zone 4 — var(--bg) @ 0.28 opacity -->
+  <!-- Zone 4 — token-bg @ 0.28 opacity -->
   <circle cx="512" cy="512" r="355" fill="none" stroke="#F3F0EB" stroke-opacity="0.28" stroke-width="26"/>
-  <!-- Zone 3 — var(--bg) @ 0.45 opacity -->
+  <!-- Zone 3 — token-bg @ 0.45 opacity -->
   <circle cx="512" cy="512" r="270" fill="none" stroke="#F3F0EB" stroke-opacity="0.45" stroke-width="26"/>
-  <!-- Zone 2 — var(--moss) full opacity (unchanged from light variant) -->
+  <!-- Zone 2 — token-moss full opacity (unchanged from light variant) -->
   <circle cx="512" cy="512" r="185" fill="none" stroke="#6B8E6B" stroke-width="26"/>
-  <!-- Zone 1 (centre) — var(--moss) solid fill (unchanged from light variant) -->
+  <!-- Zone 1 (centre) — token-moss solid fill (unchanged from light variant) -->
   <circle cx="512" cy="512" r="80" fill="#6B8E6B"/>
 </svg>
