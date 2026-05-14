@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Zonna · Plan screen UX audit</title>
+<style>
+  :root {
+    --bg:        #F3F0EB;
+    --bg-soft:   #EDE9E1;
+    --card:      #FFFFFF;
+    --ink:       #1A1A1A;
+    --ink-2:     #3D3A36;
+    --mute:      #8A857D;
+    --mute-2:    #A8A39B;
+    --line:      rgba(26,26,26,0.08);
+    --line-strong: rgba(26,26,26,0.15);
+    --moss:      #6B8E6B;
+    --moss-soft: rgba(107,142,107,0.10);
+    --moss-mid:  rgba(107,142,107,0.25);
+    --warn:      #B8853A;
+    --warn-bg:   #F5EBD4;
+    --coach-ink: #3D2600;
+    --danger:    #B84545;
+    --s-easy:    #3D6FB0;
+    --s-long:    #5E4FB0;
+    --s-quality: #B8853A;
+    --s-race:    #C86A2A;
+    --s-recov:   #4E8068;
+    --s-inter:   #B84545;
+    --font-ui:   'Inter', sans-serif;
+    --radius-lg: 14px;
+    --radius-md: 10px;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-ui);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  .page {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 56px 32px 96px;
+  }
+
+  /* ───── Header ───── */
+  .header { margin-bottom: 56px; max-width: 880px; }
+  .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.16em;
+    color: var(--moss); text-transform: uppercase; margin-bottom: 12px;
+  }
+  h1 {
+    font-family: var(--font-ui);
+    font-size: 44px; font-weight: 800; line-height: 1.05;
+    letter-spacing: -0.02em; margin: 0 0 16px;
+  }
+  .lede {
+    font-size: 17px; line-height: 1.55; color: var(--ink-2); font-weight: 400;
+    max-width: 720px;
+  }
+  .lede strong { font-weight: 600; color: var(--ink); }
+
+  /* ───── Section ───── */
+  .section { margin-bottom: 72px; }
+  .section-eyebrow {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--mute); text-transform: uppercase; margin-bottom: 10px;
+  }
+  h2 {
+    font-family: var(--font-ui);
+    font-size: 28px; font-weight: 700; line-height: 1.15;
+    letter-spacing: -0.015em; margin: 0 0 16px;
+  }
+  .section p { font-size: 15px; line-height: 1.6; color: var(--ink-2); margin: 0 0 12px; max-width: 760px; }
+  .section p strong { color: var(--ink); font-weight: 600; }
+
+  /* ───── Audit list ───── */
+  .audit-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    max-width: 1100px; margin-top: 20px;
+  }
+  .audit-item {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 18px 20px;
+  }
+  .audit-item.warn { border-left: 3px solid var(--warn); }
+  .audit-item.moss { border-left: 3px solid var(--moss); }
+  .audit-item.danger { border-left: 3px solid var(--danger); }
+  .audit-item h3 {
+    font-size: 14px; font-weight: 700; color: var(--ink);
+    margin: 0 0 6px; letter-spacing: -0.005em;
+  }
+  .audit-item p { font-size: 13px; line-height: 1.55; color: var(--ink-2); margin: 0; max-width: none; }
+  .audit-item .tag {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--mute); margin-bottom: 4px;
+  }
+  .audit-item.warn .tag { color: var(--warn); }
+  .audit-item.moss .tag { color: var(--moss); }
+  .audit-item.danger .tag { color: var(--danger); }
+
+  /* ───── Phone frame ───── */
+  .compare {
+    display: grid;
+    grid-template-columns: minmax(380px, 1fr) minmax(380px, 1fr);
+    gap: 64px;
+    margin-top: 32px;
+    align-items: start;
+  }
+  .compare-col h3 {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; margin: 0 0 4px;
+  }
+  .compare-col.before h3 { color: var(--mute); }
+  .compare-col.after h3 { color: var(--moss); }
+  .compare-col .sub {
+    font-size: 13px; color: var(--mute); margin: 0 0 20px; line-height: 1.5;
+  }
+
+  .phone {
+    width: 100%; max-width: 420px;
+    background: var(--bg); border-radius: 32px;
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.08);
+  }
+  .status {
+    height: 36px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 18px; font-size: 11px; color: var(--ink);
+    background: var(--bg);
+  }
+  .screen { padding: 20px 16px 40px; }
+
+  /* ───── Plan screen pieces ───── */
+  .screen-title {
+    font-size: 26px; font-weight: 800; color: var(--ink);
+    letter-spacing: -0.02em; margin: 0 0 4px;
+  }
+  .race-name {
+    font-size: 20px; font-weight: 600; color: var(--ink);
+    letter-spacing: -0.015em; margin: 0 0 12px;
+  }
+  .race-meta {
+    font-size: 12px; color: var(--mute); margin-bottom: 16px;
+  }
+  .race-meta .dot { color: var(--mute-2); margin: 0 6px; }
+
+  /* PlanArc */
+  .arc-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .arc-label {
+    font-size: 10px; font-weight: 700; color: var(--mute);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .arc-counter {
+    font-size: 10px; font-weight: 700; color: var(--mute);
+    letter-spacing: 0.04em;
+  }
+  .arc-bars {
+    height: 32px; display: flex; gap: 2px; align-items: flex-end;
+    margin-bottom: 4px;
+  }
+  .arc-bar {
+    flex: 1; height: 100%; border-radius: 2px;
+    background: var(--mute-2); opacity: 0.35;
+  }
+  .arc-bar.done { background: var(--moss); opacity: 0.7; }
+  .arc-bar.done.deload { background: var(--moss); opacity: 0.2; }
+  .arc-bar.current { background: var(--moss); opacity: 1; outline: 2px solid var(--moss-mid); outline-offset: 1px; }
+  .arc-bar.race { background: var(--s-race); opacity: 0.9; }
+  .arc-bar.future.deload { opacity: 0.15; }
+
+  /* Section label + week summary line */
+  .week-summary-line {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px;
+  }
+  .week-summary-line .phase {
+    font-weight: 700; color: var(--moss); letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .week-summary-line .done {
+    color: var(--moss); font-weight: 600;
+  }
+  .week-summary-line .target { color: var(--mute); }
+  .week-summary-line .sep { color: var(--mute-2); }
+
+  /* Plan voice line — NEW */
+  .plan-voice {
+    background: var(--card); border: 1px solid var(--line);
+    border-left: 3px solid var(--moss);
+    border-radius: var(--radius-lg); padding: 14px 16px;
+    margin: 20px 0 24px;
+  }
+  .plan-voice .eyebrow-row {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+  }
+  .plan-voice .eyebrow-row .label {
+    font-size: 10px; font-weight: 700; color: var(--mute);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .plan-voice .eyebrow-row .phase-chip {
+    font-size: 10px; font-weight: 700; color: var(--moss);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    margin-left: auto;
+  }
+  .plan-voice .headline {
+    font-size: 15px; font-weight: 600; color: var(--ink);
+    line-height: 1.4; letter-spacing: -0.01em; margin-bottom: 6px;
+  }
+  .plan-voice .items {
+    font-size: 12px; color: var(--ink-2); line-height: 1.55;
+  }
+  .plan-voice .items div { margin-top: 4px; }
+
+  /* Section header */
+  .section-h {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 0 4px; margin: 28px 0 10px;
+  }
+  .section-h .left {
+    font-size: 11px; font-weight: 700; color: var(--mute);
+    letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .section-h .right {
+    font-size: 10px; color: var(--mute); letter-spacing: 0.04em;
+  }
+
+  /* CURRENT WEEK CARD — bigger treatment */
+  .week-card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .week-card.current {
+    border: 1px solid var(--line-strong);
+    border-left: 3px solid var(--moss);
+  }
+  .week-card.race { border-left: 3px solid var(--s-race); }
+  .week-card .head {
+    padding: 14px 16px; border-bottom: 1px solid var(--line);
+    display: flex; justify-content: space-between; align-items: flex-end;
+  }
+  .week-card.current .head { background: var(--moss-soft); }
+  .week-card .head .lhs .eyebrow {
+    font-size: 10px; font-weight: 700; color: var(--mute);
+    letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 2px;
+  }
+  .week-card.current .head .lhs .eyebrow { color: var(--moss); }
+  .week-card .head .lhs .title {
+    font-size: 13px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em;
+  }
+  .week-card .head .rhs {
+    text-align: right;
+  }
+  .week-card .head .rhs .value {
+    font-size: 28px; font-weight: 800; color: var(--ink);
+    line-height: 1; letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .week-card.current .head .rhs .value { font-size: 36px; }
+  .week-card .head .rhs .value .total {
+    font-size: 18px; font-weight: 600; color: var(--mute); margin-left: 2px;
+  }
+  .week-card.current .head .rhs .value .total { font-size: 22px; }
+  .week-card .head .rhs .unit {
+    font-size: 10px; font-weight: 700; color: var(--mute);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* Day row inside week */
+  .day-row {
+    display: flex; align-items: center; padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .day-row:last-child { border-bottom: none; }
+  .day-row.rest { padding: 6px 14px; }
+  .day-row.done { opacity: 0.45; }
+  .day-row.skipped { opacity: 0.5; }
+  .day-row .date {
+    width: 40px; flex-shrink: 0;
+  }
+  .day-row .dow {
+    font-size: 10px; color: var(--mute); text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .day-row .num {
+    font-size: 13px; color: var(--mute);
+  }
+  .day-row.today .dow, .day-row.today .num {
+    color: var(--moss); font-weight: 600;
+  }
+  .day-row .accent {
+    width: 3px; height: 34px; border-radius: 2px;
+    margin: 0 12px 0 0; flex-shrink: 0;
+  }
+  .day-row.rest .accent { height: 16px; background: var(--line); }
+  .day-row .body { flex: 1; min-width: 0; }
+  .day-row .label-row {
+    display: flex; align-items: center; gap: 6px;
+    justify-content: space-between;
+  }
+  .day-row .label {
+    font-size: 15px; font-weight: 500; color: var(--ink);
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .day-row.future .label { color: var(--ink-2); }
+  .day-row.done .label { color: var(--mute); }
+  .day-row .type-chip {
+    font-size: 9px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.07em; border-radius: 4px;
+    padding: 2px 6px;
+  }
+  .day-row .meta {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 3px;
+    font-size: 12px; color: var(--mute);
+    font-variant-numeric: tabular-nums;
+  }
+  .day-row .strava {
+    font-size: 10px; color: #FC4C02; opacity: 0.8;
+  }
+  .day-row .chev { color: var(--mute); font-size: 16px; margin-left: 8px; }
+  .day-row .check {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--moss-soft); border: 1.5px solid var(--moss);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--moss); font-size: 9px; font-weight: 800; margin-left: 8px;
+  }
+
+  /* Compressed week strip — NEW for past/distant future */
+  .week-strip-card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .week-strip-card.past { opacity: 0.65; }
+  .week-strip-card .head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .week-strip-card .head .left {
+    font-size: 12px; font-weight: 600; color: var(--ink-2);
+    letter-spacing: -0.005em;
+  }
+  .week-strip-card.past .head .left { color: var(--mute); }
+  .week-strip-card .head .stat {
+    font-size: 14px; font-weight: 700; color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+  .week-strip-card .head .stat .unit {
+    font-size: 10px; font-weight: 500; color: var(--mute); margin-left: 2px;
+  }
+  .week-strip-card .strip {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 4px;
+  }
+  .week-strip-card .strip .day {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .week-strip-card .strip .day .dow {
+    font-size: 9px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .week-strip-card .strip .day .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--mute-2); opacity: 0.5;
+  }
+  .week-strip-card .strip .day .dot.done { background: var(--moss); opacity: 1; }
+  .week-strip-card .strip .day .dot.future { background: transparent; border: 1px solid var(--mute-2); }
+  .week-strip-card .strip .day .dot.rest { background: transparent; opacity: 0; }
+  .week-strip-card .strip .day .dot.skipped {
+    background: transparent; border: 1px dashed var(--danger); opacity: 0.6;
+  }
+  .week-strip-card .strip .day .dash {
+    width: 6px; height: 1.5px; background: var(--mute-2); opacity: 0.5;
+  }
+  .week-strip-card .race-tag {
+    margin-top: 8px; display: inline-block;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--s-race);
+  }
+  .week-strip-card.race { border-left: 3px solid var(--s-race); }
+
+  /* Annotation chips */
+  .ann {
+    position: relative;
+  }
+  .ann::after {
+    content: attr(data-ann);
+    position: absolute;
+    left: calc(100% + 14px); top: 50%;
+    transform: translateY(-50%);
+    background: var(--ink); color: var(--card);
+    font-size: 11px; font-weight: 500; line-height: 1.4;
+    padding: 8px 12px; border-radius: 6px;
+    width: 220px; pointer-events: none;
+  }
+  .ann::before {
+    content: '';
+    position: absolute;
+    left: 100%; top: 50%;
+    transform: translateY(-50%);
+    width: 14px; height: 1px; background: var(--ink);
+  }
+
+  /* Callout legend */
+  .callouts {
+    margin-top: 32px; display: flex; flex-direction: column; gap: 8px;
+    max-width: 380px;
+  }
+  .callout {
+    display: flex; gap: 12px; align-items: flex-start;
+    font-size: 13px; line-height: 1.5; color: var(--ink-2);
+  }
+  .callout .num {
+    flex-shrink: 0;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--moss); color: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .callout strong { color: var(--ink); font-weight: 600; }
+
+  /* Token migration table */
+  .token-table {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    max-width: 880px;
+    margin-top: 20px;
+  }
+  .token-table table {
+    width: 100%; border-collapse: collapse;
+  }
+  .token-table th, .token-table td {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 13px;
+    border-bottom: 1px solid var(--line);
+  }
+  .token-table th {
+    font-size: 10px; font-weight: 700; color: var(--mute);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    background: var(--bg-soft);
+  }
+  .token-table td:nth-child(1) { color: var(--mute); font-family: 'Menlo', monospace; font-size: 12px; }
+  .token-table td:nth-child(2) { color: var(--moss); font-family: 'Menlo', monospace; font-size: 12px; font-weight: 600; }
+  .token-table tr:last-child td { border-bottom: none; }
+
+  /* Recommendations */
+  .recs {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 24px 28px;
+    max-width: 880px;
+  }
+  .recs ol {
+    margin: 0; padding-left: 24px;
+  }
+  .recs li {
+    font-size: 15px; line-height: 1.6; color: var(--ink-2);
+    margin-bottom: 16px;
+  }
+  .recs li:last-child { margin-bottom: 0; }
+  .recs li strong { color: var(--ink); font-weight: 600; }
+  .recs .effort {
+    display: inline-block; margin-left: 8px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--moss);
+    background: var(--moss-soft); padding: 2px 8px; border-radius: 4px;
+  }
+  .recs .effort.m { color: var(--warn); background: var(--warn-bg); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="eyebrow">Plan screen · UX audit</div>
+    <h1>The Plan screen has no voice.</h1>
+    <p class="lede">
+      It shows you the data — weeks, sessions, distance, completion — and it shows it cleanly.
+      But it doesn&apos;t <strong>frame</strong> the data. Every other screen in the app has Zonna&apos;s voice
+      somewhere on it (Today&apos;s hero, Session detail&apos;s &quot;Why this session&quot;, Coach&apos;s Kit byline).
+      Plan is the one place users come to <strong>understand the arc</strong> — and it&apos;s silent.
+      That&apos;s the headline gap. The rest is consistency drift from Phase 3.
+    </p>
+  </div>
+
+  <!-- WHAT'S WORKING -->
+  <div class="section">
+    <div class="section-eyebrow">Working well</div>
+    <h2>What&apos;s right</h2>
+    <p>Five things the Plan screen already does well — keep them.</p>
+    <div class="audit-grid">
+      <div class="audit-item moss">
+        <div class="tag">Keep</div>
+        <h3>PlanArc visualization</h3>
+        <p>The horizontal week-bars are the Plan screen&apos;s best moment. Phase 2 redesign delivered this. Race week in <code>--s-race</code> is a thoughtful touch.</p>
+      </div>
+      <div class="audit-item moss">
+        <div class="tag">Keep</div>
+        <h3>Move / swap interaction</h3>
+        <p>Tap-to-pick, tap-to-place. Two-step. No drag. Honest about what&apos;s about to happen. Better than Runna&apos;s drag-reorder, better than Planzy&apos;s modal.</p>
+      </div>
+      <div class="audit-item moss">
+        <div class="tag">Keep</div>
+        <h3>Past weeks collapsed by default</h3>
+        <p>Respects &quot;calm guidance, not noise&quot;. User opts in to seeing history. <strong>Improve:</strong> show them as a compressed strip when expanded, not a full list.</p>
+      </div>
+      <div class="audit-item moss">
+        <div class="tag">Keep</div>
+        <h3>Information hierarchy</h3>
+        <p>Title → race → arc → context → weeks. Logical flow. Race name placement reads as the goal you&apos;re training towards. Don&apos;t reshuffle this.</p>
+      </div>
+      <div class="audit-item moss">
+        <div class="tag">Keep</div>
+        <h3>Skeleton loading state</h3>
+        <p>Three height-stepped skeletons while overrides load. Right pattern per ui-patterns.md §15. <strong>Tiny fix:</strong> uses <code>--border-col</code> instead of <code>--bg-soft</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHAT'S BROKEN -->
+  <div class="section">
+    <div class="section-eyebrow">Issues</div>
+    <h2>What&apos;s broken</h2>
+    <p>Ranked by impact on the experience, not by complexity to fix.</p>
+    <div class="audit-grid">
+      <div class="audit-item danger">
+        <div class="tag">Impact: high</div>
+        <h3>No brand voice anywhere</h3>
+        <p>Plan is the &quot;arc&quot; screen — where users come to understand where they are. It needs a one-line situating statement. <code>PlanCoachingCard</code> already exists in the codebase (line 5320) but it&apos;s only used on the Coach screen.</p>
+      </div>
+      <div class="audit-item danger">
+        <div class="tag">Impact: high</div>
+        <h3>Current week visually weak</h3>
+        <p>Past weeks: opacity 0.65. Current week: same opacity as future weeks + a 3px moss border. The current week should be visually <em>dominant</em>, not subtly differentiated. Hierarchy is wrong.</p>
+      </div>
+      <div class="audit-item warn">
+        <div class="tag">Impact: medium</div>
+        <h3>Token drift across the whole file</h3>
+        <p><code>PlanCalendar.tsx</code> still uses System B alias names: <code>--card-bg</code>, <code>--border-col</code>, <code>--text-muted</code>, <code>--accent</code>, <code>--teal-soft</code>, <code>--teal-mid</code>. Aliases bridge it (it renders correctly) but the file is one of five never migrated post-Phase-3.</p>
+      </div>
+      <div class="audit-item warn">
+        <div class="tag">Impact: medium</div>
+        <h3>Same fact stated 3 times</h3>
+        <p>&quot;Wk 8 of 16&quot; appears in PlanArc top-right. &quot;Build · 3/5 done · 42km target&quot; appears in the week summary line. &quot;W8 · Apr 14–20&quot; appears in every WeekCard header. Each adds slightly different info but the redundancy reads as noise.</p>
+      </div>
+      <div class="audit-item warn">
+        <div class="tag">Impact: medium</div>
+        <h3>Week-level metric is underweight</h3>
+        <p><code>42 / 56km</code> renders at 18px. Per ui-patterns.md, the metric pair pattern wants a bold value (44px on hero, 28px+ on cards) over a small unit label. This is the headline week stat — it should own real estate.</p>
+      </div>
+      <div class="audit-item warn">
+        <div class="tag">Impact: medium</div>
+        <h3>Done vs skipped reads identically</h3>
+        <p>Both states use opacity reduction + an icon at the right. Per SessionCard spec, done = moss check circle, skipped = dashed border + danger strikethrough. Scanning the plan, you should see at a glance what you did vs missed.</p>
+      </div>
+      <div class="audit-item warn">
+        <div class="tag">Impact: medium</div>
+        <h3>Race week invisible in calendar</h3>
+        <p>PlanArc marks race week in <code>--s-race</code>. PlanCalendar renders it identically to every other week. The most important date on the plan should be visually distinct in both views.</p>
+      </div>
+      <div class="audit-item">
+        <div class="tag">Impact: low</div>
+        <h3>Horizontal padding off-spec</h3>
+        <p><code>0 12px</code> on the calendar container. Canonical is <code>0 16px</code>. Same issue called out for Me/Strava in the cross-screen consistency table — add Plan to the list.</p>
+      </div>
+      <div class="audit-item">
+        <div class="tag">Impact: low</div>
+        <h3>Move-mode copy is compound</h3>
+        <p><em>&quot;tap an empty day to move, or another session to swap&quot;</em> — two clauses, lowercase, mid-card. Brand voice: one sentence. Suggested: <em>&quot;Tap where you want it.&quot;</em></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOCKUP COMPARE -->
+  <div class="section">
+    <div class="section-eyebrow">Proposed</div>
+    <h2>Before &amp; after</h2>
+    <p>Same data, same structure. What changes: voice gets added, hierarchy gets clearer, past/future weeks compress to free up space for the present.</p>
+
+    <div class="compare">
+
+      <!-- BEFORE -->
+      <div class="compare-col before">
+        <h3>Now</h3>
+        <p class="sub">Functional, but flat. Current week reads at the same weight as the rest.</p>
+
+        <div class="phone">
+          <div class="status"><span>9:41</span><span>●●●</span></div>
+          <div class="screen">
+            <div class="screen-title">Your plan</div>
+            <div class="race-name">Marathon des Sables</div>
+
+            <!-- PlanArc -->
+            <div class="arc-row">
+              <div class="arc-label">16 wks · base → build → peak → taper</div>
+              <div class="arc-counter">Wk 8 of 16</div>
+            </div>
+            <div class="arc-bars">
+              <div class="arc-bar done"></div>
+              <div class="arc-bar done"></div>
+              <div class="arc-bar done"></div>
+              <div class="arc-bar done deload"></div>
+              <div class="arc-bar done"></div>
+              <div class="arc-bar done"></div>
+              <div class="arc-bar done"></div>
+              <div class="arc-bar current"></div>
+              <div class="arc-bar future"></div>
+              <div class="arc-bar future"></div>
+              <div class="arc-bar future"></div>
+              <div class="arc-bar future deload"></div>
+              <div class="arc-bar future"></div>
+              <div class="arc-bar future"></div>
+              <div class="arc-bar future"></div>
+              <div class="arc-bar race"></div>
+            </div>
+
+            <!-- week summary line -->
+            <div class="week-summary-line" style="padding:16px 0 0">
+              <span class="phase">Build</span>
+              <span class="sep">·</span>
+              <span class="done">3/5 done</span>
+              <span class="sep">·</span>
+              <span class="target">42km target</span>
+            </div>
+
+            <!-- BEFORE: current week — same weight as future weeks -->
+            <div style="margin-top:20px"></div>
+            <div class="week-card current">
+              <div class="head" style="background:var(--moss-soft)">
+                <div class="lhs">
+                  <div class="eyebrow" style="color:var(--moss)">W8 · Apr 14–20</div>
+                  <div class="title">Build week 3</div>
+                </div>
+                <div class="rhs">
+                  <div class="value" style="font-size:18px;color:var(--moss)">28<span class="total" style="font-size:12px">/42</span></div>
+                  <div class="unit" style="font-size:10px">km done</div>
+                </div>
+              </div>
+              <div class="day-row today">
+                <div class="date"><div class="dow">MON</div><div class="num">14</div></div>
+                <div class="accent" style="background:var(--s-easy)"></div>
+                <div class="body">
+                  <div class="label-row">
+                    <div class="label">Easy run</div>
+                    <div class="type-chip" style="color:var(--s-easy);background:color-mix(in srgb, var(--s-easy) 18%, transparent)">EASY</div>
+                  </div>
+                  <div class="meta">8km</div>
+                </div>
+                <div class="chev">›</div>
+              </div>
+              <div class="day-row done">
+                <div class="date"><div class="dow">TUE</div><div class="num">15</div></div>
+                <div class="accent" style="background:var(--s-quality)"></div>
+                <div class="body">
+                  <div class="label-row">
+                    <div class="label">Tempo</div>
+                    <div class="type-chip" style="color:var(--s-quality);background:color-mix(in srgb, var(--s-quality) 18%, transparent)">QUALITY</div>
+                  </div>
+                  <div class="meta">10km</div>
+                </div>
+                <div style="color:var(--moss);font-size:14px;margin-left:8px">✓</div>
+              </div>
+              <div class="day-row rest"><div class="date"><div class="dow">WED</div><div class="num">16</div></div><div class="accent"></div><div class="body"></div></div>
+              <div class="day-row">
+                <div class="date"><div class="dow">THU</div><div class="num">17</div></div>
+                <div class="accent" style="background:var(--s-easy)"></div>
+                <div class="body">
+                  <div class="label-row">
+                    <div class="label">Easy run</div>
+                    <div class="type-chip" style="color:var(--s-easy);background:color-mix(in srgb, var(--s-easy) 18%, transparent)">EASY</div>
+                  </div>
+                  <div class="meta">6km</div>
+                </div>
+                <div class="chev">›</div>
+              </div>
+              <div class="day-row"><div class="date"><div class="dow">FRI</div><div class="num">18</div></div><div class="accent" style="background:var(--s-easy)"></div><div class="body"><div class="label-row"><div class="label">Easy run</div><div class="type-chip" style="color:var(--s-easy);background:color-mix(in srgb, var(--s-easy) 18%, transparent)">EASY</div></div><div class="meta">5km</div></div><div class="chev">›</div></div>
+              <div class="day-row rest"><div class="date"><div class="dow">SAT</div><div class="num">19</div></div><div class="accent"></div><div class="body"></div></div>
+              <div class="day-row"><div class="date"><div class="dow">SUN</div><div class="num">20</div></div><div class="accent" style="background:var(--s-long)"></div><div class="body"><div class="label-row"><div class="label">Long run</div><div class="type-chip" style="color:var(--s-long);background:color-mix(in srgb, var(--s-long) 18%, transparent)">LONG</div></div><div class="meta">16km</div></div><div class="chev">›</div></div>
+            </div>
+
+            <!-- Future weeks — identical visual weight -->
+            <div class="week-card">
+              <div class="head">
+                <div class="lhs">
+                  <div class="eyebrow">W9 · Apr 21–27</div>
+                  <div class="title">Build week 4</div>
+                </div>
+                <div class="rhs">
+                  <div class="value" style="font-size:18px;color:var(--mute)">46</div>
+                  <div class="unit">km planned</div>
+                </div>
+              </div>
+              <div class="day-row rest"><div class="date"><div class="dow">MON</div><div class="num">21</div></div><div class="accent"></div><div class="body"></div></div>
+              <div class="day-row"><div class="date"><div class="dow">TUE</div><div class="num">22</div></div><div class="accent" style="background:var(--s-inter)"></div><div class="body"><div class="label-row"><div class="label">Intervals</div><div class="type-chip" style="color:var(--s-inter);background:color-mix(in srgb, var(--s-inter) 18%, transparent)">INTERVALS</div></div><div class="meta">8km</div></div><div class="chev">›</div></div>
+              <div class="day-row" style="opacity:0.65"><div class="date"><div class="dow">WED</div><div class="num">23</div></div><div class="accent" style="background:var(--s-easy)"></div><div class="body"><div class="label-row"><div class="label">Easy run</div></div><div class="meta">6km</div></div><div class="chev">›</div></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="compare-col after">
+        <h3>Proposed</h3>
+        <p class="sub">Voice gets added. Current week gets weight. Past weeks compress to a strip. Future weeks peek.</p>
+
+        <div class="phone">
+          <div class="status"><span>9:41</span><span>●●●</span></div>
+          <div class="screen">
+            <div class="screen-title">Your plan</div>
+            <div class="race-name">Marathon des Sables</div>
+
+            <!-- PlanArc — unchanged -->
+            <div class="arc-row">
+              <div class="arc-label">16 wks · base → build → peak → taper</div>
+              <div class="arc-counter">Wk 8 of 16</div>
+            </div>
+            <div class="arc-bars">
+              <div class="arc-bar done"></div>
+              <div class="arc-bar done"></div>
+              <div class="arc-bar done"></div>
+              <div class="arc-bar done deload"></div>
+              <div class="arc-bar done"></div>
+              <div class="arc-bar done"></div>
+              <div class="arc-bar done"></div>
+              <div class="arc-bar current"></div>
+              <div class="arc-bar future"></div>
+              <div class="arc-bar future"></div>
+              <div class="arc-bar future"></div>
+              <div class="arc-bar future deload"></div>
+              <div class="arc-bar future"></div>
+              <div class="arc-bar future"></div>
+              <div class="arc-bar future"></div>
+              <div class="arc-bar race"></div>
+            </div>
+
+            <!-- NEW: plan voice block — single sentence + 1-2 items -->
+            <div class="plan-voice">
+              <div class="eyebrow-row">
+                <span class="label">This week</span>
+                <span class="phase-chip">Build</span>
+              </div>
+              <div class="headline">Quality and long run this week. Hard stuff first, long stuff rested.</div>
+              <div class="items">
+                <div>Run the quality session when fresh — not back-to-back with another hard day.</div>
+                <div>The long run should be Zone 2 only. No heroics.</div>
+              </div>
+            </div>
+
+            <!-- Current week section -->
+            <div class="section-h">
+              <span class="left">Now</span>
+            </div>
+
+            <!-- CURRENT WEEK — bigger -->
+            <div class="week-card current">
+              <div class="head">
+                <div class="lhs">
+                  <div class="eyebrow">W8 · Apr 14–20</div>
+                  <div class="title">Build week 3</div>
+                </div>
+                <div class="rhs">
+                  <div class="value">28<span class="total">/42</span></div>
+                  <div class="unit">km done</div>
+                </div>
+              </div>
+              <div class="day-row today">
+                <div class="date"><div class="dow">MON</div><div class="num">14</div></div>
+                <div class="accent" style="background:var(--s-easy)"></div>
+                <div class="body">
+                  <div class="label-row">
+                    <div class="label">Easy run</div>
+                    <div class="type-chip" style="color:var(--s-easy);background:color-mix(in srgb, var(--s-easy) 18%, transparent)">EASY</div>
+                  </div>
+                  <div class="meta">8km · Zone 2</div>
+                </div>
+                <div class="chev">›</div>
+              </div>
+              <div class="day-row done">
+                <div class="date"><div class="dow">TUE</div><div class="num">15</div></div>
+                <div class="accent" style="background:var(--s-quality);opacity:0.4"></div>
+                <div class="body">
+                  <div class="label-row">
+                    <div class="label" style="text-decoration:none">Tempo</div>
+                    <div class="type-chip" style="color:var(--s-quality);background:color-mix(in srgb, var(--s-quality) 12%, transparent);opacity:0.6">QUALITY</div>
+                  </div>
+                  <div class="meta">
+                    <span>10km</span>
+                    <span class="strava">● Tuesday evening tempo · 10.2km</span>
+                  </div>
+                </div>
+                <div class="check">✓</div>
+              </div>
+              <div class="day-row rest"><div class="date"><div class="dow">WED</div><div class="num">16</div></div><div class="accent"></div><div class="body"></div></div>
+              <div class="day-row">
+                <div class="date"><div class="dow">THU</div><div class="num">17</div></div>
+                <div class="accent" style="background:var(--s-easy)"></div>
+                <div class="body">
+                  <div class="label-row">
+                    <div class="label">Easy run</div>
+                    <div class="type-chip" style="color:var(--s-easy);background:color-mix(in srgb, var(--s-easy) 18%, transparent)">EASY</div>
+                  </div>
+                  <div class="meta">6km · Zone 2</div>
+                </div>
+                <div class="chev">›</div>
+              </div>
+              <div class="day-row"><div class="date"><div class="dow">FRI</div><div class="num">18</div></div><div class="accent" style="background:var(--s-easy)"></div><div class="body"><div class="label-row"><div class="label">Easy run</div><div class="type-chip" style="color:var(--s-easy);background:color-mix(in srgb, var(--s-easy) 18%, transparent)">EASY</div></div><div class="meta">5km · Zone 2</div></div><div class="chev">›</div></div>
+              <div class="day-row rest"><div class="date"><div class="dow">SAT</div><div class="num">19</div></div><div class="accent"></div><div class="body"></div></div>
+              <div class="day-row"><div class="date"><div class="dow">SUN</div><div class="num">20</div></div><div class="accent" style="background:var(--s-long)"></div><div class="body"><div class="label-row"><div class="label">Long run</div><div class="type-chip" style="color:var(--s-long);background:color-mix(in srgb, var(--s-long) 18%, transparent)">LONG</div></div><div class="meta">16km · Zone 2</div></div><div class="chev">›</div></div>
+            </div>
+
+            <!-- Next week — full but visually quieter -->
+            <div class="section-h">
+              <span class="left">Next</span>
+            </div>
+
+            <div class="week-card">
+              <div class="head">
+                <div class="lhs">
+                  <div class="eyebrow">W9 · Apr 21–27</div>
+                  <div class="title">Build week 4 · last build week</div>
+                </div>
+                <div class="rhs">
+                  <div class="value" style="font-size:22px;color:var(--ink-2)">46<span class="total" style="font-size:14px">km</span></div>
+                  <div class="unit">planned</div>
+                </div>
+              </div>
+              <div class="day-row rest"><div class="date"><div class="dow">MON</div><div class="num">21</div></div><div class="accent"></div><div class="body"></div></div>
+              <div class="day-row future"><div class="date"><div class="dow">TUE</div><div class="num">22</div></div><div class="accent" style="background:var(--s-inter)"></div><div class="body"><div class="label-row"><div class="label">Intervals</div><div class="type-chip" style="color:var(--s-inter);background:color-mix(in srgb, var(--s-inter) 18%, transparent)">INTERVALS</div></div><div class="meta">8km · Zone 5</div></div><div class="chev">›</div></div>
+              <div class="day-row future"><div class="date"><div class="dow">WED</div><div class="num">23</div></div><div class="accent" style="background:var(--s-easy)"></div><div class="body"><div class="label-row"><div class="label">Easy run</div></div><div class="meta">6km</div></div><div class="chev">›</div></div>
+              <div class="day-row future"><div class="date"><div class="dow">THU</div><div class="num">24</div></div><div class="accent" style="background:var(--s-quality)"></div><div class="body"><div class="label-row"><div class="label">Tempo</div></div><div class="meta">12km</div></div><div class="chev">›</div></div>
+              <div class="day-row rest"><div class="date"><div class="dow">FRI</div><div class="num">25</div></div><div class="accent"></div><div class="body"></div></div>
+              <div class="day-row future"><div class="date"><div class="dow">SAT</div><div class="num">26</div></div><div class="accent" style="background:var(--s-easy)"></div><div class="body"><div class="label-row"><div class="label">Easy run</div></div><div class="meta">5km</div></div><div class="chev">›</div></div>
+              <div class="day-row future"><div class="date"><div class="dow">SUN</div><div class="num">27</div></div><div class="accent" style="background:var(--s-long)"></div><div class="body"><div class="label-row"><div class="label">Long run</div></div><div class="meta">22km</div></div><div class="chev">›</div></div>
+            </div>
+
+            <!-- Distant future — compressed strip -->
+            <div class="section-h">
+              <span class="left">Later</span>
+              <span class="right">7 weeks</span>
+            </div>
+
+            <div class="week-strip-card">
+              <div class="head">
+                <div class="left">W10 · Apr 28 – May 4 · peak begins</div>
+                <div class="stat">52<span class="unit">km</span></div>
+              </div>
+              <div class="strip">
+                <div class="day"><div class="dow">M</div><div class="dot rest"></div></div>
+                <div class="day"><div class="dow">T</div><div class="dot future"></div></div>
+                <div class="day"><div class="dow">W</div><div class="dot future"></div></div>
+                <div class="day"><div class="dow">T</div><div class="dot future"></div></div>
+                <div class="day"><div class="dow">F</div><div class="dot rest"></div></div>
+                <div class="day"><div class="dow">S</div><div class="dot future"></div></div>
+                <div class="day"><div class="dow">S</div><div class="dot future"></div></div>
+              </div>
+            </div>
+
+            <div class="week-strip-card">
+              <div class="head">
+                <div class="left">W11 · May 5 – 11 · deload</div>
+                <div class="stat">32<span class="unit">km</span></div>
+              </div>
+              <div class="strip">
+                <div class="day"><div class="dow">M</div><div class="dot rest"></div></div>
+                <div class="day"><div class="dow">T</div><div class="dot future"></div></div>
+                <div class="day"><div class="dow">W</div><div class="dot rest"></div></div>
+                <div class="day"><div class="dow">T</div><div class="dot future"></div></div>
+                <div class="day"><div class="dow">F</div><div class="dot rest"></div></div>
+                <div class="day"><div class="dow">S</div><div class="dot future"></div></div>
+                <div class="day"><div class="dow">S</div><div class="dot future"></div></div>
+              </div>
+            </div>
+
+            <!-- Race week — distinct -->
+            <div class="week-strip-card race" style="margin-top:18px;border-left:3px solid var(--s-race)">
+              <div class="head">
+                <div class="left" style="color:var(--s-race);font-weight:700">W16 · Race week</div>
+                <div class="stat" style="color:var(--s-race)">42<span class="unit">.2km</span></div>
+              </div>
+              <div class="strip">
+                <div class="day"><div class="dow">M</div><div class="dot rest"></div></div>
+                <div class="day"><div class="dow">T</div><div class="dot future"></div></div>
+                <div class="day"><div class="dow">W</div><div class="dot future"></div></div>
+                <div class="day"><div class="dow">T</div><div class="dot rest"></div></div>
+                <div class="day"><div class="dow">F</div><div class="dot rest"></div></div>
+                <div class="day"><div class="dow">S</div><div class="dot future"></div></div>
+                <div class="day"><div class="dow">S</div><div class="dot future" style="background:var(--s-race);border-color:var(--s-race);opacity:1;width:10px;height:10px"></div></div>
+              </div>
+              <div class="race-tag">Sun 5 May · Marathon des Sables</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Callouts -->
+        <div class="callouts">
+          <div class="callout">
+            <div class="num">1</div>
+            <div><strong>Plan voice block</strong> — single sentence + up to 2 items. Wired from the existing <code>PlanCoachingCard</code>. Rule-engine derived, not AI — no <code>AIMark</code>. ~10 LOC to add.</div>
+          </div>
+          <div class="callout">
+            <div class="num">2</div>
+            <div><strong>Current week dominates</strong> — 36px metric pair (vs 22px on next-week, 14px on strip). Visual hierarchy matches user priority.</div>
+          </div>
+          <div class="callout">
+            <div class="num">3</div>
+            <div><strong>&quot;Now / Next / Later&quot; section headers</strong> — current vs next vs later named explicitly. The plan reads as a story: where you are, what&apos;s coming, the shape of the arc.</div>
+          </div>
+          <div class="callout">
+            <div class="num">4</div>
+            <div><strong>Later weeks compress to a strip</strong> — week strip pattern from ui-patterns.md §3, already used on Today. Tap to expand if user wants detail. Reclaims 80% vertical space across a 16-week plan.</div>
+          </div>
+          <div class="callout">
+            <div class="num">5</div>
+            <div><strong>Race week distinct</strong> — <code>--s-race</code> accent + bold day for race day + countdown line. Currently invisible in calendar; PlanArc already marks it, calendar should match.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TOKEN MIGRATION -->
+  <div class="section">
+    <div class="section-eyebrow">Cleanup</div>
+    <h2>Token migration — <code>PlanCalendar.tsx</code></h2>
+    <p>The Plan screen is the last major surface still on System B alias names. Aliases bridge the renders correctly, but the file diverges from <code>ui-patterns.md</code> § Cross-Screen Consistency. Mechanical find-and-replace; no visual change at the byte level, brings the file into compliance.</p>
+    <div class="token-table">
+      <table>
+        <thead><tr><th>Current</th><th>Should be</th><th>Where</th></tr></thead>
+        <tbody>
+          <tr><td>var(--card-bg)</td><td>var(--card)</td><td>WeekCard background</td></tr>
+          <tr><td>0.5px solid var(--border-col)</td><td>1px solid var(--line)</td><td>All borders &amp; dividers</td></tr>
+          <tr><td>borderRadius: &apos;14px&apos;</td><td>var(--radius-lg)</td><td>WeekCard radius</td></tr>
+          <tr><td>var(--text-primary)</td><td>var(--ink)</td><td>Session label, week title</td></tr>
+          <tr><td>var(--text-secondary)</td><td>var(--ink-2)</td><td>Future session label</td></tr>
+          <tr><td>var(--text-muted)</td><td>var(--mute)</td><td>Date eyebrow, metric, kbd&apos;d copy</td></tr>
+          <tr><td>var(--accent)</td><td>var(--moss)</td><td>Current week, move target, ✓ icon</td></tr>
+          <tr><td>var(--teal-soft)</td><td>var(--moss-soft)</td><td>Current-week header bg, move-mode bg</td></tr>
+          <tr><td>var(--teal-mid)</td><td>var(--moss-mid)</td><td>Move-target outline</td></tr>
+          <tr><td>var(--teal-dim)</td><td>var(--moss-mid)</td><td>Move-target dashed outline</td></tr>
+          <tr><td>padding: &apos;0 12px&apos;</td><td>padding: &apos;0 16px&apos;</td><td>Outer container</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RECOMMENDATIONS -->
+  <div class="section">
+    <div class="section-eyebrow">Ship order</div>
+    <h2>Recommendations</h2>
+    <p>Three releases, each shippable independently. SLC at each step.</p>
+    <div class="recs">
+      <ol>
+        <li>
+          <strong>Pass 1 — Add the voice.</strong> <span class="effort">S · ~1 day</span>
+          Wire <code>PlanCoachingCard</code> (or a Plan-screen-specific variant of it) into the Plan screen above the calendar. Same rule-engine derivation, no AI. Same component pattern as TodayScreen&apos;s coach block. This is the highest-leverage, lowest-risk change — closes the brand-voice gap immediately.
+        </li>
+        <li>
+          <strong>Pass 2 — Token migration + visual hierarchy.</strong> <span class="effort m">M · ~2 days</span>
+          Bring <code>PlanCalendar.tsx</code> onto Warm Slate (mechanical, ~50 LOC of find-and-replace). Same pass: bump the current-week metric pair to 36px, fix the past-week opacity, add the section headers (&quot;Now&quot; / &quot;Next&quot; / &quot;Later&quot;), fix the move-mode copy, race-week <code>--s-race</code> accent. Adds noticeable polish — costs nothing structural.
+        </li>
+        <li>
+          <strong>Pass 3 — Week strip for distant weeks.</strong> <span class="effort m">M · ~2 days</span>
+          New <code>WeekStripCard</code> component using the canonical week strip pattern (ui-patterns.md §3). Past weeks AND weeks ≥3 ahead compress to it; current + next stay as full day lists. Tap-to-expand if the user wants detail on a specific week. Structural change — needs careful testing of the move/swap interaction (does it still work when the source week is compressed?). Defer if the move/swap UX would suffer.
+        </li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

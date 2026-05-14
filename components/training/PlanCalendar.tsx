@@ -65,10 +65,10 @@ function formatDateRange(weekStartDate: Date): string {
 
 const loadMoreStyle: React.CSSProperties = {
   width: '100%', padding: '10px', background: 'none',
-  border: '0.5px solid var(--border-col)',
+  border: '1px solid var(--line)',
   borderRadius: '10px', cursor: 'pointer',
   fontFamily: 'var(--font-ui)', fontSize: '11px',
-  color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase',
+  color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase',
 }
 
 interface Props {
@@ -190,20 +190,42 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
     )
   }
 
+  function renderStrip({ week, weekNum }: { week: Week; weekNum: number }, isPast = false) {
+    return (
+      <WeekStripCard
+        key={`strip-${weekNum}`}
+        week={week}
+        weekNum={weekNum}
+        completions={Object.values(allCompletions[weekNum] ?? {})}
+        units={units}
+        isPast={isPast}
+      />
+    )
+  }
+
   if (!overridesReady) return (
-    <div style={{ padding: '0 12px 32px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    <div style={{ padding: '0 16px 32px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
       {[120, 200, 160].map((h, i) => (
-        <div key={i} style={{ height: `${h}px`, borderRadius: '14px', background: 'var(--border-col)', opacity: 1 - i * 0.15 }} />
+        <div key={i} style={{ height: `${h}px`, borderRadius: 'var(--radius-lg)', background: 'var(--bg-soft)', opacity: 1 - i * 0.15 }} />
       ))}
     </div>
   )
 
+  // Split current-and-future into [current, next, ...later] so the render
+  // can apply different visual weight to each section. Current week gets a
+  // full WeekCard (dominant). Next week gets a full WeekCard (quieter).
+  // Later weeks compress to strip cards (the arc, at a glance).
+  const currentWeek = currentAndFutureWeeks[0]
+  const nextWeek    = currentAndFutureWeeks[1]
+  const laterWeeks  = currentAndFutureWeeks.slice(2)
+
   return (
-    <div style={{ padding: '0 12px 32px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    <div style={{ padding: '0 16px 32px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
       {pastWeeks.length > 0 && (
         showPast ? (
           <>
-            {pastWeeks.map(renderWeek)}
+            <PlanSectionLabel>Past</PlanSectionLabel>
+            {pastWeeks.map(w => renderStrip(w, true))}
             <button onClick={() => setShowPast(false)} style={loadMoreStyle}>↑ Hide past weeks</button>
           </>
         ) : (
@@ -212,7 +234,46 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
           </button>
         )
       )}
-      {currentAndFutureWeeks.map(renderWeek)}
+      {currentWeek && (
+        <>
+          <PlanSectionLabel>Now</PlanSectionLabel>
+          {renderWeek(currentWeek)}
+        </>
+      )}
+      {nextWeek && (
+        <>
+          <PlanSectionLabel>Next</PlanSectionLabel>
+          {renderWeek(nextWeek)}
+        </>
+      )}
+      {laterWeeks.length > 0 && (
+        <>
+          <PlanSectionLabel right={`${laterWeeks.length} week${laterWeeks.length !== 1 ? 's' : ''}`}>Later</PlanSectionLabel>
+          {laterWeeks.map(w => renderStrip(w, false))}
+        </>
+      )}
+    </div>
+  )
+}
+
+/** Section label between week groups (Past / Now / Next / Later).
+ *  Pattern: 11px 700 mute uppercase 0.12em letter-spacing. */
+function PlanSectionLabel({ children, right }: { children: React.ReactNode; right?: string }) {
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+      padding: '0 4px', marginTop: '18px',
+    }}>
+      <span style={{
+        fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
+        color: 'var(--mute)', letterSpacing: '0.12em', textTransform: 'uppercase',
+      }}>{children}</span>
+      {right && (
+        <span style={{
+          fontFamily: 'var(--font-ui)', fontSize: '10px',
+          color: 'var(--mute)', letterSpacing: '0.04em',
+        }}>{right}</span>
+      )}
     </div>
   )
 }
@@ -234,6 +295,9 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   const weekEnd = new Date(weekStartDate); weekEnd.setDate(weekEnd.getDate() + 7)
   const isCurrent = now >= weekStartDate && now < weekEnd
   const isCompleted = !isCurrent && weekStartDate < now
+  // Race week gets --s-race left-rail accent so it stands out in the calendar
+  // — mirrors the PlanArc treatment (which already paints race week --s-race).
+  const isRace = (week as any).type === 'race' || (week as any).badge === 'race'
   const weekTheme = week.theme ?? ''
   const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()]
   const [movingDay, setMovingDay] = useState<string | null>(null)
@@ -290,44 +354,55 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
     })
   }
 
+  // Metric pair size — current week dominates the visual hierarchy.
+  // Future / past weeks stay at 18px so the current week reads as "you are here".
+  const metricSize    = isCurrent ? 36 : 18
+  const metricUnitSize = isCurrent ? 18 : 12
+
   return (
     <div style={{
-      background: 'var(--card-bg)',
-      borderRadius: '14px',
-      border: `0.5px solid ${isCurrent ? 'var(--teal-mid)' : 'var(--border-col)'}`,
-      borderLeft: isCurrent ? '3px solid var(--accent)' : undefined,
+      background: 'var(--card)',
+      borderRadius: 'var(--radius-lg)',
+      border: `1px solid ${isCurrent ? 'var(--line-strong)' : 'var(--line)'}`,
+      borderLeft: isRace
+        ? '3px solid var(--s-race)'
+        : isCurrent ? '3px solid var(--moss)' : undefined,
       overflow: 'hidden',
       opacity: isCompleted ? 0.65 : 1,
     }}>
       {/* Week header */}
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 14px 10px',
-        borderBottom: '0.5px solid var(--border-col)',
-        background: isCurrent ? 'var(--teal-soft)' : 'transparent',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+        padding: isCurrent ? '14px 16px 12px' : '12px 14px 10px',
+        borderBottom: '1px solid var(--line)',
+        background: isCurrent ? 'var(--moss-soft)' : 'transparent',
       }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: isCurrent ? 'var(--accent)' : 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px' }}>
-            W{weekNum} · {formatDateRange(weekStartDate)}
-            {movingDay && <span style={{ color: 'var(--accent)', marginLeft: '8px' }}>· tap an empty day to move, or another session to swap</span>}
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+            color: isRace ? 'var(--s-race)' : isCurrent ? 'var(--moss)' : 'var(--mute)',
+            letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px',
+          }}>
+            {isRace ? 'Race week · ' : ''}W{weekNum} · {formatDateRange(weekStartDate)}
+            {movingDay && <span style={{ color: 'var(--moss)', marginLeft: '8px', textTransform: 'none', letterSpacing: 'normal', fontWeight: 500 }}>· Tap where you want it.</span>}
           </div>
-          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '13px', fontWeight: 500, color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: isCompleted ? 'var(--mute)' : 'var(--ink)', letterSpacing: '-0.005em' }}>
             {week.label ?? ''}
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px', justifyContent: 'flex-end' }}>
             {actualKm > 0
-              ? <span style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', color: 'var(--accent)', fontWeight: 600, lineHeight: 1 }}>{formatDistance(actualKm, units, { exact: true, noSuffix: true })}</span>
+              ? <span style={{ fontFamily: 'var(--font-ui)', fontSize: `${metricSize}px`, color: 'var(--moss)', fontWeight: isCurrent ? 800 : 600, lineHeight: 1, letterSpacing: isCurrent ? '-0.02em' : 'normal', fontVariantNumeric: 'tabular-nums' }}>{formatDistance(actualKm, units, { exact: true, noSuffix: true })}</span>
               : intendedKm > 0
-              ? <span style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1 }}>{intendedKm}</span>
+              ? <span style={{ fontFamily: 'var(--font-ui)', fontSize: `${metricSize}px`, color: isCurrent ? 'var(--ink)' : 'var(--mute)', fontWeight: isCurrent ? 800 : 600, lineHeight: 1, letterSpacing: isCurrent ? '-0.02em' : 'normal', fontVariantNumeric: 'tabular-nums' }}>{intendedKm}</span>
               : null
             }
             {actualKm > 0 && intendedKm > 0 && (
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>/{intendedKm}</span>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: `${metricUnitSize}px`, fontWeight: isCurrent ? 600 : 400, color: 'var(--mute)' }}>/{intendedKm}</span>
             )}
           </div>
-          {intendedKm > 0 && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '2px' }}>{actualKm > 0 ? `${units} done` : `${units} planned`}</div>}
+          {intendedKm > 0 && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '4px' }}>{actualKm > 0 ? `${units} done` : `${units} planned`}</div>}
         </div>
       </div>
 
@@ -408,11 +483,11 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
           onClick={() => setMovingDay(null)}
           style={{
             width: '100%', padding: '10px 14px',
-            background: 'var(--teal-soft)',
-            border: 'none', borderTop: '0.5px solid var(--teal-dim)',
+            background: 'var(--moss-soft)',
+            border: 'none', borderTop: '1px solid var(--moss-mid)',
             cursor: 'pointer',
             fontFamily: 'var(--font-ui)', fontSize: '11px',
-            color: 'var(--accent)', letterSpacing: '0.06em', textTransform: 'uppercase',
+            color: 'var(--moss)', letterSpacing: '0.06em', textTransform: 'uppercase',
             textAlign: 'center',
           }}
         >
@@ -437,7 +512,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
   const hasSession = !!session && session.type !== 'rest'
   const isRestType = !session || session.type === 'rest'
   const isTarget = isMoveTarget || isSwapTarget
-  const accent = session ? (SESSION_COLORS[session.type] ?? 'var(--text-muted)') : 'transparent'
+  const accent = session ? (SESSION_COLORS[session.type] ?? 'var(--mute)') : 'transparent'
 
   return (
     <div
@@ -445,19 +520,19 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
       style={{
         display: 'flex', alignItems: 'center',
         padding: isRestType && !isTarget ? '6px 14px' : '10px 14px',
-        borderBottom: isLast ? 'none' : '0.5px solid var(--border-col)',
+        borderBottom: isLast ? 'none' : '1px solid var(--line)',
         background: isMoving
-          ? 'var(--teal-soft)'
+          ? 'var(--moss-soft)'
           : isTarget
-          ? 'var(--teal-soft)'
+          ? 'var(--moss-soft)'
           : 'transparent',
         cursor: (hasSession || isTarget) ? 'pointer' : 'default',
         opacity: isMoving ? 0.7 : isMoveMode && !isTarget && !isMoving ? 0.4 : isSkipped ? 0.5 : isPast && !isComplete && hasSession ? 0.45 : 1,
         // dashed = move (empty slot); solid = swap (occupied slot); solid on the source while moving.
         outline: isMoveTarget
-          ? '1px dashed var(--teal-dim)'
+          ? '1px dashed var(--moss-mid)'
           : isSwapTarget || isMoving
-          ? '1px solid var(--teal-mid)'
+          ? '1px solid var(--moss-mid)'
           : 'none',
         outlineOffset: '-1px',
         transition: 'background 0.15s, opacity 0.15s',
@@ -466,23 +541,23 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
       } as React.CSSProperties}
     >
       <div style={{ width: '40px', flexShrink: 0 }}>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: isToday ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: isToday ? 'var(--moss)' : 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {DOW_FULL[dayKey]}
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: isToday ? 'var(--accent)' : 'var(--text-muted)', fontWeight: isToday ? 600 : 400, marginTop: '1px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: isToday ? 'var(--moss)' : 'var(--mute)', fontWeight: isToday ? 600 : 400, marginTop: '1px' }}>
           {date.getDate()}
         </div>
       </div>
 
       {isMoveTarget ? (
-        <div style={{ width: '3px', height: '34px', borderRadius: '2px', background: 'var(--teal-mid)', marginRight: '12px', flexShrink: 0 }} />
+        <div style={{ width: '3px', height: '34px', borderRadius: '2px', background: 'var(--moss-mid)', marginRight: '12px', flexShrink: 0 }} />
       ) : (
-        <div style={{ width: '3px', height: hasSession ? '34px' : '16px', borderRadius: '2px', background: isComplete ? 'var(--accent)' : isSkipped ? 'var(--border-col)' : isMoving || isSwapTarget ? 'var(--accent)' : accent, marginRight: '12px', flexShrink: 0 }} />
+        <div style={{ width: '3px', height: hasSession ? '34px' : '16px', borderRadius: '2px', background: isComplete ? 'var(--moss)' : isSkipped ? 'var(--line)' : isMoving || isSwapTarget ? 'var(--moss)' : accent, marginRight: '12px', flexShrink: 0 }} />
       )}
 
       <div style={{ flex: 1, minWidth: 0 }}>
         {isMoveTarget ? (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--accent)', letterSpacing: '0.04em' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss)', letterSpacing: '0.04em' }}>
             Move here
           </div>
         ) : isRestType ? null : (
@@ -490,7 +565,8 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
               <div style={{
                 fontSize: '15px', fontWeight: 500,
-                color: isMoving || isSwapTarget ? 'var(--accent)' : isSkipped ? 'var(--text-muted)' : isFuture ? 'var(--text-secondary)' : 'var(--text-primary)',
+                color: isMoving || isSwapTarget ? 'var(--moss)' : isSkipped ? 'var(--mute)' : isComplete ? 'var(--mute)' : isFuture ? 'var(--ink-2)' : 'var(--ink)',
+                textDecoration: isSkipped ? 'line-through' : 'none',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 flex: 1, minWidth: 0,
               }}>
@@ -527,31 +603,43 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
                   : null
                 const value = metric === 'duration' ? (durStr ?? distStr) : (distStr ?? durStr)
                 return value ? (
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums' }}>
                     {value}
                   </span>
                 ) : null
               })() : session.detail ? (
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.detail}</span>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.detail}</span>
               ) : null}
               {isComplete && completion?.strava_activity_name && (
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--strava)' }}>
                   ● {completion.strava_activity_name}{completion.strava_activity_km ? ` · ${completion.strava_activity_km}km` : ''}
                 </span>
               )}
-              {isSkipped && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)' }}>skipped</span>}
+              {isSkipped && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)' }}>skipped</span>}
             </div>
           </>
         )}
       </div>
 
       <div style={{ flexShrink: 0, marginLeft: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        {isComplete && !isMoveMode && <span style={{ color: 'var(--accent)', fontSize: '14px' }}>✓</span>}
+        {/* Done: canonical 16px moss check circle (ui-patterns.md § SessionCard).
+            Replaces a plain ✓ glyph so a scan of the plan reads the completion
+            state more clearly. */}
+        {isComplete && !isMoveMode && (
+          <span aria-label="Complete" style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: '16px', height: '16px', borderRadius: '50%',
+            background: 'var(--moss-soft)',
+            border: '1.5px solid var(--moss)',
+            color: 'var(--moss)', fontSize: '9px', fontWeight: 800,
+            lineHeight: 1,
+          }}>✓</span>
+        )}
         {hasSession && !isComplete && !isSkipped && !isMoveMode && (
-          <span style={{ color: 'var(--text-muted)', fontSize: '16px' }}>›</span>
+          <span style={{ color: 'var(--mute)', fontSize: '16px' }}>›</span>
         )}
         {isSwapTarget && (
-          <span style={{ color: 'var(--accent)', fontSize: '15px', lineHeight: 1 }} aria-label="Swap with this session">⇄</span>
+          <span style={{ color: 'var(--moss)', fontSize: '15px', lineHeight: 1 }} aria-label="Swap with this session">⇄</span>
         )}
         {isMovable && !isMoveMode && (
           <button
@@ -563,19 +651,146 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
             }}
           >
             {[0,1,2].map(i => (
-              <div key={i} style={{ width: '14px', height: '1.5px', background: 'var(--text-primary)', borderRadius: '1px' }} />
+              <div key={i} style={{ width: '14px', height: '1.5px', background: 'var(--ink)', borderRadius: '1px' }} />
             ))}
           </button>
         )}
         {isMoving && (
           <button
             onClick={e => { e.stopPropagation(); onMoveIconTap() }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: '16px', padding: '2px' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--moss)', fontSize: '16px', padding: '2px' }}
           >
             ✕
           </button>
         )}
       </div>
+    </div>
+  )
+}
+
+/**
+ * Compressed week summary — 7 status dots in a strip, single-line meta above.
+ * Used for past weeks (when expanded) and distant-future weeks. Replaces the
+ * full WeekCard at distance so the plan reads as an arc, not a wall of rows.
+ *
+ * Canonical week-strip pattern (ui-patterns.md §3). Same dot vocabulary as the
+ * TodayScreen DateStrip:
+ *   ● filled moss     — completed
+ *   ○ outlined        — future session
+ *   ─ dash            — rest day (or empty)
+ *   ⊘ dashed circle   — skipped
+ */
+function WeekStripCard({ week, weekNum, completions, units, isPast = false, onTap }: {
+  week: Week; weekNum: number
+  completions: Completion[]
+  units: DistanceUnits
+  isPast?: boolean
+  onTap?: () => void
+}) {
+  const ws = week.sessions ?? {}
+  const weekStartDate = parseLocalDate(week.date)
+  const isRace = (week as any).type === 'race' || (week as any).badge === 'race'
+  const phase = (week as any).phase as string | undefined
+  const sessionDistances = Object.values(ws).map((s: any) => s?.distance_km as number | undefined)
+  const intendedKm = sumRoundedDistance(sessionDistances, units)
+  const completionMap: Record<string, string> = {}
+  completions.forEach(c => { completionMap[c.session_day] = c.status })
+  const actualKm = completions
+    .filter(c => c.status === 'complete' && c.strava_activity_km)
+    .reduce((sum, c) => sum + (c.strava_activity_km ?? 0), 0)
+  const headerKm = actualKm > 0 ? actualKm : intendedKm
+
+  return (
+    <div
+      onClick={onTap}
+      style={{
+        background: 'var(--card)',
+        border: '1px solid var(--line)',
+        borderLeft: isRace ? '3px solid var(--s-race)' : undefined,
+        borderRadius: 'var(--radius-lg)',
+        padding: '14px 16px',
+        opacity: isPast ? 0.65 : 1,
+        cursor: onTap ? 'pointer' : 'default',
+      }}
+    >
+      {/* Header row: week label + total km */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
+        <div style={{
+          fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600,
+          color: isRace ? 'var(--s-race)' : isPast ? 'var(--mute)' : 'var(--ink-2)',
+          letterSpacing: '-0.005em',
+        }}>
+          {isRace ? 'Race week' : `W${weekNum} · ${formatDateRange(weekStartDate)}`}
+          {!isRace && phase === 'taper' && <span style={{ color: 'var(--mute)' }}> · taper</span>}
+          {!isRace && (week as any).type === 'deload' && <span style={{ color: 'var(--mute)' }}> · deload</span>}
+          {!isRace && week.label && phase === 'peak' && <span style={{ color: 'var(--mute)' }}> · peak</span>}
+        </div>
+        {headerKm > 0 && (
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 700,
+            color: isRace ? 'var(--s-race)' : 'var(--ink-2)',
+            fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em',
+          }}>
+            {formatDistance(headerKm, units, { exact: isRace })}
+          </div>
+        )}
+      </div>
+      {/* 7-day status strip */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+        {DOW_ORDER.map(dayKey => {
+          const session = (ws as any)[dayKey]
+          const isRest = !session || session.type === 'rest'
+          const status = completionMap[dayKey]
+          const isComplete = status === 'complete'
+          const isSkipped = status === 'skipped'
+          const isRaceDay = isRace && session?.type === 'race'
+          // Dot rendering — three states (rest, future/skipped/done, race)
+          let dot: React.ReactNode
+          if (isRest) {
+            dot = <div style={{ width: '6px', height: '1.5px', borderRadius: '1px', background: 'var(--mute-2)', opacity: 0.5 }} />
+          } else if (isComplete) {
+            dot = <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--moss)' }} />
+          } else if (isSkipped) {
+            dot = <div style={{ width: '8px', height: '8px', borderRadius: '50%', border: '1px dashed var(--mute)', opacity: 0.6 }} />
+          } else if (isRaceDay) {
+            dot = <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--s-race)' }} />
+          } else if (isPast) {
+            dot = <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--mute-2)', opacity: 0.5 }} />
+          } else {
+            dot = <div style={{ width: '8px', height: '8px', borderRadius: '50%', border: '1px solid var(--mute-2)' }} />
+          }
+          return (
+            <div key={dayKey} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 600,
+                color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>{(DOW_FULL as any)[dayKey].charAt(0)}</div>
+              {dot}
+            </div>
+          )
+        })}
+      </div>
+      {/* Race week tag */}
+      {isRace && week.date && (
+        <div style={{
+          marginTop: '10px',
+          fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+          color: 'var(--s-race)', letterSpacing: '0.08em', textTransform: 'uppercase',
+        }}>
+          {(() => {
+            // Race day = last non-rest session in the week (typically Sun)
+            const raceDay = DOW_ORDER.slice().reverse().find(k => {
+              const s = (ws as any)[k]
+              return s && s.type === 'race'
+            }) ?? 'sun'
+            const offset = DAY_OFFSETS[raceDay] ?? 6
+            const raceDate = new Date(weekStartDate)
+            raceDate.setDate(raceDate.getDate() + offset)
+            return raceDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+          })()}
+          {week.label ? ` · ${week.label}` : ''}
+        </div>
+      )}
     </div>
   )
 }

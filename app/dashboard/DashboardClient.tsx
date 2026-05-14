@@ -5243,54 +5243,66 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
         />
       </div>
 
-      {/* ── WEEK SUMMARY ─────────────────────────────────────────── */}
+      {/* ── PLAN VOICE — this-week coaching card ──────────────────────
+          Slim rule-engine-derived voice block; the Plan screen's brand
+          moment. Shares helpers (buildWeekVoiceContext, getWeekVoiceHeadline,
+          getWeekVoiceItems) with PlanCoachingCard on the Coach screen.
+          No CoachByline / AIMark — rule-engine output per provenance rule. */}
       {(() => {
         const wk = plan.weeks[currentWeekIndex]
         if (!wk) return null
-        const SESSION_KEYS = ['mon','tue','wed','thu','fri','sat','sun']
-        const ws = (wk as any).sessions ?? {}
-        const weekCompletions = allCompletions[weekNum] ?? {}
-        let total = 0, done = 0
-        SESSION_KEYS.forEach(k => {
-          if (ws[k] && ws[k].type !== 'rest') {
-            total++
-            if (weekCompletions[k]?.status === 'complete' || weekCompletions[k]?.status === 'skipped') done++
-          }
-        })
-        // Week target = sum of rounded session distances, so it agrees with
-        // the rounded values displayed on each session row.
-        const weeklyKm = sumRoundedDistance(
-          SESSION_KEYS.map(k => ws[k]?.distance_km as number | undefined),
-          preferredUnits,
-        )
-        const weekPhase = (wk as any).phase as string | undefined
-        const phaseCap = weekPhase ? ({ foundation: 'Foundation Block', base: 'Base', build: 'Build', peak: 'Peak', taper: 'Taper' }[weekPhase] ?? weekPhase) : null
+        const ctx = buildWeekVoiceContext(wk, plan)
+        const headline = getWeekVoiceHeadline(ctx)
+        const items = getWeekVoiceItems(ctx, 2)
+        const phaseCap = ctx.phase ? (PHASE_LABELS[ctx.phase] ?? ctx.phase) : null
         return (
-          <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {phaseCap && (
+          <div style={{ padding: '16px 16px 0' }}>
+            <div style={{
+              position: 'relative',
+              background: 'var(--card)',
+              border: '1px solid var(--line)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '14px 16px 14px 19px',
+              overflow: 'hidden',
+            }}>
+              {/* Moss left rail — coaching surface signal (same accent pattern
+                  as CoachNoteBlock when aiGenerated). 3px wide, inset 8px. */}
               <span style={{
-                fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-                color: weekPhase === 'foundation' ? 'var(--mute)' : 'var(--moss)',
-                letterSpacing: '0.08em', textTransform: 'uppercase',
-              }}>{phaseCap}</span>
-            )}
-            {phaseCap && <span style={{ color: 'var(--mute-2)', fontSize: '10px' }}>·</span>}
-            {total > 0 && (
-              <span style={{
-                fontFamily: 'var(--font-ui)', fontSize: '10px',
-                color: done === total && total > 0 ? 'var(--moss)' : 'var(--mute)',
-              }}>
-                {done}/{total} done
-              </span>
-            )}
-            {total > 0 && weeklyKm > 0 && (
-              <span style={{ color: 'var(--mute-2)', fontSize: '10px' }}>·</span>
-            )}
-            {weeklyKm > 0 && (
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)' }}>
-                {weeklyKm}{preferredUnits} target
-              </span>
-            )}
+                position: 'absolute', left: '8px', top: '14px', bottom: '14px',
+                width: '3px', borderRadius: '2px', background: 'var(--moss)',
+              }} />
+              {/* Eyebrow row: section label + phase chip on right */}
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+                  color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
+                }}>This week</span>
+                {phaseCap && (
+                  <span style={{
+                    marginLeft: 'auto',
+                    fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+                    color: 'var(--moss)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                  }}>{phaseCap}</span>
+                )}
+              </div>
+              {/* Headline */}
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
+                color: 'var(--ink)', lineHeight: 1.4, letterSpacing: '-0.01em',
+                marginBottom: items.length > 0 ? '8px' : 0,
+              }}>{headline}</div>
+              {/* Items — max 2 on this surface; full PlanCoachingCard on Coach shows 3 */}
+              {items.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {items.map((item, i) => (
+                    <div key={i} style={{
+                      fontFamily: 'var(--font-ui)', fontSize: '12px',
+                      color: 'var(--ink-2)', lineHeight: 1.55,
+                    }}>{item}</div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )
       })()}
@@ -5316,51 +5328,78 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
 }
 
 // ── PLAN-BASED COACHING ───────────────────────────────────────────────────
+//
+// Week-level coaching voice — rule-engine derived, shared by two surfaces:
+//   • PlanScreen  → slim inline card above the calendar
+//   • CoachScreen → full PlanCoachingCard with header + footer
+//
+// Pure functions of (currentWeek, plan). No AI involved — so per ui-patterns.md
+// § AIMark provenance rule, neither surface gets a Kit / AIMark byline.
+
+interface WeekVoiceContext {
+  phase?: string
+  hasQuality: boolean
+  hasLong: boolean
+  weeksToRace: number
+}
+
+function buildWeekVoiceContext(currentWeek: Week, plan: Plan): WeekVoiceContext {
+  const sessions = Object.values((currentWeek as any).sessions ?? {}) as any[]
+  return {
+    phase: (currentWeek as any).phase as string | undefined,
+    hasQuality: sessions.some(s => s && ['quality','tempo','intervals','hard'].includes(s.type)),
+    hasLong: sessions.some(s => s && s.type === 'long'),
+    weeksToRace: Math.max(
+      0,
+      Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000))
+    ),
+  }
+}
+
+function getWeekVoiceHeadline(ctx: WeekVoiceContext): string {
+  if (ctx.phase === 'foundation') return "Foundation week. Easy only — no effort required."
+  if (ctx.phase === 'taper') return "Taper week. Back off and trust the work."
+  if (ctx.phase === 'peak')  return "Peak week. You're sharp. Don't add more."
+  if (ctx.hasQuality && ctx.hasLong) return "Quality and long run this week. Hard stuff first, long stuff rested."
+  if (ctx.hasQuality) return "Quality session this week. Everything else is recovery."
+  if (ctx.hasLong)    return "Long run week. Keep easy runs genuinely easy."
+  return "Steady week. Execute consistently."
+}
+
+function getWeekVoiceItems(ctx: WeekVoiceContext, max = 3): string[] {
+  const items: string[] = []
+  if (ctx.hasQuality && ctx.hasLong) {
+    items.push("Do the quality session before fatigue builds — earlier in the week is better.")
+    items.push("The long run should be Zone 2 only. No heroics.")
+  } else if (ctx.hasQuality) {
+    items.push("Run the quality session when fresh — not back-to-back with another hard day.")
+    items.push("Everything else this week is recovery. Treat it that way.")
+  } else if (ctx.hasLong) {
+    items.push("Keep the pace honest throughout — if HR climbs, walk.")
+    items.push("Fuel and hydrate from the start, not when you're already behind.")
+  }
+  if (ctx.phase === 'base') items.push("Base phase: volume over intensity. The fitness accrues slowly. That's fine.")
+  if (ctx.phase === 'taper') items.push("Resist adding miles. Your goal is to arrive fresh, not to cram.")
+  if (ctx.weeksToRace <= 4 && ctx.weeksToRace > 0) items.push(`${ctx.weeksToRace} week${ctx.weeksToRace !== 1 ? 's' : ''} out. Stay disciplined.`)
+  return items.slice(0, max)
+}
+
+const PHASE_LABELS: Record<string, string> = {
+  foundation: 'Foundation Block', base: 'Base', build: 'Build', peak: 'Peak', taper: 'Taper',
+}
 
 function PlanCoachingCard({ plan, currentWeek, units = 'km', trackedKm }: {
   plan: Plan; currentWeek: Week; units?: 'km' | 'mi'; trackedKm?: number | null
 }) {
   const sessions = Object.values((currentWeek as any).sessions ?? {}) as any[]
-  const runningSessions = sessions.filter(s => s && s.type && s.type !== 'rest' && s.type !== 'strength')
-  const hasQuality = sessions.some(s => s && ['quality','tempo','intervals','hard'].includes(s.type))
-  const hasLong    = sessions.some(s => s && s.type === 'long')
-  const phase      = (currentWeek as any).phase as string | undefined
-  const theme      = (currentWeek as any).theme as string | undefined
+  const phase    = (currentWeek as any).phase as string | undefined
+  const theme    = (currentWeek as any).theme as string | undefined
   // Sum of rounded session distances — agrees with per-row displays.
-  const weeklyKm   = sumRoundedDistance(sessions.map(s => s?.distance_km as number | undefined), units)
-  const weeksToRace = Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
+  const weeklyKm = sumRoundedDistance(sessions.map(s => s?.distance_km as number | undefined), units)
 
-  const phaseCap = phase ? ({ foundation: 'Foundation Block', base: 'Base', build: 'Build', peak: 'Peak', taper: 'Taper' }[phase] ?? phase) : null
-
-  function getWeekHeadline(): string {
-    if (phase === 'foundation') return "Foundation week. Easy only — no effort required."
-    if (phase === 'taper') return "Taper week. Back off and trust the work."
-    if (phase === 'peak')  return "Peak week. You're sharp. Don't add more."
-    if (hasQuality && hasLong) return "Quality and long run this week. Hard stuff first, long stuff rested."
-    if (hasQuality) return "Quality session this week. Everything else is recovery."
-    if (hasLong)    return "Long run week. Keep easy runs genuinely easy."
-    return "Steady week. Execute consistently."
-  }
-
-  function getWeekItems(): string[] {
-    const items: string[] = []
-    if (hasQuality && hasLong) {
-      items.push("Do the quality session before fatigue builds — earlier in the week is better.")
-      items.push("The long run should be Zone 2 only. No heroics.")
-    } else if (hasQuality) {
-      items.push("Run the quality session when fresh — not back-to-back with another hard day.")
-      items.push("Everything else this week is recovery. Treat it that way.")
-    } else if (hasLong) {
-      items.push("Keep the pace honest throughout — if HR climbs, walk.")
-      items.push("Fuel and hydrate from the start, not when you're already behind.")
-    }
-    if (phase === 'base') items.push("Base phase: volume over intensity. The fitness accrues slowly. That's fine.")
-    if (phase === 'taper') items.push("Resist adding miles. Your goal is to arrive fresh, not to cram.")
-    if (weeksToRace <= 4 && weeksToRace > 0) items.push(`${weeksToRace} week${weeksToRace !== 1 ? 's' : ''} out. Stay disciplined.`)
-    return items.slice(0, 3)
-  }
-
-  const items = getWeekItems()
+  const phaseCap = phase ? (PHASE_LABELS[phase] ?? phase) : null
+  const ctx      = buildWeekVoiceContext(currentWeek, plan)
+  const items    = getWeekVoiceItems(ctx)
 
   const doneDisplay = trackedKm != null && trackedKm > 0
     ? `${trackedKm.toFixed(1)}${units} done`
@@ -5381,7 +5420,7 @@ function PlanCoachingCard({ plan, currentWeek, units = 'km', trackedKm }: {
       {/* Body */}
       <div style={{ padding: '16px' }}>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.35, marginBottom: theme || items.length > 0 ? '10px' : 0, letterSpacing: '-0.2px' }}>
-          {getWeekHeadline()}
+          {getWeekVoiceHeadline(ctx)}
         </div>
         {theme && (
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.6, marginBottom: items.length > 0 ? '12px' : 0, fontStyle: 'italic' }}>
