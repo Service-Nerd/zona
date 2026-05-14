@@ -10,6 +10,7 @@ import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
+import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
 import { isTrialActive } from '@/lib/trial'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
@@ -539,6 +540,11 @@ export default function DashboardClient() {
           const thisWeekCompletions = completionsMap[wN] ?? {}
           if (week) {
             const weekStart = parseLocalDate((week as any).date)
+            // Apply swap/move overrides so a swapped session is checked against
+            // the slot it now sits in, not the day it was originally defined on.
+            // Completions are keyed by original_day — see effectiveSessions.ts.
+            const weekOverrides = (overridesRes.data ?? []).filter((o: any) => o.week_n === wN)
+            const effective = resolveEffectiveSessions(week, weekOverrides)
             for (const dayKey of WEEK_DAYS) {
               const dayIdx = WEEK_DAYS.indexOf(dayKey)
               // Calendar date for this day within the current week. Plan weeks
@@ -546,10 +552,14 @@ export default function DashboardClient() {
               const dayDate = new Date(weekStart)
               dayDate.setDate(weekStart.getDate() + dayIdx)
               if (dayDate >= today) break // today or future — not missable
-              const s = (week.sessions as any)[dayKey]
-              if (!s || s.type === 'rest') continue
-              if (!thisWeekCompletions[dayKey]) {
-                setMissedSessionPrompt({ weekN: wN, day: dayKey, session: { ...s, key: dayKey } })
+              const eff = effective[dayKey]
+              if (!eff || eff.session.type === 'rest') continue
+              if (!thisWeekCompletions[eff.originalDay]) {
+                setMissedSessionPrompt({
+                  weekN: wN,
+                  day: dayKey,                        // slot — used for display
+                  session: { ...eff.session, key: eff.originalDay },  // canonical id for upsert
+                })
                 break // one at a time
               }
             }
@@ -1222,10 +1232,14 @@ export default function DashboardClient() {
             try {
               const { data: { user } } = await supabase.auth.getUser()
               if (!user) return
+              // Completion key = original_day (session.key). After a swap, the slot
+              // (missedSessionPrompt.day) and the original day diverge; the rest of
+              // the system reads completions by original_day.
+              const completionKey = missedSessionPrompt.session.key ?? missedSessionPrompt.day
               await supabase.from('session_completions').upsert({
                 user_id: user.id,
                 week_n: missedSessionPrompt.weekN,
-                session_day: missedSessionPrompt.day,
+                session_day: completionKey,
                 status: 'skipped',
                 fatigue_tag: reason,
                 updated_at: new Date().toISOString(),
@@ -1237,7 +1251,7 @@ export default function DashboardClient() {
                   body: JSON.stringify({
                     skipReason: reason,
                     sessionType: missedSessionPrompt.session.type,
-                    sessionDay: missedSessionPrompt.day,
+                    sessionDay: completionKey,
                   }),
                 })
               }

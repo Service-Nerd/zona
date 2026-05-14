@@ -8,6 +8,7 @@ import { buildDailyCoachNotePrompt } from '@/lib/coaching/prompts/dailyCoachNote
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { getCurrentWeekIndex } from '@/lib/plan'
+import { resolveEffectiveSessions, slotForOriginalDay, type SessionOverride } from '@/lib/plan/effectiveSessions'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 
@@ -59,8 +60,8 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Build context: plan + last completions + run_analysis + first_name + last weekly report
-  const [planRes, settingsRes, completionsRes, analysisRes, lastWeeklyRes] = await Promise.all([
+  // Build context: plan + last completions + run_analysis + first_name + last weekly report + swap overrides
+  const [planRes, settingsRes, completionsRes, analysisRes, lastWeeklyRes, overridesRes] = await Promise.all([
     serviceSupabase.from('plans').select('plan_json').eq('user_id', userId).single(),
     serviceSupabase.from('user_settings').select('first_name, resting_hr, max_hr').eq('id', userId).single(),
     serviceSupabase
@@ -87,6 +88,9 @@ export async function GET(req: NextRequest) {
       .order('week_n', { ascending: false })
       .limit(1)
       .maybeSingle(),
+    serviceSupabase.from('session_overrides')
+      .select('week_n, original_day, new_day')
+      .eq('user_id', userId),
   ])
 
   const plan = planRes.data?.plan_json as Plan | null
@@ -99,12 +103,16 @@ export async function GET(req: NextRequest) {
   const week      = plan.weeks[weekIndex]
   if (!week) return NextResponse.json({ error: 'No current week in plan' }, { status: 404 })
 
-  // Today's session (by day-of-week from the local date param)
+  // Today's session — slot lookup must respect swap/move overrides.
+  // Without this, a session moved into today's slot reads as "nothing today".
+  const allOverrides: SessionOverride[] = (overridesRes.data as SessionOverride[] | null) ?? []
+  const currentWeekOverrides = allOverrides.filter(o => o.week_n === weekN)
+  const effectiveWeek = resolveEffectiveSessions(week, currentWeekOverrides)
   const dayOfWeek = new Date(noteDate + 'T00:00:00Z').getUTCDay()  // 0=Sun..6=Sat
   const dowKey    = DOW_KEYS[dayOfWeek]
   // Treat strength as a rest day for coaching purposes — feature not yet built out.
-  const rawTodaySession = (week.sessions as any)?.[dowKey] ?? null
-  const todaySession = EXCLUDED_SESSION_TYPES.includes(rawTodaySession?.type) ? null : rawTodaySession
+  const rawTodaySession = effectiveWeek[dowKey]?.session ?? null
+  const todaySession = rawTodaySession && !EXCLUDED_SESSION_TYPES.includes(rawTodaySession.type) ? rawTodaySession : null
   const todayDayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dayOfWeek]
   const todayZone = zoneForSessionType(todaySession?.type)
 
@@ -142,8 +150,12 @@ export async function GET(req: NextRequest) {
     }
 
     if (actualRunMs == null) {
+      // Completions are keyed by original_day; if that session was swapped, the
+      // planned calendar date is the new_day slot, not the original.
+      const lcWeekOverrides = allOverrides.filter(o => o.week_n === lastCompleted.week_n)
+      const effectiveSlot = slotForOriginalDay(lastCompleted.session_day, lcWeekOverrides)
       const weekStart = lcWeek?.date ? new Date(lcWeek.date + 'T00:00:00Z').getTime() : noteDateMs
-      const dayOffset = DOW_OFFSET[lastCompleted.session_day] ?? 0
+      const dayOffset = DOW_OFFSET[effectiveSlot] ?? 0
       actualRunMs     = weekStart + dayOffset * 86_400_000
     }
 
