@@ -1959,6 +1959,26 @@ function getSkipResponse(reason: string): string {
   return "Fair enough. Pick it back up."
 }
 
+// One-line voice anchor under the zone prescription card on Session Detail.
+// Same job as Today's hero ("10km, slowly.") — Zonna voice in the moment.
+// Session-type-aware. Returns null for unknown types so the caller can render nothing.
+function getSessionVoiceLine(sessionType: string): string | null {
+  switch (sessionType) {
+    case 'easy':
+    case 'run':       return "Conversational the whole way. If you can talk, you're in."
+    case 'long':      return "Hours, not effort. Slower than you think you should."
+    case 'quality':
+    case 'tempo':     return "Comfortably hard. Not all-out. Hold the line."
+    case 'intervals':
+    case 'hard':      return "Hard on the reps. Easy on the rests. Don't blur it."
+    case 'race':      return "This is the day. Trust the work."
+    case 'recovery':  return "Slower than easy. Yes, that slow."
+    case 'strength':  return "Build the body that holds the zones."
+    case 'rest':      return "Do nothing. It helps."
+    default:          return null
+  }
+}
+
 // ── COACHING FLAG ─────────────────────────────────────────────────────────
 // getCoachingFlag imported from lib/coaching/coachingFlag.ts
 
@@ -2476,34 +2496,44 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   return (
     <>
       {/* ── TOP BLOCK ── */}
-      <div style={{ padding: '14px 18px 16px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
+      <div style={{ padding: '14px 18px 16px 18px', borderBottom: '1px solid var(--line)' }}>
         {/* Date + status */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.02em' }}>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', letterSpacing: '0.02em' }}>
             {session.day} · {session.date}
           </span>
-          {isComplete && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', background: 'var(--accent-soft)', color: 'var(--teal)', border: '0.5px solid var(--teal-dim)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Done</span>}
-          {isSkipped && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', background: 'rgba(80,80,80,0.08)', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Skipped</span>}
+          {isComplete && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', background: 'var(--moss-soft)', color: 'var(--moss)', border: '1px solid var(--moss-mid)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Done</span>}
+          {isSkipped && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', background: 'var(--bg-soft)', color: 'var(--mute)', border: '1px solid var(--line)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Skipped</span>}
         </div>
         {/* ── ZONE PRESCRIPTION CARD ──────────────────────────────────
-            Replaces the tiny zone chip with a prescription card — the
-            biggest single element on the screen besides the title.
-            Session Detail exists to sell the prescription; the zone is
-            the prescription. Renders only for zone-bearing sessions. */}
+            The biggest single element on the screen besides the title —
+            Session Detail exists to sell the prescription. Whole card is
+            the tap target for ZoneInfoSheet (the education popup that used
+            to hang off the now-removed HR tile). ⓘ in the eyebrow row
+            signals drill-down. Renders only for zone-bearing sessions. */}
         {(() => {
           const zone = zoneNumberForType(session.type)
           if (!zone) return null
           const hrDisplay = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling)
+          const isInteractive = !!zoneForSessionType(session.type)
           return (
-            <div style={{
-              marginBottom: '14px',
-              background: 'var(--card)',
-              border: '1px solid var(--line)',
-              borderLeft: `3px solid ${config.color}`,
-              borderRadius: 'var(--radius-lg)',
-              padding: '14px 16px 12px',
-            }}>
-              {/* Hold the zone eyebrow */}
+            <button
+              type="button"
+              onClick={() => { if (isInteractive) setZoneSheetOpen(true) }}
+              aria-label={isInteractive ? `Zone ${zone} — tap to learn` : `Zone ${zone}`}
+              style={{
+                display: 'block', width: '100%', textAlign: 'left',
+                marginBottom: '14px',
+                background: 'var(--card)',
+                border: '1px solid var(--line)',
+                borderLeft: `3px solid ${config.color}`,
+                borderRadius: 'var(--radius-lg)',
+                padding: '14px 16px 12px',
+                cursor: isInteractive ? 'pointer' : 'default',
+                fontFamily: 'inherit',
+              }}
+            >
+              {/* Hold the zone eyebrow + ⓘ affordance */}
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '8px',
                 marginBottom: '6px',
@@ -2519,6 +2549,14 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                   color: 'var(--moss)',
                   letterSpacing: '0.14em', textTransform: 'uppercase',
                 }}>Hold the zone</span>
+                {isInteractive && (
+                  <span style={{
+                    marginLeft: 'auto',
+                    fontFamily: 'var(--font-ui)', fontSize: '11px',
+                    color: 'var(--moss)', opacity: 0.7,
+                    lineHeight: 1,
+                  }}>ⓘ</span>
+                )}
               </div>
               {/* Big zone label */}
               <div style={{
@@ -2540,18 +2578,38 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               )}
               {/* Labelled zone bar */}
               <ZoneBar activeZone={zone} height={5} showLabels />
+            </button>
+          )
+        })()}
+
+        {/* ── VOICE LINE ─────────────────────────────────────────────
+            One-sentence Zonna voice anchor under the prescription card.
+            Same job as Today's hero — voice in the moment. Session-type-aware. */}
+        {(() => {
+          const voice = getSessionVoiceLine(session.type)
+          if (!voice) return null
+          return (
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontSize: '13px',
+              color: 'var(--ink-2)', lineHeight: 1.5,
+              padding: '0 4px', marginBottom: '14px',
+            }}>
+              {voice}
             </div>
           )
         })()}
-        {/* Metric grid */}
+
+        {/* ── METRIC GRID ────────────────────────────────────────────
+            2-up: Distance/Duration + Pace. HR tile removed — the prescription
+            card above owns Zone + HR + ZoneBar (no more duplicate rendering). */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
           {/* Primary metric card with per-session toggle */}
-          {(estimatedDistance || estimatedDuration) && ['easy','run','quality','intervals','hard','tempo','race','recovery'].includes(session.type) && (
-            <div style={{ background: `${config.color}10`, borderRadius: '10px', padding: '10px 12px', border: `0.5px solid ${config.color}30` }}>
+          {(estimatedDistance || estimatedDuration) && ['easy','run','quality','intervals','hard','tempo','long','race','recovery'].includes(session.type) && (
+            <div style={{ background: `${config.color}10`, borderRadius: '10px', padding: '10px 12px', border: `1px solid ${config.color}30` }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {effectiveMetric === 'distance' ? 'Distance' : 'Duration'}
                 {isMetricCustom && (
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', background: 'var(--amber-soft)', color: 'var(--amber)', border: '0.5px solid var(--amber-mid)', borderRadius: '4px', padding: '1px 5px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>custom</span>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', background: 'var(--warn-bg)', color: 'var(--warn)', border: '1px solid var(--line)', borderRadius: '4px', padding: '1px 5px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>custom</span>
                 )}
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 500, color: config.color, lineHeight: 1, marginBottom: '6px' }}>
@@ -2561,84 +2619,35 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 }
               </div>
               {/* Toggle */}
-              <div style={{ display: 'flex', background: 'var(--toggle-inner-bg)', borderRadius: '6px', padding: '2px', width: 'fit-content', border: '0.5px solid var(--border-col)' }}>
+              <div style={{ display: 'flex', background: 'var(--bg-soft)', borderRadius: '6px', padding: '2px', width: 'fit-content', border: '1px solid var(--line)' }}>
                 {(['distance', 'duration'] as const).map(m => (
-                  <button key={m} onClick={() => updateSessionMetric(m === effectiveMetric && isMetricCustom ? null : m)} style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', padding: '3px 9px', borderRadius: '4px', border: 'none', background: effectiveMetric === m ? config.color : 'none', color: effectiveMetric === m ? 'var(--card)' : 'var(--text-muted)', cursor: 'pointer', fontWeight: 500, transition: 'all 0.15s' }}>
+                  <button key={m} onClick={() => updateSessionMetric(m === effectiveMetric && isMetricCustom ? null : m)} style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', padding: '3px 9px', borderRadius: '4px', border: 'none', background: effectiveMetric === m ? config.color : 'none', color: effectiveMetric === m ? 'var(--card)' : 'var(--mute)', cursor: 'pointer', fontWeight: 500, transition: 'all 0.15s' }}>
                     {m === 'distance' ? preferredUnits : 'min'}
                   </button>
                 ))}
               </div>
               {isMetricCustom && (
-                <button onClick={() => updateSessionMetric(null)} style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--amber)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0 0', textDecoration: 'underline', textAlign: 'left' }}>
+                <button onClick={() => updateSessionMetric(null)} style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--warn)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0 0', textDecoration: 'underline', textAlign: 'left' }}>
                   Reset to global
                 </button>
               )}
             </div>
           )}
-          {/* HR card */}
-          {['easy','run','quality','intervals','hard','tempo','race','recovery'].includes(session.type) && (() => {
-            const sessionColor = getSessionColor(session.type)
-            const zoneLabel = zoneForSessionType(session.type)?.label ?? session.zone ?? 'Target HR'
-            const isInteractive = !!zoneForSessionType(session.type)
-            return (
-            <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
-              <button
-                onClick={() => { if (isInteractive) setZoneSheetOpen(true) }}
-                aria-label={isInteractive ? `${zoneLabel} — tap for details` : zoneLabel}
-                style={{
-                  display: 'inline-flex', alignItems: 'center',
-                  fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
-                  color: sessionColor,
-                  textTransform: 'uppercase', letterSpacing: '0.08em',
-                  background: `${sessionColor}14`,
-                  border: `0.5px solid ${sessionColor}33`,
-                  borderRadius: '100px', padding: '3px 9px',
-                  marginBottom: '6px',
-                  cursor: isInteractive ? 'pointer' : 'default',
-                }}
-              >
-                {zoneLabel}
-              </button>
-              {(() => {
-                const hrVal = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling)
-                return (
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>
-                      {hrVal ?? '—'}
-                    </span>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)' }}>bpm</span>
-                  </div>
-                )
-              })()}
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                {session.type === 'quality' || session.type === 'intervals' || session.type === 'hard' ? 'Warm up 15 min first' : 'Walk if exceeded'}
-              </div>
-            </div>
-            )
-          })()}
-          {/* Pace card — skeleton while Strava-derived aerobic pace is still loading */}
+          {/* Pace card — render only when pace is available; no skeleton noise while loading */}
           {paceBracket && (
-            <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Est. pace</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>~{paceBracket}</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>{paceSource === 'plan' ? 'Pace target' : 'HR-derived estimate'}</div>
+            <div style={{ background: 'var(--card)', borderRadius: '10px', padding: '10px 12px', border: '1px solid var(--line)' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Est. pace</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1 }}>~{paceBracket}</div>
+              {paceSource === 'plan' && (
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', marginTop: '6px' }}>Pace target</div>
+              )}
             </div>
           )}
-          {!paceBracket && paceTileExpected && (
-            <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Est. pace</div>
-              <div style={{
-                height: '18px', width: '64px', background: 'var(--bg-soft)', borderRadius: '4px',
-                animation: 'ai-mark-pulse 1.6s ease-in-out infinite',
-              }} />
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', marginTop: '6px' }}>HR-derived estimate</div>
-            </div>
-          )}
-          {/* Zone card for strength */}
+          {/* Duration tile for strength sessions (no zone, no pace) */}
           {session.type === 'strength' && (
-            <div style={{ background: 'var(--bg)', borderRadius: '10px', padding: '10px 12px', border: '0.5px solid var(--border-col)' }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Duration</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>{estimatedDuration ?? '45min'}</div>
+            <div style={{ background: 'var(--card)', borderRadius: '10px', padding: '10px 12px', border: '1px solid var(--line)' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Duration</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1 }}>{estimatedDuration ?? '45min'}</div>
             </div>
           )}
         </div>
@@ -2659,15 +2668,15 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               ['easy', 'run', 'long', 'recovery'].includes(session.type)
             const flag = completion?.coaching_flag as string | null | undefined
             return (
-              <div style={{ padding: '14px 18px', borderBottom: '0.5px solid var(--border-col)', background: 'var(--bg)' }}>
+              <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)', background: 'var(--bg-soft)' }}>
                 <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
 
                   {/* Planned column */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Planned</div>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Planned</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                       {(estimatedDistance || estimatedDuration) && (
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)' }}>
                           {effectiveMetric === 'distance' ? `${estimatedDistance ?? '—'}${preferredUnits}` : (estimatedDuration ?? '—')}
                         </span>
                       )}
@@ -2680,13 +2689,13 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                         const line  = [plannedZone, hrStr].filter(Boolean).join(' · ')
                         if (!line) return null
                         return (
-                          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)' }}>
                             {line}
                           </span>
                         )
                       })()}
                       {session.rpe_target != null && (
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)' }}>
                           RPE {session.rpe_target}
                         </span>
                       )}
@@ -2694,18 +2703,18 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                   </div>
 
                   {/* Vertical divider */}
-                  <div style={{ width: '0.5px', background: 'var(--border-col)', alignSelf: 'stretch', flexShrink: 0 }} />
+                  <div style={{ width: '1px', background: 'var(--line)', alignSelf: 'stretch', flexShrink: 0 }} />
 
                   {/* Actual column */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Actual</div>
+                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Actual</div>
                       {flag && (
                         <span style={{
                           fontFamily: 'var(--font-ui)', fontSize: '9px', letterSpacing: '0.05em',
                           textTransform: 'uppercase', borderRadius: '4px', padding: '2px 6px',
-                          color: flag === 'ok' ? 'var(--teal)' : 'var(--amber)',
-                          background: flag === 'ok' ? 'var(--teal-soft)' : 'var(--amber-soft)',
+                          color: flag === 'ok' ? 'var(--moss)' : 'var(--warn)',
+                          background: flag === 'ok' ? 'var(--moss-soft)' : 'var(--warn-bg)',
                         }}>
                           {flag === 'ok' ? 'On target' : 'Check this'}
                         </span>
@@ -2713,12 +2722,12 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                       {completion?.strava_activity_km && (
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)' }}>
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)' }}>
                           {completion.strava_activity_km}{preferredUnits}
                         </span>
                       )}
                       {completion?.avg_hr && (
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: isZoneBreach ? 'var(--amber)' : 'var(--text-primary)' }}>
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: isZoneBreach ? 'var(--warn)' : 'var(--ink)' }}>
                           {completion.avg_hr} bpm avg
                           {isZoneBreach && <span style={{ fontSize: '10px', marginLeft: '4px', opacity: 0.8 }}>↑</span>}
                         </span>
@@ -2736,19 +2745,50 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             )
           })()}
 
-          {/* ── MIDDLE BLOCK: session description ── */}
-          {session.detail && (
-            <div style={{ padding: '16px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>What to do</div>
-              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>{session.detail}</div>
+          {/* ── WHY THIS SESSION ──────────────────────────────────────
+               Moved directly under the prescription/voice/metric block
+               (above structure). Brand-defining content reads first.
+               AI mark only when content came from the plan enricher
+               (session.coach_notes). DB guidance fallback is hand-authored
+               so no mark — provenance honesty. */}
+          {(session.coach_notes?.filter(Boolean).length > 0 || guidance) && (
+            <div style={{ padding: '14px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
+              <CoachNoteBlock
+                label="WHY THIS SESSION"
+                variant="why"
+                aiGenerated={(session.coach_notes?.filter(Boolean).length ?? 0) > 0}
+              >
+                {session.coach_notes?.filter(Boolean).length > 0 ? (
+                  // Structured coach notes from plan JSON (AI-generated). Pass through
+                  // renderGuidance so {{token}} placeholders the enricher emitted resolve
+                  // to live values (Z2 ceiling, session HR, etc.) rather than carrying
+                  // stale baked literals after the athlete updates restingHR/maxHR.
+                  renderGuidance(
+                    (session.coach_notes as string[]).filter(Boolean).join(' '),
+                    guidanceContextFromSession({
+                      session,
+                      zone2Ceiling: sessionHRBand('easy', restingHR ?? null, maxHR ?? null)?.hi ?? zone2Ceiling,
+                      maxHR, restingHR, goalPace,
+                    }),
+                  )
+                ) : guidance ? (
+                  renderGuidance(guidance.why, guidanceContextFromSession({
+                    session,
+                    zone2Ceiling: sessionHRBand('easy', restingHR ?? null, maxHR ?? null)?.hi ?? zone2Ceiling,
+                    maxHR, restingHR, goalPace,
+                  }))
+                ) : null}
+              </CoachNoteBlock>
             </div>
           )}
 
-          {/* ── STRUCTURED SESSION (R23 composer) ── */}
+          {/* ── STRUCTURED SESSION (R23 composer) ──────────────────────
+               When a structured composer result exists, it is the canonical
+               "what to do". The plain `session.detail` description below is
+               suppressed in that case — same instruction, two formats. */}
           {(() => {
             const catalogueRow = V1_SESSION_CATALOGUE.find(r => r.name === session.label) ?? null
             const structure = composeSession({ session, catalogueRow, goalPace })
-            // Only render for run-based sessions where the structure is meaningful
             if (!structure) return null
             const skipShapes = ['rest', 'race', 'strength']
             if (skipShapes.includes(structure.shape)) return null
@@ -2789,11 +2829,11 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             )
 
             return (
-              <div style={{ padding: '16px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Session structure</div>
+              <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Session structure</div>
                 {partRow('Warm-up', `${structure.warmup.duration_mins} min`, structure.warmup.zone, structure.warmup.description, 'var(--mute-2)')}
                 {structure.strides && (
-                  <div style={{ marginLeft: '15px', marginBottom: '10px', paddingLeft: '12px', borderLeft: '0.5px dashed var(--line)' }}>
+                  <div style={{ marginLeft: '15px', marginBottom: '10px', paddingLeft: '12px', borderLeft: '1px dashed var(--line)' }}>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss)' }}>
                       Strides — {structure.strides.count} × {structure.strides.duration_secs}s
                     </div>
@@ -2802,7 +2842,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 )}
                 {partRow('Main set', `${structure.main.duration_mins} min`, structure.main.zone, structure.main.description, getSessionColor(session.type ?? 'easy'), true)}
                 {structure.race_pace_segment && (
-                  <div style={{ marginLeft: '15px', marginBottom: '10px', paddingLeft: '12px', borderLeft: '0.5px dashed var(--line)' }}>
+                  <div style={{ marginLeft: '15px', marginBottom: '10px', paddingLeft: '12px', borderLeft: '1px dashed var(--line)' }}>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)' }}>
                       Race-pace — {structure.race_pace_segment.duration_pct}% @ {structure.race_pace_segment.pace_target}
                     </div>
@@ -2814,52 +2854,65 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             )
           })()}
 
-          {/* Week theme — readable, not footnote */}
-          {weekTheme && (
-            <div style={{ padding: '12px 18px', background: 'var(--bg)', borderBottom: '0.5px solid var(--border-col)' }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '5px' }}>Week focus</div>
-              <div style={{ fontFamily: 'var(--font-brand)', fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{weekTheme}</div>
-            </div>
-          )}
+          {/* ── DESCRIPTION FALLBACK ──────────────────────────────────
+               Renders only when the structured composer didn't — e.g.
+               race/rest/strength shapes or sessions without a catalogue row.
+               Avoids duplicating the same instruction in two formats. */}
+          {session.detail && (() => {
+            const catalogueRow = V1_SESSION_CATALOGUE.find(r => r.name === session.label) ?? null
+            const structure = composeSession({ session, catalogueRow, goalPace })
+            const skipShapes = ['rest', 'race', 'strength']
+            const hasStructure = !!structure && !skipShapes.includes(structure.shape)
+            if (hasStructure) return null
+            return (
+              <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>What to do</div>
+                <div style={{ fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>{session.detail}</div>
+              </div>
+            )
+          })()}
 
-          {/* ── WHY THIS SESSION: CoachNoteBlock variant="why" ──
-               AI mark only when content came from the plan enricher
-               (session.coach_notes). DB guidance fallback is hand-authored
-               so no mark — provenance honesty. */}
-          {(session.coach_notes?.filter(Boolean).length > 0 || guidance) && (
-            <div style={{ padding: '14px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
-              <CoachNoteBlock
-                label="WHY THIS SESSION"
-                variant="why"
-                aiGenerated={(session.coach_notes?.filter(Boolean).length ?? 0) > 0}
-              >
-                {session.coach_notes?.filter(Boolean).length > 0 ? (
-                  // Structured coach notes from plan JSON (AI-generated). Pass through
-                  // renderGuidance so {{token}} placeholders the enricher emitted resolve
-                  // to live values (Z2 ceiling, session HR, etc.) rather than carrying
-                  // stale baked literals after the athlete updates restingHR/maxHR.
-                  // Pre-tokenised legacy plans pass through unchanged (no tokens, no-op).
-                  renderGuidance(
-                    (session.coach_notes as string[]).filter(Boolean).join(' '),
-                    guidanceContextFromSession({
-                      session,
-                      zone2Ceiling: sessionHRBand('easy', restingHR ?? null, maxHR ?? null)?.hi ?? zone2Ceiling,
-                      maxHR, restingHR, goalPace,
-                    }),
-                  )
-                ) : guidance ? (
-                  // Render only the "why" field — the "what" and "how" fields belong
-                  // to other surfaces, not this WHY THIS SESSION block.
-                  // Use live Karvonen Z2 ceiling (matches session-card source of truth)
-                  // rather than the baked plan.meta.zone2_ceiling, which can drift after
-                  // restingHR/maxHR updates. Falls back to the baked value when HR data missing.
-                  renderGuidance(guidance.why, guidanceContextFromSession({
-                    session,
-                    zone2Ceiling: sessionHRBand('easy', restingHR ?? null, maxHR ?? null)?.hi ?? zone2Ceiling,
-                    maxHR, restingHR, goalPace,
-                  }))
-                ) : null}
-              </CoachNoteBlock>
+          {/* Week focus block removed (May 2026) — it is a plan-level statement,
+              not a session-level statement. Lives on Plan / Today screens. */}
+
+          {/* ── HOW DID IT FEEL (shown when complete or skipped) ──
+               Moved above the sticky CTA — the reflective state outranks
+               the corrective action. Was previously rendered below the
+               sticky bar, which inverted the layout. */}
+          {(isComplete || isSkipped) && (
+            <div style={{ padding: '18px 18px 8px', borderTop: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '18px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.2px' }}>
+                  How did it feel?
+                </div>
+                {savingRPE && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)' }}>saving…</span>}
+              </div>
+
+              {/* RPE — RPEScale shared component */}
+              <div style={{ marginBottom: '20px' }}>
+                <RPEScale
+                  value={rpe}
+                  onChange={(n) => { setRpe(n); saveRPEFatigue(n, fatigueTag) }}
+                  hint="On an easy run, a 3–4 is what you want."
+                />
+              </div>
+
+              {/* Fatigue tags */}
+              <div style={{ marginBottom: '4px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Body feeling</div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {(['Fresh', 'Fine', 'Heavy', 'Wrecked'] as const).map(tag => {
+                    const isActive = fatigueTag === tag
+                    const tagColor = tag === 'Fresh' ? 'var(--moss)' : tag === 'Fine' ? 'var(--moss)' : tag === 'Heavy' ? 'var(--warn)' : 'var(--danger)'
+                    return (
+                      <button key={tag} onClick={() => { const next = isActive ? null : tag; setFatigueTag(next); saveRPEFatigue(rpe, next) }}
+                        style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '10px 18px', minHeight: '44px', borderRadius: '20px', border: `1px solid ${isActive ? tagColor : 'var(--line)'}`, background: isActive ? `${tagColor}18` : 'transparent', color: isActive ? tagColor : 'var(--mute)', cursor: 'pointer', fontWeight: isActive ? 500 : 400, transition: 'all 0.12s' }}>
+                        {tag}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           )}
 
@@ -2867,8 +2920,8 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           <div style={{
             position: 'sticky', bottom: 0,
             padding: '12px 18px 16px',
-            background: 'var(--card-bg)',
-            borderTop: '0.5px solid var(--border-col)',
+            background: 'var(--card)',
+            borderTop: '1px solid var(--line)',
             display: 'flex', gap: '8px', flexWrap: 'wrap',
             borderRadius: '0 0 12px 12px',
           }}>
@@ -2960,24 +3013,51 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                             {subline}
                           </span>
                         </div>
-                        <button
-                          onClick={() => setView('complete')}
-                          style={{
-                            background: 'none', color: 'var(--mute)',
-                            border: 'none', padding: '8px 4px',
-                            fontFamily: 'var(--font-ui)', fontSize: '11px',
-                            cursor: 'pointer', alignSelf: 'flex-start',
-                            textDecoration: 'underline', textUnderlineOffset: '3px',
-                            minHeight: '36px',
-                          }}
-                        >
-                          Wrong one? Pick another
-                        </button>
-                        <div style={{ display: 'flex', gap: '8px', width: '100%', marginTop: '2px' }}>
-                          <button onClick={() => setShowManualModal(true)} style={{ flex: 1, background: 'var(--card-bg)', color: config.color, border: `0.5px solid ${config.color}40`, borderRadius: '10px', padding: '11px', fontFamily: 'var(--font-ui)', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500, minHeight: '36px' }}>
+                        {/* Secondary actions — single inline text-link row.
+                            Auto-match has high confidence; the dominant choice is
+                            the moss primary. These three are quiet escapes. */}
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: '0',
+                          marginTop: '2px',
+                          fontFamily: 'var(--font-ui)', fontSize: '11px',
+                          color: 'var(--mute)',
+                        }}>
+                          <button
+                            onClick={() => setView('complete')}
+                            style={{
+                              background: 'none', border: 'none', padding: '6px 0',
+                              fontFamily: 'inherit', fontSize: 'inherit',
+                              color: 'var(--mute)',
+                              cursor: 'pointer', textDecoration: 'underline',
+                              textUnderlineOffset: '3px', minHeight: '32px',
+                            }}
+                          >
+                            Wrong one?
+                          </button>
+                          <span style={{ padding: '0 8px', color: 'var(--mute-2)' }}>·</span>
+                          <button
+                            onClick={() => setShowManualModal(true)}
+                            style={{
+                              background: 'none', border: 'none', padding: '6px 0',
+                              fontFamily: 'inherit', fontSize: 'inherit',
+                              color: 'var(--mute)',
+                              cursor: 'pointer', textDecoration: 'underline',
+                              textUnderlineOffset: '3px', minHeight: '32px',
+                            }}
+                          >
                             Log manually
                           </button>
-                          <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '11px', fontFamily: 'var(--font-ui)', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', minHeight: '36px' }}>
+                          <span style={{ padding: '0 8px', color: 'var(--mute-2)' }}>·</span>
+                          <button
+                            onClick={() => setView('skip')}
+                            style={{
+                              background: 'none', border: 'none', padding: '6px 0',
+                              fontFamily: 'inherit', fontSize: 'inherit',
+                              color: 'var(--mute)',
+                              cursor: 'pointer', textDecoration: 'underline',
+                              textUnderlineOffset: '3px', minHeight: '32px',
+                            }}
+                          >
                             Skip
                           </button>
                         </div>
@@ -3016,43 +3096,6 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             })()}
           </div>
 
-          {/* ── HOW DID IT FEEL (shown when complete or skipped) ── */}
-          {(isComplete || isSkipped) && (
-            <div style={{ padding: '18px 18px 8px', borderTop: '0.5px solid var(--border-col)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '18px' }}>
-                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>
-                  How did it feel?
-                </div>
-                {savingRPE && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)' }}>saving…</span>}
-              </div>
-
-              {/* RPE — RPEScale shared component */}
-              <div style={{ marginBottom: '20px' }}>
-                <RPEScale
-                  value={rpe}
-                  onChange={(n) => { setRpe(n); saveRPEFatigue(n, fatigueTag) }}
-                  hint="On an easy run, a 3–4 is what you want."
-                />
-              </div>
-
-              {/* Fatigue tags */}
-              <div style={{ marginBottom: '4px' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Body feeling</div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {(['Fresh', 'Fine', 'Heavy', 'Wrecked'] as const).map(tag => {
-                    const isActive = fatigueTag === tag
-                    const tagColor = tag === 'Fresh' ? 'var(--session-green)' : tag === 'Fine' ? 'var(--accent)' : tag === 'Heavy' ? 'var(--amber)' : 'var(--coral)'
-                    return (
-                      <button key={tag} onClick={() => { const next = isActive ? null : tag; setFatigueTag(next); saveRPEFatigue(rpe, next) }}
-                        style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '10px 18px', minHeight: '44px', borderRadius: '20px', border: `0.5px solid ${isActive ? tagColor : 'var(--border-col)'}`, background: isActive ? `${tagColor}18` : 'transparent', color: isActive ? tagColor : 'var(--text-muted)', cursor: 'pointer', fontWeight: isActive ? 500 : 400, transition: 'all 0.12s' }}>
-                        {tag}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
         </>
       )}
 

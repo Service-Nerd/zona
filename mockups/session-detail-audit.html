@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Zonna · Session Detail UX audit</title>
+<style>
+  :root {
+    --bg:        #F3F0EB;
+    --bg-soft:   #EDE9E1;
+    --card:      #FFFFFF;
+    --ink:       #1A1A1A;
+    --ink-2:     #3D3A36;
+    --mute:      #8A857D;
+    --mute-2:    #A8A39B;
+    --line:      rgba(26,26,26,0.08);
+    --line-strong: rgba(26,26,26,0.15);
+    --moss:      #6B8E6B;
+    --moss-soft: rgba(107,142,107,0.10);
+    --moss-mid:  rgba(107,142,107,0.25);
+    --warn:      #B8853A;
+    --warn-bg:   #F5EBD4;
+    --coach-ink: #3D2600;
+    --danger:    #B84545;
+    --s-easy:    #3D6FB0;
+    --s-long:    #5E4FB0;
+    --s-quality: #B8853A;
+    --s-race:    #C86A2A;
+    --s-recov:   #4E8068;
+    --s-inter:   #B84545;
+    --font-ui:   'Inter', sans-serif;
+    --radius-lg: 14px;
+    --radius-md: 10px;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-ui);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  .page {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 56px 32px 96px;
+  }
+
+  /* ───── Header ───── */
+  .header { margin-bottom: 56px; max-width: 880px; }
+  .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.16em;
+    color: var(--moss); text-transform: uppercase; margin-bottom: 12px;
+  }
+  h1 {
+    font-family: var(--font-ui);
+    font-size: 44px; font-weight: 800; line-height: 1.05;
+    letter-spacing: -0.02em; margin: 0 0 16px;
+  }
+  .lede {
+    font-size: 17px; line-height: 1.55; color: var(--ink-2); font-weight: 400;
+    max-width: 720px;
+  }
+  .lede strong { font-weight: 600; color: var(--ink); }
+
+  /* ───── Section ───── */
+  .section { margin-bottom: 72px; }
+  .section-eyebrow {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--mute); text-transform: uppercase; margin-bottom: 10px;
+  }
+  h2 {
+    font-family: var(--font-ui);
+    font-size: 28px; font-weight: 700; line-height: 1.15;
+    letter-spacing: -0.015em; margin: 0 0 16px;
+  }
+  .section p { font-size: 15px; line-height: 1.6; color: var(--ink-2); margin: 0 0 12px; max-width: 760px; }
+  .section p strong { color: var(--ink); font-weight: 600; }
+
+  /* ───── Audit list ───── */
+  .audit-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    max-width: 1100px; margin-top: 20px;
+  }
+  .audit-item {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 18px 20px;
+  }
+  .audit-item.warn { border-left: 3px solid var(--warn); }
+  .audit-item.moss { border-left: 3px solid var(--moss); }
+  .audit-item.danger { border-left: 3px solid var(--danger); }
+  .audit-item h3 {
+    font-size: 14px; font-weight: 700; color: var(--ink);
+    margin: 0 0 6px; letter-spacing: -0.005em;
+  }
+  .audit-item p { font-size: 13px; line-height: 1.55; color: var(--ink-2); margin: 0; max-width: none; }
+  .audit-item .tag {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--mute); margin-bottom: 4px;
+  }
+  .audit-item.warn .tag { color: var(--warn); }
+  .audit-item.moss .tag { color: var(--moss); }
+  .audit-item.danger .tag { color: var(--danger); }
+
+  /* ───── Phone frame ───── */
+  .compare {
+    display: grid;
+    grid-template-columns: minmax(380px, 1fr) minmax(380px, 1fr);
+    gap: 64px;
+    margin-top: 32px;
+    align-items: start;
+  }
+  .compare-col h3 {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; margin: 0 0 4px;
+  }
+  .compare-col.before h3 { color: var(--mute); }
+  .compare-col.after h3 { color: var(--moss); }
+  .compare-col .sub {
+    font-size: 13px; color: var(--mute); margin: 0 0 20px; line-height: 1.5;
+  }
+
+  .phone {
+    width: 100%; max-width: 420px;
+    background: var(--bg); border-radius: 32px;
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.08);
+  }
+  .status {
+    height: 36px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 18px; font-size: 11px; color: var(--ink);
+    background: var(--bg);
+  }
+
+  /* ───── Session Detail screen pieces ───── */
+  .session-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+  }
+  .back-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--bg-soft); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink); font-size: 16px; font-weight: 700;
+  }
+  .session-header .titles { flex: 1; min-width: 0; }
+  .session-header .eb {
+    font-size: 10px; font-weight: 700; color: var(--mute);
+    letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 2px;
+  }
+  .session-header .ttl {
+    font-size: 16px; font-weight: 700; color: var(--ink);
+    letter-spacing: -0.02em; line-height: 1.2;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .session-header .chip {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    border-radius: 100px; padding: 4px 10px; flex-shrink: 0;
+  }
+
+  .screen-body {
+    padding: 0 16px 32px;
+  }
+  .status-row {
+    padding: 14px 0 8px;
+    font-size: 11px; color: var(--mute); letter-spacing: 0.02em;
+  }
+
+  /* Zone prescription card (existing — keep) */
+  .prescription {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px 12px;
+    margin-bottom: 12px;
+  }
+  .prescription .eb-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 6px;
+  }
+  .prescription .pulse-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--moss);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.55; transform: scale(0.92); }
+    50%      { opacity: 1;    transform: scale(1.05); }
+  }
+  .prescription .eb-row .label {
+    font-size: 10px; font-weight: 700; color: var(--moss);
+    letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .prescription .zone-headline {
+    font-size: 22px; font-weight: 800; letter-spacing: -0.015em;
+    line-height: 1.1; margin-bottom: 4px;
+  }
+  .prescription .hr-range {
+    font-size: 12px; color: var(--mute); margin-bottom: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .zone-bar {
+    display: flex; gap: 3px;
+  }
+  .zone-bar .seg {
+    flex: 1; height: 5px; border-radius: 2px;
+    background: var(--bg-soft);
+  }
+  .zone-bar-labels {
+    display: flex; gap: 3px; margin-top: 4px;
+  }
+  .zone-bar-labels .lbl {
+    flex: 1; text-align: center;
+    font-size: 9px; font-weight: 600;
+    color: var(--mute); letter-spacing: 0.06em;
+  }
+
+  /* Voice line (NEW) */
+  .voice-line {
+    font-size: 13px; color: var(--ink-2); font-style: normal;
+    line-height: 1.5; margin: 0 4px 14px;
+  }
+
+  /* Metric tiles */
+  .metric-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    margin-bottom: 14px;
+  }
+  .metric-tile {
+    border-radius: 10px; padding: 10px 12px;
+    background: var(--bg); border: 1px solid var(--line);
+  }
+  .metric-tile.coloured {
+    border: 1px solid rgba(61,111,176,0.18);
+    background: rgba(61,111,176,0.06);
+  }
+  .metric-tile .lbl {
+    font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--mute); margin-bottom: 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .metric-tile.coloured .lbl { color: var(--s-easy); }
+  .metric-tile .val {
+    font-size: 22px; font-weight: 500; line-height: 1; margin-bottom: 6px;
+    color: var(--ink);
+  }
+  .metric-tile.coloured .val { color: var(--s-easy); }
+  .metric-tile .val .unit {
+    font-size: 11px; font-weight: 400; opacity: 0.7;
+  }
+  .metric-tile .sub {
+    font-size: 9px; color: var(--mute); margin-top: 4px;
+  }
+  .metric-tile .zone-chip {
+    display: inline-flex; align-items: center;
+    font-size: 9px; font-weight: 700;
+    color: var(--s-easy);
+    background: rgba(61,111,176,0.10);
+    border: 1px solid rgba(61,111,176,0.22);
+    border-radius: 100px; padding: 3px 9px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .metric-tile .toggle {
+    display: inline-flex; background: var(--bg-soft);
+    border-radius: 6px; padding: 2px;
+    border: 1px solid var(--line);
+    width: fit-content;
+  }
+  .metric-tile .toggle button {
+    border: none; background: none;
+    font-size: 10px; padding: 3px 9px; border-radius: 4px;
+    color: var(--mute); font-weight: 500;
+  }
+  .metric-tile .toggle button.active {
+    background: var(--s-easy); color: var(--card);
+  }
+
+  /* "What to do" / structure / week focus */
+  .block {
+    padding: 14px 0; border-top: 1px solid var(--line);
+  }
+  .block .h {
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--mute); margin-bottom: 8px;
+  }
+  .block .body {
+    font-size: 14px; color: var(--ink-2); line-height: 1.7;
+  }
+
+  /* Structure rows */
+  .struct-row {
+    display: flex; gap: 12px; margin-bottom: 10px;
+  }
+  .struct-row .rail {
+    width: 3px; border-radius: 2px;
+    background: var(--mute-2);
+    flex-shrink: 0;
+  }
+  .struct-row.main .rail { width: 4px; background: var(--s-easy); }
+  .struct-row .info { flex: 1; }
+  .struct-row .top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 2px;
+  }
+  .struct-row .label-txt {
+    font-size: 13px; font-weight: 600; color: var(--ink);
+  }
+  .struct-row.main .label-txt { font-size: 14px; font-weight: 700; }
+  .struct-row .meta {
+    font-size: 12px; color: var(--mute);
+    font-variant-numeric: tabular-nums;
+  }
+  .struct-row.main .meta { font-size: 13px; color: var(--ink-2); }
+  .struct-row .desc {
+    font-size: 12px; color: var(--mute); line-height: 1.5;
+  }
+  .struct-row.main .desc { font-size: 13px; color: var(--ink-2); }
+
+  /* Coach byline */
+  .why-card {
+    background: var(--warn-bg);
+    border-radius: 14px;
+    padding: 14px 18px 14px 26px;
+    position: relative;
+    margin: 14px 0 0;
+  }
+  .why-card.moss-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+  }
+  .why-card .left-rail {
+    position: absolute;
+    left: 8px; top: 14px; bottom: 14px;
+    width: 3px; background: var(--warn);
+    border-radius: 2px;
+  }
+  .why-card.moss-card .left-rail { background: var(--moss); }
+  .why-card .byline {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 8px;
+  }
+  .why-card .avatar {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--warn), #9A6F2A);
+    color: var(--card); font-size: 10px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; flex-shrink: 0;
+  }
+  .why-card.moss-card .avatar {
+    background: linear-gradient(135deg, var(--moss), #5A7C5A);
+  }
+  .why-card .avatar::after {
+    content: '✦';
+    position: absolute; bottom: -2px; right: -3px;
+    width: 11px; height: 11px;
+    background: var(--warn-bg); color: var(--warn);
+    font-size: 8px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .why-card.moss-card .avatar::after {
+    background: var(--card); color: var(--moss);
+  }
+  .why-card .byline-text {
+    display: flex; flex-direction: column;
+  }
+  .why-card .byline-name {
+    font-size: 13px; font-weight: 700; color: var(--coach-ink);
+    line-height: 1.1;
+  }
+  .why-card.moss-card .byline-name { color: var(--ink); }
+  .why-card .byline-role {
+    font-size: 10px; font-weight: 600;
+    color: var(--warn); letter-spacing: 0.08em;
+    text-transform: uppercase; margin-top: 2px;
+  }
+  .why-card.moss-card .byline-role { color: var(--moss); }
+  .why-card .body {
+    font-size: 13px; color: var(--coach-ink); line-height: 1.55;
+  }
+  .why-card.moss-card .body { color: var(--ink-2); }
+
+  /* Sticky CTA bar */
+  .cta-bar {
+    border-top: 1px solid var(--line);
+    background: var(--card);
+    padding: 12px 18px 16px;
+    margin: 14px -16px 0;
+  }
+  .cta-bar .primary {
+    display: block; width: 100%;
+    background: var(--moss); color: var(--card);
+    border: none; border-radius: 10px; padding: 13px;
+    font-family: var(--font-ui); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    text-align: center;
+  }
+  .cta-bar .matched {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 8px;
+    font-size: 11px; color: var(--mute);
+  }
+  .cta-bar .matched .ai-mark {
+    color: var(--moss); font-size: 12px;
+  }
+  .cta-bar .picker-link {
+    display: block;
+    background: none; border: none;
+    color: var(--mute); font-size: 11px;
+    text-decoration: underline; text-underline-offset: 3px;
+    padding: 8px 0;
+  }
+  .cta-bar .secondary-row {
+    display: flex; gap: 8px; margin-top: 4px;
+  }
+  .cta-bar .secondary-row button {
+    flex: 1; padding: 11px; border-radius: 10px;
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    border: 1px solid var(--line);
+    background: var(--card); color: var(--ink-2);
+  }
+  .cta-bar .secondary-row .ghost {
+    background: none; color: var(--mute);
+  }
+
+  /* RPE bar */
+  .rpe-row {
+    display: flex; gap: 3px;
+    margin-top: 8px;
+  }
+  .rpe-row .sq {
+    flex: 1; aspect-ratio: 1; border-radius: 6px;
+    background: var(--bg-soft); color: var(--mute);
+    font-size: 11px; display: flex; align-items: center; justify-content: center;
+  }
+  .rpe-row .sq.filled { background: var(--ink); color: var(--bg); }
+  .rpe-row .sq.selected { background: var(--moss); color: var(--card); }
+  .body-state-row {
+    display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;
+  }
+  .body-state-row button {
+    font-size: 12px; padding: 8px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    background: none; color: var(--mute);
+  }
+
+  /* Annotated highlight in BEFORE */
+  .dupe-highlight {
+    outline: 2px dashed var(--danger);
+    outline-offset: 4px;
+    border-radius: 12px;
+    position: relative;
+  }
+  .dupe-tag {
+    position: absolute;
+    top: -10px; right: -6px;
+    background: var(--danger); color: var(--card);
+    font-size: 9px; font-weight: 700;
+    padding: 2px 6px; border-radius: 4px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+
+  /* Callout legend */
+  .callouts {
+    margin-top: 32px; display: flex; flex-direction: column; gap: 8px;
+    max-width: 380px;
+  }
+  .callout {
+    display: flex; gap: 12px; align-items: flex-start;
+    font-size: 13px; line-height: 1.5; color: var(--ink-2);
+  }
+  .callout .num {
+    flex-shrink: 0;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--moss); color: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .callout strong { color: var(--ink); font-weight: 600; }
+
+  /* Voice examples table */
+  .voice-table {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    max-width: 880px;
+    margin-top: 20px;
+  }
+  .voice-table table {
+    width: 100%; border-collapse: collapse;
+  }
+  .voice-table th, .voice-table td {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 13px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  .voice-table th {
+    font-size: 10px; font-weight: 700; color: var(--mute);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    background: var(--bg-soft);
+  }
+  .voice-table td:nth-child(1) {
+    color: var(--mute); font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    width: 22%;
+  }
+  .voice-table td:nth-child(2) { color: var(--ink); font-style: italic; }
+  .voice-table tr:last-child td { border-bottom: none; }
+
+  /* Recommendations */
+  .recs {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 24px 28px;
+    max-width: 880px;
+  }
+  .recs ol {
+    margin: 0; padding-left: 24px;
+  }
+  .recs li {
+    font-size: 15px; line-height: 1.6; color: var(--ink-2);
+    margin-bottom: 16px;
+  }
+  .recs li:last-child { margin-bottom: 0; }
+  .recs li strong { color: var(--ink); font-weight: 600; }
+  .recs .effort {
+    display: inline-block; margin-left: 8px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--moss);
+    background: var(--moss-soft); padding: 2px 8px; border-radius: 4px;
+  }
+  .recs .effort.m { color: var(--warn); background: var(--warn-bg); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="eyebrow">Session detail · UX audit</div>
+    <h1>The Session Detail screen says the same thing twice.</h1>
+    <p class="lede">
+      It's not that there's too much on it — it's that the same thing is on it in two places.
+      HR and zone are rendered in <strong>three different surfaces</strong> in the top viewport.
+      The brand-defining <strong>&quot;Why this session&quot;</strong> sits five blocks down, past
+      everything execution-y. The screen needs a consolidate pass, not a redesign — kill the
+      redundancy and the voice gets room to come back.
+    </p>
+  </div>
+
+  <!-- WHAT'S WORKING -->
+  <div class="section">
+    <div class="section-eyebrow">Working well</div>
+    <h2>What&apos;s right</h2>
+    <p>Five things to keep — most of these were recent ships and they landed correctly.</p>
+    <div class="audit-grid">
+      <div class="audit-item moss">
+        <div class="tag">Keep</div>
+        <h3>Zone prescription card is the right hero</h3>
+        <p>HOLD-THE-ZONE-01 nailed this. Pulsing moss dot, &quot;HOLD THE ZONE&quot; eyebrow, 22px zone label in zone colour, HR range, labelled ZoneBar. This is the brand promise rendered visually. <strong>Don&apos;t touch it.</strong></p>
+      </div>
+      <div class="audit-item moss">
+        <div class="tag">Keep</div>
+        <h3>Sticky header pattern</h3>
+        <p>44px back button, eyebrow (&quot;Tuesday · Week 14&quot;), 16px title, type chip right-aligned. Scrolls perfectly. No reason to change.</p>
+      </div>
+      <div class="audit-item moss">
+        <div class="tag">Keep</div>
+        <h3>Provenance honesty in WHY block</h3>
+        <p>WHY THIS SESSION uses <code>&lt;CoachByline&gt;</code> only when content came from the AI enricher, not when it&apos;s hand-authored DB guidance. The mark is a claim about provenance, and the screen honours that.</p>
+      </div>
+      <div class="audit-item moss">
+        <div class="tag">Keep</div>
+        <h3>Auto-matched action area</h3>
+        <p>When Strava has a high-confidence match, the picker demotes to &quot;Wrong one? Pick another&quot; and the moss CTA commits to the match. Right information architecture. Just needs visual cleanup.</p>
+      </div>
+      <div class="audit-item moss">
+        <div class="tag">Keep</div>
+        <h3>Tappable Zone chip → ZoneInfoSheet</h3>
+        <p>Progressive disclosure done right. The HR card&apos;s zone chip opens the full zone education sheet. Discoverable without cluttering the main view. Survives the consolidation.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHAT'S BROKEN -->
+  <div class="section">
+    <div class="section-eyebrow">Issues</div>
+    <h2>What&apos;s broken</h2>
+    <p>Ranked by impact. The two high-impact items together fix ~70% of the screen&apos;s problems.</p>
+    <div class="audit-grid">
+      <div class="audit-item danger">
+        <div class="tag">Impact: high</div>
+        <h3>HR / zone rendered 2–3 times in the top viewport</h3>
+        <p>Prescription card shows &quot;Zone 2 · aerobic / 127–145 bpm / ZoneBar&quot;. Metric grid directly below shows the <em>same</em> Zone 2 chip + the <em>same</em> 127–145 bpm number on its HR tile. Header chip says &quot;EASY&quot; (zone colour maps 1:1 to type). The user is told the same thing three different ways stacked.</p>
+      </div>
+      <div class="audit-item danger">
+        <div class="tag">Impact: high</div>
+        <h3>&quot;Why this session&quot; is too far down</h3>
+        <p>Zonna&apos;s pitch is &quot;stops you overtraining&quot; — the <em>why</em> is the brand. But on Session Detail it sits below prescription → metric grid → execution summary → What to do → Session structure → Week focus. Five execution-detail blocks before the user reaches the most brand-defining content on the screen.</p>
+      </div>
+      <div class="audit-item warn">
+        <div class="tag">Impact: medium</div>
+        <h3>&quot;What to do&quot; and &quot;Session structure&quot; overlap</h3>
+        <p>Description string and the R23 composer (warm-up · main · cool-down) render back-to-back for structured sessions. Same instruction in two formats. The structured composer wins on a structured session; the description string is the fallback when there&apos;s no structure.</p>
+      </div>
+      <div class="audit-item warn">
+        <div class="tag">Impact: medium</div>
+        <h3>Week focus card interrupts the narrative</h3>
+        <p>Sandwiched between Session structure and WHY. It&apos;s a plan-level statement (&quot;this week is build&quot;), not a session-level statement. Belongs on Plan/Today, not in a session card. Currently makes the WHY block feel further from the session.</p>
+      </div>
+      <div class="audit-item warn">
+        <div class="tag">Impact: medium</div>
+        <h3>Action bar is too dense in auto-matched state</h3>
+        <p>Primary &quot;Log this run&quot; + AIMark subline + &quot;Wrong one? Pick another&quot; + Log manually + Skip = 5 tap targets in 200px. With the sticky bar background it reads as a wall, not a primary + secondary.</p>
+      </div>
+      <div class="audit-item warn">
+        <div class="tag">Impact: medium</div>
+        <h3>&quot;How did it feel?&quot; sits below the sticky CTA</h3>
+        <p>Layout inversion. For a completed session the CTA collapses to &quot;Update log&quot;, but the RPE scale + body feeling chips render <em>below</em> the action bar. The reflective state outranks the corrective action — it should be above the CTA, not banished beneath it.</p>
+      </div>
+      <div class="audit-item warn">
+        <div class="tag">Impact: medium</div>
+        <h3>System B aliases linger in metric grid + execution summary</h3>
+        <p>Prescription card uses <code>1px var(--line)</code> + <code>var(--card)</code>. Tiles next to it use <code>0.5px var(--border-col)</code> + <code>var(--bg)</code>. Execution summary uses <code>var(--text-secondary)</code>, <code>var(--amber)</code>. Side by side this reads as visual incoherence. Same kind of drift the Plan screen audit called out.</p>
+      </div>
+      <div class="audit-item warn">
+        <div class="tag">Impact: medium</div>
+        <h3>No brand voice in the pre-run experience</h3>
+        <p>&quot;Hold the zone&quot; eyebrow is the only voice anchor before the user logs the run. Then silence until the WHY block (which may be hand-authored guidance, not voice). Compare to Today&apos;s hero (&quot;10km, slowly.&quot;) — that anchor is what makes Zonna feel like Zonna. One sentence under the prescription card closes the gap.</p>
+      </div>
+      <div class="audit-item">
+        <div class="tag">Impact: low</div>
+        <h3>Pace caption is utility-speak</h3>
+        <p>&quot;HR-derived estimate&quot; is technical, not brand voice. Should be either nothing or a Zonna line — e.g. &quot;Roughly. Don&apos;t chase it.&quot;</p>
+      </div>
+      <div class="audit-item">
+        <div class="tag">Impact: low</div>
+        <h3>Pace tile renders empty skeleton while Strava loads</h3>
+        <p>A pulsing placeholder beside live data adds visual noise for a secondary metric. If pace isn&apos;t ready, render no tile — don&apos;t render an empty one.</p>
+      </div>
+      <div class="audit-item">
+        <div class="tag">Impact: low</div>
+        <h3>Type chip splits on whitespace</h3>
+        <p><code>typeLabel.split(&apos; &apos;)[0]</code> turns &quot;Long run&quot; into &quot;LONG&quot;. Loses nuance. Either show the full label (it&apos;s short) or use the canonical type-key (&quot;EASY&quot;, &quot;LONG&quot;, &quot;INTERVALS&quot;) instead of slicing the display label.</p>
+      </div>
+      <div class="audit-item">
+        <div class="tag">Impact: low</div>
+        <h3>Metric tile crams 5 elements</h3>
+        <p>Distance/Duration tile holds: label · custom chip · 22px value · unit suffix · segmented selector — inside one 10px-padding card. Toggle could live behind an inline tap on the unit or under a long-press, not always-visible.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOCKUP COMPARE -->
+  <div class="section">
+    <div class="section-eyebrow">Proposed</div>
+    <h2>Before &amp; after</h2>
+    <p>Same data, same brand. What changes: HR tile is removed (already shown on the prescription card), a one-sentence voice line slots under the prescription, WHY moves up to sit directly under it, Week focus goes, action bar collapses to two tap targets.</p>
+
+    <div class="compare">
+
+      <!-- BEFORE -->
+      <div class="compare-col before">
+        <h3>Now</h3>
+        <p class="sub">Prescription card + metric grid stack the same data twice. WHY sits below 4 execution blocks.</p>
+
+        <div class="phone">
+          <div class="status"><span>9:41</span><span>●●●</span></div>
+
+          <!-- Sticky header -->
+          <div class="session-header">
+            <div class="back-btn">‹</div>
+            <div class="titles">
+              <div class="eb">Tuesday · Week 14</div>
+              <div class="ttl">Easy run</div>
+            </div>
+            <div class="chip" style="color:var(--s-easy);background:rgba(61,111,176,0.10)">EASY</div>
+          </div>
+
+          <div class="screen-body">
+            <div class="status-row">Tuesday · 20 May</div>
+
+            <!-- Zone prescription -->
+            <div class="prescription">
+              <div class="eb-row">
+                <span class="pulse-dot"></span>
+                <span class="label">Hold the zone</span>
+              </div>
+              <div class="zone-headline" style="color:var(--s-easy)">Zone 2 · aerobic</div>
+              <div class="hr-range">127–145 bpm</div>
+              <div class="zone-bar">
+                <div class="seg"></div>
+                <div class="seg" style="background:var(--s-easy)"></div>
+                <div class="seg"></div>
+                <div class="seg"></div>
+                <div class="seg"></div>
+              </div>
+              <div class="zone-bar-labels">
+                <div class="lbl">1</div>
+                <div class="lbl" style="color:var(--s-easy)">2</div>
+                <div class="lbl">3</div>
+                <div class="lbl">4</div>
+                <div class="lbl">5</div>
+              </div>
+            </div>
+
+            <!-- Metric grid — HR tile IS THE DUPE -->
+            <div class="metric-grid">
+              <div class="metric-tile coloured">
+                <div class="lbl">Distance</div>
+                <div class="val">10.0<span class="unit"> km</span></div>
+                <div class="toggle">
+                  <button class="active">km</button>
+                  <button>min</button>
+                </div>
+              </div>
+
+              <!-- DUPLICATE HR — same data as prescription card -->
+              <div class="metric-tile dupe-highlight">
+                <div class="dupe-tag">Duplicate</div>
+                <div class="zone-chip">Zone 2</div>
+                <div class="val" style="display:flex;align-items:baseline;gap:3px">
+                  <span>127–145</span>
+                  <span style="font-size:10px;font-weight:400;color:var(--mute)">bpm</span>
+                </div>
+                <div class="sub">Walk if exceeded</div>
+              </div>
+            </div>
+
+            <div class="metric-grid" style="grid-template-columns:1fr;margin-top:-6px">
+              <div class="metric-tile">
+                <div class="lbl">Est. pace</div>
+                <div class="val" style="font-size:18px">~5:30</div>
+                <div class="sub">HR-derived estimate</div>
+              </div>
+            </div>
+
+            <!-- What to do -->
+            <div class="block">
+              <div class="h">What to do</div>
+              <div class="body">Steady 10km, easy pace. Keep your heart rate in Zone 2 the whole way. Walk a few steps if it spikes.</div>
+            </div>
+
+            <!-- Session structure — SAME INFO again -->
+            <div class="block dupe-highlight" style="outline-offset:2px">
+              <div class="dupe-tag">Overlap</div>
+              <div class="h">Session structure</div>
+              <div class="struct-row">
+                <div class="rail"></div>
+                <div class="info">
+                  <div class="top">
+                    <div class="label-txt">Warm-up</div>
+                    <div class="meta">10 min · Zone 1</div>
+                  </div>
+                  <div class="desc">Easy jog, build into Zone 2.</div>
+                </div>
+              </div>
+              <div class="struct-row main">
+                <div class="rail"></div>
+                <div class="info">
+                  <div class="top">
+                    <div class="label-txt">Main set</div>
+                    <div class="meta">40 min · Zone 2</div>
+                  </div>
+                  <div class="desc">Steady the whole way. No surges.</div>
+                </div>
+              </div>
+              <div class="struct-row">
+                <div class="rail"></div>
+                <div class="info">
+                  <div class="top">
+                    <div class="label-txt">Cool-down</div>
+                    <div class="meta">10 min · Zone 1</div>
+                  </div>
+                  <div class="desc">Slow it down. Walk if needed.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Week focus — INTERRUPTS NARRATIVE -->
+            <div class="block dupe-highlight" style="outline-color:var(--warn)">
+              <div class="dupe-tag" style="background:var(--warn)">Misplaced</div>
+              <div class="h">Week focus</div>
+              <div class="body" style="font-size:13px">Build week 3 — hold the volume, keep the long run conservative.</div>
+            </div>
+
+            <!-- WHY is way down here -->
+            <div class="why-card">
+              <div class="left-rail"></div>
+              <div class="byline">
+                <div class="avatar">K</div>
+                <div class="byline-text">
+                  <div class="byline-name">Kit</div>
+                  <div class="byline-role">YOUR COACH · WHY THIS SESSION</div>
+                </div>
+              </div>
+              <div class="body">You&apos;ve done two quality sessions this week. Today is the easy day that lets them stick. Going faster here doesn&apos;t make you fitter — it just blunts Thursday.</div>
+            </div>
+
+            <!-- Action bar — 5 tap targets -->
+            <div class="cta-bar">
+              <button class="primary">Log this run</button>
+              <div class="matched">
+                <span class="ai-mark">✦</span>
+                <span>Tuesday 7am run · 9.8km · 2h ago</span>
+              </div>
+              <button class="picker-link">Wrong one? Pick another</button>
+              <div class="secondary-row">
+                <button>Log manually</button>
+                <button class="ghost">Skip</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- AFTER -->
+      <div class="compare-col after">
+        <h3>Proposed</h3>
+        <p class="sub">HR tile removed. Voice line added. WHY moves up under the prescription. Week focus gone. Action bar collapses to 2 visible CTAs.</p>
+
+        <div class="phone">
+          <div class="status"><span>9:41</span><span>●●●</span></div>
+
+          <!-- Sticky header — same -->
+          <div class="session-header">
+            <div class="back-btn">‹</div>
+            <div class="titles">
+              <div class="eb">Tuesday · Week 14</div>
+              <div class="ttl">Easy run</div>
+            </div>
+            <div class="chip" style="color:var(--s-easy);background:rgba(61,111,176,0.10)">EASY</div>
+          </div>
+
+          <div class="screen-body">
+            <div class="status-row">Tuesday · 20 May</div>
+
+            <!-- Zone prescription — unchanged -->
+            <div class="prescription">
+              <div class="eb-row">
+                <span class="pulse-dot"></span>
+                <span class="label">Hold the zone</span>
+              </div>
+              <div class="zone-headline" style="color:var(--s-easy)">Zone 2 · aerobic</div>
+              <div class="hr-range">127–145 bpm</div>
+              <div class="zone-bar">
+                <div class="seg"></div>
+                <div class="seg" style="background:var(--s-easy)"></div>
+                <div class="seg"></div>
+                <div class="seg"></div>
+                <div class="seg"></div>
+              </div>
+              <div class="zone-bar-labels">
+                <div class="lbl">1</div>
+                <div class="lbl" style="color:var(--s-easy)">2</div>
+                <div class="lbl">3</div>
+                <div class="lbl">4</div>
+                <div class="lbl">5</div>
+              </div>
+            </div>
+
+            <!-- NEW voice line -->
+            <div class="voice-line">Conversational the whole way. If you can talk, you&apos;re in.</div>
+
+            <!-- Metric grid — 2-up, HR tile removed -->
+            <div class="metric-grid">
+              <div class="metric-tile coloured">
+                <div class="lbl">Distance</div>
+                <div class="val">10.0<span class="unit"> km</span></div>
+                <div class="toggle">
+                  <button class="active">km</button>
+                  <button>min</button>
+                </div>
+              </div>
+              <div class="metric-tile">
+                <div class="lbl">Est. pace</div>
+                <div class="val" style="font-size:22px">~5:30</div>
+                <div class="sub" style="opacity:0.8">/km</div>
+              </div>
+            </div>
+
+            <!-- WHY moves up here, directly under prescription -->
+            <div class="why-card moss-card">
+              <div class="left-rail"></div>
+              <div class="byline">
+                <div class="avatar">K</div>
+                <div class="byline-text">
+                  <div class="byline-name">Kit</div>
+                  <div class="byline-role">YOUR COACH · WHY THIS SESSION</div>
+                </div>
+              </div>
+              <div class="body">You&apos;ve done two quality sessions this week. Today is the easy day that lets them stick. Going faster here doesn&apos;t make you fitter — it just blunts Thursday.</div>
+            </div>
+
+            <!-- Session structure — only the structured composer, no description string -->
+            <div class="block">
+              <div class="h">Session structure</div>
+              <div class="struct-row">
+                <div class="rail"></div>
+                <div class="info">
+                  <div class="top">
+                    <div class="label-txt">Warm-up</div>
+                    <div class="meta">10 min · Zone 1</div>
+                  </div>
+                  <div class="desc">Easy jog, build into Zone 2.</div>
+                </div>
+              </div>
+              <div class="struct-row main">
+                <div class="rail"></div>
+                <div class="info">
+                  <div class="top">
+                    <div class="label-txt">Main set</div>
+                    <div class="meta">40 min · Zone 2</div>
+                  </div>
+                  <div class="desc">Steady the whole way. No surges.</div>
+                </div>
+              </div>
+              <div class="struct-row">
+                <div class="rail"></div>
+                <div class="info">
+                  <div class="top">
+                    <div class="label-txt">Cool-down</div>
+                    <div class="meta">10 min · Zone 1</div>
+                  </div>
+                  <div class="desc">Slow it down. Walk if needed.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- (Week focus removed — lives on Plan/Today) -->
+
+            <!-- Action bar — 2 visible CTAs + expandable link -->
+            <div class="cta-bar">
+              <button class="primary">Log this run</button>
+              <div class="matched">
+                <span class="ai-mark">✦</span>
+                <span>Tuesday 7am run · 9.8km · 2h ago</span>
+              </div>
+              <button class="picker-link">Log manually or skip</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Callouts -->
+        <div class="callouts">
+          <div class="callout">
+            <div class="num">1</div>
+            <div><strong>HR tile removed.</strong> Prescription card already owns Zone + HR + ZoneBar. Metric grid is now a 2-up: Distance/Duration + Pace. Zone education still discoverable via the Zone chip on the prescription card.</div>
+          </div>
+          <div class="callout">
+            <div class="num">2</div>
+            <div><strong>Voice line under the prescription.</strong> One sentence, session-type-aware. Helper function takes <code>session.type</code> and returns the line. ~15 LOC + 8 strings. Highest-leverage brand win on the whole screen.</div>
+          </div>
+          <div class="callout">
+            <div class="num">3</div>
+            <div><strong>WHY moves up.</strong> Directly under prescription + voice. Why → How. The brand-defining block stops sitting fifth from the top.</div>
+          </div>
+          <div class="callout">
+            <div class="num">4</div>
+            <div><strong>Pick one &quot;what&quot;.</strong> Structured composer renders when there&apos;s structure; description string fallback otherwise. Don&apos;t render both — same instruction, two formats.</div>
+          </div>
+          <div class="callout">
+            <div class="num">5</div>
+            <div><strong>Week focus removed</strong> — it&apos;s a plan-level statement, lives on Plan/Today. Session Detail is about <em>this session</em>.</div>
+          </div>
+          <div class="callout">
+            <div class="num">6</div>
+            <div><strong>Action bar collapses to 2 visible.</strong> Primary moss + AIMark subline + one text link (&quot;Log manually or skip&quot;) that expands to the secondary options. From 5 tap targets to 2.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- VOICE LINES -->
+  <div class="section">
+    <div class="section-eyebrow">Brand</div>
+    <h2>The voice line — by session type</h2>
+    <p>One sentence under the prescription card. Session-type-aware. This is the same pattern Today&apos;s hero uses (&quot;10km, slowly.&quot;) — Zonna&apos;s voice anchoring the moment. <strong>Not motivational.</strong> Not generic. Specific to what this session is and what could go wrong.</p>
+    <div class="voice-table">
+      <table>
+        <thead><tr><th>Session type</th><th>Voice line</th></tr></thead>
+        <tbody>
+          <tr><td>Easy / run</td><td>&quot;Conversational the whole way. If you can talk, you&apos;re in.&quot;</td></tr>
+          <tr><td>Long</td><td>&quot;Hours, not effort. Slower than you think you should.&quot;</td></tr>
+          <tr><td>Tempo / quality</td><td>&quot;Comfortably hard. Not all-out. Hold the line.&quot;</td></tr>
+          <tr><td>Intervals</td><td>&quot;Hard on the reps. Easy on the rests. Don&apos;t blur it.&quot;</td></tr>
+          <tr><td>Race</td><td>&quot;This is the day. Trust the work.&quot;</td></tr>
+          <tr><td>Recovery</td><td>&quot;Slower than easy. Yes, that slow.&quot;</td></tr>
+          <tr><td>Strength</td><td>&quot;Build the body that holds the zones.&quot;</td></tr>
+          <tr><td>Rest</td><td>&quot;Do nothing. It helps.&quot;</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RECOMMENDATIONS -->
+  <div class="section">
+    <div class="section-eyebrow">Ship order</div>
+    <h2>Recommendations</h2>
+    <p>Three releases, each shippable independently. Net code change across all three is mostly deletion. SLC at each step.</p>
+    <div class="recs">
+      <ol>
+        <li>
+          <strong>Pass 1 — Kill the duplicate HR + add the voice.</strong> <span class="effort">S · ~1 day</span>
+          Remove the HR tile from the metric grid (prescription card already owns Zone + HR + ZoneBar). Metric grid becomes Distance/Duration + Pace, 2-up. Add the voice line under the prescription card — one helper function, ~8 strings, one new component. Highest-leverage change on the screen. Closes the &quot;same thing twice&quot; problem AND the &quot;no voice pre-run&quot; problem in one ticket.
+        </li>
+        <li>
+          <strong>Pass 2 — Reorder + simplify.</strong> <span class="effort m">M · ~2 days</span>
+          Move WHY THIS SESSION directly under the prescription (above structure). Suppress &quot;What to do&quot; when a structured composer exists (the composer wins). Remove the Week focus block from Session Detail entirely — it belongs on Plan/Today. When the session is complete, promote RPE + body feeling <em>above</em> the sticky CTA. Action bar collapses to 2 visible CTAs in auto-matched state. Mostly reorder + deletion, no new components.
+        </li>
+        <li>
+          <strong>Pass 3 — Warm Slate cleanup pass.</strong> <span class="effort m">M · ~1 day</span>
+          Same kind of pass the Plan screen needs: replace System B aliases (<code>var(--text-secondary)</code>, <code>var(--border-col)</code>, <code>0.5px</code>, <code>var(--amber)</code>) with Warm Slate equivalents (<code>var(--ink-2)</code>, <code>var(--line)</code>, <code>1px</code>, <code>var(--warn)</code>) throughout the metric grid and execution summary. Drop the pace tile&apos;s &quot;HR-derived estimate&quot; caption. Render no tile when pace isn&apos;t ready (instead of an empty skeleton). Mechanical — visual coherence pass with no structural change.
+        </li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
