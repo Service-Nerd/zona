@@ -6,7 +6,7 @@ It maps canonical values → surfaces → divergences → execution list.
 When `lib/brand.ts` and this doc disagree, `lib/brand.ts` is the truth. Fix this doc.
 When a component and this doc disagree, the component is wrong. Fix the component.
 
-**Last audited**: 2026-04-23
+**Last audited**: 2026-05-14
 
 ---
 
@@ -21,7 +21,7 @@ This table is the authoritative source of what each value currently is.
 | `BRAND.tagline` | `"Slow down. You've got a day job."` | Login, welcome, plan-ready, OG image, loading screen |
 | `BRAND.brandStatement` | `"You can't outrun your easy days."` | Privacy footer, App Store description, editorial only (not login — tagline owns that space) |
 | `BRAND.signupSub` | `'14 days, no limits. After that, you decide.'` | Sign-up sub-text only (not sign-in) |
-| `BRAND.voiceAnchor` | `'Hold the zone.'` | In-product only — push notifications, coach cards, session prompts. Not for marketing. |
+| `BRAND.voiceAnchor` | `'Hold the zone.'` | In-product. Used inline in AI-generated coach copy (`lib/coaching/prompts/*`), plan-adjustment coach notes (`lib/coaching/planAdjustment.ts`), and — as of HOLD-THE-ZONE-01 (2026-05-14) — as a visible UI eyebrow on the post-plan-gen zone intro (OrientationScreen), Today screen (above the session card, conditional on zone-bearing sessions), and Session Detail prescription card. Not for marketing — that space is owned by `BRAND.tagline`. |
 | `BRAND.push.weeklyReport` | `'Your week, reviewed.'` | Push notification title — weekly report |
 | `BRAND.push.runAnalysis` | `'Run logged.'` | Push notification title — post-run analysis |
 | `PRICING.annual.savingLabel` | `'Save 37% / year'` | Annual plan pill on UpgradeScreen |

@@ -779,6 +779,174 @@ A grouped list of tappable rows inside a single card. Used in MeScreen for plan 
 
 ---
 
+### 21. ZoneBar
+
+The canonical visual for "which zone is this session in." 5 segments in a row, one filled in zone colour. Highest information-per-pixel of any chart on the session surfaces — at a glance, the user sees both the zone they're in AND its position in the 5-zone arc. Anchors the "Hold the zone" brand promise visually.
+
+```
+[─][▓▓▓][─][─][─]        ← Today session card (compact, no labels)
+ 1   2   3   4   5
+
+[─][▓▓▓][─][─][─]        ← Session Detail prescription card (labelled)
+ 1   2   3   4   5       ← active label in zone colour, others --mute
+```
+
+**Structure:**
+- Container: optional outer wrapper styled by caller
+- Bar row: `display: flex`, `gap: 3px`
+- Segments: `flex: 1` each, `borderRadius: 2px`
+- Active segment: filled with zone colour
+- Inactive segments: `var(--bg-soft)`
+- Optional labels row: `flex: 1` cells, `9px 600`, `0.06em letter-spacing`, centred, active label in zone colour
+
+**Variants:**
+
+| Surface | Height | Labels | Notes |
+|---|---|---|---|
+| Today session card | `4px` | off | Glance-only — labels would clutter |
+| Session Detail prescription | `5px` | on | Prescription is the focal point; labels earn their space |
+| Post-plan zone intro | covered by 5-zone list (Pattern 21 not used) | — | Intro uses the full zone-row pattern with HR ranges |
+
+**Zone → colour mapping** (ui-patterns.md § HR Zone → Session Colour Coherence):
+
+| Zone | Token | Session types |
+|---|---|---|
+| 1 | `--s-recov` | recovery |
+| 2 | `--s-easy` | easy, run, long |
+| 3 | `--s-quality` | quality, tempo |
+| 4 | `--s-race` | race |
+| 5 | `--s-inter` | intervals, hard |
+
+**Helpers** (from `components/shared/ZoneBar.tsx`):
+- `zoneNumberForType(type): Zone | null` — maps session.type → 1–5. Returns null for rest / strength / cross-train. Distinct from `zoneForSessionType` in `lib/coaching/zoneRules.ts` which returns a `ZoneBand` object grouping 4+5 — the visual bar wants 5 distinct segments.
+- `zoneShortName(zone): string` — short label for prescription card ("aerobic", "tempo", "threshold", "VO₂ max").
+
+**Props:**
+```tsx
+activeZone: 1 | 2 | 3 | 4 | 5
+height?: number       // default 4 (Today); 5 on Session Detail
+showLabels?: boolean  // default false; true on Session Detail
+style?: React.CSSProperties
+```
+
+**Rules:**
+- Never render when session has no zone (rest / strength / cross-train) — caller checks `zoneNumberForType()` first
+- Active label colour MUST match the segment colour — single token per zone
+- Don't add a 6th segment, a duration overlay, or any other decoration — the value is in the constraint
+- The bar is a *visual aid*, not a measurement. For HR ranges, use the prescription card's HR display line.
+
+Reference: `components/shared/ZoneBar.tsx`. Single source of truth.
+
+---
+
+### 22. WeekStripCard
+
+Compressed weekly summary used on the Plan screen for past weeks (when expanded) and distant-future weeks (≥2 weeks ahead). 7 status dots in a single row replace the full WeekCard's day list. Lets a 16-week plan read as an arc instead of a wall of rows.
+
+```
+┌─────────────────────────────────────────────┐
+│ W10 · Apr 28 – May 4 · peak begins   52km  │
+│  M    T    W    T    F    S    S            │
+│  —    ●    ●    ●    —    ●    ●            │
+└─────────────────────────────────────────────┘
+```
+
+**Structure:**
+- Container: `--card` bg, `1px solid --line` border, `var(--radius-lg)` radius, `14px 16px` padding
+- Race-week variant: `borderLeft: 3px solid var(--s-race)` (parallels WeekCard race accent)
+- Past variant: `opacity: 0.65` (parallels WeekCard past treatment)
+- Header row: week label `12px 600 --ink-2` left, total km `14px 700 --ink-2 tabular-nums` right
+- Status dots row: `display: flex, justify-between, gap: 4px`. Each day cell flex-1, column layout with `D` initial above + dot
+- Day initial: `9px 600 --mute uppercase 0.06em`
+
+**Dot vocabulary:**
+
+| State | Visual |
+|---|---|
+| Complete | `8px` filled `--moss` circle |
+| Future session | `8px` outlined `--mute-2` circle |
+| Skipped | `8px` dashed `--mute` circle, opacity 0.6 |
+| Race day | `10px` filled `--s-race` circle (slightly bigger to read as the climax) |
+| Rest / empty | `6px × 1.5px` dash `--mute-2`, opacity 0.5 |
+| Past + future-not-done | `8px` filled `--mute-2` circle, opacity 0.5 (signals "this slot existed and is now gone") |
+
+**Race-week footer (optional):**
+- Renders only when `isRace` is true
+- `10px 700 --s-race uppercase 0.08em` — formatted as `weekday, day month` (e.g. "Sun 5 May · Marathon des Sables")
+- The actual race date is derived from the last race-typed session in the week (typically Sunday)
+
+**When to use:**
+- Past weeks in `Plan` screen's PlanCalendar after the user expands "Load N past weeks"
+- "Later" weeks (≥3 weeks ahead) — keeps the current + next week as full WeekCards, compresses the rest
+- NOT used for the current or next week — those carry the move/swap interaction and need the full WeekCard
+
+**Limitation:**
+- Strip cards are read-only. Move/swap requires the full WeekCard (`Pattern: WeekCard` in `components/training/PlanCalendar.tsx`). Tap-to-expand (PLAN-STRIP-EXPAND, backlog) will unlock move/swap on Later weeks when scoped.
+
+Reference: `components/training/PlanCalendar.tsx` → `WeekStripCard`.
+
+---
+
+### 23. PlanSectionLabel
+
+Group header between week clusters on the Plan screen (`Past / Now / Next / Later`). Names the user's position in the plan arc explicitly so the calendar reads as a story rather than a flat list.
+
+```
+NOW                                    7 weeks    ← right-side count optional
+```
+
+**Structure:**
+- Wrapper: `display: flex, justify-between, baseline`, `padding: 0 4px`, `margin-top: 18px`
+- Label: `11px 700 --mute uppercase 0.12em` (slightly louder than the generic SectionLabel at 10px — these headers carry more weight on the Plan screen)
+- Optional right-side count: `10px --mute 0.04em` — shown only on "Later" to signal how many weeks the strip cards cover
+
+**Rules:**
+- Only used on the Plan screen — for cross-screen eyebrow / category labels, use Pattern 17 (SectionLabel)
+- Always placed *between* week-card groups, never above the first card
+- The Past header only renders when past weeks are expanded
+
+Reference: `components/training/PlanCalendar.tsx` → `PlanSectionLabel`.
+
+---
+
+### 24. Plan Voice Card (slim variant of CoachNoteBlock)
+
+Inline this-week coaching surface on the Plan screen. Sibling to `PlanCoachingCard` (Coach screen) — both share the same derivation helpers (`buildWeekVoiceContext`, `getWeekVoiceHeadline`, `getWeekVoiceItems` in `DashboardClient.tsx`) but render differently for their context.
+
+```
+┌─────────────────────────────────────────────┐
+│ ▌ THIS WEEK                            BUILD │
+│   Quality and long run this week. Hard stuff │
+│   first, long stuff rested.                 │
+│   Run the quality session when fresh — not  │
+│   back-to-back with another hard day.       │
+│   The long run should be Zone 2 only.       │
+└─────────────────────────────────────────────┘
+```
+
+**Structure:**
+- `--card` bg, `1px solid --line` border, `var(--radius-lg)` radius
+- 3px `--moss` left rail (coaching-surface signal) — positioned at `left: 8px`, vertical inset matches padding
+- Padding: `14px 16px 14px 19px` (extra left padding to clear the rail)
+- Eyebrow row: `10px 700 --mute uppercase 0.08em` "THIS WEEK" left, phase chip `10px 700 --moss uppercase 0.08em` right (e.g. "BUILD")
+- Headline: `15px 600 --ink -0.01em` line-height 1.4
+- Items: `12px 400 --ink-2` line-height 1.55, gap 6px between items
+- Max 2 items on this surface (Coach screen's `PlanCoachingCard` shows 3)
+
+**Provenance rule (critical):**
+- This is **rule-engine output**, derived from session shape + phase + race countdown — NO AI involved
+- Does NOT use `<CoachByline>` or `<AIMark>` (per ui-patterns.md §16 / §16b)
+- Same treatment as Today's plan-coach-note (also rule-derived, also no byline)
+- When PLAN-VOICE-AI ships (backlog), this surface gains a `<CoachByline color="moss" role="This week" />` and the rail moves from decorative-moss to the canonical AI-card-rail pattern
+
+**Rules:**
+- Render only when there's a current week in the plan (skip if `getCurrentWeekIndex` doesn't resolve)
+- The headline + items come from the *current* week — not next week, not whichever week is in view via the Plan screen's date strip
+
+Reference: `app/dashboard/DashboardClient.tsx` → `PlanScreen` (inline JSX; not extracted to its own component because it depends on `Plan` + `Week` shapes that other Plan-screen components also derive locally).
+
+---
+
 ## Cross-Screen Consistency Rules
 
 Every screen must honour these invariants before shipping. Check against this list when auditing.

@@ -340,12 +340,20 @@ Gate richness (AI labels, coaching voice), never gate access (the plan itself, t
 - Session type colours consistent across all surfaces
 - Note: four files (BenchmarkUpdateScreen, GeneratingCeremony, GeneratePlanScreen, UpgradeScreen) reverted to legacy aliases post-merge; aliases bridged in globals.css
 
-**Phase 4 — in progress (target: May 10 TestFlight)**
-- B-001: wire BenchmarkUpdateScreen into DashboardClient router (Task 4)
-- B-002: orientation_seen migration — first-plan-only trigger (Task 5)
-- "Careful Now" section label in MeScreen (Task 6)
-- Personalisation wins (Task 7)
-- Polish pass: dead code, empty states, copy, accessibility (Tasks 9–12)
+**Phase 4 — major items shipped (was: target May 10 TestFlight)**
+- B-001: BenchmarkUpdateScreen wired into DashboardClient router
+- B-002: `orientation_seen` migration + first-plan-only trigger
+- "Careful Now" section label in MeScreen (SectionLabel — ui-patterns.md §17)
+- Personalisation wins (PROFILE-ADJ-02 — recent tweaks log on MeScreen)
+- AI coaching depth pass (AI-DEPTH-01 + AI-DEPTH-02a + AI-DEPTH-04 + AI-DEPTH-07 + AI-DEPTH-10) — see feature-registry
+- Native plumbing (Strava OAuth on native, iOS push notifications via APNs, Subscription disclosure)
+- Remaining Phase 4 polish tasks (dead code, empty states, accessibility) folded into ongoing maintenance
+
+**Post-Phase-4 wave — shipped 2026-05-14**
+- POST-RUN-02: post-run journey resolves at the read (auto-match CTA + analysis state + Done → SessionScreen)
+- PLAN-REDESIGN-01: Plan screen redesign (voice card + Warm Slate token migration + Now/Next/Later sections + WeekStripCard)
+- HOLD-THE-ZONE-01: brand visibility across the app (ZoneBar primitive + Hold-the-zone eyebrow + post-plan zone intro + Session Detail prescription card + MeScreen zone promotion)
+- Bug fixes: swap/move override resolution (`lib/plan/effectiveSessions.ts` shared between daily-coach-note and missed-session prompt), APNs `aps-environment` entitlement
 
 ---
 
