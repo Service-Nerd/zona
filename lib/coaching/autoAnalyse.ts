@@ -149,12 +149,16 @@ export async function autoMatchAndAnalyse(
       thu: 'Thursday', fri: 'Friday',   sat: 'Saturday',  sun: 'Sunday',
     }
     const dayName = dayNames[bestDay] ?? bestDay
-    const body = distKm > 0
-      ? `How did ${dayName}'s ${distLabel} feel?`
-      : `How did ${dayName}'s run feel?`
+    // POST-RUN-02: title carries the *what* (so the lock-screen preview reads
+    // as the run, not a process step); body mirrors the destination screen's
+    // own "How did it feel?" header so the tap-through is a continuation, not
+    // a new question.
+    const title = distKm > 0
+      ? `${dayName}'s ${distLabel}.`
+      : `${dayName}'s run.`
     void notifyUser(userId, {
-      title: 'Run linked.',
-      body,
+      title,
+      body:  'How did it feel?',
       tag:   'run-linked',
       data:  { url: `/dashboard?screen=post-run&weekN=${week.n}&sessionDay=${bestDay}` },
     })

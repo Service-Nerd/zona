@@ -94,6 +94,36 @@ function formatRaceCountdown(days: number, opts?: { suffix?: string }): string {
   return `${wPart}, ${rem} ${rem === 1 ? 'day' : 'days'}${suffix}`
 }
 
+// POST-RUN-02: human-readable relative time for the auto-match subline.
+// Honest and short — "this morning" / "earlier today" / "yesterday" / "{N}d ago".
+// Returns null when the date is missing or in the future (avoids weird "in 2h" cases).
+function formatRelativeTime(date: Date | null | undefined): string | null {
+  if (!date || !Number.isFinite(date.getTime())) return null
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  if (diffMs < 0) return null
+  const sameDay =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  if (sameDay) {
+    const h = date.getHours()
+    if (h < 12) return 'this morning'
+    if (h < 17) return 'earlier today'
+    return 'this evening'
+  }
+  const startOfToday = new Date(now)
+  startOfToday.setHours(0, 0, 0, 0)
+  const startOfYesterday = new Date(startOfToday)
+  startOfYesterday.setDate(startOfToday.getDate() - 1)
+  const startOfDate = new Date(date)
+  startOfDate.setHours(0, 0, 0, 0)
+  if (startOfDate.getTime() === startOfYesterday.getTime()) return 'yesterday'
+  const days = Math.floor((startOfToday.getTime() - startOfDate.getTime()) / 86400000)
+  if (days <= 6) return `${days}d ago`
+  return null
+}
+
 // ── Icons ─────────────────────────────────────────────────────────────────
 
 function IconToday({ active }: { active: boolean }) {
@@ -1203,7 +1233,22 @@ export default function DashboardClient() {
         {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentAutoAdjustments={recentAutoAdjustments} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatchedActivity={activeAutoMatch} />}
-        {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={runAnalysisMap[activePostRunData.session?.key ?? ''] ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
+        {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onDone={() => {
+          // POST-RUN-02: terminus. Route to SessionScreen for this session
+          // with the freshest completion merged in, so the verdict (which
+          // SessionScreen renders inline) is the resting state — not Today.
+          const sess = activePostRunData.session
+          const wN   = activePostRunData.weekN
+          if (!sess || wN == null) { setActivePostRunData(null); setScreen('today'); return }
+          const freshCompletion = allCompletions[wN]?.[sess.key as string] ?? sess.completion ?? null
+          setActiveSessionData({ ...sess, completion: freshCompletion })
+          setActivePostRunData(null)
+          setScreen('session')
+        }} onSaved={impersonating ? undefined : refreshCompletions} onAnalysisLoaded={(sessionDay, row) => {
+          // POST-RUN-02: keep parent map in sync so Done → SessionScreen
+          // doesn't re-poll for analysis we already have in hand.
+          setRunAnalysisMap(prev => ({ ...prev, [sessionDay]: row }))
+        }} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={runAnalysisMap[activePostRunData.session?.key ?? ''] ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
         {screen === 'admin'    && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
         {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} dob={dob} onDobSave={async (d) => { setDob(d); if (userId) await supabase.from('user_settings').update({ date_of_birth: d }).eq('id', userId) }} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} onBack={() => {
@@ -2691,6 +2736,77 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               }
               if (!isComplete && !isSkipped) {
                 if (isRunType) {
+                  // POST-RUN-02: when a high-confidence Strava match has already
+                  // been computed for this session, commit to it as the primary
+                  // CTA. The picker becomes the "wrong one?" escape hatch.
+                  // handleMarkComplete already skips the picker when
+                  // autoMatchedActivity is non-null (POST-RUN-01).
+                  if (autoMatchedActivity) {
+                    const km = typeof autoMatchedActivity.distance === 'number'
+                      ? autoMatchedActivity.distance / 1000
+                      : null
+                    const distStr = km != null
+                      ? `${km.toFixed(1)}${preferredUnits === 'mi' ? 'mi' : 'km'}`
+                      : null
+                    const startDate = autoMatchedActivity.start_date
+                      ? new Date(autoMatchedActivity.start_date)
+                      : null
+                    const subline = [
+                      autoMatchedActivity.name,
+                      distStr,
+                      formatRelativeTime(startDate),
+                    ].filter(Boolean).join(' · ')
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                        <button
+                          onClick={handleMarkComplete}
+                          style={{
+                            width: '100%',
+                            background: 'var(--moss)', color: 'var(--card)',
+                            border: 'none', borderRadius: '10px', padding: '13px',
+                            fontFamily: 'var(--font-ui)', fontSize: '12px',
+                            letterSpacing: '0.06em', textTransform: 'uppercase',
+                            cursor: 'pointer', fontWeight: 600,
+                            minHeight: '44px',
+                          }}
+                        >
+                          Log this run
+                        </button>
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: '6px',
+                          padding: '0 4px',
+                          fontFamily: 'var(--font-ui)', fontSize: '11px',
+                          color: 'var(--mute)', lineHeight: 1.4,
+                        }}>
+                          <AIMark size={11} color="var(--moss)" label="Strava run matched by Zonna" />
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {subline}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => setView('complete')}
+                          style={{
+                            background: 'none', color: 'var(--mute)',
+                            border: 'none', padding: '8px 4px',
+                            fontFamily: 'var(--font-ui)', fontSize: '11px',
+                            cursor: 'pointer', alignSelf: 'flex-start',
+                            textDecoration: 'underline', textUnderlineOffset: '3px',
+                            minHeight: '36px',
+                          }}
+                        >
+                          Wrong one? Pick another
+                        </button>
+                        <div style={{ display: 'flex', gap: '8px', width: '100%', marginTop: '2px' }}>
+                          <button onClick={() => setShowManualModal(true)} style={{ flex: 1, background: 'var(--card-bg)', color: config.color, border: `0.5px solid ${config.color}40`, borderRadius: '10px', padding: '11px', fontFamily: 'var(--font-ui)', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500, minHeight: '36px' }}>
+                            Log manually
+                          </button>
+                          <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '11px', fontFamily: 'var(--font-ui)', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', minHeight: '36px' }}>
+                            Skip
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  }
                   return (
                     <>
                       <button onClick={handleMarkComplete} style={{ flex: 1, minWidth: '120px', background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600 }}>
@@ -8145,7 +8261,9 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
 function PostRunScreen({
   data,
   onBack,
+  onDone,
   onSaved,
+  onAnalysisLoaded,
   preferredUnits = 'km',
   zone2Ceiling = 145,
   hasPaidAccess,
@@ -8155,8 +8273,17 @@ function PostRunScreen({
   goalPace,
 }: {
   data: PostRunData
+  /** Back arrow — returns to Today. */
   onBack: () => void
+  /** POST-RUN-02: terminus action. Routes to SessionScreen for this session
+   *  so the run resolves where its read lives, not on Today. Falls back to
+   *  onBack if not provided. */
+  onDone?: () => void
   onSaved?: () => void
+  /** POST-RUN-02: lift a newly-arrived analysis row into the parent's
+   *  runAnalysisMap so a subsequent route to SessionScreen renders the
+   *  verdict immediately instead of re-polling. */
+  onAnalysisLoaded?: (sessionDay: string, row: any) => void
   preferredUnits?: 'km' | 'mi'
   zone2Ceiling?: number
   hasPaidAccess?: boolean
@@ -8254,6 +8381,10 @@ function PostRunScreen({
           .maybeSingle()
         if (!cancelled && row) {
           setAnalysis(row)
+          // POST-RUN-02: lift the row into the parent's runAnalysisMap so a
+          // subsequent Done → SessionScreen route renders the verdict
+          // immediately instead of triggering a fresh poll.
+          onAnalysisLoaded?.(sessionDay, row)
           onSaved?.()
           return
         }
@@ -8266,7 +8397,7 @@ function PostRunScreen({
     }
     const initial = setTimeout(tick, 2500)
     return () => { cancelled = true; clearTimeout(initial) }
-  }, [isAnalysisPending, sessionDay, supabase, onSaved])
+  }, [isAnalysisPending, sessionDay, supabase, onSaved, onAnalysisLoaded])
 
   // ── RPE / fatigue auto-save (mirrors SessionPopupInner.saveRPEFatigue) ──
   async function saveRPEFatigue(newRpe: number | null, newTag: string | null) {
@@ -8344,6 +8475,33 @@ function PostRunScreen({
           }}>
             {sessionLabel}{dayLabel ? ` · ${dayLabel}` : ''}
           </div>
+          {/* POST-RUN-02: subtitle reflects analysis state so the wait isn't a
+              silent gap. AIMark working state replaces a spinner; this is the
+              one screen in the app where the AI verdict is the focal payoff. */}
+          {hasPaidAccess && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              marginTop: '4px',
+              fontFamily: 'var(--font-ui)', fontSize: '12px',
+              color: 'var(--mute)', lineHeight: 1.3,
+            }}>
+              {!analysis && !pollGaveUp && (
+                <>
+                  <AIMark size={11} color="var(--moss)" working label="Reading the run" />
+                  <span>Reading the run…</span>
+                </>
+              )}
+              {!analysis && pollGaveUp && (
+                <span>Logged. Tell me how it felt.</span>
+              )}
+              {analysis && (
+                <>
+                  <AIMark size={11} color="var(--moss)" label="Read complete" />
+                  <span>Here&apos;s the read.</span>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -8500,8 +8658,11 @@ function PostRunScreen({
         </div>
 
         {/* ── DONE ──────────────────────────────────────────────────── */}
+        {/* POST-RUN-02: terminus. Routes to SessionScreen for this session so
+            the verdict (and the session card) is the natural resting state,
+            not Today. Falls back to onBack when onDone isn't wired. */}
         <button
-          onClick={onBack}
+          onClick={onDone ?? onBack}
           style={{
             width: '100%',
             padding: '14px',
