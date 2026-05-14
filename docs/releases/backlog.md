@@ -115,12 +115,6 @@ After Vercel deploy, verify with agent-browser:
 
 ### Post-run journey
 
-- 🔄 **POST-RUN-02 — Journey resolves at the read** *(scoped + built 2026-05-14)* — fixes the gap between "the app could do this" and "the user feels it work" in the auto-link + post-run flow. Three surfaces, one PR:
-  (1) **Session card CTA is auto-match-aware.** When `activeAutoMatch` is present, primary CTA reads **"Log this run"** (moss) with a small `AIMark` + matched-activity subline (`{name} · {distance} · {timeAgo}`). Tertiary "Wrong one? Pick another" reopens the picker. Closes the wording bug where the button said "Match a Strava run" even though `handleMarkComplete` already skipped the picker.
-  (2) **PostRunScreen header reflects analysis state.** New subtitle: pending → `AIMark working` + "Reading the run…"; ready → `AIMark` + "Here's the read."; gave-up → "Logged. Tell me how it felt." Replaces the silent gap with honest provenance.
-  (3) **Done routes to SessionScreen, not Today.** Terminus is the session card with the verdict at the top — not the screen you started on. New `onDone` prop merges the freshest completion from `allCompletions` and routes via existing `activeSessionData`/`setScreen('session')` path. Back-arrow still goes to Today.
-  Push notification copy aligned: title is now `{Day}'s {distLabel}.`, body mirrors PostRunScreen's `How did it feel?` header. **Tier: FREE/PAID-aware** — subtitle states only render with `hasPaidAccess`; auto-match CTA works for all users. **Effort:** ~100 LOC across `app/dashboard/DashboardClient.tsx` + `lib/coaching/autoAnalyse.ts`. Build clean. Branch: `worktree-post-run-02-journey`.
-
 ---
 
 ## LATER — Post-launch roadmap
