@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Zonna · Hold the zone — brand visibility audit</title>
+<style>
+  :root {
+    --bg:        #F3F0EB;
+    --bg-soft:   #EDE9E1;
+    --card:      #FFFFFF;
+    --ink:       #1A1A1A;
+    --ink-2:     #3D3A36;
+    --mute:      #8A857D;
+    --mute-2:    #A8A39B;
+    --line:      rgba(26,26,26,0.08);
+    --line-strong: rgba(26,26,26,0.15);
+    --moss:      #6B8E6B;
+    --moss-soft: rgba(107,142,107,0.10);
+    --moss-mid:  rgba(107,142,107,0.25);
+    --warn:      #B8853A;
+    --warn-bg:   #F5EBD4;
+    --coach-ink: #3D2600;
+    --danger:    #B84545;
+    --s-easy:    #3D6FB0;
+    --s-long:    #5E4FB0;
+    --s-quality: #B8853A;
+    --s-race:    #C86A2A;
+    --s-recov:   #4E8068;
+    --s-inter:   #B84545;
+    --font-ui:   'Inter', sans-serif;
+    --radius-lg: 14px;
+    --radius-md: 10px;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-ui);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  .page { max-width: 1320px; margin: 0 auto; padding: 56px 32px 96px; }
+
+  .header { margin-bottom: 56px; max-width: 920px; }
+  .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.16em;
+    color: var(--moss); text-transform: uppercase; margin-bottom: 12px;
+  }
+  h1 {
+    font-family: var(--font-ui);
+    font-size: 48px; font-weight: 800; line-height: 1.0;
+    letter-spacing: -0.025em; margin: 0 0 20px;
+  }
+  h1 .moss { color: var(--moss); }
+  .lede {
+    font-size: 17px; line-height: 1.55; color: var(--ink-2); font-weight: 400;
+    max-width: 760px;
+  }
+  .lede strong { font-weight: 600; color: var(--ink); }
+
+  .section { margin-bottom: 72px; }
+  .section-eyebrow {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--mute); text-transform: uppercase; margin-bottom: 10px;
+  }
+  h2 {
+    font-family: var(--font-ui);
+    font-size: 28px; font-weight: 700; line-height: 1.15;
+    letter-spacing: -0.015em; margin: 0 0 16px;
+  }
+  .section p { font-size: 15px; line-height: 1.6; color: var(--ink-2); margin: 0 0 12px; max-width: 760px; }
+  .section p strong { color: var(--ink); font-weight: 600; }
+  .section p em { font-style: italic; color: var(--ink); }
+
+  /* Visibility ranking table */
+  .visibility {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); overflow: hidden;
+    max-width: 980px; margin-top: 20px;
+  }
+  .visibility table { width: 100%; border-collapse: collapse; }
+  .visibility th, .visibility td {
+    padding: 12px 16px; text-align: left; font-size: 13px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  .visibility th {
+    font-size: 10px; font-weight: 700; color: var(--mute);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    background: var(--bg-soft);
+  }
+  .visibility tr:last-child td { border-bottom: none; }
+  .visibility .strength {
+    display: inline-block;
+    width: 56px; height: 6px; border-radius: 3px;
+    background: linear-gradient(to right, var(--bg-soft) 0%, var(--bg-soft) 100%);
+    margin-top: 4px;
+    position: relative; overflow: hidden;
+  }
+  .visibility .strength::after {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    background: var(--moss); border-radius: 3px;
+    width: var(--w, 50%);
+  }
+  .visibility .strength.weak::after  { width: 20%; background: var(--danger); }
+  .visibility .strength.mid::after   { width: 50%; background: var(--warn); }
+  .visibility .strength.strong::after { width: 90%; background: var(--moss); }
+
+  /* Issues grid */
+  .audit-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    max-width: 1100px; margin-top: 20px;
+  }
+  .audit-item {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 18px 20px;
+  }
+  .audit-item.warn { border-left: 3px solid var(--warn); }
+  .audit-item.moss { border-left: 3px solid var(--moss); }
+  .audit-item.danger { border-left: 3px solid var(--danger); }
+  .audit-item h3 {
+    font-size: 14px; font-weight: 700; color: var(--ink);
+    margin: 0 0 6px; letter-spacing: -0.005em;
+  }
+  .audit-item p { font-size: 13px; line-height: 1.55; color: var(--ink-2); margin: 0; max-width: none; }
+  .audit-item .tag {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--mute); margin-bottom: 4px;
+  }
+  .audit-item.warn .tag { color: var(--warn); }
+  .audit-item.moss .tag { color: var(--moss); }
+  .audit-item.danger .tag { color: var(--danger); }
+
+  /* Phone frames */
+  .frames {
+    display: grid; gap: 56px; margin-top: 32px;
+  }
+  .frame-row {
+    display: grid;
+    grid-template-columns: minmax(380px, 1fr) minmax(380px, 1fr);
+    gap: 56px; align-items: start;
+  }
+  .frame-row.single { grid-template-columns: minmax(380px, 1fr); }
+  .frame-row .col h3 {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; margin: 0 0 4px;
+  }
+  .frame-row .col.before h3 { color: var(--mute); }
+  .frame-row .col.after  h3 { color: var(--moss); }
+  .frame-row .col.new    h3 { color: var(--moss); }
+  .frame-row .col .sub {
+    font-size: 13px; color: var(--mute); margin: 0 0 20px; line-height: 1.5; max-width: 380px;
+  }
+
+  .phone {
+    width: 100%; max-width: 420px;
+    background: var(--bg); border-radius: 32px;
+    border: 1px solid var(--line-strong);
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.08);
+  }
+  .status {
+    height: 36px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 18px; font-size: 11px; color: var(--ink);
+  }
+  .screen { padding: 20px 16px 40px; }
+
+  /* Generic UI bits */
+  .wordmark {
+    font-size: 14px; font-weight: 800; letter-spacing: 0.02em;
+    color: var(--ink); margin-bottom: 4px;
+  }
+  .wordmark .dot { color: var(--moss); }
+  .screen-title {
+    font-size: 26px; font-weight: 800; color: var(--ink);
+    letter-spacing: -0.02em; margin: 0 0 4px;
+  }
+
+  /* Today screen pieces */
+  .today-context {
+    display: flex; align-items: center; gap: 8px; margin: 12px 0 16px;
+  }
+  .today-context .phase {
+    font-size: 11px; font-weight: 700; color: var(--mute);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .today-context .divider {
+    flex: 1; height: 1px; background: var(--line);
+  }
+  .today-context .countdown {
+    font-size: 11px; font-weight: 600; color: var(--moss);
+    background: var(--moss-soft); padding: 3px 9px; border-radius: 20px;
+    letter-spacing: 0.04em;
+  }
+  .greeting {
+    font-size: 15px; color: var(--mute); margin-bottom: 4px; line-height: 1;
+  }
+  .hero {
+    font-size: 56px; font-weight: 800; letter-spacing: -0.04em; line-height: 1;
+    margin-bottom: 16px;
+  }
+  .hero .ink { color: var(--ink); }
+  .hero .moss { color: var(--moss); }
+  .hero.smaller { font-size: 44px; letter-spacing: -0.035em; }
+
+  /* Session card */
+  .session-card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 14px 16px;
+    margin-bottom: 12px;
+    border-left: 3px solid var(--s-easy);
+  }
+  .session-card .row {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .session-card .label {
+    font-size: 15px; font-weight: 600; color: var(--ink);
+  }
+  .session-card .km {
+    font-size: 17px; font-weight: 700; color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .session-card .meta {
+    display: flex; align-items: center; gap: 8px; margin-top: 6px;
+  }
+  .session-card .zone-chip {
+    font-size: 11px; font-weight: 500;
+    color: var(--s-easy); background: rgba(61,111,176,0.12);
+    padding: 3px 9px; border-radius: 5px;
+    letter-spacing: 0.04em;
+  }
+  .session-card .duration {
+    font-size: 12px; color: var(--mute);
+  }
+
+  /* NEW: zone-prominent session card */
+  .session-card-zone {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 14px 16px 12px;
+    margin-bottom: 12px;
+    border-left: 3px solid var(--s-easy);
+  }
+  .session-card-zone .top-row {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 6px;
+  }
+  .session-card-zone .label {
+    font-size: 15px; font-weight: 600; color: var(--ink);
+  }
+  .session-card-zone .km {
+    font-size: 17px; font-weight: 700; color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .session-card-zone .zone-line {
+    font-size: 13px; font-weight: 600; color: var(--s-easy);
+    letter-spacing: -0.005em;
+    margin: 4px 0 8px;
+  }
+  .session-card-zone .zone-line .hr {
+    font-weight: 400; color: var(--mute); margin-left: 6px;
+  }
+  /* Visual zone bar */
+  .zone-bar {
+    display: flex; gap: 3px; margin: 8px 0 6px;
+  }
+  .zone-bar .seg {
+    flex: 1; height: 4px; border-radius: 2px;
+    background: var(--bg-soft);
+  }
+  .zone-bar .seg.active.z2 { background: var(--s-easy); }
+  .zone-bar .seg.active.z3 { background: var(--s-quality); }
+  .zone-bar .seg.active.z4 { background: var(--s-race); }
+  .zone-bar .seg.active.z5 { background: var(--s-inter); }
+  .zone-bar-labels {
+    display: flex; gap: 3px; margin-bottom: 6px;
+  }
+  .zone-bar-labels .zlbl {
+    flex: 1; font-size: 9px; font-weight: 600;
+    color: var(--mute); text-align: center;
+    letter-spacing: 0.06em;
+  }
+  .zone-bar-labels .zlbl.active.z2 { color: var(--s-easy); }
+  .zone-bar-labels .zlbl.active.z3 { color: var(--s-quality); }
+  .zone-bar-labels .zlbl.active.z4 { color: var(--s-race); }
+  .zone-bar-labels .zlbl.active.z5 { color: var(--s-inter); }
+  .session-card-zone .meta {
+    display: flex; align-items: center; gap: 8px; margin-top: 4px;
+    font-size: 12px; color: var(--mute);
+  }
+
+  /* Voice anchor strip */
+  .voice-anchor {
+    display: flex; align-items: center; gap: 6px;
+    margin: 8px 0 4px;
+    font-size: 10px; font-weight: 700;
+    color: var(--moss); text-transform: uppercase; letter-spacing: 0.12em;
+  }
+  .voice-anchor .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--moss); }
+
+  /* CTA button */
+  .cta {
+    width: 100%; padding: 14px; border-radius: var(--radius-md);
+    background: var(--moss); color: var(--card);
+    font-family: var(--font-ui); font-size: 13px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    border: none; margin-bottom: 8px; cursor: pointer;
+  }
+  .cta-text {
+    width: 100%; text-align: center; padding: 10px;
+    font-size: 11px; color: var(--mute); letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* Session detail bits */
+  .back-arrow {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--bg-soft);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--ink); margin-bottom: 16px;
+  }
+  .session-eyebrow {
+    font-size: 10px; font-weight: 600; color: var(--mute);
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;
+  }
+  .session-title {
+    font-size: 22px; font-weight: 800; color: var(--ink);
+    letter-spacing: -0.02em; margin-bottom: 14px;
+  }
+  .metric-card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 16px 18px;
+    border-left: 3px solid var(--s-easy);
+    margin-bottom: 12px;
+  }
+  .metric-row {
+    display: flex; gap: 16px; align-items: baseline; margin-bottom: 12px;
+  }
+  .metric-row .col { flex: 1; }
+  .metric-row .lbl {
+    font-size: 9px; font-weight: 700; color: var(--mute);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .metric-row .val {
+    font-size: 18px; font-weight: 800; color: var(--ink);
+    font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .metric-row .val.zone {
+    color: var(--s-easy); font-size: 22px;
+  }
+  .session-desc {
+    font-size: 14px; color: var(--ink-2); line-height: 1.55;
+    border-top: 1px solid var(--line); padding-top: 12px;
+  }
+
+  /* "Hold the zone" prominent eyebrow */
+  .hold-zone-eyebrow {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 700;
+    color: var(--moss); text-transform: uppercase;
+    letter-spacing: 0.14em; margin-bottom: 6px;
+  }
+  .hold-zone-eyebrow .pulse {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--moss);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+
+  /* Zone Intro Screen — POST-PLAN-GEN */
+  .intro-headline {
+    font-size: 32px; font-weight: 800; color: var(--ink);
+    letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 8px;
+  }
+  .intro-headline .moss { color: var(--moss); }
+  .intro-sub {
+    font-size: 14px; color: var(--mute); line-height: 1.55; margin-bottom: 24px;
+  }
+  .zone-list {
+    display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px;
+  }
+  .zone-row {
+    display: grid; grid-template-columns: 32px 1fr auto; gap: 12px;
+    align-items: center;
+    padding: 12px 14px;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+  }
+  .zone-row .num {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800;
+    color: var(--card);
+  }
+  .zone-row.z1 .num { background: var(--s-recov); }
+  .zone-row.z2 .num { background: var(--s-easy); }
+  .zone-row.z3 .num { background: var(--s-quality); }
+  .zone-row.z4 .num { background: var(--s-race); }
+  .zone-row.z5 .num { background: var(--s-inter); }
+  .zone-row.z2 { border-left: 3px solid var(--s-easy); padding-left: 11px; }
+  .zone-row .name {
+    font-size: 14px; font-weight: 600; color: var(--ink);
+  }
+  .zone-row .desc {
+    font-size: 11px; color: var(--mute); margin-top: 2px;
+  }
+  .zone-row .hr {
+    font-size: 13px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .zone-row.z1 .hr { color: var(--s-recov); }
+  .zone-row.z2 .hr { color: var(--s-easy); }
+  .zone-row.z3 .hr { color: var(--s-quality); }
+  .zone-row.z4 .hr { color: var(--s-race); }
+  .zone-row.z5 .hr { color: var(--s-inter); }
+  .zone-row .home-tag {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+    color: var(--moss); background: var(--moss-soft);
+    padding: 2px 6px; border-radius: 3px;
+    text-transform: uppercase;
+  }
+
+  .zone-callout {
+    background: var(--moss-soft); border: 1px solid var(--moss-mid);
+    border-radius: var(--radius-md); padding: 12px 14px;
+    margin-bottom: 24px;
+  }
+  .zone-callout .anchor {
+    font-size: 11px; font-weight: 700; color: var(--moss);
+    text-transform: uppercase; letter-spacing: 0.12em;
+    margin-bottom: 4px;
+  }
+  .zone-callout .body {
+    font-size: 13px; color: var(--ink); line-height: 1.5;
+  }
+
+  /* Recommendations */
+  .recs {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 24px 28px;
+    max-width: 900px;
+  }
+  .recs ol { margin: 0; padding-left: 24px; }
+  .recs li {
+    font-size: 15px; line-height: 1.6; color: var(--ink-2);
+    margin-bottom: 18px;
+  }
+  .recs li:last-child { margin-bottom: 0; }
+  .recs li strong { color: var(--ink); font-weight: 600; }
+  .recs .effort {
+    display: inline-block; margin-left: 8px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--moss);
+    background: var(--moss-soft); padding: 2px 8px; border-radius: 4px;
+  }
+  .recs .effort.m { color: var(--warn); background: var(--warn-bg); }
+  .recs .effort.s { color: var(--moss); background: var(--moss-soft); }
+
+  /* Callouts list under mockups */
+  .callouts {
+    margin-top: 24px; display: flex; flex-direction: column; gap: 8px;
+    max-width: 380px;
+  }
+  .callout {
+    display: flex; gap: 12px; align-items: flex-start;
+    font-size: 13px; line-height: 1.5; color: var(--ink-2);
+  }
+  .callout .num {
+    flex-shrink: 0;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--moss); color: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .callout strong { color: var(--ink); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="eyebrow">Brand visibility audit</div>
+    <h1>The app is named Zonna.<br><span class="moss">The zones are barely visible.</span></h1>
+    <p class="lede">
+      Zonna&apos;s entire reason to exist is <strong>zone discipline</strong>. The brand promise — <em>&quot;Hold the zone&quot;</em> —
+      is the voice anchor, the differentiator, the thing that makes the app worth paying for.
+      But in the product itself, zones are everywhere a chip, nowhere a headline.
+      A first-time user could be using any running app and not notice this one is different.
+      We need zones to <strong>shout</strong>, not whisper.
+    </p>
+  </div>
+
+  <!-- VISIBILITY RANKING -->
+  <div class="section">
+    <div class="section-eyebrow">Where zones live today</div>
+    <h2>Zone visibility across the product, ranked</h2>
+    <p>The brand&apos;s strongest USP, surface by surface. Strong = explicit and prominent. Weak = implied or buried.</p>
+    <div class="visibility">
+      <table>
+        <thead>
+          <tr><th>Surface</th><th>How zones appear</th><th>Strength</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Marketing site</strong><br>(app/page.tsx)</td>
+            <td>&quot;Zonna prescribes the zone for each session and holds you to it.&quot; Plus sample card showing <em>&quot;Easy run — Zone 2&quot;</em>. Voice anchor on hero.</td>
+            <td><div class="strength strong"></div> Strong</td>
+          </tr>
+          <tr>
+            <td><strong>Me / Profile screen</strong><br>(HRZonesSection)</td>
+            <td>Full 5-zone education with personal HR ranges, tap-to-learn sheets per zone. Great copy: <em>&quot;The grey middle is where amateurs go to stall.&quot;</em></td>
+            <td><div class="strength strong"></div> Strong — but buried in settings</td>
+          </tr>
+          <tr>
+            <td><strong>Coach screen</strong><br>(Zone Discipline stat)</td>
+            <td>2&times;2 grid stat: <em>&quot;Zone disc. 84%&quot;</em> + tappable explainer sheet. Numbers-driven.</td>
+            <td><div class="strength strong"></div> Strong</td>
+          </tr>
+          <tr>
+            <td><strong>Generating ceremony</strong></td>
+            <td>One line during plan generation: <em>&quot;Calculating your Zone 2 ceiling. Lower than you&apos;d expect.&quot;</em></td>
+            <td><div class="strength mid"></div> Medium — single moment</td>
+          </tr>
+          <tr>
+            <td><strong>Today screen hero</strong></td>
+            <td>Zone-IMPLIED adverb: <em>&quot;10km, slowly.&quot;</em> — &quot;slowly&quot; signals Zone 2 but never names it. Audience may not infer.</td>
+            <td><div class="strength mid"></div> Medium — implicit</td>
+          </tr>
+          <tr>
+            <td><strong>Orientation screen</strong><br>(post plan-gen)</td>
+            <td>One line: <em>&quot;Your Zone 2 ceiling is X bpm. Easy runs stay under that.&quot;</em> Mentions Zone 2 only, not the full system.</td>
+            <td><div class="strength mid"></div> Medium — half the system</td>
+          </tr>
+          <tr>
+            <td><strong>Session card</strong><br>(Today, Plan)</td>
+            <td>Small <strong>11px</strong> coloured pill: <em>&quot;Zone 2&quot;</em>. Lives among other metric chips. Easy to skip past.</td>
+            <td><div class="strength weak"></div> Weak — chip not a headline</td>
+          </tr>
+          <tr>
+            <td><strong>Session detail</strong></td>
+            <td>Same small zone chip in the metric row. HR target shown. No bigger zone presence on the screen that should sell the prescription.</td>
+            <td><div class="strength weak"></div> Weak</td>
+          </tr>
+          <tr>
+            <td><strong>Plan wizard</strong></td>
+            <td>Zero zone education. Just a field note on the HR input: <em>&quot;Used to calculate your training zones. Kept private.&quot;</em></td>
+            <td><div class="strength weak"></div> Weak — silent</td>
+          </tr>
+          <tr>
+            <td><strong>Login screen</strong></td>
+            <td>Tagline: <em>&quot;Slow down. You&apos;ve got a day job.&quot;</em> No zone mention. (Defensible — tagline targets identity, not feature.)</td>
+            <td><div class="strength mid"></div> Medium — by design</td>
+          </tr>
+          <tr>
+            <td><strong>&quot;Hold the zone&quot; phrase</strong><br>(BRAND.voiceAnchor)</td>
+            <td>The voice anchor appears on the marketing site hero. In the product UI, it&apos;s used <em>only inside AI-generated copy</em> (sometimes) and one plan-adjustment branch. <strong>Zero UI surfaces use it as a visible label.</strong></td>
+            <td><div class="strength weak"></div> Invisible in-product</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- WHAT'S WORKING -->
+  <div class="section">
+    <div class="section-eyebrow">Working well</div>
+    <h2>What we do right</h2>
+    <div class="audit-grid">
+      <div class="audit-item moss">
+        <div class="tag">Keep</div>
+        <h3>Me screen Zone education</h3>
+        <p>5 zones with personal HR ranges, tap-to-learn drill-downs, brand-voice copy. Genuinely excellent. The asset exists — it&apos;s just in the wrong place.</p>
+      </div>
+      <div class="audit-item moss">
+        <div class="tag">Keep</div>
+        <h3>Coach screen Zone Discipline metric</h3>
+        <p>One of four stats on the Coach grid. Quantifies the promise. <em>&quot;You held the zone 84% of the time&quot;</em> is concrete proof of the app&apos;s job.</p>
+      </div>
+      <div class="audit-item moss">
+        <div class="tag">Keep</div>
+        <h3>Generating ceremony zone line</h3>
+        <p><em>&quot;Calculating your Zone 2 ceiling. Lower than you&apos;d expect.&quot;</em> — a brand moment during the wait. Honest, dry, useful. Don&apos;t touch.</p>
+      </div>
+      <div class="audit-item moss">
+        <div class="tag">Keep</div>
+        <h3>Session colour system</h3>
+        <p>Every session type has a token in <code>lib/session-types.ts</code> that maps to a zone colour. Visual consistency on accent bars, chips, and the upcoming Zone Bar all flow from the same source.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHAT'S BROKEN -->
+  <div class="section">
+    <div class="section-eyebrow">Gaps</div>
+    <h2>Where the brand falls short</h2>
+    <div class="audit-grid">
+      <div class="audit-item danger">
+        <div class="tag">Impact: high</div>
+        <h3>No zone intro at the post-plan moment</h3>
+        <p>OrientationScreen mentions <em>only Zone 2 ceiling</em>. The user just generated their plan — this is the ONE moment to explain the framework that plan operates in. Five zones. Personal HR ranges. <em>&quot;Hold the line.&quot;</em></p>
+      </div>
+      <div class="audit-item danger">
+        <div class="tag">Impact: high</div>
+        <h3>The zone is invisible beneath the Today hero</h3>
+        <p><em>&quot;10km, slowly.&quot;</em> implies Zone 2 but never names it. The hero is the right place for &quot;slowly&quot; (sensory, accessible), but there&apos;s no <em>secondary</em> surface naming the zone explicitly. The session card&apos;s 11px zone chip is too quiet to anchor the daily prescription.</p>
+      </div>
+      <div class="audit-item danger">
+        <div class="tag">Impact: high</div>
+        <h3>The voice anchor is invisible in-product</h3>
+        <p><em>&quot;Hold the zone.&quot;</em> appears only on the marketing site and inside AI-generated coach copy. No UI element uses it as an eyebrow, header, or any other visible label. The brand&apos;s signature phrase has no in-app home.</p>
+      </div>
+      <div class="audit-item warn">
+        <div class="tag">Impact: medium</div>
+        <h3>Zones buried in Profile</h3>
+        <p><code>HRZonesSection</code> is excellent content, but it sits below race benchmark in MeScreen. First-time users may never find it. A user shouldn&apos;t need to dig through settings to understand the central concept.</p>
+      </div>
+      <div class="audit-item warn">
+        <div class="tag">Impact: medium</div>
+        <h3>Zone chip too quiet on session surfaces</h3>
+        <p>11px coloured pill. Same visual weight as the duration label next to it. On the screen that exists to sell the prescription, the zone should be the loudest thing, not just one of several details.</p>
+      </div>
+      <div class="audit-item warn">
+        <div class="tag">Impact: medium</div>
+        <h3>Wizard collects HR without explaining why</h3>
+        <p>The HR input field note says <em>&quot;Used to calculate your training zones. Kept private.&quot;</em> — but nowhere does the wizard tell the user that zone discipline is the product&apos;s whole point. Missed teaching moment.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOCKUPS -->
+  <div class="section">
+    <div class="section-eyebrow">Proposed</div>
+    <h2>Make the zone the headline</h2>
+    <p>Three changes that put the brand promise in front of the user across the journey. Highest-impact interventions, ordered.</p>
+
+    <!-- MOCKUP 1 — Post-plan zone intro -->
+    <div class="frames">
+      <div class="frame-row single">
+        <div class="col new">
+          <h3>New · Post-plan-gen zone intro</h3>
+          <p class="sub">Between the existing OrientationScreen and the dashboard. Shows the full system with the user&apos;s personal HR ranges and names the zone they&apos;ll spend most of their training in. One brand moment.</p>
+
+          <div class="phone">
+            <div class="status"><span>9:41</span><span>●●●</span></div>
+            <div class="screen" style="padding: 32px 20px 32px">
+              <div class="wordmark">ZONNA<span class="dot"> ●</span></div>
+              <div style="font-size:11px;color:var(--mute);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:32px">Slow down. You&apos;ve got a day job.</div>
+
+              <div class="hold-zone-eyebrow">
+                <span class="pulse"></span>Hold the zone
+              </div>
+              <div class="intro-headline">These are <span class="moss">your zones.</span></div>
+              <div class="intro-sub">Every session in your plan tells you which one. Hold the line — that&apos;s the whole job.</div>
+
+              <div class="zone-list">
+                <div class="zone-row z1">
+                  <div class="num">1</div>
+                  <div>
+                    <div class="name">Recovery</div>
+                    <div class="desc">Walk pace. Active recovery only.</div>
+                  </div>
+                  <div class="hr">90–112</div>
+                </div>
+                <div class="zone-row z2">
+                  <div class="num">2</div>
+                  <div>
+                    <div class="name">Aerobic <span class="home-tag">Your home</span></div>
+                    <div class="desc">Conversational. Where most runs live.</div>
+                  </div>
+                  <div class="hr">113–145</div>
+                </div>
+                <div class="zone-row z3">
+                  <div class="num">3</div>
+                  <div>
+                    <div class="name">Tempo</div>
+                    <div class="desc">Comfortably hard. Tempo runs.</div>
+                  </div>
+                  <div class="hr">146–162</div>
+                </div>
+                <div class="zone-row z4">
+                  <div class="num">4</div>
+                  <div>
+                    <div class="name">Threshold</div>
+                    <div class="desc">Race pace. Sustained effort.</div>
+                  </div>
+                  <div class="hr">163–178</div>
+                </div>
+                <div class="zone-row z5">
+                  <div class="num">5</div>
+                  <div>
+                    <div class="name">VO₂ Max</div>
+                    <div class="desc">Intervals. Short, hard, brief.</div>
+                  </div>
+                  <div class="hr">179–195</div>
+                </div>
+              </div>
+
+              <div class="zone-callout">
+                <div class="anchor">The whole job</div>
+                <div class="body">Easy when it&apos;s easy. Hard when it&apos;s hard. The grey middle is where amateurs go to stall — and where most of your improvement is hiding.</div>
+              </div>
+
+              <button class="cta">I&apos;m ready</button>
+              <div class="cta-text">You can review your zones any time in Profile</div>
+            </div>
+          </div>
+
+          <div class="callouts">
+            <div class="callout">
+              <div class="num">1</div>
+              <div><strong>&quot;Hold the zone&quot; eyebrow</strong> — first visible use of the brand&apos;s voice anchor anywhere in the product UI. Pulsing dot is a subtle &quot;live&quot; signal.</div>
+            </div>
+            <div class="callout">
+              <div class="num">2</div>
+              <div><strong>&quot;Your home&quot; chip on Zone 2</strong> — personalises the table. Most users live in Zone 2; we name it.</div>
+            </div>
+            <div class="callout">
+              <div class="num">3</div>
+              <div><strong>HR ranges derived from the user&apos;s benchmark</strong> — same numbers as the MeScreen HRZonesSection. Single source of truth.</div>
+            </div>
+            <div class="callout">
+              <div class="num">4</div>
+              <div><strong>Callout = brand position in 2 sentences</strong> — &quot;Easy when it&apos;s easy. Hard when it&apos;s hard.&quot; First product surface that articulates the audience hook.</div>
+            </div>
+            <div class="callout">
+              <div class="num">5</div>
+              <div><strong>Replaces the current single Zone 2 line</strong> on OrientationScreen. The race card + first session card move to the next screen (or are integrated below if we want to keep both moments).</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MOCKUP 2 — Today session card -->
+      <div class="frame-row" style="margin-top: 72px">
+        <div class="col before">
+          <h3>Now · Today session card</h3>
+          <p class="sub">Zone is a small coloured chip. Same visual weight as &quot;60min&quot;.</p>
+
+          <div class="phone">
+            <div class="status"><span>9:41</span><span>●●●</span></div>
+            <div class="screen">
+              <div class="wordmark">ZONNA<span class="dot"> ●</span></div>
+              <div class="today-context">
+                <span class="phase">Build · Week 8</span>
+                <span class="divider"></span>
+                <span class="countdown">8 weeks out</span>
+              </div>
+              <div class="greeting">Good morning, Russell</div>
+              <div class="hero">
+                <span class="ink">10km,</span><br>
+                <span class="moss">slowly.</span>
+              </div>
+
+              <div class="session-card">
+                <div class="row">
+                  <div class="label">Easy run</div>
+                  <div class="km">10km</div>
+                </div>
+                <div class="meta">
+                  <span class="zone-chip">Zone 2</span>
+                  <span style="color:var(--mute);font-size:12px">≤145 bpm</span>
+                  <span style="color:var(--mute);font-size:12px">·</span>
+                  <span class="duration">60min</span>
+                </div>
+              </div>
+
+              <button class="cta">Log this session</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col after">
+          <h3>Proposed · Today session card</h3>
+          <p class="sub">Zone gets its own line, with HR ceiling. Visual zone bar shows where this session sits in the 5-zone arc.</p>
+
+          <div class="phone">
+            <div class="status"><span>9:41</span><span>●●●</span></div>
+            <div class="screen">
+              <div class="wordmark">ZONNA<span class="dot"> ●</span></div>
+              <div class="today-context">
+                <span class="phase">Build · Week 8</span>
+                <span class="divider"></span>
+                <span class="countdown">8 weeks out</span>
+              </div>
+              <div class="greeting">Good morning, Russell</div>
+
+              <!-- HERO stays accessible — "slowly" can be felt, "Zone 2" has to be learned.
+                   Layered approach: hero owns the experience, session card owns the prescription. -->
+              <div class="hero">
+                <span class="ink">10km,</span><br>
+                <span class="moss">slowly.</span>
+              </div>
+              <div class="voice-anchor">
+                <span class="dot"></span>Hold the zone · Zone 2 today
+              </div>
+
+              <div class="session-card-zone">
+                <div class="top-row">
+                  <div class="label">Easy run</div>
+                  <div class="km">10km</div>
+                </div>
+                <!-- Zone line — bigger, owns its own row -->
+                <div class="zone-line">
+                  Zone 2 · aerobic
+                  <span class="hr">113–145 bpm</span>
+                </div>
+                <!-- Visual zone bar — shows where this session sits -->
+                <div class="zone-bar">
+                  <div class="seg"></div>
+                  <div class="seg active z2"></div>
+                  <div class="seg"></div>
+                  <div class="seg"></div>
+                  <div class="seg"></div>
+                </div>
+                <div class="zone-bar-labels">
+                  <div class="zlbl">1</div>
+                  <div class="zlbl active z2">2</div>
+                  <div class="zlbl">3</div>
+                  <div class="zlbl">4</div>
+                  <div class="zlbl">5</div>
+                </div>
+                <div class="meta">
+                  <span>60min</span>
+                  <span>·</span>
+                  <span>conversational pace</span>
+                </div>
+              </div>
+
+              <button class="cta">Log this session</button>
+            </div>
+          </div>
+
+          <div class="callouts">
+            <div class="callout">
+              <div class="num">1</div>
+              <div><strong>Hero stays as-is — &quot;slowly.&quot; keeps the moss slot.</strong> &quot;Slowly&quot; can be felt; &quot;Zone 2&quot; has to be learned. The hero is the experience, not the prescription. Same slot as &quot;Do nothing. It helps.&quot; — sensory, not technical.</div>
+            </div>
+            <div class="callout">
+              <div class="num">2</div>
+              <div><strong>&quot;Hold the zone&quot; eyebrow with the zone name</strong> — &quot;Hold the zone · Zone 2 today&quot;. First daily use of the brand&apos;s voice anchor + explicit zone reference, without hijacking the hero.</div>
+            </div>
+            <div class="callout">
+              <div class="num">3</div>
+              <div><strong>Zone bar on session card</strong> — 5 segments, the active one filled. New canonical component (Pattern 21 to add to <code>ui-patterns.md</code>). Highest information per pixel of any chart we could put here.</div>
+            </div>
+            <div class="callout">
+              <div class="num">4</div>
+              <div><strong>Zone gets its own line on the session card</strong> — &quot;Zone 2 · aerobic&quot; with HR range underneath. Owns a row; not buried among duration / distance.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MOCKUP 3 — Session detail -->
+      <div class="frame-row" style="margin-top: 72px">
+        <div class="col before">
+          <h3>Now · Session detail</h3>
+          <p class="sub">Tiny zone chip in the metric row. HR target shown separately. Nothing says &quot;the zone is the point.&quot;</p>
+
+          <div class="phone">
+            <div class="status"><span>9:41</span><span>●●●</span></div>
+            <div class="screen">
+              <div class="back-arrow">←</div>
+              <div class="session-eyebrow">Monday · Week 8</div>
+              <div class="session-title">Easy run</div>
+
+              <div style="margin-bottom:14px">
+                <span class="zone-chip">Zone 2</span>
+              </div>
+
+              <div class="metric-card">
+                <div class="metric-row">
+                  <div class="col">
+                    <div class="lbl">Distance</div>
+                    <div class="val">10km</div>
+                  </div>
+                  <div class="col">
+                    <div class="lbl">Duration</div>
+                    <div class="val">60min</div>
+                  </div>
+                  <div class="col">
+                    <div class="lbl">HR target</div>
+                    <div class="val">≤145</div>
+                  </div>
+                </div>
+                <div class="session-desc">
+                  Conversational pace throughout. If you can&apos;t hold a chat, slow down.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col after">
+          <h3>Proposed · Session detail</h3>
+          <p class="sub">Zone gets a header treatment, not a chip. The prescription IS the screen.</p>
+
+          <div class="phone">
+            <div class="status"><span>9:41</span><span>●●●</span></div>
+            <div class="screen">
+              <div class="back-arrow">←</div>
+              <div class="session-eyebrow">Monday · Week 8</div>
+              <div class="session-title">Easy run</div>
+
+              <!-- Zone prescription is the headline -->
+              <div style="background:var(--card);border:1px solid var(--line);border-left:3px solid var(--s-easy);border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:12px">
+                <div class="hold-zone-eyebrow"><span class="pulse"></span>Hold the zone</div>
+                <div style="font-size:28px;font-weight:800;color:var(--s-easy);letter-spacing:-0.02em;line-height:1.1;margin-bottom:6px">Zone 2 · aerobic</div>
+                <div style="font-size:13px;color:var(--ink-2);line-height:1.55;margin-bottom:12px">113–145 bpm. If your HR climbs above the ceiling, walk until it drops.</div>
+                <!-- Zone bar -->
+                <div class="zone-bar">
+                  <div class="seg"></div>
+                  <div class="seg active z2"></div>
+                  <div class="seg"></div>
+                  <div class="seg"></div>
+                  <div class="seg"></div>
+                </div>
+                <div class="zone-bar-labels">
+                  <div class="zlbl">1</div>
+                  <div class="zlbl active z2">2</div>
+                  <div class="zlbl">3</div>
+                  <div class="zlbl">4</div>
+                  <div class="zlbl">5</div>
+                </div>
+              </div>
+
+              <!-- Metrics card stays, but zone is no longer just one of the columns -->
+              <div class="metric-card">
+                <div class="metric-row">
+                  <div class="col">
+                    <div class="lbl">Distance</div>
+                    <div class="val">10km</div>
+                  </div>
+                  <div class="col">
+                    <div class="lbl">Duration</div>
+                    <div class="val">60min</div>
+                  </div>
+                </div>
+                <div class="session-desc">
+                  Conversational pace throughout. If you can&apos;t hold a chat, slow down.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="callouts">
+            <div class="callout">
+              <div class="num">1</div>
+              <div><strong>Zone prescription gets its own card at the top</strong> — biggest element on the screen. 28px label, accent colour, HR range as supporting text.</div>
+            </div>
+            <div class="callout">
+              <div class="num">2</div>
+              <div><strong>&quot;Hold the zone&quot; eyebrow</strong> — same voice anchor as Today and the post-plan intro. Consistent across the zone-prescription surfaces.</div>
+            </div>
+            <div class="callout">
+              <div class="num">3</div>
+              <div><strong>Zone bar visualizes &quot;you are here&quot;</strong> — same component as the session card. Across-app visual consistency.</div>
+            </div>
+            <div class="callout">
+              <div class="num">4</div>
+              <div><strong>HR ceiling stays as supporting detail</strong>, not a column header. Zone is the prescription; HR is how you measure it.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECOMMENDATIONS -->
+  <div class="section">
+    <div class="section-eyebrow">Ship order</div>
+    <h2>Recommendations</h2>
+    <p>Four interventions, ordered by brand impact. Each shippable independently.</p>
+    <div class="recs">
+      <ol>
+        <li>
+          <strong>Pass 1 — Post-plan-gen zone intro screen.</strong> <span class="effort">M · ~1 day</span>
+          New <code>ZoneIntroScreen</code> shown once, after first plan generation, between OrientationScreen and the dashboard. Shows the full 5-zone system with personal HR ranges and a &quot;Your home&quot; tag on Zone 2. First visible use of &quot;Hold the zone&quot; in the product. Replaces the current single Zone 2 line on OrientationScreen. <strong>Highest brand impact</strong> — teaches the system at the moment the user is most receptive.
+        </li>
+        <li>
+          <strong>Pass 2 — &quot;Hold the zone&quot; eyebrow + zone-aware session card on Today.</strong> <span class="effort s">S · ~½ day</span>
+          Hero stays as-is — &quot;10km, slowly.&quot; keeps the moss adverb slot. &quot;Slowly&quot; can be felt; &quot;Zone 2&quot; has to be learned. The hero is the <em>experience</em>; the prescription gets its own real estate. Add a small &quot;Hold the zone · Zone 2 today&quot; eyebrow under the hero (first daily use of the voice anchor). Promote the session card&apos;s zone chip to a full row: <em>&quot;Zone 2 · aerobic · 113–145 bpm&quot;</em>. The prescription is named explicitly without sacrificing the hero&apos;s accessibility.
+        </li>
+        <li>
+          <strong>Pass 3 — Zone bar component + bigger zone presence on session card and detail.</strong> <span class="effort m">M · ~2 days</span>
+          New <code>ZoneBar</code> component (5 segments, active one filled in zone colour). Add to session card on Today and Plan. Promote the zone chip on Session Detail to a full prescription card with 28px zone label + HR range + zone bar. New canonical Pattern 21 added to <code>ui-patterns.md</code>.
+        </li>
+        <li>
+          <strong>Pass 4 — Bring Zones up from Profile.</strong> <span class="effort s">S · ~½ day</span>
+          Surface the &quot;Zones&quot; section as its own MeScreen card pinned near the top, not buried below race benchmark. Or add a &quot;Your zones&quot; quick-action from Today (small text link below the session card: <em>&quot;See all your zones &rarr;&quot;</em>). The asset is great; the discoverability isn&apos;t.
+        </li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

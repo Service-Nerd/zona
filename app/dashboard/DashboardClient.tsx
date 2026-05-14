@@ -23,6 +23,7 @@ import RestraintCard, { RestraintCardSkeleton } from '@/components/shared/Restra
 import PlanArc from '@/components/shared/PlanArc'
 import RPEScale from '@/components/shared/RPEScale'
 import SessionCard from '@/components/shared/SessionCard'
+import ZoneBar, { zoneNumberForType, zoneShortName } from '@/components/shared/ZoneBar'
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import ZoneShapeCard from '@/components/shared/ZoneShapeCard'
 import AIMark from '@/components/shared/AIMark'
@@ -1085,6 +1086,8 @@ export default function DashboardClient() {
         plan={plan}
         firstName={firstName}
         zone2Ceiling={effectiveZone2Ceiling}
+        restingHR={restingHR}
+        maxHR={maxHR}
         onDismiss={async () => {
           setShowOrientation(false)
           setOrientationSeen(true)
@@ -1363,8 +1366,10 @@ export default function DashboardClient() {
 
 // ── ORIENTATION SCREEN ────────────────────────────────────────────────────
 
-function OrientationScreen({ plan, firstName, zone2Ceiling, onDismiss }: {
-  plan: Plan; firstName: string; zone2Ceiling: number; onDismiss: () => void
+function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, onDismiss }: {
+  plan: Plan; firstName: string; zone2Ceiling: number
+  restingHR: number | null; maxHR: number | null
+  onDismiss: () => void
 }) {
   const raceName   = plan.meta.race_name || 'your race'
   const raceDate   = plan.meta.race_date ? new Date(plan.meta.race_date) : null
@@ -1444,26 +1449,155 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, onDismiss }: {
           </div>
         )}
 
-        {/* Zone 2 note */}
-        <div style={{ background: 'var(--accent-soft)', borderRadius: '12px', border: '0.5px solid var(--accent-dim)', padding: '12px 14px', marginBottom: '32px' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', lineHeight: 1.6 }}>
-            Your Zone 2 ceiling is <strong>{zone2Ceiling} bpm</strong>. Easy runs stay under that. If your HR climbs above it, walk until it drops.
-          </div>
-        </div>
+        {/* ── ZONE INTRO ──────────────────────────────────────────────
+            First visible use of "Hold the zone" anywhere in the product UI.
+            Shows the full 5-zone system at the moment the user just got
+            their plan — the moment they're most receptive to the framework
+            the plan operates in. HR ranges from calculateZones() when HR
+            data is set, otherwise zone names only (still useful). */}
+        {(() => {
+          const haveHR = restingHR != null && maxHR != null && maxHR > restingHR
+          const zones = haveHR ? calculateZones(restingHR!, maxHR!) : null
+          return (
+            <>
+              {/* Hold the zone eyebrow */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                marginBottom: '8px',
+              }}>
+                <span style={{
+                  width: '6px', height: '6px', borderRadius: '50%',
+                  background: 'var(--moss)',
+                  animation: 'ai-mark-pulse 2s ease-in-out infinite',
+                }} />
+                <span style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
+                  color: 'var(--moss)',
+                  letterSpacing: '0.14em', textTransform: 'uppercase',
+                }}>Hold the zone</span>
+              </div>
+
+              {/* Headline */}
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '24px', fontWeight: 800,
+                color: 'var(--ink)', letterSpacing: '-0.025em', lineHeight: 1.1,
+                marginBottom: '6px',
+              }}>
+                These are <span style={{ color: 'var(--moss)' }}>your zones.</span>
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '13px',
+                color: 'var(--mute)', lineHeight: 1.55, marginBottom: '18px',
+              }}>
+                Every session tells you which one. Hold the line — that&apos;s the whole job.
+              </div>
+
+              {/* Zone list — 5 rows */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+                {ZONE_DEFS.map(z => {
+                  const isHome = z.zone === 2
+                  const hr = zones?.find(zz => zz.zone === z.zone)
+                  return (
+                    <div key={z.zone} style={{
+                      display: 'grid', gridTemplateColumns: '32px 1fr auto',
+                      gap: '12px', alignItems: 'center',
+                      padding: '11px 13px',
+                      background: 'var(--card)', border: '1px solid var(--line)',
+                      borderLeft: isHome ? `3px solid ${z.colour}` : '1px solid var(--line)',
+                      paddingLeft: isHome ? '11px' : '13px',
+                      borderRadius: 'var(--radius-md)',
+                    }}>
+                      {/* Zone number badge */}
+                      <div style={{
+                        width: '32px', height: '32px', borderRadius: '50%',
+                        background: z.colour,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 800,
+                        color: 'var(--card)', flexShrink: 0,
+                      }}>{z.zone}</div>
+                      {/* Name + description */}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{
+                            fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
+                            color: 'var(--ink)', letterSpacing: '-0.005em',
+                          }}>{z.name}</div>
+                          {isHome && (
+                            <span style={{
+                              fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
+                              color: 'var(--moss)', background: 'var(--moss-soft)',
+                              padding: '2px 6px', borderRadius: '3px',
+                              letterSpacing: '0.08em', textTransform: 'uppercase',
+                            }}>Your home</span>
+                          )}
+                        </div>
+                        <div style={{
+                          fontFamily: 'var(--font-ui)', fontSize: '11px',
+                          color: 'var(--mute)', marginTop: '2px',
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        }}>{z.desc}</div>
+                      </div>
+                      {/* HR range or em-dash if no HR data */}
+                      <div style={{
+                        fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
+                        color: z.colour, fontVariantNumeric: 'tabular-nums',
+                        textAlign: 'right', whiteSpace: 'nowrap',
+                      }}>
+                        {hr ? `${hr.minHR}–${hr.maxHR}` : '—'}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* The whole job callout — brand position in two sentences */}
+              <div style={{
+                background: 'var(--moss-soft)',
+                border: '1px solid var(--moss-mid)',
+                borderRadius: 'var(--radius-md)',
+                padding: '12px 14px',
+                marginBottom: '24px',
+              }}>
+                <div style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+                  color: 'var(--moss)', letterSpacing: '0.12em', textTransform: 'uppercase',
+                  marginBottom: '4px',
+                }}>The whole job</div>
+                <div style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '13px',
+                  color: 'var(--ink)', lineHeight: 1.5,
+                }}>
+                  Easy when it&apos;s easy. Hard when it&apos;s hard. The grey middle is where amateurs go to stall — and where most of your improvement is hiding.
+                </div>
+              </div>
+
+              {/* If HR isn't set, point them at Profile so they can fill it in */}
+              {!haveHR && (
+                <div style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '12px',
+                  color: 'var(--mute)', lineHeight: 1.55,
+                  marginBottom: '16px', textAlign: 'center',
+                }}>
+                  Add your resting + max HR in Profile to see your personal ranges.
+                </div>
+              )}
+            </>
+          )
+        })()}
 
         {/* CTA */}
         <button
           onClick={onDismiss}
           style={{
             width: '100%', padding: '16px',
-            background: 'var(--accent)', color: 'var(--card)',
-            border: 'none', borderRadius: '14px',
+            background: 'var(--moss)', color: 'var(--card)',
+            border: 'none', borderRadius: 'var(--radius-lg)',
             fontFamily: 'var(--font-ui)', fontSize: '13px',
             letterSpacing: '0.08em', textTransform: 'uppercase',
             cursor: 'pointer', fontWeight: 600,
           }}
         >
-          Start training
+          I&apos;m ready
         </button>
       </div>
     </div>
@@ -2351,18 +2485,61 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           {isComplete && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', background: 'var(--accent-soft)', color: 'var(--teal)', border: '0.5px solid var(--teal-dim)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Done</span>}
           {isSkipped && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', background: 'rgba(80,80,80,0.08)', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Skipped</span>}
         </div>
-        {/* Zone label */}
+        {/* ── ZONE PRESCRIPTION CARD ──────────────────────────────────
+            Replaces the tiny zone chip with a prescription card — the
+            biggest single element on the screen besides the title.
+            Session Detail exists to sell the prescription; the zone is
+            the prescription. Renders only for zone-bearing sessions. */}
         {(() => {
-          const zL: string | null = (session.zone as string | undefined) ?? (
-            session.type === 'recovery' ? 'Zone 1' :
-            session.type === 'easy' || session.type === 'run' || session.type === 'long' ? 'Zone 2' :
-            session.type === 'quality' || session.type === 'tempo' ? 'Zone 3' :
-            session.type === 'intervals' || session.type === 'hard' ? 'Zone 4–5' : null
-          )
-          if (!zL || !['easy','run','quality','intervals','hard','tempo','race','recovery','long'].includes(session.type)) return null
+          const zone = zoneNumberForType(session.type)
+          if (!zone) return null
+          const hrDisplay = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling)
           return (
-            <div style={{ marginBottom: '12px' }}>
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: config.color, fontWeight: 500, background: `${config.color}12`, borderRadius: '5px', padding: '3px 9px', letterSpacing: '0.04em' }}>{zL}</span>
+            <div style={{
+              marginBottom: '14px',
+              background: 'var(--card)',
+              border: '1px solid var(--line)',
+              borderLeft: `3px solid ${config.color}`,
+              borderRadius: 'var(--radius-lg)',
+              padding: '14px 16px 12px',
+            }}>
+              {/* Hold the zone eyebrow */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                marginBottom: '6px',
+              }}>
+                <span style={{
+                  width: '6px', height: '6px', borderRadius: '50%',
+                  background: 'var(--moss)',
+                  animation: 'ai-mark-pulse 2.4s ease-in-out infinite',
+                  flexShrink: 0,
+                }} />
+                <span style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+                  color: 'var(--moss)',
+                  letterSpacing: '0.14em', textTransform: 'uppercase',
+                }}>Hold the zone</span>
+              </div>
+              {/* Big zone label */}
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 800,
+                color: config.color, letterSpacing: '-0.015em', lineHeight: 1.1,
+                marginBottom: '4px',
+              }}>
+                Zone {zone} · {zoneShortName(zone)}
+              </div>
+              {/* HR range as supporting detail */}
+              {hrDisplay && (
+                <div style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '12px',
+                  color: 'var(--mute)', marginBottom: '10px',
+                  fontVariantNumeric: 'tabular-nums',
+                }}>
+                  {hrDisplay} bpm
+                </div>
+              )}
+              {/* Labelled zone bar */}
+              <ZoneBar activeZone={zone} height={5} showLabels />
             </div>
           )
         })()}
@@ -4745,6 +4922,37 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         onWeekChange={onWeekChange}
       />
 
+      {/* ── HOLD THE ZONE ──────────────────────────────────────────────
+          First daily use of BRAND.voiceAnchor in the product UI. Renders
+          only when today is a zone-bearing run session (skipped on rest /
+          strength / cross-train). Names the zone explicitly without
+          hijacking the hero's poetic slot. */}
+      {showSessionHero && selectedSession && (() => {
+        const zone = zoneNumberForType(selectedSession.type)
+        if (!zone) return null
+        return (
+          <div style={{
+            padding: '0 16px',
+            marginBottom: '12px',
+            display: 'flex', alignItems: 'center', gap: '8px',
+          }}>
+            <span style={{
+              width: '6px', height: '6px', borderRadius: '50%',
+              background: 'var(--moss)',
+              animation: 'ai-mark-pulse 2.4s ease-in-out infinite',
+              flexShrink: 0,
+            }} />
+            <span style={{
+              fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
+              color: 'var(--moss)',
+              letterSpacing: '0.12em', textTransform: 'uppercase',
+            }}>
+              Hold the zone · Zone {zone} today
+            </span>
+          </div>
+        )
+      })()}
+
       {/* ── TODAY'S SESSION ──────────────────────────────────────────── */}
       <div style={{ padding: '16px 16px 0' }}>
 
@@ -4832,6 +5040,16 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               }}
             />
               )
+            })()}
+
+            {/* Zone bar — 5-segment strip under the session card. Reinforces
+                "you are here" in the 5-zone arc. No labels on Today (this is
+                glance-only); Session Detail's prescription card carries the
+                labelled version. Renders only for zone-bearing sessions. */}
+            {(() => {
+              const zone = zoneNumberForType(selectedSession.type)
+              if (!zone) return null
+              return <ZoneBar activeZone={zone} style={{ marginTop: '10px' }} />
             })()}
 
             {/* Primary CTA — only on today's session if not yet done */}
@@ -7217,7 +7435,21 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           </div>
         )}
 
-        {/* Plan + benchmark actions */}
+        {/* HR Zones — promoted above plan/benchmark actions so the core
+            product concept (zone discipline) sits prominently in MeScreen,
+            not buried below settings. Per Hold-the-Zone audit. */}
+        {!hrConfigured && (
+          <div style={{ background: 'var(--warn-bg)', borderRadius: '10px', border: '1px solid var(--line)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--warn)', flexShrink: 0 }} />
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--coach-ink)', lineHeight: 1.5 }}>
+              Set your resting and max HR below to see your training zones.
+            </div>
+          </div>
+        )}
+
+        <HRZonesSection restingHR={restingHR} maxHR={maxHR} onSave={onHRChange} />
+
+        {/* Plan + benchmark actions — moved below zones */}
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           <button
             onClick={onOpenGenerate}
@@ -7246,17 +7478,6 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
           </button>
         </div>
-
-        {!hrConfigured && (
-          <div style={{ background: 'var(--warn-bg)', borderRadius: '10px', border: '1px solid var(--line)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--warn)', flexShrink: 0 }} />
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--coach-ink)', lineHeight: 1.5 }}>
-              Set your resting and max HR below to see your training zones.
-            </div>
-          </div>
-        )}
-
-        <HRZonesSection restingHR={restingHR} maxHR={maxHR} onSave={onHRChange} />
 
         {/* Display preferences — grouped with training since they affect session cards */}
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
