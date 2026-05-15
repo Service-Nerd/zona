@@ -4892,6 +4892,36 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           </div>
         )}
 
+        {/* Trial expired banner — shown when trial has ended and no active subscription.
+            Loss framing: names what stopped. Warn accent (not moss — this is not a nudge).
+            Plan keeps running; coaching is what paused. */}
+        {trialDaysLeft === 0 && !hasPaidAccess && (
+          <div style={{ marginBottom: '16px' }}>
+            <button
+              onClick={onUpgrade}
+              style={{
+                width: '100%', textAlign: 'left', padding: '14px 16px',
+                background: 'var(--card)', border: '1px solid var(--line)',
+                borderLeft: '3px solid var(--warn)',
+                borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px',
+              }}
+            >
+              <div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
+                  Coaching has paused.
+                </div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.4 }}>
+                  Your plan keeps running. Coaching needs a subscription.
+                </div>
+              </div>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--warn)', whiteSpace: 'nowrap' }}>
+                Keep it going →
+              </span>
+            </button>
+          </div>
+        )}
+
         {/* Pending adjustment — above coach note, prominent position */}
         {pendingAdjustment && (
           <div style={{ marginBottom: '16px' }}>
