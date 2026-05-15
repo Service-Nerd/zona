@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
 // RevenueCat webhook docs: https://www.revenuecat.com/docs/integrations/webhooks
-// Signature header: X-RevenueCat-Signature (HMAC-SHA256 of raw body)
+// Authorization: header value compared directly against REVENUECAT_WEBHOOK_SECRET
 
 const REVENUECAT_WEBHOOK_SECRET = process.env.REVENUECAT_WEBHOOK_SECRET
 
@@ -31,18 +31,12 @@ export async function POST(req: NextRequest) {
   )
   const rawBody = await req.text()
 
-  // Verify signature
+  // Verify Authorization header matches configured secret
   if (REVENUECAT_WEBHOOK_SECRET) {
-    const sig = req.headers.get('X-RevenueCat-Signature')
-    if (!sig) return NextResponse.json({ error: 'Missing signature' }, { status: 401 })
-
-    const { createHmac } = await import('crypto')
-    const expected = createHmac('sha256', REVENUECAT_WEBHOOK_SECRET)
-      .update(rawBody)
-      .digest('hex')
-
-    if (sig !== expected) {
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+    const auth = req.headers.get('Authorization')
+    if (!auth) return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
+    if (auth !== REVENUECAT_WEBHOOK_SECRET) {
+      return NextResponse.json({ error: 'Invalid authorization' }, { status: 401 })
     }
   }
 

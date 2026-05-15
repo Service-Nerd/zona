@@ -33,6 +33,7 @@ import { Browser } from '@capacitor/browser'
 import { SplashScreen } from '@capacitor/splash-screen'
 import { StatusBar, Style } from '@capacitor/status-bar'
 import { createClient } from '@/lib/supabase/client'
+import { BRAND } from '@/lib/brand'
 import {
   NATIVE_AUTH_CALLBACK   as NATIVE_AUTH_CALLBACK_PREFIX,
   NATIVE_STRAVA_CALLBACK as NATIVE_STRAVA_CALLBACK_PREFIX,
@@ -45,7 +46,7 @@ export default function CapacitorBoot() {
     if (!Capacitor.isNativePlatform()) return
 
     StatusBar.setStyle({ style: Style.Light }).catch(() => {})
-    StatusBar.setBackgroundColor({ color: '#F3F0EB' }).catch(() => {})
+    StatusBar.setBackgroundColor({ color: BRAND.og.bg }).catch(() => {})
     StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {})
     SplashScreen.hide().catch(() => {})
 
@@ -100,6 +101,34 @@ export default function CapacitorBoot() {
     }).then((handle) => {
       removeUrlListener = () => handle.remove()
     }).catch(() => {})
+
+    // RevenueCat — configure StoreKit 2 purchases with the Supabase user ID as
+    // the app user ID. This ensures the webhook's app_user_id maps directly to
+    // the subscriptions table user_id. Dynamic import keeps the web bundle clean.
+    void (async () => {
+      try {
+        const { Purchases } = await import('@revenuecat/purchases-capacitor')
+        const apiKey = process.env.NEXT_PUBLIC_REVENUECAT_API_KEY
+        if (!apiKey) return
+
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        await Purchases.configure({ apiKey, appUserID: user?.id ?? null })
+
+        // If app boots on the login screen, update RC identity once auth resolves
+        supabase.auth.onAuthStateChange(async (event, session) => {
+          if (event === 'SIGNED_IN' && session?.user) {
+            await Purchases.logIn({ appUserID: session.user.id }).catch(() => {})
+          } else if (event === 'SIGNED_OUT') {
+            await Purchases.logOut().catch(() => {})
+          }
+        })
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[capacitor-boot] RevenueCat init skipped', err instanceof Error ? err.message : err)
+      }
+    })()
 
     // POST-RUN-01: route push-notification taps to the URL in their payload.
     // Wrapped in a dynamic import so web bundles don't pay for it.

@@ -21,6 +21,7 @@
     "@capacitor/status-bar": "^8.0.2",
     "@capawesome/capacitor-apple-sign-in": "^0.1.0",
     "@capgo/capacitor-health": "^8.4.8",
+    "@revenuecat/purchases-capacitor": "^13.1.1",
     "@supabase/ssr": "^0.3.0",
     "@supabase/supabase-js": "^2.43.1",
     "@vercel/functions": "^3.4.4",
