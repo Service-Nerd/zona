@@ -50,7 +50,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 ### E. Pre-submission QA
 
-- 🔄 **TestFlight beta** — build uploaded 2026-05-15, processing. Once available: add yourself as internal tester in App Store Connect → TestFlight, install on device, run full journey test.
+- 🔄 **TestFlight beta** — build uploaded and processing 2026-05-15 (second upload after adding `NSHealthUpdateUsageDescription` to Info.plist — required by Apple when HealthKit entitlement is present even when app is read-only). Once available: add yourself as internal tester in App Store Connect → TestFlight, install on device, run full journey test.
 - 🔲 **Full journey test** — agent-browser end-to-end: create account → onboarding → plan on screen → log session → post-log reflect → simulate trial end → attempt paid feature → upgrade prompt
 - 🔲 **App Store assets** — screenshots (all required device sizes), preview video (optional), keywords, App Store description copy
 
