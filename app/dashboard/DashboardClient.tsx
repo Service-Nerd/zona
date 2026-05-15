@@ -349,6 +349,7 @@ export default function DashboardClient() {
   // applied by a separate effect once `plan` has loaded (we need the plan to
   // resolve the session by week_n + session_day).
   const pendingDeepLinkRef = useRef<{ weekN: number; sessionDay: string } | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // Handle strava OAuth redirect result
@@ -985,7 +986,8 @@ export default function DashboardClient() {
   const daysToRace = raceDate ? Math.max(0, Math.ceil((raceDate.getTime() - now.getTime()) / 86400000)) : 0
 
   const s: React.CSSProperties = {
-    minHeight: '100dvh',
+    height: '100dvh',
+    overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
     background: 'var(--bg)',
@@ -1126,7 +1128,7 @@ export default function DashboardClient() {
         </div>
       )}
 
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px' }}>
+      <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px', overscrollBehavior: 'none' }}>
         {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} />}
         {screen === 'coach'    && (hasPaidAccess
@@ -1342,6 +1344,7 @@ export default function DashboardClient() {
               const active = screen === id
               return (
                 <button key={id} onClick={() => {
+                  scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
                   setScreen(id)
                   setShowMore(false)
                   const seen = getSeenGuides()
