@@ -101,7 +101,7 @@ export default function TermsPage() {
 
         <Section title="Who we are">
           <P>{BRAND.name} is operated by Russ (service-nerd), based in the United Kingdom. The service is available at <strong>zonna.run</strong> and via the App Store and Google Play.</P>
-          <P>Contact: <A href="mailto:support@zonna.run">support@zonna.run</A> {/* TODO: update domain when migration target decided */}.</P>
+          <P>Contact: <A href="mailto:support@zonna.run">support@zonna.run</A>.</P>
         </Section>
 
         <Section title="Your account">

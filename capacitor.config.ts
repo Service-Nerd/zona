@@ -8,7 +8,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
 // webDir is required by Capacitor but is not what the app serves at runtime —
 // `public` is fine. server.url overrides it.
 //
-// Update server.url when migrating to the custom domain (target TBD).
+// server.url migrated to zonna.run (2026-05-15). Custom domain live.
 //
 // Local development: temporarily change server.url to your dev machine, e.g.
 //   url: 'http://192.168.x.x:3000', cleartext: true
@@ -29,7 +29,7 @@ const config: CapacitorConfig = {
     // server-side redirect, which forces a second webview load (and a
     // black flash between the two). Auth-gated routing inside the
     // dashboard happens client-side via Supabase, no full reload needed.
-    url: 'https://rts-training-hub.vercel.app/dashboard',
+    url: 'https://www.zonna.run/dashboard',
     cleartext: false,
     // Hosts the webview is allowed to navigate to. Without these,
     // Capacitor opens any non-server-host navigation in Safari — which

@@ -14,7 +14,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 ### A. Legal & Apple compliance
 
 - ✅ **Terms of Service** — draft shipped at `app/terms/page.tsx` (mirrors `/privacy` structure, brand voice, covers both Stripe-web and Apple-IAP subscription paths, England & Wales governing law). Linked from pre-login screen alongside privacy. **Approved by user 2026-05-05.** Hosting at the production URL is gated on the custom-domain task below — same blocker as `/privacy`.
-- 🔲 **Privacy policy hosted** — page is built (`/privacy`); needs to be live at `zonna.app/privacy` (or whatever custom domain lands) before submission
+- ✅ **Privacy policy hosted** — live at `https://www.zonna.run/privacy`
 - 🔄 **App Store Connect setup** — partial (2026-05-08). Done: app record created (Bundle ID `app.zonna.ios`), subscription group `Zonna Premium`, monthly product `zonna_premium_monthly` (£7.99), annual product `zonna_premium_annual` (£59.99), 14-day free trial configured on both. Outstanding: screenshots for all required device sizes, App Store description, keywords, per-product Review Information.
 - 🔲 **DSA trader compliance** — EU Digital Services Act requires Apple to display verified trader contact info on EU listings. Selling subscriptions = trader by default. Apple needs trader name, deliverable street address (no PO Box), phone, email — all become public on EU App Store listings. Decide on address strategy (home / virtual office / Ltd registered office) before declaring. Blocks EU distribution only — not US/UK ship. Deferred 2026-05-08.
 
@@ -46,7 +46,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 - 🔲 **Stripe product + price** — "Zonna Premium", £7.99/month + £59.99/year, 14-day trial
 - ✅ **RevenueCat app + entitlement** — project created, iOS app added (bundle ID `app.zonna.ios`), In-App Purchase key configured, products `zonna_premium_monthly` + `zonna_premium_annual` added manually, entitlement `zonna_premium` created + both products attached, default offering configured. Webhook set to `https://rts-training-hub.vercel.app/api/webhooks/revenuecat` with `Authorization` header. Public SDK key in Vercel as `NEXT_PUBLIC_REVENUECAT_API_KEY`. Done 2026-05-15. **Note:** App Store Connect API credentials warning partially resolved; product MISSING_METADATA status requires localization + review screenshot on each product in App Store Connect.
 - ✅ **Apple Small Business Program** — enrolled 2026-05-15. 15% commission rate active before first live transaction.
-- 🔲 **Custom domain** — buy + point a Zonna-branded domain (e.g. `zonna.app`, `zonna.run`) at the Vercel deployment. Unblocks: `/privacy` hosting, `/terms` hosting, Universal Links (needs `apple-app-site-association` file at domain root), OG image canonical URL, GTM-08 marketing site go-live, paid acquisition / press / sharing surface. Single biggest external blocker for v1 launch — most other "🔲" items chain off this.
+- ✅ **Custom domain** — `zonna.run` purchased and DNS pointed at Vercel 2026-05-15. Live and resolving. `capacitor.config.ts` `server.url` updated to `https://www.zonna.run/dashboard`. Privacy/terms TODO comments cleaned up.
 
 ### E. Pre-submission QA
 
@@ -166,7 +166,7 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 
 The Vetra → Zonna rename (commits `fda3ff6` + `ba469df`) is complete in code, native shell, icons, OG image, and current-truth docs. The items below are non-blocking hygiene and decisions that can land any time post-launch.
 
-- 🔄 **BRAND-01 — Domain rollout** *(P1, ~30 min in code + DNS)* — ✅ domain decided: **`zonna.run`** (purchased 2026-05-15). Outstanding: (1) point DNS at Vercel, (2) add custom domain in Vercel dashboard, (3) update `support@zona.app` mailtos in `app/privacy/page.tsx` + `app/terms/page.tsx`, (4) update `<strong>zona.app</strong>` body references in same files, (5) update VAPID subject in `lib/webpush.ts:32`, (6) update migration-target comment in `capacitor.config.ts:11`, (7) set up email forwarding (`support@zonna.run`).
+- ✅ **BRAND-01 — Domain rollout** — `zonna.run` live 2026-05-15. DNS pointed, custom domain in Vercel, email refs already `support@zonna.run`, TODO comments removed, `capacitor.config.ts` `server.url` updated. **Outstanding:** (5) set `VAPID_SUBJECT` env var in Vercel to `push@zonna.run` if not already set, (7) set up email forwarding `support@zonna.run` → your inbox.
 - 🔲 **BRAND-02 — Vercel project rename** *(P3, ~2 min)* — currently `rts-training-hub`. Rename via Vercel dashboard. Affects preview URLs only — code-side: nothing.
 - 🔲 **BRAND-03 — Supabase project rename (cosmetic)** *(P3, ~1 min, optional)* — Supabase project display name can be renamed but the ID `wkppmpsvqkaxbekdgzdm` is permanent. Purely cosmetic.
 - 🔲 **BRAND-04 — npm package rename** *(P3, ~1 min)* — `package.json:2` still says `"name": "vetra"`. Rename to `"zonna"` whenever convenient. Triggers `package-lock.json` regeneration on next install.
