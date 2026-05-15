@@ -9,6 +9,7 @@
 //   trialExpired=true  — loss framing (trial ended, user has experienced the product)
 
 import { useState } from 'react'
+import { Capacitor } from '@capacitor/core'
 import { PRICING } from '@/lib/brand'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 
@@ -36,28 +37,91 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
   trialExpired?: boolean
 }) {
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError]     = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   async function handleSubscribe(annual: boolean) {
     setLoading(true)
     setError(null)
     try {
-      const res = await authedFetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ annual }),
-      })
-      const data = await res.json()
-      if (data.url) {
-        window.location.href = data.url
+      if (Capacitor.isNativePlatform()) {
+        // iOS native — RevenueCat StoreKit 2 purchase sheet.
+        // Dynamic import keeps the native SDK out of the web bundle.
+        const { Purchases } = await import('@revenuecat/purchases-capacitor')
+        const offerings = await Purchases.getOfferings()
+        const offering = offerings.current
+        if (!offering) throw new Error('No offering available.')
+
+        // Use RevenueCat's typed accessors — cleaner than searching availablePackages.
+        const pkg = annual ? offering.annual : offering.monthly
+        if (!pkg) throw new Error(`${annual ? 'Annual' : 'Monthly'} package not found.`)
+
+        await Purchases.purchasePackage({ aPackage: pkg })
+        // Webhook fires async and updates subscriptions table.
+        // Show success state here — tier refreshes on next dashboard load.
+        setSuccess(true)
       } else {
-        setError(data.error ?? 'Something went wrong. Try again.')
+        // Web — Stripe Checkout (existing path).
+        const res = await authedFetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ annual }),
+        })
+        const data = await res.json()
+        if (data.url) {
+          window.location.href = data.url
+        } else {
+          setError(data.error ?? 'Something went wrong. Try again.')
+        }
       }
-    } catch {
-      setError('Could not reach the server. Try again.')
+    } catch (err: any) {
+      // User tapped Cancel on the StoreKit sheet — not an error.
+      if (err?.userCancelled === true) return
+      setError('Purchase failed. Try again.')
     } finally {
       setLoading(false)
     }
+  }
+
+  // Success state — shown after a successful native StoreKit purchase.
+  if (success) {
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', minHeight: '100%',
+        background: 'var(--bg)', padding: '40px 24px', textAlign: 'center',
+      }}>
+        <div style={{
+          width: '56px', height: '56px', borderRadius: '50%',
+          background: 'var(--moss)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', marginBottom: '24px',
+          fontSize: '26px',
+        }}>✓</div>
+        <h1 style={{
+          fontFamily: 'var(--font-brand)', fontWeight: 700,
+          fontSize: '1.5rem', color: 'var(--ink)', margin: 0,
+        }}>You&rsquo;re in.</h1>
+        <p style={{
+          fontFamily: 'var(--font-ui)', fontSize: '0.9375rem',
+          color: 'var(--mute)', margin: '10px 0 0', lineHeight: 1.5,
+        }}>
+          Welcome to {PRICING.trialDays}-day free access.<br />
+          Your plan adapts. Your coaching starts now.
+        </p>
+        <button
+          onClick={onBack}
+          style={{
+            marginTop: '36px', padding: '14px 32px',
+            background: 'var(--moss)', border: 'none', borderRadius: '10px',
+            fontFamily: 'var(--font-ui)', fontWeight: 600,
+            fontSize: '1rem', color: 'var(--card)',
+            cursor: 'pointer',
+          }}
+        >
+          Back to training
+        </button>
+      </div>
+    )
   }
 
   const items    = trialExpired ? LOSSES    : FEATURES
