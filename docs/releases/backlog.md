@@ -23,9 +23,9 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 - ✅ **Native shell — Capacitor iOS** — bootstrapped. App boots in simulator with Zonna icon + splash, status bar polished (warm slate, dark text), splash auto-hides on web mount via `CapacitorBoot.tsx`, OAuth deep-link infrastructure in place via `app.zonna.ios://auth-callback` URL scheme. Plugins installed: `splash-screen`, `status-bar`, `browser`, `app`, `push-notifications`. `server.url` strategy with `allowNavigation` whitelist for OAuth providers. See `CLAUDE.md` § Native shell.
 - ✅ **Google OAuth on native** — opens via SFSafariViewController (`@capacitor/browser`); returns through custom URL scheme; `CapacitorBoot.tsx` exchanges the code and `router.replace`s to `/dashboard`. Same pattern reusable for Strava (still on `window.location.href`).
 - 🔲 **Strava as secondary source** *(post-launch)* — once HealthKit is primary, keep Strava OAuth + webhook + `strava_activities` writes alive but optional. Dedupe rule: if a HealthKit workout and a Strava activity match within ±5 min and ±5% distance, prefer the source with HR stream data; otherwise prefer HealthKit (always present on iOS). Apply for Strava API approval in parallel — not blocking v1.
-- ✅ **StoreKit 2 integration** — via `@revenuecat/purchases-capacitor`. Done 2026-05-15. SDK initialised in `CapacitorBoot.tsx` with Supabase user ID as `appUserID`. `UpgradeScreen` branches on `Capacitor.isNativePlatform()`: native → `getOfferings() → purchasePackage()` (StoreKit sheet); web → Stripe checkout (unchanged). Silent cancel handling (`userCancelled`). Success state after purchase. Webhook → `subscriptions` table → tier refreshes on next load. **Sandbox test still needed** before TestFlight — see backlog §E.
+- ✅ **StoreKit 2 integration** — via `@revenuecat/purchases-capacitor`. Done 2026-05-15. SDK initialised in `CapacitorBoot.tsx` with Supabase user ID as `appUserID`. `UpgradeScreen` branches on `Capacitor.isNativePlatform()`: native → `getOfferings() → purchasePackage()` (StoreKit sheet); web → Stripe checkout (unchanged). Silent cancel handling (`userCancelled`). Success state after purchase. Webhook → `subscriptions` table → tier refreshes on next load.
 - 🔲 **Universal Links** (defer until production domain is live) — replace custom URL schemes with `https://` deep links. Needs `apple-app-site-association` file at the domain root + Associated Domains entitlement in Xcode. Associated Domains capability enabled in Apple Developer portal 2026-05-08; awaiting custom domain. Better trust + UX than custom schemes; not blocking v1.
-- 🔲 **Build / signing pipeline** — Xcode signing certificate, provisioning profile, App Store Connect API key for CI uploads. Vercel keeps hosting JS; iOS builds happen on the Mac. Gated on Apple Dev.
+- ✅ **Build / signing pipeline** — Xcode automatic signing configured 2026-05-15. `APNS_PRODUCTION` flipped to `1` in Vercel for TestFlight. First TestFlight archive uploaded 2026-05-15 (TestFlight Internal Only).
 - ✅ **Migration `orientation_seen`** — column exists in `user_settings`, read on load + written on completion. Done.
 
 ### C. Vercel env config
@@ -39,7 +39,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 - 🔲 `STRIPE_WEBHOOK_SECRET` — needs Stripe webhook endpoint created
 - 🔲 `STRIPE_PRICE_MONTHLY` + `STRIPE_PRICE_ANNUAL` — needs Stripe product + price IDs
 - ✅ `REVENUECAT_WEBHOOK_SECRET` — added to Vercel 2026-05-15
-- ✅ `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC`, `APNS_PRODUCTION` — pasted into Vercel 2026-05-09 (sandbox; flip `APNS_PRODUCTION` to `1` for TestFlight builds)
+- ✅ `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC`, `APNS_PRODUCTION` — set. `APNS_PRODUCTION=1` flipped 2026-05-15 for TestFlight.
 
 ### D. External setup
 
@@ -50,7 +50,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 ### E. Pre-submission QA
 
-- 🔲 **TestFlight beta** — internal testing on device before public submission
+- 🔄 **TestFlight beta** — build uploaded 2026-05-15, processing. Once available: add yourself as internal tester in App Store Connect → TestFlight, install on device, run full journey test.
 - 🔲 **Full journey test** — agent-browser end-to-end: create account → onboarding → plan on screen → log session → post-log reflect → simulate trial end → attempt paid feature → upgrade prompt
 - 🔲 **App Store assets** — screenshots (all required device sizes), preview video (optional), keywords, App Store description copy
 
