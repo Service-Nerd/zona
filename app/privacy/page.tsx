@@ -95,8 +95,8 @@ export default function PrivacyPage() {
         </div>
 
         <Section title="Who we are">
-          <P>{BRAND.name} is a running training application operated by Russ (service-nerd). The app is available at <strong>zona.app</strong> {/* TODO: update domain when migration target decided */} and via the App Store and Google Play.</P>
-          <P>For any privacy-related queries, contact us at <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update domain when migration target decided */}.</P>
+          <P>{BRAND.name} is a running training application operated by Russ (service-nerd). The app is available at <strong>zonna.run</strong> and via the App Store and Google Play.</P>
+          <P>For any privacy-related queries, contact us at <A href="mailto:support@zonna.run">support@zonna.run</A> {/* TODO: update domain when migration target decided */}.</P>
         </Section>
 
         <Section title="What we collect">
@@ -178,7 +178,7 @@ export default function PrivacyPage() {
               }}>{item}</li>
             ))}
           </ul>
-          <P>To exercise any of these rights, email <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update domain when migration target decided */}. We will respond within 30 days.</P>
+          <P>To exercise any of these rights, email <A href="mailto:support@zonna.run">support@zonna.run</A> {/* TODO: update domain when migration target decided */}. We will respond within 30 days.</P>
         </Section>
 
         <Section title="Your rights (CCPA)">
@@ -199,16 +199,16 @@ export default function PrivacyPage() {
               }}>{item}</li>
             ))}
           </ul>
-          <P>To exercise these rights, email <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update domain when migration target decided */}.</P>
+          <P>To exercise these rights, email <A href="mailto:support@zonna.run">support@zonna.run</A> {/* TODO: update domain when migration target decided */}.</P>
         </Section>
 
         <Section title="Account deletion">
           <P>You can delete your account at any time from the Profile screen in the app. Deletion is permanent and removes all associated data: your plan, session history, Strava connection, and account credentials.</P>
-          <P>If you are unable to delete via the app, email <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update domain when migration target decided */} and we will delete your account within 7 days.</P>
+          <P>If you are unable to delete via the app, email <A href="mailto:support@zonna.run">support@zonna.run</A> {/* TODO: update domain when migration target decided */} and we will delete your account within 7 days.</P>
         </Section>
 
         <Section title="Children">
-          <P>{BRAND.name} is not directed at children under 13. We do not knowingly collect personal data from anyone under 13. If you believe a child under 13 has provided us with personal data, please contact <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update domain when migration target decided */} and we will delete it promptly.</P>
+          <P>{BRAND.name} is not directed at children under 13. We do not knowingly collect personal data from anyone under 13. If you believe a child under 13 has provided us with personal data, please contact <A href="mailto:support@zonna.run">support@zonna.run</A> {/* TODO: update domain when migration target decided */} and we will delete it promptly.</P>
         </Section>
 
         <Section title="Cookies and local storage">
@@ -231,8 +231,7 @@ export default function PrivacyPage() {
             marginTop: '16px',
           }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px', fontWeight: 500 }}>{BRAND.name}</div>
-            {/* TODO: update domain when migration target decided */}
-            <A href="mailto:support@zona.app">support@zona.app</A>
+                       <A href="mailto:support@zonna.run">support@zonna.run</A>
           </div>
         </Section>
 

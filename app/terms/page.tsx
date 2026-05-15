@@ -100,8 +100,8 @@ export default function TermsPage() {
         </Section>
 
         <Section title="Who we are">
-          <P>{BRAND.name} is operated by Russ (service-nerd), based in the United Kingdom. The service is available at <strong>zona.app</strong> {/* TODO: update domain when migration target decided */} and via the App Store and Google Play.</P>
-          <P>Contact: <A href="mailto:support@zona.app">support@zona.app</A> {/* TODO: update domain when migration target decided */}.</P>
+          <P>{BRAND.name} is operated by Russ (service-nerd), based in the United Kingdom. The service is available at <strong>zonna.run</strong> and via the App Store and Google Play.</P>
+          <P>Contact: <A href="mailto:support@zonna.run">support@zonna.run</A> {/* TODO: update domain when migration target decided */}.</P>
         </Section>
 
         <Section title="Your account">
@@ -133,10 +133,10 @@ export default function TermsPage() {
           <P>If you subscribe through the App Store, payment is charged to your Apple ID at confirmation of purchase, and renewals are charged to your Apple ID within 24 hours before the end of the current period. If you subscribe through our website, payment is charged to your selected payment method via our payment processor (Stripe).</P>
 
           <SubHead>Cancellation</SubHead>
-          <P>You can cancel at any time. Cancellation takes effect at the end of the current billing period — you keep paid access until then. <strong>If you subscribed through the App Store</strong>, manage and cancel your subscription in iOS <em>Settings → [your name] → Subscriptions</em>. <strong>If you subscribed through our website</strong>, cancel from the Profile screen in the app or by emailing <A href="mailto:support@zona.app">support@zona.app</A>.</P>
+          <P>You can cancel at any time. Cancellation takes effect at the end of the current billing period — you keep paid access until then. <strong>If you subscribed through the App Store</strong>, manage and cancel your subscription in iOS <em>Settings → [your name] → Subscriptions</em>. <strong>If you subscribed through our website</strong>, cancel from the Profile screen in the app or by emailing <A href="mailto:support@zonna.run">support@zonna.run</A>.</P>
 
           <SubHead>Refunds</SubHead>
-          <P>App Store purchases are subject to Apple&apos;s refund policy — refund requests go to Apple, not to us. For website purchases, refunds are at our discretion: contact <A href="mailto:support@zona.app">support@zona.app</A> within 14 days of a renewal charge if you believe it was made in error and we will review it.</P>
+          <P>App Store purchases are subject to Apple&apos;s refund policy — refund requests go to Apple, not to us. For website purchases, refunds are at our discretion: contact <A href="mailto:support@zonna.run">support@zonna.run</A> within 14 days of a renewal charge if you believe it was made in error and we will review it.</P>
 
           <SubHead>Price changes</SubHead>
           <P>If we change the subscription price, we will notify you by email or in-app at least 30 days before the change takes effect, so you have time to cancel before being charged the new price.</P>
@@ -222,8 +222,7 @@ export default function TermsPage() {
             marginTop: '16px',
           }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px', fontWeight: 500 }}>{BRAND.name}</div>
-            {/* TODO: update domain when migration target decided */}
-            <A href="mailto:support@zona.app">support@zona.app</A>
+                       <A href="mailto:support@zonna.run">support@zonna.run</A>
           </div>
         </Section>
 

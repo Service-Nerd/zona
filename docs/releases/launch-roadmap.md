@@ -71,7 +71,7 @@ These gate the longest dependency chains. Without answers, downstream work stall
 
 | Decision | Options | Blocks |
 |---|---|---|
-| **Domain name** | `zonna.app` (Google HSTS-locked TLD, ~£15/yr) / `zonna.run` (~£40/yr) / something else | Privacy hosting, Universal Links, GTM-08 go-live, OG image, paid acquisition |
+| ~~**Domain name**~~ | ✅ **`zonna.run` purchased 2026-05-15.** Point DNS at Vercel to unblock downstream. | Privacy hosting, Universal Links, GTM-08 go-live, OG image, paid acquisition |
 | **DSA EU trader strategy** | Home address / virtual office / Ltd registered office / defer EU launch | EU App Store availability (US/UK ship doesn't need this) |
 | **Beta testers** | Pick 5–10 people for TestFlight internal track | TestFlight beta phase — can't start without testers |
 | **Web checkout at launch?** | Defer Stripe to v1.1 / ship Stripe alongside iOS | Stripe product setup, Stripe env vars, web upgrade flow QA |
