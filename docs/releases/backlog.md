@@ -166,7 +166,7 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 
 The Vetra → Zonna rename (commits `fda3ff6` + `ba469df`) is complete in code, native shell, icons, OG image, and current-truth docs. The items below are non-blocking hygiene and decisions that can land any time post-launch.
 
-- ✅ **BRAND-01 — Domain rollout** — `zonna.run` live 2026-05-15. DNS pointed, custom domain in Vercel, email refs already `support@zonna.run`, TODO comments removed, `capacitor.config.ts` `server.url` updated. **Outstanding:** (5) set `VAPID_SUBJECT` env var in Vercel to `push@zonna.run` if not already set, (7) set up email forwarding `support@zonna.run` → your inbox.
+- ✅ **BRAND-01 — Domain rollout** — `zonna.run` live 2026-05-15. DNS pointed, custom domain in Vercel, email refs already `support@zonna.run`, TODO comments removed, `capacitor.config.ts` `server.url` updated, `VAPID_SUBJECT` set in Vercel 2026-05-15. **Outstanding:** set up email forwarding `support@zonna.run` → your inbox (registrar config, not code).
 - 🔲 **BRAND-02 — Vercel project rename** *(P3, ~2 min)* — currently `rts-training-hub`. Rename via Vercel dashboard. Affects preview URLs only — code-side: nothing.
 - 🔲 **BRAND-03 — Supabase project rename (cosmetic)** *(P3, ~1 min, optional)* — Supabase project display name can be renamed but the ID `wkppmpsvqkaxbekdgzdm` is permanent. Purely cosmetic.
 - 🔲 **BRAND-04 — npm package rename** *(P3, ~1 min)* — `package.json:2` still says `"name": "vetra"`. Rename to `"zonna"` whenever convenient. Triggers `package-lock.json` regeneration on next install.
