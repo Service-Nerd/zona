@@ -23,7 +23,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 - ✅ **Native shell — Capacitor iOS** — bootstrapped. App boots in simulator with Zonna icon + splash, status bar polished (warm slate, dark text), splash auto-hides on web mount via `CapacitorBoot.tsx`, OAuth deep-link infrastructure in place via `app.zonna.ios://auth-callback` URL scheme. Plugins installed: `splash-screen`, `status-bar`, `browser`, `app`, `push-notifications`. `server.url` strategy with `allowNavigation` whitelist for OAuth providers. See `CLAUDE.md` § Native shell.
 - ✅ **Google OAuth on native** — opens via SFSafariViewController (`@capacitor/browser`); returns through custom URL scheme; `CapacitorBoot.tsx` exchanges the code and `router.replace`s to `/dashboard`. Same pattern reusable for Strava (still on `window.location.href`).
 - 🔲 **Strava as secondary source** *(post-launch)* — once HealthKit is primary, keep Strava OAuth + webhook + `strava_activities` writes alive but optional. Dedupe rule: if a HealthKit workout and a Strava activity match within ±5 min and ±5% distance, prefer the source with HR stream data; otherwise prefer HealthKit (always present on iOS). Apply for Strava API approval in parallel — not blocking v1.
-- 🔲 **StoreKit 2 integration** — via `@revenuecat/purchases-capacitor`. Webhook → Supabase `subscriptions` table (per project memory). Stripe path stays for web users. Alternative: apply for External Purchase Entitlement (slow, not guaranteed). Apple Dev approved 2026-05-08; now gated only on RevenueCat app setup (in progress, see §D).
+- 🔄 **StoreKit 2 integration** — via `@revenuecat/purchases-capacitor`. **SDK installed + initialised in `CapacitorBoot.tsx` (2026-05-15)**: configures with Supabase user ID as `appUserID`; `onAuthStateChange` listener handles late login/logout via `Purchases.logIn/logOut`. Webhook endpoint (`/api/webhooks/revenuecat`) already existed; updated to verify `Authorization` header (not HMAC). **Outstanding:** wire `Purchases.purchasePackage()` into `UpgradeScreen` so the native StoreKit purchase sheet fires on tap — currently the upgrade CTA has no purchase handler on iOS native.
 - 🔲 **Universal Links** (defer until production domain is live) — replace custom URL schemes with `https://` deep links. Needs `apple-app-site-association` file at the domain root + Associated Domains entitlement in Xcode. Associated Domains capability enabled in Apple Developer portal 2026-05-08; awaiting custom domain. Better trust + UX than custom schemes; not blocking v1.
 - 🔲 **Build / signing pipeline** — Xcode signing certificate, provisioning profile, App Store Connect API key for CI uploads. Vercel keeps hosting JS; iOS builds happen on the Mac. Gated on Apple Dev.
 - ✅ **Migration `orientation_seen`** — column exists in `user_settings`, read on load + written on completion. Done.
@@ -38,14 +38,14 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 - 🔲 `STRIPE_SECRET_KEY` — needs Stripe product setup first
 - 🔲 `STRIPE_WEBHOOK_SECRET` — needs Stripe webhook endpoint created
 - 🔲 `STRIPE_PRICE_MONTHLY` + `STRIPE_PRICE_ANNUAL` — needs Stripe product + price IDs
-- 🔲 `REVENUECAT_WEBHOOK_SECRET` — needs RevenueCat app setup first
+- ✅ `REVENUECAT_WEBHOOK_SECRET` — added to Vercel 2026-05-15
 - ✅ `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC`, `APNS_PRODUCTION` — pasted into Vercel 2026-05-09 (sandbox; flip `APNS_PRODUCTION` to `1` for TestFlight builds)
 
 ### D. External setup
 
 - 🔲 **Stripe product + price** — "Zonna Premium", £7.99/month + £59.99/year, 14-day trial
-- 🔲 **RevenueCat app + entitlement** — link to App Store product IDs (`zonna_premium_monthly`, `zonna_premium_annual` — already created in App Store Connect), set entitlement identifier `zonna_premium`
-- 🔲 **Apple Small Business Program** — 15% vs 30% cut, enrol before first live transaction. Deferred 2026-05-08 — not visible in App Store Connect UI yet (likely gated on Paid Applications Agreement signing). Direct URL: https://appstoreconnect.apple.com/business
+- ✅ **RevenueCat app + entitlement** — project created, iOS app added (bundle ID `app.zonna.ios`), In-App Purchase key configured, products `zonna_premium_monthly` + `zonna_premium_annual` added manually, entitlement `zonna_premium` created + both products attached, default offering configured. Webhook set to `https://rts-training-hub.vercel.app/api/webhooks/revenuecat` with `Authorization` header. Public SDK key in Vercel as `NEXT_PUBLIC_REVENUECAT_API_KEY`. Done 2026-05-15. **Note:** App Store Connect API credentials warning partially resolved; product MISSING_METADATA status requires localization + review screenshot on each product in App Store Connect.
+- ✅ **Apple Small Business Program** — enrolled 2026-05-15. 15% commission rate active before first live transaction.
 - 🔲 **Custom domain** — buy + point a Zonna-branded domain (e.g. `zonna.app`, `zonna.run`) at the Vercel deployment. Unblocks: `/privacy` hosting, `/terms` hosting, Universal Links (needs `apple-app-site-association` file at domain root), OG image canonical URL, GTM-08 marketing site go-live, paid acquisition / press / sharing surface. Single biggest external blocker for v1 launch — most other "🔲" items chain off this.
 
 ### E. Pre-submission QA
