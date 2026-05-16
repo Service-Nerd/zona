@@ -945,10 +945,13 @@ export default function DashboardClient() {
     computeAerobicPace(stravaRuns, restingHR, maxHR, preferredUnits),
   [stravaRuns, restingHR, maxHR, preferredUnits])
 
-  // POST-RUN-01: high-confidence Strava match for the active session, computed
-  // client-side so "Mark complete" can skip the picker when there's an obvious
-  // candidate. Mirrors the webhook's silent auto-link path. Null when no match.
-  const activeAutoMatch = useMemo(() => {
+  // POST-RUN-01 / AUTO-MATCH-02: best Strava match for the active session,
+  // computed client-side so "Mark complete" can skip the picker. The webhook's
+  // silent auto-link path only fires on `high`; the client surface also shows
+  // `medium` candidates as a softer "Looks like this one?" CTA so the user
+  // isn't left wondering why nothing matched when a plausible run exists.
+  // `low` stays hidden — too noisy to surface.
+  const activeAutoMatch = useMemo<{ activity: any; confidence: 'high' | 'medium' } | null>(() => {
     if (!activeSessionData || !plan || plan === EMPTY_PLAN) return null
     if (!stravaRuns || !stravaRuns.length) return null
     const week = (plan.weeks as any[] | undefined)?.find((w: any) => w.n === activeSessionData.weekN)
@@ -962,7 +965,12 @@ export default function DashboardClient() {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { findMatchCandidates } = require('@/lib/coaching/sessionMatch')
       const candidates = findMatchCandidates(activeSessionData, sessionDate, stravaRuns)
-      return candidates[0]?.confidence === 'high' ? candidates[0].activity : null
+      const top = candidates[0]
+      if (!top) return null
+      if (top.confidence === 'high' || top.confidence === 'medium') {
+        return { activity: top.activity, confidence: top.confidence as 'high' | 'medium' }
+      }
+      return null
     } catch {
       return null
     }
@@ -1237,7 +1245,7 @@ export default function DashboardClient() {
         {screen === 'strava'   && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
         {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentAutoAdjustments={recentAutoAdjustments} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatchedActivity={activeAutoMatch} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onDone={() => {
           // POST-RUN-02: terminus. Route to SessionScreen for this session
           // with the freshest completion merged in, so the verdict (which
@@ -1987,7 +1995,7 @@ function getSessionVoiceLine(sessionType: string): string | null {
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
-function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, restingHR, maxHR, aerobicPace, stravaLoading, hasPaidAccess, onUpgrade, goalPace, guidance, onLinkedComplete, autoMatchedActivity }: {
+function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, restingHR, maxHR, aerobicPace, stravaLoading, hasPaidAccess, onUpgrade, goalPace, guidance, onLinkedComplete, autoMatch }: {
   session: any; weekTheme: string; weekN: number; preloadedRuns: any[]
   onClose: () => void; onSaved?: () => void
   preferredUnits: 'km' | 'mi'; zone2Ceiling: number; preferredMetric?: 'distance' | 'duration'
@@ -2004,12 +2012,15 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
    */
   onLinkedComplete?: (data: PostRunData) => void
   /**
-   * High-confidence (≥70) Strava activity match for this session — computed
-   * by the parent from `preloadedRuns` + plan dates. When present, the "Mark
-   * complete" button skips the activity picker and routes straight to
-   * PostRunScreen. Picker still shown when null. POST-RUN-01.
+   * Best Strava activity match for this session — computed by the parent from
+   * `preloadedRuns` + plan dates. AUTO-MATCH-02 surfaces both confidence tiers:
+   *   - `high` (≥70): "Log this run" filled-moss CTA, treats tap as confirmation.
+   *   - `medium` (≥40): "Looks like this one?" outline CTA, same handler, but
+   *     the question framing + softer styling sets expectations.
+   * `low` candidates are not passed through — too noisy. Null when no match.
+   * POST-RUN-01 set the high-only baseline; AUTO-MATCH-02 added medium.
    */
-  autoMatchedActivity?: any | null
+  autoMatch?: { activity: any; confidence: 'high' | 'medium' } | null
 }) {
   const [view, setView] = useState<'detail' | 'complete' | 'skip' | 'success' | 'reflect' | 'skip-reflect'>('detail')
   const [showManualModal, setShowManualModal] = useState(false)
@@ -2186,14 +2197,16 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
     } catch {} finally { setSaving(false) }
   }
 
-  // POST-RUN-01: when the parent has computed a high-confidence Strava match
-  // for this session, skip the picker entirely and go straight to PostRunScreen.
+  // POST-RUN-01 / AUTO-MATCH-02: when the parent has computed a Strava match
+  // (high OR medium), tapping the primary CTA logs against that activity and
+  // routes to PostRunScreen. Medium confirms-by-tap because the button label,
+  // run name, distance and timestamp are all visible — tapping is consent.
   // Falls back to the manual picker when no match (or for non-run sessions).
   function handleMarkComplete() {
     const isRun = ['easy', 'run', 'quality', 'race'].includes(session.type)
     if (!isRun) { void saveCompletion('complete'); return }
-    if (autoMatchedActivity) {
-      void saveCompletion('complete', autoMatchedActivity)
+    if (autoMatch) {
+      void saveCompletion('complete', autoMatch.activity)
       return
     }
     setView('complete')
@@ -2969,23 +2982,28 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               }
               if (!isComplete && !isSkipped) {
                 if (isRunType) {
-                  // POST-RUN-02: when a high-confidence Strava match has already
-                  // been computed for this session, commit to it as the primary
-                  // CTA. The picker becomes the "wrong one?" escape hatch.
-                  // handleMarkComplete already skips the picker when
-                  // autoMatchedActivity is non-null (POST-RUN-01).
-                  if (autoMatchedActivity) {
-                    const km = typeof autoMatchedActivity.distance === 'number'
-                      ? autoMatchedActivity.distance / 1000
+                  // POST-RUN-02 / AUTO-MATCH-02: when a Strava match exists,
+                  // commit to it as the primary CTA. High confidence renders as
+                  // a confident filled moss button ("Log this run"); medium
+                  // renders as an outline question ("Looks like this one?") so
+                  // the user reads the run name before tapping. Both call the
+                  // same handler — the visible run name + distance + timestamp
+                  // make the tap an explicit confirmation either way. The
+                  // picker is the "wrong one?" escape.
+                  if (autoMatch) {
+                    const { activity, confidence } = autoMatch
+                    const isHigh = confidence === 'high'
+                    const km = typeof activity.distance === 'number'
+                      ? activity.distance / 1000
                       : null
                     const distStr = km != null
                       ? `${km.toFixed(1)}${preferredUnits === 'mi' ? 'mi' : 'km'}`
                       : null
-                    const startDate = autoMatchedActivity.start_date
-                      ? new Date(autoMatchedActivity.start_date)
+                    const startDate = activity.start_date
+                      ? new Date(activity.start_date)
                       : null
                     const subline = [
-                      autoMatchedActivity.name,
+                      activity.name,
                       distStr,
                       formatRelativeTime(startDate),
                     ].filter(Boolean).join(' · ')
@@ -2995,15 +3013,17 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                           onClick={handleMarkComplete}
                           style={{
                             width: '100%',
-                            background: 'var(--moss)', color: 'var(--card)',
-                            border: 'none', borderRadius: '10px', padding: '13px',
+                            background: isHigh ? 'var(--moss)' : 'transparent',
+                            color: isHigh ? 'var(--card)' : 'var(--moss)',
+                            border: isHigh ? 'none' : '1px solid var(--moss)',
+                            borderRadius: '10px', padding: '13px',
                             fontFamily: 'var(--font-ui)', fontSize: '12px',
                             letterSpacing: '0.06em', textTransform: 'uppercase',
                             cursor: 'pointer', fontWeight: 600,
                             minHeight: '44px',
                           }}
                         >
-                          Log this run
+                          {isHigh ? 'Log this run' : 'Looks like this one?'}
                         </button>
                         <div style={{
                           display: 'flex', alignItems: 'center', gap: '6px',
@@ -3011,14 +3031,20 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                           fontFamily: 'var(--font-ui)', fontSize: '11px',
                           color: 'var(--mute)', lineHeight: 1.4,
                         }}>
-                          <AIMark size={11} color="var(--moss)" label="Strava run matched by Zonna" />
+                          <AIMark
+                            size={11}
+                            color="var(--moss)"
+                            label={isHigh ? 'Strava run matched by Zonna' : 'Possible Strava match'}
+                          />
                           <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {subline}
                           </span>
                         </div>
                         {/* Secondary actions — single inline text-link row.
-                            Auto-match has high confidence; the dominant choice is
-                            the moss primary. These three are quiet escapes. */}
+                            For high-confidence auto-match the dominant choice
+                            is the moss primary; these three are quiet escapes.
+                            For medium ("Looks like this one?"), the same row
+                            doubles as the "no, find the right one" path. */}
                         <div style={{
                           display: 'flex', alignItems: 'center', gap: '0',
                           marginTop: '2px',
@@ -8287,7 +8313,7 @@ function RunFeedbackCard({
   )
 }
 
-function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, restingHR, maxHR, aerobicPace, stravaLoading, runAnalysis, hasPaidAccess, onUpgrade, onOpenCoach, goalPace, guidance, nextSession, onLinkedComplete, autoMatchedActivity }: {
+function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, restingHR, maxHR, aerobicPace, stravaLoading, runAnalysis, hasPaidAccess, onUpgrade, onOpenCoach, goalPace, guidance, nextSession, onLinkedComplete, autoMatch }: {
   session: any; preloadedRuns: any[]; onBack: () => void; onSaved?: () => void
   preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number; preferredMetric?: 'distance' | 'duration'
   /** Lifts per-session metric toggle into DashboardClient so collapsed cards
@@ -8304,8 +8330,8 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
   nextSession?: { type: string; day: string; distanceKm?: number | null; label?: string | null } | null
   /** POST-RUN-01: route a Strava-linked completion to the new PostRunScreen. */
   onLinkedComplete?: (data: PostRunData) => void
-  /** POST-RUN-01: pre-computed high-confidence Strava match for this session. */
-  autoMatchedActivity?: any | null
+  /** AUTO-MATCH-02: best Strava match (high or medium) for this session. */
+  autoMatch?: { activity: any; confidence: 'high' | 'medium' } | null
 }) {
   const color = getSessionColor(session.type ?? 'easy')
   const typeLabel = getSessionLabel(session.type ?? 'easy')
@@ -8330,6 +8356,22 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
   const [unlinkConfirm, setUnlinkConfirm] = useState(false)
   const [unlinking, setUnlinking] = useState(false)
   const isComplete = session.completion?.status === 'complete'
+
+  // POST-LOG-01: when a session is logged the prescription brief is reference
+  // material, not the headline — RunFeedbackCard above is. Collapse the
+  // SessionPopupInner body (Plan vs Actual, Why this session, structure, RPE
+  // form) behind a "Session details" toggle so the feedback can breathe.
+  // Pre-log / future sessions render expanded so behaviour is unchanged.
+  //
+  // The re-init effect intentionally depends ONLY on session identity, not on
+  // `isComplete`. If the user logs the session mid-screen and lands in the
+  // reflect view inside SessionPopupInner, isComplete flips true — but the
+  // brief must stay open or the RPE form tears out from under them.
+  const [briefOpen, setBriefOpen] = useState(!isComplete)
+  useEffect(() => {
+    setBriefOpen(!isComplete)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.weekN, session.key])
 
   async function handleUnlink() {
     setUnlinking(true)
@@ -8553,29 +8595,72 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
           border: `1px solid var(--line)`,
           borderLeft: `3px solid ${color}`,
           marginTop: '12px',
+          overflow: 'hidden',
         }}>
-          <SessionPopupInner
-            session={session}
-            weekTheme={session.weekTheme ?? ''}
-            weekN={session.weekN ?? 1}
-            preloadedRuns={preloadedRuns}
-            onClose={onBack}
-            onSaved={onSaved}
-            preferredUnits={preferredUnits ?? 'km'}
-            zone2Ceiling={zone2Ceiling ?? 145}
-            preferredMetric={preferredMetric}
-            onSessionMetricChange={onSessionMetricChange}
-            restingHR={restingHR}
-            maxHR={maxHR}
-            aerobicPace={aerobicPace}
-            stravaLoading={stravaLoading}
-            hasPaidAccess={hasPaidAccess}
-            onUpgrade={onUpgrade}
-            goalPace={goalPace}
-            guidance={guidance}
-            onLinkedComplete={onLinkedComplete}
-            autoMatchedActivity={autoMatchedActivity}
-          />
+          {isComplete && (
+            <button
+              onClick={() => setBriefOpen(o => !o)}
+              aria-expanded={briefOpen}
+              style={{
+                width: '100%',
+                background: 'transparent',
+                border: 'none',
+                padding: '14px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                borderBottom: briefOpen ? `1px solid var(--line)` : 'none',
+                fontFamily: 'var(--font-ui)',
+                color: 'var(--ink-2)',
+                minHeight: '44px',
+              }}
+            >
+              <span style={{
+                fontSize: '10px', fontWeight: 700,
+                color: 'var(--mute)',
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+              }}>
+                {briefOpen ? 'Hide session details' : 'Session details · tweak how it felt'}
+              </span>
+              <svg
+                width="12" height="12" viewBox="0 0 12 12" fill="none"
+                aria-hidden="true"
+                style={{
+                  transform: briefOpen ? 'rotate(180deg)' : 'none',
+                  transition: 'transform 0.18s ease',
+                  flexShrink: 0,
+                  color: 'var(--mute)',
+                }}
+              >
+                <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          )}
+          {briefOpen && (
+            <SessionPopupInner
+              session={session}
+              weekTheme={session.weekTheme ?? ''}
+              weekN={session.weekN ?? 1}
+              preloadedRuns={preloadedRuns}
+              onClose={onBack}
+              onSaved={onSaved}
+              preferredUnits={preferredUnits ?? 'km'}
+              zone2Ceiling={zone2Ceiling ?? 145}
+              preferredMetric={preferredMetric}
+              onSessionMetricChange={onSessionMetricChange}
+              restingHR={restingHR}
+              maxHR={maxHR}
+              aerobicPace={aerobicPace}
+              stravaLoading={stravaLoading}
+              hasPaidAccess={hasPaidAccess}
+              onUpgrade={onUpgrade}
+              goalPace={goalPace}
+              guidance={guidance}
+              onLinkedComplete={onLinkedComplete}
+              autoMatch={autoMatch}
+            />
+          )}
         </div>
       </div>
     </div>
