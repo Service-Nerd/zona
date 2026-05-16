@@ -27,17 +27,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 - 🔲 **Universal Links** (defer until production domain is live) — replace custom URL schemes with `https://` deep links. Needs `apple-app-site-association` file at the domain root + Associated Domains entitlement in Xcode. Associated Domains capability enabled in Apple Developer portal 2026-05-08; awaiting custom domain. Better trust + UX than custom schemes; not blocking v1.
 - ✅ **Build / signing pipeline** — Xcode automatic signing configured 2026-05-15. `APNS_PRODUCTION` flipped to `1` in Vercel for TestFlight. First TestFlight archive uploaded 2026-05-15 (TestFlight Internal Only).
 - ✅ **Migration `orientation_seen`** — column exists in `user_settings`, read on load + written on completion. Done.
-- 🔲 **LaunchScreen redesign — match web loading screen** *(Xcode change, requires new TestFlight archive)*
-  Currently the native `LaunchScreen.storyboard` shows a large concentric-circles graphic that overflows the screen, followed by the web loading screen (warm slate background + Zonna wordmark + tagline). The two screens look unrelated, making the boot feel broken.
-  **Goal:** make the native launch screen visually identical to the web loading screen so the transition is invisible.
-  **Spec:**
-  - Background: `#F3F0EB` (warm slate — matches `var(--bg)` and Capacitor `backgroundColor`)
-  - Centre: Zonna wordmark — use a static PNG export of the wordmark SVG at `@2x` / `@3x` (add to `ios/App/App/Assets.xcassets`). Width ~120pt, vertically centred slightly above mid-screen (same visual weight as the web screen)
-  - Below wordmark: UILabel — `"SLOW DOWN. YOU'VE GOT A DAY JOB."` — Inter Regular, 11pt, `#8A857D`, letter-spacing 0.12em, centred, 10pt below wordmark (matches `BRAND.tagline` rendered in the web loading state)
-  - No concentric circles, no other elements, no gradient
-  - **Minimum viable version** (if wordmark export is blocked): solid `#F3F0EB` background only — background colour already matches, so the transition is seamless even with no text
-  **Why this matters:** Apple reviewers see the launch screen; a jarring transition looks unfinished. Also first impression for every cold start.
-  **In Xcode:** open `ios/App/App/Base.lproj/LaunchScreen.storyboard` → delete existing image view → set view background colour to `#F3F0EB` → add Image View centred (wordmark PNG) → add Label below → done. Then `npx cap sync ios` is not needed (LaunchScreen is a pure native asset).
+- ✅ **LaunchScreen redesign — solid Warm Slate, no circles** — shipped 2026-05-16 (LAUNCH-SCREEN-01). Storyboard reduced to a plain `UIView` with `backgroundColor = #F3F0EB`; orphaned `Splash.imageset` (1366×1366 concentric-circles PNG) left in `Assets.xcassets` for now (no storyboard reference, harmless ~840KB bundle weight — cleanup deferred). The wordmark/tagline native variant from the original spec was deliberately not built — minimum-viable solid-colour fix lets the parametrised web loading screen (in `DashboardClient.tsx`) be the only branded boot surface, which means `BRAND.tagline` rename safety is preserved without re-archiving. **Requires new TestFlight archive** for users to see it — Xcode manual step.
 
 ### C. Vercel env config
 
