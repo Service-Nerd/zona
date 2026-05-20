@@ -83,6 +83,13 @@ export async function savePlanForUser(
       { user_id: userId, plan_json: plan, updated_at: new Date().toISOString() },
       { onConflict: 'user_id' }
     )
+
+  // PLAN-VOICE-AI: invalidate cached weekly notes whenever the plan changes.
+  // Reshapes, confirmed adjustments, reverts, recalibrations, and full
+  // regenerations all flow through here — a cached note narrating sessions
+  // that no longer exist is brand-destroying, so invalidation is en bloc and
+  // the route regenerates lazily on next Plan-screen view.
+  await supabase.from('plan_weekly_notes').delete().eq('user_id', userId)
 }
 
 // Parse a YYYY-MM-DD string as local midnight — avoids UTC-offset week mismatches

@@ -355,36 +355,90 @@ Integration: `DashboardClient.tsx` → `AdjustmentBanner` wrapper (owns API call
 
 ### 11. RestraintCard
 
-The brand's counter-intuitive moment — showing restraint as progress. Only shown when ≥ 2 sessions completed this week (D-009).
+The brand's counter-intuitive moment — showing restraint as progress. **Tier-divergent (ZONE-VIS-01):** three render states ensure the Zone Discipline Score has a permanent slot on Today for every user, regardless of data availability. Never silently hidden — the proprietary metric earns its place from day zero.
+
+**Live (paid/trial + ≥1 analysed run):**
 
 ```
 ┌─────────────────────────────────────────────┐
-│  HOW THIS WEEK WENT          3 / 5 sessions │
+│  ZONE DISCIPLINE            across 3 runs   │
 │                                             │
-│  78%                                        │
+│  84%                                        │
 │                                             │
-│  of your runs were Zone 2 sessions.         │
-│  That's why you're getting faster.          │
+│  of your time was spent in Zone 2.          │
+│  Easy was easy. That's the work.            │
 └─────────────────────────────────────────────┘
 ```
 
-**Structure:**
-- Background: `--card`, border: `1px solid --line`, radius: `var(--radius-lg)`, padding: `20px`
-- Eyebrow row: `10px 700 --mute uppercase 0.08em tracking` left, meta `10px 400 --mute-2` right
-- Percent: `44px 800 tabular-nums -1.5px tracking --ink` + `22px 600 --moss "%"`
-- Body: `13px 400 --ink-2`, line-height 1.45 — supports `<strong>` for `--ink 600` emphasis
+**Pending (paid/trial pre-data):**
 
-**Props:**
-```tsx
-label?: string          // default "How this week went"
-percent: number         // 0–100
-meta?: string           // e.g. "3 / 5 sessions" or "32 / 44km"
-body: React.ReactNode   // supports <strong> for emphasis
+```
+┌─────────────────────────────────────────────┐
+│  ZONE DISCIPLINE                            │
+│                                             │
+│  —%                       (muted)           │
+│                                             │
+│  Your first score lands after a couple of   │
+│  analysed runs. Kit's watching.             │
+└─────────────────────────────────────────────┘
 ```
 
-**Gate rule (D-009):** Show only when `completedThisWeek.length >= 2`. Zone 2 percent derived from session types (easy/long/recovery/run), not Strava HR — works for all users.
+**Locked (free user):**
 
-Reference: `components/shared/RestraintCard.tsx`
+```
+┌─────────────────────────────────────────────┐
+│  ZONE DISCIPLINE             (--bg-soft)    │
+│                                             │
+│  —%                       (muted, 0.4 op)   │
+│                                             │
+│  The score that names the medium-hard       │
+│  middle. Connect Strava and upgrade to      │
+│  start scoring.                             │
+│                                             │
+│  Unlock score →           (moss text link)  │
+└─────────────────────────────────────────────┘
+```
+
+**Structure (live + pending):**
+- Background: `--card`, border: `1px solid --line`, radius: `var(--radius-lg)`, padding: `20px`
+- Eyebrow row: `10px 700 --mute uppercase 0.08em tracking` left, meta `10px 400 --mute-2` right (live only)
+- Percent: `44px 800 tabular-nums -1.5px tracking` — `--ink` (live) or `--mute` 0.5 opacity (pending)
+- Pct sign: `22px 600` — `--moss` (live) or `--mute` 0.5 opacity (pending)
+- Body: `13px 400 --ink-2`, line-height 1.45 — supports `<strong>` for `--ink 600` emphasis
+
+**Structure (locked):**
+- Background: `--bg-soft` (signals locked), border + radius + padding as above
+- Eyebrow row: same as live (no meta)
+- Percent + pct sign: muted `—%` at 0.4 opacity (matches `RestraintCardSkeleton`)
+- Body: `13px 400 --mute`, line-height 1.55
+- CTA: `12px 600 --moss` text button "Unlock score →" — no background, no border, single tap target
+
+**Data source:**
+- Live percent is **HR-derived** from `run_analysis.hr_in_zone_pct` across the week's completed analysed runs — paid feature (requires Strava + run analysis pipeline).
+- Pending state is reached when the paid feature is on but the user has no analysed runs yet (early trial, no Strava connected, or zero completions).
+- Locked state is reached when the user is on the free tier.
+
+**Props (discriminated union):**
+```tsx
+// Live (default — state omitted ⇒ live)
+{ state?: 'live'; label?: string; percent: number; meta?: string; body: React.ReactNode }
+// Pending
+{ state: 'pending'; label?: string }
+// Locked
+{ state: 'locked'; label?: string; onUpgrade?: () => void }
+```
+
+`label` defaults to `'Zone discipline'` across all states.
+
+**Tier-divergent rules:** The Today-screen wrapper picks state from `hasPaidAccess` and `zoneDisciplinePercent`:
+- `!hasPaidAccess` → `locked`
+- `!runAnalysisReady && completedThisWeek.length > 0 && zoneDisciplinePercent === null` → `RestraintCardSkeleton` (existing loading shell)
+- `zoneDisciplinePercent === null` → `pending`
+- otherwise → `live`
+
+Tier prop travels from `DashboardClient` → `TodayScreen` → the wrapper around `RestraintCard`. RestraintCard itself is data-driven by `state` — no tier logic inside the component.
+
+Reference: `components/shared/RestraintCard.tsx`. Integration: `DashboardClient.tsx` → `TodayScreen` (ZONE-VIS-01 block).
 
 ---
 
@@ -933,11 +987,16 @@ Inline this-week coaching surface on the Plan screen. Sibling to `PlanCoachingCa
 - Items: `12px 400 --ink-2` line-height 1.55, gap 6px between items
 - Max 2 items on this surface (Coach screen's `PlanCoachingCard` shows 3)
 
-**Provenance rule (critical):**
-- This is **rule-engine output**, derived from session shape + phase + race countdown — NO AI involved
-- Does NOT use `<CoachByline>` or `<AIMark>` (per ui-patterns.md §16 / §16b)
-- Same treatment as Today's plan-coach-note (also rule-derived, also no byline)
-- When PLAN-VOICE-AI ships (backlog), this surface gains a `<CoachByline color="moss" role="This week" />` and the rail moves from decorative-moss to the canonical AI-card-rail pattern
+**Provenance rule (critical) — tier-divergent (PLAN-VOICE-AI, shipped 2026-05-20):**
+
+| Tier | Source | Eyebrow |
+|---|---|---|
+| Free | Rule-engine (`buildWeekVoiceContext` + `getWeekVoiceHeadline` + `getWeekVoiceItems`) | "THIS WEEK" label — no byline (provenance honesty per §16/§16b) |
+| Trial / Paid (ready) | AI via `POST /api/plan-weekly-note` (Haiku, cached per `user_id × week_n`) | `<CoachByline color="moss" role="This week" onClick={→ Coach} />` |
+| Trial / Paid (loading) | Skeleton placeholder lines matching final shape (no reflow) | `<CoachByline color="moss" role="This week" working onClick={→ Coach} />` — the pulsing sparkle replaces any spinner |
+| Trial / Paid (failure) | Silent fallback to rule-engine (ADR-006) | Same as Free row |
+
+The 3px moss left rail is the **canonical AI-card rail** (Pattern 16b) for paid users, and a coaching-surface accent for free users — same colour token either way, single visual rule across tiers. Continuity per AI-DEPTH-04/10: the most recent prior weekly note feeds the prompt with the "reference at most once when this week tracks against it" rule. Cache is invalidated en bloc on any plan save (`lib/plan.ts → savePlanForUser`) so a regenerated plan never narrates sessions that no longer exist; the next Plan-screen view regenerates against the new session shape.
 
 **Rules:**
 - Render only when there's a current week in the plan (skip if `getCurrentWeekIndex` doesn't resolve)

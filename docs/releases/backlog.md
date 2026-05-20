@@ -120,8 +120,6 @@ After Vercel deploy, verify with agent-browser:
 
 ### Plan screen
 
-- 🔲 **PLAN-VOICE-AI — AI-generated week voice on Plan screen** *(scoped 2026-05-14, deferred from PLAN-REDESIGN-01)* — upgrades the Plan screen's voice card from rule-engine derivation (`getWeekVoiceHeadline` / `getWeekVoiceItems` in `DashboardClient.tsx`) to a real AI surface. New `POST /api/plan-weekly-note` route fetches the week's session shape + phase + race countdown + previous week's note (continuity per AI-DEPTH-04/10 pattern) and returns a one-sentence headline + 1–2 items in Kit's voice. Cached per `(user_id, week_n)` to avoid re-generation cost. When this ships, the Plan voice card gains a `<CoachByline color="moss" role="This week" onClick={→ Coach} />` and a 3px moss left rail (already shipped as the rail). UI surface stays put — only the data source changes. Tier: PAID. Effort: M (~1 day). Dependency: reuses existing AI-DEPTH-04 continuity-memory pattern.
-
 - 🔲 **PLAN-STRIP-EXPAND — Tap-to-expand WeekStripCard on Plan screen** *(scoped 2026-05-14, deferred from PLAN-REDESIGN-01)* — strip cards in the "Later" section are currently read-only. Move/swap is restricted to Now + Next weeks (the typical adjustment window). For users who need to move sessions in a Later week (e.g. planned trip 4 weeks out), add tap-to-expand: tap a strip card → it morphs inline into a full `<WeekCard>` with day rows, move/swap interactions. Tap the header again to collapse. State: `expandedLaterWeek: number \| null` in `PlanCalendar.tsx` (single-week expansion at a time keeps the UI predictable). Tier: FREE. Effort: S (~½ day). Dependency: none — additive to PLAN-REDESIGN-01.
 
 ---

@@ -1,4 +1,4 @@
-const TRIAL_DAYS = 14
+export const TRIAL_DAYS = 14
 
 export type UserTier = 'free' | 'trial' | 'paid'
 

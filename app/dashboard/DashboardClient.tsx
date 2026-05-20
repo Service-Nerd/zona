@@ -12,7 +12,7 @@ import { authedFetch } from '@/lib/supabase/authedFetch'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
 import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
-import { isTrialActive } from '@/lib/trial'
+import { isTrialActive, TRIAL_DAYS } from '@/lib/trial'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
 import { BRAND } from '@/lib/brand'
@@ -1138,7 +1138,7 @@ export default function DashboardClient() {
 
       <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px', overscrollBehavior: 'none' }}>
         {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} />}
-        {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} />}
+        {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} />}
         {screen === 'coach'    && (hasPaidAccess
           ? (() => {
               const wn = getCurrentWeekIndex(plan.weeks) + 1
@@ -4890,40 +4890,49 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           </>
         )}
 
-        {/* Trial nudge — appears when ≤4 days remain (CoachingPrinciples §15, Option A).
-            Calm reminder, not a paywall. The plan stays either way. */}
-        {trialDaysLeft != null && trialDaysLeft > 0 && trialDaysLeft <= 4 && (
-          <div style={{ marginBottom: '16px' }}>
-            <button
-              onClick={onUpgrade}
-              style={{
-                width: '100%', textAlign: 'left', padding: '14px 16px',
-                background: 'var(--card)', border: '1px solid var(--line)',
-                borderLeft: '3px solid var(--moss)',
-                borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px',
-              }}
-            >
-              <div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
-                  {trialDaysLeft === 1
-                    ? 'One day of full access left.'
-                    : `${trialDaysLeft} days of full access left.`}
+        {/* Trial nudge — appears when ≤4 days remain (TRIAL-NUDGE-01).
+            Day-keyed escalation: factual → attachment → loss preview → stark.
+            Calm reminder, not a paywall. Plan stays either way; coaching pauses. */}
+        {trialDaysLeft != null && trialDaysLeft > 0 && trialDaysLeft <= 4 && (() => {
+          const daysIn = TRIAL_DAYS - trialDaysLeft
+          const messages: Record<1 | 2 | 3 | 4, { headline: string; sub: string }> = {
+            4: { headline: 'Four days of full access left.',                 sub: 'Plan is yours either way.' },
+            3: { headline: `Kit's read ${daysIn} days of your runs.`,        sub: 'Three days left to keep him.' },
+            2: { headline: 'Two days. Then this becomes a static plan.',     sub: 'Plan still works. Coaching stops.' },
+            1: { headline: 'One day left.',                                  sub: 'Kit goes quiet at midnight.' },
+          }
+          const msg = messages[trialDaysLeft as 1 | 2 | 3 | 4]
+          return (
+            <div style={{ marginBottom: '16px' }}>
+              <button
+                onClick={onUpgrade}
+                style={{
+                  width: '100%', textAlign: 'left', padding: '14px 16px',
+                  background: 'var(--card)', border: '1px solid var(--line)',
+                  borderLeft: '3px solid var(--moss)',
+                  borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px',
+                }}
+              >
+                <div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
+                    {msg.headline}
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.4 }}>
+                    {msg.sub}
+                  </div>
                 </div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.4 }}>
-                  Plan is yours either way.
-                </div>
-              </div>
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss)', whiteSpace: 'nowrap' }}>
-                See plans →
-              </span>
-            </button>
-          </div>
-        )}
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss)', whiteSpace: 'nowrap' }}>
+                  See plans →
+                </span>
+              </button>
+            </div>
+          )
+        })()}
 
         {/* Trial expired banner — shown when trial has ended and no active subscription.
-            Loss framing: names what stopped. Warn accent (not moss — this is not a nudge).
-            Plan keeps running; coaching is what paused. */}
+            Voice aligned with UpgradeScreen trial-expired headline (TRIAL-NUDGE-01).
+            Warn accent (not moss — this is not a nudge). Plan still runs. */}
         {trialDaysLeft === 0 && !hasPaidAccess && (
           <div style={{ marginBottom: '16px' }}>
             <button
@@ -4938,14 +4947,14 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
             >
               <div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
-                  Coaching has paused.
+                  Kit&rsquo;s gone quiet.
                 </div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.4 }}>
-                  Your plan keeps running. Coaching needs a subscription.
+                  Plan still runs. Coaching needs a sub.
                 </div>
               </div>
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--warn)', whiteSpace: 'nowrap' }}>
-                Keep it going →
+                Bring Kit back →
               </span>
             </button>
           </div>
@@ -5284,30 +5293,45 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         </div>
       )}
 
-      {/* ── ZONE DISCIPLINE CARD ─────────────────────────────────────── */}
-      {/* Title flips based on week phase: "is going" while the week is
-          still active, "went" once the end-of-week boundary passes. */}
+      {/* ── ZONE DISCIPLINE CARD (ZONE-VIS-01) ───────────────────────── */}
+      {/* Tier-divergent. Free users see a locked card with an upgrade CTA.
+          Paid/trial users see pending until their first analysed run, then
+          the live score. Never silently hidden — the proprietary metric
+          earns a permanent slot on Today. */}
       {(() => {
-        const weekStart = parseLocalDate((currentWeek as any).date)
-        const weekEnd   = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 7)
-        const weekIsOver = new Date() >= weekEnd
-        const weekLabel  = weekIsOver ? 'How this week went' : 'How this week is going'
-
-        // Skeleton path: there are completed runs to score this week, but
-        // run_analysis hasn't loaded yet. Render the card shell so the
-        // Today screen layout doesn't reflow when the data lands.
-        if (!runAnalysisReady && completedThisWeek.length > 0 && zoneDisciplinePercent === null) {
+        // Free — locked card (always visible)
+        if (!hasPaidAccess) {
           return (
             <div style={{ padding: '20px 16px 0' }}>
-              <RestraintCardSkeleton label={weekLabel} />
+              <RestraintCard state="locked" onUpgrade={onUpgrade} />
             </div>
           )
         }
-        if (zoneDisciplinePercent === null) return null
+
+        // Skeleton — paid user with completed runs this week but
+        // run_analysis hasn't loaded yet. Avoids layout reflow.
+        if (!runAnalysisReady && completedThisWeek.length > 0 && zoneDisciplinePercent === null) {
+          return (
+            <div style={{ padding: '20px 16px 0' }}>
+              <RestraintCardSkeleton />
+            </div>
+          )
+        }
+
+        // Pending — paid user with no analysed-run data yet
+        // (early trial, no Strava, or no completed runs).
+        if (zoneDisciplinePercent === null) {
+          return (
+            <div style={{ padding: '20px 16px 0' }}>
+              <RestraintCard state="pending" />
+            </div>
+          )
+        }
+
+        // Live — paid user with ≥1 analysed run.
         return (
           <div style={{ padding: '20px 16px 0' }}>
             <RestraintCard
-              label={weekLabel}
               percent={zoneDisciplinePercent}
               meta={`across ${zoneDisciplineHits} ${zoneDisciplineHits === 1 ? 'run' : 'runs'}`}
               body={
@@ -5496,7 +5520,7 @@ function PlanProgressBar({ plan, allCompletions }: { plan: Plan; allCompletions:
   )
 }
 
-function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, preferredUnits = 'km', preferredMetric = 'distance', sessionMetricOverrides = {} }: {
+function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, preferredUnits = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, hasPaidAccess = false, onOpenCoach }: {
   plan: Plan; stravaRuns: any[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   allCompletions: Record<number, Record<string, any>>
@@ -5506,6 +5530,8 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   preferredUnits?: 'km' | 'mi'
   preferredMetric?: 'distance' | 'duration'
   sessionMetricOverrides?: Record<string, 'distance' | 'duration'>
+  hasPaidAccess?: boolean
+  onOpenCoach?: () => void
 }) {
   const currentWeekIndex = getCurrentWeekIndex(plan.weeks)
   const weekNum = currentWeekIndex + 1
@@ -5538,6 +5564,49 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
     return phases.map(p => caps[p] ?? p).join(' → ')
   })()
 
+  // PLAN-VOICE-AI — paid/trial users get an AI-voiced headline + items via
+  // /api/plan-weekly-note (cached per week, regenerated when the plan changes).
+  // Free users keep the rule-engine voice (no fetch). AI failure silently
+  // falls back to the rule-engine path per ADR-006.
+  const [aiNote, setAiNote] = useState<
+    { headline: string; items: string[] } | 'loading' | 'failed' | null
+  >(null)
+
+  useEffect(() => {
+    if (!hasPaidAccess) {
+      setAiNote(null)
+      return
+    }
+    const wk = plan.weeks[currentWeekIndex]
+    if (!wk) return
+    setAiNote('loading')
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await authedFetch('/api/plan-weekly-note', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ week_n: currentWeekIndex + 1 }),
+        })
+        if (cancelled) return
+        if (!res.ok) { setAiNote('failed'); return }
+        const data = await res.json()
+        if (cancelled) return
+        if (typeof data?.headline === 'string') {
+          setAiNote({
+            headline: data.headline,
+            items:    Array.isArray(data.items) ? data.items.slice(0, 2) : [],
+          })
+        } else {
+          setAiNote('failed')
+        }
+      } catch {
+        if (!cancelled) setAiNote('failed')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [hasPaidAccess, currentWeekIndex, plan])
+
   return (
     <div style={{ paddingBottom: '32px' }}>
 
@@ -5563,18 +5632,29 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
         />
       </div>
 
-      {/* ── PLAN VOICE — this-week coaching card ──────────────────────
-          Slim rule-engine-derived voice block; the Plan screen's brand
-          moment. Shares helpers (buildWeekVoiceContext, getWeekVoiceHeadline,
-          getWeekVoiceItems) with PlanCoachingCard on the Coach screen.
-          No CoachByline / AIMark — rule-engine output per provenance rule. */}
+      {/* ── PLAN VOICE — this-week coaching card (PLAN-VOICE-AI) ─────────
+          Tier-divergent: paid/trial users see AI voice with CoachByline.
+          Free users see rule-engine voice (no byline — provenance honesty).
+          AI failure silently falls back to rule-engine (ADR-006).
+          Shares rule-engine helpers (buildWeekVoiceContext et al) with
+          PlanCoachingCard on the Coach screen. */}
       {(() => {
         const wk = plan.weeks[currentWeekIndex]
         if (!wk) return null
-        const ctx = buildWeekVoiceContext(wk, plan)
-        const headline = getWeekVoiceHeadline(ctx)
-        const items = getWeekVoiceItems(ctx, 2)
-        const phaseCap = ctx.phase ? (PHASE_LABELS[ctx.phase] ?? ctx.phase) : null
+        const ctx           = buildWeekVoiceContext(wk, plan)
+        const ruleHeadline  = getWeekVoiceHeadline(ctx)
+        const ruleItems     = getWeekVoiceItems(ctx, 2)
+        const phaseCap      = ctx.phase ? (PHASE_LABELS[ctx.phase] ?? ctx.phase) : null
+
+        // Tier-divergent picker. The three branches collapse to: paid-ready,
+        // paid-loading, or rule (free OR paid-failed OR paid-not-yet-fetched-when-free).
+        const aiReady    = hasPaidAccess && aiNote && aiNote !== 'loading' && aiNote !== 'failed'
+        const isLoading  = hasPaidAccess && aiNote === 'loading'
+        const showByline = !!aiReady || isLoading
+
+        const headline   = aiReady ? (aiNote as { headline: string }).headline : ruleHeadline
+        const items      = aiReady ? (aiNote as { items: string[] }).items     : ruleItems
+
         return (
           <div style={{ padding: '16px 16px 0' }}>
             <div style={{
@@ -5585,18 +5665,28 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
               padding: '14px 16px 14px 19px',
               overflow: 'hidden',
             }}>
-              {/* Moss left rail — coaching surface signal (same accent pattern
-                  as CoachNoteBlock when aiGenerated). 3px wide, inset 8px. */}
+              {/* Moss left rail — coaching surface signal. For paid users this
+                  is now the canonical AI-card rail (Pattern 16b); for free users
+                  it's the rule-engine coaching accent. Same colour either way. */}
               <span style={{
                 position: 'absolute', left: '8px', top: '14px', bottom: '14px',
                 width: '3px', borderRadius: '2px', background: 'var(--moss)',
               }} />
-              {/* Eyebrow row: section label + phase chip on right */}
+              {/* Eyebrow row: CoachByline (paid) or rule-engine label (free) + phase chip */}
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{
-                  fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-                  color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
-                }}>This week</span>
+                {showByline ? (
+                  <CoachByline
+                    color="moss"
+                    role="This week"
+                    working={isLoading}
+                    onClick={onOpenCoach}
+                  />
+                ) : (
+                  <span style={{
+                    fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+                    color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
+                  }}>This week</span>
+                )}
                 {phaseCap && (
                   <span style={{
                     marginLeft: 'auto',
@@ -5605,22 +5695,34 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
                   }}>{phaseCap}</span>
                 )}
               </div>
-              {/* Headline */}
-              <div style={{
-                fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
-                color: 'var(--ink)', lineHeight: 1.4, letterSpacing: '-0.01em',
-                marginBottom: items.length > 0 ? '8px' : 0,
-              }}>{headline}</div>
-              {/* Items — max 2 on this surface; full PlanCoachingCard on Coach shows 3 */}
-              {items.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {items.map((item, i) => (
-                    <div key={i} style={{
-                      fontFamily: 'var(--font-ui)', fontSize: '12px',
-                      color: 'var(--ink-2)', lineHeight: 1.55,
-                    }}>{item}</div>
-                  ))}
+              {isLoading ? (
+                /* Skeleton — matches the final layout shape so there's no reflow
+                   when AI lands. CoachByline's pulsing sparkle carries the
+                   working-state cue (no spinner per ui-patterns.md). */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                  <div style={{ height: '17px', width: '85%', borderRadius: '4px', background: 'var(--bg-soft)', opacity: 0.6 }} />
+                  <div style={{ height: '14px', width: '70%', borderRadius: '4px', background: 'var(--bg-soft)', opacity: 0.5 }} />
                 </div>
+              ) : (
+                <>
+                  {/* Headline */}
+                  <div style={{
+                    fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
+                    color: 'var(--ink)', lineHeight: 1.4, letterSpacing: '-0.01em',
+                    marginBottom: items.length > 0 ? '8px' : 0,
+                  }}>{headline}</div>
+                  {/* Items — max 2 on this surface; full PlanCoachingCard on Coach shows 3 */}
+                  {items.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {items.map((item, i) => (
+                        <div key={i} style={{
+                          fontFamily: 'var(--font-ui)', fontSize: '12px',
+                          color: 'var(--ink-2)', lineHeight: 1.55,
+                        }}>{item}</div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

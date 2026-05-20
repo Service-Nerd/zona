@@ -10,26 +10,28 @@
 
 import { useState } from 'react'
 import { Capacitor } from '@capacitor/core'
-import { PRICING } from '@/lib/brand'
+import { BRAND, PRICING } from '@/lib/brand'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 
-// Ordered by recurring value — weekly coaching and zone scoring are the ongoing proof of
-// subscription value. AI plans are high at onboarding but low thereafter.
+// Ordered by recurring value — Kit's daily read and the weekly zone score are the ongoing
+// proof of subscription value. AI plan generation is high at onboarding but low thereafter.
+// Kit-led copy: the paid product is a named coach, not a feature list. Names go through
+// BRAND.coachName per the parameterisation rule.
 const FEATURES = [
-  { name: 'Weekly zone coaching',  detail: 'Your zone discipline score, every week. Honest.' },
-  { name: 'Strava analysis',       detail: 'Your actual paces and HR. Not guesses.' },
-  { name: 'AI session feedback',   detail: 'After every run. Knows your plan and your zones.' },
-  { name: 'AI training plans',     detail: 'Built around your race, not a template.' },
-  { name: 'Dynamic reshaping',     detail: 'Miss a week. The plan adapts.' },
+  { name: `${BRAND.coachName} reads every run`, detail: 'Tells you what you actually did.' },
+  { name: 'Weekly zone score',                  detail: 'How disciplined was your week. Every Sunday.' },
+  { name: 'Real paces and HR',                  detail: "What you did vs the zone you should've been in." },
+  { name: 'A plan that moves',                  detail: `Miss a week. ${BRAND.coachName} reshapes it.` },
+  { name: 'Built for your race',                detail: 'Your race, your week, your easy pace.' },
 ]
 
 // Loss framing — shown when the user's trial has expired.
-// Names specifically what stopped, not what they could have.
+// Names specifically what stopped. Kit is the protagonist who's gone quiet.
 const LOSSES = [
-  { name: 'Zone discipline coaching', detail: 'Your weekly zone score has paused.' },
-  { name: 'Weekly coaching reports',  detail: 'No more weekly reports.' },
-  { name: 'Session feedback',         detail: 'Post-run analysis has stopped.' },
-  { name: 'Plan adjustments',         detail: 'Your plan will no longer adapt.' },
+  { name: `${BRAND.coachName}'s gone quiet`, detail: "He's not reading your runs." },
+  { name: 'Zone score paused',               detail: 'No new ones for now.' },
+  { name: 'Sundays got quieter',             detail: 'No weekly review.' },
+  { name: 'The plan stops moving',           detail: "Miss a week, you're on your own." },
 ]
 
 export default function UpgradeScreen({ onBack, trialExpired = false }: {
@@ -126,8 +128,8 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
 
   const items    = trialExpired ? LOSSES    : FEATURES
   const accent   = trialExpired ? 'var(--amber)' : 'var(--teal)'
-  const headline = trialExpired ? 'Your coaching has paused.' : "Your trial's done."
-  const sub      = trialExpired ? "14 days done. Here's what stopped." : 'Time to make it official.'
+  const headline = trialExpired ? `${BRAND.coachName}'s gone quiet.` : `Keep ${BRAND.coachName} on.`
+  const sub      = trialExpired ? "14 days done. Here's what stopped." : 'Pick the coach, not the template.'
 
   return (
     <div style={{
