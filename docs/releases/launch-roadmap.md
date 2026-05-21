@@ -214,6 +214,7 @@ Drafted 2026-05-21 to make submission turnkey:
 - **`production-build-checklist.md`** — pre-archive runbook: env-var verification, Xcode scheme + entitlements check, manual smoke protocol, post-upload verification, troubleshooting table.
 - **`journey-test.md`** — 10-step end-to-end funnel test (landing → login → wizard → Today → session → log → reflect → trial-end → upgrade), runnable manually or via agent-browser. Run once per TestFlight cycle.
 - **`beta-tester-briefing.md`** — two copy-paste-ready messages for the 5–7 TestFlight testers: the initial ask (with per-profile variants) + the post-install brief covering what to look for and how to send feedback. Plus an exit-survey template.
+- **`rejection-response-templates.md`** — defensive doc. Pre-drafted root-cause checklists and response templates for the 6 most likely Apple rejection categories (§3.1.2(a) subscription disclosure, §5.1.1 privacy, §2.1 demo account, §1.4.1 health claims, 5.1.1(v) account deletion, 2.3 accurate metadata). Cuts iteration time on a rejection from days to hours.
 
 When in doubt, work through them in the order above: copy first (content production), audit second (review-rejection prevention), build checklist + journey test last (turn the crank).
 
