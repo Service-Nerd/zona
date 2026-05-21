@@ -210,10 +210,11 @@ The journey test in the backlog is one item: *create account → onboarding → 
 Drafted 2026-05-21 to make submission turnkey:
 
 - **`app-store-copy.md`** — Name, subtitle, keywords, description, promotional text, per-product Review Information, screenshots specification with 5-shot narrative arc.
-- **`pre-submission-audit.md`** — Apple Data Privacy questionnaire answers (ready to paste), Info.plist audit (one BLOCKER: `ITSAppUsesNonExemptEncryption` missing), entitlements verification, admin-surface and Vetra-legacy cleanup findings.
+- **`pre-submission-audit.md`** — Apple Data Privacy questionnaire answers (ready to paste), Info.plist audit, entitlements verification, admin-surface and Vetra-legacy cleanup findings. Most action items resolved in commit `6aa16cf`; two minor verifications remain (Release scheme entitlements + privacy URL 200 check).
 - **`production-build-checklist.md`** — pre-archive runbook: env-var verification, Xcode scheme + entitlements check, manual smoke protocol, post-upload verification, troubleshooting table.
+- **`journey-test.md`** — 10-step end-to-end funnel test (landing → login → wizard → Today → session → log → reflect → trial-end → upgrade), runnable manually or via agent-browser. Run once per TestFlight cycle.
 
-When in doubt, work through them in the order above: copy first (content production), audit second (review-rejection prevention), build checklist last (turn the crank).
+When in doubt, work through them in the order above: copy first (content production), audit second (review-rejection prevention), build checklist + journey test last (turn the crank).
 
 ---
 

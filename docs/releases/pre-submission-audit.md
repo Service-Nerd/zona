@@ -185,13 +185,15 @@ No `/debug`, `/test`, or `/_internal` routes exist under `app/`. No conditional 
 
 In order of urgency:
 
-- [ ] **Add `ITSAppUsesNonExemptEncryption: false` to `Info.plist`** (BLOCKER — 1-minute fix)
-- [ ] **Verify Xcode Release scheme uses `AppRelease.entitlements`** (5 minutes)
-- [ ] **Run the `is_admin` audit query against production Supabase** (2 minutes)
-- [ ] **Verify Strava screen gates on `isAdmin`** (5 minutes — grep + read)
+- [x] **Add `ITSAppUsesNonExemptEncryption: false` to `Info.plist`** — committed in `6aa16cf` (2026-05-21)
+- [ ] **Verify Xcode Release scheme uses `AppRelease.entitlements`** (5 minutes — do at next archive)
+- [x] **Run the `is_admin` audit query against production Supabase** — confirmed 2026-05-21: only Russ has `is_admin = true`
+- [x] **Verify Strava screen gates on `isAdmin`** — defense-in-depth gate added at render boundary in `6aa16cf` (Admin screen also gated)
 - [ ] **Verify `https://www.zonna.run/privacy` returns 200** (1 minute — open browser)
-- [ ] *(Optional, low-priority)* Change `UIRequiredDeviceCapabilities` to `arm64`
-- [ ] *(Optional, low-priority)* Lock orientation to portrait-only
+- [x] *(Optional, low-priority)* Change `UIRequiredDeviceCapabilities` to `arm64` — done 2026-05-21
+- [x] *(Optional, low-priority)* Lock orientation to portrait-only — done 2026-05-21 (still landscape-permissive on iPad)
+
+**Net remaining:** verify-Release-scheme-uses-AppRelease.entitlements (do during next Xcode archive) + verify-privacy-URL-returns-200 (1-minute browser check).
 
 ---
 

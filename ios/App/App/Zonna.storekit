@@ -22,9 +22,9 @@
     "_billingIssuesEnabled" : false,
     "_disableDialogs" : false,
     "_failTransactionsEnabled" : false,
-    "_locale" : "en_US",
+    "_locale" : "en_GB",
     "_renewalBillingIssuesEnabled" : false,
-    "_storefront" : "USA",
+    "_storefront" : "GBR",
     "_storeKitErrors" : [
 
     ],
