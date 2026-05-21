@@ -72,10 +72,10 @@ These gate the longest dependency chains. Without answers, downstream work stall
 | Decision | Options | Blocks |
 |---|---|---|
 | ~~**Domain name**~~ | ✅ **`zonna.run` purchased 2026-05-15.** Point DNS at Vercel to unblock downstream. | Privacy hosting, Universal Links, GTM-08 go-live, OG image, paid acquisition |
-| **DSA EU trader strategy** | Home address / virtual office / Ltd registered office / defer EU launch | EU App Store availability (US/UK ship doesn't need this) |
+| ~~**DSA EU trader strategy**~~ | ✅ **EU deferred to v1.1+ (2026-05-21).** Ship US/UK/anglosphere at v1 without trader info. EU verification adds 1–2 weeks of uncontrollable wait time and the address-strategy decision deserves more thought than launch prep allows. Switching EU on later is a 30-min ASC config + verification wait — fully reversible. Leading option when revisited: virtual office (~£25–£40/month, serviced office that accepts post for Apple verification). Home address rejected (publicly listed forever, privacy downside doesn't unwind). Ltd only if incorporating anyway for tax/liability/fundraising. | — |
 | **Beta testers** | Pick 5–10 people for TestFlight internal track | TestFlight beta phase — can't start without testers |
-| **Web checkout at launch?** | Defer Stripe to v1.1 / ship Stripe alongside iOS | Stripe product setup, Stripe env vars, web upgrade flow QA |
-| **Apple Small Business Program** | Re-attempt enrolment (15% vs 30% cut) | Not a blocker for submission, but every day delayed = 15% lost revenue once live |
+| ~~**Web checkout at launch?**~~ | ✅ **Deferred to v1.1 (2026-05-21).** iOS-only launch. Stripe stays parked — focus on Apple for v1, fewer moving parts through review. Reopen ~2 weeks post-launch alongside marketing-site public flip + paid acquisition. | — |
+| ~~**Apple Small Business Program**~~ | ✅ Enrolled 2026-05-15. 15% commission active. | — |
 
 ---
 
@@ -88,7 +88,7 @@ External setup; can all run concurrently. Each is a partial-day task + waiting p
 | Buy domain | Russ | 30 min + DNS propagation (1–48h) | Once decided. Point at Vercel project. |
 | RevenueCat account + app + entitlement | Russ | ~2h | Link to existing ASC products (`zonna_premium_monthly`, `zonna_premium_annual`). Set entitlement ID `zonna_premium`. Configure webhook → Supabase. |
 | Apple Dev signing certificates + provisioning profiles | Russ | ~1h | Required before any TestFlight build. App Store Connect API key for CI uploads (Vercel doesn't build iOS — Mac does). |
-| Retry Apple Small Business Program enrolment | Russ | 30 min | Direct URL: https://appstoreconnect.apple.com/business |
+| ~~Retry Apple Small Business Program enrolment~~ | ✅ Done 2026-05-15 | — | 15% commission rate active |
 | (Optional) Apply for DSA EU trader info | Russ | depends on strategy chosen | Only if shipping EU at v1. |
 
 ---
@@ -115,9 +115,9 @@ Cosmetic but submission-blocking.
 | Asset | Required sizes / counts | Notes |
 |---|---|---|
 | **Screenshots** | iPhone 6.7" + 6.5" + 5.5" (3 sets, ~5 shots each) | Capture from running simulator at correct device size. Suggested shots: Today screen with active session card, Session detail with coach note, Plan screen, Coach screen, MeScreen profile. Apple is strict — must be device-frame-accurate. |
-| **App Store description** | ~4000 chars | Lead with `BRAND.appStoreSubtitle` ("Training plans that stop you overtraining."). Body: overtraining thesis, what's included, what's not (honest), HealthKit privacy stance. End with `BRAND.brandStatement` ("You can't outrun your easy days."). |
-| **Keywords** | 100-char comma list | Suggested: zone training, heart rate, hr training, marathon training, half marathon plan, 10k plan, easy runs, base training, polarised training |
-| **Subtitle** | 30 chars | `BRAND.appStoreSubtitle` is the canonical line; verify it fits 30 chars. ("Training plans that stop you overtraining." = 43 chars → too long. Need a shorter variant. Decision needed.) |
+| **App Store description** | ~4000 chars | First draft produced 2026-05-21 (see `docs/releases/app-store-copy.md`). Lead with `BRAND.appStoreSubtitle`, body covers overtraining thesis + what's in/out + HealthKit privacy stance, end with `BRAND.brandStatement`. Awaiting review. |
+| **Keywords** | 100-char comma list | Draft produced 2026-05-21 (see `docs/releases/app-store-copy.md`). 96/100 chars. Awaiting review. |
+| **Subtitle** | 30 chars | ✅ Done — `BRAND.appStoreSubtitle` = `"Plans that stop overtraining."` = 29 chars. Fits. |
 | **Preview video** | optional | 15–30 second screen recording. Defer; not blocking. |
 | **App icon** | already done | ✅ — bundled with Capacitor shell. |
 
@@ -151,7 +151,7 @@ Cosmetic but submission-blocking.
 Don't get pulled back into these. They're documented elsewhere.
 
 - **Stripe web checkout** (unless web-checkout decision flips) — Stripe path stays for post-launch.
-- **DSA EU trader compliance** — defer EU launch to v1.1 unless trader address is already in hand.
+- **DSA EU trader compliance** — EU deferred to v1.1+ (decision 2026-05-21). Ship US/UK/anglosphere only at v1. Virtual office leading option when revisited; home address rejected.
 - **AI coaching depth** (AI-DEPTH-02b/03/08, etc.) — every one of these is post-launch.
 - **GTM-09/10 trial emails** — needs email platform; ships in NEXT after launch.
 - **GTM-08 marketing site go-live** — built and dark-launched; flip env when domain + TestFlight both land.
@@ -161,6 +161,59 @@ Don't get pulled back into these. They're documented elsewhere.
 - **Tech debt items** — none are submission-blocking.
 
 If a "but we should also..." thought lands during launch prep, write it in the backlog and move on. Restraint is the brand.
+
+---
+
+## Beta tester profile (target: 5–7 testers)
+
+Drafted 2026-05-21 to help pick the TestFlight internal list. Aim for **coverage of user-type, not quantity**. Don't just invite friends; deliberately seed the testers around the failure modes you most want to catch.
+
+| # | Profile | What they catch |
+|---|---|---|
+| 1 | **Serious-amateur runner in active race build** | The core target. Will exercise every feature daily. Best signal on whether "the coach knows what they're doing." |
+| 2 | **Returning runner post-injury** | The brand thesis case. Will stress-test the "easy days are too hard" coaching voice and the injury-aware plan reshaping. |
+| 3 | **First-time marathoner with no plan experience** | Onboarding stress test. The wizard, Tanaka HRmax estimate, the "what's a zone?" moment — if it doesn't land here, the product fails for half the App Store search audience. |
+| 4 | **Garmin / Strava power user** | The conversion friction case. Will resent migrating; will complain about anything missing vs their existing app. Best signal on what to defend and what to add. |
+| 5 | **iOS-savvy user with months of HealthKit history** | Tests data ingestion edge cases — long workout history, mixed sources (Apple Watch + Strava + manual), gaps. The cohort-similarity engine (R25 cut #1) needs density to fire correctly. |
+| 6 | **Non-runner who'll judge the marketing surface** | Critical for landing-page copy reactions, screenshot judgment, "would I download this" gut-check. Doesn't need to use the product. |
+| 7 | **(Optional) A pace-junkie who treats HR as backup** | Validates whether the zone-first brand pitch lands or feels backwards. If they push back ("but I need to know my pace") the messaging needs tightening. |
+
+**Don't:** invite 5–7 versions of profile 1. You already are profile 1.
+
+**Process:** App Store Connect → TestFlight → Internal Testing → Add Testers (max 100, but a focused 5–7 gives more usable signal). Apple TestFlight invitation needs each tester's Apple ID email. Allow 24h for first install.
+
+---
+
+## Full journey test (agent-browser, pre-submission)
+
+The journey test in the backlog is one item: *create account → onboarding → plan generation → log session → reflect → trial-end → upgrade*. Worth scripting before TestFlight smoke so any regression caught on real device can be diffed against a known-passing browser baseline.
+
+**Suggested steps:**
+
+1. Boot Vercel preview (or `localhost:3000`); clear all cookies/local storage.
+2. Sign in via Google OAuth using a fresh test account (or use the existing test fixture).
+3. Run through wizard: race distance, race date, training_age, current weekly km, days/week, long-run day, no injuries.
+4. Wait for plan generation; assert plan loads on Today screen with a session card.
+5. Tap session card → assert detail view renders prescription (zone, HR target, pace bracket, description).
+6. Log session manually (no Strava match needed): RPE 4, "felt good".
+7. Assert reflect view renders with the post-run analysis (or "Kit is analysing…" pending state).
+8. **Trial-end simulation:** override `trial_ends_at` via Supabase to yesterday, refresh dashboard.
+9. Assert trial-expired UI appears; tap upgrade → assert UpgradeScreen renders with LOSSES variant.
+10. Assert disclosure copy present, both pricing buttons visible, terms + privacy links clickable.
+
+**Don't run a real purchase** in this script — that's TestFlight territory (StoreKit sandbox handles iOS, Stripe test mode handles web). The browser script's job is the funnel UI, not the payment leg.
+
+---
+
+## Companion docs
+
+Drafted 2026-05-21 to make submission turnkey:
+
+- **`app-store-copy.md`** — Name, subtitle, keywords, description, promotional text, per-product Review Information, screenshots specification with 5-shot narrative arc.
+- **`pre-submission-audit.md`** — Apple Data Privacy questionnaire answers (ready to paste), Info.plist audit (one BLOCKER: `ITSAppUsesNonExemptEncryption` missing), entitlements verification, admin-surface and Vetra-legacy cleanup findings.
+- **`production-build-checklist.md`** — pre-archive runbook: env-var verification, Xcode scheme + entitlements check, manual smoke protocol, post-upload verification, troubleshooting table.
+
+When in doubt, work through them in the order above: copy first (content production), audit second (review-rejection prevention), build checklist last (turn the crank).
 
 ---
 

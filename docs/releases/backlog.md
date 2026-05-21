@@ -16,7 +16,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 - ✅ **Terms of Service** — draft shipped at `app/terms/page.tsx` (mirrors `/privacy` structure, brand voice, covers both Stripe-web and Apple-IAP subscription paths, England & Wales governing law). Linked from pre-login screen alongside privacy. **Approved by user 2026-05-05.** Hosting at the production URL is gated on the custom-domain task below — same blocker as `/privacy`.
 - ✅ **Privacy policy hosted** — live at `https://www.zonna.run/privacy`
 - 🔄 **App Store Connect setup** — partial (2026-05-08). Done: app record created (Bundle ID `app.zonna.ios`), subscription group `Zonna Premium`, monthly product `zonna_premium_monthly` (£7.99), annual product `zonna_premium_annual` (£59.99), 14-day free trial configured on both. Outstanding: screenshots for all required device sizes, App Store description, keywords, per-product Review Information.
-- 🔲 **DSA trader compliance** — EU Digital Services Act requires Apple to display verified trader contact info on EU listings. Selling subscriptions = trader by default. Apple needs trader name, deliverable street address (no PO Box), phone, email — all become public on EU App Store listings. Decide on address strategy (home / virtual office / Ltd registered office) before declaring. Blocks EU distribution only — not US/UK ship. Deferred 2026-05-08.
+- ⏸️ **DSA trader compliance** — EU Digital Services Act requires Apple to display verified trader contact info on EU listings (name, deliverable street address — no PO Box, phone, email — all become public). Selling subscriptions = trader by default. **EU deferred to v1.1+ (decision 2026-05-21).** v1 ships US/UK/anglosphere only — neither requires trader disclosure. Switching EU on later is a 30-min ASC config + 1–2 week verification wait — fully reversible. Address strategy when revisited: virtual office (~£25–£40/month, serviced office that accepts post for Apple verification) is the leading default for a solo founder. Home address rejected — publicly listed forever, privacy downside doesn't unwind. Ltd only if incorporating anyway for tax/liability/fundraising reasons.
 
 ### B. Engineering blockers
 
@@ -36,15 +36,15 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 - ✅ `CRON_SECRET` — confirmed present
 - ✅ `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` — confirmed present
 - ✅ `NEXT_PUBLIC_APP_URL` — confirmed present
-- 🔲 `STRIPE_SECRET_KEY` — needs Stripe product setup first
-- 🔲 `STRIPE_WEBHOOK_SECRET` — needs Stripe webhook endpoint created
-- 🔲 `STRIPE_PRICE_MONTHLY` + `STRIPE_PRICE_ANNUAL` — needs Stripe product + price IDs
+- ⏸️ `STRIPE_SECRET_KEY` — **deferred to v1.1 (2026-05-21).** iOS-only launch.
+- ⏸️ `STRIPE_WEBHOOK_SECRET` — deferred to v1.1.
+- ⏸️ `STRIPE_PRICE_MONTHLY` + `STRIPE_PRICE_ANNUAL` — deferred to v1.1.
 - ✅ `REVENUECAT_WEBHOOK_SECRET` — added to Vercel 2026-05-15
 - ✅ `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_TOPIC`, `APNS_PRODUCTION` — set. `APNS_PRODUCTION=1` flipped 2026-05-15 for TestFlight.
 
 ### D. External setup
 
-- 🔲 **Stripe product + price** — "Zonna Premium", £7.99/month + £59.99/year, 14-day trial
+- ⏸️ **Stripe product + price** — "Zonna Premium", £7.99/month + £59.99/year, 14-day trial. **Deferred to v1.1 (2026-05-21).** iOS-only launch; revisit ~2 weeks post-launch alongside marketing-site public flip + non-iOS acquisition.
 - ✅ **RevenueCat app + entitlement** — project created, iOS app added (bundle ID `app.zonna.ios`), In-App Purchase key configured, products `zonna_premium_monthly` + `zonna_premium_annual` added manually, entitlement `zonna_premium` created + both products attached, default offering configured. Webhook set to `https://rts-training-hub.vercel.app/api/webhooks/revenuecat` with `Authorization` header. Public SDK key in Vercel as `NEXT_PUBLIC_REVENUECAT_API_KEY`. Done 2026-05-15. **Note:** App Store Connect API credentials warning partially resolved; product MISSING_METADATA status requires localization + review screenshot on each product in App Store Connect.
 - ✅ **Apple Small Business Program** — enrolled 2026-05-15. 15% commission rate active before first live transaction.
 - ✅ **Custom domain** — `zonna.run` purchased and DNS pointed at Vercel 2026-05-15. Live and resolving. `capacitor.config.ts` `server.url` updated to `https://www.zonna.run/dashboard`. Privacy/terms TODO comments cleaned up.
