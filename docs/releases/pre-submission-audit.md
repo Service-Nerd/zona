@@ -189,11 +189,11 @@ In order of urgency:
 - [ ] **Verify Xcode Release scheme uses `AppRelease.entitlements`** (5 minutes — do at next archive)
 - [x] **Run the `is_admin` audit query against production Supabase** — confirmed 2026-05-21: only Russ has `is_admin = true`
 - [x] **Verify Strava screen gates on `isAdmin`** — defense-in-depth gate added at render boundary in `6aa16cf` (Admin screen also gated)
-- [ ] **Verify `https://www.zonna.run/privacy` returns 200** (1 minute — open browser)
+- [x] **Verify `https://www.zonna.run/privacy` returns 200** — verified 2026-05-21 via curl. `/`, `/privacy`, `/terms` all return 200. Privacy + Terms content audited; three real fixes shipped same day: removed "and Google Play" (Android not in v1 scope), corrected Apple Health disclosure to reflect per-workout HR sample stream storage (was claiming summary-values-only, but `lib/health/clientSync.ts:212` persists `hrSamples` in `raw_payload`), added RevenueCat to Third Parties section.
 - [x] *(Optional, low-priority)* Change `UIRequiredDeviceCapabilities` to `arm64` — done 2026-05-21
 - [x] *(Optional, low-priority)* Lock orientation to portrait-only — done 2026-05-21 (still landscape-permissive on iPad)
 
-**Net remaining:** verify-Release-scheme-uses-AppRelease.entitlements (do during next Xcode archive) + verify-privacy-URL-returns-200 (1-minute browser check).
+**Net remaining:** verify-Release-scheme-uses-AppRelease.entitlements (do during next Xcode archive). That's it — every other action item closed.
 
 ---
 

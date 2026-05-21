@@ -90,12 +90,12 @@ export default function PrivacyPage() {
             color: 'var(--text-muted)',
             letterSpacing: '0.04em',
           }}>
-            Last updated: April 2026
+            Last updated: May 2026
           </div>
         </div>
 
         <Section title="Who we are">
-          <P>{BRAND.name} is a running training application operated by Russ (service-nerd). The app is available at <strong>zonna.run</strong> and via the App Store and Google Play.</P>
+          <P>{BRAND.name} is a running training application operated by Russ (service-nerd). The app is available at <strong>zonna.run</strong> and via the App Store.</P>
           <P>For any privacy-related queries, contact us at <A href="mailto:support@zonna.run">support@zonna.run</A>.</P>
         </Section>
 
@@ -117,8 +117,8 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="Apple Health">
-          <P>If you connect Apple Health (iOS app only), {BRAND.name} requests <strong>read-only</strong> access to your runs and recovery signals: workouts, heart rate, resting heart rate, heart rate variability, sleep duration, and VO₂ max. We use this data to coach your training and detect days when your body needs a softer session.</P>
-          <P>Apple Health authorisation is managed entirely by iOS. {BRAND.name} never writes to Apple Health, never reads any other health categories, and stores only the summary values needed for coaching (e.g. one resting heart rate per day) — not raw sample streams. You can disconnect at any time from the Profile screen, or revoke access from iOS Settings → Privacy → Health → {BRAND.name}.</P>
+          <P>If you connect Apple Health (iOS app only), {BRAND.name} requests <strong>read-only</strong> access to your runs and recovery signals: workouts, heart rate samples within those workouts, resting heart rate, heart rate variability, sleep duration, and VO₂ max. We use this data to coach your training and detect days when your body needs a softer session.</P>
+          <P>Apple Health authorisation is managed entirely by iOS. {BRAND.name} never writes to Apple Health and never reads any health categories outside those listed above. For your runs, we store both summary values (distance, duration, average heart rate) and the per-workout heart rate sample stream — this lets the coach detect cardiac drift and effort fade across a single session. For daily recovery signals (resting heart rate, HRV, sleep), we store one daily summary value per metric, not raw sample streams. You can disconnect at any time from the Profile screen, or revoke access from iOS Settings → Privacy → Health → {BRAND.name}.</P>
         </Section>
 
         <Section title="How we use your data">
@@ -151,6 +151,8 @@ export default function PrivacyPage() {
           <P>If connected, Strava activity data is fetched via the Strava API and stored in your {BRAND.name} account. <A href="https://www.strava.com/legal/privacy">Strava privacy policy →</A></P>
           <SubHead>Vercel</SubHead>
           <P>The app is hosted on Vercel. Request logs may be retained by Vercel per their standard policies. <A href="https://vercel.com/legal/privacy-policy">Vercel privacy policy →</A></P>
+          <SubHead>RevenueCat</SubHead>
+          <P>App Store subscriptions are managed via RevenueCat, which gives us a unified view of subscription status. RevenueCat receives the App Store transaction ID, your subscription status (active, cancelled, refunded), and a pseudonymous user identifier tied to your {BRAND.name} account — not your name, email, or payment details. Apple handles all payment information directly. <A href="https://www.revenuecat.com/privacy">RevenueCat privacy policy →</A></P>
         </Section>
 
         <Section title="Data retention">

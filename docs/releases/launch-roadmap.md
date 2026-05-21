@@ -213,6 +213,7 @@ Drafted 2026-05-21 to make submission turnkey:
 - **`pre-submission-audit.md`** — Apple Data Privacy questionnaire answers (ready to paste), Info.plist audit, entitlements verification, admin-surface and Vetra-legacy cleanup findings. Most action items resolved in commit `6aa16cf`; two minor verifications remain (Release scheme entitlements + privacy URL 200 check).
 - **`production-build-checklist.md`** — pre-archive runbook: env-var verification, Xcode scheme + entitlements check, manual smoke protocol, post-upload verification, troubleshooting table.
 - **`journey-test.md`** — 10-step end-to-end funnel test (landing → login → wizard → Today → session → log → reflect → trial-end → upgrade), runnable manually or via agent-browser. Run once per TestFlight cycle.
+- **`beta-tester-briefing.md`** — two copy-paste-ready messages for the 5–7 TestFlight testers: the initial ask (with per-profile variants) + the post-install brief covering what to look for and how to send feedback. Plus an exit-survey template.
 
 When in doubt, work through them in the order above: copy first (content production), audit second (review-rejection prevention), build checklist + journey test last (turn the crank).
 
