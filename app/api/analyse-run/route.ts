@@ -173,13 +173,23 @@ export async function POST(req: NextRequest) {
     ? ((efValue - efBaseline) / efBaseline) * 100
     : null
 
+  // Derive prescribed-zone-anchored HR figures from the activity's full zone
+  // histogram. Until 2026-05-22 the activity's hr_in_zone_pct was a Z2-only
+  // figure regardless of session type — so a tempo run that perfectly hit Z3
+  // scored 0 on HR discipline. The histogram (added by the 20260522 migration)
+  // lets us pick whichever zone the session prescribed and treat that as "in
+  // zone". Falls back to legacy Z2-anchored values when the histogram is
+  // missing (rows ingested before the migration).
+  const prescribedZoneForScoring = zoneForSessionType(session.type)
+  const prescribedHrFigures = derivePrescribedZoneHrFigures(activity, prescribedZoneForScoring)
+
   // Score the session
   const scoreResult = scoreSession({
     session,
     actualDistKm:     (activity.distance_m ?? 0) / 1000,
     actualAvgHr:      activity.avg_hr ?? null,
     actualAvgSpeedMs: activity.avg_speed ?? 0,
-    hrInZonePct:      activity.hr_in_zone_pct ?? null,
+    hrInZonePct:      prescribedHrFigures.hrInZonePct,
     efValue,
     efBaseline,
   })
@@ -264,8 +274,8 @@ export async function POST(req: NextRequest) {
       actualDistKm:        (activity.distance_m ?? 0) / 1000,
       actualPaceSecPerKm,
       actualAvgHr:         activity.avg_hr ?? null,
-      hrInZonePct:         activity.hr_in_zone_pct ?? null,
-      hrAboveCeilingPct:   activity.hr_above_ceiling_pct ?? null,
+      hrInZonePct:         prescribedHrFigures.hrInZonePct,
+      hrAboveCeilingPct:   prescribedHrFigures.hrAboveCeilingPct,
       efTrendPct,
       rpe:                 completionRes.data?.rpe ?? null,
       fatigueTag:          completionRes.data?.fatigue_tag ?? null,
@@ -322,9 +332,9 @@ export async function POST(req: NextRequest) {
     total_score:           scoreResult.totalScore,
     verdict:               scoreResult.verdict,
     feedback_text:         feedbackText,
-    hr_in_zone_pct:        activity.hr_in_zone_pct ?? null,
-    hr_above_ceiling_pct:  activity.hr_above_ceiling_pct ?? null,
-    hr_below_floor_pct:    activity.hr_below_floor_pct ?? null,
+    hr_in_zone_pct:        prescribedHrFigures.hrInZonePct,
+    hr_above_ceiling_pct:  prescribedHrFigures.hrAboveCeilingPct,
+    hr_below_floor_pct:    prescribedHrFigures.hrBelowFloorPct,
     ef_value:              efValue,
     ef_baseline:           efBaseline,
     ef_trend_pct:          efTrendPct,
@@ -354,5 +364,77 @@ export async function POST(req: NextRequest) {
     },
     score:   scoreResult,
   })
+}
+
+interface PrescribedHrFigures {
+  hrInZonePct:       number | null
+  hrAboveCeilingPct: number | null
+  hrBelowFloorPct:   number | null
+}
+
+// Maps the activity's full zone histogram onto the session's prescribed zone:
+// "in zone" = % in the prescribed zone band, "above ceiling" = % above that
+// band, "below floor" = % below it. Falls back to the activity's legacy
+// Z2-anchored figures when the histogram is missing (rows ingested before
+// the 20260522 migration). Returns nulls when the session prescribes no zone
+// (rest / strength / cross-train) — those sessions are scored on other axes.
+function derivePrescribedZoneHrFigures(
+  activity: Record<string, any>,
+  prescribedZone: ReturnType<typeof zoneForSessionType>,
+): PrescribedHrFigures {
+  const z1   = activity.hr_pct_z1   as number | null | undefined
+  const z2   = activity.hr_pct_z2   as number | null | undefined
+  const z3   = activity.hr_pct_z3   as number | null | undefined
+  const z4_5 = activity.hr_pct_z4_5 as number | null | undefined
+  const hasHistogram = [z1, z2, z3, z4_5].some(v => v != null)
+
+  // Legacy fallback: pre-migration rows have only the Z2-anchored fields.
+  // They're correct for easy/long/recovery sessions and meaningless elsewhere
+  // — but that's how scoring used to work, so the fallback preserves behaviour
+  // rather than silently dropping data on old runs.
+  if (!hasHistogram) {
+    return {
+      hrInZonePct:       activity.hr_in_zone_pct       ?? null,
+      hrAboveCeilingPct: activity.hr_above_ceiling_pct ?? null,
+      hrBelowFloorPct:   activity.hr_below_floor_pct   ?? null,
+    }
+  }
+
+  if (!prescribedZone) {
+    return { hrInZonePct: null, hrAboveCeilingPct: null, hrBelowFloorPct: null }
+  }
+
+  const safe = (v: number | null | undefined): number => v ?? 0
+  const sum  = (...vs: Array<number | null | undefined>): number =>
+    Math.round(vs.reduce<number>((acc, v) => acc + safe(v), 0) * 100) / 100
+
+  switch (prescribedZone.zone) {
+    case 'Z2':
+      return {
+        hrInZonePct:       safe(z2),
+        hrAboveCeilingPct: sum(z3, z4_5),
+        hrBelowFloorPct:   safe(z1),
+      }
+    case 'Z3':
+      return {
+        hrInZonePct:       safe(z3),
+        hrAboveCeilingPct: safe(z4_5),
+        hrBelowFloorPct:   sum(z1, z2),
+      }
+    case 'Z4-5':
+      return {
+        hrInZonePct:       safe(z4_5),
+        hrAboveCeilingPct: 0,
+        hrBelowFloorPct:   sum(z1, z2, z3),
+      }
+    case 'Z1':
+      return {
+        hrInZonePct:       safe(z1),
+        hrAboveCeilingPct: sum(z2, z3, z4_5),
+        hrBelowFloorPct:   0,
+      }
+    default:
+      return { hrInZonePct: null, hrAboveCeilingPct: null, hrBelowFloorPct: null }
+  }
 }
 

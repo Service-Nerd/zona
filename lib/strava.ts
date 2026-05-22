@@ -33,24 +33,50 @@ export async function fetchActivities(accessToken: string, afterDate = '2026-01-
 }
 
 export interface HRStreamSummary {
+  /** % of samples in Z2 (legacy Z2-anchored figure — kept for backward compat
+   *  with cohort comparisons in runHistory that don't have session prescription). */
   inZonePct:  number
+  /** % of samples above the Z2 ceiling. */
   abovePct:   number
+  /** % of samples below the Z2 floor. */
   belowPct:   number
+  /** Full per-zone histogram. The four pcts sum to 100. /api/analyse-run picks
+   *  the right pct based on the matched session's prescribed zone, then writes
+   *  run_analysis.hr_in_zone_pct as "% in prescribed zone". */
+  histogram: ZoneHistogram
+}
+
+export interface ZoneHistogram {
+  pctZ1:    number
+  pctZ2:    number
+  pctZ3:    number
+  pctZ4_5:  number
 }
 
 export interface HRZones {
   /** Top of Zone 2 (per plan). If null, falls back to 76% of maxHR. */
   zone2Ceiling: number | null
-  /** Max HR (per plan). Used to derive the Z2 floor (60%). If null, no floor enforced. */
+  /** Max HR (per plan). Used to derive the Z2 floor (60%) and the Z3/Z4-5 boundaries.
+   *  When null, the only band we can resolve is Z2 (no floor, no upper bands). */
   maxHR:        number | null
 }
 
 /**
  * Pure zone-bucketing kernel: given an array of HR samples and the user's plan zones,
- * returns the in/above/below percentages.
+ * returns the in/above/below percentages PLUS the full per-zone histogram.
  *
  * Source-agnostic — used by both Strava streams (1Hz) and HealthKit HR samples
  * (variable interval). Equal-weight bucketing per sample.
+ *
+ * Band boundaries (matches CoachingPrinciples / zoneRules.ts):
+ *   Z1: below 60% maxHR (or below the Z2 floor)
+ *   Z2: 60–76% maxHR    (or up to the configured zone2Ceiling)
+ *   Z3: 76–86% maxHR
+ *   Z4-5: 86%+ maxHR
+ *
+ * When maxHR is unknown, the histogram collapses to two buckets (Z2 vs above
+ * ceiling) and we don't pretend to know the Z3/Z4-5 split — the missing pcts
+ * land in Z4_5 as a single "above" bucket so the histogram still sums to 100.
  */
 export function bucketHRSamples(hrData: number[], zones: HRZones): HRStreamSummary | null {
   if (!hrData?.length) return null
@@ -58,15 +84,37 @@ export function bucketHRSamples(hrData: number[], zones: HRZones): HRStreamSumma
   const floor   = zones.maxHR ? Math.round(zones.maxHR * 0.60) : null
   if (!ceiling) return null
 
-  const total  = hrData.length
-  const inZone = hrData.filter(hr => (!floor || hr >= floor) && hr <= ceiling).length
-  const above  = hrData.filter(hr => hr > ceiling).length
-  const below  = floor ? hrData.filter(hr => hr < floor).length : 0
+  const total = hrData.length
+
+  // Z2-anchored counts — legacy fields.
+  const inZoneCount = hrData.filter(hr => (!floor || hr >= floor) && hr <= ceiling).length
+  const aboveCount  = hrData.filter(hr => hr > ceiling).length
+  const belowCount  = floor ? hrData.filter(hr => hr < floor).length : 0
+
+  // Full histogram. When maxHR is unknown we can't split the "above ceiling"
+  // bucket between Z3 and Z4-5 — lump it under Z4-5 so the sum stays at 100.
+  const z3Boundary    = zones.maxHR ? Math.round(zones.maxHR * 0.86) : null
+  let pctZ1Count = belowCount
+  let pctZ2Count = inZoneCount
+  let pctZ3Count = 0
+  let pctZ4_5Count = 0
+  if (z3Boundary != null) {
+    pctZ3Count   = hrData.filter(hr => hr > ceiling && hr <= z3Boundary).length
+    pctZ4_5Count = hrData.filter(hr => hr > z3Boundary).length
+  } else {
+    pctZ4_5Count = aboveCount
+  }
 
   return {
-    inZonePct: Math.round((inZone / total) * 100 * 100) / 100,
-    abovePct:  Math.round((above  / total) * 100 * 100) / 100,
-    belowPct:  Math.round((below  / total) * 100 * 100) / 100,
+    inZonePct:  Math.round((inZoneCount / total) * 100 * 100) / 100,
+    abovePct:   Math.round((aboveCount  / total) * 100 * 100) / 100,
+    belowPct:   Math.round((belowCount  / total) * 100 * 100) / 100,
+    histogram: {
+      pctZ1:   Math.round((pctZ1Count   / total) * 100 * 100) / 100,
+      pctZ2:   Math.round((pctZ2Count   / total) * 100 * 100) / 100,
+      pctZ3:   Math.round((pctZ3Count   / total) * 100 * 100) / 100,
+      pctZ4_5: Math.round((pctZ4_5Count / total) * 100 * 100) / 100,
+    },
   }
 }
 

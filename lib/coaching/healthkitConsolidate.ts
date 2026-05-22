@@ -75,6 +75,10 @@ export async function tryEnrichHealthKitRow(
     patch.hr_in_zone_pct       = hrSummary.inZonePct
     patch.hr_above_ceiling_pct = hrSummary.abovePct
     patch.hr_below_floor_pct   = hrSummary.belowPct
+    patch.hr_pct_z1            = hrSummary.histogram.pctZ1
+    patch.hr_pct_z2            = hrSummary.histogram.pctZ2
+    patch.hr_pct_z3            = hrSummary.histogram.pctZ3
+    patch.hr_pct_z4_5          = hrSummary.histogram.pctZ4_5
   }
 
   const { error: patchErr } = await supabase

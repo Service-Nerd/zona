@@ -92,6 +92,10 @@ export async function POST(req: NextRequest) {
     hr_in_zone_pct:       hrSummary?.inZonePct ?? null,
     hr_above_ceiling_pct: hrSummary?.abovePct  ?? null,
     hr_below_floor_pct:   hrSummary?.belowPct  ?? null,
+    hr_pct_z1:            hrSummary?.histogram.pctZ1   ?? null,
+    hr_pct_z2:            hrSummary?.histogram.pctZ2   ?? null,
+    hr_pct_z3:            hrSummary?.histogram.pctZ3   ?? null,
+    hr_pct_z4_5:          hrSummary?.histogram.pctZ4_5 ?? null,
     raw_payload:          { source: 'manual_link' },
     processed_at:         new Date().toISOString(),
   }, { onConflict: 'user_id,strava_activity_id' })

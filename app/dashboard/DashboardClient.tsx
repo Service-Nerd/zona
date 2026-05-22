@@ -25,7 +25,6 @@ import RPEScale from '@/components/shared/RPEScale'
 import SessionCard from '@/components/shared/SessionCard'
 import ZoneBar, { zoneNumberForType, zoneShortName } from '@/components/shared/ZoneBar'
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
-import ZoneShapeCard from '@/components/shared/ZoneShapeCard'
 import AIMark from '@/components/shared/AIMark'
 import CoachByline from '@/components/shared/CoachByline'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
@@ -4634,12 +4633,13 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   }
 
   // ── Zone discipline (HR-derived, time-weighted) ──────────────────────
-  // Show actual % of time spent in the prescribed zone, weighted by run
-  // distance. Replaces the earlier binary per-session check on avg_hr,
-  // which could pass a run that drifted high but averaged out across
-  // walking. Time-weighted matches what the per-session AI analysis says.
-  // Sessions without run_analysis data (no Strava/HK HR stream) are
-  // excluded from the denominator.
+  // Show actual % of time spent in each session's PRESCRIBED zone (i.e.
+  // Z2 for easy/long, Z3 for tempo, Z4-5 for intervals), weighted by run
+  // distance. Until 2026-05-22 the underlying figure was always "% in Z2"
+  // regardless of session type — so a perfectly executed tempo run pulled
+  // the discipline score down. The figure now honours each session's own
+  // prescription. Sessions without run_analysis data (no Strava/HK HR
+  // stream) are excluded from the denominator.
   const completedThisWeek = sessions.filter(s =>
     s.type !== 'rest' && completions[s.key]?.status === 'complete'
   )
@@ -5339,53 +5339,22 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               meta={`across ${zoneDisciplineHits} ${zoneDisciplineHits === 1 ? 'run' : 'runs'}`}
               body={
                 <>
-                  of your time was spent in{' '}
+                  of your time was in{' '}
                   <strong style={{ color: 'var(--ink)', fontWeight: 600 }}>
-                    Zone 2
+                    the right zone
                   </strong>
                   .{' '}
                   {zoneDisciplinePercent >= 80
-                    ? "Easy was easy. That's the work."
+                    ? "Easy was easy, hard was hard. That's the work."
                     : zoneDisciplinePercent >= 60
                     ? "Mostly on target. Watch the drift on easy days."
-                    : "Too much grey-zone running. The fix is slower, not harder."}
+                    : "Too much grey-zone running. The fix is slower on easy days, not harder."}
                 </>
               }
             />
           </div>
         )
       })()}
-
-      {/* ── ZONE SHAPE CARD ─────────────────────────────────────────── */}
-      {/* Actual analyses for completed runs in the week. When ≥1 analysed
-          run is available, ZoneShapeCard shows actual time-in-zone instead
-          of the prescribed shape — honest about what happened, not what
-          was planned. */}
-      <div style={{ padding: '12px 16px 0' }}>
-        <ZoneShapeCard
-          sessions={sessions.filter(s => s.type !== 'rest')}
-          analyses={completedThisWeek
-            .map(s => {
-              const a = runAnalysisMap?.[s.key]
-              if (!a || a.hr_in_zone_pct == null) return null
-              const distKm = (a.actual_load_km as number | null)
-                ?? completions[s.key]?.strava_activity_km
-                ?? s.distance ?? null
-              if (!distKm) return null
-              // Estimate minutes from distance — used purely as a weight.
-              // ~6.5 min/km is a reasonable easy-pace average; exact value
-              // doesn't matter since each row's weight is proportional.
-              const durationMins = distKm * 6.5
-              return {
-                inZonePct:       a.hr_in_zone_pct as number,
-                aboveCeilingPct: (a.hr_above_ceiling_pct as number | null) ?? 0,
-                belowFloorPct:   (a.hr_below_floor_pct as number | null) ?? 0,
-                durationMins,
-              }
-            })
-            .filter((v): v is NonNullable<typeof v> => v !== null)}
-        />
-      </div>
 
       {/* ── DONE THIS WEEK ───────────────────────────────────────────── */}
       {(doneSessions.length > 0 || skippedSessions.length > 0) && (

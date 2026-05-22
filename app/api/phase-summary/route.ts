@@ -99,7 +99,10 @@ export async function POST(req: NextRequest) {
   // Determine next phase name from the plan.
   const nextPhaseName = (plan.weeks.find((w: any) => w.n === transition_week_n) as any)?.phase ?? 'build'
 
-  // Zone discipline: avg hr_in_zone_pct for easy+long sessions in the phase.
+  // Zone discipline: avg hr_in_zone_pct across all analysed sessions in the
+  // phase. Since 2026-05-22 hr_in_zone_pct on run_analysis means "% in the
+  // session's prescribed zone" (not "% in Z2"), so this average measures
+  // execution quality across the phase regardless of session type mix.
   const phaseAnalyses = (analysisRes.data ?? []).filter((a: any) => phaseWeekNums.has(a.week_n))
   const zonePcts = phaseAnalyses.map((a: any) => a.hr_in_zone_pct).filter((v: any) => v !== null) as number[]
   const avgZoneDisciplinePct = zonePcts.length > 0

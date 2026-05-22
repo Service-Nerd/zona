@@ -59,6 +59,10 @@ export interface HealthKitActivityRow {
   hr_in_zone_pct:       number | null
   hr_above_ceiling_pct: number | null
   hr_below_floor_pct:   number | null
+  hr_pct_z1:            number | null
+  hr_pct_z2:            number | null
+  hr_pct_z3:            number | null
+  hr_pct_z4_5:          number | null
   raw_payload:          HealthKitWorkoutPayload
   processed_at:         string
 }
@@ -106,6 +110,10 @@ export function adaptHealthKitWorkout(
     hr_in_zone_pct:       summary?.inZonePct ?? null,
     hr_above_ceiling_pct: summary?.abovePct  ?? null,
     hr_below_floor_pct:   summary?.belowPct  ?? null,
+    hr_pct_z1:            summary?.histogram.pctZ1   ?? null,
+    hr_pct_z2:            summary?.histogram.pctZ2   ?? null,
+    hr_pct_z3:            summary?.histogram.pctZ3   ?? null,
+    hr_pct_z4_5:          summary?.histogram.pctZ4_5 ?? null,
     raw_payload:          payload,
     processed_at:         new Date().toISOString(),
   }

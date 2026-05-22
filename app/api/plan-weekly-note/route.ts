@@ -22,7 +22,15 @@ import type { Plan } from '@/types/plan'
 //
 // Pattern: mirrors app/api/phase-summary/route.ts (PLAN-VOICE-AI).
 
-const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
+// Plan sessions are keyed by lowercase 3-letter day names (mon|tue|…) per
+// types/plan.ts Week.sessions. Earlier this array was capitalised, which
+// never matched anything — every cached weekly note was generated against
+// an empty sessions block and the AI produced "no running this week" copy.
+// The 20260522 migration purges those bad rows.
+const DAYS_OF_WEEK = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+const DAY_DISPLAY: Record<typeof DAYS_OF_WEEK[number], string> = {
+  mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
+}
 
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
@@ -101,12 +109,12 @@ export async function POST(req: NextRequest) {
 
   // Session list — skip rest days; preserve plan-week day order (Mon–Sun).
   const sessionsBlock = DAYS_OF_WEEK.flatMap(day => {
-    const sess = week.sessions?.[day] as { type?: string; distance?: number } | undefined
+    const sess = week.sessions?.[day] as { type?: string; distance_km?: number } | undefined
     if (!sess || !sess.type || sess.type === 'rest') return []
     return [{
-      day,
+      day:        DAY_DISPLAY[day],
       type:       sess.type,
-      distanceKm: sess.distance ?? null,
+      distanceKm: sess.distance_km ?? null,
     }]
   })
 
