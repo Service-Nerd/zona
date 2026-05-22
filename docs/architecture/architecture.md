@@ -81,6 +81,9 @@ Tracks which sessions the user has marked complete.
 ### `session_overrides`
 Per-session overrides (e.g. swapped sessions, notes).
 
+### `session_reflections`
+Post-run reflective notes + AI reframe output (POST-RUN-REFRAME-01). Composite key `(user_id, week_n, session_day)` matching `session_completions`. Stores the runner's reflection text + the Sonnet reframe, or a silenced flag when the risk gate fires. Voice metadata columns (`note_source`, `voice_duration_s`, `voice_transcript_confidence`) pre-wired for POST-RUN-REFRAME-02 (voice memo follow-up).
+
 ---
 
 ## Plan Data Schema (GitHub Gist)

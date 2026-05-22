@@ -252,6 +252,13 @@ All colour MUST come from CSS custom properties in `globals.css`. Nothing hardco
 ### Plan Archive
 - `plan_archive` Supabase table — previous plan stored before every `savePlanForUser` call. Migration: `20260424_plan_archive.sql`. No restore UI at v1 — data protection only.
 
+### Post-run Reframe (POST-RUN-REFRAME-01)
+- `session_reflections` Supabase table — composite key `(user_id, week_n, session_day)`. Migration: `20260522_session_reflections.sql`.
+- PAID via `post_run_reframe` gate. Uses Sonnet (`ANTHROPIC_MODEL_DEEP`) — first always-on Sonnet surface for paid users; first cost-bearing AI per-reflection.
+- Wired into BOTH `SessionScreen` reflect view (manual completion) AND `PostRunScreen` (Strava-linked) — `ReflectionInput` is shared. If you change one path, check the other.
+- **Risk gate silences the reframe** when overload signals fire (`coaching_flag='flag'`, 2+ flags in last 5, 3+ consecutive Heavy/Wrecked, or HR drift ≥15 bpm/≥10%). The UI renders an amber-rail warning instead of a reframe card — **no AIMark** on the warning (rule-engine output, not model). Logic: `lib/coaching/reframeRiskGate.ts`. Tested in `reframeRiskGate.test.ts`.
+- Voice spec is locked in `docs/canonical/brand.md` § Reframe Voice. Regression suite: `docs/canonical/reframe-golden-cases.md` (cases A/B/C/D). If you change the prompt builder (`lib/coaching/prompts/sessionReframe.ts`), run the golden suite first.
+
 ### Palette Regression
 - Warm Slate is the current system (ADR-007)
 - Legacy aliases bridge old System B token names to new values
