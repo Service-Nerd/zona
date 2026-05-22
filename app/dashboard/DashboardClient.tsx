@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import type { Plan, Week } from '@/types/plan'
 import PlanChart from '@/components/training/PlanChart'
 import PlanCalendar from '@/components/training/PlanCalendar'
+import ReflectionInput from '@/components/training/ReflectionInput'
 // Calendar screen retired — CalendarOverlay.tsx renamed to .old.tsx (brand-product-alignment v2)
 import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
@@ -2354,6 +2355,14 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             })}
           </div>
         </div>
+
+        {/* POST-RUN-REFRAME-01 — optional reflection + AI reframe.
+            Paid-only. Sits between the structured RPE/fatigue inputs and the
+            static reflectResponse one-liner. When a reframe is generated, it
+            shows alongside the static line, not instead of it. */}
+        {hasPaidAccess && rpe !== null && (
+          <ReflectionInput weekN={weekN} sessionDay={session.key} />
+        )}
 
         {/* Zonna response */}
         <div style={{
@@ -9151,6 +9160,15 @@ function PostRunScreen({
             </div>
           </div>
         </div>
+
+        {/* POST-RUN-REFRAME-01 — optional reflection + AI reframe.
+            Paid-only. Mounts after RPE is set so the reflection moment comes
+            after the structured inputs are captured. */}
+        {hasPaidAccess && rpe !== null && weekN != null && sessionDay && (
+          <div style={{ padding: '0 24px' }}>
+            <ReflectionInput weekN={weekN} sessionDay={sessionDay} />
+          </div>
+        )}
 
         {/* ── DONE ──────────────────────────────────────────────────── */}
         {/* POST-RUN-02: terminus. Routes to SessionScreen for this session so

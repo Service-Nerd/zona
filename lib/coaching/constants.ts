@@ -69,6 +69,60 @@ export const MAX_VOLUME_INCREASE_PCT = GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCRE
 // Single source of truth: the trigger thresholds live in GENERATION_CONFIG.READINESS.
 export const READINESS = GENERATION_CONFIG.READINESS
 
+// Multi-month trend (AI-DEPTH-03) — same-effort runs over time
+// Powers Tier A reframe specificity: "Z2 HR has dropped 12 bpm since Feb."
+// Buckets are monthly; thresholds gate noise.
+export const TREND_SERIES = {
+  /** Default lookback window in months. */
+  DEFAULT_WINDOW_MONTHS: 6,
+  /** Minimum buckets (months) before a trend is reported. */
+  MIN_BUCKETS: 2,
+  /** Minimum runs per bucket before the bucket counts. */
+  MIN_RUNS_PER_BUCKET: 2,
+  /** Minimum total matching runs across the window. */
+  MIN_TOTAL_RUNS: 6,
+  /** Minimum HR delta in bpm between first/last bucket to call it a trend. */
+  MIN_HR_DELTA_BPM: 4,
+  /** Minimum pace delta in seconds/km between first/last bucket. */
+  MIN_PACE_DELTA_SEC: 5,
+} as const
+
+// Reframe risk-gate thresholds (POST-RUN-REFRAME-01 / Step 4)
+// When these fire, the reframe is silenced — the coaching warning surfaces instead.
+// Doctrine: reframe-positive against a risk signal is harm.
+// brand.md § Reframe Voice → "Risk flags trump reframe."
+export const REFRAME_RISK = {
+  /** HR drift bpm threshold for "severe" — silences the reframe. Above the
+   *  "mention in reframe" threshold (10 bpm) used in normal feedback. */
+  SEVERE_HR_DRIFT_BPM: 15,
+  /** HR drift % threshold for "severe" (0–1 scale, not percent). */
+  SEVERE_HR_DRIFT_PCT: 0.10,
+  /** Consecutive Heavy/Wrecked sessions before fatigue silences the reframe.
+   *  Matches FATIGUE_ACCUMULATION_THRESHOLD intentionally — same rule. */
+  FATIGUE_ACCUMULATION_SESSIONS: 3,
+  /** Recent 'flag' coaching_flag count (window: last 5 completions) before
+   *  repeated-overload silences the reframe. Two flags in 5 is the bar. */
+  REPEATED_OVERLOAD_FLAG_COUNT: 2,
+  REPEATED_OVERLOAD_WINDOW: 5,
+} as const
+
+// Reframe data-source ladder (POST-RUN-REFRAME-01)
+// The reframe must work for any user — Tier A is rich-data, Tier C is minimum-data.
+// Thresholds calibrate what counts as "enough evidence" for each tier.
+// See docs/canonical/brand.md § Reframe Voice for the architectural rationale.
+export const REFRAME_TIER = {
+  /** Minimum analysed runs in last 12 weeks to qualify for Tier A (cohort + trend evidence). */
+  TIER_A_MIN_ACTIVITIES: 12,
+  /** Lookback window for the Tier A activity count. */
+  TIER_A_WINDOW_DAYS: 84,
+  /** Minimum session_completions in last 4 weeks to qualify for Tier B (RPE pattern evidence). */
+  TIER_B_MIN_COMPLETIONS: 6,
+  /** Lookback window for the Tier B completion count. */
+  TIER_B_WINDOW_DAYS: 28,
+  /** Max characters accepted for a user reflection note before trimming. */
+  USER_NOTE_MAX_CHARS: 2000,
+} as const
+
 // Cohort similarity matching — past-self comparison (R25 cut #1)
 // CoachingPrinciples §58. Two-axis match for cut #1: distance band + HR band.
 // Three-axis (adding session.type) deferred to cuts #2/#3 which need richer cohort filtering.

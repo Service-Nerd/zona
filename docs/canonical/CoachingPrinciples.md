@@ -983,6 +983,38 @@ LONG_RUN_SOFTEN_PCT   → 0.85   (long-run distance × this on a fired day; 15% 
 
 ---
 
+## 60. Post-run reframe — the hug AND the truth
+
+When a runner logs a tough session and writes a reflection, the AI's job is reframe, not feedback. Reframe is a distinct coaching surface from session feedback:
+
+| | Session feedback (existing) | Reframe (POST-RUN-REFRAME-01) |
+|---|---|---|
+| Trigger | Strava-linked session, automatic | User writes a reflection, opt-in |
+| Subject | What happened in the data | What the runner is feeling vs. what the data says |
+| Voice | Honest, dry, one paragraph | Warmth-as-permission + evidence + goal anchor, 3–4 sentences |
+| Structure | Free-form | Fixed: ACKNOWLEDGE → CAUSE → PROGRESS (opt) → ANCHOR |
+
+**Why this exists as a separate principle:** the spiral after a bad session is a real and frequent failure mode for non-elite runners. They blow a zone, the next session feels awful, and they conclude their goal is impossible. The data almost always tells a different story (this is the Zonna thesis — *"You're trying hard. That's the problem."*). The reframe surface is the only place where Zonna gets to give the runner the hug AND the truth, on the runner's own data.
+
+**Doctrine — non-negotiable:**
+
+1. **Graceful degradation across data tiers.** The reframe must work for users with no Strava and no HealthKit. Tier A leans on cohort + trend + drift; Tier B on plan completion + RPE patterns; Tier C on phase position + sessions logged. Evidence falls back through the ladder; voice rules stay constant.
+2. **Specific evidence in sentence 2 is mandatory.** No reframe without a named data point. Generic encouragement without evidence is the failure mode.
+3. **Warmth lives in sentence 1, never the closer.** Permission ≠ cheerleading. *"You're allowed a bad one"* is on-brand; *"You've got this!"* is cringe.
+4. **Risk flags trump reframe.** When `acuteChronicRatio` overload, `coaching_flag === 'flag'`, fatigue accumulation (3 consecutive Heavy/Wrecked), or severe HR drift (≥15 bpm / ≥10%) fires, the reframe is silenced. The coaching warning surfaces instead. Reframe-positive against a risk signal is harm.
+5. **AIMark on every reframe.** This is model output. The runner is owed provenance.
+6. **PAID-only.** Gate `post_run_reframe`. Free users see the existing static post-RPE one-liner; the reframe surface is part of the subscription value.
+
+**Where this lives:**
+- Numerics: `REFRAME_TIER`, `REFRAME_RISK`, `TREND_SERIES` in `lib/coaching/constants.ts`
+- Voice: `docs/canonical/brand.md` § Reframe Voice (locked register, 3 good + 4 bad examples)
+- Regression suite: `docs/canonical/reframe-golden-cases.md` (one case per tier + a Case D for risk-gate silence)
+- Prompt builder: `lib/coaching/prompts/sessionReframe.ts`
+- Risk gate: `lib/coaching/reframeRiskGate.ts`
+- Route: `app/api/post-run-reframe/route.ts`
+
+---
+
 ## 56. The constitution
 
 These fifty-six principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

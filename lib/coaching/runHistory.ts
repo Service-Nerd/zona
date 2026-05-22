@@ -9,7 +9,7 @@
 // CoachingPrinciples §58 — past-self comparison via cohort similarity.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { COHORT_SIMILARITY } from './constants'
+import { COHORT_SIMILARITY, TREND_SERIES } from './constants'
 
 export type ActivitySource = 'apple_health' | 'strava'
 
@@ -143,4 +143,130 @@ export function pickWindowDays(runsInLastSixMonths: number): number {
   return runsInLastSixMonths >= COHORT_SIMILARITY.DENSE_THRESHOLD
     ? COHORT_SIMILARITY.WINDOW_DAYS_DENSE
     : COHORT_SIMILARITY.WINDOW_DAYS_DEFAULT
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Multi-month trend (AI-DEPTH-03)
+// ──────────────────────────────────────────────────────────────────────────
+//
+// Same-effort runs bucketed by month, producing an HR-over-time series at a
+// fixed distance band. Surfaces the "engine getting stronger" evidence that
+// the reframe (and the Coach screen, when wired) leans on for Tier A claims.
+//
+// Methodology: filter history to runs matching the anchor distance ±tolerance,
+// bucket by year-month, compute per-bucket avg HR + avg pace. Only return a
+// series when MIN_BUCKETS, MIN_RUNS_PER_BUCKET, and MIN_TOTAL_RUNS all clear.
+
+export interface TrendBucket {
+  /** First day of the bucket month (UTC). */
+  monthStart: Date
+  /** 'YYYY-MM' bucket key — stable for serialisation. */
+  monthKey: string
+  /** Short label for prompts — e.g. 'Mar', 'May'. */
+  shortLabel: string
+  cohortSize: number
+  avgHr: number | null
+  avgPaceSecPerKm: number | null
+}
+
+export interface TrendSeries {
+  sessionType: string
+  /** Anchor distance the cohort was matched to. */
+  distanceKm: number
+  windowMonths: number
+  buckets: TrendBucket[]  // chronological, oldest first
+  /** Convenience: HR delta from first bucket to last (signed; negative = drop). */
+  hrDeltaBpm: number | null
+  /** Pace delta from first to last bucket (signed; negative = faster). */
+  paceDeltaSec: number | null
+  /** True when HR delta passes the MIN_HR_DELTA_BPM threshold — the prompt
+   *  should only cite the HR direction when this is true. */
+  hrIsTrending: boolean
+  /** Same for pace. */
+  paceIsTrending: boolean
+}
+
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/**
+ * Build a trend series from a runner's history, anchored to a specific
+ * session type + distance. Returns null when there isn't enough data to
+ * make a non-noisy claim (threshold-gated).
+ *
+ * `history` is expected to be pre-filtered to the relevant window. The
+ * function does its own month-bucket aggregation.
+ */
+export function buildHrTrendSeries(
+  history: RunRecord[],
+  anchor: { sessionType: string; distanceKm: number },
+  windowMonths: number = TREND_SERIES.DEFAULT_WINDOW_MONTHS,
+): TrendSeries | null {
+  if (!history.length || anchor.distanceKm <= 0) return null
+
+  const tol = COHORT_SIMILARITY.DISTANCE_TOLERANCE_PCT / 100
+  const lo = anchor.distanceKm * (1 - tol)
+  const hi = anchor.distanceKm * (1 + tol)
+
+  const cutoff = new Date()
+  cutoff.setMonth(cutoff.getMonth() - windowMonths)
+
+  const matching = history.filter(r =>
+    r.distanceKm >= lo &&
+    r.distanceKm <= hi &&
+    r.startDate >= cutoff,
+  )
+  if (matching.length < TREND_SERIES.MIN_TOTAL_RUNS) return null
+
+  // Bucket by year-month
+  const bucketMap = new Map<string, RunRecord[]>()
+  for (const r of matching) {
+    const y = r.startDate.getUTCFullYear()
+    const m = r.startDate.getUTCMonth()
+    const key = `${y}-${String(m + 1).padStart(2, '0')}`
+    if (!bucketMap.has(key)) bucketMap.set(key, [])
+    bucketMap.get(key)!.push(r)
+  }
+
+  const sortedKeys = Array.from(bucketMap.keys()).sort()
+  const buckets: TrendBucket[] = []
+  for (const key of sortedKeys) {
+    const runs = bucketMap.get(key)!
+    if (runs.length < TREND_SERIES.MIN_RUNS_PER_BUCKET) continue
+    const hrs = runs.map(r => r.avgHr).filter((v): v is number => v !== null)
+    const paces = runs
+      .filter(r => r.movingTimeSec > 0 && r.distanceKm > 0)
+      .map(r => r.movingTimeSec / r.distanceKm)
+    const [yStr, mStr] = key.split('-')
+    const monthIdx = Number(mStr) - 1
+    buckets.push({
+      monthStart: new Date(Date.UTC(Number(yStr), monthIdx, 1)),
+      monthKey: key,
+      shortLabel: SHORT_MONTHS[monthIdx] ?? key,
+      cohortSize: runs.length,
+      avgHr: hrs.length ? Math.round(hrs.reduce((s, v) => s + v, 0) / hrs.length) : null,
+      avgPaceSecPerKm: paces.length ? Math.round(paces.reduce((s, v) => s + v, 0) / paces.length) : null,
+    })
+  }
+
+  if (buckets.length < TREND_SERIES.MIN_BUCKETS) return null
+
+  const first = buckets[0]
+  const last = buckets[buckets.length - 1]
+  const hrDeltaBpm = (first.avgHr !== null && last.avgHr !== null) ? last.avgHr - first.avgHr : null
+  const paceDeltaSec = (first.avgPaceSecPerKm !== null && last.avgPaceSecPerKm !== null)
+    ? last.avgPaceSecPerKm - first.avgPaceSecPerKm
+    : null
+  const hrIsTrending = hrDeltaBpm !== null && Math.abs(hrDeltaBpm) >= TREND_SERIES.MIN_HR_DELTA_BPM
+  const paceIsTrending = paceDeltaSec !== null && Math.abs(paceDeltaSec) >= TREND_SERIES.MIN_PACE_DELTA_SEC
+
+  return {
+    sessionType: anchor.sessionType,
+    distanceKm: anchor.distanceKm,
+    windowMonths,
+    buckets,
+    hrDeltaBpm,
+    paceDeltaSec,
+    hrIsTrending,
+    paceIsTrending,
+  }
 }

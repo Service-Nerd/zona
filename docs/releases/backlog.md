@@ -98,11 +98,7 @@ After Vercel deploy, verify with agent-browser:
 
 - ✅ **AI-DEPTH-10 — Cross-surface conversation memory** *(scoped + shipped 2026-05-11)* — see feature-registry entry. Extends the AI-DEPTH-04 pattern to the four remaining coaching surfaces (daily coach note, plan adjustment explanation, phase summary, session feedback), each with its own continuity reference: daily note ← last weekly report; adjustment explanation ← previous resolved adjustment; phase summary ← previous phase summary content; session feedback ← single most-recent same-type analysed session. Same "reference at most once, only when data tracks against it" rule across all four. Closes the "no memory of prior outputs" audit gap completely.
 
-- 🔲 **AI-DEPTH-05 — Post-session structured capture (parked, decision needed)** *(scoped 2026-05-11)* — original audit recommendation was a 3–5-question structured sheet after long/quality/race. **User flagged friction concern 2026-05-11**: adding form questions trains users to skip the whole post-session flow including the RPE we already get value from. Three reframes to evaluate before committing:
-  (a) **Event-triggered, not session-triggered.** Only ask when the rule engine flagged something the data alone can't explain (HR drift >15%, late-run pace fade, off-target on a routine session). Maybe once a month per user. Friction matches signal value.
-  (b) **Voice memo, not form.** "Talk to your watch for 20 seconds about how that run felt." Whisper transcription + Haiku extraction. Lower friction, bigger build (3–4 days vs 1 day for form). Strong "this app listens" moment, on-brand.
-  (c) **Defer entirely.** Ship AI-DEPTH-02/03/04 first; revisit only if AI is still demonstrably guessing at things only the runner knows.
-  My current take: defer (c). The three data-side wins probably close ~70% of the qualitative gap without any new user friction. Revisit after AI-DEPTH-02 lands.
+- ~~🔲 **AI-DEPTH-05 — Post-session structured capture (parked, decision needed)** *(scoped 2026-05-11)*~~ — **superseded 2026-05-22 by POST-RUN-REFRAME-01** in the Post-run journey section. Original scope (3–5-question structured sheet) is dead; the friction concern won that argument. Reframe-shaped feature with text + voice input replaces it.
 
 - 🔲 **AI-DEPTH-06 — Image/vision analysis (paid-tier upsell)** *(scoped 2026-05-11)* — let users upload a screenshot of their watch's splits screen. Route through Claude with vision; extract the same metrics AI-DEPTH-02 would compute. Bigger build (1 week+), and the first surface where user-uploaded images leave the device — needs privacy review (retention, PII redaction). Lower priority than AI-DEPTH-02 because the structured-stream path is cheaper and more reliable. Tier: PAID (consider gating as premium-of-paid). Don't pick up until AI-DEPTH-02 has demonstrably shipped value.
 
@@ -116,7 +112,7 @@ After Vercel deploy, verify with agent-browser:
 
 ### Post-run journey
 
-*(no open items — see feature-registry for POST-RUN-01 + POST-RUN-02)*
+- 🔲 **POST-RUN-REFRAME-02 — Voice memo input for the reframe** *(scoped 2026-05-22; deferred from POST-RUN-REFRAME-01 Phase 3)* — adds voice as an alternative input mode to the reframe textarea. Capacitor mic plugin + iOS `NSMicrophoneUsageDescription` + `/api/transcribe` (OpenAI Whisper — **first non-Anthropic vendor in the stack**, needs `OPENAI_API_KEY` in Vercel) + UI voice mode in `ReflectionInput`. The reflection text flow already populates `note_source='voice'`/`voice_duration_s`/`voice_transcript_confidence` columns — schema is voice-ready. Pickup gated on device-test capacity and a product decision on the new vendor. Effort: M (~3d). Tier: PAID (inherits `post_run_reframe` gate).
 
 ### Plan screen
 
