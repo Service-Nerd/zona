@@ -24,6 +24,7 @@ import RestraintCard, { RestraintCardSkeleton } from '@/components/shared/Restra
 import PlanArc from '@/components/shared/PlanArc'
 import RPEScale from '@/components/shared/RPEScale'
 import SessionCard from '@/components/shared/SessionCard'
+import SessionCompleteCard from '@/components/shared/SessionCompleteCard'
 import ZoneBar, { zoneNumberForType, zoneShortName } from '@/components/shared/ZoneBar'
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import AIMark from '@/components/shared/AIMark'
@@ -2518,20 +2519,18 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
     const copy = getCompletionCopy(session.type)
     return (
       <div style={{ padding: '24px 20px 32px' }}>
-        {/* Logged confirmation */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+        {/* Compact logged-confirmation header. The SessionCompleteCard below
+            owns the completion copy + voice anchor as the peak-end artefact
+            once the runner has entered RPE; this row just acknowledges the
+            save instantly so they know the action landed. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
           <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--teal-soft)', border: '0.5px solid var(--teal-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M2.5 7L5.5 10L11.5 4" stroke="var(--teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <div>
-            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>{copy.headline}</div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px', lineHeight: 1.5 }}>{copy.body}</div>
-          </div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Logged.</div>
         </div>
-
-        <div style={{ height: '0.5px', background: 'var(--border-col)', marginBottom: '24px' }} />
 
         <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.3px', marginBottom: '4px' }}>
           How did that land?
@@ -2591,6 +2590,25 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             })}
           </div>
         </div>
+
+        {/* COMPLETE-01 — peak-end artefact. Renders once RPE is set so the
+            card has something to display. Always State B in this view: the
+            manual completion path doesn't have a run_analysis row at log
+            time (the rule engine writes one asynchronously after the route
+            call). Strava/HealthKit-matched completions surface a State A
+            card inside PostRunScreen instead. */}
+        {rpe !== null && (
+          <div style={{ marginBottom: '20px' }}>
+            <SessionCompleteCard
+              sessionType={session.type}
+              date={new Date()}
+              completionCopy={copy}
+              zonePct={null}
+              rpe={rpe}
+              fatigueTag={fatigueTag}
+            />
+          </div>
+        )}
 
         {/* POST-RUN-REFRAME-01 — optional reflection + AI reframe.
             Paid-only. Sits between the structured RPE/fatigue inputs and the
@@ -9767,6 +9785,25 @@ function PostRunScreen({
             </div>
           </div>
         </div>
+
+        {/* COMPLETE-01 — peak-end artefact. Mounts once RPE is set. Renders
+            State A (zone bar + % in zone) when the run_analysis row has
+            arrived from the analyse-run pipeline; falls back to State B
+            (RPE / 10 + fatigue chip) while the analysis is still polling.
+            Same component as the manual-completion reflect view; data
+            sources differ. */}
+        {rpe !== null && (
+          <div style={{ padding: '0 24px', marginBottom: '4px' }}>
+            <SessionCompleteCard
+              sessionType={session.type}
+              date={new Date()}
+              completionCopy={getCompletionCopy(session.type)}
+              zonePct={analysis?.hr_in_zone_pct != null ? Number(analysis.hr_in_zone_pct) : null}
+              rpe={rpe}
+              fatigueTag={fatigueTag}
+            />
+          </div>
+        )}
 
         {/* POST-RUN-REFRAME-01 — optional reflection + AI reframe.
             Paid-only. Mounts after RPE is set so the reflection moment comes
