@@ -31,28 +31,37 @@ The code in this branch already references `group.app.zonna.ios` everywhere — 
 
 ---
 
+## Xcode 16 behaviour you should know about
+
+This setup was completed on Xcode 16, which uses **file-system synchronized groups** for new targets. Important differences from older docs:
+
+- **No "Language" picker.** Widget Extension is Swift-only in modern Xcode — there's no Swift/ObjC choice in the new-target dialog.
+- **Synchronized folder = auto-membership.** When you add a Widget Extension target, Xcode creates a `PBXFileSystemSynchronizedRootGroup` pointing at the widget folder. **Every file in that folder is automatically a member of the widget target.** You do NOT need "Add Files to…" for files already in the folder — they're picked up on disk.
+- **No Target Membership tickbox per file.** Files inside a synchronized group don't show the usual Target Membership panel. Membership is folder-wide.
+- **Target name has "Extension" appended.** Despite naming your target `ZonnaWidgetExtension`, Xcode creates it as `ZonnaWidgetExtensionExtension`. The bundle ID is correct (`app.zonna.ios.ZonnaWidgetExtension`); just the internal target name is double-suffixed. Don't panic.
+- **Xcode auto-generates its own entitlements.** When you tick App Groups on the widget target, Xcode creates `ios/App/ZonnaWidgetExtensionExtension.entitlements` (sibling to the `App/` folder) and points the build setting at it. The committed `ZonnaWidgetExtension/ZonnaWidgetExtension.entitlements` becomes unused — both files exist on disk but the build uses the auto-generated one.
+
+---
+
 ## Step 2 — Xcode: add the widget extension target
 
 1. Open `ios/App/App.xcworkspace` in Xcode (not `App.xcodeproj` — Capacitor uses the workspace).
 2. **File → New → Target…**
 3. Pick **Widget Extension** (under iOS → Application Extension).
 4. Configure:
-   - **Product Name:** `ZonnaWidgetExtension` (this exact name — matches the folder + Info.plist references)
+   - **Product Name:** `ZonnaWidgetExtension`
    - **Bundle Identifier:** Xcode will suggest `app.zonna.ios.ZonnaWidgetExtension` — accept it.
    - **Team:** your usual team.
-   - **Language:** Swift.
    - **Include Configuration Intent:** **uncheck**. We use `StaticConfiguration`, not intents.
-5. Finish. Xcode creates a new folder and adds the target.
+5. Finish.
 
-**Important:** Xcode will create boilerplate Swift files in the new folder. You need to **replace** them with the ones in this repo:
+Xcode generates boilerplate Swift files in the widget folder (typically `ZonnaWidgetExtensionBundle.swift` + `ZonnaWidgetExtension.swift`) **and adds them to the synchronized group alongside the committed files.**
 
-6. In the Project Navigator, delete the auto-generated files in the new target's folder (`ZonnaWidgetExtension.swift`, default `Info.plist`, etc.) — **choose "Move to Trash"** when prompted.
-7. Right-click the `ZonnaWidgetExtension` group in the navigator → **Add Files to "App"…**.
-8. Navigate to `ios/App/ZonnaWidgetExtension/` and add the three files committed there:
-   - `ZonnaWidget.swift`
-   - `Info.plist`
-   - `ZonnaWidgetExtension.entitlements`
-9. In the **Add to targets** checkbox at the bottom of the dialog, tick **only `ZonnaWidgetExtension`** (NOT the main `App` target).
+6. In the Project Navigator, expand the `ZonnaWidgetExtension` group.
+7. **Delete only the auto-generated Swift files** — `ZonnaWidgetExtensionBundle.swift` and `ZonnaWidgetExtension.swift` (whichever Xcode created). Choose **Move to Trash**.
+8. **Leave alone:** `ZonnaWidget.swift`, `Info.plist`, `ZonnaWidgetExtension.entitlements`, `Assets.xcassets`, `README.md`. These are committed and should stay.
+
+**If you accidentally delete `ZonnaWidget.swift` or `Info.plist`:** they're tracked. Restore with `git restore ios/App/ZonnaWidgetExtension/ZonnaWidget.swift ios/App/ZonnaWidgetExtension/Info.plist`. The synchronized group will auto-re-include them.
 
 ---
 
@@ -74,17 +83,50 @@ If the group doesn't appear in the list, click the refresh icon — Xcode someti
 
 ---
 
-## Step 4 — Xcode: point both targets at the right entitlements files
+## Step 4 — Xcode: entitlements paths
 
-Xcode should auto-discover them based on the App Groups capability, but verify:
+Xcode handles this automatically when you add the App Groups capability. After step 3 the build settings should look like:
 
 - `App` target → Build Settings → **Code Signing Entitlements**:
   - Debug: `App/App.entitlements`
   - Release: `App/AppRelease.entitlements`
-- `ZonnaWidgetExtension` target → Build Settings → **Code Signing Entitlements**:
-  - Debug + Release: `ZonnaWidgetExtension/ZonnaWidgetExtension.entitlements`
+- `ZonnaWidgetExtensionExtension` target → Build Settings → **Code Signing Entitlements**:
+  - Debug + Release: `ZonnaWidgetExtensionExtension.entitlements` (at project root, not inside the widget folder — Xcode 16 puts it there)
 
-Both `.entitlements` files in this branch already contain the `application-groups` array — no manual editing needed.
+All entitlements files contain the same `group.app.zonna.ios` value.
+
+---
+
+## Step 4b — Fix the duplicate Info.plist build error
+
+On the **first build** you'll hit:
+
+> Multiple commands produce '…/ZonnaWidgetExtensionExtension.appex/Info.plist'
+
+Cause: the synchronized folder auto-includes `Info.plist` as a Copy Bundle Resources entry, but the target also uses it via `INFOPLIST_FILE`. Two paths writing the same output.
+
+Fix:
+1. Select the `App` project → `ZonnaWidgetExtensionExtension` target → **Build Phases**.
+2. Expand **Copy Bundle Resources**.
+3. Select `Info.plist`, click **−** to remove it.
+
+Xcode adds a `PBXFileSystemSynchronizedBuildFileExceptionSet` to the pbxproj to remember the exclusion. Build again — error gone.
+
+---
+
+## Step 4c — Match the build numbers
+
+You'll also see a warning:
+
+> The CFBundleVersion of an app extension ('1') must match that of its containing parent app ('N').
+
+Cause: Xcode initialises widget targets at `CURRENT_PROJECT_VERSION = 1` / `MARKETING_VERSION = 1.0`, regardless of what the main app is at.
+
+Fix: update the widget target's build settings (Build Settings tab → search "versioning") so:
+- `CURRENT_PROJECT_VERSION` matches the main app
+- `MARKETING_VERSION` matches the main app
+
+Re-check on every new TestFlight build — when you bump the main app, **bump the widget too** or this warning returns.
 
 ---
 
