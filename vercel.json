@@ -3,6 +3,14 @@
     {
       "path": "/api/push/send-weekly-report",
       "schedule": "0 18 * * 0"
+    },
+    {
+      "path": "/api/push/send-daily",
+      "schedule": "30 * * * *"
+    },
+    {
+      "path": "/api/push/send-trial-insight",
+      "schedule": "15 * * * *"
     }
   ]
 }

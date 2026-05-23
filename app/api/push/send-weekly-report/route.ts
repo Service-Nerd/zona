@@ -11,6 +11,9 @@ import { sendApnsPush } from '@/lib/apnpush'
 //
 // Protected by CRON_SECRET header — must match env var.
 
+// Vercel cron always sends GET — see send-daily for the same shim.
+export async function GET(req: NextRequest) { return POST(req) }
+
 export async function POST(req: NextRequest) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

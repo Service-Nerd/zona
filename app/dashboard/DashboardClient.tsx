@@ -32,6 +32,7 @@ import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { composeSession } from '@/lib/plan/sessionComposer'
 import { formatDistance, sumRoundedDistance, resolveSessionMetric } from '@/lib/format'
 import { didSessionHitZone, sessionHRBand, zoneForSessionType } from '@/lib/coaching/zoneRules'
+import { getSessionVoiceLine } from '@/lib/coaching/voiceLines'
 import { renderGuidance, guidanceContextFromSession } from '@/lib/plan/renderGuidance'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import dynamic from 'next/dynamic'
@@ -241,6 +242,11 @@ export default function DashboardClient() {
   // Feature 3 — dynamic adjustments opt-in
   const [dynamicAdjustmentsEnabled, setDynamicAdjustmentsEnabled] = useState(true)
 
+  // HOOK-01 — daily morning training-day push opt-in. Default true; the cron
+  // (lib/api/push/send-daily) reads `daily_push_enabled` and `timezone` on
+  // user_settings to decide whether to send at user-local 06:30.
+  const [dailyPushEnabled, setDailyPushEnabled] = useState(true)
+
   // Last engine evaluation — drives the "Last checked …" line on the Me screen.
   // Stamped by /api/adjust-plan on every successful run (manual or auto).
   const [lastAdjustmentCheckAt, setLastAdjustmentCheckAt]                   = useState<string | null>(null)
@@ -345,10 +351,11 @@ export default function DashboardClient() {
 
   const supabase = createClient()
 
-  // Deep-link target for POST-RUN-01 push notifications. Captured on mount;
-  // applied by a separate effect once `plan` has loaded (we need the plan to
-  // resolve the session by week_n + session_day).
-  const pendingDeepLinkRef = useRef<{ weekN: number; sessionDay: string } | null>(null)
+  // Deep-link target for push notifications. Captured on mount; applied by a
+  // separate effect once `plan` has loaded (we need the plan to resolve the
+  // session by week_n + session_day). `target` selects which screen to land
+  // on: POST-RUN-01 uses 'post-run', HOOK-02 ("Kit noticed") uses 'session'.
+  const pendingDeepLinkRef = useRef<{ target: 'post-run' | 'session'; weekN: number; sessionDay: string } | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -363,16 +370,21 @@ export default function DashboardClient() {
       window.history.replaceState({}, '', '/dashboard')
     }
 
-    // POST-RUN-01: push-notification deep link.
-    // Web push payload uses data.url = /dashboard?screen=post-run&weekN=14&sessionDay=tue
-    // The "Run linked" push lands the user here; we resolve the session once the plan loads.
-    if (params.get('screen') === 'post-run') {
-      const weekN      = parseInt(params.get('weekN') ?? '', 10)
-      const sessionDay = params.get('sessionDay') ?? ''
-      if (Number.isFinite(weekN) && sessionDay) {
-        pendingDeepLinkRef.current = { weekN, sessionDay }
+    // Push-notification deep links.
+    //   POST-RUN-01 — "Run linked": /dashboard?screen=post-run&weekN=14&sessionDay=tue
+    //   HOOK-02     — "Kit noticed": /dashboard?screen=session&weekN=14&sessionDay=tue
+    // Both resolve the session via week_n + session_day once `plan` loads; the
+    // applying effect (see below) branches on `target` to pick the screen.
+    {
+      const screenParam = params.get('screen')
+      if (screenParam === 'post-run' || screenParam === 'session') {
+        const weekN      = parseInt(params.get('weekN') ?? '', 10)
+        const sessionDay = params.get('sessionDay') ?? ''
+        if (Number.isFinite(weekN) && sessionDay) {
+          pendingDeepLinkRef.current = { target: screenParam, weekN, sessionDay }
+        }
+        window.history.replaceState({}, '', '/dashboard')
       }
-      window.history.replaceState({}, '', '/dashboard')
     }
 
     // Hydrate per-session metric overrides from localStorage so the resolver
@@ -419,12 +431,14 @@ export default function DashboardClient() {
     return () => clearTimeout(t)
   }, [])
 
-  // POST-RUN-01: apply the deep-link target once the plan has loaded.
-  // Resolves week_n + session_day to a session object and routes the user
-  // straight into PostRunScreen. Fires once and clears the ref.
+  // Apply the captured deep-link target once `plan` has loaded. Resolves
+  // week_n + session_day to a session object and routes the user to the
+  // appropriate screen. Fires once and clears the ref.
+  //   target='post-run' (POST-RUN-01) → PostRunScreen
+  //   target='session'  (HOOK-02)     → SessionScreen
   useEffect(() => {
     if (!plan || plan === EMPTY_PLAN || !pendingDeepLinkRef.current) return
-    const { weekN, sessionDay } = pendingDeepLinkRef.current
+    const { target, weekN, sessionDay } = pendingDeepLinkRef.current
     pendingDeepLinkRef.current = null
 
     const week = plan.weeks?.find((w: any) => w.n === weekN)
@@ -443,15 +457,18 @@ export default function DashboardClient() {
       weekTheme: week.theme ?? '',
     }
 
-    // Look up the linked-activity display info from runAnalysisMap or completion.
-    // Best-effort — PostRunScreen will hydrate further from the DB on mount.
-    setActivePostRunData({
-      session:           enrichedSession,
-      weekN,
-      pendingActivityId: null,  // already linked by webhook
-      linkedActivity:    null,  // PostRunScreen reads from session_completions if needed
-    })
-    setScreen('post-run')
+    if (target === 'post-run') {
+      setActivePostRunData({
+        session:           enrichedSession,
+        weekN,
+        pendingActivityId: null,  // already linked by webhook
+        linkedActivity:    null,  // PostRunScreen reads from session_completions if needed
+      })
+      setScreen('post-run')
+    } else {
+      setActiveSessionData(enrichedSession)
+      setScreen('session')
+    }
   }, [plan])
 
   const initials = (() => {
@@ -513,7 +530,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes, subRes, guidanceRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
@@ -666,6 +683,20 @@ export default function DashboardClient() {
 
         // Dynamic adjustments toggle
         if (data?.dynamic_adjustments_enabled === false) setDynamicAdjustmentsEnabled(false)
+
+        // HOOK-01 — hydrate daily-push toggle + auto-capture device timezone.
+        // The migration default is true so an undefined value is treated as
+        // "not yet set on this row" rather than "explicitly off".
+        if (data?.daily_push_enabled === false) setDailyPushEnabled(false)
+        // Only overwrite the stored tz when it's the placeholder 'UTC' (the
+        // column default). User-set values (e.g. via a future tz picker) are
+        // preserved. Browsers in UTC will write 'UTC' over 'UTC' — harmless.
+        if (!data?.timezone || data.timezone === 'UTC') {
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+          if (tz && tz !== 'UTC') {
+            void supabase.from('user_settings').update({ timezone: tz }).eq('id', user.id)
+          }
+        }
 
         // Last adjustment-engine evaluation — drives the "Last checked …" line.
         if (data?.last_adjustment_check_at) setLastAdjustmentCheckAt(data.last_adjustment_check_at)
@@ -928,6 +959,15 @@ export default function DashboardClient() {
       setViewWeekIndex(idx >= 0 ? idx : 0)
     }
   }, [plan])
+
+  // HOOK-01 — beacon the server when the Today screen is in view so the daily
+  // push cron can suppress the 06:30 push for runners already in the app.
+  // Fire-and-forget; failure is silent — at worst the cron sends a push the
+  // runner doesn't need, which is still better than crashing the dashboard.
+  useEffect(() => {
+    if (screen !== 'today' || !userId || impersonating) return
+    void authedFetch('/api/me/today-heartbeat', { method: 'POST' }).catch(() => {})
+  }, [screen, userId, impersonating])
 
   // Personalised zone ceiling: Karvonen 70% HRR, falls back to plan meta or 145
   const effectiveZone2Ceiling = useMemo(() => {
@@ -1246,7 +1286,7 @@ export default function DashboardClient() {
             No UI path opens these for non-admins, but the render gate prevents a future commit
             from accidentally exposing admin UI via state mutation or a new entry point. */}
         {screen === 'strava'   && isAdmin && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
-        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentAutoAdjustments={recentAutoAdjustments} />}
+        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentAutoAdjustments={recentAutoAdjustments} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onDone={() => {
@@ -1973,25 +2013,8 @@ function getSkipResponse(reason: string): string {
   return "Fair enough. Pick it back up."
 }
 
-// One-line voice anchor under the zone prescription card on Session Detail.
+// Session voice lines live in lib/coaching/voiceLines.ts (HOOK-01).
 // Same job as Today's hero ("10km, slowly.") — Zonna voice in the moment.
-// Session-type-aware. Returns null for unknown types so the caller can render nothing.
-function getSessionVoiceLine(sessionType: string): string | null {
-  switch (sessionType) {
-    case 'easy':
-    case 'run':       return "Conversational the whole way. If you can talk, you're in."
-    case 'long':      return "Hours, not effort. Slower than you think you should."
-    case 'quality':
-    case 'tempo':     return "Comfortably hard. Not all-out. Hold the line."
-    case 'intervals':
-    case 'hard':      return "Hard on the reps. Easy on the rests. Don't blur it."
-    case 'race':      return "This is the day. Trust the work."
-    case 'recovery':  return "Slower than easy. Yes, that slow."
-    case 'strength':  return "Build the body that holds the zones."
-    case 'rest':      return "Do nothing. It helps."
-    default:          return null
-  }
-}
 
 // ── COACHING FLAG ─────────────────────────────────────────────────────────
 // getCoachingFlag imported from lib/coaching/coachingFlag.ts
@@ -5865,18 +5888,120 @@ function PlanCoachingCard({ plan, currentWeek, units = 'km', trackedKm }: {
 
 // ── COACH SCREEN ──────────────────────────────────────────────────────────
 
+type FreeInsightState =
+  | { kind: 'loading' }
+  | { kind: 'insight';      headline: string; body: string }
+  | { kind: 'risk_gated';   message: string }
+  | { kind: 'insufficient'; loggedCount: number }
+  | { kind: 'unavailable' }
+
 function CoachTeaser({ plan, firstName, onUpgrade }: {
   plan: Plan; firstName?: string; onUpgrade: () => void
 }) {
   const weekNum    = getCurrentWeekIndex(plan.weeks) + 1
   const totalWeeks = plan.weeks.length
 
+  // KIT-TASTE-01 — pull-on-view fetch of this week's free insight. Failure or
+  // any non-insight state falls back to the existing locked layout below.
+  const [insight, setInsight] = useState<FreeInsightState>({ kind: 'loading' })
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await authedFetch('/api/coaching/weekly-free-insight')
+        if (!res.ok) { if (!cancelled) setInsight({ kind: 'unavailable' }); return }
+        const data = await res.json()
+        if (cancelled) return
+        if (data.state === 'insight')      setInsight({ kind: 'insight', headline: data.headline, body: data.body })
+        else if (data.state === 'risk_gated')   setInsight({ kind: 'risk_gated', message: data.message })
+        else if (data.state === 'insufficient') setInsight({ kind: 'insufficient', loggedCount: data.loggedCount ?? 0 })
+        else                                    setInsight({ kind: 'unavailable' })
+      } catch {
+        if (!cancelled) setInsight({ kind: 'unavailable' })
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
   return (
     <div>
       <ScreenHeader title="Your coach" sub={firstName ? `${firstName} · W${weekNum} of ${totalWeeks}` : `W${weekNum} of ${totalWeeks}`} />
       <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-        {/* Locked Kit identity — dimmed preview of the coach identity card */}
+        {/* KIT-TASTE-01 — free insight card / risk warning / empty-state hint.
+            Sits above the locked report. Locked stats below stay locked. */}
+        {insight.kind === 'loading' && (
+          <div style={{
+            background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)',
+            borderLeft: '3px solid var(--moss)', padding: '16px 18px',
+          }}>
+            <div style={{ marginBottom: '10px' }}>
+              <CoachByline working />
+            </div>
+            <div style={{ height: '14px', width: '70%', borderRadius: '4px', background: 'var(--bg-soft)', marginBottom: '8px' }} />
+            <div style={{ height: '12px', width: '92%', borderRadius: '4px', background: 'var(--bg-soft)' }} />
+          </div>
+        )}
+
+        {insight.kind === 'insight' && (
+          <div style={{
+            background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)',
+            borderLeft: '3px solid var(--moss)', padding: '16px 18px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <CoachByline role="THIS WEEK" />
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
+                W{weekNum} of {totalWeeks}
+              </span>
+            </div>
+            <p style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3, margin: '0 0 8px' }}>
+              {insight.headline}
+            </p>
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13.5px', color: 'var(--ink-2)', lineHeight: 1.55, margin: 0 }}>
+              {insight.body}
+            </p>
+          </div>
+        )}
+
+        {/* Risk-gated: rule-engine warning, no AIMark — output is not from the model. */}
+        {insight.kind === 'risk_gated' && (
+          <div style={{
+            background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)',
+            borderLeft: '3px solid var(--warn)', padding: '16px 18px',
+          }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+              Worth a look
+            </div>
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink)', lineHeight: 1.55, margin: 0 }}>
+              {insight.message}
+            </p>
+          </div>
+        )}
+
+        {/* Insufficient data: keep the locked identity card but with a clear
+            "log to unlock" message instead of the marketing line. */}
+        {insight.kind === 'insufficient' && (
+          <div style={{
+            background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)',
+            borderLeft: '3px solid var(--moss)', padding: '16px 18px',
+          }}>
+            <div style={{ marginBottom: '10px' }}>
+              <CoachByline />
+            </div>
+            <p style={{ fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3, margin: '0 0 6px' }}>
+              {insight.loggedCount === 0
+                ? 'Log a session to unlock your weekly Kit note.'
+                : 'One more logged session and Kit reads your week.'}
+            </p>
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55, margin: 0 }}>
+              RPE + fatigue is all Kit needs. No Strava required.
+            </p>
+          </div>
+        )}
+
+        {/* Unavailable: keep the original dimmed identity placeholder so the
+            layout doesn't collapse on a model failure or a totally fresh user. */}
+        {insight.kind === 'unavailable' && (
         <div style={{
           background:   'var(--card)',
           borderRadius: 'var(--radius-lg)',
@@ -5896,6 +6021,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
             Kit reads your sessions and surfaces what&apos;s worth knowing.
           </p>
         </div>
+        )}
 
         {/* Locked report card — mirrors the paid CoachScreen weekly report card anatomy */}
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
@@ -5949,6 +6075,35 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
           </span>
         </button>
 
+        {/* SHARE-01 — free-tier upsell for the shareable weekly zone card.
+            Distinct from the zone-discipline teaser above: that one sells
+            the score, this one sells the share moment. Same upgrade target. */}
+        <button
+          onClick={onUpgrade}
+          style={{
+            width: '100%', textAlign: 'left',
+            background: 'var(--card)',
+            border: '1px solid var(--line)',
+            borderLeft: '3px solid var(--moss)',
+            borderRadius: '10px',
+            padding: '14px 16px',
+            cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: '12px',
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '3px' }}>
+              Share your week
+            </div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
+              {BRAND.name}-branded zone card for stories and feeds.
+            </div>
+          </div>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--moss)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            Upgrade →
+          </span>
+        </button>
+
         {/* Locked race projections stub — display only, not a CTA */}
         <div style={{ width: '100%', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px', opacity: 0.5 }}>
@@ -5966,6 +6121,59 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
 
       </div>
     </div>
+  )
+}
+
+// SHARE-01 — "Share this week" button rendered alongside the weekly report
+// card. Coordinates fetch + native/web share via `shareWeeklyZoneCard`.
+function ShareWeekButton({ weekN }: { weekN: number }) {
+  const [busy, setBusy]   = useState(false)
+  const [status, setStatus] = useState<string | null>(null)
+  // Clear status messages after a short delay so the button label settles back.
+  useEffect(() => {
+    if (!status) return
+    const t = setTimeout(() => setStatus(null), 2200)
+    return () => clearTimeout(t)
+  }, [status])
+
+  async function onShare() {
+    if (busy) return
+    setBusy(true)
+    setStatus(null)
+    try {
+      const { shareWeeklyZoneCard } = await import('@/lib/share/shareWeeklyZoneCard')
+      await shareWeeklyZoneCard({
+        weekN,
+        onStatus: (s) => {
+          if (s.kind === 'downloaded')  setStatus('Downloaded')
+          else if (s.kind === 'cancelled') setStatus(null)
+          else if (s.kind === 'success')   setStatus(null)
+          else if (s.kind === 'error')     setStatus(s.message || 'Share failed')
+        },
+      })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={onShare}
+      disabled={busy}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
+        color: 'var(--moss)',
+        background: 'rgba(107,142,107,0.12)',
+        border: 'none',
+        borderRadius: '20px',
+        padding: '8px 16px',
+        cursor: busy ? 'default' : 'pointer',
+        opacity: busy ? 0.6 : 1,
+      }}
+    >
+      {status ?? (busy ? 'Preparing…' : 'Share this week')}
+    </button>
   )
 }
 
@@ -6526,9 +6734,9 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           )}
 
           {/* CTA button — inside the card, state-labelled */}
-          <div style={{ marginTop: '16px' }}>
+          <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
             {refreshBlocked && (
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', display: 'block', marginBottom: '8px' }}>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', display: 'block', width: '100%', marginBottom: '4px' }}>
                 Already refreshed today.
               </span>
             )}
@@ -6550,6 +6758,12 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               {loading && <AIMark size={10} color="var(--warn)" working />}
               {loading ? 'Generating' : (reportIsCurrent && weeklyReport?.headline ? 'Refresh' : 'Generate report')}
             </button>
+            {/* SHARE-01 — share this week's zone discipline card. Only when
+                the report is current and has a zone-discipline score (the
+                centrepiece of the card). The OG route returns 404 without one. */}
+            {reportIsCurrent && weeklyReport?.zone_discipline_score != null && (
+              <ShareWeekButton weekN={weeklyReport.week_n} />
+            )}
           </div>
         </div>
 
@@ -6753,6 +6967,44 @@ function PushNotificationsRow() {
         {status === 'subscribed' && (
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
         )}
+      </div>
+    </div>
+  )
+}
+
+// ── DAILY PUSH TOGGLE ROW ─────────────────────────────────────────────────
+// HOOK-01 — opt-out for the daily morning training-day push. Mirrors the
+// PushNotificationsRow visual but renders inline (no permission ask — the
+// permission belongs to PushNotificationsRow above).
+
+function DailyPushToggleRow({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div style={{ margin: '4px 0', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '10px', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', gap: '12px' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>Morning training push</div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.4 }}>
+            {enabled
+              ? `${BRAND.coachName} reminds you about today's session at 06:30.`
+              : 'Off. No morning reminder.'}
+          </div>
+        </div>
+        <button
+          onClick={() => onChange(!enabled)}
+          style={{
+            width: '44px', height: '26px', borderRadius: '13px', border: 'none', cursor: 'pointer',
+            background: enabled ? 'var(--moss)' : 'var(--line)',
+            position: 'relative', flexShrink: 0, transition: 'background 0.2s',
+          }}
+          aria-label="Toggle morning training push"
+        >
+          <div style={{
+            position: 'absolute', top: '3px',
+            left: enabled ? '21px' : '3px',
+            width: '20px', height: '20px', borderRadius: '50%',
+            background: 'white', transition: 'left 0.2s',
+          }} />
+        </button>
       </div>
     </div>
   )
@@ -7451,7 +7703,7 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
   )
 }
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentAutoAdjustments }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentAutoAdjustments }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   resetPhrase: string; onSaveMental: (v: string) => void
@@ -7470,6 +7722,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   trialDaysLeft?: number | null
   dynamicAdjustmentsEnabled?: boolean
   onDynamicAdjustmentsChange?: (enabled: boolean) => void
+  dailyPushEnabled?: boolean
+  onDailyPushEnabledChange?: (enabled: boolean) => void
   lastAdjustmentCheckAt?: string | null
   lastAdjustmentCheckFoundChange?: boolean | null
   /**
@@ -7705,6 +7959,12 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           <StravaConnectionRow />
         </div>
         {hasPaidAccess && <PushNotificationsRow />}
+        {hasPaidAccess && onDailyPushEnabledChange && (
+          <DailyPushToggleRow
+            enabled={dailyPushEnabled ?? true}
+            onChange={onDailyPushEnabledChange}
+          />
+        )}
 
         {/* ── Race prep ──────────────────────────────────────────── */}
         <SectionLabel>Race prep</SectionLabel>

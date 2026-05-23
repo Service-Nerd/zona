@@ -74,3 +74,20 @@ ALTER TABLE user_settings
   ADD COLUMN IF NOT EXISTS last_name text,
   ADD COLUMN IF NOT EXISTS email text;
 ```
+
+---
+
+## HOOK-01 Columns (migration `20260523_daily_push.sql`)
+
+| Column | Type | Default | Purpose |
+|---|---|---|---|
+| `daily_push_enabled` | `boolean NOT NULL` | `true` | Opt-out toggle for the daily morning training-day push. Surfaced as a Me-screen toggle (paid/trial only). |
+| `timezone` | `text NOT NULL` | `'UTC'` | IANA tz id. `DashboardClient` auto-captures `Intl.DateTimeFormat().resolvedOptions().timeZone` on first load when the stored value is still `'UTC'`. Used by the cron to compute local 06:30. |
+| `daily_push_last_sent_on` | `date` | `NULL` | Date stamp the cron writes after a successful send. Idempotency backstop — never two pushes in the same local day. |
+| `last_today_open_at` | `timestamptz` | `NULL` | Updated by `POST /api/me/today-heartbeat` on Today-screen mount. The cron skips the push if this is within the last 30 minutes. |
+
+## HOOK-02 Column (migration `20260524_trial_insight_push.sql`)
+
+| Column | Type | Default | Purpose |
+|---|---|---|---|
+| `trial_insight_push_sent_at` | `timestamptz` | `NULL` | Stamped by `/api/push/send-trial-insight` after the one-shot mid-trial "Kit noticed something." push fires. Never cleared — push is one-shot for life. |
