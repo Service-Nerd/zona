@@ -41,6 +41,10 @@ export interface SessionCompleteCardProps {
   rpe: number | null
   /** Fatigue tag — 'Fresh' / 'Fine' / 'Heavy' / 'Wrecked'. */
   fatigueTag: 'Fresh' | 'Fine' | 'Heavy' | 'Wrecked' | string | null
+  /** DOCTRINE-01 — when the discipline ledger advanced this week, the card
+   *  surfaces `BRAND.brandStatement` quietly below the voice anchor. False
+   *  / undefined → only the voice anchor renders. */
+  ledgerAdvancedThisWeek?: boolean
 }
 
 // Three-letter weekday + day + three-letter month — "Wed · 22 May". Short
@@ -72,6 +76,7 @@ export default function SessionCompleteCard({
   zonePct,
   rpe,
   fatigueTag,
+  ledgerAdvancedThisWeek = false,
 }: SessionCompleteCardProps) {
   const dateLabel = formatDate(date)
   const chipLabel = getSessionLabel(sessionType)
@@ -207,6 +212,22 @@ export default function SessionCompleteCard({
       }}>
         {BRAND.voiceAnchor}
       </div>
+
+      {/* DOCTRINE-01 — append BRAND.brandStatement quietly when the
+          discipline ledger advanced this week. Hairline forces visual
+          breathing room between the anchor and the statement so they
+          don't read as a single overrun stamp. */}
+      {ledgerAdvancedThisWeek && (
+        <>
+          <div style={{ height: '1px', background: 'var(--line)', margin: '12px 0' }} />
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+            color: 'var(--mute)', letterSpacing: '0.14em', textTransform: 'uppercase',
+          }}>
+            {BRAND.brandStatement}
+          </div>
+        </>
+      )}
     </div>
   )
 }

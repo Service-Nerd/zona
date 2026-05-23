@@ -122,9 +122,6 @@ After Vercel deploy, verify with agent-browser:
 
 *Full execution spec: `docs/releases/review-2026-05-23.md`. Strava-resilience constraint applies to all items — every surface degrades silently to HealthKit-only data on day one and absorbs Strava when approved (no redesign). Items ordered by ship sequence.*
 
-- 🔲 **LEDGER-01 — "Weeks within the lines" discipline ledger** *(scoped 2026-05-23)* — Eyal investment without gamification. Counter, not a streak. New `lib/coaching/disciplineLedger.ts`. Definition diverges by tier: free uses RPE + completion %, paid uses zone discipline. **No emojis, no flames, no urgency, no push on milestones** — silent reset on break. Strava-independent. Tier: FREE (count for everyone). Effort: M.
-- 🔲 **KIT-PREVIEW-01 — Sample Kit reading on Coach tab** *(scoped 2026-05-23)* — Sutherland imaginability. Static, hardcoded brand-voice-perfect sample reading replaces dimmed CoachTeaser body for free users below the RPE threshold. Clearly disclaimed *"Example — not your data."* Strava-independent. Tier: FREE display. Effort: S.
-- 🔲 **DOCTRINE-01 — Surface `BRAND.brandStatement` in-product** *(scoped 2026-05-23)* — Sharp distinctive assets. Adds the brand statement quietly to two surfaces: founder note bottom (FOUNDER-01) and end-of-session card when discipline ledger advanced this week (LEDGER-01 + COMPLETE-01). Not on splash, login or orientation. Strava-independent. Tier: FREE. Effort: XS.
 
 - 🔲 **WIDGET-01 — iOS home screen widget** *(scoped 2026-05-23; defer until items 1–12 ship)* — race countdown + today's session. Small + medium widgets. New Swift `ZonnaWidgetExtension` Xcode target. Shared App Group for data handoff between JS app and Swift widget. Strava-independent. Tier: FREE. Effort: L.
 

@@ -25,6 +25,7 @@ import PlanArc from '@/components/shared/PlanArc'
 import RPEScale from '@/components/shared/RPEScale'
 import SessionCard from '@/components/shared/SessionCard'
 import SessionCompleteCard from '@/components/shared/SessionCompleteCard'
+import { useDisciplineLedger } from '@/lib/coaching/useDisciplineLedger'
 import ZoneBar, { zoneNumberForType, zoneShortName } from '@/components/shared/ZoneBar'
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import AIMark from '@/components/shared/AIMark'
@@ -2269,6 +2270,10 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   const [saving, setSaving] = useState(false)
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null)
   const [claimedIds, setClaimedIds] = useState<Set<number>>(new Set())
+  // LEDGER-01 / DOCTRINE-01 — when the discipline ledger advanced this week,
+  // SessionCompleteCard surfaces BRAND.brandStatement quietly below the
+  // voice anchor. Hook handles its own fetch + cancellation.
+  const ledgerSnapshot = useDisciplineLedger()
   const [loadingClaimed, setLoadingClaimed] = useState(false)
   const [zoneSheetOpen, setZoneSheetOpen] = useState(false)
   const [rpe, setRpe] = useState<number | null>(null)
@@ -2608,6 +2613,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               zonePct={null}
               rpe={rpe}
               fatigueTag={fatigueTag}
+              ledgerAdvancedThisWeek={ledgerSnapshot?.advancedThisWeek ?? false}
             />
           </div>
         )}
@@ -6245,21 +6251,42 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
         {/* Insufficient data: keep the locked identity card but with a clear
             "log to unlock" message instead of the marketing line. */}
         {insight.kind === 'insufficient' && (
+          // KIT-PREVIEW-01 — Sample Kit reading. Shown to free users below
+          // the RPE threshold so they can SEE what Kit produces before
+          // earning their first real insight. Provenance honesty: the copy
+          // is hand-authored, NOT model output — so we use CoachByline
+          // (Kit's identity) but drop the AIMark and the moss left rail
+          // (both of which signal "this card is AI-coached"). The eyebrow
+          // "EXAMPLE — NOT YOUR DATA" explicitly disclaims authorship.
           <div style={{
             background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)',
-            borderLeft: '3px solid var(--moss)', padding: '16px 18px',
+            padding: '16px 18px',
           }}>
-            <div style={{ marginBottom: '10px' }}>
-              <CoachByline />
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+              color: 'var(--mute)', letterSpacing: '0.14em', textTransform: 'uppercase',
+              marginBottom: '12px',
+            }}>
+              Example &mdash; not your data
             </div>
-            <p style={{ fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3, margin: '0 0 6px' }}>
+            <div style={{ marginBottom: '10px' }}>
+              <CoachByline role="EXAMPLE" />
+            </div>
+            <p style={{ fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3, margin: '0 0 8px' }}>
+              Easy days running hot.
+            </p>
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13.5px', color: 'var(--ink-2)', lineHeight: 1.55, margin: '0 0 14px' }}>
+              Three logs at RPE 7+ on what should be Zone 2. Pull the next
+              one back from the first km.
+            </p>
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.55,
+              paddingTop: '12px', borderTop: '1px solid var(--line)',
+            }}>
               {insight.loggedCount === 0
-                ? 'Log a session to unlock your weekly Kit note.'
+                ? 'Log a session to unlock your own weekly reading. RPE + fatigue is all Kit needs.'
                 : 'One more logged session and Kit reads your week.'}
-            </p>
-            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55, margin: 0 }}>
-              RPE + fatigue is all Kit needs. No Strava required.
-            </p>
+            </div>
           </div>
         )}
 
@@ -8110,6 +8137,11 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
 }) {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling' | 'delete-account'>('main')
+
+  // LEDGER-01 — "Weeks within the lines" — pulled lazily on Me-screen mount.
+  // null while loading; the card renders a muted "—" placeholder until the
+  // route resolves so we don't flash a zero. Hook handles cancellation.
+  const ledger = useDisciplineLedger()
   // Plan adjustments — "What we watch for" disclosure
   const [adjustmentsDisclosureOpen, setAdjustmentsDisclosureOpen] = useState(false)
 
@@ -8346,6 +8378,68 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
               ))}
             </div>
           </div>
+        </div>
+
+        {/* LEDGER-01 — Weeks within the lines.
+             Counter, not a streak. No flames, no urgency, no celebration of
+             milestones. Resets silently to 0 on a broken week. Voice anchor
+             stamp at the bottom — same anatomy as Pattern 10 eyebrow tracking. */}
+        <SectionLabel>Weeks within the lines</SectionLabel>
+        <div style={{
+          background: 'var(--card)',
+          border: '1px solid var(--line)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '20px',
+        }}>
+          {ledger == null ? (
+            // Loading placeholder — same shape as the resolved card so the
+            // surface doesn't reflow when the data lands.
+            <>
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800,
+                color: 'var(--mute)', opacity: 0.4,
+                fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+                letterSpacing: '-0.05em',
+                marginBottom: '8px',
+              }}>—</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.5 }}>
+                weeks within the lines
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '8px' }}>
+                <div style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800,
+                  color: ledger.weeksWithinLines === 0 ? 'var(--mute)' : 'var(--ink)',
+                  opacity: ledger.weeksWithinLines === 0 ? 0.6 : 1,
+                  fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+                  letterSpacing: '-0.05em',
+                }}>
+                  {ledger.weeksWithinLines}
+                </div>
+                {ledger.currentWeekStatus === 'pending' && ledger.weeksWithinLines > 0 && (
+                  <span style={{
+                    fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 600,
+                    color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase',
+                  }}>
+                    pending
+                  </span>
+                )}
+              </div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: ledger.weeksWithinLines === 0 ? 'var(--ink-2)' : 'var(--mute)', lineHeight: 1.5, marginBottom: '14px' }}>
+                {ledger.weeksWithinLines === 0
+                  ? 'This week starts the count.'
+                  : 'weeks within the lines'}
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+                color: 'var(--mute)', letterSpacing: '0.14em', textTransform: 'uppercase',
+              }}>
+                {BRAND.voiceAnchor}
+              </div>
+            </>
+          )}
         </div>
 
         {/* ── Connections ────────────────────────────────────────── */}
@@ -9462,6 +9556,10 @@ function PostRunScreen({
   const [analysis, setAnalysis] = useState<any | null>(runAnalysis ?? null)
   useEffect(() => { setAnalysis(runAnalysis ?? null) }, [runAnalysis])
 
+  // LEDGER-01 / DOCTRINE-01 — drives the conditional brand-statement surface
+  // on the SessionCompleteCard rendered below.
+  const ledgerSnapshot = useDisciplineLedger()
+
   const [rpe, setRpe]                       = useState<number | null>(null)
   const [fatigueTag, setFatigueTag]         = useState<string | null>(null)
   const [savingRPE, setSavingRPE]           = useState(false)
@@ -9834,6 +9932,7 @@ function PostRunScreen({
               zonePct={analysis?.hr_in_zone_pct != null ? Number(analysis.hr_in_zone_pct) : null}
               rpe={rpe}
               fatigueTag={fatigueTag}
+              ledgerAdvancedThisWeek={ledgerSnapshot?.advancedThisWeek ?? false}
             />
           </div>
         )}
