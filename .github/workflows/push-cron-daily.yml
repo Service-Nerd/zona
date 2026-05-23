@@ -1,0 +1,48 @@
+# HOOK-SCHED-01 — daily morning training-day push (HOOK-01).
+#
+# Why this isn't in vercel.json:
+#   Vercel Hobby caps at 2 cron jobs + daily-only frequency. The
+#   send-daily route needs hourly granularity so per-user-timezone
+#   06:30 windows hit correctly. GitHub Actions has no cron limit
+#   and is free for public repos. See `project_vercel_hobby_plan`
+#   in memory and the backlog entry for HOOK-SCHED-01.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   CRON_SECRET  — same value as the Vercel env var of the same name.
+#                  The route accepts either `Authorization: Bearer <secret>`
+#                  (what Vercel cron would send) or `x-cron-secret`.
+#   VERCEL_URL   — the production URL with no trailing slash, e.g.
+#                  https://rts-training-hub.vercel.app
+
+name: push-cron-daily
+
+on:
+  schedule:
+    # 30 minutes past every hour, UTC. The route then filters per
+    # user-local timezone — only subscribers whose stored `timezone`
+    # puts them at local 06:30 get a push on any given run.
+    - cron: '30 * * * *'
+  # Manual trigger for testing — visible under Actions → push-cron-daily.
+  workflow_dispatch:
+
+jobs:
+  fire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST /api/push/send-daily
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VERCEL_URL:  ${{ secrets.VERCEL_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ] || [ -z "$VERCEL_URL" ]; then
+            echo "::error::CRON_SECRET and VERCEL_URL secrets must be set on the repo."
+            exit 1
+          fi
+          # -f fails the step on HTTP >=400. --max-time keeps a hung
+          # Vercel deploy from spinning forever. -sS hides the progress
+          # bar but keeps errors visible.
+          curl -fsS --max-time 60 -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$VERCEL_URL/api/push/send-daily"
