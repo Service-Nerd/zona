@@ -123,7 +123,6 @@ After Vercel deploy, verify with agent-browser:
 *Full execution spec: `docs/releases/review-2026-05-23.md`. Strava-resilience constraint applies to all items — every surface degrades silently to HealthKit-only data on day one and absorbs Strava when approved (no redesign). Items ordered by ship sequence.*
 
 
-- 🔲 **WIDGET-01 — iOS home screen widget** *(scoped 2026-05-23; defer until items 1–12 ship)* — race countdown + today's session. Small + medium widgets. New Swift `ZonnaWidgetExtension` Xcode target. Shared App Group for data handoff between JS app and Swift widget. Strava-independent. Tier: FREE. Effort: L.
 
 
 ---

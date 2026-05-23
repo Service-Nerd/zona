@@ -27,6 +27,7 @@ import SessionCard from '@/components/shared/SessionCard'
 import SessionCompleteCard from '@/components/shared/SessionCompleteCard'
 import { useDisciplineLedger } from '@/lib/coaching/useDisciplineLedger'
 import { getCompletionCopy } from '@/lib/coaching/completionCopy'
+import { useWidgetSync } from '@/lib/widget/useWidgetSync'
 import ZoneBar, { zoneNumberForType, zoneShortName } from '@/components/shared/ZoneBar'
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import AIMark from '@/components/shared/AIMark'
@@ -985,6 +986,12 @@ export default function DashboardClient() {
       setViewWeekIndex(idx >= 0 ? idx : 0)
     }
   }, [plan])
+
+  // WIDGET-01 — push race countdown + today's session into the App
+  // Group container so the iOS home-screen widget can render them.
+  // No-op on web. Debounced inside the hook — repeated identical
+  // payloads don't re-write.
+  useWidgetSync(plan, allOverrides)
 
   // HOOK-01 — beacon the server when the Today screen is in view so the daily
   // push cron can suppress the 06:30 push for runners already in the app.
