@@ -125,7 +125,6 @@ After Vercel deploy, verify with agent-browser:
 
 - 🔲 **WIDGET-01 — iOS home screen widget** *(scoped 2026-05-23; defer until items 1–12 ship)* — race countdown + today's session. Small + medium widgets. New Swift `ZonnaWidgetExtension` Xcode target. Shared App Group for data handoff between JS app and Swift widget. Strava-independent. Tier: FREE. Effort: L.
 
-- 🔲 **SAVE-IMG-01 — Save-image affordance on SessionCompleteCard (COMPLETE-01 follow-up)** *(scoped 2026-05-23, deferred from COMPLETE-01 v1)* — COMPLETE-01 shipped the in-app card; iOS-screenshot works as a manual fallback. v1.1 adds a "Save image" button that exports the artefact at higher fidelity. Architecture mirrors SHARE-01: new `app/api/og/session-complete-card/route.tsx` (`next/og`, `nodejs` runtime), 1080×1920 PNG sourced from `(session_completions row + optional run_analysis row + getCompletionCopy)`. Client-side helper extends `lib/share/shareWeeklyZoneCard.ts` (or a sibling) to fetch PNG and route to `@capacitor/share` on iOS / anchor download on web — both deps already installed. Button sits OUTSIDE the card surface (so the card screenshot itself remains clean). Tier: PAID detail / FREE structure (matches the card itself — paid users get the zone-bar variant; free users get the RPE/fatigue variant). Effort: M (~½ day; OG layout + button wiring + contract doc). Dependency: none — additive to COMPLETE-01.
 
 ---
 

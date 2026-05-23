@@ -26,6 +26,7 @@ import RPEScale from '@/components/shared/RPEScale'
 import SessionCard from '@/components/shared/SessionCard'
 import SessionCompleteCard from '@/components/shared/SessionCompleteCard'
 import { useDisciplineLedger } from '@/lib/coaching/useDisciplineLedger'
+import { getCompletionCopy } from '@/lib/coaching/completionCopy'
 import ZoneBar, { zoneNumberForType, zoneShortName } from '@/components/shared/ZoneBar'
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import AIMark from '@/components/shared/AIMark'
@@ -2159,22 +2160,8 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
 // ── Dot / accent colours — resolved via lib/session-types.ts ─────────────
 
 // ── COMPLETION COPY ───────────────────────────────────────────────────────
-
-function getCompletionCopy(type: string): { headline: string; body: string } {
-  switch (type) {
-    case 'easy':
-    case 'run':      return { headline: 'Kept it easy.', body: "That's where the fitness is built. Zone 2 does its work quietly." }
-    case 'long':     return { headline: 'Long one done.', body: "Resist the urge to add miles tomorrow. The adaptation happens now." }
-    case 'quality':
-    case 'tempo':    return { headline: 'Hard session logged.', body: "Earn that rest. Don't follow it with more effort." }
-    case 'intervals':
-    case 'hard':     return { headline: 'That was the hard part.', body: "The next 48 hours are when your body catches up. Let it." }
-    case 'race':     return { headline: 'Race done.', body: "Whatever happened, happened. You showed up and finished." }
-    case 'recovery': return { headline: 'Recovery done.', body: "More useful than it felt. That one counts." }
-    case 'strength': return { headline: 'Strength session done.', body: "The legs will thank you when it matters." }
-    default:         return { headline: 'Session done.', body: "Next one when you're ready." }
-  }
-}
+// Extracted to lib/coaching/completionCopy.ts so the share-image OG route
+// (SAVE-IMG-01) can render the same lines server-side.
 
 // ── Zonna REFLECT RESPONSE ────────────────────────────────────────────────
 
@@ -2605,17 +2592,26 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             call). Strava/HealthKit-matched completions surface a State A
             card inside PostRunScreen instead. */}
         {rpe !== null && (
-          <div style={{ marginBottom: '20px' }}>
-            <SessionCompleteCard
-              sessionType={session.type}
-              date={new Date()}
-              completionCopy={copy}
-              zonePct={null}
-              rpe={rpe}
-              fatigueTag={fatigueTag}
-              ledgerAdvancedThisWeek={ledgerSnapshot?.advancedThisWeek ?? false}
-            />
-          </div>
+          <>
+            <div style={{ marginBottom: '12px' }}>
+              <SessionCompleteCard
+                sessionType={session.type}
+                date={new Date()}
+                completionCopy={copy}
+                zonePct={null}
+                rpe={rpe}
+                fatigueTag={fatigueTag}
+                ledgerAdvancedThisWeek={ledgerSnapshot?.advancedThisWeek ?? false}
+              />
+            </div>
+            {/* SAVE-IMG-01 — Save image button. Lives OUTSIDE the card
+                surface so a user-initiated iOS screenshot frames the card
+                cleanly. The route renders the same artefact at higher
+                fidelity (1080×1920 PNG via next/og). */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+              <SaveImageButton weekN={weekN} sessionDay={session.key} />
+            </div>
+          </>
         )}
 
         {/* POST-RUN-REFRAME-01 — optional reflection + AI reframe.
@@ -6470,6 +6466,62 @@ function ShareWeekButton({ weekN }: { weekN: number }) {
   )
 }
 
+// SAVE-IMG-01 — "Save image" button rendered BELOW SessionCompleteCard
+// (never inside). Keeps the user's iOS screenshot of the card clean.
+// Tinted-moss secondary style — the card itself is the moment; the
+// button is the accelerator.
+function SaveImageButton({ weekN, sessionDay }: { weekN: number; sessionDay: string }) {
+  const [busy, setBusy]     = useState(false)
+  const [status, setStatus] = useState<string | null>(null)
+  useEffect(() => {
+    if (!status) return
+    const t = setTimeout(() => setStatus(null), 2200)
+    return () => clearTimeout(t)
+  }, [status])
+
+  async function onSave() {
+    if (busy) return
+    setBusy(true)
+    setStatus(null)
+    try {
+      const { shareSessionCompleteCard } = await import('@/lib/share/shareSessionCompleteCard')
+      await shareSessionCompleteCard({
+        weekN,
+        sessionDay,
+        onStatus: (s) => {
+          if (s.kind === 'downloaded')     setStatus('Saved')
+          else if (s.kind === 'cancelled') setStatus(null)
+          else if (s.kind === 'success')   setStatus(null)
+          else if (s.kind === 'error')     setStatus(s.message || 'Save failed')
+        },
+      })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={onSave}
+      disabled={busy}
+      style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+        fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
+        color: 'var(--moss)',
+        background: 'rgba(107,142,107,0.12)',
+        border: 'none',
+        borderRadius: '22px',
+        padding: '0 18px',
+        minHeight: '44px',  // iOS HIG tap-target minimum.
+        cursor: busy ? 'default' : 'pointer',
+        opacity: busy ? 0.7 : 1,
+      }}
+    >
+      {status ?? (busy ? 'Preparing…' : 'Save image')}
+    </button>
+  )
+}
+
 function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, liveSessionsCompleted, liveSessionsPlanned, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaConnected: boolean
@@ -9924,17 +9976,26 @@ function PostRunScreen({
             Same component as the manual-completion reflect view; data
             sources differ. */}
         {rpe !== null && (
-          <div style={{ padding: '0 24px', marginBottom: '4px' }}>
-            <SessionCompleteCard
-              sessionType={session.type}
-              date={new Date()}
-              completionCopy={getCompletionCopy(session.type)}
-              zonePct={analysis?.hr_in_zone_pct != null ? Number(analysis.hr_in_zone_pct) : null}
-              rpe={rpe}
-              fatigueTag={fatigueTag}
-              ledgerAdvancedThisWeek={ledgerSnapshot?.advancedThisWeek ?? false}
-            />
-          </div>
+          <>
+            <div style={{ padding: '0 24px', marginBottom: '12px' }}>
+              <SessionCompleteCard
+                sessionType={session.type}
+                date={new Date()}
+                completionCopy={getCompletionCopy(session.type)}
+                zonePct={analysis?.hr_in_zone_pct != null ? Number(analysis.hr_in_zone_pct) : null}
+                rpe={rpe}
+                fatigueTag={fatigueTag}
+                ledgerAdvancedThisWeek={ledgerSnapshot?.advancedThisWeek ?? false}
+              />
+            </div>
+            {/* SAVE-IMG-01 — Save image affordance lives outside the card
+                so a user-initiated screenshot doesn't include the button. */}
+            {weekN != null && sessionDay && (
+              <div style={{ padding: '0 24px', marginBottom: '4px', display: 'flex', justifyContent: 'flex-end' }}>
+                <SaveImageButton weekN={weekN} sessionDay={sessionDay} />
+              </div>
+            )}
+          </>
         )}
 
         {/* POST-RUN-REFRAME-01 — optional reflection + AI reframe.

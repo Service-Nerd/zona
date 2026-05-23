@@ -4,6 +4,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { BRAND } from '@/lib/brand'
+import { loadFont, splitOnDoubleLetter } from '@/lib/brand-og'
 
 // SHARE-01 — Shareable weekly zone-discipline card.
 //
@@ -37,26 +38,7 @@ const STORY_W = 1080
 const STORY_H = 1920
 
 // --- helpers ----------------------------------------------------------------
-
-async function loadFont(family: string, weight: number): Promise<ArrayBuffer> {
-  const css = await fetch(
-    `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@${weight}&display=swap`,
-    { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' } },
-  ).then(r => r.text())
-  const url = css.match(/src: url\((.+?)\) format\('woff2'\)/)?.[1]
-  if (!url) throw new Error(`Font URL not found for ${family}`)
-  return fetch(url).then(r => r.arrayBuffer())
-}
-
-function splitOnDoubleLetter(name: string): [string, string, string] | null {
-  const lower = name.toLowerCase()
-  for (let i = 0; i < lower.length - 1; i++) {
-    if (lower[i] === lower[i + 1]) {
-      return [name.slice(0, i), name.slice(i, i + 2), name.slice(i + 2)]
-    }
-  }
-  return null
-}
+// loadFont + splitOnDoubleLetter live in lib/brand-og.ts (shared across OG routes).
 
 // Verdict line keyed by the weekly dominant_flag. Distinct from per-session
 // getVerdictVoice() — a week is not a session. Kept short for the card slot.

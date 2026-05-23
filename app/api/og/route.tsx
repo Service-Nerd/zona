@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { BRAND } from '@/lib/brand'
+import { loadFont, splitOnDoubleLetter } from '@/lib/brand-og'
 
 export const runtime = 'edge'
 
@@ -12,31 +13,10 @@ export const runtime = 'edge'
  *   Warm Slate tokens in app/globals.css. @vercel/og runs in the edge runtime
  *   without a DOM so CSS custom properties don't resolve here; BRAND.og is
  *   the single source of truth for the resolved hex values this route uses.
- * - The double-letter accent position is derived from BRAND.name at runtime;
- *   if a future rename removes the doubled letters the wordmark falls back to
- *   plain rendering.
+ * - The double-letter accent position is derived from BRAND.name at runtime
+ *   via lib/brand-og; if a future rename removes the doubled letters the
+ *   wordmark falls back to plain rendering.
  */
-
-async function loadFont(family: string, weight: number): Promise<ArrayBuffer> {
-  const css = await fetch(
-    `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@${weight}&display=swap`,
-    { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' } }
-  ).then(r => r.text())
-
-  const url = css.match(/src: url\((.+?)\) format\('woff2'\)/)?.[1]
-  if (!url) throw new Error(`Font URL not found for ${family}`)
-  return fetch(url).then(r => r.arrayBuffer())
-}
-
-function splitOnDoubleLetter(name: string): [string, string, string] | null {
-  const lower = name.toLowerCase()
-  for (let i = 0; i < lower.length - 1; i++) {
-    if (lower[i] === lower[i + 1]) {
-      return [name.slice(0, i), name.slice(i, i + 2), name.slice(i + 2)]
-    }
-  }
-  return null
-}
 
 export async function GET() {
   const [interBlack, interRegular] = await Promise.all([
