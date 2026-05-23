@@ -131,6 +131,8 @@ After Vercel deploy, verify with agent-browser:
 
 - 🔲 **WIDGET-01 — iOS home screen widget** *(scoped 2026-05-23; defer until items 1–12 ship)* — race countdown + today's session. Small + medium widgets. New Swift `ZonnaWidgetExtension` Xcode target. Shared App Group for data handoff between JS app and Swift widget. Strava-independent. Tier: FREE. Effort: L.
 
+- 🔲 **HOOK-SCHED-01 — Schedule HOOK-01 + HOOK-02 push routes via GitHub Actions** *(scoped 2026-05-23, blocker for HOOK-01 + HOOK-02 to actually fire)* — Vercel Hobby is capped at 2 crons + daily-only frequency, so the hourly schedules for `/api/push/send-daily` (HOOK-01) and `/api/push/send-trial-insight` (HOOK-02) were stripped from `vercel.json` in commit `b2f8d51`. Routes are deployed and functional — they just don't fire on a schedule. Replace with a GitHub Actions workflow at `.github/workflows/push-crons.yml`: two scheduled jobs (`30 * * * *` for send-daily, `15 * * * *` for send-trial-insight) running `curl -H "Authorization: Bearer $CRON_SECRET" $VERCEL_URL/api/push/send-...` against the production deploy. Needs `CRON_SECRET` + `VERCEL_URL` as GitHub Actions secrets on the repo. The routes already accept the Bearer header — no code change required. Effort: XS (~15 min). Tier: PAID infra (the features themselves are PAID).
+
 ---
 
 ## LATER — Post-launch roadmap
