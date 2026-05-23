@@ -25,6 +25,14 @@ export interface PlanWeeklyNotePromptInput {
    * Null on week 1 or when invalidated by a plan regeneration.
    */
   previousWeeklyNote?: { weekN: number; headline: string; items: string[] } | null
+  /**
+   * Classification flag computed by the route from plan data — true ONLY when
+   * the week is genuinely rest-heavy (foundation/taper phase, deload type/badge,
+   * or ≤2 non-rest sessions). Grounds the AI so it doesn't pattern-match
+   * "no quality session" → "rest week" and tell the user their easy/long week
+   * is a rest week.
+   */
+  isRestHeavyWeek: boolean
 }
 
 const PHASE_LABELS: Record<string, string> = {
@@ -49,7 +57,7 @@ const PHASE_LABELS: Record<string, string> = {
 export function buildPlanWeeklyNotePrompt(input: PlanWeeklyNotePromptInput): string {
   const {
     weekN, phase, weeksToRace, raceName, raceDistance,
-    sessions, firstName, athleteContext, previousWeeklyNote,
+    sessions, firstName, athleteContext, previousWeeklyNote, isRestHeavyWeek,
   } = input
 
   const phaseLabel = phase ? (PHASE_LABELS[phase] ?? phase) : null
@@ -82,6 +90,7 @@ export function buildPlanWeeklyNotePrompt(input: PlanWeeklyNotePromptInput): str
 
   const dataBlock = [
     `Week ${weekN}${phaseLabel ? ` — ${phaseLabel} phase` : ''}`,
+    `Week classification: ${isRestHeavyWeek ? 'rest-heavy / deload' : 'normal training week'}`,
     raceLine,
     raceDistance ? `Race distance: ${raceDistance}` : null,
     '',
@@ -107,7 +116,8 @@ Write the week-ahead voice card. Rules:
 - Honest and specific. Reference the actual session shape — name a day or type when it helps.
 - Never start an ITEM with "Tip:" or "Remember:". Just say it.
 - Race week: address the race; everything else is execution detail.
-- Deload / rest-heavy week: name the restraint, don't apologise for it.
+- Rest-heavy / deload week (only when Week classification says so): name the restraint, don't apologise for it.
+- HARD RULE on the word "rest": only use it when Week classification = "rest-heavy / deload". An easy week, a base-volume week, or a build week with only easy runs is NOT a rest week. Easy runs are not rest. If you're tempted to write "rest week" on a normal-classification week, write "easy week" or name the actual sessions instead.
 
 Output EXACTLY this format. Nothing else.
 

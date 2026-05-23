@@ -118,6 +118,18 @@ export async function POST(req: NextRequest) {
     }]
   })
 
+  // Rest-heavy classification — grounds the AI so it doesn't pattern-match
+  // "no quality session" to "rest week" and tell the user their easy/long
+  // week is a rest week. True only when the week is genuinely deload:
+  // foundation/taper phase, deload-typed/badged week, or ≤2 sessions total.
+  const weekType  = week.type as string | undefined
+  const weekBadge = week.badge as string | undefined
+  const isRestHeavyWeek = (
+    phase === 'foundation' || phase === 'taper' ||
+    weekType === 'deload' || weekBadge === 'deload' ||
+    sessionsBlock.length <= 2
+  )
+
   // ── Build prompt + call AI ──────────────────────────────────────────────
   const prompt = buildPlanWeeklyNotePrompt({
     weekN:           week_n,
@@ -135,6 +147,7 @@ export async function POST(req: NextRequest) {
           items:    (prevNoteRes.data.items as string[]) ?? [],
         }
       : null,
+    isRestHeavyWeek,
   })
 
   let rawContent: string | null = null

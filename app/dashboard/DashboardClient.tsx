@@ -6032,7 +6032,7 @@ function buildWeekVoiceContext(currentWeek: Week, plan: Plan): WeekVoiceContext 
 }
 
 function getWeekVoiceHeadline(ctx: WeekVoiceContext): string {
-  if (ctx.phase === 'foundation') return "Foundation week. Easy only — no effort required."
+  if (ctx.phase === 'foundation') return "Foundation week. Easy only — build the base."
   if (ctx.phase === 'taper') return "Taper week. Back off and trust the work."
   if (ctx.phase === 'peak')  return "Peak week. You're sharp. Don't add more."
   if (ctx.hasQuality && ctx.hasLong) return "Quality and long run this week. Hard stuff first, long stuff rested."
@@ -7189,10 +7189,17 @@ function StravaScreen({ runs, loading, connected, raceName, raceDate, raceDistan
 
 // ── PUSH NOTIFICATIONS ROW ────────────────────────────────────────────────
 
-function PushNotificationsRow() {
+function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed: boolean) => void } = {}) {
   const [status, setStatus] = useState<'checking' | 'unsupported' | 'subscribed' | 'denied' | 'idle'>('checking')
   const [loading, setLoading] = useState(false)
   const [errMsg, setErrMsg] = useState<string | null>(null)
+
+  // Bubble the subscribed boolean up so the parent can gate the
+  // dependent "Morning training push" toggle on it (you can't get a
+  // morning reminder if push itself is off).
+  useEffect(() => {
+    onStatusChange?.(status === 'subscribed')
+  }, [status, onStatusChange])
 
   useEffect(() => {
     async function check() {
@@ -7307,29 +7314,56 @@ function PushNotificationsRow() {
     finally { setLoading(false) }
   }
 
-  if (status === 'checking' || status === 'unsupported') return null
+  if (status === 'unsupported') return null
+
+  // Toggle is "on" when subscribed; "off" otherwise. While the iOS permission
+  // sheet is up we keep it visually on (optimistic) so the user gets immediate
+  // feedback. On grant we stay on; on deny we revert to off + sub-copy.
+  const isOn = status === 'subscribed' || loading
+  // Tap behaviour: ON → subscribe. OFF → no-op on native (must use iOS
+  // Settings to revoke — surfaced in the subtitle copy).
+  const handleTap = () => {
+    if (status === 'idle') {
+      void enablePush()
+    }
+    // status === 'subscribed' | 'denied' → tap is no-op; subtitle tells user where to go
+  }
+  const subtitle = errMsg
+    ? errMsg
+    : status === 'checking' ? 'Checking…'
+    : status === 'subscribed' ? 'Push notifications on. Manage in iOS Settings.'
+    : status === 'denied' ? 'Blocked in iOS Settings — open to enable.'
+    : loading ? 'Asking iOS for permission…'
+    : "Kit pings you when he's read your run."
 
   return (
-    <div style={{ margin: '4px 0', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '10px', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
-        <div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>Run notifications</div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-            {errMsg
-              ? errMsg
-              : status === 'subscribed' ? 'Push notifications on'
-              : status === 'denied' ? 'Blocked in device settings'
-              : "Kit pings you when he's read your run."}
+    <div style={{ margin: '4px 0', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', gap: '12px' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500 }}>Run notifications</div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '2px', lineHeight: 1.4 }}>
+            {subtitle}
           </div>
         </div>
-        {status === 'idle' && (
-          <button onClick={enablePush} disabled={loading} style={{ background: 'var(--accent)', color: 'var(--card)', border: 'none', borderRadius: '8px', padding: '7px 14px', fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
-            {loading ? 'Enabling…' : 'Enable'}
-          </button>
-        )}
-        {status === 'subscribed' && (
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
-        )}
+        <button
+          onClick={handleTap}
+          disabled={loading || status === 'subscribed' || status === 'denied'}
+          style={{
+            width: '44px', height: '26px', borderRadius: '13px', border: 'none',
+            cursor: (status === 'idle' && !loading) ? 'pointer' : 'default',
+            background: isOn ? 'var(--moss)' : 'var(--line)',
+            position: 'relative', flexShrink: 0, transition: 'background 0.2s',
+            opacity: status === 'denied' ? 0.5 : 1,
+          }}
+          aria-label="Toggle run notifications"
+        >
+          <div style={{
+            position: 'absolute', top: '3px',
+            left: isOn ? '21px' : '3px',
+            width: '20px', height: '20px', borderRadius: '50%',
+            background: 'white', transition: 'left 0.2s',
+          }} />
+        </button>
       </div>
     </div>
   )
@@ -7340,30 +7374,45 @@ function PushNotificationsRow() {
 // PushNotificationsRow visual but renders inline (no permission ask — the
 // permission belongs to PushNotificationsRow above).
 
-function DailyPushToggleRow({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean) => void }) {
+function DailyPushToggleRow({ enabled, onChange, disabled = false }: {
+  enabled: boolean
+  onChange: (v: boolean) => void
+  /** Parent/child gate — true when Run notifications is off; row goes dim
+   *  and toggle is non-interactive (you can't get a morning reminder if
+   *  push itself is off). */
+  disabled?: boolean
+}) {
+  // Effective on-state: only "on" when both the user preference says on AND
+  // push is enabled at all. Otherwise the toggle should read as off so the
+  // user isn't lied to about getting a push that can never arrive.
+  const effectiveOn = enabled && !disabled
   return (
-    <div style={{ margin: '4px 0', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+    <div style={{ margin: '4px 0', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', opacity: disabled ? 0.55 : 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', gap: '12px' }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500 }}>Morning training push</div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '2px', lineHeight: 1.4 }}>
-            {enabled
-              ? `${BRAND.coachName} reminds you about today's session at 06:30.`
-              : 'Off. No morning reminder.'}
+            {disabled
+              ? 'Turn on Run notifications first.'
+              : enabled
+                ? `${BRAND.coachName} reminds you about today's session at 06:30.`
+                : 'Off. No morning reminder.'}
           </div>
         </div>
         <button
-          onClick={() => onChange(!enabled)}
+          onClick={() => { if (!disabled) onChange(!enabled) }}
+          disabled={disabled}
           style={{
-            width: '44px', height: '26px', borderRadius: '13px', border: 'none', cursor: 'pointer',
-            background: enabled ? 'var(--moss)' : 'var(--line)',
+            width: '44px', height: '26px', borderRadius: '13px', border: 'none',
+            cursor: disabled ? 'default' : 'pointer',
+            background: effectiveOn ? 'var(--moss)' : 'var(--line)',
             position: 'relative', flexShrink: 0, transition: 'background 0.2s',
           }}
           aria-label="Toggle morning training push"
         >
           <div style={{
             position: 'absolute', top: '3px',
-            left: enabled ? '21px' : '3px',
+            left: effectiveOn ? '21px' : '3px',
             width: '20px', height: '20px', borderRadius: '50%',
             background: 'white', transition: 'left 0.2s',
           }} />
@@ -8220,6 +8269,11 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   const router = useRouter()
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling' | 'delete-account'>('main')
 
+  // Push subscription state — bubbled up from PushNotificationsRow so we can
+  // gate the dependent DailyPushToggleRow ("Morning training push" can't fire
+  // if push itself is off). Defaults to false until the row checks iOS perm.
+  const [pushSubscribed, setPushSubscribed] = useState(false)
+
   // LEDGER-01 — "Weeks within the lines" — pulled lazily on Me-screen mount.
   // null while loading; the card renders a muted "—" placeholder until the
   // route resolves so we don't flash a zero. Hook handles cancellation.
@@ -8335,36 +8389,6 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         {/* ── Your profile ───────────────────────────────────────── */}
         <SectionLabel>Your profile</SectionLabel>
         <ProfileSection firstName={firstName} lastName={lastName} email={profileEmail} onSave={onProfileChange} />
-
-        {/* FOUNDER-01 — Why Zonna exists. Single tappable row sitting under
-            the Profile editor; routes to FounderNoteScreen. Cialdini
-            authority/liking/unity moment — quiet entry, no upsell. */}
-        {onOpenFounderNote && (
-          <button
-            onClick={onOpenFounderNote}
-            style={{
-              width: '100%',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '14px 16px',
-              background: 'var(--card)',
-              border: '1px solid var(--line)',
-              borderRadius: 'var(--radius-lg)',
-              cursor: 'pointer', textAlign: 'left',
-              minHeight: '44px',
-              marginTop: '8px',
-            }}
-          >
-            <div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.55 }}>
-                Why {BRAND.name} exists
-              </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '2px', lineHeight: 1.5 }}>
-                A short note from the founder.
-              </div>
-            </div>
-            <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
-          </button>
-        )}
 
         {/* ── Your training ──────────────────────────────────────── */}
         {/* Plan · HR data · display preferences — everything that shapes session cards */}
@@ -8532,12 +8556,26 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           <AppleHealthConnectionRow />
           <StravaConnectionRow />
         </div>
-        {hasPaidAccess && <PushNotificationsRow />}
-        {hasPaidAccess && onDailyPushEnabledChange && (
-          <DailyPushToggleRow
-            enabled={dailyPushEnabled ?? true}
-            onChange={onDailyPushEnabledChange}
-          />
+
+        {/* ── Notifications ──────────────────────────────────────── */}
+        {/* Push subscription is the parent; the morning training reminder is
+            a child preference that can't fire if push itself is off. Both
+            rows now use the same toggle visual so the relationship reads
+            cleanly (was Button + Toggle — looked like two unrelated bugs). */}
+        {hasPaidAccess && (
+          <>
+            <SectionLabel>Notifications</SectionLabel>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <PushNotificationsRow onStatusChange={setPushSubscribed} />
+              {onDailyPushEnabledChange && (
+                <DailyPushToggleRow
+                  enabled={dailyPushEnabled ?? true}
+                  onChange={onDailyPushEnabledChange}
+                  disabled={!pushSubscribed}
+                />
+              )}
+            </div>
+          </>
         )}
 
         {/* ── Race prep ──────────────────────────────────────────── */}
@@ -8741,6 +8779,29 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--danger)', fontWeight: 500 }}>Delete account</span>
           </button>
         </div>
+
+        {/* FOUNDER-01 — quiet footer link. Moved here from "Your profile"
+            (where it competed with profile editing). Same register as
+            About / Privacy / Terms — discoverable, doesn't compete. */}
+        {onOpenFounderNote && (
+          <button
+            onClick={onOpenFounderNote}
+            style={{
+              alignSelf: 'center',
+              marginTop: '16px',
+              padding: '14px 16px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-ui)',
+              fontSize: '12px',
+              fontWeight: 400,
+              color: 'var(--mute)',
+            }}
+          >
+            A note from the founder →
+          </button>
+        )}
 
       </div>
     </div>
