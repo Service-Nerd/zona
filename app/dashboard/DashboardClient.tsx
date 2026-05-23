@@ -6529,6 +6529,76 @@ function SaveImageButton({ weekN, sessionDay }: { weekN: number; sessionDay: str
   )
 }
 
+// LEDGER-01 — "Weeks within the lines" RestraintCard.
+//
+// Moved 2026-05-23 from the Me/Profile screen to the Coach screen — the metric
+// belongs with the rest of the execution / discipline data, not the admin /
+// connections context where it originally landed. Counter, not a streak. No
+// flames, no urgency, no celebration of milestones. Resets silently to 0 on a
+// broken week. Voice anchor stamp at the bottom — same anatomy as Pattern 11
+// (RestraintCard) in ui-patterns.md.
+function LedgerCard() {
+  const ledger = useDisciplineLedger()
+  return (
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--line)',
+      borderRadius: 'var(--radius-lg)',
+      padding: '20px',
+    }}>
+      {ledger == null ? (
+        // Loading placeholder — same shape as the resolved card so the
+        // surface doesn't reflow when the data lands.
+        <>
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800,
+            color: 'var(--mute)', opacity: 0.4,
+            fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+            letterSpacing: '-0.05em',
+            marginBottom: '8px',
+          }}>—</div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.5 }}>
+            weeks within the lines
+          </div>
+        </>
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '8px' }}>
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800,
+              color: ledger.weeksWithinLines === 0 ? 'var(--mute)' : 'var(--ink)',
+              opacity: ledger.weeksWithinLines === 0 ? 0.6 : 1,
+              fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+              letterSpacing: '-0.05em',
+            }}>
+              {ledger.weeksWithinLines}
+            </div>
+            {ledger.currentWeekStatus === 'pending' && ledger.weeksWithinLines > 0 && (
+              <span style={{
+                fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 600,
+                color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase',
+              }}>
+                pending
+              </span>
+            )}
+          </div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: ledger.weeksWithinLines === 0 ? 'var(--ink-2)' : 'var(--mute)', lineHeight: 1.5, marginBottom: '14px' }}>
+            {ledger.weeksWithinLines === 0
+              ? 'This week starts the count.'
+              : 'weeks within the lines'}
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+            color: 'var(--mute)', letterSpacing: '0.14em', textTransform: 'uppercase',
+          }}>
+            {BRAND.voiceAnchor}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, liveSessionsCompleted, liveSessionsPlanned, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaConnected: boolean
@@ -6800,6 +6870,13 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             </div>
           </div>
         )}
+
+        {/* ── LEDGER — "Weeks within the lines" ─────────────────────────
+            Moved here from MeScreen 2026-05-23. Sits above the stats grid
+            because it frames everything below: the in-week scores only
+            matter in the context of how many disciplined weeks you've
+            already strung together. RestraintCard anatomy (Pattern 11). */}
+        <LedgerCard />
 
         {/* ── STATS 2×2 GRID ───────────────────────────────────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -8274,10 +8351,6 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   // if push itself is off). Defaults to false until the row checks iOS perm.
   const [pushSubscribed, setPushSubscribed] = useState(false)
 
-  // LEDGER-01 — "Weeks within the lines" — pulled lazily on Me-screen mount.
-  // null while loading; the card renders a muted "—" placeholder until the
-  // route resolves so we don't flash a zero. Hook handles cancellation.
-  const ledger = useDisciplineLedger()
   // Plan adjustments — "What we watch for" disclosure
   const [adjustmentsDisclosureOpen, setAdjustmentsDisclosureOpen] = useState(false)
 
@@ -8484,68 +8557,6 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
               ))}
             </div>
           </div>
-        </div>
-
-        {/* LEDGER-01 — Weeks within the lines.
-             Counter, not a streak. No flames, no urgency, no celebration of
-             milestones. Resets silently to 0 on a broken week. Voice anchor
-             stamp at the bottom — same anatomy as Pattern 10 eyebrow tracking. */}
-        <SectionLabel>Weeks within the lines</SectionLabel>
-        <div style={{
-          background: 'var(--card)',
-          border: '1px solid var(--line)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '20px',
-        }}>
-          {ledger == null ? (
-            // Loading placeholder — same shape as the resolved card so the
-            // surface doesn't reflow when the data lands.
-            <>
-              <div style={{
-                fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800,
-                color: 'var(--mute)', opacity: 0.4,
-                fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                letterSpacing: '-0.05em',
-                marginBottom: '8px',
-              }}>—</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.5 }}>
-                weeks within the lines
-              </div>
-            </>
-          ) : (
-            <>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '8px' }}>
-                <div style={{
-                  fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800,
-                  color: ledger.weeksWithinLines === 0 ? 'var(--mute)' : 'var(--ink)',
-                  opacity: ledger.weeksWithinLines === 0 ? 0.6 : 1,
-                  fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                  letterSpacing: '-0.05em',
-                }}>
-                  {ledger.weeksWithinLines}
-                </div>
-                {ledger.currentWeekStatus === 'pending' && ledger.weeksWithinLines > 0 && (
-                  <span style={{
-                    fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 600,
-                    color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase',
-                  }}>
-                    pending
-                  </span>
-                )}
-              </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: ledger.weeksWithinLines === 0 ? 'var(--ink-2)' : 'var(--mute)', lineHeight: 1.5, marginBottom: '14px' }}>
-                {ledger.weeksWithinLines === 0
-                  ? 'This week starts the count.'
-                  : 'weeks within the lines'}
-              </div>
-              <div style={{
-                fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-                color: 'var(--mute)', letterSpacing: '0.14em', textTransform: 'uppercase',
-              }}>
-                {BRAND.voiceAnchor}
-              </div>
-            </>
-          )}
         </div>
 
         {/* ── Connections ────────────────────────────────────────── */}
