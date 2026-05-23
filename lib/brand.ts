@@ -74,6 +74,17 @@ export const BRAND = {
    */
   secondaryPhrase: 'Train within the lines.',
 
+  /**
+   * Connect-Your-Runs onboarding (CONNECT-01).
+   * Sutherland signalling — a dedicated screen instead of a settings checkbox.
+   * Day-one body offers Apple Health; the screen absorbs Strava as an equal
+   * second CTA when approved without changing the ask copy.
+   */
+  connect: {
+    ask:     "Kit needs your runs to do anything useful.",
+    subline: "Without them, he's coaching blind.",
+  },
+
   /** Push notification titles — each is a coaching voice opportunity, not a label. */
   push: {
     weeklyReport: 'Your week, reviewed.',

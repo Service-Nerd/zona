@@ -91,3 +91,10 @@ ALTER TABLE user_settings
 | Column | Type | Default | Purpose |
 |---|---|---|---|
 | `trial_insight_push_sent_at` | `timestamptz` | `NULL` | Stamped by `/api/push/send-trial-insight` after the one-shot mid-trial "Kit noticed something." push fires. Never cleared — push is one-shot for life. |
+
+## CONNECT-01 Columns (migration `20260526_connect_runs.sql`)
+
+| Column | Type | Default | Purpose |
+|---|---|---|---|
+| `connect_runs_seen` | `boolean` | `NULL` | Tri-state. `NULL` = ConnectRuns ceremony screen has never been shown (default; triggers on next native session-day open). `FALSE` = shown, user tapped "I'll do it later." `TRUE` = shown, user connected at least one source. |
+| `connect_runs_banner_dismissed_at` | `timestamptz` | `NULL` | Stamped when the one-shot post-skip reminder banner on Today is dismissed. Banner appears only when `connect_runs_seen=FALSE` AND this is `NULL`. Once stamped, never re-shown — the runner can still connect from the Me screen. |

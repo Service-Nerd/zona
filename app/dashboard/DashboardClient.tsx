@@ -310,6 +310,18 @@ export default function DashboardClient() {
 
   // Post-wizard orientation — shown once after first-ever plan generation (B-002)
   const [showOrientation, setShowOrientation] = useState(false)
+
+  // CONNECT-01 — Connect-Your-Runs ceremonial onboarding screen.
+  //   connectRunsSeen: undefined = not yet hydrated from DB
+  //                    null      = never shown (default for fresh users + pre-migration users)
+  //                    false     = shown the screen, user skipped
+  //                    true      = shown the screen, user connected at least one source
+  //   connectRunsBannerDismissedAt: timestamp the post-skip reminder banner
+  //                                 was dismissed (or tapped); null means the
+  //                                 banner is still eligible for one display.
+  const [connectRunsSeen, setConnectRunsSeen] = useState<boolean | null | undefined>(undefined)
+  const [connectRunsBannerDismissedAt, setConnectRunsBannerDismissedAt] = useState<string | null>(null)
+  const [showConnectRuns, setShowConnectRuns] = useState(false)
   const [orientationSeen, setOrientationSeen] = useState(false)
 
   // Strava token failure — set when refresh call returns non-200 for a user who had a token
@@ -530,7 +542,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes, subRes, guidanceRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
@@ -706,6 +718,16 @@ export default function DashboardClient() {
 
         // Orientation seen flag (B-002) — true means we've shown it before, don't show again
         if (data?.orientation_seen) setOrientationSeen(true)
+
+        // CONNECT-01 — hydrate the tri-state flag + banner dismissal stamp.
+        // Treats undefined as null (column may not exist on rows that haven't
+        // been touched since the migration landed).
+        setConnectRunsSeen(
+          data?.connect_runs_seen === true  ? true  :
+          data?.connect_runs_seen === false ? false :
+          null
+        )
+        setConnectRunsBannerDismissedAt(data?.connect_runs_banner_dismissed_at ?? null)
 
         // R30 + R32 dismiss timestamps — gate the coaching cards in CoachScreen
         if (data?.zone_drift_dismissed_at) setZoneDriftDismissedAt(data.zone_drift_dismissed_at)
@@ -969,6 +991,32 @@ export default function DashboardClient() {
     void authedFetch('/api/me/today-heartbeat', { method: 'POST' }).catch(() => {})
   }, [screen, userId, impersonating])
 
+  // CONNECT-01 — trigger the ConnectRuns ceremony when:
+  //   • plan is loaded (not the empty plan, not loading)
+  //   • orientation has been seen (we sit AFTER orientation in the flow)
+  //   • connect_runs_seen is exactly null (tri-state — false means skipped,
+  //     true means already connected). undefined = still hydrating.
+  //   • we're on a native platform (HealthKit is iOS-only — web users keep
+  //     the NULL flag and see the screen if they ever open the native app).
+  //   • not impersonating (admin shadow-login shouldn't trigger user-facing
+  //     onboarding flows).
+  useEffect(() => {
+    if (impersonating) return
+    if (!plan || plan === EMPTY_PLAN) return
+    if (!orientationSeen) return
+    if (connectRunsSeen !== null) return
+    if (showConnectRuns) return
+    void (async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (!Capacitor.isNativePlatform()) return
+        setShowConnectRuns(true)
+      } catch {
+        // Capacitor unavailable — treat as web, skip.
+      }
+    })()
+  }, [plan, orientationSeen, connectRunsSeen, showConnectRuns, impersonating])
+
   // Personalised zone ceiling: Karvonen 70% HRR, falls back to plan meta or 145
   const effectiveZone2Ceiling = useMemo(() => {
     if (restingHR && maxHR) return Math.round(restingHR + 0.70 * (maxHR - restingHR))
@@ -1146,6 +1194,20 @@ export default function DashboardClient() {
             if (user) void supabase.from('user_settings').upsert({ id: user.id, orientation_seen: true, updated_at: new Date().toISOString() })
           } catch {}
         }}
+      />
+    )
+  }
+
+  // CONNECT-01 — Connect-Your-Runs ceremonial onboarding screen.
+  // Gated on: plan exists, connect_runs_seen IS NULL (tri-state), and native
+  // platform (HealthKit is iOS-only). Web users skip this entirely — the
+  // flag stays NULL on their account, and they'll see the screen if they
+  // ever open the native app.
+  if (showConnectRuns) {
+    return (
+      <ConnectRunsScreen
+        onConnected={() => { setConnectRunsSeen(true); setShowConnectRuns(false) }}
+        onSkip={() => { setConnectRunsSeen(false); setShowConnectRuns(false) }}
       />
     )
   }
@@ -1652,6 +1714,157 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
           }}
         >
           I&apos;m ready
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── CONNECT-01 — Connect-Your-Runs ceremonial onboarding screen ────────────
+// Sutherland signalling — a dedicated screen, not a settings checkbox.
+// Layout absorbs a future "Connect Strava" CTA below Apple Health without
+// any redesign or copy change (per spec).
+
+function ConnectRunsScreen({ onConnected, onSkip }: {
+  onConnected: () => void
+  onSkip: () => void
+}) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const supabase = createClient()
+
+  async function connectHealthKit() {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      const { requestHealthKitAuth, syncOnAppOpen } = await import('@/lib/health/clientSync')
+      const granted = await requestHealthKitAuth()
+      if (!granted) {
+        // Denial / unavailable / framework not linked — Capacitor doesn't
+        // distinguish in the return value. Calm one-liner, Zona voice.
+        setError('Apple Health said no. Enable in iOS Settings → Health — or skip for now.')
+        return
+      }
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const nowIso = new Date().toISOString()
+      await supabase.from('user_settings').upsert({
+        id: user.id,
+        healthkit_connected_at: nowIso,
+        connect_runs_seen:      true,
+        updated_at:             nowIso,
+      })
+      void syncOnAppOpen().catch((e) => {
+        console.warn('[HealthKit] first sync after connect failed:', e)
+      })
+      onConnected()
+    } catch (e: any) {
+      console.warn('[HealthKit] connect failed:', e)
+      setError("Couldn't reach Apple Health. Skip for now — try from Me later.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function skip() {
+    if (busy) return
+    setBusy(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('user_settings').upsert({
+        id: user.id,
+        connect_runs_seen: false,
+        updated_at: new Date().toISOString(),
+      })
+      onSkip()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div style={{
+      minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
+      padding: '32px 24px',
+    }}>
+      <div style={{ marginBottom: '6px' }}>
+        <Wordmark size="md" />
+      </div>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '48px' }}>
+        {BRAND.voiceAnchor}
+      </div>
+
+      <div style={{ width: '100%', maxWidth: '340px' }}>
+        {/* The ask — single sentence, BRAND-sourced. */}
+        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.4px', lineHeight: 1.25, marginBottom: '10px' }}>
+          {BRAND.connect.ask}
+        </div>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '32px' }}>
+          {BRAND.connect.subline}
+        </div>
+
+        {/* Primary CTA — Apple Health.
+            When Strava is approved, add a second equal-weight button BELOW this
+            one with the same visual treatment (moss fill, full width). Do not
+            change the ask copy above. */}
+        <button
+          onClick={connectHealthKit}
+          disabled={busy}
+          style={{
+            width: '100%',
+            background: 'var(--moss)', color: '#FFFFFF',
+            border: 'none', borderRadius: '12px',
+            padding: '14px 16px',
+            minHeight: '52px',  // bigger than the 44pt min — primary ceremony CTA.
+            fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
+            letterSpacing: '-0.01em',
+            cursor: busy ? 'wait' : 'pointer',
+            opacity: busy ? 0.7 : 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+          }}
+        >
+          {/* Adapted from AppleHealthConnectionRow icon — 24px white-on-moss
+              roundel containing the canonical moss dot. Reads as "Apple Health"
+              identity on the button surface without needing Apple's marks. */}
+          <span style={{
+            width: '24px', height: '24px', borderRadius: '7px',
+            background: 'rgba(255,255,255,0.18)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FFFFFF' }} />
+          </span>
+          {busy ? 'Connecting…' : 'Connect Apple Health'}
+        </button>
+
+        {error && (
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', lineHeight: 1.55, marginTop: '12px' }}>
+            {error}
+          </div>
+        )}
+
+        {/* Subtle skip — non-blocking. Stamps connect_runs_seen=FALSE so the
+            user gets one reminder banner on Today and isn't pestered again.
+            44pt tap-target per iOS HIG — padding + minHeight. */}
+        <button
+          onClick={skip}
+          disabled={busy}
+          style={{
+            width: '100%',
+            background: 'none', border: 'none',
+            padding: '14px 0',
+            marginTop: '8px',
+            minHeight: '44px',
+            fontFamily: 'var(--font-ui)', fontSize: '13px',
+            color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: '3px',
+            cursor: busy ? 'default' : 'pointer',
+          }}
+        >
+          I&apos;ll do it later.
         </button>
       </div>
     </div>
@@ -4704,6 +4917,13 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   return (
     <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{ paddingBottom: '32px' }}>
 
+      {/* CONNECT-01 — one-shot reminder banner for users who skipped the
+          ConnectRuns ceremony. Self-contained; renders null on the wrong
+          platform / state. Dismiss stamps connect_runs_banner_dismissed_at
+          so the banner never reappears — the runner can still connect later
+          via the Me-screen Apple Health row. */}
+      <ConnectRunsBanner />
+
       {/* ── WORDMARK ROW ─────────────────────────────────────────────── */}
       <div style={{
         padding: '16px 16px 0',
@@ -5895,6 +6115,15 @@ type FreeInsightState =
   | { kind: 'insufficient'; loggedCount: number }
   | { kind: 'unavailable' }
 
+// TIER-DIVERGENT — FREE: renders KIT-TASTE-01 weekly insight card (CoachByline
+//                        + AIMark + headline + body) when available; falls
+//                        through to risk-gated amber warning, an insufficient-
+//                        logs hint, or a dimmed Kit identity placeholder. The
+//                        SHARE-01 upsell + locked race-projections stub sit
+//                        below the insight slot.
+//                  PAID: rendered by CoachScreen instead — this component is
+//                        never mounted for paid/trial users (router in
+//                        DashboardClient picks the screen by tier).
 function CoachTeaser({ plan, firstName, onUpgrade }: {
   plan: Plan; firstName?: string; onUpgrade: () => void
 }) {
@@ -5944,10 +6173,18 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
         )}
 
         {insight.kind === 'insight' && (
+          // AI-card anatomy per ui-patterns.md Pattern 16b § Companion — the
+          // 3px left rail is an absolutely-positioned span (matches
+          // CoachNoteBlock + PendingAdjustmentBanner), not a borderLeft.
           <div style={{
+            position: 'relative',
             background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)',
-            borderLeft: '3px solid var(--moss)', padding: '16px 18px',
+            padding: '16px 18px 16px 26px',
           }}>
+            <span aria-hidden="true" style={{
+              position: 'absolute', left: '8px', top: '16px', bottom: '16px',
+              width: '3px', background: 'var(--moss)', borderRadius: '2px',
+            }} />
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
               <CoachByline role="THIS WEEK" />
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
@@ -5963,13 +6200,20 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
           </div>
         )}
 
-        {/* Risk-gated: rule-engine warning, no AIMark — output is not from the model. */}
+        {/* Risk-gated: rule-engine warning, no AIMark — output is not from
+            the model. Rail anatomy matches CoachNoteBlock; eyebrow type is
+            canonical 10px 700 0.14em per Pattern 10. */}
         {insight.kind === 'risk_gated' && (
           <div style={{
+            position: 'relative',
             background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)',
-            borderLeft: '3px solid var(--warn)', padding: '16px 18px',
+            padding: '16px 18px 16px 26px',
           }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+            <span aria-hidden="true" style={{
+              position: 'absolute', left: '8px', top: '16px', bottom: '16px',
+              width: '3px', background: 'var(--warn)', borderRadius: '2px',
+            }} />
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: '8px' }}>
               Worth a look
             </div>
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink)', lineHeight: 1.55, margin: 0 }}>
@@ -6096,7 +6340,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
               Share your week
             </div>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
-              {BRAND.name}-branded zone card for stories and feeds.
+              The card you can drop in a story.
             </div>
           </div>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--moss)', whiteSpace: 'nowrap', flexShrink: 0 }}>
@@ -6161,15 +6405,17 @@ function ShareWeekButton({ weekN }: { weekN: number }) {
       onClick={onShare}
       disabled={busy}
       style={{
-        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-        color: 'var(--moss)',
-        background: 'rgba(107,142,107,0.12)',
+        // SHARE moment — promoted to filled-moss CTA per audit item #10.
+        color: '#FFFFFF',
+        background: 'var(--moss)',
         border: 'none',
-        borderRadius: '20px',
-        padding: '8px 16px',
+        borderRadius: '22px',
+        padding: '0 18px',
+        minHeight: '44px',  // iOS HIG tap-target minimum.
         cursor: busy ? 'default' : 'pointer',
-        opacity: busy ? 0.6 : 1,
+        opacity: busy ? 0.7 : 1,
       }}
     >
       {status ?? (busy ? 'Preparing…' : 'Share this week')}
@@ -6744,13 +6990,14 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               onClick={generateReport}
               disabled={loading || refreshBlocked}
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                 fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
                 color: 'var(--warn)',
                 background: 'rgba(184,133,58,0.12)',
                 border: 'none',
-                borderRadius: '20px',
-                padding: '8px 16px',
+                borderRadius: '22px',
+                padding: '0 18px',
+                minHeight: '44px',  // iOS HIG tap-target minimum.
                 cursor: (loading || refreshBlocked) ? 'default' : 'pointer',
                 opacity: (loading || refreshBlocked) ? 0.4 : 1,
               }}
@@ -6979,11 +7226,11 @@ function PushNotificationsRow() {
 
 function DailyPushToggleRow({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div style={{ margin: '4px 0', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '10px', overflow: 'hidden' }}>
+    <div style={{ margin: '4px 0', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', gap: '12px' }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>Morning training push</div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', lineHeight: 1.4 }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500 }}>Morning training push</div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '2px', lineHeight: 1.4 }}>
             {enabled
               ? `${BRAND.coachName} reminds you about today's session at 06:30.`
               : 'Off. No morning reminder.'}
@@ -7116,6 +7363,106 @@ function StravaConnectionRow() {
           Kit reads your Strava runs. Nothing else. We're not interested in your followers.
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * CONNECT-01 — One-shot reminder banner for users who skipped the
+ * Connect-Your-Runs ceremony on first plan save.
+ *
+ * Render rules:
+ *   • Native iOS only (no HealthKit on web; banner doesn't apply).
+ *   • Shows when connect_runs_seen=false AND connect_runs_banner_dismissed_at IS NULL.
+ *   • Dismiss (X button) stamps connect_runs_banner_dismissed_at; banner never returns.
+ *
+ * Self-contained: fetches its own row from user_settings on mount. Returns
+ * null until the check resolves so it doesn't flicker into view on a fresh
+ * page load before we know the state.
+ */
+function ConnectRunsBanner() {
+  const [visible, setVisible] = useState<boolean | undefined>(undefined)
+  const supabase = createClient()
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (!Capacitor.isNativePlatform()) { setVisible(false); return }
+      } catch { setVisible(false); return }
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setVisible(false); return }
+      const { data } = await supabase
+        .from('user_settings')
+        .select('connect_runs_seen, connect_runs_banner_dismissed_at')
+        .eq('id', user.id)
+        .single()
+      const skipped     = (data as any)?.connect_runs_seen === false
+      const notYetShown = (data as any)?.connect_runs_banner_dismissed_at == null
+      setVisible(skipped && notYetShown)
+    })()
+  }, [])
+
+  async function dismiss() {
+    setVisible(false)  // optimistic — instant fade
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('user_settings').upsert({
+        id: user.id,
+        connect_runs_banner_dismissed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+    } catch {
+      // Stamp failed — next session-day open will retry. Acceptable.
+    }
+  }
+
+  if (!visible) return null
+
+  return (
+    // Banner anatomy aligned to ui-patterns.md Pattern 10 (PendingAdjustmentBanner):
+    // 14px radius, 14px 16px padding. Moss accent rail (vs Pattern 10's warn)
+    // because this is a passive reminder, not a coaching warning. Rail is an
+    // absolutely-positioned 3px span per Pattern 16b § Companion.
+    <div style={{
+      position: 'relative',
+      margin: '12px 16px 0',
+      padding: '14px 16px 14px 24px',
+      background: 'var(--card)',
+      border: '1px solid var(--line)',
+      borderRadius: '14px',
+      display: 'flex', alignItems: 'flex-start', gap: '10px',
+    }}>
+      <span aria-hidden="true" style={{
+        position: 'absolute', left: '8px', top: '14px', bottom: '14px',
+        width: '3px', background: 'var(--moss)', borderRadius: '2px',
+      }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
+          Still need your runs.
+        </div>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
+          Apple Health connects from the Me screen — takes about ten seconds.
+        </div>
+      </div>
+      <button
+        onClick={dismiss}
+        aria-label="Dismiss"
+        style={{
+          background: 'none', border: 'none', cursor: 'pointer',
+          // 44pt tap target per iOS HIG. Negative margin keeps the visual ×
+          // anchored to the card edge while the hit area extends outward.
+          width: '44px', height: '44px',
+          marginTop: '-10px', marginRight: '-10px', marginBottom: '-10px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'var(--mute)',
+          fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 400, lineHeight: 1,
+          flexShrink: 0,
+        }}
+      >
+        ×
+      </button>
     </div>
   )
 }
