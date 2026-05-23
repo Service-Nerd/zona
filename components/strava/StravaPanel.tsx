@@ -118,7 +118,7 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
           <div>
             <div style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 500, marginBottom: '6px' }}>Strava not connected</div>
             <div style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              Go to the <span style={{ color: 'var(--teal)' }}>Me</span> screen to connect your Strava account.
+              Kit needs your runs to do anything useful. Connect Strava in the <span style={{ color: 'var(--teal)' }}>Me</span> screen.
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

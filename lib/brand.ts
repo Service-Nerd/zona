@@ -36,7 +36,7 @@ export const BRAND = {
   brandStatement: "You can't outrun your easy days.",
 
   /** Sub-text shown below the sign-in card heading. */
-  signinSub: 'Access your training plan.',
+  signinSub: 'Pick it up where you left off.',
 
   /** Sub-tagline used in signup context only. The brand doesn't pitch — it states. */
   signupSub: '14 days, no limits. After that, you decide.',
@@ -77,7 +77,7 @@ export const BRAND = {
   /** Push notification titles — each is a coaching voice opportunity, not a label. */
   push: {
     weeklyReport: 'Your week, reviewed.',
-    runAnalysis:  'Run logged.',
+    runAnalysis:  "That's done. Kit's reading.",
   },
 } as const
 

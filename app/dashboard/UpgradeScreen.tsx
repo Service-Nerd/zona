@@ -347,7 +347,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
             padding: '4px 0',
           }}
         >
-          Continue with free plan →
+          Stay with the free plan →
         </button>
       </div>
     </div>

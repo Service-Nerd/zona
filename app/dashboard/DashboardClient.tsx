@@ -1032,7 +1032,7 @@ export default function DashboardClient() {
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
         }}>
-          {BRAND.tagline}
+          {BRAND.voiceAnchor}
         </div>
       </div>
     )
@@ -1052,7 +1052,7 @@ export default function DashboardClient() {
           <Wordmark size="md" />
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '48px' }}>
-          {BRAND.tagline}
+          {BRAND.voiceAnchor}
         </div>
 
         {/* Welcome message */}
@@ -1429,7 +1429,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
         <Wordmark size="md" />
       </div>
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
-        {BRAND.tagline}
+        {BRAND.voiceAnchor}
       </div>
 
       <div style={{ width: '100%', maxWidth: '340px' }}>
@@ -1914,7 +1914,7 @@ function getCompletionCopy(type: string): { headline: string; body: string } {
     case 'hard':     return { headline: 'That was the hard part.', body: "The next 48 hours are when your body catches up. Let it." }
     case 'race':     return { headline: 'Race done.', body: "Whatever happened, happened. You showed up and finished." }
     case 'recovery': return { headline: 'Recovery done.', body: "More useful than it felt. That one counts." }
-    case 'strength': return { headline: 'Strength session done.', body: "The legs will thank you eventually. Usually around km 70." }
+    case 'strength': return { headline: 'Strength session done.', body: "The legs will thank you when it matters." }
     default:         return { headline: 'Session done.', body: "Next one when you're ready." }
   }
 }
@@ -1966,7 +1966,7 @@ function getReflectResponse(sessionType: string, rpe: number | null, fatigueTag:
 }
 
 function getSkipResponse(reason: string): string {
-  if (reason === 'Injury / illness') return "Smart call. Come back when you're ready."
+  if (reason === 'Injury / illness') return "Right call. Don't push it."
   if (reason === 'Too tired') return "Body talking. Worth listening."
   if (reason === 'Life got busy') return "Life counts. Pick it back up."
   if (reason === 'Bad weather') return "It'll be there tomorrow."
@@ -6742,7 +6742,7 @@ function PushNotificationsRow() {
         <div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>Run notifications</div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-            {status === 'subscribed' ? 'Push notifications on' : status === 'denied' ? 'Blocked in device settings' : 'Get notified after each run is analysed'}
+            {status === 'subscribed' ? 'Push notifications on' : status === 'denied' ? 'Blocked in device settings' : "Kit pings you when he's read your run."}
           </div>
         </div>
         {status === 'idle' && (
@@ -6861,7 +6861,7 @@ function StravaConnectionRow() {
       </div>
       {!isLoading && !connected && (
         <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-          {BRAND.name} will read your Strava activities to provide coaching insights. No other data is accessed.
+          Kit reads your Strava runs. Nothing else. We're not interested in your followers.
         </div>
       )}
     </div>
@@ -8090,7 +8090,7 @@ function LockedCoachingPreview({ onUpgrade, onOpenCoach }: { onUpgrade?: () => v
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
         color: 'var(--mute)', lineHeight: 1.55, marginBottom: '14px',
       }}>
-        Your coaching appears here. Connect Strava or Apple Health to unlock it.
+        Kit reads here. He needs your runs first — Strava or Apple Health.
       </div>
       {onUpgrade && (
         <button onClick={onUpgrade} style={{

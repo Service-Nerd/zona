@@ -6,7 +6,7 @@ It maps canonical values → surfaces → divergences → execution list.
 When `lib/brand.ts` and this doc disagree, `lib/brand.ts` is the truth. Fix this doc.
 When a component and this doc disagree, the component is wrong. Fix the component.
 
-**Last audited**: 2026-05-14
+**Last audited**: 2026-05-23
 
 ---
 
@@ -182,6 +182,17 @@ These are the gaps between what the code does and what it should do.
 | DIV-007 | `app/dashboard/DashboardClient.tsx` | 615–619 | Welcome screen body copy doesn't pass Zonna voice check — passive and generic | Copy quality — not a code defect |
 | DIV-008 | `app/dashboard/DashboardClient.tsx` | 3598 | Free Coach card body `"we'll tell you exactly"` is slightly salesy | Copy quality — not a code defect |
 | DIV-009 | `docs/canonical/brand.md` | 9 | Listed tagline was old brand statement — **fixed in same commit as this doc** | ✅ Fixed |
+| DIV-010 | `lib/brand.ts:39` (`signinSub`) | `'Access your training plan.'` is generic portal language — register mismatches the tagline above it. Tracked as part of VOICE-PATCH-01 (review 2026-05-23). | ✅ Fixed 2026-05-23 — now `'Pick it up where you left off.'` |
+| DIV-011 | `GeneratePlanScreen.tsx:943` | `'Welcome to Zonna…'` is the most generic SaaS opener available. TODO already flagged in code. Tracked as part of VOICE-PATCH-01. | ✅ Fixed 2026-05-23 — now `'Start with the finish line.'` / `'Work backwards from there.'` |
+| DIV-012 | `lib/brand.ts:80` (`push.runAnalysis`) | `'Run logged.'` is a system label, not a coaching opening — contradicts the comment beside it. Tracked as part of VOICE-PATCH-01. | ✅ Fixed 2026-05-23 — now `"That's done. Kit's reading."` |
+| DIV-013 | `app/dashboard/DashboardClient.tsx:6864` (Strava settings row) | `'Zonna will read your Strava activities to provide coaching insights. No other data is accessed.'` reads as legal boilerplate. Tracked as part of VOICE-PATCH-01. | ✅ Fixed 2026-05-23 — now `'Kit reads your Strava runs. Nothing else. We're not interested in your followers.'` |
+| DIV-014 | `app/dashboard/DashboardClient.tsx:6743` (push settings row) | `'Run notifications. Get notified after each run is analysed.'` — "notifications" + "notified" in one sentence. Tracked as part of VOICE-PATCH-01. | ✅ Fixed 2026-05-23 — idle state now `"Kit pings you when he's read your run."` |
+| DIV-015 | `app/dashboard/DashboardClient.tsx:1968` (skip-injury copy) | `'Smart call. Come back when you're ready.'` — faintly American-coach register. Tracked as part of VOICE-PATCH-01. | ✅ Fixed 2026-05-23 — now `"Right call. Don't push it."` |
+| DIV-016 | `app/dashboard/DashboardClient.tsx:1906` (`getCompletionCopy`, strength) | `'Usually around km 70.'` — funny for an ultra trainee, confusing for a 10K trainee. Tracked as part of VOICE-PATCH-01. | ✅ Fixed 2026-05-23 — universal `"The legs will thank you when it matters."` used for all race distances |
+| DIV-017 | `app/dashboard/UpgradeScreen.tsx` | `'Continue with free plan →'` — flow word "continue" instead of choice word "stay". Tracked as part of VOICE-PATCH-01. | ✅ Fixed 2026-05-23 — now `'Stay with the free plan →'` |
+| DIV-018 | `app/dashboard/DashboardClient.tsx:8077` (`LockedCoachingPreview`) | `'Your coaching appears here.'` — generic SaaS register. Tracked as part of VOICE-PATCH-01. | ✅ Fixed 2026-05-23 — now `'Kit reads here. He needs your runs first — Strava or Apple Health.'` |
+| DIV-019 | `app/auth/login/page.tsx:168` (signup success) | `'…or sign in if confirmation is disabled.'` — internal engineering escape hatch leaked into user copy. Tracked as part of VOICE-PATCH-01. | ✅ Fixed 2026-05-23 — now `'Account created. Check your email.'` |
+| DIV-020 | Tagline repetition | `BRAND.tagline` rendered on splash + login + orientation. Over-use degrades the asset. Tracked as STOP-01 (review 2026-05-23). | ✅ Fixed 2026-05-23 — splash + welcome + orientation now use `BRAND.voiceAnchor`; tagline stays on login only |
 
 ---
 

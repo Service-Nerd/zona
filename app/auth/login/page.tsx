@@ -165,7 +165,7 @@ export default function LoginPage() {
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       })
       if (error) { setError(error.message); setLoading(false); return }
-      setMessage('Account created — check your email to confirm, or sign in if confirmation is disabled.')
+      setMessage('Account created. Check your email.')
       setLoading(false)
     }
   }
