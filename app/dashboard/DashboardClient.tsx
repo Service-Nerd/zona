@@ -7192,6 +7192,7 @@ function StravaScreen({ runs, loading, connected, raceName, raceDate, raceDistan
 function PushNotificationsRow() {
   const [status, setStatus] = useState<'checking' | 'unsupported' | 'subscribed' | 'denied' | 'idle'>('checking')
   const [loading, setLoading] = useState(false)
+  const [errMsg, setErrMsg] = useState<string | null>(null)
 
   useEffect(() => {
     async function check() {
@@ -7224,6 +7225,7 @@ function PushNotificationsRow() {
 
   async function enablePush() {
     setLoading(true)
+    setErrMsg(null)
     const { Capacitor } = await import('@capacitor/core')
 
     // Native iOS path: request permission, register, send the device token
@@ -7234,6 +7236,7 @@ function PushNotificationsRow() {
         const perm = await PushNotifications.requestPermissions()
         if (perm.receive !== 'granted') {
           setStatus('denied')
+          setLoading(false)
           return
         }
         // Resolve once APNs hands back a device token (or errors). Time out
@@ -7271,10 +7274,13 @@ function PushNotificationsRow() {
         })
         setStatus('subscribed')
       } catch (err) {
-        // Most common cause on simulator: APNs sandbox unreachable.
-        // Surface the reason in the console so it's debuggable from Xcode.
+        // Most common cause on simulator: APNs sandbox unreachable. Also fires
+        // on a true APNs registration failure in TestFlight. Surface the
+        // reason in the UI instead of silently returning to idle — that was
+        // the "Enabling… forever" UX the user reported.
         console.warn('[push] iOS registration failed:', err instanceof Error ? err.message : err)
         setStatus('idle')
+        setErrMsg("Couldn't enable push. Try again in a moment.")
       } finally {
         setLoading(false)
       }
@@ -7309,7 +7315,11 @@ function PushNotificationsRow() {
         <div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>Run notifications</div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-            {status === 'subscribed' ? 'Push notifications on' : status === 'denied' ? 'Blocked in device settings' : "Kit pings you when he's read your run."}
+            {errMsg
+              ? errMsg
+              : status === 'subscribed' ? 'Push notifications on'
+              : status === 'denied' ? 'Blocked in device settings'
+              : "Kit pings you when he's read your run."}
           </div>
         </div>
         {status === 'idle' && (
@@ -7786,6 +7796,15 @@ function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number | nul
     setBusy(true)
     setErr(null)
     try {
+      const { Health } = await import('@capgo/capacitor-health')
+      // Check availability first so we can give a specific reason when the
+      // plugin says no — the generic "unavailable" message left users
+      // staring at a connected Apple Health row with no idea what to do.
+      const availability = await Health.isAvailable().catch(() => ({ available: false }))
+      if (!availability.available) {
+        setErr('Apple Health isn’t available on this device.')
+        return
+      }
       const { fetchAppleHealthHRSnapshot } = await import('@/lib/health/clientSync')
       const snapshot = await fetchAppleHealthHRSnapshot()
       if (!snapshot) {
@@ -7801,7 +7820,11 @@ function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number | nul
         setErr('Got resting HR, but no max HR yet — a workout adds this')
       }
     } catch (e) {
-      setErr('Apple Health unavailable')
+      // Most common cause once availability passes: read permission was revoked
+      // in iOS Settings. The Connections row above still shows "Connected"
+      // because Supabase only tracks the first-grant moment — re-running the
+      // connect flow re-prompts the system sheet and refreshes permission.
+      setErr('Couldn’t read from Apple Health. Reconnect in Connections below.')
     } finally {
       setBusy(false)
     }

@@ -180,7 +180,7 @@ struct ZonnaWidgetEntryView: View {
                 // No race — fall back to today's session block.
                 todayBlock(state: s, scale: .small)
             } else {
-                Text("Open the app to set up your widget.")
+                Text("Open Zonna to load this week.")
                     .font(.system(size: 12, weight: .regular))
                     .foregroundColor(ZonnaColour.mute)
                     .multilineTextAlignment(.leading)
@@ -234,7 +234,7 @@ struct ZonnaWidgetEntryView: View {
                 if let s = entry.state {
                     todayBlock(state: s, scale: .medium)
                 } else {
-                    Text("Open the app to set up your widget.")
+                    Text("Open Zonna to load this week.")
                         .font(.system(size: 12, weight: .regular))
                         .foregroundColor(ZonnaColour.mute)
                 }

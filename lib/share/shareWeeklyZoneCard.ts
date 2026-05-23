@@ -59,7 +59,14 @@ export async function shareWeeklyZoneCard(opts: ShareOptions = {}): Promise<void
   try {
     const res = await authedFetch(url)
     if (!res.ok) {
-      throw new Error(`Card unavailable (${res.status})`)
+      // 404 means the server-side row exists but zone discipline hasn't been
+      // computed yet (needs ≥2 runs with HR data this week). Tell the user
+      // that — the previous generic "Card unavailable (404)" left them
+      // staring at an opaque failure on a button the UI thought was enabled.
+      if (res.status === 404) {
+        throw new Error('Need 2+ logged runs with HR data this week.')
+      }
+      throw new Error(`Couldn’t load the card (${res.status}).`)
     }
     pngBlob = await res.blob()
   } catch (err: any) {

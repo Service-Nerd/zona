@@ -1,5 +1,6 @@
 import Foundation
 import Capacitor
+import WidgetKit
 
 // WIDGET-01 — Custom Capacitor plugin for App Group UserDefaults.
 //
@@ -35,6 +36,12 @@ public class SharedStorePlugin: CAPPlugin {
             return
         }
         defaults.set(value, forKey: key)
+        // Force WidgetKit to rebuild timelines so the new payload is visible
+        // on the home screen without waiting for the next scheduled refresh
+        // (iOS otherwise caches aggressively, leaving the widget stale).
+        if #available(iOS 14.0, *) {
+            WidgetCenter.shared.reloadAllTimelines()
+        }
         call.resolve(["ok": true])
     }
 
