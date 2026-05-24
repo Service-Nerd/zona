@@ -14,6 +14,19 @@ import WidgetKit
 // widget needs an App Group container. Adding an `appGroup` param to the
 // existing plugin would require a fork; a 30-line custom plugin is the
 // honest path.
+//
+// IMPORTANT — Capacitor 8 plugin registration:
+// Capacitor 8 does NOT auto-discover plugins via the `CAP_PLUGIN` macro at
+// runtime. It reads `packageClassList` in `ios/App/App/capacitor.config.json`
+// and instantiates each class via `NSClassFromString`. `SharedStorePlugin`
+// must appear in that list or this plugin is silently absent from the
+// bridge (every call rejects, every write is a no-op, widget stays empty).
+//
+// `npx cap sync ios` regenerates `packageClassList` by scanning installed
+// npm packages — it doesn't know about local plugins, so it WILL overwrite
+// any manual addition. After every cap sync, re-add "SharedStorePlugin" to
+// the list. See ios/App/ZonnaWidgetExtension/README.md → Step 5 for the
+// post-sync recovery.
 
 @objc(SharedStorePlugin)
 public class SharedStorePlugin: CAPPlugin {

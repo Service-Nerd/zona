@@ -130,13 +130,29 @@ Re-check on every new TestFlight build — when you bump the main app, **bump th
 
 ---
 
-## Step 5 — Verify the SharedStore plugin compiles
+## Step 5 — Verify the SharedStore plugin compiles AND registers
 
 The new `SharedStorePlugin.swift` + `SharedStorePlugin.m` files are inside `ios/App/App/` — they're part of the main app, not the widget. They should auto-appear in the `App` target after `npx cap sync ios`. If they don't:
 
 1. Right-click the `App` group in the navigator → **Add Files to "App"…**.
 2. Add `SharedStorePlugin.swift` and `SharedStorePlugin.m`.
 3. Tick the **`App`** target only (not the widget — the widget doesn't use Capacitor).
+
+### Step 5b — Register `SharedStorePlugin` with the Capacitor bridge
+
+**Compiling the files isn't enough.** Capacitor 8 doesn't auto-discover local plugins via the `CAP_PLUGIN` macro — it reads a list of class names from `ios/App/App/capacitor.config.json → packageClassList` and instantiates each via `NSClassFromString`. If `SharedStorePlugin` isn't in that list, every JS call rejects, every `writeWidgetState` call is a no-op, and the widget reads an empty App Group container (the "Open Zonna to load this week." fallback).
+
+Confirm the entry exists:
+
+```json
+"packageClassList": [
+  "AppPlugin",
+  …,
+  "SharedStorePlugin"   ← must be present
+]
+```
+
+**`npx cap sync ios` regenerates this list by scanning installed npm packages** — it doesn't know about local plugins, so it will silently remove the manual entry every time it runs. **Re-add `"SharedStorePlugin"` after every `cap sync`.** The plugin source file has a comment header repeating this warning.
 
 ---
 
