@@ -32,6 +32,12 @@ const DAY_DISPLAY: Record<typeof DAYS_OF_WEEK[number], string> = {
   mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
 }
 
+// Self-healing cache cutoff. Rows generated before this timestamp predate
+// the capitalised-keys fix and narrate empty session blocks ("nothing
+// scheduled this week"). Survives migration deploy lag and any future
+// prompt change that requires a forced refresh — bump this constant.
+const CACHE_MIN_GENERATED_AT = '2026-05-22T00:00:00Z'
+
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -53,11 +59,14 @@ export async function POST(req: NextRequest) {
   )
 
   // ── Idempotency check ───────────────────────────────────────────────────
+  // Cutoff filter: ignore rows generated before the capitalised-keys fix so
+  // any stale "nothing scheduled this week" copy regenerates on next view.
   const { data: existing } = await serviceSupabase
     .from('plan_weekly_notes')
     .select('headline, items')
     .eq('user_id', user.id)
     .eq('week_n', week_n)
+    .gte('generated_at', CACHE_MIN_GENERATED_AT)
     .maybeSingle()
 
   if (existing) {
@@ -183,18 +192,21 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Store ───────────────────────────────────────────────────────────────
+  // Upsert so a pre-cutoff stale row gets overwritten when we regenerate
+  // (otherwise the primary-key conflict would silently leave the bad copy).
   const { error: insertErr } = await serviceSupabase
     .from('plan_weekly_notes')
-    .insert({
-      user_id:  user.id,
+    .upsert({
+      user_id:      user.id,
       week_n,
-      headline: parsed.headline,
-      items:    parsed.items,
-      ai_model: ANTHROPIC_MODEL,
-    })
+      headline:     parsed.headline,
+      items:        parsed.items,
+      ai_model:     ANTHROPIC_MODEL,
+      generated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,week_n' })
 
   if (insertErr) {
-    console.error('[plan-weekly-note] insert failed', insertErr.message)
+    console.error('[plan-weekly-note] upsert failed', insertErr.message)
     // Still return content — client renders even if persist failed.
   }
 

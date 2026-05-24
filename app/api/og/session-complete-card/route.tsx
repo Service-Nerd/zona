@@ -113,10 +113,11 @@ export async function GET(req: NextRequest) {
           .eq('user_id', user.id),
   ])
 
+  // Race tolerance: RPE upsert and Save-image tap can interleave. If the
+  // completion row hasn't landed yet, render with null fields and "now" as
+  // the date rather than 404 — the user is authenticated and asking for
+  // their own card, so worst case is a card with no RPE/fatigue chip.
   const completion = completionRes.data ?? null
-  if (!completion) {
-    return NextResponse.json({ error: 'No completion for that slot' }, { status: 404 })
-  }
 
   const plan      = (planRes.data?.plan_json ?? null) as Plan | null
   const planWeek  = plan?.weeks?.find(w => w.n === weekN) ?? null
@@ -136,9 +137,10 @@ export async function GET(req: NextRequest) {
   const zonePct        = zonePctRaw != null ? Math.round(Number(zonePctRaw)) : null
   const zone           = zoneNumberForType(sessionType)
   const showZone       = zonePct != null && zone != null
-  const rpe            = (completion.rpe as number | null) ?? null
-  const fatigueTag     = (completion.fatigue_tag as string | null) ?? null
-  const dateLabel      = formatDate(new Date(completion.updated_at as string))
+  const rpe            = (completion?.rpe as number | null) ?? null
+  const fatigueTag     = (completion?.fatigue_tag as string | null) ?? null
+  const completedAt    = completion?.updated_at as string | undefined
+  const dateLabel      = formatDate(completedAt ? new Date(completedAt) : new Date())
   const chipLabel      = getSessionLabel(sessionType)
 
   const [interBlack, interBold, interSemi, interRegular] = await Promise.all([

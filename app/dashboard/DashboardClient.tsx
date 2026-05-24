@@ -45,7 +45,7 @@ const UpgradeScreen = dynamic(() => import('./UpgradeScreen'), { ssr: false })
 const BenchmarkUpdateScreen = dynamic(() => import('./BenchmarkUpdateScreen'), { ssr: false })
 const FounderNoteScreen = dynamic(() => import('./FounderNoteScreen'), { ssr: false })
 
-type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'admin' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder'
+type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder'
 
 /**
  * Data passed to PostRunScreen — the destination screen for a Strava-linked
@@ -215,7 +215,6 @@ export default function DashboardClient() {
   const [quitDays, setQuitDays] = useState<number | null>(null)
   const [smokeTrackerEnabled, setSmokeTrackerEnabled] = useState(false)
   const [quitDate, setQuitDate] = useState<string>('')
-  const [resetPhrase, setResetPhrase] = useState('')
   const [theme, setTheme] = useState<'dark' | 'light' | 'auto'>('light')
   const [appReady, setAppReady] = useState(false)
   // Splash holds until critical first-paint data is in: run_analysis (for
@@ -334,9 +333,6 @@ export default function DashboardClient() {
 
   // Auth user ID — stored for callbacks that need to write to user_settings
   const [userId, setUserId] = useState<string | null>(null)
-
-  // Impersonation state
-  const [impersonating, setImpersonating] = useState<{ userId: string; name: string } | null>(null)
 
   // Global overrides — fetched once, shared across all screens
   const [allOverrides, setAllOverrides] = useState<{ week_n: number; original_day: string; new_day: string }[]>([])
@@ -532,13 +528,6 @@ export default function DashboardClient() {
   }, [hasPaidAccess, appReady])
 
   useEffect(() => {
-    try {
-      const p = localStorage.getItem('rts_phrase'); if (p) setResetPhrase(p)
-      // DEPRECATED — rts_theme no longer used (see ADR-008). Theme read ignored.
-      // const t = localStorage.getItem('rts_theme') as 'dark' | 'light' | 'auto' | null
-      // if (t) { setTheme(t); applyTheme(t) } else { applyTheme('light') }
-    } catch {}
-
     async function fetchSettings() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
@@ -878,12 +867,6 @@ export default function DashboardClient() {
     } catch {}
   }
 
-  function saveMental(val: string) {
-    setResetPhrase(val)
-    try { localStorage.setItem('rts_phrase', val) } catch {}
-  }
-
-
   async function dismissWelcome() {
     setShowWelcome(false)
     try {
@@ -891,65 +874,6 @@ export default function DashboardClient() {
       if (!user) return
       await supabase.from('user_settings').upsert({ id: user.id, has_onboarded: true, updated_at: new Date().toISOString() })
     } catch {}
-  }
-
-  async function impersonateUser(userId: string, name: string) {
-    try {
-      // Load their plan — plans table (RLS returns empty for other users), fall back to gist_url
-      const { data: planRow } = await supabase.from('plans').select('plan_json').eq('user_id', userId).single()
-      if (planRow?.plan_json) {
-        setPlan(planRow.plan_json as Plan)
-      } else {
-        const { data: settings } = await supabase.from('user_settings').select('gist_url').eq('id', userId).single()
-        const gistUrl = settings?.gist_url || DEFAULT_GIST_URL
-        const loadedPlan = await fetchPlanFromUrl(gistUrl)
-        setPlan(loadedPlan)
-      }
-
-      // Load their overrides
-      const { data: overrides } = await supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', userId)
-      setAllOverrides(overrides ?? [])
-
-      // Load their completions
-      const { data: completions } = await supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', userId)
-      if (completions) {
-        const map: Record<number, Record<string, any>> = {}
-        completions.forEach((r: any) => {
-          if (!map[r.week_n]) map[r.week_n] = {}
-          map[r.week_n][r.session_day] = r
-        })
-        setAllCompletions(map)
-      }
-
-      setImpersonating({ userId, name })
-      setScreen('today')
-    } catch (e) {
-      console.error('Impersonation failed', e)
-    }
-  }
-
-  async function exitImpersonation() {
-    // Reload own data
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const loadedPlan = await fetchPlanForUser(user.id, supabase)
-    setPlan(loadedPlan)
-
-    const { data: overrides } = await supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id)
-    setAllOverrides(overrides ?? [])
-
-    const { data: completions } = await supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id)
-    if (completions) {
-      const map: Record<number, Record<string, any>> = {}
-      completions.forEach((r: any) => {
-        if (!map[r.week_n]) map[r.week_n] = {}
-        map[r.week_n][r.session_day] = r
-      })
-      setAllCompletions(map)
-    }
-
-    setImpersonating(null)
-    setScreen('today')
   }
 
   async function handlePlanSaved(savedPlan: Plan) {
@@ -998,9 +922,9 @@ export default function DashboardClient() {
   // Fire-and-forget; failure is silent — at worst the cron sends a push the
   // runner doesn't need, which is still better than crashing the dashboard.
   useEffect(() => {
-    if (screen !== 'today' || !userId || impersonating) return
+    if (screen !== 'today' || !userId) return
     void authedFetch('/api/me/today-heartbeat', { method: 'POST' }).catch(() => {})
-  }, [screen, userId, impersonating])
+  }, [screen, userId])
 
   // CONNECT-01 — trigger the ConnectRuns ceremony when:
   //   • plan is loaded (not the empty plan, not loading)
@@ -1009,10 +933,7 @@ export default function DashboardClient() {
   //     true means already connected). undefined = still hydrating.
   //   • we're on a native platform (HealthKit is iOS-only — web users keep
   //     the NULL flag and see the screen if they ever open the native app).
-  //   • not impersonating (admin shadow-login shouldn't trigger user-facing
-  //     onboarding flows).
   useEffect(() => {
-    if (impersonating) return
     if (!plan || plan === EMPTY_PLAN) return
     if (!orientationSeen) return
     if (connectRunsSeen !== null) return
@@ -1026,7 +947,7 @@ export default function DashboardClient() {
         // Capacitor unavailable — treat as web, skip.
       }
     })()
-  }, [plan, orientationSeen, connectRunsSeen, showConnectRuns, impersonating])
+  }, [plan, orientationSeen, connectRunsSeen, showConnectRuns])
 
   // Personalised zone ceiling: Karvonen 70% HRR, falls back to plan meta or 145
   const effectiveZone2Ceiling = useMemo(() => {
@@ -1228,27 +1149,6 @@ export default function DashboardClient() {
   return (
     <div style={s}>
 
-      {/* Impersonation banner */}
-      {impersonating && (
-        <div style={{
-          background: 'var(--accent)', padding: '8px 16px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          position: 'sticky', top: 0, zIndex: 2000,
-        }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--card)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            Viewing as {impersonating.name}
-          </div>
-          <button onClick={exitImpersonation} style={{
-            background: 'rgba(0,0,0,0.2)', border: 'none', borderRadius: '6px',
-            color: 'var(--card)', fontFamily: 'var(--font-ui)', fontSize: '11px',
-            letterSpacing: '0.06em', textTransform: 'uppercase', padding: '4px 10px',
-            cursor: 'pointer',
-          }}>
-            Exit
-          </button>
-        </div>
-      )}
-
       <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px', overscrollBehavior: 'none' }}>
         {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} />}
@@ -1355,13 +1255,13 @@ export default function DashboardClient() {
             })()
           : <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => setScreen('upgrade')} />
         )}
-        {/* Strava + Admin screens: defense-in-depth gate on isAdmin at the render boundary.
-            No UI path opens these for non-admins, but the render gate prevents a future commit
+        {/* Strava screen: defense-in-depth gate on isAdmin at the render boundary.
+            No UI path opens it for non-admins, but the render gate prevents a future commit
             from accidentally exposing admin UI via state mutation or a new entry point. */}
         {screen === 'strava'   && isAdmin && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
-        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} resetPhrase={resetPhrase} onSaveMental={saveMental} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} isAdmin={isAdmin} onOpenAdmin={() => setScreen('admin')} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentAutoAdjustments={recentAutoAdjustments} />}
+        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentAutoAdjustments={recentAutoAdjustments} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={impersonating ? undefined : refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onDone={() => {
           // POST-RUN-02: terminus. Route to SessionScreen for this session
           // with the freshest completion merged in, so the verdict (which
@@ -1373,12 +1273,11 @@ export default function DashboardClient() {
           setActiveSessionData({ ...sess, completion: freshCompletion })
           setActivePostRunData(null)
           setScreen('session')
-        }} onSaved={impersonating ? undefined : refreshCompletions} onAnalysisLoaded={(sessionDay, row) => {
+        }} onSaved={refreshCompletions} onAnalysisLoaded={(sessionDay, row) => {
           // POST-RUN-02: keep parent map in sync so Done → SessionScreen
           // doesn't re-poll for analysis we already have in hand.
           setRunAnalysisMap(prev => ({ ...prev, [sessionDay]: row }))
         }} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={runAnalysisMap[activePostRunData.session?.key ?? ''] ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
-        {screen === 'admin'    && isAdmin && <AdminScreen onBack={() => setScreen('me')} onImpersonate={impersonateUser} />}
         {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} dob={dob} onDobSave={async (d) => { setDob(d); if (userId) await supabase.from('user_settings').update({ date_of_birth: d }).eq('id', userId) }} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} onBack={() => {
           // Legacy key name — preserved to avoid wiping active user state. Future: migrate via key translation layer.
@@ -5405,9 +5304,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               distanceKm={selectedSession.distance}
               units={preferredUnits}
               metric={resolveSessionMetric(weekNum, selectedSession.key, selectedSession.primary_metric, sessionMetricOverrides, preferredMetric)}
-              durationMin={selectedSession.duration
-                ? parseInt(selectedSession.duration)
-                : undefined}
+              durationMin={selectedSession.duration_mins}
               state={
                 completions[selectedCompletionKey]?.status === 'complete' ? 'done'
                 : completions[selectedCompletionKey]?.status === 'skipped' ? 'skipped'
@@ -8305,12 +8202,10 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
   )
 }
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, resetPhrase, onSaveMental, theme, onThemeChange, isAdmin, onOpenAdmin, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentAutoAdjustments }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentAutoAdjustments }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
-  resetPhrase: string; onSaveMental: (v: string) => void
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void
-  isAdmin?: boolean; onOpenAdmin?: () => void
   preferredUnits: 'km' | 'mi'; onUnitsChange: (u: 'km' | 'mi') => void
   preferredMetric: 'distance' | 'duration'; onMetricChange: (m: 'distance' | 'duration') => void
   restingHR: number | null; maxHR: number | null; onHRChange: (rhr: number, mhr: number) => void
@@ -8344,7 +8239,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   recentAutoAdjustments?: Array<{ id: string; trigger_type: string; summary: string; created_at: string; week_n: number }>
 }) {
   const router = useRouter()
-  const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'mental' | 'fueling' | 'delete-account'>('main')
+  const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'delete-account'>('main')
 
   // Push subscription state — bubbled up from PushNotificationsRow so we can
   // gate the dependent DailyPushToggleRow ("Morning training push" can't fire
@@ -8401,12 +8296,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   })()
 
   const raceDistKm = plan?.meta?.race_distance_km ?? 0
-  const raceNm     = plan?.meta?.race_name ?? ''
-  const charity    = plan?.meta?.charity ?? ''
 
   if (activeSection === 'quit')           return <QuitTab    quitDays={quitDays} raceDistanceKm={raceDistKm} onBack={() => setActiveSection('main')} />
-  if (activeSection === 'mental')         return <MentalTab  resetPhrase={resetPhrase} onSave={onSaveMental} onBack={() => setActiveSection('main')} raceDistanceKm={raceDistKm} raceName={raceNm} charity={charity} />
-  if (activeSection === 'fueling')        return <FuelingTab onBack={() => setActiveSection('main')} />
   if (activeSection === 'delete-account') return <DeleteAccountScreen onBack={() => setActiveSection('main')} />
 
   const hasPlan = !!(plan?.meta?.race_name)
@@ -8589,23 +8480,6 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           </>
         )}
 
-        {/* ── Race prep ──────────────────────────────────────────── */}
-        <SectionLabel>Race prep</SectionLabel>
-        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-          {[
-            { id: 'mental'  as const, label: 'Mental toolkit', sub: '6 tools for when it gets dark at km 70', color: 'var(--s-easy)' },
-            { id: 'fueling' as const, label: 'Fueling plan',   sub: 'Gel + hydration protocol for race day',  color: 'var(--moss)' },
-          ].map(({ id, label, sub, color }, i, arr) => (
-            <button key={id} onClick={() => setActiveSection(id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : 'none', cursor: 'pointer', textAlign: 'left' }}>
-              <div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>{label}</div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color, marginTop: '2px' }}>{sub}</div>
-              </div>
-              <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
-            </button>
-          ))}
-        </div>
-
         {/* ── Plan adjustments (paid/trial only) ───────────────────
              One engine, two controls: Auto-adjust runs it on a schedule,
              Check now runs it on demand. The "Last checked" line and the
@@ -8756,20 +8630,6 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           </>
         )}
 
-        {/* ── Admin ──────────────────────────────────────────────── */}
-        {isAdmin && (
-          <>
-            <SectionLabel>Admin</SectionLabel>
-            <button onClick={onOpenAdmin} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--moss-mid)', cursor: 'pointer', textAlign: 'left' }}>
-              <div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--moss)', lineHeight: 1.55 }}>User management</div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>Impersonate · view plans</div>
-              </div>
-              <div style={{ color: 'var(--moss)', marginLeft: '12px' }}>{chevron}</div>
-            </button>
-          </>
-        )}
-
         {/* ── Careful Now — destructive account actions ───────── */}
         <SectionLabel>Careful Now</SectionLabel>
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
@@ -8818,88 +8678,6 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
     </div>
   )
 }
-
-// ── ADMIN SCREEN ──────────────────────────────────────────────────────────
-
-function AdminScreen({ onBack, onImpersonate }: {
-  onBack: () => void
-  onImpersonate: (userId: string, name: string) => void
-}) {
-  const [users, setUsers] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const supabase = createClient()
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const { data } = await supabase
-          .from('user_settings')
-          .select('id, gist_url, has_onboarded, is_admin, first_name, last_name, email')
-        if (data) {
-          const { data: { user } } = await supabase.auth.getUser()
-          setUsers(data.filter((u: any) => u.id !== user?.id))
-        }
-      } catch {}
-      finally { setLoading(false) }
-    }
-    load()
-  }, [])
-
-  return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px', borderBottom: '0.5px solid var(--border-col)', position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10 }}>
-        <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: '0', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)' }}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        </button>
-        <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)' }}>User management</div>
-      </div>
-
-      <div style={{ padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {loading ? (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '24px 0', textAlign: 'center' }}>Loading users...</div>
-        ) : users.length === 0 ? (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '24px 0', textAlign: 'center' }}>No users found</div>
-        ) : users.map(u => {
-          const displayName = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email || u.id.slice(0, 8)
-
-          return (
-            <div key={u.id} style={{
-              background: 'var(--card-bg)', borderRadius: '12px',
-              border: '0.5px solid var(--border-col)',
-              padding: '14px 16px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            }}>
-              <div>
-                <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)' }}>
-                  {displayName}
-                  {u.is_admin && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--accent)', marginLeft: '8px', border: '0.5px solid var(--accent-mid)', borderRadius: '10px', padding: '1px 6px' }}>admin</span>}
-                </div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>
-                  {u.has_onboarded ? 'Onboarded' : 'Not yet onboarded'} · {u.gist_url ? 'Plan set' : 'No plan'}
-                </div>
-              </div>
-              {!u.is_admin && (
-                <button
-                  onClick={() => onImpersonate(u.id, displayName)}
-                  style={{
-                    background: 'var(--accent-soft)', border: '0.5px solid var(--accent-mid)',
-                    borderRadius: '8px', color: 'var(--accent)',
-                    fontFamily: 'var(--font-ui)', fontSize: '11px',
-                    letterSpacing: '0.06em', textTransform: 'uppercase',
-                    padding: '6px 12px', cursor: 'pointer',
-                  }}
-                >
-                  View
-                </button>
-              )}
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
 
 // ── SESSION SCREEN ────────────────────────────────────────────────────────
 
@@ -10152,77 +9930,6 @@ function InfoBox({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '16px 18px', fontSize: '13px', lineHeight: 1.8, color: 'var(--text-secondary)', marginBottom: '10px' }}>
       {children}
-    </div>
-  )
-}
-
-function MentalTab({ resetPhrase, onSave, onBack, raceDistanceKm, raceName, charity }: { resetPhrase: string; onSave: (v: string) => void; onBack: () => void; raceDistanceKm?: number; raceName?: string; charity?: string }) {
-  const distLabel  = raceDistanceKm ? `${raceDistanceKm}km` : 'the full distance'
-  const raceLabel  = raceName || 'your race'
-  const darkKmLow  = raceDistanceKm ? Math.round(raceDistanceKm * 0.65) : null
-  const darkKmHigh = raceDistanceKm ? Math.round(raceDistanceKm * 0.75) : null
-  const darkRange  = darkKmLow && darkKmHigh ? `km ${darkKmLow}–${darkKmHigh}` : 'the back half'
-  const whyCard    = charity
-    ? `${charity}. When you want to stop, think about why you started. That one doesn't move when everything else does.`
-    : "When you want to stop, think about why you started. That one doesn't move when everything else does."
-  const tools = [
-    { title: 'The Box',          text: `Don't think about ${distLabel}. Next checkpoint only. That's your entire world. Shrink it right down and stay in it.` },
-    { title: 'The Reset Phrase', text: 'Pick one phrase now, before race day. Short. Yours. Use it the moment the voice starts. Write it below.' },
-    { title: 'Feeling ≠ Fact',   text: '"I can\'t do this" is a feeling. Not information. Your legs are still moving — that\'s information. It passes.' },
-    { title: 'The Fuel Check',   text: '80% of dark patches are underfueling in a trench coat. Before you spiral, eat something. Wait 8 minutes.' },
-    { title: 'The Why Card',     text: whyCard },
-    { title: 'Walk = Strategy',  text: `Elites walk the uphills at ${raceLabel}. Walking a climb is a tactic, not a failure.` },
-  ]
-  return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
-      <BackHeader title="Mental toolkit" onBack={onBack} />
-      <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
-        <InfoBox>
-          The dark patch is coming. Probably around <span style={{ color: 'var(--accent)' }}>{darkRange}</span>. That's not a sign something's wrong — it's a sign you've been working long enough for it to be real. These tools exist for that moment.
-        </InfoBox>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
-          {tools.map(t => (
-            <div key={t.title} style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.05em', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase' }}>{t.title}</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>{t.text}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>Your Reset Phrase</div>
-          <textarea value={resetPhrase} onChange={e => onSave(e.target.value)} placeholder="What's the phrase you'll use when it gets dark?" style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontFamily: 'var(--font-brand)', fontSize: '13px', lineHeight: 1.7, resize: 'vertical', minHeight: '60px', outline: 'none' }} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function FuelingTab({ onBack }: { onBack: () => void }) {
-  const protocol = [
-    { timing: 'Pre-run · 90 min before', what: 'Porridge + banana + coffee',      why: "Slow carbs, familiar, not ambitious. Don't experiment on race morning." },
-    { timing: '0–60 minutes',            what: 'Water only',                        why: "Glycogen tanks are full. Let your body warm up before fueling." },
-    { timing: 'Every 45 min after',      what: '1 gel OR real food',                why: '~60g carbs/hr target. Alternate to avoid sweet fatigue.' },
-    { timing: 'Every 20–30 min',         what: 'Small sips — water or electrolyte', why: "Don't wait for thirst. By then you're already behind." },
-    { timing: 'Hour 3+',                 what: 'Salty real food',                   why: 'Pretzels, nuts, cheese. Sweet fatigue is real.' },
-    { timing: 'Aid stations',            what: 'Eat at every single one',           why: "You'll never regret eating at a checkpoint. You will regret skipping one." },
-  ]
-  return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
-      <BackHeader title="Fueling plan" onBack={onBack} />
-      <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
-        <InfoBox>
-          Real food plus gels is the right call. The goal now is <span style={{ color: 'var(--accent)' }}>stress-testing your gut before race day</span>. No surprises on the day. None.
-        </InfoBox>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {protocol.map(p => (
-            <div key={p.timing} style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>{p.timing}</div>
-              <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '4px' }}>{p.what}</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.55 }}>{p.why}</div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }

@@ -18,6 +18,8 @@
 		D9ADB5782FC2242D00D54D5F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D9ADB5772FC2242D00D54D5F /* WidgetKit.framework */; };
 		D9ADB57A2FC2242D00D54D5F /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D9ADB5792FC2242D00D54D5F /* SwiftUI.framework */; };
 		D9ADB5892FC2242F00D54D5F /* ZonnaWidgetExtensionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D9ADB5752FC2242D00D54D5F /* ZonnaWidgetExtensionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D9D3E3F82FC35DCF001DAE8D /* SharedStorePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9D3E3F72FC35DCF001DAE8D /* SharedStorePlugin.swift */; };
+		D9D3E3FA2FC35DE0001DAE8D /* SharedStorePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = D9D3E3F92FC35DE0001DAE8D /* SharedStorePlugin.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,6 +64,8 @@
 		D9ADB5772FC2242D00D54D5F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		D9ADB5792FC2242D00D54D5F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		D9ADB5982FC2299B00D54D5F /* ZonnaWidgetExtensionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ZonnaWidgetExtensionExtension.entitlements; sourceTree = "<group>"; };
+		D9D3E3F72FC35DCF001DAE8D /* SharedStorePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedStorePlugin.swift; sourceTree = "<group>"; };
+		D9D3E3F92FC35DE0001DAE8D /* SharedStorePlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SharedStorePlugin.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -124,6 +128,8 @@
 		504EC3061FED79650016851F /* App */ = {
 			isa = PBXGroup;
 			children = (
+				D9D3E3F92FC35DE0001DAE8D /* SharedStorePlugin.m */,
+				D9D3E3F72FC35DCF001DAE8D /* SharedStorePlugin.swift */,
 				D90385FC2FA4BEFE00035788 /* App.entitlements */,
 				D90385FE2FA4BEFE00035789 /* AppRelease.entitlements */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
@@ -206,7 +212,7 @@
 				TargetAttributes = {
 					504EC3031FED79650016851F = {
 						CreatedOnToolsVersion = 9.2;
-						LastSwiftMigration = 1100;
+						LastSwiftMigration = 2640;
 						ProvisioningStyle = Automatic;
 					};
 					D9ADB5742FC2242D00D54D5F = {
@@ -265,6 +271,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				D9D3E3F82FC35DCF001DAE8D /* SharedStorePlugin.swift in Sources */,
+				D9D3E3FA2FC35DE0001DAE8D /* SharedStorePlugin.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -429,6 +437,7 @@
 			baseConfigurationReference = 958DCC722DB07C7200EA8C5F /* debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 5;
@@ -444,6 +453,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = app.zonna.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -453,6 +463,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = App/AppRelease.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 5;

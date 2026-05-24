@@ -238,7 +238,10 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
           background: 'var(--bg)',
           border: '0.5px solid var(--border-col)',
           borderRadius: '12px',
-          fontFamily: 'var(--font-ui)', fontSize: '13px',
+          fontFamily: 'var(--font-ui)',
+          // iOS auto-zooms inputs below 16px on focus and won't reset.
+          // Keep 16px on iOS HIG floor; visual weight is unchanged at body scale.
+          fontSize: '16px',
           color: 'var(--text-primary)', lineHeight: 1.55,
           resize: 'vertical',
           outline: 'none',
