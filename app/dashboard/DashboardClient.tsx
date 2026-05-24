@@ -7163,6 +7163,12 @@ function StravaScreen({ runs, loading, connected, raceName, raceDate, raceDistan
 
 // ── PUSH NOTIFICATIONS ROW ────────────────────────────────────────────────
 
+// LocalStorage flag tracking the user's explicit "off" intent. iOS won't
+// let us revoke push permission programmatically, but we control our DB
+// subscription row — toggling off deletes the row and stamps this flag
+// so the row isn't auto-recreated by the mount-time check.
+const PUSH_OFF_KEY = 'zonna_push_disabled'
+
 function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed: boolean) => void } = {}) {
   const [status, setStatus] = useState<'checking' | 'unsupported' | 'subscribed' | 'denied' | 'idle'>('checking')
   const [loading, setLoading] = useState(false)
@@ -7177,6 +7183,12 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
 
   useEffect(() => {
     async function check() {
+      // Respect user's explicit-off intent — even if iOS permission is
+      // still granted, treat as idle so the toggle starts off.
+      const userTurnedOff = (() => {
+        try { return localStorage.getItem(PUSH_OFF_KEY) === '1' } catch { return false }
+      })()
+
       // Native: ask the plugin whether iOS already granted permission.
       const { Capacitor } = await import('@capacitor/core')
       if (Capacitor.isNativePlatform()) {
@@ -7184,7 +7196,10 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
         try {
           const perm = await PushNotifications.checkPermissions()
           if (perm.receive === 'denied')  { setStatus('denied'); return }
-          if (perm.receive === 'granted') { setStatus('subscribed'); return }
+          if (perm.receive === 'granted') {
+            setStatus(userTurnedOff ? 'idle' : 'subscribed')
+            return
+          }
           setStatus('idle')
         } catch { setStatus('idle') }
         return
@@ -7198,15 +7213,74 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
         const regs = await navigator.serviceWorker.getRegistrations()
         if (!regs.length) { setStatus('idle'); return }
         const sub = await regs[0].pushManager.getSubscription()
-        setStatus(sub ? 'subscribed' : 'idle')
+        setStatus(sub && !userTurnedOff ? 'subscribed' : 'idle')
       } catch { setStatus('idle') }
     }
     void check()
   }, [])
 
+  async function disablePush() {
+    setLoading(true)
+    setErrMsg(null)
+    try {
+      const { Capacitor } = await import('@capacitor/core')
+
+      if (Capacitor.isNativePlatform()) {
+        // Get the current device token so we can DELETE the matching row.
+        // iOS won't let us revoke the permission itself — that's a Settings
+        // app concern — but we can stop sending pushes at our end.
+        const { PushNotifications } = await import('@capacitor/push-notifications')
+        const token: string | null = await new Promise(resolve => {
+          let settled = false
+          const t = setTimeout(() => { if (!settled) { settled = true; resolve(null) } }, 5_000)
+          PushNotifications.addListener('registration', tok => {
+            clearTimeout(t)
+            if (!settled) { settled = true; resolve(tok.value) }
+          })
+          PushNotifications.register().catch(() => {
+            clearTimeout(t)
+            if (!settled) { settled = true; resolve(null) }
+          })
+        })
+        if (token) {
+          await authedFetch('/api/push/subscribe', {
+            method:  'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ token }),
+          })
+        }
+      } else if ('serviceWorker' in navigator) {
+        // Web: read the subscription endpoint and delete the matching row.
+        // The browser-side subscription stays — we don't unsubscribe from
+        // PushManager so re-toggling on doesn't re-prompt for permission.
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations()
+          const sub  = regs[0] && await regs[0].pushManager.getSubscription()
+          if (sub) {
+            await authedFetch('/api/push/subscribe', {
+              method:  'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body:    JSON.stringify({ endpoint: sub.endpoint }),
+            })
+          }
+        } catch {}
+      }
+
+      try { localStorage.setItem(PUSH_OFF_KEY, '1') } catch {}
+      setStatus('idle')
+    } catch (err) {
+      console.warn('[push] disable failed:', err instanceof Error ? err.message : err)
+      setErrMsg("Couldn't turn off. Try again in a moment.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   async function enablePush() {
     setLoading(true)
     setErrMsg(null)
+    // Clearing the explicit-off flag — the user is opting back in.
+    try { localStorage.removeItem(PUSH_OFF_KEY) } catch {}
     const { Capacitor } = await import('@capacitor/core')
 
     // Native iOS path: request permission, register, send the device token
@@ -7294,21 +7368,24 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
   // sheet is up we keep it visually on (optimistic) so the user gets immediate
   // feedback. On grant we stay on; on deny we revert to off + sub-copy.
   const isOn = status === 'subscribed' || loading
-  // Tap behaviour: ON → subscribe. OFF → no-op on native (must use iOS
-  // Settings to revoke — surfaced in the subtitle copy).
+  // Tap behaviour: OFF → subscribe. ON → unsubscribe (delete the DB row,
+  // stamp the localStorage flag so the row isn't auto-recreated on mount).
+  // Denied stays a no-op — user has to fix it in iOS Settings.
   const handleTap = () => {
-    if (status === 'idle') {
+    if (loading || status === 'checking' || status === 'denied') return
+    if (status === 'subscribed') {
+      void disablePush()
+    } else if (status === 'idle') {
       void enablePush()
     }
-    // status === 'subscribed' | 'denied' → tap is no-op; subtitle tells user where to go
   }
   const subtitle = errMsg
     ? errMsg
     : status === 'checking' ? 'Checking…'
-    : status === 'subscribed' ? 'Push notifications on. Manage in iOS Settings.'
+    : status === 'subscribed' ? "Kit pings you when he's read your run."
     : status === 'denied' ? 'Blocked in iOS Settings — open to enable.'
-    : loading ? 'Asking iOS for permission…'
-    : "Kit pings you when he's read your run."
+    : loading ? 'Working…'
+    : "Off. Tap to let Kit ping you when he's read your run."
 
   return (
     <div style={{ margin: '4px 0', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
@@ -7321,10 +7398,10 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
         </div>
         <button
           onClick={handleTap}
-          disabled={loading || status === 'subscribed' || status === 'denied'}
+          disabled={loading || status === 'checking' || status === 'denied'}
           style={{
             width: '44px', height: '26px', borderRadius: '13px', border: 'none',
-            cursor: (status === 'idle' && !loading) ? 'pointer' : 'default',
+            cursor: (status === 'denied' || loading || status === 'checking') ? 'default' : 'pointer',
             background: isOn ? 'var(--moss)' : 'var(--line)',
             position: 'relative', flexShrink: 0, transition: 'background 0.2s',
             opacity: status === 'denied' ? 0.5 : 1,
