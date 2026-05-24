@@ -88,6 +88,8 @@ export async function POST(req: NextRequest) {
     avg_hr:               activity.average_heartrate != null ? Math.round(activity.average_heartrate) : null,
     max_hr:               activity.max_heartrate     != null ? Math.round(activity.max_heartrate)     : null,
     avg_speed:            activity.average_speed,
+    avg_temp_c:           activity.average_temp ?? null,
+    splits_metric:        activity.splits_metric ?? null,
     suffer_score:         activity.suffer_score ?? null,
     hr_in_zone_pct:       hrSummary?.inZonePct ?? null,
     hr_above_ceiling_pct: hrSummary?.abovePct  ?? null,

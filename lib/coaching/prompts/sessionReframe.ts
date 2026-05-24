@@ -25,6 +25,9 @@
 import type { Session, Plan } from '@/types/plan'
 import type { CohortSummary, TrendSeries } from '../runHistory'
 import type { HrStreamSummary } from '../streamAnalysis'
+import type { PaceFadeSummary } from '../paceAnalysis'
+import type { LimiterHypothesis } from '../limiter'
+import { limiterLabel } from '../limiter'
 import { buildVoiceHeader } from './voiceRules'
 import type { ReframeTier } from '../reframeTier'
 
@@ -57,6 +60,8 @@ export interface SessionReframePromptInput {
   // Tier A enrichment (optional — render when present, regardless of tier label)
   cohortContext?: CohortSummary | null
   streamSummary?: HrStreamSummary | null
+  /** Per-km pace fade (Strava splits_metric). Companion to streamSummary. */
+  paceFadeSummary?: PaceFadeSummary | null
   /** Multi-month HR/pace trend at this distance (AI-DEPTH-03). Tier A only. */
   trendSeries?: TrendSeries | null
 
@@ -87,6 +92,23 @@ export interface SessionReframePromptInput {
     totalWeeksInPhase: number
   } | null
   totalSessionsLogged?: number | null
+
+  /**
+   * Strava-reported average temperature in °C. Null for HealthKit-sourced
+   * runs and pre-migration Strava rows. When ≥22°C and the runner is
+   * spiralling about HR or pace, the heat is often the explanation —
+   * naming it costs nothing and protects the reframe from sounding tone-deaf.
+   */
+  tempC?: number | null
+
+  /**
+   * Deterministic limiter hypothesis. Same source as session feedback. In the
+   * reframe context it feeds sentence 2 (CAUSE) — instead of generic "the
+   * session was hard", Kit names what the rule engine thinks went sideways.
+   * Only surfaced at medium/high confidence; low-confidence guesses would
+   * undermine the reframe's authority.
+   */
+  limiter?: LimiterHypothesis | null
 
   // Athlete colour — from buildAthleteContext, empty string when no traits captured
   athleteContext?: string
@@ -149,6 +171,9 @@ export function buildSessionReframePrompt(input: SessionReframePromptInput): str
     totalSessionsLogged,
     athleteContext,
     firstName,
+    tempC,
+    limiter,
+    paceFadeSummary,
   } = input
 
   // Race anchor — drives sentence 4
@@ -204,6 +229,15 @@ HR drift across the run (back third vs first third):
 `
     : ''
 
+  const paceFadeBlock = paceFadeSummary
+    ? `
+Pace fade across the run (back half vs first half):
+- First half: ${formatPaceSec(paceFadeSummary.firstHalfAvgPaceSecPerKm)}
+- Back half:  ${formatPaceSec(paceFadeSummary.backHalfAvgPaceSecPerKm)}
+- Fade: ${paceFadeSummary.paceFadeSecPerKm >= 0 ? '+' : ''}${paceFadeSummary.paceFadeSecPerKm}s/km${paceFadeSummary.sparse ? '  (minimum splits — treat as hint)' : ''}
+`
+    : ''
+
   // Tier B evidence — plan-side patterns
   const completionBlock = planCompletion
     ? `
@@ -238,6 +272,22 @@ Plan phase: ${phasePosition.phase} — week ${phasePosition.weekInPhase} of ${ph
 
   const sessionsLoggedBlock = totalSessionsLogged != null
     ? `Total sessions logged in this plan so far: ${totalSessionsLogged}\n`
+    : ''
+
+  // Environmental context — only surface when it actually changes the read.
+  // A reframe about HR running hot or pace feeling awful on a 28°C day is
+  // a different reframe — and saying nothing about the heat is what makes
+  // Kit sound like a dashboard rather than someone who's been there.
+  const tempBlock = (tempC != null && (tempC >= 22 || tempC <= 4))
+    ? `\nEnvironmental context: ${tempC.toFixed(0)}°C${tempC >= 28 ? ' (hot)' : tempC >= 22 ? ' (warm)' : tempC <= 0 ? ' (freezing)' : ' (cold)'}. If the runner's distress is about HR or pace and the heat plausibly explains it, name the temperature in sentence 2 as part of the cause — don't pretend it wasn't a factor.\n`
+    : ''
+
+  // Limiter hypothesis — drives sentence 2 (CAUSE) when present and confident.
+  // Surfaced only at medium/high confidence; low-confidence in the reframe
+  // context would undermine the reassurance — uncertainty is the wrong note
+  // when the runner is already spiralling.
+  const limiterBlock = (limiter && (limiter.confidence === 'high' || limiter.confidence === 'medium'))
+    ? `\nLikely limiter (rule-engine hypothesis, ${limiter.confidence} confidence): ${limiterLabel(limiter.category)}.\nWhy: ${limiter.reasoning}.\n\nLimiter rule for the reframe: when present, this is the CAUSE for sentence 2. Name it directly — "today is your body settling that bill" / "the limiter looks like recovery, not fitness". Don't restate the reasoning verbatim — translate it. Confidence-high gets named as fact; confidence-medium gets named as hypothesis ("looks like…").\n`
     : ''
 
   // Tier-specific instruction layer — varies the evidence emphasis
@@ -288,7 +338,7 @@ ${hrLine}
 RPE: ${rpe !== null ? rpe : 'not logged'}
 Fatigue: ${fatigueTag ?? 'not logged'}
 ${raceContext ? `Race: ${raceContext}` : 'Race: none set'}
-${trendBlock}${cohortBlock}${streamBlock}${previousSimilarBlock}${completionBlock}${rpeBlock}${phaseBlock}${sessionsLoggedBlock}
+${trendBlock}${cohortBlock}${streamBlock}${paceFadeBlock}${previousSimilarBlock}${completionBlock}${rpeBlock}${phaseBlock}${sessionsLoggedBlock}${tempBlock}${limiterBlock}
 Write the reframe now. 3-4 sentences. Plain text only. No headers.`
 }
 

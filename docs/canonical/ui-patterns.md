@@ -355,7 +355,9 @@ Integration: `DashboardClient.tsx` → `AdjustmentBanner` wrapper (owns API call
 
 ### 11. RestraintCard
 
-The brand's counter-intuitive moment — showing restraint as progress. **Tier-divergent (ZONE-VIS-01):** three render states ensure the Zone Discipline Score has a permanent slot on Today for every user, regardless of data availability. Never silently hidden — the proprietary metric earns its place from day zero.
+The brand's counter-intuitive moment — showing restraint as progress. **Status (ZONE-VIS-02 — May 2026):** the discipline NUMBER moved off Today and now lives on Coach. Today retains the discipline RHETORIC as a single-line moss voice anchor ("Hold the zone.") — see § Voice Anchor Strip below — while the full retrospective metric belongs where retrospection happens. The RestraintCard component itself is not currently rendered; the LedgerCard (LEDGER-01) borrows its visual anatomy, and the share OG card (`app/api/og/weekly-zone-card/route.tsx`) borrows its hierarchy. The component is preserved for those echoes and for any future surface that wants the full card form.
+
+The original "permanent slot on Today / never silently hidden" doctrine is **superseded**. The Coach screen's 2×2 stat grid already includes a Zone Discipline tile (`%` + verdict sub) plus the ZoneRings component (Pattern 22) for the per-zone breakdown — the metric is now MORE visible on Coach than it was on Today, just gated to the right screen for its job.
 
 **Live (paid/trial + ≥1 analysed run):**
 
@@ -1003,6 +1005,99 @@ The 3px moss left rail is the **canonical AI-card rail** (Pattern 16b) for paid 
 - The headline + items come from the *current* week — not next week, not whichever week is in view via the Plan screen's date strip
 
 Reference: `app/dashboard/DashboardClient.tsx` → `PlanScreen` (inline JSX; not extracted to its own component because it depends on `Plan` + `Week` shapes that other Plan-screen components also derive locally).
+
+---
+
+### 25. ZoneRings
+
+Brand-mark-as-data-display. The four concentric rings of the Zonna logo each represent one HR zone bucket for the week — Z1 outer through Z4-5 inner — arc-filled to the % time the runner spent in that zone. The moss centre dot is brand-constant; it never reflects data. The logo becomes functional UI on a single screen (Coach), localised on purpose so the brand mark elsewhere (login, OG cards, marketing) stays stable.
+
+**Live (paid/trial + ≥1 analysed run):**
+
+```
+┌─────────────────────────────────────────────┐
+│  THIS WEEK IN ZONES        across 3 runs    │
+│                                             │
+│             ╭─── Z1 ───╮                    │
+│            ╱ ╭── Z2 ──╮ ╲                   │
+│           │ │ ╭─Z3─╮ │ │                    │
+│           │ │ │ ● │ │ │   ← --moss centre   │
+│            ╲ ╰────╯ ╱                       │
+│             ╰──────╯                        │
+│                                             │
+│   Z1     Z2     Z3     Z4-5                 │
+│   8%    62%    22%      8%                  │
+└─────────────────────────────────────────────┘
+```
+
+**Pending / locked / skeleton:** all three render the same ring geometry with no arc fill — the logo silhouette is preserved at every state. Pending uses `--card` background with the moss dot muted; locked uses `--bg-soft` + an "Unlock view →" moss text link; the skeleton is the loading shell used during the brief window between completion and `run_analysis` row landing.
+
+**Structure:**
+- Background: `--card` (live/pending) or `--bg-soft` (locked); border `1px solid --line`; radius `var(--radius-lg)`; padding `20px`
+- Eyebrow row: `10px 700 --mute uppercase 0.08em` left, meta `10px 400 --mute` right (live only)
+- SVG: 160×160 viewBox, centred. Four rings, stroke width `9`, gap `4` between adjacent rings. Track stroke `--line`. Coloured arc starts at 12 o'clock, grows clockwise, `strokeLinecap: round`
+- Centre dot: `r=7`, fill `--moss` (live) or `--mute` 0.4 opacity (pending/locked)
+- Numeric strip (live only): 4-up flex, each cell `9px 700 colour uppercase 0.10em` label above `15px 700 --ink tabular-nums` value (small `--mute` "%" trailing)
+
+**Ring → zone → colour mapping** (consistent with Pattern 21 ZoneBar):
+
+| Ring  | Zone  | Colour token |
+|-------|-------|--------------|
+| Outer | Z1    | `--s-recov`  |
+| Next  | Z2    | `--s-easy`   |
+| Next  | Z3    | `--s-quality`|
+| Inner | Z4-5  | `--s-inter`  |
+
+**Why arc-fill, not stroke-thickness:** thickness-as-percentage distorts the brand mark's silhouette (a low-Z1-time week would have a noticeably "thinner" outer ring). Arc-fill keeps every ring's shape intact and only the *coverage* varies. The mark stays identifiable at any data shape.
+
+**Why Z1 outer, Z4-5 inner:** the majority of a healthy training week should sit in Z1/Z2. Putting easier zones on the outside means the visually-dominant rings reflect the right way to train, and matches the brand mark's natural emphasis on its outer geometry.
+
+**Data source:**
+- Live percentages from `run_analysis.hr_pct_z1` / `z2` / `z3` / `z4_5` — load-km weighted across the week's completed analysed runs (same weighting as Pattern 11's discipline score, so the two never disagree about which session weighed what).
+- Columns added in migration `20260527_run_analysis_zone_histogram.sql` (mirrors the histogram from `strava_activities` with a backfill from historical rows).
+- Coach screen is paid-gated at the screen level — only live/pending/skeleton states render on Coach; no locked state needed there.
+
+**Props (discriminated union):**
+```tsx
+// Live (default — state omitted ⇒ live)
+{ state?: 'live'; label?: string; pctByZone: { z1: number; z2: number; z3: number; z45: number }; meta?: string }
+// Pending
+{ state: 'pending'; label?: string }
+// Locked
+{ state: 'locked'; label?: string; onUpgrade?: () => void }
+```
+
+`label` defaults to `'This week in zones'` across all states.
+
+**Tradeoff explicitly accepted:** turning the brand mark into a data display means the logo shape-shifts user-to-user on the Coach screen. The mark elsewhere stays static. Two presences for one mark — a brand-consistency cost that's localised to one screen on purpose.
+
+Reference: `components/shared/ZoneRings.tsx`. Integration: `app/dashboard/DashboardClient.tsx` → `CoachScreen` (below the Stats 2×2 grid, Pattern 19).
+
+---
+
+### 26. Voice Anchor Strip
+
+Single-line moss anchor — no card chrome, no border, no eyebrow. Used on the Today screen in place of the (now retired) Today RestraintCard slot. Earns presence through typography weight and the moss colour, not surface chrome.
+
+```
+   Hold the zone.
+```
+
+**Source:** `BRAND.voiceAnchor` (`lib/brand.ts` → `"Hold the zone."`). Never hardcoded.
+
+**Structure:**
+- Padding `18px 16px 0` (sits between the wordmark row and the session card; aligns to the same 16px horizontal gutter)
+- Typography: `13px 600 --moss`, letter-spacing `-0.005em`, line-height `1.3`
+- No background, no border, no card
+
+**Why no card:** Today is about *today*; the brand line is anchor, not metric. Wrapping it in card chrome would imply a measurement. The unboxed moss line reads as voice — Kit speaking, not Kit measuring.
+
+**Rules:**
+- Single screen only (Today). On Coach the metric does the same job through Pattern 25 ZoneRings; doubling the voice line would be noise.
+- Never combine with other copy on the same row — the line has to breathe.
+- Always uses `BRAND.voiceAnchor`. Don't rephrase. If the anchor string changes, every surface picks up the new value at once.
+
+Reference: `app/dashboard/DashboardClient.tsx` → `TodayScreen` (ZONE-VIS-02 block, replacing the prior RestraintCard wrapper).
 
 ---
 

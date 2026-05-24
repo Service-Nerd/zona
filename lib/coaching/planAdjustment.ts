@@ -50,7 +50,7 @@ export interface AdjustmentCheckInput {
   actualKm:         number
   plannedKm:        number
   priorWeeksKm:     number[]
-  hrInZoneData:     { sessionType: string; hrInZonePct: number | null }[]
+  hrInZoneData:     { hrInZonePct: number | null; actualLoadKm: number | null }[]
   efTrendPct:       number | null
   adjustmentsThisWeek: number
   currentPhase?:    'base' | 'build' | 'peak' | 'taper'

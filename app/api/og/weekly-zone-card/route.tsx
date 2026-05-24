@@ -5,6 +5,7 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { BRAND } from '@/lib/brand'
 import { loadFont, splitOnDoubleLetter } from '@/lib/brand-og'
+import { zoneDisciplineScore } from '@/lib/coaching/loadCalc'
 
 // SHARE-01 — Shareable weekly zone-discipline card.
 //
@@ -15,10 +16,16 @@ import { loadFont, splitOnDoubleLetter } from '@/lib/brand-og'
 // story dimensions); social-card aspect (1200×630) is intentionally NOT
 // supported at v1 — the spec narrows to story share + screenshot share.
 //
+// Score is computed LIVE from run_analysis (same load-km-weighted formula as
+// the in-app Today/Coach tiles via lib/coaching/loadCalc.zoneDisciplineScore)
+// so the shared card never disagrees with what the user sees on screen. We
+// only use weekly_reports to (a) anchor on the most recent reported week_n
+// when none is requested and (b) source dominant_flag for the verdict line.
+//
 // Source data:
-//   weekly_reports.zone_discipline_score (0–100)
-//   weekly_reports.dominant_flag           ('ok' | 'watch' | 'flag')
-//   auth.users.created_at                  (for the tenure caption)
+//   run_analysis.hr_in_zone_pct + actual_load_km (live, for the score)
+//   weekly_reports.week_n + dominant_flag        (anchor + verdict)
+//   auth.users.created_at                        (for the tenure caption)
 //
 // Tenure caption rules (per spec, hard requirements):
 //   - "Holding the zone since {Mmm YYYY}"  — three-letter month + four-digit year
@@ -86,25 +93,50 @@ export async function GET(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
 
-  const weekNParam = req.nextUrl.searchParams.get('week_n')
-  const weekN      = weekNParam ? parseInt(weekNParam, 10) : null
+  const weekNParam   = req.nextUrl.searchParams.get('week_n')
+  const requestedWeek = weekNParam ? parseInt(weekNParam, 10) : null
 
-  // Most recent generated weekly_report, or a specific week_n when requested.
-  // We require a headline / score — a row with zone_discipline_score still
-  // null (the rare case where the rule engine couldn't compute it from the
-  // available data) is treated as "no card" and the route returns 404.
-  let query = service
+  // Anchor on the most recent generated weekly_report when no week_n requested,
+  // so the card concept of "this week" matches the user's coaching cadence.
+  // dominant_flag from the same row feeds the verdict line.
+  let reportQuery = service
     .from('weekly_reports')
-    .select('week_n, zone_discipline_score, dominant_flag, headline, generated_at')
+    .select('week_n, dominant_flag')
     .eq('user_id', user.id)
     .not('generated_at', 'is', null)
     .order('week_n', { ascending: false })
     .limit(1)
-  if (weekN != null && Number.isFinite(weekN)) query = query.eq('week_n', weekN)
+  if (requestedWeek != null && Number.isFinite(requestedWeek)) {
+    reportQuery = reportQuery.eq('week_n', requestedWeek)
+  }
+  const { data: report } = await reportQuery.maybeSingle()
 
-  const { data: report } = await query.maybeSingle()
-  if (!report || report.zone_discipline_score == null) {
+  const weekN: number | null = report?.week_n ?? requestedWeek ?? null
+  if (weekN == null) {
     return NextResponse.json({ error: 'No weekly report yet' }, { status: 404 })
+  }
+
+  // Compute zone discipline LIVE from run_analysis for this week — same
+  // load-km-weighted formula as the in-app Today/Coach tiles. The cached
+  // weekly_reports.zone_discipline_score is intentionally ignored so the
+  // shared card matches what the user sees on screen, even mid-week before
+  // the next nightly regen.
+  const { data: analysisRows } = await service
+    .from('run_analysis')
+    .select('hr_in_zone_pct, actual_load_km, session_day')
+    .eq('user_id', user.id)
+    .like('session_day', `week_${weekN}_%`)
+
+  const scored = (analysisRows ?? [])
+    .filter((r: any) => r.hr_in_zone_pct != null)
+    .map((r: any) => ({
+      hrInZonePct:  r.hr_in_zone_pct as number,
+      actualLoadKm: (r.actual_load_km as number | null) ?? null,
+    }))
+
+  const score = zoneDisciplineScore(scored)
+  if (score == null) {
+    return NextResponse.json({ error: 'No HR-analysed runs this week' }, { status: 404 })
   }
 
   // auth.users.created_at — service-role read so RLS doesn't get in the way.
@@ -113,8 +145,7 @@ export async function GET(req: NextRequest) {
   const now       = new Date()
   const tenure    = tenureCaption(createdAt, now)
 
-  const score   = report.zone_discipline_score as number
-  const verdict = weeklyVerdictLine(score, report.dominant_flag as string | null)
+  const verdict = weeklyVerdictLine(score, (report?.dominant_flag as string | null) ?? null)
 
   const [interBlack, interBold, interRegular] = await Promise.all([
     loadFont('Inter', 800),

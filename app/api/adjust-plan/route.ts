@@ -188,13 +188,10 @@ export async function POST(req: NextRequest) {
     .slice(0, 4)
     .map(([, km]) => km)
 
-  const hrInZoneData = thisWeekAnalyses.map((a: any) => {
-    const dayKey = a.session_day.replace(`week_${weekN}_`, '') as keyof typeof week.sessions
-    return {
-      sessionType: week.sessions[dayKey]?.type ?? 'easy',
-      hrInZonePct: a.hr_in_zone_pct ?? null,
-    }
-  })
+  const hrInZoneData = thisWeekAnalyses.map((a: any) => ({
+    hrInZonePct:  a.hr_in_zone_pct ?? null,
+    actualLoadKm: a.actual_load_km ?? null,
+  }))
 
   const efTrendValues = thisWeekAnalyses.map((a: any) => a.ef_trend_pct).filter((v: any) => v !== null)
   const efTrendPct    = efTrendValues.length

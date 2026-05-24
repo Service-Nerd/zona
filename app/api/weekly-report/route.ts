@@ -201,8 +201,8 @@ export async function POST(req: NextRequest) {
   const avgRpe    = rpeValues.length ? rpeValues.reduce((s, v) => s + v, 0) / rpeValues.length : null
 
   const hrInZoneData = analyses.map((a: any) => ({
-    sessionType: week.sessions[a.session_day.replace(`week_${weekN}_`, '') as keyof typeof week.sessions]?.type ?? 'easy',
-    hrInZonePct: a.hr_in_zone_pct ?? null,
+    hrInZonePct:  a.hr_in_zone_pct ?? null,
+    actualLoadKm: a.actual_load_km ?? null,
   }))
 
   const efTrendPct = analyses.length > 0

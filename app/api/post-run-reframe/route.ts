@@ -31,7 +31,9 @@ import { buildSessionReframePrompt, REFRAME_PROMPT_VERSION } from '@/lib/coachin
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { detectReframeTier } from '@/lib/coaching/reframeTier'
 import { assessReframeRiskGate, type CoachingFlag, type FatigueTag } from '@/lib/coaching/reframeRiskGate'
-import { COHORT_SIMILARITY, REFRAME_RISK, REFRAME_TIER } from '@/lib/coaching/constants'
+import { COHORT_SIMILARITY, REFRAME_RISK, REFRAME_TIER, FATIGUE_HIGH_TAGS } from '@/lib/coaching/constants'
+import { inferLimiter } from '@/lib/coaching/limiter'
+import { sessionHRBand } from '@/lib/coaching/zoneRules'
 import {
   fetchRunHistory,
   findSimilarRuns,
@@ -41,6 +43,7 @@ import {
 } from '@/lib/coaching/runHistory'
 import { TREND_SERIES } from '@/lib/coaching/constants'
 import { computeHrStreamSummary } from '@/lib/coaching/streamAnalysis'
+import { computePaceFadeSummary, type StravaSplitMetric } from '@/lib/coaching/paceAnalysis'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import type { Plan, Session } from '@/types/plan'
 
@@ -87,7 +90,7 @@ export async function POST(req: NextRequest) {
   // Parallel: plan, settings, completion, analysis (if linked), tier
   const [planRes, settingsRes, completionRes, analysisRes, tierResult] = await Promise.all([
     service.from('plans').select('plan_json').eq('user_id', userId).single(),
-    service.from('user_settings').select('first_name').eq('id', userId).maybeSingle(),
+    service.from('user_settings').select('first_name, resting_hr, max_hr').eq('id', userId).maybeSingle(),
     service
       .from('session_completions')
       .select('rpe, fatigue_tag, avg_hr, coaching_flag, strava_activity_id, apple_health_uuid, strava_activity_km, updated_at')
@@ -127,6 +130,31 @@ export async function POST(req: NextRequest) {
   const hrInZonePct = analysis?.hr_in_zone_pct != null ? Number(analysis.hr_in_zone_pct) : null
   const hrAboveCeilingPct = analysis?.hr_above_ceiling_pct != null ? Number(analysis.hr_above_ceiling_pct) : null
   const hrBelowFloorPct = analysis?.hr_below_floor_pct != null ? Number(analysis.hr_below_floor_pct) : null
+
+  // ── Environmental context — temperature + per-km splits from the matched activity ──
+  // Available on Strava-sourced rows. Null on HealthKit, manual, and
+  // pre-migration Strava activities. Fetched unconditionally — these
+  // signals aren't gated by Tier A.
+  let tempC: number | null = null
+  let paceFadeSummary = null
+  if (completion?.strava_activity_id || completion?.apple_health_uuid) {
+    try {
+      const filterCol = completion.strava_activity_id ? 'strava_activity_id' : 'apple_health_uuid'
+      const filterVal = completion.strava_activity_id ?? completion.apple_health_uuid
+      const { data: actRow } = await service
+        .from('strava_activities')
+        .select('avg_temp_c, splits_metric')
+        .eq('user_id', userId)
+        .eq(filterCol, filterVal)
+        .maybeSingle()
+      tempC = actRow?.avg_temp_c != null ? Number(actRow.avg_temp_c) : null
+      paceFadeSummary = computePaceFadeSummary(
+        actRow?.splits_metric as StravaSplitMetric[] | null,
+      )
+    } catch (err) {
+      console.warn('[post-run-reframe] temp/splits fetch failed', err)
+    }
+  }
 
   // ── Tier A evidence: cohort + stream + previousSimilar ─────────────────
   let cohortContext = null
@@ -360,6 +388,33 @@ export async function POST(req: NextRequest) {
     }, { status: 200 })
   }
 
+  // ── Limiter hypothesis (deterministic) ────────────────────────────────
+  // Reuse risk-gate fatigue array — same window (last 5), same definition
+  // of "high fatigue". Avoids a redundant query.
+  const recentHighFatigueCount = recentFatigueTags
+    .filter((t) => (FATIGUE_HIGH_TAGS as readonly string[]).includes(t))
+    .length
+  const liveBand = sessionHRBand(
+    session.type,
+    settingsRes.data?.resting_hr ?? null,
+    settingsRes.data?.max_hr ?? null,
+  )
+  const limiter = inferLimiter({
+    sessionType:            session.type,
+    actualAvgHr,
+    prescribedHrCeiling:    liveBand?.hi ?? null,
+    hrAboveCeilingPct,
+    hrBelowFloorPct,
+    streamSummary,
+    paceFadeSummary,
+    tempC,
+    rpe,
+    fatigueTag,
+    recentHighFatigueCount,
+    actualDistKm,
+    plannedDistKm:          (session as any).distance_km ?? null,
+  })
+
   // ── Build prompt + call Sonnet ────────────────────────────────────────
   const prompt = buildSessionReframePrompt({
     userNote,
@@ -384,6 +439,9 @@ export async function POST(req: NextRequest) {
     totalSessionsLogged,
     athleteContext: buildAthleteContext({ plan }),
     firstName: settingsRes.data?.first_name ?? null,
+    tempC,
+    limiter,
+    paceFadeSummary,
   })
 
   let reframeText: string | null = null

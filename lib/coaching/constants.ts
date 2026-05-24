@@ -36,9 +36,6 @@ export const SHADOW_LOAD_THRESHOLD_PCT = 15  // >15% over plan triggers reflecti
 // EF trend — aerobic efficiency decline
 export const EF_DECLINE_THRESHOLD_PCT = -8  // >8% drop vs 4-week rolling avg
 
-// Easy session weight in zone discipline calculation
-export const EASY_SESSION_WEIGHT = 2
-
 // Max activities to include in EF baseline
 export const EF_BASELINE_WINDOW = 6
 
@@ -121,6 +118,36 @@ export const REFRAME_TIER = {
   TIER_B_WINDOW_DAYS: 28,
   /** Max characters accepted for a user reflection note before trimming. */
   USER_NOTE_MAX_CHARS: 2000,
+} as const
+
+// Limiter hypothesis classifier — picks ONE most-likely physiological cause
+// per session, when the signal is strong enough to defend. Inspired by the
+// "what was the limiter?" framing common in elite coaching analysis.
+// Source-tiered: degrades from full HR+stream+temp+RPE down to RPE+fatigue only.
+// Doctrine: no signal → no claim. Returning null is correct when the data
+// doesn't support a defensible hypothesis. See lib/coaching/limiter.ts.
+export const LIMITER = {
+  /** Temp ≥ this counts as warm enough to explain a hot HR (°C). */
+  HEAT_C_THRESHOLD: 22,
+  /** Temp + HR-above-ceiling delta that triggers a high-confidence "heat" call. */
+  HEAT_BPM_OVER_CEILING: 5,
+  /** Recent Heavy/Wrecked tags in last 5 sessions that trigger "recovery" limiter. */
+  RECOVERY_HIGH_FATIGUE_COUNT: 2,
+  /** HR drift bpm (back third vs first third) that points at aerobic limiter. */
+  AEROBIC_DRIFT_BPM: 12,
+  /** Pace fade seconds/km (back half vs first half) that points at muscular limiter. */
+  MUSCULAR_PACE_FADE_SEC: 20,
+  /** HR drift below this threshold means the legs faded WITHOUT the engine
+   *  ramping — classic muscular-endurance signature rather than aerobic. */
+  MUSCULAR_HR_DRIFT_BELOW_BPM: 8,
+  /** % HR above ceiling that signals "started too hot" — pacing limiter. */
+  PACING_HOT_PCT_THRESHOLD: 50,
+  /** % HR below floor on a hard session — execution limiter (didn't commit). */
+  EXECUTION_COLD_PCT_THRESHOLD: 50,
+  /** Long-run shortfall fraction (actual / planned) that signals fueling. */
+  FUELING_LONG_RUN_SHORTFALL: 0.90,
+  /** Minimum RPE on an easy/recovery run to trigger recovery limiter alongside fatigue. */
+  RECOVERY_EASY_RPE_FLOOR: 7,
 } as const
 
 // Cohort similarity matching — past-self comparison (R25 cut #1)

@@ -126,6 +126,7 @@ export function buildVoiceHeader({
 
   lines.push(
     `- Specific beats abstract. Reference specific facts and numbers from the data.`,
+    `- Interpret, don't recite. Reach for observational stems — "This suggests…", "The important detail here…", "The limiter looks like…", "A key distinction is…" — when the data warrants a hypothesis. A reading without a read is a dashboard, not a coach. Never invent causes; only frame what the numbers point at.`,
     `- Use "you" throughout.`,
     `- Never use: ${VOICE_BANNED_PHRASES.join(', ')}.`,
     `- Always use: short sentences, plain words, the athlete's actual recent reality.`,

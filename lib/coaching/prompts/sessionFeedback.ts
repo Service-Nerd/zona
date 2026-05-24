@@ -2,6 +2,9 @@ import type { Session, Plan } from '@/types/plan'
 import type { Verdict } from '../sessionScore'
 import type { CohortSummary } from '../runHistory'
 import type { HrStreamSummary } from '../streamAnalysis'
+import type { PaceFadeSummary } from '../paceAnalysis'
+import type { LimiterHypothesis } from '../limiter'
+import { limiterLabel } from '../limiter'
 import { buildVoiceHeader } from './voiceRules'
 
 export interface SessionFeedbackPromptInput {
@@ -32,6 +35,13 @@ export interface SessionFeedbackPromptInput {
   athleteContext?: string
   /** AI-DEPTH-02 — back-third-vs-first-third HR drift summary. Null on Strava-sourced runs (no per-sample HR persisted yet) and on sample-starved runs. */
   streamSummary?: HrStreamSummary | null
+  /**
+   * First-half vs back-half average pace, from Strava's splits_metric.
+   * Companion to streamSummary — HR drift answers "did the engine push?",
+   * pace fade answers "did the legs hold?". Null for HealthKit-sourced runs
+   * (no per-km splits), manual rows, and pre-migration Strava rows.
+   */
+  paceFadeSummary?: PaceFadeSummary | null
   /** AI-DEPTH-10 — most recent prior analysed session of the SAME type (single specific run, distinct from the averaged cohort). Null when no same-type analysis exists in history. */
   previousSimilarSession?: {
     dayLabel:    string
@@ -39,6 +49,21 @@ export interface SessionFeedbackPromptInput {
     verdict:     string | null
     hrInZonePct: number | null
   } | null
+  /**
+   * Strava-reported average temperature in °C. Null for HealthKit-sourced
+   * runs and pre-migration Strava rows. When present and warm/hot, the
+   * prompt instructs Kit to factor heat into the read — a run with HR
+   * 10bpm above ceiling in 28°C is execution noise, not an execution
+   * failure, and the feedback should reflect that.
+   */
+  tempC?: number | null
+  /**
+   * Deterministic limiter hypothesis from lib/coaching/limiter.ts. When
+   * present and confidence is medium/high, the prompt instructs Kit to
+   * name the limiter as part of the read. Null when no signal crosses
+   * a defensible threshold (manual loggers with no fatigue tag, etc.).
+   */
+  limiter?: LimiterHypothesis | null
 }
 
 // Few-shot examples — Zonna voice: honest, dry, no cringe.
@@ -92,7 +117,7 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
     actualDistKm, actualAvgHr, actualPaceSecPerKm, hrInZonePct, hrAboveCeilingPct,
     efTrendPct, rpe, fatigueTag, weekPhase,
     prescribedZoneLabel, prescribedHrBand, cohortContext,
-    isFirstAnalysis, athleteContext, streamSummary, previousSimilarSession } = input
+    isFirstAnalysis, athleteContext, streamSummary, previousSimilarSession, tempC, limiter, paceFadeSummary } = input
 
   const weeksToRace = plan.meta.race_date
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
@@ -144,6 +169,45 @@ Drift rule: when the absolute drift is ≥ 10 bpm or ≥ 7%, reference it direct
 `
     : ''
 
+  // Pace fade across the run (Strava per-km splits). Same shape as the HR
+  // drift block — surfaces a back-half slowdown that the aggregate avg pace
+  // hides. Threshold for reference in feedback: ≥ 15s/km.
+  const paceFadeBlock = paceFadeSummary
+    ? `
+Pace fade across the run (back half vs first half, ${paceFadeSummary.splitsUsed} per-km splits):
+- First half: ${formatPaceSec(paceFadeSummary.firstHalfAvgPaceSecPerKm)}
+- Back half:  ${formatPaceSec(paceFadeSummary.backHalfAvgPaceSecPerKm)}
+- Fade: ${paceFadeSummary.paceFadeSecPerKm >= 0 ? '+' : ''}${paceFadeSummary.paceFadeSecPerKm}s/km (${paceFadeSummary.paceFadePct >= 0 ? '+' : ''}${(paceFadeSummary.paceFadePct * 100).toFixed(1)}%)${paceFadeSummary.sparse ? '\n- Splits: minimum sample — treat as hint, not hard signal' : ''}
+
+Pace-fade rule: when fade is ≥ 15s/km in the back half, reference it directly ("pace dropped 22s/km in the back half"). Cross-reference with HR drift: pace fade + flat HR = legs went before lungs (muscular); pace fade + HR rise = engine pushed (aerobic). Negative fade is a negative split — call it out as a strength when the session called for even effort. Below 15s/km, ignore unless it's the dominant story.
+`
+    : ''
+
+  // Environmental context — temperature from Strava. Only surface when the
+  // value crosses a threshold where heat or cold actually changes the read.
+  // Tepid days (10–21°C) are noise and would only crowd the prompt. Hot
+  // (≥22°C) days suppress HR-discipline lectures; cold (≤4°C) days warn
+  // about warmup creep.
+  const tempBlock = (tempC != null && (tempC >= 22 || tempC <= 4))
+    ? `
+Environmental context — Strava-reported average temperature: ${tempC.toFixed(0)}°C${tempC >= 28 ? ' (hot)' : tempC >= 22 ? ' (warm)' : tempC <= 0 ? ' (freezing)' : ' (cold)'}.
+
+Heat/cold rule: when temp ≥ 22°C, HR running 5–10bpm above zone ceiling is expected — name the heat, don't lecture the discipline. When temp ≤ 4°C, first-km HR can be artificially low (warmup creep) and pace can feel harder than the data suggests. Factor this in when reading the session; don't manufacture it as the headline unless it dominates.
+`
+    : ''
+
+  // Limiter hypothesis (deterministic — from lib/coaching/limiter.ts). Only
+  // surfaced when confidence is medium/high. Low-confidence hypotheses are
+  // genuine guesses and Kit lecturing about a guess is worse than silence.
+  const limiterBlock = (limiter && (limiter.confidence === 'high' || limiter.confidence === 'medium'))
+    ? `
+Likely limiter (rule-engine hypothesis, ${limiter.confidence} confidence): ${limiterLabel(limiter.category)}.
+Why: ${limiter.reasoning}.
+
+Limiter rule: when confidence is high, name the limiter as part of the read — use an observational stem ("The limiter looks like…", "What stands out…", "This suggests…"). Don't restate the reasoning verbatim — paraphrase it into the voice. When confidence is medium, frame as a hypothesis ("looks like…", "points at…") rather than a fact. Never override what the session-level numbers above clearly say — the limiter is one read, not the only one.
+`
+    : ''
+
   // Past-self cohort block (CoachingPrinciples §58). Empty string when no cohort.
   const cohortBlock = cohortContext
     ? `
@@ -186,7 +250,7 @@ ${paceLine ? paceLine + '\n' : ''}${hrLine}
 ${efLine ? efLine + '\n' : ''}RPE: ${rpe !== null ? rpe : 'not logged'}
 Fatigue: ${fatigueTag ?? 'not logged'}
 Verdict: ${verdict}
-${previousSimilarBlock}${streamBlock}${cohortBlock}
+${previousSimilarBlock}${streamBlock}${paceFadeBlock}${cohortBlock}${tempBlock}${limiterBlock}
 Write 2–4 sentences of honest, specific feedback. No headers. No bullet points. Plain text only.`
 }
 

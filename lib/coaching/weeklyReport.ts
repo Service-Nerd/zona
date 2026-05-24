@@ -117,7 +117,7 @@ export interface WeeklyReportInput {
   plannedKmToDate:        number       // km due by today (mid-week context)
   priorWeeksKm:           number[]     // last 4 weeks actual, most-recent first
   sessionFlagCounts:      Record<CoachingFlag, number>
-  hrInZoneData:           { sessionType: string; hrInZonePct: number | null }[]
+  hrInZoneData:           { hrInZonePct: number | null; actualLoadKm: number | null }[]
   efTrendPct:             number | null // % change vs baseline
 }
 

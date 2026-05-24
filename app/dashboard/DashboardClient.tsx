@@ -20,7 +20,7 @@ import { BRAND } from '@/lib/brand'
 import { Wordmark } from '@/components/ui/Wordmark'
 import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
 import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
-import RestraintCard, { RestraintCardSkeleton } from '@/components/shared/RestraintCard'
+import ZoneRings, { ZoneRingsSkeleton } from '@/components/shared/ZoneRings'
 import PlanArc from '@/components/shared/PlanArc'
 import RPEScale from '@/components/shared/RPEScale'
 import SessionCard from '@/components/shared/SessionCard'
@@ -741,7 +741,7 @@ export default function DashboardClient() {
             try { await authedFetch('/api/pre-session-readiness') } catch {}
 
             const [analysisRes, reportRes, adjustmentsRes, autoAdjustmentsRes, phaseSummaryRes, raceReadinessRes] = await Promise.all([
-              supabase.from('run_analysis').select('session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km').eq('user_id', user.id),
+              supabase.from('run_analysis').select('session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5').eq('user_id', user.id),
               supabase.from('weekly_reports').select('*').eq('user_id', user.id).order('week_n', { ascending: false }).limit(1).maybeSingle(),
               supabase.from('plan_adjustments').select('*').eq('user_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
               // PROFILE-ADJ-02 — most recent silent/auto-applied tweaks for the MeScreen log.
@@ -1188,6 +1188,38 @@ export default function DashboardClient() {
                   )
                 : null
 
+              // Per-zone weekly aggregates for the Coach ZoneRings (Pattern 22).
+              // Same load-km weighting as zoneDisciplinePercent — the two
+              // numbers describe the same week from different angles, so they
+              // must never disagree about which session weighed what.
+              const zoneHistogramRows = wSessions
+                .filter((s: any) => comps[s.key]?.status === 'complete')
+                .map((s: any) => {
+                  const a = runAnalysisMap?.[s.key]
+                  if (!a) return null
+                  if (a.hr_pct_z1 == null && a.hr_pct_z2 == null && a.hr_pct_z3 == null && a.hr_pct_z4_5 == null) return null
+                  return {
+                    z1:     Number(a.hr_pct_z1   ?? 0),
+                    z2:     Number(a.hr_pct_z2   ?? 0),
+                    z3:     Number(a.hr_pct_z3   ?? 0),
+                    z45:    Number(a.hr_pct_z4_5 ?? 0),
+                    weight: (a.actual_load_km as number | null) ?? 1,
+                  }
+                })
+                .filter((v: any): v is { z1: number; z2: number; z3: number; z45: number; weight: number } => v !== null)
+              const zoneTimePctByZone = zoneHistogramRows.length >= 1
+                ? (() => {
+                    const totalW = zoneHistogramRows.reduce((s: number, r: any) => s + r.weight, 0)
+                    return {
+                      z1:  zoneHistogramRows.reduce((s: number, r: any) => s + r.z1  * r.weight, 0) / totalW,
+                      z2:  zoneHistogramRows.reduce((s: number, r: any) => s + r.z2  * r.weight, 0) / totalW,
+                      z3:  zoneHistogramRows.reduce((s: number, r: any) => s + r.z3  * r.weight, 0) / totalW,
+                      z45: zoneHistogramRows.reduce((s: number, r: any) => s + r.z45 * r.weight, 0) / totalW,
+                    }
+                  })()
+                : null
+              const zoneHistogramHits = zoneHistogramRows.length
+
               // R30 — zone drift pattern detection.
               // Join runAnalysisMap with plan sessions to identify easy/recovery rows,
               // then check the most recent 8 for hr_in_zone_pct < 60%.
@@ -1238,6 +1270,8 @@ export default function DashboardClient() {
                   weeklyReport={weeklyReport} onReportGenerated={setWeeklyReport}
                   preferredUnits={preferredUnits}
                   zoneDisciplinePercent={zoneDisciplinePercent}
+                  zoneTimePctByZone={zoneTimePctByZone}
+                  zoneHistogramHits={zoneHistogramHits}
                   liveSessionsCompleted={liveSessionsCompleted}
                   liveSessionsPlanned={liveSessionsPlanned}
                   phaseSummary={phaseSummary}
@@ -5474,65 +5508,26 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         </div>
       )}
 
-      {/* ── ZONE DISCIPLINE CARD (ZONE-VIS-01) ───────────────────────── */}
-      {/* Tier-divergent. Free users see a locked card with an upgrade CTA.
-          Paid/trial users see pending until their first analysed run, then
-          the live score. Never silently hidden — the proprietary metric
-          earns a permanent slot on Today. */}
-      {(() => {
-        // Free — locked card (always visible)
-        if (!hasPaidAccess) {
-          return (
-            <div style={{ padding: '20px 16px 0' }}>
-              <RestraintCard state="locked" onUpgrade={onUpgrade} />
-            </div>
-          )
-        }
-
-        // Skeleton — paid user with completed runs this week but
-        // run_analysis hasn't loaded yet. Avoids layout reflow.
-        if (!runAnalysisReady && completedThisWeek.length > 0 && zoneDisciplinePercent === null) {
-          return (
-            <div style={{ padding: '20px 16px 0' }}>
-              <RestraintCardSkeleton />
-            </div>
-          )
-        }
-
-        // Pending — paid user with no analysed-run data yet
-        // (early trial, no Strava, or no completed runs).
-        if (zoneDisciplinePercent === null) {
-          return (
-            <div style={{ padding: '20px 16px 0' }}>
-              <RestraintCard state="pending" />
-            </div>
-          )
-        }
-
-        // Live — paid user with ≥1 analysed run.
-        return (
-          <div style={{ padding: '20px 16px 0' }}>
-            <RestraintCard
-              percent={zoneDisciplinePercent}
-              meta={`across ${zoneDisciplineHits} ${zoneDisciplineHits === 1 ? 'run' : 'runs'}`}
-              body={
-                <>
-                  of your time was in{' '}
-                  <strong style={{ color: 'var(--ink)', fontWeight: 600 }}>
-                    the right zone
-                  </strong>
-                  .{' '}
-                  {zoneDisciplinePercent >= 80
-                    ? "Easy was easy, hard was hard. That's the work."
-                    : zoneDisciplinePercent >= 60
-                    ? "Mostly on target. Watch the drift on easy days."
-                    : "Too much grey-zone running. The fix is slower on easy days, not harder."}
-                </>
-              }
-            />
-          </div>
-        )
-      })()}
+      {/* ── VOICE ANCHOR STRIP (ZONE-VIS-02) ─────────────────────────────
+          Replaces the Today-screen RestraintCard. The discipline NUMBER now
+          lives on Coach (where retrospection belongs); Today keeps the
+          discipline RHETORIC — a single moss line that anchors the day's
+          job. Source: BRAND.voiceAnchor ("Hold the zone."). No card chrome:
+          the strip earns presence through typography, not borders. */}
+      <div style={{ padding: '18px 16px 0' }}>
+        <div
+          style={{
+            fontFamily: 'var(--font-ui)',
+            fontSize: '13px',
+            fontWeight: 600,
+            color: 'var(--moss)',
+            letterSpacing: '-0.005em',
+            lineHeight: 1.3,
+          }}
+        >
+          {BRAND.voiceAnchor}
+        </div>
+      </div>
 
       {/* ── DONE THIS WEEK ───────────────────────────────────────────── */}
       {(doneSessions.length > 0 || skippedSessions.length > 0) && (
@@ -6496,13 +6491,15 @@ function LedgerCard() {
   )
 }
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, liveSessionsCompleted, liveSessionsPlanned, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark }: {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaConnected: boolean
   stravaTokenFailed?: boolean; firstName?: string
   weeklyReport?: any | null; onReportGenerated?: (report: any) => void
   preferredUnits?: 'km' | 'mi'
   zoneDisciplinePercent?: number | null
+  zoneTimePctByZone?: { z1: number; z2: number; z3: number; z45: number } | null
+  zoneHistogramHits?: number
   liveSessionsCompleted?: number
   liveSessionsPlanned?: number
   // R28 phase-end summary + R29 race readiness
@@ -6831,6 +6828,31 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             )
           })}
         </div>
+
+        {/* ── ZONE RINGS (Pattern 22) ─────────────────────────────────────
+            Per-zone weekly breakdown — concentric brand mark, one ring per
+            zone, arc-filled to % time in that zone for the week. Companion
+            to the discipline % tile in the 2×2 grid above: the tile gives
+            the verdict, the rings give the breakdown. Coach is paid-gated
+            at the screen level, so only live / pending / skeleton states
+            render here (no locked state needed). */}
+        {(() => {
+          if (zoneTimePctByZone) {
+            return (
+              <ZoneRings
+                pctByZone={zoneTimePctByZone}
+                meta={`across ${zoneHistogramHits} ${zoneHistogramHits === 1 ? 'run' : 'runs'}`}
+              />
+            )
+          }
+          // Have completed runs but the analysis payload hasn't returned yet
+          // — show the skeleton to hold layout. liveSessionsCompleted is the
+          // honest signal here; analysis lags completion by a few seconds.
+          if ((liveSessionsCompleted ?? 0) > 0) {
+            return <ZoneRingsSkeleton />
+          }
+          return <ZoneRings state="pending" />
+        })()}
 
         {/* ── LOAD RATIO SHEET ────────────────────────────────────────── */}
         {loadSheetOpen && (

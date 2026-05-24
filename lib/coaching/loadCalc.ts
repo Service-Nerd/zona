@@ -1,7 +1,6 @@
 import {
   LOAD_RATIO,
   SHADOW_LOAD_THRESHOLD_PCT,
-  EASY_SESSION_WEIGHT,
   ZONE_DISCIPLINE_BANDS,
 } from './constants'
 
@@ -53,15 +52,20 @@ export function isShadowLoadTriggered(
 
 /**
  * Zone discipline score (0–100), or null when there's no signal.
- * Weighted average of HR-in-zone% across all sessions.
- * Easy sessions weighted 2× — they're the most commonly violated.
+ * Time-weighted average of HR-in-zone% across all sessions, weighted by
+ * actual_load_km (a proxy for time-in-session). Same formula the in-app
+ * Today/Coach tiles use — the share card and AI prompts must never disagree
+ * with what the user sees on screen.
+ *
+ * Sessions with missing actualLoadKm fall back to weight 1 so a brand-new
+ * Strava match without computed load still contributes.
  *
  * Returns null when no session has hrInZonePct data — "no signal" is
  * different from "score zero", and the caller must treat them differently
  * (a fresh user with no Strava history shouldn't be flagged as freelancing).
  */
 export function zoneDisciplineScore(
-  sessions: { sessionType: string; hrInZonePct: number | null }[]
+  sessions: { hrInZonePct: number | null; actualLoadKm: number | null }[]
 ): number | null {
   const scored = sessions.filter(s => s.hrInZonePct !== null)
   if (!scored.length) return null
@@ -70,13 +74,12 @@ export function zoneDisciplineScore(
   let weightedSum = 0
 
   for (const s of scored) {
-    const weight = ['easy', 'run', 'long', 'recovery'].includes(s.sessionType)
-      ? EASY_SESSION_WEIGHT
-      : 1
+    const weight = s.actualLoadKm ?? 1
     weightedSum += s.hrInZonePct! * weight
     totalWeight += weight
   }
 
+  if (totalWeight === 0) return null
   return Math.round(weightedSum / totalWeight)
 }
 

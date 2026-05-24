@@ -10,8 +10,11 @@ import { COACHING_RULE_ENGINE_VERSION, COHORT_SIMILARITY } from '@/lib/coaching/
 import { buildSessionFeedbackPrompt } from '@/lib/coaching/prompts/sessionFeedback'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { computeHrStreamSummary } from '@/lib/coaching/streamAnalysis'
+import { computePaceFadeSummary, type StravaSplitMetric } from '@/lib/coaching/paceAnalysis'
 import { fetchRunHistory, findSimilarRuns, summariseCohort, pickWindowDays } from '@/lib/coaching/runHistory'
 import { zoneForSessionType, sessionHRBand } from '@/lib/coaching/zoneRules'
+import { inferLimiter } from '@/lib/coaching/limiter'
+import { FATIGUE_HIGH_TAGS } from '@/lib/coaching/constants'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import type { Plan, Session } from '@/types/plan'
 
@@ -266,6 +269,51 @@ export async function POST(req: NextRequest) {
     const avgSpeedMs = activity.avg_speed ?? 0
     const actualPaceSecPerKm = avgSpeedMs > 0 ? Math.round(1000 / avgSpeedMs) : null
 
+    // Recent high-fatigue count for the limiter classifier — read the last
+    // 5 logged sessions and count Heavy/Wrecked/Cooked tags. Best-effort:
+    // failure leaves the count at 0 and the limiter simply skips the
+    // recovery-accumulation branch.
+    let recentHighFatigueCount = 0
+    try {
+      const { data: recentFatigueRows } = await serviceSupabase
+        .from('session_completions')
+        .select('fatigue_tag, updated_at')
+        .eq('user_id', userId)
+        .not('updated_at', 'is', null)
+        .order('updated_at', { ascending: false })
+        .limit(5)
+      recentHighFatigueCount = (recentFatigueRows ?? [])
+        .filter((r: any) => r.fatigue_tag && (FATIGUE_HIGH_TAGS as readonly string[]).includes(r.fatigue_tag))
+        .length
+    } catch (err) {
+      console.warn('[analyse-run] recent fatigue fetch failed', err)
+    }
+
+    const streamSummaryForLimiter = computeHrStreamSummary(
+      (activity.raw_payload as { hrSamples?: Array<{ valueBpm: number; timestamp: string }> } | null)?.hrSamples ?? null,
+      activity.moving_time_s ?? 0,
+    )
+    const paceFadeSummaryForLimiter = computePaceFadeSummary(
+      activity.splits_metric as StravaSplitMetric[] | null,
+    )
+    const tempCNum = activity.avg_temp_c != null ? Number(activity.avg_temp_c) : null
+
+    const limiter = inferLimiter({
+      sessionType:            (session as any).type,
+      actualAvgHr:            activity.avg_hr ?? null,
+      prescribedHrCeiling:    liveBand?.hi ?? null,
+      hrAboveCeilingPct:      prescribedHrFigures.hrAboveCeilingPct,
+      hrBelowFloorPct:        prescribedHrFigures.hrBelowFloorPct,
+      streamSummary:          streamSummaryForLimiter,
+      paceFadeSummary:        paceFadeSummaryForLimiter,
+      tempC:                  tempCNum,
+      rpe:                    completionRes.data?.rpe ?? null,
+      fatigueTag:             completionRes.data?.fatigue_tag ?? null,
+      recentHighFatigueCount,
+      actualDistKm:           (activity.distance_m ?? 0) / 1000,
+      plannedDistKm:          (session as any).distance_km ?? null,
+    })
+
     const prompt = buildSessionFeedbackPrompt({
       session,
       weekN:               week_n,
@@ -286,12 +334,10 @@ export async function POST(req: NextRequest) {
       isFirstAnalysis,
       athleteContext:      buildAthleteContext({ plan }),
       previousSimilarSession,
-      streamSummary:       computeHrStreamSummary(
-        // raw_payload.hrSamples is HealthKit-only today (see lib/health/adapter.ts).
-        // Returns null on Strava-sourced runs or sample-starved data.
-        (activity.raw_payload as { hrSamples?: Array<{ valueBpm: number; timestamp: string }> } | null)?.hrSamples ?? null,
-        activity.moving_time_s ?? 0,
-      ),
+      streamSummary:       streamSummaryForLimiter,
+      paceFadeSummary:     paceFadeSummaryForLimiter,
+      tempC:               tempCNum,
+      limiter,
     })
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
@@ -335,6 +381,12 @@ export async function POST(req: NextRequest) {
     hr_in_zone_pct:        prescribedHrFigures.hrInZonePct,
     hr_above_ceiling_pct:  prescribedHrFigures.hrAboveCeilingPct,
     hr_below_floor_pct:    prescribedHrFigures.hrBelowFloorPct,
+    // Mirror the four-bucket zone histogram from strava_activities onto
+    // run_analysis so the Coach ZoneRings aggregation reads a single table.
+    hr_pct_z1:             activity.hr_pct_z1   ?? null,
+    hr_pct_z2:             activity.hr_pct_z2   ?? null,
+    hr_pct_z3:             activity.hr_pct_z3   ?? null,
+    hr_pct_z4_5:           activity.hr_pct_z4_5 ?? null,
     ef_value:              efValue,
     ef_baseline:           efBaseline,
     ef_trend_pct:          efTrendPct,
