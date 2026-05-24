@@ -25,20 +25,27 @@ export function splitOnDoubleLetter(name: string): [string, string, string] | nu
 }
 
 /**
- * Fetch an Inter weight from Google Fonts and return the woff2 buffer
- * suitable for passing into next/og's ImageResponse `fonts` array.
+ * Fetch a font weight from Google Fonts and return the buffer suitable
+ * for passing into next/og's ImageResponse `fonts` array.
  *
  * Single source of truth for next/og font loading. The Googlebot UA
  * string is required — Google serves a CSS file with a `unicode-range`
  * subset to modern browsers that next/og can't parse; the Googlebot
- * path serves a plain woff2 URL.
+ * path serves a single plain font URL.
+ *
+ * The regex matches any url() in the @font-face declaration regardless
+ * of format ('woff2', 'truetype', etc.) — Google changed the Googlebot-
+ * served format from woff2 to truetype at some point in 2026 and the
+ * narrower regex started returning undefined, which threw and 500'd
+ * every OG route that loaded a font. next/og's ImageResponse accepts
+ * woff/woff2/ttf/otf interchangeably so the broader regex is safe.
  */
 export async function loadFont(family: string, weight: number): Promise<ArrayBuffer> {
   const css = await fetch(
     `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@${weight}&display=swap`,
     { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' } },
   ).then(r => r.text())
-  const url = css.match(/src: url\((.+?)\) format\('woff2'\)/)?.[1]
+  const url = css.match(/src:\s*url\(([^)]+)\)\s*format\('[^']+'\)/)?.[1]
   if (!url) throw new Error(`Font URL not found for ${family} weight ${weight}`)
   return fetch(url).then(r => r.arrayBuffer())
 }
