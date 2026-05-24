@@ -53,8 +53,13 @@ export async function sendWebPush(
 }
 
 /**
- * Looks up a user's push subscription and sends a notification.
- * No-ops silently if the user has no subscription.
+ * Looks up ALL of a user's push subscriptions (web + iOS) and dispatches
+ * each to the right transport. No-ops silently if the user has none.
+ *
+ * Previously this was web-only and never selected the platform column —
+ * iOS rows have null p256dh/auth, so sendWebPush threw and the post-run
+ * push silently never reached iOS users. Mirrors the platform-aware
+ * branching already done in send-daily / send-weekly-report routes.
  */
 export async function notifyUser(
   userId: string,
@@ -65,13 +70,22 @@ export async function notifyUser(
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
 
-  const { data: sub } = await serviceSupabase
+  const { data: subs } = await serviceSupabase
     .from('push_subscriptions')
-    .select('endpoint, p256dh, auth')
+    .select('endpoint, p256dh, auth, platform')
     .eq('user_id', userId)
-    .maybeSingle()
 
-  if (!sub) return
+  if (!subs?.length) return
 
-  await sendWebPush(sub, payload)
+  // sendApnsPush is dynamically imported to keep the iOS-only `apn` npm
+  // package off the call path for web subscribers.
+  const { sendApnsPush } = await import('./apnpush')
+
+  await Promise.all(subs.map(async sub => {
+    if (sub.platform === 'ios') {
+      await sendApnsPush(sub.endpoint, payload)
+    } else if (sub.p256dh && sub.auth) {
+      await sendWebPush({ endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth }, payload)
+    }
+  }))
 }
