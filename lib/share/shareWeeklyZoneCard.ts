@@ -98,7 +98,7 @@ export async function shareWeeklyZoneCard(opts: ShareOptions = {}): Promise<void
           title:        `${BRAND.name} — Zone discipline`,
           text:         BRAND.voiceAnchor,
           files:        [written.uri],
-          dialogTitle:  'Share this week',
+          dialogTitle:  'Share week',
         })
         onStatus?.({ kind: 'success' })
       } catch (err: any) {

@@ -6365,15 +6365,15 @@ function ShareWeekButton({ weekN }: { weekN: number }) {
         opacity: busy ? 0.7 : 1,
       }}
     >
-      {status ?? (busy ? 'Preparing…' : 'Share this week')}
+      {status ?? (busy ? 'Preparing…' : 'Share')}
     </button>
   )
 }
 
-// SAVE-IMG-01 — "Save image" button rendered BELOW SessionCompleteCard
+// SAVE-IMG-01 — "Share" button rendered BELOW SessionCompleteCard
 // (never inside). Keeps the user's iOS screenshot of the card clean.
 // Tinted-moss secondary style — the card itself is the moment; the
-// button is the accelerator.
+// button is the accelerator. Same label as ShareWeekButton on Coach.
 function SaveImageButton({ weekN, sessionDay }: { weekN: number; sessionDay: string }) {
   const [busy, setBusy]     = useState(false)
   const [status, setStatus] = useState<string | null>(null)
@@ -6421,7 +6421,7 @@ function SaveImageButton({ weekN, sessionDay }: { weekN: number; sessionDay: str
         opacity: busy ? 0.7 : 1,
       }}
     >
-      {status ?? (busy ? 'Preparing…' : 'Save image')}
+      {status ?? (busy ? 'Preparing…' : 'Share')}
     </button>
   )
 }

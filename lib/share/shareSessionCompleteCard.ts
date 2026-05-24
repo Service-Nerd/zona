@@ -72,7 +72,7 @@ export async function shareSessionCompleteCard(opts: ShareSessionCardOptions): P
           title:       `${BRAND.name} — session card`,
           text:        BRAND.voiceAnchor,
           files:       [written.uri],
-          dialogTitle: 'Save image',
+          dialogTitle: 'Share session',
         })
         onStatus?.({ kind: 'success' })
       } catch (err: any) {

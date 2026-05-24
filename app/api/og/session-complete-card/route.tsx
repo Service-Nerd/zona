@@ -208,7 +208,8 @@ export async function GET(req: NextRequest) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
             <span style={{
-              display: 'inline-block',
+              // Satori only supports flex/block/none — inline-block throws and 500s.
+              display: 'flex',
               fontFamily: 'Inter', fontSize: 22, fontWeight: 700,
               color: BRAND.og.ink, background: '#EDE9E1',
               padding: '10px 22px', borderRadius: 999,
@@ -289,7 +290,8 @@ export async function GET(req: NextRequest) {
               Resolved hex pair so color-mix isn't needed. */}
           {fatigueTag && FATIGUE_COLOURS[fatigueTag] && (
             <span style={{
-              display: 'inline-block',
+              // Satori only supports flex/block/none — inline-block throws and 500s.
+              display: 'flex',
               fontFamily: 'Inter', fontSize: 28, fontWeight: 600,
               color: FATIGUE_COLOURS[fatigueTag],
               background: '#FFFFFF',
