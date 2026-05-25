@@ -7191,6 +7191,62 @@ function StravaScreen({ runs, loading, connected, raceName, raceDate, raceDistan
 // so the row isn't auto-recreated by the mount-time check.
 const PUSH_OFF_KEY = 'zonna_push_disabled'
 
+// iOS hands back the APNs device token via the `registration` event, but only
+// reliably on the FIRST `register()` of an app session. A second register()
+// — e.g. toggling Run notifications off then back on without relaunching —
+// frequently never re-fires the event, so a register-and-wait hangs for the
+// full timeout and then errors ("Working…" forever → "Couldn't enable push").
+// We sidestep that by caching the token at module scope the first time it
+// arrives and reusing it for every later subscribe/unsubscribe this session.
+type PushListenerHandle = { remove: () => Promise<void> }
+let cachedDeviceToken: string | null = null
+let tokenListenerAttached = false
+
+// Attach one persistent `registration` listener so any token iOS emits is
+// captured into the cache, regardless of which toggle action triggered it.
+async function attachTokenListener() {
+  if (tokenListenerAttached) return
+  tokenListenerAttached = true
+  const { PushNotifications } = await import('@capacitor/push-notifications')
+  await PushNotifications.addListener('registration', tok => { cachedDeviceToken = tok.value })
+}
+
+// Resolve the APNs device token: the cached value if we've already seen one
+// this session, otherwise call register() once and wait for the event (bounded
+// so the UI can't hang forever — simulator/sandbox APNs can be unreachable).
+// Crucially, once ANY register() fires the token is cached, so the second
+// enable/disable in a session returns instantly instead of timing out.
+async function getDeviceToken(timeoutMs = 30_000): Promise<string> {
+  await attachTokenListener()
+  if (cachedDeviceToken) return cachedDeviceToken
+  const { PushNotifications } = await import('@capacitor/push-notifications')
+  let regHandle: PushListenerHandle | undefined
+  let errHandle: PushListenerHandle | undefined
+  try {
+    return await new Promise<string>((resolve, reject) => {
+      let settled = false
+      const settle = (fn: () => void) => { if (!settled) { settled = true; fn() } }
+      const timeoutId = setTimeout(() => {
+        settle(() => reject(new Error('APNs registration timed out — push may be unavailable here')))
+      }, timeoutMs)
+      Promise.all([
+        PushNotifications.addListener('registration', tok => {
+          cachedDeviceToken = tok.value
+          settle(() => { clearTimeout(timeoutId); resolve(tok.value) })
+        }),
+        PushNotifications.addListener('registrationError', err => {
+          settle(() => { clearTimeout(timeoutId); reject(new Error(err.error)) })
+        }),
+      ]).then(([r, e]) => { regHandle = r as PushListenerHandle; errHandle = e as PushListenerHandle })
+      PushNotifications.register().catch(err => settle(() => { clearTimeout(timeoutId); reject(err) }))
+    })
+  } finally {
+    // Tear down the per-call waiters — the persistent listener keeps the cache warm.
+    await regHandle?.remove?.()
+    await errHandle?.remove?.()
+  }
+}
+
 function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed: boolean) => void } = {}) {
   const [status, setStatus] = useState<'checking' | 'unsupported' | 'subscribed' | 'denied' | 'idle'>('checking')
   const [loading, setLoading] = useState(false)
@@ -7250,20 +7306,10 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
       if (Capacitor.isNativePlatform()) {
         // Get the current device token so we can DELETE the matching row.
         // iOS won't let us revoke the permission itself — that's a Settings
-        // app concern — but we can stop sending pushes at our end.
-        const { PushNotifications } = await import('@capacitor/push-notifications')
-        const token: string | null = await new Promise(resolve => {
-          let settled = false
-          const t = setTimeout(() => { if (!settled) { settled = true; resolve(null) } }, 5_000)
-          PushNotifications.addListener('registration', tok => {
-            clearTimeout(t)
-            if (!settled) { settled = true; resolve(tok.value) }
-          })
-          PushNotifications.register().catch(() => {
-            clearTimeout(t)
-            if (!settled) { settled = true; resolve(null) }
-          })
-        })
+        // app concern — but we can stop sending pushes at our end. Uses the
+        // shared cached-token helper so it can't hang on a stale register().
+        let token: string | null = null
+        try { token = await getDeviceToken(5_000) } catch { token = null }
         if (token) {
           await authedFetch('/api/push/subscribe', {
             method:  'DELETE',
@@ -7316,47 +7362,24 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
           setLoading(false)
           return
         }
-        // Resolve once APNs hands back a device token (or errors). Time out
-        // after 30s so the button can't hang forever — APNs registration in
-        // the simulator silently fails on older macOS/iOS combos (needs
-        // macOS 13+ and iOS 16+ simulator runtime), and we want feedback
-        // either way.
-        await new Promise<void>((resolve, reject) => {
-          let settled = false
-          const settle = (fn: () => void) => { if (!settled) { settled = true; fn() } }
-          const timeoutId = setTimeout(() => {
-            settle(() => reject(new Error('APNs registration timed out after 30s — simulator may not support push, or APNs sandbox is unreachable')))
-          }, 30_000)
-          PushNotifications.addListener('registration', async (token) => {
-            clearTimeout(timeoutId)
-            try {
-              const res = await authedFetch('/api/push/subscribe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ platform: 'ios', token: token.value }),
-              })
-              // authedFetch resolves on ANY HTTP status — a 403 (paid gate) or a
-              // 5xx is not a thrown error. Without this check the toggle flips to
-              // "subscribed" while no row was ever written, which is exactly why
-              // push silently never worked. Surface the real failure instead.
-              if (!res.ok) {
-                settle(() => reject(new Error(res.status === 403 ? 'paid-only' : `subscribe failed (${res.status})`)))
-                return
-              }
-              settle(resolve)
-            } catch (err) {
-              settle(() => reject(err))
-            }
-          })
-          PushNotifications.addListener('registrationError', (err) => {
-            clearTimeout(timeoutId)
-            settle(() => reject(new Error(err.error)))
-          })
-          PushNotifications.register().catch((err) => {
-            clearTimeout(timeoutId)
-            settle(() => reject(err))
-          })
+        // Resolve the device token (cached if we've already seen one this
+        // session, else register-and-wait, bounded at 30s). This is the fix
+        // for the "Working… forever → Couldn't enable push" bug: a second
+        // register() in a session doesn't re-fire the registration event, but
+        // the cached token from the first one lets us subscribe instantly.
+        const token = await getDeviceToken()
+        const res = await authedFetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ platform: 'ios', token }),
         })
+        // authedFetch resolves on ANY HTTP status — a 403 (paid gate) or a
+        // 5xx is not a thrown error. Without this check the toggle flips to
+        // "subscribed" while no row was ever written, which is exactly why
+        // push silently never worked. Surface the real failure instead.
+        if (!res.ok) {
+          throw new Error(res.status === 403 ? 'paid-only' : `subscribe failed (${res.status})`)
+        }
         setStatus('subscribed')
       } catch (err) {
         // Most common cause on simulator: APNs sandbox unreachable. Also fires
