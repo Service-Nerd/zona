@@ -6,6 +6,7 @@ import { getUserTier } from '@/lib/trial'
 import { getCurrentWeekIndex } from '@/lib/plan'
 import { resolveEffectiveSessions, type SessionOverride } from '@/lib/plan/effectiveSessions'
 import { buildDailyPushTitle, buildDailyPushBody } from '@/lib/coaching/voiceLines'
+import { recordNotification } from '@/lib/notifications'
 import type { Plan, Session } from '@/types/plan'
 
 // POST /api/push/send-daily
@@ -191,6 +192,15 @@ export async function POST(req: NextRequest) {
         }
         if (ok) deliveredAny = true
       }
+
+      // Inbox record — once per user, regardless of per-device delivery, so
+      // the durable copy survives even if a device token has gone stale.
+      await recordNotification(userId, {
+        type:  'daily_training',
+        title: payload.title,
+        body:  payload.body,
+        url:   payload.data.url,
+      })
 
       if (deliveredAny) {
         sent++

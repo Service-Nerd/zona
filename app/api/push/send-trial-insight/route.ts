@@ -4,6 +4,7 @@ import { BRAND } from '@/lib/brand'
 import { sendWebPush } from '@/lib/webpush'
 import { sendApnsPush } from '@/lib/apnpush'
 import { getUserTier } from '@/lib/trial'
+import { recordNotification } from '@/lib/notifications'
 
 // POST/GET /api/push/send-trial-insight
 //
@@ -157,6 +158,15 @@ export async function POST(req: NextRequest) {
           .from('user_settings')
           .update({ trial_insight_push_sent_at: now.toISOString() })
           .eq('id', userId)
+        // Inbox record tied to the successful send — this is a one-shot that
+        // retries hourly until delivered, so recording here (not before the
+        // loop) avoids writing a fresh row every hour while delivery fails.
+        await recordNotification(userId, {
+          type:  'trial_insight',
+          title: payload.title,
+          body:  payload.body,
+          url:   payload.data.url,
+        })
       }
     } catch (err: any) {
       errors.push(`${userId}: ${err.message}`)

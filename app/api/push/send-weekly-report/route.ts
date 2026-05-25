@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { BRAND } from '@/lib/brand'
 import { sendWebPush } from '@/lib/webpush'
 import { sendApnsPush } from '@/lib/apnpush'
+import { recordNotification } from '@/lib/notifications'
 
 // POST /api/push/send-weekly-report
 // Called by Vercel cron every Sunday at 18:00.
@@ -37,6 +38,9 @@ export async function POST(req: NextRequest) {
 
   let sent = 0
   const errors: string[] = []
+  // This route iterates per-subscription, so a multi-device user appears more
+  // than once. The inbox row is per-user — guard so we record it only once.
+  const recorded = new Set<string>()
 
   for (const sub of subscriptions) {
     try {
@@ -58,6 +62,16 @@ export async function POST(req: NextRequest) {
         body:  report.headline,
         tag:   'weekly-report',
         data:  { url: '/dashboard?screen=coach' },
+      }
+
+      if (!recorded.has(sub.user_id)) {
+        recorded.add(sub.user_id)
+        await recordNotification(sub.user_id, {
+          type:  'weekly_report',
+          title: payload.title,
+          body:  payload.body,
+          url:   payload.data.url,
+        })
       }
 
       let pushSent = false

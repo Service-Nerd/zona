@@ -101,6 +101,13 @@ export const BRAND = {
      * first sentence of the latest `run_analysis.feedback_text`.
      */
     trialInsight: 'Kit noticed something.',
+    /**
+     * Engine auto-applied a plan adjustment (NOTIF-01). Title only — the body
+     * carries the rule-engine summary of what changed. Voice opportunity, not
+     * a label: the change happened *to* the runner, so the tone is calm
+     * reassurance, not alarm.
+     */
+    planAdjusted: "Plan's been shifted.",
   },
 } as const
 

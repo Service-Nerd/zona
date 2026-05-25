@@ -156,12 +156,17 @@ export async function autoMatchAndAnalyse(
     const title = distKm > 0
       ? `${dayName}'s ${distLabel}.`
       : `${dayName}'s run.`
+    const url = `/dashboard?screen=post-run&weekN=${week.n}&sessionDay=${bestDay}`
     void notifyUser(userId, {
       title,
       body:  'How did it feel?',
       tag:   'run-linked',
-      data:  { url: `/dashboard?screen=post-run&weekN=${week.n}&sessionDay=${bestDay}` },
+      data:  { url },
     })
+    // Inbox record (NOTIF-01) — mirrors the push so a missed lock-screen ping
+    // is still recoverable from the bell.
+    const { recordNotification } = await import('@/lib/notifications')
+    void recordNotification(userId, { type: 'run_feedback', title, body: 'How did it feel?', url })
   } catch (err) {
     console.warn('[auto-analyse] link push failed', err)
   }

@@ -12,6 +12,9 @@ import { getCurrentWeekIndex } from '@/lib/plan'
 import { savePlanForUser } from '@/lib/plan'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
+import { BRAND } from '@/lib/brand'
+import { notifyUser } from '@/lib/webpush'
+import { recordNotification } from '@/lib/notifications'
 
 // POST /api/adjust-plan
 // Auth-gated (paid/trial). Checks adjustment triggers for the current week.
@@ -300,6 +303,25 @@ export async function POST(req: NextRequest) {
   if (status === 'auto_applied') {
     const updatedPlan = applyAdjustmentToPlan(plan, weekN, proposed.sessionsAfter)
     await savePlanForUser(user.id, updatedPlan, supabase)
+
+    // NOTIF-01 — an engine tweak happened *to* the runner without them asking,
+    // so tell them: push + durable inbox row. Manual adjustments are excluded —
+    // the user made that change themselves; pushing it back is noise.
+    if (!isManual) {
+      const url = '/dashboard?screen=plan'
+      void notifyUser(user.id, {
+        title: BRAND.push.planAdjusted,
+        body:  explanationText,
+        tag:   'plan-adjustment',
+        data:  { url },
+      })
+      void recordNotification(user.id, {
+        type:  'plan_adjustment',
+        title: BRAND.push.planAdjusted,
+        body:  explanationText,
+        url,
+      })
+    }
   }
 
   await recordAdjustmentCheck(serviceSupabase, user.id, true)
