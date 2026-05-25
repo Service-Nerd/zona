@@ -48,3 +48,34 @@ export async function recordNotification(
     console.warn('[notifications] record threw:', err instanceof Error ? err.message : err)
   }
 }
+
+// Retention window for the inbox. Read rows older than this are pruned so the
+// daily-training push (one row every training morning) can't grow the table
+// unbounded. Unread rows are kept — the user hasn't seen them. Ops constant,
+// not a coaching numeric (a coach wouldn't tune inbox retention), so it lives
+// inline rather than in GENERATION_CONFIG.
+const NOTIFICATION_RETENTION_DAYS = 30
+
+/**
+ * Housekeeping: delete READ notifications older than the retention window.
+ * Best-effort, never throws. Folded into the weekly-report cron rather than a
+ * new Vercel cron (Hobby plan caps at 2). Weekly cadence means rows live up to
+ * ~37 days — immaterial for a 30-day target.
+ */
+export async function pruneReadNotifications(): Promise<void> {
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    )
+    const cutoff = new Date(Date.now() - NOTIFICATION_RETENTION_DAYS * 86_400_000).toISOString()
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .not('read_at', 'is', null)
+      .lt('created_at', cutoff)
+    if (error) console.warn('[notifications] prune failed:', error.message)
+  } catch (err) {
+    console.warn('[notifications] prune threw:', err instanceof Error ? err.message : err)
+  }
+}

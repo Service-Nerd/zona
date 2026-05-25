@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { BRAND } from '@/lib/brand'
 import { sendWebPush } from '@/lib/webpush'
 import { sendApnsPush } from '@/lib/apnpush'
-import { recordNotification } from '@/lib/notifications'
+import { recordNotification, pruneReadNotifications } from '@/lib/notifications'
 
 // POST /api/push/send-weekly-report
 // Called by Vercel cron every Sunday at 18:00.
@@ -24,6 +24,10 @@ export async function POST(req: NextRequest) {
   if (!secret || secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  // NOTIF-01 housekeeping — prune old read notifications. Folded into this
+  // weekly cron rather than a new one (Vercel Hobby caps at 2). Best-effort.
+  void pruneReadNotifications()
 
   const { data: subscriptions, error } = await supabase
     .from('push_subscriptions')

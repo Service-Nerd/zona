@@ -78,4 +78,4 @@ export async function recordNotification(userId: string, n: {
 
 ## Retention
 
-Read rows older than 30 days are pruned by an existing daily cron (do **not** add a 3rd Vercel cron — Hobby plan caps at 2 and silently rejects the deploy otherwise).
+Read rows older than 30 days are pruned by `pruneReadNotifications()` in `lib/notifications.ts`, called from the existing **`send-weekly-report` cron** (Sunday 18:00 — the only Vercel cron). Weekly cadence means rows live up to ~37 days, immaterial for a 30-day target. Unread rows are kept (the user hasn't seen them). Folded into an existing cron rather than adding a 3rd — Vercel Hobby caps at 2 and silently rejects the deploy otherwise.
