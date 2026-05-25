@@ -1101,6 +1101,53 @@ Reference: `app/dashboard/DashboardClient.tsx` → `TodayScreen` (ZONE-VIS-02 bl
 
 ---
 
+### 27. NotificationBell
+
+The bell affordance for the notification inbox (NOTIF-01). Lives top-right on the Today screen's wordmark row — home is where users land, and the most frequent push (daily training) already deep-links to Today. A bell icon is justified under "no icons unless they carry unique meaning": it's the universally-understood notifications affordance with no compact text equivalent.
+
+```
+ZONNA ●                         🔔 ●     ← moss unread dot, top-right of glyph
+```
+
+**Structure:**
+- 44×44 tap target (iOS HIG); 22px stroke-bell glyph, `--ink-2` stroke.
+- Unread indicator: `8px --moss` dot, `1.5px solid --bg` ring so it reads cleanly over the glyph. **No number badge** — calm over count ("calm guidance, not alerts").
+- On the wordmark row, wrap in a `margin: -11px -10px -11px 0` box so the 44px target doesn't balloon the row height.
+
+**Rules:**
+- **Paid/trial only.** Free users can't have notifications — render nothing (`hasPaidAccess && onOpenNotifications`).
+- Unread count is owned by `DashboardClient` (fetched at load, refreshed on app-resume via `visibilitychange`); opening the inbox optimistically zeroes it.
+
+Reference: `components/shared/NotificationBell.tsx`.
+
+---
+
+### 28. NotificationRow
+
+One row in the notification inbox. Read-only delivery record — the *envelope*, not the AI content surface.
+
+```
+┌─────────────────────────────────────────────┐
+│ ▌ PLAN ADJUSTED                     2h ago ● │  ← rail-coloured eyebrow · time · unread dot
+│   Plan's been shifted.                      │  ← title (bold)
+│   Thursday's long run moved to Saturday.    │  ← body (muted, 2-line clamp)
+└─────────────────────────────────────────────┘
+```
+
+**Structure:**
+- Standalone card: `--card`, `1px solid --line`, `var(--radius-lg)`, padding `13px 16px 14px 18px` (extra left clears the rail), min-height 64px. 8px gap between rows; grouped under SectionLabels (`Today` / `Earlier`).
+- **3px left rail — two-colour system:** `--warn` for `plan_adjustment` (design system reserves warn for coaching/adjustment surfaces), `--moss` for every other type (Kit's voice).
+- Eyebrow: short type label, `10px 700 uppercase 0.08em`, in the rail colour. Map: `daily_training`→"Today's session", `weekly_report`→"Your week", `trial_insight`→"Kit noticed", `run_feedback`→"Run logged", `plan_adjustment`→"Plan adjusted".
+- Title: `13px 600` — `--ink` unread, `--mute` read. Body: `12px 400 --mute`, 2-line clamp. Time: `11px --mute-2`. Unread dot: `8px --moss`.
+
+**Provenance rule (deliberate):** rows carry **NO AIMark / CoachByline**. Most copy is rule/hand-authored, and the deep-link target (Coach, Session detail) already carries the proper byline (§16/§16b). Marking rows would violate provenance honesty and add noise.
+
+**NotificationsScreen** (inline in `DashboardClient`): back arrow top-left → Today; `ScreenHeader title="Notifications"`; Today/Earlier `SectionLabel` groups; static skeleton rows while loading (no spinner, matches existing skeletons); Pattern 8 empty state ("Nothing from Kit yet."). Opening marks all rows read (clears the bell); loaded rows keep their unread styling for the current view.
+
+Reference: `components/shared/NotificationRow.tsx`; `DashboardClient.tsx` → `NotificationsScreen`.
+
+---
+
 ## Cross-Screen Consistency Rules
 
 Every screen must honour these invariants before shipping. Check against this list when auditing.

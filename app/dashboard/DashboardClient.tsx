@@ -33,6 +33,8 @@ import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import AIMark from '@/components/shared/AIMark'
 import CoachByline from '@/components/shared/CoachByline'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
+import { NotificationBell } from '@/components/shared/NotificationBell'
+import { NotificationRow, type NotificationItem } from '@/components/shared/NotificationRow'
 import { composeSession } from '@/lib/plan/sessionComposer'
 import { formatDistance, sumRoundedDistance, resolveSessionMetric } from '@/lib/format'
 import { didSessionHitZone, sessionHRBand, zoneForSessionType } from '@/lib/coaching/zoneRules'
@@ -45,7 +47,7 @@ const UpgradeScreen = dynamic(() => import('./UpgradeScreen'), { ssr: false })
 const BenchmarkUpdateScreen = dynamic(() => import('./BenchmarkUpdateScreen'), { ssr: false })
 const FounderNoteScreen = dynamic(() => import('./FounderNoteScreen'), { ssr: false })
 
-type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder'
+type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'notifications'
 
 /**
  * Data passed to PostRunScreen — the destination screen for a Strava-linked
@@ -265,11 +267,11 @@ export default function DashboardClient() {
   const [runAnalysisReady, setRunAnalysisReady] = useState(false)
   const [weeklyReport, setWeeklyReport] = useState<any | null>(null)
   const [pendingAdjustment, setPendingAdjustment] = useState<any | null>(null)
-  // PROFILE-ADJ-02 — last 5 silent/auto-applied plan_adjustments rows, for the
-  // "Recent tweaks" card on MeScreen. Read-only surface — the rows are written
-  // by /api/adjust-plan when a trigger fires with requiresConfirmation=false
-  // (zone_drift, rpe_disconnect, readiness_signal). Always an array; never null.
-  const [recentAutoAdjustments, setRecentAutoAdjustments] = useState<any[]>([])
+  // NOTIF-01 — unread notification count drives the Today-screen bell dot.
+  // Fetched once at load (paid only) and refreshed on app-resume. Auto-applied
+  // plan adjustments (formerly the MeScreen "Recent tweaks" log) now live in
+  // the notification inbox instead.
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
   // R28 phase-end summary + R29 race readiness — pre-fetched cached rows, generated on-demand in CoachScreen
   const [phaseSummary, setPhaseSummary] = useState<{ content: string; generated_at: string; phase_ended: string; transition_week_n: number } | null>(null)
   const [raceReadinessNote, setRaceReadinessNote] = useState<{ content: string; generated_at: string } | null>(null)
@@ -397,6 +399,11 @@ export default function DashboardClient() {
           pendingDeepLinkRef.current = { target: screenParam, weekN, sessionDay }
         }
         window.history.replaceState({}, '', '/dashboard')
+      } else if (screenParam === 'plan' || screenParam === 'coach' || screenParam === 'notifications') {
+        // Non-session deep links (weekly report → coach, plan adjustment → plan,
+        // and a future "unread coaching" → notifications) route straight away.
+        setScreen(screenParam)
+        window.history.replaceState({}, '', '/dashboard')
       }
     }
 
@@ -444,24 +451,19 @@ export default function DashboardClient() {
     return () => clearTimeout(t)
   }, [])
 
-  // Apply the captured deep-link target once `plan` has loaded. Resolves
-  // week_n + session_day to a session object and routes the user to the
-  // appropriate screen. Fires once and clears the ref.
+  // Resolve a week_n + session_day deep link to a session object and route to
+  // the right screen. Shared by the push cold-start effect below and by
+  // in-app notification-row taps (NOTIF-01). Needs `plan` loaded to resolve.
   //   target='post-run' (POST-RUN-01) → PostRunScreen
   //   target='session'  (HOOK-02)     → SessionScreen
-  useEffect(() => {
-    if (!plan || plan === EMPTY_PLAN || !pendingDeepLinkRef.current) return
-    const { target, weekN, sessionDay } = pendingDeepLinkRef.current
-    pendingDeepLinkRef.current = null
-
+  const applyDeepLink = useCallback((target: 'post-run' | 'session', weekN: number, sessionDay: string) => {
+    if (!plan || plan === EMPTY_PLAN) return
     const week = plan.weeks?.find((w: any) => w.n === weekN)
     if (!week) return
     const session = (week.sessions as Record<string, any> | undefined)?.[sessionDay]
     if (!session) return
 
-    // Build the same shape TodayScreen passes via onOpenSession — see lines
-    // around 913 (`setActiveSessionData` callback) and the SessionScreen prop
-    // usage in `runAnalysisMap[activeSessionData?.key]`.
+    // Build the same shape TodayScreen passes via onOpenSession.
     const enrichedSession = {
       ...session,
       key:       sessionDay,
@@ -484,6 +486,34 @@ export default function DashboardClient() {
     }
   }, [plan])
 
+  // Apply the captured push deep-link target once `plan` has loaded. Fires
+  // once and clears the ref.
+  useEffect(() => {
+    if (!pendingDeepLinkRef.current) return
+    if (!plan || plan === EMPTY_PLAN) return
+    const { target, weekN, sessionDay } = pendingDeepLinkRef.current
+    pendingDeepLinkRef.current = null
+    applyDeepLink(target, weekN, sessionDay)
+  }, [plan, applyDeepLink])
+
+  // NOTIF-01 — route from a tapped notification row's stored url. Session /
+  // post-run links resolve through applyDeepLink (needs the plan); the rest map
+  // straight to a screen. Mirrors the push deep-link param convention.
+  const navigateFromNotificationUrl = useCallback((url: string | null) => {
+    if (!url) return
+    try {
+      const sp = new URL(url, window.location.origin).searchParams
+      const screenParam = sp.get('screen')
+      const weekN       = parseInt(sp.get('weekN') ?? '', 10)
+      const sessionDay  = sp.get('sessionDay') ?? ''
+      if ((screenParam === 'session' || screenParam === 'post-run') && Number.isFinite(weekN) && sessionDay) {
+        applyDeepLink(screenParam, weekN, sessionDay)
+      } else if (screenParam === 'today' || screenParam === 'plan' || screenParam === 'coach' || screenParam === 'me') {
+        setScreen(screenParam)
+      }
+    } catch { /* malformed url — leave the user on the inbox */ }
+  }, [applyDeepLink])
+
   const initials = (() => {
     if (firstName || lastName) {
       return `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase().slice(0, 2) || '?'
@@ -502,6 +532,30 @@ export default function DashboardClient() {
     if (!('serviceWorker' in navigator)) return
     void navigator.serviceWorker.register('/sw.js')
   }, [hasPaidAccess, appReady])
+
+  // NOTIF-01 — re-read the unread notification count. Called on app-resume so a
+  // push that landed while backgrounded bumps the bell dot, and by the
+  // NotificationsScreen after it marks everything read.
+  const refreshUnreadNotifications = useCallback(async () => {
+    if (!hasPaidAccess) return
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { count } = await supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .is('read_at', null)
+      if (typeof count === 'number') setUnreadNotifications(count)
+    } catch { /* best-effort — leave the current badge */ }
+  }, [hasPaidAccess, supabase])
+
+  useEffect(() => {
+    if (!hasPaidAccess) return
+    const onVisible = () => { if (document.visibilityState === 'visible') void refreshUnreadNotifications() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [hasPaidAccess, refreshUnreadNotifications])
 
   // Daily coach note — paid/trial only. Skip fetch entirely for free users.
   // Cached daily; the route returns instantly on cache hit, so this only
@@ -740,13 +794,13 @@ export default function DashboardClient() {
             // many adjustment paths and shouldn't block the rest of the dashboard data.
             try { await authedFetch('/api/pre-session-readiness') } catch {}
 
-            const [analysisRes, reportRes, adjustmentsRes, autoAdjustmentsRes, phaseSummaryRes, raceReadinessRes] = await Promise.all([
+            const [analysisRes, reportRes, adjustmentsRes, unreadCountRes, phaseSummaryRes, raceReadinessRes] = await Promise.all([
               supabase.from('run_analysis').select('session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5').eq('user_id', user.id),
               supabase.from('weekly_reports').select('*').eq('user_id', user.id).order('week_n', { ascending: false }).limit(1).maybeSingle(),
               supabase.from('plan_adjustments').select('*').eq('user_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
-              // PROFILE-ADJ-02 — most recent silent/auto-applied tweaks for the MeScreen log.
-              // 5-row cap balances "see what changed" against vertical density on the screen.
-              supabase.from('plan_adjustments').select('id, trigger_type, summary, created_at, week_n').eq('user_id', user.id).eq('status', 'auto_applied').order('created_at', { ascending: false }).limit(5),
+              // NOTIF-01 — unread notification count for the Today-screen bell dot.
+              // head:true returns the count without the rows (we only need the badge).
+              supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).is('read_at', null),
               // R28 — most recent phase-end summary (CoachScreen validates against current transition)
               supabase.from('phase_summaries').select('content, generated_at, phase_ended, transition_week_n').eq('user_id', user.id).order('generated_at', { ascending: false }).limit(1).maybeSingle(),
               // R29 — race readiness note for the plan's race date
@@ -761,7 +815,7 @@ export default function DashboardClient() {
             }
             if (reportRes.data) setWeeklyReport(reportRes.data)
             if (adjustmentsRes.data) setPendingAdjustment(adjustmentsRes.data)
-            if (Array.isArray(autoAdjustmentsRes.data)) setRecentAutoAdjustments(autoAdjustmentsRes.data)
+            if (typeof unreadCountRes.count === 'number') setUnreadNotifications(unreadCountRes.count)
             if (phaseSummaryRes.data) setPhaseSummary(phaseSummaryRes.data as any)
             if (raceReadinessRes.data) setRaceReadinessNote(raceReadinessRes.data as any)
           } catch {}
@@ -1150,7 +1204,7 @@ export default function DashboardClient() {
     <div style={s}>
 
       <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: '72px', overscrollBehavior: 'none' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} />}
         {screen === 'coach'    && (hasPaidAccess
           ? (() => {
@@ -1293,7 +1347,7 @@ export default function DashboardClient() {
             No UI path opens it for non-admins, but the render gate prevents a future commit
             from accidentally exposing admin UI via state mutation or a new entry point. */}
         {screen === 'strava'   && isAdmin && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
-        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentAutoAdjustments={recentAutoAdjustments} />}
+        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onDone={() => {
@@ -1321,6 +1375,7 @@ export default function DashboardClient() {
         {screen === 'benchmark' && plan && <BenchmarkUpdateScreen plan={plan} stravaConnected={stravaConnected} onBack={() => setScreen('me')} onUpdated={(updatedPlan) => { setPlan(updatedPlan) }} />}
         {screen === 'reshape'   && <ReshapeScreen plan={plan} onBack={() => setScreen('me')} onReshapeApplied={(updatedPlan) => { setPlan(updatedPlan); setPendingAdjustment(null); setScreen('today') }} onChecked={(foundChange) => { setLastAdjustmentCheckAt(new Date().toISOString()); setLastAdjustmentCheckFoundChange(foundChange) }} />}
         {screen === 'founder'   && <FounderNoteScreen onBack={() => setScreen('me')} />}
+        {screen === 'notifications' && <NotificationsScreen onBack={() => setScreen('today')} onNavigate={navigateFromNotificationUrl} onAllRead={() => setUnreadNotifications(0)} />}
       </div>
 
       {/* Screen guide — first-load popup */}
@@ -1817,6 +1872,152 @@ function ConnectRunsScreen({ onConnected, onSkip }: {
 }
 
 // ── Shared header ─────────────────────────────────────────────────────────
+
+// ── NOTIFICATIONS SCREEN (NOTIF-01) ───────────────────────────────────────
+// Reverse-chron inbox of every push the app sent. Read-only. Opening it marks
+// everything read (clears the bell). Tapping a row navigates to its deep link.
+// One job: show Kit's messages and let the user jump to what they're about.
+
+// Relative timestamp for a notification row: just-now / Nm / Nh today, then
+// weekday within the last week, then day-month.
+function formatNotifTime(iso: string): string {
+  const d = new Date(iso)
+  const now = new Date()
+  const diffMs = now.getTime() - d.getTime()
+  const min = Math.floor(diffMs / 60000)
+  if (min < 1) return 'just now'
+  if (min < 60) return `${min}m`
+  if (d.toDateString() === now.toDateString()) return `${Math.floor(min / 60)}h`
+  if (diffMs < 7 * 86400000) return d.toLocaleDateString('en-GB', { weekday: 'short' })
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+}
+
+function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
+  onBack: () => void
+  onNavigate: (url: string | null) => void
+  onAllRead: () => void
+}) {
+  const supabase = createClient()
+  const [items, setItems] = useState<NotificationItem[] | null>(null) // null = loading
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { if (!cancelled) setItems([]); return }
+        const { data } = await supabase
+          .from('notifications')
+          .select('id, type, title, body, url, read_at, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50)
+        if (cancelled) return
+        const rows = (data ?? []) as NotificationItem[]
+        setItems(rows)
+        // Mark everything read — clears the bell. Loaded rows keep their unread
+        // styling for this view (already in state); gone next visit.
+        if (rows.some(r => !r.read_at)) {
+          await supabase.from('notifications')
+            .update({ read_at: new Date().toISOString() })
+            .eq('user_id', user.id)
+            .is('read_at', null)
+          onAllRead()
+        }
+      } catch {
+        if (!cancelled) setItems([])
+      }
+    })()
+    return () => { cancelled = true }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const backBtn = (
+    <button onClick={onBack} aria-label="Back" style={{
+      width: '44px', height: '44px', borderRadius: '50%', background: 'var(--bg-soft)',
+      border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      color: 'var(--ink)', flexShrink: 0,
+    }}>
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+        <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </button>
+  )
+
+  // Split into Today vs Earlier (loaded list only).
+  const todayStr = new Date().toDateString()
+  const today: NotificationItem[]   = []
+  const earlier: NotificationItem[] = []
+  for (const it of items ?? []) {
+    (new Date(it.created_at).toDateString() === todayStr ? today : earlier).push(it)
+  }
+
+  const renderRow = (it: NotificationItem) => (
+    <NotificationRow
+      key={it.id}
+      item={it}
+      relativeTime={formatNotifTime(it.created_at)}
+      onClick={it.url ? () => onNavigate(it.url) : undefined}
+    />
+  )
+
+  return (
+    <div style={{ minHeight: '100%', background: 'var(--bg)' }}>
+      <div style={{ padding: '16px 16px 0' }}>{backBtn}</div>
+      <ScreenHeader title="Notifications" />
+
+      {items === null ? (
+        // Loading — static skeleton rows matching the row shape (no spinner).
+        <div aria-busy="true" style={{ padding: '8px 16px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {[0, 1, 2].map(i => (
+            <div key={i} style={{
+              background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)',
+              padding: '13px 16px 14px 18px', minHeight: '64px',
+            }}>
+              <div style={{ width: '38%', height: '9px', borderRadius: '3px', background: 'var(--bg-soft)', marginBottom: '10px' }} />
+              <div style={{ width: '70%', height: '11px', borderRadius: '3px', background: 'var(--bg-soft)', marginBottom: '7px' }} />
+              <div style={{ width: '90%', height: '10px', borderRadius: '3px', background: 'var(--bg-soft)' }} />
+            </div>
+          ))}
+        </div>
+      ) : (today.length + earlier.length) === 0 ? (
+        // Empty state — Pattern 8, Zonna voice.
+        <div style={{ padding: '64px 32px', textAlign: 'center' }}>
+          <div style={{ marginBottom: '14px', display: 'flex', justifyContent: 'center' }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+          </div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 600, color: 'var(--ink)', marginBottom: '6px' }}>
+            Nothing from Kit yet.
+          </div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.5, maxWidth: '260px', margin: '0 auto' }}>
+            Coaching notes, plan changes, and your weekly review land here.
+          </div>
+        </div>
+      ) : (
+        <div style={{ paddingBottom: '24px' }}>
+          {today.length > 0 && (
+            <>
+              <SectionLabel>Today</SectionLabel>
+              <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {today.map(renderRow)}
+              </div>
+            </>
+          )}
+          {earlier.length > 0 && (
+            <>
+              <SectionLabel>Earlier</SectionLabel>
+              <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {earlier.map(renderRow)}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function ScreenHeader({ title, sub }: { title: string; sub?: string }) {
   return (
@@ -4517,7 +4718,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked }: {
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   sessionMetricOverrides: Record<string, 'distance' | 'duration'>
@@ -4546,6 +4747,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   onOpenCoach?: () => void
   /** POST-RUN-01: route the retroactive RPE nudge into PostRunScreen. */
   onOpenPostRun?: (data: PostRunData) => void
+  /** NOTIF-01: unread count + opener for the bell on the wordmark row. */
+  unreadNotifications?: number
+  onOpenNotifications?: () => void
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
@@ -4891,22 +5095,32 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         padding: '16px 16px 0',
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'space-between',
         gap: '6px',
       }}>
-        <Wordmark size="xs" className="wordmark-today" />
-        {/* Moss dot with soft halo */}
-        <div style={{ position: 'relative', width: '8px', height: '8px', flexShrink: 0 }}>
-          <div style={{
-            position: 'absolute', inset: '-3px',
-            borderRadius: '50%',
-            background: 'var(--moss-soft)',
-          }} />
-          <div style={{
-            position: 'absolute', inset: 0,
-            borderRadius: '50%',
-            background: 'var(--moss)',
-          }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Wordmark size="xs" className="wordmark-today" />
+          {/* Moss dot with soft halo */}
+          <div style={{ position: 'relative', width: '8px', height: '8px', flexShrink: 0 }}>
+            <div style={{
+              position: 'absolute', inset: '-3px',
+              borderRadius: '50%',
+              background: 'var(--moss-soft)',
+            }} />
+            <div style={{
+              position: 'absolute', inset: 0,
+              borderRadius: '50%',
+              background: 'var(--moss)',
+            }} />
+          </div>
         </div>
+        {/* NOTIF-01 — bell. Paid/trial only (free users can't have notifications).
+            Negative margins absorb the 44px tap target so it doesn't balloon the row. */}
+        {hasPaidAccess && onOpenNotifications && (
+          <div style={{ margin: '-11px -10px -11px 0' }}>
+            <NotificationBell unreadCount={unreadNotifications} onClick={onOpenNotifications} />
+          </div>
+        )}
       </div>
 
       {/* ── HERO BLOCK ───────────────────────────────────────────────── */}
@@ -8344,7 +8558,7 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
   )
 }
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentAutoAdjustments }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void
@@ -8372,13 +8586,6 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
    * engine auto-applies a change silently. Drives the tappable "View change" copy.
    */
   hasPendingAdjustment?: boolean
-  /**
-   * PROFILE-ADJ-02 — most recent silent/auto-applied plan_adjustments rows
-   * (status='auto_applied') for the "Recent tweaks" log. Sorted newest-first,
-   * up to 5 entries. Rendered inline above "Check now" so users can see what
-   * the engine quietly did on their behalf. Empty array → card is hidden.
-   */
-  recentAutoAdjustments?: Array<{ id: string; trigger_type: string; summary: string; created_at: string; week_n: number }>
 }) {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'delete-account'>('main')
@@ -8391,9 +8598,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   // Plan adjustments — "What we watch for" disclosure
   const [adjustmentsDisclosureOpen, setAdjustmentsDisclosureOpen] = useState(false)
 
-  // Relative-time formatter for the Recent tweaks log and the Last checked row.
-  // Same vocabulary so the card reads as a coherent timeline ("today", "yesterday",
-  // "3 days ago", etc.). Lives on the component so it can't drift from lastCheckedLabel.
+  // Relative-time formatter for the "Last checked" row. (The "Recent tweaks"
+  // log that also used this was relocated to the notification inbox — NOTIF-01.)
   const formatRelative = (iso: string): string => {
     const ms    = Date.now() - new Date(iso).getTime()
     const days  = Math.floor(ms / 86_400_000)
@@ -8404,23 +8610,6 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
     if (days < 7)    return `${days} days ago`
     if (days < 14)   return 'last week'
     return `${Math.floor(days / 7)} weeks ago`
-  }
-
-  // PROFILE-ADJ-02 — short, plain-English label for each engine trigger.
-  // The DB stores trigger_type as a snake_case taxonomy ("zone_drift",
-  // "rpe_disconnect", etc.); this maps to the runner-facing language. Falls
-  // back to "Plan tweak" if an unknown trigger lands in the table (forward-compat
-  // for new trigger types we haven't taught the UI about yet).
-  const triggerLabel = (trigger: string): string => {
-    switch (trigger) {
-      case 'zone_drift':        return 'Zone drift'
-      case 'rpe_disconnect':    return 'Effort signal'
-      case 'shadow_load':       return 'Shadow load'
-      case 'acute_chronic_high':return 'Load spike'
-      case 'ef_decline':        return 'Efficiency dip'
-      case 'manual':            return 'Manual'
-      default:                  return 'Plan tweak'
-    }
   }
 
   // "Last checked N days ago" — null when the engine has never run for this user.
@@ -8671,43 +8860,9 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                 </div>
               )}
 
-              {/* PROFILE-ADJ-02 — Recent tweaks log.
-                  Lists silent/auto-applied changes (zone drift, effort signal,
-                  shadow load). Hidden when the engine has never auto-applied
-                  anything — the "Last checked" line above already covers the
-                  "engine has been running" message in that case.
-
-                  Read-only by design: each row is a record of what was already
-                  done, not a confirmation prompt. The pending-change card at
-                  the top is the only tappable adjustment surface. */}
-              {recentAutoAdjustments && recentAutoAdjustments.length > 0 && (
-                <div style={{ borderBottom: '1px solid var(--line)' }}>
-                  <div style={{ padding: '14px 16px 8px', fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    Recent tweaks
-                  </div>
-                  {recentAutoAdjustments.map((adj, i) => (
-                    <div
-                      key={adj.id}
-                      style={{
-                        padding: '10px 16px 12px',
-                        borderTop: i === 0 ? 'none' : '1px solid var(--line)',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px', marginBottom: '4px' }}>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)' }}>
-                          {triggerLabel(adj.trigger_type)}
-                        </div>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', flexShrink: 0 }}>
-                          {formatRelative(adj.created_at)}
-                        </div>
-                      </div>
-                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', lineHeight: 1.5 }}>
-                        {adj.summary}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* PROFILE-ADJ-02's "Recent tweaks" log was relocated to the
+                  notification inbox (NOTIF-01) — auto-applied changes now arrive
+                  as a push + bell row instead of sitting silently here. */}
 
               {/* Check now — manual run of the same engine Auto-adjust schedules. */}
               <button
