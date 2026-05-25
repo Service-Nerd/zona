@@ -1,7 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
+
+// push_subscriptions has RLS (auth.uid() = user_id). The native app authenticates
+// with a Bearer token (no Supabase cookies), so a cookie-based client has no
+// session and auth.uid() is NULL — every insert was being rejected by RLS and the
+// row silently never stored. The user is already authenticated via
+// getUserFromRequest and user_id is pinned server-side, so we write with the
+// service-role client (RLS-exempt) the same way delete-account / getUserTier do.
+function adminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
+}
 
 // POST /api/push/subscribe
 // Saves a push subscription for the authenticated user. Accepts two shapes:
@@ -25,7 +38,7 @@ type SubscriptionBody = WebSubscription | IosSubscription
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = createClient()
+  const supabase = adminClient()
 
   const tier = await getUserTier(user.id)
   if (tier === 'free') return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
@@ -87,7 +100,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = createClient()
+  const supabase = adminClient()
 
   const body = await req.json() as { endpoint?: string; token?: string }
   const key = body.endpoint ?? body.token

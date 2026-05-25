@@ -22,11 +22,13 @@ export interface ReframeRiskInput {
   /** This session's coaching_flag, computed at link time. */
   currentSessionFlag: CoachingFlag | null
   /** Recent coaching_flag values, NEWEST FIRST, including the current session.
-   *  Pass at least REFRAME_RISK.REPEATED_OVERLOAD_WINDOW for full coverage. */
-  recentCompletionFlags: CoachingFlag[]
+   *  Pass at least REFRAME_RISK.REPEATED_OVERLOAD_WINDOW for full coverage.
+   *  readonly — the gate only reads these, so `as const` fixtures/inputs fit. */
+  recentCompletionFlags: readonly CoachingFlag[]
   /** Recent fatigue tags, NEWEST FIRST, including this session if logged.
-   *  Pass at least REFRAME_RISK.FATIGUE_ACCUMULATION_SESSIONS for full coverage. */
-  recentFatigueTags: FatigueTag[]
+   *  Pass at least REFRAME_RISK.FATIGUE_ACCUMULATION_SESSIONS for full coverage.
+   *  readonly — the gate only reads these, so `as const` fixtures/inputs fit. */
+  recentFatigueTags: readonly FatigueTag[]
   /** Back-third HR drift in bpm (signed — positive = drift up). */
   hrDriftBpm: number | null
   /** Back-third HR drift as a fraction (0–1, NOT percent). */

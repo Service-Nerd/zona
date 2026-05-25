@@ -7330,11 +7330,19 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
           PushNotifications.addListener('registration', async (token) => {
             clearTimeout(timeoutId)
             try {
-              await authedFetch('/api/push/subscribe', {
+              const res = await authedFetch('/api/push/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ platform: 'ios', token: token.value }),
               })
+              // authedFetch resolves on ANY HTTP status — a 403 (paid gate) or a
+              // 5xx is not a thrown error. Without this check the toggle flips to
+              // "subscribed" while no row was ever written, which is exactly why
+              // push silently never worked. Surface the real failure instead.
+              if (!res.ok) {
+                settle(() => reject(new Error(res.status === 403 ? 'paid-only' : `subscribe failed (${res.status})`)))
+                return
+              }
               settle(resolve)
             } catch (err) {
               settle(() => reject(err))
@@ -7355,9 +7363,12 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
         // on a true APNs registration failure in TestFlight. Surface the
         // reason in the UI instead of silently returning to idle — that was
         // the "Enabling… forever" UX the user reported.
-        console.warn('[push] iOS registration failed:', err instanceof Error ? err.message : err)
+        const msg = err instanceof Error ? err.message : String(err)
+        console.warn('[push] iOS registration failed:', msg)
         setStatus('idle')
-        setErrMsg("Couldn't enable push. Try again in a moment.")
+        setErrMsg(msg === 'paid-only'
+          ? 'Run pings are part of the paid plan.'
+          : "Couldn't enable push. Try again in a moment.")
       } finally {
         setLoading(false)
       }
@@ -7374,11 +7385,20 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
       })
-      await authedFetch('/api/push/subscribe', {
+      const res = await authedFetch('/api/push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sub.toJSON()),
       })
+      // Same guard as the native path: authedFetch doesn't throw on a 403/5xx,
+      // so an unchecked response would fake a successful subscribe.
+      if (!res.ok) {
+        setStatus('idle')
+        setErrMsg(res.status === 403
+          ? 'Run pings are part of the paid plan.'
+          : "Couldn't enable push. Try again in a moment.")
+        return
+      }
       setStatus('subscribed')
     } catch { setStatus((Notification as any).permission === 'denied' ? 'denied' : 'idle') }
     finally { setLoading(false) }
