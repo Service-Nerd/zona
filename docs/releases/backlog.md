@@ -108,11 +108,11 @@ After Vercel deploy, verify with agent-browser:
 
 ### Plan adjustments
 
-*(no open items — see feature-registry for shipped plan-adjustment work. Note: the "Recent tweaks" log on MeScreen (PROFILE-ADJ-02) is being relocated into the notification inbox by NOTIF-01 below — auto-applied adjustments become push + inbox rows and the Profile block is removed.)*
+*(no open items — see feature-registry for shipped plan-adjustment work. The "Recent tweaks" log on MeScreen (PROFILE-ADJ-02) was relocated into the notification inbox — see NOTIF-01 in feature-registry — so auto-applied adjustments now arrive as push + inbox rows.)*
 
 ### Notifications
 
-- 🔄 **NOTIF-01 — Notification inbox + bell** *(scoped 2026-05-25)* — **[PAID]** (all notification types are paid-gated; bell hidden for free users). Makes Kit's pushes durable: a new `notifications` table records every send, a bell on the Today screen (moss unread dot, no count badge) opens a reverse-chron `NotificationsScreen`. Covers all five types: daily training, weekly report, trial insight, run feedback, and **plan adjustment (new)** — non-manual auto-applied engine tweaks now fire a real push + inbox row (manual moves get neither). Removes the "Recent tweaks" block from MeScreen (PROFILE-ADJ-02 superseded); one-time migration backfills existing `auto_applied` plan_adjustments so no history is lost. Two slices: **Phase A** — persistence (migration + `lib/notifications.ts` + wire 5 send sites). **Phase B** — bell + screen + nav/deep-link + Profile removal. RLS owns reads + mark-read (browser client has a session on web & native); inserts are service-role only. Contract: `docs/contracts/api/notifications.md`. New UI patterns: `NotificationRow`, `NotificationBell`. Effort: M.
+*(no open items — see NOTIF-01 in feature-registry for the shipped inbox + bell.)*
 
 ### Post-run journey
 
