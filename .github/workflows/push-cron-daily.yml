@@ -23,7 +23,14 @@ on:
     # puts them at local 06:30 get a push on any given run.
     - cron: '30 * * * *'
   # Manual trigger for testing — visible under Actions → push-cron-daily.
+  # Set `test` = true to fire an immediate admin-only delivery test that
+  # bypasses the time-of-day/idempotency gates (see /api/push/send-daily).
   workflow_dispatch:
+    inputs:
+      test:
+        description: 'Admin-only test send (bypass 06:30 / idempotency gates)'
+        type: boolean
+        default: false
 
 jobs:
   fire:
@@ -43,6 +50,11 @@ jobs:
           # -f fails the step on HTTP >=400. --max-time keeps a hung
           # Vercel deploy from spinning forever. -sS hides the progress
           # bar but keeps errors visible.
+          URL="$VERCEL_URL/api/push/send-daily"
+          if [ "${{ github.event.inputs.test }}" = "true" ]; then
+            URL="$URL?test=1"
+            echo "Test mode: admin-only immediate send."
+          fi
           curl -fsS --max-time 60 -X POST \
             -H "Authorization: Bearer $CRON_SECRET" \
-            "$VERCEL_URL/api/push/send-daily"
+            "$URL"

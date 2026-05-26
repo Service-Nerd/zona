@@ -2,7 +2,9 @@
 
 **Method:** POST
 **Auth:** `Authorization: Bearer <CRON_SECRET>` (the header Vercel cron sends) **or** `x-cron-secret`. Either must match `CRON_SECRET`. Returns 403 otherwise.
-**Trigger:** Vercel cron — hourly at `:30` UTC (`vercel.json` cron config). The route filters per-user by local hour, so only subscribers whose stored `timezone` puts them in the 6 AM local hour get a push on any given run.
+**Trigger:** Hourly at `:30` UTC via the `push-cron-daily` GitHub Action (Vercel Hobby caps crons at daily, so scheduling lives in Actions). The route filters per-user by local hour, so only subscribers whose stored `timezone` puts them in the 6 AM local hour get a push on any given run.
+
+**Query param `?test=1`** — admin-only delivery test. Bypasses the time-of-day, idempotency and already-engaged gates so a push fires immediately, and restricts the run to `is_admin` accounts (never reaches a real user). Does **not** stamp `daily_push_last_sent_on` and does **not** write to the inbox, so it can't interfere with the genuine 06:30 push. On a non-push session day (rest/cross-train/strength) it sends a generic "Test push" payload so the test always fires. Triggered via the `push-cron-daily` Action's manual run (`test` input = true); still `CRON_SECRET`-gated.
 
 ## Request body
 
@@ -17,7 +19,7 @@ Empty body accepted (cron invocation).
 | Field | Meaning |
 |---|---|
 | `sent` | Number of users for whom at least one device delivery succeeded. |
-| `skipped` | Users not pushed this run (wrong local hour, opted out, already sent today, opened Today within 30 min, no plan, rest day, free tier). |
+| `skipped` | Users not pushed this run (wrong local hour, opted out, already sent today, opened Today within 30 min, no plan, rest day, free tier; in test mode, all non-admin accounts). |
 | `errors` | Up to 5 per-user failure strings. Per-user errors are caught and do not abort the batch. |
 
 ## Error responses

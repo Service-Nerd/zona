@@ -84,6 +84,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  // ?test=1 — admin-only delivery test. Bypasses the time-of-day, idempotency
+  // and already-engaged gates so a push fires immediately, and restricts the
+  // run to is_admin accounts so it can never reach a real user. Does NOT stamp
+  // daily_push_last_sent_on (so it can't suppress the genuine 06:30 push) and
+  // does not write to the inbox. Triggered via the push-cron-daily GitHub
+  // Action's manual "Run workflow" (test input) — still CRON_SECRET-gated.
+  const testMode = new URL(req.url).searchParams.get('test') === '1'
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -121,28 +129,34 @@ export async function POST(req: NextRequest) {
     try {
       const { data: settings } = await supabase
         .from('user_settings')
-        .select('timezone, daily_push_enabled, daily_push_last_sent_on, last_today_open_at')
+        .select('timezone, daily_push_enabled, daily_push_last_sent_on, last_today_open_at, is_admin')
         .eq('id', userId)
         .maybeSingle()
 
       if (!settings || settings.daily_push_enabled === false) { skipped++; continue }
 
+      // Test mode only ever touches admin accounts — never a real user.
+      if (testMode && !settings.is_admin) { skipped++; continue }
+
       const tz    = settings.timezone || 'UTC'
       const clock = localClockFor(tz, now)
       if (!clock) { skipped++; continue }
 
-      // Hour-window filter. Cron runs at :30 each hour (see vercel.json), so
-      // when the user's local hour is 6 we are within minutes of their 06:30.
-      if (clock.hour !== 6) { skipped++; continue }
+      // Timing gates — skipped in test mode so a manual run fires immediately.
+      if (!testMode) {
+        // Hour-window filter. Cron runs at :30 each hour (see vercel.json), so
+        // when the user's local hour is 6 we are within minutes of their 06:30.
+        if (clock.hour !== 6) { skipped++; continue }
 
-      // Daily idempotency — never fire twice for the same local date.
-      if (settings.daily_push_last_sent_on === clock.isoDate) { skipped++; continue }
+        // Daily idempotency — never fire twice for the same local date.
+        if (settings.daily_push_last_sent_on === clock.isoDate) { skipped++; continue }
 
-      // Already-engaged suppression: runner opened Today in the last 30 min.
-      if (
-        settings.last_today_open_at &&
-        new Date(settings.last_today_open_at) > heartbeatCutoff
-      ) { skipped++; continue }
+        // Already-engaged suppression: runner opened Today in the last 30 min.
+        if (
+          settings.last_today_open_at &&
+          new Date(settings.last_today_open_at) > heartbeatCutoff
+        ) { skipped++; continue }
+      }
 
       // Paid/trial only.
       const tier = await getUserTier(userId)
@@ -173,14 +187,26 @@ export async function POST(req: NextRequest) {
       const dowKey    = DOW_KEYS[dayOfWeek]
       const session   = (effectiveWeek[dowKey]?.session ?? null) as Session | null
 
-      if (!session || SKIP_PUSH_TYPES.has(session.type)) { skipped++; continue }
-
-      const payload = {
-        title: buildDailyPushTitle(session),
-        body:  buildDailyPushBody(session.type),
-        tag:   `daily-push-${clock.isoDate}`,
-        data:  { url: '/dashboard?screen=today' },
+      // Non-push session types (rest / cross-train / strength) are skipped on a
+      // real run, but in test mode we send a generic payload so the delivery
+      // test fires regardless of what today happens to be.
+      if (!session || SKIP_PUSH_TYPES.has(session.type)) {
+        if (!testMode) { skipped++; continue }
       }
+
+      const payload = session && !SKIP_PUSH_TYPES.has(session.type)
+        ? {
+            title: buildDailyPushTitle(session),
+            body:  buildDailyPushBody(session.type),
+            tag:   `daily-push-${clock.isoDate}`,
+            data:  { url: '/dashboard?screen=today' },
+          }
+        : {
+            title: 'Test push',
+            body:  "Kit can reach you — notifications are working.",
+            tag:   `daily-push-test-${clock.isoDate}`,
+            data:  { url: '/dashboard?screen=today' },
+          }
 
       let deliveredAny = false
       for (const sub of userSubs) {
@@ -195,19 +221,25 @@ export async function POST(req: NextRequest) {
 
       // Inbox record — once per user, regardless of per-device delivery, so
       // the durable copy survives even if a device token has gone stale.
-      await recordNotification(userId, {
-        type:  'daily_training',
-        title: payload.title,
-        body:  payload.body,
-        url:   payload.data.url,
-      })
+      // Skipped in test mode to keep the real inbox clean.
+      if (!testMode) {
+        await recordNotification(userId, {
+          type:  'daily_training',
+          title: payload.title,
+          body:  payload.body,
+          url:   payload.data.url,
+        })
+      }
 
       if (deliveredAny) {
         sent++
-        await supabase
-          .from('user_settings')
-          .update({ daily_push_last_sent_on: clock.isoDate })
-          .eq('id', userId)
+        // Don't stamp in test mode — that would suppress the genuine 06:30 push.
+        if (!testMode) {
+          await supabase
+            .from('user_settings')
+            .update({ daily_push_last_sent_on: clock.isoDate })
+            .eq('id', userId)
+        }
       }
     } catch (err: any) {
       errors.push(`${userId}: ${err.message}`)
