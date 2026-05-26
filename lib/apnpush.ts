@@ -40,13 +40,19 @@ function getProvider(): apn.Provider | null {
   return cachedProvider
 }
 
+// Delivery result. `reason` is null on success and a short diagnostic string
+// on failure (the APNs reason, or a local cause) so callers can surface *why*
+// a send failed instead of only that it did — D-04, failure is data.
+export type ApnsResult = { ok: boolean; reason: string | null }
+
 export async function sendApnsPush(
   deviceToken: string,
   payload: PushPayload,
-): Promise<boolean> {
+): Promise<ApnsResult> {
   const provider = getProvider()
   const topic    = process.env.APNS_TOPIC
-  if (!provider || !topic) return false
+  if (!provider) return { ok: false, reason: 'apns_not_configured' }
+  if (!topic)    return { ok: false, reason: 'no_topic' }
 
   const note = new apn.Notification()
   note.topic    = topic
@@ -73,11 +79,11 @@ export async function sendApnsPush(
           .eq('platform', 'ios')
       }
       console.warn(`[apnpush] failed: ${reason}`)
-      return false
+      return { ok: false, reason }
     }
-    return true
+    return { ok: true, reason: null }
   } catch (err: any) {
     console.error('[apnpush] send threw', err.message)
-    return false
+    return { ok: false, reason: `threw: ${err.message}` }
   }
 }

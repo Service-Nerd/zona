@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
       for (const sub of userSubs) {
         let ok = false
         if (sub.platform === 'ios') {
-          ok = await sendApnsPush(sub.endpoint, payload)
+          ok = (await sendApnsPush(sub.endpoint, payload)).ok
         } else if (sub.p256dh && sub.auth) {
           ok = await sendWebPush({ endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth }, payload)
         }
