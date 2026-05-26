@@ -10,7 +10,10 @@ export function isTrialActive(trialStartedAt: string | null | undefined): boolea
 }
 
 // Server-only — uses service role to bypass RLS.
-// Resolution order: active subscription → trial window → free.
+// Resolution order: admin → active subscription → trial window → free.
+// `is_admin` accounts (owner / developer / support) always resolve as paid so
+// the full server feature set — push registration, AI routes, Strava — is
+// available without a billing artefact. See ADR-003 § Admin entitlement.
 export async function getUserTier(userId: string): Promise<UserTier> {
   const { createClient } = await import('@supabase/supabase-js')
   const supabase = createClient(
@@ -26,10 +29,12 @@ export async function getUserTier(userId: string): Promise<UserTier> {
       .maybeSingle(),
     supabase
       .from('user_settings')
-      .select('trial_started_at')
+      .select('trial_started_at, is_admin')
       .eq('id', userId)
       .maybeSingle(),
   ])
+
+  if (settings?.is_admin) return 'paid'
 
   if (
     sub?.status &&

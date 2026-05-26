@@ -373,6 +373,38 @@ export default function DashboardClient() {
   const pendingDeepLinkRef = useRef<{ target: 'post-run' | 'session'; weekN: number; sessionDay: string } | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
+  // Lock document scroll while the dashboard shell is mounted. The shell is a
+  // 100dvh flex column with a fixed bottom nav; only the inner content div
+  // (scrollContainerRef) is meant to scroll. Without this, iOS WKWebView
+  // (contentInset: 'automatic') keeps its own scroll view live, so overscroll
+  // rubber-bands the whole document — dragging the fixed nav off the bottom
+  // and getting stuck there. position:fixed is required because iOS ignores
+  // overflow:hidden on body. Restored on unmount so standalone scrollable
+  // routes (login, landing) are unaffected.
+  useEffect(() => {
+    const html = document.documentElement
+    const body = document.body
+    const prev = {
+      htmlOverflow: html.style.overflow,
+      overflow: body.style.overflow,
+      position: body.style.position,
+      width: body.style.width,
+      height: body.style.height,
+    }
+    html.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+    body.style.position = 'fixed'
+    body.style.width = '100%'
+    body.style.height = '100%'
+    return () => {
+      html.style.overflow = prev.htmlOverflow
+      body.style.overflow = prev.overflow
+      body.style.position = prev.position
+      body.style.width = prev.width
+      body.style.height = prev.height
+    }
+  }, [])
+
   useEffect(() => {
     // Handle strava OAuth redirect result
     const params = new URLSearchParams(window.location.search)
@@ -723,12 +755,15 @@ export default function DashboardClient() {
           void supabase.from('user_settings').upsert({ id: user.id, trial_started_at: trialStartedAt, updated_at: new Date().toISOString() })
         }
 
-        // Paid access — active subscription OR within trial window
+        // Paid access — admin OR active subscription OR within trial window.
+        // Mirrors getUserTier's resolution order (admin → sub → trial → free)
+        // so the client gate and every server gate agree. ADR-003 § Admin
+        // entitlement; D-16 (no parallel semantics).
         const sub = subRes.data
         const hasActiveSub = sub?.status &&
           ['trialing', 'active'].includes(sub.status) &&
           new Date(sub.current_period_end) > new Date()
-        const paidAccess = !!(hasActiveSub || isTrialActive(trialStartedAt))
+        const paidAccess = !!(data?.is_admin || hasActiveSub || isTrialActive(trialStartedAt))
         setHasPaidAccess(paidAccess)
         setTrialExpired(!paidAccess && !!trialStartedAt)
 
@@ -7585,7 +7620,7 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
         const res = await authedFetch('/api/push/subscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ platform: 'ios', token }),
+          body: JSON.stringify({ platform: 'ios', token, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
         })
         // authedFetch resolves on ANY HTTP status — a 403 (paid gate) or a
         // 5xx is not a thrown error. Without this check the toggle flips to
@@ -7625,7 +7660,7 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
       const res = await authedFetch('/api/push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sub.toJSON()),
+        body: JSON.stringify({ ...sub.toJSON(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
       })
       // Same guard as the native path: authedFetch doesn't throw on a 403/5xx,
       // so an unchecked response would fake a successful subscribe.

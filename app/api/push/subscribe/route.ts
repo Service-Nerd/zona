@@ -16,21 +16,39 @@ function adminClient() {
   )
 }
 
+// True when `tz` is an IANA zone the runtime recognises. Intl throws a
+// RangeError on an unknown zone — we treat that as "ignore", not "store".
+function isValidTimeZone(tz: string): boolean {
+  try {
+    Intl.DateTimeFormat('en-GB', { timeZone: tz })
+    return true
+  } catch {
+    return false
+  }
+}
+
 // POST /api/push/subscribe
 // Saves a push subscription for the authenticated user. Accepts two shapes:
 //   web: { endpoint, keys: { p256dh, auth } }    — Web Push (PWA / browser)
 //   ios: { platform: 'ios', token }              — APNs device token
 // Only paid/trial users can subscribe.
 
+// `timezone` is the IANA zone of the registering device (e.g. 'Europe/London').
+// send-daily reads user_settings.timezone to fire the 06:30 push in the user's
+// local time, so the device that receives the push is the authoritative source
+// for that zone — capture it here rather than relying solely on the on-load
+// client write, which leaves the column at its 'UTC' default if it never runs.
 type WebSubscription = {
   endpoint: string
   keys: { p256dh: string; auth: string }
   platform?: 'web'
+  timezone?: string
 }
 
 type IosSubscription = {
   platform: 'ios'
   token: string
+  timezone?: string
 }
 
 type SubscriptionBody = WebSubscription | IosSubscription
@@ -88,6 +106,18 @@ export async function POST(req: NextRequest) {
   if (error) {
     console.error('[push/subscribe] upsert failed', error.message)
     return NextResponse.json({ error: 'Failed to save subscription' }, { status: 500 })
+  }
+
+  // Capture the registering device's timezone so the daily push fires at the
+  // user's local 06:30. Validated against Intl before writing — an unknown
+  // zone string is ignored rather than overwriting a good value with junk.
+  const tz = body.timezone
+  if (tz && isValidTimeZone(tz)) {
+    const { error: tzError } = await supabase
+      .from('user_settings')
+      .update({ timezone: tz, updated_at: new Date().toISOString() })
+      .eq('id', user.id)
+    if (tzError) console.warn('[push/subscribe] timezone update failed', tzError.message)
   }
 
   return NextResponse.json({ status: 'subscribed' })

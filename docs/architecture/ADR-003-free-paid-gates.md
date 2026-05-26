@@ -49,6 +49,14 @@ The plan a user generates during the trial is theirs to keep. The ongoing intell
 
 Free tier UI must not expose the existence of paid-tier data, even in a disabled/locked state, without an explicit product decision.
 
+### Admin entitlement (2026-05-26)
+
+`getUserTier` (`lib/trial.ts`) is the single server-side owner of tier resolution. Its order is **admin → active subscription → trial → free**.
+
+An account flagged `user_settings.is_admin = true` (owner / developer / support) always resolves to `paid`. The rationale: these accounts need the full server feature set — push registration (`/api/push/subscribe` 403s free users), AI routes, Strava analysis — without carrying a billing artefact. Before this rule, `getUserTier` consulted only the `subscriptions` table and the trial window, so an admin whose trial had lapsed silently resolved to `free` and was gated out of every server feature even though `is_admin` unlocked admin-only UI. That manifested as push notifications never arriving: the device's APNs token was rejected at `/api/push/subscribe` and no `push_subscriptions` row was ever stored.
+
+The client gate in `DashboardClient` mirrors this order (admin → sub → trial), per the both-layers rule below and D-16 (no parallel semantics).
+
 ---
 
 ## Consequences
