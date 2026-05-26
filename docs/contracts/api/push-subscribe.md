@@ -38,6 +38,24 @@ Upserts to `push_subscriptions` (conflict key: `user_id, endpoint`; iOS rows sto
 
 ---
 
+## GET — subscription status
+
+**Auth:** Bearer token (or cookie). Returns `{ "subscribed": false }` with 401 if unauthenticated.
+
+### Query
+
+`?platform=ios` or `?platform=web` (optional) — scope the check to one platform. Omitted = any platform.
+
+### Response — 200
+
+```json
+{ "subscribed": true }
+```
+
+`true` when the user has ≥1 `push_subscriptions` row (for the given platform, if specified). Lets the UI toggle reflect real subscription state instead of OS permission alone (permission can be granted while the token failed to register, leaving no row).
+
+---
+
 ## DELETE — remove subscription
 
 **Auth:** Bearer token (any tier).

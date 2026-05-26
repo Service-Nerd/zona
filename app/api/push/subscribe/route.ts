@@ -123,6 +123,30 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ status: 'subscribed' })
 }
 
+// GET /api/push/subscribe[?platform=ios|web]
+// Reports whether the authenticated user has a stored push subscription, so the
+// UI toggle can reflect real subscription state rather than mere OS permission
+// (permission granted ≠ a row was ever written — the token can fail to register).
+export async function GET(req: NextRequest) {
+  const user = await getUserFromRequest(req)
+  if (!user) return NextResponse.json({ subscribed: false }, { status: 401 })
+  const supabase = adminClient()
+
+  const platform = new URL(req.url).searchParams.get('platform')
+  let query = supabase
+    .from('push_subscriptions')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+  if (platform === 'ios' || platform === 'web') query = query.eq('platform', platform)
+
+  const { count, error } = await query
+  if (error) {
+    console.error('[push/subscribe] count failed', error.message)
+    return NextResponse.json({ subscribed: false }, { status: 500 })
+  }
+  return NextResponse.json({ subscribed: (count ?? 0) > 0 })
+}
+
 // DELETE /api/push/subscribe
 // Removes a push subscription (user unsubscribed).
 // Body accepts either { endpoint } (web) or { token } (ios).

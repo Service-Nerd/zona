@@ -7496,6 +7496,20 @@ async function getDeviceToken(timeoutMs = 30_000): Promise<string> {
   }
 }
 
+// Whether the server has a stored push_subscriptions row for this user on the
+// given platform. Used so the toggle reflects real subscription state, not just
+// OS permission. Any failure resolves false — never claim "on" unconfirmed.
+async function hasServerSubscription(platform: 'ios' | 'web'): Promise<boolean> {
+  try {
+    const res = await authedFetch(`/api/push/subscribe?platform=${platform}`)
+    if (!res.ok) return false
+    const json = await res.json()
+    return json?.subscribed === true
+  } catch {
+    return false
+  }
+}
+
 function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed: boolean) => void } = {}) {
   const [status, setStatus] = useState<'checking' | 'unsupported' | 'subscribed' | 'denied' | 'idle'>('checking')
   const [loading, setLoading] = useState(false)
@@ -7523,8 +7537,11 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
         try {
           const perm = await PushNotifications.checkPermissions()
           if (perm.receive === 'denied')  { setStatus('denied'); return }
-          if (perm.receive === 'granted') {
-            setStatus(userTurnedOff ? 'idle' : 'subscribed')
+          // Permission granted is necessary but NOT sufficient — the APNs token
+          // can fail to register, leaving no push_subscriptions row. Showing
+          // "on" off permission alone is a false positive. Confirm a real row.
+          if (perm.receive === 'granted' && !userTurnedOff) {
+            setStatus((await hasServerSubscription('ios')) ? 'subscribed' : 'idle')
             return
           }
           setStatus('idle')
@@ -7532,7 +7549,8 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
         return
       }
 
-      // Web: rely on the service worker / PushManager check.
+      // Web: rely on the service worker / PushManager check, then confirm the
+      // server row exists too so the toggle can't claim "on" without one.
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) { setStatus('unsupported'); return }
       const perm = (Notification as any).permission
       if (perm === 'denied') { setStatus('denied'); return }
@@ -7540,7 +7558,8 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
         const regs = await navigator.serviceWorker.getRegistrations()
         if (!regs.length) { setStatus('idle'); return }
         const sub = await regs[0].pushManager.getSubscription()
-        setStatus(sub && !userTurnedOff ? 'subscribed' : 'idle')
+        if (!sub || userTurnedOff) { setStatus('idle'); return }
+        setStatus((await hasServerSubscription('web')) ? 'subscribed' : 'idle')
       } catch { setStatus('idle') }
     }
     void check()
