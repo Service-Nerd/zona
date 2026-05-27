@@ -5107,14 +5107,6 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
     : null
   const zoneDisciplineHits = analysisRows.length
 
-  // ── Done sessions for "Done this week" section ───────────────────────
-  const doneSessions = sessions.filter(s =>
-    s.type !== 'rest' && completions[s.key]?.status === 'complete'
-  )
-  const skippedSessions = sessions.filter(s =>
-    s.type !== 'rest' && completions[s.key]?.status === 'skipped'
-  )
-
   return (
     <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{ paddingBottom: '32px' }}>
 
@@ -5778,53 +5770,10 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         </div>
       </div>
 
-      {/* ── DONE THIS WEEK ───────────────────────────────────────────── */}
-      {(doneSessions.length > 0 || skippedSessions.length > 0) && (
-        <div style={{ padding: '20px 16px 0' }}>
-          <div style={{
-            fontFamily: 'var(--font-ui)',
-            fontSize: '10px',
-            fontWeight: 700,
-            color: 'var(--mute)',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            marginBottom: '10px',
-          }}>
-            Done this week
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {[...doneSessions, ...skippedSessions].map(s => (
-              <SessionCard
-                key={s.key}
-                type={s.type}
-                name={s.title}
-                distanceKm={completions[s.key]?.strava_activity_km ?? s.distance}
-                durationMin={s.duration_mins}
-                units={preferredUnits}
-                metric={resolveSessionMetric(weekNum, s.key, s.primary_metric, sessionMetricOverrides, preferredMetric)}
-                state={completions[s.key]?.status === 'skipped' ? 'skipped' : 'done'}
-                completion={{
-                  distanceKm: completions[s.key]?.strava_activity_km ?? undefined,
-                  avgBpm: completions[s.key]?.avg_hr ?? undefined,
-                  viaStrava: !!completions[s.key]?.strava_activity_id,
-                  activityName: completions[s.key]?.strava_activity_name ?? undefined,
-                }}
-                onClick={() => {
-                  onOpenSession?.({
-                    ...s,
-                    rawDate: s.rawDate.toISOString(),
-                    completion: completions[s.key],
-                    isPast: true,
-                    isFuture: false,
-                    weekN: weekNum,
-                    weekTheme,
-                  })
-                }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      {/* "Done this week" retrospective list removed — it duplicated the Plan
+          calendar (which shows completed/skipped state per session) and added a
+          second, review-shaped job to a present-moment screen. Today's own
+          completion still shows via the hero card's `done` state above. */}
 
       {/* Strava nudge — muted text link if no runs connected */}
       {stravaRuns.length === 0 && (
@@ -6037,7 +5986,6 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
         if (!wk) return null
         const ctx           = buildWeekVoiceContext(wk, plan)
         const ruleHeadline  = getWeekVoiceHeadline(ctx)
-        const ruleItems     = getWeekVoiceItems(ctx, 2)
         const phaseCap      = ctx.phase ? (PHASE_LABELS[ctx.phase] ?? ctx.phase) : null
 
         // Tier-divergent picker. The three branches collapse to: paid-ready,
@@ -6046,8 +5994,10 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
         const isLoading  = hasPaidAccess && aiNote === 'loading'
         const showByline = !!aiReady || isLoading
 
+        // Plan shows the one-line framing only — the supporting items + the full
+        // weekly read live on the Coach screen (PlanCoachingCard + AI Weekly
+        // Report). Paid users tap the CoachByline to get there.
         const headline   = aiReady ? (aiNote as { headline: string }).headline : ruleHeadline
-        const items      = aiReady ? (aiNote as { items: string[] }).items     : ruleItems
 
         return (
           <div style={{ padding: '16px 16px 0' }}>
@@ -6090,33 +6040,19 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
                 )}
               </div>
               {isLoading ? (
-                /* Skeleton — matches the final layout shape so there's no reflow
-                   when AI lands. CoachByline's pulsing sparkle carries the
+                /* Skeleton — single headline-height bar (this surface is now a
+                   one-line teaser). CoachByline's pulsing sparkle carries the
                    working-state cue (no spinner per ui-patterns.md). */
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                <div style={{ marginTop: '4px' }}>
                   <div style={{ height: '17px', width: '85%', borderRadius: '4px', background: 'var(--bg-soft)', opacity: 0.6 }} />
-                  <div style={{ height: '14px', width: '70%', borderRadius: '4px', background: 'var(--bg-soft)', opacity: 0.5 }} />
                 </div>
               ) : (
-                <>
-                  {/* Headline */}
-                  <div style={{
-                    fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
-                    color: 'var(--ink)', lineHeight: 1.4, letterSpacing: '-0.01em',
-                    marginBottom: items.length > 0 ? '8px' : 0,
-                  }}>{headline}</div>
-                  {/* Items — max 2 on this surface; full PlanCoachingCard on Coach shows 3 */}
-                  {items.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      {items.map((item, i) => (
-                        <div key={i} style={{
-                          fontFamily: 'var(--font-ui)', fontSize: '12px',
-                          color: 'var(--ink-2)', lineHeight: 1.55,
-                        }}>{item}</div>
-                      ))}
-                    </div>
-                  )}
-                </>
+                /* Headline only — the one-line framing for the week. The full
+                   read (supporting items + weekly report) lives on Coach. */
+                <div style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
+                  color: 'var(--ink)', lineHeight: 1.4, letterSpacing: '-0.01em',
+                }}>{headline}</div>
               )}
             </div>
           </div>
