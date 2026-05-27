@@ -347,6 +347,11 @@ export default function DashboardClient() {
   // All completions — fetched once at top level, refreshed on save
   const [allCompletions, setAllCompletions] = useState<Record<number, Record<string, any>>>({})
 
+  // Activity ids the orphan auto-heal has already re-tried this session, so a
+  // persistently-failing link (e.g. deleted Strava activity) can't re-fire on
+  // every render. See the self-heal effect below.
+  const healAttemptedRef = useRef<Set<number>>(new Set())
+
   const [stravaRuns, setStravaRuns] = useState<any[] | null>(null)
   const [stravaLoading, setStravaLoading] = useState(true)
   const [stravaConnected, setStravaConnected] = useState(false)
@@ -963,6 +968,74 @@ export default function DashboardClient() {
       }
     } catch {}
   }
+
+  // Re-fetch run_analysis and rebuild the nested (week → day) map. Used by the
+  // orphan auto-heal after it backfills a missing analysis row.
+  async function refreshRunAnalysis() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('run_analysis')
+        .select('week_n, session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5')
+        .eq('user_id', user.id)
+      if (data) {
+        const map: Record<number, Record<string, any>> = {}
+        data.forEach((r: any) => {
+          if (r.week_n == null) return
+          if (!map[r.week_n]) map[r.week_n] = {}
+          map[r.week_n][r.session_day] = r
+        })
+        setRunAnalysisMap(map)
+      }
+    } catch {}
+  }
+
+  // ── Orphan analysis auto-heal ──────────────────────────────────────────────
+  // The link path writes the completion immediately but fires the zone-analysis
+  // call (link-activity) fire-and-forget. A transient Strava error, a token
+  // refresh, or the app backgrounding mid-call leaves a completion that has an
+  // activity id but no run_analysis row — so the Coach zone rings have nothing
+  // to draw, permanently and silently. Here we detect that for the current week
+  // and re-run the analysis. Idempotent (link-activity upserts) and bounded:
+  // current week only, each activity tried at most once per session.
+  useEffect(() => {
+    if (!hasPaidAccess || !stravaConnected || !runAnalysisReady) return
+    if (!plan?.weeks?.length) return
+    const wn       = getCurrentWeekIndex(plan.weeks) + 1
+    const comps    = allCompletions[wn] ?? {}
+    const analysed = runAnalysisMap[wn] ?? {}
+    const orphans  = Object.entries(comps).filter(([day, c]: [string, any]) =>
+      c?.status === 'complete'
+      && c?.strava_activity_id != null
+      && !analysed[day]
+      && !healAttemptedRef.current.has(c.strava_activity_id)
+    ) as [string, any][]
+    if (!orphans.length) return
+
+    let cancelled = false
+    ;(async () => {
+      let healed = false
+      for (const [day, c] of orphans) {
+        healAttemptedRef.current.add(c.strava_activity_id)
+        try {
+          // authedFetch never throws on 4xx/5xx — must check res.ok.
+          const res = await authedFetch('/api/strava/link-activity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ strava_activity_id: c.strava_activity_id, week_n: wn, session_day: day }),
+          })
+          if (res.ok) healed = true
+        } catch {}
+      }
+      if (healed && !cancelled) {
+        await refreshRunAnalysis()
+        await refreshCompletions()
+      }
+    })()
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPaidAccess, stravaConnected, runAnalysisReady, allCompletions, runAnalysisMap, plan])
 
   async function dismissWelcome() {
     setShowWelcome(false)
