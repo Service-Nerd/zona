@@ -11,15 +11,18 @@ import type { Plan, Session } from '@/types/plan'
 
 // POST /api/push/send-daily
 // Vercel cron — runs hourly. For each push subscription, computes the user's
-// local hour from their stored timezone. Sends one daily push at user-local
-// 06:30 to paid/trial users with `daily_push_enabled=true` on training days.
+// local hour from their stored timezone. Sends one daily push to paid/trial
+// users with `daily_push_enabled=true` on every planned day — the first cron
+// run in the user-local morning window (06:00–11:00) delivers; the idempotency
+// stamp collapses the window to one send per day. On a healthy cron the 06:30
+// run wins; a drifted/dropped run self-heals at the next hour.
 //
-// Skip conditions (acceptance criteria from HOOK-01):
+// Skip conditions (HOOK-01, amended 2026-05-27 to fire on every planned day):
 //   • Free tier — no daily push.
 //   • daily_push_enabled = false — user opted out.
 //   • No plan / no current week — nothing to push about.
-//   • Today's session is undefined or `rest` (rest days send no push; v1 also
-//     suppresses cross-train + strength per spec).
+//   • Today has no session at all (genuinely empty day). Rest / strength /
+//     cross-train DO push now (product decision 2026-05-27).
 //   • Already sent today (daily_push_last_sent_on stamps the local date).
 //   • Today screen opened within the last 30 minutes — runner is already in
 //     the app, double-prompting kills the trust.
@@ -32,12 +35,27 @@ import type { Plan, Session } from '@/types/plan'
 
 const DOW_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const
 
-// Session types that skip the push at v1 — rest plus the two we don't yet
-// coach against (cross-train and strength). When those graduate to first-class
-// coaching surfaces, drop them from this set.
-const SKIP_PUSH_TYPES = new Set(['rest', 'cross-train', 'strength'])
+// Product decision 2026-05-27: the morning push fires on EVERY planned day,
+// rest included — a daily cue, not only run days. (Previously rest / strength /
+// cross-train were suppressed via SKIP_PUSH_TYPES; that set is now removed.)
+// The voice-line builders already carry on-brand copy for every type, e.g.
+// rest → "Do nothing. It helps.", strength → "Build the body that holds the
+// zones." Only a day with no session at all is skipped.
 
 const HEARTBEAT_SUPPRESSION_MIN = 30
+
+// Morning send window (user-local hours). The cron fires hourly at :30, but
+// GitHub Actions scheduled runs drift (5–30+ min) and are occasionally dropped
+// entirely. An exact `hour === 6` match meant a single delayed/missed run lost
+// the whole day's push. Instead we accept any run from local 06:00 up to (not
+// including) 11:00 and let the daily idempotency stamp (`daily_push_last_sent_on`)
+// guarantee exactly one send per local day: the first eligible run that morning
+// delivers, every later run that day no-ops on the stamp. Delivery time is
+// unchanged on a healthy cron (the 06:30 run still wins); a drifted/dropped run
+// now self-heals at 07:30/08:30 instead of vanishing. Ops/delivery constants,
+// not coaching numerics — same rationale as HEARTBEAT_SUPPRESSION_MIN above.
+const MORNING_SEND_HOUR       = 6
+const MORNING_WINDOW_END_HOUR = 11
 
 type LocalClock = { hour: number; minute: number; isoDate: string }
 
@@ -115,6 +133,14 @@ export async function POST(req: NextRequest) {
   let sent     = 0
   let skipped  = 0
   const errors: string[] = []
+  // Per-reason skip tally — returned in the response so an admin can see *why*
+  // a run sent nothing (e.g. `rest_or_skip_type` on a strength day vs an actual
+  // fault) without trawling logs. D-04: a skip is data, not silence.
+  const skipReasons: Record<string, number> = {}
+  const skip = (reason: string) => {
+    skipped++
+    skipReasons[reason] = (skipReasons[reason] ?? 0) + 1
+  }
 
   // De-dupe by user — a single user with both web + iOS subscriptions should
   // get the push on every device, but tier/plan/eligibility only computed once.
@@ -133,34 +159,40 @@ export async function POST(req: NextRequest) {
         .eq('id', userId)
         .maybeSingle()
 
-      if (!settings || settings.daily_push_enabled === false) { skipped++; continue }
+      if (!settings) { skip('no_settings'); continue }
+      if (settings.daily_push_enabled === false) { skip('push_disabled'); continue }
 
       // Test mode only ever touches admin accounts — never a real user.
-      if (testMode && !settings.is_admin) { skipped++; continue }
+      if (testMode && !settings.is_admin) { skip('test_non_admin'); continue }
 
       const tz    = settings.timezone || 'UTC'
       const clock = localClockFor(tz, now)
-      if (!clock) { skipped++; continue }
+      if (!clock) { skip('bad_timezone'); continue }
 
       // Timing gates — skipped in test mode so a manual run fires immediately.
       if (!testMode) {
-        // Hour-window filter. Cron runs at :30 each hour (see vercel.json), so
-        // when the user's local hour is 6 we are within minutes of their 06:30.
-        if (clock.hour !== 6) { skipped++; continue }
+        // Morning-window filter. Accept any run from local 06:00 up to 11:00;
+        // the idempotency stamp below collapses the window to one send per day.
+        // (Was an exact `hour === 6` — fragile to GitHub cron drift; see the
+        // MORNING_SEND_HOUR comment.)
+        if (clock.hour < MORNING_SEND_HOUR || clock.hour >= MORNING_WINDOW_END_HOUR) {
+          skip('outside_window'); continue
+        }
 
-        // Daily idempotency — never fire twice for the same local date.
-        if (settings.daily_push_last_sent_on === clock.isoDate) { skipped++; continue }
+        // Daily idempotency — never fire twice for the same local date. This is
+        // what makes the widened window safe: only the first in-window run sends.
+        if (settings.daily_push_last_sent_on === clock.isoDate) { skip('already_sent'); continue }
 
         // Already-engaged suppression: runner opened Today in the last 30 min.
         if (
           settings.last_today_open_at &&
           new Date(settings.last_today_open_at) > heartbeatCutoff
-        ) { skipped++; continue }
+        ) { skip('recently_engaged'); continue }
       }
 
       // Paid/trial only.
       const tier = await getUserTier(userId)
-      if (tier === 'free') { skipped++; continue }
+      if (tier === 'free') { skip('free_tier'); continue }
 
       const [planRes, overridesRes] = await Promise.all([
         supabase.from('plans').select('plan_json').eq('user_id', userId).single(),
@@ -170,11 +202,11 @@ export async function POST(req: NextRequest) {
       ])
 
       const plan = planRes.data?.plan_json as Plan | null
-      if (!plan || plan.weeks.length === 0) { skipped++; continue }
+      if (!plan || plan.weeks.length === 0) { skip('no_plan'); continue }
 
       const weekIndex = getCurrentWeekIndex(plan.weeks)
       const week      = plan.weeks[weekIndex]
-      if (!week) { skipped++; continue }
+      if (!week) { skip('no_current_week'); continue }
       const weekN = weekIndex + 1
 
       const allOverrides: SessionOverride[] = (overridesRes.data as SessionOverride[] | null) ?? []
@@ -187,14 +219,12 @@ export async function POST(req: NextRequest) {
       const dowKey    = DOW_KEYS[dayOfWeek]
       const session   = (effectiveWeek[dowKey]?.session ?? null) as Session | null
 
-      // Non-push session types (rest / cross-train / strength) are skipped on a
-      // real run, but in test mode we send a generic payload so the delivery
-      // test fires regardless of what today happens to be.
-      if (!session || SKIP_PUSH_TYPES.has(session.type)) {
-        if (!testMode) { skipped++; continue }
-      }
+      // Every planned day notifies (rest included). Only a day with no session
+      // at all is skipped on a real run; in test mode we still fire a generic
+      // payload so the delivery test works regardless of today's plan.
+      if (!session && !testMode) { skip('no_session'); continue }
 
-      const payload = session && !SKIP_PUSH_TYPES.has(session.type)
+      const payload = session
         ? {
             title: buildDailyPushTitle(session),
             body:  buildDailyPushBody(session.type),
@@ -250,6 +280,9 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  console.log(`[push/send-daily] sent=${sent}, skipped=${skipped}, errors=${errors.length}`)
-  return NextResponse.json({ sent, skipped, errors: errors.slice(0, 5) })
+  console.log(
+    `[push/send-daily] sent=${sent}, skipped=${skipped}, errors=${errors.length}, ` +
+    `reasons=${JSON.stringify(skipReasons)}`,
+  )
+  return NextResponse.json({ sent, skipped, skipReasons, errors: errors.slice(0, 5) })
 }
