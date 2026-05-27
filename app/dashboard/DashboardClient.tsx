@@ -1026,7 +1026,8 @@ export default function DashboardClient() {
             body: JSON.stringify({ strava_activity_id: c.strava_activity_id, week_n: wn, session_day: day }),
           })
           if (res.ok) healed = true
-        } catch {}
+          else console.warn('[auto-heal] link-activity failed', day, res.status, await res.text().catch(() => ''))
+        } catch (e) { console.warn('[auto-heal] link-activity threw', day, e) }
       }
       if (healed && !cancelled) {
         await refreshRunAnalysis()
@@ -2742,15 +2743,26 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
     const actId = pendingLinkRef.current
     if (actId) {
       pendingLinkRef.current = null
-      void authedFetch('/api/strava/link-activity', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          strava_activity_id: actId,
-          week_n: weekN,
-          session_day: session.key,
-        }),
-      }).catch(() => {})
+      ;(async () => {
+        try {
+          // Check res.ok — authedFetch resolves (not rejects) on 4xx/5xx, so a
+          // server failure must be read off the response, not the catch.
+          const res = await authedFetch('/api/strava/link-activity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              strava_activity_id: actId,
+              week_n: weekN,
+              session_day: session.key,
+            }),
+          })
+          if (!res.ok) {
+            console.error('[reflect] link-activity failed', res.status, await res.text().catch(() => ''))
+          }
+        } catch (e) {
+          console.error('[reflect] link-activity threw', e)
+        }
+      })()
     } else if ((rpe !== null || fatigueTag !== null) && session.type !== 'rest') {
       // No activity linked — derive feedback from RPE/fatigue alone.
       // Call onSaved after the write so runAnalysisMap refreshes and the
@@ -9930,15 +9942,27 @@ function PostRunScreen({
   useEffect(() => {
     if (!pendingActivityId || linkFired) return
     setLinkFired(true)
-    void authedFetch('/api/strava/link-activity', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        strava_activity_id: pendingActivityId,
-        week_n:             weekN,
-        session_day:        sessionDay,
-      }),
-    }).catch(() => {})
+    ;(async () => {
+      try {
+        // authedFetch never throws on 4xx/5xx — must inspect res.ok, or a
+        // server failure (e.g. a missing column) stays invisible. This used to
+        // be `.catch(()=>{})`, which swallowed exactly that.
+        const res = await authedFetch('/api/strava/link-activity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            strava_activity_id: pendingActivityId,
+            week_n:             weekN,
+            session_day:        sessionDay,
+          }),
+        })
+        if (!res.ok) {
+          console.error('[post-run] link-activity failed', res.status, await res.text().catch(() => ''))
+        }
+      } catch (e) {
+        console.error('[post-run] link-activity threw', e)
+      }
+    })()
   }, [pendingActivityId, linkFired, weekN, sessionDay])
 
   // ── Poll run_analysis until it lands (mirrors SessionScreen behaviour) ──

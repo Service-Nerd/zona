@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
     .single() as { data: { strava_refresh_token: string } | null; error: unknown }
 
   if (!settings?.strava_refresh_token) {
+    console.warn(`[link-activity] no strava_refresh_token for user ${user.id}`)
     return NextResponse.json({ error: 'Strava not connected' }, { status: 400 })
   }
 
@@ -53,11 +54,13 @@ export async function POST(req: NextRequest) {
     { headers: { Authorization: `Bearer ${access_token}` }, cache: 'no-store' }
   )
   if (!actRes.ok) {
+    console.warn(`[link-activity] activity fetch failed ${strava_activity_id} -> ${actRes.status}`)
     return NextResponse.json({ error: 'Strava activity fetch failed', status: actRes.status }, { status: 502 })
   }
   const activity = await actRes.json()
 
   if (activity.type !== 'Run' && activity.sport_type !== 'Run') {
+    console.warn(`[link-activity] not a run ${strava_activity_id} type=${activity.type}/${activity.sport_type}`)
     return NextResponse.json({ error: 'Activity is not a run' }, { status: 422 })
   }
 
