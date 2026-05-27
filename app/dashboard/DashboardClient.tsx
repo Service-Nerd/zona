@@ -259,7 +259,11 @@ export default function DashboardClient() {
   const [lastAdjustmentCheckFoundChange, setLastAdjustmentCheckFoundChange] = useState<boolean | null>(null)
 
   // Coaching data — run analysis + weekly report + pending adjustments
-  const [runAnalysisMap, setRunAnalysisMap] = useState<Record<string, any>>({})  // keyed by session_day
+  // Nested: runAnalysisMap[week_n][session_day] = row. Keyed by week THEN day
+  // because run_analysis.session_day is a bare weekday ('tue') — without the
+  // week dimension, rows from different weeks collide on the same key and
+  // "this week" silently reads another week's run. (Bug fixed 2026-05-27.)
+  const [runAnalysisMap, setRunAnalysisMap] = useState<Record<number, Record<string, any>>>({})
   // Tracks whether the run_analysis fetch has completed (success OR empty).
   // Lets downstream UI distinguish "still loading" from "definitely no data"
   // — used to show a skeleton instead of letting the RestraintCard pop in
@@ -830,7 +834,7 @@ export default function DashboardClient() {
             try { await authedFetch('/api/pre-session-readiness') } catch {}
 
             const [analysisRes, reportRes, adjustmentsRes, unreadCountRes, phaseSummaryRes, raceReadinessRes] = await Promise.all([
-              supabase.from('run_analysis').select('session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5').eq('user_id', user.id),
+              supabase.from('run_analysis').select('week_n, session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5').eq('user_id', user.id),
               supabase.from('weekly_reports').select('*').eq('user_id', user.id).order('week_n', { ascending: false }).limit(1).maybeSingle(),
               supabase.from('plan_adjustments').select('*').eq('user_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
               // NOTIF-01 — unread notification count for the Today-screen bell dot.
@@ -844,8 +848,12 @@ export default function DashboardClient() {
                 : Promise.resolve({ data: null, error: null }),
             ])
             if (analysisRes.data) {
-              const map: Record<string, any> = {}
-              analysisRes.data.forEach((r: any) => { map[r.session_day] = r })
+              const map: Record<number, Record<string, any>> = {}
+              analysisRes.data.forEach((r: any) => {
+                if (r.week_n == null) return
+                if (!map[r.week_n]) map[r.week_n] = {}
+                map[r.week_n][r.session_day] = r
+              })
               setRunAnalysisMap(map)
             }
             if (reportRes.data) setWeeklyReport(reportRes.data)
@@ -1262,7 +1270,7 @@ export default function DashboardClient() {
               const analysisRows = wSessions
                 .filter((s: any) => comps[s.key]?.status === 'complete')
                 .map((s: any) => {
-                  const a = runAnalysisMap?.[s.key]
+                  const a = runAnalysisMap?.[wn]?.[s.key]
                   if (!a || a.hr_in_zone_pct == null) return null
                   return {
                     inZone: a.hr_in_zone_pct as number,
@@ -1284,7 +1292,7 @@ export default function DashboardClient() {
               const zoneHistogramRows = wSessions
                 .filter((s: any) => comps[s.key]?.status === 'complete')
                 .map((s: any) => {
-                  const a = runAnalysisMap?.[s.key]
+                  const a = runAnalysisMap?.[wn]?.[s.key]
                   if (!a) return null
                   if (a.hr_pct_z1 == null && a.hr_pct_z2 == null && a.hr_pct_z3 == null && a.hr_pct_z4_5 == null) return null
                   return {
@@ -1310,21 +1318,22 @@ export default function DashboardClient() {
               const zoneHistogramHits = zoneHistogramRows.length
 
               // R30 — zone drift pattern detection.
-              // Join runAnalysisMap with plan sessions to identify easy/recovery rows,
-              // then check the most recent 8 for hr_in_zone_pct < 60%.
+              // Walk the nested runAnalysisMap (week → day → row), keep easy/
+              // recovery rows, then check the most recent 8 for hr_in_zone_pct
+              // < 60%. (Previously parsed a `week_N_day` string key that the map
+              // never produced — so this was dead. Revived by the nested-map fix.)
               const allEasyRecoveryRows = Object.entries(runAnalysisMap ?? {})
-                .map(([sessionDay, analysis]: [string, any]) => {
-                  if (analysis.hr_in_zone_pct == null) return null
-                  if (analysis.source === 'manual') return null
-                  const m = sessionDay.match(/^week_(\d+)_([a-z]+)$/)
-                  if (!m) return null
-                  const weekN    = parseInt(m[1], 10)
-                  const dayShort = m[2].slice(0, 3)
-                  const weekData = plan.weeks.find((w: any) => w.n === weekN)
-                  const sType    = (weekData?.sessions as any)?.[dayShort]?.type ?? null
-                  if (sType !== 'easy' && sType !== 'recovery') return null
-                  return { weekN, hr_in_zone_pct: analysis.hr_in_zone_pct as number }
-                })
+                .flatMap(([weekNStr, days]: [string, any]) =>
+                  Object.entries((days ?? {}) as Record<string, any>).map(([dayShort, analysis]: [string, any]) => {
+                    if (!analysis || analysis.hr_in_zone_pct == null) return null
+                    if (analysis.source === 'manual') return null
+                    const weekN    = parseInt(weekNStr, 10)
+                    const weekData = plan.weeks.find((w: any) => w.n === weekN)
+                    const sType    = (weekData?.sessions as any)?.[dayShort]?.type ?? null
+                    if (sType !== 'easy' && sType !== 'recovery') return null
+                    return { weekN, hr_in_zone_pct: analysis.hr_in_zone_pct as number }
+                  })
+                )
                 .filter((r): r is { weekN: number; hr_in_zone_pct: number } => r !== null)
                 .sort((a, b) => b.weekN - a.weekN)
                 .slice(0, 8)
@@ -1373,6 +1382,8 @@ export default function DashboardClient() {
                   benchmarkRecalDismissedAt={benchmarkRecalDismissedAt}
                   onDismissRecal={dismissBenchmarkRecal}
                   onOpenBenchmark={() => setScreen('benchmark')}
+                  runAnalysisReady={runAnalysisReady}
+                  onConnect={() => setScreen('me')}
                 />
               )
             })()
@@ -1384,7 +1395,7 @@ export default function DashboardClient() {
         {screen === 'strava'   && isAdmin && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
         {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={runAnalysisMap[activeSessionData?.key ?? ''] ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onDone={() => {
           // POST-RUN-02: terminus. Route to SessionScreen for this session
           // with the freshest completion merged in, so the verdict (which
@@ -1398,9 +1409,11 @@ export default function DashboardClient() {
           setScreen('session')
         }} onSaved={refreshCompletions} onAnalysisLoaded={(sessionDay, row) => {
           // POST-RUN-02: keep parent map in sync so Done → SessionScreen
-          // doesn't re-poll for analysis we already have in hand.
-          setRunAnalysisMap(prev => ({ ...prev, [sessionDay]: row }))
-        }} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={runAnalysisMap[activePostRunData.session?.key ?? ''] ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
+          // doesn't re-poll for analysis we already have in hand. Nested by week.
+          const wN = activePostRunData.weekN
+          if (wN == null) return
+          setRunAnalysisMap(prev => ({ ...prev, [wN]: { ...(prev[wN] ?? {}), [sessionDay]: row } }))
+        }} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={(activePostRunData.weekN != null ? runAnalysisMap[activePostRunData.weekN]?.[activePostRunData.session?.key ?? ''] : null) ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
         {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} dob={dob} onDobSave={async (d) => { setDob(d); if (userId) await supabase.from('user_settings').update({ date_of_birth: d }).eq('id', userId) }} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} onBack={() => {
           // Legacy key name — preserved to avoid wiping active user state. Future: migrate via key translation layer.
@@ -4776,7 +4789,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   hasPaidAccess?: boolean
   dailyCoachNote?: string | null
   coachNoteSettled?: boolean
-  runAnalysisMap?: Record<string, any>
+  runAnalysisMap?: Record<number, Record<string, any>>
   runAnalysisReady?: boolean
   /** Navigates to the Coach tab — wired to Kit chip on AI-generated notes. */
   onOpenCoach?: () => void
@@ -5091,7 +5104,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   )
   const analysisRows = completedThisWeek
     .map(s => {
-      const a = runAnalysisMap?.[s.key]
+      const a = runAnalysisMap?.[weekNum]?.[s.key]
       if (!a || a.hr_in_zone_pct == null) return null
       return {
         inZone: a.hr_in_zone_pct as number,
@@ -6676,7 +6689,7 @@ function LedgerCard() {
   )
 }
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark }: {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, onConnect }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaConnected: boolean
   stravaTokenFailed?: boolean; firstName?: string
@@ -6700,6 +6713,12 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   benchmarkRecalDismissedAt?: string | null
   onDismissRecal?: () => void
   onOpenBenchmark?: () => void
+  /** Gates the ZoneRings loading skeleton — true once run_analysis has been
+   *  fetched. Without it the skeleton can't tell "still loading" from "no data". */
+  runAnalysisReady?: boolean
+  /** Navigate to where a runner connects a run source (Profile). Shown in the
+   *  ZoneRings empty state when nothing is linked. */
+  onConnect?: () => void
 }) {
   const [loading, setLoading]           = useState(false)
   const [error, setError]               = useState<string | null>(null)
@@ -7019,9 +7038,10 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             zone, arc-filled to % time in that zone for the week. Companion
             to the discipline % tile in the 2×2 grid above: the tile gives
             the verdict, the rings give the breakdown. Coach is paid-gated
-            at the screen level, so only live / pending / skeleton states
+            at the screen level, so only live / skeleton / empty states
             render here (no locked state needed). */}
         {(() => {
+          // Live — at least one analysed run this week carries a zone histogram.
           if (zoneTimePctByZone) {
             return (
               <ZoneRings
@@ -7030,13 +7050,21 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               />
             )
           }
-          // Have completed runs but the analysis payload hasn't returned yet
-          // — show the skeleton to hold layout. liveSessionsCompleted is the
-          // honest signal here; analysis lags completion by a few seconds.
-          if ((liveSessionsCompleted ?? 0) > 0) {
+          // Genuine loading — the analysis fetch hasn't returned on first paint.
+          if (!runAnalysisReady) {
             return <ZoneRingsSkeleton />
           }
-          return <ZoneRings state="pending" />
+          // Ready, but no zone histogram for this week's runs. Honest resting
+          // state — NOT a perpetual shimmer (the old bug). Prompt to connect a
+          // source if there isn't one; otherwise explain zones need a heart-rate
+          // run (covers manual logs, HR-less runs, and links that never analysed).
+          return (
+            <ZoneRings
+              state="empty"
+              reason={stravaConnected ? 'no-data' : 'not-linked'}
+              onConnect={onConnect}
+            />
+          )
         })()}
 
         {/* ── LOAD RATIO SHEET ────────────────────────────────────────── */}

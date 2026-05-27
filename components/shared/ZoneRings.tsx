@@ -48,7 +48,18 @@ type LockedProps = {
   onUpgrade?: () => void
 }
 
-type Props = LiveProps | PendingProps | LockedProps
+type EmptyProps = {
+  state: 'empty'
+  label?: string
+  /** 'not-linked' — no Strava/Health source, so zones can never be computed
+   *  (offer to connect). 'no-data' — source(s) linked but this week's runs
+   *  carry no usable HR/zone breakdown (manual log, missing HR, or a link that
+   *  never got analysed). Honest end state — never a perpetual shimmer. */
+  reason: 'not-linked' | 'no-data'
+  onConnect?: () => void
+}
+
+type Props = LiveProps | PendingProps | LockedProps | EmptyProps
 
 // ── Geometry ──────────────────────────────────────────────────────────────
 // All numbers in SVG user units. Component renders at 160×160 by default;
@@ -336,6 +347,70 @@ export default function ZoneRings(props: Props) {
               }}
             >
               Unlock view →
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ── EMPTY — paid/trial, no zone data to draw ──────────────────────────
+  // Distinct from PENDING: pending means "analysis is in flight, data is
+  // coming"; empty means "there is nothing coming for this week" — a manual
+  // log, a run without HR, or no linked source at all. Honest resting state,
+  // not a loading shimmer (which is what users saw before).
+  if (props.state === 'empty') {
+    const linkable = props.reason === 'not-linked'
+    return (
+      <div
+        style={{
+          background: 'var(--card)',
+          border: '1px solid var(--line)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '20px',
+        }}
+      >
+        <Eyebrow label={label} />
+        <div style={{ display: 'flex', justifyContent: 'center', opacity: 0.4 }}>
+          <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true">
+            <Ring radius={RADII.z1}  pct={0} colour={ZONE_COLOURS.z1}  active={false} />
+            <Ring radius={RADII.z2}  pct={0} colour={ZONE_COLOURS.z2}  active={false} />
+            <Ring radius={RADII.z3}  pct={0} colour={ZONE_COLOURS.z3}  active={false} />
+            <Ring radius={RADII.z45} pct={0} colour={ZONE_COLOURS.z45} active={false} />
+            <BrandDot muted />
+          </svg>
+        </div>
+        <div
+          style={{
+            marginTop: '18px',
+            fontFamily: 'var(--font-ui)',
+            fontSize: '13px',
+            fontWeight: 400,
+            color: 'var(--mute)',
+            lineHeight: 1.55,
+            textAlign: 'center',
+          }}
+        >
+          {linkable
+            ? 'Connect Strava or Apple Health to map your week by zone.'
+            : 'No zone data this week yet. Zones come from a run with heart rate.'}
+        </div>
+        {linkable && props.onConnect && (
+          <div style={{ marginTop: '14px', textAlign: 'center' }}>
+            <button
+              onClick={props.onConnect}
+              style={{
+                fontFamily: 'var(--font-ui)',
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--moss)',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+              }}
+            >
+              Connect →
             </button>
           </div>
         )}
