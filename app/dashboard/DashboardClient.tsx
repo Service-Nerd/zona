@@ -1233,10 +1233,13 @@ export default function DashboardClient() {
   if (showWelcome) {
     return (
       <div style={{
-        minHeight: '100dvh', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
+        // Own scroll context — see OrientationScreen note. Retired screen, but
+        // kept scroll-safe in case the trigger is ever re-enabled.
+        height: '100dvh', overflowY: 'auto',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'safe center',
         background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
-        padding: '32px 24px',
+        padding: '32px 24px calc(32px + env(safe-area-inset-bottom, 0px))',
       }}>
         {/* Brand wordmark — Wordmark component sources text from BRAND.name */}
         <div style={{ marginBottom: '8px' }}>
@@ -1643,10 +1646,17 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
 
   return (
     <div style={{
-      minHeight: '100dvh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
+      // Own scroll context: the dashboard body-lock (overflow:hidden;
+      // position:fixed, set on mount) leaves this early-return screen with no
+      // scrollable ancestor, so it must scroll itself — otherwise content
+      // taller than the viewport clips the CTA off-screen and bricks onboarding.
+      // 'safe center' keeps the layout centred when it fits, but falls back to
+      // top-aligned + scrollable when it overflows.
+      height: '100dvh', overflowY: 'auto',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'safe center',
       background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
-      padding: '32px 24px',
+      padding: '32px 24px calc(32px + env(safe-area-inset-bottom, 0px))',
     }}>
       {/* Brand mark — Wordmark component sources text from BRAND.name */}
       <div style={{ marginBottom: '6px' }}>
@@ -1908,10 +1918,15 @@ function ConnectRunsScreen({ onConnected, onSkip }: {
 
   return (
     <div style={{
-      minHeight: '100dvh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
+      // Own scroll context — see OrientationScreen note. Early-return screens
+      // sit outside the dashboard's inner scroll container, and the body is
+      // locked (overflow:hidden; position:fixed), so this must scroll itself or
+      // the "Connect Apple Health" CTA can clip off-screen on shorter devices.
+      height: '100dvh', overflowY: 'auto',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'safe center',
       background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
-      padding: '32px 24px',
+      padding: '32px 24px calc(32px + env(safe-area-inset-bottom, 0px))',
     }}>
       <div style={{ marginBottom: '6px' }}>
         <Wordmark size="md" />
