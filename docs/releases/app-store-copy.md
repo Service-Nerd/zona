@@ -137,11 +137,28 @@ Demo account for review: [TO ADD — create a fresh account with trial expired +
 
 ## Open items before submit
 
-- [ ] Demo account: create one, trial-expired state, plan + history populated, credentials added above, **`is_admin = false`**
-- [ ] Production privacy/terms verification: confirm `https://www.zonna.run/privacy` and `/terms` render on the live domain (last checked when DNS landed 2026-05-15)
-- [ ] Russ red-pen pass on description voice
-- [ ] Russ confirm keywords list
-- [ ] Promotional text — keep this draft or replace at submission time
+- [ ] **Demo account** — create fresh account, generate plan, expire trial via Supabase (`UPDATE user_settings SET trial_ends_at = NOW() - INTERVAL '1 day' WHERE email = '...'`), confirm `is_admin = false`, add credentials to Review Information Notes on both subscription products
+- [ ] **Subscription Review Notes** — text field in each subscription product → Review Information (alongside screenshot already uploaded). Paste the review notes block from above. Blocked on demo account credentials.
+- [ ] **Marketing screenshots** — 5 shots × 2 device sizes (iPhone 15 Pro Max 1290×2796 + iPhone 14 Plus 1284×2778) from simulator with seeded data. See screenshot spec below.
+- [x] ~~Production privacy/terms verification~~ — confirmed live 2026-05-15
+- [x] ~~Russ red-pen pass on description voice~~ — accepted as-is 2026-05-28
+- [x] ~~Russ confirm keywords list~~ — confirmed 2026-05-28
+- [x] ~~Promotional text~~ — draft accepted 2026-05-28
+
+## ASC metadata status — 2026-05-28
+
+- [x] Name: `Zonna`
+- [x] Subtitle: `Plans that stop overtraining.`
+- [x] Description: pasted
+- [x] Keywords: pasted
+- [x] Promotional Text: pasted
+- [x] Support URL: `https://www.zonna.run`
+- [x] Privacy Policy URL: `https://www.zonna.run/privacy`
+- [x] App Privacy / Data Collection questionnaire: complete
+- [x] IAP subscription products: both Ready to Submit (localization + review screenshot + territory availability all done)
+- [ ] Subscription Review Notes: pending demo account
+- [ ] Marketing screenshots: not started
+- [ ] Demo account: not started
 
 ---
 
