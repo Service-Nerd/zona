@@ -7,6 +7,7 @@ import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { getUserHRZones } from '@/lib/strava'
 import { adaptHealthKitWorkout, type HealthKitWorkoutPayload } from '@/lib/health/adapter'
 import { autoMatchAndAnalyse, getInternalBaseUrl } from '@/lib/coaching/autoAnalyse'
+import { consolidateIncomingHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
 
 // POST /api/health/ingest
 //
@@ -54,6 +55,17 @@ export async function POST(req: NextRequest) {
   const zones = await getUserHRZones(supabase, userId)
 
   const row = adaptHealthKitWorkout(userId, payload, zones)
+
+  // INGEST-DEDUP-01: if a Strava row or another HealthKit row already covers
+  // this physical run (±5 min / ±5%), don't insert a duplicate. The canonical
+  // row stays and keeps its completion/analysis links; we only lift the HR
+  // summary onto it if it was missing one. Mirrors tryEnrichHealthKitRow on the
+  // Strava side. The canonical row already ran its own auto-match/analysis, so
+  // we skip both the insert and the redundant pipeline trigger below.
+  const dedup = await consolidateIncomingHealthKitRow(supabase, userId, row)
+  if (dedup.skipped) {
+    return NextResponse.json({ status: 'deduped', canonical_id: dedup.canonicalId })
+  }
 
   const { error } = await supabase
     .from('strava_activities')
