@@ -14,6 +14,27 @@
 import { useState } from 'react'
 import type { RaceResult } from '@/types/plan'
 import { authedFetch } from '@/lib/supabase/authedFetch'
+import { DurationPicker } from '@/components/shared/DurationPicker'
+import RPEScale from '@/components/shared/RPEScale'
+
+// Parse a finish/target time string into h/m/s. 3 parts → H:MM:SS;
+// 2 parts → MM:SS (short-race convention, e.g. "21:48" = 21m 48s).
+function parseTime(t?: string): { h: number; m: number; s: number } {
+  if (!t) return { h: 0, m: 0, s: 0 }
+  const parts = t.split(':').map(n => parseInt(n, 10))
+  if (parts.some(isNaN)) return { h: 0, m: 0, s: 0 }
+  if (parts.length === 3) return { h: parts[0], m: parts[1], s: parts[2] }
+  if (parts.length === 2) return { h: 0, m: parts[0], s: parts[1] }
+  return { h: 0, m: 0, s: 0 }
+}
+
+// Format h/m/s back to a finish_time string. Drop the hours segment for
+// sub-hour times so a 5K reads "21:48", a marathon "4:32:00".
+function formatTime(h: number, m: number, s: number): string | undefined {
+  if (h === 0 && m === 0 && s === 0) return undefined
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -29,6 +50,9 @@ export interface ReshapeProposal {
 interface Props {
   raceWeekN:     number
   raceName?:     string
+  /** Plan goal time (meta.target_time) — pre-fills the finish-time picker so
+   *  most users nudge from their target rather than entering from zero. */
+  targetTime?:   string
   onClose:       () => void
   /** Called when the reshape is proposed (status: pending). Caller shows the card. */
   onReshapeReady: (proposal: ReshapeProposal) => void
@@ -50,12 +74,16 @@ const OUTCOMES: Array<{ value: RaceResult['outcome']; label: string; sub: string
 export default function RaceResultSheet({
   raceWeekN,
   raceName,
+  targetTime,
   onClose,
   onReshapeReady,
   onLogOnly,
 }: Props) {
+  const anchor = parseTime(targetTime)
   const [outcome,        setOutcome]        = useState<RaceResult['outcome'] | null>(null)
-  const [finishTime,     setFinishTime]     = useState('')
+  const [finishH,        setFinishH]        = useState(anchor.h)
+  const [finishM,        setFinishM]        = useState(anchor.m)
+  const [finishS,        setFinishS]        = useState(anchor.s)
   const [rpe,            setRpe]            = useState<number | null>(null)
   const [notes,          setNotes]          = useState('')
   const [showAdvanced,   setShowAdvanced]   = useState(false)
@@ -70,7 +98,7 @@ export default function RaceResultSheet({
   function buildResult(): RaceResult {
     return {
       outcome:         outcome ?? undefined,
-      finish_time:     finishTime.trim() || undefined,
+      finish_time:     formatTime(finishH, finishM, finishS),
       rpe:             rpe ?? undefined,
       notes:           notes.trim() || undefined,
       what_worked:     whatWorked.trim() || undefined,
@@ -212,57 +240,36 @@ export default function RaceResultSheet({
           </div>
 
           {/* ── Finish time ────────────────────────────── */}
+          {/* Stepper, not free text: no format-guessing, no keyboard, no iOS
+              zoom — and pre-filled from the goal time so most users nudge from
+              their target rather than entering from zero. */}
           <div>
-            <label style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: '6px' }}>
+            <label style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: '2px' }}>
               Finish time <span style={{ fontWeight: 400, color: 'var(--mute)' }}>(optional)</span>
             </label>
-            <input
-              type="text"
-              value={finishTime}
-              onChange={e => setFinishTime(e.target.value)}
-              placeholder="4:32:00 or 21:48"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                background: 'var(--bg-soft)',
-                border: '1px solid var(--line)',
-                borderRadius: '10px',
-                // 16px (not 15) — iOS zooms any focused input below 16px, and
-                // the maximum-scale=1 viewport then traps the user zoomed in.
-                fontFamily: 'var(--font-ui)', fontSize: '16px', color: 'var(--ink)',
-                outline: 'none', boxSizing: 'border-box',
-              }}
+            {targetTime && (
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: '2px' }}>
+                Set to your goal — adjust to what you ran.
+              </div>
+            )}
+            <DurationPicker
+              hours={finishH}
+              mins={finishM}
+              secs={finishS}
+              onHoursChange={setFinishH}
+              onMinsChange={setFinishM}
+              onSecsChange={setFinishS}
+              showSeconds
             />
           </div>
 
           {/* ── RPE ────────────────────────────────────── */}
-          <div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)', marginBottom: '10px' }}>
-              Overall effort <span style={{ fontWeight: 400, color: 'var(--mute)' }}>(optional)</span>
-            </div>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {[1,2,3,4,5,6,7,8,9,10].map(n => (
-                <button
-                  key={n}
-                  onClick={() => setRpe(rpe === n ? null : n)}
-                  style={{
-                    width: '40px', height: '40px',
-                    background: rpe === n ? 'var(--moss)' : 'var(--bg-soft)',
-                    border: `1px solid ${rpe === n ? 'var(--moss)' : 'var(--line)'}`,
-                    borderRadius: '8px', cursor: 'pointer',
-                    fontFamily: 'var(--font-ui)', fontSize: '14px',
-                    fontWeight: rpe === n ? 700 : 400,
-                    color: rpe === n ? 'var(--card)' : 'var(--ink)',
-                  }}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '4px' }}>
-              1 = walked it · 10 = everything
-            </div>
-          </div>
+          {/* Shared RPEScale — one effort language across reflect + race surfaces. */}
+          <RPEScale
+            value={rpe}
+            onChange={setRpe}
+            hint="1 = walked it · 10 = everything"
+          />
 
           {/* ── Notes ──────────────────────────────────── */}
           <div>

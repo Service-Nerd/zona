@@ -9,15 +9,25 @@ import type React from 'react'
 export function DurationPicker({
   hours,
   mins,
+  secs,
   onHoursChange,
   onMinsChange,
+  onSecsChange,
   maxHours = 23,
+  showSeconds = false,
 }: {
   hours: number
   mins: number
+  /** Seconds — only used when showSeconds is true. */
+  secs?: number
   onHoursChange: (v: number) => void
   onMinsChange: (v: number) => void
+  onSecsChange?: (v: number) => void
   maxHours?: number
+  /** Adds a third column for seconds. Needed for short-race finish times
+   *  (a 5K is minutes:seconds, where seconds decide a PB). Off by default so
+   *  the wizard/benchmark target-time callers stay HH:MM. */
+  showSeconds?: boolean
 }) {
   const btnStyle: React.CSSProperties = {
     width: '44px', height: '44px', borderRadius: '8px',
@@ -49,6 +59,17 @@ export function DurationPicker({
         <div style={unitStyle}>min</div>
         <button style={btnStyle} onClick={() => onMinsChange(mins === 0 ? 59 : mins - 1)}>−</button>
       </div>
+      {showSeconds && (
+        <>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', color: 'var(--mute)', fontWeight: 300, paddingBottom: '20px' }}>:</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+            <button style={btnStyle} onClick={() => onSecsChange?.((secs ?? 0) === 59 ? 0 : (secs ?? 0) + 1)}>+</button>
+            <div style={valStyle}>{String(secs ?? 0).padStart(2, '0')}</div>
+            <div style={unitStyle}>sec</div>
+            <button style={btnStyle} onClick={() => onSecsChange?.((secs ?? 0) === 0 ? 59 : (secs ?? 0) - 1)}>−</button>
+          </div>
+        </>
+      )}
     </div>
   )
 }
