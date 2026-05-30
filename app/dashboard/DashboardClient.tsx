@@ -25,7 +25,7 @@ import PlanArc from '@/components/shared/PlanArc'
 import RPEScale from '@/components/shared/RPEScale'
 import SessionCard from '@/components/shared/SessionCard'
 import SessionCompleteCard from '@/components/shared/SessionCompleteCard'
-import { useDisciplineLedger } from '@/lib/coaching/useDisciplineLedger'
+import { useDisciplineLedger, type LedgerSnapshot } from '@/lib/coaching/useDisciplineLedger'
 import { getCompletionCopy } from '@/lib/coaching/completionCopy'
 import { useWidgetSync } from '@/lib/widget/useWidgetSync'
 import ZoneBar, { zoneNumberForType, zoneShortName } from '@/components/shared/ZoneBar'
@@ -269,6 +269,11 @@ export default function DashboardClient() {
   // — used to show a skeleton instead of letting the RestraintCard pop in
   // a beat after the rest of the Today screen renders.
   const [runAnalysisReady, setRunAnalysisReady] = useState(false)
+  // Discipline ledger prefetched as part of the orchestrated paid-data load so
+  // the Coach LedgerCard is present on first paint instead of popping in after
+  // its own mount-time fetch. Coach is paid/trial-only, so this block covers
+  // every surface that shows the card; MeScreen/PostRun keep the hook.
+  const [disciplineLedger, setDisciplineLedger] = useState<LedgerSnapshot | null>(null)
   const [weeklyReport, setWeeklyReport] = useState<any | null>(null)
   const [pendingAdjustment, setPendingAdjustment] = useState<any | null>(null)
   // NOTIF-01 — unread notification count drives the Today-screen bell dot.
@@ -838,7 +843,7 @@ export default function DashboardClient() {
             // many adjustment paths and shouldn't block the rest of the dashboard data.
             try { await authedFetch('/api/pre-session-readiness') } catch {}
 
-            const [analysisRes, reportRes, adjustmentsRes, unreadCountRes, phaseSummaryRes, raceReadinessRes] = await Promise.all([
+            const [analysisRes, reportRes, adjustmentsRes, unreadCountRes, phaseSummaryRes, raceReadinessRes, ledgerData] = await Promise.all([
               supabase.from('run_analysis').select('week_n, session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5').eq('user_id', user.id),
               supabase.from('weekly_reports').select('*').eq('user_id', user.id).order('week_n', { ascending: false }).limit(1).maybeSingle(),
               supabase.from('plan_adjustments').select('*').eq('user_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
@@ -851,6 +856,10 @@ export default function DashboardClient() {
               loadedPlan.meta.race_date
                 ? supabase.from('race_readiness_notes').select('content, generated_at').eq('user_id', user.id).eq('race_date', loadedPlan.meta.race_date).maybeSingle()
                 : Promise.resolve({ data: null, error: null }),
+              // Discipline ledger — prefetched here so the Coach LedgerCard
+              // doesn't pop in from its own mount fetch. authedFetch never
+              // throws on non-2xx, so guard on res.ok and swallow network errors.
+              authedFetch('/api/discipline-ledger').then(r => r.ok ? r.json() : null).catch(() => null),
             ])
             if (analysisRes.data) {
               const map: Record<number, Record<string, any>> = {}
@@ -866,6 +875,12 @@ export default function DashboardClient() {
             if (typeof unreadCountRes.count === 'number') setUnreadNotifications(unreadCountRes.count)
             if (phaseSummaryRes.data) setPhaseSummary(phaseSummaryRes.data as any)
             if (raceReadinessRes.data) setRaceReadinessNote(raceReadinessRes.data as any)
+            if (ledgerData) setDisciplineLedger({
+              weeksWithinLines:  ledgerData.weeksWithinLines ?? 0,
+              currentWeekStatus: ledgerData.currentWeekStatus ?? 'pending',
+              advancedThisWeek:  !!ledgerData.advancedThisWeek,
+              tier:              ledgerData.tier ?? 'free',
+            })
           } catch {}
           finally { setRunAnalysisReady(true) }
         } else {
@@ -1460,6 +1475,7 @@ export default function DashboardClient() {
                   onDismissRecal={dismissBenchmarkRecal}
                   onOpenBenchmark={() => setScreen('benchmark')}
                   runAnalysisReady={runAnalysisReady}
+                  disciplineLedger={disciplineLedger}
                   onConnect={() => setScreen('me')}
                 />
               )
@@ -6727,8 +6743,12 @@ function SaveImageButton({ weekN, sessionDay }: { weekN: number; sessionDay: str
 // flames, no urgency, no celebration of milestones. Resets silently to 0 on a
 // broken week. Voice anchor stamp at the bottom — same anatomy as Pattern 11
 // (RestraintCard) in ui-patterns.md.
-function LedgerCard() {
-  const ledger = useDisciplineLedger()
+function LedgerCard({ ledger: ledgerProp }: { ledger?: LedgerSnapshot | null }) {
+  // Prefer the prefetched snapshot from the parent's orchestrated load so the
+  // card is resolved on first paint. Fall back to the hook only when the prop
+  // is absent (skip the hook's fetch when we already have the data).
+  const hookLedger = useDisciplineLedger(ledgerProp != null)
+  const ledger = ledgerProp ?? hookLedger
   return (
     <div style={{
       background: 'var(--card)',
@@ -6789,7 +6809,7 @@ function LedgerCard() {
   )
 }
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, onConnect }: {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, disciplineLedger, onConnect }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaConnected: boolean
   stravaTokenFailed?: boolean; firstName?: string
@@ -6816,6 +6836,10 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   /** Gates the ZoneRings loading skeleton — true once run_analysis has been
    *  fetched. Without it the skeleton can't tell "still loading" from "no data". */
   runAnalysisReady?: boolean
+  /** Prefetched discipline ledger from the parent's orchestrated load, so the
+   *  LedgerCard renders resolved on first paint. null until loaded (or if the
+   *  fetch failed) — LedgerCard falls back to its own hook in that case. */
+  disciplineLedger?: LedgerSnapshot | null
   /** Navigate to where a runner connects a run source (Profile). Shown in the
    *  ZoneRings empty state when nothing is linked. */
   onConnect?: () => void
@@ -7074,7 +7098,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             because it frames everything below: the in-week scores only
             matter in the context of how many disciplined weeks you've
             already strung together. RestraintCard anatomy (Pattern 11). */}
-        <LedgerCard />
+        <LedgerCard ledger={disciplineLedger} />
 
         {/* ── STATS 2×2 GRID ───────────────────────────────────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>

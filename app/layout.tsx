@@ -10,7 +10,11 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://rts-training-hub.ver
 export const metadata: Metadata = {
   title: `${BRAND.name} — ${BRAND.appStoreSubtitle}`,
   description: BRAND.tagline,
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+  // viewport-fit=cover is REQUIRED for iOS to expose env(safe-area-inset-*) to
+  // CSS — without it those insets resolve to 0, so the fixed bottom nav and the
+  // scroll-container padding can't clear the home indicator (nav renders under
+  // it). The app already consumes env(safe-area-inset-bottom) throughout.
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover',
   manifest: '/manifest.json',
   icons: {
     icon: [

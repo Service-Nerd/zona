@@ -20,9 +20,13 @@ export interface LedgerSnapshot {
   tier: 'free' | 'trial' | 'paid'
 }
 
-export function useDisciplineLedger(): LedgerSnapshot | null {
+// `skip` lets a caller suppress the fetch when the snapshot has already been
+// loaded upstream (e.g. the Coach screen prefetches the ledger in its
+// orchestrated load and passes it down) — avoids a redundant round-trip.
+export function useDisciplineLedger(skip = false): LedgerSnapshot | null {
   const [snapshot, setSnapshot] = useState<LedgerSnapshot | null>(null)
   useEffect(() => {
+    if (skip) return
     let cancelled = false
     void (async () => {
       try {
@@ -39,6 +43,6 @@ export function useDisciplineLedger(): LedgerSnapshot | null {
       } catch { /* silent — caller treats null as "no data yet" */ }
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [skip])
   return snapshot
 }
