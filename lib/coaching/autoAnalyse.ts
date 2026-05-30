@@ -139,34 +139,21 @@ export async function autoMatchAndAnalyse(
   // by RPE entry inside the Post-Run screen instead of a silent 30s gap.
   // Replaces the older post-analysis push (now removed from /api/analyse-run).
   try {
-    const { notifyUser } = await import('@/lib/webpush')
-    const distKm = activity.distance / 1000
-    const distLabel = distKm > 0
-      ? (distKm < 10 ? `${distKm.toFixed(1)}K` : `${Math.round(distKm)}K`)
-      : 'your run'
-    const dayNames: Record<string, string> = {
-      mon: 'Monday',  tue: 'Tuesday',  wed: 'Wednesday',
-      thu: 'Thursday', fri: 'Friday',   sat: 'Saturday',  sun: 'Sunday',
-    }
-    const dayName = dayNames[bestDay] ?? bestDay
-    // POST-RUN-02: title carries the *what* (so the lock-screen preview reads
-    // as the run, not a process step); body mirrors the destination screen's
-    // own "How did it feel?" header so the tap-through is a continuation, not
-    // a new question.
-    const title = distKm > 0
-      ? `${dayName}'s ${distLabel}.`
-      : `${dayName}'s run.`
+    const { notifyUser }       = await import('@/lib/webpush')
+    const { buildLinkPushCopy } = await import('@/lib/coaching/voiceLines')
+    // POST-RUN-02: the lock-screen line proves Kit looked (a morsel built from
+    // data we already hold at link time — avg HR vs the planned zone) and frames
+    // RPE as the runner's half of the read. The body keeps the destination
+    // screen's "how did it feel?" header so the tap-through is a continuation,
+    // not a new question. Risk-gate reasoning lives in buildLinkPushCopy.
+    const matchedSession = week.sessions?.[bestDay] ?? null
+    const { title, body } = buildLinkPushCopy(matchedSession, activity.average_heartrate ?? null)
     const url = `/dashboard?screen=post-run&weekN=${week.n}&sessionDay=${bestDay}`
-    void notifyUser(userId, {
-      title,
-      body:  'How did it feel?',
-      tag:   'run-linked',
-      data:  { url },
-    })
+    void notifyUser(userId, { title, body, tag: 'run-linked', data: { url } })
     // Inbox record (NOTIF-01) — mirrors the push so a missed lock-screen ping
     // is still recoverable from the bell.
     const { recordNotification } = await import('@/lib/notifications')
-    void recordNotification(userId, { type: 'run_feedback', title, body: 'How did it feel?', url })
+    void recordNotification(userId, { type: 'run_feedback', title, body, url })
   } catch (err) {
     console.warn('[auto-analyse] link push failed', err)
   }

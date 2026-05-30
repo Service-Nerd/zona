@@ -90,12 +90,6 @@ export const BRAND = {
     weeklyReport: 'Your week, reviewed.',
     runAnalysis:  "That's done. Kit's reading.",
     /**
-     * Daily morning training-day push (HOOK-01). Used as the title prefix —
-     * the cron appends the session word + metric, e.g. "Today: easy 45m."
-     * Building the full title lives in `lib/coaching/voiceLines.ts`.
-     */
-    dailyTraining: 'Today',
-    /**
      * One-shot mid-trial reciprocity nudge (HOOK-02). Fires once between
      * trial day 3 and day 5 when the user has ≥2 analysed runs. Body is the
      * first sentence of the latest `run_analysis.feedback_text`.

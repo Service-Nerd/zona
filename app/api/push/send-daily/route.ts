@@ -4,8 +4,8 @@ import { sendWebPush } from '@/lib/webpush'
 import { sendApnsPush } from '@/lib/apnpush'
 import { getUserTier } from '@/lib/trial'
 import { getCurrentWeekIndex } from '@/lib/plan'
-import { resolveEffectiveSessions, type SessionOverride } from '@/lib/plan/effectiveSessions'
-import { buildDailyPushTitle, buildDailyPushBody } from '@/lib/coaching/voiceLines'
+import { resolveEffectiveSessions, DAY_KEYS, type DayKey, type SessionOverride } from '@/lib/plan/effectiveSessions'
+import { buildDailyPushTitle, buildDailyPushBody, type NextKeySession } from '@/lib/coaching/voiceLines'
 import { recordNotification } from '@/lib/notifications'
 import type { Plan, Session } from '@/types/plan'
 
@@ -34,6 +34,34 @@ import type { Plan, Session } from '@/types/plan'
 // this automatically via the header configured in vercel.json.
 
 const DOW_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const
+
+const FULL_DAY_NAMES: Record<DayKey, string> = {
+  mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday',
+  fri: 'Friday', sat: 'Saturday', sun: 'Sunday',
+}
+// Demanding sessions an easy/recovery day exists to protect. key_session=true
+// (long runs, race-pace tempos, tune-ups) also qualifies.
+const KEY_SESSION_TYPES = new Set(['quality', 'tempo', 'intervals', 'hard', 'long', 'race'])
+
+// The next key session later in THIS training week — gives the morning push a
+// "why" on easy/recovery days ("Easy 45m today. Intervals Thursday."). "This
+// week" is a structural boundary (the plan week, Mon→Sun via DAY_KEYS), not a
+// tunable lookahead — so no coaching numeric is introduced.
+function findNextKeyThisWeek(
+  effectiveWeek: ReturnType<typeof resolveEffectiveSessions>,
+  todayKey: DayKey,
+): NextKeySession | null {
+  const start = DAY_KEYS.indexOf(todayKey)
+  if (start < 0) return null
+  for (let i = start + 1; i < DAY_KEYS.length; i++) {
+    const s = effectiveWeek[DAY_KEYS[i]]?.session
+    if (!s) continue
+    if (KEY_SESSION_TYPES.has(s.type) || s.key_session) {
+      return { type: s.type, dayName: FULL_DAY_NAMES[DAY_KEYS[i]] }
+    }
+  }
+  return null
+}
 
 // Product decision 2026-05-27: the morning push fires on EVERY planned day,
 // rest included — a daily cue, not only run days. (Previously rest / strength /
@@ -224,9 +252,11 @@ export async function POST(req: NextRequest) {
       // payload so the delivery test works regardless of today's plan.
       if (!session && !testMode) { skip('no_session'); continue }
 
+      const nextKey = session ? findNextKeyThisWeek(effectiveWeek, dowKey as DayKey) : null
+
       const payload = session
         ? {
-            title: buildDailyPushTitle(session),
+            title: buildDailyPushTitle(session, nextKey),
             body:  buildDailyPushBody(session.type),
             tag:   `daily-push-${clock.isoDate}`,
             data:  { url: '/dashboard?screen=today' },
