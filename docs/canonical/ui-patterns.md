@@ -1080,6 +1080,68 @@ Reference: `components/shared/ZoneRings.tsx`. Integration: `app/dashboard/Dashbo
 
 ---
 
+### 29. TrendCard
+
+Multi-month aerobic trend card. Shows how avg HR on same-effort long runs has changed over a window (default 6 months). The metric pair is formula-derived; the gloss sentence is model-written (CoachByline + 3px moss left rail). Two-metric variant of Pattern 11 (RestraintCard).
+
+**Four states:**
+
+```
+LIVE:
+┌─────────────────────────────────────────────┐
+│  AEROBIC TREND     across 14 long runs · 6w  │  ← eyebrow
+│                                              │
+│  166          →         149                  │  ← 44px 800 tabular-nums
+│  Feb avg                now                  │  ← 13px 400 --mute
+│                                              │
+│ ▌ [K✦] Kit                                   │  ← 3px moss rail + CoachByline
+│ ▌      AEROBIC TREND                         │
+│ ▌                                            │
+│ ▌ Long run at 5:40/km. Easy is easier        │  ← 13px 400 --ink-2 AI gloss
+│ ▌ than it was.                               │
+└─────────────────────────────────────────────┘
+
+PENDING (< MIN_BUCKETS data):
+  muted —/— metrics, hand-authored pending copy, tap to open explanation sheet.
+
+LOCKED (free tier):
+  --bg-soft, muted —/—, "The receipt for your easy days.", moss CTA "Unlock trend →"
+
+SKELETON:
+  shimmer placeholders matching live shape, <CoachByline working /> pulsing.
+```
+
+**Behavioural design:**
+- Count-up animation (ease-out cubic, 600ms) on both HR values at first mount — makes the data feel earned, not loaded
+- Gloss fades in (200ms) after count-up completes
+- Tap anywhere → slide-up explanation sheet (Pattern 19 keyframes)
+- No chart — two numbers, one sentence. The brand constraint is the feature.
+
+**Provenance (critical):**
+- Numbers → formula-derived → **no AIMark** on the metric pair
+- Gloss sentence → model-written → `<CoachByline color="moss" role="Aerobic trend" />` + 3px moss left rail on the AI section only
+- Rail starts at the border dividing the metric pair from the AI section — not over the numbers
+
+**Placement:** CoachScreen only, above the weekly report amber card. Absent for free users (screen is paid-gated upstream — no locked state needed at this placement).
+
+**Tier-divergent header:**
+```tsx
+// TIER-DIVERGENT — FREE:  locked state, upgrade CTA, hand-authored body
+//                  PAID:  live/pending/skeleton states, AI gloss for live
+```
+
+**Props (discriminated union):**
+```tsx
+{ state: 'live';     earlierMonth, earlierHr, nowHr, cohortSize, windowMonths, gloss? }
+{ state: 'pending'  }
+{ state: 'locked';   onUpgrade? }
+{ state: 'skeleton' }
+```
+
+**Empty-state rule:** pending renders the card body (educates the user); locked renders the locked shell. Neither hides the card entirely — the slot has value even before the signal arrives. The live card silently suppresses when `hrIsTrending === false` (pending instead of live) so noisy non-trends never surface.
+
+Reference: `components/shared/TrendCard.tsx`. Route: `GET /api/coaching/trend?include_gloss=true`. Prompt: `lib/coaching/prompts/aerobicTrend.ts`.
+
 ### 26. Voice Anchor Strip
 
 Single-line moss anchor — no card chrome, no border, no eyebrow. Used on the Today screen in place of the (now retired) Today RestraintCard slot. Earns presence through typography weight and the moss colour, not surface chrome.

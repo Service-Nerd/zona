@@ -35,6 +35,7 @@ import CoachByline from '@/components/shared/CoachByline'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { NotificationBell } from '@/components/shared/NotificationBell'
 import { NotificationRow, type NotificationItem } from '@/components/shared/NotificationRow'
+import TrendCard from '@/components/shared/TrendCard'
 import { composeSession } from '@/lib/plan/sessionComposer'
 import { formatDistance, sumRoundedDistance, resolveSessionMetric } from '@/lib/format'
 import { didSessionHitZone, sessionHRBand, zoneForSessionType } from '@/lib/coaching/zoneRules'
@@ -7021,6 +7022,75 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   const [loadSheetOpen, setLoadSheetOpen] = useState(false)
   const [zoneDisciplineSheetOpen, setZoneDisciplineSheetOpen] = useState(false)
 
+  // ── AI-DEPTH-03: Aerobic Trend card ────────────────────────────────────
+  // Fetched lazily on CoachScreen mount (same pattern as race-readiness / phase-summary).
+  // Lazy because it involves an AI call (~500ms); pre-fetching in the DashboardClient
+  // Promise.all would slow every app load for a feature that only shows on Coach.
+  const [trendCardData, setTrendCardData] = useState<{
+    state: 'live'
+    earlierMonth: string; earlierHr: number; nowHr: number
+    cohortSize: number; windowMonths: number; gloss?: string
+  } | { state: 'pending' } | null>(null)
+  const [trendCardLoading, setTrendCardLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchTrend() {
+      // Derive the anchor distance from the plan's long-run sessions.
+      // Median of all planned long-run distances; returns null when no long runs exist.
+      const longRunDistances: number[] = []
+      for (const week of plan.weeks) {
+        const sessions = (week as any).sessions ?? {}
+        for (const s of Object.values(sessions)) {
+          if ((s as any)?.type === 'long' && (s as any)?.distance_km) {
+            longRunDistances.push((s as any).distance_km as number)
+          }
+        }
+      }
+      if (!longRunDistances.length) {
+        setTrendCardData({ state: 'pending' })
+        setTrendCardLoading(false)
+        return
+      }
+      longRunDistances.sort((a, b) => a - b)
+      const anchorKm = longRunDistances[Math.floor(longRunDistances.length / 2)]
+
+      try {
+        const params = new URLSearchParams({
+          session_type: 'long',
+          distance_km:  String(anchorKm),
+          window_months: '6',
+          include_gloss: 'true',
+        })
+        const res = await authedFetch(`/api/coaching/trend?${params}`)
+        if (!res.ok) { setTrendCardData({ state: 'pending' }); return }
+        const data = await res.json()
+        const trend = data.trend
+        if (!trend || !trend.hrIsTrending) {
+          setTrendCardData({ state: 'pending' })
+          return
+        }
+        const first = trend.buckets[0]
+        const last  = trend.buckets[trend.buckets.length - 1]
+        const cohortSize = trend.buckets.reduce((s: number, b: any) => s + b.cohortSize, 0)
+        setTrendCardData({
+          state:        'live',
+          earlierMonth: first.shortLabel,
+          earlierHr:    first.avgHr ?? 0,
+          nowHr:        last.avgHr  ?? 0,
+          cohortSize,
+          windowMonths: trend.windowMonths,
+          gloss:        data.gloss,
+        })
+      } catch {
+        setTrendCardData({ state: 'pending' })
+      } finally {
+        setTrendCardLoading(false)
+      }
+    }
+    void fetchTrend()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // fire once on CoachScreen mount — data is stable for the session
+
   // ── Option E: first-open coach intro card ───────────────────────────
   // One-time card that sets the user's mental model of the AI coach.
   // Persisted in localStorage so it survives tab changes and reloads.
@@ -7358,6 +7428,25 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             ) : null}
           </div>
         )}
+
+        {/* ── AI-DEPTH-03: AEROBIC TREND CARD ──────────────────────────
+            Persists above the weekly report — the receipt for zone discipline.
+            Skeleton while loading; live/pending based on trend engine output.
+            No locked state here — CoachScreen is already paid-gated upstream. */}
+        {trendCardLoading
+          ? <TrendCard state="skeleton" />
+          : trendCardData?.state === 'live'
+          ? <TrendCard
+              state="live"
+              earlierMonth={trendCardData.earlierMonth}
+              earlierHr={trendCardData.earlierHr}
+              nowHr={trendCardData.nowHr}
+              cohortSize={trendCardData.cohortSize}
+              windowMonths={trendCardData.windowMonths}
+              gloss={trendCardData.gloss}
+            />
+          : <TrendCard state="pending" />
+        }
 
         {/* ── 3. AI WEEKLY REPORT — CoachNoteBlock amber pattern ─────── */}
         <div style={{
