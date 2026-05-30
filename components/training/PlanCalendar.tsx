@@ -87,6 +87,10 @@ interface Props {
 
 export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true, units = 'km', preferredMetric = 'distance', sessionMetricOverrides = {} }: Props) {
   const [showPast, setShowPast] = useState(false)
+  // PLAN-STRIP-EXPAND: single Later-week may be expanded into a full WeekCard
+  // for move/swap. State held here so navigating away resets — option-value,
+  // not use-value, in the brand sense (the tap-to-reveal IS the friction).
+  const [expandedLaterWeek, setExpandedLaterWeek] = useState<number | null>(null)
   const supabase = createClient()
 
   const currentWeekIndex = getCurrentWeekIndex(weeks)
@@ -249,7 +253,48 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
       {laterWeeks.length > 0 && (
         <>
           <PlanSectionLabel right={`${laterWeeks.length} week${laterWeeks.length !== 1 ? 's' : ''}`}>Later</PlanSectionLabel>
-          {laterWeeks.map(w => renderStrip(w, false))}
+          {laterWeeks.map(w => {
+            // PLAN-STRIP-EXPAND: when this Later week is the currently-expanded
+            // one, replace the strip with a full WeekCard preceded by a single
+            // brand-restraint eyebrow ("LATER — STILL FLEXIBLE"). Tapping the
+            // eyebrow collapses. Single-week expansion at a time.
+            if (expandedLaterWeek === w.weekNum) {
+              return (
+                <div key={`expanded-${w.weekNum}`} style={{ display: 'flex', flexDirection: 'column', gap: '8px', animation: 'vetra-fade-in 0.18s ease-out' }}>
+                  <button
+                    onClick={() => setExpandedLaterWeek(null)}
+                    aria-label="Collapse week"
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      width: '100%', padding: '0 4px',
+                      background: 'none', border: 'none', cursor: 'pointer',
+                    }}
+                  >
+                    <span style={{
+                      fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+                      color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                    }}>Later — still flexible</span>
+                    <span style={{
+                      fontFamily: 'var(--font-ui)', fontSize: '12px',
+                      color: 'var(--mute)', lineHeight: 1,
+                    }} aria-hidden>⌃</span>
+                  </button>
+                  {renderWeek(w)}
+                </div>
+              )
+            }
+            return (
+              <WeekStripCard
+                key={`strip-${w.weekNum}`}
+                week={w.week}
+                weekNum={w.weekNum}
+                completions={Object.values(allCompletions[w.weekNum] ?? {})}
+                units={units}
+                isPast={false}
+                onTap={() => setExpandedLaterWeek(prev => prev === w.weekNum ? null : w.weekNum)}
+              />
+            )
+          })}
         </>
       )}
     </div>
@@ -725,15 +770,27 @@ function WeekStripCard({ week, weekNum, completions, units, isPast = false, onTa
           {!isRace && (week as any).type === 'deload' && <span style={{ color: 'var(--mute)' }}> · deload</span>}
           {!isRace && week.label && phase === 'peak' && <span style={{ color: 'var(--mute)' }}> · peak</span>}
         </div>
-        {headerKm > 0 && (
-          <div style={{
-            fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 700,
-            color: isRace ? 'var(--s-race)' : 'var(--ink-2)',
-            fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em',
-          }}>
-            {formatDistance(headerKm, units, { exact: isRace })}
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+          {headerKm > 0 && (
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 700,
+              color: isRace ? 'var(--s-race)' : 'var(--ink-2)',
+              fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em',
+            }}>
+              {formatDistance(headerKm, units, { exact: isRace })}
+            </div>
+          )}
+          {onTap && (
+            // PLAN-STRIP-EXPAND affordance: chevron signals the strip is tappable.
+            // No microcopy — the glyph is the message; instructional text would
+            // breach the "no chrome" rule. Only present when `onTap` is provided
+            // (Later weeks), so past-week read-only strips stay glyph-free.
+            <span aria-hidden style={{
+              fontFamily: 'var(--font-ui)', fontSize: '12px',
+              color: 'var(--mute)', lineHeight: 1,
+            }}>⌄</span>
+          )}
+        </div>
       </div>
       {/* 7-day status strip */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>

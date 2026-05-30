@@ -936,8 +936,13 @@ Compressed weekly summary used on the Plan screen for past weeks (when expanded)
 - "Later" weeks (≥3 weeks ahead) — keeps the current + next week as full WeekCards, compresses the rest
 - NOT used for the current or next week — those carry the move/swap interaction and need the full WeekCard
 
-**Limitation:**
-- Strip cards are read-only. Move/swap requires the full WeekCard (`Pattern: WeekCard` in `components/training/PlanCalendar.tsx`). Tap-to-expand (PLAN-STRIP-EXPAND, backlog) will unlock move/swap on Later weeks when scoped.
+**Later-week tap-to-expand (PLAN-STRIP-EXPAND, shipped 2026-05-30):**
+- Later-week strips render a `⌄` chevron in the header when `onTap` is provided and become tappable
+- Tapping replaces the strip with a full `WeekCard` (full day rows, move/swap interaction enabled) preceded by a single brand-restraint eyebrow `LATER — STILL FLEXIBLE`
+- Single-week expansion at a time — state `expandedLaterWeek: number | null` held in `PlanCalendar`
+- Tapping the eyebrow collapses; navigating away resets (state is component-local)
+- Past-week strips remain read-only (`onTap` is never passed) — the chevron is the affordance, and read-only past data has no use for it
+- Motion: `vetra-fade-in 0.18s ease-out` on the expanded wrapper; no spinner, no height-morph
 
 Reference: `components/training/PlanCalendar.tsx` → `WeekStripCard`.
 
