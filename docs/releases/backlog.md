@@ -130,8 +130,6 @@ After Vercel deploy, verify with agent-browser:
 
 ### Plan screen
 
-- 🔲 **PLAN-STRIP-EXPAND — Tap-to-expand WeekStripCard on Plan screen** *(scoped 2026-05-14, deferred from PLAN-REDESIGN-01)* — strip cards in the "Later" section are currently read-only. Move/swap is restricted to Now + Next weeks (the typical adjustment window). For users who need to move sessions in a Later week (e.g. planned trip 4 weeks out), add tap-to-expand: tap a strip card → it morphs inline into a full `<WeekCard>` with day rows, move/swap interactions. Tap the header again to collapse. State: `expandedLaterWeek: number \| null` in `PlanCalendar.tsx` (single-week expansion at a time keeps the UI predictable). Tier: FREE. Effort: S (~½ day). Dependency: none — additive to PLAN-REDESIGN-01.
-
 ### Review 2026-05-23
 
 *Full execution spec: `docs/releases/review-2026-05-23.md`. Strava-resilience constraint applies to all items — every surface degrades silently to HealthKit-only data on day one and absorbs Strava when approved (no redesign). Items ordered by ship sequence.*
