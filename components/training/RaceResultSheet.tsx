@@ -133,7 +133,10 @@ export default function RaceResultSheet({
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 200,
+        // zIndex must sit ABOVE the bottom nav bar (zIndex 3000 in
+        // DashboardClient) — otherwise the fixed nav floats over the sheet and
+        // its scrim, reading as the nav "pulling off the bottom" on scroll.
+        position: 'fixed', inset: 0, zIndex: 4000,
         background: 'rgba(26,26,26,0.40)',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         animation: 'vetra-fade-in 0.18s ease-out',
@@ -224,7 +227,9 @@ export default function RaceResultSheet({
                 background: 'var(--bg-soft)',
                 border: '1px solid var(--line)',
                 borderRadius: '10px',
-                fontFamily: 'var(--font-ui)', fontSize: '15px', color: 'var(--ink)',
+                // 16px (not 15) — iOS zooms any focused input below 16px, and
+                // the maximum-scale=1 viewport then traps the user zoomed in.
+                fontFamily: 'var(--font-ui)', fontSize: '16px', color: 'var(--ink)',
                 outline: 'none', boxSizing: 'border-box',
               }}
             />
@@ -274,7 +279,8 @@ export default function RaceResultSheet({
                 background: 'var(--bg-soft)',
                 border: '1px solid var(--line)',
                 borderRadius: '10px',
-                fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink)',
+                // 16px — see finish-time note: anything smaller triggers the iOS zoom trap.
+                fontFamily: 'var(--font-ui)', fontSize: '16px', color: 'var(--ink)',
                 lineHeight: 1.5, outline: 'none', boxSizing: 'border-box',
               }}
             />
@@ -376,7 +382,8 @@ function AdvancedField({
           background: 'var(--bg-soft)',
           border: '1px solid var(--line)',
           borderRadius: '10px',
-          fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)',
+          // 16px — see finish-time note: anything smaller triggers the iOS zoom trap.
+          fontFamily: 'var(--font-ui)', fontSize: '16px', color: 'var(--ink)',
           lineHeight: 1.5, outline: 'none', boxSizing: 'border-box',
         }}
       />

@@ -10,7 +10,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
-import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
@@ -18,7 +17,6 @@ import { savePlanForUser } from '@/lib/plan'
 import type { Plan } from '@/types/plan'
 
 export async function POST(req: NextRequest) {
-  const supabase      = createClient()
   const serviceClient = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -55,8 +53,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Cannot revert — status is '${row.status}'` }, { status: 409 })
   }
 
-  // Restore the original plan
-  await savePlanForUser(user.id, row.original_plan_json as Plan, supabase)
+  // Restore the original plan via the SERVICE client — this route authenticates
+  // off the Bearer token, so the cookie session isn't available server-side on
+  // native; a cookie-bound write hits RLS with no session and silently no-ops.
+  await savePlanForUser(user.id, row.original_plan_json as Plan, serviceClient)
 
   // Mark as reverted
   await serviceClient

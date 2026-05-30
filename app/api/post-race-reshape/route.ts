@@ -11,7 +11,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
-import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
@@ -28,7 +27,6 @@ const AI_PROMPT_VERSION = '1.0'
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 
 export async function POST(req: NextRequest) {
-  const supabase      = createClient()
   const serviceClient = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -51,7 +49,22 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 1. Fetch plan ────────────────────────────────────────────────────────────
-  const plan = await fetchPlanForUser(user.id, supabase)
+  // Read/write the plan via the SERVICE client, not the cookie client: this route
+  // authenticates off the Bearer token (getUserFromRequest), but the cookie
+  // session doesn't sync to the server on native, so a cookie-bound read hits RLS
+  // with no session and returns nothing → false "No plan found". Pass the same
+  // gist/legacy fallback the client uses so a missing/un-migrated `plans` row
+  // self-heals here instead of 404ing.
+  const { data: settings } = await serviceClient
+    .from('user_settings')
+    .select('gist_url, plan_json')
+    .eq('id', user.id)
+    .single()
+
+  const plan = await fetchPlanForUser(user.id, serviceClient, {
+    gistUrl:        settings?.gist_url,
+    legacyPlanJson: settings?.plan_json as Plan | null,
+  })
   if (!plan || plan.weeks.length === 0) {
     return NextResponse.json({ error: 'No plan found' }, { status: 404 })
   }
@@ -63,7 +76,7 @@ export async function POST(req: NextRequest) {
     // No weeks remaining or all protected by future taper — no reshape available.
     // Still embed the race result on the race week and save.
     const planWithResult = embedRaceResult(plan, raceResult, raceWeekN)
-    await savePlanForUser(user.id, planWithResult, supabase)
+    await savePlanForUser(user.id, planWithResult, serviceClient)
     return NextResponse.json({ reshape_available: false, reason: 'no_remaining_weeks' })
   }
 
