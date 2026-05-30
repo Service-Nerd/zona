@@ -1,12 +1,15 @@
-// One-shot repair + dedup. Dry-run by default; pass --apply to mutate.
+// Cross-source duplicate sweep — ALL users. Dry-run by default; --apply to mutate.
 //   node scripts/cleanup-dupes.mjs            (dry run — shows what would change)
 //   node scripts/cleanup-dupes.mjs --apply    (executes)
 //
-// (1) REPAIR: re-point the Wk19/Fri completion at the 29 May Strava run whose
-//     link a manual "complete" wiped (now prevented by the saveCompletion fix).
-// (2) DEDUP:  delete HealthKit rows that duplicate a Strava run (±5min/±5%),
-//     keeping the Strava row (it carries the HR stream). Skips any HK row a
-//     session_completion still points to, so no completion is orphaned.
+// Deletes HealthKit rows (source='apple_health', strava_activity_id null) that
+// duplicate a Strava-sourced run for the SAME user (start ±5 min, distance ±5%),
+// keeping the Strava row (it carries the HR stream). Skips any HK row a
+// session_completion still points to, so no completion is orphaned.
+//
+// One-off backstop until ingest-time dedup ships (backlog "Strava as secondary
+// source"). Idempotent — safe to re-run. History: a founder-account run on
+// 2026-05-30 also repaired the Wk19/Fri link (one-off, removed from this sweep).
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 
@@ -16,57 +19,34 @@ for (const line of readFileSync(new URL('../.env.local', import.meta.url), 'utf8
 }
 
 const APPLY = process.argv.includes('--apply')
-const EMAIL = 'russell.j.shear@gmail.com'
 const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+const FIVE_MIN = 5 * 60 * 1000
 const log = (...a) => console.log(...a)
 log(APPLY ? '\n*** APPLY MODE — mutating ***' : '\n--- DRY RUN (pass --apply to execute) ---')
 
-// Resolve user.
-let userId = null
-for (let page = 1; !userId; page++) {
-  const { data, error } = await sb.auth.admin.listUsers({ page, perPage: 200 })
-  if (error) { log('auth lookup failed:', error.message); process.exit(1) }
-  userId = data.users.find(u => u.email?.toLowerCase() === EMAIL)?.id ?? null
-  if (data.users.length < 200) break
+// Candidate users: anyone with ≥1 unlinked HealthKit activity row. Paginate so
+// a large table doesn't silently truncate at the 1000-row default.
+const userIds = new Set()
+for (let from = 0; ; from += 1000) {
+  const { data, error } = await sb.from('strava_activities')
+    .select('user_id').eq('source', 'apple_health').is('strava_activity_id', null)
+    .range(from, from + 999)
+  if (error) { log('candidate query failed:', error.message); process.exit(1) }
+  for (const r of data) userIds.add(r.user_id)
+  if (data.length < 1000) break
 }
-if (!userId) { log('user not found'); process.exit(1) }
-log('user_id:', userId)
+log(`candidate users (≥1 unlinked HK row): ${userIds.size}`)
 
-// ─── (1) REPAIR Wk19/Fri ───────────────────────────────────────────────────
-log('\n=== (1) repair Wk19/Fri link ===')
-{
-  const repair = {
-    strava_activity_id:   18706532028,
-    strava_activity_name: 'Evening Run',
-    strava_activity_km:   12.1,
-    avg_hr:               141,
-    status:               'complete',
-    updated_at:           new Date().toISOString(),
-  }
-  const { data: before } = await sb.from('session_completions')
-    .select('week_n, session_day, status, strava_activity_id, avg_hr')
-    .eq('user_id', userId).eq('week_n', 19).eq('session_day', 'fri').maybeSingle()
-  log('  before:', JSON.stringify(before))
-  if (before?.strava_activity_id != null) {
-    log('  ⏭  already linked — skipping repair.')
-  } else if (APPLY) {
-    const { error } = await sb.from('session_completions').update(repair)
-      .eq('user_id', userId).eq('week_n', 19).eq('session_day', 'fri')
-    log(error ? `  ❌ ${error.message}` : `  ✅ relinked to ${repair.strava_activity_id} (avg_hr ${repair.avg_hr})`)
-  } else {
-    log('  would set →', JSON.stringify(repair))
-  }
-}
-
-// ─── (2) DEDUP HealthKit copies of Strava runs ──────────────────────────────
-log('\n=== (2) delete cross-source HK duplicates ===')
-{
-  const { data: all } = await sb.from('strava_activities')
-    .select('id, source, strava_activity_id, apple_health_uuid, start_date, distance_m, name')
+let totalDel = 0, totalProtected = 0, usersAffected = 0
+for (const userId of userIds) {
+  const { data: all, error } = await sb.from('strava_activities')
+    .select('id, source, strava_activity_id, apple_health_uuid, start_date, distance_m')
     .eq('user_id', userId)
+  if (error) { log(`  ❌ ${userId}: ${error.message}`); continue }
   const strava = all.filter(r => r.source === 'strava' && r.strava_activity_id != null)
   const hk     = all.filter(r => r.source === 'apple_health' && r.strava_activity_id == null)
-  const FIVE_MIN = 5 * 60 * 1000
+  if (!strava.length || !hk.length) continue
+
   const dupes = hk.filter(h => {
     const ht = new Date(h.start_date).getTime()
     return strava.some(s => {
@@ -75,23 +55,25 @@ log('\n=== (2) delete cross-source HK duplicates ===')
       return dt <= FIVE_MIN && dd <= 0.05
     })
   })
+  if (!dupes.length) continue
 
   // Safety: never delete an HK row a completion still points to.
   const { data: comps } = await sb.from('session_completions')
     .select('apple_health_uuid').eq('user_id', userId).not('apple_health_uuid', 'is', null)
   const referenced = new Set((comps ?? []).map(c => c.apple_health_uuid))
   const deletable = dupes.filter(d => !referenced.has(d.apple_health_uuid))
-  const protectedRows = dupes.filter(d => referenced.has(d.apple_health_uuid))
+  const protectedN = dupes.length - deletable.length
 
-  log(`  dupes found: ${dupes.length} | protected (linked to a completion): ${protectedRows.length} | to delete: ${deletable.length}`)
-  for (const d of deletable) log('  -', d.name, d.start_date, `${(d.distance_m/1000).toFixed(1)}km`, d.apple_health_uuid)
+  usersAffected++
+  totalDel += deletable.length
+  totalProtected += protectedN
+  log(`  user ${userId}: dupes ${dupes.length} | protected ${protectedN} | delete ${deletable.length}`)
 
   if (APPLY && deletable.length) {
-    const ids = deletable.map(d => d.id)
-    const { error } = await sb.from('strava_activities').delete().in('id', ids)
-    log(error ? `  ❌ ${error.message}` : `  ✅ deleted ${ids.length} rows`)
+    const { error: delErr } = await sb.from('strava_activities').delete().in('id', deletable.map(d => d.id))
+    if (delErr) log(`    ❌ delete failed: ${delErr.message}`)
   }
 }
 
-log('\n=== done ===')
+log(`\n=== ${APPLY ? 'DELETED' : 'WOULD DELETE'} ${totalDel} row(s) across ${usersAffected} user(s) | protected ${totalProtected} ===`)
 process.exit(0)
