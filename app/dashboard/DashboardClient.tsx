@@ -2679,15 +2679,28 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
       // synchronously (state updates are async — using selectedActivity alone
       // would race the next render).
       const activity = overrideActivity ?? selectedActivity
+      // Source-link fields. A bare manual "complete" (no activity selected) must
+      // NOT clobber a link that auto-match already attached (POST-RUN-01) — that
+      // wiped the Strava run + its HR off the day. So: clear the link on skip,
+      // write it when we actually have an activity, and otherwise OMIT the fields
+      // entirely so the upsert preserves whatever's already on the row.
+      const linkFields =
+        status === 'skipped'
+          ? { strava_activity_id: null, strava_activity_name: null, strava_activity_km: null, avg_hr: null }
+          : activity
+            ? {
+                strava_activity_id:   activity.id ?? null,
+                strava_activity_name: activity.name ?? null,
+                strava_activity_km:   +(activity.distance / 1000).toFixed(1),
+                avg_hr:               activity.average_heartrate ? Math.round(activity.average_heartrate) : null,
+              }
+            : {}
       await supabase.from('session_completions').upsert({
         user_id: user.id,
         week_n: weekN,
         session_day: session.key,
         status,
-        strava_activity_id: status === 'complete' ? (activity?.id ?? null) : null,
-        strava_activity_name: status === 'complete' ? (activity?.name ?? null) : null,
-        strava_activity_km: status === 'complete' ? (activity ? +(activity.distance / 1000).toFixed(1) : null) : null,
-        avg_hr: status === 'complete' ? (activity?.average_heartrate ? Math.round(activity.average_heartrate) : null) : null,
+        ...linkFields,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
 
