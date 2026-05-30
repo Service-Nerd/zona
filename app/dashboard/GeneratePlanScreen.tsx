@@ -11,6 +11,8 @@ import { createClient } from '@/lib/supabase/client'
 import { classifyGap, gapDays, generateFoundationBlock } from '@/lib/plan/foundationBlock'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { DurationPicker } from '@/components/shared/DurationPicker'
+import { TextField } from '@/components/shared/TextField'
+import { Chip } from '@/components/shared/Chip'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -126,25 +128,21 @@ function ProgressDots({ total, current }: { total: number; current: number }) {
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
+// Thin wrapper over the canonical TextField — kept so the wizard's many call
+// sites stay unchanged while the actual control is the shared primitive.
 function WizardInput({ value, onChange, placeholder, type = 'text', min, max }: {
   value: string; onChange: (v: string) => void; placeholder?: string
-  type?: string; min?: number; max?: number
+  type?: 'text' | 'number' | 'date'; min?: number; max?: number
 }) {
   return (
-    <input
-      type={type}
+    <TextField
       value={value}
-      onChange={e => onChange(e.target.value)}
+      onChange={onChange}
+      type={type}
       placeholder={placeholder}
       min={min}
       max={max}
-      style={{
-        width: '100%', boxSizing: 'border-box',
-        background: 'var(--bg-soft)', border: '1px solid var(--line)',
-        borderRadius: 'var(--radius-md)', padding: '14px 16px',
-        fontFamily: 'var(--font-ui)', fontSize: '17px',
-        color: 'var(--ink)', outline: 'none',
-      }}
+      inputMode={type === 'number' ? 'numeric' : undefined}
     />
   )
 }
@@ -197,25 +195,6 @@ function OptionCard({ label, sub, active, onClick, locked, lockLabel }: {
         )}
       </div>
       {lockLabel && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700, color: 'var(--moss)', letterSpacing: '0.08em', marginTop: '2px', flexShrink: 0 }}>{lockLabel}</span>}
-    </button>
-  )
-}
-
-// Compact chip toggle (used for benchmark distances, days-off circles)
-function Chip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: '10px 18px', borderRadius: 'var(--radius-md)',
-        border: `1px solid ${active ? 'var(--moss)' : 'var(--line)'}`,
-        background: active ? 'var(--moss-soft)' : 'var(--card)',
-        color: active ? 'var(--moss)' : 'var(--ink-2)',
-        fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: active ? 600 : 400,
-        cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
-      }}
-    >
-      {label}
     </button>
   )
 }

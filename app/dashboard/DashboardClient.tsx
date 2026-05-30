@@ -21,6 +21,8 @@ import { Wordmark } from '@/components/ui/Wordmark'
 import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
 import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
 import ZoneRings, { ZoneRingsSkeleton } from '@/components/shared/ZoneRings'
+import { TextField } from '@/components/shared/TextField'
+import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import PlanArc from '@/components/shared/PlanArc'
 import RPEScale from '@/components/shared/RPEScale'
 import SessionCard from '@/components/shared/SessionCard'
@@ -8654,16 +8656,6 @@ function HRZonesSection({ restingHR, maxHR, dob, onSave }: {
     letterSpacing: '0.08em', marginBottom: '6px', display: 'block',
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', background: 'var(--bg)',
-    border: '0.5px solid var(--border-col)', borderRadius: '8px',
-    padding: '11px 36px 11px 12px', color: 'var(--text-primary)',
-    // 16px — iOS zooms any focused input below 16px and the maximum-scale=1
-    // viewport then traps the user zoomed in.
-    fontFamily: 'var(--font-ui)', fontSize: '16px',
-    outline: 'none', boxSizing: 'border-box',
-  }
-
   return (
     <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
 
@@ -8681,19 +8673,13 @@ function HRZonesSection({ restingHR, maxHR, dob, onSave }: {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
           <div>
             <label style={labelStyle}>Resting HR</label>
-            <div style={{ position: 'relative' }}>
-              <input type="number" inputMode="numeric" placeholder="48" value={rhr}
-                onChange={e => setRhr(e.target.value)} style={inputStyle} />
-              <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)' }}>bpm</span>
-            </div>
+            <TextField type="number" inputMode="numeric" placeholder="48" unit="bpm"
+              value={rhr} onChange={setRhr} ariaLabel="Resting heart rate" />
           </div>
           <div>
             <label style={labelStyle}>Max HR</label>
-            <div style={{ position: 'relative' }}>
-              <input type="number" inputMode="numeric" placeholder="188" value={mhr}
-                onChange={e => setMhr(e.target.value)} style={inputStyle} />
-              <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)' }}>bpm</span>
-            </div>
+            <TextField type="number" inputMode="numeric" placeholder="188" unit="bpm"
+              value={mhr} onChange={setMhr} ariaLabel="Max heart rate" />
           </div>
         </div>
         {showEstHint && (
@@ -8812,16 +8798,6 @@ function ProfileSection({ firstName, lastName, email, onSave }: {
     setTimeout(() => setSaved(false), 2000)
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', background: 'var(--bg)',
-    border: '0.5px solid var(--border-col)', borderRadius: '8px',
-    padding: '11px 12px', color: 'var(--text-primary)',
-    // 16px — iOS zooms any focused input below 16px and the maximum-scale=1
-    // viewport then traps the user zoomed in.
-    fontFamily: 'var(--font-brand)', fontSize: '16px',
-    outline: 'none', boxSizing: 'border-box',
-  }
-
   const labelStyle: React.CSSProperties = {
     fontFamily: 'var(--font-ui)', fontSize: '10px',
     color: 'var(--text-muted)', textTransform: 'uppercase',
@@ -8833,23 +8809,16 @@ function ProfileSection({ firstName, lastName, email, onSave }: {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
         <div>
           <label style={labelStyle}>First name</label>
-          <input type="text" placeholder="Russell" value={fn} onChange={e => setFn(e.target.value)} style={inputStyle} />
+          <TextField type="text" placeholder="Russell" value={fn} onChange={setFn} autoComplete="given-name" />
         </div>
         <div>
           <label style={labelStyle}>Last name</label>
-          <input type="text" placeholder="Shear" value={ln} onChange={e => setLn(e.target.value)} style={inputStyle} />
+          <TextField type="text" placeholder="Shear" value={ln} onChange={setLn} autoComplete="family-name" />
         </div>
       </div>
       <div>
         <label style={labelStyle}>Email</label>
-        <input
-          type="email"
-          value={email}
-          readOnly
-          tabIndex={-1}
-          aria-readonly="true"
-          style={{ ...inputStyle, background: 'var(--bg-soft)', color: 'var(--text-muted)', cursor: 'default' }}
-        />
+        <TextField type="email" value={email} onChange={() => {}} readOnly />
       </div>
       <button
         onClick={handleSave}
@@ -9158,12 +9127,13 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.55 }}>Distance units</div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>Pace brackets and distances</div>
             </div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {(['km', 'mi'] as const).map(u => (
-                <button key={u} onClick={() => onUnitsChange(u)} style={{ borderRadius: '10px', padding: '5px 12px', border: `1px solid ${preferredUnits === u ? 'var(--moss)' : 'var(--line)'}`, background: preferredUnits === u ? 'var(--moss-soft)' : 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', color: preferredUnits === u ? 'var(--moss)' : 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  {u}
-                </button>
-              ))}
+            <div style={{ width: '108px', flexShrink: 0 }}>
+              <SegmentedControl
+                ariaLabel="Distance units"
+                value={preferredUnits}
+                onChange={onUnitsChange}
+                options={[{ value: 'km', label: 'KM' }, { value: 'mi', label: 'MI' }]}
+              />
             </div>
           </div>
           {/* Session display */}
@@ -9172,12 +9142,13 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.55 }}>Session display</div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>Default metric on session cards</div>
             </div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {(['distance', 'duration'] as const).map(m => (
-                <button key={m} onClick={() => onMetricChange(m)} style={{ borderRadius: '10px', padding: '5px 12px', border: `1px solid ${preferredMetric === m ? 'var(--moss)' : 'var(--line)'}`, background: preferredMetric === m ? 'var(--moss-soft)' : 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', color: preferredMetric === m ? 'var(--moss)' : 'var(--mute)', textTransform: 'capitalize', letterSpacing: '0.04em' }}>
-                  {m}
-                </button>
-              ))}
+            <div style={{ width: '168px', flexShrink: 0 }}>
+              <SegmentedControl
+                ariaLabel="Session display metric"
+                value={preferredMetric}
+                onChange={onMetricChange}
+                options={[{ value: 'distance', label: 'Distance' }, { value: 'duration', label: 'Duration' }]}
+              />
             </div>
           </div>
         </div>

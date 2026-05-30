@@ -8,6 +8,8 @@ import { createClient } from '@/lib/supabase/client'
 import { BRAND } from '@/lib/brand'
 import { NATIVE_AUTH_CALLBACK } from '@/lib/native'
 import { Wordmark } from '@/components/ui/Wordmark'
+import { TextField } from '@/components/shared/TextField'
+import { SegmentedControl } from '@/components/shared/SegmentedControl'
 
 // NATIVE_AUTH_CALLBACK is the custom URL scheme registered in
 // ios/App/App/Info.plist. Google OAuth requires SFSafariViewController on iOS
@@ -170,16 +172,6 @@ export default function LoginPage() {
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', background: 'var(--input-bg)',
-    border: '0.5px solid var(--border-col)', borderRadius: '10px',
-    padding: '12px 14px', color: 'var(--text-primary)',
-    // 16px (not 14) — iOS zooms any focused input below 16px, and the
-    // maximum-scale=1 viewport then traps the user zoomed in on first touch.
-    fontFamily: 'var(--font-ui)', fontSize: '16px',
-    outline: 'none', boxSizing: 'border-box',
-  }
-
   return (
     <div
       style={{
@@ -197,27 +189,27 @@ export default function LoginPage() {
           </div>
           <div style={{
             fontFamily: 'var(--font-ui)',
-            fontSize: '11px', color: 'var(--text-muted)',
+            fontSize: '11px', color: 'var(--mute)',
             letterSpacing: '0.12em', textTransform: 'uppercase',
           }}>{BRAND.tagline}</div>
         </div>
 
         {/* Card */}
         <div style={{
-          background: 'var(--card-bg)',
-          border: '0.5px solid var(--border-col)',
+          background: 'var(--card)',
+          border: '0.5px solid var(--line)',
           borderRadius: '16px',
           padding: '28px 24px',
         }}>
           <div style={{
             fontFamily: 'var(--font-brand)',
             fontSize: '18px', fontWeight: 500,
-            color: 'var(--text-primary)', marginBottom: '6px',
+            color: 'var(--ink)', marginBottom: '6px',
             letterSpacing: '-0.3px',
           }}>{mode === 'signin' ? 'Sign in' : 'Create account'}</div>
           <div style={{
             fontFamily: 'var(--font-ui)',
-            fontSize: '11px', color: 'var(--text-muted)',
+            fontSize: '11px', color: 'var(--mute)',
             marginBottom: '24px', lineHeight: 1.6,
           }}>{mode === 'signin' ? BRAND.signinSub : BRAND.signupSub}</div>
 
@@ -256,9 +248,9 @@ export default function LoginPage() {
             style={{
               width: '100%',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-              background: 'var(--card-bg)',
-              color: 'var(--text-primary)',
-              border: '0.5px solid var(--border-col)',
+              background: 'var(--card)',
+              color: 'var(--ink)',
+              border: '0.5px solid var(--line)',
               borderRadius: '10px',
               padding: '13px 16px',
               fontFamily: 'var(--font-ui)',
@@ -277,40 +269,35 @@ export default function LoginPage() {
 
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '20px 0' }}>
-            <div style={{ flex: 1, height: '0.5px', background: 'var(--border-col)' }} />
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>or</span>
-            <div style={{ flex: 1, height: '0.5px', background: 'var(--border-col)' }} />
+            <div style={{ flex: 1, height: '0.5px', background: 'var(--line)' }} />
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>or</span>
+            <div style={{ flex: 1, height: '0.5px', background: 'var(--line)' }} />
           </div>
 
           {/* Mode toggle */}
-          <div style={{ display: 'flex', background: 'var(--bg)', borderRadius: '8px', padding: '3px', marginBottom: '16px' }}>
-            {(['signin', 'signup'] as const).map(m => (
-              <button key={m} onClick={() => { setMode(m); setError(null); setMessage(null) }} style={{
-                flex: 1, padding: '7px',
-                background: mode === m ? 'var(--card-bg)' : 'transparent',
-                border: mode === m ? '0.5px solid var(--border-col)' : 'none',
-                borderRadius: '6px',
-                fontFamily: 'var(--font-ui)', fontSize: '11px',
-                color: mode === m ? 'var(--text-primary)' : 'var(--text-muted)',
-                letterSpacing: '0.06em', textTransform: 'uppercase',
-                cursor: 'pointer', transition: 'all 0.15s',
-              }}>
-                {m === 'signin' ? 'Sign in' : 'Sign up'}
-              </button>
-            ))}
+          <div style={{ marginBottom: '16px' }}>
+            <SegmentedControl
+              ariaLabel="Sign in or sign up"
+              value={mode}
+              onChange={m => { setMode(m); setError(null); setMessage(null) }}
+              options={[
+                { value: 'signin', label: 'Sign in' },
+                { value: 'signup', label: 'Sign up' },
+              ]}
+            />
           </div>
 
           {/* Email/password form */}
           <form onSubmit={handleEmail} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <input
+            <TextField
               type="email" placeholder="Email" required
-              value={email} onChange={e => setEmail(e.target.value)}
-              style={inputStyle}
+              autoComplete="email"
+              value={email} onChange={setEmail}
             />
-            <input
+            <TextField
               type="password" placeholder="Password" required
-              value={password} onChange={e => setPassword(e.target.value)}
-              style={inputStyle}
+              autoComplete="current-password"
+              value={password} onChange={setPassword}
             />
             {mode === 'signup' && (
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>
@@ -318,9 +305,9 @@ export default function LoginPage() {
                   type="checkbox"
                   checked={ageConfirmed}
                   onChange={e => setAgeConfirmed(e.target.checked)}
-                  style={{ marginTop: '2px', accentColor: 'var(--accent)', flexShrink: 0 }}
+                  style={{ marginTop: '2px', accentColor: 'var(--moss)', flexShrink: 0 }}
                 />
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.6 }}>
                   I confirm I am 13 years of age or older.
                 </span>
               </label>
@@ -330,7 +317,7 @@ export default function LoginPage() {
               disabled={loading || !email || !password || (mode === 'signup' && !ageConfirmed)}
               style={{
                 width: '100%', padding: '13px',
-                background: 'var(--accent)', color: 'var(--card)',
+                background: 'var(--moss)', color: 'var(--card)',
                 border: 'none', borderRadius: '10px',
                 fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500,
                 cursor: loading || !email || !password || (mode === 'signup' && !ageConfirmed) ? 'default' : 'pointer',
@@ -359,9 +346,9 @@ export default function LoginPage() {
             <div style={{
               marginTop: '12px',
               fontFamily: 'var(--font-ui)',
-              fontSize: '11px', color: 'var(--accent)',
+              fontSize: '11px', color: 'var(--moss)',
               padding: '8px 12px',
-              background: 'var(--accent-soft)',
+              background: 'var(--moss-soft)',
               borderRadius: '8px',
             }}>{message}</div>
           )}
@@ -377,7 +364,7 @@ export default function LoginPage() {
             rel="noopener noreferrer"
             style={{
               fontFamily: 'var(--font-ui)',
-              fontSize: '10px', color: 'var(--text-muted)',
+              fontSize: '10px', color: 'var(--mute)',
               opacity: 0.4, textDecoration: 'underline',
               textUnderlineOffset: '2px',
             }}
@@ -386,7 +373,7 @@ export default function LoginPage() {
           </a>
           <span style={{
             fontFamily: 'var(--font-ui)',
-            fontSize: '10px', color: 'var(--text-muted)',
+            fontSize: '10px', color: 'var(--mute)',
             opacity: 0.4,
           }}>·</span>
           <a
@@ -395,7 +382,7 @@ export default function LoginPage() {
             rel="noopener noreferrer"
             style={{
               fontFamily: 'var(--font-ui)',
-              fontSize: '10px', color: 'var(--text-muted)',
+              fontSize: '10px', color: 'var(--mute)',
               opacity: 0.4, textDecoration: 'underline',
               textUnderlineOffset: '2px',
             }}

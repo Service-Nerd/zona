@@ -1215,6 +1215,68 @@ Reference: `components/shared/NotificationRow.tsx`; `DashboardClient.tsx` → `N
 
 ---
 
+## Form Fields & Pickers
+
+The canonical user-input controls. **Never build a one-off input, toggle, chip, or time entry inline** — reach for one of these. Before this section existed, the same quantities (a time, a heart rate, an effort) were collected 2–3 different ways across screens; these primitives end that drift. Each lives in `components/shared/` and uses Warm Slate tokens only.
+
+**Match the control to the nature of the quantity** — this is the rule that decides which one to use:
+
+| Quantity | Nature | Control |
+|---|---|---|
+| Free text, email, password, name, a precise number (HR, distance) | Objective, typed | **TextField** |
+| A time — finish time, target time, duration | Objective, precise, ranged | **DurationPicker** (stepper) |
+| Effort / RPE | Subjective, low-precision | **RPEScale** (Pattern 13) |
+| One of 2–4 mutually-exclusive modes (km/mi, sign-in/up, distance/duration) | Toggle | **SegmentedControl** |
+| One (or several) of a larger set — race distances, injuries, training-age bands | Select | **Chip** |
+
+### TextField (`components/shared/TextField.tsx`)
+
+The single text/number/email/password/date input. Two rules are enforced inside it so they can never regress:
+1. **`fontSize` is locked at 16px.** iOS zooms any focused input below 16px and the `maximum-scale=1` viewport then traps the user zoomed in. This is not negotiable per-field — the primitive owns it.
+2. **Warm Slate tokens only** — `--bg-soft` fill, `--line` border, `--ink` text, `--radius-md` radius. No legacy System-B aliases.
+
+- Optional `unit` prop renders a right-aligned suffix *inside* the field (e.g. "bpm") — use this instead of an absolutely-positioned span. Unit is a suffix, never a placeholder.
+- `readOnly` switches to `--bg`/`--mute` and a default cursor (e.g. the Profile email).
+- Wrap with a `labelStyle` eyebrow above; the field carries no label itself.
+
+```tsx
+<TextField type="number" inputMode="numeric" unit="bpm" placeholder="188" value={mhr} onChange={setMhr} />
+```
+
+There is no separate "NumberStepper" — a numeric value is a `TextField type="number"` with a `unit`. The only +/− stepper is DurationPicker (time).
+
+### DurationPicker (`components/shared/DurationPicker.tsx`)
+
+The canonical time entry — hour/minute steppers, no keyboard, no format-guessing, no zoom. `showSeconds` adds a third column (default off): use it for **race finish times**, where a short race is minutes:seconds and the seconds decide a PB. Target/benchmark times stay HH:MM.
+
+- Anchor it: pre-fill from a known value (e.g. the plan's goal time) so most users *nudge* rather than enter from zero — the power of defaults applied to the highest-emotion input.
+
+```tsx
+<DurationPicker hours={h} mins={m} secs={s} onHoursChange={setH} onMinsChange={setM} onSecsChange={setS} showSeconds />
+```
+
+### SegmentedControl (`components/shared/SegmentedControl.tsx`)
+
+Contained-track toggle for 2–4 mutually-exclusive options. One idiom for login mode, km/mi, and distance/duration (previously two divergent toggle styles). Full-width by default; wrap in a fixed-width box for compact right-aligned settings rows.
+
+```tsx
+<SegmentedControl value={units} onChange={setUnits} options={[{value:'km',label:'KM'},{value:'mi',label:'MI'}]} />
+```
+
+### Chip (`components/shared/Chip.tsx`)
+
+Stateless select-chip for choosing from a set. Single-select (caller tracks one active value) or multi-select (caller tracks a Set). `--moss` border + `--moss-soft` fill when active. Used for race distances, injuries, benchmark type, training-age bands.
+
+### RPEScale (`components/shared/RPEScale.tsx`)
+
+See Pattern 13. The **only** effort control — the post-race sheet and the post-run reflect sheet both use it. Never reimplement a 1–10 grid inline.
+
+### Legacy token migration
+
+The form-control migration (2026-05-30) moved Login, Benchmark, and the Me-screen controls off System-B aliases (`--accent`, `--border-col`, `--input-bg`, `--text-*`, `--card-bg`, `--teal`) onto Warm Slate. `DashboardClient`'s non-control surfaces still carry bridged aliases by design (CLAUDE.md) — migrate them opportunistically when touched, never in a blind sweep of that file.
+
+---
+
 ## Cross-Screen Consistency Rules
 
 Every screen must honour these invariants before shipping. Check against this list when auditing.
@@ -1345,7 +1407,7 @@ Two components, one flow: (1) log the race result, (2) accept or reject the prop
 
 #### RaceResultSheet (`components/training/RaceResultSheet.tsx`)
 
-Slide-up sheet pattern (Pattern 19 keyframes). Fields: outcome picker (pb / on_target / off_target / dnf), finish time, RPE (1–10 chip grid), notes textarea, optional advanced section (what worked / broke / fueling / strategy). No close button at top — drag indicator only. Mirrored nav footer at bottom.
+Slide-up sheet pattern (Pattern 19 keyframes). Fields: outcome picker (pb / on_target / off_target / dnf), finish time (DurationPicker with `showSeconds`, pre-filled from `plan.meta.target_time`), RPE (shared RPEScale, Pattern 13), notes textarea, optional advanced section (what worked / broke / fueling / strategy). All inputs use the § Form Fields & Pickers primitives. No close button at top — drag indicator only. Mirrored nav footer at bottom.
 
 **Two CTAs:**
 - Primary: "Log result" (moss, full-width) → POST `/api/post-race-reshape` → emits `onReshapeReady` with the proposal
