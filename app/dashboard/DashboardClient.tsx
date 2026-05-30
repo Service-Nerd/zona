@@ -8635,7 +8635,9 @@ function HRZonesSection({ restingHR, maxHR, onSave }: {
     width: '100%', background: 'var(--bg)',
     border: '0.5px solid var(--border-col)', borderRadius: '8px',
     padding: '11px 36px 11px 12px', color: 'var(--text-primary)',
-    fontFamily: 'var(--font-ui)', fontSize: '15px',
+    // 16px — iOS zooms any focused input below 16px and the maximum-scale=1
+    // viewport then traps the user zoomed in.
+    fontFamily: 'var(--font-ui)', fontSize: '16px',
     outline: 'none', boxSizing: 'border-box',
   }
 
@@ -8786,7 +8788,9 @@ function ProfileSection({ firstName, lastName, email, onSave }: {
     width: '100%', background: 'var(--bg)',
     border: '0.5px solid var(--border-col)', borderRadius: '8px',
     padding: '11px 12px', color: 'var(--text-primary)',
-    fontFamily: 'var(--font-brand)', fontSize: '14px',
+    // 16px — iOS zooms any focused input below 16px and the maximum-scale=1
+    // viewport then traps the user zoomed in.
+    fontFamily: 'var(--font-brand)', fontSize: '16px',
     outline: 'none', boxSizing: 'border-box',
   }
 

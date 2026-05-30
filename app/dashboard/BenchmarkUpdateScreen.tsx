@@ -59,7 +59,9 @@ function StepInput({ value, onChange, placeholder, type = 'text', min }: {
         width: '100%', boxSizing: 'border-box',
         background: 'var(--input-bg)', border: '0.5px solid var(--border-col)',
         borderRadius: '10px', padding: '12px 14px',
-        fontFamily: 'var(--font-ui)', fontSize: '15px',
+        // 16px — iOS zooms any focused input below 16px and the maximum-scale=1
+        // viewport then traps the user zoomed in.
+        fontFamily: 'var(--font-ui)', fontSize: '16px',
         color: 'var(--text-primary)', outline: 'none',
       }}
     />

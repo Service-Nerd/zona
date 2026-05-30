@@ -174,7 +174,9 @@ export default function LoginPage() {
     width: '100%', background: 'var(--input-bg)',
     border: '0.5px solid var(--border-col)', borderRadius: '10px',
     padding: '12px 14px', color: 'var(--text-primary)',
-    fontFamily: 'var(--font-ui)', fontSize: '14px',
+    // 16px (not 14) — iOS zooms any focused input below 16px, and the
+    // maximum-scale=1 viewport then traps the user zoomed in on first touch.
+    fontFamily: 'var(--font-ui)', fontSize: '16px',
     outline: 'none', boxSizing: 'border-box',
   }
 
