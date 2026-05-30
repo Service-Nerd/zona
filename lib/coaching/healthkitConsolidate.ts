@@ -145,15 +145,24 @@ export type DedupDecision =
  * Pure decision: given the incoming HK row and existing candidate rows in the
  * same time neighbourhood, decide whether to insert it or skip it as a dup.
  *
- * Excludes the incoming row's own uuid (that's an idempotent re-sync, handled
- * by the upsert, not a duplicate). Among true matches, prefers a Strava-linked
- * row, then an HR-bearing row, as the canonical to keep. `patchHr` is true when
- * the chosen canonical lacks an HR summary but the incoming row has one.
+ * First guards the self re-sync of an already-enriched row: if this exact
+ * workout already exists with a Strava link patched on, skip — re-upserting the
+ * adapted row would null `strava_activity_id` and overwrite the higher-fidelity
+ * Strava HR with HK-sample HR. An unenriched same-uuid row falls through and is
+ * refreshed normally (insert/upsert). For cross-source matches (different uuid),
+ * prefers a Strava-linked row, then an HR-bearing row, as the canonical to keep;
+ * `patchHr` is true when that canonical lacks an HR summary but the incoming has one.
  */
 export function resolveHealthKitDuplicate(
   incoming: { appleHealthUuid: string; distanceM: number; startMs: number; hasHrSummary: boolean },
   candidates: DedupCandidate[],
 ): DedupDecision {
+  // Self re-sync of an enriched row — preserve it, don't re-upsert over the link.
+  const self = candidates.find(c => c.apple_health_uuid === incoming.appleHealthUuid)
+  if (self && self.strava_activity_id != null) {
+    return { action: 'skip', matchId: self.id, patchHr: false }
+  }
+
   const distMin = incoming.distanceM * (1 - DEDUP_DIST_TOLERANCE)
   const distMax = incoming.distanceM * (1 + DEDUP_DIST_TOLERANCE)
 

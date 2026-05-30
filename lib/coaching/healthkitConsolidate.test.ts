@@ -28,8 +28,14 @@ describe('resolveHealthKitDuplicate', () => {
     expect(resolveHealthKitDuplicate(incoming(), [])).toEqual({ action: 'insert' })
   })
 
-  it('inserts when the only candidate is the same uuid (idempotent re-sync)', () => {
-    const c = cand({ apple_health_uuid: 'INCOMING', strava_activity_id: 123 })
+  it('skips a re-sync of an already-enriched same-uuid row (preserve the Strava link)', () => {
+    // Re-upserting would null strava_activity_id + overwrite Strava HR — the bug.
+    const c = cand({ id: 'self', apple_health_uuid: 'INCOMING', strava_activity_id: 123, hasHrSummary: true })
+    expect(resolveHealthKitDuplicate(incoming({ uuid: 'INCOMING' }), [c])).toEqual({ action: 'skip', matchId: 'self', patchHr: false })
+  })
+
+  it('inserts (refreshes) a re-sync of an unenriched same-uuid row', () => {
+    const c = cand({ apple_health_uuid: 'INCOMING', strava_activity_id: null, hasHrSummary: false })
     expect(resolveHealthKitDuplicate(incoming({ uuid: 'INCOMING' }), [c]).action).toBe('insert')
   })
 
