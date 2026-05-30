@@ -48,13 +48,13 @@ export const RACE_PROJECTIONS_COPY: Record<RaceProjectionsVariant, RaceProjectio
     eyebrow: 'Race projections',
     empty: {
       heading: 'No estimate yet.',
-      bodyWithStrava:    'Add a benchmark result in Profile, or complete a few easy runs with Strava.',
-      bodyWithoutStrava: 'Add a benchmark result in Profile, or connect Strava and complete a few easy runs.',
+      bodyWithStrava:    'Add a benchmark result in Profile, or complete a few easy runs with heart rate.',
+      bodyWithoutStrava: 'Add a benchmark result in Profile, or complete a few easy runs with heart rate.',
     },
     lowConf: {
       withBenchmark:           'Log a benchmark result in Profile for a higher-confidence estimate.',
       withoutBenchmarkStrava:  'Log a benchmark result in Profile to improve accuracy.',
-      withoutBenchmarkNoStrava:'Add a benchmark in Profile, or connect Strava and complete a few easy runs.',
+      withoutBenchmarkNoStrava:'Add a benchmark in Profile, or complete a few easy runs with heart rate.',
     },
     recal: {
       body:    'Aerobic fitness has moved since plan start. Your training zones may be set too low for where you are now.',

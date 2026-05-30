@@ -3052,7 +3052,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)',
             }}
           >
-            Connect Strava or Apple Health to unlock coaching.{' '}
+            Upgrade to unlock zone coaching.{' '}
             <span style={{ color: 'var(--moss)' }}>→</span>
           </button>
         )}
@@ -6661,7 +6661,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
               Your weekly coaching report.
             </div>
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.7, margin: 0, opacity: 0.5 }}>
-              Connect Strava and run a few sessions. We'll tell you exactly what's working — and what isn't.
+              Log a few runs and we'll tell you exactly what's working — and what isn't.
             </p>
           </div>
           {/* Locked stats row */}
@@ -7094,10 +7094,10 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   // ── Score body copy ──────────────────────────────────────────────────────
   function scoreBodyCopy(score: number | null): string {
     if (score === null) {
-      // Don't mention Strava if already connected — just need more sessions with HR data
+      // DS-03: source-neutral copy — zone discipline comes from HR data, not a specific provider
       return runs?.length
         ? "Need at least two sessions with HR data this week to score."
-        : "Connect Strava in Profile to start tracking this."
+        : "Log a run with heart rate to start tracking your zone discipline."
     }
     if (score >= 80) return "Easy was easy. Hard was hard. That's the work."
     if (score >= 60) return "Getting there. A few easy sessions went a bit hard."
@@ -7381,7 +7381,10 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           return (
             <ZoneRings
               state="empty"
-              reason={stravaConnected ? 'no-data' : 'not-linked'}
+              // DS-03: reason is now based on whether we have any runs (source-agnostic),
+              // not whether Strava is specifically connected. HealthKit runs populate
+              // the same `runs` array, so 'not-linked' correctly means "no data at all".
+              reason={runs?.length ? 'no-data' : 'not-linked'}
               onConnect={onConnect}
             />
           )
@@ -7620,7 +7623,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.6, opacity: 0.75 }}>
                 {!runs?.length && !stravaTokenFailed
-                  ? 'Connect Strava in Profile to get zone and load data.'
+                  ? 'Log a run with heart rate to generate a weekly report.'
                   : 'Generate a report to see how this week is tracking.'}
               </div>
             </div>
@@ -8111,8 +8114,13 @@ function DailyPushToggleRow({ enabled, onChange, disabled = false }: {
 
 // ── STRAVA CONNECTION ROW ─────────────────────────────────────────────────
 
+// DS-03: StravaConnectionRow is gated on is_admin.
+// Strava API approval is pending — showing a Connect button that fails to all
+// non-admin users damages trust and implies Strava is required (it isn't).
+// Admins still see it for testing. Removes itself silently when is_admin=false.
 function StravaConnectionRow() {
   const [connected, setConnected] = useState<boolean | null>(null)
+  const [isAdminUser, setIsAdminUser] = useState<boolean | null>(null) // null = loading
   const [disconnecting, setDisconnecting] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const supabase = createClient()
@@ -8120,10 +8128,11 @@ function StravaConnectionRow() {
   useEffect(() => {
     async function check() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setConnected(false); return }
+      if (!user) { setConnected(false); setIsAdminUser(false); return }
       setUserId(user.id)
-      const { data } = await supabase.from('user_settings').select('strava_refresh_token').eq('id', user.id).single()
+      const { data } = await supabase.from('user_settings').select('strava_refresh_token, is_admin').eq('id', user.id).single()
       setConnected(!!(data?.strava_refresh_token))
+      setIsAdminUser(!!(data as any)?.is_admin)
     }
     check()
 
@@ -8151,7 +8160,10 @@ function StravaConnectionRow() {
     } finally { setDisconnecting(false) }
   }
 
-  const isLoading = connected === null
+  // Resolve loading: both flags must be non-null before rendering anything.
+  const isLoading = connected === null || isAdminUser === null
+  // Non-admins never see the Strava row (Strava API approval pending — DS-03).
+  if (!isLoading && !isAdminUser) return null
 
   return (
     <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>

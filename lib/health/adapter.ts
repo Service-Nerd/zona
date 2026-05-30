@@ -63,6 +63,7 @@ export interface HealthKitActivityRow {
   hr_pct_z2:            number | null
   hr_pct_z3:            number | null
   hr_pct_z4_5:          number | null
+  calories_kcal:        number | null  // DS-02: active energy burned per workout
   raw_payload:          HealthKitWorkoutPayload
   processed_at:         string
 }
@@ -114,6 +115,9 @@ export function adaptHealthKitWorkout(
     hr_pct_z2:            summary?.histogram.pctZ2   ?? null,
     hr_pct_z3:            summary?.histogram.pctZ3   ?? null,
     hr_pct_z4_5:          summary?.histogram.pctZ4_5 ?? null,
+    calories_kcal:        payload.totalEnergyKcal != null
+                            ? Math.round(payload.totalEnergyKcal * 10) / 10
+                            : null,
     raw_payload:          payload,
     processed_at:         new Date().toISOString(),
   }

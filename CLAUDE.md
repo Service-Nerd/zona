@@ -228,6 +228,15 @@ All colour MUST come from CSS custom properties in `globals.css`. Nothing hardco
 - Values containing `#` wrapped in double quotes get corrupted
 - Always verify output after bulk replacements
 
+### Data Sources — System of Record (ADR-011)
+
+- **`strava_activities` is the source-agnostic activity log**, not a Strava-specific table. The `source` column (`'strava' | 'apple_health' | 'manual'`) discriminates. Never filter queries by `source = 'strava'` without explicit justification.
+- **No paid feature requires Strava.** iOS users with Apple Watch get full coaching value via HealthKit alone. Strava and HealthKit are co-equal sources.
+- **iOS onboarding CTAs**: HealthKit first, Strava second. Never "connect Strava" as the only or first CTA on iOS.
+- **SOR by data type**: run sessions → activity log; recovery (RHR/HRV/sleep) → `health_daily_samples` (HealthKit only); RPE/fatigue → `session_completions` (user input, never overridden by device data). Full table in ADR-011.
+- **HealthKit permissions**: every requested permission must have an active query. Current defect: `distance` requested but not queried — remove it (DS-01 in backlog).
+- **`@capgo/capacitor-health` does NOT support**: GPS routes, cadence, stride, power, VO2max. Don't promise features that need these without a custom Swift bridge.
+
 ### Strava OAuth
 - Multi-line curl in Mac Terminal consistently fails
 - Use Hoppscotch (hoppscotch.io)
@@ -474,6 +483,7 @@ Two docs run the work pipeline. Keep them in sync:
   - ADR-008: single light theme only
   - ADR-009: config-driven plan generation *(R23 rebuild)*
   - ADR-010: session catalogue *(R23 rebuild)*
+  - ADR-011: data source doctrine — SOR by data type, source priority, no single external data dependency for paid value *(2026-05-30)*
 - Brand alignment: `docs/alignment/brand-product-alignment.md`
 - Phase 4 decisions log: `docs/alignment/phase-4-decisions.md`
 - Phase 4 blockers log: `docs/alignment/phase-4-blockers.md`

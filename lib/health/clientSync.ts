@@ -107,7 +107,9 @@ export async function requestHealthKitAuth(): Promise<boolean> {
       'restingHeartRate',
       'heartRateVariability',
       'sleep',
-      'distance',
+      // 'distance' removed — distance comes from HKWorkout.totalDistance, not standalone
+      // samples. Requesting it here was wasted consent friction (DS-01).
+      'calories',  // active energy burn per workout — DS-02
     ],
   })
   // HealthKit can't tell us if read access was actually granted (Apple's

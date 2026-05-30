@@ -158,7 +158,7 @@ export default function RestraintCard(props: Props) {
           fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
           color: 'var(--mute)', lineHeight: 1.55, marginBottom: '14px',
         }}>
-          The score that names the medium-hard middle. Connect Strava and upgrade to start scoring.
+          The score that names the medium-hard middle. Upgrade to unlock it.
         </div>
         {props.onUpgrade && (
           <button

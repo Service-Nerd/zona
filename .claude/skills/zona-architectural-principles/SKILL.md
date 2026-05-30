@@ -504,3 +504,54 @@ Use these before making architectural decisions:
 | `docs/contracts/components/` | Component prop interfaces |
 | `globals.css` | All design tokens — always the authority |
 | `session-types.ts` | Runtime resolver — must match `docs/canonical/session-types.md` |
+| `docs/architecture/ADR-011-data-source-doctrine.md` | SOR by data type, source priority, conflict resolution, expected experience by configuration |
+
+---
+
+## 17. Data Source Invariants
+
+**Authority**: ADR-011 (Data Source Doctrine). Read that ADR before touching any data ingest, HealthKit, Strava, or coaching query code.
+
+| ID | Invariant |
+|---|---|
+| INV-DATA-001 | No paid feature may require a specific external data provider. Features degrade gracefully when data is absent; degradation is source-neutral and equally applies whether the absent source is Strava or HealthKit. |
+| INV-DATA-002 | The `strava_activities` table is the source-agnostic activity log. All coaching queries read from it without source filtering unless source-specific behaviour is explicitly justified and documented. A query that adds `WHERE source = 'strava'` without explicit justification is a defect. |
+| INV-DATA-003 | Every HealthKit permission requested in `requestHealthKitAuth()` (`lib/health/clientSync.ts`) must have a corresponding active query. Unused permissions are wasted consent friction and must be removed. Current defect: `distance` permission is requested but not queried — remove it. Current gap: `calories` (active energy) is not requested but should be — add it. |
+| INV-DATA-004 | iOS onboarding and empty states must offer HealthKit as the primary data source CTA. Strava is offered as a secondary option, not the default. Copy must never say "connect Strava" as the only or first option on iOS. |
+| INV-DATA-005 | When a coaching metric is absent (null), the UI must render a one-line explanation of why — not a blank, muted placeholder, or silent omission. Example: zone discipline null → "No HR data yet — sync a run to unlock." |
+| INV-DATA-006 | Conflict resolution when the same run arrives from multiple sources follows the priority table in ADR-011 §4. `lib/coaching/healthkitConsolidate.ts` is the single owner of dedup and merge logic. No caller implements its own conflict resolution. |
+| INV-DATA-007 | The SOR for each data type is the table in ADR-011 §3. No code may treat a different source as authoritative without updating that table and ADR-011. |
+
+### Data Source Quick Reference (SOR Summary)
+
+| Data Type | System of Record | Primary Source |
+|---|---|---|
+| Run sessions (distance, pace, duration) | Activity log (`strava_activities`) | Strava → HealthKit → Manual |
+| HR stream / HR-in-zone % | Activity log → `run_analysis` | Strava stream → HealthKit samples → Absent (neutral) |
+| Average HR per run | Activity log | Strava field → HealthKit avg of samples |
+| Aerobic efficiency (EF) | `run_analysis` (computed) | Pace + HR from activity log, source-blind |
+| Resting HR baseline | `health_daily_samples` | HealthKit only |
+| HRV baseline | `health_daily_samples` | HealthKit only |
+| Sleep duration | `health_daily_samples` | HealthKit only |
+| RPE | `session_completions` | User input only — never overridden by device data |
+| Fatigue tag | `session_completions` | User input only — never overridden by device data |
+| Plan session definitions | GitHub Gist JSON | Single source, `cache: 'no-store'` |
+| HR zones | `user_settings` (computed) | User input → Karvonen → %MaxHR → Tanaka estimate |
+
+### HealthKit Plugin Capability Boundaries
+
+The `@capgo/capacitor-health` plugin (v8.4.8) **does not support**: GPS routes, running cadence, stride length, ground contact time, running power, VO2max. These require a custom Swift bridge or plugin fork. Do not promise or build features that depend on these without first verifying the bridge exists.
+
+### Expected Experience by Configuration
+
+| User Setup | Run Analysis | Zone Discipline | Recovery Signal | Adjustment Triggers |
+|---|---|---|---|---|
+| iOS + Apple Watch + HealthKit | ✅ Full | ✅ Full | ✅ Full | ✅ All |
+| iOS + Apple Watch + Strava | ✅ Full | ✅ Full | ✅ Full | ✅ All |
+| iOS + both connected | ✅ Full (richer) | ✅ Full | ✅ Full | ✅ All |
+| iOS + no watch + Strava | ✅ Full via Strava | ✅ Full | ⚠️ HK if available | ✅ All |
+| iOS + no watch + no Strava | ⚠️ Manual only | ❌ No HR | ⚠️ RHR/HRV if phone measures | ⚠️ Load + fatigue |
+| Web/Android + Strava | ✅ Full via Strava | ✅ Full | ❌ No HealthKit | ⚠️ Load + zone + EF |
+| Web/Android + no Strava | ⚠️ Manual only | ❌ No HR | ❌ None | ⚠️ Fatigue only |
+
+Every ⚠️ or ❌ cell must have a corresponding UI state with a one-line explanation and a specific action the user can take.

@@ -329,7 +329,7 @@ export default function ZoneRings(props: Props) {
             textAlign: 'center',
           }}
         >
-          Where your week actually went — by zone. Connect Strava and upgrade to see it.
+          Where your week actually went — by zone. Upgrade to unlock it.
         </div>
         {props.onUpgrade && (
           <div style={{ marginTop: '14px', textAlign: 'center' }}>
@@ -392,7 +392,7 @@ export default function ZoneRings(props: Props) {
           }}
         >
           {linkable
-            ? 'Connect Strava or Apple Health to map your week by zone.'
+            ? 'Run with heart rate this week — your zones appear here automatically.'
             : 'No zone data this week yet. Zones come from a run with heart rate.'}
         </div>
         {linkable && props.onConnect && (
@@ -410,7 +410,7 @@ export default function ZoneRings(props: Props) {
                 cursor: 'pointer',
               }}
             >
-              Connect →
+              Allow health access →
             </button>
           </div>
         )}
