@@ -1337,6 +1337,68 @@ Canonical examples: `GeneratingCeremony.tsx`, `GeneratePlanScreen.tsx`
 
 ---
 
+### 30. PostRaceReshapeCard + RaceResultSheet
+
+**AI-DEPTH-08 — post-race reshape flow.**
+
+Two components, one flow: (1) log the race result, (2) accept or reject the proposed plan reshape.
+
+#### RaceResultSheet (`components/training/RaceResultSheet.tsx`)
+
+Slide-up sheet pattern (Pattern 19 keyframes). Fields: outcome picker (pb / on_target / off_target / dnf), finish time, RPE (1–10 chip grid), notes textarea, optional advanced section (what worked / broke / fueling / strategy). No close button at top — drag indicator only. Mirrored nav footer at bottom.
+
+**Two CTAs:**
+- Primary: "Log result" (moss, full-width) → POST `/api/post-race-reshape` → emits `onReshapeReady` with the proposal
+- Secondary: text link "Log result only, keep my plan →" → emits `onLogOnly` (logs result, no reshape)
+
+**Rules:**
+- Outcome is required before the primary CTA activates
+- Submitting state: "Checking plan…" with disabled CTA
+- Error shown inline above the footer (no toast)
+- Advanced section collapses by default — show/hide toggle with `⌄`/`⌃`
+
+#### PostRaceReshapeCard (`components/training/PostRaceReshapeCard.tsx`)
+
+TIER-DIVERGENT card. Shows the proposed reshape after `RaceResultSheet` resolves:
+
+```
+TIER-DIVERGENT — FREE:  locked state — hand-authored copy, upgrade CTA, muted left-rail
+                  PAID:  live state — AI summary (Sonnet), CoachByline (moss), 3px left-rail
+```
+
+**States (discriminated union):**
+- `skeleton` — shimmer placeholders while the reshape API is in flight
+- `live` — AI summary + stat chips (N weeks, M sessions) + Accept + Dismiss
+- `locked` — non-paid users, upgrade CTA + dismiss
+- *(no 'error' state — on API failure the route falls back to rule-engine voice)*
+
+**Live state anatomy:**
+```
+[3px moss rail]
+[CoachByline: "POST-RACE RESHAPE"]
+[AI summary — 2-3 sentences, Sonnet voice]
+[Stat chips: "N weeks updated · M sessions changed"]
+[Accept — update my plan]      ← full-width moss, 46px
+[Keep my plan as-is →]         ← text link, muted
+```
+
+**Motion:** `vetra-fade-in` on card mount.
+
+**On Accept:** calls POST `/api/post-race-reshape/confirm` with `reshape_id`. Route returns `reshaped_plan_json`. Card calls `onAccepted(reshapedPlan)` so parent can update plan state without re-fetching.
+
+**On Dismiss (both states):** calls `onDismiss()`. Parent sets `reshapeDismissedAt` (session-scoped — prompt doesn't reappear until next app boot).
+
+**Provenance:**
+- CoachByline on the AI summary — Sonnet output, provenance honesty required
+- No CoachByline on the locked state (hand-authored copy)
+- Stats row: formula-derived (weeks_affected.length, sessions_modified from rule engine) — no AIMark
+
+**Where it renders:** TodayScreen, above the PendingAdjustmentBanner, inside the content padding area. Triggered when `currentWeekIndex > raceWeekIndex && !raceWeek.result_embedded && !reshapeDismissedAt`.
+
+Reference: `components/training/PostRaceReshapeCard.tsx`, `components/training/RaceResultSheet.tsx`. Routes: `POST /api/post-race-reshape`, `POST /api/post-race-reshape/confirm`, `POST /api/post-race-reshape/revert`. Prompt: `lib/coaching/prompts/postRaceReshape.ts`. Engine: `lib/coaching/postRaceReshape.ts`.
+
+---
+
 ## What Not to Build
 
 | Avoid | Use instead |

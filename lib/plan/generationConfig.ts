@@ -64,6 +64,32 @@ export const GENERATION_CONFIG = {
   // full taper weeks BEFORE race week).
   RACE_WEEK_VOLUME_PCT: 18,
 
+  // ── Post-race recovery (CoachingPrinciples §62) ─────────────────────────────
+  // After a planned race, the engine reshapes remaining plan weeks with a
+  // structured recovery curve before returning to quality training.
+  //
+  // quality_blackout_weeks: weeks after race where ALL quality/interval/tempo/
+  //   long sessions are converted to easy recovery (no stimulus, full absorption).
+  //   The body cannot distinguish genius from stupidity when this tired.
+  //
+  // volume_curve_pct: target weekly volume as % of plan peak weekly_km,
+  //   week-by-week through the recovery window. Index 0 = race_week+1.
+  //   Sessions beyond the curve resume normally; the AI adds coach notes on
+  //   the first quality session back.
+  //
+  // Principle: volume drops sharply at week+1, recovers conservatively.
+  // Quality sessions are the last thing to return — they require absorbed,
+  // rested legs to do adaptive work. Returning too fast after a marathon
+  // is how stress fractures happen. (CoachingPrinciples §62.)
+  POST_RACE_RECOVERY_BY_DISTANCE: {
+    '5K':       { quality_blackout_weeks: 1, volume_curve_pct: [30, 55] },
+    '10K':      { quality_blackout_weeks: 1, volume_curve_pct: [30, 55] },
+    'HM':       { quality_blackout_weeks: 1, volume_curve_pct: [25, 45, 65] },
+    'MARATHON': { quality_blackout_weeks: 2, volume_curve_pct: [20, 35, 55, 70] },
+    '50K':      { quality_blackout_weeks: 2, volume_curve_pct: [15, 30, 50, 65] },
+    '100K':     { quality_blackout_weeks: 3, volume_curve_pct: [10, 25, 40, 55, 70] },
+  } as const,
+
   // Strength sessions — flagged off until R21 ships full content.
   // When false: engine skips strength placement entirely (frees up day slots
   // for easy fillers, preventing "1 run/week" plans for low-volume runners).

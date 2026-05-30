@@ -36,6 +36,8 @@ import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { NotificationBell } from '@/components/shared/NotificationBell'
 import { NotificationRow, type NotificationItem } from '@/components/shared/NotificationRow'
 import TrendCard from '@/components/shared/TrendCard'
+import RaceResultSheet, { type ReshapeProposal } from '@/components/training/RaceResultSheet'
+import PostRaceReshapeCard from '@/components/training/PostRaceReshapeCard'
 import { composeSession } from '@/lib/plan/sessionComposer'
 import { formatDistance, sumRoundedDistance, resolveSessionMetric } from '@/lib/format'
 import { didSessionHitZone, sessionHRBand, zoneForSessionType } from '@/lib/coaching/zoneRules'
@@ -288,6 +290,14 @@ export default function DashboardClient() {
   // R30 zone drift pattern + R32 recalibration — dismiss timestamps from user_settings
   const [zoneDriftDismissedAt, setZoneDriftDismissedAt]         = useState<string | null>(null)
   const [benchmarkRecalDismissedAt, setBenchmarkRecalDismissedAt] = useState<string | null>(null)
+
+  // AI-DEPTH-08 — post-race reshape flow.
+  // showRaceResultSheet: the log-result form (slide-up)
+  // pendingReshape: proposed reshape waiting for user confirm/dismiss
+  // reshapeDismissedAt: timestamp the user dismissed the card (session-scoped)
+  const [showRaceResultSheet, setShowRaceResultSheet] = useState(false)
+  const [pendingReshape, setPendingReshape]           = useState<ReshapeProposal | null>(null)
+  const [reshapeDismissedAt, setReshapeDismissedAt]   = useState<string | null>(null)
 
   // Next session after activeSessionData — passed to SessionScreen for the "Up next" row.
   // Scans remaining days in the same week, then the first day of the next week.
@@ -1090,6 +1100,26 @@ export default function DashboardClient() {
   const currentWeekIndex = plan ? getCurrentWeekIndex(plan.weeks) : 0
   const [viewWeekIndex, setViewWeekIndex] = useState(0)
 
+  // AI-DEPTH-08 — post-race detection.
+  // raceWeekIndex: index of the race week in plan.weeks (first race found)
+  // showRacePrompt: true when the current week is after the race week and no
+  //   result has been logged yet. Free users see a locked card; paid users see live.
+  const postRaceState = (() => {
+    if (!plan) return null
+    const raceWeekIdx = plan.weeks.findIndex(
+      w => w.type === 'race' || (w as any).badge === 'race'
+    )
+    if (raceWeekIdx < 0) return null
+    const isPostRace = currentWeekIndex > raceWeekIdx
+    const hasResult  = !!(plan.weeks[raceWeekIdx] as any)?.result_embedded
+    if (!isPostRace || hasResult) return null
+    return {
+      raceWeekN:  raceWeekIdx + 1,
+      raceName:   plan.meta.race_name ?? '',
+    }
+  })()
+  const showRacePrompt = !!postRaceState && !reshapeDismissedAt && !pendingReshape
+
   // Update to current week once plan loads
   useEffect(() => {
     if (plan) {
@@ -1340,7 +1370,7 @@ export default function DashboardClient() {
     <div style={s}>
 
       <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(72px + max(16px, env(safe-area-inset-bottom, 0px)))', overscrollBehavior: 'none' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={() => { setPendingReshape(null); setReshapeDismissedAt(new Date().toISOString()) }} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} />}
         {screen === 'coach'    && (hasPaidAccess
           ? (() => {
@@ -1573,6 +1603,24 @@ export default function DashboardClient() {
         />
       )}
 
+
+      {/* ── AI-DEPTH-08: Race result sheet (global overlay) ── */}
+      {showRaceResultSheet && postRaceState && (
+        <RaceResultSheet
+          raceWeekN={postRaceState.raceWeekN}
+          raceName={postRaceState.raceName}
+          onClose={() => setShowRaceResultSheet(false)}
+          onReshapeReady={(proposal) => {
+            setPendingReshape(proposal)
+            setShowRaceResultSheet(false)
+          }}
+          onLogOnly={(_result) => {
+            // Logged without reshape — dismiss the prompt
+            setReshapeDismissedAt(new Date().toISOString())
+            setShowRaceResultSheet(false)
+          }}
+        />
+      )}
 
       {/* ── Bottom nav bar ── */}
       {(() => {
@@ -4896,7 +4944,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked }: {
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, onLogRaceResult, onReshapeAccepted, onReshapeDismissed }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   sessionMetricOverrides: Record<string, 'distance' | 'duration'>
@@ -4928,6 +4976,12 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   /** NOTIF-01: unread count + opener for the bell on the wordmark row. */
   unreadNotifications?: number
   onOpenNotifications?: () => void
+  /** AI-DEPTH-08: post-race prompt and reshape card. */
+  showRacePrompt?: boolean
+  pendingReshape?: ReshapeProposal | null
+  onLogRaceResult?: () => void
+  onReshapeAccepted?: (plan: Plan) => void
+  onReshapeDismissed?: () => void
 }) {
   const currentWeek = plan.weeks[weekIndex]
   const weekNum = weekIndex + 1
@@ -5558,6 +5612,65 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 Bring Kit back →
               </span>
             </button>
+          </div>
+        )}
+
+        {/* AI-DEPTH-08: post-race reshape prompt + card ───────────────────
+            Shown when the race week is in the past and no result logged yet.
+            Priority order: pendingReshape card > prompt button > nothing. */}
+        {pendingReshape && (
+          <div style={{ marginBottom: '16px', animation: 'vetra-fade-in 0.2s ease-out' }}>
+            <PostRaceReshapeCard
+              state="live"
+              reshapeId={pendingReshape.reshapeId}
+              summary={pendingReshape.summary}
+              weeksAffected={pendingReshape.weeksAffected}
+              sessionsModified={pendingReshape.sessionsModified}
+              distanceBucket={pendingReshape.distanceBucket}
+              onAccepted={(reshapedPlan) => {
+                // PostRaceReshapeCard called /api/post-race-reshape/confirm which
+                // saved the plan to Supabase and returned the reshaped_plan_json.
+                // We set local state directly to avoid a round-trip fetch.
+                onReshapeAccepted?.(reshapedPlan)
+              }}
+              onDismiss={() => onReshapeDismissed?.()}
+            />
+          </div>
+        )}
+
+        {showRacePrompt && !pendingReshape && (
+          <div style={{ marginBottom: '16px' }}>
+            {hasPaidAccess ? (
+              <button
+                onClick={() => onLogRaceResult?.()}
+                style={{
+                  width: '100%', padding: '14px 16px',
+                  background: 'var(--card)',
+                  border: '1.5px solid var(--moss)',
+                  borderRadius: '14px', cursor: 'pointer', textAlign: 'left',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                }}
+              >
+                <div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--moss)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '3px' }}>
+                    Race done
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2 }}>
+                    How did it go?
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '2px' }}>
+                    Log your result · Zonna will adjust your plan
+                  </div>
+                </div>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', color: 'var(--moss)', flexShrink: 0 }}>→</span>
+              </button>
+            ) : (
+              <PostRaceReshapeCard
+                state="locked"
+                onUpgrade={() => onUpgrade?.()}
+                onDismiss={() => onReshapeDismissed?.()}
+              />
+            )}
           </div>
         )}
 

@@ -1015,8 +1015,48 @@ When a runner logs a tough session and writes a reflection, the AI's job is refr
 
 ---
 
+## 61. Limiter hypothesis — naming the physiological cause
+
+Post-session analysis names ONE most-likely physiological limiter when the signal is strong enough to defend. The hypothesis is specific ("heat" when temp ≥22°C + HR ≥5 bpm over ceiling) or it is not stated. Generic framings ("you were tired") without data are banned. The cause-space: heat, recovery deficit, aerobic limiter (HR drift ≥12 bpm), muscular limiter (pace fade ≥20 sec/km with flat HR), pacing error (>50% of session HR above ceiling), execution (didn't commit — >50% of hard session below floor), fueling (long-run shortfall ≥10%). If none fire, no hypothesis — "no signal → no claim" is always the correct answer when the evidence doesn't stack up.
+
+Config: `LIMITER` in `lib/coaching/constants.ts`.
+
+---
+
+## 62. Post-race recovery — structured return to training (AI-DEPTH-08)
+
+After a planned race, the remaining plan weeks are reshaped with a structured recovery curve before returning to quality training. The curve is distance-keyed.
+
+**Why this matters:** coming back too fast after a long race is the most common training error for non-elites. The body is far more compromised than it feels at day +3. For a marathon, the "3 weeks of easy before hard sessions return" rule is well-established in elite coaching practice. Violating it doesn't cause visible short-term harm (the runner feels OK); the cost arrives 6–8 weeks later as an injury, illness, or performance plateau.
+
+**Volume curve** (% of plan peak weekly_km, week-by-week post-race):
+
+| Distance | Wk +1 | Wk +2 | Wk +3 | Wk +4 | Wk +5 |
+|----------|-------|-------|-------|-------|-------|
+| 5K       | 30%   | 55%   | —     | —     | —     |
+| 10K      | 30%   | 55%   | —     | —     | —     |
+| HM       | 25%   | 45%   | 65%   | —     | —     |
+| Marathon | 20%   | 35%   | 55%   | 70%   | —     |
+| 50K      | 15%   | 30%   | 50%   | 65%   | —     |
+| 100K     | 10%   | 25%   | 40%   | 55%   | 70%   |
+
+**Quality blackout:** quality/interval/tempo/long sessions are converted to easy recovery during the first `quality_blackout_weeks` (1 for 5K–HM; 2 for marathon/50K; 3 for 100K). Quality returns only when the body can do adaptive work, not junk miles at high intensity.
+
+**Taper protection:** weeks within `TAPER_PROTECTION_WEEKS` of a future race (Race B) are never touched by the post-race reshape. The runner may still have a Race B.
+
+**Outcome-awareness:** the Sonnet enricher reads the race outcome (on_target / pb / off_target / dnf) and adjusts the coaching voice accordingly. DNF gets matter-of-fact recovery notes. PB gets an acknowledgment then moves on. The volume structure is identical regardless of outcome — the physiology doesn't care about the result.
+
+**User control:** the reshape is proposed (status: pending), not auto-applied. The runner sees the summary and must accept before the plan updates. They can reject and keep the original plan.
+
+Config: `POST_RACE_RECOVERY_BY_DISTANCE` in `lib/plan/generationConfig.ts`.
+Engine: `lib/coaching/postRaceReshape.ts`.
+Routes: `POST /api/post-race-reshape`, `POST /api/post-race-reshape/confirm`, `POST /api/post-race-reshape/revert`.
+UI: `RaceResultSheet.tsx` (log result) + `PostRaceReshapeCard.tsx` (accept/reject).
+
+---
+
 ## 56. The constitution
 
-These fifty-six principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
+These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.
