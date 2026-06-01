@@ -648,12 +648,19 @@ export default function DashboardClient() {
         setUserId(user.id)
 
         // Fetch overrides + user settings + completions in parallel
-        const [settingsRes, overridesRes, completionsRes, subRes, guidanceRes] = await Promise.all([
+        const [settingsRes, overridesRes, completionsRes, subRes, guidanceRes, pendingReshapeRes] = await Promise.all([
           supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
           supabase.from('session_guidance').select('*').order('phase', { ascending: false, nullsFirst: false }),
+          supabase.from('post_race_reshapes')
+            .select('id, summary_text, weeks_affected, sessions_modified, recovery_config_key')
+            .eq('user_id', user.id)
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
         ])
 
         // Build session_type → guidance map. Within each type, the first row
@@ -690,6 +697,20 @@ export default function DashboardClient() {
           setScreen('generate')
         } else {
           setPlan(loadedPlan)
+          // Rehydrate any pending reshape from the DB so the race prompt stays
+          // suppressed across app restarts. The result is committed to the plan
+          // only when the user confirms — until then pendingReshape is the gate.
+          if (pendingReshapeRes.data) {
+            const pr = pendingReshapeRes.data as any
+            setPendingReshape({
+              reshapeId:           pr.id,
+              summary:             pr.summary_text ?? null,
+              weeksAffected:       pr.weeks_affected ?? [],
+              sessionsModified:    pr.sessions_modified ?? 0,
+              recoveryWindowWeeks: 0,
+              distanceBucket:      pr.recovery_config_key ?? '',
+            })
+          }
         }
 
         // Trigger 3: miss detection — past days this week with a scheduled session and no completion.

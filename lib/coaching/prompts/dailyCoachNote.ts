@@ -160,7 +160,7 @@ export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
 
   const previousWeeklyBlock = input.previousWeeklyReport
     ? `
-Recent weekly coaching (use only if today connects to it — never reference gratuitously):
+Recent weekly coaching pattern (broad theme only — NEVER extract specific session names, day names, fatigue tags, or HR numbers from this block; those are last week's details, not today's facts):
 - Headline: "${input.previousWeeklyReport.headline}"
 - Body: "${input.previousWeeklyReport.body}"
 `
@@ -173,6 +173,7 @@ Your job: write ONE sentence framing today, anchored in a specific fact from bel
 Critical rules:
 - Only say "yesterday" when the fact line literally says "yesterday". For any other gap, use the day name (e.g. "Sunday's easy") or the count ("two days ago"). Never invent a day relationship that isn't in the facts.
 - The athlete may have done non-running training (e.g. strength) since their last run — only the last run is in the facts. Don't claim they ran on a day not listed below.
+- Never reference a specific session, day name, fatigue tag, or HR value from the "Recent weekly coaching pattern" block above. That block gives you a broad theme only — anchor specific claims in the facts section below.
 
 ${FEW_SHOT_EXAMPLES}
 

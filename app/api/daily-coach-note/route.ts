@@ -68,6 +68,7 @@ export async function GET(req: NextRequest) {
       .from('session_completions')
       .select('week_n, session_day, status, rpe, fatigue_tag, avg_hr, updated_at, apple_health_uuid, strava_activity_id')
       .eq('user_id', userId)
+      .order('week_n', { ascending: false })
       .order('updated_at', { ascending: false, nullsFirst: false })
       .limit(8),
     serviceSupabase
@@ -118,12 +119,14 @@ export async function GET(req: NextRequest) {
 
   const completions = completionsRes.data ?? []
 
-  // Last completed non-strength session — find, then look up type from plan to confirm
+  // Last completed non-strength session — must also reference a session that still exists
+  // in the current plan to avoid orphaned completions from old plan versions surfacing.
   const lastCompleted = completions.find((c: any) => {
     if (c.status !== 'complete') return false
     const lcWeekCheck = plan.weeks[c.week_n - 1] as any
     const lcSessionCheck = lcWeekCheck?.sessions?.[c.session_day]
-    return !EXCLUDED_SESSION_TYPES.includes(lcSessionCheck?.type)
+    if (!lcSessionCheck) return false  // skip completions whose plan session no longer exists
+    return !EXCLUDED_SESSION_TYPES.includes(lcSessionCheck.type)
   })
 
   let lastSession: any = null
@@ -160,19 +163,27 @@ export async function GET(req: NextRequest) {
     }
 
     const daysAgo = Math.max(1, Math.round((noteDateMs - actualRunMs) / 86_400_000))
-    const lastRunDayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date(actualRunMs).getUTCDay()]
-    // Match analysis row
-    const analysis = (analysisRes.data ?? []).find(
-      (a: any) => a.week_n === lastCompleted.week_n && a.session_day === lastCompleted.session_day
-    )
-    lastSession = {
-      daysAgo,
-      dayName: lastRunDayName,
-      type: lcSession?.type ?? 'run',
-      verdict: analysis?.verdict ?? null,
-      hrAboveCeilingPct: analysis?.hr_above_ceiling_pct ?? null,
-      rpe: lastCompleted.rpe ?? null,
-      fatigueTag: lastCompleted.fatigue_tag ?? null,
+
+    // Sessions older than 14 days are not useful coaching context — skip them so a
+    // stale completion (e.g. from a Strava re-sync touching an old record) can't
+    // surface as "the last session" and produce confusing day-name references.
+    if (daysAgo > 14) {
+      // leave lastSession null
+    } else {
+      const lastRunDayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date(actualRunMs).getUTCDay()]
+      // Match analysis row
+      const analysis = (analysisRes.data ?? []).find(
+        (a: any) => a.week_n === lastCompleted.week_n && a.session_day === lastCompleted.session_day
+      )
+      lastSession = {
+        daysAgo,
+        dayName: lastRunDayName,
+        type: lcSession?.type ?? 'run',
+        verdict: analysis?.verdict ?? null,
+        hrAboveCeilingPct: analysis?.hr_above_ceiling_pct ?? null,
+        rpe: lastCompleted.rpe ?? null,
+        fatigueTag: lastCompleted.fatigue_tag ?? null,
+      }
     }
   }
 
