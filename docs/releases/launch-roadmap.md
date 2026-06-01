@@ -6,6 +6,21 @@
 
 ---
 
+## ⏱ Status update — 2026-06-01
+
+Almost everything on the critical path is done. **Only two things stand between here and "submitted":**
+
+1. **Capture 10 App Store screenshots** (5 shots × 2 device sizes — 6.7" + 6.5"). Spec + 5-shot narrative + caption copy in `app-store-copy.md`. Needs the simulator.
+2. **Re-archive a fresh TestFlight build** (the 2026-05-15 build is stale) → device smoke → submit.
+
+**Done since this roadmap was assembled:** custom domain (`zonna.run`) live; StoreKit 2 via RevenueCat wired; ASC copy + keywords + Privacy Details questionnaire complete; both subscription products "Ready to Submit"; Apple Small Business Program enrolled; **Apple reviewer demo account created + seeded** (`zonna.demo@demo.com`, trial-expired, populated — `scripts/seed-demo-account.mjs`); **pre-submission journey test executed** (critical funnel passing; one post-race bug found + fixed, commit `f2892b9`). Subscription disclosure verified §3.1.2(a)-compliant live.
+
+**Not blocking submission (deferred to v1.1+):** Stripe web checkout, DSA/EU trader compliance, Universal Links, marketing-site env flip, trial-expiry emails (GTM-09/10).
+
+The phase tables below are retained for reference but are largely complete — work the two items above.
+
+---
+
 ## Working assumption
 
 iOS App Store launch is the goal. Web app at the Vercel URL continues to exist and serve users who already have access; **no new web-checkout work is on the v1 critical path** (Stripe lives in the post-launch slot). If that assumption is wrong, see the "Decisions" section below.
