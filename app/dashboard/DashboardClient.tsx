@@ -352,6 +352,14 @@ export default function DashboardClient() {
   const [showConnectRuns, setShowConnectRuns] = useState(false)
   const [orientationSeen, setOrientationSeen] = useState(false)
 
+  // PUSH-ONBOARD — Push-permission ceremonial onboarding screen.
+  //   pushPermissionSeen: undefined = not yet hydrated from DB
+  //                       null      = never shown (default for fresh + pre-migration users)
+  //                       false     = shown; user skipped or denied
+  //                       true      = shown; user enabled push
+  const [pushPermissionSeen, setPushPermissionSeen] = useState<boolean | null | undefined>(undefined)
+  const [showPushOnboarding, setShowPushOnboarding] = useState(false)
+
   // Strava token failure — set when refresh call returns non-200 for a user who had a token
   const [stravaTokenFailed, setStravaTokenFailed] = useState(false)
 
@@ -649,7 +657,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes, subRes, guidanceRes, pendingReshapeRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at, push_permission_seen').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
@@ -859,6 +867,13 @@ export default function DashboardClient() {
           null
         )
         setConnectRunsBannerDismissedAt(data?.connect_runs_banner_dismissed_at ?? null)
+
+        // PUSH-ONBOARD — hydrate the tri-state flag.
+        setPushPermissionSeen(
+          data?.push_permission_seen === true  ? true  :
+          data?.push_permission_seen === false ? false :
+          null
+        )
 
         // R30 + R32 dismiss timestamps — gate the coaching cards in CoachScreen
         if (data?.zone_drift_dismissed_at) setZoneDriftDismissedAt(data.zone_drift_dismissed_at)
@@ -1190,6 +1205,27 @@ export default function DashboardClient() {
     })()
   }, [plan, orientationSeen, connectRunsSeen, showConnectRuns])
 
+  // PUSH-ONBOARD — trigger the push-permission ceremony when:
+  //   • plan is loaded
+  //   • orientation has been seen
+  //   • connect_runs_seen is decided (true or false — not null/undefined meaning it's been acted on)
+  //   • push_permission_seen is exactly null (never shown; undefined = still hydrating)
+  //   • we're on a native platform (APNs is iOS-only)
+  useEffect(() => {
+    if (!plan || plan === EMPTY_PLAN) return
+    if (!orientationSeen) return
+    if (connectRunsSeen === undefined || connectRunsSeen === null) return
+    if (pushPermissionSeen !== null) return
+    if (showPushOnboarding) return
+    void (async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (!Capacitor.isNativePlatform()) return
+        setShowPushOnboarding(true)
+      } catch {}
+    })()
+  }, [plan, orientationSeen, connectRunsSeen, pushPermissionSeen, showPushOnboarding])
+
   // Personalised zone ceiling: Karvonen 70% HRR, falls back to plan meta or 145
   const effectiveZone2Ceiling = useMemo(() => {
     if (restingHR && maxHR) return Math.round(restingHR + 0.70 * (maxHR - restingHR))
@@ -1388,13 +1424,36 @@ export default function DashboardClient() {
     )
   }
 
+  // PUSH-ONBOARD — Push-permission ceremonial onboarding screen.
+  // Gated on: connect_runs_seen decided, push_permission_seen IS NULL, native platform.
+  // Free users see this — push registration is free; the daily reminder is paid.
+  if (showPushOnboarding) {
+    return (
+      <PushOnboardingScreen
+        onEnabled={() => { setPushPermissionSeen(true); setShowPushOnboarding(false) }}
+        onSkip={() => { setPushPermissionSeen(false); setShowPushOnboarding(false) }}
+      />
+    )
+  }
+
   const currentWeek = getCurrentWeek(plan?.weeks ?? [])
 
   return (
     <div style={s}>
 
       <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(72px + max(16px, env(safe-area-inset-bottom, 0px)))', overscrollBehavior: 'none' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={() => { setPendingReshape(null); setReshapeDismissedAt(new Date().toISOString()) }} />}
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={() => {
+                  // Stamp DB row so the dismiss survives a page reload. Without this the row
+                  // stays status='pending' and the reshape card re-appears on every load.
+                  if (pendingReshape?.reshapeId) {
+                    void supabase
+                      .from('post_race_reshapes')
+                      .update({ status: 'dismissed', dismissed_at: new Date().toISOString() })
+                      .eq('id', pendingReshape.reshapeId)
+                  }
+                  setPendingReshape(null)
+                  setReshapeDismissedAt(new Date().toISOString())
+                }} />}
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} />}
         {screen === 'coach'    && (hasPaidAccess
           ? (() => {
@@ -2092,6 +2151,158 @@ function ConnectRunsScreen({ onConnected, onSkip }: {
           }}
         >
           I&apos;ll do it later.
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── PUSH-ONBOARD: push permission ceremony ─────────────────────────────────
+// Third step in the onboarding gate sequence (Orientation → Connect Runs → here).
+// Matches ConnectRunsScreen layout exactly. Stamps push_permission_seen so it
+// never re-appears. Denial and skip both stamp false — iOS can't re-prompt once
+// denied; user can re-enable from Me → Notifications.
+
+function PushOnboardingScreen({ onEnabled, onSkip }: {
+  onEnabled: () => void
+  onSkip: () => void
+}) {
+  const [busy, setBusy] = useState(false)
+  const [denied, setDenied] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const supabase = createClient()
+
+  async function stampFlag(value: boolean) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('user_settings').upsert({
+        id: user.id,
+        push_permission_seen: value,
+        updated_at: new Date().toISOString(),
+      })
+    } catch {}
+  }
+
+  async function enableNotifications() {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      const { PushNotifications } = await import('@capacitor/push-notifications')
+      const perm = await PushNotifications.requestPermissions()
+      if (perm.receive !== 'granted') {
+        // iOS denied — stamp false so the screen doesn't reappear.
+        // User needs Settings → {BRAND.name} → Notifications to reverse this.
+        await stampFlag(false)
+        setDenied(true)
+        setBusy(false)
+        return
+      }
+      try { localStorage.removeItem(PUSH_OFF_KEY) } catch {}
+      const token = await getDeviceToken()
+      const res = await authedFetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform: 'ios', token, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+      })
+      if (!res.ok) throw new Error(`subscribe failed (${res.status})`)
+      await stampFlag(true)
+      onEnabled()
+    } catch (e: any) {
+      console.warn('[push onboarding] failed:', e)
+      setError(`Couldn't set up notifications. Skip for now — try from Me later.`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function skip() {
+    if (busy) return
+    setBusy(true)
+    try {
+      await stampFlag(false)
+      onSkip()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div style={{
+      height: '100dvh', overflowY: 'auto',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'safe center',
+      background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
+      padding: '32px 24px calc(32px + env(safe-area-inset-bottom, 0px))',
+    }}>
+      <div style={{ marginBottom: '6px' }}>
+        <Wordmark size="md" />
+      </div>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '48px' }}>
+        {BRAND.voiceAnchor}
+      </div>
+
+      <div style={{ width: '100%', maxWidth: '340px' }}>
+        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.4px', lineHeight: 1.25, marginBottom: '10px' }}>
+          {BRAND.notify.ask}
+        </div>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '32px' }}>
+          {denied
+            ? `Notifications are blocked. Go to Settings → ${BRAND.name} → Notifications to enable them.`
+            : BRAND.notify.subline}
+        </div>
+
+        {!denied && (
+          <button
+            onClick={enableNotifications}
+            disabled={busy}
+            style={{
+              width: '100%',
+              background: 'var(--moss)', color: '#FFFFFF',
+              border: 'none', borderRadius: '12px',
+              padding: '14px 16px',
+              minHeight: '52px',
+              fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
+              letterSpacing: '-0.01em',
+              cursor: busy ? 'wait' : 'pointer',
+              opacity: busy ? 0.7 : 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+            }}
+          >
+            {/* Bell icon — same roundel pattern as ConnectRunsScreen */}
+            <span style={{
+              width: '24px', height: '24px', borderRadius: '7px',
+              background: 'rgba(255,255,255,0.18)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0, fontSize: '13px',
+            }}>
+              🔔
+            </span>
+            {busy ? 'Setting up…' : 'Enable Notifications'}
+          </button>
+        )}
+
+        {error && (
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', lineHeight: 1.55, marginTop: '12px' }}>
+            {error}
+          </div>
+        )}
+
+        <button
+          onClick={skip}
+          disabled={busy}
+          style={{
+            width: '100%', background: 'none', border: 'none',
+            padding: '14px 0',
+            marginTop: denied ? '0' : '8px',
+            minHeight: '44px',
+            fontFamily: 'var(--font-ui)', fontSize: '13px',
+            color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: '3px',
+            cursor: busy ? 'default' : 'pointer',
+          }}
+        >
+          {denied ? 'Continue without notifications.' : "Skip for now."}
         </button>
       </div>
     </div>
@@ -7972,12 +8183,11 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ platform: 'ios', token, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
         })
-        // authedFetch resolves on ANY HTTP status — a 403 (paid gate) or a
-        // 5xx is not a thrown error. Without this check the toggle flips to
-        // "subscribed" while no row was ever written, which is exactly why
-        // push silently never worked. Surface the real failure instead.
+        // authedFetch resolves on ANY HTTP status — a 5xx is not a thrown error.
+        // Without this check the toggle flips to "subscribed" while no row was
+        // ever written. Surface the real failure instead.
         if (!res.ok) {
-          throw new Error(res.status === 403 ? 'paid-only' : `subscribe failed (${res.status})`)
+          throw new Error(`subscribe failed (${res.status})`)
         }
         setStatus('subscribed')
       } catch (err) {
@@ -7988,9 +8198,7 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
         const msg = err instanceof Error ? err.message : String(err)
         console.warn('[push] iOS registration failed:', msg)
         setStatus('idle')
-        setErrMsg(msg === 'paid-only'
-          ? 'Run pings are part of the paid plan.'
-          : "Couldn't enable push. Try again in a moment.")
+        setErrMsg("Couldn't enable push. Try again in a moment.")
       } finally {
         setLoading(false)
       }
@@ -8283,12 +8491,14 @@ function ConnectRunsBanner() {
       if (!user) { setVisible(false); return }
       const { data } = await supabase
         .from('user_settings')
-        .select('connect_runs_seen, connect_runs_banner_dismissed_at')
+        .select('connect_runs_seen, connect_runs_banner_dismissed_at, strava_refresh_token, healthkit_connected_at')
         .eq('id', user.id)
         .single()
-      const skipped     = (data as any)?.connect_runs_seen === false
-      const notYetShown = (data as any)?.connect_runs_banner_dismissed_at == null
-      setVisible(skipped && notYetShown)
+      const skipped       = (data as any)?.connect_runs_seen === false
+      const notYetShown   = (data as any)?.connect_runs_banner_dismissed_at == null
+      // Suppress if any data source is live — Strava and HealthKit are co-equal.
+      const hasDataSource = !!(data as any)?.strava_refresh_token || !!(data as any)?.healthkit_connected_at
+      setVisible(skipped && notYetShown && !hasDataSource)
     })()
   }, [])
 
@@ -9184,25 +9394,20 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         </div>
 
         {/* ── Notifications ──────────────────────────────────────── */}
-        {/* Push subscription is the parent; the morning training reminder is
-            a child preference that can't fire if push itself is off. Both
-            rows now use the same toggle visual so the relationship reads
-            cleanly (was Button + Toggle — looked like two unrelated bugs). */}
-        {hasPaidAccess && (
-          <>
-            <SectionLabel>Notifications</SectionLabel>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <PushNotificationsRow onStatusChange={setPushSubscribed} />
-              {onDailyPushEnabledChange && (
-                <DailyPushToggleRow
-                  enabled={dailyPushEnabled ?? true}
-                  onChange={onDailyPushEnabledChange}
-                  disabled={!pushSubscribed}
-                />
-              )}
-            </div>
-          </>
-        )}
+        {/* Push registration is free (PUSH-ONBOARD). The daily training reminder
+            sub-toggle is paid-only — it sends a push that costs a real APNs call
+            per user per day, so it's gated on a subscription. */}
+        <SectionLabel>Notifications</SectionLabel>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <PushNotificationsRow onStatusChange={setPushSubscribed} />
+          {hasPaidAccess && onDailyPushEnabledChange && (
+            <DailyPushToggleRow
+              enabled={dailyPushEnabled ?? true}
+              onChange={onDailyPushEnabledChange}
+              disabled={!pushSubscribed}
+            />
+          )}
+        </div>
 
         {/* ── Plan adjustments (paid/trial only) ───────────────────
              One engine, two controls: Auto-adjust runs it on a schedule,

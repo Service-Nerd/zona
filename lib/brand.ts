@@ -85,6 +85,15 @@ export const BRAND = {
     subline: "Without them, he's coaching blind.",
   },
 
+  /**
+   * Push-permission onboarding screen (PUSH-ONBOARD).
+   * Surfaces after the Connect-Your-Runs screen. Same ceremony pattern.
+   */
+  notify: {
+    ask:     "One ping a day. That's it.",
+    subline: 'Your session and zone, each morning before you head out. Nothing else.',
+  },
+
   /** Push notification titles — each is a coaching voice opportunity, not a label. */
   push: {
     weeklyReport: 'Your week, reviewed.',

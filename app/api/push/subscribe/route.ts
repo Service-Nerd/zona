@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { createClient } from '@supabase/supabase-js'
-import { getUserTier } from '@/lib/trial'
-
 // push_subscriptions has RLS (auth.uid() = user_id). The native app authenticates
 // with a Bearer token (no Supabase cookies), so a cookie-based client has no
 // session and auth.uid() is NULL — every insert was being rejected by RLS and the
@@ -31,7 +29,8 @@ function isValidTimeZone(tz: string): boolean {
 // Saves a push subscription for the authenticated user. Accepts two shapes:
 //   web: { endpoint, keys: { p256dh, auth } }    — Web Push (PWA / browser)
 //   ios: { platform: 'ios', token }              — APNs device token
-// Only paid/trial users can subscribe.
+// Open to all tiers — push registration is free. The daily training reminder
+// (send-daily cron) remains a paid feature; that gate lives in the cron, not here.
 
 // `timezone` is the IANA zone of the registering device (e.g. 'Europe/London').
 // send-daily reads user_settings.timezone to fire the 06:30 push in the user's
@@ -57,9 +56,6 @@ export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const supabase = adminClient()
-
-  const tier = await getUserTier(user.id)
-  if (tier === 'free') return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
   const body = await req.json() as SubscriptionBody
 
