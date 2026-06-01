@@ -1,0 +1,49 @@
+Subject: You're in — here's how to get Zonna on your phone
+
+(Alt subjects: "Early access to Zonna (read this first)" / "Zonna's ready for you")
+Preview text: Two minutes to set up. One ask in return.
+
+---
+
+Hi [First name],
+
+Thanks for testing this with me. Quick context, then how to get in.
+
+WHY THIS EXISTS
+Most training apps assume your problem is laziness. Yours probably isn't.
+If you've got a job and a training plan, the problem is usually the opposite —
+you go medium-hard on everything. Never properly easy, never properly hard.
+Every run lands in the same grey middle, and you wonder why you're tired AND
+not getting faster.
+
+That's the whole idea: you're trying hard — that's the problem. Run easy when
+it's easy. Run hard when it's hard. Hold the zone.
+
+GETTING IN (about two minutes)
+1. Install TestFlight from the App Store — it's Apple's free beta app.
+2. Open the invite link I've sent you, tap Accept, then Install.
+3. Open Zonna, sign in with Apple or Google, and generate your plan.
+
+WHAT TO DO FIRST
+- Build a plan around your race or distance.
+- Connect Strava or Apple Health — the coaching needs your runs to do anything useful.
+- Check today's session. That's the daily loop: open it, run it, log it.
+
+A FEW THINGS WORTH KNOWING
+- Kit is the coach. He reads your runs and gives honest feedback — no "crushing
+  it," no confetti. If you went too hard, he'll say so.
+- Everyone starts with 14 days of full access. After that it eases to a free
+  tier — you won't lose your plan.
+- I push updates often. Things will move, change, and occasionally break. If it
+  looks different next week, that's me — not you.
+
+THE ONE THING I NEED FROM YOU
+Tell me what's confusing, broken, or annoying. Don't be polite about it — rough
+feedback is the entire point of a beta. Just reply to this email.
+
+Cheers,
+Russell
+
+—
+Zonna
+Slow down. You've got a day job.
