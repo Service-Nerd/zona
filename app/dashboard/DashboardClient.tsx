@@ -1144,7 +1144,11 @@ export default function DashboardClient() {
   //   result has been logged yet. Free users see a locked card; paid users see live.
   const postRaceState = (() => {
     if (!plan) return null
-    const raceWeekIdx = plan.weeks.findIndex(
+    // Goal race = the LAST race-flagged week. A mid-plan tune-up event is typed
+    // 'race_event' but still carries a 'race' badge; findIndex would grab that
+    // tune-up and fire the post-race prompt the moment the current week passes it
+    // (weeks before the real race). findLastIndex selects the culminating race.
+    const raceWeekIdx = plan.weeks.findLastIndex(
       w => w.type === 'race' || (w as any).badge === 'race'
     )
     if (raceWeekIdx < 0) return null
@@ -6388,7 +6392,9 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
     return acc
   }, [])
   const raceWeekNumber = (() => {
-    const idx = plan.weeks.findIndex((wk) => (wk as any).type === 'race' || (wk as any).badge === 'race')
+    // Goal race = LAST race-flagged week (mid-plan 'race_event' tune-ups also
+    // carry a 'race' badge; findIndex would mark the tune-up on the plan arc).
+    const idx = plan.weeks.findLastIndex((wk) => (wk as any).type === 'race' || (wk as any).badge === 'race')
     return idx >= 0 ? idx + 1 : undefined
   })()
 
