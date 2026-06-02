@@ -81,6 +81,7 @@ After Vercel deploy, verify with agent-browser:
 ### Small UX
 
 - ✅ **UX-01** — fixed 2026-05-01: Profile email field is now read-only (`readOnly` + muted styling + `tabIndex={-1}` + `aria-readonly`). Email is auth identity owned by the OAuth provider — visible for orientation, not editable. Save button only commits first/last name; email passes through unchanged. Done.
+- **UPGRADE-ENTRY-01** (PAID gate / compliance) — **add an always-visible upgrade entry so any non-paid user can reach the paywall at any time.** Today, `onUpgrade` is passed into `MeScreen` but never invoked, and every in-app path to `UpgradeScreen` is gated behind `!hasPaidAccess` (`CoachTeaser`, `LockedCoachingPreview`, `PostRaceReshapeCard` — the only place `onUpgrade()` actually fires, DashboardClient.tsx:5915). Result: a user in **active trial** (`hasPaidAccess === true`) has no way to view subscription options. Fix: add a persistent "Subscription" / "View plans" row in MeScreen that calls the existing `onUpgrade` prop, visible regardless of trial/free/expired state. Removes the §3.1.2 reviewer-reachability coupling that forced the demo account to be trial-expired for v1 submission (see launch-roadmap status 2026-06-02 rev.2). SLC: Simple — one row, reuses existing wiring; Lovable — matches MeScreen SectionLabel pattern (ui-patterns.md §17); Complete — show for trial + expired + free; hide only for already-Pro. Trigger frontend-design skill.
 
 ### AI visibility & provenance
 

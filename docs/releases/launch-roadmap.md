@@ -6,15 +6,22 @@
 
 ---
 
-## ⏱ Status update — 2026-06-02
+## ⏱ Status update — 2026-06-02 (rev. 2)
 
-**Only three things stand between here and "submitted":**
+**ASC submission form — remaining gaps (everything else done):**
 
-1. **Device smoke on v1.7 build 8** (archived + uploaded 2026-06-02) — install on device, run journey Steps 3 (fresh wizard) and 6–7 (log + reflect).
-2. **Capture 10 App Store screenshots** (5 shots × 2 device sizes — 6.7" + 6.5"). Spec + 5-shot narrative + caption copy in `app-store-copy.md`. Needs the simulator.
-3. **Submit for review in ASC.**
+1. **Copyright field** — still blank. Set to `2026 Russell Shear`.
+2. **Support URL** — currently points at a page that just loads the app. Apple requires a page exposing a contact method (support email or form). Swap to a one-pager with a support email.
+3. **Export compliance** — answer at submit time: uses encryption → **exempt (standard HTTPS only)**.
+4. **Marketing URL** — intentionally left blank (optional, no penalty).
 
-**Done since this roadmap was assembled:** custom domain (`zonna.run`) live; StoreKit 2 via RevenueCat wired; ASC copy + keywords + Privacy Details questionnaire complete; both subscription products "Ready to Submit"; Apple Small Business Program enrolled; **Apple reviewer demo account created + seeded** (`zonna.demo@demo.com`, trial-expired, populated — `scripts/seed-demo-account.mjs`); **pre-submission journey test executed** (critical funnel passing; one post-race bug found + fixed, commit `f2892b9`). Subscription disclosure verified §3.1.2(a)-compliant live.
+Then **Submit for review**.
+
+**ASC submission form — confirmed complete:** 5 screenshots uploaded to the **6.5" Display** slot (only slot ASC offered; sized to 1242×2688 from the Pro Max simulator set — source files `~/Downloads/Screen Shots/AppStore 1242x2688/`); promo text, description, keywords all in; **Privacy Policy URL set** (done in an earlier pass — do not re-flag); **App Review contact info filled**; **demo account works**.
+
+**Paywall reachability (§3.1.2) — RESOLVED, no code change needed.** `onUpgrade` is passed into `MeScreen` but never invoked, and every in-app path to `UpgradeScreen` is gated behind `!hasPaidAccess` (`CoachTeaser`, `LockedCoachingPreview`, `PostRaceReshapeCard`). The reviewer therefore reaches the paywall **only if the demo account is in the trial-EXPIRED (free) state** — which is exactly what `scripts/seed-demo-account.mjs` produces (`trial_started_at` = 15 days ago; comment at line 71: "reviewer must see the real free/paid gating"). **Action: ensure the account given to Apple is the seeded `zonna.demo@demo.com` (expired), NOT a fresh active-trial account.** If a future build adds an always-visible upgrade entry in MeScreen, this constraint relaxes.
+
+**Done before this rev:** custom domain (`zonna.run`) live; StoreKit 2 via RevenueCat wired; ASC copy + keywords + Privacy Details questionnaire complete; both subscription products "Ready to Submit"; Apple Small Business Program enrolled; **Apple reviewer demo account created + seeded** (`zonna.demo@demo.com`, trial-expired, populated — `scripts/seed-demo-account.mjs`); **pre-submission journey test executed** (critical funnel passing; one post-race bug found + fixed, commit `f2892b9`); v1.7 build 8 archived + uploaded; **5 screenshots captured + sized + uploaded**. Subscription disclosure verified §3.1.2(a)-compliant live (price per period, trial conversion, Apple-ID charge, auto-renew, cancellation path, Terms + Privacy links — `UpgradeScreen.tsx:278–308`).
 
 **Not blocking submission (deferred to v1.1+):** Stripe web checkout, DSA/EU trader compliance, Universal Links, marketing-site env flip, trial-expiry emails (GTM-09/10).
 
