@@ -1446,14 +1446,19 @@ export default function DashboardClient() {
     <div style={s}>
 
       <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(72px + max(16px, env(safe-area-inset-bottom, 0px)))', overscrollBehavior: 'none' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={() => {
-                  // Stamp DB row so the dismiss survives a page reload. Without this the row
-                  // stays status='pending' and the reshape card re-appears on every load.
-                  if (pendingReshape?.reshapeId) {
-                    void supabase
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
+                  // Stamp DB so the dismiss survives a page reload. Dismiss every
+                  // pending row for this user, not just pendingReshape.reshapeId:
+                  // historical pending rows from repeated test runs (the POST route
+                  // used to insert unconditionally) would otherwise resurface on
+                  // reload and make the card look un-dismissable.
+                  if (userId) {
+                    const { error } = await supabase
                       .from('post_race_reshapes')
                       .update({ status: 'dismissed', dismissed_at: new Date().toISOString() })
-                      .eq('id', pendingReshape.reshapeId)
+                      .eq('user_id', userId)
+                      .eq('status', 'pending')
+                    if (error) console.error('[post-race-reshape] dismiss failed', error)
                   }
                   setPendingReshape(null)
                   setReshapeDismissedAt(new Date().toISOString())
@@ -2106,7 +2111,7 @@ function ConnectRunsScreen({ onConnected, onSkip }: {
           disabled={busy}
           style={{
             width: '100%',
-            background: 'var(--moss)', color: '#FFFFFF',
+            background: 'var(--moss)', color: 'var(--card)',
             border: 'none', borderRadius: '12px',
             padding: '14px 16px',
             minHeight: '52px',  // bigger than the 44pt min — primary ceremony CTA.
@@ -2126,7 +2131,7 @@ function ConnectRunsScreen({ onConnected, onSkip }: {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
           }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#FFFFFF' }} />
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--card)' }} />
           </span>
           {busy ? 'Connecting…' : 'Connect Apple Health'}
         </button>
@@ -2263,7 +2268,7 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
             disabled={busy}
             style={{
               width: '100%',
-              background: 'var(--moss)', color: '#FFFFFF',
+              background: 'var(--moss)', color: 'var(--card)',
               border: 'none', borderRadius: '12px',
               padding: '14px 16px',
               minHeight: '52px',
@@ -7033,7 +7038,7 @@ function ShareWeekButton({ weekN }: { weekN: number }) {
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
         // SHARE moment — promoted to filled-moss CTA per audit item #10.
-        color: '#FFFFFF',
+        color: 'var(--card)',
         background: 'var(--moss)',
         border: 'none',
         borderRadius: '22px',

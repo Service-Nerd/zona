@@ -138,6 +138,16 @@ export async function POST(req: NextRequest) {
   const finalReshapedPlan = embedRaceResult(enrichedPlan, raceResult, raceWeekN)
 
   // ── 4. Save to post_race_reshapes (pending — user must confirm) ──────────────
+  // Supersede any earlier pending rows for this user before inserting. Without
+  // this, repeated race-result submissions pile up status='pending' rows; the
+  // Today-screen query picks the newest pending and the card re-appears on
+  // reload even after the user explicitly dismissed the latest proposal.
+  await serviceClient
+    .from('post_race_reshapes')
+    .update({ status: 'dismissed', dismissed_at: new Date().toISOString() })
+    .eq('user_id', user.id)
+    .eq('status', 'pending')
+
   const { data: reshapeRow, error: insertError } = await serviceClient
     .from('post_race_reshapes')
     .insert({
