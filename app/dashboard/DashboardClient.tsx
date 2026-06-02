@@ -47,6 +47,8 @@ import { getSessionVoiceLine } from '@/lib/coaching/voiceLines'
 import { renderGuidance, guidanceContextFromSession } from '@/lib/plan/renderGuidance'
 import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import dynamic from 'next/dynamic'
+import { Capacitor } from '@capacitor/core'
+import { App as CapacitorApp } from '@capacitor/app'
 const GeneratePlanScreen = dynamic(() => import('./GeneratePlanScreen'), { ssr: false })
 const UpgradeScreen = dynamic(() => import('./UpgradeScreen'), { ssr: false })
 const BenchmarkUpdateScreen = dynamic(() => import('./BenchmarkUpdateScreen'), { ssr: false })
@@ -9152,6 +9154,123 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
   )
 }
 
+// ── SupportScreen ─────────────────────────────────────────────────────────────
+// In-app contact entry (FREE). Opens a pre-filled email to support@zonna.run with
+// a quiet diagnostic footer (app version · platform · account · plan) so support
+// can act on the first reply. Copy-address fallback covers users with no mail
+// client (common on desktop web, where mailto: silently no-ops). Mirrors the
+// /support web page register and the DeleteAccountScreen sub-view structure.
+const SUPPORT_EMAIL = 'support@zonna.run'
+
+function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
+  onBack: () => void
+  email?: string
+  hasPaidAccess?: boolean
+  trialDaysLeft?: number | null
+}) {
+  const [copied, setCopied] = useState(false)
+  const [appInfo, setAppInfo] = useState<{ version: string; build: string } | null>(null)
+
+  const platform = Capacitor.getPlatform() // 'ios' | 'android' | 'web'
+  const tier = hasPaidAccess ? ((trialDaysLeft ?? 0) > 0 ? 'Trial' : 'Pro') : 'Free'
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    CapacitorApp.getInfo()
+      .then(info => setAppInfo({ version: info.version, build: info.build }))
+      .catch(() => { /* not critical — email still sends without it */ })
+  }, [])
+
+  const versionLabel = appInfo ? `${appInfo.version} (${appInfo.build})` : platform
+
+  function buildMailto() {
+    const versionTag = appInfo?.version ? `v${appInfo.version}` : platform
+    const subject = `${BRAND.name} support — ${versionTag}`
+    const body = [
+      '',
+      '',
+      '———',
+      `Sent from ${BRAND.name} ${versionLabel} · ${platform}`,
+      `Account: ${email || '(not available)'}`,
+      `Plan: ${tier}`,
+      '(This helps us help you — feel free to delete it.)',
+    ].join('\n')
+    return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  }
+
+  function handleEmail() {
+    window.location.href = buildMailto()
+  }
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(SUPPORT_EMAIL)
+    } catch {
+      /* address is selectable on screen as the fallback-to-the-fallback */
+    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      {/* Header — back arrow top-left (ui-patterns: back arrow always top-left) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 8px' }}>
+        <button onClick={onBack} style={{ border: 'none', color: 'var(--moss)', cursor: 'pointer', padding: 0, width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--moss-soft)', flexShrink: 0 }} aria-label="Back">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+        <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px' }}>
+          Contact support
+        </div>
+      </div>
+
+      <div style={{ padding: '8px 16px 40px', display: 'flex', flexDirection: 'column', gap: '20px', flex: 1 }}>
+        {/* Intro + expectation-setting (the anxiety-killer line) */}
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', color: 'var(--ink)', lineHeight: 1.55 }}>
+            Something not working, or a question about your plan? Tell us.
+          </div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55 }}>
+            A real person reads this. Usually within two days.
+          </div>
+        </div>
+
+        {/* Primary CTA — email */}
+        <button
+          onClick={handleEmail}
+          style={{ width: '100%', padding: '15px', background: 'var(--moss)', border: 'none', borderRadius: 'var(--radius-lg)', color: 'white', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, letterSpacing: '0.02em', cursor: 'pointer' }}
+        >
+          Email us
+        </button>
+
+        {/* Fallback — copy address (covers no-mail-client case) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
+            No mail app set up? Copy the address and write to us from anywhere.
+          </div>
+          <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', gap: '12px' }}>
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, userSelect: 'all', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {SUPPORT_EMAIL}
+            </span>
+            <button
+              onClick={handleCopy}
+              style={{ flexShrink: 0, padding: '5px 12px', borderRadius: '10px', border: `1px solid ${copied ? 'var(--moss)' : 'var(--line)'}`, background: copied ? 'var(--moss-soft)' : 'transparent', color: copied ? 'var(--moss)' : 'var(--mute)', fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'color 0.15s, background 0.15s, border-color 0.15s' }}
+              aria-label="Copy support email address"
+            >
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+        </div>
+
+        {/* Transparency — what gets attached (privacy honesty, brand stance) */}
+        <div style={{ marginTop: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.6 }}>
+          We add your app version, platform, and account email to the message so we can help faster. You&apos;ll see it before you send — delete it if you&apos;d rather not.
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, dob, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
@@ -9182,7 +9301,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   hasPendingAdjustment?: boolean
 }) {
   const router = useRouter()
-  const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'delete-account'>('main')
+  const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'delete-account' | 'support'>('main')
 
   // Push subscription state — bubbled up from PushNotificationsRow so we can
   // gate the dependent DailyPushToggleRow ("Morning training push" can't fire
@@ -9224,6 +9343,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
 
   if (activeSection === 'quit')           return <QuitTab    quitDays={quitDays} raceDistanceKm={raceDistKm} onBack={() => setActiveSection('main')} />
   if (activeSection === 'delete-account') return <DeleteAccountScreen onBack={() => setActiveSection('main')} />
+  if (activeSection === 'support')        return <SupportScreen onBack={() => setActiveSection('main')} email={profileEmail} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} />
 
   const hasPlan = !!(plan?.meta?.race_name)
 
@@ -9517,6 +9637,23 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             </div>
           </>
         )}
+
+        {/* ── Support — in-app contact (FREE; SUPPORT-01) ──────── */}
+        <SectionLabel>Support</SectionLabel>
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+          <button
+            onClick={() => setActiveSection('support')}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+          >
+            <div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2px' }}>Something broken? Tell us.</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
+                Email support — a real person reads it.
+              </div>
+            </div>
+            <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
+          </button>
+        </div>
 
         {/* ── Careful Now — destructive account actions ───────── */}
         <SectionLabel>Careful Now</SectionLabel>
