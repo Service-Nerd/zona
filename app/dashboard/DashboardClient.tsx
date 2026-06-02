@@ -6276,24 +6276,6 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           second, review-shaped job to a present-moment screen. Today's own
           completion still shows via the hero card's `done` state above. */}
 
-      {/* Strava nudge — muted text link if no runs connected */}
-      {stravaRuns.length === 0 && (
-        <div style={{
-          padding: '20px 16px 0',
-          textAlign: 'center',
-        }}>
-          <span style={{
-            fontFamily: 'var(--font-ui)',
-            fontSize: '12px',
-            color: 'var(--mute)',
-          }}>
-            Connect{' '}
-            <span style={{ color: 'var(--strava)', fontWeight: 500 }}>Strava</span>
-            {' '}in Profile for auto-logging after each run.
-          </span>
-        </div>
-      )}
-
       {/* Manual log modal */}
       {showManualLog && (
         <ManualRunModal

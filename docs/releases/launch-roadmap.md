@@ -6,12 +6,13 @@
 
 ---
 
-## ⏱ Status update — 2026-06-01
+## ⏱ Status update — 2026-06-02
 
-Almost everything on the critical path is done. **Only two things stand between here and "submitted":**
+**Only three things stand between here and "submitted":**
 
-1. **Capture 10 App Store screenshots** (5 shots × 2 device sizes — 6.7" + 6.5"). Spec + 5-shot narrative + caption copy in `app-store-copy.md`. Needs the simulator.
-2. **Re-archive a fresh TestFlight build** (the 2026-05-15 build is stale) → device smoke → submit.
+1. **Device smoke on v1.7 build 8** (archived + uploaded 2026-06-02) — install on device, run journey Steps 3 (fresh wizard) and 6–7 (log + reflect).
+2. **Capture 10 App Store screenshots** (5 shots × 2 device sizes — 6.7" + 6.5"). Spec + 5-shot narrative + caption copy in `app-store-copy.md`. Needs the simulator.
+3. **Submit for review in ASC.**
 
 **Done since this roadmap was assembled:** custom domain (`zonna.run`) live; StoreKit 2 via RevenueCat wired; ASC copy + keywords + Privacy Details questionnaire complete; both subscription products "Ready to Submit"; Apple Small Business Program enrolled; **Apple reviewer demo account created + seeded** (`zonna.demo@demo.com`, trial-expired, populated — `scripts/seed-demo-account.mjs`); **pre-submission journey test executed** (critical funnel passing; one post-race bug found + fixed, commit `f2892b9`). Subscription disclosure verified §3.1.2(a)-compliant live.
 

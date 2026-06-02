@@ -44,7 +44,11 @@ const config: CapacitorConfig = {
     ],
   },
   ios: {
-    contentInset: 'automatic',
+    // 'never' = edge-to-edge webview; CSS env(safe-area-inset-*) handles
+    // the inset. 'automatic' double-applies the bottom inset (webview is
+    // shrunk by the home-indicator area AND CSS adds the same padding
+    // again), leaving the bottom nav floating above empty space.
+    contentInset: 'never',
     backgroundColor: '#F3F0EB',
   },
   plugins: {
