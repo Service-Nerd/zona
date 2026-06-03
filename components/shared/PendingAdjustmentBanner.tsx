@@ -15,8 +15,8 @@ type Props = {
   title?: string
   /** Description of what changed */
   children: React.ReactNode
-  /** Called when user taps Confirm */
-  onConfirm: () => void
+  /** Called when user taps Confirm. Omit for informational adjustments (e.g. fitness_signal) — hides the Confirm button. */
+  onConfirm?: () => void
   /** Called when user taps Revert */
   onRevert: () => void
   /** Disable both actions while an API call is in flight */
@@ -77,27 +77,29 @@ export default function PendingAdjustmentBanner({
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: '8px' }}>
-        {/* Primary — Confirm */}
-        <button
-          onClick={onConfirm}
-          disabled={loading}
-          style={{
-            flex:         1,
-            padding:      '10px 0',
-            background:   loading ? 'var(--warn-bg)' : 'var(--warn)',
-            border:       'none',
-            borderRadius: '100px',
-            fontFamily:   'var(--font-ui)',
-            fontSize:     '13px',
-            fontWeight:   600,
-            color:        'var(--card)',
-            cursor:       loading ? 'default' : 'pointer',
-            opacity:      loading ? 0.6 : 1,
-            transition:   'opacity 0.15s',
-          }}
-        >
-          {loading ? '…' : 'Confirm'}
-        </button>
+        {/* Primary — Confirm (hidden when onConfirm not provided, e.g. fitness_signal) */}
+        {onConfirm && (
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            style={{
+              flex:         1,
+              padding:      '10px 0',
+              background:   loading ? 'var(--warn-bg)' : 'var(--warn)',
+              border:       'none',
+              borderRadius: '100px',
+              fontFamily:   'var(--font-ui)',
+              fontSize:     '13px',
+              fontWeight:   600,
+              color:        'var(--card)',
+              cursor:       loading ? 'default' : 'pointer',
+              opacity:      loading ? 0.6 : 1,
+              transition:   'opacity 0.15s',
+            }}
+          >
+            {loading ? '…' : 'Confirm'}
+          </button>
+        )}
 
         {/* Ghost — Revert */}
         <button

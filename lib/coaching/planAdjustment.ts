@@ -11,6 +11,13 @@ import {
   FATIGUE_ACCUMULATION_THRESHOLD,
   FATIGUE_SOFTENING_LONG_RUN_PCT,
   READINESS,
+  FITNESS_SIGNAL_PACE_SCORE_MAX,
+  FITNESS_SIGNAL_HR_CEILING_MAX,
+  FITNESS_SIGNAL_SESSION_THRESHOLD,
+  FITNESS_SIGNAL_MIN_PLAN_WEEKS,
+  LONG_RUN_SHORTFALL_COMPLETION_PCT,
+  LONG_RUN_SHORTFALL_CONSECUTIVE,
+  LONG_RUN_SHORTFALL_REDUCE_PCT,
 } from './constants'
 import { acuteChronicRatio, shadowLoadPct, zoneDisciplineScore } from './loadCalc'
 import { BRAND } from '@/lib/brand'
@@ -35,6 +42,8 @@ export type TriggerType    =
   | 'session_reorder'      // user-initiated: session moved to another day
   | 'readiness_signal'     // pre-session RHR / HRV / sleep deviation
   | 'manual'               // user tapped "Check now" (ReshapeScreen)
+  | 'fitness_signal'       // ENGINE-01: quality sessions consistently faster than band with HR controlled → benchmark recal prompt
+  | 'long_run_shortfall'   // ENGINE-02: consecutive long runs significantly under planned distance → reduce prescription
 
 export interface AdjustmentTrigger {
   type:   TriggerType
@@ -85,6 +94,28 @@ export interface AdjustmentCheckInput {
    * The reorder check bypasses taper protection — it's always user-initiated.
    */
   reorderSignal?: { fromDay: string; toDay: string }
+  /**
+   * ENGINE-01 — Recent quality session analyses for the fitness-signal trigger.
+   * Each entry is one analysed quality/interval/tempo session.
+   * paceScore ≤ FITNESS_SIGNAL_PACE_SCORE_MAX = ran faster than target band.
+   * hrAboveCeilingPct ≤ FITNESS_SIGNAL_HR_CEILING_MAX = HR stayed controlled.
+   */
+  recentQualityAnalyses?: Array<{
+    paceScore:          number | null
+    hrAboveCeilingPct:  number | null
+    weekN:              number
+  }>
+  /**
+   * ENGINE-02 — Recent long run analyses for the distance-shortfall trigger.
+   * plannedKm is the plan's prescribed distance for that session.
+   * actualKm is what was logged.
+   * weekN is used to detect consecutive-week shortfall.
+   */
+  recentLongRunAnalyses?: Array<{
+    actualKm:   number | null
+    plannedKm:  number | null
+    weekN:      number
+  }>
   /**
    * Pre-session readiness signal — composite of RHR / HRV / sleep deviations
    * from the user's 14-day baseline. Fires only on quality/long days, only
@@ -167,6 +198,25 @@ export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAd
 
   if (input.efTrendPct !== null && input.efTrendPct < EF_DECLINE_THRESHOLD_PCT) {
     return buildEFDeclineAdjustment(input, input.efTrendPct)
+  }
+
+  // ENGINE-02 — Long run shortfall (above EF decline; both are structural patterns).
+  // Fires only when we have enough long run analysis history.
+  if (input.recentLongRunAnalyses && input.recentLongRunAnalyses.length >= LONG_RUN_SHORTFALL_CONSECUTIVE) {
+    const shortfall = buildLongRunShortfallAdjustment(input)
+    if (shortfall) return shortfall
+  }
+
+  // ENGINE-01 — Fitness signal: consistently fast quality sessions with controlled HR.
+  // Lowest priority automatic signal — informational, no session changes.
+  // Only fires when we have enough quality session history and the plan is established.
+  if (
+    input.recentQualityAnalyses &&
+    input.recentQualityAnalyses.length >= FITNESS_SIGNAL_SESSION_THRESHOLD &&
+    input.currentWeekN >= FITNESS_SIGNAL_MIN_PLAN_WEEKS
+  ) {
+    const fitness = buildFitnessSignalAdjustment(input)
+    if (fitness) return fitness
   }
 
   // RPE disconnect — lowest priority automatic signal, fires only when no Strava HR data
@@ -546,6 +596,115 @@ function buildReorderAdjustment(
     sessionsBefore,
     sessionsAfter,
     requiresConfirmation,
+  }
+}
+
+// ─── ENGINE-01: Fitness signal ────────────────────────────────────────────────
+//
+// Three-part pattern required before firing:
+//   1. paceScore ≤ FITNESS_SIGNAL_PACE_SCORE_MAX — ran faster than target band
+//   2. hrAboveCeilingPct ≤ FITNESS_SIGNAL_HR_CEILING_MAX — HR stayed controlled
+//   3. No fatigue accumulation in the same window (checked upstream in checkAdjustmentTriggers)
+//
+// Not a plan adjustment — sessionsAfter = sessionsBefore.
+// Action: flag_for_review → notification → ReshapeScreen shows benchmark CTA.
+// Architecture note: all paces flow from VDOT. The right response to "plan is
+// too conservative" is benchmark recalibration, not individual session hardening.
+function buildFitnessSignalAdjustment(input: AdjustmentCheckInput): ProposedAdjustment | null {
+  const qualifying = (input.recentQualityAnalyses ?? []).filter(a =>
+    a.paceScore !== null &&
+    a.paceScore <= FITNESS_SIGNAL_PACE_SCORE_MAX &&
+    a.hrAboveCeilingPct !== null &&
+    a.hrAboveCeilingPct <= FITNESS_SIGNAL_HR_CEILING_MAX
+  )
+  if (qualifying.length < FITNESS_SIGNAL_SESSION_THRESHOLD) return null
+
+  const sessions       = input.currentWeekSessions
+  const sessionsBefore = sessions.map(s => ({ ...s }))
+
+  return {
+    weekN:          input.currentWeekN,
+    trigger:        {
+      type: 'fitness_signal',
+      detail: {
+        qualifyingCount: qualifying.length,
+        paceScoreThreshold: FITNESS_SIGNAL_PACE_SCORE_MAX,
+        hrCeilingThreshold: FITNESS_SIGNAL_HR_CEILING_MAX,
+      },
+    },
+    adjustmentType: 'flag_for_review',
+    // Sessions unchanged — this is informational only.
+    // The notification body (AI-generated via buildAdjustmentExplanationPrompt)
+    // carries the coaching message; the ReshapeScreen CTA routes to benchmark update.
+    summary:              `${qualifying.length} quality sessions ran ahead of target at controlled effort. Fitness may have moved — worth a benchmark test.`,
+    sessionsBefore,
+    sessionsAfter:        sessionsBefore,
+    requiresConfirmation: false, // auto-applies (no plan change) → notification fires
+  }
+}
+
+// ─── ENGINE-02: Long run distance shortfall ───────────────────────────────────
+//
+// Pattern: LONG_RUN_SHORTFALL_CONSECUTIVE consecutive long runs at
+// < LONG_RUN_SHORTFALL_COMPLETION_PCT of their planned distance.
+// Response: reduce the current week's long run by LONG_RUN_SHORTFALL_REDUCE_PCT.
+// Requires confirmation — this is a structural plan change.
+//
+// Distinct from fatigue_accumulation (which watches fatigue tags).
+// Distinct from skip_with_reason (which fires on explicit user-initiated skips).
+// Catches the silent pattern: sessions logged as complete but consistently cut short.
+function buildLongRunShortfallAdjustment(input: AdjustmentCheckInput): ProposedAdjustment | null {
+  const analyses = (input.recentLongRunAnalyses ?? [])
+    .filter(a => a.actualKm !== null && a.plannedKm !== null && a.plannedKm > 0)
+    .sort((a, b) => b.weekN - a.weekN) // most recent first
+
+  // Need CONSECUTIVE weeks — check the most recent N long runs are in adjacent weeks
+  if (analyses.length < LONG_RUN_SHORTFALL_CONSECUTIVE) return null
+  const recent = analyses.slice(0, LONG_RUN_SHORTFALL_CONSECUTIVE)
+
+  // Verify they're from consecutive (or near-consecutive) weeks
+  const weekGap = recent[0].weekN - recent[recent.length - 1].weekN
+  if (weekGap > LONG_RUN_SHORTFALL_CONSECUTIVE + 1) return null // gap too large — not consecutive
+
+  // All N must be below the shortfall threshold
+  const allShort = recent.every(a =>
+    a.actualKm! < a.plannedKm! * LONG_RUN_SHORTFALL_COMPLETION_PCT
+  )
+  if (!allShort) return null
+
+  const sessions       = input.currentWeekSessions
+  const sessionsBefore = sessions.map(s => ({ ...s }))
+  const sessionsAfter  = sessions.map(s => {
+    if (s.type === 'long' && s.distance_km) {
+      const reduced = Math.round(s.distance_km * LONG_RUN_SHORTFALL_REDUCE_PCT * 10) / 10
+      return {
+        ...s,
+        distance_km: reduced,
+        coach_notes: [`Trimmed to ${reduced}km — long runs have been finishing short. Build back to full distance when ready.`] as [string],
+      }
+    }
+    return { ...s }
+  })
+
+  const avgCompletion = Math.round(
+    recent.reduce((sum, a) => sum + (a.actualKm! / a.plannedKm!) * 100, 0) / recent.length
+  )
+
+  return {
+    weekN:          input.currentWeekN,
+    trigger:        {
+      type: 'long_run_shortfall',
+      detail: {
+        consecutiveCount: LONG_RUN_SHORTFALL_CONSECUTIVE,
+        avgCompletionPct: avgCompletion,
+        threshold:        Math.round(LONG_RUN_SHORTFALL_COMPLETION_PCT * 100),
+      },
+    },
+    adjustmentType:       'reduce_volume',
+    summary:              `Long runs averaging ${avgCompletion}% completion over ${LONG_RUN_SHORTFALL_CONSECUTIVE} weeks. Prescription pulled back to match where you're actually finishing.`,
+    sessionsBefore,
+    sessionsAfter,
+    requiresConfirmation: true,
   }
 }
 

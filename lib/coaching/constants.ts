@@ -59,6 +59,25 @@ export const MIN_QUALITY_GAP_HOURS = GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY
 // Taper protection — no adjustments in final N weeks
 export const TAPER_PROTECTION_WEEKS = 3
 
+// ENGINE-01 — Fitness signal: consistently fast quality sessions with controlled HR.
+// Fires a flag_for_review (no session changes) + benchmark recalibration prompt.
+// paceScore ≤ this on a quality session = ran faster than the upper edge of the band.
+export const FITNESS_SIGNAL_PACE_SCORE_MAX    = 60
+// hr_above_ceiling_pct ≤ this = HR stayed controlled even at high pace (genuine fitness signal).
+export const FITNESS_SIGNAL_HR_CEILING_MAX    = 15
+// How many qualifying quality sessions in recent window before the signal fires.
+export const FITNESS_SIGNAL_SESSION_THRESHOLD = 3
+// Minimum weeks into plan before fitness signal can fire (early-plan variance is noise).
+export const FITNESS_SIGNAL_MIN_PLAN_WEEKS    = 4
+
+// ENGINE-02 — Long run distance shortfall: consecutive long runs significantly under plan.
+// actual_load_km < planned * this threshold = significant shortfall.
+export const LONG_RUN_SHORTFALL_COMPLETION_PCT  = 0.82
+// How many consecutive qualifying long runs before the trigger fires.
+export const LONG_RUN_SHORTFALL_CONSECUTIVE     = 2
+// Reduce the upcoming long run prescription by this fraction (15% trim).
+export const LONG_RUN_SHORTFALL_REDUCE_PCT      = 0.85
+
 // Max volume increase per adjustment — re-exported from generationConfig (§2).
 export const MAX_VOLUME_INCREASE_PCT = GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT
 

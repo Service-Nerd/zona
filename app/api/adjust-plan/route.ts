@@ -108,10 +108,12 @@ export async function POST(req: NextRequest) {
   const [analysisRes, prevWeeksRes, adjustmentsThisWeekRes, existingPendingRes, completionsRes, lastResolvedAdjustmentRes] = await Promise.all([
     serviceSupabase
       .from('run_analysis')
-      .select('session_day, hr_in_zone_pct, actual_load_km, planned_load_km, ef_trend_pct')
+      // ENGINE-01/02: week_n, pace_score, hr_above_ceiling_pct, distance_score added
+      // for fitness-signal and long-run-shortfall triggers.
+      .select('week_n, session_day, hr_in_zone_pct, actual_load_km, planned_load_km, ef_trend_pct, pace_score, hr_above_ceiling_pct, distance_score')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(20),
+      .limit(30),
     serviceSupabase
       .from('run_analysis')
       .select('week_n, actual_load_km')
@@ -207,6 +209,44 @@ export async function POST(req: NextRequest) {
     ? { ...skipSignalRaw, weekSessionsByDay: week.sessions as Record<string, any> }
     : undefined
 
+  // ENGINE-01 — Fitness signal: quality sessions from recent weeks.
+  // Cross-reference session_day against plan to determine session type.
+  // Only include sessions where pace_score is non-null (VDOT-based plans only).
+  const QUALITY_TYPES = new Set(['quality', 'intervals', 'tempo'])
+  const recentQualityAnalyses = (analysisRes.data ?? [])
+    .filter((a: any) => {
+      if (a.pace_score === null || a.pace_score === undefined) return false
+      // Derive session type from plan week for this analysis row
+      const w = plan.weeks.find((pw: any) => pw.n === a.week_n)
+      const s = (w?.sessions as any)?.[a.session_day as string]
+      return s && QUALITY_TYPES.has((s as any).type)
+    })
+    .slice(0, 10) // last 10 quality sessions at most
+    .map((a: any) => ({
+      paceScore:         a.pace_score as number,
+      hrAboveCeilingPct: a.hr_above_ceiling_pct as number | null,
+      weekN:             a.week_n as number,
+    }))
+
+  // ENGINE-02 — Long run shortfall: long run sessions from recent weeks.
+  const recentLongRunAnalyses = (analysisRes.data ?? [])
+    .filter((a: any) => {
+      if (a.actual_load_km === null || a.actual_load_km === undefined) return false
+      const w = plan.weeks.find((pw: any) => pw.n === a.week_n)
+      const s = (w?.sessions as any)?.[a.session_day as string]
+      return s && (s as any).type === 'long'
+    })
+    .slice(0, 4) // last 4 long runs at most
+    .map((a: any) => {
+      const w = plan.weeks.find((pw: any) => pw.n === a.week_n)
+      const s = (w?.sessions as any)?.[a.session_day as string]
+      return {
+        actualKm:  a.actual_load_km as number,
+        plannedKm: (s as any)?.distance_km as number | null ?? null,
+        weekN:     a.week_n as number,
+      }
+    })
+
   const proposed = checkAdjustmentTriggers({
     currentWeekN:         weekN,
     totalWeeks:           plan.weeks.length,
@@ -222,6 +262,8 @@ export async function POST(req: NextRequest) {
     rpeSignal,
     skipSignal,
     reorderSignal,
+    recentQualityAnalyses,
+    recentLongRunAnalyses,
   })
 
   if (!proposed) {

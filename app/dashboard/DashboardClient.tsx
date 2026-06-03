@@ -1641,7 +1641,7 @@ export default function DashboardClient() {
           setScreen(hasWizardDraft ? 'generate' : 'today')
         }} />}
         {screen === 'benchmark' && plan && <BenchmarkUpdateScreen plan={plan} stravaConnected={stravaConnected} onBack={() => setScreen('me')} onUpdated={(updatedPlan) => { setPlan(updatedPlan) }} />}
-        {screen === 'reshape'   && <ReshapeScreen plan={plan} onBack={() => setScreen('me')} onReshapeApplied={(updatedPlan) => { setPlan(updatedPlan); setPendingAdjustment(null); setScreen('today') }} onChecked={(foundChange) => { setLastAdjustmentCheckAt(new Date().toISOString()); setLastAdjustmentCheckFoundChange(foundChange) }} />}
+        {screen === 'reshape'   && <ReshapeScreen plan={plan} onBack={() => setScreen('me')} onReshapeApplied={(updatedPlan) => { setPlan(updatedPlan); setPendingAdjustment(null); setScreen('today') }} onChecked={(foundChange) => { setLastAdjustmentCheckAt(new Date().toISOString()); setLastAdjustmentCheckFoundChange(foundChange) }} onOpenBenchmark={() => setScreen('benchmark')} />}
         {screen === 'founder'   && <FounderNoteScreen onBack={() => setScreen('me')} />}
         {screen === 'notifications' && <NotificationsScreen onBack={() => setScreen('today')} onNavigate={navigateFromNotificationUrl} onAllRead={() => setUnreadNotifications(0)} />}
       </div>
@@ -5048,13 +5048,15 @@ function AdjustmentBanner({ adjustment, onConfirmed, onReverted }: {
 // ── ReshapeScreen ─────────────────────────────────────────────────────────────
 // User-initiated plan reshape. Calls /api/adjust-plan with manual:true, shows result.
 
-function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked }: {
+function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpenBenchmark }: {
   plan: Plan | null
   onBack: () => void
   onReshapeApplied: (plan: any) => void
   /** Fired after a successful engine evaluation (manual run). Lets the parent
    *  refresh the "Last checked …" line on the Me screen without a re-fetch. */
   onChecked?: (foundChange: boolean) => void
+  /** ENGINE-01 fitness_signal: CTA routes to BenchmarkUpdateScreen. */
+  onOpenBenchmark?: () => void
 }) {
   const [status, setStatus]               = useState<'loading' | 'found' | 'clean' | 'error'>('loading')
   const [adjustment, setAdjustment]       = useState<any | null>(null)
@@ -5146,9 +5148,29 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked }: {
         )}
 
         {status === 'found' && adjustment && (
-          <PendingAdjustmentBanner onConfirm={handleConfirm} onRevert={handleDismiss} loading={actionLoading}>
-            {adjustment.summary}
-          </PendingAdjustmentBanner>
+          <>
+            <PendingAdjustmentBanner
+              onConfirm={adjustment.trigger_type === 'fitness_signal' ? undefined : handleConfirm}
+              onRevert={handleDismiss}
+              loading={actionLoading}
+            >
+              {adjustment.summary}
+            </PendingAdjustmentBanner>
+            {/* ENGINE-01: fitness_signal has no plan change — show benchmark CTA instead */}
+            {adjustment.trigger_type === 'fitness_signal' && onOpenBenchmark && (
+              <button
+                onClick={onOpenBenchmark}
+                style={{
+                  width: '100%', marginTop: '12px', padding: '15px',
+                  borderRadius: 'var(--radius-md)', background: 'var(--moss)',
+                  border: 'none', cursor: 'pointer',
+                  fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--card)',
+                }}
+              >
+                Update benchmark →
+              </button>
+            )}
+          </>
         )}
 
         {status === 'clean' && (
@@ -9736,7 +9758,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
               </button>
               {adjustmentsDisclosureOpen && (
                 <div style={{ padding: '0 16px 16px', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.6 }}>
-                  Recovery signals before hard sessions — resting HR, HRV, sleep. Easy runs drifting above Zone 2. Load spiking against your recent weeks. Aerobic efficiency slipping over time. Missed or rearranged sessions. When something looks off, you&apos;ll get a notification and can review it here.
+                  Recovery signals before hard sessions — resting HR, HRV, sleep. Easy runs drifting above Zone 2. Load spiking against your recent weeks. Aerobic efficiency slipping over time. Long runs consistently finishing short. Missed or rearranged sessions. Quality sessions running faster than target at controlled effort — a signal your fitness may have moved. When something looks off, you&apos;ll get a notification and can review it here.
                 </div>
               )}
             </div>
