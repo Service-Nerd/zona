@@ -18,7 +18,7 @@ Supporting strategy: `docs/gtm/go-to-market-plan-2026-06.md` (the GTM playbook �
 
 **Workstreams:** 🏃 Product · 📣 Go-to-Market & Marketing · 🔁 Growth & Retention · ⚖️ Legal & Ops
 **Status:** 🔲 not started · 🔄 in progress · ✅ done · ⏸️ deferred
-**Last updated:** 2026-06-03 (session 2)
+**Last updated:** 2026-06-04 (session 3)
 
 ---
 
@@ -26,7 +26,7 @@ Supporting strategy: `docs/gtm/go-to-market-plan-2026-06.md` (the GTM playbook �
 
 iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. **App Store submission ready — one action left: Submit for review.** Copyright `2026 Russell Shear`, support page, screenshots, demo account, subscription disclosure, legal copy (service-nerd removed) all done. **Operating entity for v1: Russell Shear personally** (Apple Developer account is Individual; convert to LoGlide Limited post-validation — see Legal & Ops).
 
-**`zonna.run` is now a real marketing page** (live 2026-06-03). Download-first: App Store badge ("Coming soon" until approval), waitlist email capture (Supabase `waitlist` table), pricing + trial + Apple Health mention. Waitlist form live and taking signups. On approval day: set `BRAND.appStore.url` → badge becomes a live download link.
+**`zonna.run` is now a real marketing page** (live 2026-06-03, redesigned 2026-06-04). Sutherland-flavoured positioning pass: tagline elevated to hero kicker, "What's not in the app" anti-feature grid, "Probably not for you if…" counter-positioning, waitlist + trial copy in brand voice, personalisation mechanic preview (wizard → session card), brand statement closes the page alone. SEO fully wired: `robots.txt`, `sitemap.xml`, page-level canonical + OG + 155-char description, `NEXT_PUBLIC_APP_URL=https://zonna.run` in Vercel. Waitlist form live and taking signups. On approval day: set `BRAND.appStore.url` → badge becomes a live download link.
 
 **Acquisition + retention engine:** not yet running. Waitlist is the only capture. Trial emails (GTM-09/10) not built. No paid spend — correct at this stage (wait for trial→paid signal first).
 
@@ -56,7 +56,7 @@ iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. **App Store subm
 
 | Item | Status | Effort | Notes |
 |------|--------|--------|-------|
-| **Marketing site live** (GTM-08) | ✅ | — | **Shipped 2026-06-03.** `zonna.run` now serves the marketing page. Download-first: App Store badge + waitlist form + pricing/trial + Apple Health. `MARKETING_SITE_ENABLED=true` in Vercel. On approval: set `BRAND.appStore.url` in `lib/brand.ts` — badge goes live. |
+| **Marketing site live** (GTM-08) | ✅ | — | **Shipped 2026-06-03. Redesigned + SEO 2026-06-04.** Sutherland positioning pass: tagline as hero kicker, anti-feature grid, counter-positioning, brand-voice copy, personalisation mechanic preview. SEO: `robots.ts`, `sitemap.ts`, canonical/OG metadata, `NEXT_PUBLIC_APP_URL=https://zonna.run`. `MARKETING_SITE_ENABLED=true` in Vercel. On approval: set `BRAND.appStore.url` in `lib/brand.ts` — badge goes live. |
 | **Waitlist capture** | ✅ | — | **Shipped 2026-06-03.** Supabase `waitlist` table live. `/api/waitlist` route, duplicate emails silent-succeed. |
 | **Set App Store URL on approval** | 🔲 | S (~5 min) | Day-of action. Set `BRAND.appStore.url` in `lib/brand.ts` → commit → push. Badge on the marketing site becomes a live download link. No Vercel env change needed. |
 | **App Store Optimization loop** | 🔲 | S | Listing is the whole iOS funnel. Iterate keywords/screenshots on real conversion data once installs start. |
