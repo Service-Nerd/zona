@@ -18,13 +18,17 @@ Supporting strategy: `docs/gtm/go-to-market-plan-2026-06.md` (the GTM playbook �
 
 **Workstreams:** 🏃 Product · 📣 Go-to-Market & Marketing · 🔁 Growth & Retention · ⚖️ Legal & Ops
 **Status:** 🔲 not started · 🔄 in progress · ✅ done · ⏸️ deferred
-**Last updated:** 2026-06-03
+**Last updated:** 2026-06-03 (session 2)
 
 ---
 
 ## Where we are
 
-iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. App Store submission essentially ready — copyright (`2026 Russell Shear`), support page, screenshots, demo account, subscription disclosure all done. **Operating entity for v1: Russell Shear personally** (Apple Developer account is Individual; convert to LoGlide Limited post-validation — see Legal & Ops). The product is strong; the gap is **market presence** — there is no proper marketing website yet, and no acquisition/retention engine running.
+iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. **App Store submission ready — one action left: Submit for review.** Copyright `2026 Russell Shear`, support page, screenshots, demo account, subscription disclosure, legal copy (service-nerd removed) all done. **Operating entity for v1: Russell Shear personally** (Apple Developer account is Individual; convert to LoGlide Limited post-validation — see Legal & Ops).
+
+**`zonna.run` is now a real marketing page** (live 2026-06-03). Download-first: App Store badge ("Coming soon" until approval), waitlist email capture (Supabase `waitlist` table), pricing + trial + Apple Health mention. Waitlist form live and taking signups. On approval day: set `BRAND.appStore.url` → badge becomes a live download link.
+
+**Acquisition + retention engine:** not yet running. Waitlist is the only capture. Trial emails (GTM-09/10) not built. No paid spend — correct at this stage (wait for trial→paid signal first).
 
 ---
 
@@ -52,13 +56,13 @@ iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. App Store submis
 
 | Item | Status | Effort | Notes |
 |------|--------|--------|-------|
-| **Flip the marketing one-pager live** (`MARKETING_SITE_ENABLED`) | 🔲 | S | GTM-08. Built + dark-launched. **Check Vercel first** — don't assume it's off. Quick win the day the app is live. |
-| **Build a proper website** (GTM-08b — NEW) | 🔲 | M | The current `app/page.tsx` is a single dark-launched panel, not a real site. Need a proper marketing site: hero, the "grey middle" thesis, product proof, pricing, FAQ, support, content/blog home for SEO. **Budget-friendly: extend the existing Next.js page** (same repo, same `zonna.run`, zero new hosting) rather than a separate Webflow/Framer subscription. This is the funnel's front door once acquisition starts. |
-| **Waitlist / notify-me capture** | 🔲 | S | ~1h Supabase `waitlist` table. Captures non-iOS + not-ready visitors for the v1.1 decision. |
-| **App Store Optimization loop** | 🔲 | S | Listing is the whole iOS funnel. Iterate keywords/screenshots on real conversion data. |
+| **Marketing site live** (GTM-08) | ✅ | — | **Shipped 2026-06-03.** `zonna.run` now serves the marketing page. Download-first: App Store badge + waitlist form + pricing/trial + Apple Health. `MARKETING_SITE_ENABLED=true` in Vercel. On approval: set `BRAND.appStore.url` in `lib/brand.ts` — badge goes live. |
+| **Waitlist capture** | ✅ | — | **Shipped 2026-06-03.** Supabase `waitlist` table live. `/api/waitlist` route, duplicate emails silent-succeed. |
+| **Set App Store URL on approval** | 🔲 | S (~5 min) | Day-of action. Set `BRAND.appStore.url` in `lib/brand.ts` → commit → push. Badge on the marketing site becomes a live download link. No Vercel env change needed. |
+| **App Store Optimization loop** | 🔲 | S | Listing is the whole iOS funnel. Iterate keywords/screenshots on real conversion data once installs start. |
 | **Content engine — "the grey middle"** | 🔲 | ongoing | Founder-led, phone-only. 1–2 POV pieces/week repurposed across Reddit / Shorts / carousel. Zero production budget. See GTM plan Phase 1. |
-| **First 10 reviews + community seeding** | 🔲 | ongoing | Reviews are conversion fuel; seed running subreddits honestly. |
-| **Micro-PR / newsletters** | 🔲 | ongoing | Pitch the "a coach that tells you to slow down" angle. Free outreach. |
+| **First 10 reviews + community seeding** | 🔲 | ongoing | Reviews are conversion fuel. Ask the TestFlight cohort before any acquisition push. |
+| **Micro-PR / newsletters** | 🔲 | ongoing | Pitch the "a coach that tells you to slow down" angle to running newsletters. Free outreach. |
 
 ### 🔁 Growth & Retention
 
