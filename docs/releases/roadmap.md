@@ -44,7 +44,7 @@ iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. **App Store subm
 | 📣 | **App Store listing** (subtitle, description, keywords, screenshots) | ✅ | 5 screenshots uploaded; three-beat description rhythm optional polish (analysis §7). |
 | 🏃 | **Pre-submission QA / journey test** | ✅ | Critical funnel passing; post-race bug fixed (`f2892b9`). |
 | ⚖️ | **Submit for review** | ✅ | Submitted. Manual release selected — smoke the live binary before flipping to traffic. |
-| ⚖️ | **In-app medical/training disclaimer present** | 🔲 | Verify it's shown at onboarding + in Terms before traffic. Cheap, high-value for a health app operated personally. |
+| ⚖️ | **In-app medical/training disclaimer present** | ✅ | Terms §5 + §11 hold the full disclaimer. Login screen now shows a one-line in-brand pointer above the Terms/Privacy footer — every account creation passes through it. |
 
 ---
 

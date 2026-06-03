@@ -138,6 +138,9 @@ export const PlanMetaSchema = z.object({
   tier:         z.enum(['free', 'trial', 'paid']).optional(),
   compressed:   z.boolean().optional(),
   coach_intro:  z.string().optional(),
+  // CA-01: FREE first-plan-only "why this plan" intro. Set in the route (not the
+  // enricher) so a re-parse through PlanSchema doesn't strip it on plan load.
+  plan_intro:   z.string().optional(),
 
   // R24 — VDOT / zone model fields (these were missing from the schema; added here for completeness)
   age:                z.number().int().positive().optional(),

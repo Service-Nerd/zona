@@ -34,6 +34,7 @@ import ZoneBar, { zoneNumberForType, zoneShortName } from '@/components/shared/Z
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import AIMark from '@/components/shared/AIMark'
 import CoachByline from '@/components/shared/CoachByline'
+import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { NotificationBell } from '@/components/shared/NotificationBell'
 import { NotificationRow, type NotificationItem } from '@/components/shared/NotificationRow'
@@ -6461,6 +6462,17 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           phaseLabel={phaseLabel || undefined}
         />
       </div>
+
+      {/* ── PLAN INTRO — CA-01 free first-plan "why this plan" (Kit's voice) ──
+          Plan-level intro generated once on a free user's first plan. The one
+          AI surface a free user gets; carries CoachByline provenance. Persists
+          in meta.plan_intro, so it survives save/reload. Only set for free
+          first-plans — paid plans carry coach_intro instead and never this. */}
+      {plan.meta.plan_intro && (
+        <div style={{ padding: '16px 16px 0' }}>
+          <PlanIntroCard text={plan.meta.plan_intro} />
+        </div>
+      )}
 
       {/* ── PLAN VOICE — this-week coaching card (PLAN-VOICE-AI) ─────────
           Tier-divergent: paid/trial users see AI voice with CoachByline.

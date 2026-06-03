@@ -222,7 +222,7 @@ export default function LoginPage() {
               width: '100%',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
               background: 'var(--ink)',
-              color: '#FFFFFF',
+              color: 'var(--card)',
               border: 'none',
               borderRadius: '10px',
               padding: '13px 16px',
@@ -356,6 +356,16 @@ export default function LoginPage() {
 
         <div style={{
           marginTop: '24px', textAlign: 'center',
+          fontFamily: 'var(--font-ui)',
+          fontSize: '11px', color: 'var(--mute)',
+          lineHeight: 1.6,
+          padding: '0 4px',
+        }}>
+          {BRAND.name} is training guidance, not medical advice. If you have a health condition or haven&rsquo;t exercised in a while, check with a doctor first.
+        </div>
+
+        <div style={{
+          marginTop: '12px', textAlign: 'center',
           display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px',
         }}>
           <a

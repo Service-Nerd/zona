@@ -1013,6 +1013,32 @@ Reference: `app/dashboard/DashboardClient.tsx` → `PlanScreen` (inline JSX; not
 
 ---
 
+### 24b. PlanIntroCard — free "why this plan" intro (CA-01)
+
+The free-tier counterpart to the per-week Plan Voice Card (§24). A plan-*level* one-line intro in Kit's voice, generated once on a free user's **first plan** (the "wedge moment" fix — otherwise free users get zero AI voice). Distinct from the paid `coach_intro` (2–3 sentences + confidence); the two never co-exist on a plan.
+
+```
+┌─────────────────────────────────────────────┐
+│ ▌ [K✦] Kit                                   │  ← 3px moss rail + CoachByline
+│        WHY THIS PLAN                         │
+│   Twelve weeks to your 10K. The work is in   │
+│   holding your easy days easy — that's where │
+│   the speed actually comes from.             │
+└─────────────────────────────────────────────┘
+```
+
+**Structure:** identical shell to §24 — `--card` bg, `1px --line` border, `--radius-lg`, 3px `--moss` left rail at `left: 8px`, padding `14px 16px 14px 19px`. Eyebrow is always `<CoachByline color="moss" role="Why this plan" />` (model output → byline required). Body: `14px 400 --ink-2`, line-height 1.6.
+
+**Provenance:** always genuine model output (`meta.plan_intro`, Haiku). Never render rule-engine or hand-authored copy through this card.
+
+**Where it renders:** the generation preview (`GeneratePlanScreen`) and the top of the saved Plan screen (`DashboardClient → PlanScreen`, above the §24 "This week" card). Single field, two read sites; persists in `meta.plan_intro` across save/reload.
+
+**Source:** the field is set in `app/api/generate-plan/route.ts` (free branch, first-plan only) via `lib/plan/freeIntro.ts` — **not** the enricher. Silent fallback (ADR-006): on any AI failure the field is simply absent and the card doesn't render.
+
+Reference: `components/shared/PlanIntroCard.tsx`
+
+---
+
 ### 25. ZoneRings
 
 Brand-mark-as-data-display. The four concentric rings of the Zonna logo each represent one HR zone bucket for the week — Z1 outer through Z4-5 inner — arc-filled to the % time the runner spent in that zone. The moss centre dot is brand-constant; it never reflects data. The logo becomes functional UI on a single screen (Coach), localised on purpose so the brand mark elsewhere (login, OG cards, marketing) stays stable.

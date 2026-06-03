@@ -4,6 +4,7 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { enrich } from '@/lib/plan/enrich'
+import { generateFreeIntro } from '@/lib/plan/freeIntro'
 import { nextMonday, formatDate } from '@/lib/plan/length'
 import { PrepTimeError, DaysAvailableError, InputFieldError } from '@/lib/plan/inputs'
 
@@ -97,8 +98,32 @@ export async function POST(req: NextRequest) {
       throw err
     }
 
-    // Free tier: no enrichment, return immediately as before.
+    // Free tier: no enrichment. CA-01 — on the user's FIRST plan only, add a
+    // single short "why this plan" intro line (the one AI surface a free user
+    // gets — the wedge moment). Silent fallback: any failure leaves the rule
+    // plan untouched. Subsequent free plans skip the call entirely.
     if (tier === 'free') {
+      try {
+        const { createClient } = await import('@supabase/supabase-js')
+        const service = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        )
+        // The `plans` table holds one row per user, written on first save. No
+        // row yet ⇒ this is their first plan (it isn't persisted until they tap
+        // "Use this plan"). Cheapest reliable first-plan signal.
+        const { count } = await service
+          .from('plans')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+
+        if ((count ?? 0) === 0) {
+          const intro = await generateFreeIntro(rulePlan, input)
+          if (intro) rulePlan.meta.plan_intro = intro
+        }
+      } catch (e) {
+        console.error('[generate-plan] free intro skipped', e)
+      }
       return NextResponse.json({ plan: rulePlan })
     }
 

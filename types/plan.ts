@@ -245,7 +245,8 @@ export interface PlanMeta {
   // R23 — hybrid generation fields
   tier?: 'free' | 'trial' | 'paid'       // tier at which plan was generated
   compressed?: boolean                    // true if available weeks < ideal minimum for this distance
-  coach_intro?: string                    // PAID only — enricher-generated intro paragraph
+  coach_intro?: string                    // PAID only — enricher-generated intro paragraph (2–3 sentences + confidence)
+  plan_intro?: string                     // FREE first-plan only — CA-01 one-line "why this plan" taste of Kit's voice (Haiku, ~1–2 sentences). Distinct from coach_intro; never co-exists with it.
 
   // R24 — VDOT / zone model fields
   age?: number                            // athlete age at time of generation

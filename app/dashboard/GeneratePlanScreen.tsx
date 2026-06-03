@@ -10,6 +10,7 @@ import { BRAND } from '@/lib/brand'
 import { createClient } from '@/lib/supabase/client'
 import { classifyGap, gapDays, generateFoundationBlock } from '@/lib/plan/foundationBlock'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
+import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import { TextField } from '@/components/shared/TextField'
 import { Chip } from '@/components/shared/Chip'
@@ -805,6 +806,14 @@ export default function GeneratePlanScreen({
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.65 }}>
                 {meta.coach_intro}
               </div>
+            </div>
+          )}
+
+          {/* CA-01 — FREE first-plan "why this plan" intro (Kit's voice). Never
+              co-exists with the paid coach_intro above. */}
+          {meta.plan_intro && (
+            <div style={{ margin: '16px 0' }}>
+              <PlanIntroCard text={meta.plan_intro} />
             </div>
           )}
 
