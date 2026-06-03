@@ -31,7 +31,7 @@ export default function TermsPage() {
       }}>
         <Wordmark size="sm" />
         <Link
-          href="/auth/login"
+          href="/"
           style={{
             fontFamily: 'var(--font-ui)',
             fontSize: '11px',
