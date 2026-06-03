@@ -78,7 +78,7 @@ iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. **App Store subm
 |------|--------|--------|-------|
 | **UPGRADE-ENTRY-01 — always-visible upgrade entry** | ✅ | S | Shipped 2026-06-04. "Subscription / View plans" row in MeScreen; visible to free/trial/expired, hidden for active Pro. §3.1.2 compliant. |
 | **CA-04 — adjustment narrative** (coaching, not a banner) | ✅ | S | Already shipped (built as part of AI-DEPTH-10). AI narrative via `buildAdjustmentExplanationPrompt` + Sonnet, PAID-gated via `dynamic_reshape_r20`, notification inbox + push wired. |
-| **R25 cuts #2 + #3** (Today pre-run band + Coach trend cards) | 🔲 | ~10h | Turns "coach for today" into "coach for your trajectory" — retention between races. Tier: PAID. |
+| **R25 cuts #2 + #3** (Today pre-run band + Coach trend cards) | ✅ | ~10h | Shipped 2026-06-04. Cut #2: `PreRunBandCard` above Today session card (distance-only cohort, PAID, today only). Cut #3: easy-run `TrendCard` on Coach (only renders live). API: `/api/coaching/prerun-band`. |
 | **POST-RUN-03 — rich-media zone push** | 🔲 | M | Gated on TestFlight exercising production APNs. Web image first, then iOS Notification Service Extension. |
 | **POST-RUN-REFRAME-02 — voice memo input** | 🔲 | M (~3d) | First non-Anthropic vendor (Whisper). Gated on device-test capacity + vendor decision. Tier: PAID. |
 
@@ -99,6 +99,7 @@ iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. **App Store subm
 
 | Item | Tier | Effort | Notes |
 |------|------|--------|-------|
+| **CA-06 — Plan history UI** | FREE | S | `plan_archive` table already snapshots every prior plan; no browse surface yet. Read-only list on MeScreen with race name + date + archived_at. Data-protection promise completed. |
 | **CA-02 — Apple Watch companion app** (thin: session + zone + one-tap start) | FREE display / PAID analysis | L | Biggest competitive table-stakes gap. Reuses the `SharedStorePlugin` App-Group bridge. |
 | **CA-03 — Post-race "what next" goal-ladder** | PAID | M | Closes the post-race retention void. Pairs with R24 + R25. |
 | **CA-07 — "Ask Kit about this run"** (single gated affordance, *not* chat) | PAID | M | Needs product decision before scoping. |

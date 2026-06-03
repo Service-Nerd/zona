@@ -29,6 +29,10 @@ interface TrendCardLive {
   windowMonths: number
   /** Model-written gloss. Present when hrIsTrending and AI succeeded. */
   gloss?: string
+  /** Eyebrow label and CoachByline role. Default: 'Aerobic trend'. */
+  label?: string
+  /** Noun for metadata count, e.g. 'easy run'. Default: 'long run'. */
+  sessionLabel?: string
   onUpgrade?: never
 }
 interface TrendCardPending  { state: 'pending';  onUpgrade?: never }
@@ -317,7 +321,9 @@ export default function TrendCard(props: TrendCardProps) {
 
   // ── Live ──────────────────────────────────────────────────────────────────
   // Props confirmed as TrendCardLive here.
-  const { earlierMonth, earlierHr, nowHr, cohortSize, windowMonths, gloss } = props
+  const { earlierMonth, earlierHr, nowHr, cohortSize, windowMonths, gloss, label, sessionLabel } = props
+  const eyebrow    = label       ?? 'Aerobic trend'
+  const runNoun    = sessionLabel ?? 'long run'
 
   // Count-up animation — both values from 0 to target on first mount.
   const earlier = useCountUp(earlierHr)
@@ -338,10 +344,10 @@ export default function TrendCard(props: TrendCardProps) {
         {/* Eyebrow */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Aerobic trend
+            {eyebrow}
           </span>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 400, color: 'var(--mute)', opacity: 0.8 }}>
-            across {cohortSize} long run{cohortSize !== 1 ? 's' : ''} · {windowMonths}w
+            across {cohortSize} {runNoun}{cohortSize !== 1 ? 's' : ''} · {windowMonths}w
           </span>
         </div>
 
@@ -369,7 +375,7 @@ export default function TrendCard(props: TrendCardProps) {
           <div style={{ marginBottom: gloss ? '10px' : 0 }}>
             <CoachByline
               working={!gloss && !glossVisible}
-              role="Aerobic trend"
+              role={eyebrow}
             />
           </div>
 
@@ -387,7 +393,7 @@ export default function TrendCard(props: TrendCardProps) {
           {/* When no gloss came back from AI (silent fallback) */}
           {!gloss && glossVisible && (
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', lineHeight: 1.55, margin: 0 }}>
-              Long-run HR, {earlierMonth} to now.
+              {runNoun.charAt(0).toUpperCase() + runNoun.slice(1)} HR, {earlierMonth} to now.
             </p>
           )}
         </div>

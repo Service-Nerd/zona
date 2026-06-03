@@ -35,6 +35,7 @@ import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import AIMark from '@/components/shared/AIMark'
 import CoachByline from '@/components/shared/CoachByline'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
+import PreRunBandCard from '@/components/shared/PreRunBandCard'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { NotificationBell } from '@/components/shared/NotificationBell'
 import { NotificationRow, type NotificationItem } from '@/components/shared/NotificationRow'
@@ -5411,6 +5412,33 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   // calendar day — completions are keyed by originalDay so they survive moves.
   const selectedCompletionKey = selectedSession?.key ?? ''
 
+  // R25 Cut #2 — pre-run band: cohort stats for similar past runs shown above
+  // today's session card. PAID only. Fires when a today session with a planned
+  // distance is selected; silently absent when < 3 similar runs exist.
+  const [preRunBand, setPreRunBand] = useState<{ cohortSize: number; avgHr: number | null; avgInZonePct: number | null; medianDistanceKm: number } | null>(null)
+  const [preRunBandLoading, setPreRunBandLoading] = useState(false)
+  useEffect(() => {
+    const PRE_RUN_TYPES = new Set(['easy', 'long', 'run', 'quality', 'tempo', 'intervals', 'recovery'])
+    if (!hasPaidAccess || !selectedSession?.today || !PRE_RUN_TYPES.has(selectedSession.type) || !selectedSession.distance) {
+      setPreRunBand(null)
+      return
+    }
+    setPreRunBandLoading(true)
+    const params = new URLSearchParams({
+      session_type: selectedSession.type,
+      distance_km:  String(selectedSession.distance),
+    })
+    authedFetch(`/api/coaching/prerun-band?${params}`)
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { cohort: { cohortSize: number; avgHr: number | null; avgInZonePct: number | null; medianDistanceKm: number } | null } | null) => {
+        setPreRunBand(data?.cohort ?? null)
+      })
+      .catch(() => { setPreRunBand(null) })
+      .finally(() => setPreRunBandLoading(false))
+  // selectedSession.displayKey changes when user picks a different day
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSession?.displayKey, hasPaidAccess])
+
   const RUN_TYPES = ['run', 'easy', 'quality', 'race']
   const isRunDay      = selectedEntry && RUN_TYPES.includes(selectedEntry.type)
   const isStrengthDay = selectedEntry?.type === 'strength'
@@ -6059,6 +6087,17 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 </span>
               )}
             </div>
+
+            {/* R25 Cut #2 — pre-run band. Shows cohort stats for similar past
+                runs when the user is about to head out. PAID, today only.
+                Formula-derived: no AIMark. Absent when < 3 similar runs. */}
+            {hasPaidAccess && selectedSession.today && (
+              preRunBandLoading
+                ? <PreRunBandCard state="skeleton" />
+                : preRunBand
+                ? <PreRunBandCard state="live" cohort={preRunBand} sessionType={selectedSession.type} />
+                : null
+            )}
 
             {/* Session card.
                 Pace fallback chain: plan-baked pace_target → live aerobicPace
@@ -7378,6 +7417,60 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   const [loadSheetOpen, setLoadSheetOpen] = useState(false)
   const [zoneDisciplineSheetOpen, setZoneDisciplineSheetOpen] = useState(false)
 
+  // ── R25 Cut #3: Easy-run trend card ────────────────────────────────────
+  // Same pattern as the long-run aerobic trend (AI-DEPTH-03) below.
+  // Only renders when live — no pending/skeleton clutter (long run card covers that).
+  const [easyTrendData, setEasyTrendData] = useState<{
+    state: 'live'
+    earlierMonth: string; earlierHr: number; nowHr: number
+    cohortSize: number; windowMonths: number; gloss?: string
+  } | null>(null)
+  useEffect(() => {
+    async function fetchEasyTrend() {
+      const easyDistances: number[] = []
+      for (const week of plan.weeks) {
+        const sessions = (week as any).sessions ?? {}
+        for (const s of Object.values(sessions)) {
+          if ((s as any)?.type === 'easy' && (s as any)?.distance_km) {
+            easyDistances.push((s as any).distance_km as number)
+          }
+        }
+      }
+      if (!easyDistances.length) return
+      easyDistances.sort((a, b) => a - b)
+      const anchorKm = easyDistances[Math.floor(easyDistances.length / 2)]
+      try {
+        const params = new URLSearchParams({
+          session_type:  'easy',
+          distance_km:   String(anchorKm),
+          window_months: '6',
+          include_gloss: 'true',
+        })
+        const res = await authedFetch(`/api/coaching/trend?${params}`)
+        if (!res.ok) return
+        const data = await res.json()
+        const trend = data.trend
+        if (!trend?.hrIsTrending) return
+        const first = trend.buckets[0]
+        const last  = trend.buckets[trend.buckets.length - 1]
+        const cohortSize = trend.buckets.reduce((s: number, b: any) => s + b.cohortSize, 0)
+        setEasyTrendData({
+          state:        'live',
+          earlierMonth: first.shortLabel,
+          earlierHr:    first.avgHr ?? 0,
+          nowHr:        last.avgHr  ?? 0,
+          cohortSize,
+          windowMonths: trend.windowMonths,
+          gloss:        data.gloss,
+        })
+      } catch {
+        // silent — easy-run trend is bonus signal
+      }
+    }
+    void fetchEasyTrend()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // fire once on CoachScreen mount
+
   // ── AI-DEPTH-03: Aerobic Trend card ────────────────────────────────────
   // Fetched lazily on CoachScreen mount (same pattern as race-readiness / phase-summary).
   // Lazy because it involves an AI call (~500ms); pre-fetching in the DashboardClient
@@ -7806,6 +7899,23 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             />
           : <TrendCard state="pending" />
         }
+
+        {/* R25 Cut #3 — easy-run trend. Only renders when live and the signal
+            is meaningful (hrIsTrending). No pending/skeleton to avoid clutter
+            — the long-run card above already handles the "not enough data" state. */}
+        {easyTrendData?.state === 'live' && (
+          <TrendCard
+            state="live"
+            label="Easy run trend"
+            sessionLabel="easy run"
+            earlierMonth={easyTrendData.earlierMonth}
+            earlierHr={easyTrendData.earlierHr}
+            nowHr={easyTrendData.nowHr}
+            cohortSize={easyTrendData.cohortSize}
+            windowMonths={easyTrendData.windowMonths}
+            gloss={easyTrendData.gloss}
+          />
+        )}
 
         {/* ── 3. AI WEEKLY REPORT — CoachNoteBlock amber pattern ─────── */}
         <div style={{
