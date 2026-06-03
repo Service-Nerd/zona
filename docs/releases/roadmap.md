@@ -43,7 +43,7 @@ iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. **App Store subm
 | ⚖️ | **Drop "service-nerd" from legal copy** | ✅ | Privacy + Terms now "operated by Russell Shear". Infra identifiers (gist URL, repo) left as-is. |
 | 📣 | **App Store listing** (subtitle, description, keywords, screenshots) | ✅ | 5 screenshots uploaded; three-beat description rhythm optional polish (analysis §7). |
 | 🏃 | **Pre-submission QA / journey test** | ✅ | Critical funnel passing; post-race bug fixed (`f2892b9`). |
-| ⚖️ | **Submit for review** | 🔲 | The one remaining action. Use **manual release** (smoke the live binary before traffic). Give Apple the seeded `zonna.demo@demo.com` (trial-expired). |
+| ⚖️ | **Submit for review** | ✅ | Submitted. Manual release selected — smoke the live binary before flipping to traffic. |
 | ⚖️ | **In-app medical/training disclaimer present** | 🔲 | Verify it's shown at onboarding + in Terms before traffic. Cheap, high-value for a health app operated personally. |
 
 ---
