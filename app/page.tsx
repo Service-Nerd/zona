@@ -29,6 +29,7 @@
 // Product mockups are pure CSS (Warm Slate tokens). Faster than maintaining
 // real screenshots through redesigns, and stays on-palette automatically.
 
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -38,6 +39,36 @@ import { WaitlistForm } from '@/components/marketing/WaitlistForm'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
 
 export const dynamic = 'force-dynamic'  // auth check must run per-request
+
+// ─── Page-level metadata (overrides layout.tsx defaults for this route) ──────
+// Description: 155 chars — rich enough for Google's snippet, honest tone.
+// Canonical: prevents /rts-training-hub.vercel.app and /zonna.run indexing
+// the same page as duplicates once the custom domain is live.
+// NEXT_PUBLIC_APP_URL must be set to https://zonna.run in Vercel env vars.
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zonna.run'
+
+export const metadata: Metadata = {
+  title: `${BRAND.name} — ${BRAND.appStoreSubtitle}`,
+  description: `Training plans for runners who go medium-hard on everything. ${BRAND.name} prescribes the zone for each session and holds you to it. Built for the day-job runner. ${PRICING.trialDays} days free.`,
+  alternates: {
+    canonical: APP_URL,
+  },
+  openGraph: {
+    title: `${BRAND.name} — ${BRAND.appStoreSubtitle}`,
+    description: `Training plans for runners who overtrain. ${BRAND.name} prescribes the zone for each session — easy when it's easy, hard when it's hard.`,
+    url: APP_URL,
+    siteName: BRAND.name,
+    images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630, alt: `${BRAND.name} — ${BRAND.appStoreSubtitle}` }],
+    type: 'website',
+    locale: 'en_GB',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${BRAND.name} — ${BRAND.appStoreSubtitle}`,
+    description: `Training plans for runners who go medium-hard on everything. ${BRAND.name} holds you to your zones.`,
+    images: [`${APP_URL}/api/og`],
+  },
+}
 
 const MARKETING_LIVE = process.env.MARKETING_SITE_ENABLED === 'true'
 
