@@ -324,6 +324,32 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // NOTIF-01 (pending path) — engine detected something that needs the runner's
+  // confirmation but previously had no active channel to reach them. Without this,
+  // the adjustment sits silently in the DB until they happen to open Me.
+  //
+  // Scope: automatic triggers only. Skip and reorder are user-initiated
+  // (isExplicitSignal) — they already know what they asked for. Manual
+  // (ReshapeScreen "Check now") is the user polling — no notification either.
+  //
+  // Deep-link to Me so the "1 change pending · Tap to review" badge is the
+  // first thing they see. One more tap takes them to ReshapeScreen to confirm.
+  if (status === 'pending' && !isManual && !isExplicitSignal) {
+    const url = '/dashboard?screen=me'
+    void notifyUser(user.id, {
+      title: BRAND.push.planNeedsReview,
+      body:  explanationText,
+      tag:   'plan-adjustment',
+      data:  { url },
+    })
+    void recordNotification(user.id, {
+      type:  'plan_adjustment',
+      title: BRAND.push.planNeedsReview,
+      body:  explanationText,
+      url,
+    })
+  }
+
   await recordAdjustmentCheck(serviceSupabase, user.id, true)
   return NextResponse.json({ adjustment: inserted, requires_confirmation: proposed.requiresConfirmation })
 }

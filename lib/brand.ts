@@ -123,6 +123,13 @@ export const BRAND = {
      * reassurance, not alarm.
      */
     planAdjusted: "Plan's been shifted.",
+    /**
+     * Engine detected a change that requires the runner's confirmation.
+     * Curiosity-gap framing (Sutherland): "Kit noticed something." creates
+     * the question "what?" — which is the mechanism that gets it opened.
+     * Body carries the AI explanation. Deep-links to Me → "1 change pending".
+     */
+    planNeedsReview: 'Kit noticed something.',
   },
 } as const
 
