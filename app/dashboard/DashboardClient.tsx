@@ -9693,25 +9693,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                 </div>
               )}
 
-              {/* PROFILE-ADJ-02's "Recent tweaks" log was relocated to the
-                  notification inbox (NOTIF-01) — auto-applied changes now arrive
-                  as a push + bell row instead of sitting silently here. */}
-
-              {/* Check now — manual run of the same engine Auto-adjust schedules. */}
-              <button
-                onClick={onOpenReshape}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}
-              >
-                <div>
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2px' }}>Check now</div>
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
-                    Run the adjustment check on demand.
-                  </div>
-                </div>
-                <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
-              </button>
-
-              {/* Auto-adjust toggle — schedules the same engine. */}
+              {/* Auto-adjust toggle. */}
               <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', borderBottom: '1px solid var(--line)' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2px' }}>Auto-adjust</div>
@@ -9739,8 +9721,9 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                 </button>
               </div>
 
-              {/* What we watch for — disclosure. Broad strokes only; the trigger
-                  taxonomy (acute:chronic, EF decline, etc.) lives in the engine. */}
+              {/* What we watch for — user-facing disclosure of trigger taxonomy.
+                  SYNC RULE: keep in step with TriggerType in lib/coaching/planAdjustment.ts.
+                  If you add or remove a trigger type, update this copy in the same commit. */}
               <button
                 onClick={() => setAdjustmentsDisclosureOpen(o => !o)}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
@@ -9753,7 +9736,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
               </button>
               {adjustmentsDisclosureOpen && (
                 <div style={{ padding: '0 16px 16px', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.6 }}>
-                  Fatigue accumulating across sessions, easy runs creeping above Zone 2, load spikes against your recent weeks, missed or rearranged sessions, and post-session effort that doesn&apos;t match what was planned. When the picture is clear, you&apos;ll see a suggested change here.
+                  Recovery signals before hard sessions — resting HR, HRV, sleep. Easy runs drifting above Zone 2. Load spiking against your recent weeks. Aerobic efficiency slipping over time. Missed or rearranged sessions. When something looks off, you&apos;ll get a notification and can review it here.
                 </div>
               )}
             </div>

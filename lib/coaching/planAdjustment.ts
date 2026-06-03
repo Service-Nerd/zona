@@ -17,16 +17,24 @@ import { BRAND } from '@/lib/brand'
 import type { Session } from '@/types/plan'
 
 export type AdjustmentType = 'reduce_volume' | 'swap_session' | 'extend_recovery' | 'reorder_sessions' | 'flag_for_review'
+
+// ─── SYNC RULE ────────────────────────────────────────────────────────────────
+// Whenever you add, remove, or materially change a TriggerType, you MUST update
+// the "What we watch for" disclosure in DashboardClient.tsx → MeScreen (search
+// "What we watch for"). That copy is the user-facing contract for what this
+// engine does. It's on the same screen as the Auto-adjust toggle — the runner
+// reads it to decide whether to trust the feature with their plan.
+// ─────────────────────────────────────────────────────────────────────────────
 export type TriggerType    =
-  | 'acute_chronic_high'
-  | 'zone_drift'
-  | 'shadow_load'
-  | 'ef_decline'
-  | 'fatigue_accumulation'
-  | 'skip_with_reason'
-  | 'session_reorder'
-  | 'readiness_signal'
-  | 'manual'
+  | 'acute_chronic_high'   // load ratio spike vs 4-week rolling avg
+  | 'zone_drift'           // easy runs running too hard (HR score + RPE fallback)
+  | 'shadow_load'          // actual km > planned km by threshold
+  | 'ef_decline'           // aerobic efficiency drop over 4-week window
+  | 'fatigue_accumulation' // N consecutive heavy/wrecked sessions
+  | 'skip_with_reason'     // user-initiated: session skipped with a reason
+  | 'session_reorder'      // user-initiated: session moved to another day
+  | 'readiness_signal'     // pre-session RHR / HRV / sleep deviation
+  | 'manual'               // user tapped "Check now" (ReshapeScreen)
 
 export interface AdjustmentTrigger {
   type:   TriggerType
