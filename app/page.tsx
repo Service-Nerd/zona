@@ -10,13 +10,21 @@
 // TestFlight is live + you actually want this surface public. No release-day
 // deploy needed at that point — just an env toggle.
 //
-// Copy is sourced entirely from `lib/brand.ts` so a brand rename only touches
-// that file. Tagline placement follows the three-line system in CLAUDE.md:
-//   • Hero headline       → BRAND.appStoreSubtitle  (functional, discovery-facing)
-//   • Demographic hook    → BRAND.tagline           (names the user)
+// Copy is sourced from `lib/brand.ts` for the locked brand strings so a rename
+// only touches that file. Page-structural marketing prose lives inline here
+// (same precedent as the thesis / pillar cards). Tagline placement:
+//   • Hero kicker         → BRAND.tagline           (voice leads — names the user)
+//   • Hero headline (h1)  → BRAND.appStoreSubtitle  (functional, discovery/SEO)
 //   • Closing voice line  → BRAND.brandStatement    (personality moment)
-//   • Voice anchor lift   → BRAND.voiceAnchor       (one in-product voice example)
-// Never mix two taglines on the same surface — each owns its own block.
+//
+// ─── Brand-rule note (revisit if challenged) ───────────────────────────────
+// CLAUDE.md locks "never mix two taglines on the same surface" and maps the
+// landing-page hero to appStoreSubtitle. On a *destination marketing* surface
+// (not the App Store), voice should lead — so the tagline is elevated to the
+// hero kicker while appStoreSubtitle stays the functional <h1> / SEO anchor.
+// This is the deliberate, documented exception for this surface only.
+// Separately: BRAND.voiceAnchor ("Hold the zone.") is product-internal and
+// explicitly NOT for marketing copy — it has been removed from this hero.
 //
 // Product mockups are pure CSS (Warm Slate tokens). Faster than maintaining
 // real screenshots through redesigns, and stays on-palette automatically.
@@ -47,40 +55,30 @@ export default async function Home() {
   return (
     <main style={{ background: 'var(--bg)', color: 'var(--ink)', minHeight: '100vh', fontFamily: 'var(--font-ui)' }}>
 
-      {/* ── Top nav — wordmark + Sign in ─────────────────────────────── */}
+      {/* ── Top nav — wordmark only (sign-in removed) ────────────────────── */}
       <nav style={{
         maxWidth: '1100px', margin: '0 auto',
         padding: '20px 24px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        display: 'flex', alignItems: 'center',
       }}>
         <Wordmark size="sm" />
-        <Link href="/auth/login" style={{
-          fontSize: '14px', fontWeight: 500, color: 'var(--ink-2)',
-          textDecoration: 'none', padding: '8px 14px',
-          border: '1px solid var(--line)', borderRadius: 'var(--radius-md, 8px)',
-          background: 'var(--card)',
-        }}>
-          Sign in
-        </Link>
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <section style={{
         maxWidth: '780px', margin: '0 auto',
-        padding: '64px 24px 80px',
+        padding: '56px 24px 80px',
         textAlign: 'center',
       }}>
+        {/* Tagline elevated to hero kicker — voice leads on this surface. */}
         <div style={{
-          display: 'inline-block',
-          padding: '6px 12px',
-          borderRadius: '999px',
-          background: 'rgba(107,142,107,0.12)',
+          fontFamily: 'var(--font-brand)',
+          fontSize: 'clamp(17px, 2.4vw, 21px)',
+          fontWeight: 600, lineHeight: 1.3, letterSpacing: '-0.01em',
           color: 'var(--moss)',
-          fontSize: '12px', fontWeight: 600,
-          letterSpacing: '0.08em', textTransform: 'uppercase',
-          marginBottom: '24px',
+          marginBottom: '18px',
         }}>
-          {BRAND.voiceAnchor}
+          {BRAND.tagline}
         </div>
 
         <h1 style={{
@@ -109,11 +107,23 @@ export default async function Home() {
           <WaitlistForm />
         </div>
 
+        {/* Waitlist reason — gives the email field a point. Dry, specific. */}
         <p style={{
-          marginTop: '18px',
-          fontSize: '14px', color: 'var(--ink-2)',
+          marginTop: '14px',
+          fontSize: '13px', lineHeight: 1.5, color: 'var(--mute)',
+          maxWidth: '440px', marginLeft: 'auto', marginRight: 'auto',
         }}>
-          {PRICING.trialDays} days free. Then {PRICING.monthly.display}/month or {PRICING.annual.display}/year. Cancel anytime.
+          One email the day it lands. Maybe a sticker if you&apos;re early. We&apos;re not running a
+          launch campaign — we just want to know who&apos;s actually interested.
+        </p>
+
+        {/* Trial + pricing in owned voice — honest numbers, brand tone. */}
+        <p style={{
+          marginTop: '22px',
+          fontSize: '14px', lineHeight: 1.5, color: 'var(--ink-2)',
+        }}>
+          Two weeks, full access. Then {PRICING.monthly.display}/month or {PRICING.annual.display}/year —
+          or you walk. We won&apos;t email you to come back.
         </p>
 
         <p style={{
@@ -121,13 +131,6 @@ export default async function Home() {
           fontSize: '13px', color: 'var(--mute)',
         }}>
           Works with Apple Health. Apple Watch supported.
-        </p>
-
-        <p style={{
-          marginTop: '24px',
-          fontSize: '14px', color: 'var(--mute)',
-        }}>
-          {BRAND.tagline}
         </p>
       </section>
 
@@ -139,23 +142,8 @@ export default async function Home() {
         padding: '72px 24px',
       }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <div style={{
-            fontSize: '12px', fontWeight: 700, color: 'var(--moss)',
-            textTransform: 'uppercase', letterSpacing: '0.08em',
-            textAlign: 'center', marginBottom: '12px',
-          }}>
-            The problem
-          </div>
-          <h2 style={{
-            fontFamily: 'var(--font-brand)',
-            fontSize: 'clamp(28px, 4vw, 36px)',
-            fontWeight: 600, lineHeight: 1.2,
-            color: 'var(--ink)',
-            textAlign: 'center', margin: '0 0 56px',
-            maxWidth: '720px', marginLeft: 'auto', marginRight: 'auto',
-          }}>
-            Every run ends up in the same grey middle.
-          </h2>
+          <Eyebrow>The problem</Eyebrow>
+          <SectionTitle>Every run ends up in the same grey middle.</SectionTitle>
 
           <div style={{
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
@@ -179,22 +167,8 @@ export default async function Home() {
 
       {/* ── What it does — three pillars + product mockups ───────────── */}
       <section style={{ padding: '80px 24px', maxWidth: '1100px', margin: '0 auto' }}>
-        <div style={{
-          fontSize: '12px', fontWeight: 700, color: 'var(--moss)',
-          textTransform: 'uppercase', letterSpacing: '0.08em',
-          textAlign: 'center', marginBottom: '12px',
-        }}>
-          The product
-        </div>
-        <h2 style={{
-          fontFamily: 'var(--font-brand)',
-          fontSize: 'clamp(28px, 4vw, 36px)',
-          fontWeight: 600, lineHeight: 1.2,
-          color: 'var(--ink)',
-          textAlign: 'center', margin: '0 0 56px',
-        }}>
-          Three things, done with restraint.
-        </h2>
+        <Eyebrow>The product</Eyebrow>
+        <SectionTitle>Three things, done with restraint.</SectionTitle>
 
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -210,7 +184,7 @@ export default async function Home() {
           />
           <PillarCard
             title="Nothing you don't need"
-            body="No streaks. No leaderboards. No motivational posters. One job per screen. The plan shows up, you run, the plan adjusts."
+            body="One job per screen. The plan shows up, you run, the plan adjusts. No noise, no dashboards, nothing competing for the run itself."
           />
         </div>
 
@@ -225,35 +199,137 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── Closing voice moment + CTA ───────────────────────────────── */}
+      {/* ── Personalisation mechanic — previews the in-app profile/wizard ── */}
       <section style={{
         background: 'var(--bg-soft)',
         borderTop: '1px solid var(--line)',
+        borderBottom: '1px solid var(--line)',
         padding: '80px 24px',
+      }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <Eyebrow>Personalised, not generic</Eyebrow>
+          <SectionTitle sub="Race, fitness, age, weekly volume. Pace bands and HR zones are derived from those — not lifted from a template.">
+            Your plan starts from four answers.
+          </SectionTitle>
+
+          {/* Answers → generated session. Lifted from the real wizard + Today
+              session card. Stacks on mobile; the arrow flips to vertical. */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '20px', alignItems: 'stretch',
+          }}>
+            <AnswersCard />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{
+                fontSize: '10px', fontWeight: 700, color: 'var(--moss)',
+                textTransform: 'uppercase', letterSpacing: '0.1em',
+              }}>
+                → Generates
+              </div>
+              <MockSessionCard />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── What's not in the app — the restraint, made explicit ───────── */}
+      <section style={{ padding: '80px 24px', maxWidth: '900px', margin: '0 auto' }}>
+        <Eyebrow>The restraint</Eyebrow>
+        <SectionTitle sub="What we left out, on purpose.">
+          What&apos;s not in the app.
+        </SectionTitle>
+
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '0',
+          border: '1px solid var(--line)',
+          borderRadius: 'var(--radius-lg, 12px)',
+          overflow: 'hidden',
+          background: 'var(--card)',
+        }}>
+          {[
+            'No streaks.',
+            'No leaderboards.',
+            'No "crushing it" notifications.',
+            'No motivational quotes.',
+            'No 30-day challenges.',
+            'No social feed.',
+            'No virtual coaches in your DMs.',
+            'No paywalled VO₂ score.',
+            'No badges.',
+            'No fire emojis. Ever.',
+          ].map((item) => (
+            <div key={item} style={{
+              padding: '18px 20px',
+              borderTop: '1px solid var(--line)',
+              borderLeft: '1px solid var(--line)',
+              fontSize: '15px', lineHeight: 1.4, color: 'var(--ink-2)',
+              fontWeight: 500,
+            }}>
+              {item}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Counter-positioning — who this isn't for ──────────────────── */}
+      <section style={{
+        background: 'var(--bg-soft)',
+        borderTop: '1px solid var(--line)',
+        borderBottom: '1px solid var(--line)',
+        padding: '72px 24px',
+      }}>
+        <div style={{ maxWidth: '640px', margin: '0 auto', textAlign: 'left' }}>
+          <Eyebrow>Honestly</Eyebrow>
+          <h2 style={{
+            fontFamily: 'var(--font-brand)',
+            fontSize: 'clamp(26px, 4vw, 34px)',
+            fontWeight: 600, lineHeight: 1.2,
+            color: 'var(--ink)', margin: '0 0 28px',
+          }}>
+            Probably not for you if&hellip;
+          </h2>
+
+          <ul style={{ listStyle: 'none', margin: '0 0 24px', padding: 0, display: 'grid', gap: '14px' }}>
+            {[
+              'You train six days a week and have a sponsor.',
+              'You genuinely believe sleep is for the weak.',
+              'You want your phone to applaud you.',
+            ].map((line) => (
+              <li key={line} style={{
+                display: 'flex', gap: '12px', alignItems: 'baseline',
+                fontSize: '17px', lineHeight: 1.45, color: 'var(--ink)',
+              }}>
+                <span aria-hidden style={{ color: 'var(--moss)', fontWeight: 700, flexShrink: 0 }}>—</span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+
+          <p style={{
+            fontSize: '16px', lineHeight: 1.5, color: 'var(--ink-2)',
+            margin: 0,
+          }}>
+            Plenty of excellent apps will. This one won&apos;t.
+          </p>
+        </div>
+      </section>
+
+      {/* ── Closing voice moment — ends on the line, no button ─────────── */}
+      <section style={{
+        padding: '96px 24px',
         textAlign: 'center',
       }}>
         <p style={{
           fontFamily: 'var(--font-brand)',
-          fontSize: 'clamp(28px, 4vw, 40px)',
-          fontWeight: 500, lineHeight: 1.2,
+          fontSize: 'clamp(32px, 5vw, 48px)',
+          fontWeight: 500, lineHeight: 1.15, letterSpacing: '-0.01em',
           color: 'var(--ink)',
-          maxWidth: '640px', margin: '0 auto 36px',
+          maxWidth: '680px', margin: '0 auto',
           fontStyle: 'italic',
         }}>
           &ldquo;{BRAND.brandStatement}&rdquo;
-        </p>
-        <a href="#waitlist" style={{
-          display: 'inline-block',
-          padding: '14px 28px',
-          background: 'var(--moss)', color: 'white',
-          fontSize: '15px', fontWeight: 600,
-          borderRadius: 'var(--radius-md, 8px)',
-          textDecoration: 'none',
-        }}>
-          Join the waitlist
-        </a>
-        <p style={{ marginTop: '16px', fontSize: '14px', color: 'var(--mute)' }}>
-          {BRAND.signupSub}
         </p>
       </section>
 
@@ -263,17 +339,26 @@ export default async function Home() {
         borderTop: '1px solid var(--line)',
         background: 'var(--bg)',
       }}>
-        <div style={{
-          maxWidth: '1100px', margin: '0 auto',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexWrap: 'wrap', gap: '16px',
-          fontSize: '13px', color: 'var(--mute)',
-        }}>
-          <div>© {new Date().getFullYear()} {BRAND.name}</div>
-          <div style={{ display: 'flex', gap: '20px' }}>
-            <Link href="/support" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Support</Link>
-            <Link href="/privacy" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Privacy</Link>
-            <Link href="/terms" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Terms</Link>
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          {/* One-line founder note — no headshot, no story page. */}
+          <p style={{
+            fontSize: '13px', lineHeight: 1.5, color: 'var(--ink-2)',
+            margin: '0 0 20px',
+          }}>
+            Built by Russell. Runs medium-hard on everything. That&apos;s how I know.
+          </p>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            flexWrap: 'wrap', gap: '16px',
+            fontSize: '13px', color: 'var(--mute)',
+            borderTop: '1px solid var(--line)', paddingTop: '20px',
+          }}>
+            <div>© {new Date().getFullYear()} {BRAND.name}</div>
+            <div style={{ display: 'flex', gap: '20px' }}>
+              <Link href="/support" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Support</Link>
+              <Link href="/privacy" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Privacy</Link>
+              <Link href="/terms" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Terms</Link>
+            </div>
           </div>
         </div>
       </footer>
@@ -282,6 +367,44 @@ export default async function Home() {
 }
 
 // ─── Local presentational components ────────────────────────────────────────
+
+/** Section eyebrow — moss, uppercase, the canonical 0.08em label. */
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      fontSize: '12px', fontWeight: 700, color: 'var(--moss)',
+      textTransform: 'uppercase', letterSpacing: '0.08em',
+      marginBottom: '12px',
+    }}>
+      {children}
+    </div>
+  )
+}
+
+/** Section title (+ optional sub line). Shared rhythm across all sections. */
+function SectionTitle({ children, sub }: { children: React.ReactNode; sub?: string }) {
+  return (
+    <div style={{ marginBottom: '48px' }}>
+      <h2 style={{
+        fontFamily: 'var(--font-brand)',
+        fontSize: 'clamp(28px, 4vw, 36px)',
+        fontWeight: 600, lineHeight: 1.2,
+        color: 'var(--ink)', margin: 0,
+        maxWidth: '720px',
+      }}>
+        {children}
+      </h2>
+      {sub && (
+        <p style={{
+          fontSize: '16px', lineHeight: 1.55, color: 'var(--ink-2)',
+          maxWidth: '600px', margin: '14px 0 0',
+        }}>
+          {sub}
+        </p>
+      )}
+    </div>
+  )
+}
 
 function ThesisCard({ label, line }: { label: string; line: string }) {
   return (
@@ -329,6 +452,52 @@ function PillarCard({ title, body }: { title: string; body: string }) {
       }}>
         {body}
       </p>
+    </div>
+  )
+}
+
+/** Wizard answers receipt — lifted from GeneratePlanScreen's core inputs.
+ *  Four answered rows: the inputs the rule-engine actually derives from. */
+function AnswersCard() {
+  const answers: Array<[string, string]> = [
+    ['How far?', 'Half marathon'],
+    ['Goal', 'Sub-2:00'],
+    ['Weekly volume', '20–40 km'],
+    ['Age', '38'],
+  ]
+  return (
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--line)',
+      borderRadius: 'var(--radius-lg, 12px)',
+      padding: '20px',
+      display: 'flex', flexDirection: 'column',
+    }}>
+      <div style={{
+        fontSize: '10px', fontWeight: 700, color: 'var(--mute)',
+        textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '14px',
+      }}>
+        Your answers
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {answers.map(([q, a], i) => (
+          <div key={q} style={{
+            display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+            gap: '16px',
+            padding: '12px 0',
+            borderTop: i === 0 ? 'none' : '1px solid var(--line)',
+          }}>
+            <span style={{ fontSize: '13px', color: 'var(--mute)' }}>{q}</span>
+            <span style={{
+              fontFamily: 'var(--font-brand)',
+              fontSize: '15px', fontWeight: 600, color: 'var(--ink)',
+              textAlign: 'right',
+            }}>
+              {a}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -435,7 +604,7 @@ function MockCoachNoteCard() {
         textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px',
       }}>
         <span>✦</span>
-        <span>Kit · this week</span>
+        <span>{BRAND.coachName} · this week</span>
       </div>
       <div style={{
         fontSize: '14px', lineHeight: 1.55, color: 'var(--ink)',
