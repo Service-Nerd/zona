@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "zonna-dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "name": "marketing",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "MARKETING_SITE_ENABLED=true ./node_modules/.bin/next dev"],
       "port": 3000
     }
   ]

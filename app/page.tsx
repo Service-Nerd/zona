@@ -24,8 +24,10 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { BRAND } from '@/lib/brand'
+import { BRAND, PRICING } from '@/lib/brand'
 import { Wordmark } from '@/components/ui/Wordmark'
+import { WaitlistForm } from '@/components/marketing/WaitlistForm'
+import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
 
 export const dynamic = 'force-dynamic'  // auth check must run per-request
 
@@ -100,21 +102,29 @@ export default async function Home() {
           {' '}{BRAND.name} prescribes the zone for each session and holds you to it.
         </p>
 
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href="/auth/login" style={{
-            display: 'inline-block',
-            padding: '14px 28px',
-            background: 'var(--moss)', color: 'white',
-            fontSize: '15px', fontWeight: 600,
-            borderRadius: 'var(--radius-md, 8px)',
-            textDecoration: 'none',
-          }}>
-            Start your plan
-          </Link>
+        {/* Primary action — download-first. App Store badge ("coming soon" until
+            BRAND.appStore.url is set) sits above the waitlist capture. */}
+        <div id="waitlist" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+          <AppStoreBadge />
+          <WaitlistForm />
         </div>
 
         <p style={{
-          marginTop: '20px',
+          marginTop: '18px',
+          fontSize: '14px', color: 'var(--ink-2)',
+        }}>
+          {PRICING.trialDays} days free. Then {PRICING.monthly.display}/month or {PRICING.annual.display}/year. Cancel anytime.
+        </p>
+
+        <p style={{
+          marginTop: '8px',
+          fontSize: '13px', color: 'var(--mute)',
+        }}>
+          Works with Apple Health. Apple Watch supported.
+        </p>
+
+        <p style={{
+          marginTop: '24px',
           fontSize: '14px', color: 'var(--mute)',
         }}>
           {BRAND.tagline}
@@ -232,7 +242,7 @@ export default async function Home() {
         }}>
           &ldquo;{BRAND.brandStatement}&rdquo;
         </p>
-        <Link href="/auth/login" style={{
+        <a href="#waitlist" style={{
           display: 'inline-block',
           padding: '14px 28px',
           background: 'var(--moss)', color: 'white',
@@ -240,8 +250,8 @@ export default async function Home() {
           borderRadius: 'var(--radius-md, 8px)',
           textDecoration: 'none',
         }}>
-          Start your plan
-        </Link>
+          Join the waitlist
+        </a>
         <p style={{ marginTop: '16px', fontSize: '14px', color: 'var(--mute)' }}>
           {BRAND.signupSub}
         </p>
@@ -261,6 +271,7 @@ export default async function Home() {
         }}>
           <div>© {new Date().getFullYear()} {BRAND.name}</div>
           <div style={{ display: 'flex', gap: '20px' }}>
+            <Link href="/support" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Support</Link>
             <Link href="/privacy" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Privacy</Link>
             <Link href="/terms" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Terms</Link>
           </div>
@@ -332,7 +343,7 @@ function MockSessionCard() {
       border: '1px solid var(--line)',
       borderRadius: 'var(--radius-lg, 12px)',
       padding: '20px 20px 20px 24px',
-      borderLeft: '3px solid var(--s-easy, #3D6FB0)',
+      borderLeft: '3px solid var(--s-easy)',
     }}>
       <div style={{
         fontSize: '10px', fontWeight: 700, color: 'var(--mute)',

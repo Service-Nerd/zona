@@ -95,7 +95,7 @@ export default function PrivacyPage() {
         </div>
 
         <Section title="Who we are">
-          <P>{BRAND.name} is a running training application operated by Russ (service-nerd). The app is available at <strong>zonna.run</strong> and via the App Store.</P>
+          <P>{BRAND.name} is a running training application operated by Russell Shear, based in the United Kingdom. The app is available at <strong>zonna.run</strong> and via the App Store.</P>
           <P>For any privacy-related queries, contact us at <A href="mailto:support@zonna.run">support@zonna.run</A>.</P>
         </Section>
 

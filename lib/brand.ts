@@ -42,6 +42,18 @@ export const BRAND = {
   signupSub: '14 days, no limits. After that, you decide.',
 
   /**
+   * App Store presence (marketing site). `url` is empty until the app is approved
+   * and live — the marketing page renders a "coming soon" badge + waitlist while
+   * `url` is falsy, then a live "Download on the App Store" link once it's set.
+   * Set `url` to the App Store product URL on approval day. Single source of truth.
+   */
+  appStore: {
+    url: '',
+    comingSoonLabel: 'Coming soon to the App Store',
+    liveLabel: 'Download on the App Store',
+  },
+
+  /**
    * Resolved hex values for the next/og ImageResponse route. @vercel/og runs in
    * the edge runtime without a DOM, so CSS custom properties from globals.css
    * cannot resolve there — these values mirror the Warm Slate tokens 1:1 and

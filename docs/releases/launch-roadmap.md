@@ -1,5 +1,7 @@
 # Launch Roadmap — Zonna v1 iOS
 
+> ⚠️ **SUPERSEDED 2026-06-03.** Forward-looking planning now lives in **`docs/releases/roadmap.md`** (the unified Now/Next/Later view across product *and* go-to-market). This doc is retained as the detailed App-Store-submission checklist / launch record — it's ~complete (only "Submit for review" remains). Don't add new forward work here; add it to `roadmap.md` + `backlog.md`.
+
 **Job:** Get Zonna approved on the App Store. Everything else waits.
 **Source:** distilled from `backlog.md` NOW section + dependency mapping.
 **Status:** assembled 2026-05-12. Update as items land.
@@ -11,7 +13,7 @@
 **ASC submission form — remaining gaps (everything else done):**
 
 1. **Copyright field** — still blank. Set to `2026 Russell Shear`.
-2. **Support URL** — currently points at a page that just loads the app. Apple requires a page exposing a contact method (support email or form). Swap to a one-pager with a support email.
+2. ✅ **Support URL** — **DONE (2026-06-02).** Live at `zonna.run/support` (`app/support/page.tsx`) exposing `support@zonna.run` + subscription/account/data/health sections. Uploaded to the Apple submission. (This rev was written at 16:12, five minutes before the page was created at 16:17 — earlier "points at a page that just loads the app" text was stale on arrival.)
 3. **Export compliance** — answer at submit time: uses encryption → **exempt (standard HTTPS only)**.
 4. **Marketing URL** — intentionally left blank (optional, no penalty).
 

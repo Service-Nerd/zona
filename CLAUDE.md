@@ -440,14 +440,17 @@ Per-session toggle in expanded card only — saves per session, updates collapse
 
 ### Doc System — Where Things Live
 
-Two docs run the work pipeline. Keep them in sync:
+Three docs run the work pipeline. Keep them in sync:
 
 | Doc | Job | When it changes |
 |---|---|---|
-| `docs/releases/backlog.md` | **What's left to ship.** Now / Next / Later. Single source of truth for "what should I work on?" | Item added when scoped; item removed when shipped (moves to feature-registry) |
+| `docs/releases/roadmap.md` | **The unified plan.** Now / Next / Later × workstream (🏃 Product · 📣 GTM & Marketing · 🔁 Growth & Retention · ⚖️ Legal & Ops). One-liners + status + links. Start here for "what are we doing, in what order, across product *and* market?" | Horizon/status updated as items move; new workstream items added here + detailed in backlog |
+| `docs/releases/backlog.md` | **What's left to ship — the detail bench.** Full specs, scope notes, SLC framing behind each roadmap item. | Item added when scoped; item removed when shipped (moves to feature-registry) |
 | `docs/canonical/feature-registry.md` | **What's been built + tier assignments.** Single source of truth for "does this exist? is it free or paid?" | New entry appended to "Shipped Features" table when a backlog item ships |
 
-**The flow:** backlog.md → ship → feature-registry.md. An item lives in exactly one of the two at any time.
+**The flow:** roadmap.md (plan) → backlog.md (spec) → ship → feature-registry.md (built). An open item lives in roadmap (as a line) + backlog (as detail); once shipped it lives only in feature-registry.
+
+> `docs/releases/launch-roadmap.md` is **superseded** (2026-06-03) — retained as the v1 App-Store-submission record only. Don't add forward work there.
 
 **Mechanism:** the `/ship` skill performs the move atomically. After every `git commit`, the assistant checks whether anything shipped and invokes `/ship` if so. Hook in `.claude/settings.local.json` enforces the check.
 
