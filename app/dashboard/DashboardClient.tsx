@@ -16,7 +16,7 @@ import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from
 import { isTrialActive, TRIAL_DAYS } from '@/lib/trial'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
-import { BRAND } from '@/lib/brand'
+import { BRAND, PRICING } from '@/lib/brand'
 import { Wordmark } from '@/components/ui/Wordmark'
 import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
 import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
@@ -9646,6 +9646,35 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                   Fatigue accumulating across sessions, easy runs creeping above Zone 2, load spikes against your recent weeks, missed or rearranged sessions, and post-session effort that doesn&apos;t match what was planned. When the picture is clear, you&apos;ll see a suggested change here.
                 </div>
               )}
+            </div>
+          </>
+        )}
+
+        {/* ── Subscription — UPGRADE-ENTRY-01 ─────────────────────
+            Visible to free / trial / expired users. Hidden for active
+            paid subscribers (hasPaidAccess=true AND no trial days left).
+            Satisfies §3.1.2 reviewer-reachability: any non-Pro user can
+            reach the paywall from Me at any time. */}
+        {(!hasPaidAccess || trialDaysLeft != null) && onUpgrade && (
+          <>
+            <SectionLabel>Subscription</SectionLabel>
+            <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+              <button
+                onClick={onUpgrade}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+              >
+                <div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.4, marginBottom: '2px' }}>
+                    View plans
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
+                    {trialDaysLeft != null
+                      ? `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left in your trial.`
+                      : `From ${PRICING.monthly.label}.`}
+                  </div>
+                </div>
+                <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
+              </button>
             </div>
           </>
         )}

@@ -69,15 +69,15 @@ iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. **App Store subm
 | Item | Status | Effort | Notes |
 |------|--------|--------|-------|
 | **Trial lifecycle emails** (GTM-09 day-14 + GTM-10 day-11) | 🔲 | M | Needs an email platform — **Resend free tier** (£0 at this scale). First money goes to retention, not acquisition. Directly lifts trial→paid (the north-star). |
-| **CA-01 — Free-tier "why this plan" coach intro** | 🔲 | S | **Highest-leverage item on the board.** ~50-token Haiku intro on the first free plan, carrying AIMark. Fixes the silent wedge moment (free user currently hears no voice until paid). Product *and* marketing lever. Tier: FREE. |
+| **CA-01 — Free-tier "why this plan" coach intro** | ✅ | S | Shipped 2026-06-04. Haiku intro on first free plan via `meta.plan_intro`; CoachByline + moss rail (§24b); renders in preview + saved Plan screen; silent fallback. Tier: FREE. |
 | **In-app review prompt at a value moment** | 🔲 | S | After a "nailed" session / good weekly report — not at launch. |
 
 ### 🏃 Product
 
 | Item | Status | Effort | Notes |
 |------|--------|--------|-------|
-| **UPGRADE-ENTRY-01 — always-visible upgrade entry** | 🔲 | S | Compliance + UX: lets any non-paid user reach the paywall; relaxes the demo-account constraint. |
-| **CA-04 — adjustment narrative** (coaching, not a banner) | 🔲 | S | 1 Haiku call per reshape → the system already adapts; make the user *feel* it. Lands in the notification inbox. Tier: PAID. |
+| **UPGRADE-ENTRY-01 — always-visible upgrade entry** | ✅ | S | Shipped 2026-06-04. "Subscription / View plans" row in MeScreen; visible to free/trial/expired, hidden for active Pro. §3.1.2 compliant. |
+| **CA-04 — adjustment narrative** (coaching, not a banner) | ✅ | S | Already shipped (built as part of AI-DEPTH-10). AI narrative via `buildAdjustmentExplanationPrompt` + Sonnet, PAID-gated via `dynamic_reshape_r20`, notification inbox + push wired. |
 | **R25 cuts #2 + #3** (Today pre-run band + Coach trend cards) | 🔲 | ~10h | Turns "coach for today" into "coach for your trajectory" — retention between races. Tier: PAID. |
 | **POST-RUN-03 — rich-media zone push** | 🔲 | M | Gated on TestFlight exercising production APNs. Web image first, then iOS Notification Service Extension. |
 | **POST-RUN-REFRAME-02 — voice memo input** | 🔲 | M (~3d) | First non-Anthropic vendor (Whisper). Gated on device-test capacity + vendor decision. Tier: PAID. |
