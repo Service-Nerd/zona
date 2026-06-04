@@ -30,6 +30,7 @@ import SessionCompleteCard from '@/components/shared/SessionCompleteCard'
 import { useDisciplineLedger, type LedgerSnapshot } from '@/lib/coaching/useDisciplineLedger'
 import { getCompletionCopy } from '@/lib/coaching/completionCopy'
 import { useWidgetSync } from '@/lib/widget/useWidgetSync'
+import { clearWidgetState } from '@/lib/native/sharedStore'
 import ZoneBar, { zoneNumberForType, zoneShortName } from '@/components/shared/ZoneBar'
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import AIMark from '@/components/shared/AIMark'
@@ -9253,6 +9254,7 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
         return
       }
       const supabase = createClient()
+      await clearWidgetState()
       await supabase.auth.signOut()
       router.replace('/auth/login')
     } catch {
@@ -9840,6 +9842,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           <button
             onClick={async () => {
               const supabase = createClient()
+              await clearWidgetState()
               await supabase.auth.signOut()
               router.replace('/auth/login')
             }}
