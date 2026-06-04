@@ -5,6 +5,8 @@ node_modules/
 out/
 .DS_Store
 *.pem
+*.p8
+docs/keys/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
