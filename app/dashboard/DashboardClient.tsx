@@ -412,6 +412,29 @@ export default function DashboardClient() {
   const pendingDeepLinkRef = useRef<{ target: 'post-run' | 'session'; weekN: number; sessionDay: string } | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
+  // The bottom nav is position:fixed, so the scroll container has to reserve
+  // exactly its rendered height as paddingBottom or last-row content scrolls
+  // under it. Font metrics + safe-area insets vary by device, so we measure at
+  // runtime (ResizeObserver) and apply via React state. The nav is
+  // conditionally rendered (hidden during first-time onboarding), so we use a
+  // callback ref to re-observe whenever the node mounts/unmounts. Fallback in
+  // the scroll container's paddingBottom calc covers first paint.
+  const [bottomNavH, setBottomNavH] = useState<number | null>(null)
+  const bottomNavObserverRef = useRef<ResizeObserver | null>(null)
+  const bottomNavRef = useCallback((node: HTMLDivElement | null) => {
+    bottomNavObserverRef.current?.disconnect()
+    bottomNavObserverRef.current = null
+    if (!node) { setBottomNavH(null); return }
+    const apply = () => {
+      const h = Math.ceil(node.getBoundingClientRect().height)
+      if (h > 0) setBottomNavH(h)
+    }
+    apply()
+    const ro = new ResizeObserver(apply)
+    ro.observe(node)
+    bottomNavObserverRef.current = ro
+  }, [])
+
   // Lock document scroll while the dashboard shell is mounted. The shell is a
   // 100dvh flex column with a fixed bottom nav; only the inner content div
   // (scrollContainerRef) is meant to scroll. Without this, iOS WKWebView
@@ -1449,7 +1472,7 @@ export default function DashboardClient() {
   return (
     <div style={s}>
 
-      <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(72px + max(16px, env(safe-area-inset-bottom, 0px)))', overscrollBehavior: 'none' }}>
+      <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: `${(bottomNavH ?? 88) + 16}px`, overscrollBehavior: 'none' }}>
         {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
@@ -1732,7 +1755,7 @@ export default function DashboardClient() {
           { id: 'me',    label: 'Me',    icon: (a) => <IconMe    active={a} /> },
         ]
         return (
-          <div style={{
+          <div ref={bottomNavRef} style={{
             position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
             width: '100%', maxWidth: '480px',
             display: 'flex', alignItems: 'center',

@@ -12,6 +12,7 @@ import { useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { BRAND, PRICING } from '@/lib/brand'
 import { authedFetch } from '@/lib/supabase/authedFetch'
+import { createClient } from '@/lib/supabase/client'
 
 // Ordered by recurring value — Kit's daily read and the weekly zone score are the ongoing
 // proof of subscription value. AI plan generation is high at onboarding but low thereafter.
@@ -50,6 +51,24 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
         // iOS native — RevenueCat StoreKit 2 purchase sheet.
         // Dynamic import keeps the native SDK out of the web bundle.
         const { Purchases } = await import('@revenuecat/purchases-capacitor')
+
+        // Wait for the boot-time configure to resolve. Without this, users who
+        // sign up + onboard fast enough can tap Subscribe before
+        // Purchases.configure has completed; getOfferings then rejects with
+        // "Purchases not configured" and the whole purchase appears to fail.
+        const ready = (window as any).__rcReady as Promise<void> | undefined
+        if (ready) { try { await ready } catch {} }
+
+        // Belt-and-braces: ensure the RC identity matches the current Supabase
+        // user. If the user signed up between boot and now, the onAuthStateChange
+        // listener should have called logIn — but if it hasn't fired yet we'd
+        // be purchasing as the anonymous boot user. Re-identify just-in-time.
+        try {
+          const supabase = createClient()
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user?.id) await Purchases.logIn({ appUserID: user.id })
+        } catch {}
+
         const offerings = await Purchases.getOfferings()
         const offering = offerings.current
         if (!offering) throw new Error('No offering available.')

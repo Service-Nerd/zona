@@ -105,7 +105,12 @@ export default function CapacitorBoot() {
     // RevenueCat — configure StoreKit 2 purchases with the Supabase user ID as
     // the app user ID. This ensures the webhook's app_user_id maps directly to
     // the subscriptions table user_id. Dynamic import keeps the web bundle clean.
-    void (async () => {
+    //
+    // We publish the configure promise on window.__rcReady so UpgradeScreen
+    // can await it before calling getOfferings — without this, a user who
+    // signs up + onboards quickly can hit Subscribe before configure resolves,
+    // and getOfferings rejects with "Purchases not configured".
+    ;(window as any).__rcReady = (async () => {
       try {
         const { Purchases } = await import('@revenuecat/purchases-capacitor')
         const apiKey = process.env.NEXT_PUBLIC_REVENUECAT_API_KEY
