@@ -9327,6 +9327,143 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
 // In-app contact entry (FREE). Opens a pre-filled email to support@zonna.run with
 // a quiet diagnostic footer (app version · platform · account · plan) so support
 // can act on the first reply. Copy-address fallback covers users with no mail
+// ── PlanHistoryScreen ─────────────────────────────────────────────────────────
+// CA-06 — FREE. Read-only reverse-chron list of archived plans from plan_archive.
+// No restore at v1. The user sees the races they've trained for as a quiet timeline.
+
+interface ArchivedPlan {
+  id:          string
+  race_name:   string | null
+  race_date:   string | null
+  archived_at: string
+}
+
+function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
+  const [status, setStatus]   = useState<'loading' | 'loaded' | 'error'>('loading')
+  const [plans, setPlans]     = useState<ArchivedPlan[]>([])
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { setStatus('error'); return }
+        const { data, error } = await supabase
+          .from('plan_archive')
+          .select('id, race_name, race_date, archived_at')
+          .eq('user_id', user.id)
+          .order('archived_at', { ascending: false })
+        if (error) { setStatus('error'); return }
+        setPlans(data ?? [])
+        setStatus('loaded')
+      } catch {
+        setStatus('error')
+      }
+    }
+    void load()
+  }, [])
+
+  function formatRaceDate(dateStr: string | null): string {
+    if (!dateStr) return ''
+    try {
+      return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    } catch { return dateStr }
+  }
+
+  function relativeTime(isoStr: string): string {
+    const diff = Date.now() - new Date(isoStr).getTime()
+    const days = Math.floor(diff / 86400000)
+    if (days < 1)   return 'today'
+    if (days === 1) return 'yesterday'
+    if (days < 30)  return `${days} days ago`
+    const months = Math.floor(days / 30)
+    if (months < 12) return `${months} month${months === 1 ? '' : 's'} ago`
+    const years = Math.floor(months / 12)
+    return `${years} year${years === 1 ? '' : 's'} ago`
+  }
+
+  const backBtn = (
+    <button onClick={onBack} style={{
+      width: '44px', height: '44px', borderRadius: '50%', background: 'var(--bg-soft)',
+      border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      color: 'var(--ink)', marginBottom: '20px', flexShrink: 0,
+    }}>
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+        <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </button>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
+      <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
+        {backBtn}
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+          Your training
+        </div>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: '24px' }}>
+          Plan history
+        </div>
+      </div>
+
+      <div style={{ flex: 1, padding: '0 20px 32px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {status === 'loading' && (
+          <>
+            <style>{`@keyframes ph-shimmer { 0%,100%{opacity:.3} 50%{opacity:.6} }`}</style>
+            {[1, 2, 3].map(i => (
+              <div key={i} style={{
+                height: '62px', borderRadius: 'var(--radius-lg)',
+                background: 'var(--card)', border: '1px solid var(--line)',
+                animation: `ph-shimmer 1.4s ease-in-out infinite`,
+                animationDelay: `${i * 0.1}s`,
+              }} />
+            ))}
+          </>
+        )}
+
+        {status === 'error' && (
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', textAlign: 'center', marginTop: '48px' }}>
+            Couldn&apos;t load plan history. Go back and try again.
+          </div>
+        )}
+
+        {status === 'loaded' && plans.length === 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: '200px', gap: '8px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 600, color: 'var(--ink)' }}>
+              No prior plans.
+            </div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)' }}>
+              This is the first one.
+            </div>
+          </div>
+        )}
+
+        {status === 'loaded' && plans.map(p => {
+          const raceName  = p.race_name ?? 'Unnamed plan'
+          const raceDate  = formatRaceDate(p.race_date)
+          const archived  = relativeTime(p.archived_at)
+          const subtitle  = [raceDate, archived ? `replaced ${archived}` : ''].filter(Boolean).join(' · ')
+          return (
+            <div key={p.id} style={{
+              background: 'var(--card)', borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--line)', padding: '14px 16px',
+            }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, marginBottom: '3px' }}>
+                {raceName}
+              </div>
+              {subtitle && (
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.4 }}>
+                  {subtitle}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // client (common on desktop web, where mailto: silently no-ops). Mirrors the
 // /support web page register and the DeleteAccountScreen sub-view structure.
 const SUPPORT_EMAIL = 'support@zonna.run'
@@ -9470,7 +9607,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   hasPendingAdjustment?: boolean
 }) {
   const router = useRouter()
-  const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'delete-account' | 'support'>('main')
+  const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'delete-account' | 'support' | 'plan-history'>('main')
 
   // Push subscription state — bubbled up from PushNotificationsRow so we can
   // gate the dependent DailyPushToggleRow ("Morning training push" can't fire
@@ -9513,6 +9650,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   if (activeSection === 'quit')           return <QuitTab    quitDays={quitDays} raceDistanceKm={raceDistKm} onBack={() => setActiveSection('main')} />
   if (activeSection === 'delete-account') return <DeleteAccountScreen onBack={() => setActiveSection('main')} />
   if (activeSection === 'support')        return <SupportScreen onBack={() => setActiveSection('main')} email={profileEmail} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} />
+  if (activeSection === 'plan-history')   return <PlanHistoryScreen onBack={() => setActiveSection('main')} />
 
   const hasPlan = !!(plan?.meta?.race_name)
 
@@ -9620,12 +9758,24 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           </button>
           <button
             onClick={onOpenBenchmark}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}
           >
             <div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>Race benchmark</div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>
                 How fast. Pace targets calibrated from a recent race.
+              </div>
+            </div>
+            <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
+          </button>
+          <button
+            onClick={() => setActiveSection('plan-history')}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+          >
+            <div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>Plan history</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>
+                All the races you&apos;ve trained for.
               </div>
             </div>
             <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
