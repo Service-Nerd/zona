@@ -1055,6 +1055,25 @@ UI: `RaceResultSheet.tsx` (log result) + `PostRaceReshapeCard.tsx` (accept/rejec
 
 ---
 
+## 55. Fitness signal — benchmark recalibration prompt (ENGINE-01)
+
+When a runner consistently outperforms their target pace band on quality sessions *and* HR stays controlled, the prescription is too conservative. The correct response is not to harden individual sessions — it is to ask whether the benchmark (VDOT) has moved. All paces flow from VDOT; fixing the root is one recalibration, not session-by-session surgery.
+
+**Pattern required before firing:**
+- `N ≥ FITNESS_SIGNAL_SESSION_THRESHOLD` quality/interval/tempo sessions with `paceScore ≤ FITNESS_SIGNAL_PACE_SCORE_MAX`
+- *All* qualifying sessions also have `hrAboveCeilingPct ≤ FITNESS_SIGNAL_HR_CEILING_MAX` — the HR constraint is the distinguishing signal. Fast pace + high HR = going too hard. Fast pace + controlled HR = fitness has moved.
+- No concurrent fatigue accumulation in the same window (checked upstream before this trigger fires)
+- `currentWeekN ≥ FITNESS_SIGNAL_MIN_PLAN_WEEKS` — early-plan variance is noise; the signal needs a baseline
+
+**What this trigger does NOT do:** auto-harden sessions, change the plan, or assume the benchmark has moved. It fires `flag_for_review` with no session changes, sends "Kit noticed something." as a push (curiosity-gap framing), and routes to ReshapeScreen which presents a direct "Update benchmark →" CTA. The runner decides.
+
+**Voice rule:** frame this as a discovery, not a correction. The runner has outgrown the plan quietly — Kit noticed before they did. "The plan is working from an older version of you." Never say "your zones are wrong."
+
+Config: `FITNESS_SIGNAL_PACE_SCORE_MAX`, `FITNESS_SIGNAL_HR_CEILING_MAX`, `FITNESS_SIGNAL_SESSION_THRESHOLD`, `FITNESS_SIGNAL_MIN_PLAN_WEEKS` in `lib/coaching/constants.ts`.
+Engine: `buildFitnessSignalAdjustment` in `lib/coaching/planAdjustment.ts`.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

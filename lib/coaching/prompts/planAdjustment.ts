@@ -25,6 +25,10 @@ Output: "Skipped the intervals — calf tightness isn't worth pushing through on
 Example 5 — sparse trigger detail:
 Trigger detail: {}
 Output: "Load and effort signals didn't line up this week. Pulled the easy sessions back slightly to give the legs room to absorb it."
+
+Example 6 — flag_for_review / fitness_signal (POSITIVE — no plan change, benchmark CTA):
+Trigger detail: { qualifyingCount: 3, paceScoreThreshold: 60, hrCeilingThreshold: 15 }
+Output: "Three quality sessions ran ahead of target — and HR stayed controlled each time. That's not noise, it's a pattern. The plan is working from an older version of you. Worth a new benchmark to see where the ceiling actually is."
 `
 
 /** AI-DEPTH-10 — most recent non-pending adjustment, for continuity framing. */

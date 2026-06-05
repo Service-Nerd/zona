@@ -639,7 +639,10 @@ function buildFitnessSignalAdjustment(input: AdjustmentCheckInput): ProposedAdju
     summary:              `${qualifying.length} quality sessions ran ahead of target at controlled effort. Fitness may have moved — worth a benchmark test.`,
     sessionsBefore,
     sessionsAfter:        sessionsBefore,
-    requiresConfirmation: false, // auto-applies (no plan change) → notification fires
+    // requiresConfirmation: true — nothing to auto-apply; this is informational.
+    // pending status → "Kit noticed something." push (curiosity-gap framing) →
+    // ReshapeScreen shows benchmark CTA. User decides whether to update zones.
+    requiresConfirmation: true,
   }
 }
 
