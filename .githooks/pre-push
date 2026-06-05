@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Pre-push: TypeScript type check
+# Runs tsc --noEmit before any push. Blocks the push on type errors.
+
+set -euo pipefail
+
+echo "  tsc --noEmit..."
+if ! npx tsc --noEmit 2>&1 | grep -v "^ios/DerivedData"; then
+  echo ""
+  echo "✗  TypeScript errors detected. Fix before pushing."
+  exit 1
+fi
+
+echo "  ✓ Type check passed."
+exit 0

@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# Pre-commit: palette + font guard
+# Blocks hardcoded hex values, banned fonts, setProperty calls in app/ and components/
+# globals.css is excluded — it is the token authority.
+
+set -euo pipefail
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(tsx?|jsx?)$' | grep -vE '^globals\.css$' | grep -E '^(app|components)/' || true)
+
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+FAIL=0
+
+# ── Hardcoded hex colours ─────────────────────────────────────────────────────
+HEX_HITS=$(echo "$STAGED" | xargs grep -lnE '#[0-9A-Fa-f]{3,8}\b' 2>/dev/null || true)
+if [ -n "$HEX_HITS" ]; then
+  echo ""
+  echo "✗  Hardcoded hex colour detected. Use CSS custom properties from globals.css."
+  echo "$HEX_HITS" | while read -r f; do
+    grep -nE '#[0-9A-Fa-f]{3,8}\b' "$f" | head -3 | sed "s|^|   $f:|"
+  done
+  FAIL=1
+fi
+
+# ── Banned fonts ──────────────────────────────────────────────────────────────
+FONT_HITS=$(echo "$STAGED" | xargs grep -lnE 'DM Mono|DM Sans|Space Grotesk|Bebas Neue' 2>/dev/null || true)
+if [ -n "$FONT_HITS" ]; then
+  echo ""
+  echo "✗  Banned font reference detected. Use var(--font-ui) or var(--font-brand) only."
+  echo "$FONT_HITS" | while read -r f; do
+    grep -nE 'DM Mono|DM Sans|Space Grotesk|Bebas Neue' "$f" | head -3 | sed "s|^|   $f:|"
+  done
+  FAIL=1
+fi
+
+# ── setProperty calls (theme switching) ──────────────────────────────────────
+SETP_HITS=$(echo "$STAGED" | xargs grep -lnE '\.style\.setProperty\(' 2>/dev/null || true)
+if [ -n "$SETP_HITS" ]; then
+  echo ""
+  echo "✗  style.setProperty() detected. Colour switching is not allowed (ADR-008)."
+  echo "$SETP_HITS" | while read -r f; do
+    grep -nE '\.style\.setProperty\(' "$f" | head -3 | sed "s|^|   $f:|"
+  done
+  FAIL=1
+fi
+
+# ── Specifically banned values ────────────────────────────────────────────────
+BANNED_HITS=$(echo "$STAGED" | xargs grep -lnE '#D4501A|#f5f2ee|#F5F2EE|#0B132B|#5BC0BE' 2>/dev/null || true)
+if [ -n "$BANNED_HITS" ]; then
+  echo ""
+  echo "✗  Banned palette value detected (ember orange / warm beige / System B colours)."
+  echo "$BANNED_HITS" | while read -r f; do
+    grep -nE '#D4501A|#f5f2ee|#F5F2EE|#0B132B|#5BC0BE' "$f" | head -3 | sed "s|^|   $f:|"
+  done
+  FAIL=1
+fi
+
+if [ $FAIL -ne 0 ]; then
+  echo ""
+  echo "  Commit blocked. Fix the issues above before committing."
+  echo ""
+  exit 1
+fi
+
+exit 0
