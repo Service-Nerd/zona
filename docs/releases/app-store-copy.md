@@ -87,7 +87,7 @@ Premium (14-day free trial, then £7.99/month or £59.99/year): Kit reads every 
 
 PRIVACY
 
-Your health data stays on your device by default. Apple Health permissions are read-only. We never write back. No data sold, ever. Full policy at zonna.run/privacy.
+Your health data stays on your device by default. Apple Health permissions are read-only. We never write back. No data sold, ever. Full policy at zonna.run/privacy. Terms of use at zonna.run/terms.
 
 You can't outrun your easy days.
 ```
