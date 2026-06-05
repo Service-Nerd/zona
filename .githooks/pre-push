@@ -1,13 +1,22 @@
 #!/usr/bin/env bash
 # Pre-push: TypeScript type check
-# Runs tsc --noEmit before any push. Blocks the push on type errors.
+# Runs tsc --noEmit before any push. Filters out iOS/DerivedData noise.
+# Blocks the push only on errors in the actual app source.
 
 set -euo pipefail
 
 echo "  tsc --noEmit..."
-if ! npx tsc --noEmit 2>&1 | grep -v "^ios/DerivedData"; then
+
+TSC_OUTPUT=$(npx tsc --noEmit 2>&1 || true)
+
+# Filter out iOS DerivedData errors — those are third-party, not our code
+APP_ERRORS=$(echo "$TSC_OUTPUT" | grep -v "^ios/DerivedData" | grep "error TS" || true)
+
+if [ -n "$APP_ERRORS" ]; then
   echo ""
   echo "✗  TypeScript errors detected. Fix before pushing."
+  echo ""
+  echo "$APP_ERRORS"
   exit 1
 fi
 
