@@ -136,10 +136,29 @@ export default function CapacitorBoot() {
     })()
 
     // POST-RUN-01: route push-notification taps to the URL in their payload.
+    // Also handles foreground delivery — when the app is open (e.g. HealthKit
+    // sync just completed and auto-match fired), the banner shows (configured
+    // via presentationOptions in capacitor.config.ts) but we also navigate
+    // immediately in-app so the user doesn't have to tap the banner at all.
     // Wrapped in a dynamic import so web bundles don't pay for it.
+    let removePushReceivedListener: (() => void) | undefined
     void (async () => {
       try {
         const { PushNotifications } = await import('@capacitor/push-notifications')
+
+        // Foreground: navigate immediately when push arrives (no tap needed).
+        // Only auto-navigates for run-linked pushes (tag='run-linked') —
+        // avoids hijacking unrelated notifications mid-session.
+        const receivedHandle = await PushNotifications.addListener('pushNotificationReceived', (notification: any) => {
+          const url = notification?.data?.url
+          const tag = notification?.data?.tag ?? notification?.tag
+          if (typeof url === 'string' && url.startsWith('/') && tag === 'run-linked') {
+            router.replace(url)
+          }
+        })
+        removePushReceivedListener = () => receivedHandle.remove()
+
+        // Background / lock-screen tap: same navigation via action event.
         const handle = await PushNotifications.addListener('pushNotificationActionPerformed', (event: any) => {
           const url = event?.notification?.data?.url
           if (typeof url === 'string' && url.startsWith('/')) {
@@ -152,7 +171,7 @@ export default function CapacitorBoot() {
       }
     })()
 
-    return () => { removeUrlListener?.(); removePushListener?.() }
+    return () => { removeUrlListener?.(); removePushListener?.(); removePushReceivedListener?.() }
   }, [router])
 
   return null

@@ -62,6 +62,15 @@ const config: CapacitorConfig = {
       backgroundColor: '#F3F0EB',
       showSpinner: false,
     },
+    PushNotifications: {
+      // Show push banners even when the app is in the foreground.
+      // Without this, iOS suppresses banners by default — which means the
+      // run-linked push sent after HealthKit auto-match is invisible
+      // (the user opened the app to trigger the sync, so the app is always
+      // in the foreground at match time). Strava doesn't have this problem
+      // because its webhook fires while the app is closed/backgrounded.
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
   },
 }
 

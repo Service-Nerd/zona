@@ -72,6 +72,9 @@ type PostRunData = {
   session: any
   weekN: number
   pendingActivityId: number | null
+  /** Set instead of pendingActivityId when the just-linked activity came from
+   *  HealthKit (its strava_activities row already exists; link by UUID). */
+  pendingAppleHealthUuid?: string | null
   /** Display info for the linked-activity confirmation row */
   linkedActivity: { name: string; km: number | null } | null
 }
@@ -652,6 +655,64 @@ export default function DashboardClient() {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [hasPaidAccess, refreshUnreadNotifications])
 
+  // Re-merge HealthKit activities from Supabase when the app comes back to
+  // foreground. Covers the race between CapacitorBoot's syncOnAppOpen() and
+  // the initial fetchSettings() call — ingest takes ~3–5 s, so on first open
+  // after a run the row isn't in strava_activities yet. On the next
+  // visibilitychange it is, and the picker + auto-match see it immediately
+  // without needing a full app restart.
+  const refreshHealthKitRuns = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: hkRows } = await supabase
+        .from('strava_activities')
+        .select('apple_health_uuid, strava_activity_id, name, start_date, distance_m, moving_time_s, elapsed_time_s, avg_hr, max_hr, avg_speed, total_elevation_gain')
+        .eq('user_id', user.id)
+        .eq('source', 'apple_health')
+        .order('start_date', { ascending: false })
+        .limit(100)
+      if (!hkRows?.length) return
+      const newHkRuns = hkRows.map((r: any) => ({
+        id:                   r.apple_health_uuid,
+        source:               'apple_health' as const,
+        apple_health_uuid:    r.apple_health_uuid,
+        type:                 'Run',
+        sport_type:           'Run',
+        name:                 r.name ?? 'Apple Health run',
+        start_date:           r.start_date,
+        distance:             r.distance_m ?? 0,
+        moving_time:          r.moving_time_s ?? 0,
+        elapsed_time:         r.elapsed_time_s ?? r.moving_time_s ?? 0,
+        total_elevation_gain: r.total_elevation_gain ?? 0,
+        average_heartrate:    r.avg_hr ?? undefined,
+        max_heartrate:        r.max_hr ?? undefined,
+        average_speed:        r.avg_speed ?? undefined,
+      }))
+      const newHkIds = new Set(newHkRuns.map((r: any) => r.id))
+      setStravaRuns(prev => {
+        if (!prev) return newHkRuns
+        // Replace any existing HK entries + keep non-HK runs (Strava)
+        const nonHk = prev.filter((r: any) => r.source !== 'apple_health')
+        // Only update if something actually changed (new UUIDs)
+        const existingHkIds = new Set(prev.filter((r: any) => r.source === 'apple_health').map((r: any) => r.id))
+        const hasNew = newHkRuns.some((r: any) => !existingHkIds.has(r.id))
+        if (!hasNew) return prev
+        return [...newHkRuns, ...nonHk]
+      })
+      // Also refresh completions — auto-match may have written a completion
+      // while the app was backgrounded / while ingest was in flight.
+      void refreshCompletions()
+    } catch {}
+  }, [supabase, refreshCompletions])
+
+  useEffect(() => {
+    if (!appReady) return
+    const onVisible = () => { if (document.visibilityState === 'visible') void refreshHealthKitRuns() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [appReady, refreshHealthKitRuns])
+
   // Daily coach note — paid/trial only. Skip fetch entirely for free users.
   // Cached daily; the route returns instantly on cache hit, so this only
   // pays the AI cost once per user per day.
@@ -974,7 +1035,48 @@ export default function DashboardClient() {
           setQuitDays(days)
         }
 
-        if (!data?.strava_refresh_token) { setStravaLoading(false); return }
+        // ADR-011: HealthKit activities are a co-equal match source to Strava.
+        // They already live in strava_activities (source='apple_health', written
+        // by /api/health/ingest). Load them up front — regardless of whether
+        // Strava is connected — so the client-side auto-match and the manual
+        // picker can see treadmill / Apple Watch runs, not just Strava runs.
+        let healthKitRuns: any[] = []
+        let hkStravaIds = new Set<number>()
+        try {
+          const { data: hkRows } = await supabase
+            .from('strava_activities')
+            .select('apple_health_uuid, strava_activity_id, name, start_date, distance_m, moving_time_s, elapsed_time_s, avg_hr, max_hr, avg_speed, total_elevation_gain')
+            .eq('user_id', user.id)
+            .eq('source', 'apple_health')
+            .order('start_date', { ascending: false })
+            .limit(100)
+          // Marshal each HK row into the StravaActivity-like shape the matcher,
+          // picker, and saveCompletion already consume. `id` is the UUID so the
+          // link path can branch on `source` to write apple_health_uuid.
+          healthKitRuns = (hkRows ?? []).map((r: any) => ({
+            id:                   r.apple_health_uuid,
+            source:               'apple_health' as const,
+            apple_health_uuid:    r.apple_health_uuid,
+            type:                 'Run',
+            sport_type:           'Run',
+            name:                 r.name ?? 'Apple Health run',
+            start_date:           r.start_date,
+            distance:             r.distance_m ?? 0,
+            moving_time:          r.moving_time_s ?? 0,
+            elapsed_time:         r.elapsed_time_s ?? r.moving_time_s ?? 0,
+            total_elevation_gain: r.total_elevation_gain ?? 0,
+            average_heartrate:    r.avg_hr ?? undefined,
+            max_heartrate:        r.max_hr ?? undefined,
+            average_speed:        r.avg_speed ?? undefined,
+          }))
+          hkStravaIds = new Set(
+            (hkRows ?? [])
+              .map((r: any) => r.strava_activity_id)
+              .filter((x: any): x is number => x != null)
+          )
+        } catch {}
+
+        if (!data?.strava_refresh_token) { setStravaRuns(healthKitRuns); setStravaLoading(false); return }
 
         // Use cached access token if still valid (Strava tokens last 6 hours)
         let access_token: string | null = null
@@ -1012,8 +1114,12 @@ export default function DashboardClient() {
           if (batch.length < 100) break
         }
         const { getRuns } = await import('@/lib/strava')
-        const runs = getRuns(activities)
-        setStravaRuns(runs)
+        // Drop Strava rows already consolidated into a HealthKit row (same
+        // physical run, per tryEnrichHealthKitRow) so the list never shows the
+        // workout twice. HealthKit runs lead — Apple Health is the primary
+        // iOS source (ADR-011).
+        const runs = getRuns(activities).filter((r: any) => !hkStravaIds.has(r.id))
+        setStravaRuns([...healthKitRuns, ...runs])
         setStravaConnected(true)
       } catch {}
       finally { setStravaLoading(false) }
@@ -1258,10 +1364,14 @@ export default function DashboardClient() {
     })()
   }, [plan, orientationSeen, connectRunsSeen, pushPermissionSeen, showPushOnboarding])
 
-  // Personalised zone ceiling: Karvonen 70% HRR, falls back to plan meta or 145
-  const effectiveZone2Ceiling = useMemo(() => {
+  // Personalised zone ceiling: Karvonen 70% HRR, falls back to plan meta.
+  // Returns null only when no HR data exists AND no plan is present — which
+  // is impossible for any user past onboarding. Never returns a hardcoded
+  // bpm value: all HR data must derive from user_settings (Apple Health or
+  // Tanaka) or plan.meta (set at generation time from the same source).
+  const effectiveZone2Ceiling = useMemo<number | null>(() => {
     if (restingHR && maxHR) return Math.round(restingHR + 0.70 * (maxHR - restingHR))
-    return plan?.meta?.zone2_ceiling ?? 145
+    return plan?.meta?.zone2_ceiling ?? null
   }, [restingHR, maxHR, plan])
 
   // Aerobic pace derived from Strava runs in user's Z2 HR band
@@ -1452,6 +1562,29 @@ export default function DashboardClient() {
       <ConnectRunsScreen
         onConnected={() => { setConnectRunsSeen(true); setShowConnectRuns(false) }}
         onSkip={() => { setConnectRunsSeen(false); setShowConnectRuns(false) }}
+        onHRFound={async (rhr, mhr) => {
+          // Only write values that are currently missing — never overwrite what
+          // the user already entered manually. The plan may already have Tanaka
+          // zones baked in; updating user_settings here means all future coaching
+          // (and any re-generation) uses the real Karvonen values instead.
+          const newRhr = restingHR != null ? restingHR : rhr
+          const newMhr = maxHR     != null ? maxHR     : mhr
+          if (newRhr != null) setRestingHR(newRhr)
+          if (newMhr != null) setMaxHR(newMhr)
+          if (newRhr != null || newMhr != null) {
+            try {
+              const { data: { user } } = await supabase.auth.getUser()
+              if (user) {
+                await supabase.from('user_settings').upsert({
+                  id:         user.id,
+                  resting_hr: newRhr ?? undefined,
+                  max_hr:     newMhr ?? undefined,
+                  updated_at: new Date().toISOString(),
+                })
+              }
+            } catch {}
+          }
+        }}
       />
     )
   }
@@ -1636,10 +1769,33 @@ export default function DashboardClient() {
         {/* Strava screen: defense-in-depth gate on isAdmin at the render boundary.
             No UI path opens it for non-admins, but the render gate prevents a future commit
             from accidentally exposing admin UI via state mutation or a new entry point. */}
-        {screen === 'strava'   && isAdmin && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
-        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} dob={dob} onHRChange={async (rhr: number, mhr: number) => { setRestingHR(rhr); setMaxHR(mhr); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() }) } catch {} }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} />}
+        {screen === 'strava'   && isAdmin && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
+        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} dob={dob} onHRChange={async (rhr: number, mhr: number) => {
+  setRestingHR(rhr); setMaxHR(mhr)
+  const newZ2 = Math.round(rhr + 0.70 * (mhr - rhr))
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    // 1. user_settings is the single source of truth for live HR values
+    await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() })
+    // 2. P1 — sync plan.meta so the zone2_ceiling fallback path never drifts
+    //    from user_settings. Uses savePlanForUser (not savePlanForUser archives
+    //    the plan — that's only done in the generate flow). Plain upsert here.
+    if (plan && plan !== EMPTY_PLAN) {
+      const updatedPlan = { ...plan, meta: { ...plan.meta, resting_hr: rhr, max_hr: mhr, zone2_ceiling: newZ2 } }
+      setPlan(updatedPlan as any)
+      void savePlanForUser(user.id, updatedPlan as any, supabase)
+    }
+    // 3. P3 — re-bucket past run analyses with new zone boundaries (fire-and-forget).
+    //    The route updates strava_activities.hr_pct_z* for Strava-sourced runs
+    //    (re-fetches HR streams from Strava API) and recomputes run_analysis
+    //    zone columns for all recent sessions. Failure is silent — stale data
+    //    is better than blocking the HR save.
+    void authedFetch('/api/recalibrate-hr', { method: 'POST' })
+  } catch {}
+}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} zone2Ceiling={effectiveZone2Ceiling} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onDone={() => {
           // POST-RUN-02: terminus. Route to SessionScreen for this session
           // with the freshest completion merged in, so the verdict (which
@@ -1794,7 +1950,7 @@ export default function DashboardClient() {
 // ── ORIENTATION SCREEN ────────────────────────────────────────────────────
 
 function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, onDismiss }: {
-  plan: Plan; firstName: string; zone2Ceiling: number
+  plan: Plan; firstName: string; zone2Ceiling: number | null
   restingHR: number | null; maxHR: number | null
   onDismiss: () => void
 }) {
@@ -2005,8 +2161,36 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
                 </div>
               </div>
 
-              {/* If HR isn't set, point them at Profile so they can fill it in */}
-              {!haveHR && (
+              {/* Zone-method disclosure — honest about how these were derived.
+                  plan.meta.hr_zone_method is always written by the rule engine. */}
+              {(() => {
+                const method = (plan?.meta as any)?.hr_zone_method as string | undefined
+                const note   = (plan?.meta as any)?.hr_assumption_note as string | undefined
+                let msg: string | null = null
+                if (!method || method === 'karvonen') {
+                  // Karvonen: real data used — no disclaimer needed, but confirm it.
+                  if (haveHR) msg = 'Zones personalised from your heart rate data.'
+                } else if (method === 'karvonen_estimated_max') {
+                  msg = 'Resting HR used. Max HR estimated from age — add your measured max in Profile to refine.'
+                } else if (method === 'percent_of_max') {
+                  msg = 'Max HR used. Add your resting HR in Profile for more accurate zones.'
+                } else {
+                  // percent_of_estimated_max — no HR data at all
+                  msg = note ?? 'Zones estimated from age — no HR data available. Add values in Profile, or connect Apple Health, to personalise.'
+                }
+                if (!msg) return null
+                return (
+                  <div style={{
+                    fontFamily: 'var(--font-ui)', fontSize: '11px',
+                    color: 'var(--mute)', lineHeight: 1.55,
+                    marginBottom: '16px', textAlign: 'center',
+                  }}>
+                    {msg}
+                  </div>
+                )
+              })()}
+              {/* If HR isn't set at all, also prompt them to add values */}
+              {!haveHR && !(plan?.meta as any)?.hr_zone_method && (
                 <div style={{
                   fontFamily: 'var(--font-ui)', fontSize: '12px',
                   color: 'var(--mute)', lineHeight: 1.55,
@@ -2043,9 +2227,14 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
 // Layout absorbs a future "Connect Strava" CTA below Apple Health without
 // any redesign or copy change (per spec).
 
-function ConnectRunsScreen({ onConnected, onSkip }: {
+function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
   onConnected: () => void
   onSkip: () => void
+  /** Called after a successful connect with whatever resting/max HR HealthKit
+   *  had available. Null for either value = HealthKit didn't have that reading
+   *  (e.g. Garmin user — no Apple Watch resting HR). Parent decides whether to
+   *  write to user_settings based on what's currently saved. */
+  onHRFound?: (rhr: number | null, mhr: number | null) => void
 }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -2056,7 +2245,7 @@ function ConnectRunsScreen({ onConnected, onSkip }: {
     setBusy(true)
     setError(null)
     try {
-      const { requestHealthKitAuth, syncOnAppOpen } = await import('@/lib/health/clientSync')
+      const { requestHealthKitAuth, syncOnAppOpen, fetchAppleHealthHRSnapshot } = await import('@/lib/health/clientSync')
       const granted = await requestHealthKitAuth()
       if (!granted) {
         // Denial / unavailable / framework not linked — Capacitor doesn't
@@ -2076,6 +2265,14 @@ function ConnectRunsScreen({ onConnected, onSkip }: {
       void syncOnAppOpen().catch((e) => {
         console.warn('[HealthKit] first sync after connect failed:', e)
       })
+      // Auto-populate HR zones from HealthKit if we can — fire-and-forget so it
+      // never blocks the connect confirmation. Parent writes to user_settings
+      // only if the values are currently null (don't overwrite user-entered data).
+      if (onHRFound) {
+        fetchAppleHealthHRSnapshot()
+          .then(snap => onHRFound(snap?.restingHR ?? null, snap?.maxHR ?? null))
+          .catch(() => onHRFound(null, null))
+      }
       onConnected()
     } catch (e: any) {
       console.warn('[HealthKit] connect failed:', e)
@@ -2844,7 +3041,7 @@ function getSkipResponse(reason: string): string {
 function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, restingHR, maxHR, aerobicPace, stravaLoading, hasPaidAccess, onUpgrade, goalPace, guidance, onLinkedComplete, autoMatch }: {
   session: any; weekTheme: string; weekN: number; preloadedRuns: any[]
   onClose: () => void; onSaved?: () => void
-  preferredUnits: 'km' | 'mi'; zone2Ceiling: number; preferredMetric?: 'distance' | 'duration'
+  preferredUnits: 'km' | 'mi'; zone2Ceiling: number | null; preferredMetric?: 'distance' | 'duration'
   onSessionMetricChange?: (weekN: number, sessionKey: string, metric: 'distance' | 'duration' | null) => void
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
   stravaLoading?: boolean
@@ -2933,7 +3130,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
         sessionType: session.type,
         rpe: newRpe,
         avgHr: completion?.avg_hr ?? null,
-        zone2Ceiling,
+        zone2Ceiling: zone2Ceiling ?? undefined,
       })
       await supabase.from('session_completions').upsert({
         user_id: user.id,
@@ -2962,15 +3159,23 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
     async function loadClaimed() {
       setLoadingClaimed(true)
       try {
-        const { data } = await supabase.from('session_completions').select('strava_activity_id').not('strava_activity_id', 'is', null)
-        setClaimedIds(new Set((data ?? []).map((r: any) => r.strava_activity_id)))
+        const { data } = await supabase
+          .from('session_completions')
+          .select('strava_activity_id, apple_health_uuid')
+          .or('strava_activity_id.not.is.null,apple_health_uuid.not.is.null')
+        const ids = new Set<any>()
+        ;(data ?? []).forEach((r: any) => {
+          if (r.strava_activity_id != null) ids.add(r.strava_activity_id)
+          if (r.apple_health_uuid != null) ids.add(r.apple_health_uuid)
+        })
+        setClaimedIds(ids)
       } catch {} finally { setLoadingClaimed(false) }
     }
     loadClaimed()
   }, [view])
 
   const stravaRuns = preloadedRuns.filter((r: any) => {
-    if (claimedIds.has(r.id) && r.id !== completion?.strava_activity_id) return false
+    if (claimedIds.has(r.id) && r.id !== completion?.strava_activity_id && r.id !== completion?.apple_health_uuid) return false
     const actDate = new Date(r.start_date)
     const today = new Date()
     if (session.rawDate) {
@@ -3008,10 +3213,14 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
       // entirely so the upsert preserves whatever's already on the row.
       const linkFields =
         status === 'skipped'
-          ? { strava_activity_id: null, strava_activity_name: null, strava_activity_km: null, avg_hr: null }
+          ? { strava_activity_id: null, apple_health_uuid: null, strava_activity_name: null, strava_activity_km: null, avg_hr: null }
           : activity
             ? {
-                strava_activity_id:   activity.id ?? null,
+                // Source-aware link column: HealthKit runs key on
+                // apple_health_uuid, Strava runs on strava_activity_id.
+                ...(activity.source === 'apple_health'
+                  ? { apple_health_uuid: activity.apple_health_uuid ?? activity.id }
+                  : { strava_activity_id: activity.id ?? null }),
                 strava_activity_name: activity.name ?? null,
                 strava_activity_km:   +(activity.distance / 1000).toFixed(1),
                 avg_hr:               activity.average_heartrate ? Math.round(activity.average_heartrate) : null,
@@ -3040,12 +3249,14 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
         // Manual completions (no activity) still flow through the Reflect view.
         if (activity?.id && onLinkedComplete) {
           pendingLinkRef.current = null  // PostRunScreen takes ownership of the link fire
+          const isHK = activity.source === 'apple_health'
           onLinkedComplete({
             session,
             weekN,
-            pendingActivityId: activity.id,
+            pendingActivityId:      isHK ? null : activity.id,
+            pendingAppleHealthUuid: isHK ? (activity.apple_health_uuid ?? activity.id) : null,
             linkedActivity: {
-              name: activity.name ?? 'Strava run',
+              name: activity.name ?? 'Run',
               km: typeof activity.distance === 'number'
                 ? activity.distance / 1000
                 : null,
@@ -3439,7 +3650,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
         {(() => {
           const zone = zoneNumberForType(session.type)
           if (!zone) return null
-          const hrDisplay = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling)
+          const hrDisplay = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling ?? undefined)
           const isInteractive = !!zoneForSessionType(session.type)
           return (
             <button
@@ -3609,7 +3820,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                         // Single source of truth: live Karvonen via getSessionHRDisplay,
                         // matching the session-card hero. Falls back to baked hr_target
                         // when restingHR/maxHR are missing. CoachingPrinciples §14, ADR-009.
-                        const hrVal = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling)
+                        const hrVal = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling ?? undefined)
                         const hrStr = hrVal ? `${hrVal} bpm` : null
                         const line  = [plannedZone, hrStr].filter(Boolean).join(' · ')
                         if (!line) return null
@@ -3943,7 +4154,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                           <AIMark
                             size={11}
                             color="var(--moss)"
-                            label={isHigh ? 'Strava run matched by Zonna' : 'Possible Strava match'}
+                            label={isHigh ? 'Run matched by Zonna' : 'Possible match'}
                           />
                           <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {subline}
@@ -4005,7 +4216,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                   return (
                     <>
                       <button onClick={handleMarkComplete} style={{ flex: 1, minWidth: '120px', background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600 }}>
-                        Match a Strava run
+                        Match a run
                       </button>
                       <button onClick={() => setShowManualModal(true)} style={{ flex: 1, minWidth: '100px', background: 'var(--card-bg)', color: config.color, border: `0.5px solid ${config.color}40`, borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500 }}>
                         Log manually
@@ -4040,7 +4251,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
       {/* Strava log view */}
       {view === 'complete' && (
         <div style={{ padding: '16px 18px 24px' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Link a Strava activity</div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Link an activity</div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>Optional — select from recent runs</div>
           {loadingClaimed ? (
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0' }}>Loading activities...</div>
@@ -4058,7 +4269,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                     <div>
                       <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>{run.name}</div>
                       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        {new Date(run.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {(run.distance / 1000).toFixed(1)}km {run.average_heartrate ? `· ${Math.round(run.average_heartrate)} bpm` : ''}
+                        {new Date(run.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {(run.distance / 1000).toFixed(1)}km {run.average_heartrate ? `· ${Math.round(run.average_heartrate)} bpm` : ''} · {run.source === 'apple_health' ? 'Apple Health' : 'Strava'}
                       </div>
                     </div>
                     {isSelected && <span style={{ color: 'var(--teal)', fontSize: '16px' }}>✓</span>}
@@ -4067,7 +4278,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               })}
             </div>
           ) : (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0', marginBottom: '8px' }}>No Strava activities found near this session date</div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0', marginBottom: '8px' }}>No activities found near this session date</div>
           )}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: 'var(--font-ui)', fontSize: '12px', cursor: 'pointer' }}>Back</button>
@@ -4769,7 +4980,7 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
     } catch {}
   }, [metricStorageKey, sessionDefault])
 
-  const hrDisplay = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling)
+  const hrDisplay = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling ?? undefined)
   // Same shape for every session type: "Zone X". Falls back to the plan's
   // session.zone string if the type isn't in our zone map.
   const hrLabel = zoneForSessionType(session.type)?.label
@@ -5249,7 +5460,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   onOpenSession?: (s: any) => void
   allCompletions: Record<number, Record<string, any>>
   preferredUnits: 'km' | 'mi'
-  zone2Ceiling: number
+  zone2Ceiling: number | null
   onManualSaved?: () => void
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
   stravaLoading?: boolean
@@ -6156,13 +6367,22 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               const paceForDetail = selectedSession.pace_target
                 ?? (expectsAerobicPace ? aerobicPace : null)
                 ?? (expectsAerobicPace && stravaLoading ? '—' : null)
+              // P2 fix: route HR through getSessionHRDisplay (live Karvonen) instead of
+              // reading the baked plan string directly. Mirrors what the expanded card does.
+              const liveHrStr = getSessionHRDisplay(
+                selectedSession.type,
+                selectedSession.hr_target,
+                restingHR ?? null,
+                maxHR ?? null,
+                zone2Ceiling ?? undefined,
+              )
               return (
             <SessionCard
               type={selectedSession.type}
               name={selectedSession.title}
               detail={[
                 selectedSession.zone,
-                selectedSession.hr_target,
+                liveHrStr ? `${liveHrStr} bpm` : undefined,
                 paceForDetail,
               ].filter(Boolean).join(' · ') || undefined}
               distanceKm={selectedSession.distance}
@@ -8734,7 +8954,11 @@ function ConnectRunsBanner() {
  * Mirrors StravaConnectionRow shape; HealthKit auth is plugin-based (no OAuth
  * redirect), so the connect button calls the plugin directly.
  */
-function AppleHealthConnectionRow() {
+function AppleHealthConnectionRow({ onHRFound }: {
+  /** Called after a successful connect with resting/max HR from HealthKit.
+   *  Null = HealthKit had no reading (Garmin user etc). */
+  onHRFound?: (rhr: number | null, mhr: number | null) => void
+}) {
   const [isNative, setIsNative] = useState(false)
   const [connectedAt, setConnectedAt] = useState<string | null | undefined>(undefined)  // undefined = checking
   const [busy, setBusy] = useState(false)
@@ -8789,6 +9013,13 @@ function AppleHealthConnectionRow() {
       void syncOnAppOpen().catch((e) => {
         console.warn('[HealthKit] first sync after connect failed:', e)
       })
+      // Auto-populate HR zones — same pattern as ConnectRunsScreen
+      if (onHRFound) {
+        const { fetchAppleHealthHRSnapshot } = await import('@/lib/health/clientSync')
+        fetchAppleHealthHRSnapshot()
+          .then(snap => onHRFound(snap?.restingHR ?? null, snap?.maxHR ?? null))
+          .catch(() => onHRFound(null, null))
+      }
     } catch (e) {
       // Most likely the plugin failed to load or HealthKit.framework isn't
       // linked. Without this log the connect button silently does nothing,
@@ -8998,11 +9229,15 @@ function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number | nul
   )
 }
 
-function HRZonesSection({ restingHR, maxHR, dob, onSave }: {
+function HRZonesSection({ restingHR, maxHR, dob, onSave, hrZoneMethod, hrAssumptionNote }: {
   restingHR: number | null
   maxHR: number | null
   dob?: string | null
   onSave: (rhr: number, mhr: number) => void
+  /** From plan.meta.hr_zone_method — which fallback level was used when the plan was generated. */
+  hrZoneMethod?: string | null
+  /** From plan.meta.hr_assumption_note — human-readable explanation of the fallback. */
+  hrAssumptionNote?: string | null
 }) {
   // Smart default: most people have never tested their max HR, so a blank field
   // leaves zones unconfigured. Pre-fill an age estimate (Tanaka: 208 − 0.7×age —
@@ -9108,8 +9343,17 @@ function HRZonesSection({ restingHR, maxHR, dob, onSave }: {
             Five zones. Most of your running stays in Zone 2 — easy, conversational. Some of it pushes into Zone 3 (tempo) or Zone 4–5 (intervals). The grey middle is where amateurs go to stall. Tap a zone to learn more.
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
-            Your zones · HRR method
+            {hrZoneMethod === 'karvonen'
+              ? 'Your zones · Personalised from HR data'
+              : hrZoneMethod
+                ? 'Your zones · Age estimate'
+                : 'Your zones · HRR method'}
           </div>
+          {hrZoneMethod && hrZoneMethod !== 'karvonen' && hrAssumptionNote && (
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.5, marginBottom: '8px' }}>
+              {hrAssumptionNote}
+            </div>
+          )}
           {zones.map(z => (
             <button
               key={z.zone}
@@ -9738,7 +9982,14 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           </div>
         )}
 
-        <HRZonesSection restingHR={restingHR} maxHR={maxHR} dob={dob} onSave={onHRChange} />
+        <HRZonesSection
+          restingHR={restingHR}
+          maxHR={maxHR}
+          dob={dob}
+          onSave={onHRChange}
+          hrZoneMethod={(plan?.meta as any)?.hr_zone_method ?? null}
+          hrAssumptionNote={(plan?.meta as any)?.hr_assumption_note ?? null}
+        />
 
         {/* Plan + benchmark actions — moved below zones */}
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
@@ -9821,7 +10072,25 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             Strava remains an optional secondary import. */}
         <SectionLabel>Connections</SectionLabel>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <AppleHealthConnectionRow />
+          <AppleHealthConnectionRow
+            onHRFound={async (rhr, mhr) => {
+              const newRhr = restingHR != null ? restingHR : rhr
+              const newMhr = maxHR     != null ? maxHR     : mhr
+              if (newRhr != null || newMhr != null) {
+                if (newRhr != null) onHRChange(newRhr, newMhr ?? maxHR ?? 0)
+                try {
+                  const supabase = createClient()
+                  const { data: { user } } = await supabase.auth.getUser()
+                  if (user) await supabase.from('user_settings').upsert({
+                    id:         user.id,
+                    resting_hr: newRhr ?? undefined,
+                    max_hr:     newMhr ?? undefined,
+                    updated_at: new Date().toISOString(),
+                  })
+                } catch {}
+              }
+            }}
+          />
           <StravaConnectionRow />
         </div>
 
@@ -10770,7 +11039,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
               onClose={onBack}
               onSaved={onSaved}
               preferredUnits={preferredUnits ?? 'km'}
-              zone2Ceiling={zone2Ceiling ?? 145}
+              zone2Ceiling={zone2Ceiling ?? null}
               preferredMetric={preferredMetric}
               onSessionMetricChange={onSessionMetricChange}
               restingHR={restingHR}
@@ -10810,7 +11079,7 @@ function PostRunScreen({
   onSaved,
   onAnalysisLoaded,
   preferredUnits = 'km',
-  zone2Ceiling = 145,
+  zone2Ceiling,
   hasPaidAccess,
   onOpenCoach,
   runAnalysis,
@@ -10830,7 +11099,7 @@ function PostRunScreen({
    *  verdict immediately instead of re-polling. */
   onAnalysisLoaded?: (sessionDay: string, row: any) => void
   preferredUnits?: 'km' | 'mi'
-  zone2Ceiling?: number
+  zone2Ceiling?: number | null
   hasPaidAccess?: boolean
   onOpenCoach?: () => void
   /** Latest analysis row from the parent's runAnalysisMap. May be null while polling. */
@@ -10839,7 +11108,7 @@ function PostRunScreen({
   goalPace?: string | null
 }) {
   const supabase = createClient()
-  const { session, weekN, pendingActivityId, linkedActivity } = data
+  const { session, weekN, pendingActivityId, pendingAppleHealthUuid, linkedActivity } = data
 
   // Local analysis state — seeded from prop, then polled until run_analysis lands.
   const [analysis, setAnalysis] = useState<any | null>(runAnalysis ?? null)
@@ -10897,21 +11166,23 @@ function PostRunScreen({
   // server-side. Idempotent on the server (autoMatchAndAnalyse is a no-op when
   // the link already exists), so safe even if the webhook beat us to it.
   useEffect(() => {
-    if (!pendingActivityId || linkFired) return
+    if ((!pendingActivityId && !pendingAppleHealthUuid) || linkFired) return
     setLinkFired(true)
     ;(async () => {
       try {
         // authedFetch never throws on 4xx/5xx — must inspect res.ok, or a
         // server failure (e.g. a missing column) stays invisible. This used to
         // be `.catch(()=>{})`, which swallowed exactly that.
+        // Source-aware body: HealthKit links by apple_health_uuid (row already
+        // exists), Strava links by strava_activity_id (route fetches + persists).
         const res = await authedFetch('/api/strava/link-activity', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            strava_activity_id: pendingActivityId,
-            week_n:             weekN,
-            session_day:        sessionDay,
-          }),
+          body: JSON.stringify(
+            pendingAppleHealthUuid
+              ? { apple_health_uuid: pendingAppleHealthUuid, week_n: weekN, session_day: sessionDay }
+              : { strava_activity_id: pendingActivityId, week_n: weekN, session_day: sessionDay }
+          ),
         })
         if (!res.ok) {
           console.error('[post-run] link-activity failed', res.status, await res.text().catch(() => ''))
@@ -10920,7 +11191,7 @@ function PostRunScreen({
         console.error('[post-run] link-activity threw', e)
       }
     })()
-  }, [pendingActivityId, linkFired, weekN, sessionDay])
+  }, [pendingActivityId, pendingAppleHealthUuid, linkFired, weekN, sessionDay])
 
   // ── Poll run_analysis until it lands (mirrors SessionScreen behaviour) ──
   const isAnalysisPending = !!hasPaidAccess && !analysis && !pollGaveUp
@@ -10970,7 +11241,7 @@ function PostRunScreen({
         sessionType: session.type,
         rpe:         newRpe,
         avgHr:       null,
-        zone2Ceiling,
+        zone2Ceiling: zone2Ceiling ?? undefined,
       })
       await supabase.from('session_completions').upsert({
         user_id:       user.id,

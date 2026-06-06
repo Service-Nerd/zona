@@ -21,19 +21,52 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { strava_activity_id, week_n, session_day } = body as {
-    strava_activity_id: number
+  const { strava_activity_id, apple_health_uuid, week_n, session_day } = body as {
+    strava_activity_id?: number
+    apple_health_uuid?:  string
     week_n: number
     session_day: string
   }
-  if (!strava_activity_id || week_n == null || !session_day) {
-    return NextResponse.json({ error: 'strava_activity_id, week_n, session_day required' }, { status: 422 })
+  if (week_n == null || !session_day) {
+    return NextResponse.json({ error: 'week_n, session_day required' }, { status: 422 })
+  }
+  if (!strava_activity_id && !apple_health_uuid) {
+    return NextResponse.json({ error: 'strava_activity_id or apple_health_uuid required' }, { status: 422 })
   }
 
   const supabase = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
+
+  // HealthKit path: the activity already lives in strava_activities (written by
+  // /api/health/ingest), so there's no external API to call. The completion row
+  // was already written client-side in saveCompletion — all that's left is to
+  // (re)trigger analyse-run, which writes the run_analysis row keyed by
+  // apple_health_uuid. Idempotent: safe even if auto-match already analysed it.
+  if (apple_health_uuid) {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+      ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+    try {
+      await fetch(`${baseUrl}/api/analyse-run`, {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'x-service-key': process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          'x-user-id':     user.id,
+        },
+        body: JSON.stringify({ apple_health_uuid, week_n, session_day }),
+      })
+    } catch (err) {
+      console.warn('[link-activity] healthkit analyse-run trigger failed', err)
+    }
+    return NextResponse.json({ ok: true, mode: 'healthkit' })
+  }
+
+  // ── Strava path (strava_activity_id guaranteed present below) ──
+  if (!strava_activity_id) {
+    return NextResponse.json({ error: 'strava_activity_id required' }, { status: 422 })
+  }
 
   // user_settings PK is `id` (referencing auth.users.id) — same column-name bug pattern fixed in 991c617.
   const { data: settings } = await supabase

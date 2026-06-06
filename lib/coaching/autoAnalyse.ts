@@ -94,10 +94,15 @@ export async function autoMatchAndAnalyse(
   if (!bestDay) return
 
   // POST-RUN-01 race-condition guard: never clobber an existing user-manual
-  // link, and never re-fire push/analyse for an activity we've already linked.
+  // completion, and never re-fire push/analyse for an activity already linked.
+  // Two cases to block:
+  //   (a) Activity already linked — idempotent or user-chosen, don't touch.
+  //   (b) Session already manually marked complete (no activity link) — user
+  //       explicitly said "done" (e.g. logged a hike, planned a top-up run).
+  //       Auto-match overwriting that with a partial activity is wrong.
   const { data: existing } = await supabase
     .from('session_completions')
-    .select('strava_activity_id, apple_health_uuid')
+    .select('strava_activity_id, apple_health_uuid, status')
     .eq('user_id', userId)
     .eq('week_n', week.n)
     .eq('session_day', bestDay)
@@ -107,8 +112,12 @@ export async function autoMatchAndAnalyse(
     const existingRef: number | string | null =
       existing.strava_activity_id ?? existing.apple_health_uuid ?? null
     if (existingRef != null) {
-      // Either same activity (idempotent) or a different user-chosen link
-      // (don't overwrite). Either way: this auto-flow is done.
+      // Already linked — idempotent or user-chosen. Done.
+      return
+    }
+    if (existing.status === 'complete') {
+      // User manually marked the session done without an activity link.
+      // Respect that — don't silently replace it with an auto-matched run.
       return
     }
   }

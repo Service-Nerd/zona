@@ -588,6 +588,26 @@ export default function GeneratePlanScreen({
       return undefined
     })()
 
+    // Auto-populate HR from Apple Health when values are missing.
+    // Runs on iOS native only; web/PWA falls through silently.
+    // Failure is always silent — Tanaka formula fires as the fallback.
+    // The generating ceremony covers this extra async step's wall-clock time.
+    let hkRHR: number | null = initialRHR ?? (restingHR ? Number(restingHR) : null)
+    let hkMHR: number | null = initialMHR ?? null
+    if (!hkRHR || !hkMHR) {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (Capacitor.isNativePlatform()) {
+          const { fetchAppleHealthHRSnapshot } = await import('@/lib/health/clientSync')
+          const snap = await fetchAppleHealthHRSnapshot()
+          if (snap) {
+            hkRHR = hkRHR ?? snap.restingHR
+            hkMHR = hkMHR ?? snap.maxHR
+          }
+        }
+      } catch {}
+    }
+
     const input: GeneratorInput = {
       race_date:             raceDate,
       race_distance_km:      distanceKm!,
@@ -598,8 +618,8 @@ export default function GeneratePlanScreen({
       current_weekly_km:     weeklyKmVal,
       longest_recent_run_km: longestRunVal,
       days_available:        daysAvailable!,
-      resting_hr:            restingHR ? Number(restingHR) : undefined,
-      max_hr:                initialMHR ?? undefined,
+      resting_hr:            hkRHR ?? undefined,
+      max_hr:                hkMHR ?? undefined,
       training_age:          trainingAge ?? undefined,
       preferred_long_run_day: preferredLongRunDay,
       benchmark,
