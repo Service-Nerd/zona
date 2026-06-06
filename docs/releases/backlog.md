@@ -184,6 +184,18 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
   - **Risks:** PK migration footprint (every `session_completions` upsert needs slot); autoMatch mis-routing (graceful fallback when a `WeightTraining` arrives at a day with no secondary slot — decision needed: create slot? skip? prompt?); visual creep on Today (must hold the "subordinate sub-row" rule); `plan_archive` JSON backwards-compat (easy if `secondary_session` stays optional); 3-layer invariant drift (`CoachingPrinciples.md` → `GENERATION_CONFIG` → `validatePlan` need same-PR updates); scope creep to AM/PM once slot exists — hold the line.
   - **Out of scope:** AM/PM run-doubling. Advanced-runner pattern, counter to *"Slow down. You've got a day job."* Stays deferred indefinitely; revisit only if the audience shifts.
 
+- 🔲 **DS-07 — Composite effort logging** *(P2, ~2 days)* — two or more activities of the same type that together satisfy one planned session (e.g. hike + treadmill top-up = one planned long easy run). Distinct from Supplementary session slots (which is strength/cross-train alongside a run). Two parts:
+
+  **Part A — Edit logged distance on complete sessions (~2h, unblocked):**
+  When a session is manually complete (no linked HK/Strava activity), "Update log" opens ManualRunModal pre-filled with the existing distance/duration so the user can correct the total (e.g. change 8km → 13km). Currently "Update log" routes to the activity picker instead — dead end for manual completions. Fix: detect `isComplete && !completion.strava_activity_id && !completion.apple_health_uuid` → open ManualRunModal pre-filled. Tier: FREE.
+
+  **Part B — True composite effort (~1.5 days, depends on Part A):**
+  A dedicated "Add another effort" affordance on already-complete run sessions. Opens ManualRunModal in accumulate mode — shows current logged total, adds the new effort on top (new total = existing + new). Label updates to "2 efforts · 13.0km". Coaching sees the combined total. No new schema needed — `strava_activity_km` holds the aggregate, `strava_activity_name` holds the label. Tier: FREE for logging; zone analysis of combined effort stays PAID.
+
+  **Explicitly out of scope for DS-07:** storing per-effort HR data for the combined session (that requires schema changes and is follow-on). The HealthKit/Strava auto-match guard already correctly blocks auto-match from overwriting a manually-logged session — both efforts are still ingested to `strava_activities` individually, they just don't link to the session.
+
+  **Workaround until shipped:** "Log manually" on a complete session overwrites the existing log — user can manually enter the combined total (e.g. 13km for hike + treadmill). Clunky but functional.
+
 ### Ops
 
 - **Rename Vercel project** from `zona-service-nerds-projects` → `zonna` (or `zonna-app` if taken) when name available. Update `NEXT_PUBLIC_APP_URL`, `CLAUDE.md`, this file, `app/api/checkout/route.ts` fallback.

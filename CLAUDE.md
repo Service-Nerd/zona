@@ -516,6 +516,25 @@ Trigger with `/frontend-design` for ALL UI work — screens, components, layouts
 This skill biases output toward high-quality, non-generic design.
 Use the prompt template in `docs/canonical/ui-patterns.md` alongside it.
 
+### `slt-review`
+Trigger with `/slt-review [item]` when deciding what to build next — specifically when pulling an item from the backlog into active development.
+
+Five board members review the item from distinct lenses:
+- **Rory Sutherland** — behavioural economics. Will the feature solve the real problem or just the rational one?
+- **Jason Fried** — sustainable growth. Does this earn its place in the paid proposition without manipulation?
+- **Alex Hutchinson** — performance science. Is the coaching correct and defensible to experienced runners?
+- **Wendy Wood** — habit science. Does this actually change behaviour or just create the feeling of it?
+- **Des Traynor** — commercial strategy. Does this make the business work?
+
+The review gate: **before a backlog item moves to active build.** Not a post-build review.
+
+Every review outputs: tier tag (FREE/PAID), board responses, conflicts between members, a recommendation, and a MUST/NEVER compliance check.
+
+Do NOT load for:
+- Simple bug fixes or technical tasks
+- UI work (use `frontend-design` instead)
+- Architectural decisions (use `zona-architectural-principles` instead)
+
 ---
 
 ## UI Testing
