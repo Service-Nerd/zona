@@ -68,12 +68,12 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 | 2 | DS-07 Part A — Edit logged distance | ~2h | FREE |
 | 3 | ENGINE-02 — Long run shortfall | S | PAID |
 | 4 | CA-03 — Post-race goal ladder | M | PAID |
-| 5 | R25 cut 2 — Today pre-run band | ~4h | PAID |
-| 6 | ENGINE-03a — Cycle false positives | S | FREE |
-| 7 | R25 cut 3 — Coach trend cards | ~6h | PAID |
-| 8 | CA-05 — Cycle coaching (after ENGINE-03a) | M | FREE (recommended) |
-| 9 | POST-RUN-REFRAME-02 — Voice memo (after vendor decision) | M | PAID |
-| 10 | CA-02 — Apple Watch (dedicated sprint) | L | FREE/PAID |
+| 5 | ENGINE-03a — Cycle false positives | S | FREE |
+| 6 | CA-05 — Cycle coaching (after ENGINE-03a) | M | FREE (recommended) |
+| 7 | POST-RUN-REFRAME-02 — Voice memo (after vendor decision) | M | PAID |
+| 8 | CA-02 — Apple Watch (dedicated sprint) | L | FREE/PAID |
+
+*Note: R25 cuts 2–3 (Today pre-run band + Coach trend cards) were confirmed shipped 2026-06-04 via code audit 2026-06-06. Removed from priority stack. Feature registry updated.*
 
 Ordered by GTM impact. Each needs FREE/PAID tag confirmed before build.
 
@@ -196,7 +196,7 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 
 | # | Title | Tier | Effort | Notes |
 |---|-------|------|--------|-------|
-| **R25** | **Historical run intelligence** — "how does this run compare to your past self?" Similarity matching + per-run cohort comparison + trend detection. Source: `strava_activities` table, source-mixed (HealthKit primary + Strava supplementary for users who connect both). Three shippable cuts: ✅ (1) post-run analysis line — augment `/api/analyse-run` AI prompt with cohort-similarity context (~2h, **founder pickup, shipped 2026-04-30**); 🔲 (2) Today pre-run band — single card above session card showing past-self stats for matched cohort, fires only when ≥3 similar runs exist (~4h); 🔲 (3) Coach screen trend cards — 1–3 cards with one sentence + one number each, no charts (~6h) | PAID | ~10h remaining (cuts 2–3) | **Cut #1 done.** **HealthKit primary shipped 2026-06-06 — cuts 2–3 now UNBLOCKED.** SLT: cut 2 (Today pre-run band) is priority #5, cut 3 (Coach trend cards) is priority #7. Do cut 2 first. **Board note (Alex Hutchinson):** voice discipline is essential — lead with the number, not the judgment. *"Your last 3 Z2 runs averaged 8 seconds per km slower than the 3 before"* (fact) not *"Your Z2 pace has slipped"* (judgment). The fact is coaching; the judgment is noise. Three-run minimum is correct. **Board note (Wendy Wood):** the pre-run band changes context before the session — more powerful than post-run comparison. Cut 2 first. |
+| **R25** | **Historical run intelligence** — "how does this run compare to your past self?" Similarity matching + per-run cohort comparison + trend detection. ✅ **ALL THREE CUTS SHIPPED.** (1) post-run analysis line — shipped 2026-04-30; (2) Today pre-run band (`PreRunBandCard`, `/api/coaching/prerun-band`) — shipped 2026-06-04; (3) Coach trend cards (`TrendCard`, `/api/coaching/trend`) — shipped 2026-06-04. Code audit confirmed 2026-06-06. See feature-registry. | PAID | ✅ COMPLETE | Moved to feature-registry 2026-06-06. |
 | **R22** | **Blockout days** — user marks days unavailable, plan reshapes around them | PAID | M | Bundle with R20 parked triggers — uses same reshape engine |
 | **R18** | **Plan confidence score** — derive from session completion + RPE. R17 coaching flags are the per-session atom this aggregates. Logically downstream of R25 — pairs naturally as the next item once the comparison engine ships | PAID | M | Display on dashboard or plan screen |
 | **R24** | **Multi-race support** (A/B race hierarchy) | PAID | L | Non-breaking additive: `meta.races: Race[]` on top of existing `meta.race_date`/`race_name` |

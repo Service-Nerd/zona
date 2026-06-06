@@ -18,7 +18,7 @@ Supporting strategy: `docs/gtm/go-to-market-plan-2026-06.md` (the GTM playbook �
 
 **Workstreams:** 🏃 Product · 📣 Go-to-Market & Marketing · 🔁 Growth & Retention · ⚖️ Legal & Ops
 **Status:** 🔲 not started · 🔄 in progress · ✅ done · ⏸️ deferred
-**Last updated:** 2026-06-04 (session 3)
+**Last updated:** 2026-06-06 (SLT full backlog review)
 
 ---
 
@@ -68,19 +68,25 @@ iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. **App Store subm
 
 | Item | Status | Effort | Notes |
 |------|--------|--------|-------|
-| **Trial lifecycle emails** (GTM-09 day-14 + GTM-10 day-11) | 🔲 | M | Needs an email platform — **Resend free tier** (£0 at this scale). First money goes to retention, not acquisition. Directly lifts trial→paid (the north-star). |
-| **CA-01 — Free-tier "why this plan" coach intro** | ✅ | S | Shipped 2026-06-04. Haiku intro on first free plan via `meta.plan_intro`; CoachByline + moss rail (§24b); renders in preview + saved Plan screen; silent fallback. Tier: FREE. |
+| **Trial lifecycle emails** (GTM-09 day-14 + GTM-10 day-11) | 🔲 | M | **SLT #1.** Email platform decision first (Resend recommended). Content: surface a specific run, not a deadline. |
+| **CA-01 — Free-tier "why this plan" coach intro** | ✅ | S | Shipped 2026-06-04. |
 | **In-app review prompt at a value moment** | 🔲 | S | After a "nailed" session / good weekly report — not at launch. |
 
-### 🏃 Product
+### 🏃 Product — SLT priority order (reviewed 2026-06-06)
 
-| Item | Status | Effort | Notes |
-|------|--------|--------|-------|
-| **UPGRADE-ENTRY-01 — always-visible upgrade entry** | ✅ | S | Shipped 2026-06-04. "Subscription / View plans" row in MeScreen; visible to free/trial/expired, hidden for active Pro. §3.1.2 compliant. |
-| **CA-04 — adjustment narrative** (coaching, not a banner) | ✅ | S | Already shipped (built as part of AI-DEPTH-10). AI narrative via `buildAdjustmentExplanationPrompt` + Sonnet, PAID-gated via `dynamic_reshape_r20`, notification inbox + push wired. |
-| **R25 cuts #2 + #3** (Today pre-run band + Coach trend cards) | ✅ | ~10h | Shipped 2026-06-04. Cut #2: `PreRunBandCard` above Today session card (distance-only cohort, PAID, today only). Cut #3: easy-run `TrendCard` on Coach (only renders live). API: `/api/coaching/prerun-band`. |
-| **POST-RUN-03 — rich-media zone push** | 🔲 | M | Gated on TestFlight exercising production APNs. Web image first, then iOS Notification Service Extension. |
-| **POST-RUN-REFRAME-02 — voice memo input** | 🔲 | M (~3d) | First non-Anthropic vendor (Whisper). Gated on device-test capacity + vendor decision. Tier: PAID. |
+| Priority | Item | Status | Effort | Notes |
+|---|------|--------|--------|-------|
+| ✅ | **UPGRADE-ENTRY-01** | ✅ | S | Shipped 2026-06-04. |
+| ✅ | **CA-04** — adjustment narrative | ✅ | S | Shipped (AI-DEPTH-10). |
+| ✅ | **R25 cuts #2 + #3** — pre-run band + trend cards | ✅ | ~10h | Shipped 2026-06-04. Confirmed code audit 2026-06-06. Feature registry updated. |
+| **#2** | **DS-07 Part A** — edit logged distance on complete manual sessions | 🔲 | ~2h | FREE. Quick win — broken today. |
+| **#3** | **ENGINE-02** — long run shortfall detection | 🔲 | S | PAID. 2+ short long runs → 15% pull-back. One-tap confirm. |
+| **#4** | **CA-03** — post-race "what next" goal-ladder | 🔲 | M | PAID. Fires in PostRunScreen for race sessions. Seeds wizard prefill. |
+| **#5** | **ENGINE-03a** — cycle false positive fix | 🔲 | S | FREE. Prerequisite for CA-05. Verify `@capgo/capacitor-health` menstrual data support first. |
+| **#6** | **CA-05** — cycle-aware coaching thin slice | 🔲 | M | Recommend FREE. Passive activation, no opt-in question. After ENGINE-03a only. |
+| **#7** | **POST-RUN-REFRAME-02** — voice memo reframe input | 🔲 | M (~3d) | PAID. Make Whisper/OpenAI vendor decision — don't let it stay deferred by indecision. |
+| **#8** | **CA-02** — Apple Watch companion app | 🔲 | L | FREE/PAID. Dedicated sprint. Scope locked: session + zone + HR + one-tap start only. Start Apple Developer provisioning now. |
+| later | **POST-RUN-03** — rich-media zone push | 🔲 | M | Gated on production APNs. Not before #1–4. |
 
 ### ⚖️ Legal & Ops
 
@@ -99,14 +105,16 @@ iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. **App Store subm
 
 | Item | Tier | Effort | Notes |
 |------|------|--------|-------|
-| **CA-06 — Plan history UI** | FREE | S | `plan_archive` table already snapshots every prior plan; no browse surface yet. Read-only list on MeScreen with race name + date + archived_at. Data-protection promise completed. |
-| **CA-02 — Apple Watch companion app** (thin: session + zone + one-tap start) | FREE display / PAID analysis | L | Biggest competitive table-stakes gap. Reuses the `SharedStorePlugin` App-Group bridge. |
-| **CA-03 — Post-race "what next" goal-ladder** | PAID | M | Closes the post-race retention void. Pairs with R24 + R25. |
-| **CA-07 — "Ask Kit about this run"** (single gated affordance, *not* chat) | PAID | M | Needs product decision before scoping. |
-| **CA-08 — Garmin Connect integration** | PAID | M | Largest watch ecosystem; same ingest/dedupe path as Strava-secondary. |
-| **R18** Plan confidence score · **R21** Strength sessions · **R22** Blockout days · **R24** Multi-race · **R26** Background load · **R27** Cycle-aware coaching (thin slice = CA-05) | PAID | M–L | R27 cycle-aware is the highest-leverage moat (competitors avoid it). |
-| **Supplementary session slots** (strength/cross-train second slot) | FREE slot / PAID placement | ~3wk | Big schema footprint. Hold the line against AM/PM run-doubling. |
-| **DS-05** sleep stages · **DS-06** manual run metrics · **DS-07** rename `strava_activities`→`run_activities` | mixed | S–M | Data-source hygiene from ADR-011. |
+| **CA-06 — Plan history UI** | FREE | S | ✅ Shipped 2026-06-05. Read-only list in MeScreen. |
+| **CA-02 — Apple Watch companion** | FREE/PAID | L | **NEXT #8** — moved to NEXT (dedicated sprint). Start Apple Developer provisioning now. |
+| **CA-03 — Post-race goal-ladder** | PAID | M | **NEXT #4** — moved to NEXT. Closes post-race churn void. |
+| **CA-07 — "Ask Kit about this run"** | PAID | M | Hold. Return when 50+ paying users — build for real questions, not imagined ones. |
+| **CA-08 — Garmin Connect** | PAID | M | **Apply for Garmin Connect Developer Program now** (4–8 week approval). Build later. |
+| **R18** Plan confidence · **R21** Strength sessions · **R22** Blockout days · **R24** Multi-race · **R26** Background load | PAID | M–L | Hold. No urgency. |
+| **CA-05 / R27** — Cycle-aware coaching | FREE (recommended) | M | **NEXT #6** — moved to NEXT (after ENGINE-03a). Highest-leverage moat. |
+| **Supplementary session slots** | FREE slot / PAID placement | ~3wk | Big schema footprint. Dedicated window only. Hold the line on AM/PM run-doubling. |
+| **DS-05** sleep stages · **DS-06** manual run metrics | mixed | S–M | Data hygiene. No urgency. |
+| **DS-07 Part A** — edit logged distance | FREE | ~2h | **NEXT #2** — moved to NEXT. Quick win. |
 
 ### 📣 Go-to-Market & Marketing
 
