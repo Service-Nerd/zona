@@ -190,7 +190,7 @@ All colour MUST come from CSS custom properties in `globals.css`. Nothing hardco
 
 **Reference aesthetic: Runna + Planzy** — bold metric hierarchy, warm athletic cards, left-accent session type indicators, week-strip navigation, clean session rows. See `docs/canonical/ui-patterns.md` before building any new screen.
 
-**Before building any screen or component**: read `docs/canonical/ui-patterns.md`. Use the prompt template at the bottom of that file. Trigger the `frontend-design` skill for all UI work.
+**Before building any screen or component**: read `docs/canonical/screen-architecture.md` first — it defines the single job of each screen and what belongs where. Then read `docs/canonical/ui-patterns.md`. Use the prompt template at the bottom of that file. Trigger the `frontend-design` skill for all UI work.
 
 ### Active scope (Phases 1–3 shipped)
 
@@ -493,6 +493,7 @@ Three docs run the work pipeline. Keep them in sync:
 - Brand copy registry: `docs/canonical/brand-copy-alignment.md`
 - Brand & tone of voice: `docs/canonical/brand.md`
 - UX principles: `docs/canonical/ux-principles.md`
+- Screen architecture (one job per screen, what belongs where): `docs/canonical/screen-architecture.md`
 
 ---
 

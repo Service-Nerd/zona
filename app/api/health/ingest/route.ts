@@ -67,6 +67,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: 'deduped', canonical_id: dedup.canonicalId })
   }
 
+  // Fix A: capture whether HR was absent on the existing row before we overwrite it.
+  // If this re-sync brings HR that was missing on the first ingest, we need to
+  // re-run analyse-run after the upsert (autoMatchAndAnalyse returns early when
+  // already linked and won't re-trigger analysis on its own).
+  let wasHrAbsent = false
+  if (row.avg_hr != null) {
+    const { data: existingAct } = await supabase
+      .from('strava_activities')
+      .select('avg_hr')
+      .eq('user_id', userId)
+      .eq('apple_health_uuid', payload.uuid)
+      .maybeSingle()
+    wasHrAbsent = existingAct != null && existingAct.avg_hr == null
+  }
+
   const { error } = await supabase
     .from('strava_activities')
     .upsert(row, { onConflict: 'user_id,apple_health_uuid' })
@@ -74,6 +89,35 @@ export async function POST(req: NextRequest) {
   if (error) {
     console.error('[health-ingest] upsert failed', error.message)
     return NextResponse.json({ error: 'Persist failed' }, { status: 500 })
+  }
+
+  // Fix A: HR just arrived for an already-linked + already-analysed session.
+  // Re-run analyse-run silently so the score card reflects real HR data.
+  // No push — the link-time notification already fired on the first sync.
+  if (wasHrAbsent && row.avg_hr != null) {
+    const { data: existingAnalysis } = await supabase
+      .from('run_analysis')
+      .select('week_n, session_day')
+      .eq('user_id', userId)
+      .eq('apple_health_uuid', payload.uuid)
+      .maybeSingle()
+    if (existingAnalysis) {
+      waitUntil(
+        fetch(`${getInternalBaseUrl()}/api/analyse-run`, {
+          method: 'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'x-service-key': process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            'x-user-id':     userId,
+          },
+          body: JSON.stringify({
+            apple_health_uuid: payload.uuid,
+            week_n:            existingAnalysis.week_n,
+            session_day:       existingAnalysis.session_day,
+          }),
+        }).catch(err => console.error('[health-ingest] hr-refresh analyse failed', err))
+      )
+    }
   }
 
   // Auto-match + analysis runs in the background. Fire-and-forget via waitUntil

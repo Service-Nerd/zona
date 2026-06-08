@@ -78,6 +78,8 @@ After generating a plan, new users who land on a rest day or an empty first week
 
 ## Screen Design Principles
 
+The job of each screen is defined in `docs/canonical/screen-architecture.md`. That document is the canonical reference for what belongs on which screen and the validation test to apply before adding any feature. Read it before building any new screen or moving content between screens.
+
 | Principle | What it means |
 |-----------|---------------|
 | One job per screen | Each screen has exactly one primary purpose. No multi-purpose dashboards. |

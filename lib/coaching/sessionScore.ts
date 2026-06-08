@@ -14,7 +14,7 @@ export interface SessionScoreInput {
 }
 
 export interface SessionScoreResult {
-  hrDisciplineScore: number
+  hrDisciplineScore: number | null  // null = no HR data available (not a bad score)
   distanceScore:     number
   paceScore:         number
   efScore:           number
@@ -29,11 +29,14 @@ export function scoreSession(input: SessionScoreInput): SessionScoreResult {
   const paceScore         = computePaceScore(input)
   const efScore           = computeEFScore(input)
 
+  // When HR is absent, use 75 neutral only for the total so scoring stays
+  // meaningful — but we expose null on hr_discipline_score so the UI can
+  // distinguish "no data" from "genuinely scored 75".
   const totalScore = Math.round(
-    hrDisciplineScore * SCORE_WEIGHTS.hr_discipline +
-    distanceScore     * SCORE_WEIGHTS.distance +
-    paceScore         * SCORE_WEIGHTS.pace +
-    efScore           * SCORE_WEIGHTS.ef
+    (hrDisciplineScore ?? 75) * SCORE_WEIGHTS.hr_discipline +
+    distanceScore             * SCORE_WEIGHTS.distance +
+    paceScore                 * SCORE_WEIGHTS.pace +
+    efScore                   * SCORE_WEIGHTS.ef
   )
 
   return {
@@ -46,7 +49,7 @@ export function scoreSession(input: SessionScoreInput): SessionScoreResult {
   }
 }
 
-function computeHRScore({ session, actualAvgHr, hrInZonePct }: SessionScoreInput): number {
+function computeHRScore({ session, actualAvgHr, hrInZonePct }: SessionScoreInput): number | null {
   // Prefer stream-based zone % if available
   if (hrInZonePct !== null) {
     return Math.round(Math.min(100, hrInZonePct))
@@ -63,7 +66,7 @@ function computeHRScore({ session, actualAvgHr, hrInZonePct }: SessionScoreInput
       return 20
     }
   }
-  return 75 // neutral if no HR data
+  return null // no HR data — caller uses 75 neutral only for total score
 }
 
 /** Parses ceiling from strings like "< 145 bpm", "135–145 bpm", "155–165 bpm" */

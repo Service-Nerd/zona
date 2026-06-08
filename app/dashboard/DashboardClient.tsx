@@ -3792,15 +3792,36 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
       {view === 'detail' && (
         <>
           {/* ── EXECUTION SUMMARY: planned vs actual — only when complete with actuals ── */}
-          {isComplete && (completion?.strava_activity_km || completion?.avg_hr || completion?.rpe != null) && (() => {
+          {isComplete && (
+            completion?.strava_activity_km || completion?.avg_hr || completion?.rpe != null ||
+            completion?.apple_health_uuid != null || completion?.strava_activity_id != null
+          ) && (() => {
             const plannedZone = (session.zone as string | undefined) ?? (
               session.type === 'recovery' ? 'Zone 1' :
               session.type === 'easy' || session.type === 'run' || session.type === 'long' ? 'Zone 2' :
               session.type === 'quality' || session.type === 'tempo' ? 'Zone 3' :
               session.type === 'intervals' || session.type === 'hard' ? 'Zone 4–5' : null
             )
-            const isZoneBreach = completion?.avg_hr && zone2Ceiling &&
-              completion.avg_hr > zone2Ceiling &&
+            // ADR-011: strava_activities is the SOR for activity metrics. Read
+            // distance, HR, and duration from preloadedRuns rather than from
+            // session_completions denormalised copies — those can be null when
+            // the first sync had incomplete data (watch hadn't finished uploading
+            // HR). session_completions owns only RPE, fatigue, and link IDs.
+            const linkedRun = Array.isArray(preloadedRuns)
+              ? preloadedRuns.find((r: any) =>
+                  (completion?.apple_health_uuid && r.id === completion.apple_health_uuid) ||
+                  (completion?.strava_activity_id && r.id === completion.strava_activity_id)
+                )
+              : null
+            const actualDistKm   = linkedRun
+              ? +(linkedRun.distance_m / 1000).toFixed(1)
+              : (completion?.strava_activity_km ?? null)
+            const actualAvgHr    = completion?.avg_hr ?? (linkedRun?.avg_hr as number | null | undefined) ?? null
+            const actualDuration = linkedRun?.moving_time_s
+              ? fmtDurationMins(Math.round((linkedRun.moving_time_s as number) / 60))
+              : null
+            const isZoneBreach = actualAvgHr != null && zone2Ceiling != null &&
+              actualAvgHr > zone2Ceiling &&
               ['easy', 'run', 'long', 'recovery'].includes(session.type)
             const flag = completion?.coaching_flag as string | null | undefined
             return (
@@ -3841,7 +3862,8 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                   {/* Vertical divider */}
                   <div style={{ width: '1px', background: 'var(--line)', alignSelf: 'stretch', flexShrink: 0 }} />
 
-                  {/* Actual column */}
+                  {/* Actual column — metrics from strava_activities via linkedRun,
+                      RPE from session_completions (user-entered, ADR-011) */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Actual</div>
@@ -3857,14 +3879,16 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                       )}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                      {completion?.strava_activity_km && (
+                      {(effectiveMetric === 'distance' ? actualDistKm : actualDuration) != null && (
                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)' }}>
-                          {completion.strava_activity_km}{preferredUnits}
+                          {effectiveMetric === 'distance'
+                            ? `${actualDistKm}${preferredUnits}`
+                            : actualDuration}
                         </span>
                       )}
-                      {completion?.avg_hr && (
+                      {actualAvgHr != null && (
                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: isZoneBreach ? 'var(--warn)' : 'var(--ink)' }}>
-                          {completion.avg_hr} bpm avg
+                          {actualAvgHr} bpm avg
                           {isZoneBreach && <span style={{ fontSize: '10px', marginLeft: '4px', opacity: 0.8 }}>↑</span>}
                         </span>
                       )}
@@ -6700,6 +6724,14 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
     return phases.map(p => caps[p] ?? p).join(' → ')
   })()
 
+  // Race Projections sheet — tapping the Plan Arc opens this (screen-architecture.md)
+  const [showRaceProjections, setShowRaceProjections] = useState(false)
+
+  // Tracked km for the current week (for the This Week card footer)
+  const currentWeek = plan.weeks[currentWeekIndex] as any
+  const currentWeekSessions = Object.values((currentWeek as any)?.sessions ?? {}) as any[]
+  const weeklyKmTarget = sumRoundedDistance(currentWeekSessions.map((s: any) => s?.distance_km as number | undefined), 'km')
+
   // PLAN-VOICE-AI — paid/trial users get an AI-voiced headline + items via
   // /api/plan-weekly-note (cached per week, regenerated when the plan changes).
   // Free users keep the rule-engine voice (no fetch). AI failure silently
@@ -6756,8 +6788,12 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
         </div>
       )}
 
-      {/* ── PLAN ARC ─────────────────────────────────────────────── */}
-      <div style={{ padding: '0 16px 0' }}>
+      {/* ── PLAN ARC — tap to open Race Projections (screen-architecture.md) ── */}
+      <button
+        onClick={() => setShowRaceProjections(true)}
+        style={{ display: 'block', width: '100%', padding: '0 16px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+        aria-label="View race projections"
+      >
         <PlanArc
           totalWeeks={totalWeeks}
           currentWeek={weekNum}
@@ -6766,7 +6802,12 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           raceWeek={raceWeekNumber}
           phaseLabel={phaseLabel || undefined}
         />
-      </div>
+        {raceDate && (
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '6px', letterSpacing: '0.02em' }}>
+            {raceName ? `${raceName} · ` : ''}{daysToRace === 0 ? 'Race day' : daysToRace === 1 ? '1 day to go' : `${daysToRace} days to go`} · Tap for projections
+          </div>
+        )}
+      </button>
 
       {/* ── PLAN INTRO — CA-01 free first-plan "why this plan" (Kit's voice) ──
           Plan-level intro generated once on a free user's first plan. The one
@@ -6783,8 +6824,8 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           Tier-divergent: paid/trial users see AI voice with CoachByline.
           Free users see rule-engine voice (no byline — provenance honesty).
           AI failure silently falls back to rule-engine (ADR-006).
-          Shares rule-engine helpers (buildWeekVoiceContext et al) with
-          PlanCoachingCard on the Coach screen. */}
+          Uses rule-engine helpers (buildWeekVoiceContext et al).
+          Week Notes merged into this card (screen-architecture.md 2026-06-07). */}
       {(() => {
         const wk = plan.weeks[currentWeekIndex]
         if (!wk) return null
@@ -6799,9 +6840,20 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
         const showByline = !!aiReady || isLoading
 
         // Plan shows the one-line framing only — the supporting items + the full
-        // weekly read live on the Coach screen (PlanCoachingCard + AI Weekly
-        // Report). Paid users tap the CoachByline to get there.
+        // Week Notes merged in here (screen-architecture.md 2026-06-07):
+        // headline + items (max 2) + km target footer all live on Plan now.
         const headline   = aiReady ? (aiNote as { headline: string }).headline : ruleHeadline
+        const aiItems    = aiReady ? (aiNote as { headline: string; items: string[] }).items.slice(0, 2) : null
+        const ruleItems  = getWeekVoiceItems(ctx, 2)
+        const items      = aiItems ?? ruleItems
+        const doneKm     = (() => {
+          // Sum completed runs this week from allCompletions
+          const weekN = currentWeekIndex + 1
+          const weekCompletions = allCompletions[weekN] ?? {}
+          const total = Object.values(weekCompletions)
+            .reduce((sum: number, c: any) => sum + (c?.distance_km ?? 0), 0)
+          return total > 0 ? parseFloat(total.toFixed(1)) : null
+        })()
 
         return (
           <div style={{ padding: '16px 16px 0' }}>
@@ -6810,53 +6862,79 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
               background: 'var(--card)',
               border: '1px solid var(--line)',
               borderRadius: 'var(--radius-lg)',
-              padding: '14px 16px 14px 19px',
               overflow: 'hidden',
             }}>
-              {/* Moss left rail — coaching surface signal. For paid users this
-                  is now the canonical AI-card rail (Pattern 16b); for free users
-                  it's the rule-engine coaching accent. Same colour either way. */}
-              <span style={{
-                position: 'absolute', left: '8px', top: '14px', bottom: '14px',
-                width: '3px', borderRadius: '2px', background: 'var(--moss)',
-              }} />
-              {/* Eyebrow row: CoachByline (paid) or rule-engine label (free) + phase chip */}
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                {showByline ? (
-                  <CoachByline
-                    color="moss"
-                    role="This week"
-                    working={isLoading}
-                    onClick={onOpenCoach}
-                  />
+              {/* Main content area with left rail */}
+              <div style={{ padding: '14px 16px 14px 19px', position: 'relative' }}>
+                {/* Moss left rail — coaching surface signal */}
+                <span style={{
+                  position: 'absolute', left: '8px', top: '14px', bottom: '14px',
+                  width: '3px', borderRadius: '2px', background: 'var(--moss)',
+                }} />
+                {/* Eyebrow row: CoachByline (paid) or rule-engine label (free) + phase chip */}
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                  {showByline ? (
+                    <CoachByline
+                      color="moss"
+                      role="This week"
+                      working={isLoading}
+                      onClick={onOpenCoach}
+                    />
+                  ) : (
+                    <span style={{
+                      fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+                      color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
+                    }}>This week</span>
+                  )}
+                  {phaseCap && (
+                    <span style={{
+                      marginLeft: 'auto',
+                      fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+                      color: 'var(--moss)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                    }}>{phaseCap}</span>
+                  )}
+                </div>
+                {isLoading ? (
+                  <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ height: '17px', width: '85%', borderRadius: '4px', background: 'var(--bg-soft)', opacity: 0.6 }} />
+                    <div style={{ height: '13px', width: '70%', borderRadius: '4px', background: 'var(--bg-soft)', opacity: 0.4 }} />
+                  </div>
                 ) : (
-                  <span style={{
-                    fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-                    color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
-                  }}>This week</span>
-                )}
-                {phaseCap && (
-                  <span style={{
-                    marginLeft: 'auto',
-                    fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-                    color: 'var(--moss)', letterSpacing: '0.08em', textTransform: 'uppercase',
-                  }}>{phaseCap}</span>
+                  <>
+                    <div style={{
+                      fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
+                      color: 'var(--ink)', lineHeight: 1.4, letterSpacing: '-0.01em',
+                      marginBottom: items.length > 0 ? '10px' : 0,
+                    }}>{headline}</div>
+                    {items.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {items.map((item: string, i: number) => (
+                          <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+                            {item}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
-              {isLoading ? (
-                /* Skeleton — single headline-height bar (this surface is now a
-                   one-line teaser). CoachByline's pulsing sparkle carries the
-                   working-state cue (no spinner per ui-patterns.md). */
-                <div style={{ marginTop: '4px' }}>
-                  <div style={{ height: '17px', width: '85%', borderRadius: '4px', background: 'var(--bg-soft)', opacity: 0.6 }} />
+              {/* Km target footer — mirrors PlanCoachingCard footer pattern */}
+              {weeklyKmTarget > 0 && (
+                <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)' }}>
+                    {weeklyKmTarget}km target
+                  </span>
+                  {doneKm ? (
+                    <>
+                      <span style={{ color: 'var(--line-strong)', fontSize: '12px' }}>·</span>
+                      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--moss)', fontWeight: 500 }}>
+                        {doneKm}km done
+                      </span>
+                    </>
+                  ) : (
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>no runs logged yet</span>
+                  )}
                 </div>
-              ) : (
-                /* Headline only — the one-line framing for the week. The full
-                   read (supporting items + weekly report) lives on Coach. */
-                <div style={{
-                  fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
-                  color: 'var(--ink)', lineHeight: 1.4, letterSpacing: '-0.01em',
-                }}>{headline}</div>
               )}
             </div>
           </div>
@@ -6879,6 +6957,55 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           }}
         />
       </div>
+
+      {/* ── RACE PROJECTIONS SHEET — accessed via Plan Arc tap ──────────
+          screen-architecture.md: Race Projections belong on Plan, one tap
+          from the Plan Arc (the existing race-goal object). VDOT formula
+          + R31 target row + R32 recal nudge live here. */}
+      {showRaceProjections && (
+        <div
+          onClick={() => setShowRaceProjections(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'vetra-fade-in 0.18s ease-out' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '85vh', overflowY: 'auto', animation: 'vetra-slide-up 0.22s ease-out' }}
+          >
+            <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />
+            <div style={{ padding: '0 20px 4px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
+                Race projections
+              </div>
+              {raceName && (
+                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.2, marginBottom: '4px' }}>
+                  {raceName}
+                </div>
+              )}
+              {raceDateStr && (
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>
+                  {raceDateStr}{daysToRace !== null && daysToRace > 0 ? ` · ${daysToRace} days to go` : daysToRace === 0 ? ' · Race day' : ''}
+                </div>
+              )}
+            </div>
+            <div style={{ padding: '12px 20px 8px' }}>
+              <RaceTimesCard
+                stravaConnected={false}
+                benchmarkRecalDismissedAt={undefined}
+                onOpenBenchmark={undefined}
+                onDismissRecal={undefined}
+              />
+            </div>
+            <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: '8px' }}>
+              <button
+                onClick={() => setShowRaceProjections(false)}
+                style={{ width: '100%', padding: '12px', background: 'var(--bg-soft)', border: 'none', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', cursor: 'pointer', letterSpacing: '0.04em' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -7891,14 +8018,192 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           </div>
         )}
 
-        {/* ── LEDGER — "Weeks within the lines" ─────────────────────────
-            Moved here from MeScreen 2026-05-23. Sits above the stats grid
-            because it frames everything below: the in-week scores only
-            matter in the context of how many disciplined weeks you've
-            already strung together. RestraintCard anatomy (Pattern 11). */}
-        <LedgerCard ledger={disciplineLedger} />
+        {/* ── KIT WEEKLY READ — hero position ──────────────────────────
+            Promoted from bottom of screen: the AI synthesis is the primary
+            reason a paid user opens Coach. Everything below is evidence that
+            supports what Kit says here. Action line (cta) is the most
+            important text on the screen. */}
+        <div style={{
+          background: 'var(--warn-bg)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '16px 18px',
+        }}>
+          {/* Eyebrow — byline + week counter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+            <CoachByline working={loading} color="warn" role="This week" />
+            <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', opacity: 0.6 }}>
+              W{weekNum}/{totalWeeks}
+            </span>
+          </div>
+          {stravaTokenFailed && !stravaLoading && (
+            <div style={{ marginBottom: '12px' }}>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--coach-ink)', opacity: 0.7 }}>
+                Strava connection expired. Reconnect in Profile.
+              </span>
+            </div>
+          )}
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+              {[85, 100, 70].map((w, i) => (
+                <div key={i} style={{ height: '13px', background: 'rgba(184,133,58,0.18)', borderRadius: '4px', width: `${w}%` }} />
+              ))}
+            </div>
+          ) : reportIsCurrent && weeklyReport?.headline ? (
+            <div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 600, color: 'var(--coach-ink)', letterSpacing: '-0.3px', lineHeight: 1.3, marginBottom: weeklyReport.body ? '10px' : 0 }}>
+                {weeklyReport.headline}
+              </div>
+              {weeklyReport.body && (
+                <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.7, margin: 0, marginBottom: weeklyReport.cta ? '12px' : 0 }}>
+                  {weeklyReport.body}
+                </p>
+              )}
+              {weeklyReport.cta && (
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--coach-ink)', lineHeight: 1.5, fontStyle: 'italic', marginBottom: 0 }}>
+                  {weeklyReport.cta}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--coach-ink)', marginBottom: '8px' }}>
+                {weeklyReport && !reportIsCurrent ? "Last week’s report is below." : 'No report yet this week.'}
+              </div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.6, opacity: 0.75 }}>
+                {!runs?.length && !stravaTokenFailed
+                  ? 'Log a run with heart rate to generate a weekly report.'
+                  : 'Generate a report to see how this week is tracking.'}
+              </div>
+            </div>
+          )}
+          {error && (
+            <div style={{ marginTop: '10px', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--danger)', opacity: 0.85 }}>
+              {error}
+            </div>
+          )}
+          <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            {refreshBlocked && (
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', display: 'block', width: '100%', marginBottom: '4px' }}>
+                Already refreshed today.
+              </span>
+            )}
+            <button
+              onClick={generateReport}
+              disabled={loading || refreshBlocked}
+              style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
+                color: 'var(--warn)',
+                background: 'rgba(184,133,58,0.12)',
+                border: 'none',
+                borderRadius: '22px',
+                padding: '0 18px',
+                minHeight: '44px',
+                cursor: (loading || refreshBlocked) ? 'default' : 'pointer',
+                opacity: (loading || refreshBlocked) ? 0.4 : 1,
+              }}
+            >
+              {loading && <AIMark size={10} color="var(--warn)" working />}
+              {loading ? 'Generating' : (reportIsCurrent && weeklyReport?.headline ? 'Refresh' : 'Generate report')}
+            </button>
+            {reportIsCurrent && weeklyReport?.zone_discipline_score != null && (
+              <ShareWeekButton weekN={weeklyReport.week_n} />
+            )}
+          </div>
+        </div>
 
-        {/* ── STATS 2×2 GRID ───────────────────────────────────────────── */}
+        {/* ── R29 RACE READINESS — shows daysToRace 0–14, suppresses R28 ── */}
+        {showRaceCard && (localRaceReadiness || specialCardLoading) && (
+          <div style={{
+            background: 'var(--card)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--line)',
+            borderLeft: '3px solid var(--s-race)',
+            padding: '16px 18px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <CoachByline working={specialCardLoading && !localRaceReadiness} role="Race readiness" />
+              <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
+                {daysToRace === 0 ? 'Race day' : `${daysToRace}d to go`}
+              </span>
+            </div>
+            {specialCardLoading && !localRaceReadiness ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[90, 100, 75].map((w, i) => (
+                  <div key={i} style={{ height: '13px', background: 'rgba(200,106,42,0.12)', borderRadius: '4px', width: `${w}%` }} />
+                ))}
+              </div>
+            ) : localRaceReadiness ? (
+              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.65, margin: 0 }}>
+                {localRaceReadiness.content}
+              </p>
+            ) : null}
+          </div>
+        )}
+
+        {/* ── R28 PHASE SUMMARY — shows first week of new phase, suppressed by R29 ── */}
+        {showPhaseCard && (localPhaseSummary || specialCardLoading) && (
+          <div style={{
+            background: 'var(--bg-soft)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--line)',
+            borderLeft: '3px solid var(--moss)',
+            padding: '16px 18px',
+          }}>
+            <div style={{ marginBottom: '12px' }}>
+              <CoachByline working={specialCardLoading && !localPhaseSummary} role="Phase complete" />
+            </div>
+            {specialCardLoading && !localPhaseSummary ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[85, 100, 70].map((w, i) => (
+                  <div key={i} style={{ height: '13px', background: 'rgba(107,142,107,0.12)', borderRadius: '4px', width: `${w}%` }} />
+                ))}
+              </div>
+            ) : localPhaseSummary ? (
+              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.65, margin: 0 }}>
+                {localPhaseSummary.content}
+              </p>
+            ) : null}
+          </div>
+        )}
+
+        {/* ── R30 ZONE DRIFT PATTERN — rule-engine, no AI ─────────────── */}
+        {/* Suppressed by R29 (race window). 14-day dismiss window checked here. */}
+        {(() => {
+          if (!zoneDriftPattern || isRaceWindow) return null
+          if (zoneDriftDismissedAt) {
+            const daysSince = (Date.now() - new Date(zoneDriftDismissedAt).getTime()) / 86_400_000
+            if (daysSince <= 14) return null
+          }
+          return (
+            <div style={{
+              background: 'var(--card)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--line)',
+              borderLeft: '3px solid var(--warn)',
+              padding: '16px 18px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                  Easy days running hot
+                </span>
+                <button
+                  onClick={onDismissZoneDrift}
+                  style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 400, color: 'var(--mute)', background: 'none', border: 'none', padding: '0', cursor: 'pointer', flexShrink: 0 }}
+                >
+                  Dismiss
+                </button>
+              </div>
+              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.6, margin: 0 }}>
+                {zoneDriftPattern.count} of your last {zoneDriftPattern.total} easy sessions crept above Zone 2. If easy isn&apos;t easy, hard can&apos;t be hard.
+              </p>
+            </div>
+          )
+        })()}
+
+        {/* ── STATS 2×2 GRID — supporting evidence tier ────────────────
+            Numbers that explain what Kit said above. Stats follow the read,
+            not precede it. The read is the hero; these are the evidence. */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
           {([
             {
@@ -8084,71 +8389,12 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           </div>
         )}
 
-        {/* ── R29 RACE READINESS — shows daysToRace 0–14, suppresses R28 ── */}
-        {showRaceCard && (localRaceReadiness || specialCardLoading) && (
-          <div style={{
-            background: 'var(--card)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--line)',
-            borderLeft: '3px solid var(--s-race)',
-            padding: '16px 18px',
-          }}>
-            {/* Eyebrow — byline + countdown */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <CoachByline
-                working={specialCardLoading && !localRaceReadiness}
-                role="Race readiness"
-              />
-              <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
-                {daysToRace === 0 ? 'Race day' : `${daysToRace}d to go`}
-              </span>
-            </div>
-            {specialCardLoading && !localRaceReadiness ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {[90, 100, 75].map((w, i) => (
-                  <div key={i} style={{ height: '13px', background: 'rgba(200,106,42,0.12)', borderRadius: '4px', width: `${w}%` }} />
-                ))}
-              </div>
-            ) : localRaceReadiness ? (
-              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.65, margin: 0 }}>
-                {localRaceReadiness.content}
-              </p>
-            ) : null}
-          </div>
-        )}
-
-        {/* ── R28 PHASE SUMMARY — shows first week of new phase, suppressed by R29 ── */}
-        {showPhaseCard && (localPhaseSummary || specialCardLoading) && (
-          <div style={{
-            background: 'var(--bg-soft)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--line)',
-            borderLeft: '3px solid var(--moss)',
-            padding: '16px 18px',
-          }}>
-            {/* Eyebrow — byline carries the topic */}
-            <div style={{ marginBottom: '12px' }}>
-              <CoachByline
-                working={specialCardLoading && !localPhaseSummary}
-                role="Phase complete"
-              />
-            </div>
-            {specialCardLoading && !localPhaseSummary ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {[85, 100, 70].map((w, i) => (
-                  <div key={i} style={{ height: '13px', background: 'rgba(107,142,107,0.12)', borderRadius: '4px', width: `${w}%` }} />
-                ))}
-              </div>
-            ) : localPhaseSummary ? (
-              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.65, margin: 0 }}>
-                {localPhaseSummary.content}
-              </p>
-            ) : null}
-          </div>
-        )}
+        {/* ── LEDGER — "Weeks within the lines" ─────────────────────────
+            After the stats evidence tier. RestraintCard anatomy (Pattern 11). */}
+        <LedgerCard ledger={disciplineLedger} />
 
         {/* ── AI-DEPTH-03: AEROBIC TREND CARD ──────────────────────────
-            Persists above the weekly report — the receipt for zone discipline.
+            HR drift over time — the receipt for zone discipline.
             Skeleton while loading; live/pending based on trend engine output.
             No locked state here — CoachScreen is already paid-gated upstream. */}
         {trendCardLoading
@@ -8183,157 +8429,8 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           />
         )}
 
-        {/* ── 3. AI WEEKLY REPORT — CoachNoteBlock amber pattern ─────── */}
-        <div style={{
-          background: 'var(--warn-bg)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '16px 18px',
-        }}>
-          {/* Eyebrow — byline + week counter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-            <CoachByline working={loading} color="warn" role="This week" />
-            <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', opacity: 0.6 }}>
-              W{weekNum}/{totalWeeks}
-            </span>
-          </div>
 
-          {/* Strava token failed — inline mention, reconnect via Profile */}
-          {stravaTokenFailed && !stravaLoading && (
-            <div style={{ marginBottom: '12px' }}>
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--coach-ink)', opacity: 0.7 }}>
-                Strava connection expired. Reconnect in Profile.
-              </span>
-            </div>
-          )}
 
-          {/* Content states */}
-          {loading ? (
-            /* Loading skeleton */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
-              {[85, 100, 70].map((w, i) => (
-                <div
-                  key={i}
-                  style={{ height: '13px', background: 'rgba(184,133,58,0.18)', borderRadius: '4px', width: `${w}%` }}
-                />
-              ))}
-            </div>
-          ) : reportIsCurrent && weeklyReport?.headline ? (
-            /* Report content */
-            <div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 600, color: 'var(--coach-ink)', letterSpacing: '-0.3px', lineHeight: 1.3, marginBottom: weeklyReport.body ? '10px' : 0 }}>
-                {weeklyReport.headline}
-              </div>
-              {weeklyReport.body && (
-                <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.7, margin: 0, marginBottom: weeklyReport.cta ? '12px' : 0 }}>
-                  {weeklyReport.body}
-                </p>
-              )}
-              {weeklyReport.cta && (
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--coach-ink)', lineHeight: 1.5, fontStyle: 'italic', marginBottom: 0 }}>
-                  {weeklyReport.cta}
-                </div>
-              )}
-            </div>
-          ) : (
-            /* No report yet — prompt without nagging */
-            <div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--coach-ink)', marginBottom: '8px' }}>
-                {weeklyReport && !reportIsCurrent ? "Last week\u2019s report is below." : 'No report yet this week.'}
-              </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.6, opacity: 0.75 }}>
-                {!runs?.length && !stravaTokenFailed
-                  ? 'Log a run with heart rate to generate a weekly report.'
-                  : 'Generate a report to see how this week is tracking.'}
-              </div>
-            </div>
-          )}
-
-          {/* Error */}
-          {error && (
-            <div style={{ marginTop: '10px', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--danger)', opacity: 0.85 }}>
-              {error}
-            </div>
-          )}
-
-          {/* CTA button — inside the card, state-labelled */}
-          <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-            {refreshBlocked && (
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', display: 'block', width: '100%', marginBottom: '4px' }}>
-                Already refreshed today.
-              </span>
-            )}
-            <button
-              onClick={generateReport}
-              disabled={loading || refreshBlocked}
-              style={{
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-                color: 'var(--warn)',
-                background: 'rgba(184,133,58,0.12)',
-                border: 'none',
-                borderRadius: '22px',
-                padding: '0 18px',
-                minHeight: '44px',  // iOS HIG tap-target minimum.
-                cursor: (loading || refreshBlocked) ? 'default' : 'pointer',
-                opacity: (loading || refreshBlocked) ? 0.4 : 1,
-              }}
-            >
-              {loading && <AIMark size={10} color="var(--warn)" working />}
-              {loading ? 'Generating' : (reportIsCurrent && weeklyReport?.headline ? 'Refresh' : 'Generate report')}
-            </button>
-            {/* SHARE-01 — share this week's zone discipline card. Only when
-                the report is current and has a zone-discipline score (the
-                centrepiece of the card). The OG route returns 404 without one. */}
-            {reportIsCurrent && weeklyReport?.zone_discipline_score != null && (
-              <ShareWeekButton weekN={weeklyReport.week_n} />
-            )}
-          </div>
-        </div>
-
-        {/* ── R30 ZONE DRIFT PATTERN — rule-engine, no AI ─────────────── */}
-        {/* Suppressed by R29 (race window). 14-day dismiss window checked here. */}
-        {(() => {
-          if (!zoneDriftPattern || isRaceWindow) return null
-          if (zoneDriftDismissedAt) {
-            const daysSince = (Date.now() - new Date(zoneDriftDismissedAt).getTime()) / 86_400_000
-            if (daysSince <= 14) return null
-          }
-          return (
-            <div style={{
-              background: 'var(--card)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--line)',
-              borderLeft: '3px solid var(--warn)',
-              padding: '16px 18px',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
-                  Easy days running hot
-                </span>
-                <button
-                  onClick={onDismissZoneDrift}
-                  style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 400, color: 'var(--mute)', background: 'none', border: 'none', padding: '0', cursor: 'pointer', flexShrink: 0 }}
-                >
-                  Dismiss
-                </button>
-              </div>
-              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.6, margin: 0 }}>
-                {zoneDriftPattern.count} of your last {zoneDriftPattern.total} easy sessions crept above Zone 2. If easy isn&apos;t easy, hard can&apos;t be hard.
-              </p>
-            </div>
-          )
-        })()}
-
-        {/* ── 4. PLAN NOTES — always shown ────────────────────────────── */}
-        <PlanCoachingCard plan={plan} currentWeek={currentWeek} units={preferredUnits} trackedKm={trackedKm} />
-
-        {/* ── 5. RACE PROJECTIONS ──────────────────────────────────────── */}
-        <RaceTimesCard
-          stravaConnected={stravaConnected}
-          benchmarkRecalDismissedAt={benchmarkRecalDismissedAt}
-          onOpenBenchmark={onOpenBenchmark}
-          onDismissRecal={onDismissRecal}
-        />
 
       </div>
     </div>
@@ -10539,12 +10636,13 @@ function RunFeedbackCard({
   const [expanded, setExpanded] = useState(false)
   const explanations = buildScoreExplanations(analysis, paceTarget, actualAvgSpeedMs)
 
-  const metrics: { label: string; value: number | undefined }[] = [
-    { label: 'HR',         value: analysis.hr_discipline_score },
+  const metrics: { label: string; value: number | null | undefined }[] = [
+    { label: 'HR',         value: analysis.hr_discipline_score as number | null },
     { label: 'Distance',   value: analysis.distance_score },
     { label: 'Pace',       value: analysis.pace_score },
     { label: 'Efficiency', value: analysis.ef_score },
   ]
+  const hrNotAvailable = !isManual && analysis.hr_discipline_score == null
 
   return (
     <>
@@ -10599,9 +10697,11 @@ function RunFeedbackCard({
           {voice.headline}
         </div>
 
-        {/* Metric quartet — hidden for manual rows (no activity data to score) */}
+        {/* Metric quartet — hidden for manual rows (no activity data to score).
+         *  HR shows "—" when null (watch sync race — HR not yet available).
+         *  Other metrics are hidden when absent. INV-DATA-005: one-liner explains. */}
         {!isManual && <div style={{ display: 'flex', gap: '10px' }}>
-          {metrics.map(({ label, value }) => value !== undefined && (
+          {metrics.map(({ label, value }) => (value != null || label === 'HR') && (
             <div key={label} style={{ flex: 1 }}>
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
@@ -10610,39 +10710,55 @@ function RunFeedbackCard({
               }}>
                 {label}
               </div>
-              <div style={{
-                fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 700,
-                color: 'var(--coach-ink)', fontVariantNumeric: 'tabular-nums',
-                letterSpacing: '-0.5px', marginBottom: '6px',
-              }}>
-                {value}
-              </div>
-              <div style={{
-                height: '3px', background: 'rgba(61,38,0,0.12)', borderRadius: '2px',
-                overflow: 'hidden',
-              }}>
+              {value != null ? (
+                <>
+                  <div style={{
+                    fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 700,
+                    color: 'var(--coach-ink)', fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: '-0.5px', marginBottom: '6px',
+                  }}>
+                    {value}
+                  </div>
+                  <div style={{
+                    height: '3px', background: 'rgba(61,38,0,0.12)', borderRadius: '2px',
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${value}%`,
+                      background: value >= 80 ? 'var(--moss)' : 'var(--warn)',
+                      opacity: value >= 80 ? 0.8 : value >= 60 ? 0.55 : 1,
+                      borderRadius: '2px',
+                      transition: 'width 0.4s ease',
+                    }} />
+                  </div>
+                  <div style={{
+                    fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
+                    color: 'var(--warn)', opacity: 0.7,
+                    textTransform: 'uppercase', letterSpacing: '0.08em',
+                    whiteSpace: 'nowrap',
+                    marginTop: '5px',
+                  }}>
+                    {scoreBandLabel(value)}
+                  </div>
+                </>
+              ) : (
                 <div style={{
-                  height: '100%',
-                  width: `${value}%`,
-                  background: value >= 80 ? 'var(--moss)' : 'var(--warn)',
-                  opacity: value >= 80 ? 0.8 : value >= 60 ? 0.55 : 1,
-                  borderRadius: '2px',
-                  transition: 'width 0.4s ease',
-                }} />
-              </div>
-              {/* Verbal backup for the bar colour */}
-              <div style={{
-                fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
-                color: 'var(--warn)', opacity: 0.7,
-                textTransform: 'uppercase', letterSpacing: '0.08em',
-                whiteSpace: 'nowrap',
-                marginTop: '5px',
-              }}>
-                {scoreBandLabel(value)}
-              </div>
+                  fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 700,
+                  color: 'var(--mute)', letterSpacing: '-0.5px',
+                }}>—</div>
+              )}
             </div>
           ))}
         </div>}
+        {hrNotAvailable && (
+          <p style={{
+            fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)',
+            margin: '8px 0 0', lineHeight: 1.4,
+          }}>
+            HR data wasn&rsquo;t available when this run was analysed.
+          </p>
+        )}
 
         {/* Expanded breakdown — one line per sub-score, derived from analysis row */}
         {!isManual && expanded && (
@@ -10872,7 +10988,10 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
           // avg_speed for the Pace explanation. Activity ID lives on the
           // analysis row; preloadedRuns is the StravaActivity[] already prefetched.
           const linkedAct = Array.isArray(preloadedRuns)
-            ? preloadedRuns.find((r: any) => r.id === analysis.strava_activity_id)
+            ? preloadedRuns.find((r: any) =>
+                (analysis.strava_activity_id && r.id === analysis.strava_activity_id) ||
+                (analysis.apple_health_uuid  && r.id === analysis.apple_health_uuid)
+              )
             : null
           // HealthKit provenance label — shown when the session was auto-matched
           // from Apple Health rather than Strava. Uses strava_activity_km from
@@ -11124,6 +11243,7 @@ function PostRunScreen({
   const [pollGaveUp, setPollGaveUp]         = useState(false)
   const [linkFired, setLinkFired]           = useState(false)
   const [hydratedActivity, setHydratedActivity] = useState<PostRunData['linkedActivity']>(null)
+  const [isHKCompletion, setIsHKCompletion] = useState(false)
   const sessionDay = session?.key as string | undefined
 
   // ── Hydrate RPE/fatigue + linked activity from existing completion ──
@@ -11137,7 +11257,7 @@ function PostRunScreen({
         if (!user) return
         const { data: row } = await supabase
           .from('session_completions')
-          .select('rpe, fatigue_tag, strava_activity_name, strava_activity_km')
+          .select('rpe, fatigue_tag, strava_activity_name, strava_activity_km, apple_health_uuid')
           .eq('user_id', user.id)
           .eq('week_n', weekN)
           .eq('session_day', sessionDay)
@@ -11145,9 +11265,11 @@ function PostRunScreen({
         if (!cancelled && row) {
           if (row.rpe != null) setRpe(row.rpe as number)
           if (row.fatigue_tag) setFatigueTag(row.fatigue_tag as string)
+          const isHK = row.apple_health_uuid != null
+          if (isHK) setIsHKCompletion(true)
           if (!linkedActivity && (row.strava_activity_name || row.strava_activity_km)) {
             setHydratedActivity({
-              name: (row.strava_activity_name as string | null) ?? 'Strava run',
+              name: (row.strava_activity_name as string | null) ?? (isHK ? 'Apple Health run' : 'Strava run'),
               km:   (row.strava_activity_km as number | null) ?? null,
             })
           }
@@ -11160,6 +11282,7 @@ function PostRunScreen({
 
   // Display source for the linked-activity row — prop wins when present.
   const displayActivity = linkedActivity ?? hydratedActivity
+  const isHKSource = !!pendingAppleHealthUuid || isHKCompletion
 
   // ── Fire link-activity once on mount when a fresh activity is staged ──
   // This commits the Strava → session_completions link AND triggers analyse-run
@@ -11347,7 +11470,7 @@ function PostRunScreen({
             padding: '12px 14px',
             display: 'flex', alignItems: 'center', gap: '10px',
           }}>
-            {/* Strava-style chip */}
+            {/* source chip */}
             <div style={{
               width: '8px', height: '8px', borderRadius: '50%',
               background: 'var(--moss)', flexShrink: 0,
@@ -11358,7 +11481,7 @@ function PostRunScreen({
                 color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
                 marginBottom: '2px',
               }}>
-                Linked from Strava
+                {isHKSource ? 'Apple Health' : 'Linked from Strava'}
               </div>
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500,

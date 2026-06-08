@@ -1,0 +1,38 @@
+# GTM-09 + GTM-10 — trial lifecycle emails (day 11 nudge + day 14 expiry).
+#
+# Why GitHub Actions instead of vercel.json:
+#   Vercel Hobby caps at 2 crons. One slot is already used by
+#   send-weekly-report. See push-cron-daily.yml for the full rationale.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   CRON_SECRET — same value as the Vercel env var.
+#   VERCEL_URL  — production URL with no trailing slash,
+#                 e.g. https://rts-training-hub.vercel.app
+
+name: email-cron-trial
+
+on:
+  schedule:
+    # 08:00 UTC daily. Offset from push crons (:15 and :30) to avoid
+    # stampeding the Vercel function concurrency pool.
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  fire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST /api/email/send-trial
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VERCEL_URL:  ${{ secrets.VERCEL_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ] || [ -z "$VERCEL_URL" ]; then
+            echo "::error::CRON_SECRET and VERCEL_URL secrets must be set."
+            exit 1
+          fi
+          curl -fsS --max-time 60 -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$VERCEL_URL/api/email/send-trial"

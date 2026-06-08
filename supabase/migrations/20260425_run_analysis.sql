@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS run_analysis (
   strava_activity_id    BIGINT NOT NULL,
 
   -- Execution scoring (0–100 each)
-  hr_discipline_score   INTEGER,                 -- % time in target HR band (0–100)
+  hr_discipline_score   INTEGER,                 -- % time in target HR band (0–100); NULL = no HR data (not a bad score)
   distance_score        INTEGER,                 -- actual vs planned distance (0–100)
   pace_score            INTEGER,                 -- actual vs target pace (0–100)
   ef_score              INTEGER,                 -- aerobic efficiency vs 4-week avg (0–100)
