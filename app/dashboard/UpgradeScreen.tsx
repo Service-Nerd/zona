@@ -39,9 +39,11 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
   onBack: () => void
   trialExpired?: boolean
 }) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState<string | null>(null)
+  const [success, setSuccess]     = useState(false)
+  const [restoring, setRestoring] = useState(false)
+  const [restoreMsg, setRestoreMsg] = useState<string | null>(null)
 
   async function handleSubscribe(annual: boolean) {
     setLoading(true)
@@ -109,6 +111,29 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
       setError(`Purchase failed. ${code ? `[${code}] ` : ''}${msg}${info ? ` — ${info}` : ''}`)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleRestore() {
+    if (!Capacitor.isNativePlatform()) return
+    setRestoring(true)
+    setRestoreMsg(null)
+    try {
+      const { Purchases } = await import('@revenuecat/purchases-capacitor')
+      const ready = (window as any).__rcReady as Promise<void> | undefined
+      if (ready) { try { await ready } catch {} }
+      const { customerInfo } = await Purchases.restorePurchases()
+      const active = customerInfo.entitlements?.active ?? {}
+      if (Object.keys(active).length > 0) {
+        setRestoreMsg('Purchases restored. Tap Back to continue.')
+      } else {
+        setRestoreMsg('No active purchases found on this Apple ID.')
+      }
+    } catch (err: any) {
+      if (err?.userCancelled) return
+      setRestoreMsg('Restore failed. Try again.')
+    } finally {
+      setRestoring(false)
     }
   }
 
@@ -380,6 +405,36 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
         >
           Stay with the free plan →
         </button>
+
+        {/* Restore Purchases — iOS only, required by App Store guideline 3.1.1 */}
+        {Capacitor.isNativePlatform() && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <button
+              onClick={handleRestore}
+              disabled={restoring}
+              style={{
+                marginTop: '8px',
+                background: 'none', border: 'none',
+                fontFamily: 'var(--font-ui)', fontWeight: 400,
+                fontSize: '0.8125rem', color: 'var(--text-muted)',
+                cursor: restoring ? 'default' : 'pointer',
+                textDecoration: 'underline',
+                padding: '4px 0',
+                opacity: restoring ? 0.5 : 1,
+              }}
+            >
+              {restoring ? 'Restoring…' : 'Restore Purchases'}
+            </button>
+            {restoreMsg && (
+              <p style={{
+                fontFamily: 'var(--font-ui)', fontSize: '0.8125rem',
+                color: restoreMsg.startsWith('Purchases restored')
+                  ? 'var(--teal)' : 'var(--amber)',
+                margin: '4px 0 0', textAlign: 'center',
+              }}>{restoreMsg}</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
