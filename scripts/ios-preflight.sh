@@ -94,6 +94,12 @@ for f in "$APP_PRIVACY" "$WIDGET_PRIVACY"; do
     else
       fail "$name — NSPrivacyTracking not declared"
     fi
+    # C617.1 is invalid for group-container UserDefaults — both targets use suiteName
+    if grep -q "C617.1" "$f"; then
+      fail "$name uses C617.1 — invalid for suiteName/group-container access; use 1C8F.1"
+    else
+      ok "$name does not contain invalid reason code C617.1"
+    fi
   fi
 done
 
