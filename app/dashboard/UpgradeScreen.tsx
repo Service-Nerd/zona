@@ -100,15 +100,9 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
     } catch (err: any) {
       // User tapped Cancel on the StoreKit sheet — not an error.
       if (err?.userCancelled === true) return
-      // DIAGNOSTIC: surface RC/StoreKit error details so we can diagnose
-      // sandbox failures without needing Safari Web Inspector. Revert once
-      // the purchase flow is verified end-to-end on a TestFlight build.
       // eslint-disable-next-line no-console
       console.error('[upgrade] purchase failed', err)
-      const code = err?.code ?? err?.errorCode ?? err?.readableErrorCode ?? ''
-      const msg  = err?.message ?? String(err)
-      const info = err?.underlyingErrorMessage ?? ''
-      setError(`Purchase failed. ${code ? `[${code}] ` : ''}${msg}${info ? ` — ${info}` : ''}`)
+      setError('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }

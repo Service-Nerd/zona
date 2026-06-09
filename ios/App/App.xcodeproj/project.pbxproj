@@ -20,6 +20,7 @@
 		D9ADB5892FC2242F00D54D5F /* ZonnaWidgetExtensionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D9ADB5752FC2242D00D54D5F /* ZonnaWidgetExtensionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D9D3E3F82FC35DCF001DAE8D /* SharedStorePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9D3E3F72FC35DCF001DAE8D /* SharedStorePlugin.swift */; };
 		D9D3E3FA2FC35DE0001DAE8D /* SharedStorePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = D9D3E3F92FC35DE0001DAE8D /* SharedStorePlugin.m */; };
+		D9FF00022FC300FFAA000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D9FF00012FC300FFAA000001 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +67,7 @@
 		D9ADB5982FC2299B00D54D5F /* ZonnaWidgetExtensionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ZonnaWidgetExtensionExtension.entitlements; sourceTree = "<group>"; };
 		D9D3E3F72FC35DCF001DAE8D /* SharedStorePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedStorePlugin.swift; sourceTree = "<group>"; };
 		D9D3E3F92FC35DE0001DAE8D /* SharedStorePlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SharedStorePlugin.m; sourceTree = "<group>"; };
+		D9FF00012FC300FFAA000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -130,6 +132,7 @@
 			children = (
 				D9D3E3F92FC35DE0001DAE8D /* SharedStorePlugin.m */,
 				D9D3E3F72FC35DCF001DAE8D /* SharedStorePlugin.swift */,
+				D9FF00012FC300FFAA000001 /* PrivacyInfo.xcprivacy */,
 				D90385FC2FA4BEFE00035788 /* App.entitlements */,
 				D90385FE2FA4BEFE00035789 /* AppRelease.entitlements */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
@@ -253,6 +256,7 @@
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
+				D9FF00022FC300FFAA000001 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

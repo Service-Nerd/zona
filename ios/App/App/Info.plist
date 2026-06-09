@@ -39,9 +39,7 @@
 	<true/>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Zonna reads your runs and recovery signals (resting heart rate, HRV, sleep) to provide coaching feedback. Zonna never writes to Apple Health.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>Zonna does not write to Apple Health. This app only reads activity and recovery data to provide training coaching.</string>
-	<key>UILaunchStoryboardName</key>
+<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
