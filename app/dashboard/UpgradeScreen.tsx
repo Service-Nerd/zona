@@ -119,7 +119,10 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
       const { customerInfo } = await Purchases.restorePurchases()
       const active = customerInfo.entitlements?.active ?? {}
       if (Object.keys(active).length > 0) {
-        setRestoreMsg('Purchases restored. Tap Back to continue.')
+        // Reload the app so DashboardClient re-fetches the subscription tier.
+        // The RevenueCat webhook updates Supabase async — give it 2s then reload.
+        setRestoreMsg('Purchases restored. Reloading…')
+        setTimeout(() => { window.location.reload() }, 2000)
       } else {
         setRestoreMsg('No active purchases found on this Apple ID.')
       }
