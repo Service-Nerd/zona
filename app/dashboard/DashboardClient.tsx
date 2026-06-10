@@ -3070,6 +3070,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   const [saving, setSaving] = useState(false)
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null)
   const [claimedIds, setClaimedIds] = useState<Set<number>>(new Set())
+  const [freshRuns, setFreshRuns] = useState<any[]>([])
   // LEDGER-01 / DOCTRINE-01 — when the discipline ledger advanced this week,
   // SessionCompleteCard surfaces BRAND.brandStatement quietly below the
   // voice anchor. Hook handles its own fetch + cancellation.
@@ -3159,22 +3160,79 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
     async function loadClaimed() {
       setLoadingClaimed(true)
       try {
-        const { data } = await supabase
-          .from('session_completions')
-          .select('strava_activity_id, apple_health_uuid')
-          .or('strava_activity_id.not.is.null,apple_health_uuid.not.is.null')
+        const [completionsRes, activitiesRes] = await Promise.all([
+          supabase
+            .from('session_completions')
+            .select('strava_activity_id, apple_health_uuid')
+            .or('strava_activity_id.not.is.null,apple_health_uuid.not.is.null'),
+          // Re-query strava_activities to pick up runs ingested after the boot-time
+          // snapshot in preloadedRuns (race: CapacitorBoot.syncOnAppOpen writes the
+          // run concurrently with DashboardClient.fetchSettings reading the DB).
+          supabase
+            .from('strava_activities')
+            .select('apple_health_uuid, strava_activity_id, source, name, start_date, distance_m, moving_time_s, elapsed_time_s, avg_hr, max_hr, avg_speed, total_elevation_gain')
+            .eq('user_id', (await supabase.auth.getUser()).data.user?.id ?? '')
+            .order('start_date', { ascending: false })
+            .limit(100),
+        ])
+
         const ids = new Set<any>()
-        ;(data ?? []).forEach((r: any) => {
+        ;(completionsRes.data ?? []).forEach((r: any) => {
           if (r.strava_activity_id != null) ids.add(r.strava_activity_id)
           if (r.apple_health_uuid != null) ids.add(r.apple_health_uuid)
         })
         setClaimedIds(ids)
+
+        // Marshal fresh DB rows into the same shape the picker consumes.
+        // Dedup against preloadedRuns so a run already in the boot snapshot
+        // isn't shown twice.
+        const preloadedHkIds  = new Set(preloadedRuns.filter((r: any) => r.source === 'apple_health').map((r: any) => r.apple_health_uuid))
+        const preloadedStrIds = new Set(preloadedRuns.filter((r: any) => r.source !== 'apple_health').map((r: any) => String(r.id)))
+        const extras = (activitiesRes.data ?? [])
+          .filter((r: any) => {
+            if (r.source === 'apple_health') return r.apple_health_uuid && !preloadedHkIds.has(r.apple_health_uuid)
+            return r.strava_activity_id != null && !preloadedStrIds.has(String(r.strava_activity_id))
+          })
+          .map((r: any) => r.source === 'apple_health'
+            ? {
+                id:                   r.apple_health_uuid,
+                source:               'apple_health' as const,
+                apple_health_uuid:    r.apple_health_uuid,
+                type:                 'Run',
+                sport_type:           'Run',
+                name:                 r.name ?? 'Apple Health run',
+                start_date:           r.start_date,
+                distance:             r.distance_m ?? 0,
+                moving_time:          r.moving_time_s ?? 0,
+                elapsed_time:         r.elapsed_time_s ?? r.moving_time_s ?? 0,
+                total_elevation_gain: r.total_elevation_gain ?? 0,
+                average_heartrate:    r.avg_hr ?? undefined,
+                max_heartrate:        r.max_hr ?? undefined,
+                average_speed:        r.avg_speed ?? undefined,
+              }
+            : {
+                id:                   r.strava_activity_id,
+                source:               'strava' as const,
+                type:                 'Run',
+                sport_type:           'Run',
+                name:                 r.name ?? 'Run',
+                start_date:           r.start_date,
+                distance:             r.distance_m ?? 0,
+                moving_time:          r.moving_time_s ?? 0,
+                elapsed_time:         r.elapsed_time_s ?? r.moving_time_s ?? 0,
+                total_elevation_gain: r.total_elevation_gain ?? 0,
+                average_heartrate:    r.avg_hr ?? undefined,
+                max_heartrate:        r.max_hr ?? undefined,
+                average_speed:        r.avg_speed ?? undefined,
+              }
+          )
+        setFreshRuns(extras)
       } catch {} finally { setLoadingClaimed(false) }
     }
     loadClaimed()
   }, [view])
 
-  const stravaRuns = preloadedRuns.filter((r: any) => {
+  const stravaRuns = [...preloadedRuns, ...freshRuns].filter((r: any) => {
     if (claimedIds.has(r.id) && r.id !== completion?.strava_activity_id && r.id !== completion?.apple_health_uuid) return false
     const actDate = new Date(r.start_date)
     const today = new Date()
