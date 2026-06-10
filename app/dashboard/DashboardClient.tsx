@@ -2238,6 +2238,9 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
 }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Tracks whether the iOS permission dialog has already been presented.
+  // Apple 5.1.1(iv): no skip path before the request — only after.
+  const [permissionAsked, setPermissionAsked] = useState(false)
   const supabase = createClient()
 
   async function connectHealthKit() {
@@ -2246,11 +2249,12 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
     setError(null)
     try {
       const { requestHealthKitAuth, syncOnAppOpen, fetchAppleHealthHRSnapshot } = await import('@/lib/health/clientSync')
+      setPermissionAsked(true)
       const granted = await requestHealthKitAuth()
       if (!granted) {
         // Denial / unavailable / framework not linked — Capacitor doesn't
         // distinguish in the return value. Calm one-liner, Zona voice.
-        setError('Apple Health said no. Enable in iOS Settings → Health — or skip for now.')
+        setError('Apple Health said no. Enable in iOS Settings → Health — or connect later.')
         return
       }
       const { data: { user } } = await supabase.auth.getUser()
@@ -2358,7 +2362,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
           }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--card)' }} />
           </span>
-          {busy ? 'Connecting…' : 'Connect Apple Health'}
+          {busy ? 'Connecting…' : 'Continue'}
         </button>
 
         {error && (
@@ -2367,25 +2371,27 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
           </div>
         )}
 
-        {/* Subtle skip — non-blocking. Stamps connect_runs_seen=FALSE so the
-            user gets one reminder banner on Today and isn't pestered again.
-            44pt tap-target per iOS HIG — padding + minHeight. */}
-        <button
-          onClick={skip}
-          disabled={busy}
-          style={{
-            width: '100%',
-            background: 'none', border: 'none',
-            padding: '14px 0',
-            marginTop: '8px',
-            minHeight: '44px',
-            fontFamily: 'var(--font-ui)', fontSize: '13px',
-            color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: '3px',
-            cursor: busy ? 'default' : 'pointer',
-          }}
-        >
-          I&apos;ll do it later.
-        </button>
+        {/* Skip only shown AFTER the iOS permission dialog has fired (Apple
+            5.1.1(iv): no exit path before the request). permissionAsked flips
+            true the moment requestHealthKitAuth() is called. */}
+        {permissionAsked && (
+          <button
+            onClick={skip}
+            disabled={busy}
+            style={{
+              width: '100%',
+              background: 'none', border: 'none',
+              padding: '14px 0',
+              marginTop: '8px',
+              minHeight: '44px',
+              fontFamily: 'var(--font-ui)', fontSize: '13px',
+              color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: '3px',
+              cursor: busy ? 'default' : 'pointer',
+            }}
+          >
+            Connect later
+          </button>
+        )}
       </div>
     </div>
   )
