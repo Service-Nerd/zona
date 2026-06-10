@@ -2280,7 +2280,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
       onConnected()
     } catch (e: any) {
       console.warn('[HealthKit] connect failed:', e)
-      setError("Couldn't reach Apple Health. Skip for now — try from Me later.")
+      setError("Couldn't reach Apple Health. Try again, or connect from Me later.")
     } finally {
       setBusy(false)
     }
@@ -2308,7 +2308,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
       // Own scroll context — see OrientationScreen note. Early-return screens
       // sit outside the dashboard's inner scroll container, and the body is
       // locked (overflow:hidden; position:fixed), so this must scroll itself or
-      // the "Connect Apple Health" CTA can clip off-screen on shorter devices.
+      // the primary CTA can clip off-screen on shorter devices.
       height: '100dvh', overflowY: 'auto',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'safe center',
@@ -3174,10 +3174,10 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           // Re-query strava_activities to pick up runs ingested after the boot-time
           // snapshot in preloadedRuns (race: CapacitorBoot.syncOnAppOpen writes the
           // run concurrently with DashboardClient.fetchSettings reading the DB).
+          // No explicit user_id filter — RLS (auth.uid() = user_id) handles scoping.
           supabase
             .from('strava_activities')
-            .select('apple_health_uuid, strava_activity_id, source, name, start_date, distance_m, moving_time_s, elapsed_time_s, avg_hr, max_hr, avg_speed, total_elevation_gain')
-            .eq('user_id', (await supabase.auth.getUser()).data.user?.id ?? '')
+            .select('apple_health_uuid, strava_activity_id, source, name, start_date, distance_m, moving_time_s, elapsed_time_s, avg_hr, max_hr, avg_speed, elevation_gain')
             .order('start_date', { ascending: false })
             .limit(100),
         ])
@@ -3211,7 +3211,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 distance:             r.distance_m ?? 0,
                 moving_time:          r.moving_time_s ?? 0,
                 elapsed_time:         r.elapsed_time_s ?? r.moving_time_s ?? 0,
-                total_elevation_gain: r.total_elevation_gain ?? 0,
+                total_elevation_gain: r.elevation_gain ?? 0,
                 average_heartrate:    r.avg_hr ?? undefined,
                 max_heartrate:        r.max_hr ?? undefined,
                 average_speed:        r.avg_speed ?? undefined,
@@ -3226,7 +3226,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 distance:             r.distance_m ?? 0,
                 moving_time:          r.moving_time_s ?? 0,
                 elapsed_time:         r.elapsed_time_s ?? r.moving_time_s ?? 0,
-                total_elevation_gain: r.total_elevation_gain ?? 0,
+                total_elevation_gain: r.elevation_gain ?? 0,
                 average_heartrate:    r.avg_hr ?? undefined,
                 max_heartrate:        r.max_hr ?? undefined,
                 average_speed:        r.avg_speed ?? undefined,
