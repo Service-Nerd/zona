@@ -80,9 +80,16 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
     if (!trimmed) return
     setView('submitting')
     try {
+      // getUserFromRequest requires a bearer token — cookie auth is unreliable
+      // on native (Capacitor). Same pattern as authedFetch in DashboardClient.
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
       const res = await fetch('/api/post-run-reframe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ week_n: weekN, session_day: sessionDay, user_note: trimmed }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
