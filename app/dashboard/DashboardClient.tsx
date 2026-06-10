@@ -11449,6 +11449,29 @@ function PostRunScreen({
         void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({ rpe: newRpe, sessionType: session.type }) })
       }
       onSaved?.()
+      // Re-run analyse-run so the verdict card reflects the just-saved RPE/fatigue.
+      // analyse-run is idempotent (upserts); it awaits the AI call server-side
+      // and returns the updated row, so we can update state directly — no re-poll.
+      if (hasPaidAccess && sessionDay && (pendingAppleHealthUuid || pendingActivityId)) {
+        try {
+          const reRes = await authedFetch('/api/analyse-run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(
+              pendingAppleHealthUuid
+                ? { apple_health_uuid: pendingAppleHealthUuid, week_n: weekN, session_day: sessionDay }
+                : { strava_activity_id: pendingActivityId, week_n: weekN, session_day: sessionDay }
+            ),
+          })
+          if (reRes.ok) {
+            const reData = await reRes.json()
+            if (reData?.analysis) {
+              setAnalysis(reData.analysis)
+              onAnalysisLoaded?.(sessionDay, reData.analysis)
+            }
+          }
+        } catch {}
+      }
     } catch {} finally { setSavingRPE(false) }
   }
 
