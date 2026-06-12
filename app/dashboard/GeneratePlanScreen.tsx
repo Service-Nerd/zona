@@ -13,6 +13,7 @@ import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import { TextField } from '@/components/shared/TextField'
+import { Select } from '@/components/shared/Select'
 import { Chip } from '@/components/shared/Chip'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -398,8 +399,7 @@ export default function GeneratePlanScreen({
   // ── Step 5 — Fitness ─────────────────────────────────────────────────────
   // Year of birth (not full DOB) — App Store Guideline 5.1.1 data minimisation.
   // Only used for Tanaka max-HR fallback (208 − 0.7 × age) and masters threshold.
-  const [birthYear,      setBirthYear]      = useState<number | null>(initialBirthYear ?? null)
-  const [birthYearError, setBirthYearError] = useState<string | null>(null)
+  const [birthYear, setBirthYear] = useState<number | null>(initialBirthYear ?? null)
   const [weeklyKmChip,   setWeeklyKmChip]   = useState<string | null>(null)
   const [longestRunChip, setLongestRunChip] = useState<string | null>(null)
   const [restingHR,      setRestingHR]      = useState(initialRHR ? String(initialRHR) : '')
@@ -1119,35 +1119,26 @@ export default function GeneratePlanScreen({
       // ── Fitness ────────────────────────────────────────────────────────────
       case 'fitness': {
         const currentYear = new Date().getFullYear()
-        const minYear = currentYear - 90
-        const maxYear = currentYear - 14
-        const byAge = birthYear !== null ? currentYear - birthYear : null
-        const byAgeErr = byAge !== null
-          ? (byAge < 14 ? 'Must be 14 or older.' : byAge > 90 ? 'Year looks off — check it.' : null)
-          : null
+        // 14–90 maps to allowable runner age range. Newest year first so the
+        // picker opens near most users' birth year without scrolling.
+        const yearOptions = Array.from({ length: 90 - 14 + 1 }, (_, i) => {
+          const y = currentYear - 14 - i
+          return { value: String(y), label: String(y) }
+        })
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div>
               <FieldLabel>Year of birth</FieldLabel>
-              <WizardInput
-                type="number"
+              <Select
                 value={birthYear !== null ? String(birthYear) : ''}
-                placeholder={`e.g. ${currentYear - 35}`}
-                min={minYear}
-                max={maxYear}
                 onChange={v => {
-                  const trimmed = v.trim()
-                  if (trimmed === '') { setBirthYear(null); setBirthYearError(null); return }
-                  const n = Number(trimmed)
-                  setBirthYear(Number.isFinite(n) ? Math.floor(n) : null)
-                  setBirthYearError(null)
+                  const n = Number(v)
+                  setBirthYear(Number.isFinite(n) ? n : null)
                 }}
+                options={yearOptions}
+                placeholder="Select year"
+                ariaLabel="Year of birth"
               />
-              {(birthYearError ?? byAgeErr) && (
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--danger)', marginTop: '6px' }}>
-                  {birthYearError ?? byAgeErr}
-                </div>
-              )}
               <FieldNote>Used to estimate your max heart rate if you haven't entered your own. Kept private.</FieldNote>
             </div>
             <div>
