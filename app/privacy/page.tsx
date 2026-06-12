@@ -104,7 +104,7 @@ export default function PrivacyPage() {
           <SubHead>Account data</SubHead>
           <P>When you sign up, we store your email address and an encrypted password (if using email sign-in), or a reference to your Google or Apple account (if using OAuth). We also store your first name, last name, and any profile details you choose to add.</P>
           <SubHead>Training data</SubHead>
-          <P>To deliver a personalised training plan, we store: your race date, race distance, weekly training volume, HR zones (resting HR, max HR), fitness level, and plan preferences. This data is provided by you during plan generation and is stored in your account.</P>
+          <P>To deliver a personalised training plan, we store: your race date, race distance, weekly training volume, HR zones (resting HR, max HR), fitness level, year of birth (used only to estimate your max heart rate when you haven't entered your own — we don't ask for day or month), and plan preferences. This data is provided by you during plan generation and is stored in your account.</P>
           <SubHead>Session data</SubHead>
           <P>When you log a training session, we store: completion status, RPE (rate of perceived exertion, 1–10), fatigue tags, distance, duration, and — where available from Strava — your average heart rate. This is used to provide coaching feedback and track your progress.</P>
           <SubHead>Usage data</SubHead>

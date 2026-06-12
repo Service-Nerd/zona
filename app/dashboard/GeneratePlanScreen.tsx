@@ -351,15 +351,15 @@ function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
 
 export default function GeneratePlanScreen({
   onBack, firstName: _firstName, lastName: _lastName, restingHR: initialRHR, maxHR: initialMHR,
-  dob: initialDob, onDobSave, onPlanSaved, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade,
+  birthYear: initialBirthYear, onBirthYearSave, onPlanSaved, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade,
 }: {
   onBack: () => void
   firstName?: string
   lastName?: string
   restingHR?: number | null
   maxHR?: number | null
-  dob?: string | null
-  onDobSave?: (dob: string) => Promise<void>
+  birthYear?: number | null
+  onBirthYearSave?: (year: number) => Promise<void>
   onPlanSaved?: (plan: Plan) => Promise<void>
   isOnboarding?: boolean
   hasExistingPlan?: boolean
@@ -396,8 +396,10 @@ export default function GeneratePlanScreen({
   const [targetMins,  setTargetMins]  = useState(0)
 
   // ── Step 5 — Fitness ─────────────────────────────────────────────────────
-  const [dob,            setDob]            = useState(initialDob ?? '')
-  const [dobError,       setDobError]       = useState<string | null>(null)
+  // Year of birth (not full DOB) — App Store Guideline 5.1.1 data minimisation.
+  // Only used for Tanaka max-HR fallback (208 − 0.7 × age) and masters threshold.
+  const [birthYear,      setBirthYear]      = useState<number | null>(initialBirthYear ?? null)
+  const [birthYearError, setBirthYearError] = useState<string | null>(null)
   const [weeklyKmChip,   setWeeklyKmChip]   = useState<string | null>(null)
   const [longestRunChip, setLongestRunChip] = useState<string | null>(null)
   const [restingHR,      setRestingHR]      = useState(initialRHR ? String(initialRHR) : '')
@@ -440,7 +442,7 @@ export default function GeneratePlanScreen({
       if (s.goal)            setGoal(s.goal)
       if (typeof s.targetHours === 'number') setTargetHours(s.targetHours)
       if (typeof s.targetMins  === 'number') setTargetMins(s.targetMins)
-      if (s.dob)             setDob(s.dob)
+      if (typeof s.birthYear === 'number') setBirthYear(s.birthYear)
       if (s.weeklyKmChip)    setWeeklyKmChip(s.weeklyKmChip)
       if (s.longestRunChip)  setLongestRunChip(s.longestRunChip)
       if (s.restingHR)       setRestingHR(s.restingHR)
@@ -471,7 +473,7 @@ export default function GeneratePlanScreen({
       sessionStorage.setItem(WIZARD_KEY, JSON.stringify({
         appStep, distanceKm, raceName, raceDate, goal,
         targetHours, targetMins,
-        dob, weeklyKmChip, longestRunChip, restingHR, trainingAge,
+        birthYear, weeklyKmChip, longestRunChip, restingHR, trainingAge,
         benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
         daysAvailable, preferredLongRunDay, daysOff, maxWeekdayChip,
         hardSessions, terrain, injuries,
@@ -479,7 +481,7 @@ export default function GeneratePlanScreen({
     } catch {}
   }, [appStep, distanceKm, raceName, raceDate, goal,
       targetHours, targetMins,
-      dob, weeklyKmChip, longestRunChip, restingHR, trainingAge,
+      birthYear, weeklyKmChip, longestRunChip, restingHR, trainingAge,
       benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
       daysAvailable, preferredLongRunDay, daysOff, maxWeekdayChip,
       hardSessions, terrain, injuries])
@@ -544,8 +546,8 @@ export default function GeneratePlanScreen({
       case 'goal':           return goal !== null
       case 'target-time':    return targetHours > 0 || targetMins > 0
       case 'fitness': {
-        if (!dob) return false
-        const ageCheck = Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000)
+        if (birthYear === null) return false
+        const ageCheck = new Date().getFullYear() - birthYear
         if (ageCheck < 14 || ageCheck > 90) return false
         return weeklyKmChip !== null && longestRunChip !== null
       }
@@ -569,7 +571,7 @@ export default function GeneratePlanScreen({
     setError(null)
     setPlan(null)
 
-    const ageYears      = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000) : 30
+    const ageYears      = birthYear !== null ? new Date().getFullYear() - birthYear : 30
     const weeklyKmVal   = WEEKLY_KM_CHIPS.find(c => c.label === weeklyKmChip)?.value ?? 30
     const longestRunVal = LONGEST_RUN_CHIPS.find(c => c.label === longestRunChip)?.value ?? 12
     const targetTimeStr = goal === 'time_target' && (targetHours > 0 || targetMins > 0)
@@ -754,7 +756,7 @@ export default function GeneratePlanScreen({
     if (!plan || !onPlanSaved) return
     setIsSaving(true)
     try {
-      if (dob && onDobSave) await onDobSave(dob).catch(() => {})
+      if (birthYear !== null && onBirthYearSave) await onBirthYearSave(birthYear).catch(() => {})
       await onPlanSaved(plan)
       sessionStorage.removeItem(WIZARD_KEY)
     } catch { setIsSaving(false) }
@@ -1116,25 +1118,37 @@ export default function GeneratePlanScreen({
 
       // ── Fitness ────────────────────────────────────────────────────────────
       case 'fitness': {
-        const dobAge = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000) : null
-        const dobAgeErr = dob && dobAge !== null
-          ? (dobAge < 14 ? 'Must be 14 or older.' : dobAge > 90 ? 'Date looks off — check the year.' : null)
+        const currentYear = new Date().getFullYear()
+        const minYear = currentYear - 90
+        const maxYear = currentYear - 14
+        const byAge = birthYear !== null ? currentYear - birthYear : null
+        const byAgeErr = byAge !== null
+          ? (byAge < 14 ? 'Must be 14 or older.' : byAge > 90 ? 'Year looks off — check it.' : null)
           : null
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div>
-              <FieldLabel>Date of birth</FieldLabel>
+              <FieldLabel>Year of birth</FieldLabel>
               <WizardInput
-                type="date"
-                value={dob}
-                onChange={v => { setDob(v); setDobError(null) }}
+                type="number"
+                value={birthYear !== null ? String(birthYear) : ''}
+                placeholder={`e.g. ${currentYear - 35}`}
+                min={minYear}
+                max={maxYear}
+                onChange={v => {
+                  const trimmed = v.trim()
+                  if (trimmed === '') { setBirthYear(null); setBirthYearError(null); return }
+                  const n = Number(trimmed)
+                  setBirthYear(Number.isFinite(n) ? Math.floor(n) : null)
+                  setBirthYearError(null)
+                }}
               />
-              {(dobError ?? dobAgeErr) && (
+              {(birthYearError ?? byAgeErr) && (
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--danger)', marginTop: '6px' }}>
-                  {dobError ?? dobAgeErr}
+                  {birthYearError ?? byAgeErr}
                 </div>
               )}
-              <FieldNote>Used to calculate your training zones. Kept private.</FieldNote>
+              <FieldNote>Used to estimate your max heart rate if you haven't entered your own. Kept private.</FieldNote>
             </div>
             <div>
               <FieldLabel>Average weekly km — last 4 weeks</FieldLabel>
