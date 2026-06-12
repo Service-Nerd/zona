@@ -546,9 +546,9 @@ export default function GeneratePlanScreen({
       case 'goal':           return goal !== null
       case 'target-time':    return targetHours > 0 || targetMins > 0
       case 'fitness': {
-        if (birthYear === null) return false
-        const ageCheck = new Date().getFullYear() - birthYear
-        if (ageCheck < 14 || ageCheck > 90) return false
+        // Year of birth is optional — App Store 5.1.1 ("should be optional").
+        // Engine falls back to age 30 when null; only weeklyKm + longestRun
+        // are required to derive a sensible plan.
         return weeklyKmChip !== null && longestRunChip !== null
       }
       case 'benchmark':
@@ -1128,7 +1128,7 @@ export default function GeneratePlanScreen({
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div>
-              <FieldLabel>Year of birth</FieldLabel>
+              <FieldLabel optional>Year of birth</FieldLabel>
               <Select
                 value={birthYear !== null ? String(birthYear) : ''}
                 onChange={v => {
@@ -1139,7 +1139,7 @@ export default function GeneratePlanScreen({
                 placeholder="Select year"
                 ariaLabel="Year of birth"
               />
-              <FieldNote>Used to estimate your max heart rate if you haven't entered your own. Kept private.</FieldNote>
+              <FieldNote>Optional. Helps estimate your max heart rate if you haven't entered your own. Kept private.</FieldNote>
             </div>
             <div>
               <FieldLabel>Average weekly km — last 4 weeks</FieldLabel>
