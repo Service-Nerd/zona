@@ -326,8 +326,6 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
         }}>
           <p style={{ margin: 0 }}>
             {PRICING.monthly.label} or {PRICING.annual.label} ({PRICING.annual.perMonthDisplay} equivalent).
-            New subscribers get {PRICING.trialDays} days free — the first payment is charged at the
-            end of the trial unless you cancel.
           </p>
           <p style={{ margin: '8px 0 0' }}>
             Payment is charged to your Apple ID at confirmation of purchase. Subscription auto-renews
