@@ -3,12 +3,9 @@
 // Renders a one-page site for unauthenticated visitors; signed-in visitors are
 // forwarded to /dashboard server-side so they never see the marketing surface.
 //
-// ─── Dark-launched ─────────────────────────────────────────────────────────
-// Gated behind MARKETING_SITE_ENABLED. When unset/falsy (default, including
-// production today) the root route preserves the legacy redirect-to-dashboard
-// behaviour. Flip the env to "true" in Vercel when the custom domain lands +
-// TestFlight is live + you actually want this surface public. No release-day
-// deploy needed at that point — just an env toggle.
+// ─── Public, gated by env ──────────────────────────────────────────────────
+// MARKETING_SITE_ENABLED=true in production (post-launch). When falsy, the
+// root route falls back to redirect-to-dashboard — useful as a kill switch.
 //
 // Copy is sourced from `lib/brand.ts` for the locked brand strings so a rename
 // only touches that file. Page-structural marketing prose lives inline here
@@ -35,7 +32,6 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { BRAND, PRICING } from '@/lib/brand'
 import { Wordmark } from '@/components/ui/Wordmark'
-import { WaitlistForm } from '@/components/marketing/WaitlistForm'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
 
 export const dynamic = 'force-dynamic'  // auth check must run per-request
@@ -131,22 +127,10 @@ export default async function Home() {
           {' '}{BRAND.name} prescribes the zone for each session and holds you to it.
         </p>
 
-        {/* Primary action — download-first. App Store badge ("coming soon" until
-            BRAND.appStore.url is set) sits above the waitlist capture. */}
-        <div id="waitlist" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+        {/* Primary action — App Store download. Single CTA, post-launch. */}
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
           <AppStoreBadge />
-          <WaitlistForm />
         </div>
-
-        {/* Waitlist reason — gives the email field a point. Dry, specific. */}
-        <p style={{
-          marginTop: '14px',
-          fontSize: '13px', lineHeight: 1.5, color: 'var(--mute)',
-          maxWidth: '440px', marginLeft: 'auto', marginRight: 'auto',
-        }}>
-          One email the day it lands. Maybe a sticker if you&apos;re early. We&apos;re not running a
-          launch campaign — we just want to know who&apos;s actually interested.
-        </p>
 
         {/* Trial + pricing in owned voice — honest numbers, brand tone. */}
         <p style={{

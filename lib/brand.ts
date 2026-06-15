@@ -21,9 +21,12 @@ export const BRAND = {
   /**
    * App Store subtitle (30 chars max). Discovery surfaces: App Store, landing page, paid ads.
    * Functional and outward-facing — describes what the app does.
-   * Length budget: 29/30 chars. Do not exceed without re-trimming.
+   * Value matches the LIVE App Store subtitle (reconciled 2026-06-15) and names the runner
+   * ("you"), staying true to the locked functional line "Training plans that stop you overtraining."
+   * Length budget: 30/30 chars exactly — no trailing period (a period would push it to 31).
+   * Do not exceed without re-trimming.
    */
-  appStoreSubtitle: 'Plans that stop overtraining.',
+  appStoreSubtitle: 'Plans to stop you overtraining',
 
   /** Primary tagline. Use on login, loading, OG image, in-app footer moments. Names the user. */
   tagline: "Slow down. You've got a day job.",
@@ -48,7 +51,7 @@ export const BRAND = {
    * Set `url` to the App Store product URL on approval day. Single source of truth.
    */
   appStore: {
-    url: '',
+    url: 'https://apps.apple.com/app/id6767516424',
     comingSoonLabel: 'Coming soon to the App Store',
     liveLabel: 'Download on the App Store',
   },
