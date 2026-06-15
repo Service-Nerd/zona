@@ -80,7 +80,7 @@ and user_settings. Nothing is hardcoded to a specific person.
 | Dev machine  | Mac Mini                      |
 
 - Supabase project ID: `wkppmpsvqkaxbekdgzdm`
-- Vercel app: `https://rts-training-hub.vercel.app` (Vercel project rename to `zonna` is on the backlog)
+- Vercel app: `https://www.zonna.run` (production custom domain on Vercel project `zona`). The legacy `rts-training-hub` Vercel project still exists but no live traffic depends on it.
 - Plan JSON: `https://gist.githubusercontent.com/Service-Nerd/efec07a87f65494f0e078a1ccb136100/raw/rts_plan.json`
   - Always fetched with `cache: 'no-store'`
 
