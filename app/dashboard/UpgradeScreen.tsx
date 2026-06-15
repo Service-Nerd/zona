@@ -358,15 +358,11 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
           </div>
         </div>
 
-        {/* Error state — diagnostic mode renders full RC/StoreKit error so
-            the user can read it on-device. Widened + left-aligned + wrap so
-            long messages don't clip. */}
+        {/* Error state */}
         {error && (
           <p style={{
-            fontFamily: 'var(--font-ui)', fontSize: '0.8125rem',
-            color: 'var(--amber)', margin: '12px 0 0',
-            textAlign: 'left', lineHeight: 1.5,
-            wordBreak: 'break-word', whiteSpace: 'pre-wrap',
+            fontFamily: 'var(--font-ui)', fontSize: '0.875rem',
+            color: 'var(--amber)', margin: '12px 0 0', textAlign: 'center',
           }}>{error}</p>
         )}
 
