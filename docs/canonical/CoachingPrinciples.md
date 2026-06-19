@@ -1074,6 +1074,25 @@ Engine: `buildFitnessSignalAdjustment` in `lib/coaching/planAdjustment.ts`.
 
 ---
 
+## 64. Day-level rest — every training week needs at least one rest day
+
+**Principle.** Every plan week must contain at least one rest day (`session.type === 'rest'`). Six-on / one-off is the upper limit for non-elite runners; seven-on is overreaching dressed as commitment. Race week is excluded — the prescribed structure already includes its own rest.
+
+**Why.** Day-level recovery sits beneath week-level recovery (§3). The weekly recovery week handles cumulative load over four-week cycles; the per-week rest day handles acute load between hard sessions. Without it, every "easy" day is forced to absorb someone else's recovery duty — which is exactly how easy creeps hot.
+
+**Enforcement (three layers per Decision #4):**
+1. **Principle** — this section.
+2. **Constitutional invariant** — `INV-PLAN-WEEK-HAS-REST-DAY` in `lib/plan/invariants.ts → validatePlan()`. Plan generation produces a week without a rest day → error.
+3. **Move-time trigger** — `lib/coaching/planAdjustment.ts → buildReorderAdjustment`. User drags a session onto the rest day → the post-move week has no rest day → flagged in the proposed adjustment. The override stays available — restraint isn't enforced, but it's named.
+
+**Shared helper** — both triggers call `weekHasRestDay(sessions)` so the rule has one implementation. Single source of truth (D-08).
+
+**Config** — none. This is a structural rule, not a tuning knob.
+
+**Originating decision:** PL-MOVE, SLT-reviewed 2026-06-19. Decision #4 locked the three-layer pattern: principle + validator + trigger. Future per-week invariants follow the same shape.
+
+---
+
 ## 63. Session intent — every type explains its place in the week
 
 Every session type carries a one-line **rationale** — not what to do, why this session exists in this week. The detail screen used to explain *what* and *how* (prescription + execution) but rarely *why this exists*. For an anti-overtraining product, the rationale is the most persuasive sentence each surface owns. "This is easy on purpose, so Thursday can be hard." "Recovery, not light training — going hard here steals the next quality day."

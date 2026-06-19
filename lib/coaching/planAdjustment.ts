@@ -20,6 +20,7 @@ import {
   LONG_RUN_SHORTFALL_REDUCE_PCT,
 } from './constants'
 import { acuteChronicRatio, shadowLoadPct, zoneDisciplineScore } from './loadCalc'
+import { weekHasRestDay } from '@/lib/plan/invariants'
 import { BRAND } from '@/lib/brand'
 import type { Session } from '@/types/plan'
 
@@ -583,20 +584,34 @@ function buildReorderAdjustment(
     }
   }
 
-  const requiresConfirmation = hardAdjacentViolation
-  const summary = hardAdjacentViolation
-    ? `Moved ${fromSession.label ?? fromDay} to ${toDay}. Back-to-back hard sessions detected — review carefully.`
-    : `Moved ${fromSession.label ?? fromDay} to ${toDay}. Hard/easy alternation preserved.`
+  // §64 check (PL-MOVE, Decision #4): the move must not eliminate the week's
+  // only rest day. Reuses the shared `weekHasRestDay` helper that validatePlan
+  // uses — single source of truth for the rule, two triggers calling it.
+  const lostRestDayViolation =
+    weekHasRestDay(sessions) && !weekHasRestDay(sessionsAfter)
+
+  const requiresConfirmation = hardAdjacentViolation || lostRestDayViolation
+  const moveLabel = `Moved ${fromSession.label ?? fromDay} to ${toDay}.`
+  const issues: string[] = []
+  if (hardAdjacentViolation) issues.push('back-to-back hard sessions')
+  if (lostRestDayViolation)  issues.push('no rest day this week')
+  const summary = issues.length
+    ? `${moveLabel} ${cap(issues.join(' + '))} — review carefully.`
+    : `${moveLabel} Hard/easy alternation preserved.`
 
   return {
     weekN:          input.currentWeekN,
-    trigger:        { type: 'session_reorder', detail: { fromDay, toDay, hardAdjacentViolation } },
+    trigger:        { type: 'session_reorder', detail: { fromDay, toDay, hardAdjacentViolation, lostRestDayViolation } },
     adjustmentType: 'reorder_sessions',
     summary,
     sessionsBefore,
     sessionsAfter,
     requiresConfirmation,
   }
+}
+
+function cap(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
 // ─── ENGINE-01: Fitness signal ────────────────────────────────────────────────

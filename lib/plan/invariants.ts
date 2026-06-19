@@ -55,7 +55,24 @@ export const INVARIANT_CODES = [
   'INV-PLAN-BUILD-LR-SEGMENT-CAP',
   'INV-PLAN-FINISH-GOAL-LR-CAP',
   'INV-PLAN-ULTRA-NO-PACE-SEGMENTS',
+  'INV-PLAN-WEEK-HAS-REST-DAY',
 ] as const
+
+/**
+ * Single source of truth for "does this week have at least one rest day?".
+ * Called by `validatePlan` (constitutional layer, plan generation) AND by
+ * `buildReorderAdjustment` (move-time trigger). CoachingPrinciples §64 +
+ * Decision #4 (PL-MOVE): rules live in the canon; both triggers call the
+ * same implementation. D-08 (no duplicate ownership).
+ *
+ * Accepts either the flat session array `buildReorderAdjustment` uses or
+ * the entry tuples `validatePlan` produces — duck-types on `.type === 'rest'`.
+ */
+export function weekHasRestDay(
+  sessions: ReadonlyArray<{ type?: string } | null | undefined>,
+): boolean {
+  return sessions.some(s => s?.type === 'rest')
+}
 
 export interface Violation {
   code: string
@@ -159,6 +176,23 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     const placedRunning = sessions
       .filter(([, s]) => !!s && s.type !== 'strength' && s.type !== 'rest')
       .map(([d, s]) => ({ day: d, session: s! }))
+
+    // INV-PLAN-WEEK-HAS-REST-DAY — every non-race week has at least one
+    // rest day. Seven-on is overreaching dressed as commitment.
+    // (CoachingPrinciples §64 — day-level rest sits beneath the §3 weekly
+    //  recovery cadence. Without it, easy days absorb someone else's
+    //  recovery duty and creep hot.)
+    if (!isRaceWeek && !weekHasRestDay(sessions.map(([, s]) => s))) {
+      violations.push({
+        code: 'INV-PLAN-WEEK-HAS-REST-DAY',
+        principle_ref: 'CoachingPrinciples §64',
+        severity: 'error',
+        week: w.n,
+        message: 'Week has no rest day',
+        actual: 0,
+        expected: '>= 1 rest day per week',
+      })
+    }
 
     // INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS — every placed session lands on an
     // unblocked day, including in race week.
