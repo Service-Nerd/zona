@@ -122,6 +122,35 @@ export function getCurrentWeekIndex(weeks: Plan['weeks']): number {
   return idx >= 0 ? idx : 0
 }
 
+/**
+ * Find the plan-week index whose 7-day window contains the given calendar
+ * date. Used by activity-matching paths so a Sunday-night run ingested on
+ * Monday morning is matched against last week's plan (where it belongs),
+ * not today's. Same fallback semantics as getCurrentWeek: nearest past
+ * week if the date sits in a gap, or weeks[0] if it's before the plan.
+ *
+ * Why this exists separately from getCurrentWeekIndex: that one is
+ * (correctly) anchored to "now" for UI surfaces — TodayScreen, Coach
+ * report, etc. Activity-matching is anchored to the activity, not the
+ * clock — those are different semantics.
+ */
+export function getWeekIndexForDate(weeks: Plan['weeks'], date: Date): number {
+  const target = new Date(date)
+  target.setHours(0, 0, 0, 0)
+  const idx = weeks.findIndex(w => {
+    const weekStart = parseLocalDate((w as any).date)
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekEnd.getDate() + 7)
+    return target >= weekStart && target < weekEnd
+  })
+  if (idx >= 0) return idx
+  // Fallback: nearest past week, else first week.
+  for (let i = weeks.length - 1; i >= 0; i--) {
+    if (parseLocalDate((weeks[i] as any).date) <= target) return i
+  }
+  return 0
+}
+
 export function getWeeksToRace(raceDate: string) {
   const ms = new Date(raceDate).getTime() - Date.now()
   return Math.max(0, Math.round(ms / (1000 * 60 * 60 * 24 * 7)))

@@ -51,10 +51,16 @@ export async function autoMatchAndAnalyse(
   if (!plan?.weeks?.length) return
 
   const { findMatchCandidates, autoSelectMatch } = await import('@/lib/coaching/sessionMatch')
-  const { getCurrentWeekIndex } = await import('@/lib/plan')
+  const { getWeekIndexForDate } = await import('@/lib/plan')
 
-  const weekIndex = getCurrentWeekIndex(plan.weeks)
-  const week      = plan.weeks[weekIndex]
+  // Anchor to the ACTIVITY date, not today. A Sunday-night run ingested
+  // Monday morning belongs to last week's plan — using today's week made
+  // the matcher silently miss every late-Sunday / early-Monday boundary
+  // case. Fixes a recurring "auto-link missed" symptom that the picker
+  // backstop was masking.
+  const activityDate = new Date(activity.start_date)
+  const weekIndex    = getWeekIndexForDate(plan.weeks, activityDate)
+  const week         = plan.weeks[weekIndex]
   if (!week) return
 
   const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
