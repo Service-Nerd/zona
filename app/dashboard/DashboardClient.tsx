@@ -8047,27 +8047,102 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // fire once on CoachScreen mount — data is stable for the session
 
-  // ── Option E: first-open coach intro card ───────────────────────────
-  // One-time card that sets the user's mental model of the AI coach.
-  // Persisted in localStorage so it survives tab changes and reloads.
-  const [coachIntroSeen, setCoachIntroSeen] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return true // SSR: don't flash
-    return localStorage.getItem('zona_coach_intro_seen') === 'true'
-  })
-  function dismissCoachIntro() {
-    if (typeof window !== 'undefined') localStorage.setItem('zona_coach_intro_seen', 'true')
-    setCoachIntroSeen(true)
-  }
+  // CO-ONE: The single Kit read assembles signals in priority order:
+  //   1. Race window  → race-readiness content leads
+  //   2. Phase change → phase-summary content leads (race suppresses phase)
+  //   3. Zone drift   → folds in as body sentence (race suppresses)
+  //   4. Trend signal → folds in as body sentence when hrIsTrending
+  //   5. Base synthesis → weeklyReport headline/body/cta default
+  // Highest-priority signal leads the headline + body; lower signals append.
+  // Race suppresses both phase AND drift (race week is too important to dilute).
+  // No CoachByline duplication anywhere else on Coach (Pattern 16b provenance).
+  //
+  // Hybrid scope (Decision #2): no "Manage what Kit watches" sheet in v1 —
+  // existing zoneDriftDismissedAt / benchmarkRecalDismissedAt columns kept
+  // in schema, no surface to set them. Folded signals appear in the read
+  // whenever they fire; dismissal sheet is a Phase 2 backlog item.
+  const consolidatedRead = (() => {
+    type ReadShape = {
+      headline:  string | null
+      body:      string | null
+      action:    string | null
+      isLoading: boolean
+      // True when this is genuine model synthesis (weeklyReport spine,
+      // race-readiness content, phase-summary content). Empty state is
+      // hand-authored → no AIMark in that case (Pattern 16 provenance).
+      hasAiContent: boolean
+    }
 
-  // ── Dynamic coach headline ──────────────────────────────────────────
-  function getCoachHeadline(): string {
-    const behind = (sessionsPlanned ?? 0) - (sessionsCompleted ?? 0)
-    const name = firstName ? `, ${firstName}` : ''
-    if (loadRatio !== null && loadRatio >= 1.3) return `Ease up this week${name}`
-    if (sessionsCompleted !== null && sessionsPlanned !== null && behind >= 2) return `Let's catch up${name}`
-    if (sessionsCompleted !== null && sessionsPlanned !== null && behind <= 0) return `You're on track${name}`
-    return `Here's your week${name}`
-  }
+    // Race leads (priority 1) — replaces base spine, suppresses drift.
+    if (showRaceCard) {
+      if (specialCardLoading && !localRaceReadiness) {
+        return { headline: null, body: null, action: null, isLoading: true, hasAiContent: true } as ReadShape
+      }
+      if (localRaceReadiness) {
+        const daysLine = daysToRace === 0 ? 'Race day.' : `Race in ${daysToRace} day${daysToRace === 1 ? '' : 's'}.`
+        return { headline: daysLine, body: localRaceReadiness.content, action: null, isLoading: false, hasAiContent: true } as ReadShape
+      }
+    }
+
+    // Phase leads (priority 2) — replaces base spine, drift can still fold.
+    if (showPhaseCard) {
+      if (specialCardLoading && !localPhaseSummary) {
+        return { headline: null, body: null, action: null, isLoading: true, hasAiContent: true } as ReadShape
+      }
+      if (localPhaseSummary) {
+        const body: string[] = [localPhaseSummary.content]
+        if (zoneDriftPattern) {
+          body.push(`${zoneDriftPattern.count} of your last ${zoneDriftPattern.total} easy sessions crept above Zone 2.`)
+        }
+        return {
+          headline: "You've crossed into a new phase.",
+          body:     body.join(' '),
+          action:   null,
+          isLoading: false,
+          hasAiContent: true,
+        } as ReadShape
+      }
+    }
+
+    // Base synthesis (priority 5) — weeklyReport spine, with drift + trend folded in.
+    if (loading) {
+      return { headline: null, body: null, action: null, isLoading: true, hasAiContent: true } as ReadShape
+    }
+
+    if (reportIsCurrent && weeklyReport?.headline) {
+      const body: string[] = []
+      if (weeklyReport.body) body.push(weeklyReport.body)
+      if (zoneDriftPattern) {
+        body.push(`${zoneDriftPattern.count} of your last ${zoneDriftPattern.total} easy sessions crept above Zone 2. If easy isn't easy, hard can't be hard.`)
+      }
+      // Trend fold — when the trend engine returned a live state with a gloss
+      // (i.e. hrIsTrending), surface as a templated sentence in Kit's voice.
+      // The TrendCard below shows the numbers; this is the interpretation.
+      if (trendCardData?.state === 'live' && trendCardData.gloss) {
+        body.push(`Easy is easier than it was — ${trendCardData.earlierHr} down to ${trendCardData.nowHr} since ${trendCardData.earlierMonth}.`)
+      }
+      return {
+        headline: weeklyReport.headline,
+        body:     body.length ? body.join(' ') : null,
+        action:   weeklyReport.cta ?? null,
+        isLoading: false,
+        hasAiContent: true,
+      } as ReadShape
+    }
+
+    // No report yet → hand-authored line. No AIMark per Pattern 16 provenance
+    // honesty — empty-state copy is not model output.
+    const emptyBody = !runs?.length && !stravaTokenFailed
+      ? "Link a run with heart rate and I'll have something to say."
+      : 'Generate a report to see how this week is tracking.'
+    return {
+      headline: weeklyReport && !reportIsCurrent ? "Last week's report is below." : 'Nothing to read yet.',
+      body:     emptyBody,
+      action:   null,
+      isLoading: false,
+      hasAiContent: false,
+    } as ReadShape
+  })()
 
   return (
     <div>
@@ -8075,126 +8150,117 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
 
       <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '32px' }}>
 
-        {/* ── KIT COACH IDENTITY — persistent presence, replaces headline ── */}
+        {/* ── CO-ONE: THE ONE KIT READ ──────────────────────────────────
+            Single authored synthesis. Replaces five previous standalone Kit
+            surfaces: identity card, first-open intro, weekly report card,
+            race readiness card, phase summary card, zone drift card. Lower-
+            priority signals fold INTO this read as body sentences. This is
+            the ONLY CoachByline + AIMark on the screen (Pattern 16b
+            provenance). Empty state renders a dimmed Kit identity WITHOUT
+            AIMark — hand-authored line, not model output. */}
         <div style={{
           background:   'var(--card)',
           borderRadius: 'var(--radius-lg)',
           border:       '1px solid var(--line)',
-          borderLeft:   '3px solid var(--moss)',
-          padding:      '16px 18px',
+          padding:      '18px 20px 18px 22px',
+          position:     'relative',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <CoachByline />
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums' }}>
-              {sessionsCompleted
-                ? `W${weekNum} · ${sessionsCompleted} session${sessionsCompleted !== 1 ? 's' : ''}`
-                : `W${weekNum} of ${totalWeeks}`}
-            </span>
-          </div>
-          <p style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3, margin: '10px 0 0' }}>
-            {getCoachHeadline()}
-          </p>
-        </div>
-
-        {/* ── OPTION E: FIRST-OPEN COACH INTRO ────────────────────────── */}
-        {/* Shown once to set the user's mental model. localStorage-gated. */}
-        {!coachIntroSeen && (
+          {/* 3px moss left rail at left:8px (Pattern 16b) */}
           <div style={{
-            background:   'var(--bg-soft)',
-            borderRadius: 'var(--radius-lg)',
-            border:       '1px solid var(--line)',
-            padding:      '16px 18px',
-          }}>
-            <div style={{ marginBottom: '10px' }}>
-              <CoachByline />
-            </div>
-            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.6, margin: '0 0 14px' }}>
-              Kit watches your training. Says something when it&apos;s worth saying.
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                onClick={dismissCoachIntro}
-                style={{
-                  fontFamily:   'var(--font-ui)',
-                  fontSize:     '13px',
-                  fontWeight:   600,
-                  color:        'var(--moss)',
-                  background:   'rgba(107,142,107,0.10)',
-                  border:       'none',
-                  borderRadius: '20px',
-                  padding:      '7px 16px',
-                  cursor:       'pointer',
-                }}
-              >
-                Got it
-              </button>
-            </div>
-          </div>
-        )}
+            position:     'absolute',
+            left:         '8px',
+            top:          '14px',
+            bottom:       '14px',
+            width:        '3px',
+            background:   'var(--moss)',
+            borderRadius: '2px',
+            opacity:      consolidatedRead.hasAiContent ? 1 : 0.3,
+          }} />
 
-        {/* ── KIT WEEKLY READ — hero position ──────────────────────────
-            Promoted from bottom of screen: the AI synthesis is the primary
-            reason a paid user opens Coach. Everything below is evidence that
-            supports what Kit says here. Action line (cta) is the most
-            important text on the screen. */}
-        <div style={{
-          background: 'var(--warn-bg)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '16px 18px',
-        }}>
-          {/* Eyebrow — byline + week counter */}
+          {/* Eyebrow — single byline + week counter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-            <CoachByline working={loading} color="warn" role="This week" />
-            <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', opacity: 0.6 }}>
+            {consolidatedRead.hasAiContent ? (
+              <CoachByline working={consolidatedRead.isLoading} color="moss" role="This week" />
+            ) : (
+              // Empty state: dimmed Kit identity, NO AIMark (Pattern 16
+              // provenance honesty — empty line is hand-authored).
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', opacity: 0.45 }} aria-label={`${BRAND.coachName} — this week`}>
+                <span aria-hidden="true" style={{
+                  width: '22px', height: '22px', borderRadius: '50%',
+                  background: 'var(--moss)',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--card)', fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
+                  letterSpacing: '-0.02em', flexShrink: 0,
+                }}>
+                  {BRAND.coachName.charAt(0).toUpperCase()}
+                </span>
+                <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 700, color: 'var(--ink)' }}>
+                    {BRAND.coachName}
+                  </span>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 600, color: 'var(--moss)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    This week
+                  </span>
+                </span>
+              </span>
+            )}
+            <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums' }}>
               W{weekNum}/{totalWeeks}
             </span>
           </div>
+
           {stravaTokenFailed && !stravaLoading && (
             <div style={{ marginBottom: '12px' }}>
-              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--coach-ink)', opacity: 0.7 }}>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--ink-2)', opacity: 0.7 }}>
                 Strava connection expired. Reconnect in Profile.
               </span>
             </div>
           )}
-          {loading ? (
+
+          {consolidatedRead.isLoading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
               {[85, 100, 70].map((w, i) => (
-                <div key={i} style={{ height: '13px', background: 'rgba(184,133,58,0.18)', borderRadius: '4px', width: `${w}%` }} />
+                <div key={i} style={{ height: '13px', background: 'rgba(107,142,107,0.12)', borderRadius: '4px', width: `${w}%` }} />
               ))}
             </div>
-          ) : reportIsCurrent && weeklyReport?.headline ? (
-            <div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 600, color: 'var(--coach-ink)', letterSpacing: '-0.3px', lineHeight: 1.3, marginBottom: weeklyReport.body ? '10px' : 0 }}>
-                {weeklyReport.headline}
-              </div>
-              {weeklyReport.body && (
-                <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.7, margin: 0, marginBottom: weeklyReport.cta ? '12px' : 0 }}>
-                  {weeklyReport.body}
-                </p>
-              )}
-              {weeklyReport.cta && (
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--coach-ink)', lineHeight: 1.5, fontStyle: 'italic', marginBottom: 0 }}>
-                  {weeklyReport.cta}
+          ) : (
+            <>
+              {consolidatedRead.headline && (
+                <div style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 600,
+                  color: consolidatedRead.hasAiContent ? 'var(--ink)' : 'var(--ink-2)',
+                  letterSpacing: '-0.3px', lineHeight: 1.3,
+                  marginBottom: consolidatedRead.body ? '10px' : 0,
+                }}>
+                  {consolidatedRead.headline}
                 </div>
               )}
-            </div>
-          ) : (
-            <div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--coach-ink)', marginBottom: '8px' }}>
-                {weeklyReport && !reportIsCurrent ? "Last week’s report is below." : 'No report yet this week.'}
-              </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.6, opacity: 0.75 }}>
-                {!runs?.length && !stravaTokenFailed
-                  ? 'Log a run with heart rate to generate a weekly report.'
-                  : 'Generate a report to see how this week is tracking.'}
-              </div>
-            </div>
+              {consolidatedRead.body && (
+                <p style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '13px',
+                  color: 'var(--ink-2)', lineHeight: 1.7, margin: 0,
+                  marginBottom: consolidatedRead.action ? '12px' : 0,
+                }}>
+                  {consolidatedRead.body}
+                </p>
+              )}
+              {consolidatedRead.action && (
+                <div style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500,
+                  color: 'var(--ink)', lineHeight: 1.5, fontStyle: 'italic',
+                }}>
+                  {consolidatedRead.action}
+                </div>
+              )}
+            </>
           )}
+
           {error && (
             <div style={{ marginTop: '10px', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--danger)', opacity: 0.85 }}>
               {error}
             </div>
           )}
+
           <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
             {refreshBlocked && (
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', display: 'block', width: '100%', marginBottom: '4px' }}>
@@ -8207,8 +8273,8 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               style={{
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                 fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-                color: 'var(--warn)',
-                background: 'rgba(184,133,58,0.12)',
+                color: 'var(--moss)',
+                background: 'rgba(107,142,107,0.10)',
                 border: 'none',
                 borderRadius: '22px',
                 padding: '0 18px',
@@ -8217,7 +8283,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                 opacity: (loading || refreshBlocked) ? 0.4 : 1,
               }}
             >
-              {loading && <AIMark size={10} color="var(--warn)" working />}
+              {loading && <AIMark size={10} color="var(--moss)" working />}
               {loading ? 'Generating' : (reportIsCurrent && weeklyReport?.headline ? 'Refresh' : 'Generate report')}
             </button>
             {reportIsCurrent && weeklyReport?.zone_discipline_score != null && (
@@ -8225,95 +8291,6 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             )}
           </div>
         </div>
-
-        {/* ── R29 RACE READINESS — shows daysToRace 0–14, suppresses R28 ── */}
-        {showRaceCard && (localRaceReadiness || specialCardLoading) && (
-          <div style={{
-            background: 'var(--card)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--line)',
-            borderLeft: '3px solid var(--s-race)',
-            padding: '16px 18px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <CoachByline working={specialCardLoading && !localRaceReadiness} role="Race readiness" />
-              <span style={{ marginLeft: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
-                {daysToRace === 0 ? 'Race day' : `${daysToRace}d to go`}
-              </span>
-            </div>
-            {specialCardLoading && !localRaceReadiness ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {[90, 100, 75].map((w, i) => (
-                  <div key={i} style={{ height: '13px', background: 'rgba(200,106,42,0.12)', borderRadius: '4px', width: `${w}%` }} />
-                ))}
-              </div>
-            ) : localRaceReadiness ? (
-              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.65, margin: 0 }}>
-                {localRaceReadiness.content}
-              </p>
-            ) : null}
-          </div>
-        )}
-
-        {/* ── R28 PHASE SUMMARY — shows first week of new phase, suppressed by R29 ── */}
-        {showPhaseCard && (localPhaseSummary || specialCardLoading) && (
-          <div style={{
-            background: 'var(--bg-soft)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--line)',
-            borderLeft: '3px solid var(--moss)',
-            padding: '16px 18px',
-          }}>
-            <div style={{ marginBottom: '12px' }}>
-              <CoachByline working={specialCardLoading && !localPhaseSummary} role="Phase complete" />
-            </div>
-            {specialCardLoading && !localPhaseSummary ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {[85, 100, 70].map((w, i) => (
-                  <div key={i} style={{ height: '13px', background: 'rgba(107,142,107,0.12)', borderRadius: '4px', width: `${w}%` }} />
-                ))}
-              </div>
-            ) : localPhaseSummary ? (
-              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.65, margin: 0 }}>
-                {localPhaseSummary.content}
-              </p>
-            ) : null}
-          </div>
-        )}
-
-        {/* ── R30 ZONE DRIFT PATTERN — rule-engine, no AI ─────────────── */}
-        {/* Suppressed by R29 (race window). 14-day dismiss window checked here. */}
-        {(() => {
-          if (!zoneDriftPattern || isRaceWindow) return null
-          if (zoneDriftDismissedAt) {
-            const daysSince = (Date.now() - new Date(zoneDriftDismissedAt).getTime()) / 86_400_000
-            if (daysSince <= 14) return null
-          }
-          return (
-            <div style={{
-              background: 'var(--card)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--line)',
-              borderLeft: '3px solid var(--warn)',
-              padding: '16px 18px',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
-                  Easy days running hot
-                </span>
-                <button
-                  onClick={onDismissZoneDrift}
-                  style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 400, color: 'var(--mute)', background: 'none', border: 'none', padding: '0', cursor: 'pointer', flexShrink: 0 }}
-                >
-                  Dismiss
-                </button>
-              </div>
-              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink)', lineHeight: 1.6, margin: 0 }}>
-                {zoneDriftPattern.count} of your last {zoneDriftPattern.total} easy sessions crept above Zone 2. If easy isn&apos;t easy, hard can&apos;t be hard.
-              </p>
-            </div>
-          )
-        })()}
 
         {/* ── STATS 2×2 GRID — supporting evidence tier ────────────────
             Numbers that explain what Kit said above. Stats follow the read,
@@ -8511,6 +8488,10 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             HR drift over time — the receipt for zone discipline.
             Skeleton while loading; live/pending based on trend engine output.
             No locked state here — CoachScreen is already paid-gated upstream. */}
+        {/* CO-ONE: glossless mode strips the AI gloss + its CoachByline so
+            the trend reads as raw evidence. Trend interpretation folds into
+            the one Kit read at the top of Coach instead — see
+            `consolidatedRead` above (priority-4 trend fold). */}
         {trendCardLoading
           ? <TrendCard state="skeleton" />
           : trendCardData?.state === 'live'
@@ -8522,6 +8503,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               cohortSize={trendCardData.cohortSize}
               windowMonths={trendCardData.windowMonths}
               gloss={trendCardData.gloss}
+              glossless
             />
           : <TrendCard state="pending" />
         }
@@ -8540,6 +8522,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             cohortSize={easyTrendData.cohortSize}
             windowMonths={easyTrendData.windowMonths}
             gloss={easyTrendData.gloss}
+            glossless
           />
         )}
 

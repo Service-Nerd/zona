@@ -208,6 +208,7 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 ### Scoped but unscheduled
 
 
+- **CO-ONE dismissal sheet** *(Phase 2, ~half-day)* — "Manage what Kit watches →" slide-up sheet on Coach. Per-signal 14-day mute toggles (zone drift, benchmark staleness, future foldable signals). Reuses existing `zone_drift_dismissed_at` / `benchmark_recal_dismissed_at` persistence (left in schema during CO-ONE v1 ship). **Gate:** build only when ≥3 real user requests for signal mute land in support. SLT call (2026-06-19): the heat-block / altitude-camp use case is real but speculative; ship the read clean first, add the sheet if validated by demand. Persistence already exists → minimal effort when triggered. Tier: FREE.
 - **Zone method selector** — user picks HR zone calc method, stored in `user_settings` — PAID
 - **GTM-11 Pricing review** — annual discount currently 37% vs category norm 44–49%. Monthly parameterised in `lib/brand.ts`; can raise to £9.99/month (50% annual discount) without a search-replace. Revisit after first 100 paid conversions
 - **Supplementary session slots** — second session per day for strength / cross-train / yoga / mobility. Explicitly NOT AM/PM run-doubling (different audience pattern, counter to brand). Tier: slot FREE, AI placement PAID. Estimate ~3 weeks.

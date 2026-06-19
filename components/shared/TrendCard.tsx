@@ -33,6 +33,10 @@ interface TrendCardLive {
   label?: string
   /** Noun for metadata count, e.g. 'easy run'. Default: 'long run'. */
   sessionLabel?: string
+  /** CO-ONE: numbers-only mode for Coach. Hides the AI gloss section so the
+   *  trend reads as raw evidence with no second Kit voice. Trend interpretation
+   *  folds into the one Kit read at the top of Coach instead. */
+  glossless?: boolean
   onUpgrade?: never
 }
 interface TrendCardPending  { state: 'pending';  onUpgrade?: never }
@@ -321,7 +325,7 @@ export default function TrendCard(props: TrendCardProps) {
 
   // ── Live ──────────────────────────────────────────────────────────────────
   // Props confirmed as TrendCardLive here.
-  const { earlierMonth, earlierHr, nowHr, cohortSize, windowMonths, gloss, label, sessionLabel } = props
+  const { earlierMonth, earlierHr, nowHr, cohortSize, windowMonths, gloss, label, sessionLabel, glossless } = props
   const eyebrow    = label       ?? 'Aerobic trend'
   const runNoun    = sessionLabel ?? 'long run'
 
@@ -363,40 +367,44 @@ export default function TrendCard(props: TrendCardProps) {
           <MetricPair value={String(now.value)} label="now" />
         </div>
 
-        {/* AI section — CoachByline + gloss, separated by a border + left rail */}
-        {/* No AIMark on the metrics above — those are formula-derived (provenance honesty). */}
-        <div style={{ borderTop: '1px solid var(--line)', paddingTop: '14px', position: 'relative', paddingLeft: '14px' }}>
-          {/* 3px moss left rail — AI-card companion (Pattern 16b) */}
-          <div style={{
-            position: 'absolute', left: '8px', top: '14px', bottom: '0',
-            width: '3px', background: 'var(--moss)', borderRadius: '2px',
-          }} />
+        {/* AI section — CoachByline + gloss, separated by a border + left rail.
+            CO-ONE: glossless mode hides this block entirely on Coach so the
+            trend reads as raw evidence with no second Kit voice. Interpretation
+            folds into the one Kit read at the top of the screen. */}
+        {!glossless && (
+          <div style={{ borderTop: '1px solid var(--line)', paddingTop: '14px', position: 'relative', paddingLeft: '14px' }}>
+            {/* 3px moss left rail — AI-card companion (Pattern 16b) */}
+            <div style={{
+              position: 'absolute', left: '8px', top: '14px', bottom: '0',
+              width: '3px', background: 'var(--moss)', borderRadius: '2px',
+            }} />
 
-          <div style={{ marginBottom: gloss ? '10px' : 0 }}>
-            <CoachByline
-              working={!gloss && !glossVisible}
-              role={eyebrow}
-            />
+            <div style={{ marginBottom: gloss ? '10px' : 0 }}>
+              <CoachByline
+                working={!gloss && !glossVisible}
+                role={eyebrow}
+              />
+            </div>
+
+            {gloss && (
+              <p style={{
+                fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
+                color: 'var(--ink-2)', lineHeight: 1.55, margin: 0,
+                opacity: glossVisible ? 1 : 0,
+                transition: 'opacity 0.2s ease-out',
+              }}>
+                {gloss}
+              </p>
+            )}
+
+            {/* When no gloss came back from AI (silent fallback) */}
+            {!gloss && glossVisible && (
+              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', lineHeight: 1.55, margin: 0 }}>
+                {runNoun.charAt(0).toUpperCase() + runNoun.slice(1)} HR, {earlierMonth} to now.
+              </p>
+            )}
           </div>
-
-          {gloss && (
-            <p style={{
-              fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
-              color: 'var(--ink-2)', lineHeight: 1.55, margin: 0,
-              opacity: glossVisible ? 1 : 0,
-              transition: 'opacity 0.2s ease-out',
-            }}>
-              {gloss}
-            </p>
-          )}
-
-          {/* When no gloss came back from AI (silent fallback) */}
-          {!gloss && glossVisible && (
-            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', lineHeight: 1.55, margin: 0 }}>
-              {runNoun.charAt(0).toUpperCase() + runNoun.slice(1)} HR, {earlierMonth} to now.
-            </p>
-          )}
-        </div>
+        )}
       </div>
 
       {sheetOpen && (

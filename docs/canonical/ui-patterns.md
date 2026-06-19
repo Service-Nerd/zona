@@ -706,7 +706,48 @@ Reference: `components/shared/SectionLabel.tsx` (if extracted) or inline in `Das
 
 ---
 
+### 18a. Coach screen composition (CO-ONE)
+
+The Coach screen carries **exactly one Kit voice** — a single authored read at the top, single `CoachByline` + `AIMark`. Everything below is **unvoiced evidence**: rings, stats, trends, ledger.
+
+**The one read — priority assembly (top of Coach):**
+
+| Priority | Signal | Source | Folds in as |
+|---|---|---|---|
+| 1 | Race window (`daysToRace ∈ [0, 14]`) | `/api/race-readiness` | Leads: "Race in {n} days." + race-readiness content |
+| 2 | Phase change (suppressed by race) | `/api/phase-summary` | Leads if no race: "You've crossed into a new phase." + phase content |
+| 3 | Zone drift (suppressed by race) | `zoneDriftPattern` | Body sentence: "{count} of your last {total} easy runs crept above Zone 2." |
+| 4 | Trend signal | `/api/coaching/trend` with `hrIsTrending` | Body sentence: "Easy is easier than it was — {earlierHr} down to {nowHr} since {earlierMonth}." |
+| 5 | Base synthesis | `/api/weekly-report` | Default headline + body + italic cta (action line) |
+
+**Anatomy:**
+- `--card` bg, `1px --line`, `--radius-lg`, `3px --moss` left rail at `left: 8px`, padding `18px 20px 18px 22px`
+- ONE `<CoachByline color="moss" role="This week" working={isLoading} />` at top
+- W{n}/{total} counter right-aligned in eyebrow
+- Headline (17px 600), body (13px 400 line-height 1.7), italic action line
+- "Generate / Refresh report" button + `ShareWeekButton` attached
+- Loading: 3 shimmer lines at 85% / 100% / 70%, `rgba(107,142,107,0.12)`
+
+**Empty state (no analysed runs):**
+- Dimmed Kit identity (avatar gradient + name + eyebrow, opacity ~0.45)
+- **NO AIMark** — empty-state line is hand-authored, not model output (Pattern 16 provenance honesty)
+- One line: "Link a run with heart rate and I'll have something to say." or "Generate a report to see how this week is tracking."
+
+**Evidence below — unvoiced, fixed order:**
+1. ZoneRings (Pattern 22) — unchanged
+2. Stats 2×2 (Pattern 19) — Zone discipline · Load ratio · Sessions · Weeks left, with info sheets preserved
+3. LedgerCard (Pattern 11) — Weeks within the lines, unchanged
+4. TrendCards (Pattern 29, `glossless`) — numbers only, AI gloss + byline stripped on Coach
+
+**Dismissal:** v1 has no dismissal surface (one Kit read, repetition is signal). The "Manage what Kit watches" sheet is a Phase 2 backlog item gated on real user mute requests. `zone_drift_dismissed_at` / `benchmark_recal_dismissed_at` columns remain in schema, currently unread.
+
+**Replaces:** Kit identity card + first-open coach intro + standalone weekly report card + Pattern 18 SpecialCoachCard (Race Readiness, Phase Summary) + standalone zone-drift card. All those surfaces' Kit bylines collapsed into the one read.
+
+---
+
 ### 18. SpecialCoachCard
+
+> **SUPERSEDED by CO-ONE (2026-06-19).** Phase Summary and Race Readiness content is no longer rendered as standalone cards on Coach. Both fold into the **one consolidated Kit read** at the top of CoachScreen — race-readiness content leads the read when in race window, phase-summary content leads when a phase just changed. The generation flow, idempotent storage, and API routes are unchanged; only the rendering surface is consolidated. The variant table below documents the legacy two-card layout for historical reference.
 
 Timed AI coaching moments that appear on the Coach screen in specific windows. Two variants share the same anatomy but carry different visual language to distinguish them from the persistent weekly report card.
 
@@ -1148,17 +1189,18 @@ SKELETON:
 - Gloss sentence → model-written → `<CoachByline color="moss" role="Aerobic trend" />` + 3px moss left rail on the AI section only
 - Rail starts at the border dividing the metric pair from the AI section — not over the numbers
 
-**Placement:** CoachScreen only, above the weekly report amber card. Absent for free users (screen is paid-gated upstream — no locked state needed at this placement).
+**Placement on Coach (CO-ONE):** numbers-only via `glossless` prop. The gloss + CoachByline are stripped so Coach carries exactly one Kit voice (the consolidated read at the top). Trend interpretation folds into that read as a templated sentence ("Easy is easier than it was — 166 down to 149 since Feb.") when the trend engine returns a live gloss. Off-Coach (any future surface), the gloss path remains available — `glossless` is opt-in.
 
 **Tier-divergent header:**
 ```tsx
 // TIER-DIVERGENT — FREE:  locked state, upgrade CTA, hand-authored body
 //                  PAID:  live/pending/skeleton states, AI gloss for live
+//                  CO-ONE: pass `glossless` on Coach to suppress the AI section
 ```
 
 **Props (discriminated union):**
 ```tsx
-{ state: 'live';     earlierMonth, earlierHr, nowHr, cohortSize, windowMonths, gloss? }
+{ state: 'live';     earlierMonth, earlierHr, nowHr, cohortSize, windowMonths, gloss?, glossless? }
 { state: 'pending'  }
 { state: 'locked';   onUpgrade? }
 { state: 'skeleton' }
