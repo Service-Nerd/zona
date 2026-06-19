@@ -706,6 +706,36 @@ Reference: `components/shared/SectionLabel.tsx` (if extracted) or inline in `Das
 
 ---
 
+### 17. ME-ATHLETE — "What Kit knows about you"
+
+Read-only synthesis card at the top of Me, above existing editors. Surfaces the inputs the engine actually runs on — zones, benchmark freshness, recovery signals — so configuration reads as identity, not as chores. Existing editor rows below remain untouched; this card is the *read*, not a replacement.
+
+**Anatomy:**
+- `--card` bg, `1px --line`, `--radius-lg`, no left rail (not a coaching surface)
+- Eyebrow: `10px 700 --mute uppercase, letterSpacing 0.12em` — "What Kit knows about you"
+- Three stacked rows, each: label (left) + state-dot + value (right) + optional sub-line
+- Benchmark row is tappable → routes to `BenchmarkUpdateScreen` (`onOpenBenchmark`)
+
+**State-dot colour rule:**
+- `--moss` solid = healthy / set
+- `--warn` = stale (benchmark > `GENERATION_CONFIG.VDOT_STALENESS_FRESH_WEEKS`)
+- `--mute` = unset / not configured
+- `--moss` 0.4 opacity = source available but not connected
+
+**Honest staleness — the brand-defining detail:**
+A benchmark four weeks old silently softens pace targets via VDOT's staleness discount. The card *names* it with a sub-line: "Targets may be soft — re-benchmark when you can." Same threshold sourced from `GENERATION_CONFIG.VDOT_STALENESS_FRESH_WEEKS` so the user-facing "stale" matches what the engine actually treats as stale (D-08, INV-CFG-001).
+
+**Tier:** FREE. Read-only synthesis of inputs the user already owns — paywalling it makes no sense.
+
+**Rules:**
+- No new data model — every field is already computed elsewhere
+- Stale state must be rendered (silent staleness is the bug the card exists to fix)
+- Existing edit affordances below remain visible — the card surfaces, doesn't bury
+
+Reference: inline render in `MeScreen` above the existing Identity card.
+
+---
+
 ### 17a. TD-CLOSE (the day's close)
 
 When today's session is complete, skipped, or is a rest day, Today renders a small **calm closing read** above the session card. The brand's anti-cheerleading thesis is most visible here: restraint as reward, no confetti, no streak burn, no celebration.

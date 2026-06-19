@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/client'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
 import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
+import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
 import { isTrialActive, TRIAL_DAYS } from '@/lib/trial'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
@@ -10442,6 +10443,93 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             </div>
           </div>
         </div>
+
+        {/* ── ME-ATHLETE — "What Kit knows about you" ──────────────────
+            Read-only synthesis of the inputs the engine runs on. Surfaces
+            staleness honestly — a benchmark four+ weeks old silently softens
+            pace targets via VDOT_STALENESS_FRESH_WEEKS; this card names it.
+            Configuration becomes identity, not chores. Existing editors
+            below remain — this card is the read, not a replacement. */}
+        {(() => {
+          // Benchmark data + staleness signal. Threshold sourced from the
+          // engine config so the user-facing freshness window matches what
+          // the VDOT engine actually treats as fresh (D-08, INV-CFG-001).
+          const bm = (plan?.meta as any)?.benchmark
+          const bmDate = bm?.benchmark_date ? new Date(bm.benchmark_date) : null
+          const bmWeeks = bmDate
+            ? Math.max(0, Math.floor((Date.now() - bmDate.getTime()) / (7 * 86_400_000)))
+            : null
+          const bmStale = bmWeeks != null && bmWeeks > GENERATION_CONFIG.VDOT_STALENESS_FRESH_WEEKS
+
+          // Row state badges: --moss for healthy, --warn for stale, --mute for unset.
+          type RowState = 'set' | 'stale' | 'unset'
+          const row = (label: string, value: string, sub: string | null, state: RowState, onTap?: () => void) => {
+            const colour = state === 'stale' ? 'var(--warn)' : state === 'set' ? 'var(--moss)' : 'var(--mute)'
+            const inner = (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>{label}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: colour, flexShrink: 0 }} />
+                    {value}
+                  </span>
+                </div>
+                {sub && (
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: state === 'stale' ? 'var(--warn)' : 'var(--mute)', marginTop: '4px', lineHeight: 1.4 }}>
+                    {sub}
+                  </div>
+                )}
+              </>
+            )
+            const baseStyle: React.CSSProperties = { padding: '12px 16px', borderBottom: '1px solid var(--line)' }
+            return onTap ? (
+              <button onClick={onTap} style={{ ...baseStyle, width: '100%', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer' }}>
+                {inner}
+              </button>
+            ) : (
+              <div style={baseStyle}>{inner}</div>
+            )
+          }
+
+          return (
+            <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+              <div style={{ padding: '14px 16px 4px', fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+                What Kit knows about you
+              </div>
+
+              {row(
+                'Zones',
+                hrConfigured ? `Z2 ≤ ${z2Ceiling} · Max ${maxHR}` : 'Not set',
+                hrConfigured ? null : 'Set RHR and Max HR below — your zones lock in.',
+                hrConfigured ? 'set' : 'unset',
+              )}
+
+              {row(
+                'Benchmark',
+                bmDate ? `${bmWeeks}w old` : 'Not set',
+                bmStale
+                  ? 'Targets may be soft — re-benchmark when you can.'
+                  : bmDate ? null : 'No benchmark — pace targets are estimated.',
+                bmDate ? (bmStale ? 'stale' : 'set') : 'unset',
+                onOpenBenchmark,
+              )}
+
+              {/* Last row — no border below */}
+              <div style={{ padding: '12px 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>Recovery signals</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--moss)', flexShrink: 0, opacity: 0.4 }} />
+                    Apple Health
+                  </span>
+                </div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '4px', lineHeight: 1.4 }}>
+                  Connect below to feed readiness checks.
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* ── Your profile ───────────────────────────────────────── */}
         <SectionLabel>Your profile</SectionLabel>
