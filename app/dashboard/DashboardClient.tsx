@@ -6649,13 +6649,82 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               )}
             </div>
 
+            {/* TD-CLOSE — the day's close. When today is done (logged,
+                skipped, or a rest day) Today resolves to a calm one-line
+                read above the session card. The brand's anti-cheerleading
+                voice: "Do nothing. It helps." for rest; "That's the day.
+                Nothing to prove now." for a logged session; "Benched.
+                Tomorrow's still the plan." for skipped.
+                No confetti. The reward is closure, not celebration. */}
+            {selectedSession.today && (() => {
+              const todayCompletion = completions[selectedCompletionKey]
+              const isDone    = todayCompletion?.status === 'complete'
+              const isSkipped = todayCompletion?.status === 'skipped'
+              const isRest    = selectedSession.type === 'rest'
+              if (!isDone && !isSkipped && !isRest) return null
+
+              const headline = isRest ? 'Do nothing. It helps.'
+                : isSkipped ? "Benched. Tomorrow's still the plan."
+                : "That's the day. Nothing to prove now."
+
+              // The day's one number. For a logged run: distance. For rest /
+              // skipped: nothing — the headline IS the read.
+              const distKm = isDone ? todayCompletion?.strava_activity_km ?? null : null
+              const metric = distKm != null ? formatDistance(distKm, preferredUnits) : null
+
+              return (
+                <div style={{
+                  background:   'var(--card)',
+                  border:       '1px solid var(--line)',
+                  borderRadius: 'var(--radius-lg)',
+                  padding:      '16px 20px 16px 22px',
+                  marginBottom: '8px',
+                  position:     'relative',
+                }}>
+                  {/* 3px moss left rail — completion accent, no warn here.
+                      Restraint is the reward; --moss is the brand's quiet
+                      "well done" colour without saying "well done". */}
+                  <div style={{
+                    position:     'absolute',
+                    left:         '8px',
+                    top:          '14px',
+                    bottom:       '14px',
+                    width:        '3px',
+                    background:   'var(--moss)',
+                    borderRadius: '2px',
+                  }} />
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '4px' }}>
+                    {isRest ? 'Rest day' : isSkipped ? 'Benched' : "Today's done"}
+                  </div>
+                  <p style={{
+                    fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 600,
+                    color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3,
+                    margin: 0,
+                  }}>
+                    {headline}
+                  </p>
+                  {metric && (
+                    <div style={{
+                      marginTop: '8px',
+                      fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500,
+                      color: 'var(--ink-2)', fontVariantNumeric: 'tabular-nums',
+                    }}>
+                      {metric}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+
             {/* R25 Cut #2 — pre-run band. Shows cohort stats for similar past
                 runs when the user is about to head out. PAID, today only.
                 Formula-derived: no AIMark. Absent when < 3 similar runs.
                 TD-READY (Decision #3): hides when a readiness-signal pending
                 adjustment exists. Both want this real-estate; readiness wins
-                because permission > confirmation on a cooked morning. */}
-            {hasPaidAccess && selectedSession.today && pendingAdjustment?.trigger_type !== 'readiness_signal' && (
+                because permission > confirmation on a cooked morning.
+                TD-CLOSE: also hides when today is done — pre-run guidance
+                is irrelevant after the run. */}
+            {hasPaidAccess && selectedSession.today && pendingAdjustment?.trigger_type !== 'readiness_signal' && !completions[selectedCompletionKey]?.status && selectedSession.type !== 'rest' && (
               preRunBandLoading
                 ? <PreRunBandCard state="skeleton" />
                 : preRunBand

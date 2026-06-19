@@ -706,6 +706,36 @@ Reference: `components/shared/SectionLabel.tsx` (if extracted) or inline in `Das
 
 ---
 
+### 17a. TD-CLOSE (the day's close)
+
+When today's session is complete, skipped, or is a rest day, Today renders a small **calm closing read** above the session card. The brand's anti-cheerleading thesis is most visible here: restraint as reward, no confetti, no streak burn, no celebration.
+
+**Three voice lines (locked):**
+
+| State | Eyebrow | Headline | Metric |
+|---|---|---|---|
+| Done (complete) | `Today's done` | "That's the day. Nothing to prove now." | distance done (km / mi) |
+| Rest day | `Rest day` | "Do nothing. It helps." | — |
+| Skipped | `Benched` | "Benched. Tomorrow's still the plan." | — |
+
+**Anatomy:**
+- `--card` bg, `1px --line`, `--radius-lg`, **3px `--moss` left rail** at `left: 8px` (completion accent, not warn)
+- Eyebrow: `10px 700 --moss uppercase, letterSpacing 0.12em`
+- Headline: `17px 600 --ink, lineHeight 1.3`
+- Metric (done only): `13px 500 --ink-2, tabular-nums` — distance done in the user's preferred units
+- Sits above the session card, replacing PreRunBandCard which self-hides when today is done
+
+**Tier:** FREE. The closing read is brand infrastructure — habit-loop reward cue — and can't be paywalled credibly.
+
+**What this does NOT do:**
+- No confetti, no streak burn, no celebration (anti-gamification line — Wood)
+- No motivation copy ("Great job today!" — forbidden by `CLAUDE.md` voice table)
+- No re-showing the prescription post-log — the session card already flips to its done state; this read is the one-line acknowledgement above it
+
+Reference: inline render in `TodayScreen` selectedSession render block.
+
+---
+
 ### 17b. TD-READY hero (readiness-led permission)
 
 When recovery signals (RHR / HRV / sleep) fire on a quality / long / intervals / tempo day, the engine writes a `plan_adjustments` row with `trigger_type = 'readiness_signal'`. Instead of the generic `AdjustmentBanner` Confirm/Revert pattern, that row renders as a **TD-READY permission pill** above today's session card. Permission > score. "Ease the session" gives the runner permission to back off; "Run it anyway →" stays equally visible (never a coercive gate).
