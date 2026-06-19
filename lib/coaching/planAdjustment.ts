@@ -20,7 +20,8 @@ import {
   LONG_RUN_SHORTFALL_REDUCE_PCT,
 } from './constants'
 import { acuteChronicRatio, shadowLoadPct, zoneDisciplineScore } from './loadCalc'
-import { weekHasRestDay } from '@/lib/plan/invariants'
+import { weekHasRestDay, findQualityLongSpacingViolations } from '@/lib/plan/invariants'
+import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { BRAND } from '@/lib/brand'
 import type { Session } from '@/types/plan'
 
@@ -590,18 +591,29 @@ function buildReorderAdjustment(
   const lostRestDayViolation =
     weekHasRestDay(sessions) && !weekHasRestDay(sessionsAfter)
 
-  const requiresConfirmation = hardAdjacentViolation || lostRestDayViolation
+  // §7 quality-long spacing check. Same shared helper validatePlan calls at
+  // generation time — Decision #4: one constitution, two triggers. Move that
+  // brings a quality session within MIN_HOURS_BETWEEN_QUALITY_AND_LONG of the
+  // long run is flagged. Counts ALL quality sessions in the week, not just
+  // the moved one — the move can put another quality too close even if the
+  // moved session isn't the long or quality.
+  const minDaysQualLong = Math.ceil(GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG / 24)
+  const spacingViolations = findQualityLongSpacingViolations(sessionsAfter, minDaysQualLong)
+  const qualityLongViolation = spacingViolations.length > 0
+
+  const requiresConfirmation = hardAdjacentViolation || lostRestDayViolation || qualityLongViolation
   const moveLabel = `Moved ${fromSession.label ?? fromDay} to ${toDay}.`
   const issues: string[] = []
   if (hardAdjacentViolation) issues.push('back-to-back hard sessions')
   if (lostRestDayViolation)  issues.push('no rest day this week')
+  if (qualityLongViolation)  issues.push('quality too close to the long run')
   const summary = issues.length
     ? `${moveLabel} ${cap(issues.join(' + '))} — review carefully.`
     : `${moveLabel} Hard/easy alternation preserved.`
 
   return {
     weekN:          input.currentWeekN,
-    trigger:        { type: 'session_reorder', detail: { fromDay, toDay, hardAdjacentViolation, lostRestDayViolation } },
+    trigger:        { type: 'session_reorder', detail: { fromDay, toDay, hardAdjacentViolation, lostRestDayViolation, qualityLongViolation } },
     adjustmentType: 'reorder_sessions',
     summary,
     sessionsBefore,

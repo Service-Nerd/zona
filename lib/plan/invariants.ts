@@ -74,6 +74,44 @@ export function weekHasRestDay(
   return sessions.some(s => s?.type === 'rest')
 }
 
+const DAYS_MON_SUN = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+type DayKey = typeof DAYS_MON_SUN[number]
+
+/**
+ * Quality-vs-long spacing check (CoachingPrinciples §7). Used by validatePlan
+ * (constitutional, plan generation) AND by buildReorderAdjustment (move-time).
+ * Returns every violation — calendar-day gap between any quality session
+ * and the week's long run that's below `minDays`. Empty array when spacing
+ * is correct, the week has no long run, or there are no quality sessions.
+ *
+ * Input shape: sessions indexed by DAYS_MON_SUN order. validatePlan emits
+ * `DAYS.map(d => w.sessions[d])`; buildReorderAdjustment already has the
+ * post-move array in this order.
+ *
+ * Decision #4 (PL-MOVE): one constitution, two triggers. The check lives
+ * here; both triggers import and call it. D-08.
+ */
+export function findQualityLongSpacingViolations(
+  weekSessions: ReadonlyArray<{ type?: string } | null | undefined>,
+  minDays: number,
+): Array<{ qualityDay: string; longDay: string; gap: number }> {
+  const longIdx = weekSessions.findIndex(s => s?.type === 'long')
+  if (longIdx < 0) return []
+  const out: Array<{ qualityDay: string; longDay: string; gap: number }> = []
+  for (let qi = 0; qi < weekSessions.length; qi++) {
+    if (weekSessions[qi]?.type !== 'quality') continue
+    const gap = Math.min(Math.abs(qi - longIdx), 7 - Math.abs(qi - longIdx))
+    if (gap < minDays) {
+      out.push({
+        qualityDay: DAYS_MON_SUN[qi] ?? String(qi),
+        longDay:    DAYS_MON_SUN[longIdx] ?? String(longIdx),
+        gap,
+      })
+    }
+  }
+  return out
+}
+
 export interface Violation {
   code: string
   principle_ref: string
@@ -555,21 +593,22 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
 
     // INV-PLAN-QUALITY-LONG-SPACING — ≥ MIN_HOURS_BETWEEN_QUALITY_AND_LONG between quality and long
     // (CoachingPrinciples §7 — heavy legs from quality the day before is the most reliable injury vector)
-    if (long) {
-      const qualities = placedRunning.filter(({ session }) => session.type === 'quality')
-      for (const q of qualities) {
-        if (dayGap(q.day, long.day) < minDaysQualLong) {
-          violations.push({
-            code: 'INV-PLAN-QUALITY-LONG-SPACING',
-            principle_ref: 'CoachingPrinciples §7',
-            severity: 'error',
-            week: w.n, day: q.day,
-            message: 'Quality session too close to long run',
-            actual: dayGap(q.day, long.day),
-            expected: `≥ ${minDaysQualLong} day(s)`,
-          })
-        }
-      }
+    // Single-source-of-truth helper (D-08): findQualityLongSpacingViolations()
+    // is also called by buildReorderAdjustment at move time. Decision #4.
+    const spacingViolations = findQualityLongSpacingViolations(
+      DAYS.map(d => w.sessions[d]),
+      minDaysQualLong,
+    )
+    for (const v of spacingViolations) {
+      violations.push({
+        code: 'INV-PLAN-QUALITY-LONG-SPACING',
+        principle_ref: 'CoachingPrinciples §7',
+        severity: 'error',
+        week: w.n, day: v.qualityDay,
+        message: 'Quality session too close to long run',
+        actual: v.gap,
+        expected: `≥ ${minDaysQualLong} day(s)`,
+      })
     }
 
     // INV-PLAN-QUALITY-EXPECTED — build/peak/taper non-deload weeks with
