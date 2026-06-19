@@ -13,6 +13,7 @@ import { authedFetch } from '@/lib/supabase/authedFetch'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
 import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
+import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
 import { isTrialActive, TRIAL_DAYS } from '@/lib/trial'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
@@ -1663,6 +1664,16 @@ export default function DashboardClient() {
               const liveSessionsCompleted = wSessions.filter(
                 (s: any) => comps[s.key]?.status === 'complete'
               ).length
+              // CoachingPrinciples §65: today is in flight. "Behind / on
+              // track" judgement compares done against what was due by
+              // end of yesterday, not against the full-week target. The
+              // headline number stays "X / full-week" — only the verdict
+              // line beneath honours in-flight.
+              const dueByYesterday = daysDueByEndOfYesterday((currentWeek as any).date)
+              const dueSet = new Set<string>(dueByYesterday)
+              const liveSessionsDueToDate = wSessions.filter(
+                (s: any) => dueSet.has(s.key),
+              ).length
               // Zone discipline — time-weighted hr_in_zone_pct, same formula
               // as the TodayScreen RestraintCard so the two surfaces never
               // disagree about the same week.
@@ -1771,6 +1782,7 @@ export default function DashboardClient() {
                   zoneHistogramHits={zoneHistogramHits}
                   liveSessionsCompleted={liveSessionsCompleted}
                   liveSessionsPlanned={liveSessionsPlanned}
+                  liveSessionsDueToDate={liveSessionsDueToDate}
                   phaseSummary={phaseSummary}
                   onPhaseSummaryGenerated={setPhaseSummary as any}
                   raceReadinessNote={raceReadinessNote}
@@ -7992,7 +8004,7 @@ function LedgerCard({ ledger: ledgerProp }: { ledger?: LedgerSnapshot | null }) 
   )
 }
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, disciplineLedger, onConnect, restingHR, maxHR, healthkitConnectedAt }: {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, liveSessionsDueToDate, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, disciplineLedger, onConnect, restingHR, maxHR, healthkitConnectedAt }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaConnected: boolean
   stravaTokenFailed?: boolean; firstName?: string
@@ -8003,6 +8015,10 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   zoneHistogramHits?: number
   liveSessionsCompleted?: number
   liveSessionsPlanned?: number
+  /** Sessions whose calendar day is strictly past — "due by end of yesterday".
+   *  Used for the verdict line beneath the headline number so "X behind" only
+   *  fires when the runner is genuinely behind. CoachingPrinciples §65. */
+  liveSessionsDueToDate?: number
   // R28 phase-end summary + R29 race readiness
   phaseSummary?: { content: string; generated_at: string; phase_ended: string; transition_week_n: number } | null
   onPhaseSummaryGenerated?: (s: { content: string; generated_at: string; phase_ended: string; transition_week_n: number }) => void
@@ -8174,11 +8190,20 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   }
 
   // ── Sessions context ────────────────────────────────────────────────────
-  function sessionsContext(done: number | null, planned: number | null): { label: string; color: string } {
+  // CoachingPrinciples §65 — today is in flight. The headline number stays
+  // "X / full-week-planned" (honest, the runner can see what's still ahead),
+  // but the verdict line uses sessions-due-by-end-of-yesterday so "X behind"
+  // only fires when the runner is genuinely behind, not at noon Wednesday
+  // when three days remain. "Complete" still requires all planned sessions
+  // done — that's an end-of-week verdict, not a mid-week one.
+  function sessionsContext(done: number | null, planned: number | null, dueToDate: number | null): { label: string; color: string } {
     if (done === null || planned === null) return { label: '—', color: 'var(--mute)' }
-    const behind = planned - done
-    if (behind <= 0) return { label: 'complete', color: 'var(--moss)' }
-    if (done / planned >= 0.7) return { label: 'on track', color: 'var(--moss)' }
+    if (done >= planned) return { label: 'complete', color: 'var(--moss)' }
+    const dueRef = dueToDate ?? planned
+    if (dueRef === 0)            return { label: 'on track', color: 'var(--moss)' }
+    const behind = dueRef - done
+    if (behind <= 0)             return { label: 'on track', color: 'var(--moss)' }
+    if (done / dueRef >= 0.7)    return { label: 'on track', color: 'var(--moss)' }
     return { label: `${behind} behind`, color: 'var(--warn)' }
   }
 
@@ -8190,7 +8215,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   }
 
   const lrc  = loadRatioContext(loadRatio)
-  const sc   = sessionsContext(sessionsCompleted, sessionsPlanned)
+  const sc   = sessionsContext(sessionsCompleted, sessionsPlanned, liveSessionsDueToDate ?? null)
   const wtrc = weeksContext(weeksToRace)
 
   const [loadSheetOpen, setLoadSheetOpen] = useState(false)

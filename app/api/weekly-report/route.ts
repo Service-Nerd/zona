@@ -5,6 +5,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { computeWeeklyReportData, pickSpotlightSession } from '@/lib/coaching/weeklyReport'
+import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildWeeklyReportPrompt } from '@/lib/coaching/prompts/weeklyReport'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
@@ -134,17 +135,20 @@ export async function POST(req: NextRequest) {
   const DAY_ORDER_REPORT = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
   const DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
-  // How far through the week are we? (0 = Monday, 6 = Sunday)
+  // How far through the week are we? (0 = Monday, 6 = Sunday). Used for the
+  // user-facing "it is currently {dayOfWeek}" line and to identify today's
+  // session for the "remaining" bucket below. Day-boundary doctrine is in
+  // the shared helper (CoachingPrinciples §65).
   const weekStart       = new Date(week.date)
   weekStart.setHours(0, 0, 0, 0)
   const todayMidnight   = new Date(); todayMidnight.setHours(0, 0, 0, 0)
   const dayIndex        = Math.min(Math.max(Math.floor((todayMidnight.getTime() - weekStart.getTime()) / 86_400_000), 0), 6)
   const dayOfWeek       = DAY_LABELS[dayIndex]
-  // Today is in flight until midnight — a session due today is not "missed"
-  // even if it's noon and the user hasn't run yet. The "due" window is
-  // strictly past days; today moves into the "remaining" bucket below.
-  // Fixes the brand-corrosive "you missed today's run" at lunchtime case.
-  const daysDueByToday  = DAY_ORDER_REPORT.slice(0, dayIndex)
+  // Today is in flight until midnight — a session due today is NOT missed
+  // even at noon when the runner hasn't run yet. Single source of truth in
+  // `daysDueByEndOfYesterday`; both this route and CoachScreen call it so
+  // the "in-flight vs done" bug can't ship a third time.
+  const daysDueByToday  = daysDueByEndOfYesterday(week.date)
   const todayKey        = DAY_ORDER_REPORT[dayIndex]
 
   // Strength sessions excluded from coaching logic until that feature is built out.

@@ -1074,6 +1074,33 @@ Engine: `buildFitnessSignalAdjustment` in `lib/coaching/planAdjustment.ts`.
 
 ---
 
+## 65. Day boundary — today is in flight until midnight
+
+**Principle.** Every surface that compares "what the runner has done" against "what the plan asked for" treats today as **in flight**, not as **done**. A run due today and not yet completed at noon is **not missed** — the day isn't over. Apply the rule to every report, push, gate, and metric that anchors its comparison on the calendar.
+
+**Why.** Zonna is for runners who already feel behind. The product can't earn its anti-overtraining promise if its own surfaces accuse the runner of falling behind before lunch. We shipped this bug twice on the same day (weekly report at noon; Coach "X of Y" mid-week). Both times the symptom was the same — the runner reads as "behind" while their day is still in front of them. Both times the brand contradicted itself.
+
+**Implementation rule.** Use `lib/coaching/dayBoundary.ts → daysDueByEndOfYesterday(weekStart, now)`. It returns the strictly-past day-keys for the current week — today is excluded. Single source of truth.
+
+**Surfaces that must call it:**
+- Any weekly summary that says "X of Y this week"
+- Any "you missed" message in a notification, banner, or read
+- Any load / volume / discipline comparison whose "actual" is partial and whose "planned" is the full week
+- Any insight that fires off a "you're behind" gate (the `low_data` insight in `weeklyReport.ts` is a current honest example — only fires when 2+ sessions were *strictly* due)
+
+**Surfaces that don't need it:**
+- Load calculations against prior weeks (acuteChronicRatio etc.) — both sides are "actual completed," same basis
+- Push notifications that fire only in the morning window — forward-looking, not backward
+- Discipline ledger (`disciplineLedger.ts`) — already uses user-action signals (Heavy/Wrecked tags, skipped quality), not date arithmetic
+
+**Audit on 2026-06-19 (this commit):** `/api/push/send-daily`, `acuteChronicRatio`, `disciplineLedger`, all clean. Coach `liveSessionsPlanned` was broken — fixed by adding `liveSessionsDueToDate` and using it for the "behind / on track" judgement.
+
+**Test enforcement.** `lib/coaching/dayBoundary.test.ts` locks the exact behaviour — noon Wednesday with a Monday week start returns `['mon', 'tue']` and never `['mon', 'tue', 'wed']`. If a future contributor "fixes" the off-by-one by adding +1, the test will scream.
+
+**Originating decision:** Traynor flagged the pattern in the weekly-report SLT review (2026-06-19) — *"this is the second 'in-flight vs done' bug we've shipped (the picker date-window had the same pattern). Worth pulling out a dayBoundary doctrine."* Deferred at the time as out-of-scope; brought forward to canon the same day.
+
+---
+
 ## 64. Day-level rest — every training week needs at least one rest day
 
 **Principle.** Every plan week must contain at least one rest day (`session.type === 'rest'`). Six-on / one-off is the upper limit for non-elite runners; seven-on is overreaching dressed as commitment. Race week is excluded — the prescribed structure already includes its own rest.
