@@ -10542,8 +10542,9 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                 onOpenBenchmark,
               )}
 
-              {/* Last row — no border below */}
-              <div style={{ padding: '12px 16px' }}>
+              {/* Recovery signals — no longer the last row now that injuries
+                  sit beneath it. Same display-only treatment as before. */}
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>Recovery signals</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)' }}>
@@ -10555,6 +10556,36 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                   Connect below to feed readiness checks.
                 </div>
               </div>
+
+              {/* Injury flags — last row, no border below. Empty list reads
+                  as "None reported" (moss dot — no flags is the healthy state);
+                  any present injuries read as warn (something to watch on hard
+                  sessions). Strings are lowercase tags from plan.meta — cap on
+                  display so they read as labels, not commands. */}
+              {(() => {
+                const injuries = (plan?.meta as any)?.injury_history as string[] | undefined
+                const hasInjuries = !!injuries?.length
+                const displayList = hasInjuries
+                  ? injuries.map(i => i.charAt(0).toUpperCase() + i.slice(1)).join(', ')
+                  : 'None reported'
+                const colour = hasInjuries ? 'var(--warn)' : 'var(--moss)'
+                return (
+                  <div style={{ padding: '12px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>Injury flags</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', textAlign: 'right', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: colour, flexShrink: 0 }} />
+                        {displayList}
+                      </span>
+                    </div>
+                    {hasInjuries && (
+                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', marginTop: '4px', lineHeight: 1.4 }}>
+                        Engine eases hill and long-run prescriptions.
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
             </div>
           )
         })()}

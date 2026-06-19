@@ -37,10 +37,15 @@ function scoreMatch(session: Session, sessionDate: Date, activity: StravaActivit
   let score = 0
 
   const actDate = new Date(activity.start_date)
-  const dayDiff = Math.abs(actDate.getDay() !== sessionDate.getDay() ? 1 : 0)
+  // Calendar-weekday equality (not numerical day distance). Sunday == Sunday
+  // even across week boundaries; the activity-vs-session window-filter above
+  // (±2 days) already constrains how far apart they can be in real time.
+  // The earlier `Math.abs(... ? 1 : 0)` wrapper was dead — abs of 0 or 1 is
+  // the value — and read as a numerical distance, which it isn't.
+  const sameWeekday = actDate.getDay() === sessionDate.getDay()
 
   // Same calendar day = strong signal
-  if (dayDiff === 0) { score += 40; reasons.push('same day') }
+  if (sameWeekday) { score += 40; reasons.push('same day') }
 
   // Distance match — asymmetric band targeting Zonna's over-trainer demographic.
   // Lower bound 0.75 (25% under), upper bound 1.40 (40% over). The previous

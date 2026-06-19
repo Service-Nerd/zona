@@ -392,8 +392,8 @@ export default function ZoneRings(props: Props) {
           }}
         >
           {linkable
-            ? 'Run with heart rate this week — your zones appear here automatically.'
-            : 'No zone data this week yet. Zones come from a run with heart rate.'}
+            ? 'Run with HR this week — the rings fill in on their own.'
+            : 'Nothing for the rings yet. A run with HR is all this needs.'}
         </div>
         {linkable && props.onConnect && (
           <div style={{ marginTop: '14px', textAlign: 'center' }}>
