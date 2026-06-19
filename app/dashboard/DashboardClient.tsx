@@ -294,6 +294,22 @@ export default function DashboardClient() {
   const [disciplineLedger, setDisciplineLedger] = useState<LedgerSnapshot | null>(null)
   const [weeklyReport, setWeeklyReport] = useState<any | null>(null)
   const [pendingAdjustment, setPendingAdjustment] = useState<any | null>(null)
+  // Readiness check response captured from /api/pre-session-readiness at boot.
+  // When `adjustment` is null and `reason` is 'all_clear' / 'no_trigger', the
+  // chip on Today renders "Readiness · steady" with the detail (RHR / HRV /
+  // sleep vs baseline). When `adjustment` is set, `TdReadyHero` handles it
+  // (cooked path). Other reasons (baseline_dormant, session_type_not_eligible,
+  // tier, no_session, no_plan, no_week) render nothing.
+  const [readinessData, setReadinessData] = useState<{
+    adjustment?: any | null
+    reason?: string
+    detail?: {
+      rhrBaseline?: number; rhrToday?: number
+      hrvBaseline?: number; hrvToday?: number; hrvSd?: number
+      sleepHours?: number
+      samplesUsed?: number
+    }
+  } | null>(null)
   // NOTIF-01 — unread notification count drives the Today-screen bell dot.
   // Fetched once at load (paid only) and refreshed on app-resume. Auto-applied
   // plan adjustments (formerly the MeScreen "Recent tweaks" log) now live in
@@ -1003,7 +1019,16 @@ export default function DashboardClient() {
             // Fires HealthKit RHR/HRV/sleep deviations into a pending plan_adjustment
             // row before we read the table below. Silent failure — readiness is one of
             // many adjustment paths and shouldn't block the rest of the dashboard data.
-            try { await authedFetch('/api/pre-session-readiness') } catch {}
+            // Response is captured so the Today screen can render the "steady" chip
+            // when baseline exists but no adjustment fired (the fresh/steady half of
+            // the SLT TD-READY spec). Cooked path stays driven by `plan_adjustments`.
+            try {
+              const readinessRes = await authedFetch('/api/pre-session-readiness')
+              if (readinessRes.ok) {
+                const json = await readinessRes.json().catch(() => null)
+                if (json) setReadinessData(json)
+              }
+            } catch {}
 
             const [analysisRes, reportRes, adjustmentsRes, unreadCountRes, phaseSummaryRes, raceReadinessRes, ledgerData] = await Promise.all([
               supabase.from('run_analysis').select('week_n, session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5').eq('user_id', user.id),
@@ -1631,7 +1656,7 @@ export default function DashboardClient() {
     <div style={s}>
 
       <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: `${(bottomNavH ?? 88) + 16}px`, overscrollBehavior: 'none' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
                   // historical pending rows from repeated test runs (the POST route
@@ -5560,6 +5585,90 @@ function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
   )
 }
 
+// ReadinessSteadyChip — the calm/positive half of the SLT TD-READY spec
+// (fresh/steady/cooked). When the readiness route returns `all_clear` or
+// `no_trigger` with a baseline, render a small chip above the session card
+// so the runner sees Kit IS watching, not just hears from him when something
+// goes wrong. Tap once to expand the underlying numbers (RHR / HRV / sleep
+// vs baseline). Rule-derived — no AIMark per Pattern 16 provenance.
+//
+// CoachingPrinciples §59. Gated upstream — only the cooked path writes a
+// pending row; this chip surfaces the "we ran the check and it's fine" state
+// the route already computes but never previously reached the UI.
+function ReadinessSteadyChip({ detail }: {
+  detail: {
+    rhrBaseline?: number; rhrToday?: number
+    hrvBaseline?: number; hrvToday?: number; hrvSd?: number
+    sleepHours?: number
+    samplesUsed?: number
+  }
+}) {
+  const [expanded, setExpanded] = useState(false)
+
+  // Compose individual signal lines only when the underlying numbers exist.
+  // Some users will have RHR and sleep but not HRV (depends on watch).
+  const lines: string[] = []
+  if (detail.rhrToday != null && detail.rhrBaseline != null) {
+    lines.push(`RHR ${detail.rhrToday} bpm (baseline ${Math.round(detail.rhrBaseline)})`)
+  }
+  if (detail.hrvToday != null && detail.hrvBaseline != null) {
+    lines.push(`HRV ${detail.hrvToday} ms (baseline ${Math.round(detail.hrvBaseline)})`)
+  }
+  if (detail.sleepHours != null) {
+    lines.push(`Sleep ${detail.sleepHours.toFixed(1)}h`)
+  }
+  if (lines.length === 0) return null
+
+  return (
+    <button
+      onClick={() => setExpanded(v => !v)}
+      style={{
+        width:        '100%',
+        background:   'var(--card)',
+        border:       '1px solid var(--line)',
+        borderRadius: 'var(--radius-md)',
+        padding:      '10px 14px 10px 16px',
+        marginBottom: '8px',
+        cursor:       'pointer',
+        textAlign:    'left',
+        position:     'relative',
+      }}
+    >
+      {/* 3px moss left rail — same coaching-surface rule as elsewhere */}
+      <div style={{
+        position:     'absolute',
+        left:         '8px',
+        top:          '10px',
+        bottom:       '10px',
+        width:        '3px',
+        background:   'var(--moss)',
+        borderRadius: '2px',
+      }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between' }}>
+        <span style={{
+          fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
+          color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.12em',
+        }}>
+          Readiness · steady
+        </span>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
+          {expanded ? '▴' : '▾'}
+        </span>
+      </div>
+      {expanded && (
+        <div style={{
+          marginTop: '8px',
+          fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--ink-2)',
+          lineHeight: 1.55,
+          fontVariantNumeric: 'tabular-nums',
+        }}>
+          {lines.join(' · ')}
+        </div>
+      )}
+    </button>
+  )
+}
+
 // AdjustmentBanner — now wraps PendingAdjustmentBanner with API call logic.
 // State management lives here (and in DashboardClient), UI delegated to the shared component.
 function AdjustmentBanner({ adjustment, onConfirmed, onReverted }: {
@@ -5784,7 +5893,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, onLogRaceResult, onReshapeAccepted, onReshapeDismissed }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, onLogRaceResult, onReshapeAccepted, onReshapeDismissed }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   sessionMetricOverrides: Record<string, 'distance' | 'duration'>
@@ -5800,6 +5909,19 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   stravaLoading?: boolean
   firstName?: string
   pendingAdjustment?: any | null
+  /** Captured response from /api/pre-session-readiness — drives the steady chip
+   *  on Today (fresh/steady half of the SLT TD-READY spec). Cooked path is on
+   *  pendingAdjustment, not here. */
+  readinessData?: {
+    adjustment?: any | null
+    reason?: string
+    detail?: {
+      rhrBaseline?: number; rhrToday?: number
+      hrvBaseline?: number; hrvToday?: number; hrvSd?: number
+      sleepHours?: number
+      samplesUsed?: number
+    }
+  } | null
   onAdjustmentConfirmed?: (plan: any) => void
   onAdjustmentReverted?: (plan: any) => void
   trialDaysLeft?: number | null
@@ -6765,6 +6887,25 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 because permission > confirmation on a cooked morning.
                 TD-CLOSE: also hides when today is done — pre-run guidance
                 is irrelevant after the run. */}
+            {/* TD-READY steady chip — the calm/positive half of fresh/steady/
+                cooked. Renders ONLY when: paid, today is selected, today's
+                session is eligible (route returns detail only for quality/
+                long/intervals/tempo), no cooked adjustment firing (TdReadyHero
+                gets that), today isn't done, baseline exists. Tap to expand
+                the numbers (RHR / HRV / sleep vs baseline). Rule-derived,
+                no AIMark per Pattern 16 provenance. */}
+            {hasPaidAccess
+              && selectedSession.today
+              && pendingAdjustment?.trigger_type !== 'readiness_signal'
+              && !completions[selectedCompletionKey]?.status
+              && selectedSession.type !== 'rest'
+              && readinessData
+              && !readinessData.adjustment
+              && (readinessData.reason === 'all_clear' || readinessData.reason === 'no_trigger')
+              && readinessData.detail
+              && <ReadinessSteadyChip detail={readinessData.detail} />
+            }
+
             {hasPaidAccess && selectedSession.today && pendingAdjustment?.trigger_type !== 'readiness_signal' && !completions[selectedCompletionKey]?.status && selectedSession.type !== 'rest' && (
               preRunBandLoading
                 ? <PreRunBandCard state="skeleton" />

@@ -766,6 +766,38 @@ Reference: inline render in `TodayScreen` selectedSession render block.
 
 ---
 
+### 17d. TD-READY steady chip (the calm half of fresh/steady/cooked)
+
+Companion to Pattern 17b (TD-READY hero). When the readiness route returns `all_clear` or `no_trigger` with an established baseline, a small chip renders above the session card: **"READINESS · STEADY"** with a tap-to-expand affordance. Expanded body shows the underlying numbers — RHR (today vs baseline), HRV (today vs baseline), Sleep hours.
+
+**Why it exists:** the SLT TD-READY spec called for fresh/steady/cooked. v1 shipped cooked only. Without the steady chip the runner only ever hears from readiness when something is *wrong* — app-as-pessimist. The chip lets Kit confirm the daily check happened without shouting about it. Wood's habit-loop reward cue, made calm enough to survive Sutherland's permission > score rule.
+
+**Anatomy:**
+- Tappable button row, full width
+- `--card` bg, `1px --line`, `--radius-md`, **3px `--moss` left rail** at `left:8px` (coaching-surface rail)
+- Eyebrow: `11px 700 --moss uppercase, letterSpacing 0.12em` — "Readiness · steady"
+- Disclosure chevron: `▾` (collapsed) / `▴` (expanded)
+- Expanded body: `12px --ink-2`, tabular-nums, one line — "RHR 52 (baseline 50) · HRV 65 (baseline 58) · Sleep 7.2h"
+
+**Eligibility (must satisfy all):**
+- Paid tier
+- Today's session selected
+- Session type ∈ {quality, long, intervals, tempo} (route returns detail only for these)
+- No `readiness_signal` pending adjustment (TdReadyHero handles cooked)
+- Today not done
+- `readinessData.reason === 'all_clear' | 'no_trigger'`
+- `readinessData.detail` present (baseline exists)
+
+**Stacking:** sits above PreRunBandCard (if it would render). Both can coexist — different questions, different scales.
+
+**Tier:** PAID. Underlying signal is HK-derived; free users never reach this state.
+
+**Rule-derived — no AIMark** (Pattern 16 provenance).
+
+Reference: `function ReadinessSteadyChip` in `app/dashboard/DashboardClient.tsx`.
+
+---
+
 ### 17b. TD-READY hero (readiness-led permission)
 
 When recovery signals (RHR / HRV / sleep) fire on a quality / long / intervals / tempo day, the engine writes a `plan_adjustments` row with `trigger_type = 'readiness_signal'`. Instead of the generic `AdjustmentBanner` Confirm/Revert pattern, that row renders as a **TD-READY permission pill** above today's session card. Permission > score. "Ease the session" gives the runner permission to back off; "Run it anyway →" stays equally visible (never a coercive gate).
