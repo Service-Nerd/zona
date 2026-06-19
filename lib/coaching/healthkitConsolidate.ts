@@ -139,7 +139,7 @@ export interface DedupCandidate {
 
 export type DedupDecision =
   | { action: 'insert' }
-  | { action: 'skip'; matchId: string; patchHr: boolean }
+  | { action: 'skip'; matchId: string; patchHr: boolean; convertToHk: boolean }
 
 /**
  * Pure decision: given the incoming HK row and existing candidate rows in the
@@ -152,6 +152,12 @@ export type DedupDecision =
  * refreshed normally (insert/upsert). For cross-source matches (different uuid),
  * prefers a Strava-linked row, then an HR-bearing row, as the canonical to keep;
  * `patchHr` is true when that canonical lacks an HR summary but the incoming has one.
+ *
+ * ADR-011 / HK-SOR: when the canonical is a Strava-only row (apple_health_uuid
+ * is null), `convertToHk` is true — the caller patches that row to
+ * source='apple_health' and sets apple_health_uuid. The Strava-first webhook
+ * race must not strand us without an Apple Health row; HealthKit is the SOR
+ * for run data, Strava is provenance.
  */
 export function resolveHealthKitDuplicate(
   incoming: { appleHealthUuid: string; distanceM: number; startMs: number; hasHrSummary: boolean },
@@ -160,7 +166,7 @@ export function resolveHealthKitDuplicate(
   // Self re-sync of an enriched row — preserve it, don't re-upsert over the link.
   const self = candidates.find(c => c.apple_health_uuid === incoming.appleHealthUuid)
   if (self && self.strava_activity_id != null) {
-    return { action: 'skip', matchId: self.id, patchHr: false }
+    return { action: 'skip', matchId: self.id, patchHr: false, convertToHk: false }
   }
 
   const distMin = incoming.distanceM * (1 - DEDUP_DIST_TOLERANCE)
@@ -183,6 +189,7 @@ export function resolveHealthKitDuplicate(
     action: 'skip',
     matchId: canonical.id,
     patchHr: incoming.hasHrSummary && !canonical.hasHrSummary,
+    convertToHk: canonical.apple_health_uuid == null,
   }
 }
 
@@ -238,21 +245,29 @@ export async function consolidateIncomingHealthKitRow(
 
   if (decision.action === 'insert') return { skipped: false }
 
-  // Lift the HR summary onto the canonical row if it was missing it.
+  // Build the patch: convert a Strava-only canonical to HK provenance (ADR-011),
+  // and/or lift HR onto the canonical if it lacked a summary. Both can apply in
+  // the same write — one round-trip.
+  const patch: Record<string, unknown> = {}
+  if (decision.convertToHk) {
+    patch.source            = 'apple_health'
+    patch.apple_health_uuid = row.apple_health_uuid
+  }
   if (decision.patchHr) {
-    const { error } = await supabase.from('strava_activities').update({
-      avg_hr:               row.avg_hr,
-      max_hr:               row.max_hr,
-      hr_in_zone_pct:       row.hr_in_zone_pct,
-      hr_above_ceiling_pct: row.hr_above_ceiling_pct,
-      hr_below_floor_pct:   row.hr_below_floor_pct,
-      hr_pct_z1:            row.hr_pct_z1,
-      hr_pct_z2:            row.hr_pct_z2,
-      hr_pct_z3:            row.hr_pct_z3,
-      hr_pct_z4_5:          row.hr_pct_z4_5,
-      processed_at:         new Date().toISOString(),
-    }).eq('id', decision.matchId)
-    if (error) console.error('[healthkit-consolidate] HR lift failed', error.message)
+    patch.avg_hr               = row.avg_hr
+    patch.max_hr               = row.max_hr
+    patch.hr_in_zone_pct       = row.hr_in_zone_pct
+    patch.hr_above_ceiling_pct = row.hr_above_ceiling_pct
+    patch.hr_below_floor_pct   = row.hr_below_floor_pct
+    patch.hr_pct_z1            = row.hr_pct_z1
+    patch.hr_pct_z2            = row.hr_pct_z2
+    patch.hr_pct_z3            = row.hr_pct_z3
+    patch.hr_pct_z4_5          = row.hr_pct_z4_5
+  }
+  if (Object.keys(patch).length > 0) {
+    patch.processed_at = new Date().toISOString()
+    const { error } = await supabase.from('strava_activities').update(patch).eq('id', decision.matchId)
+    if (error) console.error('[healthkit-consolidate] canonical patch failed', error.message)
   }
 
   return { skipped: true, canonicalId: decision.matchId }

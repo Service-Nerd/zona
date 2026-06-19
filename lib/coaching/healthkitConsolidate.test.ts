@@ -31,7 +31,7 @@ describe('resolveHealthKitDuplicate', () => {
   it('skips a re-sync of an already-enriched same-uuid row (preserve the Strava link)', () => {
     // Re-upserting would null strava_activity_id + overwrite Strava HR — the bug.
     const c = cand({ id: 'self', apple_health_uuid: 'INCOMING', strava_activity_id: 123, hasHrSummary: true })
-    expect(resolveHealthKitDuplicate(incoming({ uuid: 'INCOMING' }), [c])).toEqual({ action: 'skip', matchId: 'self', patchHr: false })
+    expect(resolveHealthKitDuplicate(incoming({ uuid: 'INCOMING' }), [c])).toEqual({ action: 'skip', matchId: 'self', patchHr: false, convertToHk: false })
   })
 
   it('inserts (refreshes) a re-sync of an unenriched same-uuid row', () => {
@@ -39,10 +39,29 @@ describe('resolveHealthKitDuplicate', () => {
     expect(resolveHealthKitDuplicate(incoming({ uuid: 'INCOMING' }), [c]).action).toBe('insert')
   })
 
-  it('skips when a Strava row covers the same run', () => {
-    const c = cand({ id: 's1', apple_health_uuid: null, strava_activity_id: 999, hasHrSummary: true })
+  it('skips and converts a Strava-only row to HK canonical (ADR-011: HK is SOR)', () => {
+    // Strava webhook landed first → row has strava_activity_id but no
+    // apple_health_uuid. HK ingest arrives second: instead of suppressing the
+    // HK side and leaving us Strava-only, we patch the row to source=HK.
+    // NB: build the candidate directly — `cand({ apple_health_uuid: null })`
+    // gets silently swapped to 'HK_OTHER' by the factory's `??` fallback.
+    const c: DedupCandidate = {
+      id:                 's1',
+      apple_health_uuid:  null,
+      strava_activity_id: 999,
+      distance_m:         10_000,
+      start_ms:           T0,
+      hasHrSummary:       true,
+    }
     const d = resolveHealthKitDuplicate(incoming(), [c])
-    expect(d).toEqual({ action: 'skip', matchId: 's1', patchHr: false })
+    expect(d).toEqual({ action: 'skip', matchId: 's1', patchHr: false, convertToHk: true })
+  })
+
+  it('does not convert when the canonical is already an HK row', () => {
+    // Cross-source HK ingest from a second app (e.g. Garmin Connect): the
+    // existing HK row stays canonical, no source change.
+    const c = cand({ id: 'hk2', apple_health_uuid: 'HK_GARMIN', strava_activity_id: null, hasHrSummary: true })
+    expect(resolveHealthKitDuplicate(incoming(), [c])).toEqual({ action: 'skip', matchId: 'hk2', patchHr: false, convertToHk: false })
   })
 
   it('skips when another HealthKit row (different uuid) covers the same run', () => {
@@ -74,16 +93,16 @@ describe('resolveHealthKitDuplicate', () => {
 
   it('patches HR when the canonical lacks a summary and the incoming has one', () => {
     const c = cand({ id: 'noHr', hasHrSummary: false })
-    expect(resolveHealthKitDuplicate(incoming({ hr: true }), [c])).toEqual({ action: 'skip', matchId: 'noHr', patchHr: true })
+    expect(resolveHealthKitDuplicate(incoming({ hr: true }), [c])).toEqual({ action: 'skip', matchId: 'noHr', patchHr: true, convertToHk: false })
   })
 
   it('does not patch HR when the canonical already has a summary', () => {
     const c = cand({ id: 'hasHr', hasHrSummary: true })
-    expect(resolveHealthKitDuplicate(incoming({ hr: true }), [c])).toEqual({ action: 'skip', matchId: 'hasHr', patchHr: false })
+    expect(resolveHealthKitDuplicate(incoming({ hr: true }), [c])).toEqual({ action: 'skip', matchId: 'hasHr', patchHr: false, convertToHk: false })
   })
 
   it('does not patch HR when the incoming has no summary', () => {
     const c = cand({ id: 'noHr', hasHrSummary: false })
-    expect(resolveHealthKitDuplicate(incoming({ hr: false }), [c])).toEqual({ action: 'skip', matchId: 'noHr', patchHr: false })
+    expect(resolveHealthKitDuplicate(incoming({ hr: false }), [c])).toEqual({ action: 'skip', matchId: 'noHr', patchHr: false, convertToHk: false })
   })
 })

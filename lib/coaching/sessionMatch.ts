@@ -42,12 +42,16 @@ function scoreMatch(session: Session, sessionDate: Date, activity: StravaActivit
   // Same calendar day = strong signal
   if (dayDiff === 0) { score += 40; reasons.push('same day') }
 
-  // Distance match (within 20%)
+  // Distance match — asymmetric band targeting Zonna's over-trainer demographic.
+  // Lower bound 0.75 (25% under), upper bound 1.40 (40% over). The previous
+  // symmetric ±20% missed runners who routinely tack 2–3 km onto an easy session
+  // — the exact "blurring the zones" pattern the brand calls out. A 7 km plan
+  // and a 9.3 km actual (ratio 1.33) is the same session, not a stranger.
   const plannedKm = session.distance_km
   if (plannedKm) {
     const actKm = activity.distance / 1000
     const ratio = actKm / plannedKm
-    if (ratio >= 0.80 && ratio <= 1.25) {
+    if (ratio >= 0.75 && ratio <= 1.40) {
       score += 30
       reasons.push('distance match')
     }
