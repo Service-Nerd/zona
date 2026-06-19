@@ -3108,6 +3108,11 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   // voice anchor. Hook handles its own fetch + cancellation.
   const ledgerSnapshot = useDisciplineLedger()
   const [loadingClaimed, setLoadingClaimed] = useState(false)
+  // Picker load errors used to disappear into `catch {} finally {}` and the
+  // user just saw "No activities found" — same UI as a legitimate empty list.
+  // Surface failures explicitly so silent fetch breakage stops looking like
+  // missing data. Layer 2 of the sync fix.
+  const [claimedError, setClaimedError] = useState<string | null>(null)
   const [zoneSheetOpen, setZoneSheetOpen] = useState(false)
   const [rpe, setRpe] = useState<number | null>(null)
   const [fatigueTag, setFatigueTag] = useState<string | null>(null)
@@ -3191,6 +3196,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
     if (view !== 'complete') return
     async function loadClaimed() {
       setLoadingClaimed(true)
+      setClaimedError(null)
       try {
         const [completionsRes, activitiesRes] = await Promise.all([
           supabase
@@ -3207,6 +3213,16 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             .order('start_date', { ascending: false })
             .limit(100),
         ])
+
+        // Supabase returns `.error` on RLS / query failures without throwing.
+        // The old `catch {}` block missed these entirely — the picker showed
+        // "No activities found" against a real DB error. Treat as failure.
+        if (completionsRes.error || activitiesRes.error) {
+          const msg = completionsRes.error?.message || activitiesRes.error?.message || 'Unknown error'
+          console.error('[picker] load failed', msg)
+          setClaimedError(msg)
+          return
+        }
 
         const ids = new Set<any>()
         ;(completionsRes.data ?? []).forEach((r: any) => {
@@ -3259,7 +3275,11 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               }
           )
         setFreshRuns(extras)
-      } catch {} finally { setLoadingClaimed(false) }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error('[picker] load threw', msg)
+        setClaimedError(msg)
+      } finally { setLoadingClaimed(false) }
     }
     loadClaimed()
   }, [view])
@@ -4369,6 +4389,14 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>Optional — select from recent runs</div>
           {loadingClaimed ? (
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0' }}>Loading activities...</div>
+          ) : claimedError ? (
+            // Explicit failure path. Without this branch the same UI rendered
+            // for a real load error as for "no matches" — silent breakage was
+            // unrecoverable by sight. Honest one-line says what happened and
+            // points to the only meaningful next action (retry by reopening).
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', padding: '12px 0', marginBottom: '8px', lineHeight: 1.5 }}>
+              Couldn&apos;t load activities. Tap Back, then try again.
+            </div>
           ) : stravaRuns.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', maxHeight: '200px', overflowY: 'auto' }}>
               {stravaRuns.slice(0, 20).map((run: any) => {
