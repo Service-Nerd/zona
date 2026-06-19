@@ -706,6 +706,28 @@ Reference: `components/shared/SectionLabel.tsx` (if extracted) or inline in `Das
 
 ---
 
+### 17b. TD-READY hero (readiness-led permission)
+
+When recovery signals (RHR / HRV / sleep) fire on a quality / long / intervals / tempo day, the engine writes a `plan_adjustments` row with `trigger_type = 'readiness_signal'`. Instead of the generic `AdjustmentBanner` Confirm/Revert pattern, that row renders as a **TD-READY permission pill** above today's session card. Permission > score. "Ease the session" gives the runner permission to back off; "Run it anyway →" stays equally visible (never a coercive gate).
+
+**Anatomy:**
+- `--card` bg, `1px --line`, `--radius-lg`, **3px `--warn` left rail** at `left: 8px` (coaching-caution rail, never red — INV-DS-005)
+- Eyebrow `Readiness · easing today` + reason chips: `RHR up · HRV down · Short sleep`
+- Permission line: 15px 400 `--ink`, line-height 1.55 — this is the adjustment's `summary`, already in Kit voice from `buildReadinessAdjustment`
+- Two buttons: primary `--moss` "Ease the session" (= confirm API), secondary text "Run it anyway →" (= revert API)
+- **No AIMark** — rule-derived (CoachingPrinciples §59), not model output (Pattern 16 provenance honesty)
+
+**Stacking against PreRunBandCard (Decision 2026-06-19):**
+PreRunBandCard self-hides when a readiness-signal pending adjustment exists. Same hero space, different jobs — readiness wins on a cooked morning because permission > confirmation. PreRunBandCard returns to normal once the user eases or runs anyway.
+
+**Tier:** PAID (the underlying `/api/pre-session-readiness` route is gated; free users never see a pending readiness row).
+
+**Eligibility:** today's session type ∈ `{quality, long, intervals, tempo}`. Easy / recovery / rest never trigger — an easy day doesn't need easing.
+
+Reference: `function TdReadyHero` in `app/dashboard/DashboardClient.tsx`. Engine: `lib/coaching/planAdjustment.ts → buildReadinessAdjustment`. Thresholds: `GENERATION_CONFIG.READINESS`.
+
+---
+
 ### 18a. Coach screen composition (CO-ONE)
 
 The Coach screen carries **exactly one Kit voice** — a single authored read at the top, single `CoachByline` + `AIMark`. Everything below is **unvoiced evidence**: rings, stats, trends, ledger.

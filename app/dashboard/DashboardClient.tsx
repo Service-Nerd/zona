@@ -5373,6 +5373,152 @@ function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, 
 
 // ── ADJUSTMENT BANNER ────────────────────────────────────────────────────
 
+// TD-READY hero — readiness-led pre-session permission.
+//
+// When recovery signals (RHR / HRV / sleep) say today is cooked, the plan
+// proposes an eased prescription. Default action: "Ease the session" — the
+// app gives permission to back off. Override: "Run it anyway →" — never a
+// coercive gate; the runner stays in charge. Rule-derived (no AIMark).
+//
+// Replaces the generic AdjustmentBanner for trigger_type === 'readiness_signal'
+// so the call-to-action reads as permission, not as system-prompts-please-confirm.
+// Other adjustment types (load_spike, fatigue, etc.) keep using AdjustmentBanner.
+//
+// CoachingPrinciples §59. PAID gated upstream — the readiness signal route
+// returns null for free users, so no pending row is ever written.
+function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
+  adjustment: any
+  onConfirmed?: (plan: any) => void
+  onReverted?:  (plan: any) => void
+}) {
+  const [loading, setLoading] = useState(false)
+  const detail = adjustment.trigger_detail ?? {}
+
+  // Compose the reason chips from the boolean signals the engine recorded.
+  const reasonChips: string[] = []
+  if (detail.isElevatedRHR) reasonChips.push('RHR up')
+  if (detail.isLowHRV)      reasonChips.push('HRV down')
+  if (detail.isShortSleep)  reasonChips.push('Short sleep')
+
+  async function ease() {
+    setLoading(true)
+    try {
+      const res  = await authedFetch('/api/confirm-adjustment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adjustment_id: adjustment.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      onConfirmed?.(data.plan)
+    } catch { /* keep visible on error */ } finally { setLoading(false) }
+  }
+
+  async function runAnyway() {
+    setLoading(true)
+    try {
+      const res  = await authedFetch('/api/revert-adjustment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adjustment_id: adjustment.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      onReverted?.(data.plan)
+    } catch { /* keep visible on error */ } finally { setLoading(false) }
+  }
+
+  return (
+    <div style={{
+      background:   'var(--card)',
+      borderRadius: 'var(--radius-lg)',
+      border:       '1px solid var(--line)',
+      padding:      '18px 20px 16px 22px',
+      position:     'relative',
+      marginBottom: '16px',
+    }}>
+      {/* 3px warn left rail — coaching-warning rail, NOT moss CTA rail.
+          Same colour rule as the discipline ledger: rule-derived caution
+          uses --warn, never --danger (no red in training UI per INV-DS-005). */}
+      <div style={{
+        position:     'absolute',
+        left:         '8px',
+        top:          '14px',
+        bottom:       '14px',
+        width:        '3px',
+        background:   'var(--warn)',
+        borderRadius: '2px',
+      }} />
+
+      {/* Eyebrow + reason chips */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
+        <span style={{
+          fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+          color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.12em',
+        }}>
+          Readiness · easing today
+        </span>
+        {reasonChips.length > 0 && (
+          <>
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', opacity: 0.5 }}>·</span>
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
+              {reasonChips.join(' · ')}
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* Permission line — the summary IS Kit-voice already (see
+          buildReadinessAdjustment in lib/coaching/planAdjustment.ts). */}
+      <p style={{
+        fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400,
+        color: 'var(--ink)', lineHeight: 1.55, margin: '0 0 14px',
+      }}>
+        {adjustment.summary}
+      </p>
+
+      {/* Two actions: ease (primary) + run-anyway (secondary).
+          Override stays equally visible — restraint isn't enforced. */}
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <button
+          onClick={ease}
+          disabled={loading}
+          style={{
+            background:   'var(--moss)',
+            color:        'var(--card)',
+            border:       'none',
+            borderRadius: '22px',
+            padding:      '0 18px',
+            minHeight:    '44px',
+            fontFamily:   'var(--font-ui)', fontSize: '13px', fontWeight: 600,
+            letterSpacing:'0.04em',
+            cursor:       loading ? 'default' : 'pointer',
+            opacity:      loading ? 0.5 : 1,
+          }}
+        >
+          Ease the session
+        </button>
+        <button
+          onClick={runAnyway}
+          disabled={loading}
+          style={{
+            background:   'transparent',
+            color:        'var(--ink-2)',
+            border:       'none',
+            padding:      '0 12px',
+            minHeight:    '44px',
+            fontFamily:   'var(--font-ui)', fontSize: '13px', fontWeight: 500,
+            cursor:       loading ? 'default' : 'pointer',
+            opacity:      loading ? 0.5 : 1,
+          }}
+        >
+          Run it anyway →
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // AdjustmentBanner — now wraps PendingAdjustmentBanner with API call logic.
 // State management lives here (and in DashboardClient), UI delegated to the shared component.
 function AdjustmentBanner({ adjustment, onConfirmed, onReverted }: {
@@ -6352,15 +6498,28 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           </div>
         )}
 
-        {/* Pending adjustment — above coach note, prominent position */}
+        {/* Pending adjustment — above coach note, prominent position.
+            TD-READY: readiness-signal adjustments render as a permission
+            pill instead of the generic confirm/revert banner — "ease the
+            session" reads as permission, not as system-please-confirm.
+            Other adjustment triggers (load_spike, fatigue, etc.) keep the
+            existing banner. */}
         {pendingAdjustment && (
-          <div style={{ marginBottom: '16px' }}>
-            <AdjustmentBanner
+          pendingAdjustment.trigger_type === 'readiness_signal' ? (
+            <TdReadyHero
               adjustment={pendingAdjustment}
               onConfirmed={onAdjustmentConfirmed}
               onReverted={onAdjustmentReverted}
             />
-          </div>
+          ) : (
+            <div style={{ marginBottom: '16px' }}>
+              <AdjustmentBanner
+                adjustment={pendingAdjustment}
+                onConfirmed={onAdjustmentConfirmed}
+                onReverted={onAdjustmentReverted}
+              />
+            </div>
+          )
         )}
 
         {/* Coach note — paid/trial only. Free users see no coach card.
@@ -6492,8 +6651,11 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
             {/* R25 Cut #2 — pre-run band. Shows cohort stats for similar past
                 runs when the user is about to head out. PAID, today only.
-                Formula-derived: no AIMark. Absent when < 3 similar runs. */}
-            {hasPaidAccess && selectedSession.today && (
+                Formula-derived: no AIMark. Absent when < 3 similar runs.
+                TD-READY (Decision #3): hides when a readiness-signal pending
+                adjustment exists. Both want this real-estate; readiness wins
+                because permission > confirmation on a cooked morning. */}
+            {hasPaidAccess && selectedSession.today && pendingAdjustment?.trigger_type !== 'readiness_signal' && (
               preRunBandLoading
                 ? <PreRunBandCard state="skeleton" />
                 : preRunBand
