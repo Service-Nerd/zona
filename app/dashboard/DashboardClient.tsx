@@ -247,6 +247,9 @@ export default function DashboardClient() {
   const [sessionMetricOverrides, setSessionMetricOverrides] = useState<Record<string, 'distance' | 'duration'>>({})
   const [restingHR, setRestingHR] = useState<number | null>(null)
   const [maxHR, setMaxHR] = useState<number | null>(null)
+  // X-FIRSTRUN: detect Apple Health connection state so we can render an
+  // honest pre-data view ("Connect a source" vs "Set your HR" vs "Run one").
+  const [healthkitConnectedAt, setHealthkitConnectedAt] = useState<string | null>(null)
   const [birthYear, setBirthYear] = useState<number | null>(null)
   const [firstName, setFirstName] = useState<string>('')
   const [lastName, setLastName] = useState<string>('')
@@ -746,7 +749,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes, subRes, guidanceRes, pendingReshapeRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, birth_year, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at, push_permission_seen').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, birth_year, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at, push_permission_seen, healthkit_connected_at').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
@@ -871,6 +874,7 @@ export default function DashboardClient() {
         // HR data
         if (data?.resting_hr) setRestingHR(data.resting_hr)
         if (data?.max_hr) setMaxHR(data.max_hr)
+        if (data?.healthkit_connected_at) setHealthkitConnectedAt(data.healthkit_connected_at)
         // Prefer birth_year (post-migration source of truth). Fall back to the
         // year of legacy date_of_birth for rows where the backfill migration
         // hasn't run yet (dev environments). App Store 5.1.1 — App stores only
@@ -1779,6 +1783,9 @@ export default function DashboardClient() {
                   runAnalysisReady={runAnalysisReady}
                   disciplineLedger={disciplineLedger}
                   onConnect={() => setScreen('me')}
+                  restingHR={restingHR}
+                  maxHR={maxHR}
+                  healthkitConnectedAt={healthkitConnectedAt}
                 />
               )
             })()
@@ -7725,7 +7732,7 @@ function LedgerCard({ ledger: ledgerProp }: { ledger?: LedgerSnapshot | null }) 
   )
 }
 
-function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, disciplineLedger, onConnect }: {
+function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, stravaTokenFailed, firstName, weeklyReport, onReportGenerated, preferredUnits = 'km', zoneDisciplinePercent, zoneTimePctByZone, zoneHistogramHits, liveSessionsCompleted, liveSessionsPlanned, phaseSummary, onPhaseSummaryGenerated, raceReadinessNote, onRaceReadinessGenerated, zoneDriftPattern, zoneDriftDismissedAt, onDismissZoneDrift, benchmarkRecalDismissedAt, onDismissRecal, onOpenBenchmark, runAnalysisReady = true, disciplineLedger, onConnect, restingHR, maxHR, healthkitConnectedAt }: {
   plan: Plan; currentWeek: Week; runs: any[] | null; stravaLoading: boolean
   stravaConnected: boolean
   stravaTokenFailed?: boolean; firstName?: string
@@ -7759,6 +7766,11 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   /** Navigate to where a runner connects a run source (Profile). Shown in the
    *  ZoneRings empty state when nothing is linked. */
   onConnect?: () => void
+  /** X-FIRSTRUN: pre-data state detection. The empty Kit read selects copy +
+   *  CTA based on which signal is missing (source / runs / HR). */
+  restingHR?: number | null
+  maxHR?: number | null
+  healthkitConnectedAt?: string | null
 }) {
   const [loading, setLoading]           = useState(false)
   const [error, setError]               = useState<string | null>(null)
@@ -8071,6 +8083,11 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
       // race-readiness content, phase-summary content). Empty state is
       // hand-authored → no AIMark in that case (Pattern 16 provenance).
       hasAiContent: boolean
+      // X-FIRSTRUN: empty-state primary action. Replaces the "Generate
+      // report" button when present (no point generating from no data).
+      // Routes to connect-source or HR-setup depending on which signal
+      // is missing.
+      cta?: { label: string; onClick: () => void } | null
     }
 
     // Race leads (priority 1) — replaces base spine, suppresses drift.
@@ -8132,13 +8149,50 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
 
     // No report yet → hand-authored line. No AIMark per Pattern 16 provenance
     // honesty — empty-state copy is not model output.
-    const emptyBody = !runs?.length && !stravaTokenFailed
-      ? "Link a run with heart rate and I'll have something to say."
-      : 'Generate a report to see how this week is tracking.'
+    //
+    // X-FIRSTRUN: branch on which signal is actually missing so the empty
+    // state teaches the ONE next action instead of a generic "log a run"
+    // line. Without HR baseline, the read is honest about what's blocked —
+    // a runner could be logging perfectly and still see no coaching because
+    // they never set their max HR. State machine:
+    //   - no-source: no Strava token AND no Apple Health connection
+    //   - no-runs:   source connected but no runs in the snapshot
+    //   - no-hr:     runs exist but RHR or MaxHR missing
+    //   - last-week: stale weekly report (handled above; falls through)
+    const hasHkConnected = !!healthkitConnectedAt
+    const hasAnySource   = stravaConnected || hasHkConnected
+    const hasRuns        = !!runs?.length
+    const hasHr          = !!restingHR && !!maxHR
+
+    let emptyHeadline: string
+    let emptyBody:     string
+    let emptyCta:      { label: string; onClick: () => void } | null = null
+
+    if (weeklyReport && !reportIsCurrent) {
+      emptyHeadline = "Last week's report is below."
+      emptyBody     = 'Generate a report to see how this week is tracking.'
+    } else if (!hasAnySource) {
+      emptyHeadline = "Nothing to coach from yet."
+      emptyBody     = 'Connect Apple Health or Strava so I can see your runs. I keep quiet until I have something honest to say.'
+      emptyCta      = onConnect ? { label: 'Connect a source', onClick: onConnect } : null
+    } else if (!hasRuns) {
+      emptyHeadline = "Waiting on your first run."
+      emptyBody     = "Go log a session — even an easy one. Once I see a run with heart rate, I can say something useful."
+      emptyCta      = null
+    } else if (!hasHr) {
+      emptyHeadline = "One more thing."
+      emptyBody     = "Set your resting and max heart rate. Without those, the zone targets are guesses."
+      emptyCta      = onOpenBenchmark ? { label: 'Set heart rate', onClick: onOpenBenchmark } : null
+    } else {
+      emptyHeadline = 'Nothing to read yet.'
+      emptyBody     = 'Generate a report to see how this week is tracking.'
+    }
+
     return {
-      headline: weeklyReport && !reportIsCurrent ? "Last week's report is below." : 'Nothing to read yet.',
+      headline: emptyHeadline,
       body:     emptyBody,
       action:   null,
+      cta:      emptyCta,
       isLoading: false,
       hasAiContent: false,
     } as ReadShape
@@ -8267,25 +8321,48 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                 Already refreshed today.
               </span>
             )}
-            <button
-              onClick={generateReport}
-              disabled={loading || refreshBlocked}
-              style={{
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-                color: 'var(--moss)',
-                background: 'rgba(107,142,107,0.10)',
-                border: 'none',
-                borderRadius: '22px',
-                padding: '0 18px',
-                minHeight: '44px',
-                cursor: (loading || refreshBlocked) ? 'default' : 'pointer',
-                opacity: (loading || refreshBlocked) ? 0.4 : 1,
-              }}
-            >
-              {loading && <AIMark size={10} color="var(--moss)" working />}
-              {loading ? 'Generating' : (reportIsCurrent && weeklyReport?.headline ? 'Refresh' : 'Generate report')}
-            </button>
+            {consolidatedRead.cta ? (
+              // X-FIRSTRUN: pre-data primary action takes over the button slot.
+              // No "Generate report" until there's data to generate from — the
+              // empty state teaches the one next action that unblocks coaching.
+              <button
+                onClick={consolidatedRead.cta.onClick}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
+                  color: 'var(--card)',
+                  background: 'var(--moss)',
+                  border: 'none',
+                  borderRadius: '22px',
+                  padding: '0 18px',
+                  minHeight: '44px',
+                  cursor: 'pointer',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {consolidatedRead.cta.label} →
+              </button>
+            ) : (
+              <button
+                onClick={generateReport}
+                disabled={loading || refreshBlocked}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
+                  color: 'var(--moss)',
+                  background: 'rgba(107,142,107,0.10)',
+                  border: 'none',
+                  borderRadius: '22px',
+                  padding: '0 18px',
+                  minHeight: '44px',
+                  cursor: (loading || refreshBlocked) ? 'default' : 'pointer',
+                  opacity: (loading || refreshBlocked) ? 0.4 : 1,
+                }}
+              >
+                {loading && <AIMark size={10} color="var(--moss)" working />}
+                {loading ? 'Generating' : (reportIsCurrent && weeklyReport?.headline ? 'Refresh' : 'Generate report')}
+              </button>
+            )}
             {reportIsCurrent && weeklyReport?.zone_discipline_score != null && (
               <ShareWeekButton weekN={weeklyReport.week_n} />
             )}

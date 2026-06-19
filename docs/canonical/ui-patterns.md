@@ -728,10 +728,19 @@ The Coach screen carries **exactly one Kit voice** — a single authored read at
 - "Generate / Refresh report" button + `ShareWeekButton` attached
 - Loading: 3 shimmer lines at 85% / 100% / 70%, `rgba(107,142,107,0.12)`
 
-**Empty state (no analysed runs):**
-- Dimmed Kit identity (avatar gradient + name + eyebrow, opacity ~0.45)
+**Empty state — X-FIRSTRUN state-aware (no analysed runs):**
+- Dimmed Kit identity (avatar + name + eyebrow, opacity ~0.45)
 - **NO AIMark** — empty-state line is hand-authored, not model output (Pattern 16 provenance honesty)
-- One line: "Link a run with heart rate and I'll have something to say." or "Generate a report to see how this week is tracking."
+- The body line + CTA branch on which signal is actually missing — the empty state teaches the ONE next action instead of a generic "log a run":
+
+| State | Detected when | Headline | Body | CTA button |
+|---|---|---|---|---|
+| **no-source** | no Strava token AND no Apple Health connection | "Nothing to coach from yet." | "Connect Apple Health or Strava so I can see your runs. I keep quiet until I have something honest to say." | "Connect a source →" → Profile |
+| **no-runs** | source connected but `runs.length === 0` | "Waiting on your first run." | "Go log a session — even an easy one. Once I see a run with heart rate, I can say something useful." | none (action is real-world) |
+| **no-hr** | runs exist but RHR or MaxHR missing | "One more thing." | "Set your resting and max heart rate. Without those, the zone targets are guesses." | "Set heart rate →" → Benchmark |
+| **last-week** | weekly report exists for previous week | "Last week's report is below." | "Generate a report to see how this week is tracking." | "Generate report" |
+
+The CTA button replaces the "Generate report" button when present — no generating from no data. Auto-resolves as data lands (the read re-evaluates on every render against the current user state).
 
 **Evidence below — unvoiced, fixed order:**
 1. ZoneRings (Pattern 22) — unchanged
