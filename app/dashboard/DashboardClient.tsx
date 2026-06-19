@@ -832,19 +832,28 @@ export default function DashboardClient() {
             const weekOverrides = (overridesRes.data ?? []).filter((o: any) => o.week_n === wN)
             const effective = resolveEffectiveSessions(week, weekOverrides)
             for (const dayKey of WEEK_DAYS) {
-              const dayIdx = WEEK_DAYS.indexOf(dayKey)
-              // Calendar date for this day within the current week. Plan weeks
-              // start on Monday by convention; mon = weekStart + 0, sun = +6.
-              const dayDate = new Date(weekStart)
-              dayDate.setDate(weekStart.getDate() + dayIdx)
+              const dayDate = computeSessionDate(weekStart, dayKey)
               if (dayDate >= today) break // today or future — not missable
               const eff = effective[dayKey]
               if (!eff || eff.session.type === 'rest') continue
               if (!thisWeekCompletions[eff.originalDay]) {
+                // Build the activeSessionData shape now — same fields the card
+                // path attaches (rawDate, weekN, completion) — so opening the
+                // session via "I actually ran it" yields the same picker
+                // behaviour as opening via the card. Without these fields the
+                // picker falls back to a date-agnostic 5-day window and shows
+                // runs from days after the missed session (which look like
+                // duplicates of the actual run when Strava names are generic).
                 setMissedSessionPrompt({
                   weekN: wN,
                   day: dayKey,                        // slot — used for display
-                  session: { ...eff.session, key: eff.originalDay },  // canonical id for upsert
+                  session: {
+                    ...eff.session,
+                    key:        eff.originalDay,      // canonical id for upsert
+                    weekN:      wN,
+                    rawDate:    dayDate.toISOString(),
+                    completion: thisWeekCompletions[eff.originalDay] ?? null,
+                  },
                 })
                 break // one at a time
               }
@@ -4434,6 +4443,16 @@ const DOW_LETTER: Record<string, string> = { mon:'M', tue:'T', wed:'W', thu:'T',
 const DOW_FULL:   Record<string, string> = { mon:'Mon', tue:'Tue', wed:'Wed', thu:'Thu', fri:'Fri', sat:'Sat', sun:'Sun' }
 const DAY_OFFSETS: Record<string, number> = { mon:0, tue:1, wed:2, thu:3, fri:4, sat:5, sun:6 }
 
+/** Single source of truth for "what calendar date does this session fall on?".
+ *  Used by TodayScreen.sessions[], PlanScreen, and the missed-session boot scan
+ *  so every entry point computes rawDate identically. Picker date-window logic
+ *  depends on consistent rawDate construction across paths. */
+function computeSessionDate(weekStartDate: Date, dayKey: string): Date {
+  const d = new Date(weekStartDate)
+  d.setDate(d.getDate() + (DAY_OFFSETS[dayKey] ?? 0))
+  return d
+}
+
 const FATIGUE_COLORS: Record<string, string> = {
   Fresh:  'var(--session-green)',
   Fine:   'var(--accent)',
@@ -5650,8 +5669,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         if (completion.status !== 'complete') return
         if (completion.rpe != null) return
         if (!completion.strava_activity_id && !completion.apple_health_uuid) return
-        const sessionDate = new Date(weekStart)
-        sessionDate.setDate(sessionDate.getDate() + idx)
+        const sessionDate = computeSessionDate(weekStart, dayKey)
         if (sessionDate < cutoff || sessionDate > now) return
         const session = (week.sessions as Record<string, any> | undefined)?.[dayKey]
         if (!session) return
@@ -5732,8 +5750,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   const sessions: SessionEntry[] = useMemo(() => DOW_ORDER.map(key => {
     const s = effectiveWs[key]
     const originalDay = s?.originalDay ?? key
-    const d = new Date(weekStartDate)
-    d.setDate(d.getDate() + DAY_OFFSETS[key])
+    const d = computeSessionDate(weekStartDate, key)
     const displayDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
     // Parse legacy free-text detail as fallback for hand-authored plans
     const parsed = s ? parseSessionDetail(s.detail ?? null) : {}
