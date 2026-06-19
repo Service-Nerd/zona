@@ -706,7 +706,7 @@ Reference: `components/shared/SectionLabel.tsx` (if extracted) or inline in `Das
 
 ---
 
-### 17. ME-ATHLETE — "What Kit knows about you"
+### 17c. ME-ATHLETE — "What Kit knows about you"
 
 Read-only synthesis card at the top of Me, above existing editors. Surfaces the inputs the engine actually runs on — zones, benchmark freshness, recovery signals — so configuration reads as identity, not as chores. Existing editor rows below remain untouched; this card is the *read*, not a replacement.
 
