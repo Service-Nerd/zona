@@ -5157,13 +5157,37 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
           )
         })()}
 
-        {/* Strava if complete */}
-        {isComplete && completion?.strava_activity_name && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0 14px 10px' }}>
-            <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--strava)', flexShrink: 0 }} />
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--strava)' }}>{completion.strava_activity_name}</span>
-          </div>
-        )}
+        {/* Source attribution on a logged session — mirrors the canonical
+            "via {source} · {name}" pattern in components/shared/SessionCard.tsx
+            (DS-03). HK-first per ADR-011: if both IDs are present (Strava webhook
+            → HK consolidation), the row is HK-canonical so we credit Apple
+            Health. Strava-only rows keep Strava colour to respect API display
+            requirements. Provenance is meta-text, not a status signal — no dot,
+            muted treatment. */}
+        {isComplete && completion?.strava_activity_name && (() => {
+          const isHk     = completion?.apple_health_uuid != null
+          const isStrava = !isHk && completion?.strava_activity_id != null
+          const colour   = isStrava ? 'var(--strava)' : 'var(--mute)'
+          const label    = isHk ? `via Apple Health · ${completion.strava_activity_name}`
+                          : isStrava ? `via Strava · ${completion.strava_activity_name}`
+                          : completion.strava_activity_name
+          return (
+            <div
+              style={{
+                fontFamily: 'var(--font-ui)',
+                fontSize: '11px',
+                color: colour,
+                opacity: 0.75,
+                padding: '0 14px 10px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {label}
+            </div>
+          )
+        })()}
 
         {/* Footer */}
         <div style={{ padding: '9px 14px', borderTop: '0.5px solid var(--border-col)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg)' }}>
