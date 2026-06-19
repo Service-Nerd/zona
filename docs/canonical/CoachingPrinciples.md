@@ -1074,6 +1074,23 @@ Engine: `buildFitnessSignalAdjustment` in `lib/coaching/planAdjustment.ts`.
 
 ---
 
+## 63. Session intent — every type explains its place in the week
+
+Every session type carries a one-line **rationale** — not what to do, why this session exists in this week. The detail screen used to explain *what* and *how* (prescription + execution) but rarely *why this exists*. For an anti-overtraining product, the rationale is the most persuasive sentence each surface owns. "This is easy on purpose, so Thursday can be hard." "Recovery, not light training — going hard here steals the next quality day."
+
+**Where it lives:** `session_guidance` table in Supabase, one row per session type with optional phase variation. The `why` column is the rationale; `what` and `how` are prescription + execution. Render path: `DashboardClient.tsx → CoachNoteBlock variant="why"`. Free users see the rule-derived `why` line; paid users see AI-enriched `session.coach_notes` baked into the plan JSON which takes priority.
+
+**Voice rules** (per `CLAUDE.md` voice table — honest, slightly dry, never motivational):
+- One sentence is better than two. Specific beats abstract.
+- The line names *the trade-off* or *the consequence* of doing this session wrong, not just what it is.
+- Reference the zone idea when possible — that's the product thesis.
+
+**The ten session types must each have a row.** A missing row means a free user on that session type sees no `why` block — the rationale is silent, the prescription has no defence. Audit periodically.
+
+**Originating decision:** SD-WHY backlog item, SLT-reviewed 2026-06-19. Initial migration `20260619_session_guidance_sd_why.sql`.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
