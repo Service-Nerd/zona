@@ -41,6 +41,14 @@ Headline: "Good start — stay the course."
 Body: "Zone discipline is up, load is on track, and there's nothing alarming in the data so far. The back half of the week is still to come — don't let a good start become a reason to push harder."
 CTA: "Keep the same structure through the rest of the week."`
 
+// In-flight today variant — runner has work scheduled later today.
+// Used when the report fires mid-day with today's session still to do.
+// Tells the model to frame today's run as present-tense intent, not miss.
+const TODAY_IN_FLIGHT_EXAMPLE = `
+Headline: "Two down, one to go today."
+Body: "What's logged so far is on plan — zone discipline holding, load where it should be. Today's easy run is still in front of you; the week hangs on how you run it. Easy means easy."
+CTA: "Hold the zone on today's run. The day isn't done yet."`
+
 /** AI-DEPTH-04 — previous week's coaching, fed into this week's prompt for continuity. */
 export interface PreviousReportSummary {
   headline: string
@@ -68,18 +76,31 @@ export function buildWeeklyReportPrompt(
     ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${plan.meta.race_distance_km}km)` : ''}${weeksToRace !== null ? `, ${weeksToRace} weeks away` : ''}`
     : 'target race'
 
-  // Mid-week context: show sessions/km vs what was due by today, not the full week target
-  const isMidWeek = dayOfWeek !== undefined && dayOfWeek !== 'Sunday'
+  // Every day is in flight until midnight. The week is only "done" once
+  // tomorrow is Monday — i.e. we're reading the report any time before the
+  // week's end-of-week boundary. dayOfWeek is undefined only when called
+  // from a pre-week-start preview path.
+  const isInFlight = dayOfWeek !== undefined
 
-  // Use mid-week solid_week variant when reporting partway through a clean week
-  const example = (isMidWeek && data.primaryInsight === 'solid_week')
-    ? SOLID_WEEK_MIDWEEK_EXAMPLE
-    : (FEW_SHOT_EXAMPLES[data.primaryInsight] ?? FEW_SHOT_EXAMPLES.solid_week!)
-  const sessionLine = (isMidWeek && sessionsPlannedToDate !== undefined)
-    ? `Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned} this week (${sessionsPlannedToDate} due by ${dayOfWeek})`
+  // Does the runner still have a session scheduled for today?
+  const hasTodayWork = (remainingScheduledSessions ?? []).some(s => /\(today/.test(s))
+
+  // Pick the few-shot example:
+  //   - in-flight + clean week + still work to do today  → today-in-flight variant
+  //   - in-flight + clean week                            → solid-week-midweek variant
+  //   - otherwise                                          → standard per-insight example
+  const example =
+    (isInFlight && data.primaryInsight === 'solid_week' && hasTodayWork)
+      ? TODAY_IN_FLIGHT_EXAMPLE
+      : (isInFlight && data.primaryInsight === 'solid_week')
+        ? SOLID_WEEK_MIDWEEK_EXAMPLE
+        : (FEW_SHOT_EXAMPLES[data.primaryInsight] ?? FEW_SHOT_EXAMPLES.solid_week!)
+
+  const sessionLine = (isInFlight && sessionsPlannedToDate !== undefined)
+    ? `Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned} this week (${sessionsPlannedToDate} due by end of yesterday)`
     : `Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned}`
-  const volumeLine = (isMidWeek && plannedKmToDate !== undefined)
-    ? `Volume: ${data.totalKmActual.toFixed(1)}km actual vs ${plannedKmToDate.toFixed(1)}km due by ${dayOfWeek} (${data.totalKmPlanned.toFixed(1)}km full-week target)`
+  const volumeLine = (isInFlight && plannedKmToDate !== undefined)
+    ? `Volume: ${data.totalKmActual.toFixed(1)}km actual vs ${plannedKmToDate.toFixed(1)}km due by end of yesterday (${data.totalKmPlanned.toFixed(1)}km full-week target)`
     : `Volume: ${data.totalKmActual.toFixed(1)}km actual vs ${data.totalKmPlanned.toFixed(1)}km planned`
 
   const remainingLine = (remainingScheduledSessions && remainingScheduledSessions.length > 0)
@@ -136,7 +157,7 @@ Continuity rule: you may reference last week's coaching at most ONCE in the Body
   })
 
   return `${voiceHeader}
-${athleteContext ?? ''}${isMidWeek ? `\nImportant: it is currently ${dayOfWeek} — this is a mid-week report. Evaluate against what was due by today, not the full week target.` : ''}
+${athleteContext ?? ''}${isInFlight ? `\nImportant: it is currently ${dayOfWeek} and the day is not over. Today is in flight — sessions due today are NOT missed. Compare what's logged against what was due by end of yesterday only. Today's still-to-do sessions are listed under "remaining" — frame them as present-tense intent ("today's run is still ahead of you"), never as failure.` : ''}
 Critical rule: the athlete's sessions are already scheduled in their training plan — never suggest they need to "schedule", "block time", or "plan" their runs. The plan is fixed; the only question is execution.
 
 Output format — exactly three fields:

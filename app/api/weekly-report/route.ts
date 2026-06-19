@@ -140,7 +140,12 @@ export async function POST(req: NextRequest) {
   const todayMidnight   = new Date(); todayMidnight.setHours(0, 0, 0, 0)
   const dayIndex        = Math.min(Math.max(Math.floor((todayMidnight.getTime() - weekStart.getTime()) / 86_400_000), 0), 6)
   const dayOfWeek       = DAY_LABELS[dayIndex]
-  const daysDueByToday  = DAY_ORDER_REPORT.slice(0, dayIndex + 1)
+  // Today is in flight until midnight — a session due today is not "missed"
+  // even if it's noon and the user hasn't run yet. The "due" window is
+  // strictly past days; today moves into the "remaining" bucket below.
+  // Fixes the brand-corrosive "you missed today's run" at lunchtime case.
+  const daysDueByToday  = DAY_ORDER_REPORT.slice(0, dayIndex)
+  const todayKey        = DAY_ORDER_REPORT[dayIndex]
 
   // Strength sessions excluded from coaching logic until that feature is built out.
   const isCountableSession = (s: any) => s && s.type !== 'rest' && s.type !== 'strength'
@@ -151,7 +156,8 @@ export async function POST(req: NextRequest) {
   }).length
   const plannedKm = week.weekly_km ?? 0
 
-  // Sessions and km that were due by today (for mid-week comparison)
+  // Sessions and km that were due by yesterday end-of-day (for mid-week
+  // comparison). Today is excluded — it's still in flight.
   const sessionsPlannedToDate = daysDueByToday.filter(d => {
     return isCountableSession(week.sessions[d as keyof typeof week.sessions])
   }).length
@@ -167,7 +173,8 @@ export async function POST(req: NextRequest) {
     return isCountableSession(s)
   }).length
 
-  // Sessions that were due by today but not completed — gives AI context on missed work
+  // Sessions on past days that weren't completed — truly missed.
+  // Today is never in this list.
   const completedDays = new Set(
     completions
       .filter((c: any) => c.status === 'complete')
@@ -180,16 +187,26 @@ export async function POST(req: NextRequest) {
     })
     .map(d => (week.sessions[d as keyof typeof week.sessions] as any)?.type ?? 'run')
 
-  // Remaining scheduled sessions after today — so the AI knows they're already in the plan
-  const remainingSessionLabels = DAY_ORDER_REPORT.slice(dayIndex + 1)
-    .map(d => {
-      const s = week.sessions[d as keyof typeof week.sessions]
-      if (!isCountableSession(s)) return null
-      const label = DAY_LABELS[DAY_ORDER_REPORT.indexOf(d)]
-      const km = (s as any)?.distance_km ? ` (${(s as any).distance_km}km)` : ''
-      return `${label}: ${(s as any)?.type}${km}`
-    })
+  // Remaining scheduled sessions: today (if not yet completed) + all future
+  // days. Today goes first so the model can frame "still to do today" as
+  // present-tense intent, not past-tense miss.
+  const formatRemainingDay = (d: string): string | null => {
+    const s = week.sessions[d as keyof typeof week.sessions]
+    if (!isCountableSession(s)) return null
+    const label = DAY_LABELS[DAY_ORDER_REPORT.indexOf(d as typeof DAY_ORDER_REPORT[number])]
+    const km    = (s as any)?.distance_km ? ` (${(s as any).distance_km}km)` : ''
+    return `${label}: ${(s as any)?.type}${km}`
+  }
+  const todayRemaining = todayKey && !completedDays.has(todayKey)
+    ? formatRemainingDay(todayKey)
+    : null
+  const futureLabels = DAY_ORDER_REPORT.slice(dayIndex + 1)
+    .map(formatRemainingDay)
     .filter(Boolean) as string[]
+  const remainingSessionLabels = [
+    ...(todayRemaining ? [`${todayRemaining} (today, still to do)`] : []),
+    ...futureLabels,
+  ]
 
   const flagCounts = { ok: 0, watch: 0, flag: 0 }
   completions.forEach((c: any) => {

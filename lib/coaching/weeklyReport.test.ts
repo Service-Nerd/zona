@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { pickSpotlightSession, type RunAnalysisRow } from './weeklyReport'
+import { pickSpotlightSession, type RunAnalysisRow, type WeeklyReportData } from './weeklyReport'
+import { buildWeeklyReportPrompt } from './prompts/weeklyReport'
+import type { Plan } from '@/types/plan'
 
 /**
  * The week shape `pickSpotlightSession` consumes — a permissive subset of
@@ -156,5 +158,86 @@ describe('pickSpotlightSession', () => {
       expect(result!.hrInZonePct).toBeCloseTo(42.5)
       expect(result!.efTrendPct).toBeCloseTo(-8.2)
     })
+  })
+})
+
+// ─── In-flight framing (today is not "missed" at noon) ─────────────────────
+// Locks the brand-corrosive bug where a noon weekly report counted today's
+// not-yet-run session as missed. Today is in flight until midnight; the prompt
+// must frame today's still-to-do sessions as present-tense intent.
+
+const baseReportData: WeeklyReportData = {
+  sessionsCompleted:   2,
+  sessionsPlanned:     4,
+  totalKmActual:       18,
+  totalKmPlanned:      36,
+  acuteChronicRatio:   1.0,
+  zoneDisciplineScore: 82,
+  avgRpe:              5.2,
+  dominantFlag:        'ok',
+  primaryInsight:      'solid_week',
+}
+
+const minimalPlan: Plan = {
+  meta: { race_name: 'Test Race', race_distance_km: 10, race_date: '2026-12-31' } as any,
+  weeks: [{}, {}, {}, {}] as any,
+} as Plan
+
+describe('buildWeeklyReportPrompt — today-in-flight framing', () => {
+  it('compares against end of yesterday, not today, on a mid-day Tuesday', () => {
+    const prompt = buildWeeklyReportPrompt(
+      baseReportData,
+      minimalPlan,
+      3,
+      'Sam',
+      'Tuesday',
+      /* sessionsPlannedToDate (Mon only) */ 1,
+      /* plannedKmToDate (Mon only) */ 8,
+      [`Tuesday: easy (8km) (today, still to do)`, 'Saturday: long (18km)'],
+      /* missedSessionTypes */ [],
+    )
+    expect(prompt).toMatch(/due by end of yesterday/)
+    expect(prompt).not.toMatch(/due by Tuesday/)
+    expect(prompt).toMatch(/Today is in flight/)
+    expect(prompt).toMatch(/today, still to do/)
+  })
+
+  it('renders the in-flight few-shot when today still has work and the week is solid', () => {
+    const prompt = buildWeeklyReportPrompt(
+      baseReportData,
+      minimalPlan,
+      3,
+      undefined,
+      'Tuesday',
+      1,
+      8,
+      [`Tuesday: easy (8km) (today, still to do)`],
+      [],
+    )
+    // The in-flight example's headline should be the example surfaced to the model
+    expect(prompt).toMatch(/Two down, one to go today/)
+  })
+
+  it('falls back to standard solid_week framing when today has no remaining work', () => {
+    const prompt = buildWeeklyReportPrompt(
+      baseReportData,
+      minimalPlan,
+      3,
+      undefined,
+      'Tuesday',
+      1,
+      8,
+      ['Saturday: long (18km)'],   // no "(today, still to do)"
+      [],
+    )
+    expect(prompt).not.toMatch(/Two down, one to go today/)
+    // Still in-flight (today not over), so the solid-week midweek variant fires
+    expect(prompt).toMatch(/Good start — stay the course|Solid week/)
+  })
+
+  it('does not apply in-flight framing when dayOfWeek is undefined (pre-week preview)', () => {
+    const prompt = buildWeeklyReportPrompt(baseReportData, minimalPlan, 3)
+    expect(prompt).not.toMatch(/in flight/)
+    expect(prompt).not.toMatch(/due by end of yesterday/)
   })
 })
