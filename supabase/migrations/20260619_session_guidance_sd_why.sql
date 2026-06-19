@@ -17,6 +17,11 @@
 --   3. Two existing rows (run/long, race) had voice drift toward
 --      grandiose. Tightening in this same migration.
 --
+-- Idempotency: uses NOT EXISTS guards on inserts (the table has no
+-- (session_type, phase) unique constraint, so ON CONFLICT can't be used).
+-- Re-running this migration is safe — UPDATEs are no-ops on second run,
+-- INSERTs skip when the row already exists.
+--
 -- No code changes. Render pipeline (DashboardClient.tsx → CoachNoteBlock
 -- variant="why") already handles all session types via guidanceMap lookup.
 
@@ -39,48 +44,54 @@ WHERE session_type = 'race'
   AND phase IS NULL;
 
 -- 3. Insert missing types: recovery, intervals, tempo, cross-train.
---    ON CONFLICT DO UPDATE so the migration is idempotent across re-runs
---    and safe if a row already exists for a given (session_type, phase).
---    All keyed phase=NULL — phase-specific variants can be added later
---    without colliding with these baseline rows.
+--    NOT EXISTS guards keep the migration idempotent without requiring
+--    a unique constraint on (session_type, phase). Safe to re-run.
 INSERT INTO session_guidance (session_type, phase, title, why, what, how)
-VALUES
-  (
-    'recovery',
-    NULL,
-    'Recovery run',
-    'Recovery, not light training. Going hard here steals the next quality day. The clue''s in the name.',
-    'Very easy. HR well below {{zone2_ceiling}}. {{session_duration|20–40}} minutes. Lower than your usual easy effort.',
-    'If your easy run feels like recovery, you''re running easy too hard. Walk breaks are fine. The goal is to leave more recovered than you started.'
-  ),
-  (
-    'intervals',
-    NULL,
-    'Interval session',
-    'VO2-max work. The intensity is the point — but so is the recovery between reps. Both halves matter.',
-    'Repeated efforts at HR {{session_hr|near max}}. Recovery long enough to do the next rep cleanly. 15 min easy warm-up, 10 min easy cool-down.',
-    'First rep at planned effort, not "just see how I feel". If you can''t hit the target on rep 3, end the session — quality is the work, junk reps aren''t.'
-  ),
-  (
-    'tempo',
-    NULL,
-    'Tempo run',
-    'Threshold work. Comfortably hard, sustained. The discipline is holding the line, not chasing it harder.',
-    'Sustained effort at HR {{session_hr|in your tempo band}}. Sayable in a phrase, not a sentence. 15 min easy warm-up, 10 min easy cool-down.',
-    'Lock into the effort early; don''t accelerate halfway through. If you can talk in full sentences you''re going too easy. Racing the watch is going too hard.'
-  ),
-  (
-    'cross-train',
-    NULL,
-    'Cross-training',
-    'Aerobic stimulus without the running impact. Same heart-rate target, different sport. It still counts as work.',
-    'Bike, swim, row, or elliptical — your call. Time in Zone 2 (HR {{zone2_ceiling}} or below), {{session_duration|45–60}} min.',
-    'Effort, not session. Cross-train at the same heart rate target as an easy run. Treat it as a real session, not a cool-down.'
-  )
-ON CONFLICT (session_type, phase) DO UPDATE
-SET title = EXCLUDED.title,
-    why   = EXCLUDED.why,
-    what  = EXCLUDED.what,
-    how   = EXCLUDED.how;
+SELECT
+  'recovery',
+  NULL,
+  'Recovery run',
+  'Recovery, not light training. Going hard here steals the next quality day. The clue''s in the name.',
+  'Very easy. HR well below {{zone2_ceiling}}. {{session_duration|20–40}} minutes. Lower than your usual easy effort.',
+  'If your easy run feels like recovery, you''re running easy too hard. Walk breaks are fine. The goal is to leave more recovered than you started.'
+WHERE NOT EXISTS (
+  SELECT 1 FROM session_guidance WHERE session_type = 'recovery' AND phase IS NULL
+);
+
+INSERT INTO session_guidance (session_type, phase, title, why, what, how)
+SELECT
+  'intervals',
+  NULL,
+  'Interval session',
+  'VO2-max work. The intensity is the point — but so is the recovery between reps. Both halves matter.',
+  'Repeated efforts at HR {{session_hr|near max}}. Recovery long enough to do the next rep cleanly. 15 min easy warm-up, 10 min easy cool-down.',
+  'First rep at planned effort, not "just see how I feel". If you can''t hit the target on rep 3, end the session — quality is the work, junk reps aren''t.'
+WHERE NOT EXISTS (
+  SELECT 1 FROM session_guidance WHERE session_type = 'intervals' AND phase IS NULL
+);
+
+INSERT INTO session_guidance (session_type, phase, title, why, what, how)
+SELECT
+  'tempo',
+  NULL,
+  'Tempo run',
+  'Threshold work. Comfortably hard, sustained. The discipline is holding the line, not chasing it harder.',
+  'Sustained effort at HR {{session_hr|in your tempo band}}. Sayable in a phrase, not a sentence. 15 min easy warm-up, 10 min easy cool-down.',
+  'Lock into the effort early; don''t accelerate halfway through. If you can talk in full sentences you''re going too easy. Racing the watch is going too hard.'
+WHERE NOT EXISTS (
+  SELECT 1 FROM session_guidance WHERE session_type = 'tempo' AND phase IS NULL
+);
+
+INSERT INTO session_guidance (session_type, phase, title, why, what, how)
+SELECT
+  'cross-train',
+  NULL,
+  'Cross-training',
+  'Aerobic stimulus without the running impact. Same heart-rate target, different sport. It still counts as work.',
+  'Bike, swim, row, or elliptical — your call. Time in Zone 2 (HR {{zone2_ceiling}} or below), {{session_duration|45–60}} min.',
+  'Effort, not session. Cross-train at the same heart rate target as an easy run. Treat it as a real session, not a cool-down.'
+WHERE NOT EXISTS (
+  SELECT 1 FROM session_guidance WHERE session_type = 'cross-train' AND phase IS NULL
+);
 
 COMMIT;
