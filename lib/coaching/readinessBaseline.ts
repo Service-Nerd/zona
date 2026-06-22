@@ -32,12 +32,22 @@ export interface ReadinessSignal {
   isShortSleep:   boolean
   /** DS-05 — adequate total sleep but a low deep-sleep share (quality, not duration). */
   isPoorSleepQuality: boolean
+  /**
+   * ENGINE-03-pre — the single firing decision. True when a session should be
+   * softened. Noise-hardened: an elevated RHR alone is the noisiest signal
+   * (measurement artefact, a glass of wine, sleep position, hormonal rhythm),
+   * so it only fires when it PERSISTS (today + the most recent prior day both
+   * elevated) or is CORROBORATED by HRV/sleep. HRV and sleep still fire alone.
+   * Callers use this instead of OR-ing the individual booleans.
+   */
+  softeningWarranted: boolean
   /** False when the 14-day baseline isn't yet established — caller treats as silent. */
   hasBaseline:    boolean
   /** Diagnostic detail surfaced in adjustment trigger metadata. */
   detail: {
     rhrBaseline?:    number
     rhrToday?:       number
+    rhrPersistent?:  boolean
     hrvBaseline?:    number
     hrvSd?:          number
     hrvToday?:       number
@@ -84,6 +94,7 @@ export function computeReadiness(
       isLowHRV:           false,
       isShortSleep:       false,
       isPoorSleepQuality: false,
+      softeningWarranted: false,
       hasBaseline:        false,
       detail:             { samplesUsed },
     }
@@ -93,8 +104,18 @@ export function computeReadiness(
   const hrvBaseline = mean(hrvSamples)
   const hrvSd       = stddev(hrvSamples, hrvBaseline)
 
-  const isElevatedRHR = today.rhrBpm != null
-    && today.rhrBpm >= rhrBaseline + READINESS.RHR_ELEVATION_BPM
+  const rhrThreshold  = rhrBaseline + READINESS.RHR_ELEVATION_BPM
+  const isElevatedRHR = today.rhrBpm != null && today.rhrBpm >= rhrThreshold
+
+  // ENGINE-03-pre — RHR persistence. A one-day spike is the noisiest reading; we
+  // only treat RHR as a standalone fatigue signal when the most recent prior day
+  // was ALSO elevated (two consecutive readings above baseline). Uses the same
+  // threshold; no new numeric. The prior reading is the latest-dated sample in
+  // the window with an RHR value.
+  const priorRhr = [...samplesWindow]
+    .filter(s => s.rhrBpm != null)
+    .sort((a, b) => b.sampleDate.localeCompare(a.sampleDate))[0]?.rhrBpm ?? null
+  const rhrPersistent = isElevatedRHR && priorRhr != null && priorRhr >= rhrThreshold
 
   const isLowHRV = today.hrvMs != null
     && today.hrvMs <= hrvBaseline - (READINESS.HRV_DECLINE_SD * hrvSd)
@@ -112,15 +133,23 @@ export function computeReadiness(
     && today.sleepHours >= READINESS.SLEEP_THRESHOLD_HOURS
     && deepSleepPct < READINESS.DEEP_SLEEP_PCT_FLOOR
 
+  // ENGINE-03-pre — the firing decision. HRV / short sleep / poor sleep quality
+  // fire on their own; RHR fires only when persistent OR corroborated by one of
+  // the others (corroboration is implicit — if another signal is true, this is
+  // already true regardless of RHR).
+  const softeningWarranted = isLowHRV || isShortSleep || isPoorSleepQuality || rhrPersistent
+
   return {
     isElevatedRHR,
     isLowHRV,
     isShortSleep,
     isPoorSleepQuality,
+    softeningWarranted,
     hasBaseline:   true,
     detail: {
       rhrBaseline:  round(rhrBaseline, 1),
       rhrToday:     today.rhrBpm ?? undefined,
+      rhrPersistent,
       hrvBaseline:  round(hrvBaseline, 1),
       hrvSd:        round(hrvSd, 2),
       hrvToday:     today.hrvMs ?? undefined,

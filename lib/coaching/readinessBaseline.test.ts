@@ -74,3 +74,48 @@ describe('DS-05 — sleep quality (isPoorSleepQuality)', () => {
     expect(r.isPoorSleepQuality).toBe(false)
   })
 })
+
+// ENGINE-03-pre — RHR noise-hardening. `softeningWarranted` is the firing
+// decision; a one-day RHR spike must no longer soften a session on its own.
+// Baseline RHR ~50 (threshold ~57); the LAST-dated window sample is the "most
+// recent prior day" the persistence check reads.
+function rhrWindow(latestPriorRhr: number): DailyHealthSample[] {
+  return Array.from({ length: READINESS.BASELINE_WINDOW_DAYS }, (_, i) => ({
+    sampleDate: `2026-06-${String(i + 1).padStart(2, '0')}`,
+    rhrBpm:     i === READINESS.BASELINE_WINDOW_DAYS - 1 ? latestPriorRhr : 50,
+    hrvMs:      60,
+    sleepHours: 7.5,
+  }))
+}
+
+describe('ENGINE-03-pre — RHR noise-hardening (softeningWarranted)', () => {
+  it('does NOT soften on a single elevated RHR reading (the bug)', () => {
+    const r = computeReadiness(rhrWindow(50), { rhrBpm: 60, hrvMs: 70, sleepHours: 7.5 })
+    expect(r.isElevatedRHR).toBe(true)        // signal still detected…
+    expect(r.detail.rhrPersistent).toBe(false)
+    expect(r.softeningWarranted).toBe(false)  // …but it must not fire alone
+  })
+
+  it('softens when RHR is elevated two days running (persistent)', () => {
+    const r = computeReadiness(rhrWindow(60), { rhrBpm: 60, hrvMs: 70, sleepHours: 7.5 })
+    expect(r.detail.rhrPersistent).toBe(true)
+    expect(r.softeningWarranted).toBe(true)
+  })
+
+  it('softens when an elevated RHR is corroborated by low HRV (same day)', () => {
+    const r = computeReadiness(rhrWindow(50), { rhrBpm: 60, hrvMs: 55, sleepHours: 7.5 })
+    expect(r.detail.rhrPersistent).toBe(false)
+    expect(r.isLowHRV).toBe(true)
+    expect(r.softeningWarranted).toBe(true)
+  })
+
+  it('HRV and short sleep still fire on their own (behaviour unchanged)', () => {
+    const lowHrv = computeReadiness(rhrWindow(50), { rhrBpm: 48, hrvMs: 55, sleepHours: 7.5 })
+    expect(lowHrv.isElevatedRHR).toBe(false)
+    expect(lowHrv.softeningWarranted).toBe(true)
+
+    const shortSleep = computeReadiness(rhrWindow(50), { rhrBpm: 48, hrvMs: 70, sleepHours: 4 })
+    expect(shortSleep.isShortSleep).toBe(true)
+    expect(shortSleep.softeningWarranted).toBe(true)
+  })
+})

@@ -132,6 +132,8 @@ export interface AdjustmentCheckInput {
     isShortSleep:   boolean
     /** DS-05 — adequate total sleep but low deep-sleep share. */
     isPoorSleepQuality: boolean
+    /** ENGINE-03-pre — the firing decision (RHR-alone noise-hardened). */
+    softeningWarranted: boolean
     hasBaseline:    boolean
   }
 }
@@ -186,7 +188,7 @@ export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAd
   if (
     input.readinessSignal
     && input.readinessSignal.hasBaseline
-    && (input.readinessSignal.isElevatedRHR || input.readinessSignal.isLowHRV || input.readinessSignal.isShortSleep || input.readinessSignal.isPoorSleepQuality)
+    && input.readinessSignal.softeningWarranted
     && HARD_TYPES.has(input.readinessSignal.sessionType)
   ) {
     return buildReadinessAdjustment(input, input.readinessSignal)

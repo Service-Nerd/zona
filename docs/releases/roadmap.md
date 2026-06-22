@@ -18,7 +18,7 @@ Supporting strategy: `docs/gtm/go-to-market-plan-2026-06.md` (the GTM playbook �
 
 **Workstreams:** 🏃 Product · 📣 Go-to-Market & Marketing · 🔁 Growth & Retention · ⚖️ Legal & Ops
 **Status:** 🔲 not started · 🔄 in progress · ✅ done · ⏸️ deferred
-**Last updated:** 2026-06-22 (post-launch wave — shipped ENGINE-02, DS-05, DS-07 A+B, CA-03; GTM-09/10 reconciled; ENGINE-03a/CA-05 blocked on plugin cycle data; Plan-restore cancelled)
+**Last updated:** 2026-06-22 (post-launch wave — shipped ENGINE-02, DS-05, DS-07 A+B, CA-03, ENGINE-03-pre, AUTH-RESET-01, BRAND tech-debt; GTM-09/10 reconciled; cycle coaching SLT-reviewed → deferred behind gates; Plan-restore cancelled)
 
 ---
 
@@ -84,8 +84,9 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 | ✅ | **DS-07** — composite effort (A: edit logged distance · B: add another effort) | ✅ | ~2h + ~1.5d | Shipped 2026-06-22 (both parts). Manual completions can be distance-corrected and have second efforts stacked on (hike + treadmill = one session). |
 | ✅ | **ENGINE-02** — long run shortfall detection | ✅ | S | Shipped 2026-06-22 (`b605088` engine + finalised). Migration `20260622_engine_trigger_types.sql` (also fixes ENGINE-01's missing trigger type) ⚠️ apply to live DB. Principle §66. |
 | ✅ | **CA-03** — post-race "what next" goal-ladder | ✅ | M | Shipped 2026-06-22. TodayScreen card after a logged race: engine-sequenced next goals (chase/step-up/maintain) seed the wizard. Deterministic, PAID, principle §67. |
-| ⛔ | **ENGINE-03a** — cycle false positive fix | ⛔ | S | **BLOCKED (verified 2026-06-22).** `@capgo/capacitor-health@8.4.8` exposes no menstrual/cycle data type — no data path. Needs a custom Swift bridge / plugin fork to unblock. |
-| ⛔ | **CA-05** — cycle-aware coaching thin slice | ⛔ | M | **BLOCKED on ENGINE-03a** (same missing cycle data). |
+| ✅ | **ENGINE-03-pre** — readiness RHR noise-hardening | ✅ | S | Shipped 2026-06-22. The no-cycle-data precursor from the SLT review: a single RHR spike no longer softens a session (persistence-or-corroboration), fixing the luteal false-positive root for everyone. Principle §59. |
+| ⛔ | **ENGINE-03a** — cycle false positive fix | ⛔ | S | **DEFERRED behind gates (SLT 2026-06-22).** Cycle bridge waits for (a) usage evidence of mis-firing readiness in female cycle-trackers + (b) incorporation/insurance. ENGINE-03-pre already banks most of the value. FREE only (INV-DATA-001). |
+| ⛔ | **CA-05** — cycle-aware coaching thin slice | ⛔ | M | **DEFERRED on ENGINE-03** (SLT: the note is the risky part — "the moat is the silence, not the note"; build after a voice review only). |
 | **#7** | **POST-RUN-REFRAME-02** — voice memo reframe input | 🔲 | M (~3d) | PAID. Make Whisper/OpenAI vendor decision — don't let it stay deferred by indecision. |
 | **#8** | **CA-02** — Apple Watch companion app | 🔲 | L | FREE/PAID. Dedicated sprint. Scope locked: session + zone + HR + one-tap start only. Start Apple Developer provisioning now. |
 | later | **POST-RUN-03** — rich-media zone push | 🔲 | M | Gated on production APNs. Not before #1–4. |
@@ -113,7 +114,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 | **CA-07 — "Ask Kit about this run"** | PAID | M | Hold. Return when 50+ paying users — build for real questions, not imagined ones. |
 | **CA-08 — Garmin Connect** | PAID | M | **Apply for Garmin Connect Developer Program now** (4–8 week approval). Build later. |
 | **R18** Plan confidence · **R21** Strength sessions · **R22** Blockout days · **R24** Multi-race · **R26** Background load | PAID | M–L | Hold. No urgency. |
-| **CA-05 / R27** — Cycle-aware coaching | FREE (recommended) | M | ⛔ **BLOCKED (2026-06-22)** — depends on ENGINE-03a, which is blocked: `@capgo/capacitor-health` has no menstrual/cycle data. Needs a plugin fork / Swift bridge before this moat is buildable. |
+| **CA-05 / R27** — Cycle-aware coaching | FREE | M | ⛔ **DEFERRED behind gates (SLT 2026-06-22).** Precursor ENGINE-03-pre shipped (no-data RHR hardening). Cycle bridge gated on usage evidence + incorporation/insurance; moat kept visible. |
 | **Supplementary session slots** | FREE slot / PAID placement | ~3wk | Big schema footprint. Dedicated window only. Hold the line on AM/PM run-doubling. |
 | ~~**DS-05** sleep stages~~ ✅ shipped 2026-06-22 · **DS-06** manual run metrics | mixed | S–M | DS-05 done (quality-weighted readiness). DS-06 data hygiene, no urgency. |
 | ~~**DS-07** — edit logged distance + composite effort~~ ✅ shipped 2026-06-22 | FREE | — | Done (both parts). |

@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
   if (!readiness.hasBaseline) {
     return NextResponse.json({ adjustment: null, reason: 'baseline_dormant', detail: readiness.detail })
   }
-  if (!readiness.isElevatedRHR && !readiness.isLowHRV && !readiness.isShortSleep && !readiness.isPoorSleepQuality) {
+  if (!readiness.softeningWarranted) {
     return NextResponse.json({ adjustment: null, reason: 'all_clear', detail: readiness.detail })
   }
 
@@ -127,6 +127,7 @@ export async function GET(req: NextRequest) {
       isLowHRV:           readiness.isLowHRV,
       isShortSleep:       readiness.isShortSleep,
       isPoorSleepQuality: readiness.isPoorSleepQuality,
+      softeningWarranted: readiness.softeningWarranted,
       hasBaseline:        readiness.hasBaseline,
     },
   }
