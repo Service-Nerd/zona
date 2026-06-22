@@ -18,7 +18,7 @@ Supporting strategy: `docs/gtm/go-to-market-plan-2026-06.md` (the GTM playbook �
 
 **Workstreams:** 🏃 Product · 📣 Go-to-Market & Marketing · 🔁 Growth & Retention · ⚖️ Legal & Ops
 **Status:** 🔲 not started · 🔄 in progress · ✅ done · ⏸️ deferred
-**Last updated:** 2026-06-22 (post-launch reconciliation — GTM-09/10 + live-on-App-Store status)
+**Last updated:** 2026-06-22 (post-launch wave — shipped ENGINE-02, DS-05, DS-07 Part A, CA-03; GTM-09/10 reconciled; ENGINE-03a/CA-05 blocked on plugin cycle data)
 
 ---
 
