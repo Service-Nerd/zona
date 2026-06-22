@@ -65,7 +65,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 | Priority | Item | Effort | Tier |
 |---|---|---|---|
 | ✅ | GTM-09 + GTM-10 — Trial emails (SHIPPED 2026-06-08 → registry) | M | PAID |
-| 2 | DS-07 Part A — Edit logged distance | ~2h | FREE |
+| ✅ | DS-07 Part A — Edit logged distance (SHIPPED 2026-06-22 → registry) | ~2h | FREE |
 | ✅ | ENGINE-02 — Long run shortfall (SHIPPED 2026-06-22 → registry) | S | PAID |
 | 4 | CA-03 — Post-race goal ladder | M | PAID |
 | ⛔ | ENGINE-03a — Cycle false positives (BLOCKED — no plugin data, see below) | S | FREE |
@@ -81,7 +81,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 *Note: ENGINE-03a + CA-05 are BLOCKED (verified 2026-06-22). `@capgo/capacitor-health@8.4.8` exposes no menstrual/cycle/reproductive data type (`HealthDataType` union in `node_modules/.../definitions.d.ts` confirms it), so the luteal-phase RHR suppression has no data path. Unblocking needs a custom Swift bridge / plugin fork — see the ENGINE-03 detail below.*
 
-*Note: with ENGINE-02 done and ENGINE-03a blocked, **CA-03 (post-race goal ladder) is the next actionable item after DS-07 Part A.***
+*Note: DS-07 Part A + ENGINE-02 + DS-05 shipped 2026-06-22; ENGINE-03a/CA-05 blocked. **CA-03 (post-race goal ladder) is now the head of the actionable stack.** (DS-07 Part B — composite effort — remains open below.)*
 
 Ordered by GTM impact. Each needs FREE/PAID tag confirmed before build.
 
@@ -230,8 +230,8 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 
 - 🔲 **DS-07 — Composite effort logging** *(P2, ~2 days)* — two or more activities of the same type that together satisfy one planned session (e.g. hike + treadmill top-up = one planned long easy run). Distinct from Supplementary session slots (which is strength/cross-train alongside a run). Two parts:
 
-  **Part A — Edit logged distance on complete sessions (~2h, unblocked):**
-  When a session is manually complete (no linked HK/Strava activity), "Update log" opens ManualRunModal pre-filled with the existing distance/duration so the user can correct the total (e.g. change 8km → 13km). Currently "Update log" routes to the activity picker instead — dead end for manual completions. Fix: detect `isComplete && !completion.strava_activity_id && !completion.apple_health_uuid` → open ManualRunModal pre-filled. Tier: FREE.
+  **Part A — Edit logged distance on complete sessions — ✅ SHIPPED 2026-06-22 → feature-registry.**
+  When a session is manually complete (no linked HK/Strava activity), "Update log" now opens `ManualRunModal` pre-filled with the logged distance (`completion.strava_activity_km`) so the runner can correct the total (e.g. 8km → 13km). Previously it dead-ended into the activity picker — useless for a manual completion. Detection: `isComplete && !strava_activity_id && !apple_health_uuid` (`isManualCompletion` in `DashboardClient.tsx`). **Scope note:** distance-correction only — manual logs store distance (`strava_activity_km`) but not duration as a structured field (it's only embedded in the name string), so duration isn't pre-filled. Also fixed: the modal's save no longer nulls `rpe`/`fatigue_tag`, so editing distance can't wipe already-logged body-state. Tier: FREE.
 
   **Part B — True composite effort (~1.5 days, depends on Part A):**
   A dedicated "Add another effort" affordance on already-complete run sessions. Opens ManualRunModal in accumulate mode — shows current logged total, adds the new effort on top (new total = existing + new). Label updates to "2 efforts · 13.0km". Coaching sees the combined total. No new schema needed — `strava_activity_km` holds the aggregate, `strava_activity_name` holds the label. Tier: FREE for logging; zone analysis of combined effort stays PAID.

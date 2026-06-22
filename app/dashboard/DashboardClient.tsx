@@ -3188,6 +3188,12 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   const isPast = session.isPast
   const completion = session.completion
   const isComplete = completion?.status === 'complete'
+  // DS-07 Part A — a completion logged by hand (no linked Strava/HealthKit
+  // activity). "Update log" on one of these opens the manual editor pre-filled,
+  // not the activity picker (which has nothing to link).
+  const isManualCompletion = isComplete
+    && !completion?.strava_activity_id
+    && !completion?.apple_health_uuid
   const isSkipped = completion?.status === 'skipped'
 
   // Load existing RPE/fatigue from completion
@@ -4250,7 +4256,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 const isRpeSet = rpe != null
                 return (
                   <button
-                    onClick={handleMarkComplete}
+                    onClick={isManualCompletion ? () => setShowManualModal(true) : handleMarkComplete}
                     style={{
                       flex: 1,
                       background: isRpeSet ? 'var(--moss)' : 'none',
@@ -4480,6 +4486,8 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           sessionType={session.type}
           plannedDistanceKm={session.distance_km ?? session.distance ?? undefined}
           plannedDurationMins={session.duration_mins ? Number(session.duration_mins) : undefined}
+          loggedDistanceKm={isManualCompletion ? (completion?.strava_activity_km ?? undefined) : undefined}
+          isEdit={isManualCompletion}
         />
       )}
 
@@ -4708,7 +4716,7 @@ function savedCopy(rpe: number | null): string {
   return "Maximum effort. Now actually rest."
 }
 
-function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, sessionName, sessionType, plannedDistanceKm, plannedDurationMins }: {
+function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, sessionName, sessionType, plannedDistanceKm, plannedDurationMins, loggedDistanceKm, isEdit }: {
   weekN: number
   sessionKey: string | null
   preferredUnits: 'km' | 'mi'
@@ -4718,9 +4726,19 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
   sessionType?: string
   plannedDistanceKm?: number
   plannedDurationMins?: number
+  /** DS-07 Part A — when editing an existing manual log, the already-logged
+   *  distance (stored in km) to pre-fill instead of the planned distance. */
+  loggedDistanceKm?: number
+  /** DS-07 Part A — true when correcting an existing log (vs first-time logging). */
+  isEdit?: boolean
 }) {
-  const initWhole   = plannedDistanceKm ? Math.floor(plannedDistanceKm) : 5
-  const initDecimal = plannedDistanceKm ? Math.round((plannedDistanceKm % 1) * 10) : 0
+  // Edit pre-fills the logged distance (converted to the user's unit); first-log
+  // pre-fills the planned distance (left raw, matching prior behaviour).
+  const initDistDisplay = loggedDistanceKm != null
+    ? (preferredUnits === 'mi' ? loggedDistanceKm / 1.60934 : loggedDistanceKm)
+    : (plannedDistanceKm ?? null)
+  const initWhole   = initDistDisplay != null ? Math.floor(initDistDisplay) : 5
+  const initDecimal = initDistDisplay != null ? Math.round((initDistDisplay % 1) * 10) : 0
   const initHours   = plannedDurationMins ? Math.floor(plannedDurationMins / 60) : 0
   const initMinutes = plannedDurationMins ? plannedDurationMins % 60 : 30
 
@@ -4772,8 +4790,9 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
         strava_activity_id: null,
         strava_activity_name: notes || `Manual log · ${distanceStr}${preferredUnits} · ${durationStr}`,
         strava_activity_km: +distKm.toFixed(1),
-        rpe: null,
-        fatigue_tag: null,
+        // rpe / fatigue_tag intentionally omitted: on a DS-07 edit this upsert
+        // must not wipe body-state the runner already logged. New logs leave
+        // them null (schema default) and set them in the reflect step below.
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
       setSavedStep(true)
@@ -4975,9 +4994,9 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div>
-                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>Log a run</div>
+                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>{isEdit ? 'Update your log' : 'Log a run'}</div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Manual entry · no Strava needed
+                  {isEdit ? 'Correct what you logged' : 'Manual entry · no Strava needed'}
                 </div>
               </div>
               <button onClick={handleClose} style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-muted)', fontSize: '14px', cursor: 'pointer', width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
