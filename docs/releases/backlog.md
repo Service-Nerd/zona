@@ -71,8 +71,6 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 *Shipped 2026-06-22 → feature-registry: ENGINE-02 (long-run shortfall, + fixed ENGINE-01's latent trigger-constraint bug), DS-05 (sleep stages), DS-07 Part A (edit logged distance), CA-03 (post-race goal ladder). Earlier: GTM-08/09/10, R25 cuts 2–3, CA-01, CA-04, UPGRADE-ENTRY-01. All migrations applied to live Supabase.*
 
-*⚠️ Operational follow-up: GTM-09/10 trial emails only fire once the GitHub Actions `email-cron-trial` secrets (`CRON_SECRET` + `VERCEL_URL`) are set — confirm a green run.*
-
 *ENGINE-03a + CA-05 are BLOCKED (verified 2026-06-22): `@capgo/capacitor-health@8.4.8` exposes no menstrual/cycle/reproductive data type, so the luteal-phase RHR suppression has no data path. Unblocking needs a plugin fork / custom Swift bridge — see the ENGINE-03 detail below.*
 
 *Open after the 2026-06-22 wave: POST-RUN-REFRAME-02, CA-02, DS-07 Part B (composite effort), R22 (blockout days), R24 (multi-race — pairs with the CA-03 goal ladder). POST-RUN-03 needs native Xcode work.*
