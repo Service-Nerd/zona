@@ -44,8 +44,26 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [message, setMessage]   = useState<string | null>(null)
   const [ageConfirmed, setAgeConfirmed] = useState(false)
+  // AUTH-RESET-01 — forgot-password request view (toggled from signin mode).
+  const [forgot, setForgot]     = useState(false)
   const supabase = createClient()
   const router   = useRouter()
+
+  // AUTH-RESET-01 — send a password-reset email. redirectTo lands on /auth/reset;
+  // the recovery link is verified there (token_hash via verifyOtp, cross-device
+  // safe; ?code= as a same-device PKCE fallback). We never reveal whether the
+  // email has an account — Supabase returns success for unknown addresses, and
+  // we show the same neutral message either way.
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true); setError(null); setMessage(null)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset`,
+    })
+    setLoading(false)
+    if (error) { setError(error.message); return }
+    setMessage("If that email has an account, a reset link is on its way. Check your inbox.")
+  }
 
   async function signInWithApple() {
     setLoading(true); setError(null)
@@ -201,6 +219,78 @@ export default function LoginPage() {
           borderRadius: '16px',
           padding: '28px 24px',
         }}>
+          {forgot ? (
+          <>
+          <div style={{
+            fontFamily: 'var(--font-brand)',
+            fontSize: '18px', fontWeight: 500,
+            color: 'var(--ink)', marginBottom: '6px',
+            letterSpacing: '-0.3px',
+          }}>Reset password</div>
+          <div style={{
+            fontFamily: 'var(--font-ui)',
+            fontSize: '11px', color: 'var(--mute)',
+            marginBottom: '24px', lineHeight: 1.6,
+          }}>Enter your email and we&rsquo;ll send a link to set a new password.</div>
+
+          <form onSubmit={handleForgot} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <TextField
+              type="email" placeholder="Email" required
+              autoComplete="email"
+              value={email} onChange={setEmail}
+            />
+            <button
+              type="submit"
+              disabled={loading || !email}
+              style={{
+                width: '100%', padding: '13px',
+                background: 'var(--moss)', color: 'var(--card)',
+                border: 'none', borderRadius: '10px',
+                fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500,
+                cursor: loading || !email ? 'default' : 'pointer',
+                opacity: loading || !email ? 0.5 : 1,
+                transition: 'opacity 0.15s',
+              }}
+            >
+              {loading ? 'Sending…' : 'Send reset link'}
+            </button>
+          </form>
+
+          <button
+            onClick={() => { setForgot(false); setError(null); setMessage(null) }}
+            style={{
+              marginTop: '14px', width: '100%',
+              background: 'none', border: 'none',
+              fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
+              cursor: 'pointer', padding: '4px 0',
+            }}
+          >
+            ← Back to sign in
+          </button>
+
+          {error && (
+            <div style={{
+              marginTop: '12px',
+              fontFamily: 'var(--font-ui)',
+              fontSize: '11px', color: 'var(--amber)',
+              padding: '8px 12px',
+              background: 'var(--amber-soft)',
+              borderRadius: '8px',
+            }}>{error}</div>
+          )}
+          {message && (
+            <div style={{
+              marginTop: '12px',
+              fontFamily: 'var(--font-ui)',
+              fontSize: '11px', color: 'var(--moss)',
+              padding: '8px 12px',
+              background: 'var(--moss-soft)',
+              borderRadius: '8px',
+            }}>{message}</div>
+          )}
+          </>
+          ) : (
+          <>
           <div style={{
             fontFamily: 'var(--font-brand)',
             fontSize: '18px', fontWeight: 500,
@@ -331,6 +421,21 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {mode === 'signin' && (
+            <button
+              onClick={() => { setForgot(true); setError(null); setMessage(null) }}
+              style={{
+                marginTop: '12px', width: '100%',
+                background: 'none', border: 'none',
+                fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
+                cursor: 'pointer', padding: '4px 0',
+                textDecoration: 'underline', textUnderlineOffset: '3px',
+              }}
+            >
+              Forgot password?
+            </button>
+          )}
+
           {error && (
             <div style={{
               marginTop: '12px',
@@ -351,6 +456,8 @@ export default function LoginPage() {
               background: 'var(--moss-soft)',
               borderRadius: '8px',
             }}>{message}</div>
+          )}
+          </>
           )}
         </div>
 
