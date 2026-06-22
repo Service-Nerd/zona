@@ -64,7 +64,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 | Priority | Item | Effort | Tier |
 |---|---|---|---|
-| 1 | GTM-09 + GTM-10 — Trial emails | M | PAID |
+| ✅ | GTM-09 + GTM-10 — Trial emails (SHIPPED 2026-06-08 → registry) | M | PAID |
 | 2 | DS-07 Part A — Edit logged distance | ~2h | FREE |
 | 3 | ENGINE-02 — Long run shortfall | S | PAID |
 | 4 | CA-03 — Post-race goal ladder | M | PAID |
@@ -75,6 +75,8 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 *Note: R25 cuts 2–3 (Today pre-run band + Coach trend cards) were confirmed shipped 2026-06-04 via code audit 2026-06-06. Removed from priority stack. Feature registry updated.*
 
+*Note: GTM-09/10 (trial emails) shipped 2026-06-08 (`7cde428`) — was the held commit, now on `origin/main`. The doc lag was caught 2026-06-22; entry moved to feature-registry. Code is live; firing depends on the GitHub Actions `email-cron-trial` workflow secrets (`CRON_SECRET` + `VERCEL_URL`) — confirm a green run. **DS-07 Part A is now the active head of the stack.***
+
 Ordered by GTM impact. Each needs FREE/PAID tag confirmed before build.
 
 ### GTM commercial
@@ -82,8 +84,8 @@ Ordered by GTM impact. Each needs FREE/PAID tag confirmed before build.
 | # | Item | Effort | Tier | Notes |
 |---|------|--------|------|-------|
 | GTM-08 ✅ | **Marketing site + waitlist** — **SHIPPED 2026-06-03.** `zonna.run` serves the marketing page (download-first: App Store badge + waitlist form, pricing/trial line, Apple Health mention, Support in footer). `MARKETING_SITE_ENABLED=true` in Vercel Production. Supabase `waitlist` table live; `/api/waitlist` route (public POST, service-role write, duplicate-silent). `BRAND.appStore` block in `lib/brand.ts` — set `url` on App Store approval to flip badge live (no redeploy needed). Components: `components/marketing/WaitlistForm.tsx`, `components/marketing/AppStoreBadge.tsx`. Migration: `20260603_waitlist.sql`. Commit: `bd27e2d`. | M | FREE | ✅ |
-| GTM-09 🔄 | **Trial expiry email** (day 14) — built 2026-06-08. **In held commit — deploys on App Store approval push.** Resend free tier, `kit@zonna.run`, GitHub Actions daily cron (08:00 UTC), idempotency stamp `trial_email_day14_sent_at` on `user_settings`. Migration `20260608_trial_email_stamps.sql` applied. | M | PAID | High |
-| GTM-10 🔄 | **Trial nudge email** (day 11) — built 2026-06-08. Ships with GTM-09 in same commit/deploy. Same infra. Idempotency stamp `trial_email_day11_sent_at`. | S | PAID | Medium |
+| GTM-09 ✅ | **Trial expiry email** (day 14) — **SHIPPED 2026-06-08** (`7cde428`, on `origin/main`). Resend, `kit@zonna.run`, GitHub Actions daily cron (08:00 UTC), idempotency stamp `trial_email_day14_sent_at`. Migration `20260608_trial_email_stamps.sql`. See feature-registry. **Op gate:** GH Actions secrets `CRON_SECRET` + `VERCEL_URL` must be set — confirm a green `email-cron-trial` run. | M | PAID | ✅ |
+| GTM-10 ✅ | **Trial nudge email** (day 11) — **SHIPPED 2026-06-08** with GTM-09, same route/cron/infra. Idempotency stamp `trial_email_day11_sent_at`. See feature-registry. | S | PAID | ✅ |
 
 > **Board notes — GTM-09/10:** Email content must not lead with scarcity ("your subscription is ending"). Instead: surface a specific run the user logged and what it showed — *"You ran 12km in Zone 2 last Tuesday. That's the plan working."* Contextual recall drives conversion better than deadline pressure. The most powerful line sounds like the app noticed something the user didn't — *"You've run 4 sessions in the zone. That's unusual in the first two weeks."* Make the vendor decision (Resend vs Supabase Edge) first — don't let it be the indefinite blocker.
 

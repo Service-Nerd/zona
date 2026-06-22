@@ -28,7 +28,7 @@ iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. **App Store subm
 
 **`zonna.run` is now a real marketing page** (live 2026-06-03, redesigned 2026-06-04). Sutherland-flavoured positioning pass: tagline elevated to hero kicker, "What's not in the app" anti-feature grid, "Probably not for you if…" counter-positioning, waitlist + trial copy in brand voice, personalisation mechanic preview (wizard → session card), brand statement closes the page alone. SEO fully wired: `robots.txt`, `sitemap.xml`, page-level canonical + OG + 155-char description, `NEXT_PUBLIC_APP_URL=https://zonna.run` in Vercel. Waitlist form live and taking signups. On approval day: set `BRAND.appStore.url` → badge becomes a live download link.
 
-**Acquisition + retention engine:** not yet running. Waitlist is the only capture. Trial emails (GTM-09/10) not built. No paid spend — correct at this stage (wait for trial→paid signal first).
+**Acquisition + retention engine:** trial lifecycle emails (GTM-09/10) shipped 2026-06-08 — day-11 nudge + day-14 expiry via Resend, daily GitHub Actions cron. Waitlist capture live. No paid spend — correct at this stage (wait for trial→paid signal first).
 
 ---
 
@@ -68,7 +68,7 @@ iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. **App Store subm
 
 | Item | Status | Effort | Notes |
 |------|--------|--------|-------|
-| **Trial lifecycle emails** (GTM-09 day-14 + GTM-10 day-11) | 🔲 | M | **SLT #1.** Email platform decision first (Resend recommended). Content: surface a specific run, not a deadline. |
+| **Trial lifecycle emails** (GTM-09 day-14 + GTM-10 day-11) | ✅ | M | Shipped 2026-06-08 (`7cde428`). Resend, daily GH Actions cron, personalised from last analysed run, no scarcity. Op gate: set GH secrets `CRON_SECRET` + `VERCEL_URL`, confirm green run. |
 | **CA-01 — Free-tier "why this plan" coach intro** | ✅ | S | Shipped 2026-06-04. |
 | **In-app review prompt at a value moment** | 🔲 | S | After a "nailed" session / good weekly report — not at launch. |
 
