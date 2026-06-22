@@ -18,13 +18,15 @@ Supporting strategy: `docs/gtm/go-to-market-plan-2026-06.md` (the GTM playbook �
 
 **Workstreams:** 🏃 Product · 📣 Go-to-Market & Marketing · 🔁 Growth & Retention · ⚖️ Legal & Ops
 **Status:** 🔲 not started · 🔄 in progress · ✅ done · ⏸️ deferred
-**Last updated:** 2026-06-06 (SLT full backlog review)
+**Last updated:** 2026-06-22 (post-launch reconciliation — GTM-09/10 + live-on-App-Store status)
 
 ---
 
 ## Where we are
 
-iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. **App Store submission ready — one action left: Submit for review.** Copyright `2026 Russell Shear`, support page, screenshots, demo account, subscription disclosure, legal copy (service-nerd removed) all done. **Operating entity for v1: Russell Shear personally** (Apple Developer account is Individual; convert to LoGlide Limited post-validation — see Legal & Ops).
+iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and released 2026-06-15.** The binary is in front of users; focus has shifted from "ship it" to acquisition + conversion + the NEXT product stack. Copyright `2026 Russell Shear`, support page, screenshots, demo account, subscription disclosure, legal copy (service-nerd removed) all done. **Operating entity for v1: Russell Shear personally** (Apple Developer account is Individual; convert to LoGlide Limited post-validation — see Legal & Ops).
+
+**Remaining day-of action:** set `BRAND.appStore.url` in `lib/brand.ts` to the live listing URL → the marketing-site download badge becomes a real link (no Vercel change needed).
 
 **`zonna.run` is now a real marketing page** (live 2026-06-03, redesigned 2026-06-04). Sutherland-flavoured positioning pass: tagline elevated to hero kicker, "What's not in the app" anti-feature grid, "Probably not for you if…" counter-positioning, waitlist + trial copy in brand voice, personalisation mechanic preview (wizard → session card), brand statement closes the page alone. SEO fully wired: `robots.txt`, `sitemap.xml`, page-level canonical + OG + 155-char description, `NEXT_PUBLIC_APP_URL=https://zonna.run` in Vercel. Waitlist form live and taking signups. On approval day: set `BRAND.appStore.url` → badge becomes a live download link.
 
@@ -32,9 +34,9 @@ iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. **App Store subm
 
 ---
 
-## NOW — Launch (this week)
+## NOW — Launch ✅ COMPLETE (v1.7 live 2026-06-15)
 
-*Goal: get the binary in front of users. Almost everything is done; the remaining work is to submit and not ship with inconsistencies.*
+*Goal was: get the binary in front of users. Done — app approved and released. Section retained as the launch record; live work now sits in NEXT.*
 
 | WS | Item | Status | Notes |
 |----|------|--------|-------|
@@ -43,7 +45,7 @@ iOS-only (US/UK/anglosphere). TestFlight v1.7 build 8 uploaded. **App Store subm
 | ⚖️ | **Drop "service-nerd" from legal copy** | ✅ | Privacy + Terms now "operated by Russell Shear". Infra identifiers (gist URL, repo) left as-is. |
 | 📣 | **App Store listing** (subtitle, description, keywords, screenshots) | ✅ | 5 screenshots uploaded; three-beat description rhythm optional polish (analysis §7). |
 | 🏃 | **Pre-submission QA / journey test** | ✅ | Critical funnel passing; post-race bug fixed (`f2892b9`). |
-| ⚖️ | **Submit for review** | ✅ | Submitted. Manual release selected — smoke the live binary before flipping to traffic. |
+| ⚖️ | **Submit for review → release** | ✅ | Approved and **released to the App Store 2026-06-15** (v1.7). Live to all traffic. |
 | ⚖️ | **In-app medical/training disclaimer present** | ✅ | Terms §5 + §11 hold the full disclaimer. Login screen now shows a one-line in-brand pointer above the Terms/Privacy footer — every account creation passes through it. |
 
 ---
