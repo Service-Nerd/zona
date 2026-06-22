@@ -18,7 +18,7 @@ Supporting strategy: `docs/gtm/go-to-market-plan-2026-06.md` (the GTM playbook �
 
 **Workstreams:** 🏃 Product · 📣 Go-to-Market & Marketing · 🔁 Growth & Retention · ⚖️ Legal & Ops
 **Status:** 🔲 not started · 🔄 in progress · ✅ done · ⏸️ deferred
-**Last updated:** 2026-06-22 (post-launch wave — shipped ENGINE-02, DS-05, DS-07 Part A, CA-03; GTM-09/10 reconciled; ENGINE-03a/CA-05 blocked on plugin cycle data)
+**Last updated:** 2026-06-22 (post-launch wave — shipped ENGINE-02, DS-05, DS-07 A+B, CA-03; GTM-09/10 reconciled; ENGINE-03a/CA-05 blocked on plugin cycle data; Plan-restore cancelled)
 
 ---
 
@@ -81,7 +81,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 | ✅ | **UPGRADE-ENTRY-01** | ✅ | S | Shipped 2026-06-04. |
 | ✅ | **CA-04** — adjustment narrative | ✅ | S | Shipped (AI-DEPTH-10). |
 | ✅ | **R25 cuts #2 + #3** — pre-run band + trend cards | ✅ | ~10h | Shipped 2026-06-04. Confirmed code audit 2026-06-06. Feature registry updated. |
-| ✅ | **DS-07 Part A** — edit logged distance on complete manual sessions | ✅ | ~2h | Shipped 2026-06-22. "Update log" on a manual completion now opens the manual editor pre-filled with the logged distance (was a dead-end picker). Distance-correction only. |
+| ✅ | **DS-07** — composite effort (A: edit logged distance · B: add another effort) | ✅ | ~2h + ~1.5d | Shipped 2026-06-22 (both parts). Manual completions can be distance-corrected and have second efforts stacked on (hike + treadmill = one session). |
 | ✅ | **ENGINE-02** — long run shortfall detection | ✅ | S | Shipped 2026-06-22 (`b605088` engine + finalised). Migration `20260622_engine_trigger_types.sql` (also fixes ENGINE-01's missing trigger type) ⚠️ apply to live DB. Principle §66. |
 | ✅ | **CA-03** — post-race "what next" goal-ladder | ✅ | M | Shipped 2026-06-22. TodayScreen card after a logged race: engine-sequenced next goals (chase/step-up/maintain) seed the wizard. Deterministic, PAID, principle §67. |
 | ⛔ | **ENGINE-03a** — cycle false positive fix | ⛔ | S | **BLOCKED (verified 2026-06-22).** `@capgo/capacitor-health@8.4.8` exposes no menstrual/cycle data type — no data path. Needs a custom Swift bridge / plugin fork to unblock. |
@@ -116,7 +116,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 | **CA-05 / R27** — Cycle-aware coaching | FREE (recommended) | M | ⛔ **BLOCKED (2026-06-22)** — depends on ENGINE-03a, which is blocked: `@capgo/capacitor-health` has no menstrual/cycle data. Needs a plugin fork / Swift bridge before this moat is buildable. |
 | **Supplementary session slots** | FREE slot / PAID placement | ~3wk | Big schema footprint. Dedicated window only. Hold the line on AM/PM run-doubling. |
 | ~~**DS-05** sleep stages~~ ✅ shipped 2026-06-22 · **DS-06** manual run metrics | mixed | S–M | DS-05 done (quality-weighted readiness). DS-06 data hygiene, no urgency. |
-| ~~**DS-07 Part A** — edit logged distance~~ ✅ shipped 2026-06-22 | FREE | ~2h | Done. DS-07 Part B (composite effort) remains on the bench. |
+| ~~**DS-07** — edit logged distance + composite effort~~ ✅ shipped 2026-06-22 | FREE | — | Done (both parts). |
 
 ### 📣 Go-to-Market & Marketing
 

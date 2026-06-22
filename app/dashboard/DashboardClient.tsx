@@ -3189,6 +3189,9 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
 }) {
   const [view, setView] = useState<'detail' | 'complete' | 'skip' | 'success' | 'reflect' | 'skip-reflect'>('detail')
   const [showManualModal, setShowManualModal] = useState(false)
+  // DS-07 Part B — "Add another effort" opens the manual modal in accumulate mode
+  // (the entered distance is added on top of the logged total, not a replacement).
+  const [manualAccumulate, setManualAccumulate] = useState(false)
   const [saving, setSaving] = useState(false)
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null)
   const [claimedIds, setClaimedIds] = useState<Set<number>>(new Set())
@@ -4308,26 +4311,43 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 // the RPEScale writes via setRpe.
                 const isRpeSet = rpe != null
                 return (
-                  <button
-                    onClick={isManualCompletion ? () => setShowManualModal(true) : handleMarkComplete}
-                    style={{
-                      flex: 1,
-                      background: isRpeSet ? 'var(--moss)' : 'none',
-                      color:      isRpeSet ? 'var(--card)' : 'var(--text-muted)',
-                      border:     isRpeSet ? 'none'        : '0.5px solid var(--border-col)',
-                      borderRadius: '10px',
-                      padding: '13px',
-                      fontFamily: 'var(--font-ui)',
-                      fontSize: '12px',
-                      fontWeight: isRpeSet ? 600 : 400,
-                      letterSpacing: isRpeSet ? '0.06em' : '0.04em',
-                      textTransform: isRpeSet ? 'uppercase' : 'none',
-                      cursor: 'pointer',
-                      transition: 'background 0.18s ease, color 0.18s ease, letter-spacing 0.18s ease',
-                    }}
-                  >
-                    Update log
-                  </button>
+                  <>
+                    <button
+                      onClick={isManualCompletion ? () => setShowManualModal(true) : handleMarkComplete}
+                      style={{
+                        flex: 1,
+                        background: isRpeSet ? 'var(--moss)' : 'none',
+                        color:      isRpeSet ? 'var(--card)' : 'var(--text-muted)',
+                        border:     isRpeSet ? 'none'        : '0.5px solid var(--border-col)',
+                        borderRadius: '10px',
+                        padding: '13px',
+                        fontFamily: 'var(--font-ui)',
+                        fontSize: '12px',
+                        fontWeight: isRpeSet ? 600 : 400,
+                        letterSpacing: isRpeSet ? '0.06em' : '0.04em',
+                        textTransform: isRpeSet ? 'uppercase' : 'none',
+                        cursor: 'pointer',
+                        transition: 'background 0.18s ease, color 0.18s ease, letter-spacing 0.18s ease',
+                      }}
+                    >
+                      Update log
+                    </button>
+                    {/* DS-07 Part B — stack a second activity onto a logged run
+                        (e.g. hike + treadmill top-up = one session). */}
+                    {isComplete && isRunType && (
+                      <button
+                        onClick={() => { setManualAccumulate(true); setShowManualModal(true) }}
+                        style={{
+                          flexBasis: '100%', background: 'none', border: 'none',
+                          fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
+                          cursor: 'pointer', padding: '6px 0',
+                          textDecoration: 'underline', textUnderlineOffset: '3px',
+                        }}
+                      >
+                        + Add another effort
+                      </button>
+                    )}
+                  </>
                 )
               }
               if (!isComplete && !isSkipped) {
@@ -4533,14 +4553,17 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           weekN={weekN}
           sessionKey={session.key}
           preferredUnits={preferredUnits}
-          onClose={() => setShowManualModal(false)}
-          onSaved={() => { setShowManualModal(false); onSaved?.(); onClose() }}
+          onClose={() => { setShowManualModal(false); setManualAccumulate(false) }}
+          onSaved={() => { setShowManualModal(false); setManualAccumulate(false); onSaved?.(); onClose() }}
           sessionName={session.title}
           sessionType={session.type}
           plannedDistanceKm={session.distance_km ?? session.distance ?? undefined}
           plannedDurationMins={session.duration_mins ? Number(session.duration_mins) : undefined}
-          loggedDistanceKm={isManualCompletion ? (completion?.strava_activity_km ?? undefined) : undefined}
-          isEdit={isManualCompletion}
+          loggedDistanceKm={isManualCompletion && !manualAccumulate ? (completion?.strava_activity_km ?? undefined) : undefined}
+          isEdit={isManualCompletion && !manualAccumulate}
+          accumulate={manualAccumulate}
+          existingTotalKm={manualAccumulate ? (completion?.strava_activity_km ?? 0) : undefined}
+          existingEffortCount={manualAccumulate ? parseEffortCount(completion?.strava_activity_name) : undefined}
         />
       )}
 
@@ -4769,7 +4792,13 @@ function savedCopy(rpe: number | null): string {
   return "Maximum effort. Now actually rest."
 }
 
-function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, sessionName, sessionType, plannedDistanceKm, plannedDurationMins, loggedDistanceKm, isEdit }: {
+/** DS-07 Part B — read the effort count off a composite log's name ("3 efforts · …"). */
+function parseEffortCount(name?: string | null): number {
+  const m = name?.match(/^(\d+)\s+efforts/)
+  return m ? parseInt(m[1], 10) : 1
+}
+
+function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, sessionName, sessionType, plannedDistanceKm, plannedDurationMins, loggedDistanceKm, isEdit, accumulate, existingTotalKm, existingEffortCount }: {
   weekN: number
   sessionKey: string | null
   preferredUnits: 'km' | 'mi'
@@ -4784,12 +4813,22 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
   loggedDistanceKm?: number
   /** DS-07 Part A — true when correcting an existing log (vs first-time logging). */
   isEdit?: boolean
+  /** DS-07 Part B — accumulate mode: the entered distance is added on top of the
+   *  logged total instead of replacing it (composite effort). */
+  accumulate?: boolean
+  /** DS-07 Part B — current logged total (km) to add onto. */
+  existingTotalKm?: number
+  /** DS-07 Part B — efforts already counted on this session (default 1). */
+  existingEffortCount?: number
 }) {
   // Edit pre-fills the logged distance (converted to the user's unit); first-log
-  // pre-fills the planned distance (left raw, matching prior behaviour).
-  const initDistDisplay = loggedDistanceKm != null
-    ? (preferredUnits === 'mi' ? loggedDistanceKm / 1.60934 : loggedDistanceKm)
-    : (plannedDistanceKm ?? null)
+  // pre-fills the planned distance (left raw). Accumulate starts at zero — the
+  // runner enters the NEW effort, which is added to the existing total.
+  const initDistDisplay = accumulate
+    ? 0
+    : loggedDistanceKm != null
+      ? (preferredUnits === 'mi' ? loggedDistanceKm / 1.60934 : loggedDistanceKm)
+      : (plannedDistanceKm ?? null)
   const initWhole   = initDistDisplay != null ? Math.floor(initDistDisplay) : 5
   const initDecimal = initDistDisplay != null ? Math.round((initDistDisplay % 1) * 10) : 0
   const initHours   = plannedDurationMins ? Math.floor(plannedDurationMins / 60) : 0
@@ -4835,6 +4874,27 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
       const dist  = parseFloat(distanceStr)
       const distKm = preferredUnits === 'mi' ? dist * 1.60934 : dist
       const key   = sessionKey ?? todayKey
+
+      if (accumulate) {
+        // DS-07 Part B — add this effort onto the existing logged total. Preserve
+        // any existing activity link (omit strava_activity_id) — the distance
+        // becomes the composite aggregate, the name carries the effort count.
+        const finalKm   = (existingTotalKm ?? 0) + distKm
+        const count     = (existingEffortCount ?? 1) + 1
+        const finalDisp = (preferredUnits === 'mi' ? finalKm / 1.60934 : finalKm).toFixed(1)
+        await supabase.from('session_completions').upsert({
+          user_id: user.id,
+          week_n: weekN,
+          session_day: key,
+          status: 'complete',
+          strava_activity_name: `${count} efforts · ${finalDisp}${preferredUnits}`,
+          strava_activity_km: +finalKm.toFixed(1),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,week_n,session_day' })
+        setSavedStep(true)
+        return
+      }
+
       await supabase.from('session_completions').upsert({
         user_id: user.id,
         week_n: weekN,
@@ -5047,9 +5107,11 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div>
-                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>{isEdit ? 'Update your log' : 'Log a run'}</div>
+                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>{accumulate ? 'Add another effort' : isEdit ? 'Update your log' : 'Log a run'}</div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  {isEdit ? 'Correct what you logged' : 'Manual entry · no Strava needed'}
+                  {accumulate
+                    ? `Adds to your ${(preferredUnits === 'mi' ? (existingTotalKm ?? 0) / 1.60934 : (existingTotalKm ?? 0)).toFixed(1)}${preferredUnits} so far`
+                    : isEdit ? 'Correct what you logged' : 'Manual entry · no Strava needed'}
                 </div>
               </div>
               <button onClick={handleClose} style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-muted)', fontSize: '14px', cursor: 'pointer', width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
