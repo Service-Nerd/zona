@@ -5952,9 +5952,9 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
       <div style={{ flex: 1, padding: '0 20px 24px' }}>
         {status === 'loading' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <style>{`@keyframes vetra-shimmer { 0%,100%{opacity:.3} 50%{opacity:.6} }`}</style>
+            <style>{`@keyframes zonna-shimmer { 0%,100%{opacity:.3} 50%{opacity:.6} }`}</style>
             {[1,2,3].map(i => (
-              <div key={i} style={{ height: '64px', borderRadius: '12px', background: 'var(--line-strong)', animation: 'vetra-shimmer 1.4s ease-in-out infinite', animationDelay: `${i * 0.1}s` }} />
+              <div key={i} style={{ height: '64px', borderRadius: '12px', background: 'var(--line-strong)', animation: 'zonna-shimmer 1.4s ease-in-out infinite', animationDelay: `${i * 0.1}s` }} />
             ))}
           </div>
         )}
@@ -6743,7 +6743,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
             Shown when the race week is in the past and no result logged yet.
             Priority order: pendingReshape card > prompt button > nothing. */}
         {pendingReshape && (
-          <div style={{ marginBottom: '16px', animation: 'vetra-fade-in 0.2s ease-out' }}>
+          <div style={{ marginBottom: '16px', animation: 'zonna-fade-in 0.2s ease-out' }}>
             <PostRaceReshapeCard
               state="live"
               reshapeId={pendingReshape.reshapeId}
@@ -7650,11 +7650,11 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
       {showRaceProjections && (
         <div
           onClick={() => setShowRaceProjections(false)}
-          style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'vetra-fade-in 0.18s ease-out' }}
+          style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'zonna-fade-in 0.18s ease-out' }}
         >
           <div
             onClick={e => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '85vh', overflowY: 'auto', animation: 'vetra-slide-up 0.22s ease-out' }}
+            style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '85vh', overflowY: 'auto', animation: 'zonna-slide-up 0.22s ease-out' }}
           >
             <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />
             <div style={{ padding: '0 20px 4px' }}>
@@ -9046,11 +9046,11 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
         {loadSheetOpen && (
           <div
             onClick={() => setLoadSheetOpen(false)}
-            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'vetra-fade-in 0.18s ease-out' }}
+            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'zonna-fade-in 0.18s ease-out' }}
           >
             <div
               onClick={e => e.stopPropagation()}
-              style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '80vh', overflowY: 'auto', animation: 'vetra-slide-up 0.22s ease-out' }}
+              style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '80vh', overflowY: 'auto', animation: 'zonna-slide-up 0.22s ease-out' }}
             >
               <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />
 
@@ -9092,11 +9092,11 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
         {zoneDisciplineSheetOpen && (
           <div
             onClick={() => setZoneDisciplineSheetOpen(false)}
-            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'vetra-fade-in 0.18s ease-out' }}
+            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'zonna-fade-in 0.18s ease-out' }}
           >
             <div
               onClick={e => e.stopPropagation()}
-              style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '80vh', overflowY: 'auto', animation: 'vetra-slide-up 0.22s ease-out' }}
+              style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '80vh', overflowY: 'auto', animation: 'zonna-slide-up 0.22s ease-out' }}
             >
               <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />
 

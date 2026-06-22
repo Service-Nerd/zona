@@ -260,7 +260,7 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
             // eyebrow collapses. Single-week expansion at a time.
             if (expandedLaterWeek === w.weekNum) {
               return (
-                <div key={`expanded-${w.weekNum}`} style={{ display: 'flex', flexDirection: 'column', gap: '8px', animation: 'vetra-fade-in 0.18s ease-out' }}>
+                <div key={`expanded-${w.weekNum}`} style={{ display: 'flex', flexDirection: 'column', gap: '8px', animation: 'zonna-fade-in 0.18s ease-out' }}>
                   <button
                     onClick={() => setExpandedLaterWeek(null)}
                     aria-label="Collapse week"

@@ -167,7 +167,7 @@ export default function RaceResultSheet({
         position: 'fixed', inset: 0, zIndex: 4000,
         background: 'rgba(26,26,26,0.40)',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        animation: 'vetra-fade-in 0.18s ease-out',
+        animation: 'zonna-fade-in 0.18s ease-out',
       }}
     >
       <div
@@ -179,7 +179,7 @@ export default function RaceResultSheet({
           boxShadow: '0 -8px 24px rgba(0,0,0,0.12)',
           paddingTop: '8px',
           maxHeight: '90vh', overflowY: 'auto',
-          animation: 'vetra-slide-up 0.22s ease-out',
+          animation: 'zonna-slide-up 0.22s ease-out',
         }}
       >
         {/* Drag indicator */}
@@ -307,7 +307,7 @@ export default function RaceResultSheet({
             </button>
 
             {showAdvanced && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '14px', animation: 'vetra-fade-in 0.15s ease-out' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '14px', animation: 'zonna-fade-in 0.15s ease-out' }}>
                 <AdvancedField label="What worked" placeholder="Pacing, fueling, mindset…" value={whatWorked} onChange={setWhatWorked} />
                 <AdvancedField label="What broke" placeholder="Faded at km 30, stomach issues…" value={whatBroke} onChange={setWhatBroke} />
                 <AdvancedField label="Fueling" placeholder="Gels every 25 min, cramped at km 35…" value={fuelingNote} onChange={setFuelingNote} />

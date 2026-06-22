@@ -201,7 +201,7 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 ### Ops
 
 - **Rename Vercel project** from `zona-service-nerds-projects` → `zonna` (or `zonna-app` if taken) when name available. Update `NEXT_PUBLIC_APP_URL`, `CLAUDE.md`, this file, `app/api/checkout/route.ts` fallback.
-- **Update local git remote URL** — GitHub repo moved from `Service-Nerd/rts-training-hub` → `Service-Nerd/zona` (verified via push redirect notice 2026-05-12). Pushes still succeed via redirect, but the local origin URL is stale. Fix: `git remote set-url origin https://github.com/Service-Nerd/zona.git`. Ideally the GitHub repo gets a second rename to `zonna` to align with the brand — bundle both into one operation.
+- ✅ **Update local git remote URL** — done. Local origin is `https://github.com/Service-Nerd/zona.git` (verified 2026-06-22). The further `zona` → `zonna` repo rename is tracked as BRAND-13.
 
 ---
 
@@ -212,17 +212,17 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 The Vetra → Zonna rename (commits `fda3ff6` + `ba469df`) is complete in code, native shell, icons, OG image, and current-truth docs. The items below are non-blocking hygiene and decisions that can land any time post-launch.
 
 - ✅ **BRAND-01 — Domain rollout** — `zonna.run` live 2026-05-15. DNS pointed, custom domain in Vercel, email refs already `support@zonna.run`, TODO comments removed, `capacitor.config.ts` `server.url` updated, `VAPID_SUBJECT` set in Vercel 2026-05-15. **Outstanding:** set up email forwarding `support@zonna.run` → your inbox (registrar config, not code).
-- 🔲 **BRAND-02 — Vercel project rename** *(P3, ~2 min)* — currently `rts-training-hub`. Rename via Vercel dashboard. Affects preview URLs only — code-side: nothing.
+- 🔲 **BRAND-02 — Vercel project rename** *(P3, ~2 min)* — *(corrected 2026-06-22: the live project is already `zona`; `rts-training-hub` is legacy.)* Rename `zona` → `zonna` via Vercel dashboard if desired. Affects preview URLs only — code-side: nothing. **External — dashboard action.**
 - 🔲 **BRAND-03 — Supabase project rename (cosmetic)** *(P3, ~1 min, optional)* — Supabase project display name can be renamed but the ID `wkppmpsvqkaxbekdgzdm` is permanent. Purely cosmetic.
-- 🔲 **BRAND-04 — npm package rename** *(P3, ~1 min)* — `package.json:2` still says `"name": "vetra"`. Rename to `"zonna"` whenever convenient. Triggers `package-lock.json` regeneration on next install.
+- ✅ **BRAND-04 — npm package rename** — done 2026-06-22. `package.json` + `package-lock.json` name now `"zonna"`.
 - 🔲 **BRAND-05 — Remove old `app.vetra.ios` allowlist entries** *(P2, ~5 min)* — once the new bundle ID is verified in TestFlight, remove the lingering `app.vetra.ios` entries from Apple Developer portal, Supabase Auth Redirect URLs, Supabase Apple provider Authorized Client IDs, Google OAuth iOS bundle IDs.
-- 🔲 **BRAND-06 — CSS keyframe + alias rename** *(P3, ~20 min)* — `globals.css` still defines `--vetra-amber`, `--vetra-red`, `@keyframes vetra-fade-in`, `@keyframes vetra-slide-up`. `DashboardClient.tsx` (`vetra-shimmer` inline) and `ZoneInfoSheet.tsx` reference these. Rename to `--zonna-*` / `zonna-*` and update all callsites. No user-visible impact. Bundle with another `globals.css` cleanup pass. Currently documented in `brand.md` and `ui-patterns.md` with explicit "name retained pending BRAND-06" notes.
+- ✅ **BRAND-06 — CSS keyframe + alias rename** — done 2026-06-22. Dead `--vetra-amber` / `--vetra-red` aliases (0 references) deleted; keyframes `vetra-fade-in` / `vetra-slide-up` / `vetra-shimmer` → `zonna-*` across `globals.css` + all ~22 call-sites (incl. the inline defs in `DashboardClient.tsx` and `ZoneInfoSheet.tsx`). Build + 178 tests green. *(Note: `brand.md` / `ui-patterns.md` may still carry "name retained pending BRAND-06" notes — clear those next time those docs are touched.)*
 - 🔲 **BRAND-07 — Legacy storage key migration** *(P3, ~1 hr)* — `lib/health/clientSync.ts:26` uses `vetra_healthkit_last_sync_ts`; `DashboardClient.tsx` + `GeneratePlanScreen.tsx` use `zona_wizard_draft`, `zona_guide_seen`, `zona_coach_intro_seen`. Renaming wipes user state. Write a one-time read-old → write-new → delete-old migration on app boot. Low priority — these are functional IDs invisible to users.
 - 🔲 **BRAND-08-pwa — Regenerate PWA icon PNGs** *(P2, ~5 min)* — `public/icons/icon-*.png` still rendered from the old ring+dot mark. Need to regenerate from the new concentric-rings SVG so PWA install / favicon / Add-to-Home Screen use the new design. iOS app icon (Capacitor) already done — this is web-only.
 - 🔲 **BRAND-09 — App Store screenshot templates** *(P2, ~2 days)* — when screenshots get built, ensure they use the Zonna wordmark with NN-moss device. Per `brand-product-alignment.md §7`, the 5-screenshot narrative arc is locked but the visuals don't exist yet.
-- 🔲 **BRAND-10 — Update `mockups/ai-visibility-audit.html`** *(P3, ~2 min, optional)* — still references Vetra. Outside the build, kept for design context. Update or archive on next visit to that file.
+- ✅ **BRAND-10 — Update `mockups/ai-visibility-audit.html`** — done 2026-06-22. 3× "Vetra" → "Zonna".
 - 🔲 **BRAND-11 — Convention reminder** *(P3, 0 min)* — new SQL migrations should use "Zonna voice" in comments. Committed migrations are immutable history; don't edit them.
-- 🔲 **BRAND-12 — Rebrand `scripts/generate-coaching-review.ts`** *(P3, ~10 min)* — hardcoded "Zona" in the Claude Desktop prompt template. Refactor to import `BRAND.name`.
+- ✅ **BRAND-12 — Rebrand `scripts/generate-coaching-review.ts`** — done 2026-06-22. Imports `BRAND` from `../lib/brand`; 4 hardcoded "Zona" → `${BRAND.name}`.
 - 🔲 **BRAND-13 — Rename GitHub repo `zona` → `zonna`** *(P3, ~5 min)* — currently push goes via the redirect (`zona` → was renamed from `rts-training-hub`; now stale). After rename: `git remote set-url origin https://github.com/Service-Nerd/zonna.git` locally.
 
 ### Data source hygiene (from ADR-011)

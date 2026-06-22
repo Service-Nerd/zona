@@ -97,12 +97,10 @@
   --accent-amber:    var(--warn);
   --amber-soft:      var(--warn-bg);
   --amber-mid:       var(--warn-bg);
-  --vetra-amber:     var(--warn);
   --yellow:          var(--warn);
 
   /* Danger aliases */
   --red:             var(--danger);
-  --vetra-red:       var(--danger);
   --coral:           var(--s-inter);
 
   /* Text aliases → ink */
@@ -193,12 +191,12 @@ html, body {
 }
 
 /* Slide-up sheet backdrop + panel — used by Coach stats sheets */
-@keyframes vetra-fade-in {
+@keyframes zonna-fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
-@keyframes vetra-slide-up {
+@keyframes zonna-slide-up {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
 }

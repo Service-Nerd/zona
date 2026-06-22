@@ -170,7 +170,7 @@ function ExplanationSheet({
         position: 'fixed', inset: 0, zIndex: 200,
         background: 'rgba(26,26,26,0.4)',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        animation: 'vetra-fade-in 0.18s ease-out',
+        animation: 'zonna-fade-in 0.18s ease-out',
       }}
     >
       <div
@@ -182,7 +182,7 @@ function ExplanationSheet({
           boxShadow: '0 -8px 24px rgba(0,0,0,0.12)',
           paddingTop: '8px',
           maxHeight: '80vh', overflowY: 'auto',
-          animation: 'vetra-slide-up 0.22s ease-out',
+          animation: 'zonna-slide-up 0.22s ease-out',
         }}
       >
         <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />

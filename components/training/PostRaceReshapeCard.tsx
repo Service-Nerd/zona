@@ -158,7 +158,7 @@ function Live({
   const distLabel = bucketLabel[distanceBucket] ?? distanceBucket
 
   return (
-    <div style={{ position: 'relative', background: 'var(--card)', borderRadius: '16px', padding: '16px 16px 16px 22px', animation: 'vetra-fade-in 0.2s ease-out' }}>
+    <div style={{ position: 'relative', background: 'var(--card)', borderRadius: '16px', padding: '16px 16px 16px 22px', animation: 'zonna-fade-in 0.2s ease-out' }}>
       {/* 3px moss left-rail — AI provenance marker */}
       <span style={{ position: 'absolute', left: '8px', top: '16px', bottom: '16px', width: '3px', borderRadius: '2px', background: 'var(--moss)' }} aria-hidden />
 

@@ -16,6 +16,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { generateRulePlan, type Tier } from '../lib/plan/ruleEngine'
 import type { GeneratorInput, Plan } from '../types/plan'
+import { BRAND } from '../lib/brand'
 
 interface Case {
   id: string
@@ -65,7 +66,7 @@ const cases: Case[] = [
     id: '02-10k-intermediate',
     title: '10K intermediate — sub-50 time goal',
     persona:
-      "Mark, 38. Software engineer, two kids. Runs 4×/week, consistent for 2 years but always pushes too hard on easy days — Zona's exact target user. Wants to break 50:00 in a local 10K, 12 weeks away. Has 60 min on weekdays, longer on weekends. Comfortable with structured quality but injury history of mild knee niggles.",
+      `Mark, 38. Software engineer, two kids. Runs 4×/week, consistent for 2 years but always pushes too hard on easy days — ${BRAND.name}'s exact target user. Wants to break 50:00 in a local 10K, 12 weeks away. Has 60 min on weekdays, longer on weekends. Comfortable with structured quality but injury history of mild knee niggles.`,
     tier: 'paid',
     input: {
       race_date: '2026-07-20',
@@ -305,7 +306,7 @@ function renderCase(c: Case, plan: Plan): string {
 }
 
 function renderIndex(cases: Case[]): string {
-  return `# Zona Plan Coaching Review
+  return `# ${BRAND.name} Plan Coaching Review
 
 You are a senior running coach with 15+ years of experience training non-elite
 runners — people with day jobs, families, and a tendency to overtrain. Your
@@ -314,7 +315,7 @@ feedback to the engine team.
 
 ## Context
 
-Zona is a training app for runners who always go hard on their easy days.
+${BRAND.name} is a training app for runners who always go hard on their easy days.
 Core positioning: *"Training plans that stop you overtraining."* The engine
 follows a written constitution (\`docs/canonical/CoachingPrinciples.md\`)
 covering volume progression, intensity distribution, long-run rules, taper
@@ -365,7 +366,7 @@ Be honest. Be specific. Reference week numbers and session days.
 
 ### Constitutional gaps
 Anything the plan does that you'd flag as a coaching error but that isn't
-addressed by Zona's existing principles. Describe the gap and propose a
+addressed by ${BRAND.name}'s existing principles. Describe the gap and propose a
 principle that would close it.
 \`\`\`
 
