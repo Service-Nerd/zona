@@ -235,7 +235,7 @@ All colour MUST come from CSS custom properties in `globals.css`. Nothing hardco
 - **iOS onboarding CTAs**: HealthKit first, Strava second. Never "connect Strava" as the only or first CTA on iOS.
 - **SOR by data type**: run sessions → activity log; recovery (RHR/HRV/sleep) → `health_daily_samples` (HealthKit only); RPE/fatigue → `session_completions` (user input, never overridden by device data). Full table in ADR-011.
 - **HealthKit permissions**: every requested permission must have an active query. Current defect: `distance` requested but not queried — remove it (DS-01 in backlog).
-- **`@capgo/capacitor-health` does NOT support**: GPS routes, cadence, stride, power, VO2max. Don't promise features that need these without a custom Swift bridge.
+- **`@capgo/capacitor-health` does NOT support**: GPS routes, cadence, stride, power, VO2max, **menstrual / cycle / reproductive-health data** (its `HealthDataType` union has no such type — verified v8.4.8, 2026-06-22; this is why ENGINE-03a/CA-05 are blocked). Don't promise features that need these without a custom Swift bridge / plugin fork.
 
 ### Strava OAuth
 - Multi-line curl in Mac Terminal consistently fails

@@ -1074,6 +1074,26 @@ Engine: `buildFitnessSignalAdjustment` in `lib/coaching/planAdjustment.ts`.
 
 ---
 
+## 66. Long-run shortfall — match the prescription to where the runner actually finishes (ENGINE-02)
+
+A long run logged as "complete" at 70% of its planned distance, twice in a row, is not a complete long run — it is the plan asking for more than the runner can currently execute. Chasing the prescribed number a third time does not build the runner up; it just manufactures a third shortfall and the quiet erosion of trust that comes with always falling short. The correct response is to lower the prescription to a distance the runner will finish, then build back. This is **§1 in practice — honesty over optimism**: a number the runner hits beats a number the plan wishes for.
+
+**Pattern required before firing:**
+- `LONG_RUN_SHORTFALL_CONSECUTIVE` most-recent long runs each logged at `actualKm < plannedKm × LONG_RUN_SHORTFALL_COMPLETION_PCT` (under 82% of prescribed distance — equivalent to `distance_score ≤ 50`, the 70–85% band).
+- Those long runs are in adjacent (or near-adjacent) weeks — a one-off short run is noise, not a pattern. The week-gap guard rejects scattered shortfalls.
+- Both/all qualifying runs have a real planned distance (`plannedKm > 0`) — duration-primary long runs are out of scope (no distance to fall short of).
+
+**What it does:** reduces the upcoming long run by `LONG_RUN_SHORTFALL_REDUCE_PCT` (15% trim) with a coach note, as a `reduce_volume` adjustment that **requires confirmation** — a structural change to a key session is the runner's call, one tap, no explanation demanded. Easy-run shortfalls are explicitly out of scope: per §1, zone discipline outranks volume discipline, so a short easy run earns a coach note at most, never a plan change.
+
+**Why the peak long run is safe.** §24 requires the peak long run to reach ≥85% of race distance (HM) / ≥75% (marathon). ENGINE-02 could in principle fight that. It does not, because the shared adjustment guards (`guardCheck`) suppress every automatic trigger inside `TAPER_PROTECTION_WEEKS` of race day and during the taper phase — the window where the peak long run lives. The pull-back only fires earlier, where matching reality is the right call and there is still time to rebuild.
+
+**Voice rule:** matter-of-fact, never a telling-off. The runner already knows the runs came up short — naming it as failure is the opposite of useful. Lead with the number, frame the change as alignment not punishment, leave the door open. *"Long runs averaging 71% completion over two weeks. Prescription pulled back to match where you're actually finishing — build it back when it feels right."* Never "you keep failing to finish."
+
+Config: `LONG_RUN_SHORTFALL_COMPLETION_PCT`, `LONG_RUN_SHORTFALL_CONSECUTIVE`, `LONG_RUN_SHORTFALL_REDUCE_PCT` in `lib/coaching/constants.ts`.
+Engine: `buildLongRunShortfallAdjustment` in `lib/coaching/planAdjustment.ts`.
+
+---
+
 ## 65. Day boundary — today is in flight until midnight
 
 **Principle.** Every surface that compares "what the runner has done" against "what the plan asked for" treats today as **in flight**, not as **done**. A run due today and not yet completed at noon is **not missed** — the day isn't over. Apply the rule to every report, push, gate, and metric that anchors its comparison on the calendar.

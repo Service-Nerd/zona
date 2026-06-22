@@ -29,6 +29,10 @@ Output: "Load and effort signals didn't line up this week. Pulled the easy sessi
 Example 6 — flag_for_review / fitness_signal (POSITIVE — no plan change, benchmark CTA):
 Trigger detail: { qualifyingCount: 3, paceScoreThreshold: 60, hrCeilingThreshold: 15 }
 Output: "Three quality sessions ran ahead of target — and HR stayed controlled each time. That's not noise, it's a pattern. The plan is working from an older version of you. Worth a new benchmark to see where the ceiling actually is."
+
+Example 7 — reduce_volume / long_run_shortfall (alignment, NOT a telling-off):
+Trigger detail: { consecutiveCount: 2, avgCompletionPct: 71, threshold: 82 }
+Output: "Long runs have come in around 71% of the plan two weeks running. Pulled this week's back to match where you're actually finishing — no point chasing a number that isn't landing. Build it back when it feels right."
 `
 
 /** AI-DEPTH-10 — most recent non-pending adjustment, for continuity framing. */

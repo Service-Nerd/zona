@@ -82,10 +82,10 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 | ✅ | **CA-04** — adjustment narrative | ✅ | S | Shipped (AI-DEPTH-10). |
 | ✅ | **R25 cuts #2 + #3** — pre-run band + trend cards | ✅ | ~10h | Shipped 2026-06-04. Confirmed code audit 2026-06-06. Feature registry updated. |
 | **#2** | **DS-07 Part A** — edit logged distance on complete manual sessions | 🔲 | ~2h | FREE. Quick win — broken today. |
-| **#3** | **ENGINE-02** — long run shortfall detection | 🔲 | S | PAID. 2+ short long runs → 15% pull-back. One-tap confirm. |
-| **#4** | **CA-03** — post-race "what next" goal-ladder | 🔲 | M | PAID. Fires in PostRunScreen for race sessions. Seeds wizard prefill. |
-| **#5** | **ENGINE-03a** — cycle false positive fix | 🔲 | S | FREE. Prerequisite for CA-05. Verify `@capgo/capacitor-health` menstrual data support first. |
-| **#6** | **CA-05** — cycle-aware coaching thin slice | 🔲 | M | Recommend FREE. Passive activation, no opt-in question. After ENGINE-03a only. |
+| ✅ | **ENGINE-02** — long run shortfall detection | ✅ | S | Shipped 2026-06-22 (`b605088` engine + finalised). Migration `20260622_engine_trigger_types.sql` (also fixes ENGINE-01's missing trigger type) ⚠️ apply to live DB. Principle §66. |
+| **#4** | **CA-03** — post-race "what next" goal-ladder | 🔲 | M | PAID. Fires in PostRunScreen for race sessions. Seeds wizard prefill. **Now the next actionable item after DS-07 Part A.** |
+| ⛔ | **ENGINE-03a** — cycle false positive fix | ⛔ | S | **BLOCKED (verified 2026-06-22).** `@capgo/capacitor-health@8.4.8` exposes no menstrual/cycle data type — no data path. Needs a custom Swift bridge / plugin fork to unblock. |
+| ⛔ | **CA-05** — cycle-aware coaching thin slice | ⛔ | M | **BLOCKED on ENGINE-03a** (same missing cycle data). |
 | **#7** | **POST-RUN-REFRAME-02** — voice memo reframe input | 🔲 | M (~3d) | PAID. Make Whisper/OpenAI vendor decision — don't let it stay deferred by indecision. |
 | **#8** | **CA-02** — Apple Watch companion app | 🔲 | L | FREE/PAID. Dedicated sprint. Scope locked: session + zone + HR + one-tap start only. Start Apple Developer provisioning now. |
 | later | **POST-RUN-03** — rich-media zone push | 🔲 | M | Gated on production APNs. Not before #1–4. |
@@ -113,7 +113,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 | **CA-07 — "Ask Kit about this run"** | PAID | M | Hold. Return when 50+ paying users — build for real questions, not imagined ones. |
 | **CA-08 — Garmin Connect** | PAID | M | **Apply for Garmin Connect Developer Program now** (4–8 week approval). Build later. |
 | **R18** Plan confidence · **R21** Strength sessions · **R22** Blockout days · **R24** Multi-race · **R26** Background load | PAID | M–L | Hold. No urgency. |
-| **CA-05 / R27** — Cycle-aware coaching | FREE (recommended) | M | **NEXT #6** — moved to NEXT (after ENGINE-03a). Highest-leverage moat. |
+| **CA-05 / R27** — Cycle-aware coaching | FREE (recommended) | M | ⛔ **BLOCKED (2026-06-22)** — depends on ENGINE-03a, which is blocked: `@capgo/capacitor-health` has no menstrual/cycle data. Needs a plugin fork / Swift bridge before this moat is buildable. |
 | **Supplementary session slots** | FREE slot / PAID placement | ~3wk | Big schema footprint. Dedicated window only. Hold the line on AM/PM run-doubling. |
 | **DS-05** sleep stages · **DS-06** manual run metrics | mixed | S–M | Data hygiene. No urgency. |
 | **DS-07 Part A** — edit logged distance | FREE | ~2h | **NEXT #2** — moved to NEXT. Quick win. |
