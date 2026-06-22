@@ -948,7 +948,7 @@ Four metric cells in a 2-column grid. Used on the Coach screen for Zone discipli
 - Body: 3 paragraphs explaining the metric, `15px 400 --ink-2`, `1.55` line-height
 - Sticky footer: full-width close button, `--bg-soft` background, `--ink` text
 
-**Keyframes:** `vetra-fade-in` (backdrop) and `vetra-slide-up` (panel) are defined once in `globals.css` — never inline in JSX. (Keyframe names retained from a prior rebrand pending CSS-token rename — backlog BRAND-06.)
+**Keyframes:** `zonna-fade-in` (backdrop) and `zonna-slide-up` (panel) are defined once in `globals.css` — never inline in JSX.
 
 **Rule:** Only Zone discipline and Load ratio are interactive. Sessions and Weeks left are static — same card style, no button, no ⓘ.
 
@@ -1106,7 +1106,7 @@ Compressed weekly summary used on the Plan screen for past weeks (when expanded)
 - Single-week expansion at a time — state `expandedLaterWeek: number | null` held in `PlanCalendar`
 - Tapping the eyebrow collapses; navigating away resets (state is component-local)
 - Past-week strips remain read-only (`onTap` is never passed) — the chevron is the affordance, and read-only past data has no use for it
-- Motion: `vetra-fade-in 0.18s ease-out` on the expanded wrapper; no spinner, no height-morph
+- Motion: `zonna-fade-in 0.18s ease-out` on the expanded wrapper; no spinner, no height-morph
 
 Reference: `components/training/PlanCalendar.tsx` → `WeekStripCard`.
 
@@ -1635,7 +1635,7 @@ TIER-DIVERGENT — FREE:  locked state — hand-authored copy, upgrade CTA, mute
 [Keep my plan as-is →]         ← text link, muted
 ```
 
-**Motion:** `vetra-fade-in` on card mount.
+**Motion:** `zonna-fade-in` on card mount.
 
 **On Accept:** calls POST `/api/post-race-reshape/confirm` with `reshape_id`. Route returns `reshaped_plan_json`. Card calls `onAccepted(reshapedPlan)` so parent can update plan state without re-fetching.
 

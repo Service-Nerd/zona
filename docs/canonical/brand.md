@@ -138,7 +138,7 @@ This is a design gate, not a guideline.
 
 | Rule | Detail |
 |------|--------|
-| No red in the training UI | Red implies danger or failure. Zonna uses amber for warnings, coral for high-intensity sessions. Form validation errors may use `--vetra-red` (`#ff7777`) only — alias name retained from a prior rebrand pending CSS-token rename (backlog BRAND-06). |
+| No red in the training UI | Red implies danger or failure. Zonna uses amber for warnings, coral for high-intensity sessions. Form validation / error states may use `--danger` (`#B84545`) only — never in training UI. |
 | No popups | All interactions navigate to full screens. Modal overlays only for destructive confirmations (delete, disconnect). Never for information. |
 | Back arrow top-left | Navigation is always predictable and reversible. |
 | One job per screen | Each screen has exactly one primary purpose. No dashboards. No noise. |
