@@ -115,7 +115,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 | **R18** Plan confidence · **R21** Strength sessions · **R22** Blockout days · **R24** Multi-race · **R26** Background load | PAID | M–L | Hold. No urgency. |
 | **CA-05 / R27** — Cycle-aware coaching | FREE (recommended) | M | ⛔ **BLOCKED (2026-06-22)** — depends on ENGINE-03a, which is blocked: `@capgo/capacitor-health` has no menstrual/cycle data. Needs a plugin fork / Swift bridge before this moat is buildable. |
 | **Supplementary session slots** | FREE slot / PAID placement | ~3wk | Big schema footprint. Dedicated window only. Hold the line on AM/PM run-doubling. |
-| **DS-05** sleep stages · **DS-06** manual run metrics | mixed | S–M | Data hygiene. No urgency. |
+| ~~**DS-05** sleep stages~~ ✅ shipped 2026-06-22 · **DS-06** manual run metrics | mixed | S–M | DS-05 done (quality-weighted readiness). DS-06 data hygiene, no urgency. |
 | **DS-07 Part A** — edit logged distance | FREE | ~2h | **NEXT #2** — moved to NEXT. Quick win. |
 
 ### 📣 Go-to-Market & Marketing

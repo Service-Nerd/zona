@@ -516,6 +516,16 @@ export const GENERATION_CONFIG = {
     HRV_DECLINE_SD:          1,
     /** Sleep below this many hours on the night before quality/long fires. */
     SLEEP_THRESHOLD_HOURS:   5,
+    /**
+     * DS-05 — sleep QUALITY sub-signal. When total sleep was adequate
+     * (>= SLEEP_THRESHOLD_HOURS) but deep sleep was a smaller share of staged
+     * sleep than this floor, recovery is incomplete even though duration looked
+     * fine. Healthy adult deep sleep is ~13–23% of total; below 10% is genuinely
+     * low. Conservative on purpose — deep sleep is night-to-night noisy and this
+     * is the weakest of the four readiness signals. Only assessed when the source
+     * supplied a stage breakdown (deep+rem+light minutes > 0).
+     */
+    DEEP_SLEEP_PCT_FLOOR:    0.10,
     /** Rolling baseline window (days). */
     BASELINE_WINDOW_DAYS:    14,
     /** Long-run distance multiplier when readiness softens (15% trim). */

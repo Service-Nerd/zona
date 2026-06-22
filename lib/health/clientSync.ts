@@ -50,11 +50,12 @@ export async function postWorkout(payload: HealthKitWorkoutPayload): Promise<boo
 
 /** Posts a batch of daily samples to /api/health/samples. */
 export async function postSamples(samples: Array<{
-  sampleDate:  string
-  rhrBpm?:     number | null
-  hrvMs?:      number | null
-  sleepHours?: number | null
-  vo2Max?:     number | null
+  sampleDate:   string
+  rhrBpm?:      number | null
+  hrvMs?:       number | null
+  sleepHours?:  number | null
+  sleepStages?: { deep: number; rem: number; light: number; awake: number } | null
+  vo2Max?:      number | null
 }>): Promise<boolean> {
   if (samples.length === 0) return true
   try {
@@ -256,8 +257,13 @@ async function syncRecoverySamples(Health: HealthModule): Promise<void> {
     rhrBpm:    number[]
     hrvMs:     number[]
     sleepMins: number  // accumulated active-sleep duration in minutes
+    // DS-05 — per-stage minutes. deep/rem/light count toward sleepMins above;
+    // awake does not (it isn't sleep). Stays all-zero when the source reports
+    // only undifferentiated 'asleep' — caller posts null stages in that case.
+    stage:     { deep: number; rem: number; light: number; awake: number }
   }> = {}
-  const ensure = (date: string) => (byDate[date] ??= { rhrBpm: [], hrvMs: [], sleepMins: 0 })
+  const ensure = (date: string) =>
+    (byDate[date] ??= { rhrBpm: [], hrvMs: [], sleepMins: 0, stage: { deep: 0, rem: 0, light: 0, awake: 0 } })
 
   for (const s of rhrRes.samples) {
     if (!s.value || s.value <= 0) continue
@@ -268,21 +274,40 @@ async function syncRecoverySamples(Health: HealthModule): Promise<void> {
     ensure(localDateKey(s.startDate)).hrvMs.push(s.value)
   }
   for (const s of sleepRes.samples) {
-    if (!s.sleepState || !ACTIVE_SLEEP_STATES.has(s.sleepState)) continue
+    if (!s.sleepState) continue
+    const isActive = ACTIVE_SLEEP_STATES.has(s.sleepState)
+    if (!isActive && s.sleepState !== 'awake') continue  // skip 'inBed' / unknown
     const minutes = (new Date(s.endDate).getTime() - new Date(s.startDate).getTime()) / 60000
     if (minutes <= 0) continue
     // Sleep that crosses midnight is bucketed by start date — the Apple Watch
     // habit of reporting one main session per night makes this consistent.
-    ensure(localDateKey(s.startDate)).sleepMins += minutes
+    const agg = ensure(localDateKey(s.startDate))
+    if (isActive) agg.sleepMins += minutes  // deep/rem/light/asleep count as sleep; awake doesn't
+    if (s.sleepState === 'deep')  agg.stage.deep  += minutes
+    else if (s.sleepState === 'rem')   agg.stage.rem   += minutes
+    else if (s.sleepState === 'light') agg.stage.light += minutes
+    else if (s.sleepState === 'awake') agg.stage.awake += minutes
   }
 
-  const samples = Object.entries(byDate).map(([sampleDate, agg]) => ({
-    sampleDate,
-    rhrBpm:     agg.rhrBpm.length ? Math.round(avg(agg.rhrBpm)) : null,
-    hrvMs:      agg.hrvMs.length  ? round1(avg(agg.hrvMs))      : null,
-    sleepHours: agg.sleepMins > 0 ? round1(agg.sleepMins / 60)  : null,
-    vo2Max:     null,  // not exposed by @capgo/capacitor-health — TODO follow-up
-  }))
+  const samples = Object.entries(byDate).map(([sampleDate, agg]) => {
+    const staged = agg.stage.deep + agg.stage.rem + agg.stage.light
+    return {
+      sampleDate,
+      rhrBpm:     agg.rhrBpm.length ? Math.round(avg(agg.rhrBpm)) : null,
+      hrvMs:      agg.hrvMs.length  ? round1(avg(agg.hrvMs))      : null,
+      sleepHours: agg.sleepMins > 0 ? round1(agg.sleepMins / 60)  : null,
+      // DS-05 — only post a breakdown when the source actually staged the night.
+      sleepStages: staged > 0
+        ? {
+            deep:  Math.round(agg.stage.deep),
+            rem:   Math.round(agg.stage.rem),
+            light: Math.round(agg.stage.light),
+            awake: Math.round(agg.stage.awake),
+          }
+        : null,
+      vo2Max:     null,  // not exposed by @capgo/capacitor-health — TODO follow-up
+    }
+  })
 
   if (samples.length > 0) await postSamples(samples)
 }

@@ -19,6 +19,8 @@ interface SamplePayload {
   rhrBpm?:       number | null
   hrvMs?:        number | null
   sleepHours?:   number | null
+  /** DS-05 — per-stage minutes; null when the source gave no stage breakdown. */
+  sleepStages?:  { deep: number; rem: number; light: number; awake: number } | null
   vo2Max?:       number | null
 }
 
@@ -61,11 +63,12 @@ export async function POST(req: NextRequest) {
     .map(s => ({
       user_id:     user.id,
       sample_date: s.sampleDate,
-      rhr_bpm:     s.rhrBpm     ?? null,
-      hrv_ms:      s.hrvMs      ?? null,
-      sleep_hours: s.sleepHours ?? null,
-      vo2_max:     s.vo2Max     ?? null,
-      source:      'apple_health',
+      rhr_bpm:      s.rhrBpm      ?? null,
+      hrv_ms:       s.hrvMs       ?? null,
+      sleep_hours:  s.sleepHours  ?? null,
+      sleep_stages: s.sleepStages ?? null,
+      vo2_max:      s.vo2Max      ?? null,
+      source:       'apple_health',
     }))
 
   if (rows.length === 0) {

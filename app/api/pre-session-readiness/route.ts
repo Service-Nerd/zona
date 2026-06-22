@@ -4,7 +4,7 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { getCurrentWeekIndex } from '@/lib/plan'
-import { computeReadiness, type DailyHealthSample } from '@/lib/coaching/readinessBaseline'
+import { computeReadiness, type DailyHealthSample, type SleepStageMinutes } from '@/lib/coaching/readinessBaseline'
 import { checkAdjustmentTriggers, type AdjustmentCheckInput } from '@/lib/coaching/planAdjustment'
 import { READINESS, COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import type { Plan, Session } from '@/types/plan'
@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
 
   const { data: samples } = await supabase
     .from('health_daily_samples')
-    .select('sample_date, rhr_bpm, hrv_ms, sleep_hours')
+    .select('sample_date, rhr_bpm, hrv_ms, sleep_hours, sleep_stages')
     .eq('user_id', userId)
     .gte('sample_date', since.toISOString().slice(0, 10))
     .order('sample_date', { ascending: false })
@@ -95,15 +95,16 @@ export async function GET(req: NextRequest) {
     }))
 
   const readiness = computeReadiness(baselineWindow, {
-    rhrBpm:     todaySample.rhr_bpm,
-    hrvMs:      todaySample.hrv_ms,
-    sleepHours: todaySample.sleep_hours,
+    rhrBpm:      todaySample.rhr_bpm,
+    hrvMs:       todaySample.hrv_ms,
+    sleepHours:  todaySample.sleep_hours,
+    sleepStages: toSleepStages(todaySample.sleep_stages),
   })
 
   if (!readiness.hasBaseline) {
     return NextResponse.json({ adjustment: null, reason: 'baseline_dormant', detail: readiness.detail })
   }
-  if (!readiness.isElevatedRHR && !readiness.isLowHRV && !readiness.isShortSleep) {
+  if (!readiness.isElevatedRHR && !readiness.isLowHRV && !readiness.isShortSleep && !readiness.isPoorSleepQuality) {
     return NextResponse.json({ adjustment: null, reason: 'all_clear', detail: readiness.detail })
   }
 
@@ -120,12 +121,13 @@ export async function GET(req: NextRequest) {
     adjustmentsThisWeek: 0,
     currentPhase:        (week as any).phase,
     readinessSignal: {
-      sessionType:   todaySession.type,
-      sessionDay:    todayDay,
-      isElevatedRHR: readiness.isElevatedRHR,
-      isLowHRV:      readiness.isLowHRV,
-      isShortSleep:  readiness.isShortSleep,
-      hasBaseline:   readiness.hasBaseline,
+      sessionType:        todaySession.type,
+      sessionDay:         todayDay,
+      isElevatedRHR:      readiness.isElevatedRHR,
+      isLowHRV:           readiness.isLowHRV,
+      isShortSleep:       readiness.isShortSleep,
+      isPoorSleepQuality: readiness.isPoorSleepQuality,
+      hasBaseline:        readiness.hasBaseline,
     },
   }
 
@@ -177,4 +179,12 @@ export async function GET(req: NextRequest) {
 
 function isQualityOrLong(t: string | undefined): boolean {
   return t === 'quality' || t === 'long' || t === 'intervals' || t === 'tempo'
+}
+
+/** Coerce the sleep_stages JSONB into a typed shape, or null if absent/malformed. */
+function toSleepStages(raw: unknown): SleepStageMinutes | null {
+  if (!raw || typeof raw !== 'object') return null
+  const s = raw as Record<string, unknown>
+  const num = (v: unknown): number => (typeof v === 'number' && isFinite(v) ? v : 0)
+  return { deep: num(s.deep), rem: num(s.rem), light: num(s.light), awake: num(s.awake) }
 }

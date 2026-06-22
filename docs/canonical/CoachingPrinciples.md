@@ -960,9 +960,12 @@ HR_BAND_BREAKPOINTS     → { low: 145, mid: 165 }  (three-bucket effort classif
 RHR_ELEVATION_BPM     → 7      (today RHR ≥ baseline + 7 bpm fires)
 HRV_DECLINE_SD        → 1      (today HRV ≤ baseline − 1 SD fires)
 SLEEP_THRESHOLD_HOURS → 5      (last night < 5 h fires; absolute, no baseline needed)
+DEEP_SLEEP_PCT_FLOOR  → 0.10   (DS-05 — deep < 10% of staged sleep fires, when duration was adequate)
 BASELINE_WINDOW_DAYS  → 14     (rolling window over which RHR / HRV baseline is established)
 LONG_RUN_SOFTEN_PCT   → 0.85   (long-run distance × this on a fired day; 15% trim)
 ```
+
+**Sleep quality, not just duration (DS-05).** Total sleep hours is a blunt signal: seven hours of fragmented sleep with almost no deep stage is not the recovery seven good hours buys. HealthKit reports a per-stage breakdown (deep / rem / light / awake), so the composite gains a **fourth sub-signal** — `isPoorSleepQuality` — that fires when total sleep *was* adequate (≥ `SLEEP_THRESHOLD_HOURS`) but deep sleep was a smaller share of staged sleep than `DEEP_SLEEP_PCT_FLOOR`. It is deliberately the weakest of the four: deep sleep is noisy night-to-night, so the floor is conservative (healthy adults run ~13–23% deep; below 10% is genuinely low), and it is only assessed when the source supplied a real stage breakdown — undifferentiated "asleep" minutes never read as 0% deep (that would be a false positive). It does not fire on short nights: that is `isShortSleep`'s job, and double-counting one bad night across two reasons is noise. Stages are stored in `health_daily_samples.sleep_stages` (JSONB minutes); ingest captures them in `syncRecoverySamples` (`lib/health/clientSync.ts`). Config: `DEEP_SLEEP_PCT_FLOOR` in `GENERATION_CONFIG.READINESS`.
 
 **How.** Source: `health_daily_samples` table populated by the iOS HealthKit sync (`/api/health/samples`). On TodayScreen mount the dashboard calls `/api/pre-session-readiness`, which:
 
@@ -970,7 +973,7 @@ LONG_RUN_SOFTEN_PCT   → 0.85   (long-run distance × this on a fired day; 15% 
 2. Loads the last 14 days of samples plus today's sample.
 3. Calls `computeReadiness()` (`lib/coaching/readinessBaseline.ts`) — pure mean + standard-deviation kernel.
 4. Returns `hasBaseline: false` and exits silently when fewer than 14 days of RHR + HRV samples exist (no false-positive pollution while the baseline accrues — new users see nothing).
-5. When at least one of the three signals fires, runs the proposal through `checkAdjustmentTriggers` with only `readinessSignal` populated. The trigger sits **above zone_drift** in the priority order because it pre-empts the day.
+5. When at least one of the four signals fires (RHR / HRV / short sleep / poor sleep quality), runs the proposal through `checkAdjustmentTriggers` with only `readinessSignal` populated. The trigger sits **above zone_drift** in the priority order because it pre-empts the day.
 6. Soften, never auto-skip:
    - `quality` / `intervals` / `tempo` → swap to easy.
    - `long` → trim by `LONG_RUN_SOFTEN_PCT`.

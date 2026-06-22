@@ -118,7 +118,7 @@ The HealthKit consent prompt is friction. Every permission requested must have a
 | **VO2max not available in `@capgo/capacitor-health`** | Pace/fitness inference is weaker; no direct VO2max readiness signal | Plugin limitation — would require a fork or custom Swift bridge. Not prioritised; VDOT proxy is sufficient for race-time estimation. |
 | **GPS routes not available in plugin** | No polyline, no pace-per-km breakdowns | Plugin limitation. Zone-discipline product doesn't need GPS; this is a route-replay feature we've explicitly not built. Accept. |
 | **Running cadence / stride / power not available in plugin** | Advanced biomechanics signals absent | Plugin limitation. Out of scope for current product. |
-| **Sleep stages not consumed** | Recovery signal is duration-only, not quality-weighted | The plugin supports iOS 16+ sleep staging (deep/REM/light). `health_daily_samples` schema needs a `sleep_stages` JSONB column. Backlog item. |
+| ~~Sleep stages not consumed~~ ✅ CLOSED (DS-05, 2026-06-22) | ~~Recovery signal duration-only~~ → now quality-weighted | Shipped: `health_daily_samples.sleep_stages` JSONB + `isPoorSleepQuality` readiness sub-signal (deep < 10% of staged sleep). See feature-registry DS-05 / CoachingPrinciples §59. |
 | **Active energy not ingested** | Caloric load signal absent | See permission hygiene above. Backlog item to add query and schema column. |
 | **Web/Android users have no passive data ingest** | Manual completions only → coaching is RPE/fatigue based only | Near-term: manual run entry with distance + optional avg HR. Long-term: Health Connect (Android). Backlog items. |
 | **`strava_activities` table name** | Misleads new contributors into treating it as Strava-specific | Cosmetic rename to `run_activities` is a backlog item. Low urgency; aliased in docs until renamed. |
@@ -146,7 +146,7 @@ Rejected. Unnecessary complexity. The current adapter pattern (`lib/health/adapt
 4. Empty states on iOS must offer HealthKit CTAs, not Strava CTAs.
 5. The `distance` HealthKit permission must be removed from the auth request in `lib/health/clientSync.ts`.
 6. `calories` (active energy) must be added to the HealthKit auth request and ingest pipeline.
-7. Sleep stages support (iOS 16+) is a backlog item — `health_daily_samples` will need a `sleep_stages` JSONB column.
+7. Sleep stages support (iOS 16+) shipped 2026-06-22 (DS-05) — `health_daily_samples.sleep_stages` JSONB column + quality-weighted readiness sub-signal.
 8. Manual run entry with distance + optional avg HR is a backlog item for web/Android coverage.
 
 ---

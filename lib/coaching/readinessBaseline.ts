@@ -18,10 +18,20 @@ export interface DailyHealthSample {
   sleepHours:  number | null
 }
 
+/** DS-05 — per-stage sleep minutes from HealthKit, for the night being assessed. */
+export interface SleepStageMinutes {
+  deep:   number
+  rem:    number
+  light:  number
+  awake:  number
+}
+
 export interface ReadinessSignal {
   isElevatedRHR:  boolean
   isLowHRV:       boolean
   isShortSleep:   boolean
+  /** DS-05 — adequate total sleep but a low deep-sleep share (quality, not duration). */
+  isPoorSleepQuality: boolean
   /** False when the 14-day baseline isn't yet established — caller treats as silent. */
   hasBaseline:    boolean
   /** Diagnostic detail surfaced in adjustment trigger metadata. */
@@ -32,6 +42,7 @@ export interface ReadinessSignal {
     hrvSd?:          number
     hrvToday?:       number
     sleepHours?:     number
+    deepSleepPct?:   number
     samplesUsed:     number
   }
 }
@@ -48,7 +59,13 @@ export interface ReadinessSignal {
  */
 export function computeReadiness(
   samplesWindow: DailyHealthSample[],
-  today: { rhrBpm: number | null; hrvMs: number | null; sleepHours: number | null },
+  today: {
+    rhrBpm: number | null
+    hrvMs: number | null
+    sleepHours: number | null
+    /** DS-05 — null when the source gave no stage breakdown for the night. */
+    sleepStages?: SleepStageMinutes | null
+  },
 ): ReadinessSignal {
   const rhrSamples = samplesWindow.map(s => s.rhrBpm).filter((n): n is number => n != null)
   const hrvSamples = samplesWindow.map(s => s.hrvMs).filter((n): n is number => n != null)
@@ -63,11 +80,12 @@ export function computeReadiness(
     // gates on hasBaseline regardless — this matches the spec ("dormant until
     // baseline is established") and avoids day-1 false positives.
     return {
-      isElevatedRHR: false,
-      isLowHRV:      false,
-      isShortSleep:  false,
-      hasBaseline:   false,
-      detail:        { samplesUsed },
+      isElevatedRHR:      false,
+      isLowHRV:           false,
+      isShortSleep:       false,
+      isPoorSleepQuality: false,
+      hasBaseline:        false,
+      detail:             { samplesUsed },
     }
   }
 
@@ -84,10 +102,21 @@ export function computeReadiness(
   const isShortSleep = today.sleepHours != null
     && today.sleepHours < READINESS.SLEEP_THRESHOLD_HOURS
 
+  // DS-05 — sleep quality. Only the distinguishing signal when duration looked
+  // fine (short duration already fires isShortSleep). Requires a real stage
+  // breakdown; undifferentiated "asleep"-only nights have no staged total and
+  // are not assessed (deepSleepPct stays undefined → never fires).
+  const deepSleepPct = deepSleepProportion(today.sleepStages)
+  const isPoorSleepQuality = deepSleepPct != null
+    && today.sleepHours != null
+    && today.sleepHours >= READINESS.SLEEP_THRESHOLD_HOURS
+    && deepSleepPct < READINESS.DEEP_SLEEP_PCT_FLOOR
+
   return {
     isElevatedRHR,
     isLowHRV,
     isShortSleep,
+    isPoorSleepQuality,
     hasBaseline:   true,
     detail: {
       rhrBaseline:  round(rhrBaseline, 1),
@@ -96,9 +125,22 @@ export function computeReadiness(
       hrvSd:        round(hrvSd, 2),
       hrvToday:     today.hrvMs ?? undefined,
       sleepHours:   today.sleepHours ?? undefined,
+      deepSleepPct: deepSleepPct != null ? round(deepSleepPct, 3) : undefined,
       samplesUsed,
     },
   }
+}
+
+/**
+ * Deep sleep as a fraction of staged sleep (deep + rem + light). Returns null
+ * when no staged data exists — undifferentiated "asleep" minutes are not a
+ * stage breakdown and must not read as 0% deep (that would be a false positive).
+ */
+function deepSleepProportion(stages: SleepStageMinutes | null | undefined): number | null {
+  if (!stages) return null
+  const staged = stages.deep + stages.rem + stages.light
+  if (staged <= 0) return null
+  return stages.deep / staged
 }
 
 function mean(values: number[]): number {

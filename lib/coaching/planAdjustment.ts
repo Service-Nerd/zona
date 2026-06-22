@@ -130,6 +130,8 @@ export interface AdjustmentCheckInput {
     isElevatedRHR:  boolean
     isLowHRV:       boolean
     isShortSleep:   boolean
+    /** DS-05 — adequate total sleep but low deep-sleep share. */
+    isPoorSleepQuality: boolean
     hasBaseline:    boolean
   }
 }
@@ -184,7 +186,7 @@ export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAd
   if (
     input.readinessSignal
     && input.readinessSignal.hasBaseline
-    && (input.readinessSignal.isElevatedRHR || input.readinessSignal.isLowHRV || input.readinessSignal.isShortSleep)
+    && (input.readinessSignal.isElevatedRHR || input.readinessSignal.isLowHRV || input.readinessSignal.isShortSleep || input.readinessSignal.isPoorSleepQuality)
     && HARD_TYPES.has(input.readinessSignal.sessionType)
   ) {
     return buildReadinessAdjustment(input, input.readinessSignal)
@@ -413,9 +415,10 @@ function buildReadinessAdjustment(
   const sessionsBefore = sessions.map(s => ({ ...s }))
 
   const reasons: string[] = []
-  if (signal.isElevatedRHR) reasons.push('resting HR up')
-  if (signal.isLowHRV)      reasons.push('HRV down')
-  if (signal.isShortSleep)  reasons.push('short sleep')
+  if (signal.isElevatedRHR)      reasons.push('resting HR up')
+  if (signal.isLowHRV)           reasons.push('HRV down')
+  if (signal.isShortSleep)       reasons.push('short sleep')
+  if (signal.isPoorSleepQuality) reasons.push('deep sleep low')
   const reasonStr = reasons.join(' + ')
 
   // Caller (/api/pre-session-readiness) passes only today's session in
@@ -447,11 +450,12 @@ function buildReadinessAdjustment(
   return {
     weekN:          input.currentWeekN,
     trigger:        { type: 'readiness_signal', detail: {
-      sessionType:   signal.sessionType,
-      sessionDay:    signal.sessionDay,
-      isElevatedRHR: signal.isElevatedRHR,
-      isLowHRV:      signal.isLowHRV,
-      isShortSleep:  signal.isShortSleep,
+      sessionType:       signal.sessionType,
+      sessionDay:        signal.sessionDay,
+      isElevatedRHR:     signal.isElevatedRHR,
+      isLowHRV:          signal.isLowHRV,
+      isShortSleep:      signal.isShortSleep,
+      isPoorSleepQuality: signal.isPoorSleepQuality,
     } },
     adjustmentType,
     summary,
