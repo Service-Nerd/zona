@@ -83,7 +83,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 | ✅ | **R25 cuts #2 + #3** — pre-run band + trend cards | ✅ | ~10h | Shipped 2026-06-04. Confirmed code audit 2026-06-06. Feature registry updated. |
 | ✅ | **DS-07 Part A** — edit logged distance on complete manual sessions | ✅ | ~2h | Shipped 2026-06-22. "Update log" on a manual completion now opens the manual editor pre-filled with the logged distance (was a dead-end picker). Distance-correction only. |
 | ✅ | **ENGINE-02** — long run shortfall detection | ✅ | S | Shipped 2026-06-22 (`b605088` engine + finalised). Migration `20260622_engine_trigger_types.sql` (also fixes ENGINE-01's missing trigger type) ⚠️ apply to live DB. Principle §66. |
-| **#4** | **CA-03** — post-race "what next" goal-ladder | 🔲 | M | PAID. Fires in PostRunScreen for race sessions. Seeds wizard prefill. **Now the head of the actionable stack.** |
+| ✅ | **CA-03** — post-race "what next" goal-ladder | ✅ | M | Shipped 2026-06-22. TodayScreen card after a logged race: engine-sequenced next goals (chase/step-up/maintain) seed the wizard. Deterministic, PAID, principle §67. |
 | ⛔ | **ENGINE-03a** — cycle false positive fix | ⛔ | S | **BLOCKED (verified 2026-06-22).** `@capgo/capacitor-health@8.4.8` exposes no menstrual/cycle data type — no data path. Needs a custom Swift bridge / plugin fork to unblock. |
 | ⛔ | **CA-05** — cycle-aware coaching thin slice | ⛔ | M | **BLOCKED on ENGINE-03a** (same missing cycle data). |
 | **#7** | **POST-RUN-REFRAME-02** — voice memo reframe input | 🔲 | M (~3d) | PAID. Make Whisper/OpenAI vendor decision — don't let it stay deferred by indecision. |
@@ -109,7 +109,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 |------|------|--------|-------|
 | **CA-06 — Plan history UI** | FREE | S | ✅ Shipped 2026-06-05. Read-only list in MeScreen. |
 | **CA-02 — Apple Watch companion** | FREE/PAID | L | **NEXT #8** — moved to NEXT (dedicated sprint). Start Apple Developer provisioning now. |
-| **CA-03 — Post-race goal-ladder** | PAID | M | **NEXT #4** — moved to NEXT. Closes post-race churn void. |
+| ~~**CA-03 — Post-race goal-ladder**~~ ✅ shipped 2026-06-22 | PAID | M | Done — closed the post-race void. Pairs with R24 (multi-race). |
 | **CA-07 — "Ask Kit about this run"** | PAID | M | Hold. Return when 50+ paying users — build for real questions, not imagined ones. |
 | **CA-08 — Garmin Connect** | PAID | M | **Apply for Garmin Connect Developer Program now** (4–8 week approval). Build later. |
 | **R18** Plan confidence · **R21** Strength sessions · **R22** Blockout days · **R24** Multi-race · **R26** Background load | PAID | M–L | Hold. No urgency. |

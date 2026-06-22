@@ -1097,6 +1097,25 @@ Engine: `buildLongRunShortfallAdjustment` in `lib/coaching/planAdjustment.ts`.
 
 ---
 
+## 67. Post-race goal ladder — the next line is the engine's call, not free text (CA-03)
+
+The moment a goal race is run, the plan that justified months of training is spent — and with it the reason to keep the subscription open. The post-race reshape handles the *recovery* (the next two weeks); it does nothing about the *next goal*. That gap — the post-race void — is where runners drift away. The fix is to meet the runner in the moment of achievement with a single card that names what they just did and proposes the next sensible line, then seeds the plan wizard so starting again is one tap.
+
+**The options are sequenced by the engine, never improvised.** Three kinds, each computed from the finished race (distance + finish time + goal + outcome):
+- **chase_time** — same distance, a faster target. If they missed the goal, re-attempt the *same* time; if they hit/beat it, a modest improvement (`GOAL_SEQUENCING.CHASE_IMPROVEMENT_FACTOR`).
+- **step_up** — the next rung on the distance ladder (5K → 10K → HM → Marathon), with a Riegel-predicted target time. **Capped at the marathon** — never auto-propose an ultra; stepping a marathoner to 50K is too big a jump to suggest unprompted.
+- **maintain** — same distance, no time pressure. Always offered, always last: the low-pressure option is never the headline.
+
+Ordering reflects the outcome: a missed goal leads with chasing the same time again; a PB or on-target race leads with stepping up. Every option carries a minimum sensible prep window (`PREP_TIME_THRESHOLDS`); the wizard enforces it. This is the §24 spirit in reverse — don't let a runner under-prepare for an over-reach.
+
+**Voice:** the achievement line is one sentence, one number, never a celebration — *"You ran 2:04:00 — 6:00 inside your goal."* Then the options, plainly. The card is **rule-engine output, so it carries no AIMark** (provenance honesty) — the accent is the race colour, not the moss AI rail.
+
+**Tier.** PAID (richness, not access — free runners can still start a new plan from the wizard manually; CA-03 is the *intelligent proposal*, gated like other paid coaching). The card is dismissable; dismissal persists per-race in `localStorage` and auto-clears once a new plan moves the goal race into the future.
+
+Config: `GENERATION_CONFIG.GOAL_SEQUENCING`, `PREP_TIME_THRESHOLDS`. Engine: `lib/coaching/goalSequencing.ts → nextGoalOptions` / `achievementLine`. Card: `components/training/NextGoalCard.tsx`.
+
+---
+
 ## 65. Day boundary — today is in flight until midnight
 
 **Principle.** Every surface that compares "what the runner has done" against "what the plan asked for" treats today as **in flight**, not as **done**. A run due today and not yet completed at noon is **not missed** — the day isn't over. Apply the rule to every report, push, gate, and metric that anchors its comparison on the calendar.

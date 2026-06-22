@@ -45,6 +45,8 @@ import { NotificationRow, type NotificationItem } from '@/components/shared/Noti
 import TrendCard from '@/components/shared/TrendCard'
 import RaceResultSheet, { type ReshapeProposal } from '@/components/training/RaceResultSheet'
 import PostRaceReshapeCard from '@/components/training/PostRaceReshapeCard'
+import NextGoalCard from '@/components/training/NextGoalCard'
+import { nextGoalOptions, achievementLine, parseTimeToSeconds, type FinishedRace, type NextGoalOption } from '@/lib/coaching/goalSequencing'
 import { composeSession } from '@/lib/plan/sessionComposer'
 import { formatDistance, sumRoundedDistance, resolveSessionMetric } from '@/lib/format'
 import { didSessionHitZone, sessionHRBand, zoneForSessionType } from '@/lib/coaching/zoneRules'
@@ -328,6 +330,14 @@ export default function DashboardClient() {
   // reshapeDismissedAt: timestamp the user dismissed the card (session-scoped)
   const [showRaceResultSheet, setShowRaceResultSheet] = useState(false)
   const [pendingReshape, setPendingReshape]           = useState<ReshapeProposal | null>(null)
+  // CA-03 — post-race "what next" goal ladder. Dismissal persists in
+  // localStorage keyed by the race signature, so it stays dismissed for this
+  // race but re-surfaces for the next one (and auto-clears once a new plan
+  // moves the goal race into the future).
+  const [nextGoalDismissedSig, setNextGoalDismissedSig] = useState<string | null>(null)
+  useEffect(() => {
+    try { setNextGoalDismissedSig(localStorage.getItem('zona_next_goal_dismissed')) } catch {}
+  }, [])
   const [reshapeDismissedAt, setReshapeDismissedAt]   = useState<string | null>(null)
 
   // Next session after activeSessionData — passed to SessionScreen for the "Up next" row.
@@ -1346,6 +1356,49 @@ export default function DashboardClient() {
   })()
   const showRacePrompt = !!postRaceState && !reshapeDismissedAt && !pendingReshape
 
+  // CA-03 — once the goal race is run AND its result is logged, surface the
+  // "what next" goal ladder. Independent of the reshape lifecycle (it fills the
+  // post-race void that opens once the reshape is resolved). PAID-gated.
+  const finishedRace = (() => {
+    if (!plan) return null
+    const idx = plan.weeks.findLastIndex(w => w.type === 'race' || (w as any).badge === 'race')
+    if (idx < 0 || currentWeekIndex <= idx) return null
+    const result = (plan.weeks[idx] as any)?.result_embedded
+    if (!result) return null
+    const race: FinishedRace = {
+      distanceKm: result.distance_km ?? plan.meta.race_distance_km,
+      finishTime: result.finish_time ?? null,
+      targetTime: plan.meta.target_time ?? null,
+      outcome:    result.outcome ?? null,
+    }
+    return { sig: plan.meta.race_date ?? `race-${idx}`, race }
+  })()
+  const nextGoalData = (finishedRace && hasPaidAccess && nextGoalDismissedSig !== finishedRace.sig)
+    ? { achievement: achievementLine(finishedRace.race), options: nextGoalOptions(finishedRace.race) }
+    : null
+
+  function handlePickNextGoal(opt: NextGoalOption) {
+    // Seed the plan wizard with the chosen goal, then open it. GeneratePlanScreen
+    // restores this draft on mount (sessionStorage key 'zona_wizard_draft').
+    try {
+      const draft: Record<string, unknown> = { appStep: 'distance', distanceKm: opt.distanceKm, goal: opt.goal }
+      const sec = parseTimeToSeconds(opt.targetTime)
+      if (opt.goal === 'time_target' && sec != null) {
+        const totalMin = Math.round(sec / 60)
+        draft.targetHours = Math.floor(totalMin / 60)
+        draft.targetMins  = totalMin % 60
+      }
+      sessionStorage.setItem('zona_wizard_draft', JSON.stringify(draft))
+    } catch {}
+    setScreen('generate')
+  }
+
+  function handleDismissNextGoal() {
+    if (!finishedRace) return
+    try { localStorage.setItem('zona_next_goal_dismissed', finishedRace.sig) } catch {}
+    setNextGoalDismissedSig(finishedRace.sig)
+  }
+
   // Update to current week once plan loads
   useEffect(() => {
     if (plan) {
@@ -1656,7 +1709,7 @@ export default function DashboardClient() {
     <div style={s}>
 
       <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: `${(bottomNavH ?? 88) + 16}px`, overscrollBehavior: 'none' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
                   // historical pending rows from repeated test runs (the POST route
@@ -5912,7 +5965,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, onLogRaceResult, onReshapeAccepted, onReshapeDismissed }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, onLogRaceResult, onReshapeAccepted, onReshapeDismissed }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   sessionMetricOverrides: Record<string, 'distance' | 'duration'>
@@ -5960,6 +6013,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   /** AI-DEPTH-08: post-race prompt and reshape card. */
   showRacePrompt?: boolean
   pendingReshape?: ReshapeProposal | null
+  nextGoalData?: { achievement: string; options: NextGoalOption[] } | null
+  onPickNextGoal?: (opt: NextGoalOption) => void
+  onDismissNextGoal?: () => void
   onLogRaceResult?: () => void
   onReshapeAccepted?: (plan: Plan) => void
   onReshapeDismissed?: () => void
@@ -6677,6 +6733,20 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 onDismiss={() => onReshapeDismissed?.()}
               />
             )}
+          </div>
+        )}
+
+        {/* CA-03: post-race "what next" goal ladder. Fills the post-race void
+            once the result is logged — sequenced next goals seed the wizard.
+            Rule-engine output (no AIMark). */}
+        {nextGoalData && (
+          <div style={{ marginBottom: '16px' }}>
+            <NextGoalCard
+              achievement={nextGoalData.achievement}
+              options={nextGoalData.options}
+              onPick={(opt) => onPickNextGoal?.(opt)}
+              onDismiss={() => onDismissNextGoal?.()}
+            />
           </div>
         )}
 

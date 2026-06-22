@@ -67,7 +67,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 | ✅ | GTM-09 + GTM-10 — Trial emails (SHIPPED 2026-06-08 → registry) | M | PAID |
 | ✅ | DS-07 Part A — Edit logged distance (SHIPPED 2026-06-22 → registry) | ~2h | FREE |
 | ✅ | ENGINE-02 — Long run shortfall (SHIPPED 2026-06-22 → registry) | S | PAID |
-| 4 | CA-03 — Post-race goal ladder | M | PAID |
+| ✅ | CA-03 — Post-race goal ladder (SHIPPED 2026-06-22 → registry) | M | PAID |
 | ⛔ | ENGINE-03a — Cycle false positives (BLOCKED — no plugin data, see below) | S | FREE |
 | ⛔ | CA-05 — Cycle coaching (BLOCKED on ENGINE-03a) | M | FREE (recommended) |
 | 7 | POST-RUN-REFRAME-02 — Voice memo (after vendor decision) | M | PAID |
@@ -81,7 +81,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 *Note: ENGINE-03a + CA-05 are BLOCKED (verified 2026-06-22). `@capgo/capacitor-health@8.4.8` exposes no menstrual/cycle/reproductive data type (`HealthDataType` union in `node_modules/.../definitions.d.ts` confirms it), so the luteal-phase RHR suppression has no data path. Unblocking needs a custom Swift bridge / plugin fork — see the ENGINE-03 detail below.*
 
-*Note: DS-07 Part A + ENGINE-02 + DS-05 shipped 2026-06-22; ENGINE-03a/CA-05 blocked. **CA-03 (post-race goal ladder) is now the head of the actionable stack.** (DS-07 Part B — composite effort — remains open below.)*
+*Note: CA-03 + DS-07 Part A + ENGINE-02 + DS-05 shipped 2026-06-22; ENGINE-03a/CA-05 blocked. **Next actionable items: DS-07 Part B (composite effort), R22 (blockout days), or POST-RUN-03 (needs native Xcode work).** R24 multi-race pairs naturally with the CA-03 goal ladder.*
 
 Ordered by GTM impact. Each needs FREE/PAID tag confirmed before build.
 
@@ -103,7 +103,7 @@ Ordered by GTM impact. Each needs FREE/PAID tag confirmed before build.
 
   > **Board note:** The restraint of what's *not* on the watch face is the product. Zone target + HR band + one-tap start. Nothing else. The friction-free start is where the real coaching happens — what the runner sees in the first 10 seconds of a run changes their behaviour for the next hour.
 
-- 🔲 **CA-03 — Post-race "what next" goal-ladder** — post-race reshape is shipped but handles only the immediate aftermath; there's no goal-laddering, so the subscription has no reason to persist between races (the "post-race void"). MVP: a single post-race card that proposes the next sensible target (maintain base / step up distance / chase a time) and seeds a fresh wizard prefill. Closes a retention gap, not an acquisition one. **Tier: PAID.** Effort: M. Pairs with R24 (multi-race) and R25 cuts 2–3. **SLT priority #4.**
+- ✅ **CA-03 — Post-race "what next" goal-ladder** — SHIPPED 2026-06-22 → feature-registry. Card on TodayScreen after a goal race is logged: achievement line + engine-sequenced next goals (chase_time / step_up / maintain), each seeding the plan wizard. Deterministic (no AI), PAID, dismissal persists per-race. Engine `lib/coaching/goalSequencing.ts`; card `NextGoalCard.tsx`; principle §67. **Pairs with R24 (multi-race)** — still open.
 
   > **Board notes:** Fire the card in PostRunScreen for race sessions — meet the runner in the moment of achievement, don't wait for them to feel the void. Seeds wizard prefill so there's zero friction to starting a new plan. "What next" options must be sequenced correctly by the engine — don't suggest a full marathon the week after a 5K. The logic lives in the engine, not free text. Voice: one sentence, no celebration, one number. *"You ran 2:04 — 6 minutes inside your goal. What's the next line?"*
 

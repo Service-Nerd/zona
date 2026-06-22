@@ -161,6 +161,13 @@ export const GENERATION_CONFIG = {
   },
   PREP_TIME_RETURNING_RUNNER_SHIFT_WEEKS: 2,
 
+  // ── CA-03 post-race goal-ladder suggestion seeds (CoachingPrinciples §67) ───
+  // These seed the "what next" wizard prefill; the runner edits before generating.
+  GOAL_SEQUENCING: {
+    /** "Same distance, faster" suggests this fraction of the achieved finish (3% quicker). */
+    CHASE_IMPROVEMENT_FACTOR: 0.97,
+  },
+
   // ── Long-run progression cap (CoachingPrinciples §45) ──────────────────────
   // Universal — no phase exemption. Long-run distance increase week-on-week
   // capped at the GREATER of LONG_RUN_PROGRESSION_CAP_PCT (% of prior LR) or
