@@ -310,6 +310,12 @@ export interface PlanMeta {
   // shift, V5 stimulus regression escalation). One entry per rule fired —
   // human-readable, intended for debugging and post-hoc review.
   rule_adjustments?: RuleAdjustment[]
+
+  // ENGINE-04 — taper recalibration (CoachingPrinciples §68).
+  // Set when taper volumes are re-anchored to actual functional peak.
+  taper_recalibrated_at?:     string   // ISO timestamp of recalibration
+  functional_peak_km?:        number   // actual functional peak used as anchor
+  planned_peak_km_at_recal?:  number   // original planned pre-taper volume (for coach card)
 }
 
 /** Audit entry for a post-pass rule that fired during plan generation. */

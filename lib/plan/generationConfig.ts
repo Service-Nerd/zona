@@ -50,6 +50,21 @@ export const GENERATION_CONFIG = {
 
   // ── Taper (CoachingPrinciples §6) ───────────────────────────────────────────
   // Maintain intensity, cut volume, never detrain.
+
+  // ── Taper recalibration (CoachingPrinciples §68) ────────────────────────────
+  // A taper is a reduction from what the body is adapted to — not from what was
+  // planned. If the runner completed <TAPER_RECAL_VOLUME_THRESHOLD_PCT of their
+  // intended peak, the written taper targets are proportionally too high. On
+  // entering the taper phase, the engine re-anchors all taper week volumes to
+  // the runner's functional peak (avg of top TAPER_RECAL_FUNCTIONAL_PEAK_WEEKS
+  // actual weeks) using the same reduction % as the original plan.
+  //
+  // Only downward recalibration is applied (overperformance is handled by the
+  // existing benchmark recalibration path). Race week is never touched.
+  TAPER_RECAL_VOLUME_THRESHOLD_PCT:    85,  // recalibrate if actual < 85% of planned
+  TAPER_RECAL_FUNCTIONAL_PEAK_WEEKS:    2,  // avg of top N actual weeks → protects against outliers
+  TAPER_RECAL_MIN_WEEKS_DATA:           2,  // minimum data weeks required to fire
+
   TAPER_BY_DISTANCE: {
     '5K':       { days: 10, volume_reduction_pct: 35, keep_quality: true },
     '10K':      { days: 10, volume_reduction_pct: 35, keep_quality: true },

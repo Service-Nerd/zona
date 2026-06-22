@@ -1181,6 +1181,31 @@ Every session type carries a one-line **rationale** — not what to do, why this
 
 ---
 
+## 68. Taper recalibration — re-anchor to the body that actually trained
+
+**Principle.** When the runner enters their taper phase, recalibrate the taper week volume targets to their *functional peak* — the average of their top two actual training weeks — rather than the original planned peak. If actual functional peak is below 85% of planned, the original taper is too high.
+
+**Why.** A taper is a reduction from what the body is adapted to, not from what was written on the plan. A runner who completed 60% of their planned peak volume carries none of the accumulated fatigue the original taper was designed to dissipate. Tapering from a fiction means arriving at the start line under-recovered *relative to what they actually did* — not over-rested, just mistargeted. The taper targets should reflect the body, not the spreadsheet.
+
+Two distinct failure modes this prevents:
+- *Undertrained runner*: planned taper targets are near or above their actual peak → almost no perceived reduction → no real freshening.
+- *Inconsistently trained runner*: big weeks followed by collapses → a single peak week is an outlier, not an adaptation signal. Using the average of the top two weeks is more representative of what the body has consolidated.
+
+Upward recalibration (overperformance) is intentionally excluded — a well-trained runner tapering below planned targets arrives fresh without penalty. Upward adjustment of taper volume carries injury risk and is the wrong intervention; the benchmark recalibration path handles confirmed fitness improvement.
+
+**What is recalibrated.** Volume targets only. Session types, quality session counts, rest days, and race week structure are unchanged. Race week is never touched — its shakeout-only structure is sacred (§26, §30).
+
+**Trigger.** Fires once, automatically, on the first day of the taper phase, when a paid/trial user has at least two weeks of actual data on record for their build/peak weeks. Idempotent — `plan.meta.taper_recalibrated_at` prevents re-runs.
+
+**Config.**
+- `GENERATION_CONFIG.TAPER_RECAL_VOLUME_THRESHOLD_PCT` (85) — trigger threshold
+- `GENERATION_CONFIG.TAPER_RECAL_FUNCTIONAL_PEAK_WEEKS` (2) — weeks to average for functional peak
+- `GENERATION_CONFIG.TAPER_RECAL_MIN_WEEKS_DATA` (2) — minimum data required
+
+**Implementation.** `lib/plan/taperRecalibration.ts → computeTaperRecalibration()`. API route: `POST /api/recalibrate-taper`. Wired into `DashboardClient` at the paid coaching data load on taper entry.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

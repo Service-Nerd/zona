@@ -69,7 +69,8 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 | ⛔ | ENGINE-03a — Cycle false positives (DEFERRED behind gates — SLT 2026-06-22) | S | FREE |
 | ⛔ | CA-05 — Cycle coaching (DEFERRED on ENGINE-03) | M | FREE |
 
-*Shipped 2026-06-22 → feature-registry: ENGINE-02 (long-run shortfall, + fixed ENGINE-01's latent trigger-constraint bug), DS-05 (sleep stages), DS-07 (composite effort — Part A + B), CA-03 (post-race goal ladder), ENGINE-03-pre (readiness RHR noise-hardening), AUTH-RESET-01 (password reset), BRAND-04/06/10/12 (rebrand tech-debt). Earlier: GTM-08/09/10, R25 cuts 2–3, CA-01, CA-04, UPGRADE-ENTRY-01. All migrations applied to live Supabase.*
+*Shipped 2026-06-22 → feature-registry: ENGINE-04 (taper recalibration), ENGINE-02 (long-run shortfall, + fixed ENGINE-01's latent trigger-constraint bug), DS-05 (sleep stages), DS-07 (composite effort — Part A + B), CA-03 (post-race goal ladder), ENGINE-03-pre (readiness RHR noise-hardening), AUTH-RESET-01 (password reset), BRAND-04/06/10/12 (rebrand tech-debt). Earlier: GTM-08/09/10, R25 cuts 2–3, CA-01, CA-04, UPGRADE-ENTRY-01. All migrations applied to live Supabase.*
+
 
 *ENGINE-03a + CA-05 (cycle-aware coaching) — **SLT-reviewed 2026-06-22: build differently, deferred behind two gates.** The cheap no-data precursor (ENGINE-03-pre, RHR noise-hardening) shipped and fixes the same false-positive root for everyone. The cycle-specific native bridge waits for (a) usage evidence that female users with cycle data have mis-firing readiness, and (b) incorporation + insurance (reproductive-health data). Moat stays visible on the roadmap. Tier MUST be FREE (INV-DATA-001). Full steer in the ENGINE-03 detail below.*
 

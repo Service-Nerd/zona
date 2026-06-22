@@ -1080,6 +1080,34 @@ export default function DashboardClient() {
             })
           } catch {}
           finally { setRunAnalysisReady(true) }
+
+          // ENGINE-04 — taper recalibration. Fires once when the runner enters
+          // their taper phase, re-anchoring volume targets to actual functional
+          // peak. Silent: skips if insufficient data, already run, or within
+          // tolerance. No user confirmation needed — it's a forward-only volume
+          // scale, not a structural change. CoachingPrinciples §68.
+          const taperPhaseEntry = loadedPlan.phases?.find((p: any) => p.name === 'taper')
+            ?? (() => {
+              const ft = loadedPlan.weeks.find((w: any) => w.phase === 'taper')
+              const lt = [...loadedPlan.weeks].reverse().find((w: any) => w.phase === 'taper')
+              return ft && lt ? { start_week: ft.n } : null
+            })()
+          const taperCurrentWeekN = (getCurrentWeekIndex(loadedPlan.weeks)) + 1
+          if (
+            taperPhaseEntry &&
+            taperCurrentWeekN === taperPhaseEntry.start_week &&
+            !(loadedPlan.meta as any).taper_recalibrated_at
+          ) {
+            try {
+              const recalRes = await authedFetch('/api/recalibrate-taper', { method: 'POST' })
+              if (recalRes.ok) {
+                const recalJson = await recalRes.json().catch(() => null)
+                if (recalJson?.recalibrated && recalJson.plan) {
+                  setPlan(recalJson.plan)
+                }
+              }
+            } catch {}
+          }
         } else {
           setRunAnalysisReady(true)
         }
