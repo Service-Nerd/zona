@@ -249,22 +249,7 @@ The Vetra → Zonna rename (commits `fda3ff6` + `ba469df`) is complete in code, 
 - ✅ **HR-SYNC-01** — shipped 2026-06-24. See feature-registry.
 - ✅ **HR-SYNC-02** — shipped 2026-06-24. See feature-registry.
 
-- 🔄 **HR-SYNC-03 — Layer 2: Swift HealthKit bridge (HKObserverQuery + background delivery)** *(P1)* — **Code shipped 2026-06-24. Needs Xcode build + TestFlight to validate.** `HealthObserverPlugin.swift` + `.m` created in `ios/App/App/`. TypeScript binding in `lib/health/observer.ts`. `initHealthObserver()` wired into `CapacitorBoot.tsx`. Both `SharedStorePlugin` and `HealthObserverPlugin` added to `capacitor.config.json → packageClassList`. **Post-code steps**: (1) open in Xcode, verify both new `.swift` + `.m` files are in the App target membership; (2) `npx cap sync ios` — then re-add `SharedStorePlugin` + `HealthObserverPlugin` to `packageClassList` (sync overwrites it); (3) archive + TestFlight. Precedent: `SharedStorePlugin` for the widget — same packaging / Capacitor 8 `packageClassList` registration pattern (re-add after every `cap sync`).
-  - **Minimum scope (this item)**:
-    - `HKObserverQuery` on `HKQuantityTypeIdentifierHeartRate`. On fire, query the affected workout window and call `/api/health/ingest` (existing patch path).
-    - `HKHealthStore.enableBackgroundDelivery(for: .heartRate, frequency: .immediate)` so iOS wakes the app extension when new HR samples land — even when the app is fully closed.
-    - Same observer registration for `restingHeartRate`, `heartRateVariability`, `sleepAnalysis` — wakes the readiness signal pipeline as soon as overnight metrics land.
-  - **Entitlements / Info.plist**:
-    - Existing `com.apple.developer.healthkit = true` covers it.
-    - `NSHealthShareUsageDescription` already in place.
-    - No new entitlements needed (background delivery is implicit when the observer is registered + the app's HealthKit entitlement is granted).
-  - **App Store review notes**: background HealthKit delivery has been a standard pattern for fitness apps since iOS 9. Apple reviews this routinely; no special justification needed beyond "Zonna delivers coaching when your watch syncs new heart rate data, so users see analysis as soon as it's available." Standard.
-  - **Once shipped**, the Pending-HR state from HR-SYNC-02 becomes mostly invisible — HR usually arrives within seconds of Watch sync, so the pending card resolves quickly. State logic stays the same; the UX just resolves faster.
-  - **Sets up a future-extensible bridge** for the other HealthKit data types the capgo plugin doesn't expose. See **HR-SYNC-FUTURES** below for the menu of follow-ups this unlocks (no new items scoped yet — captured as a reference register).
-  - **Doctrine fit**: HK-SOR, INV-DATA-008.
-  - **Risks**: Capacitor 8 plugin discovery requires manual `packageClassList` entry (same trap as SharedStorePlugin). Plugin needs careful lifecycle around `applicationDidEnterBackground` — observer must persist. Standard iOS dev pattern, not novel.
-  - **Depends on**: HR-SYNC-01 (the patch path the observer calls into). Build after Layer 1 lands.
-  - **Tier**: PAID infra.
+- ✅ **HR-SYNC-03** — shipped 2026-06-24. See feature-registry.
 
 - 🔲 **HR-SYNC-04 — Pre-purchase copy: "works best with Apple Watch"** *(P2, ~30 min)* — Commercial framing fix (Traynor). One line added to upgrade-screen pre-purchase copy + waitlist landing copy: *"Zonna works best with Apple Watch or a HealthKit-compatible heart-rate strap."* Sets expectation pre-conversion. Reduces the wrong-fit purchases that would churn at the no-HR-card discovery moment. Trivial copy edit. Surfaces: `UpgradeScreen`, marketing site landing, waitlist email confirmation.
   - **Doctrine fit**: voice-neutral framing (no shame, no upsell pressure). `brand.md` voice rules honoured.
