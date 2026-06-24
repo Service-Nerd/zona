@@ -92,8 +92,9 @@ export const BRAND = {
   /**
    * Connect-Your-Runs onboarding (CONNECT-01).
    * Sutherland signalling — a dedicated screen instead of a settings checkbox.
-   * Day-one body offers Apple Health; the screen absorbs Strava as an equal
-   * second CTA when approved without changing the ask copy.
+   * Day-one body offers Apple Health (the SOR per ADR-011). When Strava
+   * approval lands, the screen adds Strava as a *secondary supplement* CTA
+   * below HK — not a peer. Copy never frames Strava as required or primary.
    */
   connect: {
     ask:     "Kit needs your runs to do anything useful.",

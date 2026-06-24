@@ -21,10 +21,13 @@
  */
 
 import { authedFetch } from '@/lib/supabase/authedFetch'
+import { createClient } from '@/lib/supabase/client'
 import type { HealthKitWorkoutPayload } from './adapter'
 
 const LAST_SYNC_KEY         = 'vetra_healthkit_last_sync_ts'
 const SAMPLES_LOOKBACK_DAYS = 14
+/** HR-SYNC-01: how far back to scan for HR-pending rows on each foreground sync. */
+const HR_RETRY_LOOKBACK_HOURS = 48
 /** Sleep states that count as "actually sleeping" (excludes 'inBed' and 'awake'). */
 const ACTIVE_SLEEP_STATES   = new Set(['asleep', 'rem', 'deep', 'light'])
 /** Per-workout HR sample cap. HKWorkout HR streams can be 1Hz — a 90 min run is ~5400 points.
@@ -163,7 +166,30 @@ export async function syncOnAppOpen(): Promise<void> {
   await Promise.allSettled([
     syncRecentWorkouts(Health),
     syncRecoverySamples(Health),
+    retryPendingHrRows(Health),
   ])
+}
+
+// HR-SYNC-02: throttled wrapper for UI-triggered HR retries (the fallback-row
+// tap on a 24h+ HR-pending session card). Shares the 30s window with the
+// CapacitorBoot resume listener so a fresh background sweep that just ran
+// doesn't get duplicated by an immediate user tap. The returned promise
+// resolves whether the retry actually ran or was throttled — UI uses this to
+// switch the "Checking…" copy back off.
+let _lastUiRetryAt = 0
+const UI_RETRY_THROTTLE_MS = 30_000
+
+export async function retryHrFromUi(): Promise<{ ran: boolean }> {
+  const now = Date.now()
+  if (now - _lastUiRetryAt < UI_RETRY_THROTTLE_MS) {
+    // Still hold the "Checking…" state briefly so the user gets feedback,
+    // even though we skipped the actual sync.
+    await new Promise<void>(resolve => setTimeout(resolve, 400))
+    return { ran: false }
+  }
+  _lastUiRetryAt = now
+  try { await syncOnAppOpen() } catch {}
+  return { ran: true }
 }
 
 // ─── Internal: workout sync ────────────────────────────────────────────────
@@ -230,6 +256,85 @@ async function syncRecentWorkouts(Health: HealthModule): Promise<void> {
 
   // Advance lastSync only when at least one workout posted successfully.
   if (totalSynced > 0) setLastSyncIso(endDate)
+}
+
+// ─── HR-SYNC-01: foreground retry for HR-pending rows ───────────────────────
+//
+// Apple Watch HR samples land in HealthKit on Apple's schedule, often hours
+// after the workout shell. A row inserted with hrSamples=[] needs to be
+// retried whenever the user returns to the app. We scan our backend for
+// HR-null `source='apple_health'` rows from the last 48h, re-query HealthKit
+// for HR samples in their windows, and re-post if anything appeared. The
+// existing ingest path (`/api/health/ingest` → `consolidateIncomingHealthKitRow`)
+// handles the patch, late-arrival gate, and analyse-run trigger.
+
+async function retryPendingHrRows(Health: HealthModule): Promise<void> {
+  try {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const lookbackIso = isoDaysAgo(HR_RETRY_LOOKBACK_HOURS / 24)
+
+    const { data: pendingRows } = await supabase
+      .from('strava_activities')
+      .select('apple_health_uuid, start_date, moving_time_s, raw_payload, distance_m')
+      .eq('user_id', user.id)
+      .eq('source', 'apple_health')
+      .is('avg_hr', null)
+      .gte('start_date', lookbackIso)
+      .order('start_date', { ascending: false })
+      .limit(10)
+
+    if (!pendingRows?.length) return
+
+    for (const row of pendingRows as Array<{
+      apple_health_uuid: string
+      start_date:        string
+      moving_time_s:     number
+      raw_payload:       any
+      distance_m:        string | number
+    }>) {
+      try {
+        const startIso = row.start_date
+        const endIso   = new Date(new Date(startIso).getTime() + row.moving_time_s * 1000).toISOString()
+        const hrRes = await Health.readSamples({
+          dataType:  'heartRate',
+          startDate: startIso,
+          endDate:   endIso,
+          limit:     HR_SAMPLES_PER_WORKOUT_LIMIT,
+          ascending: true,
+        })
+        if (!hrRes.samples.length) continue  // still nothing — leave for the next retry
+
+        // Reconstruct the payload using the stored raw_payload for the shell
+        // fields (totalDistance, calories, sourceName, elevation metadata),
+        // and overlay the freshly-queried HR samples. The ingest path will
+        // route through the consolidate helper, which patches HR on the
+        // existing row (same apple_health_uuid → self-resync path).
+        const rawPayload = row.raw_payload && typeof row.raw_payload === 'object' ? row.raw_payload : {}
+        const payload: HealthKitWorkoutPayload = {
+          uuid:                row.apple_health_uuid,
+          startDate:           startIso,
+          endDate:             endIso,
+          totalDistanceMeters: typeof row.distance_m === 'string' ? parseFloat(row.distance_m) : row.distance_m,
+          durationSeconds:     row.moving_time_s,
+          totalEnergyKcal:     rawPayload.totalEnergyKcal,
+          elevationGainMeters: rawPayload.elevationGainMeters,
+          hrSamples:           hrRes.samples.map(s => ({ valueBpm: s.value, timestamp: s.startDate })),
+          workoutType:         'running',
+          sourceName:          rawPayload.sourceName,
+        }
+        await postWorkout(payload)
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[health-sync] hr-retry failed', row.apple_health_uuid, err)
+      }
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('[health-sync] hr-retry sweep skipped', err instanceof Error ? err.message : err)
+  }
 }
 
 function parseElevation(metadata: Record<string, string> | undefined): number | undefined {

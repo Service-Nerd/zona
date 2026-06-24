@@ -66,6 +66,31 @@ export default function CapacitorBoot() {
 
     let removeUrlListener: (() => void) | undefined
     let removePushListener: (() => void) | undefined
+    let removeAppStateListener: (() => void) | undefined
+
+    // Foreground-resume HealthKit sync. The mount-time sync above only fires on
+    // cold start; without this, a user who finishes a run while Zonna is warm
+    // in memory won't see the new workout until they swipe-kill and re-open.
+    // Throttled so rapid tab-switching doesn't hammer HealthKit.
+    let lastResumeSyncAt = 0
+    const RESUME_SYNC_THROTTLE_MS = 30_000
+    CapApp.addListener('appStateChange', ({ isActive }) => {
+      if (!isActive) return
+      const now = Date.now()
+      if (now - lastResumeSyncAt < RESUME_SYNC_THROTTLE_MS) return
+      lastResumeSyncAt = now
+      void (async () => {
+        try {
+          const { syncOnAppOpen } = await import('@/lib/health/clientSync')
+          await syncOnAppOpen()
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.warn('[capacitor-boot] HealthKit resume sync skipped', err instanceof Error ? err.message : err)
+        }
+      })()
+    }).then((handle) => {
+      removeAppStateListener = () => handle.remove()
+    }).catch(() => {})
 
     CapApp.addListener('appUrlOpen', async ({ url }) => {
       // Strava OAuth return — `/api/strava/callback` already wrote tokens to
@@ -171,7 +196,7 @@ export default function CapacitorBoot() {
       }
     })()
 
-    return () => { removeUrlListener?.(); removePushListener?.(); removePushReceivedListener?.() }
+    return () => { removeUrlListener?.(); removePushListener?.(); removePushReceivedListener?.(); removeAppStateListener?.() }
   }, [router])
 
   return null

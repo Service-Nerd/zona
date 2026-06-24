@@ -6,6 +6,7 @@
 
 import { getSessionColor } from '@/lib/session-types'
 import { formatDistance, type DistanceUnits, type SessionMetric } from '@/lib/format'
+import HrPendingStatusRow, { type HrPendingState } from './HrPendingStatusRow'
 
 type SessionState = 'future' | 'current' | 'done' | 'skipped'
 
@@ -33,6 +34,16 @@ type Props = {
    *  per-session overrides → plan primary_metric → global preference cascade
    *  is consistent with the session detail screen. Defaults to 'distance'. */
   metric?: SessionMetric
+  /** HR-SYNC-02: when non-null on a done session, renders the pending-HR
+   *  status row beneath the provenance line and overrides the done-state
+   *  visual treatment back to full presence (the run still matters).
+   *  See `lib/coaching/hrPending.ts → classifyHrPending`. */
+  hrPendingState?: HrPendingState | null
+  /** Required when hrPendingState='fallback'. Caller should wire to the
+   *  throttled `retryHrFromUi()` wrapper in `lib/health/clientSync.ts`. */
+  onHrRetry?:     () => void | Promise<void>
+  /** True while a retry is in flight. Drives the "Checking…" copy. */
+  isHrRetrying?:  boolean
 }
 
 export default function SessionCard({
@@ -47,11 +58,18 @@ export default function SessionCard({
   showDragHandle = false,
   units = 'km',
   metric = 'distance',
+  hrPendingState = null,
+  onHrRetry,
+  isHrRetrying = false,
 }: Props) {
   const accentColor = getSessionColor(type)
   const isDone = state === 'done'
   const isSkipped = state === 'skipped'
   const isCurrent = state === 'current'
+  // HR-SYNC-02: when pending, suppress the done-state's "transparent / muted"
+  // treatment. The run still matters; we're just waiting on Apple's sync.
+  const showHrPending = isDone && hrPendingState != null
+  const renderAsDone  = isDone && !showHrPending
 
   // Format duration: "46min" or "1h 12min"
   function fmtDur(mins: number): string {
@@ -89,14 +107,14 @@ export default function SessionCard({
           ? '1px dashed var(--line-strong)'
           : isCurrent
           ? `1px solid var(--line-strong)`
-          : isDone
+          : renderAsDone
           ? 'none'
           : `1px solid var(--line)`,
-        background: isDone || isSkipped ? 'transparent' : 'var(--card)',
+        background: renderAsDone || isSkipped ? 'transparent' : 'var(--card)',
         cursor: onClick ? 'pointer' : 'default',
-        minHeight: '64px',
+        minHeight: showHrPending ? '76px' : '64px',
         overflow: 'hidden',
-        transition: 'border-color 0.12s',
+        transition: 'border-color 0.12s, min-height 0.2s ease-out',
       }}
     >
       {/* Left accent bar */}
@@ -105,7 +123,7 @@ export default function SessionCard({
           width: '3px',
           flexShrink: 0,
           background: accentColor,
-          opacity: isDone ? 0.3 : isSkipped ? 0.2 : 1,
+          opacity: renderAsDone ? 0.3 : isSkipped ? 0.2 : 1,
           borderRadius: '2px 0 0 2px',
         }}
       />
@@ -153,8 +171,8 @@ export default function SessionCard({
             style={{
               fontFamily: 'var(--font-ui)',
               fontSize: '15px',
-              fontWeight: isDone ? 500 : 600,
-              color: isDone ? 'var(--mute)' : isSkipped ? 'var(--danger)' : 'var(--ink)',
+              fontWeight: renderAsDone ? 500 : 600,
+              color: renderAsDone ? 'var(--mute)' : isSkipped ? 'var(--danger)' : 'var(--ink)',
               textDecoration: isSkipped ? 'line-through' : 'none',
               lineHeight: 1.2,
               whiteSpace: 'nowrap',
@@ -198,6 +216,18 @@ export default function SessionCard({
               via Strava · {completion.activityName}
             </div>
           )}
+          {/* HR-SYNC-02: pending-HR status row beneath provenance. Sits in
+           *  --mute (pending) or --ink-2 (fallback, tappable). */}
+          {showHrPending && (
+            <div style={{ marginTop: '4px' }}>
+              <HrPendingStatusRow
+                state={hrPendingState!}
+                onRetry={onHrRetry}
+                isRetrying={isHrRetrying}
+                size="sm"
+              />
+            </div>
+          )}
         </div>
 
         {/* Right side */}
@@ -224,9 +254,9 @@ export default function SessionCard({
               <div
                 style={{
                   fontFamily: 'var(--font-ui)',
-                  fontSize: isDone ? '14px' : '17px',
-                  fontWeight: isDone ? 600 : 700,
-                  color: isDone ? 'var(--mute)' : 'var(--ink)',
+                  fontSize: renderAsDone ? '14px' : '17px',
+                  fontWeight: renderAsDone ? 600 : 700,
+                  color: renderAsDone ? 'var(--mute)' : 'var(--ink)',
                   fontVariantNumeric: 'tabular-nums',
                   letterSpacing: '-0.3px',
                   lineHeight: 1,

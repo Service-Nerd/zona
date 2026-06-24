@@ -18,7 +18,8 @@ Supporting strategy: `docs/gtm/go-to-market-plan-2026-06.md` (the GTM playbook �
 
 **Workstreams:** 🏃 Product · 📣 Go-to-Market & Marketing · 🔁 Growth & Retention · ⚖️ Legal & Ops
 **Status:** 🔲 not started · 🔄 in progress · ✅ done · ⏸️ deferred
-**Last updated:** 2026-06-22 (post-launch wave — shipped ENGINE-02, DS-05, DS-07 A+B, CA-03, ENGINE-03-pre, AUTH-RESET-01, BRAND tech-debt; GTM-09/10 reconciled; cycle coaching SLT-reviewed → deferred behind gates; Plan-restore cancelled)
+**Last updated:** 2026-06-24 (HR sync latency absorption SLT-reviewed + committed — HR-SYNC-01/02/03/04 added as priority #7a/b/c after the founder-data evidence that 2/3 recent Watch runs missed HR permanently; Strava approval confirmed not arriving so Layer 2 unconditionally committed; opportunity register `HR-SYNC-FUTURES` captured in backlog for the Swift bridge's wider unlock surface)
+**Prior update:** 2026-06-22 (post-launch wave — shipped ENGINE-02, DS-05, DS-07 A+B, CA-03, ENGINE-03-pre, AUTH-RESET-01, BRAND tech-debt; GTM-09/10 reconciled; cycle coaching SLT-reviewed → deferred behind gates; Plan-restore cancelled)
 
 ---
 
@@ -87,8 +88,11 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 | ✅ | **ENGINE-03-pre** — readiness RHR noise-hardening | ✅ | S | Shipped 2026-06-22. The no-cycle-data precursor from the SLT review: a single RHR spike no longer softens a session (persistence-or-corroboration), fixing the luteal false-positive root for everyone. Principle §59. |
 | ⛔ | **ENGINE-03a** — cycle false positive fix | ⛔ | S | **DEFERRED behind gates (SLT 2026-06-22).** Cycle bridge waits for (a) usage evidence of mis-firing readiness in female cycle-trackers + (b) incorporation/insurance. ENGINE-03-pre already banks most of the value. FREE only (INV-DATA-001). |
 | ⛔ | **CA-05** — cycle-aware coaching thin slice | ⛔ | M | **DEFERRED on ENGINE-03** (SLT: the note is the risky part — "the moat is the silence, not the note"; build after a voice review only). |
-| **#7** | **POST-RUN-REFRAME-02** — voice memo reframe input | 🔲 | M (~3d) | PAID. Make Whisper/OpenAI vendor decision — don't let it stay deferred by indecision. |
-| **#8** | **CA-02** — Apple Watch companion app | 🔲 | L | FREE/PAID. Dedicated sprint. Scope locked: session + zone + HR + one-tap start only. Start Apple Developer provisioning now. |
+| **#7a** | **HR-SYNC-01 + HR-SYNC-02** — HR sync latency absorption (Layer 1) | 🔲 | S (~1.5 days) | **SLT 2026-06-24** — backend (`HR-SYNC-01`, 1 day) + UX (`HR-SYNC-02`, 0.5 day via `frontend-design` skill). PAID infra. Closes the brand-violation surface where post-run cards render with no HR + no zone discipline as if final. Late-arrival gating (>24h-late HR doesn't fire a stale fresh reframe), foreground retry on resume, pending-state card. **Ships before HR-SYNC-03 — UX needs the helper first.** |
+| **#7b** | **HR-SYNC-03** — Swift HealthKit bridge (Layer 2) | 🔲 | M (~3–5 days) | **SLT 2026-06-24, committed (Strava approval confirmed not arriving).** Custom Capacitor plugin: `HKObserverQuery` + `enableBackgroundDelivery` for HR + recovery types. iOS wakes the app when new HealthKit data lands. PAID infra. Same pattern as `SharedStorePlugin`. Pending state from #7a becomes mostly invisible once shipped. **Bridge is also a future-extensibility unlock** — see `HR-SYNC-FUTURES` in backlog (VO2max, splits via lap events, route polyline, etc.) — no follow-up items scoped yet; menu captured for future prioritisation. |
+| **#7c** | **HR-SYNC-04** — Pre-purchase "works best with Apple Watch" copy | 🔲 | S (~30 min) | **SLT 2026-06-24.** One-line upgrade-screen + landing copy: *"Zonna works best with Apple Watch or a HealthKit-compatible heart-rate strap."* Sets expectation pre-conversion (Traynor). Can ship alongside #7a or independently. FREE-surface copy. |
+| **#8** | **POST-RUN-REFRAME-02** — voice memo reframe input | 🔲 | M (~3d) | PAID. Make Whisper/OpenAI vendor decision — don't let it stay deferred by indecision. *(was #7)* |
+| **#9** | **CA-02** — Apple Watch companion app | 🔲 | L | FREE/PAID. Dedicated sprint. Scope locked: session + zone + HR + one-tap start only. Start Apple Developer provisioning now. *(was #8)* |
 | later | **POST-RUN-03** — rich-media zone push | 🔲 | M | Gated on production APNs. Not before #1–4. |
 
 ### ⚖️ Legal & Ops

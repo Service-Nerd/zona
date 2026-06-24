@@ -510,48 +510,59 @@ Use these before making architectural decisions:
 
 ## 17. Data Source Invariants
 
-**Authority**: ADR-011 (Data Source Doctrine). Read that ADR before touching any data ingest, HealthKit, Strava, or coaching query code.
+**Authority**: ADR-011 (Data Source Doctrine, amended 2026-06-24). Read that ADR before touching any data ingest, HealthKit, Strava, or coaching query code.
+
+**Core position (amended 2026-06-24)**: HealthKit is the System of Record for all run-derived data on iOS. Strava is an optional supplement — only when connected, only as a patch onto an existing HealthKit row. Strava never inserts a primary record. If no matching HK row exists, the Strava activity is discarded.
 
 | ID | Invariant |
 |---|---|
-| INV-DATA-001 | No paid feature may require a specific external data provider. Features degrade gracefully when data is absent; degradation is source-neutral and equally applies whether the absent source is Strava or HealthKit. |
-| INV-DATA-002 | The `strava_activities` table is the source-agnostic activity log. All coaching queries read from it without source filtering unless source-specific behaviour is explicitly justified and documented. A query that adds `WHERE source = 'strava'` without explicit justification is a defect. |
+| INV-DATA-001 | No paid feature may require a specific external data provider. Features degrade gracefully when data is absent; degradation is source-neutral. |
+| INV-DATA-002 | The `strava_activities` table is the source-agnostic activity log (v1 misnomer — treat as "the run log"). All coaching queries read from it without source filtering unless source-specific behaviour is explicitly justified and documented. A query that adds `WHERE source = 'strava'` without explicit justification is a defect. |
 | INV-DATA-003 | Every HealthKit permission requested in `requestHealthKitAuth()` (`lib/health/clientSync.ts`) must have a corresponding active query. Unused permissions are wasted consent friction and must be removed. Current defect: `distance` permission is requested but not queried — remove it. Current gap: `calories` (active energy) is not requested but should be — add it. |
-| INV-DATA-004 | iOS onboarding and empty states must offer HealthKit as the primary data source CTA. Strava is offered as a secondary option, not the default. Copy must never say "connect Strava" as the only or first option on iOS. |
+| INV-DATA-004 | iOS onboarding and empty states must offer HealthKit as the primary data source CTA. Strava is offered as a secondary supplement option only, never the default. Copy must never say "connect Strava" as the only or first option on iOS. |
 | INV-DATA-005 | When a coaching metric is absent (null), the UI must render a one-line explanation of why — not a blank, muted placeholder, or silent omission. Example: zone discipline null → "No HR data yet — sync a run to unlock." |
-| INV-DATA-006 | Conflict resolution when the same run arrives from multiple sources follows the priority table in ADR-011 §4. `lib/coaching/healthkitConsolidate.ts` is the single owner of dedup and merge logic. No caller implements its own conflict resolution. |
+| INV-DATA-006 | Conflict resolution when the same run arrives from multiple sources follows ADR-011 §4. `lib/coaching/healthkitConsolidate.ts` is the single owner of dedup, merge, and discard logic. No caller implements its own conflict resolution. |
 | INV-DATA-007 | The SOR for each data type is the table in ADR-011 §3. No code may treat a different source as authoritative without updating that table and ADR-011. |
+| INV-DATA-008 | **HealthKit is the SOR for all run-derived data on iOS.** Strava data may only enter the system as a supplement that patches an existing HealthKit row via `lib/coaching/healthkitConsolidate.ts → tryEnrichHealthKitRow`. If no matching HealthKit row exists, the Strava activity is **discarded** — never stored as a primary record. Direct writes to `strava_activities` outside of `/api/health/ingest` (insert path) and `lib/coaching/healthkitConsolidate.ts` (patch path) are doctrine violations. New ingest paths must extend these helpers, not bypass them. |
 
-### Data Source Quick Reference (SOR Summary)
+### Data Source Quick Reference (SOR Summary, amended 2026-06-24)
 
-| Data Type | System of Record | Primary Source |
-|---|---|---|
-| Run sessions (distance, pace, duration) | Activity log (`strava_activities`) | Strava → HealthKit → Manual |
-| HR stream / HR-in-zone % | Activity log → `run_analysis` | Strava stream → HealthKit samples → Absent (neutral) |
-| Average HR per run | Activity log | Strava field → HealthKit avg of samples |
-| Aerobic efficiency (EF) | `run_analysis` (computed) | Pace + HR from activity log, source-blind |
-| Resting HR baseline | `health_daily_samples` | HealthKit only |
-| HRV baseline | `health_daily_samples` | HealthKit only |
-| Sleep duration | `health_daily_samples` | HealthKit only |
-| RPE | `session_completions` | User input only — never overridden by device data |
-| Fatigue tag | `session_completions` | User input only — never overridden by device data |
-| Plan session definitions | GitHub Gist JSON | Single source, `cache: 'no-store'` |
-| HR zones | `user_settings` (computed) | User input → Karvonen → %MaxHR → Tanaka estimate |
+| Data Type | System of Record | Primary Source | Strava Role |
+|---|---|---|---|
+| Run sessions (distance, pace, duration) | Activity log (`strava_activities`) | HealthKit | Supplement only (patches existing HK row; never inserts) |
+| HR stream / HR-in-zone % | Activity log → `run_analysis` | HealthKit HR samples | None — Strava does not push HR into HealthKit |
+| Average HR per run | Activity log | HealthKit avg of samples | None |
+| Aerobic efficiency (EF) | `run_analysis` (computed) | Pace + HR from HK | Degrades to 75 neutral when HR absent |
+| Splits per km | Activity log | Absent (HK doesn't expose) | Supplement (`splits_metric` patched on existing HK row only) |
+| Temperature | Activity log | Absent (HK doesn't expose) | Supplement (`avg_temp_c` patched on existing HK row only) |
+| Elevation gain | Activity log | HealthKit metadata | Supplement (patched on existing HK row only) |
+| Resting HR baseline | `health_daily_samples` | HealthKit only | None |
+| HRV baseline | `health_daily_samples` | HealthKit only | None |
+| Sleep duration / stages | `health_daily_samples` | HealthKit only | None |
+| Active energy per run | Activity log | HealthKit `totalEnergyBurned` | None |
+| RPE | `session_completions` | User input only — never overridden by device data | None |
+| Fatigue tag | `session_completions` | User input only — never overridden by device data | None |
+| Plan session definitions | GitHub Gist JSON | Single source, `cache: 'no-store'` | None |
+| HR zones | `user_settings` (computed) | User input → Karvonen → %MaxHR → Tanaka estimate | None |
 
 ### HealthKit Plugin Capability Boundaries
 
-The `@capgo/capacitor-health` plugin (v8.4.8) **does not support**: GPS routes, running cadence, stride length, ground contact time, running power, VO2max. These require a custom Swift bridge or plugin fork. Do not promise or build features that depend on these without first verifying the bridge exists.
+The `@capgo/capacitor-health` plugin (v8.4.8) **does not support**: GPS routes, running cadence, stride length, ground contact time, running power, VO2max, menstrual/cycle/reproductive-health data. These require a custom Swift bridge or plugin fork. Do not promise or build features that depend on these without first verifying the bridge exists.
 
-### Expected Experience by Configuration
+### Expected Experience by Configuration (amended 2026-06-24)
+
+Under HK-SOR, the deciding question is **"does HealthKit have HR samples for the run window?"** — not "is Strava connected?".
 
 | User Setup | Run Analysis | Zone Discipline | Recovery Signal | Adjustment Triggers |
 |---|---|---|---|---|
-| iOS + Apple Watch + HealthKit | ✅ Full | ✅ Full | ✅ Full | ✅ All |
-| iOS + Apple Watch + Strava | ✅ Full | ✅ Full | ✅ Full | ✅ All |
-| iOS + both connected | ✅ Full (richer) | ✅ Full | ✅ Full | ✅ All |
-| iOS + no watch + Strava | ✅ Full via Strava | ✅ Full | ⚠️ HK if available | ✅ All |
-| iOS + no watch + no Strava | ⚠️ Manual only | ❌ No HR | ⚠️ RHR/HRV if phone measures | ⚠️ Load + fatigue |
-| Web/Android + Strava | ✅ Full via Strava | ✅ Full | ❌ No HealthKit | ⚠️ Load + zone + EF |
-| Web/Android + no Strava | ⚠️ Manual only | ❌ No HR | ❌ None | ⚠️ Fatigue only |
+| iOS + Apple Watch (worn during run) | ✅ Full | ✅ Full | ✅ Full | ✅ All |
+| iOS + Apple Watch + Strava | ✅ Full + splits + temp | ✅ Full | ✅ Full | ✅ All |
+| iOS + HR chest strap (writes to HK) | ✅ Full | ✅ Full | ⚠️ What the device writes | ✅ All |
+| iOS + no HR device (Strava-on-phone only) | ⚠️ Workout shell only — **no HR** | ❌ Absent | ⚠️ Passive HR if any | ⚠️ Load + fatigue |
+| iOS + no HR device + Strava | ⚠️ Shell + splits + temp — **still no HR** | ❌ Absent | ⚠️ Passive HR if any | ⚠️ Load + fatigue |
+| iOS + no HealthKit connection | ⚠️ Manual only | ❌ Absent | ❌ Absent | ⚠️ Fatigue only |
+| Web/Android | **Out of scope for v1** | — | — | — |
 
-Every ⚠️ or ❌ cell must have a corresponding UI state with a one-line explanation and a specific action the user can take.
+**Hard consequence**: iPhone-only runners (no Apple Watch, no chest strap) get no HR-based coaching even with Strava connected. Strava's Apple Health write does not include the HR stream. Apple controls what Strava writes; we don't reach back to Strava's API to compensate. This is a doctrine-driven trade.
+
+Every ⚠️ or ❌ cell must have a corresponding UI state with a one-line explanation and a specific action the user can take. Never a generic "connect Strava" prompt — connecting Strava does not solve the no-HR case.

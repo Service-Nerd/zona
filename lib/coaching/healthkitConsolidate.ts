@@ -15,6 +15,7 @@
 // look up by either ID type stay consistent.
 
 import type { HRStreamSummary } from '@/lib/strava'
+import { decideLateArrival } from './lateArrivalGate'
 
 interface MatchableStravaActivity {
   id:           number
@@ -196,6 +197,9 @@ export function resolveHealthKitDuplicate(
 interface IncomingHealthKitRow {
   apple_health_uuid:    string
   start_date:           string
+  /** Used by the late-arrival gate (HR-SYNC-01) to decide whether a fresh
+   *  patch should trigger analyse-run or just archive the columns. */
+  moving_time_s:        number
   distance_m:           number
   avg_hr:               number | null
   max_hr:               number | null
@@ -212,12 +216,29 @@ interface IncomingHealthKitRow {
  * DB wrapper around resolveHealthKitDuplicate. Returns `{ skipped: true }` when
  * the incoming HK row duplicates an existing run (caller must NOT insert it);
  * `{ skipped: false }` when it's a genuinely new activity to insert.
+ *
+ * HR-SYNC-01: when an HR-bearing incoming row patches HR onto a previously
+ * HR-null canonical, the return signals (a) whether HR was lifted and
+ * (b) whether the workout is still within the fresh coaching window. The
+ * caller uses this to fire `/api/analyse-run` for fresh-window patches
+ * (so the score card + reframe reflect real HR) and skip it for stale
+ * arrivals (per Hutchinson — no two-day-stale fresh reframe).
  */
 export async function consolidateIncomingHealthKitRow(
   supabase: any,
   userId: string,
   row: IncomingHealthKitRow,
-): Promise<{ skipped: boolean; canonicalId?: string }> {
+): Promise<{
+  skipped:          boolean
+  canonicalId?:     string
+  /** The canonical row's apple_health_uuid (after any convertToHk patch).
+   *  Caller uses this to look up the row's run_analysis on the HR-refresh path. */
+  canonicalAppleHealthUuid?: string | null
+  /** True when the patch lifted HR columns onto the canonical (false otherwise). */
+  hrLifted?:        boolean
+  /** Present when hrLifted=true. False means the patch happened > 24h after workout end. */
+  withinFreshWindow?: boolean
+}> {
   const startMs = new Date(row.start_date).getTime()
   const { data: candidates } = await supabase
     .from('strava_activities')
@@ -245,6 +266,14 @@ export async function consolidateIncomingHealthKitRow(
 
   if (decision.action === 'insert') return { skipped: false }
 
+  // Resolve the canonical row's apple_health_uuid for the return value. If
+  // convertToHk is true, the canonical becomes HK with the incoming uuid;
+  // otherwise it's whatever the matched candidate already carried.
+  const matchedCandidate = (candidates ?? []).find((c: any) => c.id === decision.matchId)
+  const canonicalAppleHealthUuid: string | null = decision.convertToHk
+    ? row.apple_health_uuid
+    : (matchedCandidate?.apple_health_uuid ?? null)
+
   // Build the patch: convert a Strava-only canonical to HK provenance (ADR-011),
   // and/or lift HR onto the canonical if it lacked a summary. Both can apply in
   // the same write — one round-trip.
@@ -253,6 +282,7 @@ export async function consolidateIncomingHealthKitRow(
     patch.source            = 'apple_health'
     patch.apple_health_uuid = row.apple_health_uuid
   }
+  let lateArrival: { withinFreshWindow: boolean } | null = null
   if (decision.patchHr) {
     patch.avg_hr               = row.avg_hr
     patch.max_hr               = row.max_hr
@@ -263,6 +293,18 @@ export async function consolidateIncomingHealthKitRow(
     patch.hr_pct_z2            = row.hr_pct_z2
     patch.hr_pct_z3            = row.hr_pct_z3
     patch.hr_pct_z4_5          = row.hr_pct_z4_5
+
+    // HR-SYNC-01: stamp arrival timestamp on late-window patches so the
+    // daily coach note can reference "yesterday's HR just landed" without
+    // re-firing analyse-run now (Hutchinson). The decision flows back to
+    // the caller via the return value.
+    lateArrival = decideLateArrival(
+      { workoutStartIso: row.start_date, durationSeconds: row.moving_time_s },
+      new Date(),
+    )
+    if (!lateArrival.withinFreshWindow) {
+      patch.hr_arrived_late_at = new Date().toISOString()
+    }
   }
   if (Object.keys(patch).length > 0) {
     patch.processed_at = new Date().toISOString()
@@ -270,5 +312,11 @@ export async function consolidateIncomingHealthKitRow(
     if (error) console.error('[healthkit-consolidate] canonical patch failed', error.message)
   }
 
-  return { skipped: true, canonicalId: decision.matchId }
+  return {
+    skipped:                  true,
+    canonicalId:              decision.matchId,
+    canonicalAppleHealthUuid,
+    hrLifted:                 decision.patchHr,
+    withinFreshWindow:        lateArrival?.withinFreshWindow,
+  }
 }

@@ -28,9 +28,11 @@ import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import PlanArc from '@/components/shared/PlanArc'
 import RPEScale from '@/components/shared/RPEScale'
 import SessionCard from '@/components/shared/SessionCard'
+import PendingHrCard from '@/components/shared/PendingHrCard'
 import SessionCompleteCard from '@/components/shared/SessionCompleteCard'
 import { useDisciplineLedger, type LedgerSnapshot } from '@/lib/coaching/useDisciplineLedger'
 import { getCompletionCopy } from '@/lib/coaching/completionCopy'
+import { classifyHrPending } from '@/lib/coaching/hrPending'
 import { useWidgetSync } from '@/lib/widget/useWidgetSync'
 import { clearWidgetState } from '@/lib/native/sharedStore'
 import ZoneBar, { zoneNumberForType, zoneShortName } from '@/components/shared/ZoneBar'
@@ -6320,6 +6322,22 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   const isStrengthDay = selectedEntry?.type === 'strength'
   const showSessionHero = isRunDay || isStrengthDay
 
+  // HR-SYNC-02: per-card retry state. Tracks which apple_health_uuid is
+  // currently mid-retry so the matching SessionCard renders the "Checking…"
+  // copy. Single key — only one retry can be in flight at a time (matches
+  // the throttle behaviour in retryHrFromUi).
+  const [retryingForHrUuid, setRetryingForHrUuid] = useState<string | null>(null)
+  const handleHrRetry = useCallback(async (uuid: string) => {
+    setRetryingForHrUuid(uuid)
+    try {
+      const { retryHrFromUi } = await import('@/lib/health/clientSync')
+      await retryHrFromUi()
+    } finally {
+      // Brief hold so the "Checking…" state is felt even on instant returns.
+      setTimeout(() => setRetryingForHrUuid(cur => (cur === uuid ? null : cur)), 400)
+    }
+  }, [])
+
   // Next run session after selected day
   const nextRunSession = sessions.find(s =>
     s.rawDate > (selectedSession?.rawDate ?? now) && RUN_TYPES.includes(s.type)
@@ -7138,6 +7156,27 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 viaStrava: !!completions[selectedCompletionKey]?.strava_activity_id,
                 activityName: completions[selectedCompletionKey]?.strava_activity_name ?? undefined,
               } : undefined}
+              {...(() => {
+                // HR-SYNC-02: look up the activity matching this completion and
+                // classify HR-pending. Only applies when complete + an HK uuid
+                // links the completion to an activity log row.
+                const comp = completions[selectedCompletionKey]
+                if (comp?.status !== 'complete' || !comp?.apple_health_uuid) return {}
+                const act: any = stravaRuns?.find((r: any) => r.apple_health_uuid === comp.apple_health_uuid)
+                if (!act || act.source !== 'apple_health') return {}
+                const state = classifyHrPending({
+                  source:        act.source,
+                  avg_hr:        act.average_heartrate ?? null,
+                  start_date:    act.start_date ?? null,
+                  moving_time_s: act.moving_time ?? null,
+                }, new Date())
+                if (state !== 'pending' && state !== 'fallback') return {}
+                return {
+                  hrPendingState: state,
+                  onHrRetry: state === 'fallback' ? () => handleHrRetry(comp.apple_health_uuid) : undefined,
+                  isHrRetrying: retryingForHrUuid === comp.apple_health_uuid,
+                }
+              })()}
               onClick={() => {
                 const isPast = selectedSession.rawDate < now && !selectedSession.today
                 const isFuture = !selectedSession.today && selectedSession.rawDate > now
@@ -12136,6 +12175,23 @@ function PostRunScreen({
   const [linkFired, setLinkFired]           = useState(false)
   const [hydratedActivity, setHydratedActivity] = useState<PostRunData['linkedActivity']>(null)
   const [isHKCompletion, setIsHKCompletion] = useState(false)
+  // HR-SYNC-02: fields needed to classify HR-pending for the linked HK
+  // activity. Fetched alongside the completion when this is an HK-linked run.
+  const [hrPendingActivity, setHrPendingActivity] = useState<{
+    avg_hr:        number | null
+    start_date:    string | null
+    moving_time_s: number | null
+  } | null>(null)
+  const [isHrRetrying, setIsHrRetrying] = useState(false)
+  const handlePostRunHrRetry = useCallback(async () => {
+    setIsHrRetrying(true)
+    try {
+      const { retryHrFromUi } = await import('@/lib/health/clientSync')
+      await retryHrFromUi()
+    } finally {
+      setTimeout(() => setIsHrRetrying(false), 400)
+    }
+  }, [])
   const sessionDay = session?.key as string | undefined
 
   // ── Hydrate RPE/fatigue + linked activity from existing completion ──
@@ -12165,6 +12221,24 @@ function PostRunScreen({
               km:   (row.strava_activity_km as number | null) ?? null,
             })
           }
+          // HR-SYNC-02: fetch the activity row's HR-pending fields when this
+          // completion is HK-linked. Used to gate the morph chain on whether
+          // HR has actually landed yet.
+          if (isHK) {
+            const { data: act } = await supabase
+              .from('strava_activities')
+              .select('avg_hr, start_date, moving_time_s')
+              .eq('user_id', user.id)
+              .eq('apple_health_uuid', row.apple_health_uuid)
+              .maybeSingle()
+            if (!cancelled && act) {
+              setHrPendingActivity({
+                avg_hr:        (act.avg_hr as number | null) ?? null,
+                start_date:    (act.start_date as string | null) ?? null,
+                moving_time_s: (act.moving_time_s as number | null) ?? null,
+              })
+            }
+          }
         }
       } catch {}
     }
@@ -12175,6 +12249,21 @@ function PostRunScreen({
   // Display source for the linked-activity row — prop wins when present.
   const displayActivity = linkedActivity ?? hydratedActivity
   const isHKSource = !!pendingAppleHealthUuid || isHKCompletion
+
+  // HR-SYNC-02: HR-pending classification for the morph chain. Null when
+  // not HK-linked, when the activity row hasn't loaded yet, or when HR has
+  // already landed. 'pending' / 'fallback' gates the existing analysis cards.
+  const hrPendingState = hrPendingActivity != null
+    ? (() => {
+        const s = classifyHrPending({
+          source:        'apple_health',
+          avg_hr:        hrPendingActivity.avg_hr,
+          start_date:    hrPendingActivity.start_date,
+          moving_time_s: hrPendingActivity.moving_time_s,
+        }, new Date())
+        return s === 'pending' || s === 'fallback' ? s : null
+      })()
+    : null
 
   // ── Fire link-activity once on mount when a fresh activity is staged ──
   // This commits the Strava → session_completions link AND triggers analyse-run
@@ -12410,7 +12499,18 @@ function PostRunScreen({
         )}
 
         {/* ── AI CARD — pending or done ───────────────────────────── */}
-        {hasPaidAccess && analysis && (
+        {/* HR-SYNC-02 morph chain: PendingHrCard (waiting on HK sync) →
+            PendingAnalysisCard (analyse-run in flight) → RunFeedbackCard.
+            When HR is still pending we suppress the AI surfaces — coaching
+            depth is meaningless without HR. */}
+        {hasPaidAccess && hrPendingState && (
+          <PendingHrCard
+            state={hrPendingState}
+            onRetry={hrPendingState === 'fallback' ? handlePostRunHrRetry : undefined}
+            isRetrying={isHrRetrying}
+          />
+        )}
+        {hasPaidAccess && !hrPendingState && analysis && (
           <RunFeedbackCard
             analysis={analysis}
             paceTarget={paceTarget}
@@ -12418,10 +12518,10 @@ function PostRunScreen({
             onOpenCoach={onOpenCoach}
           />
         )}
-        {hasPaidAccess && !analysis && !pollGaveUp && (
+        {hasPaidAccess && !hrPendingState && !analysis && !pollGaveUp && (
           <PendingAnalysisCard onOpenCoach={onOpenCoach} />
         )}
-        {hasPaidAccess && !analysis && pollGaveUp && (
+        {hasPaidAccess && !hrPendingState && !analysis && pollGaveUp && (
           <GaveUpCard onOpenCoach={onOpenCoach} />
         )}
 

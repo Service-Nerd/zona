@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
-# Pre-commit: palette + font guard
-# Blocks hardcoded hex values, banned fonts, setProperty calls in app/ and components/
-# globals.css is excluded — it is the token authority.
+# Pre-commit guard. Three independent checks:
+#   1. Palette + font (app/ + components/ only)
+#   2. setProperty (app/ + components/ only)
+#   3. Data source doctrine — direct writes to strava_activities (whole tree)
+# globals.css is excluded from #1/#2 — it is the token authority.
 
 set -euo pipefail
 
-STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(tsx?|jsx?)$' | grep -vE '^globals\.css$' | grep -E '^(app|components)/' || true)
-
-if [ -z "$STAGED" ]; then
-  exit 0
-fi
-
 FAIL=0
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(tsx?|jsx?)$' | grep -vE '^globals\.css$' | grep -E '^(app|components)/' || true)
 
 # ── Hardcoded hex colours ─────────────────────────────────────────────────────
 HEX_HITS=$(echo "$STAGED" | xargs grep -lnE '#[0-9A-Fa-f]{3,8}\b' 2>/dev/null || true)
@@ -55,6 +53,38 @@ if [ -n "$BANNED_HITS" ]; then
     grep -nE '#D4501A|#f5f2ee|#F5F2EE|#0B132B|#5BC0BE' "$f" | head -3 | sed "s|^|   $f:|"
   done
   FAIL=1
+fi
+
+# ── Data Source Doctrine: direct writes to strava_activities (INV-DATA-008) ──
+# HealthKit is the SOR (ADR-011 amended 2026-06-24). Writes to strava_activities
+# may only happen through the canonical HK ingest gateway. Strava-direct paths
+# are legacy and tolerated until retirement — listed below — but no NEW code
+# may add a .from('strava_activities').insert/.upsert(...) chain.
+#
+# Allowed (SOR ingest + patch gateway):
+#   - app/api/health/ingest/         — primary HealthKit ingest
+#   - lib/coaching/healthkitConsolidate.ts — patch helper (only .update)
+# Tolerated legacy (no new violations of doctrine here either):
+#   - app/api/webhooks/strava/       — pending retirement, see ADR-011
+#   - app/api/strava/link-activity/  — pending retirement, see ADR-011
+ALLOWED_WRITER_REGEX='^(app/api/health/ingest/|app/api/webhooks/strava/|app/api/strava/link-activity/|lib/coaching/healthkitConsolidate\.ts$)'
+
+STAGED_ALL_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(tsx?|jsx?)$' | grep -vE "$ALLOWED_WRITER_REGEX" || true)
+
+if [ -n "$STAGED_ALL_TS" ]; then
+  for f in $STAGED_ALL_TS; do
+    [ -f "$f" ] || continue
+    if perl -0777 -ne 'exit 1 unless /\.from\(["'"'"']strava_activities["'"'"']\)[\s\S]{0,400}?\.(insert|upsert)\(/' "$f"; then
+      echo ""
+      echo "✗  Direct write to strava_activities outside the allowed ingest gateway (INV-DATA-008)."
+      echo "   ADR-011 (amended 2026-06-24): HealthKit is the SOR. Only the canonical"
+      echo "   HK ingest gateway may insert into strava_activities. Strava data must enter"
+      echo "   via lib/coaching/healthkitConsolidate.ts → tryEnrichHealthKitRow, which"
+      echo "   patches existing HK rows. Activities with no HK match are discarded."
+      echo "   Offending file: $f"
+      FAIL=1
+    fi
+  done
 fi
 
 if [ $FAIL -ne 0 ]; then

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveHealthKitDuplicate, type DedupCandidate } from './healthkitConsolidate'
+import { resolveHealthKitDuplicate, tryEnrichHealthKitRow, type DedupCandidate } from './healthkitConsolidate'
 
 /**
  * INGEST-DEDUP-01 — the pure decision behind HealthKit-side consolidation.
@@ -104,5 +104,78 @@ describe('resolveHealthKitDuplicate', () => {
   it('does not patch HR when the incoming has no summary', () => {
     const c = cand({ id: 'noHr', hasHrSummary: false })
     expect(resolveHealthKitDuplicate(incoming({ hr: false }), [c])).toEqual({ action: 'skip', matchId: 'noHr', patchHr: false, convertToHk: false })
+  })
+})
+
+/**
+ * INV-DATA-008 sentinel. ADR-011 (amended 2026-06-24): HealthKit is the SOR.
+ * A Strava activity that finds no matching HealthKit row must NOT be stored
+ * as a primary record — `tryEnrichHealthKitRow` reports `enriched: false`
+ * and the caller is required to discard the activity.
+ *
+ * If this test ever flips (e.g. the helper starts inserting a fallback Strava
+ * row internally, or the contract changes silently), the doctrine has drifted.
+ * The hook in `.githooks/pre-commit` catches NEW writers; this test pins the
+ * existing helper's behaviour.
+ */
+describe('INV-DATA-008: tryEnrichHealthKitRow discards Strava with no HK match', () => {
+  // Minimal supabase chain stub. Returns the configured candidate list from
+  // the .order() terminal call. Skips update mirrors — the no-match path
+  // shouldn't reach them. If it does, the test will throw on undefined chains
+  // and that's a doctrine violation worth surfacing.
+  const stubSupabase = (candidates: unknown[]) => ({
+    from: (_table: string) => ({
+      select: (_cols: string) => ({
+        eq: (_col: string, _val: unknown) => ({
+          eq: (_col2: string, _val2: unknown) => ({
+            gte: (_col3: string, _val3: unknown) => ({
+              lte: (_col4: string, _val4: unknown) => ({
+                order: (_col5: string, _opts: unknown) => Promise.resolve({ data: candidates, error: null }),
+              }),
+            }),
+          }),
+        }),
+      }),
+    }),
+  })
+
+  const stravaActivity = {
+    id:           777,
+    start_date:   '2026-06-23T17:49:55.000Z',
+    distance:     8025,
+    name:         '8K shakeout',
+    suffer_score: null,
+  }
+
+  it('reports enriched=false when no HK candidates exist (Strava is discarded)', async () => {
+    const result = await tryEnrichHealthKitRow(
+      stubSupabase([]),
+      'user-1',
+      stravaActivity,
+      null,
+    )
+    expect(result).toEqual({ enriched: false })
+  })
+
+  it('reports enriched=false when candidates are out of distance tolerance (Strava is discarded)', async () => {
+    const farRow = { id: 'r1', apple_health_uuid: 'HK1', distance_m: 5000, strava_activity_id: null }
+    const result = await tryEnrichHealthKitRow(
+      stubSupabase([farRow]),
+      'user-1',
+      stravaActivity,
+      null,
+    )
+    expect(result).toEqual({ enriched: false })
+  })
+
+  it('reports enriched=false when the only candidate is already linked to a Strava activity', async () => {
+    const alreadyLinked = { id: 'r1', apple_health_uuid: 'HK1', distance_m: 8025, strava_activity_id: 999 }
+    const result = await tryEnrichHealthKitRow(
+      stubSupabase([alreadyLinked]),
+      'user-1',
+      stravaActivity,
+      null,
+    )
+    expect(result).toEqual({ enriched: false })
   })
 })
