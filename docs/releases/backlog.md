@@ -246,27 +246,8 @@ The Vetra → Zonna rename (commits `fda3ff6` + `ba469df`) is complete in code, 
 
 *Source: SLT review 2026-06-24. Founder-data evidence: 2/3 recent runs missing HR permanently because Apple Watch sync didn't land before the row aged out. The "Hold the zone" brand promise depends on HR coaching — surfacing half-information when sync is pending violates the promise. Two sequenced layers + instrumentation + commercial copy. Strava approval is known-not-arriving so Layer 2 is committed (not gated on instrumentation).*
 
-- 🔲 **HR-SYNC-01 — Backend: pending detection, foreground retry, late-arrival gating, instrumentation** *(P1, ~1 day)* — Backend half of Layer 1. **Three parts, one PR.**
-  1. **Pending detection helper**: pure function `isHrPending(row, now)` → returns `true` when `source='apple_health'`, `avg_hr` is null, and run end was < 24h ago. Returns `'fallback'` when > 24h. Lives in `lib/coaching/hrPending.ts`. Unit-tested.
-  2. **Foreground retry on resume**: extend the `appStateChange` listener shipped 2026-06-24 to additionally scan for HR-null `source='apple_health'` rows from the last 48h. For each, call `Health.readSamples({ dataType: 'heartRate', startDate: workout.startDate, endDate: workout.endDate })` and re-post to `/api/health/ingest` if samples now exist. Patch path via existing `consolidateIncomingHealthKitRow`. Throttled to once per 30s like the existing resume sync.
-  3. **Late-arrival coaching-correctness gate (Hutchinson)**: when `consolidateIncomingHealthKitRow → patchHr` fires, check `now - workout.end > 24h`. If yes, patch HR columns + `processed_at` but **do not** trigger `/api/analyse-run`. Run shows zone breakdown as historical (consumed by weekly report / fitness signals / zone ledger), no fresh reframe card, no fresh coach note. Add a `hr_arrived_late_at` timestamp column on `strava_activities` so the daily coach note can reference it tomorrow without re-firing now.
-  4. **Instrumentation (Fried/Traynor non-negotiable)**: log on every HK ingest `hr_present_at_first_query: boolean`; log on every patch path fire `hr_appeared_seconds_after_workout_end: number`. Simple counters; analytics surface can come later. Migration: small column adds, no schema breaks.
-  - **Doctrine fit**: HK-SOR (INV-DATA-008), uses existing helpers, no Strava reach.
-  - **Risks**: late-arrival gate behaviour change is the main one — existing post-run reframe flow currently fires whenever HR arrives, regardless of age. Need to verify no regression in the < 24h case; sentinel test for the > 24h case.
-  - **Depends on**: nothing. Ready to build.
-  - **Tier**: PAID infra (activity_intelligence).
-
-- 🔲 **HR-SYNC-02 — UX: pending state card + 24h+ fallback (handoff to `frontend-design`)** *(P1, ~0.5 day after spec)* — UX half of Layer 1. **Build via the `frontend-design` skill** — voice + visuals need the design-bar pass. Three new visual states layered onto the existing session card morph chain (which currently goes "no card" → `PendingAnalysisCard` → `RunFeedbackCard`):
-  1. **Pending-HR state** (HR-null, < 24h old): suppresses zone discipline score, risk gate, reframe card, AI coach note. Renders distance/duration/pace as normal. Soft pulsing dot (no AIMark — rule-engine state, not AI). Copy candidate (Sutherland-corrected, don't promise a time): *"Apple Watch hasn't synced this one yet."* Sub-line optional. Card morphs into `PendingAnalysisCard` once HR arrives, then into `RunFeedbackCard` after analysis.
-  2. **24h+ fallback** (HR-null, > 24h old): copy becomes *"Apple Watch didn't sync this one. Tap to try again."* Tappable affordance triggers an explicit foreground HR re-query (same code path as the resume retry). If still nothing after the manual try, no further degradation — the run lives as a workout-shell-only entry for zone ledger purposes.
-  3. **Today screen post-run hero**: same pattern — suppress verdict when HR is pending. PostRunScreen's existing morph chain extended.
-  - **Voice rule**: no voice anchor ("Hold the zone") on pending cards — they're system states, not coaching moments. `brand.md` voice rules honoured.
-  - **No notification on pending-resolve** (Wood): the post-run app-open is the trigger; resolution is found, not announced. Pushing a "your HR is here" notification would re-trigger the loop at the wrong moment.
-  - **AIMark**: explicitly NOT on the pending state. Reaffirmed.
-  - **Doctrine fit**: INV-DATA-005 (absent metric must explain why) — the pending state IS the explanation.
-  - **Risks**: visual stacking with TODAY-ATTR-01 provenance line. Test both render on the same card. PostRunScreen morph chain becomes three-state (was two).
-  - **Depends on**: HR-SYNC-01 ships first (UX needs the `isHrPending` helper).
-  - **Tier**: PAID infra (cosmetic of activity_intelligence).
+- ✅ **HR-SYNC-01** — shipped 2026-06-24. See feature-registry.
+- ✅ **HR-SYNC-02** — shipped 2026-06-24. See feature-registry.
 
 - 🔲 **HR-SYNC-03 — Layer 2: Swift HealthKit bridge (HKObserverQuery + background delivery)** *(P1, ~3–5 days)* — **Committed (Strava approval confirmed not arriving — board condition met).** New custom Capacitor plugin in `ios/App/App/`. Precedent: `SharedStorePlugin` for the widget — same packaging / Capacitor 8 `packageClassList` registration pattern (re-add after every `cap sync`).
   - **Minimum scope (this item)**:
