@@ -15,6 +15,8 @@
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
+		D94282382FEBF63D001DBFD3 /* HealthObserverPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D94282372FEBF63D001DBFD3 /* HealthObserverPlugin.swift */; };
+		D94282392FEBF63D001DBFD3 /* HealthObserverPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = D94282362FEBF63D001DBFD3 /* HealthObserverPlugin.m */; };
 		D9ADB5782FC2242D00D54D5F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D9ADB5772FC2242D00D54D5F /* WidgetKit.framework */; };
 		D9ADB57A2FC2242D00D54D5F /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D9ADB5792FC2242D00D54D5F /* SwiftUI.framework */; };
 		D9ADB5892FC2242F00D54D5F /* ZonnaWidgetExtensionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D9ADB5752FC2242D00D54D5F /* ZonnaWidgetExtensionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -60,6 +62,8 @@
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 		D90385FC2FA4BEFE00035788 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		D90385FE2FA4BEFE00035789 /* AppRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AppRelease.entitlements; sourceTree = "<group>"; };
+		D94282362FEBF63D001DBFD3 /* HealthObserverPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HealthObserverPlugin.m; sourceTree = "<group>"; };
+		D94282372FEBF63D001DBFD3 /* HealthObserverPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthObserverPlugin.swift; sourceTree = "<group>"; };
 		D947A5352FB72F4700107617 /* Zonna.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; name = Zonna.storekit; path = App/Zonna.storekit; sourceTree = "<group>"; };
 		D9ADB5752FC2242D00D54D5F /* ZonnaWidgetExtensionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ZonnaWidgetExtensionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D9ADB5772FC2242D00D54D5F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -130,6 +134,8 @@
 		504EC3061FED79650016851F /* App */ = {
 			isa = PBXGroup;
 			children = (
+				D94282362FEBF63D001DBFD3 /* HealthObserverPlugin.m */,
+				D94282372FEBF63D001DBFD3 /* HealthObserverPlugin.swift */,
 				D9D3E3F92FC35DE0001DAE8D /* SharedStorePlugin.m */,
 				D9D3E3F72FC35DCF001DAE8D /* SharedStorePlugin.swift */,
 				D9FF00012FC300FFAA000001 /* PrivacyInfo.xcprivacy */,
@@ -274,6 +280,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D94282382FEBF63D001DBFD3 /* HealthObserverPlugin.swift in Sources */,
+				D94282392FEBF63D001DBFD3 /* HealthObserverPlugin.m in Sources */,
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				D9D3E3F82FC35DCF001DAE8D /* SharedStorePlugin.swift in Sources */,
 				D9D3E3FA2FC35DE0001DAE8D /* SharedStorePlugin.m in Sources */,
@@ -444,7 +452,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = RGBM2B294H;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
@@ -453,7 +461,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.7;
+				MARKETING_VERSION = 1.8;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = app.zonna.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -475,7 +483,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = App/AppRelease.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = RGBM2B294H;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
@@ -484,7 +492,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.7;
+				MARKETING_VERSION = 1.8;
 				PRODUCT_BUNDLE_IDENTIFIER = app.zonna.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -507,7 +515,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = ZonnaWidgetExtensionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = RGBM2B294H;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -521,7 +529,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.7;
+				MARKETING_VERSION = 1.8;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = app.zonna.ios.ZonnaWidgetExtension;
@@ -547,7 +555,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = ZonnaWidgetExtensionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = RGBM2B294H;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -561,7 +569,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.7;
+				MARKETING_VERSION = 1.8;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = app.zonna.ios.ZonnaWidgetExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";

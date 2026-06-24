@@ -64,6 +64,19 @@ export default function CapacitorBoot() {
       }
     })()
 
+    // HR-SYNC-03: register HKObserverQuery background delivery so iOS notifies
+    // the app when Apple Watch syncs new HR / recovery data — covers the
+    // warm-background case where the user hasn't re-opened the app yet.
+    void (async () => {
+      try {
+        const { initHealthObserver } = await import('@/lib/health/observer')
+        await initHealthObserver()
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[capacitor-boot] HealthObserver init skipped', err instanceof Error ? err.message : err)
+      }
+    })()
+
     let removeUrlListener: (() => void) | undefined
     let removePushListener: (() => void) | undefined
     let removeAppStateListener: (() => void) | undefined
