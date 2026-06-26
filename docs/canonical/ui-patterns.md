@@ -353,6 +353,39 @@ Integration: `DashboardClient.tsx` → `AdjustmentBanner` wrapper (owns API call
 
 ---
 
+### 10b. Move-confirmation row (PlanCalendar)
+
+Inline row appended to a `WeekCard` after the user taps the move icon on a session and then taps a destination day. Stages the move; the actual `session_overrides` insert + `/api/adjust-plan` call only fire on **Confirm**. **Cancel** aborts with no DB side-effect.
+
+```
+┌─────────────────────────────────────────────┐
+│  Move Long run from Sun to Thu?             │
+│  Easy 8km swaps to Sun.                     │
+│                                             │
+│  [ Cancel ]  [   Move it   ]                │
+└─────────────────────────────────────────────┘
+```
+
+**Why this pattern:** the 2026-06-26 reshape incident root cause was a runner who didn't realise the tap-to-move UI had structural consequences. The override + AI summary fell on his taper before he could see what had happened. This row makes the move legible before it writes. Inline (not popup, not modal — per § "No popups" rule in CLAUDE.md).
+
+**Structure:**
+- Container: padding `12px 14px 14px`, background `--warn-soft` (with `--moss-soft` fallback), border-top `1px solid --line`
+- Body: `12px 400 --ink`, line-height 1.4. Source label + source day + target day are bolded. Swap call-out below in `--ink-2` at `11px`.
+- Button row: flex gap `8px`
+  - Cancel: `flex: 1`, transparent bg, `1px solid --line`, `--mute` text, `11px 400` uppercase `0.06em`
+  - Confirm: `flex: 2`, `--moss` bg, `--card` text, `11px 600` uppercase `0.06em`. Label: "Move it" or "Swap them" depending on `isSwap`
+
+**Voice rule:** copy describes the move in concrete terms — *what* moves, *from* where, *to* where. Never abstract ("apply change"). Never invents structure not in the diff. Aligns with brand voice — *honest, slightly sarcastic, self-aware, encouraging without cringe*.
+
+**Move-icon affordance:** the trigger button on each `DayRow` is a moss-soft pill containing `↕ Move`, not a hamburger. The pre-fix 3-line hamburger at 0.45 opacity read as "more options"; the explicit glyph + label removes the ambiguity that caused the incident.
+
+Reference: `components/training/PlanCalendar.tsx → WeekCard`  
+Integration: `PlanScreen` → `PlanCalendar` (owns the `onMove` / `onSwap` callbacks that write `session_overrides`)
+
+**Future:** when RESHAPE-FIX-WAVE2A ships, the `<AdjustmentDiff />` component will replace the prose body above — same Confirm/Cancel mechanism, richer per-day before/after view. The button row stays. See backlog → RESHAPE-FIX-WAVE2A.
+
+---
+
 ### 11. RestraintCard
 
 The brand's counter-intuitive moment — showing restraint as progress. **Status (ZONE-VIS-02 — May 2026):** the discipline NUMBER moved off Today and now lives on Coach. Today retains the discipline RHETORIC as a single-line moss voice anchor ("Hold the zone.") — see § Voice Anchor Strip below — while the full retrospective metric belongs where retrospection happens. The RestraintCard component itself is not currently rendered; the LedgerCard (LEDGER-01) borrows its visual anatomy, and the share OG card (`app/api/og/weekly-zone-card/route.tsx`) borrows its hierarchy. The component is preserved for those echoes and for any future surface that wants the full card form.

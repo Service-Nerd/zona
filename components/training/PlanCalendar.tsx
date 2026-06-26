@@ -346,6 +346,18 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   const weekTheme = week.theme ?? ''
   const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()]
   const [movingDay, setMovingDay] = useState<string | null>(null)
+  // RESHAPE-FIX-WAVE2C (Defect 11) — pending move staged between target-tap
+  // and the actual session_overrides + adjust-plan write. Set by
+  // handleTargetTap; cleared by confirmPendingMove / cancelPendingMove.
+  const [pendingMove, setPendingMove] = useState<{
+    sourceKey: string
+    targetKey: string
+    sourceOriginal: string
+    targetOriginal: string | null  // null when target is empty/rest (move); set when swap
+    sourceLabel: string
+    targetLabel: string | null
+    isSwap: boolean
+  } | null>(null)
 
   const effectiveSessions: Record<string, EffectiveSession> = {}
   DOW_ORDER.forEach(key => {
@@ -377,6 +389,15 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
     if (navigator.vibrate) navigator.vibrate(30)
   }
 
+  // RESHAPE-FIX-WAVE2C (Defect 11) — pendingMove confirmation step.
+  // Pre-fix: tapping a target day immediately fired onMove/onSwap which
+  // wrote session_overrides + posted /api/adjust-plan. The 2026-06-26
+  // incident root cause was a runner who didn't realise the tap-to-move
+  // UI was *a move* (he experienced it as a tap, not a drag) — the
+  // override + AI summary lie that followed corrupted his taper. Now:
+  // tapping a target day stages a pendingMove and renders an inline
+  // confirmation row. Confirm fires the write path; Cancel aborts with
+  // no DB side-effect. Move icon affordance also bumped (see DayRow).
   function handleTargetTap(targetKey: string) {
     setMovingDay(prev => {
       if (!prev) return null
@@ -389,14 +410,31 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
         && targetSession.type !== 'rest'
         && targetCompletion?.status !== 'complete'
         && targetCompletion?.status !== 'skipped'
-      if (targetIsSwappable && targetSession) {
-        const targetOriginal = targetSession.originalDay ?? targetKey
-        onSwap(weekNum, sourceOriginal, prev, targetOriginal, targetKey)
-      } else {
-        onMove(weekNum, sourceOriginal, targetKey, prev)
-      }
+      setPendingMove({
+        sourceKey: prev,
+        targetKey,
+        sourceOriginal,
+        targetOriginal: (targetIsSwappable && targetSession) ? (targetSession.originalDay ?? targetKey) : null,
+        sourceLabel: sourceSession.label ?? 'session',
+        targetLabel: targetSession?.label ?? null,
+        isSwap: targetIsSwappable && !!targetSession,
+      })
       return null
     })
+  }
+
+  function confirmPendingMove() {
+    if (!pendingMove) return
+    if (pendingMove.isSwap && pendingMove.targetOriginal) {
+      onSwap(weekNum, pendingMove.sourceOriginal, pendingMove.sourceKey, pendingMove.targetOriginal, pendingMove.targetKey)
+    } else {
+      onMove(weekNum, pendingMove.sourceOriginal, pendingMove.targetKey, pendingMove.sourceKey)
+    }
+    setPendingMove(null)
+  }
+
+  function cancelPendingMove() {
+    setPendingMove(null)
   }
 
   // Metric pair size — current week dominates the visual hierarchy.
@@ -523,7 +561,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
         )
       })}
 
-      {movingDay && (
+      {movingDay && !pendingMove && (
         <button
           onClick={() => setMovingDay(null)}
           style={{
@@ -538,6 +576,62 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
         >
           Cancel move
         </button>
+      )}
+
+      {/* RESHAPE-FIX-WAVE2C confirmation row. Pattern 30 (inline banner) —
+          no popup, no full-screen takeover. Honest about what's about to
+          land: source label, destination day, swap call-out where relevant.
+          The 2026-06-26 incident root cause was a runner unaware that the
+          tap-to-move he'd just executed had structural consequences. This
+          row makes the move legible before it writes. */}
+      {pendingMove && (
+        <div style={{
+          padding: '12px 14px 14px',
+          background: 'var(--warn-soft, var(--moss-soft))',
+          borderTop: '1px solid var(--line)',
+          display: 'flex', flexDirection: 'column', gap: '10px',
+        }}>
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '12px',
+            color: 'var(--ink)', lineHeight: 1.4,
+          }}>
+            Move <strong>{pendingMove.sourceLabel}</strong>
+            {' from '}<strong>{DOW_FULL[pendingMove.sourceKey] ?? pendingMove.sourceKey}</strong>
+            {' to '}<strong>{DOW_FULL[pendingMove.targetKey] ?? pendingMove.targetKey}</strong>?
+            {pendingMove.isSwap && pendingMove.targetLabel && (
+              <div style={{ marginTop: '4px', color: 'var(--ink-2)', fontSize: '11px' }}>
+                {pendingMove.targetLabel} swaps to {DOW_FULL[pendingMove.sourceKey] ?? pendingMove.sourceKey}.
+              </div>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={cancelPendingMove}
+              style={{
+                flex: 1, padding: '10px 14px',
+                background: 'none', border: '1px solid var(--line)',
+                borderRadius: '10px', cursor: 'pointer',
+                fontFamily: 'var(--font-ui)', fontSize: '11px',
+                color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmPendingMove}
+              style={{
+                flex: 2, padding: '10px 14px',
+                background: 'var(--moss)', border: 'none',
+                borderRadius: '10px', cursor: 'pointer',
+                fontFamily: 'var(--font-ui)', fontSize: '11px',
+                color: 'var(--card)', letterSpacing: '0.06em', textTransform: 'uppercase',
+                fontWeight: 600,
+              }}
+            >
+              {pendingMove.isSwap ? 'Swap them' : 'Move it'}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
@@ -687,17 +781,33 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
           <span style={{ color: 'var(--moss)', fontSize: '15px', lineHeight: 1 }} aria-label="Swap with this session">⇄</span>
         )}
         {isMovable && !isMoveMode && (
+          // RESHAPE-FIX-WAVE2C (Defect 11) — clearer move affordance.
+          // Pre-fix: a 3-line hamburger at 0.45 opacity looked like a
+          // "more options" icon, not a move handle. The 2026-06-26
+          // incident user reported never having "dragged" anything —
+          // because he hadn't; he'd tapped this icon without realising
+          // it initiated a move. Now: explicit ↕ glyph in a soft moss
+          // pill, aria-labelled, opacity 0.85. Still unobtrusive
+          // (restraint = brand) but legible as "move this session."
           <button
             onClick={e => { e.stopPropagation(); onMoveIconTap() }}
+            aria-label={`Move ${session?.label ?? 'session'}`}
+            title="Move this session"
             style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              padding: '4px', display: 'flex', flexDirection: 'column', gap: '2.5px',
-              opacity: 0.45,
+              background: 'var(--moss-soft)',
+              border: '1px solid var(--moss-mid, var(--line))',
+              borderRadius: '999px',
+              cursor: 'pointer',
+              padding: '3px 8px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'var(--font-ui)', fontSize: '11px',
+              color: 'var(--moss)', fontWeight: 600,
+              letterSpacing: '0.05em',
+              opacity: 0.85,
             }}
           >
-            {[0,1,2].map(i => (
-              <div key={i} style={{ width: '14px', height: '1.5px', background: 'var(--ink)', borderRadius: '1px' }} />
-            ))}
+            <span style={{ marginRight: '3px', fontSize: '12px', lineHeight: 1 }}>↕</span>
+            Move
           </button>
         )}
         {isMoving && (
