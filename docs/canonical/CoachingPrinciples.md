@@ -1206,6 +1206,44 @@ Upward recalibration (overperformance) is intentionally excluded — a well-trai
 
 ---
 
+## 69. Magnitude calibration — the structural change that earns confirmation
+
+**Principle.** The engine auto-applies changes the runner would have consented to silently — small intensity tweaks, sub-15% distance trims, coach-note-only flags. The engine surfaces a confirmation tile for changes the runner needs to consciously sign off on — day-of-week moves, session-type changes at any slot, distance changes above the threshold per session, and cumulative week-volume changes above the floor.
+
+**Why.** A coach who silently moves Sunday's long run to Tuesday is not coaching — they're rearranging someone's life without consent. The 2026-06-26 incident shipped exactly that, with an AI summary that lied about it. The fix is not "ask for permission on everything" (which destroys habit-formation automaticity and turns coaching into notification fatigue) and not "ask for permission on nothing" (which restores the autonomy the engine has not earned back). The fix is to draw the line at *what kind of change requires consent*, and then enforce that line in one place.
+
+Habit research (Wood) is explicit: friction added to small, frequent decisions costs more than the decisions themselves. A runner who confirms a 0.7km easy-run trim three times a week stops paying attention; that engagement debt then bleeds the structural confirmations that *should* land. Reserve confirmation for the changes the runner would tell a real coach about: "you moved my long day," not "you trimmed Tuesday's easy by 700m."
+
+**The line.**
+
+| Category | Examples | Magnitude |
+|---|---|---|
+| Day-of-week move (any session) | session_reorder, swap | **high** — always confirm |
+| Session-type change at a slot | tempo → easy, long → rest | **high** — diff `kind === 'replaced'` |
+| Skip-with-reason | runner missed work, engine absorbing | **high** — runner signs off on how |
+| Pre-session readiness softening | quality → easy on a high-RHR morning | **high** — pre-session prompt is visible by design |
+| Per-session distance change > 15% | long_run_shortfall trimming 20%+ | **high** |
+| Week-total distance change > 15% | compound small trims summing high | **high** — catches "death by 1000 cuts" |
+| Per-session distance change ≤ 15% | acute_chronic_high standard 15% trim | low — auto-apply silently |
+| Coach-note-only adjustment | zone drift HR reminder, EF decline flag | low — auto-apply silently |
+| No structural change | informational triggers | low — auto-apply silently |
+
+**Config.**
+- `GENERATION_CONFIG.RESHAPE_AUTOAPPLY_THRESHOLDS.DISTANCE_CHANGE_PCT_THRESHOLD` (15) — per-session trim/extend ceiling for silent
+- `GENERATION_CONFIG.RESHAPE_AUTOAPPLY_THRESHOLDS.WEEK_VOLUME_PCT_THRESHOLD` (15) — week-total ceiling for silent
+
+15% mirrors the existing `LOAD_RATIO.watch` reduce-volume trim — that exact engine behaviour is sub-threshold by design. The engine's standard "this week was a bit too much, soften 15%" decision stays automatic; anything beyond it crosses into structural-change territory.
+
+**Implementation.** `lib/coaching/reshapeMagnitude.ts → computeReshapeMagnitude(proposed)` is the single decision point. Pure function, deterministic. The route `/api/adjust-plan` calls it after the builder runs and uses its verdict as the authoritative `requiresConfirmation`. Builder-level flags are not consulted post-Wave-3 — ADR-012 is the architectural reference.
+
+**Trade-offs deliberately accepted.**
+- Builder `requiresConfirmation` is now informational only. Cleanup work to remove it from builder return shapes is tracked but low priority.
+- A new trigger that needs domain-specific magnitude logic must extend the helper rather than self-determine. Acceptable cost — the alternative is the 2026-06-26 incident class re-emerging.
+
+**Originating decision:** RESHAPE-FIX-WAVE3 / SLT 2026-06-26 (Sutherland, Fried, Hutchinson, Wood, Traynor). ADR-012 documents the architectural rationale; this principle is the coaching-language anchor.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

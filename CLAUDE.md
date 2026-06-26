@@ -492,6 +492,7 @@ Three docs run the work pipeline. Keep them in sync:
   - ADR-009: config-driven plan generation *(R23 rebuild)*
   - ADR-010: session catalogue *(R23 rebuild)*
   - ADR-011: data source doctrine — SOR by data type, source priority, no single external data dependency for paid value *(2026-05-30)*
+  - ADR-012: reshape authority model — magnitude-calibrated confirmation; sub-threshold engine changes auto-apply silently, structural changes (day-of-week moves, session-type swaps, >15% trims, >15% week-volume changes) surface confirmation tiles *(2026-06-26, post-incident)*
 - Brand alignment: `docs/alignment/brand-product-alignment.md`
 - Phase 4 decisions log: `docs/alignment/phase-4-decisions.md`
 - Phase 4 blockers log: `docs/alignment/phase-4-blockers.md`

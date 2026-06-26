@@ -553,6 +553,48 @@ export const GENERATION_CONFIG = {
     /** Long-run distance multiplier when readiness softens (15% trim). */
     LONG_RUN_SOFTEN_PCT:     0.85,
   },
+
+  // ── Reshape auto-apply thresholds (CoachingPrinciples §69) ──────────────────
+  // Wave 3 of the 2026-06-26 reshape remediation. Replaces the binary
+  // advisory-vs-autonomous question with magnitude-calibrated confirmation.
+  //
+  // Doctrine (Wendy Wood, SLT 2026-06-26):
+  // - Sub-threshold changes auto-apply silently — small intensity tweaks,
+  //   sub-15% distance trims, coach-note-only adjustments. The runner doesn't
+  //   need to consent to a 1km easy-run trim; the engine's job is to absorb
+  //   that decision quietly. Habit formation depends on automaticity.
+  // - Threshold-crossing changes — day-of-week moves, session-type changes,
+  //   week-volume changes above the floor — require a confirmation tile with
+  //   the Wave 2A diff. The runner sees what changes before it lands.
+  // - Skip-with-reason and user-initiated reorders are structural by
+  //   definition and ALWAYS require confirmation regardless of magnitude.
+  //
+  // The 2026-06-26 incident's Row 2 ("rest day from tue to thu" → long run
+  // landed on tue) was classified as `requiresConfirmation: false` by the
+  // pre-Wave-3 builder because no §7 violation fired. The new threshold
+  // catches it: any session_reorder is high-magnitude, period.
+  //
+  // Principle: CoachingPrinciples §69 — "Magnitude calibration: the
+  // structural change that earns confirmation."
+  RESHAPE_AUTOAPPLY_THRESHOLDS: {
+    /**
+     * Per-session distance trim/extend (percent) above which a `modified`
+     * day in the diff is treated as high-magnitude. Below this threshold,
+     * the engine may silently auto-apply. 15% mirrors the existing
+     * `LOAD_RATIO.watch` reduce-volume trim — that exact engine behaviour
+     * is sub-threshold by design.
+     */
+    DISTANCE_CHANGE_PCT_THRESHOLD: 15,
+
+    /**
+     * Week-total distance change (percent) above which any cumulative
+     * adjustment becomes high-magnitude even when each individual day's
+     * trim is sub-threshold. Catches the "death by 1000 cuts" failure
+     * mode where the engine could chain three small trims into a 20%
+     * weekly load reduction without the runner ever consenting.
+     */
+    WEEK_VOLUME_PCT_THRESHOLD: 15,
+  },
 } as const
 
 // Type helpers — derived from the const object so tables and types stay in sync.

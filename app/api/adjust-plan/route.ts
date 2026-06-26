@@ -9,6 +9,7 @@ import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildAdjustmentExplanationPrompt } from '@/lib/coaching/prompts/planAdjustment'
 import { computeSessionDiff } from '@/lib/coaching/diff/sessionDiff'
 import { validateSummaryAgainstDiff } from '@/lib/coaching/diff/validateAiSummary'
+import { computeReshapeMagnitude } from '@/lib/coaching/reshapeMagnitude'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { getCurrentWeekIndex } from '@/lib/plan'
 import { savePlanForUser } from '@/lib/plan'
@@ -344,8 +345,23 @@ export async function POST(req: NextRequest) {
     // silent fallback to rule-based summary
   }
 
-  // Manual triggers always require confirmation — user should review what they asked for
-  const status = (proposed.requiresConfirmation || isManual) ? 'pending' : 'auto_applied'
+  // RESHAPE-FIX-WAVE3 — magnitude-calibrated confirmation.
+  //
+  // Pre-fix: each builder set `requiresConfirmation` per its own ad-hoc
+  // rule. The 2026-06-26 incident's tue↔thu reorder didn't trigger §7
+  // alternation so the builder shipped it as auto_applied — but the
+  // swap landed the long run on Tuesday, which the runner should have
+  // confirmed. The builder logic was structurally blind to "is this a
+  // structural move."
+  //
+  // Post-fix: `computeReshapeMagnitude(proposed)` is the single source of
+  // truth. Builder's `requiresConfirmation` is no longer consulted.
+  // Manual triggers still force pending — the runner is polling, they
+  // expect a review surface. CoachingPrinciples §69 documents the
+  // magnitude rules; numerics in GENERATION_CONFIG.RESHAPE_AUTOAPPLY_THRESHOLDS.
+  const magnitude = computeReshapeMagnitude(proposed)
+  const requiresConfirmation = isManual || magnitude === 'high'
+  const status = requiresConfirmation ? 'pending' : 'auto_applied'
 
   const adjustmentRow = {
     user_id:         user.id,
@@ -424,7 +440,10 @@ export async function POST(req: NextRequest) {
   }
 
   await recordAdjustmentCheck(serviceSupabase, user.id, true)
-  return NextResponse.json({ adjustment: inserted, requires_confirmation: proposed.requiresConfirmation })
+  // RESHAPE-FIX-WAVE3: use the magnitude-derived value, not the builder's
+  // pre-Wave-3 ad-hoc flag (kept on the proposal type for backward
+  // compatibility but no longer authoritative).
+  return NextResponse.json({ adjustment: inserted, requires_confirmation: requiresConfirmation })
 }
 
 function applyAdjustmentToPlan(plan: Plan, weekN: number, sessionsAfter: any[]): Plan {
