@@ -73,7 +73,7 @@ A future rename to `run_activities` or `activity_log` is a backlog item. Until t
 | **HRV (baseline)** | `health_daily_samples` | HealthKit only (HKQuantityTypeIdentifierHeartRateVariabilitySDNN) | |
 | **Sleep duration** | `health_daily_samples` | HealthKit only | |
 | **Sleep quality (stages)** | `health_daily_samples` | HealthKit only (deep/REM/light/awake breakdown, iOS 16+) | Shipped 2026-06-22 (DS-05) |
-| **RPE** | `session_completions` | User input always | Never overridden by device data |
+| **RPE** | `session_completions` | User input always | Never overridden by device data. **A completion without any signal (no RPE, no fatigue tag, no activity link) is not a verified session** — see § 4b. |
 | **Fatigue tag** | `session_completions` | User input always | Never overridden by device data |
 | **Plan session definitions** | GitHub Gist JSON | Single source | Always fetched `cache: 'no-store'` |
 | **HR zones (user's 5-zone model)** | `user_settings` (computed from RHR + MaxHR) | User input → Karvonen → %MaxHR → Tanaka estimate → %estimated max | Fallback hierarchy defined in CoachingPrinciples §50 |
@@ -81,6 +81,23 @@ A future rename to `run_activities` or `activity_log` is a backlog item. Until t
 | **Active energy burn per run** | Activity log | 1: HealthKit `totalEnergyBurned` · 2: Absent | **Currently not forwarded to coaching engine — see §Gaps** |
 
 **Strava supplement rule.** When Strava is connected and approval is in place, the Strava webhook may *patch* an existing HealthKit-sourced row with fields HealthKit doesn't expose (`splits_metric`, `avg_temp_c`) or fields HealthKit has but at lower fidelity (HR stream from chest strap recorded only in Strava). The patch never changes `source` to `'strava'` — the row stays HK-canonical, with `strava_activity_id` set as provenance. If no matching HK row exists, the Strava activity is **discarded**.
+
+### 3b. Verified-Completion Rule (RESHAPE-FIX-WAVE2B, 2026-06-26)
+
+A `session_completions` row with `status='complete'` is **verified** only when it carries at least one of:
+
+- An activity link (`strava_activity_id` OR `apple_health_uuid`)
+- An RPE input
+- A fatigue tag
+
+A row with `status='complete'` and none of the above is a **bare stub** — the user tapped "done" but the system has no signal about the run. The 2026-06-26 reshape incident's phantom completion (id `5d13a19b`, week 23, session_day `sun`) had exactly this shape: no link, no RPE, no fatigue tag, no HR. The override-driven UI then displayed it as "Long run done on Thursday" — verified-looking, but the run had not happened.
+
+**Doctrine consequence:**
+- **Write boundary**: the user-facing "Mark as done" / "Confirm complete" buttons in `DashboardClient.tsx` are gated to route through the reflect view first, so RPE is collected before the row is created. Going forward, the write path cannot produce a bare stub except via direct DB tampering.
+- **Read boundary**: the six AI-DEPTH-01 coaching surfaces (daily coach note, session feedback, weekly report, phase summary, race readiness, plan-adjustment explanation) must filter bare stubs out of analytics consumption. The helper `lib/coaching/completionVerification.ts → isVerifiedCompletion(c)` is the single source of truth for the check. UI display (binary done/not-done) does not filter — a bare stub still reads as "the user marked it done" for the runner.
+- **Existing historical bare stubs are not migrated** — they sit in the DB with `status='complete'` and null metadata. The read-boundary filter neutralises them.
+
+A surface-by-surface audit of the six AI-DEPTH-01 consumers is tracked as `RESHAPE-FIX-WAVE2B-AUDIT` in `backlog.md`; current state of each consumer is documented there.
 
 ### 4. Conflict Resolution When Multiple Sources Present
 

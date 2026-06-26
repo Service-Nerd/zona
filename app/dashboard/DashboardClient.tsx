@@ -3523,7 +3523,13 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   // Falls back to the manual picker when no match (or for non-run sessions).
   function handleMarkComplete() {
     const isRun = ['easy', 'run', 'quality', 'race'].includes(session.type)
-    if (!isRun) { void saveCompletion('complete'); return }
+    // RESHAPE-FIX-WAVE2B (Defect 10): non-run sessions previously dropped
+    // straight into saveCompletion('complete') with no activity, no RPE,
+    // no fatigue tag — a bare-stub row that the engine then treated as a
+    // verified done session. Route through reflect instead so RPE +
+    // body state are collected before the row is created. saveReflect's
+    // upsert creates the row on first chip-tap with full metadata.
+    if (!isRun) { setView('reflect'); return }
     if (autoMatch) {
       void saveCompletion('complete', autoMatch.activity)
       return
@@ -4517,8 +4523,14 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 } else {
                   return (
                     <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-                      <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}>
-                        {saving ? 'Saving...' : 'Mark as done'}
+                      {/* RESHAPE-FIX-WAVE2B (Defect 10): non-run "Mark as done"
+                          previously fired saveCompletion('complete') with no
+                          activity / no RPE / no fatigue — producing a bare
+                          stub the engine couldn't distinguish from a real
+                          session. Routes to reflect now; RPE chip-tap creates
+                          the row with metadata via saveReflect. */}
+                      <button onClick={() => setView('reflect')} disabled={saving} style={{ flex: 2, background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}>
+                        Mark as done
                       </button>
                       <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
                         Skip
@@ -4576,8 +4588,20 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           )}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: 'var(--font-ui)', fontSize: '12px', cursor: 'pointer' }}>Back</button>
-            <button onClick={() => saveCompletion('complete')} disabled={saving} style={{ flex: 2, background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}>
-              {saving ? 'Saving...' : 'Confirm complete'}
+            {/* RESHAPE-FIX-WAVE2B (Defect 10): the 2026-06-26 incident's
+                phantom completion came from this exact button — tapped
+                with no activity selected, it wrote a bare stub the engine
+                then displayed as "Long run done on Thursday." Behaviour:
+                with an activity selected → save it (existing path). With
+                no activity → route to reflect where RPE chip-tap creates
+                the row with body-state metadata. No path from this view
+                produces a bare stub now. */}
+            <button
+              onClick={() => selectedActivity ? saveCompletion('complete', selectedActivity) : setView('reflect')}
+              disabled={saving}
+              style={{ flex: 2, background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}
+            >
+              {saving ? 'Saving...' : (selectedActivity ? 'Confirm complete' : 'Log without activity')}
             </button>
           </div>
         </div>
