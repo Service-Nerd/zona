@@ -7,6 +7,11 @@ export interface MatchCandidate {
   reasons: string[]
 }
 
+// Minimum confidence for SERVER-SIDE passive auto-link (no user action).
+// Client tap-to-confirm flows may surface medium-confidence matches — the tap
+// is explicit consent. Change this in one place; callers import, don't hardcode.
+export const MIN_AUTO_LINK_CONFIDENCE: MatchCandidate['confidence'] = 'high'
+
 /**
  * Returns ordered match candidates for a planned session, best match first.
  * Auto-selects if exactly one 'high' confidence candidate.
@@ -91,7 +96,9 @@ function confidenceRank(c: MatchCandidate['confidence']): number {
   return c === 'high' ? 2 : c === 'medium' ? 1 : 0
 }
 
+// Returns the single high-confidence candidate, or null if there are 0 or 2+
+// (ambiguous). Uses MIN_AUTO_LINK_CONFIDENCE so the threshold is defined once.
 export function autoSelectMatch(candidates: MatchCandidate[]): StravaActivity | null {
-  const highConf = candidates.filter(c => c.confidence === 'high')
-  return highConf.length === 1 ? highConf[0].activity : null
+  const qualified = candidates.filter(c => c.confidence === MIN_AUTO_LINK_CONFIDENCE)
+  return qualified.length === 1 ? qualified[0].activity : null
 }

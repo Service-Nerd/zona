@@ -61,6 +61,12 @@ export default function CapacitorBoot() {
       } catch (err) {
         // eslint-disable-next-line no-console
         console.warn('[capacitor-boot] HealthKit sync skipped', err instanceof Error ? err.message : err)
+      } finally {
+        // Signal DashboardClient to re-query completions. autoMatchAndAnalyse
+        // runs inside waitUntil (after the ingest response) so it may write a
+        // completion AFTER fetchSettings already loaded — this event closes that
+        // race by triggering a refresh once sync + background tasks settle.
+        window.dispatchEvent(new CustomEvent('zonna:sync-complete'))
       }
     })()
 
@@ -99,6 +105,8 @@ export default function CapacitorBoot() {
         } catch (err) {
           // eslint-disable-next-line no-console
           console.warn('[capacitor-boot] HealthKit resume sync skipped', err instanceof Error ? err.message : err)
+        } finally {
+          window.dispatchEvent(new CustomEvent('zonna:sync-complete'))
         }
       })()
     }).then((handle) => {

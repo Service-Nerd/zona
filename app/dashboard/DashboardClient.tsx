@@ -746,6 +746,19 @@ export default function DashboardClient() {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [appReady, refreshHealthKitRuns])
 
+  // After CapacitorBoot finishes syncOnAppOpen() it fires 'zonna:sync-complete'.
+  // autoMatchAndAnalyse runs inside waitUntil (after ingest response), so the
+  // completion it writes is invisible to the initial fetchSettings load. This
+  // listener closes that race: refreshHealthKitRuns() re-queries strava_activities
+  // AND calls refreshCompletions(), so the Today screen reflects the auto-link
+  // without the user needing to background+foreground or open the session card.
+  useEffect(() => {
+    if (!appReady) return
+    const handler: EventListener = () => { void refreshHealthKitRuns() }
+    window.addEventListener('zonna:sync-complete', handler)
+    return () => window.removeEventListener('zonna:sync-complete', handler)
+  }, [appReady, refreshHealthKitRuns])
+
   // Daily coach note — paid/trial only. Skip fetch entirely for free users.
   // Cached daily; the route returns instantly on cache hit, so this only
   // pays the AI cost once per user per day.

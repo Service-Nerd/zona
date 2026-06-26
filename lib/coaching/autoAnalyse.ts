@@ -84,15 +84,17 @@ export async function autoMatchAndAnalyse(
   // the matcher's date/distance/HR fields matter for matching.
   const allActivities = [activity] as any
 
-  // POST-RUN-01: silent auto-link only at high confidence (≥70). Medium
-  // candidates are deliberately ignored — wrong link is worse than a picker
-  // tap. Activity still lands in `strava_activities` upstream, so the user
-  // sees it in the manual picker as fallback.
+  // POST-RUN-01: silent auto-link only at MIN_AUTO_LINK_CONFIDENCE (currently
+  // 'high', ≥70 points). Medium candidates are deliberately ignored — wrong
+  // link is worse than a picker tap. Activity still lands in `strava_activities`
+  // upstream, so the user sees it in the manual picker as fallback.
+  // autoSelectMatch() enforces MIN_AUTO_LINK_CONFIDENCE + exactly-one-match;
+  // a non-null return already guarantees both constraints.
   let bestDay: string | null = null
   for (const { session, sessionDate, day } of plannedSessions) {
     const sessionCandidates = findMatchCandidates(session, sessionDate, allActivities)
     const match = autoSelectMatch(sessionCandidates)
-    if (match && sessionCandidates[0]?.confidence === 'high') {
+    if (match) {
       bestDay = day
       break
     }
