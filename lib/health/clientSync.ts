@@ -197,8 +197,16 @@ export async function retryHrFromUi(): Promise<{ ran: boolean }> {
 type HealthModule = typeof import('@capgo/capacitor-health')['Health']
 
 async function syncRecentWorkouts(Health: HealthModule): Promise<void> {
-  const startDate = getLastSyncIso() ?? isoDaysAgo(30)  // first sync — last 30 days
-  const endDate   = new Date().toISOString()
+  const lastSyncIso = getLastSyncIso()
+  // Always look back at least 24 h even when a recent watermark exists.
+  // The ingest dedup makes re-posting safe (existing rows are patched/skipped).
+  // This ensures a run from earlier today is never stranded if the watermark
+  // advanced past it (e.g., after a background sync completed mid-session).
+  const oneDayAgoMs = Date.now() - 24 * 60 * 60 * 1000
+  const startDate   = lastSyncIso
+    ? new Date(Math.min(new Date(lastSyncIso).getTime(), oneDayAgoMs)).toISOString()
+    : isoDaysAgo(30)
+  const endDate     = new Date().toISOString()
 
   let anchor: string | undefined
   let totalSynced = 0
