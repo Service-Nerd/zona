@@ -1,5 +1,6 @@
 import type { ProposedAdjustment } from '../planAdjustment'
 import { buildVoiceHeader } from './voiceRules'
+import { computeSessionDiff, summariseDiff } from '../diff/sessionDiff'
 
 // Few-shot examples — Zonna voice for adjustment explanations.
 // IMPORTANT: examples illustrate TONE only. Numbers in examples are
@@ -51,13 +52,22 @@ export function buildAdjustmentExplanationPrompt(
 ): string {
   const { trigger, adjustmentType, summary, sessionsBefore, sessionsAfter } = adjustment
 
-  const changedSessions = sessionsAfter
-    .filter((s, i) => {
-      const before = sessionsBefore[i]
-      return JSON.stringify(s) !== JSON.stringify(before)
-    })
-    .map(s => `${s.type} — ${s.distance_km ? s.distance_km + 'km' : s.duration_mins ? s.duration_mins + 'min' : 'flexible'}`)
-    .join(', ')
+  // RESHAPE-FIX-WAVE2A — Per-day structural diff.
+  //
+  // Pre-fix: `changedSessions` enumerated sessions that differ by raw
+  // JSON equality, then listed only their post-change shape. Sonnet
+  // saw "long — 24km" but couldn't tell whether it had moved or stayed
+  // put. The 2026-06-26 incident's "the 24km run stays intact" came
+  // from this prompt opacity.
+  //
+  // Post-fix: feed the model the explicit diff. Each line shows
+  // "Day: before → after" so the structural change is unambiguous.
+  // The model is also told NOT to summarise the diff itself — that's
+  // the rule-engine diff renderer's job. The model writes the WHY.
+  const structuralDiff = summariseDiff(computeSessionDiff(sessionsBefore, sessionsAfter))
+  const diffBlock = structuralDiff.length > 0
+    ? structuralDiff.map(line => `- ${line}`).join('\n')
+    : '- (no per-day changes — coaching-note adjustment only)'
 
   const voiceHeader = buildVoiceHeader({
     role: 'explaining a plan adjustment',
@@ -77,9 +87,11 @@ Continuity rule: reference the previous adjustment ONLY if this new one continue
 ${athleteContext ?? ''}${previousAdjustmentBlock}
 HARD RULES — anti-confabulation:
 1. The ONLY metrics you may quote are those present in the "Trigger detail" JSON below. Do not invent percentages, run counts, weekly totals, paces, or HR numbers.
-2. Do not invent specifics about individual sessions ("three easy runs", "Wednesday's tempo") unless they are explicitly listed in "Sessions changed".
+2. Do not invent specifics about individual sessions ("three easy runs", "Wednesday's tempo") unless they are explicitly listed in "Structural diff".
 3. If the trigger detail is sparse, write a sparse explanation. It is better to be terse than to invent.
 4. Few-shot examples below are for TONE only — never copy their numbers.
+5. DO NOT enumerate the structural diff yourself. The runner sees the per-day before/after as a separate component below your prose. Your job is the WHY — the reasoning, the trade-off, the coaching context. If you find yourself writing "moved X to Y," delete it: the diff already shows that.
+6. DO NOT make stability claims about anything in the "Structural diff" — every entry there is a change. Phrases like "X stays intact", "Y is preserved", "Z remains" are forbidden for any session that appears in the diff. Stability prose is reserved for sessions NOT in the diff.
 
 ${FEW_SHOT_EXAMPLES}
 
@@ -88,8 +100,10 @@ Now explain this adjustment:
 Trigger type: ${trigger.type}
 Trigger detail: ${JSON.stringify(trigger.detail)}
 Adjustment type: ${adjustmentType}
-Summary: ${summary}
-Sessions changed: ${changedSessions || 'none (flag only)'}
+Engine summary (rule-based, factual): ${summary}
 
-Write 1–3 sentences explaining the change. Fewer is fine if the trigger is simple. Plain text only. No headers. Numbers only from Trigger detail.`
+Structural diff (every line here is a real change — do not claim any of these are unchanged):
+${diffBlock}
+
+Write 1–3 sentences explaining the WHY behind the change. Fewer is fine. Plain text only. No headers. No enumeration of the diff. Numbers only from Trigger detail.`
 }

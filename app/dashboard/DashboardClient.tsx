@@ -5880,12 +5880,18 @@ function AdjustmentBanner({ adjustment, onConfirmed, onReverted }: {
     } catch { /* keep visible on error */ } finally { setLoading(false) }
   }
 
+  // RESHAPE-FIX-WAVE2A — pass the structural diff to the banner so the
+  // per-day before/after strip renders under the prose. Defends against
+  // the 2026-06-26 incident pattern: AI summary said one thing, diff
+  // showed another; the user could only see the prose.
   return (
     <div style={{ margin: '0 0 12px' }}>
       <PendingAdjustmentBanner
         onConfirm={confirm}
         onRevert={revert}
         loading={loading}
+        sessionsBefore={adjustment.sessions_before ?? undefined}
+        sessionsAfter={adjustment.sessions_after ?? undefined}
       >
         {adjustment.summary}
       </PendingAdjustmentBanner>
@@ -6001,6 +6007,8 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
               onConfirm={adjustment.trigger_type === 'fitness_signal' ? undefined : handleConfirm}
               onRevert={handleDismiss}
               loading={actionLoading}
+              sessionsBefore={adjustment.sessions_before ?? undefined}
+              sessionsAfter={adjustment.sessions_after ?? undefined}
             >
               {adjustment.summary}
             </PendingAdjustmentBanner>

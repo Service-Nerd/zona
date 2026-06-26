@@ -320,36 +320,57 @@ Inline banner for plan adjustments awaiting user confirmation. Appears above coa
 
 ```
 ┌─────────────────────────────────────────────┐
-│  [!] PLAN ADJUSTED                          │
+│  [byline] PLAN ADJUSTED                     │
 │                                             │
-│  Thursday's long run moved to Saturday.     │
-│  Injury week — protecting your build.       │
+│  Pulled this week's long run back to        │
+│  match where you're actually finishing.     │
+│  ─────────────────────────────────────────  │
+│  TUE  rest      →  long 24km                │
+│  SUN  long 24km →  rest                     │
 │                                             │
 │  [  Confirm  ]  [Revert]                    │
 └─────────────────────────────────────────────┘
 ```
 
+**Layering doctrine (RESHAPE-FIX-WAVE2A, 2026-06-26):**
+- Prose (the **WHY**) is AI-generated and carries the CoachByline + AIMark provenance signal at the top.
+- Diff strip (the **WHAT**) is rule-engine output — deterministic per-day before/after — and **never** carries AIMark. Mixing provenance on the same card would teach users to ignore the mark.
+- The 2026-06-26 incident root cause was a runner unable to see what Confirm would do — only an AI summary that lied ("the 24km run stays intact" while it moved). The diff strip is the safety net: even if the prose drifts, the user sees the structural truth.
+
 **Structure:**
 - Background: `--warn-bg`
 - Radius: `14px`, padding: `14px 16px`
-- Eyebrow: `10px 700 --warn uppercase 0.1em tracking`
-- Alert circle: `18px`, `--warn` background, `--card` text, "!" `10px 800`
-- Body: `13px 400 --coach-ink`, line-height 1.5
-- Button row: flex gap 8px, margin-top 14px
-  - Confirm: `--warn` background, `--card` text, `100px` radius pill, `36px` height, `12px 600`
+- Eyebrow: `CoachByline color="warn"` (replaces the pre-AI-VIS-01 "!" alert circle)
+- Body prose: `13px 400 --coach-ink`, line-height 1.55
+- Diff strip (new, optional):
+  - Separator: `1px solid rgba(61,38,0,0.12)` top border, `12px` padding-top
+  - Day label: `10px 600 --coach-ink uppercase 0.04em`, min-width `32px`
+  - Before label: `12px 400 --mute`, `line-through` (rgba(61,38,0,0.35) decoration)
+  - Arrow: `→` `--mute`
+  - After label: `12px 600 --warn`
+- Button row: flex gap `8px`, margin-top `14px`
+  - Confirm: `--warn` background, `--card` text, `100px` radius pill, `36px` height, `13px 600`
   - Revert: transparent bg, `rgba(61,38,0,0.2)` border, `--coach-ink` text
 
 **Props:**
 ```tsx
-title?: string          // default "Plan adjusted"
-children: React.ReactNode
-onConfirm: () => void
+title?: string                                      // default "Plan adjusted"
+children: React.ReactNode                           // AI prose (WHY)
+onConfirm?: () => void                              // omit for informational adjustments
 onRevert: () => void
-loading?: boolean       // disables buttons during API call
+loading?: boolean
+sessionsBefore?: ReadonlyArray<SessionLike | null>  // RESHAPE-FIX-WAVE2A — diff strip
+sessionsAfter?:  ReadonlyArray<SessionLike | null>  //   omit to keep prose-only behaviour
 ```
 
-Reference: `components/shared/PendingAdjustmentBanner.tsx`  
-Integration: `DashboardClient.tsx` → `AdjustmentBanner` wrapper (owns API calls)
+**Hidden when empty:** `<AdjustmentDiff />` returns `null` when there are no non-unchanged days. Coaching-note-only adjustments (e.g. zone reminders) render prose without the strip — appropriate; there's nothing structural to show.
+
+**AI prompt contract (linked):** the prompt builder in `lib/coaching/prompts/planAdjustment.ts` now feeds the model the explicit diff and forbids enumerating it — the model writes the WHY, never the WHAT. The runtime validator `lib/coaching/diff/validateAiSummary.ts` rejects AI output that contradicts the diff (stability claims about changed sessions, invented moves) and falls back to the rule-engine summary. Two layers of defence against the 2026-06-26 failure mode.
+
+Reference: `components/shared/PendingAdjustmentBanner.tsx`, `components/shared/AdjustmentDiff.tsx`  
+Integration: `DashboardClient.tsx` → `AdjustmentBanner` wrapper (owns API calls)  
+Diff utility: `lib/coaching/diff/sessionDiff.ts` (pure)  
+Summary validator: `lib/coaching/diff/validateAiSummary.ts` (pure)
 
 ---
 

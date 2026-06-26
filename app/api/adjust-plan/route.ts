@@ -7,6 +7,8 @@ import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { checkAdjustmentTriggers } from '@/lib/coaching/planAdjustment'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildAdjustmentExplanationPrompt } from '@/lib/coaching/prompts/planAdjustment'
+import { computeSessionDiff } from '@/lib/coaching/diff/sessionDiff'
+import { validateSummaryAgainstDiff } from '@/lib/coaching/diff/validateAiSummary'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { getCurrentWeekIndex } from '@/lib/plan'
 import { savePlanForUser } from '@/lib/plan'
@@ -320,7 +322,23 @@ export async function POST(req: NextRequest) {
     if (aiRes.ok) {
       const aiData = await aiRes.json()
       const text   = aiData.content?.[0]?.text?.trim()
-      if (text) explanationText = text
+      if (text) {
+        // RESHAPE-FIX-WAVE2A — Validate AI prose against the structural
+        // diff before publishing. The 2026-06-26 incident shipped an AI
+        // summary ("the 24km run stays intact") that flatly contradicted
+        // the diff (the 24km run moved). Anti-confabulation rules in the
+        // prompt failed to catch it. The validator is the safety net.
+        // On rejection, fall back to the rule-engine summary silently
+        // (ADR-006 hybrid generation pattern). Log the rejection reason
+        // for telemetry so prompt drift surfaces.
+        const diff = computeSessionDiff(proposed.sessionsBefore, proposed.sessionsAfter)
+        const validation = validateSummaryAgainstDiff(text, diff)
+        if (validation.ok) {
+          explanationText = text
+        } else {
+          console.warn('[adjust-plan] AI summary rejected by validator:', validation.reason)
+        }
+      }
     }
   } catch {
     // silent fallback to rule-based summary

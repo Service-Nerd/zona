@@ -117,6 +117,28 @@ The reframe regression suite lives in `docs/canonical/reframe-golden-cases.md`. 
 
 ---
 
+### Adjustment Voice — Two-Layer Honesty (RESHAPE-FIX-WAVE2A)
+
+When the engine proposes a plan adjustment, two surfaces share the runner's attention: the **prose** ("why we're changing your plan") and the **diff** ("what specifically changes day by day"). They follow different voice rules because they have different jobs.
+
+| Layer | Job | Provenance | Voice rules |
+|---|---|---|---|
+| **Prose** (above) | Explain the WHY — the coaching reasoning, the trade-off, the context | AI (CoachByline + AIMark) | Honest, slightly sarcastic, self-aware, encouraging without cringe. 1-3 sentences. Numbers only from `trigger_detail`. **Never** describe the structural diff itself ("moved X to Y") — the diff component does that. **Never** make stability claims about anything in the diff. |
+| **Diff** (below) | Enumerate the WHAT — per-day before/after, deterministic | Rule engine (no AIMark) | No prose voice — labels only. Day name + before-label + → + after-label. Strikethrough on the before. Highlight on the after. The runner reads it like a calendar, not coaching. |
+
+**Why two layers:** the 2026-06-26 incident shipped an AI summary that said *"the 24km run and hard-easy rhythm stay intact"* while the engine had just moved the long run from Sunday to Tuesday. The runner saw only prose; the diff lived in the database. He confirmed without seeing what would happen. The prose lied. The diff would have caught it.
+
+**Hard rules:**
+- **AI prose carries AIMark. Rule-engine diff does not.** Mixing provenance on the same card destroys the signal — runners stop noticing the mark when it appears inconsistently.
+- **The model is forbidden from enumerating the diff.** Prompt rule #5: *"If you find yourself writing 'moved X to Y,' delete it: the diff already shows that."*
+- **The model is forbidden from making stability claims about anything in the diff.** Prompt rule #6: phrases like *"X stays intact"*, *"Y is preserved"*, *"Z remains"* are forbidden for any session appearing in the diff. Stability prose is reserved for sessions NOT in the diff.
+- **A runtime validator backs the prompt rules.** `lib/coaching/diff/validateAiSummary.ts` rejects AI output that contradicts the diff and falls back to the rule-engine summary silently (ADR-006 hybrid generation pattern). False positives (rejecting a good summary) degrade to safe rule-engine prose. False negatives (passing a confabulation) re-create the incident — so the validator skews toward rejecting anything that *might* be lying.
+- **A coaching-note-only adjustment renders prose without the diff.** Zone reminders, fatigue flags with no structural change — the strip auto-hides when there are no non-unchanged days. Appropriate; there's nothing structural to surface.
+
+The diff strip lives in `components/shared/AdjustmentDiff.tsx`. The validator lives in `lib/coaching/diff/validateAiSummary.ts`. The pattern is documented in `ui-patterns.md` § PendingAdjustmentBanner.
+
+---
+
 ## User-First Principle
 
 **Every feature and every screen must be evaluated from the user's perspective before the technical one.**
