@@ -77,19 +77,31 @@ export async function savePlanForUser(
   plan: Plan,
   supabase: SupabaseClient
 ): Promise<void> {
-  await supabase
+  // RESHAPE-FIX-WAVE1 (Defect 9): surface upsert errors. Prior code awaited
+  // the upsert without checking `.error`, so RLS rejections, schema issues,
+  // and constraint failures landed silently. The reshape engine then
+  // believed it had persisted state that the DB never accepted. Throw so the
+  // caller route surfaces a 500; better a visible failure than a phantom
+  // success that corrupts downstream coaching reads.
+  const upsertRes = await supabase
     .from('plans')
     .upsert(
       { user_id: userId, plan_json: plan, updated_at: new Date().toISOString() },
       { onConflict: 'user_id' }
     )
+  if (upsertRes.error) {
+    throw new Error(`savePlanForUser: plan upsert failed — ${upsertRes.error.message}`)
+  }
 
   // PLAN-VOICE-AI: invalidate cached weekly notes whenever the plan changes.
   // Reshapes, confirmed adjustments, reverts, recalibrations, and full
   // regenerations all flow through here — a cached note narrating sessions
   // that no longer exist is brand-destroying, so invalidation is en bloc and
   // the route regenerates lazily on next Plan-screen view.
-  await supabase.from('plan_weekly_notes').delete().eq('user_id', userId)
+  const deleteRes = await supabase.from('plan_weekly_notes').delete().eq('user_id', userId)
+  if (deleteRes.error) {
+    throw new Error(`savePlanForUser: weekly-notes invalidation failed — ${deleteRes.error.message}`)
+  }
 }
 
 // Parse a YYYY-MM-DD string as local midnight — avoids UTC-offset week mismatches

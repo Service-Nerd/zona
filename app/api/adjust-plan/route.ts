@@ -203,7 +203,20 @@ export async function POST(req: NextRequest) {
     ? efTrendValues.reduce((s: number, v: number) => s + v, 0) / efTrendValues.length
     : null
 
-  const currentWeekSessions = Object.values(week.sessions).filter(Boolean) as any[]
+  // RESHAPE-FIX-WAVE1 (Defect 1): `Object.values(week.sessions)` returns values
+  // in object-key insertion order, NOT canonical mon→sun order. Plans stored
+  // with shuffled key order (a real artifact in production) caused the engine
+  // to read sessions at the wrong day indices — e.g. interpreting Sunday's
+  // long run as "Thursday's session" because Sun's value happened to sit at
+  // array index 3. Every downstream swap, validate, and apply read the wrong
+  // cells of the week. Replace with explicit DAY_ORDER mapping; the array is
+  // now guaranteed to be 7 entries, indexed mon=0 … sun=6. A null sentinel
+  // preserves the slot when the day genuinely has no session, so the
+  // length-7 invariant in checkAdjustmentTriggers can assert structure.
+  const DAY_ORDER_LOCAL = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+  const currentWeekSessions = DAY_ORDER_LOCAL.map(
+    d => (week.sessions as Record<string, unknown>)[d] ?? null,
+  ) as any[]
 
   const skipSignal = skipSignalRaw
     ? { ...skipSignalRaw, weekSessionsByDay: week.sessions as Record<string, any> }

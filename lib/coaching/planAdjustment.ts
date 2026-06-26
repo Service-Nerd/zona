@@ -153,6 +153,29 @@ const HILL_TYPES = new Set(['hills', 'hill_repeats'])
  * Returns null if no adjustment warranted or guards prevent it.
  */
 export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAdjustment | null {
+  // RESHAPE-FIX-WAVE1 (Defect 1, defensive): the entire engine assumes
+  // `currentWeekSessions` is a 7-element array indexed mon=0 … sun=6.
+  // Pre-fix, the caller used `Object.values(week.sessions).filter(Boolean)`
+  // which silently returned arrays of variable length and arbitrary order
+  // when plan_json had non-canonical key insertion order. Assert structure
+  // at the boundary so a malformed week is loud, not silent. The route
+  // builds this array via `DAY_ORDER.map(d => week.sessions[d])` and rest
+  // days are stored as `{type:'rest', …}` not null, so a non-7 length OR
+  // any nullish slot here indicates a data integrity defect upstream.
+  if (input.currentWeekSessions.length !== 7) {
+    throw new Error(
+      `checkAdjustmentTriggers: currentWeekSessions must have 7 entries (mon→sun), got ${input.currentWeekSessions.length}`,
+    )
+  }
+  for (let i = 0; i < 7; i++) {
+    const s = input.currentWeekSessions[i] as { type?: unknown } | null | undefined
+    if (s == null || typeof s.type !== 'string') {
+      throw new Error(
+        `checkAdjustmentTriggers: currentWeekSessions[${i}] (${DAY_ORDER[i]}) is not a valid session object`,
+      )
+    }
+  }
+
   // Skip with reason — user-initiated, bypasses taper guard
   if (input.skipSignal) {
     if (input.adjustmentsThisWeek >= MAX_ADJUSTMENTS_PER_WEEK) return null
@@ -505,15 +528,22 @@ function buildSkipAdjustment(
       detail: 'Rescheduled from earlier this week. Keep the effort easy — this is a catch-up, not extra load.',
       coach_notes: ['Make-up session. Same effort as the original — no extra load.'] as [string],
     }
+    // RESHAPE-FIX-WAVE1 (Defect 2): previously `[...sessionsAfter, makeUpSession]`
+    // appended the make-up at array index 7. The apply loop in
+    // `applyAdjustmentToPlan` only reads indices 0–6 (one slot per weekday),
+    // so the make-up was silently dropped on every confirm. Write the
+    // make-up INTO the freeDay slot — replacing the rest day the builder
+    // already identified above as the only legitimate landing place.
+    const freeDayIdx = DAY_ORDER.indexOf(freeDay as typeof DAY_ORDER[number])
     const sessionsAfter = sessions.map(s => ({ ...s }))
-    // Insert as a note on the plan — the actual session structure is returned for display
+    sessionsAfter[freeDayIdx] = makeUpSession
     return {
       weekN:          input.currentWeekN,
       trigger:        { type: 'skip_with_reason', detail: { reason, sessionType, sessionDay, freeDay } },
       adjustmentType: 'reorder_sessions',
       summary:        `Skipped ${sessionType} (${reason.toLowerCase()}). Make-up slot found: ${freeDay}.`,
       sessionsBefore,
-      sessionsAfter:  [...sessionsAfter, makeUpSession],
+      sessionsAfter,
       requiresConfirmation: true,
     }
   }

@@ -46,6 +46,29 @@ Exit 1 on any violation.
 | `INV-PLAN-THEME-MATCHES-PRESCRIPTION` | `CoachingPrinciples §27, §41` | error | Week theme must not contradict its sessions. "Highest volume / fitness is built" requires overload vs prior non-deload week. "Intensity stays" / "feel hard" requires ≥ 1 quality session. Foundation weeks are fully exempt. |
 | `INV-PLAN-FOUNDATION-BLOCK` | `CoachingPrinciples §57` | error | Foundation weeks may only contain `easy`, `rest`, or `cross-train` sessions. Weekly volume must not exceed `current_weekly_km`. Volume increase within the block must not exceed `FOUNDATION_WEEKLY_INCREASE_PCT` (10%) per week. |
 
+## Reshape-time invariants
+
+`validatePlan()` is the constitutional layer for *plan generation*. The
+reshape engine (`lib/coaching/planAdjustment.ts → checkAdjustmentTriggers`)
+operates on an already-generated plan and has its own structural contract
+at the entry boundary:
+
+| Code | Location | Severity | What it checks |
+|---|---|---|---|
+| **CHECK-RESHAPE-WEEK-LEN-7** | `checkAdjustmentTriggers` entry | throws | `currentWeekSessions.length === 7` AND every slot is a valid session object with a string `type` field. Catches the upstream defect where `Object.values(week.sessions)` returned a misaligned array because the plan's session keys were not stored in mon→sun insertion order. |
+
+This invariant is intentionally a hard throw, not a logged warning. A
+malformed week reaching the engine indicates either a) `plan_json` is
+corrupted, or b) the caller is bypassing the canonical `DAY_ORDER.map` read.
+Both demand visibility, not a silent degrade. The throw surfaces to the API
+route's 500, which is exactly the diagnostic surface this class of bug
+needs.
+
+Full `validatePlan()` integration into the reshape *output* path
+(verifying the proposed `sessionsAfter` honours the constitution before
+the row is persisted) is deferred to Wave 3 of the reshape remediation
+work — see backlog.
+
 ## Out of scope (deliberately)
 
 **Week-on-week volume cap (`MAX_WEEKLY_VOLUME_INCREASE_PCT`).** This is enforced

@@ -1930,7 +1930,13 @@ export default function DashboardClient() {
     if (plan && plan !== EMPTY_PLAN) {
       const updatedPlan = { ...plan, meta: { ...plan.meta, resting_hr: rhr, max_hr: mhr, zone2_ceiling: newZ2 } }
       setPlan(updatedPlan as any)
-      void savePlanForUser(user.id, updatedPlan as any, supabase)
+      // RESHAPE-FIX-WAVE1: savePlanForUser now throws on persistence failure.
+      // This call is deliberately fire-and-forget (the resting-HR save above
+      // is the load-bearing write; plan.meta sync is best-effort), so swallow
+      // the rejection here rather than re-architect the call shape.
+      savePlanForUser(user.id, updatedPlan as any, supabase).catch((err: unknown) => {
+        console.error('plan.meta sync failed:', err)
+      })
     }
     // 3. P3 — re-bucket past run analyses with new zone boundaries (fire-and-forget).
     //    The route updates strava_activities.hr_pct_z* for Strava-sourced runs
