@@ -9,7 +9,7 @@ import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildWeeklyReportPrompt } from '@/lib/coaching/prompts/weeklyReport'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
-import { getCurrentWeekIndex } from '@/lib/plan'
+import { getCurrentWeekIndex, isDateWithinWeek } from '@/lib/plan'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       .eq('week_n', weekN),
     serviceSupabase
       .from('run_analysis')
-      .select('session_day, total_score, verdict, hr_in_zone_pct, ef_trend_pct, actual_load_km, planned_load_km')
+      .select('session_day, total_score, verdict, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, actual_load_km, planned_load_km')
       .eq('user_id', userId)
       .eq('week_n', weekN),
     serviceSupabase
@@ -143,7 +143,12 @@ export async function POST(req: NextRequest) {
   weekStart.setHours(0, 0, 0, 0)
   const todayMidnight   = new Date(); todayMidnight.setHours(0, 0, 0, 0)
   const dayIndex        = Math.min(Math.max(Math.floor((todayMidnight.getTime() - weekStart.getTime()) / 86_400_000), 0), 6)
-  const dayOfWeek       = DAY_LABELS[dayIndex]
+  // getCurrentWeekIndex() pins to the last week once today is past the plan, so
+  // dayIndex clamps to 6 ("Sunday") and the prompt would wrongly tell the model
+  // "it is currently Sunday, day in flight". When today is outside this week's
+  // window the week is DONE — no in-flight framing, no remaining sessions.
+  const weekComplete    = !isDateWithinWeek(week, todayMidnight)
+  const dayOfWeek       = weekComplete ? undefined : DAY_LABELS[dayIndex]
   // Today is in flight until midnight — a session due today is NOT missed
   // even at noon when the runner hasn't run yet. Single source of truth in
   // `daysDueByEndOfYesterday`; both this route and CoachScreen call it so
@@ -201,16 +206,58 @@ export async function POST(req: NextRequest) {
     const km    = (s as any)?.distance_km ? ` (${(s as any).distance_km}km)` : ''
     return `${label}: ${(s as any)?.type}${km}`
   }
-  const todayRemaining = todayKey && !completedDays.has(todayKey)
+  const todayRemaining = !weekComplete && todayKey && !completedDays.has(todayKey)
     ? formatRemainingDay(todayKey)
     : null
-  const futureLabels = DAY_ORDER_REPORT.slice(dayIndex + 1)
-    .map(formatRemainingDay)
-    .filter(Boolean) as string[]
+  const futureLabels = weekComplete
+    ? []
+    : (DAY_ORDER_REPORT.slice(dayIndex + 1)
+        .map(formatRemainingDay)
+        .filter(Boolean) as string[])
   const remainingSessionLabels = [
     ...(todayRemaining ? [`${todayRemaining} (today, still to do)`] : []),
     ...futureLabels,
   ]
+
+  // ── Race debrief ──────────────────────────────────────────────────────────
+  // When this week contains a completed goal race, the report is a race DEBRIEF,
+  // not a training-week scorecard. A race is run at race effort — not by holding
+  // easy zones — so judging it on zone discipline is wrong, and a load spike on
+  // race week is expected by design. We pass the real race day (fixes "Sunday's
+  // race" when it was Saturday) and the pacing direction so below-zone on a long
+  // race reads as smart pacing, never as "ran too hot".
+  const raceDayKey = DAY_ORDER_REPORT.find(
+    d => (week.sessions[d as keyof typeof week.sessions] as any)?.type === 'race'
+  ) ?? null
+  const raceAnalysis = raceDayKey
+    ? analyses.find((a: any) => a.session_day === `week_${weekN}_${raceDayKey}`)
+    : null
+  const raceCompleted = !!raceDayKey && (
+    completedDays.has(raceDayKey) || !!raceAnalysis
+  )
+  let raceDebrief: {
+    dayName: string
+    distanceKm: number | null
+    zoneDirection: 'below' | 'above' | 'mixed' | null
+  } | null = null
+  if (raceDayKey && raceCompleted) {
+    let zoneDirection: 'below' | 'above' | 'mixed' | null = null
+    if (raceAnalysis) {
+      const below  = Number((raceAnalysis as any).hr_below_floor_pct ?? 0)
+      const above  = Number((raceAnalysis as any).hr_above_ceiling_pct ?? 0)
+      const inZone = Number((raceAnalysis as any).hr_in_zone_pct ?? 0)
+      if (below > above && below > inZone)       zoneDirection = 'below'
+      else if (above > below && above > inZone)  zoneDirection = 'above'
+      else                                       zoneDirection = 'mixed'
+    }
+    raceDebrief = {
+      dayName:    DAY_LABELS[DAY_ORDER_REPORT.indexOf(raceDayKey as typeof DAY_ORDER_REPORT[number])],
+      distanceKm: plan.meta.race_distance_km
+        ?? (week.sessions[raceDayKey as keyof typeof week.sessions] as any)?.distance_km
+        ?? null,
+      zoneDirection,
+    }
+  }
 
   const flagCounts = { ok: 0, watch: 0, flag: 0 }
   completions.forEach((c: any) => {
@@ -250,7 +297,10 @@ export async function POST(req: NextRequest) {
   // Identify the single session that pulled the week's signal down hardest, if any.
   // Null when no session is concerning — the prompt then writes a clean-week message
   // without inventing a problem.
-  const spotlight = pickSpotlightSession(
+  // On a race week the "concerning session" is usually the race itself (low
+  // in-zone %) — spotlighting it re-introduces the scolding we're removing.
+  // The race-debrief block carries the race context instead.
+  const spotlight = raceDebrief ? null : pickSpotlightSession(
     analyses.map((a: any) => ({
       session_day:    a.session_day,
       total_score:    a.total_score,
@@ -281,6 +331,7 @@ export async function POST(req: NextRequest) {
       spotlight,
       buildAthleteContext({ plan }),
       previousReport,
+      raceDebrief,
     )
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {

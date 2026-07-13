@@ -55,6 +55,26 @@ export interface PreviousReportSummary {
   body:     string
 }
 
+/**
+ * Race debrief context. Present only when this week contains a completed goal
+ * race. Switches the report from a training-week scorecard to a debrief: a race
+ * is run at race effort, not by holding easy zones, so zone discipline and load
+ * ratio are NOT failure signals here. `zoneDirection` lets the model read a
+ * below-zone long race as smart pacing rather than "ran too hot".
+ */
+export interface RaceDebrief {
+  dayName:       string                             // 'Saturday' — the actual race day
+  distanceKm:    number | null
+  zoneDirection: 'below' | 'above' | 'mixed' | null // where HR sat vs the prescribed zone
+}
+
+// Race debrief few-shot — acknowledges the race, refuses to score it on zone
+// discipline / load, reads below-zone on a long race as discipline.
+const RACE_DEBRIEF_EXAMPLE = `
+Headline: "Race run. Now recover."
+Body: "Saturday's race is done — and you paced most of it under the prescribed zone, which on a race that long is discipline, not drift. The week's load and zone numbers spike on race day by design; they're not a warning. The work is behind you."
+CTA: "Rest properly this week — the plan's finished and the next goal can wait."`
+
 export function buildWeeklyReportPrompt(
   data: WeeklyReportData,
   plan: Plan,
@@ -68,13 +88,32 @@ export function buildWeeklyReportPrompt(
   spotlight?: SpotlightSession | null,
   athleteContext?: string,
   previousReport?: PreviousReportSummary | null,
+  raceDebrief?: RaceDebrief | null,
 ): string {
   const weeksToRace = plan.meta.race_date
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
     : null
-  const raceContext = plan.meta.race_name
-    ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${plan.meta.race_distance_km}km)` : ''}${weeksToRace !== null ? `, ${weeksToRace} weeks away` : ''}`
-    : 'target race'
+  const raceName = plan.meta.race_name ?? 'target race'
+  const raceContext = raceDebrief
+    ? `${raceName}${raceDebrief.distanceKm ? ` (${raceDebrief.distanceKm}km)` : ''} — run on ${raceDebrief.dayName}, now complete`
+    : plan.meta.race_name
+      ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${plan.meta.race_distance_km}km)` : ''}${weeksToRace !== null ? `, ${weeksToRace} weeks away` : ''}`
+      : 'target race'
+
+  // Race debrief instruction block — the single most important framing override.
+  const raceDebriefBlock = raceDebrief
+    ? `
+RACE WEEK — this is a debrief, not a scorecard. The athlete's goal race (${raceDebrief.dayName}${raceDebrief.distanceKm ? `, ${raceDebrief.distanceKm}km` : ''}) is done. Rules:
+- Acknowledge the race first. Reference it by its day — "${raceDebrief.dayName}'s race".
+- Do NOT judge the race by zone discipline or load ratio. A race is run at race effort, not by holding easy zones; the load-ratio spike and low zone-discipline figure on a race week are EXPECTED and correct — never frame them as overload, drift, or "ignoring the plan".${
+      raceDebrief.zoneDirection === 'below'
+        ? `\n- HR ran BELOW the prescribed zone for much of the race. On a race this long that is smart, conservative pacing — discipline, not a failure. NEVER say it "ran too hot" or that they went too hard.`
+        : raceDebrief.zoneDirection === 'above'
+          ? `\n- HR ran above the prescribed zone — normal for a hard race effort. Note it plainly if useful, but don't scold; racing hard is the point of race day.`
+          : ''
+    }
+- Voice: honest, calm, forward-looking to recovery. No scolding, no "hard not smart".`
+    : ''
 
   // Every day is in flight until midnight. The week is only "done" once
   // tomorrow is Monday — i.e. we're reading the report any time before the
@@ -90,11 +129,13 @@ export function buildWeeklyReportPrompt(
   //   - in-flight + clean week                            → solid-week-midweek variant
   //   - otherwise                                          → standard per-insight example
   const example =
-    (isInFlight && data.primaryInsight === 'solid_week' && hasTodayWork)
-      ? TODAY_IN_FLIGHT_EXAMPLE
-      : (isInFlight && data.primaryInsight === 'solid_week')
-        ? SOLID_WEEK_MIDWEEK_EXAMPLE
-        : (FEW_SHOT_EXAMPLES[data.primaryInsight] ?? FEW_SHOT_EXAMPLES.solid_week!)
+    raceDebrief
+      ? RACE_DEBRIEF_EXAMPLE
+      : (isInFlight && data.primaryInsight === 'solid_week' && hasTodayWork)
+        ? TODAY_IN_FLIGHT_EXAMPLE
+        : (isInFlight && data.primaryInsight === 'solid_week')
+          ? SOLID_WEEK_MIDWEEK_EXAMPLE
+          : (FEW_SHOT_EXAMPLES[data.primaryInsight] ?? FEW_SHOT_EXAMPLES.solid_week!)
 
   const sessionLine = (isInFlight && sessionsPlannedToDate !== undefined)
     ? `Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned} this week (${sessionsPlannedToDate} due by end of yesterday)`
@@ -157,7 +198,7 @@ Continuity rule: you may reference last week's coaching at most ONCE in the Body
   })
 
   return `${voiceHeader}
-${athleteContext ?? ''}${isInFlight ? `\nImportant: it is currently ${dayOfWeek} and the day is not over. Today is in flight — sessions due today are NOT missed. Compare what's logged against what was due by end of yesterday only. Today's still-to-do sessions are listed under "remaining" — frame them as present-tense intent ("today's run is still ahead of you"), never as failure.` : ''}
+${athleteContext ?? ''}${isInFlight ? `\nImportant: it is currently ${dayOfWeek} and the day is not over. Today is in flight — sessions due today are NOT missed. Compare what's logged against what was due by end of yesterday only. Today's still-to-do sessions are listed under "remaining" — frame them as present-tense intent ("today's run is still ahead of you"), never as failure.` : ''}${raceDebriefBlock}
 Critical rule: the athlete's sessions are already scheduled in their training plan — never suggest they need to "schedule", "block time", or "plan" their runs. The plan is fixed; the only question is execution.
 
 Output format — exactly three fields:

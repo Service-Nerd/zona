@@ -1145,6 +1145,23 @@ Config: `GENERATION_CONFIG.GOAL_SEQUENCING`, `PREP_TIME_THRESHOLDS`. Engine: `li
 
 ---
 
+## 70. Plan's over, and a race is debriefed — not scored
+
+**Principle.** Two related rules, both surfacing the day after a goal race:
+
+1. **The plan can end.** Once today is past the final week's 7-day window, the plan is complete — there is no "today's session". `getCurrentWeekIndex()` pins to the last week forever (there's no week after to advance into, especially when the race *is* the last week), so any surface that reads "today's slot" must first confirm today is genuinely inside the resolved week's window (`isDateWithinWeek` / `isPlanComplete` in `lib/plan.ts`). The daily coach note switches to a recovery / what's-next line; it must never prescribe the final week's stale weekday slot.
+2. **A race is a debrief, not a scorecard.** A race is run at race effort, not by holding easy zones. On a race week the zone-discipline % and the acute:chronic load ratio spike *by design* — a 100 km race is a 100 km load spike. Never frame either as overload, drift, or "ignoring the plan". Below-zone HR on a long race is disciplined, conservative pacing — never "ran too hot". The weekly report drops into race-debrief mode (`RaceDebrief` in `prompts/weeklyReport.ts`), naming the actual race day; the Coach zone-discipline and load-ratio tiles show race-appropriate context instead of the scolding verdict copy.
+
+**Why.** The brand promise is "training plans that stop you overtraining." Accusing a runner of "racing hard, not smart" and "ignoring the plan entirely" the morning after they finished their goal race — for the crime of pacing a 100 km race below Zone 2 — is the single worst moment to contradict the brand. It also read the wrong day ("Sunday's race" when it was Saturday): the day index clamped to 6 once we were past the plan, and the model was told "it is currently Sunday, day in flight". Both are the same root cause as §65 — a surface that can't tell "in flight" from "over".
+
+**Implementation rule.** Race detection: the week's session with `type === 'race'`, completed (a completion or a `run_analysis` row for that slot). Pacing direction comes from `run_analysis.hr_below_floor_pct` vs `hr_above_ceiling_pct`. On a race week, suppress the spotlight (it would name the race as "concerning").
+
+**Test enforcement.** `lib/planDateWindow.test.ts` (window/plan-complete boundaries), `weeklyReport.test.ts` "race debrief framing" (names the real day, refuses zone/load scoring, reads below-zone as pacing), `prompts/dailyCoachNote.test.ts` "plan complete" (never prescribes once the plan is over).
+
+**Originating decision:** post-race bug report, 2026-07-13 — founder finished a 100 km race Saturday; Monday's Coach card said "Sunday's race … you raced hard, not smart … ignoring the plan entirely" and Today prescribed a phantom 3 km shakeout from the already-finished plan.
+
+---
+
 ## 64. Day-level rest — every training week needs at least one rest day
 
 **Principle.** Every plan week must contain at least one rest day (`session.type === 'rest'`). Six-on / one-off is the upper limit for non-elite runners; seven-on is overreaching dressed as commitment. Race week is excluded — the prescribed structure already includes its own rest.

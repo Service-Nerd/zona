@@ -8496,6 +8496,10 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   const sessionsPlanned: number | null   = liveSessionsPlanned
     ?? (reportIsCurrent ? (weeklyReport?.sessions_planned ?? null) : null)
   const weeksToRace = Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
+  // On a race week the zone-discipline % and load-ratio spike by design — a race
+  // is run at race effort, not by holding easy zones. The verdict copy on those
+  // two tiles must NOT scold ("ran too hot" / "overloading") on this week.
+  const isRaceWeek = (currentWeek as any)?.type === 'race'
 
   // ── R28 / R29 detection ─────────────────────────────────────────────────
   const daysToRace = Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / 86_400_000)
@@ -9072,15 +9076,15 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             {
               label: 'Zone discipline',
               value: currentScore !== null ? `${currentScore}%` : '—',
-              sub: scoreBodyCopy(currentScore).split('.')[0],
-              subColor: currentScore !== null && currentScore >= 80 ? 'var(--moss)' : currentScore !== null && currentScore >= 60 ? 'var(--ink-2)' : currentScore !== null ? 'var(--warn)' : 'var(--mute)',
+              sub: isRaceWeek ? 'Race effort — not an easy-zone day' : scoreBodyCopy(currentScore).split('.')[0],
+              subColor: isRaceWeek ? 'var(--ink-2)' : currentScore !== null && currentScore >= 80 ? 'var(--moss)' : currentScore !== null && currentScore >= 60 ? 'var(--ink-2)' : currentScore !== null ? 'var(--warn)' : 'var(--mute)',
               onTap: () => setZoneDisciplineSheetOpen(true),
             },
             {
               label: 'Load ratio',
               value: loadRatio !== null ? `${loadRatio.toFixed(2)}x` : '—',
-              sub: lrc.label,
-              subColor: lrc.color,
+              sub: isRaceWeek ? 'race week — spike expected' : lrc.label,
+              subColor: isRaceWeek ? 'var(--ink-2)' : lrc.color,
               onTap: () => setLoadSheetOpen(true),
             },
             {

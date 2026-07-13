@@ -34,6 +34,8 @@ export interface DailyCoachNoteInput {
   weekPhase: string | null          // 'base' / 'build' / 'peak' / 'taper'
   weekN: number
   totalWeeks: number
+  /** True when today is past the end of the plan's final week — the plan is over. */
+  planComplete?: boolean
   weeksToRace: number | null
   raceName: string | null
   raceDistanceKm: number | null
@@ -112,7 +114,60 @@ Input: today=quality (Zone 3), last=easy 2 days ago, nailed; no flags
 Output: "Easy sorted two days ago. Now make the tempo count — hit the band from the first km."
 `
 
+// Plan-complete few-shots — the plan has ended (usually just after the goal
+// race). There is NO session today; the note acknowledges that and points
+// forward to recovery or the next goal. Never prescribes a run.
+const PLAN_COMPLETE_EXAMPLES = `
+Example A — race two days ago, plan finished:
+Input: plan complete, last=race 2 days ago
+Output: "Plan's done and the race is behind you — nothing to chase today, let the legs come back."
+
+Example B — plan finished, no recent race logged:
+Input: plan complete, last=long 4 days ago
+Output: "That's the plan finished. No session today — rest is the work now until the next one's set."
+
+Example C — race yesterday, plan finished:
+Input: plan complete, last=race yesterday
+Output: "You raced yesterday. Today does nothing on purpose — recovery is the whole job."`
+
 export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
+  // Plan-complete branch — the plan is over, so there is no "today's session".
+  // Prescribing one (the old bug pulled the final week's stale weekday slot)
+  // is wrong; the note is a recovery / what's-next line anchored on the last run.
+  if (input.planComplete) {
+    const facts: string[] = ['The training plan has finished — there is NO session scheduled today.']
+    if (input.lastSession) {
+      const ls  = input.lastSession
+      const ago = ls.daysAgo === 1 ? 'yesterday' : `on ${ls.dayName} (${ls.daysAgo} days ago)`
+      facts.push(`Last session: ${ls.type} ${ago}${ls.verdict ? `, verdict: ${ls.verdict}` : ''}`)
+    } else {
+      facts.push('No recent completed sessions')
+    }
+    if (input.raceName) facts.push(`Goal race: ${input.raceName}${input.raceDistanceKm ? ` (${input.raceDistanceKm}km)` : ''}`)
+
+    const voiceHeaderPC = buildVoiceHeader({
+      role: 'writing a one-sentence note now the plan has finished',
+      outputConstraint: 'One sentence. Always. No headers, no quotes around the output.',
+      firstName: input.firstName,
+    })
+
+    return `${voiceHeaderPC}
+${input.athleteContext ?? ''}
+Your job: write ONE sentence for an athlete whose plan is now complete.
+
+Critical rules:
+- There is NO session today. Never prescribe, suggest, or reference "today's run/session" as if one exists.
+- If a race was the last session, acknowledge it's behind them. Otherwise acknowledge the plan is done.
+- Point at recovery or "what's next", not at a workout. Honest and calm — no cheerleading.
+${PLAN_COMPLETE_EXAMPLES}
+
+Now write the note for this athlete:
+
+${facts.join('\n')}
+
+Output: one sentence in the voice described above. No quotes. No prefix. Just the sentence.`
+  }
+
   const facts: string[] = []
 
   // Today — surface day name, session label and zone so the model has full context

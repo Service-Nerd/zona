@@ -241,3 +241,60 @@ describe('buildWeeklyReportPrompt — today-in-flight framing', () => {
     expect(prompt).not.toMatch(/due by end of yesterday/)
   })
 })
+
+// ─── Race debrief framing ──────────────────────────────────────────────────
+// A completed goal race is a debrief, not a training-week scorecard. Locks the
+// post-race bug where the report wrote "Sunday's race" (wrong day, hallucinated
+// from a clamped day index) and scolded a below-zone ultra as "ran too hot".
+
+const raceReportData: WeeklyReportData = {
+  sessionsCompleted:   3,
+  sessionsPlanned:     3,
+  totalKmActual:       107.6,
+  totalKmPlanned:      100,
+  acuteChronicRatio:   2.73,
+  zoneDisciplineScore: 28,
+  avgRpe:              7,
+  dominantFlag:        'ok',
+  primaryInsight:      'load_spike',
+}
+
+const racePlan: Plan = {
+  meta: { race_name: 'Ultra 100', race_distance_km: 100, race_date: '2026-07-11' } as any,
+  weeks: Array.from({ length: 25 }, () => ({})) as any,
+} as Plan
+
+describe('buildWeeklyReportPrompt — race debrief framing', () => {
+  it('names the real race day and refuses to score the race on zone/load', () => {
+    const prompt = buildWeeklyReportPrompt(
+      raceReportData, racePlan, 25,
+      'Russ',
+      /* dayOfWeek — undefined once the plan is over */ undefined,
+      undefined, undefined,
+      /* remaining */ [],
+      /* missed */ [],
+      /* spotlight */ null,
+      /* athleteContext */ '',
+      /* previousReport */ null,
+      { dayName: 'Saturday', distanceKm: 100, zoneDirection: 'below' },
+    )
+    expect(prompt).toMatch(/RACE WEEK/)
+    expect(prompt).toMatch(/Saturday's race/)
+    expect(prompt).not.toMatch(/Sunday/)
+    expect(prompt).not.toMatch(/it is currently/)
+    // Below-zone on a long race must be framed as pacing, never "ran too hot".
+    expect(prompt).toMatch(/smart, conservative pacing/)
+    expect(prompt).toMatch(/Race run\. Now recover\./)  // race few-shot, not load_spike
+    expect(prompt).not.toMatch(/You did too much/)
+  })
+
+  it('omits the below-zone pacing note when the race ran above zone', () => {
+    const prompt = buildWeeklyReportPrompt(
+      raceReportData, racePlan, 25, 'Russ', undefined, undefined, undefined, [], [], null, '', null,
+      { dayName: 'Saturday', distanceKm: 100, zoneDirection: 'above' },
+    )
+    expect(prompt).toMatch(/RACE WEEK/)
+    expect(prompt).not.toMatch(/smart, conservative pacing/)
+    expect(prompt).toMatch(/racing hard is the point/)
+  })
+})

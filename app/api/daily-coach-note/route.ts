@@ -7,7 +7,7 @@ import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { buildDailyCoachNotePrompt } from '@/lib/coaching/prompts/dailyCoachNote'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { zoneForSessionType } from '@/lib/coaching/zoneRules'
-import { getCurrentWeekIndex } from '@/lib/plan'
+import { getCurrentWeekIndex, isDateWithinWeek, isPlanComplete, parseLocalDate } from '@/lib/plan'
 import { resolveEffectiveSessions, slotForOriginalDay, type SessionOverride } from '@/lib/plan/effectiveSessions'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
@@ -111,8 +111,15 @@ export async function GET(req: NextRequest) {
   const effectiveWeek = resolveEffectiveSessions(week, currentWeekOverrides)
   const dayOfWeek = new Date(noteDate + 'T00:00:00Z').getUTCDay()  // 0=Sun..6=Sat
   const dowKey    = DOW_KEYS[dayOfWeek]
+  // getCurrentWeekIndex() pins to the last week once today is past the plan, so
+  // a slot lookup would surface a stale session (e.g. the final week's Monday
+  // shakeout) days after the plan ended. Only trust today's slot when today is
+  // genuinely inside this week's window; otherwise there is no session today.
+  const noteDateLocal = parseLocalDate(noteDate)
+  const withinWeek    = isDateWithinWeek(week, noteDateLocal)
+  const planComplete  = isPlanComplete(plan.weeks, noteDateLocal)
   // Treat strength as a rest day for coaching purposes — feature not yet built out.
-  const rawTodaySession = effectiveWeek[dowKey]?.session ?? null
+  const rawTodaySession = withinWeek ? (effectiveWeek[dowKey]?.session ?? null) : null
   const todaySession = rawTodaySession && !EXCLUDED_SESSION_TYPES.includes(rawTodaySession.type) ? rawTodaySession : null
   const todayDayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dayOfWeek]
   const todayZone = zoneForSessionType(todaySession?.type)
@@ -222,6 +229,7 @@ export async function GET(req: NextRequest) {
     weekPhase: (week as any).phase as string | null,
     weekN,
     totalWeeks: plan.weeks.length,
+    planComplete,
     weeksToRace,
     raceName: plan.meta.race_name ?? null,
     raceDistanceKm: plan.meta.race_distance_km ?? null,

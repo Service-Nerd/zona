@@ -167,3 +167,38 @@ export function getWeeksToRace(raceDate: string) {
   const ms = new Date(raceDate).getTime() - Date.now()
   return Math.max(0, Math.round(ms / (1000 * 60 * 60 * 24 * 7)))
 }
+
+/**
+ * Whether `date` falls inside a plan week's 7-day window [weekStart, weekStart+7).
+ *
+ * getCurrentWeek() falls back to the last week when today is past the plan, so
+ * callers can't otherwise tell "genuinely inside this week" from "pinned to the
+ * final week because the plan is over". Coaching surfaces need that distinction:
+ * without it they read a stale slot (e.g. today's weekday) out of a week that
+ * has already ended and prescribe a session that no longer exists.
+ */
+export function isDateWithinWeek(week: Plan['weeks'][number], date: Date): boolean {
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  const weekStart = parseLocalDate((week as any).date)
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekEnd.getDate() + 7)
+  return d >= weekStart && d < weekEnd
+}
+
+/**
+ * True when `date` is on or after the end of the plan's final week — i.e. the
+ * plan is over. The race commonly lives in the last week, so post-race is
+ * frequently also plan-complete; there is no "week after" for the current-week
+ * pointer to advance into.
+ */
+export function isPlanComplete(weeks: Plan['weeks'], date: Date): boolean {
+  const last = weeks[weeks.length - 1]
+  if (!last) return false
+  const weekStart = parseLocalDate((last as any).date)
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekEnd.getDate() + 7)
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  return d >= weekEnd
+}
