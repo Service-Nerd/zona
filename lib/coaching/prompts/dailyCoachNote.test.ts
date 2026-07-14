@@ -38,7 +38,46 @@ describe('buildDailyCoachNotePrompt — plan complete', () => {
     // The old phantom-session few-shots must not appear in this branch.
     expect(prompt).not.toMatch(/First quality of the build/)
     // Last race is available for the model to acknowledge.
-    expect(prompt).toMatch(/race on Saturday|race on/i)
+    expect(prompt).toMatch(/the goal race/i)
+  })
+
+  // §71.1–71.2 — a finished goal race is debriefed, not scored. The plan-scoring
+  // verdict must never leak into the note, and the note leads with the
+  // achievement rather than any shortfall.
+  it('suppresses the plan-scoring verdict and leads with the achievement', () => {
+    const prompt = buildDailyCoachNotePrompt({
+      ...base,
+      planComplete: true,
+      raceAchievement: '100K done. In the book.',
+      lastSession: {
+        daysAgo: 3, dayName: 'Saturday', type: 'race',
+        verdict: 'off_target', hrAboveCeilingPct: 40, rpe: 9, fatigueTag: 'Wrecked',
+      },
+    })
+    // The off_target verdict must never reach the prompt.
+    expect(prompt).not.toMatch(/off_target/)
+    // Leads with the deterministic achievement acknowledgement.
+    expect(prompt).toMatch(/100K done\. In the book\./)
+    // Race-debrief framing is present, and it must forbid shortfall language.
+    expect(prompt).toMatch(/GOAL RACE/)
+    expect(prompt).toMatch(/finishing the distance IS the achievement/i)
+    expect(prompt).toMatch(/didn't land/i) // present only inside the "never say" rule
+  })
+
+  it('suppresses a race verdict in the normal (plan-running) branch too', () => {
+    const prompt = buildDailyCoachNotePrompt({
+      ...base,
+      planComplete: false,
+      todaySessionType: 'easy', todaySessionLabel: 'Easy 8km',
+      todayZoneLabel: 'Zone 2', todayDistanceKm: 8,
+      lastSession: {
+        daysAgo: 2, dayName: 'Sunday', type: 'race',
+        verdict: 'off_target', hrAboveCeilingPct: 55, rpe: 8, fatigueTag: null,
+      },
+    })
+    // The verdict fact line (few-shot examples mention off_target; the facts must not).
+    expect(prompt).not.toMatch(/verdict: off_target/)
+    expect(prompt).not.toMatch(/above zone ceiling/)
   })
 
   it('falls through to the normal note when the plan is still running', () => {

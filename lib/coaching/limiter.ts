@@ -64,6 +64,12 @@ export interface LimiterInputs {
   recentHighFatigueCount: number
   actualDistKm:           number | null
   plannedDistKm:          number | null
+  /** True when the runner reported an acute injury/incident during the effort
+   *  (e.g. `Week.result_embedded.what_broke`). The device signal cannot see an
+   *  injury-driven fade; the athlete's account outranks the classifier here, so
+   *  the limiter stays silent rather than mis-attributing the fade. Wired from
+   *  the race narrative in RACE-DEBRIEF-02; optional until then. §71.3. */
+  injuryFlagged?:         boolean
 }
 
 const EASY_TYPES = new Set(['easy', 'recovery', 'long', 'run'])
@@ -84,6 +90,23 @@ const HARD_TYPES = new Set(['quality', 'tempo', 'intervals', 'threshold'])
  * Returns null when nothing crosses a defensible threshold.
  */
 export function inferLimiter(inputs: LimiterInputs): LimiterHypothesis | null {
+  // ── 0. SILENCE GUARDS (§71.3) ──────────────────────────────────────────
+  // A confident wrong diagnosis is worse than no diagnosis. The limiter stays
+  // silent — returns null, no hypothesis surfaced — when it cannot defensibly
+  // read the cause:
+  //  • a race is run at race effort, not held in a zone — the classifier's
+  //    zone/pace/HR heuristics don't apply (§70.2, §71.1);
+  //  • ultra-distance fade is expected physiology, not a limiter;
+  //  • an athlete-reported injury outranks any device signal — attributing an
+  //    injury-driven fade to "running out of gas" destroys credibility.
+  if (
+    inputs.sessionType === 'race'
+    || inputs.injuryFlagged === true
+    || (inputs.actualDistKm != null && inputs.actualDistKm >= LIMITER.SUPPRESS_ULTRA_DISTANCE_KM)
+  ) {
+    return null
+  }
+
   // ── 1. HEAT ────────────────────────────────────────────────────────────
   if (
     inputs.tempC != null

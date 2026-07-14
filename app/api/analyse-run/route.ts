@@ -14,6 +14,7 @@ import { computePaceFadeSummary, type StravaSplitMetric } from '@/lib/coaching/p
 import { fetchRunHistory, findSimilarRuns, summariseCohort, pickWindowDays } from '@/lib/coaching/runHistory'
 import { zoneForSessionType, sessionHRBand } from '@/lib/coaching/zoneRules'
 import { inferLimiter } from '@/lib/coaching/limiter'
+import { raceInjuryFlagged } from '@/lib/coaching/raceNarrative'
 import { FATIGUE_HIGH_TAGS } from '@/lib/coaching/constants'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import type { Plan, Session } from '@/types/plan'
@@ -298,6 +299,10 @@ export async function POST(req: NextRequest) {
     )
     const tempCNum = activity.avg_temp_c != null ? Number(activity.avg_temp_c) : null
 
+    // RACE-DEBRIEF-02 — the runner's own race account (race week only). Feeds
+    // the debrief block and the limiter's injury silence guard (§71.3).
+    const raceResult = (week as any)?.result_embedded ?? null
+
     const limiter = inferLimiter({
       sessionType:            (session as any).type,
       actualAvgHr:            activity.avg_hr ?? null,
@@ -312,6 +317,7 @@ export async function POST(req: NextRequest) {
       recentHighFatigueCount,
       actualDistKm:           (activity.distance_m ?? 0) / 1000,
       plannedDistKm:          (session as any).distance_km ?? null,
+      injuryFlagged:          raceInjuryFlagged(raceResult),
     })
 
     const prompt = buildSessionFeedbackPrompt({
@@ -338,6 +344,7 @@ export async function POST(req: NextRequest) {
       paceFadeSummary:     paceFadeSummaryForLimiter,
       tempC:               tempCNum,
       limiter,
+      raceResult,
     })
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {

@@ -6,6 +6,7 @@ import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { buildDailyCoachNotePrompt } from '@/lib/coaching/prompts/dailyCoachNote'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
+import { achievementLine } from '@/lib/coaching/goalSequencing'
 import { zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { getCurrentWeekIndex, isDateWithinWeek, isPlanComplete, parseLocalDate } from '@/lib/plan'
 import { resolveEffectiveSessions, slotForOriginalDay, type SessionOverride } from '@/lib/plan/effectiveSessions'
@@ -219,6 +220,24 @@ export async function GET(req: NextRequest) {
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
     : null
 
+  // §71.2 — when the plan is over and the last session was the goal race, lead
+  // the debrief with a deterministic achievement acknowledgement rather than a
+  // plan-scoring verdict. Reuses achievementLine (CA-03). RACE-DEBRIEF-02:
+  // enrich with the runner's logged result (Week.result_embedded) when present —
+  // finish time + outcome make the line specific ("You ran 14:32 …"); it
+  // degrades gracefully to "<distance> done. In the book." when no result exists.
+  const raceWeekResult = (planComplete && lastSession?.type === 'race' && lastCompleted)
+    ? ((plan.weeks[lastCompleted.week_n - 1] as any)?.result_embedded ?? null)
+    : null
+  const raceAchievement = (planComplete && lastSession?.type === 'race' && (raceWeekResult?.distance_km || plan.meta.race_distance_km))
+    ? achievementLine({
+        distanceKm: raceWeekResult?.distance_km ?? plan.meta.race_distance_km,
+        finishTime: raceWeekResult?.finish_time ?? null,
+        targetTime: (plan.meta as any).target_time ?? null,
+        outcome:    raceWeekResult?.outcome ?? null,
+      })
+    : null
+
   const promptInput = {
     todayDayName,
     todaySessionType:  todaySession?.type ?? null,
@@ -240,6 +259,7 @@ export async function GET(req: NextRequest) {
     previousWeeklyReport: lastWeeklyRes.data?.headline && lastWeeklyRes.data?.body
       ? { headline: lastWeeklyRes.data.headline as string, body: lastWeeklyRes.data.body as string }
       : null,
+    raceAchievement,
   }
 
   // Generate via Claude — silent fallback to null on failure

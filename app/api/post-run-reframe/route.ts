@@ -33,6 +33,7 @@ import { detectReframeTier } from '@/lib/coaching/reframeTier'
 import { assessReframeRiskGate, type CoachingFlag, type FatigueTag } from '@/lib/coaching/reframeRiskGate'
 import { COHORT_SIMILARITY, REFRAME_RISK, REFRAME_TIER, FATIGUE_HIGH_TAGS } from '@/lib/coaching/constants'
 import { inferLimiter } from '@/lib/coaching/limiter'
+import { raceInjuryFlagged } from '@/lib/coaching/raceNarrative'
 import { sessionHRBand } from '@/lib/coaching/zoneRules'
 import {
   fetchRunHistory,
@@ -399,6 +400,10 @@ export async function POST(req: NextRequest) {
     settingsRes.data?.resting_hr ?? null,
     settingsRes.data?.max_hr ?? null,
   )
+  // RACE-DEBRIEF-02 — the runner's own race account (race week only). Feeds the
+  // reframe's race override and the limiter's injury silence guard (§71.3).
+  const raceResult = (week as any)?.result_embedded ?? null
+
   const limiter = inferLimiter({
     sessionType:            session.type,
     actualAvgHr,
@@ -413,6 +418,7 @@ export async function POST(req: NextRequest) {
     recentHighFatigueCount,
     actualDistKm,
     plannedDistKm:          (session as any).distance_km ?? null,
+    injuryFlagged:          raceInjuryFlagged(raceResult),
   })
 
   // ── Build prompt + call Sonnet ────────────────────────────────────────
@@ -442,6 +448,7 @@ export async function POST(req: NextRequest) {
     tempC,
     limiter,
     paceFadeSummary,
+    raceResult,
   })
 
   let reframeText: string | null = null

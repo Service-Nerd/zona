@@ -167,6 +167,13 @@ export const LIMITER = {
   FUELING_LONG_RUN_SHORTFALL: 0.90,
   /** Minimum RPE on an easy/recovery run to trigger recovery limiter alongside fatigue. */
   RECOVERY_EASY_RPE_FLOOR: 7,
+  /** Distance (km) at/above which the limiter stays silent regardless of signal.
+   *  Back-third fade over ultra distance is expected physiology (glycogen
+   *  depletion), not a defensible limiter hypothesis — a confident "muscular"
+   *  or "aerobic" call here mis-reads the distance itself. Standard ultra floor.
+   *  CoachingPrinciples §71. Race sessions are suppressed by type; this catches
+   *  ultra-distance efforts not tagged as a race. */
+  SUPPRESS_ULTRA_DISTANCE_KM: 50,
 } as const
 
 // Cohort similarity matching — past-self comparison (R25 cut #1)

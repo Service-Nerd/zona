@@ -52,6 +52,14 @@ export interface DailyCoachNoteInput {
 
   /** AI-DEPTH-10 — most recent weekly report's headline+body. Lets the daily note reference the week's coaching story when today's session connects to it. Null on first week or silent-fallback weeks. */
   previousWeeklyReport?: { headline: string; body: string } | null
+
+  /** Deterministic achievement acknowledgement for a completed goal race
+   *  (from `achievementLine`, CA-03 / `lib/coaching/goalSequencing.ts`). Present
+   *  only when the plan is complete AND the last session was the goal race. The
+   *  plan-complete branch leads with this framing instead of any plan-scoring
+   *  verdict — finishing the distance is the achievement, the time is secondary.
+   *  §71.2. */
+  raceAchievement?: string | null
 }
 
 // Few-shot examples — Zonna voice anchored. Each shows a specific recent
@@ -130,42 +138,78 @@ Example C — race yesterday, plan finished:
 Input: plan complete, last=race yesterday
 Output: "You raced yesterday. Today does nothing on purpose — recovery is the whole job."`
 
+// Goal-race-complete few-shots — the last session was the GOAL RACE and the plan
+// is over. Lead with the accomplishment (finishing IS the achievement; the time
+// is secondary), never a shortfall or a plan-scoring verdict, then point at
+// recovery. §71.1–71.2.
+const RACE_COMPLETE_EXAMPLES = `
+Example R1 — long goal race finished a few days ago, plan complete:
+Input: plan complete, last=the goal race 3 days ago, 100km; achievement "100K done. In the book."
+Output: "100K, done. That's the achievement — nothing to chase now, just let the legs come back."
+
+Example R2 — goal race yesterday, plan complete:
+Input: plan complete, last=the goal race yesterday, marathon; achievement "You ran 3:58 — 2:00 inside your goal."
+Output: "You got the marathon done. Today does nothing on purpose — recovery is the whole job now."
+
+Example R3 — goal race finished, no time recorded:
+Input: plan complete, last=the goal race on Saturday (3 days ago); achievement "Marathon done. In the book."
+Output: "The marathon's in the book. Rest is the work now — the next goal can wait."`
+
 export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
   // Plan-complete branch — the plan is over, so there is no "today's session".
   // Prescribing one (the old bug pulled the final week's stale weekday slot)
   // is wrong; the note is a recovery / what's-next line anchored on the last run.
   if (input.planComplete) {
+    // §71.1 — a finished goal race is debriefed, not scored. When the last
+    // session was the race, suppress the plan-scoring verdict entirely (an
+    // `off_target` on a race is scoring race effort by plan adherence) and
+    // lead with the achievement instead.
+    const lastWasRace = input.lastSession?.type === 'race'
     const facts: string[] = ['The training plan has finished — there is NO session scheduled today.']
     if (input.lastSession) {
       const ls  = input.lastSession
       const ago = ls.daysAgo === 1 ? 'yesterday' : `on ${ls.dayName} (${ls.daysAgo} days ago)`
-      facts.push(`Last session: ${ls.type} ${ago}${ls.verdict ? `, verdict: ${ls.verdict}` : ''}`)
+      facts.push(lastWasRace
+        ? `Last session: the goal race, ${ago}`
+        : `Last session: ${ls.type} ${ago}${ls.verdict ? `, verdict: ${ls.verdict}` : ''}`)
     } else {
       facts.push('No recent completed sessions')
     }
     if (input.raceName) facts.push(`Goal race: ${input.raceName}${input.raceDistanceKm ? ` (${input.raceDistanceKm}km)` : ''}`)
+    if (lastWasRace && input.raceAchievement) {
+      facts.push(`Achievement to lead with (use this framing — do NOT invent a finish time, and do NOT invent a shortfall): "${input.raceAchievement}"`)
+    }
 
     const voiceHeaderPC = buildVoiceHeader({
-      role: 'writing a one-sentence note now the plan has finished',
-      outputConstraint: 'One sentence. Always. No headers, no quotes around the output.',
+      role: 'writing a short note now the plan has finished',
+      outputConstraint: 'One or two short sentences. No headers, no quotes around the output.',
       firstName: input.firstName,
     })
 
+    // §71.1–71.2 — race-debrief rules replace the generic "acknowledge the plan"
+    // line when the last session was the goal race.
+    const raceDebriefRules = lastWasRace
+      ? `
+- This was the athlete's GOAL RACE and it is behind them. Open by acknowledging the accomplishment — finishing the distance IS the achievement; the time is secondary. Use the achievement framing given in the facts below.
+- NEVER frame the race as a shortfall or a disappointment. Do not say it "didn't land", "wasn't what you wanted", "off target", or reference goals, targets, verdicts, or what "shifted". You do not know how the runner feels about it — do not tell them.
+- Do not analyse the race. No pacing, HR, or fade commentary. Witness it, then point at recovery.`
+      : `
+- If a race was the last session, acknowledge it's behind them. Otherwise acknowledge the plan is done.`
+
     return `${voiceHeaderPC}
 ${input.athleteContext ?? ''}
-Your job: write ONE sentence for an athlete whose plan is now complete.
+Your job: write a short note (one or two sentences) for an athlete whose plan is now complete.
 
 Critical rules:
-- There is NO session today. Never prescribe, suggest, or reference "today's run/session" as if one exists.
-- If a race was the last session, acknowledge it's behind them. Otherwise acknowledge the plan is done.
+- There is NO session today. Never prescribe, suggest, or reference "today's run/session" as if one exists.${raceDebriefRules}
 - Point at recovery or "what's next", not at a workout. Honest and calm — no cheerleading.
-${PLAN_COMPLETE_EXAMPLES}
+${lastWasRace ? RACE_COMPLETE_EXAMPLES : PLAN_COMPLETE_EXAMPLES}
 
 Now write the note for this athlete:
 
 ${facts.join('\n')}
 
-Output: one sentence in the voice described above. No quotes. No prefix. Just the sentence.`
+Output: one or two short sentences in the voice described above. No quotes. No prefix. Just the note.`
   }
 
   const facts: string[] = []
@@ -188,8 +232,11 @@ Output: one sentence in the voice described above. No quotes. No prefix. Just th
       ? 'yesterday'
       : `on ${ls.dayName} (${ls.daysAgo} days ago)`
     const parts: string[] = [`${ls.type} ${ago}`]
-    if (ls.verdict) parts.push(`verdict: ${ls.verdict}`)
-    if (ls.hrAboveCeilingPct !== null && ls.hrAboveCeilingPct > 15) parts.push(`${Math.round(ls.hrAboveCeilingPct)}% above zone ceiling`)
+    // §71.1 — never surface a plan-scoring verdict or a zone-ceiling "ran hot"
+    // fact for a race. A race is run at race effort, not held in a zone.
+    const lastWasRace = ls.type === 'race'
+    if (ls.verdict && !lastWasRace) parts.push(`verdict: ${ls.verdict}`)
+    if (ls.hrAboveCeilingPct !== null && ls.hrAboveCeilingPct > 15 && !lastWasRace) parts.push(`${Math.round(ls.hrAboveCeilingPct)}% above zone ceiling`)
     if (ls.rpe !== null) parts.push(`RPE ${ls.rpe}`)
     if (ls.fatigueTag) parts.push(`tagged ${ls.fatigueTag}`)
     facts.push(`Last session: ${parts.join(', ')}`)

@@ -1162,6 +1162,26 @@ Config: `GENERATION_CONFIG.GOAL_SEQUENCING`, `PREP_TIME_THRESHOLDS`. Engine: `li
 
 ---
 
+## 71. A goal race is debriefed *with* the athlete — every surface, not just the weekly report
+
+**Principle.** §70 stopped the *weekly report* scoring a race by zone discipline. This principle carries the same doctrine to **every** post-race and difficult-session surface — the daily coach note, the post-run reframe, and the limiter — and adds three rules that §70 did not state:
+
+1. **The plan-scoring `verdict` never reaches a race debrief.** A race session is stamped `off_target` / `concerning` by the ordinary session scorer because HR sat below zone and pace was off prescription — both of which are *correct* race execution (§70.2). That verdict must be suppressed on any surface that speaks after a race. Surfacing it — directly, or by the model editorialising it into "the race didn't land where you wanted" — is scoring the race. The daily-note plan-complete branch and the reframe must switch into debrief framing for a `type === 'race'` last session, exactly as the weekly report does.
+2. **Lead with the achievement.** The debrief opens by acknowledging what was accomplished — for an endurance goal race, *finishing is the achievement*; the time is secondary. Use the deterministic `achievementLine` (`lib/coaching/goalSequencing.ts`, CA-03) — no AIMark (rule-engine output). Acknowledgement is the opener, never the closer, and never manufactured reassurance ("not a referendum" installs the doubt it denies).
+3. **The athlete's account outranks the device signal for a race.** The runner's own race narrative (`Week.result_embedded` — `notes`, `what_broke`, heat, injury) is authoritative over any classifier. If the runner says "injured at 60k" or "too hot, backed off", that is the cause of the shape of the run — not the pace-fade limiter. A confident wrong diagnosis ("running out of gas" for an injury-driven fade) destroys coaching credibility with an experienced runner; **when the limiter cannot be confident, it stays silent.** The limiter (`lib/coaching/limiter.ts`) returns `null` for a race session, an ultra-distance session, or when an acute-injury signal is present.
+
+**Why.** The goal race is the emotional peak of the whole training cycle and the natural churn cliff (race done → why keep paying?). A deflating debrief at that moment torches renewal at the highest-LTV point in the paid lifecycle, and getting an ultra debrief visibly wrong signals the product is for beginners only. The brand promise is "training plans that stop you overtraining" — the post-race job is to *witness* the effort the runner already lived, not to re-diagnose it from telemetry the runner knows better than we do.
+
+**Scope guard (SLT 2026-07-14).** Broaden context — plan phase, temperature, acute injury — onto the **post-race and difficult-session path only**. Do *not* dump per-prompt context into every coaching prompt (phase-summary, plan weekly note, etc. do not need a temperature block). The fix is broad across the surfaces that speak after a hard effort, not universal across all prompts.
+
+**Implementation rule.** Temperature on the race path honours ADR-011 §5 (INV-DATA-005): present only as a Strava supplement, named-absent for HealthKit-only runs, never fabricated. Ultra threshold, injury flag, and limiter-suppression conditions live in `lib/coaching/constants.ts → LIMITER` per INV-CFG-001 — no inline numerics. Reuse `Week.result_embedded` (AI-DEPTH-08) and `achievementLine` (CA-03); do not fork them.
+
+**Test enforcement.** `dailyCoachNote.test.ts` (race last-session → verdict suppressed, achievement-led, degrades with no `result_embedded`), `limiter.test.ts` (race / ultra / injury → `null`), reframe golden suite (`reframe-golden-cases.md` A–D stay green + a race-debrief case). §70's `weeklyReport.test.ts` must not regress.
+
+**Originating decision:** post-race coaching SLT review, 2026-07-14 — the §70 fix (2026-07-13) corrected the weekly report but the same deflating, mis-attributing debrief persisted on the Today note and the run-analysis reframe, because the verdict leak and the missing athlete-narrative channel were never closed on those surfaces.
+
+---
+
 ## 64. Day-level rest — every training week needs at least one rest day
 
 **Principle.** Every plan week must contain at least one rest day (`session.type === 'rest'`). Six-on / one-off is the upper limit for non-elite runners; seven-on is overreaching dressed as commitment. Race week is excluded — the prescribed structure already includes its own rest.

@@ -1,10 +1,11 @@
-import type { Session, Plan } from '@/types/plan'
+import type { Session, Plan, RaceResult } from '@/types/plan'
 import type { Verdict } from '../sessionScore'
 import type { CohortSummary } from '../runHistory'
 import type { HrStreamSummary } from '../streamAnalysis'
 import type { PaceFadeSummary } from '../paceAnalysis'
 import type { LimiterHypothesis } from '../limiter'
 import { limiterLabel } from '../limiter'
+import { buildRaceNarrativeBlock } from '../raceNarrative'
 import { buildVoiceHeader } from './voiceRules'
 
 export interface SessionFeedbackPromptInput {
@@ -64,6 +65,12 @@ export interface SessionFeedbackPromptInput {
    * a defensible threshold (manual loggers with no fatigue tag, etc.).
    */
   limiter?: LimiterHypothesis | null
+  /**
+   * RACE-DEBRIEF-02 — the runner's own logged account of the race
+   * (`Week.result_embedded`). Present only on a race session. Authoritative
+   * over device signals; drives the race-debrief block. §71.3.
+   */
+  raceResult?: RaceResult | null
 }
 
 // Few-shot examples — Zonna voice: honest, dry, no cringe.
@@ -117,7 +124,12 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
     actualDistKm, actualAvgHr, actualPaceSecPerKm, hrInZonePct, hrAboveCeilingPct,
     efTrendPct, rpe, fatigueTag, weekPhase,
     prescribedZoneLabel, prescribedHrBand, cohortContext,
-    isFirstAnalysis, athleteContext, streamSummary, previousSimilarSession, tempC, limiter, paceFadeSummary } = input
+    isFirstAnalysis, athleteContext, streamSummary, previousSimilarSession, tempC, limiter, paceFadeSummary,
+    raceResult } = input
+
+  // §71 — a race is debriefed, not scored. Suppress the zone/drift/fade
+  // citations and the plan-scoring verdict; frame the read as a race debrief.
+  const isRace = session.type === 'race'
 
   const weeksToRace = plan.meta.race_date
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
@@ -234,6 +246,32 @@ If today's numbers diverge meaningfully from this cohort (HR ±5 bpm, pace ±10s
     ? '\nFirst session context: This is the athlete\'s first ever analysed run. Keep the welcome implicit — one sentence that acknowledges a start, then get specific about the data. No hype. No "welcome to the journey" framing.\n'
     : ''
 
+  // §71 — race debrief framing. When the session is a race, this block replaces
+  // the zone/drift/fade citation blocks and the verdict line: a race is read,
+  // not scored.
+  // RACE-DEBRIEF-02 — the runner's own account of the race, authoritative over
+  // any device signal. Silently omits when no result was logged.
+  const raceNarrativeBlock = isRace ? buildRaceNarrativeBlock(raceResult) : ''
+
+  // §71 / RACE-DEBRIEF-02 — temperature on the race path is UN-gated (any value,
+  // not just ≥22/≤4°C) so the debrief can name the conditions. Honest-absence
+  // (ADR-011 §5 / INV-DATA-005) when temp wasn't recorded: don't invent it.
+  const raceTempBlock = isRace
+    ? (tempC != null
+        ? `\nConditions: ${tempC.toFixed(0)}°C${tempC >= 28 ? ' (hot)' : tempC >= 22 ? ' (warm)' : tempC <= 0 ? ' (freezing)' : tempC <= 4 ? ' (cold)' : ''}. Heat slows everyone and is not a discipline failure — name the conditions if they shaped the day, but never lecture pacing or HR against them.\n`
+        : `\nConditions: temperature wasn't recorded for this run. If the runner's account mentions the weather, trust it; don't invent a temperature.\n`)
+    : ''
+
+  const raceDebriefBlock = isRace
+    ? `
+RACE EFFORT — this session was a race, not a training run. Debrief it; do not score it. Rules:
+- Do NOT judge it by zone discipline, HR drift, or back-half pace fade. A race is run at race effort, and fading over race distance — especially long or ultra — is expected physiology, not a fault.
+- Acknowledge the effort and the distance covered. Finishing is the achievement; the time is secondary.
+- If the athlete's notes mention what happened out there (injury, heat, a tactical call), that account is the truth of the race — never contradict it, and never tell them to do something they already did.
+- Read it like a coach who was on the course, not a scorer reading a spreadsheet.
+${raceNarrativeBlock}${raceTempBlock}`
+    : ''
+
   return `${voiceHeader}
 ${athleteContext ?? ''}
 ${FEW_SHOT_EXAMPLES}
@@ -248,9 +286,8 @@ Planned distance: ${session.distance_km ? `${session.distance_km}km` : 'not set'
 Actual distance: ${actualDistKm.toFixed(1)}km
 ${paceLine ? paceLine + '\n' : ''}${hrLine}
 ${efLine ? efLine + '\n' : ''}RPE: ${rpe !== null ? rpe : 'not logged'}
-Fatigue: ${fatigueTag ?? 'not logged'}
-Verdict: ${verdict}
-${previousSimilarBlock}${streamBlock}${paceFadeBlock}${cohortBlock}${tempBlock}${limiterBlock}
+Fatigue: ${fatigueTag ?? 'not logged'}${isRace ? '' : `\nVerdict: ${verdict}`}
+${isRace ? raceDebriefBlock : `${previousSimilarBlock}${streamBlock}${paceFadeBlock}${cohortBlock}${tempBlock}${limiterBlock}`}
 Write 2–4 sentences of honest, specific feedback. No headers. No bullet points. Plain text only.`
 }
 

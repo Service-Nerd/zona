@@ -45,6 +45,38 @@ describe('inferLimiter', () => {
     expect(inferLimiter(baseInputs())).toBeNull()
   })
 
+  // §71.3 — a confident wrong diagnosis is worse than silence. The limiter stays
+  // silent on a race, an ultra-distance effort, or an athlete-reported injury —
+  // even when a signal that would otherwise fire is present.
+  describe('silence guards (§71)', () => {
+    // A strong muscular signal that WOULD fire without a guard — the control.
+    const wouldFireMuscular = (): LimiterInputs => ({
+      ...baseInputs(),
+      paceFadeSummary: paceFade({ paceFadeSecPerKm: 40 }),
+      streamSummary:   stream({ hrDriftBpm: 2 }),
+    })
+
+    it('control: the muscular signal fires without any guard', () => {
+      expect(inferLimiter(wouldFireMuscular())?.category).toBe('muscular')
+    })
+
+    it('returns null for a race regardless of signal', () => {
+      expect(inferLimiter({ ...wouldFireMuscular(), sessionType: 'race' })).toBeNull()
+    })
+
+    it('returns null for an ultra-distance effort (≥ 50km)', () => {
+      expect(inferLimiter({ ...wouldFireMuscular(), actualDistKm: 100 })).toBeNull()
+    })
+
+    it('returns null when an acute injury is flagged', () => {
+      expect(inferLimiter({ ...wouldFireMuscular(), injuryFlagged: true })).toBeNull()
+    })
+
+    it('still fires just under the ultra threshold', () => {
+      expect(inferLimiter({ ...wouldFireMuscular(), actualDistKm: 42 })?.category).toBe('muscular')
+    })
+  })
+
   describe('heat', () => {
     it('fires high-confidence when warm + HR over ceiling', () => {
       const r = inferLimiter({
