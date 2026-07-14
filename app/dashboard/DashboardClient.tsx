@@ -2058,12 +2058,17 @@ export default function DashboardClient() {
           raceName={postRaceState.raceName}
           targetTime={postRaceState.targetTime}
           onClose={() => setShowRaceResultSheet(false)}
-          onReshapeReady={(proposal) => {
+          onReshapeReady={(proposal, updatedPlan) => {
+            // §74 — the result is already live; apply it so the debrief + goal
+            // ladder reflect immediately. The reshape stays pending for review.
+            if (updatedPlan) setPlan(updatedPlan)
             setPendingReshape(proposal)
             setShowRaceResultSheet(false)
           }}
-          onLogOnly={(_result) => {
-            // Logged without reshape — dismiss the prompt
+          onLogOnly={(updatedPlan) => {
+            // §74 — result saved on submit. Apply it so the CA-03 "what's next"
+            // goal ladder appears as the acknowledgment (no reshape to show).
+            if (updatedPlan) setPlan(updatedPlan)
             setReshapeDismissedAt(new Date().toISOString())
             setShowRaceResultSheet(false)
           }}

@@ -43,6 +43,10 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const raceResult: RaceResult = body?.race_result ?? {}
   const raceWeekN: number      = Number(body?.race_week_n)
+  // §74 — when false ("keep my plan as-is"), the result is still persisted but
+  // NO reshape is proposed (no lingering pending row to resurface on reload).
+  // Defaults true for the primary "Log result" path.
+  const offerReshape: boolean  = body?.offer_reshape !== false
 
   if (!raceWeekN || isNaN(raceWeekN)) {
     return NextResponse.json({ error: 'race_week_n required' }, { status: 400 })
@@ -69,15 +73,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No plan found' }, { status: 404 })
   }
 
-  // ── 2. Run rule engine ───────────────────────────────────────────────────────
-  const reshapeOutput = computePostRaceReshape(plan, raceResult, raceWeekN)
+  // ── 2. Persist the result unconditionally (§74) ───────────────────────────────
+  // Logging a race result is a single write that happens on submit, never gated
+  // by the optional reshape decision. Save the result-embedded plan now and
+  // return it so the client reflects it immediately (goal ladder + debrief).
+  const planWithResult = embedRaceResult(plan, raceResult, raceWeekN)
+  await savePlanForUser(user.id, planWithResult, serviceClient)
+
+  // ── 3. Run rule engine (skipped when the user opted to keep their plan) ────────
+  const reshapeOutput = offerReshape ? computePostRaceReshape(plan, raceResult, raceWeekN) : null
 
   if (!reshapeOutput) {
-    // No weeks remaining or all protected by future taper — no reshape available.
-    // Still embed the race result on the race week and save.
-    const planWithResult = embedRaceResult(plan, raceResult, raceWeekN)
-    await savePlanForUser(user.id, planWithResult, serviceClient)
-    return NextResponse.json({ reshape_available: false, reason: 'no_remaining_weeks' })
+    // No weeks to reshape (final-week race / taper-protected), or the user chose
+    // "keep my plan as-is". Result is already saved above.
+    return NextResponse.json({ reshape_available: false, reason: 'no_remaining_weeks', plan: planWithResult })
   }
 
   const {
@@ -182,6 +191,9 @@ export async function POST(req: NextRequest) {
     sessions_modified:      sessionsModified,
     recovery_window_weeks:  recoveryWindowWeeks,
     distance_bucket:        distanceBucket,
+    // §74 — result is already live (saved above); the reshape is the optional
+    // layer. Return the result-embedded plan so the client reflects the log now.
+    plan: planWithResult,
     // Return only the affected weeks so the client can preview changes
     preview_weeks: finalReshapedPlan.weeks
       .map((w, i) => ({ ...w, _week_n: i + 1 }))

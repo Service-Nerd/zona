@@ -1217,6 +1217,24 @@ Config: `GENERATION_CONFIG.GOAL_SEQUENCING`, `PREP_TIME_THRESHOLDS`. Engine: `li
 
 ---
 
+## 74. A logged race result persists on submit — the reshape never gates the write
+
+**Principle.** Logging a race result is a single **unconditional write** that happens the moment the runner submits. The optional post-race reshape (recovery-week restructuring) is a layer offered *on top* — it never gates whether the result is saved. And the client reflects the saved result **immediately**, so submitting always produces a visible outcome.
+
+- Both submit actions ("Log result" and "Log result only, keep my plan") POST through the same path and persist `Week.result_embedded`. There is no button that logs a result without saving it.
+- On submit the server saves the result-embedded plan and returns it; the client applies it, so the CA-03 goal ladder ("what's next") and the debrief context appear at once — that surfacing IS the acknowledgment (no popup — N-004).
+- "Keep my plan as-is" declines the *reshape*, not the *result*: the result stays, only the recovery restructuring is skipped (and no pending reshape row is staged, so nothing resurfaces on reload).
+
+**Why.** The founder logged a 100k, submitted, and saw nothing: the "keep my plan" button made no network call (the result was silently discarded), the reshape path only wrote `result_embedded` on *Accept*, and no success path updated client state. For a final-week race there is no reshape and therefore no Accept button to find — so the write appeared to do nothing. A user's logged data must never be contingent on a downstream optional decision they may never reach. This is the race-result sibling of the completion write-boundary rule (RESHAPE-FIX-WAVE2B / ADR-011 §3b): the write lands at submit, at the boundary, unconditionally.
+
+**Implementation rule.** `POST /api/post-race-reshape` always `savePlanForUser(embedRaceResult(plan))` before the reshape branch and returns `plan`; the `offer_reshape:false` body flag persists the result without staging a reshape. `RaceResultSheet` routes both buttons through one `submitResult(offerReshape)`; `DashboardClient` `onLogOnly`/`onReshapeReady` call `setPlan(updatedPlan)`.
+
+**Test enforcement.** No route/component test infra in the repo today; the pure reshape engine (`postRaceReshape.test.ts`) is unaffected. Verified by typecheck + build + natural device use — a logged result must surface the goal ladder without a reload.
+
+**Originating decision:** POST-RACE-PROMPT-02, 2026-07-14 — "yes fix it. It should be obvious. I didn't see anything that said Accept anywhere."
+
+---
+
 ## 64. Day-level rest — every training week needs at least one rest day
 
 **Principle.** Every plan week must contain at least one rest day (`session.type === 'rest'`). Six-on / one-off is the upper limit for non-elite runners; seven-on is overreaching dressed as commitment. Race week is excluded — the prescribed structure already includes its own rest.

@@ -12,7 +12,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { RaceResult } from '@/types/plan'
+import type { RaceResult, Plan } from '@/types/plan'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import RPEScale from '@/components/shared/RPEScale'
@@ -54,10 +54,13 @@ interface Props {
    *  most users nudge from their target rather than entering from zero. */
   targetTime?:   string
   onClose:       () => void
-  /** Called when the reshape is proposed (status: pending). Caller shows the card. */
-  onReshapeReady: (proposal: ReshapeProposal) => void
-  /** Called when the user logs a result but skips the reshape offer. */
-  onLogOnly:     (result: RaceResult) => void
+  /** Called when the reshape is proposed (status: pending). Caller shows the card.
+   *  `updatedPlan` is the result-embedded plan already saved server-side (§74) —
+   *  apply it so the result reflects immediately, independent of accepting. */
+  onReshapeReady: (proposal: ReshapeProposal, updatedPlan: Plan | null) => void
+  /** Called when the result is logged with no reshape to show. `updatedPlan` is
+   *  the saved result-embedded plan — apply it so the goal ladder appears. */
+  onLogOnly:     (updatedPlan: Plan | null) => void
 }
 
 // ── Outcome options ───────────────────────────────────────────────────────────
@@ -109,17 +112,20 @@ export default function RaceResultSheet({
     }
   }
 
-  async function handleLogAndReshape() {
+  // §74 — the single, unconditional write. Both buttons POST here so the result
+  // ALWAYS persists on submit; `offerReshape` only decides whether we also stage
+  // the optional recovery reshape. The saved plan comes back so the caller can
+  // reflect the result immediately (goal ladder + debrief).
+  async function submitResult(offerReshape: boolean) {
     if (!outcome) return
     setSubmitting(true)
     setError(null)
 
     try {
-      const result = buildResult()
       const res = await authedFetch('/api/post-race-reshape', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ race_result: result, race_week_n: raceWeekN }),
+        body:    JSON.stringify({ race_result: buildResult(), race_week_n: raceWeekN, offer_reshape: offerReshape }),
       })
 
       if (!res.ok) {
@@ -129,21 +135,22 @@ export default function RaceResultSheet({
       }
 
       const data = await res.json()
+      const updatedPlan = (data.plan as Plan) ?? null
 
-      if (!data.reshape_available) {
-        // No weeks to reshape — treat as log-only
-        onLogOnly(result)
+      if (offerReshape && data.reshape_available) {
+        onReshapeReady({
+          reshapeId:           data.reshape_id,
+          summary:             data.summary ?? null,
+          weeksAffected:       data.weeks_affected ?? [],
+          sessionsModified:    data.sessions_modified ?? 0,
+          recoveryWindowWeeks: data.recovery_window_weeks ?? 0,
+          distanceBucket:      data.distance_bucket ?? '',
+        }, updatedPlan)
         return
       }
 
-      onReshapeReady({
-        reshapeId:           data.reshape_id,
-        summary:             data.summary ?? null,
-        weeksAffected:       data.weeks_affected ?? [],
-        sessionsModified:    data.sessions_modified ?? 0,
-        recoveryWindowWeeks: data.recovery_window_weeks ?? 0,
-        distanceBucket:      data.distance_bucket ?? '',
-      })
+      // No reshape (final-week race, taper-protected, or "keep my plan").
+      onLogOnly(updatedPlan)
     } catch {
       setError('Network error. Check your connection.')
     } finally {
@@ -151,9 +158,8 @@ export default function RaceResultSheet({
     }
   }
 
-  function handleLogOnly() {
-    onLogOnly(buildResult())
-  }
+  const handleLogAndReshape = () => submitResult(true)
+  const handleLogOnly       = () => submitResult(false)
 
   const canSubmit = !!outcome && !submitting
 
