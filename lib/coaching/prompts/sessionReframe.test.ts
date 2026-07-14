@@ -53,8 +53,22 @@ describe('buildSessionReframePrompt — race override (§71 / RACE-DEBRIEF-02)',
     const prompt = buildSessionReframePrompt({
       ...base,
       session: { type: 'long', label: 'Long run', distance_km: 30 } as any,
+      actualDistKm: 30,
     })
     expect(prompt).toMatch(/Pace fade across the run/)
+    expect(prompt).not.toMatch(/RACE OVERRIDE/)
+    expect(prompt).not.toMatch(/ULTRA-DISTANCE EFFORT/)
+  })
+
+  // §72 — ultra-distance non-race long run: fade suppressed, time-on-feet framing.
+  it('ultra-distance long run: drops the pace-fade block, adds the ultra override, no race override', () => {
+    const prompt = buildSessionReframePrompt({
+      ...base,
+      session: { type: 'long', label: 'Ultra long run', distance_km: 55 } as any,
+      actualDistKm: 55,
+    })
+    expect(prompt).toMatch(/ULTRA-DISTANCE EFFORT \(55km\)/)
+    expect(prompt).not.toMatch(/Pace fade across the run/)
     expect(prompt).not.toMatch(/RACE OVERRIDE/)
   })
 })

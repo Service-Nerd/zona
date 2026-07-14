@@ -29,6 +29,7 @@ import type { PaceFadeSummary } from '../paceAnalysis'
 import type { LimiterHypothesis } from '../limiter'
 import { limiterLabel } from '../limiter'
 import { buildRaceNarrativeBlock } from '../raceNarrative'
+import { LIMITER } from '../constants'
 import { buildVoiceHeader } from './voiceRules'
 import type { ReframeTier } from '../reframeTier'
 
@@ -189,9 +190,19 @@ export function buildSessionReframePrompt(input: SessionReframePromptInput): str
   // the CAUSE (sentence 2) must not lean on HR drift / pace fade / zone
   // discipline; the athlete's own account of the race is the truth of it.
   const isRace = session.type === 'race'
+  // §72 — an ultra-distance non-race effort (e.g. a 50km+ long run) is read as
+  // time-on-feet: back-half fade is expected, so the CAUSE must not lean on it.
+  const isUltraEffort = !isRace && actualDistKm != null && actualDistKm >= LIMITER.SUPPRESS_ULTRA_DISTANCE_KM
+  const suppressFade = isRace || isUltraEffort
   // RACE-DEBRIEF-02 — the runner's logged account (authoritative) + un-gated
   // conditions on the race path. Both silently omit when absent.
   const raceNarrativeBlock = isRace ? buildRaceNarrativeBlock(raceResult) : ''
+  // §72 — ultra non-race override for the CAUSE. Race efforts use RACE OVERRIDE.
+  const ultraOverride = isUltraEffort
+    ? `
+ULTRA-DISTANCE EFFORT (${actualDistKm!.toFixed(0)}km) — for sentence 2 (CAUSE), do NOT cite back-half pace fade or late HR drift as a fault: over this distance that is expected physiology (glycogen depletion), not a failure. The cause is the distance itself, or what the runner's note names. Never tell them to "start slower".
+`
+    : ''
   const raceTempBlock = isRace
     ? (tempC != null
         ? `\nConditions: ${tempC.toFixed(0)}°C${tempC >= 28 ? ' (hot)' : tempC >= 22 ? ' (warm)' : tempC <= 0 ? ' (freezing)' : tempC <= 4 ? ' (cold)' : ''}. Heat slows everyone — if the runner's distress is about pace or HR, name the conditions as part of the cause; never frame the heat as a discipline failure.\n`
@@ -348,7 +359,7 @@ RACE OVERRIDE — this session was a RACE, not a training run:
 - Open (sentence 1) by acknowledging the race as an accomplishment. Finishing the distance is the achievement; the time is secondary. This is warmth-as-permission, not cheerleading.
 - Override sentence 2 (CAUSE): do NOT cite HR drift, back-half pace fade, or zone discipline as a fault. A race is run at race effort, and fading over race distance — especially long or ultra — is expected physiology, not a failure. If the runner's note names what actually happened (an injury, the heat, a tactical decision), THAT is the cause — reflect it honestly. Never contradict their account, and never tell them to do something they already did (e.g. "start conservatively" when they did).
 - The mandatory "named data point" for sentence 2 may be the runner's own stated cause or the race distance/effort — it does not have to be a device metric here.
-${raceNarrativeBlock}` : ''}
+${raceNarrativeBlock}` : ''}${ultraOverride}
 ${tierInstruction}
 
 ${FEW_SHOT_EXAMPLES}
@@ -365,7 +376,7 @@ ${hrLine}
 RPE: ${rpe !== null ? rpe : 'not logged'}
 Fatigue: ${fatigueTag ?? 'not logged'}
 ${raceContext ? `Race: ${raceContext}` : 'Race: none set'}
-${trendBlock}${cohortBlock}${isRace ? '' : streamBlock}${isRace ? '' : paceFadeBlock}${previousSimilarBlock}${completionBlock}${rpeBlock}${phaseBlock}${sessionsLoggedBlock}${isRace ? raceTempBlock : tempBlock}${isRace ? '' : limiterBlock}
+${trendBlock}${cohortBlock}${suppressFade ? '' : streamBlock}${suppressFade ? '' : paceFadeBlock}${previousSimilarBlock}${completionBlock}${rpeBlock}${phaseBlock}${sessionsLoggedBlock}${isRace ? raceTempBlock : tempBlock}${suppressFade ? '' : limiterBlock}
 Write the reframe now. 3-4 sentences. Plain text only. No headers.`
 }
 

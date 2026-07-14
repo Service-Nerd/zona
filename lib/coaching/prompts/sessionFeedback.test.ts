@@ -60,10 +60,27 @@ describe('buildSessionFeedbackPrompt — race debrief (§71 / RACE-DEBRIEF-02)',
     const prompt = buildSessionFeedbackPrompt({
       ...base,
       session: { type: 'long', label: 'Long run', distance_km: 30 } as any,
+      actualDistKm: 30,
       verdict: 'off_target' as any,
     })
     expect(prompt).toMatch(/Verdict: off_target/)
     expect(prompt).toMatch(/Pace fade across the run/)
     expect(prompt).not.toMatch(/RACE EFFORT/)
+  })
+
+  // §72 — an ultra-distance NON-race effort keeps its training read but drops the
+  // fade-as-fault citation, framing the run as time-on-feet.
+  it('ultra-distance long run: keeps the verdict, drops the pace-fade citation, frames as time-on-feet', () => {
+    const prompt = buildSessionFeedbackPrompt({
+      ...base,
+      session: { type: 'long', label: 'Ultra long run', distance_km: 55 } as any,
+      actualDistKm: 55,
+      verdict: 'off_target' as any,
+    })
+    expect(prompt).toMatch(/ULTRA-DISTANCE EFFORT \(55km\)/)
+    expect(prompt).toMatch(/time-on-feet/)
+    expect(prompt).not.toMatch(/Pace fade across the run/)
+    expect(prompt).not.toMatch(/RACE EFFORT/)     // not a race — no race debrief
+    expect(prompt).toMatch(/Verdict: off_target/) // still a scored training session
   })
 })

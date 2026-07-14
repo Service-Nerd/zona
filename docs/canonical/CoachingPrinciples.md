@@ -1182,6 +1182,24 @@ Config: `GENERATION_CONFIG.GOAL_SEQUENCING`, `PREP_TIME_THRESHOLDS`. Engine: `li
 
 ---
 
+## 72. An ultra effort is read as time-on-feet — never scored on fade
+
+**Principle.** Over ultra distance, back-half pace fade and late cardiac drift are **expected physiology** — glycogen depletion and accumulated fatigue, not a pacing error or a fitness gap. The coaching surfaces (`sessionFeedback`, `sessionReframe`, and the limiter) must not cite that fade as a fault or tell the runner to "start slower". This applies to any effort at/above the ultra threshold — a race *or* a 50km+ long run — not only to sessions tagged `type === 'race'`.
+
+- The limiter (`lib/coaching/limiter.ts`) returns `null` at/above the threshold — a "muscular" or "aerobic" limiter call is invalid when the distance itself explains the fade.
+- `sessionFeedback` and `sessionReframe` drop the pace-fade / HR-drift *citation* blocks for an ultra effort and frame the run as fatigue-resistance work. A non-race ultra keeps its ordinary training-session read (verdict, cohort, EF); only the fade-as-fault framing is suppressed.
+- This is the debrief-surface complement to the plan-generation ultra doctrine already in force: ultra long runs are protected aerobic time-on-feet (§24e), ultra plans carry their own intensity distribution (§1), peak-volume floors (§46), taper rhythm, and post-race recovery curves (§62).
+
+**Why.** A negative or even split over 100km is the rare exception even in elite fields; fade across the back third is near-universal. An engine that reads that fade as "you went out too hard" or "your legs aren't strong enough" is scientifically illiterate to any experienced ultra runner and destroys credibility with a high-commitment, high-willingness-to-pay segment (Hutchinson, SLT 2026-07-14). It is the same class of error as scoring a race by zone discipline (§70.2) — the wrong yardstick for the effort.
+
+**Config.** The ultra threshold is `GENERATION_CONFIG`-adjacent: `lib/coaching/constants.ts → LIMITER.SUPPRESS_ULTRA_DISTANCE_KM` (50km, the standard ultra floor — beyond the marathon, where fatigue-resistance rather than pace is the demand). Single source, read by the limiter and both prompt builders (INV-CFG-001). Distinct on purpose from `getDistanceBucket`'s recovery-curve boundaries (§62) and `raceKeyFromKm`'s ladder buckets (CA-03) — those answer "which recovery/plan shape?", this answers "is fade a fault here?".
+
+**Test enforcement.** `limiter.test.ts` (ultra-distance → `null`, control just under the threshold still fires), `sessionFeedback.test.ts` / `sessionReframe.test.ts` (ultra-distance non-race effort → no pace-fade citation, time-on-feet framing present).
+
+**Originating decision:** RACE-DEBRIEF-03, 2026-07-14 — Phase 1 silenced the limiter on ultra distance; this principle extends the "fade is expected, not a fault" framing to the AI debrief surfaces for every ultra effort, and backstops the threshold constant (INV-CFG-002).
+
+---
+
 ## 64. Day-level rest — every training week needs at least one rest day
 
 **Principle.** Every plan week must contain at least one rest day (`session.type === 'rest'`). Six-on / one-off is the upper limit for non-elite runners; seven-on is overreaching dressed as commitment. Race week is excluded — the prescribed structure already includes its own rest.

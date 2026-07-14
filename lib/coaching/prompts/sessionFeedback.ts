@@ -6,6 +6,7 @@ import type { PaceFadeSummary } from '../paceAnalysis'
 import type { LimiterHypothesis } from '../limiter'
 import { limiterLabel } from '../limiter'
 import { buildRaceNarrativeBlock } from '../raceNarrative'
+import { LIMITER } from '../constants'
 import { buildVoiceHeader } from './voiceRules'
 
 export interface SessionFeedbackPromptInput {
@@ -130,6 +131,12 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
   // §71 — a race is debriefed, not scored. Suppress the zone/drift/fade
   // citations and the plan-scoring verdict; frame the read as a race debrief.
   const isRace = session.type === 'race'
+
+  // §72 — an ultra-distance effort is read as time-on-feet. Back-half fade over
+  // this distance is expected physiology, not a fault. A non-race ultra effort
+  // keeps its training-session read (verdict, cohort) but drops the
+  // fade-as-fault citations. Race efforts are already handled by isRace.
+  const isUltraEffort = !isRace && actualDistKm >= LIMITER.SUPPRESS_ULTRA_DISTANCE_KM
 
   const weeksToRace = plan.meta.race_date
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
@@ -272,6 +279,14 @@ RACE EFFORT — this session was a race, not a training run. Debrief it; do not 
 ${raceNarrativeBlock}${raceTempBlock}`
     : ''
 
+  // §72 — ultra-distance non-race effort: keep the training read, but frame the
+  // fade as expected and replace the fade-as-fault citation blocks.
+  const ultraEffortBlock = isUltraEffort
+    ? `
+ULTRA-DISTANCE EFFORT (${actualDistKm.toFixed(0)}km) — this is time-on-feet, not a pace session. Back-half pace fade and late HR drift over this distance are expected physiology (glycogen depletion), not a fault. Don't cite the fade as a problem or tell them to "start slower" — read it as the fatigue-resistance work it is.
+`
+    : ''
+
   return `${voiceHeader}
 ${athleteContext ?? ''}
 ${FEW_SHOT_EXAMPLES}
@@ -287,7 +302,7 @@ Actual distance: ${actualDistKm.toFixed(1)}km
 ${paceLine ? paceLine + '\n' : ''}${hrLine}
 ${efLine ? efLine + '\n' : ''}RPE: ${rpe !== null ? rpe : 'not logged'}
 Fatigue: ${fatigueTag ?? 'not logged'}${isRace ? '' : `\nVerdict: ${verdict}`}
-${isRace ? raceDebriefBlock : `${previousSimilarBlock}${streamBlock}${paceFadeBlock}${cohortBlock}${tempBlock}${limiterBlock}`}
+${isRace ? raceDebriefBlock : `${previousSimilarBlock}${isUltraEffort ? ultraEffortBlock : `${streamBlock}${paceFadeBlock}`}${cohortBlock}${tempBlock}${limiterBlock}`}
 Write 2–4 sentences of honest, specific feedback. No headers. No bullet points. Plain text only.`
 }
 
