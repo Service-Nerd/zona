@@ -1200,6 +1200,23 @@ Config: `GENERATION_CONFIG.GOAL_SEQUENCING`, `PREP_TIME_THRESHOLDS`. Engine: `li
 
 ---
 
+## 73. "Are we past plan-week N?" is a date-window question — never an index compare
+
+**Principle.** Any surface reasoning about temporal position relative to a plan week — *is today past the race week? past the taper? past the plan?* — must ask a **date-window predicate**, never compare an index against `getCurrentWeekIndex()`.
+
+- The current-week pointer **saturates at the final week**: `getCurrentWeek()` falls back to the last week once today is past the plan's window, so `getCurrentWeekIndex()` returns the last index forever. A comparison like `currentWeekIndex > raceWeekIdx` is therefore **unreachable when the target week is the last week** — and the goal race is *normally* the final week.
+- The canonical predicates live in `lib/plan.ts`: `isDateWithinWeek(week, date)` (inside the window), `isDatePastWeek(week, date)` (past the window's end), and `isPlanComplete(weeks, date)` (a special case of `isDatePastWeek` on the last week). These are the single owner of "when are we?" reasoning (D-08). No surface reimplements it with index arithmetic.
+
+**Why.** This is the third instance of one bug class: a saturating pointer used to reason about "done vs in-flight." It bit the day boundary (§65 — day-level), the plan-complete surfaces (§70 — daily note + weekly report), and then the **post-race result prompt**: `DashboardClient`'s `postRaceState` (`currentWeekIndex > raceWeekIdx`) and `finishedRace` (`currentWeekIndex <= idx`) both silently never fired when the race was the final week. The knock-on was large and invisible — the `RaceResultSheet` prompt never appeared, so `Week.result_embedded` was never captured, which starved *everything* downstream of it: the CA-03 goal ladder, the AI-DEPTH-08 post-race reshape, and the RACE-DEBRIEF-02 narrative enrichment. A whole shipped post-race surface was dead for the majority (final-week-race) case, and nothing errored — the prompts just never rendered.
+
+**Implementation rule.** `isDatePastWeek(plan.weeks[raceWeekIdx], now)` replaces both index comparisons. When adding any "past week N" check, reach for the predicate. A raw `getCurrentWeekIndex()`-vs-index comparison used to decide "have we passed X" is a defect on sight — grep for it in review.
+
+**Test enforcement.** `lib/planDateWindow.test.ts` — `isDatePastWeek` window boundaries (day before end = false, end day = true) and `isPlanComplete`-via-delegate parity on the last week.
+
+**Originating decision:** POST-RACE-PROMPT-01, 2026-07-14 — surfaced while answering "what race result sheet?" during the RACE-DEBRIEF work: the founder had never seen the post-race prompt because it was gated on the saturating index compare, which also explained why their debrief carried no injury/heat context (no `result_embedded` was ever logged).
+
+---
+
 ## 64. Day-level rest — every training week needs at least one rest day
 
 **Principle.** Every plan week must contain at least one rest day (`session.type === 'rest'`). Six-on / one-off is the upper limit for non-elite runners; seven-on is overreaching dressed as commitment. Race week is excluded — the prescribed structure already includes its own rest.

@@ -10,7 +10,7 @@ import ReflectionInput from '@/components/training/ReflectionInput'
 import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
 import { authedFetch } from '@/lib/supabase/authedFetch'
-import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
+import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, isDatePastWeek, parseLocalDate } from '@/lib/plan'
 import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
@@ -1388,7 +1388,11 @@ export default function DashboardClient() {
       w => w.type === 'race' || (w as any).badge === 'race'
     )
     if (raceWeekIdx < 0) return null
-    const isPostRace = currentWeekIndex > raceWeekIdx
+    // §73 — date-window, not index compare. currentWeekIndex saturates at the
+    // last week once the plan is over, so `currentWeekIndex > raceWeekIdx` never
+    // fires when the race is the final week (the normal case). "Post-race" = the
+    // race week's 7-day window has ended.
+    const isPostRace = isDatePastWeek(plan.weeks[raceWeekIdx], new Date())
     const hasResult  = !!(plan.weeks[raceWeekIdx] as any)?.result_embedded
     if (!isPostRace || hasResult) return null
     return {
@@ -1405,7 +1409,9 @@ export default function DashboardClient() {
   const finishedRace = (() => {
     if (!plan) return null
     const idx = plan.weeks.findLastIndex(w => w.type === 'race' || (w as any).badge === 'race')
-    if (idx < 0 || currentWeekIndex <= idx) return null
+    // §73 — date-window, not index compare (same saturating-pointer bug: CA-03's
+    // goal ladder was dead when the race was the final week, even with a result).
+    if (idx < 0 || !isDatePastWeek(plan.weeks[idx], new Date())) return null
     const result = (plan.weeks[idx] as any)?.result_embedded
     if (!result) return null
     const race: FinishedRace = {

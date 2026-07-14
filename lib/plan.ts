@@ -187,18 +187,35 @@ export function isDateWithinWeek(week: Plan['weeks'][number], date: Date): boole
 }
 
 /**
- * True when `date` is on or after the end of the plan's final week — i.e. the
- * plan is over. The race commonly lives in the last week, so post-race is
- * frequently also plan-complete; there is no "week after" for the current-week
- * pointer to advance into.
+ * True when `date` is on or after the END of `week`'s 7-day window — i.e. today
+ * is past that week. The canonical "are we past plan-week N?" predicate.
+ *
+ * Doctrine (§73): temporal position must be reasoned about with a date-window
+ * predicate, NEVER with an index comparison against `getCurrentWeekIndex()`.
+ * That pointer SATURATES at the final week once today is past the plan
+ * (`getCurrentWeek` falls back to the last week), so `currentWeekIndex > N` is
+ * unreachable when N is the last week — the "in-flight vs done" bug class that
+ * bit the day boundary (§65), the plan-complete surfaces (§70), and the
+ * post-race prompt. Use this predicate instead.
  */
-export function isPlanComplete(weeks: Plan['weeks'], date: Date): boolean {
-  const last = weeks[weeks.length - 1]
-  if (!last) return false
-  const weekStart = parseLocalDate((last as any).date)
+export function isDatePastWeek(week: Plan['weeks'][number], date: Date): boolean {
+  const weekStart = parseLocalDate((week as any).date)
   const weekEnd = new Date(weekStart)
   weekEnd.setDate(weekEnd.getDate() + 7)
   const d = new Date(date)
   d.setHours(0, 0, 0, 0)
   return d >= weekEnd
+}
+
+/**
+ * True when `date` is on or after the end of the plan's final week — i.e. the
+ * plan is over. Special case of {@link isDatePastWeek} on the last week: the
+ * race commonly lives in the last week, so post-race is frequently also
+ * plan-complete; there is no "week after" for the current-week pointer to
+ * advance into.
+ */
+export function isPlanComplete(weeks: Plan['weeks'], date: Date): boolean {
+  const last = weeks[weeks.length - 1]
+  if (!last) return false
+  return isDatePastWeek(last, date)
 }
