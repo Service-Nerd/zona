@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { sendWebPush } from '@/lib/webpush'
 import { sendApnsPush } from '@/lib/apnpush'
 import { getUserTier } from '@/lib/trial'
-import { getCurrentWeekIndex } from '@/lib/plan'
+import { getCurrentWeekIndex, isPlanComplete } from '@/lib/plan'
 import { resolveEffectiveSessions, DAY_KEYS, type DayKey, type SessionOverride } from '@/lib/plan/effectiveSessions'
 import { buildDailyPushTitle, buildDailyPushBody, type NextKeySession } from '@/lib/coaching/voiceLines'
 import { recordNotification } from '@/lib/notifications'
@@ -231,6 +231,12 @@ export async function POST(req: NextRequest) {
 
       const plan = planRes.data?.plan_json as Plan | null
       if (!plan || plan.weeks.length === 0) { skip('no_plan'); continue }
+
+      // Don't push after the plan ends. getCurrentWeekIndex falls back to the
+      // last week when today is past the plan — without this guard the cron
+      // replays the final week's sessions by day-of-week indefinitely.
+      const localToday = new Date(clock.isoDate + 'T00:00:00')
+      if (isPlanComplete(plan.weeks, localToday)) { skip('plan_complete'); continue }
 
       const weekIndex = getCurrentWeekIndex(plan.weeks)
       const week      = plan.weeks[weekIndex]
