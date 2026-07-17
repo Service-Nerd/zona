@@ -136,7 +136,7 @@ export interface Week {
   label: string
   theme: string
   type: WeekType
-  phase?: 'base' | 'build' | 'peak' | 'taper' | 'foundation'
+  phase?: 'base' | 'build' | 'peak' | 'taper' | 'foundation' | 'maintenance_restoration' | 'maintenance_base'
   badge?: 'deload' | 'holiday' | 'race'
   sessions: Partial<Record<'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun', Session>>
   long_run_hrs: number | null

@@ -1334,6 +1334,40 @@ Habit research (Wood) is explicit: friction added to small, frequent decisions c
 
 ---
 
+## 75. Post-race maintenance block — protecting the recovery window
+
+After a goal race, the body's repair work continues well past the finish line. Inflammation markers (CK, IL-6, cortisol) remain elevated for weeks in age-group runners — longer at greater distances, longer with higher RPE, longer after a DNF (incomplete effort plus accumulated load). Running quality sessions into this window produces adaptation in tissue that is not yet ready to adapt; the stimulus lands on a structure still repairing itself, not recovering from it.
+
+**The maintenance block is not optional.** It is not a reward for racing well or a fallback for runners who feel bad. It is the mechanical consequence of what a race does to the body.
+
+**Two phases:**
+
+*Phase 1 — Restoration.* Quality blackout. Easy runs, rest, cross-training only. Volume follows the post-race recovery curve (same curve as the in-plan reshape engine uses, starting from the race week's final week). Duration is distance-keyed, with modifiers for high RPE (≥8: +1 week) and DNF (+1 week). These stack. A 100K DNF at RPE 9 earns 6 weeks of quality blackout.
+
+*Phase 2 — Base.* Quality reintroduced at a controlled rate (1 session per week, mildest catalogue entry). Volume held flat at 70% of plan peak — not ramping, not recovering toward anything. Holding a base. The quality session begins in week 2 of Phase 2, not week 1.
+
+**Why the specific durations (distance-keyed):**
+- 5K/10K: 1 week blackout. Peripheral damage is low; central fatigue resolves in days.
+- HM: 1 week blackout. Muscle glycogen and minor structural stress. ~3 weeks total.
+- Marathon: 2–3 weeks blackout. Substantial glycogen depletion, inflammatory load, eccentric muscle damage. ~6–8 weeks total.
+- 50K: 3 weeks blackout. Ultra loading adds time-on-feet stress beyond marathon pace stress. ~8 weeks total.
+- 100K: 4 weeks blackout. Inflammation markers (CK, IL-6, cortisol) remain elevated 3–4 weeks in age-group runners — the standard literature floor (3 weeks) is the elite case. Non-elites absorbing accumulated fatigue with day-job stress need the extra week. ~10–12 weeks total.
+
+**What is not permitted in Phase 1:** tempo, threshold, intervals, long run, VO2max, any race-specific or ultra-specific catalogue session. These are not optional omissions — they are banned. INV-MAINT-PHASE1-SESSION-TYPES enforces this mechanically.
+
+**What is not permitted in any maintenance week:** race-specific or ultra-specific sessions. The race is over. The maintenance block is not race preparation. INV-MAINT-NO-RACE-SPECIFIC enforces this.
+
+**Volume ceiling in Phase 2:** 75% of plan peak weekly_km (configured at 70% with a 5% mechanical tolerance). This is a hard cap regardless of fitness signals. The runner may feel ready for more. The cap holds anyway.
+
+**Voice register during the block:**
+- Phase 1: flat, factual. One sentence. No race reference after week 2. No forward goal language. DNF register: most restrained in the product — zero pressure, zero forward-looking framing. *"The body doesn't know what it didn't finish. Recover anyway."*
+- Phase 2: quiet and settled. *"Back to base."* Nothing to prove. No celebration of what was.
+- No "great job" framing anywhere in the block. The race happened. This is what comes after.
+
+**Config:** `GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK` — all duration parameters live there. No maintenance numeric is hardcoded. `validateMaintenanceBlock()` in `lib/plan/invariants.ts` enforces all structural invariants mechanically.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

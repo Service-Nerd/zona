@@ -340,6 +340,11 @@ export default function DashboardClient() {
   useEffect(() => {
     try { setNextGoalDismissedSig(localStorage.getItem('zona_next_goal_dismissed')) } catch {}
   }, [])
+  // MAINT-01 — "Base running" quiet card dismissal, keyed by race signature
+  const [maintCardDismissedSig, setMaintCardDismissedSig] = useState<string | null>(null)
+  useEffect(() => {
+    try { setMaintCardDismissedSig(localStorage.getItem('zona_maint_card_dismissed')) } catch {}
+  }, [])
   const [reshapeDismissedAt, setReshapeDismissedAt]   = useState<string | null>(null)
 
   // Next session after activeSessionData — passed to SessionScreen for the "Up next" row.
@@ -1448,6 +1453,40 @@ export default function DashboardClient() {
     setNextGoalDismissedSig(finishedRace.sig)
   }
 
+  // MAINT-01 — "Base running" card visible during the maintenance block, keyed
+  // by the race signature so it re-surfaces for the next race.
+  const maintCardSig = finishedRace?.sig ?? null
+  const showMaintCard = !!(
+    maintCardSig &&
+    maintCardDismissedSig !== maintCardSig &&
+    plan?.weeks.some(w => (w as any).phase === 'maintenance_restoration' || (w as any).phase === 'maintenance_base')
+  )
+  function handleDismissMaintCard() {
+    if (!maintCardSig) return
+    try { localStorage.setItem('zona_maint_card_dismissed', maintCardSig) } catch {}
+    setMaintCardDismissedSig(maintCardSig)
+  }
+
+  // MAINT-01 — auto-generate maintenance block when the plan is complete and the
+  // race result has been logged. Fire-and-forget; the returned plan replaces the
+  // local state so Today screen shows the first maintenance session immediately.
+  // authedFetch never throws on 4xx/5xx — must check res.ok.
+  useEffect(() => {
+    if (!plan || !finishedRace) return
+    const hasMaintenance = plan.weeks.some(
+      w => (w as any).phase === 'maintenance_restoration' || (w as any).phase === 'maintenance_base',
+    )
+    if (hasMaintenance) return
+    void (async () => {
+      const res = await authedFetch('/api/maintenance-block', { method: 'POST' })
+      if (!res.ok) return
+      const data = await res.json().catch(() => null)
+      if (data?.plan) setPlan(data.plan)
+    })()
+  // finishedRace changes when result is logged; plan changes after we setPlan.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan, finishedRace])
+
   // Update to current week once plan loads
   useEffect(() => {
     if (plan) {
@@ -1758,7 +1797,7 @@ export default function DashboardClient() {
     <div style={s}>
 
       <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: `${(bottomNavH ?? 88) + 16}px`, overscrollBehavior: 'none' }}>
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
                   // historical pending rows from repeated test runs (the POST route
@@ -6119,7 +6158,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, onLogRaceResult, onReshapeAccepted, onReshapeDismissed }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, onLogRaceResult, onReshapeAccepted, onReshapeDismissed }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   sessionMetricOverrides: Record<string, 'distance' | 'duration'>
@@ -6170,6 +6209,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   nextGoalData?: { achievement: string; options: NextGoalOption[] } | null
   onPickNextGoal?: (opt: NextGoalOption) => void
   onDismissNextGoal?: () => void
+  /** MAINT-01 — quiet "Base running" card visible during the maintenance block. */
+  showMaintCard?: boolean
+  onDismissMaintCard?: () => void
   onLogRaceResult?: () => void
   onReshapeAccepted?: (plan: Plan) => void
   onReshapeDismissed?: () => void
@@ -6903,6 +6945,35 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 onDismiss={() => onReshapeDismissed?.()}
               />
             )}
+          </div>
+        )}
+
+        {/* MAINT-01: quiet "Base running" card — visible throughout the maintenance
+            block. No ceremony, no push. Rule-engine output (no AIMark). */}
+        {showMaintCard && (
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{
+              background: 'var(--card)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '14px 16px 10px',
+              border: '1px solid var(--line)',
+            }}>
+              <p style={{
+                fontFamily: 'var(--font-ui)',
+                fontSize: '13px',
+                color: 'var(--ink-2)',
+                lineHeight: '1.4',
+                margin: '0 0 10px',
+              }}>
+                Base running while you decide what&apos;s next.
+              </p>
+              <button
+                onClick={onDismissMaintCard}
+                style={{ background: 'none', border: 'none', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', cursor: 'pointer', padding: '4px 0', width: '100%' }}
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
 

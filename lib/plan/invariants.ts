@@ -56,6 +56,13 @@ export const INVARIANT_CODES = [
   'INV-PLAN-FINISH-GOAL-LR-CAP',
   'INV-PLAN-ULTRA-NO-PACE-SEGMENTS',
   'INV-PLAN-WEEK-HAS-REST-DAY',
+  // MAINT-01 — maintenance block invariants (validated by validateMaintenanceBlock,
+  // not by validatePlan — maintenance weeks are not produced by generateRulePlan)
+  'INV-MAINT-PHASE1-SESSION-TYPES',
+  'INV-MAINT-QUALITY-CAP',
+  'INV-MAINT-VOLUME-CEILING',
+  'INV-MAINT-REST-DAY',
+  'INV-MAINT-NO-RACE-SPECIFIC',
 ] as const
 
 /**
@@ -209,6 +216,9 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   const isTimeTarget = input.goal === 'time_target'
 
   for (const w of plan.weeks) {
+    // Maintenance weeks are produced by generateMaintenanceBlock (not generateRulePlan)
+    // and validated separately by validateMaintenanceBlock. Skip them here.
+    if (w.phase === 'maintenance_restoration' || w.phase === 'maintenance_base') continue
     const isRaceWeek = w.type === 'race'
     const sessions = Object.entries(w.sessions) as [Day, Session | undefined][]
     const placedRunning = sessions
@@ -1316,6 +1326,100 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           })
         }
       }
+    }
+  }
+
+  return violations
+}
+
+const PHASE1_SESSION_TYPES = new Set(['easy', 'rest', 'cross-train', 'cross_train'])
+const RACE_SPECIFIC_CATEGORIES = new Set(['race_specific', 'ultra_specific'])
+
+/** Constitutional checks for maintenance weeks (MAINT-01). Called by generateMaintenanceBlock,
+ *  not by validatePlan — maintenance weeks are generated separately from the main plan. */
+export function validateMaintenanceBlock(weeks: import('@/types/plan').Week[], planPeakWeeklyKm: number): Violation[] {
+  const violations: Violation[] = []
+  const qualityTypes = new Set(['tempo', 'threshold', 'intervals', 'quality', 'vo2max', 'cruise'])
+  const volumeCeiling = planPeakWeeklyKm * (GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK.PHASE2_VOLUME_CEILING_PCT / 100)
+
+  for (const w of weeks) {
+    const isPhase1 = w.phase === 'maintenance_restoration'
+    const sessions = Object.entries(w.sessions ?? {}) as [string, import('@/types/plan').Session | undefined][]
+    const placed = sessions.filter(([, s]) => !!s)
+
+    // INV-MAINT-REST-DAY — every maintenance week includes ≥1 rest day (§64 extended)
+    if (!weekHasRestDay(placed.map(([, s]) => s))) {
+      violations.push({
+        code: 'INV-MAINT-REST-DAY',
+        principle_ref: 'CoachingPrinciples §64, §75',
+        severity: 'error',
+        week: w.n,
+        message: 'Maintenance week has no rest day',
+        actual: 0,
+        expected: '>= 1 rest day',
+      })
+    }
+
+    // INV-MAINT-PHASE1-SESSION-TYPES — Phase 1 allows only easy, rest, cross-train
+    if (isPhase1) {
+      for (const [day, s] of placed) {
+        if (!s || s.type === 'rest') continue
+        if (!PHASE1_SESSION_TYPES.has(s.type)) {
+          violations.push({
+            code: 'INV-MAINT-PHASE1-SESSION-TYPES',
+            principle_ref: 'CoachingPrinciples §75',
+            severity: 'error',
+            week: w.n, day,
+            message: `Phase 1 maintenance week contains banned session type: ${s.type}`,
+            actual: s.type,
+            expected: 'easy | rest | cross-train only',
+          })
+        }
+      }
+    }
+
+    // INV-MAINT-QUALITY-CAP — Phase 2 allows at most PHASE2_QUALITY_PER_WEEK quality sessions
+    if (!isPhase1) {
+      const qualityCount = placed.filter(([, s]) => s && qualityTypes.has(s.type)).length
+      const cap = GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK.PHASE2_QUALITY_PER_WEEK
+      if (qualityCount > cap) {
+        violations.push({
+          code: 'INV-MAINT-QUALITY-CAP',
+          principle_ref: 'CoachingPrinciples §75',
+          severity: 'error',
+          week: w.n,
+          message: `Phase 2 maintenance week has ${qualityCount} quality sessions (max ${cap})`,
+          actual: qualityCount,
+          expected: `<= ${cap}`,
+        })
+      }
+    }
+
+    // INV-MAINT-VOLUME-CEILING — Phase 2 weekly volume ≤ 75% of plan peak
+    if (!isPhase1 && w.weekly_km > volumeCeiling) {
+      violations.push({
+        code: 'INV-MAINT-VOLUME-CEILING',
+        principle_ref: 'CoachingPrinciples §75',
+        severity: 'error',
+        week: w.n,
+        message: `Maintenance Phase 2 weekly volume ${w.weekly_km}km exceeds ceiling ${volumeCeiling.toFixed(1)}km`,
+        actual: w.weekly_km,
+        expected: `<= ${volumeCeiling.toFixed(1)}km (75% of plan peak ${planPeakWeeklyKm}km)`,
+      })
+    }
+
+    // INV-MAINT-NO-RACE-SPECIFIC — no race-specific or ultra-specific sessions in any maintenance week
+    for (const [day, s] of placed) {
+      if (!s || !RACE_SPECIFIC_CATEGORIES.has((s as any).category ?? '')) continue
+      violations.push({
+        code: 'INV-MAINT-NO-RACE-SPECIFIC',
+        principle_ref: 'CoachingPrinciples §75',
+        severity: 'error',
+        week: w.n, day,
+        message: `Maintenance week contains race-specific session category: ${(s as any).category}`,
+        actual: (s as any).category,
+        expected: 'no race_specific or ultra_specific sessions in maintenance',
+      })
     }
   }
 

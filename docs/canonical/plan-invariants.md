@@ -46,6 +46,18 @@ Exit 1 on any violation.
 | `INV-PLAN-THEME-MATCHES-PRESCRIPTION` | `CoachingPrinciples §27, §41` | error | Week theme must not contradict its sessions. "Highest volume / fitness is built" requires overload vs prior non-deload week. "Intensity stays" / "feel hard" requires ≥ 1 quality session. Foundation weeks are fully exempt. |
 | `INV-PLAN-FOUNDATION-BLOCK` | `CoachingPrinciples §57` | error | Foundation weeks may only contain `easy`, `rest`, or `cross-train` sessions. Weekly volume must not exceed `current_weekly_km`. Volume increase within the block must not exceed `FOUNDATION_WEEKLY_INCREASE_PCT` (10%) per week. |
 
+## Maintenance block invariants (MAINT-01)
+
+Enforced by `validateMaintenanceBlock()` in `lib/plan/invariants.ts`, called from `generateMaintenanceBlock()`. Maintenance weeks are produced separately from the main plan (not by `generateRulePlan`) so these invariants do not run inside `validatePlan()` — `validatePlan()` skips any week with `phase === 'maintenance_restoration' | 'maintenance_base'`.
+
+| Code | Principle ref | Severity | What it checks |
+|---|---|---|---|
+| `INV-MAINT-REST-DAY` | `CoachingPrinciples §64, §75` | error | Every maintenance week includes ≥1 rest day. Extends §64 to the post-race block. |
+| `INV-MAINT-PHASE1-SESSION-TYPES` | `CoachingPrinciples §75` | error | Phase 1 (`maintenance_restoration`) weeks contain only `easy`, `rest`, or `cross-train`. Any quality/interval/tempo/long session is a violation. |
+| `INV-MAINT-QUALITY-CAP` | `CoachingPrinciples §75` | error | Phase 2 (`maintenance_base`) weeks contain at most `PHASE2_QUALITY_PER_WEEK` (1) quality session. |
+| `INV-MAINT-VOLUME-CEILING` | `CoachingPrinciples §75` | error | Phase 2 weekly volume ≤ 75% of plan peak weekly_km (configured at 70% with 5% mechanical tolerance). Hard cap regardless of fitness signals. |
+| `INV-MAINT-NO-RACE-SPECIFIC` | `CoachingPrinciples §75` | error | No `race_specific` or `ultra_specific` catalogue sessions permitted in any maintenance week. |
+
 ## Reshape-time invariants
 
 `validatePlan()` is the constitutional layer for *plan generation*. The

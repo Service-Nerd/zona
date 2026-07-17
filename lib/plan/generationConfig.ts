@@ -595,6 +595,36 @@ export const GENERATION_CONFIG = {
      */
     WEEK_VOLUME_PCT_THRESHOLD: 15,
   },
+
+  // ── Post-race maintenance block (CoachingPrinciples §75, MAINT-01) ─────────
+  // Duration is distance-keyed. Two phases: quality blackout (Phase 1, restoration)
+  // and base maintenance (Phase 2). Modifiers extend Phase 1 only.
+  //
+  // Phase 1 volume follows POST_RACE_RECOVERY_BY_DISTANCE.volume_curve_pct.
+  // Phase 2 volume is a flat fraction of the plan's peak weekly_km.
+  POST_RACE_MAINTENANCE_BLOCK: {
+    PHASE1_WEEKS_BY_DISTANCE: {
+      '5K': 1, '10K': 1, 'HM': 1, 'MARATHON': 2, '50K': 3, '100K': 4,
+    },
+    PHASE2_WEEKS_BY_DISTANCE: {
+      '5K': 3, '10K': 3, 'HM': 3, 'MARATHON': 5, '50K': 5, '100K': 7,
+    },
+    PHASE2_VOLUME_PCT_OF_PEAK: 70,       // % of plan peak weekly_km — the generation target
+    PHASE2_VOLUME_CEILING_PCT: 75,       // % of plan peak weekly_km — the hard constitutional cap (INV-MAINT-VOLUME-CEILING).
+    // A 5pp buffer above the target absorbs floating-point rounding without
+    // producing spurious violations. Coaches set the target; the ceiling is the
+    // hard backstop. Both are coaching choices — don't inline either.
+    PHASE2_LONG_DAY_PCT: 35,             // % of weekly volume placed on the longer training day (Saturday).
+    // Matches the ~35% long-run share in Phase 1 / Phase 2 base weeks. If a coach
+    // wants flatter distribution, reduce toward 25% (equal share across 4 days).
+    PHASE2_QUALITY_PER_WEEK: 1,          // max quality sessions in Phase 2
+    RPE_BLACKOUT_EXTENSION_THRESHOLD: 8, // rpe >= this → +1 week blackout
+    MARATHON_BLACKOUT_RANGE: [2, 3],     // Marathon Phase 1 min/max; RPE selects upper
+    PHASE3_LAST_WEEKS: 2,                // final N weeks of Phase 2 become Phase 3 (ambient re-engagement)
+    MIN_PEAK_KM_FLOOR: 20,               // floor for plan peak weekly_km when computing maintenance volumes
+    // Prevents degenerate maintenance plans for users who had unusually low peak volume.
+    // A coach would not want a maintenance block below this floor.
+  },
 } as const
 
 // Type helpers — derived from the const object so tables and types stay in sync.

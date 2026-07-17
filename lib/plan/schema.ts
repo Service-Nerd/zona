@@ -74,7 +74,7 @@ export const WeekSchema = z.object({
   label:                z.string(),
   theme:                z.string(),
   type:                 WeekTypeSchema,
-  phase:                z.enum(['base', 'build', 'peak', 'taper']).optional(),
+  phase:                z.enum(['base', 'build', 'peak', 'taper', 'foundation', 'maintenance_restoration', 'maintenance_base']).optional(),
   badge:                z.enum(['deload', 'holiday', 'race']).optional(),
   sessions:             z.record(DayKeySchema, SessionSchema).optional(),
   long_run_hrs:         z.number().nullable(),
