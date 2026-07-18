@@ -24,8 +24,9 @@ const THRESHOLD = 72
 const MAX_PULL = 104
 /** Fraction of raw finger travel that becomes pull distance (rubber feel). */
 const RESISTANCE = 0.5
-/** How long the "Up to date." / error line lingers before collapse (ms). */
-const DONE_HOLD_MS = 750
+/** How long the completion / error beat lingers before collapse (ms). Long
+ *  enough to read the two-line restraint moment, not a whisper that flashes. */
+const DONE_HOLD_MS = 1200
 
 type Status = 'idle' | 'pulling' | 'armed' | 'refreshing' | 'done' | 'error'
 
@@ -152,10 +153,7 @@ export default function PullToRefresh({
     typeof window !== 'undefined' &&
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-  const statusText =
-    status === 'done' ? 'Up to date.'
-    : status === 'error' ? "Couldn't refresh."
-    : null
+  const showStatus = status === 'done' || status === 'error'
 
   return (
     <div
@@ -173,8 +171,7 @@ export default function PullToRefresh({
     >
       {/* Indicator zone — occupies exactly the revealed gap above the content. */}
       <div
-        aria-hidden={statusText == null}
-        role={statusText ? 'status' : undefined}
+        aria-hidden={!showStatus}
         style={{
           position: 'absolute',
           top: 0,
@@ -201,16 +198,23 @@ export default function PullToRefresh({
             animation: working && !reduceMotion ? 'zonna-ptr-pulse 1.1s ease-in-out infinite' : undefined,
           }}
         />
-        {statusText && (
-          <span
-            style={{
-              fontFamily: 'var(--font-ui)',
-              fontSize: '0.75rem',
-              fontWeight: 500,
-              color: 'var(--mute)',
-            }}
-          >
-            {statusText}
+        {/* Done — a two-line restraint beat, not a whisper. Points at release
+            ("nothing left to fetch"), never at the next assignment: this app
+            treats over-triers, so the caught-up state should let you put the
+            phone down, not hand you the next task. */}
+        {status === 'done' && (
+          <span role="status" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px' }}>
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--ink-2)' }}>
+              Up to date.
+            </span>
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', fontWeight: 400, color: 'var(--mute)' }}>
+              Nothing to chase.
+            </span>
+          </span>
+        )}
+        {status === 'error' && (
+          <span role="status" style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', fontWeight: 500, color: 'var(--mute)' }}>
+            Couldn&apos;t refresh.
           </span>
         )}
       </div>

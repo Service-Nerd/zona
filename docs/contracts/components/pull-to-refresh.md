@@ -30,7 +30,8 @@ interface PullToRefreshProps {
 - Thresholds: `THRESHOLD = 72px` (arm), `MAX_PULL = 104px` (resistance ceiling), `RESISTANCE = 0.5`.
 - State machine: `idle → pulling → armed → (release) → refreshing → done | error → idle`.
 - `refreshing` holds the indicator at the rest position and **pulses a neutral moss dot** (`zonna-ptr-pulse`, in `globals.css`). No spinner. The dot is **not** the AIMark sparkle — a data refresh is not model output (provenance honesty).
-- `done`/`error` copy lingers `DONE_HOLD_MS = 750ms`, then the indicator collapses.
+- `done` renders a **two-line restraint beat** — "Up to date." (`--ink-2`, 600) over "Nothing to chase." (`--mute`, 400). Deliberately points at *release* (nothing left to fetch), never at the next assignment: the product treats over-triers, so the caught-up state should let the user put the phone down, not hand them the next task. `error` is a single "Couldn't refresh." line (`--mute`).
+- `done`/`error` beat lingers `DONE_HOLD_MS = 1200ms`, then the indicator collapses. It lives inside the pull affordance and retracts with the gesture — never a self-dismissing toast (N-004).
 - Respects `prefers-reduced-motion` (no pulse animation; static dot).
 - `touchmove` is bound natively as **non-passive** so the pull can `preventDefault`; when not actively pulling it early-returns and normal scrolling is untouched.
 
@@ -42,8 +43,8 @@ interface PullToRefreshProps {
 | pulling | dot fades/scales in with pull progress |
 | armed | dot at full opacity/scale (past threshold) |
 | refreshing | dot pulses at rest position |
-| done | "Up to date." under the dot, 750ms |
-| error | "Couldn't refresh." (`--mute`) under the dot, 750ms |
+| done | two-line beat under the dot — "Up to date." / "Nothing to chase.", 1200ms |
+| error | "Couldn't refresh." (`--mute`) under the dot, 1200ms |
 | disabled | gesture inert (no engagement) |
 
 ## Design Tokens

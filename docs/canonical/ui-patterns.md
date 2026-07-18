@@ -1480,9 +1480,9 @@ The dashboard's manual refresh gesture (PTR-01). Wraps the single dashboard scro
 - Thresholds: arm at 72px, resistance ceiling 104px, damping 0.5. State machine: `idle → pulling → armed → refreshing → done | error → idle`.
 - `touchmove` is bound **non-passive** to `preventDefault` while pulling; when not pulling it early-returns and normal scroll is untouched.
 
-**Copy (brand — restraint, not novelty):** the completion line is the always-true, calm `"Up to date."` — the gesture *teaches* restraint rather than manufacturing something-new-every-pull. Error (offline) is `"Couldn't refresh."` in `--mute`, **never red** (§INV-DS-005). Respects `prefers-reduced-motion` (static dot).
+**Copy (brand — restraint, not novelty):** the completion state is a **two-line beat** — `"Up to date."` over `"Nothing to chase."` — held long enough to read (1200ms), not a whisper. It points at *release* (nothing left to fetch), **never at the next assignment**: this app treats over-triers, so the caught-up state should let you put the phone down, not hand you the next task (deliberately Rory-over-Wood — release, not re-engagement). The gesture *teaches* restraint rather than manufacturing something-new-every-pull. Error (offline) is `"Couldn't refresh."` in `--mute`, **never red** (§INV-DS-005). The beat lives inside the pull affordance and retracts with the gesture — never a self-dismissing toast (N-004). Respects `prefers-reduced-motion` (static dot).
 
-**States (Complete):** idle · pulling · armed · refreshing (pulse) · done ("Up to date.", 750ms) · error ("Couldn't refresh.", 750ms) · disabled (inert during onboarding / before `appReady` / on non-primary screens).
+**States (Complete):** idle · pulling · armed · refreshing (pulse) · done (two-line "Up to date." / "Nothing to chase.", 1200ms) · error ("Couldn't refresh.", 1200ms) · disabled (inert during onboarding / before `appReady` / on non-primary screens).
 
 **Ownership:** the consumer passes its existing scroll ref (so scroll-to-top on screen change keeps working) and owns `onRefresh` (resolve = success, throw = error). `PullToRefresh` is a pure gesture + indicator; it never fetches.
 
