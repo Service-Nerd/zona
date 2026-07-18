@@ -214,3 +214,13 @@ html, body {
   0%, 100% { opacity: 0.4; }
   50%      { opacity: 0.85; }
 }
+
+/* PullToRefresh working state — a neutral moss dot pulse while a manual
+ * refresh (HealthKit sync + re-fetch) is in flight. Deliberately NOT the
+ * AIMark sparkle: a data refresh is not model output, so it must not borrow
+ * the AI-provenance glyph. Pulse (not spin) honours the no-spinner rule.
+ * See components/shared/PullToRefresh.tsx. */
+@keyframes zonna-ptr-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(0.82); }
+  50%      { opacity: 1;   transform: scale(1.12); }
+}

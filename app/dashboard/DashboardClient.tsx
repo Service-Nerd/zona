@@ -58,6 +58,8 @@ import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
 import dynamic from 'next/dynamic'
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
+import PullToRefresh from '@/components/shared/PullToRefresh'
+import { syncOnAppOpen } from '@/lib/health/clientSync'
 const GeneratePlanScreen = dynamic(() => import('./GeneratePlanScreen'), { ssr: false })
 const UpgradeScreen = dynamic(() => import('./UpgradeScreen'), { ssr: false })
 const BenchmarkUpdateScreen = dynamic(() => import('./BenchmarkUpdateScreen'), { ssr: false })
@@ -1793,10 +1795,41 @@ export default function DashboardClient() {
 
   const currentWeek = getCurrentWeek(plan?.weeks ?? [])
 
+  // PTR-01 — pull-to-refresh handler. One more trigger into the existing
+  // resume-path refreshes: force a HealthKit ingest (native) so a just-finished
+  // run lands now, then re-fetch runs, completions, analysis, and the unread
+  // count. Daily-cached coaching (daily note, weekly report) is intentionally
+  // out of scope — it's server-cached per day, so a pull can't change it.
+  // Throwing surfaces the "Couldn't refresh." state; offline is the honest case.
+  const handleRefresh = async () => {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      throw new Error('offline')
+    }
+    if (Capacitor.isNativePlatform()) {
+      try { await syncOnAppOpen() } catch { /* ingest best-effort; still re-fetch below */ }
+    }
+    await Promise.all([
+      refreshHealthKitRuns(),   // also calls refreshCompletions() when HK rows exist
+      refreshRunAnalysis(),
+      refreshCompletions(),     // explicit — covers the no-HK-rows path
+      refreshUnreadNotifications(),
+    ])
+  }
+  // Only the primary nav screens carry the gesture. Detail/checkout screens
+  // (session, post-run, upgrade, notifications) push on top and don't own
+  // refreshable data.
+  const pullToRefreshEnabled =
+    appReady && (screen === 'today' || screen === 'plan' || screen === 'coach' || screen === 'me')
+
   return (
     <div style={s}>
 
-      <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: `${(bottomNavH ?? 88) + 16}px`, overscrollBehavior: 'none' }}>
+      <PullToRefresh
+        scrollRef={scrollContainerRef}
+        onRefresh={handleRefresh}
+        paddingBottom={(bottomNavH ?? 88) + 16}
+        disabled={!pullToRefreshEnabled}
+      >
         {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
@@ -2034,7 +2067,7 @@ export default function DashboardClient() {
         {screen === 'reshape'   && <ReshapeScreen plan={plan} onBack={() => setScreen('me')} onReshapeApplied={(updatedPlan) => { setPlan(updatedPlan); setPendingAdjustment(null); setScreen('today') }} onChecked={(foundChange) => { setLastAdjustmentCheckAt(new Date().toISOString()); setLastAdjustmentCheckFoundChange(foundChange) }} onOpenBenchmark={() => setScreen('benchmark')} />}
         {screen === 'founder'   && <FounderNoteScreen onBack={() => setScreen('me')} />}
         {screen === 'notifications' && <NotificationsScreen onBack={() => setScreen('today')} onNavigate={navigateFromNotificationUrl} onAllRead={() => setUnreadNotifications(0)} />}
-      </div>
+      </PullToRefresh>
 
       {/* Screen guide — first-load popup */}
       {guideScreen && (

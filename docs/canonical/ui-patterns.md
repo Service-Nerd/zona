@@ -1460,6 +1460,36 @@ Reference: `components/shared/NotificationRow.tsx`; `DashboardClient.tsx` → `N
 
 ---
 
+### 30. PullToRefresh
+
+The dashboard's manual refresh gesture (PTR-01). Wraps the single dashboard scroll container so all four primary screens (Today / Plan / Coach / Me) share one implementation. Honest use case: the post-run window — pull to force a HealthKit sync + re-fetch so a just-finished run's verdict appears without backgrounding the app.
+
+```
+        ●                              ← neutral moss dot, pulses while refreshing
+   ─────────────                       ← revealed gap (content translated down)
+   Up to date.                         ← calm, always-true confirmation on success
+```
+
+**Structure:**
+- A neutral `9px --moss` **dot** in the revealed gap above the content. Opacity + scale track pull progress; past threshold it's full.
+- **Refreshing state pulses** (`zonna-ptr-pulse` keyframe in `globals.css`) — never spins. This is the sanctioned substitute for the banned spinner (same rationale as `ai-mark-pulse`), **but deliberately NOT the AIMark sparkle**: a data refresh is not model output, so borrowing the AI-provenance glyph would violate provenance honesty (§16).
+- Content is translated down by the (resistance-damped) pull distance; the dot lives in the gap.
+
+**Interaction:**
+- Engages only from `scrollTop <= 0`, on a predominantly **vertical, downward** drag. Axis lock releases horizontal intent so the week strip (§22) is unaffected, and releases upward drags.
+- Thresholds: arm at 72px, resistance ceiling 104px, damping 0.5. State machine: `idle → pulling → armed → refreshing → done | error → idle`.
+- `touchmove` is bound **non-passive** to `preventDefault` while pulling; when not pulling it early-returns and normal scroll is untouched.
+
+**Copy (brand — restraint, not novelty):** the completion line is the always-true, calm `"Up to date."` — the gesture *teaches* restraint rather than manufacturing something-new-every-pull. Error (offline) is `"Couldn't refresh."` in `--mute`, **never red** (§INV-DS-005). Respects `prefers-reduced-motion` (static dot).
+
+**States (Complete):** idle · pulling · armed · refreshing (pulse) · done ("Up to date.", 750ms) · error ("Couldn't refresh.", 750ms) · disabled (inert during onboarding / before `appReady` / on non-primary screens).
+
+**Ownership:** the consumer passes its existing scroll ref (so scroll-to-top on screen change keeps working) and owns `onRefresh` (resolve = success, throw = error). `PullToRefresh` is a pure gesture + indicator; it never fetches.
+
+Reference: `components/shared/PullToRefresh.tsx`; contract at `docs/contracts/components/pull-to-refresh.md`; consumer `DashboardClient.tsx` → `handleRefresh`.
+
+---
+
 ## Form Fields & Pickers
 
 The canonical user-input controls. **Never build a one-off input, toggle, chip, or time entry inline** — reach for one of these. Before this section existed, the same quantities (a time, a heart rate, an effort) were collected 2–3 different ways across screens; these primitives end that drift. Each lives in `components/shared/` and uses Warm Slate tokens only.
