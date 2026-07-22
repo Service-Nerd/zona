@@ -18,7 +18,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 |---|---|---|---|
 | **W0** | **Measurement** — unlocks everything gated | ~~INSTRUMENT-01~~ ✅ shipped 2026-07-22 | Nothing gated on a number can be evaluated until this exists. Done — see feature-registry. |
 | **W1** ✅ | **Correctness & trust** — cheap, already-decided, protects the one thing we sell | ~~EMAIL-CRON-01~~ ✅ · ~~RESHAPE-FIX-WAVE2B-AUDIT~~ ✅ · ~~OPS-01~~ ✅ · ~~RESHAPE-FIX-WAVE3-PHASE2~~ ✅ | **Wave complete 2026-07-22.** Silent-failure class closed. |
-| **W2** | **Pre-acquisition commercial hygiene** — must land before any paid spend | MON-TRIAL-01 · HR-SYNC-04 | Trivial, gate conversion. Ship before acquisition. |
+| **W2** | **Pre-acquisition commercial hygiene** — must land before any paid spend | MON-TRIAL-01 · ~~HR-SYNC-04~~ ✅ | Trivial, gate conversion. Ship before acquisition. |
 | **W3** | **Complete & deepen what shipped** — highest value-per-effort | MAINT-02 · POST-RUN-REFRAME-02 | Finish the half-built PAID value. Voice-vendor decision gates REFRAME-02. |
 | **W4** | **Competitive access** — start clocks now, build on evidence | CA-08 (Garmin) · CA-02 (Apple Watch) · POST-RUN-03 · Strava-secondary-source | Provisioning/approval clocks are no-regret NOW; L-effort builds gated on acquisition being scheduled. |
 | **W5** | **Product bets, evidence-gated** — don't pull until the named trigger fires | R18 · R22 · R24 · R26 · ENGINE-03/CA-05/R27 · CA-07 · CO-ONE sheet · AI-DEPTH-06 · AI-DEPTH-09 · R19 · R21 · Supplementary slots · Zone-method selector · GTM-11 · DS-04 | Each has an explicit trigger. Building ahead of it is building for a user who doesn't exist. |
@@ -283,11 +283,6 @@ The Vetra → Zonna rename (commits `fda3ff6` + `ba469df`) is complete in code, 
 - ✅ **HR-SYNC-02** — shipped 2026-06-24. See feature-registry.
 
 - ✅ **HR-SYNC-03** — shipped 2026-06-24. See feature-registry.
-
-- 🔲 **[W2]** **HR-SYNC-04 — Pre-purchase copy: "works best with Apple Watch"** *(P2, ~30 min)* — Commercial framing fix (Traynor). One line added to upgrade-screen pre-purchase copy + waitlist landing copy: *"Zonna works best with Apple Watch or a HealthKit-compatible heart-rate strap."* Sets expectation pre-conversion. Reduces the wrong-fit purchases that would churn at the no-HR-card discovery moment. Trivial copy edit. Surfaces: `UpgradeScreen`, marketing site landing, waitlist email confirmation.
-  - **Doctrine fit**: voice-neutral framing (no shame, no upsell pressure). `brand.md` voice rules honoured.
-  - **Depends on**: nothing. Can ship anytime.
-  - **Tier**: FREE-surface copy (gates PAID conversion).
 
 #### HR-SYNC-FUTURES — Swift bridge opportunity register *(not scoped backlog items — a reference list of what HR-SYNC-03's bridge unlocks)*
 
