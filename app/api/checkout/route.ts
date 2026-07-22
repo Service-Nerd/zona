@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Price not configured.' }, { status: 503 })
   }
 
-  const origin = req.headers.get('origin') ?? 'https://rts-training-hub.vercel.app'
+  const origin = req.headers.get('origin') ?? 'https://www.zonna.run'
 
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',

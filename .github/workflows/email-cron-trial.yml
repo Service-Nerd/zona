@@ -7,7 +7,7 @@
 # Required repo secrets (Settings → Secrets and variables → Actions):
 #   CRON_SECRET — same value as the Vercel env var.
 #   VERCEL_URL  — production URL with no trailing slash,
-#                 e.g. https://rts-training-hub.vercel.app
+#                 e.g. https://www.zonna.run
 
 name: email-cron-trial
 

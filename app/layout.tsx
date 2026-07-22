@@ -5,7 +5,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 import CapacitorBoot from '@/components/CapacitorBoot'
 import { BRAND } from '@/lib/brand'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://rts-training-hub.vercel.app'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
 export const metadata: Metadata = {
   title: `${BRAND.name} — ${BRAND.appStoreSubtitle}`,
@@ -57,7 +57,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="theme-color" content="#F3F0EB" />
+        {/* theme-color is browser-chrome, not CSS — can't read a custom property,
+            so it reuses the warm-slate bg literal single-sourced in lib/brand.ts
+            (same non-CSS-surface exception as the OG image). Value === --bg. */}
+        <meta name="theme-color" content={BRAND.og.bg} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

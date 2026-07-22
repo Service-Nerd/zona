@@ -12,7 +12,7 @@
 #                  The route accepts either `Authorization: Bearer <secret>`
 #                  (what Vercel cron would send) or `x-cron-secret`.
 #   VERCEL_URL   — the production URL with no trailing slash, e.g.
-#                  https://rts-training-hub.vercel.app
+#                  https://www.zonna.run
 
 name: push-cron-daily
 
