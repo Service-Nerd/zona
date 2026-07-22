@@ -56,16 +56,22 @@ export async function fetchPlanForUser(
 
   if (planRow?.plan_json) return planRow.plan_json as Plan
 
+  // OPS-01: these migrate-on-read saves are fire-and-forget, but a throw must
+  // not become an unhandled rejection (this module is isomorphic — imported by
+  // client components — so it can't use the service-role recordOpsEvent; the
+  // daily integrity probe backstops the resulting stale state). Surface it.
   if (opts.gistUrl) {
     const plan = await fetchPlanFromUrl(opts.gistUrl)
     if (plan.weeks.length > 0) {
-      void savePlanForUser(userId, plan, supabase)
+      void savePlanForUser(userId, plan, supabase).catch((err) =>
+        console.error('[fetchPlanForUser] gist auto-save failed', err))
       return plan
     }
   }
 
   if (opts.legacyPlanJson && (opts.legacyPlanJson as Plan).weeks?.length > 0) {
-    void savePlanForUser(userId, opts.legacyPlanJson, supabase)
+    void savePlanForUser(userId, opts.legacyPlanJson, supabase).catch((err) =>
+      console.error('[fetchPlanForUser] legacy auto-save failed', err))
     return opts.legacyPlanJson
   }
 

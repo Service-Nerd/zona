@@ -13,6 +13,7 @@ import { computeReshapeMagnitude } from '@/lib/coaching/reshapeMagnitude'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { getCurrentWeekIndex } from '@/lib/plan'
 import { savePlanForUser } from '@/lib/plan'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import { BRAND } from '@/lib/brand'
@@ -395,7 +396,21 @@ export async function POST(req: NextRequest) {
   // For auto-applied adjustments, update the plan immediately
   if (status === 'auto_applied') {
     const updatedPlan = applyAdjustmentToPlan(plan, weekN, proposed.sessionsAfter)
-    await savePlanForUser(user.id, updatedPlan, supabase)
+    // OPS-01: the plan_adjustments row is already written, so if this save
+    // throws we'd have a recorded "auto_applied" adjustment with no matching
+    // plan_json change — the exact 2026-06-26 incident. Record the failure to
+    // ops_events before rethrowing so it's visible without waiting for the
+    // daily integrity probe (or founder dogfooding).
+    try {
+      await savePlanForUser(user.id, updatedPlan, supabase)
+    } catch (err) {
+      await recordOpsEvent(
+        'plan_save_failed',
+        { route: 'adjust-plan', week_n: weekN, message: err instanceof Error ? err.message : String(err) },
+        user.id,
+      )
+      throw err
+    }
 
     // NOTIF-01 — an engine tweak happened *to* the runner without them asking,
     // so tell them: push + durable inbox row. Manual adjustments are excluded —

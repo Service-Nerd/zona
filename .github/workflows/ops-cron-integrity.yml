@@ -1,0 +1,39 @@
+# OPS-01 — daily reshape-integrity probe.
+#
+# Detects the 2026-06-26 incident class: an auto-applied plan reshape that never
+# landed in plan_json (invisible for nine days). Findings are written to the
+# ops_events table for review.
+#
+# Why GitHub Actions instead of vercel.json: Vercel Hobby caps at 2 crons, both
+# already used. See push-cron-daily.yml / email-cron-trial.yml for the rationale.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   CRON_SECRET — same value as the Vercel env var.
+#   VERCEL_URL  — production URL, no trailing slash (e.g. https://www.zonna.run).
+
+name: ops-cron-integrity
+
+on:
+  schedule:
+    # 07:30 UTC daily — offset from the push (:15/:30) and email (08:00) crons.
+    - cron: '30 7 * * *'
+  workflow_dispatch:
+
+jobs:
+  fire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST /api/ops/reshape-integrity
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VERCEL_URL:  ${{ secrets.VERCEL_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ] || [ -z "$VERCEL_URL" ]; then
+            echo "::error::CRON_SECRET and VERCEL_URL secrets must be set."
+            exit 1
+          fi
+          curl -fsS --max-time 60 -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$VERCEL_URL/api/ops/reshape-integrity"
