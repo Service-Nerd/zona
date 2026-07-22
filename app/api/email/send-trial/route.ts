@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email/resend'
 import { buildDay11Email, buildDay14Email, type RunSummary } from '@/lib/email/trialEmailTemplates'
+import { trialDayNumber, decideTrialEmails } from '@/lib/email/trialEmailWindow'
 
 // POST /api/email/send-trial
 //
@@ -16,13 +17,9 @@ import { buildDay11Email, buildDay14Email, type RunSummary } from '@/lib/email/t
 // showed. No scarcity framing. Sounds like the app noticed something.
 //
 // Auth: CRON_SECRET via Authorization: Bearer or x-cron-secret header.
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000
-
-function trialDayNumber(trialStartedAt: string, now: Date): number {
-  const start = new Date(trialStartedAt).getTime()
-  return Math.floor((now.getTime() - start) / MS_PER_DAY) + 1
-}
+//
+// Send windows (nudge + expiry) are stamp-guarded RANGES, not exact-day
+// equality — see lib/email/trialEmailWindow.ts + architectural-principles N-014.
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -86,9 +83,7 @@ export async function POST(req: NextRequest) {
   for (const settings of allSettings ?? []) {
     try {
       const day = trialDayNumber(settings.trial_started_at, now)
-
-      const needsDay11 = day === 11 && !settings.trial_email_day11_sent_at
-      const needsDay14 = day === 14 && !settings.trial_email_day14_sent_at
+      const { needsDay11, needsDay14 } = decideTrialEmails(day, settings)
 
       if (!needsDay11 && !needsDay14) { skipped++; continue }
 
