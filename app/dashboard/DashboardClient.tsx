@@ -10,6 +10,7 @@ import ReflectionInput from '@/components/training/ReflectionInput'
 import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
 import { trackEvent } from '@/lib/analytics'
+import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, isDatePastWeek, parseLocalDate } from '@/lib/plan'
 import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
@@ -301,6 +302,9 @@ export default function DashboardClient() {
   const [disciplineLedger, setDisciplineLedger] = useState<LedgerSnapshot | null>(null)
   const [weeklyReport, setWeeklyReport] = useState<any | null>(null)
   const [pendingAdjustment, setPendingAdjustment] = useState<any | null>(null)
+  // RESHAPE-FIX-WAVE3-PHASE2 — recent silent (auto_applied) adjustments for the
+  // Me-screen "what changed this week" audit surface (§69 honest absorption).
+  const [recentChanges, setRecentChanges] = useState<any[]>([])
   // Readiness check response captured from /api/pre-session-readiness at boot.
   // When `adjustment` is null and `reason` is 'all_clear' / 'no_trigger', the
   // chip on Today renders "Readiness · steady" with the detail (RHR / HRV /
@@ -1072,7 +1076,10 @@ export default function DashboardClient() {
               }
             } catch {}
 
-            const [analysisRes, reportRes, adjustmentsRes, unreadCountRes, phaseSummaryRes, raceReadinessRes, ledgerData] = await Promise.all([
+            // RESHAPE-FIX-WAVE3-PHASE2 — silent auto-applied changes from the last
+            // 14 days for the Me-screen audit surface. Read-only; capped at 10.
+            const recentChangesCutoff = new Date(Date.now() - 14 * 86_400_000).toISOString()
+            const [analysisRes, reportRes, adjustmentsRes, unreadCountRes, phaseSummaryRes, raceReadinessRes, ledgerData, recentChangesRes] = await Promise.all([
               supabase.from('run_analysis').select('week_n, session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5').eq('user_id', user.id),
               supabase.from('weekly_reports').select('*').eq('user_id', user.id).order('week_n', { ascending: false }).limit(1).maybeSingle(),
               supabase.from('plan_adjustments').select('*').eq('user_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
@@ -1089,6 +1096,11 @@ export default function DashboardClient() {
               // doesn't pop in from its own mount fetch. authedFetch never
               // throws on non-2xx, so guard on res.ok and swallow network errors.
               authedFetch('/api/discipline-ledger').then(r => r.ok ? r.json() : null).catch(() => null),
+              supabase.from('plan_adjustments')
+                .select('id, week_n, summary, sessions_before, sessions_after, created_at')
+                .eq('user_id', user.id).eq('status', 'auto_applied')
+                .gte('created_at', recentChangesCutoff)
+                .order('created_at', { ascending: false }).limit(10),
             ])
             if (analysisRes.data) {
               const map: Record<number, Record<string, any>> = {}
@@ -1101,6 +1113,7 @@ export default function DashboardClient() {
             }
             if (reportRes.data) setWeeklyReport(reportRes.data)
             if (adjustmentsRes.data) setPendingAdjustment(adjustmentsRes.data)
+            if (recentChangesRes.data) setRecentChanges(recentChangesRes.data)
             if (typeof unreadCountRes.count === 'number') setUnreadNotifications(unreadCountRes.count)
             if (phaseSummaryRes.data) setPhaseSummary(phaseSummaryRes.data as any)
             if (raceReadinessRes.data) setRaceReadinessNote(raceReadinessRes.data as any)
@@ -2046,7 +2059,7 @@ export default function DashboardClient() {
     //    is better than blocking the HR save.
     void authedFetch('/api/recalibrate-hr', { method: 'POST' })
   } catch {}
-}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} />}
+}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onDone={() => {
@@ -10911,7 +10924,7 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
   )
 }
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, birthYear, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, birthYear, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void
@@ -10939,6 +10952,14 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
    * engine auto-applies a change silently. Drives the tappable "View change" copy.
    */
   hasPendingAdjustment?: boolean
+  /**
+   * Recent silent (auto_applied) plan adjustments from the last 14 days, newest
+   * first. Feeds the "Changed this week" audit surface (RESHAPE-FIX-WAVE3-PHASE2):
+   * sub-threshold changes the engine applied without asking (§69), so honest
+   * absorption requires a passive place to see them. Rows: { id, week_n, summary,
+   * sessions_before, sessions_after, created_at }.
+   */
+  recentChanges?: any[]
 }) {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'delete-account' | 'support' | 'plan-history'>('main')
@@ -10950,6 +10971,26 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
 
   // Plan adjustments — "What we watch for" disclosure
   const [adjustmentsDisclosureOpen, setAdjustmentsDisclosureOpen] = useState(false)
+
+  // RESHAPE-FIX-WAVE3-PHASE2 — per-change dismissal for the "Changed this week"
+  // audit surface, persisted client-side (matches the MAINT-01 dismissable-card
+  // precedent — informational card, no migration). Keyed by adjustment id.
+  const [dismissedChanges, setDismissedChanges] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set()
+    try {
+      const raw = window.localStorage.getItem('zonna_dismissed_changes')
+      return new Set(raw ? (JSON.parse(raw) as string[]) : [])
+    } catch { return new Set() }
+  })
+  const dismissChange = (id: string) => {
+    setDismissedChanges(prev => {
+      const next = new Set(prev)
+      next.add(id)
+      try { window.localStorage.setItem('zonna_dismissed_changes', JSON.stringify(Array.from(next))) } catch {}
+      return next
+    })
+  }
+  const visibleChanges = (recentChanges ?? []).filter((c: any) => !dismissedChanges.has(c.id))
 
   // Relative-time formatter for the "Last checked" row. (The "Recent tweaks"
   // log that also used this was relocated to the notification inbox — NOTIF-01.)
@@ -11364,6 +11405,34 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                         ? `${lastCheckedLabel.charAt(0).toUpperCase() + lastCheckedLabel.slice(1)} · Plan tweaked`
                         : `${lastCheckedLabel.charAt(0).toUpperCase() + lastCheckedLabel.slice(1)} · No changes needed`}
                   </div>
+                </div>
+              )}
+
+              {/* RESHAPE-FIX-WAVE3-PHASE2 — "Changed this week" audit surface.
+                  Sub-threshold adjustments auto-apply silently (§69); this is the
+                  passive, honest place to see what the engine did without asking.
+                  Read-only + dismissable per row. AdjustmentDiff is rule-engine
+                  output (no AIMark); the summary is a factual record line, same
+                  provenance stance as the "Plan tweaked" line above. */}
+              {visibleChanges.length > 0 && (
+                <div style={{ borderBottom: '1px solid var(--line)' }}>
+                  <div style={{ padding: '12px 16px 2px', fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Changed this week
+                  </div>
+                  {visibleChanges.map((c: any) => (
+                    <div key={c.id} style={{ padding: '8px 16px 14px' }}>
+                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', lineHeight: 1.45 }}>
+                        {c.summary}
+                      </div>
+                      <AdjustmentDiff sessionsBefore={c.sessions_before ?? []} sessionsAfter={c.sessions_after ?? []} />
+                      <button
+                        onClick={() => dismissChange(c.id)}
+                        style={{ marginTop: '10px', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--mute)' }}
+                      >
+                        Got it
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
 

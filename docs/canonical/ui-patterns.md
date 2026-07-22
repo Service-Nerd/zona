@@ -407,6 +407,29 @@ Integration: `PlanScreen` → `PlanCalendar` (owns the `onMove` / `onSwap` callb
 
 ---
 
+### 10c. Applied-change audit row (Me screen)
+
+Read-only variant of the adjustment card, in the Me → **Plan adjustments** card under a **"Changed this week"** sub-label. Lists sub-threshold changes the engine auto-applied *without asking* (§69) over the last 14 days — Wood's honest-absorption surface. No Confirm/Reject (it already happened); a single dry **"Got it"** dismiss per row, persisted in `localStorage` (`zonna_dismissed_changes`, keyed by adjustment id — the MAINT-01 dismissable-card precedent, no migration).
+
+```
+CHANGED THIS WEEK
+Eased Thursday's tempo — your last two ran hot.
+  Thu   Tempo 8km  →  Easy 6km
+  Got it
+```
+
+**Structure:**
+- Sub-label: `11px 700 --mute`, uppercase, `0.06em` — mirrors the "Last checked" label in the same card.
+- Summary prose: `13px 400 --ink`, line-height 1.45. Factual record line — **no `<AIMark />`** (same provenance stance as the "Plan tweaked" line above it; the deterministic WHAT is the diff below).
+- `<AdjustmentDiff />` (Pattern 10a) for the per-day before→after — rule-engine, no AIMark.
+- Dismiss: `12px 600 --mute` text button, no chrome.
+
+**Provenance:** never mix the AIMark onto the diff. The whole row reads as a factual audit record, not a coaching moment. **Tier: PAID** (lives in the paid-gated Plan-adjustments section). Empty state: the block is simply absent when there are no undismissed recent changes.
+
+**Pairs with** the NOTIF quietness rule (RESHAPE-FIX-WAVE3-PHASE2): auto-applies no longer push, so this passive surface + the inbox row are how a silent change stays discoverable.
+
+---
+
 ### 11. RestraintCard
 
 The brand's counter-intuitive moment — showing restraint as progress. **Status (ZONE-VIS-02 — May 2026):** the discipline NUMBER moved off Today and now lives on Coach. Today retains the discipline RHETORIC as a single-line moss voice anchor ("Hold the zone.") — see § Voice Anchor Strip below — while the full retrospective metric belongs where retrospection happens. The RestraintCard component itself is not currently rendered; the LedgerCard (LEDGER-01) borrows its visual anatomy, and the share OG card (`app/api/og/weekly-zone-card/route.tsx`) borrows its hierarchy. The component is preserved for those echoes and for any future surface that wants the full card form.
