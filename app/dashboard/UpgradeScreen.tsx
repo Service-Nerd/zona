@@ -251,6 +251,17 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
           ))}
         </div>
 
+        {/* HR-SYNC-04 — pre-purchase expectation-setter. Zone coaching needs an HR
+            stream; state it plainly before the price so wrong-fit buyers self-select
+            out (voice-neutral, no shame). Single source: BRAND.hrRecommendation. */}
+        <div style={{
+          fontFamily: 'var(--font-ui)', fontWeight: 400,
+          fontSize: '0.8125rem', color: 'var(--text-muted)',
+          lineHeight: 1.5, marginTop: '18px',
+        }}>
+          {BRAND.hrRecommendation}
+        </div>
+
         <div style={{ height: '1px', background: 'var(--border-col)', margin: '24px 0' }} />
 
         {/* Pricing — metric pair pattern */}

@@ -141,11 +141,16 @@ export default async function Home() {
           or you walk. We won&apos;t email you to come back.
         </p>
 
+        {/* HR-SYNC-04 — device expectation-setter. Replaces the older, weaker
+            "Apple Watch supported" line: zone coaching needs an HR stream, so
+            "works best with" sets the right pre-download expectation (voice-
+            neutral). Single source: BRAND.hrRecommendation (same line as the
+            in-app UpgradeScreen). */}
         <p style={{
           marginTop: '8px',
           fontSize: '13px', color: 'var(--mute)',
         }}>
-          Works with Apple Health. Apple Watch supported.
+          {BRAND.hrRecommendation}
         </p>
       </section>
 

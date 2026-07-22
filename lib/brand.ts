@@ -45,6 +45,17 @@ export const BRAND = {
   signupSub: '14 days, no limits. After that, you decide.',
 
   /**
+   * HR-SYNC-04 — pre-purchase expectation-setter. Zone coaching needs a heart-rate
+   * stream, and ~73% of logged runs currently arrive without one (INSTRUMENT-01,
+   * v_hr_present_pct). Surfacing this before purchase reduces wrong-fit conversions
+   * that would churn at the no-HR-card moment. Voice-neutral — states, never shames
+   * or upsells. Phrased name-free so it's rename-safe. Surfaces: UpgradeScreen
+   * pre-purchase copy, marketing landing (app/page.tsx). (No waitlist confirmation
+   * email exists yet — carry this line into the launch email when that ships.)
+   */
+  hrRecommendation: 'Works best with an Apple Watch or a heart-rate strap that syncs to Apple Health.',
+
+  /**
    * App Store presence (marketing site). `url` is empty until the app is approved
    * and live — the marketing page renders a "coming soon" badge + waitlist while
    * `url` is falsy, then a live "Download on the App Store" link once it's set.
