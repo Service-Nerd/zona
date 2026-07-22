@@ -9,6 +9,7 @@ import ReflectionInput from '@/components/training/ReflectionInput'
 // Calendar screen retired — CalendarOverlay.tsx renamed to .old.tsx (brand-product-alignment v2)
 import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
+import { trackEvent } from '@/lib/analytics'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, isDatePastWeek, parseLocalDate } from '@/lib/plan'
 import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
@@ -448,6 +449,15 @@ export default function DashboardClient() {
   const [coachNoteSettled, setCoachNoteSettled] = useState(false)
 
   const supabase = createClient()
+
+  // INSTRUMENT-01: record each Coach-screen open (one per navigation into Coach)
+  // for the CO-ONE engagement gate. Fire-and-forget — never blocks or fails the
+  // UI. Fires once per screen→'coach' transition; a null userId (pre-auth) is a
+  // no-op and the effect re-runs to capture the open once the id resolves.
+  useEffect(() => {
+    if (screen === 'coach') trackEvent(supabase, userId, 'coach_open')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen, userId])
 
   // Deep-link target for push notifications. Captured on mount; applied by a
   // separate effect once `plan` has loaded (we need the plan to resolve the
