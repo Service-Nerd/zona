@@ -9,6 +9,7 @@ import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildWeeklyReportPrompt } from '@/lib/coaching/prompts/weeklyReport'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
+import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { getCurrentWeekIndex, isDateWithinWeek } from '@/lib/plan'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
@@ -82,7 +83,11 @@ export async function POST(req: NextRequest) {
   const [completionsRes, analysisRes, prevWeeksRes, prevReportRes] = await Promise.all([
     serviceSupabase
       .from('session_completions')
-      .select('week_n, session_day, status, rpe, fatigue_tag, avg_hr, coaching_flag')
+      // strava_activity_id + apple_health_uuid are needed so isVerifiedCompletion
+      // (RESHAPE-FIX-WAVE2B-AUDIT) recognises an activity-linked run that carries
+      // no RPE/HR (e.g. phone-only Strava) as verified — without them such a real
+      // run would be misclassified as a bare stub and dropped from the count.
+      .select('week_n, session_day, status, rpe, fatigue_tag, avg_hr, coaching_flag, strava_activity_id, apple_health_uuid')
       .eq('user_id', userId)
       .eq('week_n', weekN),
     serviceSupabase
@@ -176,14 +181,21 @@ export async function POST(req: NextRequest) {
     return sum + (s?.distance_km ?? 0)
   }, 0)
 
+  // RESHAPE-FIX-WAVE2B-AUDIT: the completed-session COUNT is an analytic and
+  // must not treat a bare-stub tap as a real session (ADR-011 §3b).
   const sessionsCompleted = completions.filter((c: any) => {
     if (c.status !== 'complete') return false
+    if (!isVerifiedCompletion(c)) return false
     const s = week.sessions[c.session_day as keyof typeof week.sessions]
     return isCountableSession(s)
   }).length
 
   // Sessions on past days that weren't completed — truly missed.
   // Today is never in this list.
+  // NOTE: this set intentionally does NOT filter bare stubs — a "done" tap is
+  // attendance ("I showed up"), so it must not be reported as a MISSED session
+  // even when it carries no data. Verification gates the quality count above,
+  // not the attendance/missed signal here.
   const completedDays = new Set(
     completions
       .filter((c: any) => c.status === 'complete')

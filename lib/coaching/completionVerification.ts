@@ -17,10 +17,19 @@
 // any defensive-write that slips through are filterable at the READ
 // boundary by the six AI-DEPTH-01 coaching surfaces.
 //
-// Audit follow-up tracked as RESHAPE-FIX-WAVE2B-AUDIT in backlog —
-// each of the six surfaces must opt in to verification filtering
-// based on its job. `discipline-ledger` already filters on
-// `coaching_flag` which implies metadata presence; others to review.
+// Read-boundary audit COMPLETE (RESHAPE-FIX-WAVE2B-AUDIT, 2026-07-22):
+//   - daily-coach-note, weekly-report, phase-summary, race-readiness now filter
+//     their completion COUNTS through isVerifiedCompletion.
+//   - analyse-run (422s without an activity ref) and adjust-plan (filters
+//     `.not(fatigue_tag, is, null)`) are self-protecting — documented in place.
+//   - weekly-report's `completedDays` (missed-session detection) intentionally
+//     does NOT filter: a bare "done" tap is attendance, not a miss.
+//
+// ⚠️ GUARDRAIL for any FUTURE consumer: this predicate reads the activity-link
+// columns (strava_activity_id, apple_health_uuid) as verification signals. If
+// your `.select(...)` omits them, an activity-linked run with no RPE/HR (e.g.
+// phone-only Strava) is misclassified as a bare stub and DROPPED. Always select
+// the CompletionVerificationInput columns you rely on before filtering.
 
 export interface CompletionVerificationInput {
   status?:              string | null

@@ -139,6 +139,10 @@ export async function POST(req: NextRequest) {
       .limit(1)
       .maybeSingle(),
     // Recent fatigue tags for Trigger 4 (fatigue_accumulation)
+    // RESHAPE-FIX-WAVE2B-AUDIT: self-protecting against bare stubs — the
+    // `.not('fatigue_tag', 'is', null)` filter already excludes them by
+    // construction (a bare stub has null fatigue_tag), so the fatigue-
+    // accumulation trigger never sees a data-less "done" tap.
     serviceSupabase
       .from('session_completions')
       .select('week_n, session_day, fatigue_tag')

@@ -8,6 +8,7 @@ import { buildDailyCoachNotePrompt } from '@/lib/coaching/prompts/dailyCoachNote
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { achievementLine } from '@/lib/coaching/goalSequencing'
 import { zoneForSessionType } from '@/lib/coaching/zoneRules'
+import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { getCurrentWeekIndex, isDateWithinWeek, isPlanComplete, parseLocalDate } from '@/lib/plan'
 import { resolveEffectiveSessions, slotForOriginalDay, type SessionOverride } from '@/lib/plan/effectiveSessions'
 import type { Plan } from '@/types/plan'
@@ -131,6 +132,11 @@ export async function GET(req: NextRequest) {
   // in the current plan to avoid orphaned completions from old plan versions surfacing.
   const lastCompleted = completions.find((c: any) => {
     if (c.status !== 'complete') return false
+    // RESHAPE-FIX-WAVE2B-AUDIT: a bare-stub tap (no RPE / fatigue / avg_hr /
+    // activity link) is not a real run — never narrate it as "your last
+    // session" (ADR-011 §3b Verified-Completion Rule). Select carries the
+    // link ids + rpe/fatigue/avg_hr, so the helper classifies correctly.
+    if (!isVerifiedCompletion(c)) return false
     const lcWeekCheck = plan.weeks[c.week_n - 1] as any
     const lcSessionCheck = lcWeekCheck?.sessions?.[c.session_day]
     if (!lcSessionCheck) return false  // skip completions whose plan session no longer exists

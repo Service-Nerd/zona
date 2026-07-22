@@ -88,6 +88,10 @@ export async function POST(req: NextRequest) {
       .select('plan_json')
       .eq('user_id', userId)
       .single(),
+    // RESHAPE-FIX-WAVE2B-AUDIT: no bare-stub filter needed here — the handler
+    // 422s unless a strava_activity_id or apple_health_uuid is supplied (see
+    // top of POST), so this route only ever runs for a real linked activity.
+    // This read just enriches that analysis with the user's RPE/fatigue.
     serviceSupabase
       .from('session_completions')
       .select('rpe, fatigue_tag, avg_hr')

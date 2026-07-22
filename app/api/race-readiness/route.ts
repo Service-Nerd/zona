@@ -5,6 +5,7 @@ import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { buildRaceReadinessPrompt } from '@/lib/coaching/prompts/raceReadiness'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
+import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import type { Plan } from '@/types/plan'
 
@@ -87,7 +88,9 @@ export async function POST(req: NextRequest) {
       .neq('source', 'manual'),
     serviceSupabase
       .from('session_completions')
-      .select('week_n, status, session_type, rpe')
+      // RESHAPE-FIX-WAVE2B-AUDIT: verification columns so the completed-session
+      // count excludes bare stubs without dropping an activity-linked no-RPE/HR run.
+      .select('week_n, status, session_type, rpe, fatigue_tag, avg_hr, strava_activity_id, apple_health_uuid')
       .eq('user_id', user.id),
   ])
 
@@ -122,7 +125,9 @@ export async function POST(req: NextRequest) {
   }, 0)
 
   // Completed sessions across the whole plan.
-  const completedSessions = completions.filter((c: any) => c.status === 'complete').length
+  // RESHAPE-FIX-WAVE2B-AUDIT: verified completions only — a bare-stub tap is not
+  // a completed session for readiness analytics (ADR-011 §3b).
+  const completedSessions = completions.filter((c: any) => c.status === 'complete' && isVerifiedCompletion(c)).length
 
   // Zone discipline: avg hr_in_zone_pct from all Strava/AH analyses.
   const zonePcts = analyses

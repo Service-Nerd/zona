@@ -5,6 +5,7 @@ import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { buildPhaseSummaryPrompt } from '@/lib/coaching/prompts/phaseSummary'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
+import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import type { Plan } from '@/types/plan'
 
@@ -68,7 +69,10 @@ export async function POST(req: NextRequest) {
       .neq('source', 'manual'),
     serviceSupabase
       .from('session_completions')
-      .select('week_n, status, session_type')
+      // RESHAPE-FIX-WAVE2B-AUDIT: verification columns so the completion-rate
+      // count below can exclude bare stubs without misclassifying an
+      // activity-linked no-RPE/HR run as one.
+      .select('week_n, status, session_type, rpe, fatigue_tag, avg_hr, strava_activity_id, apple_health_uuid')
       .eq('user_id', user.id),
     // AI-DEPTH-10 — connective tissue across phase transitions. Most recent
     // prior phase summary so the new one can frame "base → build" against
@@ -122,7 +126,11 @@ export async function POST(req: NextRequest) {
 
   // Completion rate: phase weeks only.
   const phaseCompletions = (completionsRes.data ?? []).filter((c: any) => phaseWeekNums.has(c.week_n))
-  const completed  = phaseCompletions.filter((c: any) => c.status === 'complete').length
+  // RESHAPE-FIX-WAVE2B-AUDIT: completion rate counts verified sessions only — a
+  // bare-stub tap is not a completed session for coaching analytics (ADR-011
+  // §3b). The write-gate makes new completions carry ≥ RPE, so this only ever
+  // excludes historical bare stubs.
+  const completed  = phaseCompletions.filter((c: any) => c.status === 'complete' && isVerifiedCompletion(c)).length
   const totalSessions = phaseWeeks.reduce((sum: number, w: any) => {
     const sessions = Object.values((w as any).sessions ?? {}) as any[]
     return sum + sessions.filter((s: any) => s?.type && s.type !== 'rest').length
