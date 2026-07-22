@@ -19,7 +19,7 @@ Supporting strategy: `docs/gtm/go-to-market-plan-2026-06.md` (the GTM playbook �
 **Workstreams:** 🏃 Product · 📣 Go-to-Market & Marketing · 🔁 Growth & Retention · ⚖️ Legal & Ops
 **Status:** 🔲 not started · 🔄 in progress · ✅ done · ⏸️ deferred
 **Sequenced waves:** the open backlog is sequenced into six waves (W0–W6) by the SLT portfolio review (2026-07-22). The wave map + per-item `[Wn]` tags live at the top of `backlog.md` (§ Roadmap Waves). This doc holds the horizon × workstream view; the wave map holds the build order.
-**Last updated:** 2026-07-22 (SLT portfolio review — full open backlog sequenced into Waves W0–W6; wave map + inline `[Wn]` tags added to backlog.md; new item INSTRUMENT-01 (W0 analytics baseline) promoted from the board's finding that four gated items have no measurement)
+**Last updated:** 2026-07-22 (SLT portfolio review + first two waves shipped. **(1)** Full open backlog sequenced into Waves W0–W6 — wave map + inline `[Wn]` tags in backlog.md. **(2)** Shipped, same day: **W0** INSTRUMENT-01 (analytics baseline, live+verified); **W1 complete** — EMAIL-CRON-01, RESHAPE-FIX-WAVE2B-AUDIT, OPS-01, RESHAPE-FIX-WAVE3-PHASE2 (silent-failure class closed); **W2** HR-SYNC-04. Two doctrine guardrails added (N-014, N-015). Remaining W2: MON-TRIAL-01 (App-Store-cycle-gated, ASC-only). All in feature-registry.)
 **Prior update:** 2026-07-17 (MAINT-01 post-race maintenance block added to LATER — SLT reviewed, build decision unanimous; full spec in backlog)
 **Prior update:** 2026-06-24 (HR sync latency absorption SLT-reviewed + committed — HR-SYNC-01/02/03/04 added as priority #7a/b/c after the founder-data evidence that 2/3 recent Watch runs missed HR permanently; Strava approval confirmed not arriving so Layer 2 unconditionally committed; opportunity register `HR-SYNC-FUTURES` captured in backlog for the Swift bridge's wider unlock surface)
 **Prior update:** 2026-06-22 (post-launch wave — shipped ENGINE-02, DS-05, DS-07 A+B, CA-03, ENGINE-03-pre, AUTH-RESET-01, BRAND tech-debt; GTM-09/10 reconciled; cycle coaching SLT-reviewed → deferred behind gates; Plan-restore cancelled)
@@ -35,6 +35,8 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 **`zonna.run` is now a real marketing page** (live 2026-06-03, redesigned 2026-06-04). Sutherland-flavoured positioning pass: tagline elevated to hero kicker, "What's not in the app" anti-feature grid, "Probably not for you if…" counter-positioning, waitlist + trial copy in brand voice, personalisation mechanic preview (wizard → session card), brand statement closes the page alone. SEO fully wired: `robots.txt`, `sitemap.xml`, page-level canonical + OG + 155-char description, `NEXT_PUBLIC_APP_URL=https://zonna.run` in Vercel. Waitlist form live and taking signups. On approval day: set `BRAND.appStore.url` → badge becomes a live download link.
 
 **Acquisition + retention engine:** trial lifecycle emails (GTM-09/10) shipped 2026-06-08 — day-11 nudge + day-14 expiry via Resend, daily GitHub Actions cron. Waitlist capture live. No paid spend — correct at this stage (wait for trial→paid signal first).
+
+**Foundation waves shipped (2026-07-22):** the cheap, high-trust front of the post-launch roadmap is done — **W0 (measurement)** put an owned analytics baseline in place (INSTRUMENT-01: paying-user/trial-conversion/HR-present/Coach-engagement views — first reading, 27.3% of runs have HR at first query), and **W1 (correctness & trust)** closed the silent-failure class (trial-email cron drift, bare-stub analytics pollution, reshape write-failure monitoring, and the reshape Phase-2 quietness/validation/audit surface). Detail: the wave map at the top of `backlog.md` + feature-registry.
 
 ---
 
@@ -93,7 +95,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 | ⛔ | **CA-05** — cycle-aware coaching thin slice | ⛔ | M | **DEFERRED on ENGINE-03** (SLT: the note is the risky part — "the moat is the silence, not the note"; build after a voice review only). |
 | **#7a** | **HR-SYNC-01 + HR-SYNC-02** — HR sync latency absorption (Layer 1) | ✅ | S (~1.5 days) | Shipped 2026-06-24. See feature-registry. |
 | **#7b** | **HR-SYNC-03** — Swift HealthKit bridge (Layer 2) | ✅ | M (~3–5 days) | Shipped 2026-06-24. See feature-registry. |
-| **#7c** | **HR-SYNC-04** — Pre-purchase "works best with Apple Watch" copy | 🔲 | S (~30 min) | **SLT 2026-06-24.** One-line upgrade-screen + landing copy: *"Zonna works best with Apple Watch or a HealthKit-compatible heart-rate strap."* Sets expectation pre-conversion (Traynor). Can ship alongside #7a or independently. FREE-surface copy. |
+| **#7c** | **HR-SYNC-04** — Pre-purchase "works best with Apple Watch" copy | ✅ | S | **Shipped 2026-07-22 (W2).** Single-source `BRAND.hrRecommendation` on `UpgradeScreen` + marketing landing. See feature-registry. |
 | **#8** | **POST-RUN-REFRAME-02** — voice memo reframe input | 🔲 | M (~3d) | PAID. Make Whisper/OpenAI vendor decision — don't let it stay deferred by indecision. *(was #7)* |
 | **#9** | **CA-02** — Apple Watch companion app | 🔲 | L | FREE/PAID. Dedicated sprint. Scope locked: session + zone + HR + one-tap start only. Start Apple Developer provisioning now. *(was #8)* |
 | later | **POST-RUN-03** — rich-media zone push | 🔲 | M | Gated on production APNs. Not before #1–4. |
