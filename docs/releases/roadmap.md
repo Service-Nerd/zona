@@ -18,7 +18,9 @@ Supporting strategy: `docs/gtm/go-to-market-plan-2026-06.md` (the GTM playbook �
 
 **Workstreams:** 🏃 Product · 📣 Go-to-Market & Marketing · 🔁 Growth & Retention · ⚖️ Legal & Ops
 **Status:** 🔲 not started · 🔄 in progress · ✅ done · ⏸️ deferred
-**Last updated:** 2026-07-17 (MAINT-01 post-race maintenance block added to LATER — SLT reviewed, build decision unanimous; full spec in backlog)
+**Sequenced waves:** the open backlog is sequenced into six waves (W0–W6) by the SLT portfolio review (2026-07-22). The wave map + per-item `[Wn]` tags live at the top of `backlog.md` (§ Roadmap Waves). This doc holds the horizon × workstream view; the wave map holds the build order.
+**Last updated:** 2026-07-22 (SLT portfolio review — full open backlog sequenced into Waves W0–W6; wave map + inline `[Wn]` tags added to backlog.md; new item INSTRUMENT-01 (W0 analytics baseline) promoted from the board's finding that four gated items have no measurement)
+**Prior update:** 2026-07-17 (MAINT-01 post-race maintenance block added to LATER — SLT reviewed, build decision unanimous; full spec in backlog)
 **Prior update:** 2026-06-24 (HR sync latency absorption SLT-reviewed + committed — HR-SYNC-01/02/03/04 added as priority #7a/b/c after the founder-data evidence that 2/3 recent Watch runs missed HR permanently; Strava approval confirmed not arriving so Layer 2 unconditionally committed; opportunity register `HR-SYNC-FUTURES` captured in backlog for the Swift bridge's wider unlock surface)
 **Prior update:** 2026-06-22 (post-launch wave — shipped ENGINE-02, DS-05, DS-07 A+B, CA-03, ENGINE-03-pre, AUTH-RESET-01, BRAND tech-debt; GTM-09/10 reconciled; cycle coaching SLT-reviewed → deferred behind gates; Plan-restore cancelled)
 
