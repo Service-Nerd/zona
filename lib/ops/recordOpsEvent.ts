@@ -10,6 +10,7 @@ import { createClient } from '@supabase/supabase-js'
 export type OpsEventKind =
   | 'plan_save_failed'          // savePlanForUser threw on a server reshape/write path
   | 'plan_integrity_mismatch'   // an auto_applied adjustment never landed in plan_json (probe)
+  | 'reshape_invalid'           // a reshaped plan failed a constitutional invariant (prod soft-degrade)
 
 /**
  * Record an internal ops event. Fire-and-forget by nature but awaitable, so a

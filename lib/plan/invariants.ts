@@ -1332,6 +1332,42 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   return violations
 }
 
+/**
+ * Reshape-time constitutional check (RESHAPE-FIX-WAVE3-PHASE2).
+ *
+ * `validatePlan` needs a `GeneratorInput`, which the reshape path doesn't have.
+ * Derive a best-effort one from `plan.meta` (persisted at generation precisely
+ * so the R20 reshaper can operate without re-asking — see PlanMeta). Fields not
+ * stored on meta (`current_weekly_km`, `longest_recent_run_km`,
+ * `days_cannot_train`, `max_weekday_mins`) are left empty; every invariant that
+ * reads them is guarded (`> 0` / optional) and self-skips, so this NEVER
+ * produces a false violation. Net effect: all structural per-week invariants
+ * (rest day, race-week sharpening, min distance, long-run cap, quality caps,
+ * quality/long spacing) are enforced at reshape time; only the generation-time
+ * volume-progression and blocked-days invariants are skipped — a within-week
+ * reshape doesn't alter those, and the reshape builders respect blocked days at
+ * construction.
+ */
+export function validateReshapedPlan(plan: Plan): Violation[] {
+  const m = plan.meta
+  const input: GeneratorInput = {
+    race_date:             m.race_date,
+    race_distance_km:      m.race_distance_km,
+    goal:                  m.goal ?? 'finish',
+    current_weekly_km:     0,   // not on meta — dependent invariants self-skip on 0
+    longest_recent_run_km: 0,   // not on meta — dependent invariants self-skip on 0
+    days_available:        m.days_available ?? 7,
+    age:                   m.age ?? 40,
+    fitness_level:         m.fitness_level,
+    training_age:          m.training_age,
+    injury_history:        m.injury_history,
+    hard_session_relationship: m.hard_session_relationship,
+    benchmark:             m.benchmark,
+    days_cannot_train:     [], // not on meta — blocked-days invariant skipped (see doc)
+  }
+  return validatePlan(plan, input)
+}
+
 const PHASE1_SESSION_TYPES = new Set(['easy', 'rest', 'cross-train', 'cross_train'])
 const RACE_SPECIFIC_CATEGORIES = new Set(['race_specific', 'ultra_specific'])
 

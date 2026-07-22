@@ -13,6 +13,7 @@ import { computeReshapeMagnitude } from '@/lib/coaching/reshapeMagnitude'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { getCurrentWeekIndex } from '@/lib/plan'
 import { savePlanForUser } from '@/lib/plan'
+import { validateReshapedPlan } from '@/lib/plan/invariants'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
@@ -368,6 +369,26 @@ export async function POST(req: NextRequest) {
   const requiresConfirmation = isManual || magnitude === 'high'
   const status = requiresConfirmation ? 'pending' : 'auto_applied'
 
+  // RESHAPE-FIX-WAVE3-PHASE2 (Hutchinson) — run the constitutional layer on the
+  // reshaped plan BEFORE persisting the adjustment. Compute the prospective plan
+  // once here (reused by the auto-apply save below). Dev/test: error-severity
+  // violations throw so property/matrix tests fail loudly. Prod: record to
+  // ops_events + soft-degrade (don't break the runner's flow), mirroring
+  // generateRulePlan's constitutional-review posture.
+  const updatedPlan = applyAdjustmentToPlan(plan, weekN, proposed.sessionsAfter)
+  const reshapeErrors = validateReshapedPlan(updatedPlan).filter(v => v.severity === 'error')
+  if (reshapeErrors.length > 0) {
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+      throw new Error(`reshape produced invalid plan: ${reshapeErrors.map(v => v.code).join(', ')}`)
+    }
+    await recordOpsEvent(
+      'reshape_invalid',
+      { route: 'adjust-plan', week_n: weekN, violations: reshapeErrors.map(v => ({ code: v.code, week: v.week, message: v.message })) },
+      user.id,
+    )
+    console.error('[adjust-plan] reshape validation failed', reshapeErrors)
+  }
+
   const adjustmentRow = {
     user_id:         user.id,
     week_n:          weekN,
@@ -393,9 +414,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to save adjustment' }, { status: 500 })
   }
 
-  // For auto-applied adjustments, update the plan immediately
+  // For auto-applied adjustments, update the plan immediately (updatedPlan was
+  // computed + constitutionally validated above).
   if (status === 'auto_applied') {
-    const updatedPlan = applyAdjustmentToPlan(plan, weekN, proposed.sessionsAfter)
     // OPS-01: the plan_adjustments row is already written, so if this save
     // throws we'd have a recorded "auto_applied" adjustment with no matching
     // plan_json change — the exact 2026-06-26 incident. Record the failure to
@@ -412,17 +433,15 @@ export async function POST(req: NextRequest) {
       throw err
     }
 
-    // NOTIF-01 — an engine tweak happened *to* the runner without them asking,
-    // so tell them: push + durable inbox row. Manual adjustments are excluded —
-    // the user made that change themselves; pushing it back is noise.
+    // RESHAPE-FIX-WAVE3-PHASE2 (NOTIF quietness) — an auto-applied adjustment is
+    // sub-threshold by construction (§69: high-magnitude changes route to
+    // `pending` and DO push, below). A lock-screen ping for a small silent trim
+    // is notification noise, so we no longer push here. Visibility stays passive
+    // and discoverable: the durable inbox row below + the Me-screen "what changed
+    // this week" audit surface. Manual adjustments are the user's own change —
+    // no inbox row either.
     if (!isManual) {
       const url = '/dashboard?screen=plan'
-      void notifyUser(user.id, {
-        title: BRAND.push.planAdjusted,
-        body:  explanationText,
-        tag:   'plan-adjustment',
-        data:  { url },
-      })
       void recordNotification(user.id, {
         type:  'plan_adjustment',
         title: BRAND.push.planAdjusted,
