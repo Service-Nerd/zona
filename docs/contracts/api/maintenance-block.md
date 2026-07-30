@@ -2,7 +2,7 @@
 
 **Method:** POST  
 **Auth:** Bearer token required (uses service-role client — safe for native iOS where cookie session is absent). Returns 401 if unauthenticated.  
-**Gate:** None — plan structure generation is FREE. AI coaching voice enrichment is PAID (`maintenance_coaching` gate, not yet wired in v1).
+**Gate:** None for structure — plan structure generation is FREE and always runs. AI coaching voice enrichment is PAID, gated by `maintenance_coaching` (MAINT-02, wired 2026-07-30). Trial/paid users get enriched maintenance weeks; free/expired users get the rule-engine block unchanged. Enricher failure is silent (ADR-006) — the block is always returned regardless.
 
 ## Request body
 
@@ -31,6 +31,8 @@ If condition 3 fails, the route is **idempotent** — returns `{ plan, skipped: 
 }
 ```
 
+For trial/paid users the appended maintenance weeks additionally carry AI voice: each session gets `coach_notes`, and each week gets a `coach_debrief` string (one flat, factual sentence per §75). `coach_debrief` is absent when the user is free/expired or the enricher failed.
+
 ## Response — 200 (skipped — already generated)
 
 ```json
@@ -58,6 +60,7 @@ If condition 3 fails, the route is **idempotent** — returns `{ plan, skipped: 
 ## Architecture notes
 
 - Generator lives in `lib/plan/maintenance.ts → generateMaintenanceBlock()`. Pure function, no AI calls.
+- AI enricher lives in `lib/plan/enrichMaintenance.ts → enrichMaintenanceBlock()` (MAINT-02). Called by the route after generation, only when `isFeatureAllowed('maintenance_coaching', tier)`. Same hybrid pattern as `lib/plan/enrich.ts` — Haiku (`ANTHROPIC_MODEL`), Zod-validated output, silent failure returns the rule-engine weeks unchanged. Adds `coach_notes` per session + `coach_debrief` per week. Voice register locked in §75. Rendered on the Today maintenance card with a `CoachByline` + moss rail (Pattern 16b); the rule-engine fallback line carries no provenance mark.
 - Maintenance weeks carry `phase: 'maintenance_restoration'` (Phase 1) or `phase: 'maintenance_base'` (Phase 2).
 - Durations are distance-keyed; modifiers for RPE ≥ 8 (+1 week) and DNF (+1 week) stack.
 - All coaching numerics live in `GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK`.

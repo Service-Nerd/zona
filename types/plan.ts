@@ -150,6 +150,13 @@ export interface Week {
    *  webhooks). Consumed by AI-DEPTH-08 (post-race reshape) and any future
    *  retrospective surfaces. Null/undefined = race not yet run or not logged. */
   result_embedded?: RaceResult | null
+
+  /** MAINT-02 — AI-generated weekly debrief for post-race maintenance weeks.
+   *  PAID (gated by `maintenance_coaching`). One flat, factual sentence per §75
+   *  voice register. Distinct from `theme` (rule-engine, no AIMark) so the render
+   *  layer can mark only this AI copy. Absent when the enricher is skipped or fails
+   *  (silent — ADR-006). Only ever populated on maintenance_restoration/base weeks. */
+  coach_debrief?: string
 }
 
 /** AI-DEPTH-07 — race-day result envelope.

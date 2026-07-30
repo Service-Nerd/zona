@@ -6287,6 +6287,14 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   const completions = allCompletions[weekNum] ?? {}
   const [showManualLog, setShowManualLog] = useState(false)
 
+  // MAINT-02 — AI weekly debrief for the viewed maintenance week (PAID; present
+  // only when the enricher ran). Distinct from the rule-engine card copy so the
+  // provenance byline marks only the model output.
+  const maintDebrief =
+    currentWeek.phase === 'maintenance_restoration' || currentWeek.phase === 'maintenance_base'
+      ? currentWeek.coach_debrief
+      : undefined
+
   // POST-RUN-01: retroactive RPE nudges. Sessions auto-completed via the
   // webhook (strava_activity_id set, status='complete') but missing RPE in the
   // last 7 days. Tap → PostRunScreen with the analysis pre-loaded. Capped at
@@ -7004,25 +7012,49 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           </div>
         )}
 
-        {/* MAINT-01: quiet "Base running" card — visible throughout the maintenance
-            block. No ceremony, no push. Rule-engine output (no AIMark). */}
+        {/* MAINT-01/02: quiet "Base running" card — visible throughout the
+            maintenance block. No ceremony, no push. When the AI enricher (MAINT-02,
+            PAID) has written a weekly debrief, the card carries Kit's voice with a
+            CoachByline + moss rail (Pattern 16b); otherwise it shows the rule-engine
+            line with NO provenance mark. AIMark marks the enriched copy only. */}
         {showMaintCard && (
           <div style={{ marginBottom: '16px' }}>
             <div style={{
+              position: 'relative',
               background: 'var(--card)',
               borderRadius: 'var(--radius-lg)',
-              padding: '14px 16px 10px',
+              padding: maintDebrief ? '14px 16px 10px 19px' : '14px 16px 10px',
               border: '1px solid var(--line)',
+              overflow: 'hidden',
             }}>
-              <p style={{
-                fontFamily: 'var(--font-ui)',
-                fontSize: '13px',
-                color: 'var(--ink-2)',
-                lineHeight: '1.4',
-                margin: '0 0 10px',
-              }}>
-                Base running while you decide what&apos;s next.
-              </p>
+              {maintDebrief ? (
+                <>
+                  {/* Moss left rail — canonical AI-card signal (Pattern 16b) */}
+                  <span style={{
+                    position: 'absolute', left: '8px', top: '14px', bottom: '34px',
+                    width: '3px', borderRadius: '2px', background: 'var(--moss)',
+                  }} />
+                  <div style={{ marginBottom: '8px' }}>
+                    <CoachByline color="moss" role="Maintenance" />
+                  </div>
+                  <p style={{
+                    fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)',
+                    lineHeight: '1.45', margin: '0 0 10px',
+                  }}>
+                    {maintDebrief}
+                  </p>
+                </>
+              ) : (
+                <p style={{
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: '13px',
+                  color: 'var(--ink-2)',
+                  lineHeight: '1.4',
+                  margin: '0 0 10px',
+                }}>
+                  Base running while you decide what&apos;s next.
+                </p>
+              )}
               <button
                 onClick={onDismissMaintCard}
                 style={{ background: 'none', border: 'none', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', cursor: 'pointer', padding: '4px 0', width: '100%' }}

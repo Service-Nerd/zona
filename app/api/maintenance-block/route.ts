@@ -12,7 +12,10 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { fetchPlanForUser, savePlanForUser } from '@/lib/plan'
 import { generateMaintenanceBlock } from '@/lib/plan/maintenance'
+import { enrichMaintenanceBlock } from '@/lib/plan/enrichMaintenance'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
+import { getUserTier } from '@/lib/trial'
+import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import type { Plan } from '@/types/plan'
 
 export async function POST(req: NextRequest) {
@@ -82,6 +85,19 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error('[maintenance-block] generation failed:', err)
     return NextResponse.json({ error: 'Maintenance block generation failed' }, { status: 500 })
+  }
+
+  // ── 5b. AI voice enrichment (PAID — MAINT-02) ─────────────────────────────────
+  // Gated by `maintenance_coaching`. Adds per-session coach_notes + a per-week
+  // coach_debrief. Enricher failure is silent — returns rule-engine weeks unchanged
+  // (ADR-006 hybrid pattern). Free/expired users keep the rule-engine block as-is.
+  const tier = await getUserTier(user.id)
+  if (isFeatureAllowed('maintenance_coaching', tier)) {
+    maintWeeks = await enrichMaintenanceBlock(maintWeeks, {
+      raceResult,
+      raceName:       plan.meta.race_name,
+      raceDistanceKm: plan.meta.race_distance_km,
+    })
   }
 
   // ── 6. Append to plan and save ───────────────────────────────────────────────

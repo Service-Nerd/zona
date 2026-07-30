@@ -38,6 +38,7 @@ export const FEATURE_GATES = {
     'strength_sessions_tailored', // R21 tailored strength (when shipped)
     'race_time_estimates',        // estimated race times from VDOT / Strava aerobic pace
     'post_run_reframe',           // POST-RUN-REFRAME-01 — text/voice reflection + AI reframe
+    'maintenance_coaching',       // MAINT-02 — AI voice on the post-race maintenance block (per-session notes + weekly debrief)
   ],
 
   // Note (R23-D6 resolution, 2026-04-25): `new_plan_generation` was previously
