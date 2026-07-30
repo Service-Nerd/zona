@@ -5019,6 +5019,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
   const [minutes, setMinutes] = useState(initMinutes)
   const [seconds, setSeconds] = useState(0)
   const [notes, setNotes]   = useState('')
+  const [avgHr, setAvgHr]   = useState<number | null>(null)   // DS-06 — optional
   const [rpe, setRpe]       = useState<number | null>(null)
   const [fatigueTag, setFatigueTag] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -5088,6 +5089,39 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,week_n,session_day' })
       setSavedStep(true)
+
+      // DS-06 — store the run as a source='manual' row in the activity log (so it
+      // counts in history / R25 cohorts / load) and trigger metric scoring
+      // (distance/pace + coarse avg-HR read; PAID computes scores, FREE stays
+      // RPE-only). Both fire-and-forget: the completion above is the durable
+      // "done" state. Deterministic manual_uuid per session → re-logs/edits
+      // upsert the same row rather than piling up duplicates.
+      const durationS = hours * 3600 + minutes * 60 + seconds
+      if (distKm > 0 && durationS > 0) {
+        void authedFetch('/api/health/ingest', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source:          'manual',
+            manualUuid:      `manual-w${weekN}-${key}`,
+            startDate:       new Date().toISOString(),
+            distanceMeters:  Math.round(distKm * 1000),
+            durationSeconds: durationS,
+            avgHeartRate:    avgHr ?? undefined,
+            name:            notes || undefined,
+          }),
+        }).catch(() => {})
+        void authedFetch('/api/analyse-run/manual', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            week_n:       weekN,
+            session_day:  key,
+            session_type: sessionType ?? 'run',
+            distance_km:  +distKm.toFixed(2),
+            duration_s:   durationS,
+            avg_hr:       avgHr ?? null,
+          }),
+        }).catch(() => {})
+      }
     } catch {} finally { setSaving(false) }
   }
 
@@ -5350,6 +5384,35 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
                 <Stepper label="sec" value={seconds} min={0} max={59} step={5} onChange={setSeconds} pad />
               </div>
             </div>
+
+            {/* Average HR — DS-06, optional. Stored on the run; unlocks a coarse
+                zone-discipline read in the coaching card. 16px font avoids the
+                iOS focus-zoom trap. */}
+            {!accumulate && (
+              <div style={{ marginBottom: '20px' }}>
+                <div style={labelStyle}>Average HR <span style={{ textTransform: 'none', letterSpacing: 0, opacity: 0.6, fontSize: '10px' }}>optional · bpm</span></div>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="—"
+                  value={avgHr ?? ''}
+                  onChange={e => {
+                    const v = parseInt(e.target.value, 10)
+                    setAvgHr(Number.isFinite(v) ? Math.min(240, Math.max(60, v)) : null)
+                  }}
+                  style={{
+                    width: '100%', background: 'var(--bg)',
+                    border: '0.5px solid var(--border-col)', borderRadius: '8px',
+                    padding: '12px', color: 'var(--text-primary)',
+                    fontFamily: 'var(--font-ui)', fontSize: '16px',
+                    outline: 'none', boxSizing: 'border-box',
+                  }}
+                />
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  From your watch or chest strap, if you had one.
+                </div>
+              </div>
+            )}
 
             {/* Notes */}
             <div style={{ marginBottom: '20px' }}>

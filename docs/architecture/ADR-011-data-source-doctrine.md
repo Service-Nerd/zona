@@ -21,6 +21,12 @@ Sections §2, §3, §4, §5, §Alternatives, and §New Architectural Invariants 
 
 ---
 
+## Amendment Note (2026-07-30) — Manual entry realised (DS-06)
+
+The §Gaps "manual run entry with distance + optional avg HR" near-term item shipped. A runner with no device (web/Android, or an iPhone-only runner with no Apple Watch / chest strap) can now hand-enter a run's distance, duration, and optional average HR. See §4b (manual insert path) and the updated §5 manual-only row. The `source='manual'` arm of the activity log — long documented in §2 — is now actually written.
+
+---
+
 ## Context
 
 Zonna ingests run data from two external sources today: **Strava** (OAuth webhook) and **Apple HealthKit** (Capacitor plugin on iOS). A third path — **manual completion** (RPE + fatigue tag only) — exists for users without any device integration.
@@ -113,6 +119,14 @@ The HK-SOR doctrine collapses most conflict logic. There is no peer-vs-peer arbi
 
 **The canonical owner of this logic is `lib/coaching/healthkitConsolidate.ts`.** No other code path may insert or merge run data. Direct writes to `strava_activities` outside of `/api/health/ingest` and the consolidate helper are doctrine violations.
 
+### 4b. Manual Entry Insert Path (DS-06, 2026-07-30)
+
+A hand-entered run enters the activity log as a `source='manual'` row. This preserves INV-DATA-008's single-gateway rule: the insert goes through **`/api/health/ingest`** (a manual branch that returns before any HealthKit machinery), not a new route. Migration `20260730_manual_activity_source.sql` widens the `strava_activities` source CHECK to admit `'manual'` and adds a client-generated `manual_uuid` dedupe key (deterministic per session — `manual-w{week}-{day}` — so re-logs/edits upsert one row).
+
+- **FREE to log, PAID to score.** Storing the row (distance/duration/avg-HR) is free — it makes the run count in history, R25 cohorts, and load. The richer scoring (distance/pace + coarse avg-HR read) is gated on `activity_intelligence` and computed by `/api/analyse-run/manual` via the pure `scoreSession` scorer. Free users keep the RPE-only manual verdict.
+- **Coarse HR, honestly.** A hand-typed average HR is a single number, not a stream — so `hr_in_zone_pct` and the zone histogram stay **null**. The coarse "avg HR vs the session's band" read is `scoreSession`'s existing `hr_target`-ceiling fallback. Copy never claims time-in-zone.
+- **No cross-source dedup (accepted limitation).** The manual branch does not run `consolidateIncomingHealthKitRow`. Manual entry targets users with **no device**, so a colliding Strava/HK row for the same run is not the expected case. If a device is later added and a real duplicate appears, it is a known, low-frequency edge — not silently merged.
+
 ### 5. Expected Experience by Configuration
 
 Under HK-SOR, the deciding question is **"does HealthKit have HR samples for the run window?"** — not "is Strava connected?". Strava connection only adds `splits_metric` + `avg_temp_c` on top of an existing HK row.
@@ -124,8 +138,8 @@ Under HK-SOR, the deciding question is **"does HealthKit have HR samples for the
 | iOS + HR chest strap (writes to HealthKit) | ✅ Full | ✅ Full | ⚠️ Only what the device writes to HK | ✅ Triggers fire |
 | iOS + no HR device (Strava-on-phone only) | ⚠️ Workout shell only (distance, duration) — **no HR** | ❌ Absent (Strava does not push HR into HealthKit) | ⚠️ RHR/HRV/sleep if passive HR exists | ⚠️ Load + fatigue triggers only |
 | iOS + no HR device + Strava connected | ⚠️ Workout shell + splits + temp — **still no HR** | ❌ Absent (same root cause) | ⚠️ As above | ⚠️ Load + fatigue triggers only |
-| iOS + no Apple Health connection (manual only) | ⚠️ RPE + fatigue only | ❌ Absent | ❌ Absent | ⚠️ Fatigue triggers only |
-| Web / Android | **Out of scope for v1.** No HealthKit available. See §Gaps. | — | — | — |
+| iOS + no Apple Health connection (manual only) | ⚠️ RPE + fatigue, or hand-entered distance/duration/avg-HR (DS-06) | ⚠️ Coarse avg-HR-vs-band read if HR entered (PAID); else absent | ❌ Absent | ⚠️ Fatigue triggers only |
+| Web / Android | ⚠️ Manual entry only (DS-06) — distance/duration/avg-HR by hand; no passive ingest. | ⚠️ Coarse avg-HR read (PAID) if entered | ❌ Absent | ⚠️ Fatigue triggers only |
 
 **The hard truth this table makes explicit**: an iPhone-only runner using Strava on the phone (no Apple Watch, no chest strap) gets **no HR-based coaching**, even with Strava connected. This is a doctrine-driven choice: HealthKit is the single ingestion point, and Strava's Apple Health write does not include the HR stream. Apple controls what Strava writes; we don't reach back to Strava's own API to compensate. The product trade — clean architecture and no third-party data dependency — is paid for by these users in HR-less plans.
 
@@ -172,7 +186,7 @@ The HealthKit consent prompt is friction. Every permission requested must have a
 | **Running cadence / stride / power not available in plugin** | Advanced biomechanics signals absent | Plugin limitation. Out of scope for current product. |
 | ~~Sleep stages not consumed~~ ✅ CLOSED (DS-05, 2026-06-22) | ~~Recovery signal duration-only~~ → now quality-weighted | Shipped: `health_daily_samples.sleep_stages` JSONB + `isPoorSleepQuality` readiness sub-signal (deep < 10% of staged sleep). See feature-registry DS-05 / CoachingPrinciples §59. |
 | **Active energy not ingested** | Caloric load signal absent | See permission hygiene above. Backlog item to add query and schema column. |
-| **Web/Android users have no passive data ingest** | Manual completions only → coaching is RPE/fatigue based only | Near-term: manual run entry with distance + optional avg HR. Long-term: Health Connect (Android). Backlog items. |
+| **Web/Android users have no passive data ingest** | Manual completions only → coaching is RPE/fatigue based only | ✅ Near-term addressed 2026-07-30 (DS-06): manual run entry with distance + duration + optional avg HR → distance/pace + coarse avg-HR scoring (PAID). Long-term: Health Connect (Android). |
 | **`strava_activities` table name** | Misleads new contributors into treating it as Strava-specific | Cosmetic rename to `run_activities` is a backlog item. Low urgency; aliased in docs until renamed. |
 
 ---

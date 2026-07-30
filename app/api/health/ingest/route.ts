@@ -5,7 +5,7 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { getUserHRZones } from '@/lib/strava'
-import { adaptHealthKitWorkout, type HealthKitWorkoutPayload } from '@/lib/health/adapter'
+import { adaptHealthKitWorkout, adaptManualRun, type HealthKitWorkoutPayload, type ManualRunPayload } from '@/lib/health/adapter'
 import { autoMatchAndAnalyse, getInternalBaseUrl } from '@/lib/coaching/autoAnalyse'
 import { consolidateIncomingHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
 import { decideLateArrival } from '@/lib/coaching/lateArrivalGate'
@@ -32,17 +32,28 @@ export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Bad JSON' }, { status: 400 })
+  }
+
+  // DS-06 — manual run entry. FREE: any authenticated user may log a run by hand
+  // (stored for history / R25 cohorts / load). Branches BEFORE the PAID
+  // activity_intelligence gate — logging is free, richer analysis stays gated
+  // downstream (/api/analyse-run/manual). Same gateway (INV-DATA-008), isolated
+  // from the HealthKit machinery below.
+  if ((body as { source?: string } | null)?.source === 'manual') {
+    return handleManualIngest(user.id, body as Partial<ManualRunPayload>)
+  }
+
   const tier = await getUserTier(user.id)
   if (!isFeatureAllowed('activity_intelligence', tier)) {
     return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
   }
 
-  let payload: HealthKitWorkoutPayload
-  try {
-    payload = await req.json() as HealthKitWorkoutPayload
-  } catch {
-    return NextResponse.json({ error: 'Bad JSON' }, { status: 400 })
-  }
+  const payload = body as HealthKitWorkoutPayload
 
   if (!payload.uuid || !payload.startDate || !payload.totalDistanceMeters || !payload.durationSeconds) {
     return NextResponse.json({ error: 'uuid, startDate, totalDistanceMeters, durationSeconds required' }, { status: 422 })
@@ -177,6 +188,37 @@ export async function POST(req: NextRequest) {
   )
 
   return NextResponse.json({ status: 'ok', activity_id: row.apple_health_uuid })
+}
+
+// DS-06 — manual run insert. FREE, isolated from the HealthKit path above: no
+// PAID gate, no HR-stream machinery, no auto-analyse trigger (the reflect flow
+// calls /api/analyse-run/manual, which owns the manual coaching row and is where
+// the PAID metric scoring lives). Just persists the source='manual' row so the
+// run counts in history / R25 cohorts / load. Cross-source dedup is intentionally
+// skipped — manual entry targets users with NO device, so a colliding Strava/HK
+// row is not the expected case (documented limitation, ADR-011 §Manual entry).
+async function handleManualIngest(
+  userId: string,
+  body: Partial<ManualRunPayload>,
+): Promise<NextResponse> {
+  if (!body.manualUuid || !body.startDate || !body.distanceMeters || !body.durationSeconds) {
+    return NextResponse.json(
+      { error: 'manualUuid, startDate, distanceMeters, durationSeconds required' },
+      { status: 422 },
+    )
+  }
+
+  const row = adaptManualRun(userId, body as ManualRunPayload)
+  const { error } = await getSupabase()
+    .from('strava_activities')
+    .upsert(row, { onConflict: 'user_id,manual_uuid' })
+
+  if (error) {
+    console.error('[health-ingest] manual upsert failed', error.message)
+    return NextResponse.json({ error: 'Persist failed' }, { status: 500 })
+  }
+
+  return NextResponse.json({ status: 'ok', activity_id: row.manual_uuid })
 }
 
 // HR-SYNC-01: re-fire analyse-run silently when HR appears for a session that

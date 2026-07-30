@@ -61,3 +61,15 @@ All three fields required. Returns 422 if any are missing.
 - AI feedback via claude-haiku (max 200 tokens). Silent fallback — row is written regardless of AI result.
 - Internal webhook path (called by Strava webhook handler): sets `tier = 'trial'` for enrichment and fires a push notification.
 - Scoring weights: HR 50%, distance 25%, pace 15%, EF 10%. See `lib/coaching/constants.ts`.
+
+## Sibling route — POST `/api/analyse-run/manual`
+
+Coaching row for a session completed without a linked device activity. Writes `run_analysis` with `source='manual'` (DELETE+INSERT idempotent per session — partial unique index `run_analysis_manual_uniq`).
+
+**Body:** `{ week_n, session_day, session_type, rpe?, fatigue_tag?, distance_km?, duration_s?, avg_hr? }`. Requires at least one of: `rpe`, `fatigue_tag`, or (`distance_km` + `duration_s`).
+
+**Tier behaviour (DS-06):**
+- **FREE** — verdict + one-line note from RPE/fatigue (`deriveManualVerdict` / `manualFeedbackText`); numeric scores null.
+- **PAID/trial with metrics** — additionally runs `scoreSession` on the entered distance/pace + a coarse avg-HR-vs-band read (`hr_target` ceiling fallback), writing `distance_score` / `pace_score` / `hr_discipline_score` / `total_score` + a metric-anchored verdict. `hr_in_zone_pct` stays null (a single avg HR is not a stream). Gated on `activity_intelligence`.
+
+The run itself is stored separately as a `source='manual'` row in `strava_activities` via the `/api/health/ingest` manual branch (see ADR-011 §4b) — that row is what counts in history / cohorts / load.

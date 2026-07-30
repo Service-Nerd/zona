@@ -70,7 +70,7 @@ function computeHRScore({ session, actualAvgHr, hrInZonePct }: SessionScoreInput
 }
 
 /** Parses ceiling from strings like "< 145 bpm", "135–145 bpm", "155–165 bpm" */
-function parseHRCeiling(hrTarget: string): number | null {
+export function parseHRCeiling(hrTarget: string): number | null {
   // Range: "155–165 bpm" → upper bound 165
   const rangeMatch = hrTarget.match(/(\d+)[–\-](\d+)/)
   if (rangeMatch) return parseInt(rangeMatch[2])

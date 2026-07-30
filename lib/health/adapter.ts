@@ -122,3 +122,102 @@ export function adaptHealthKitWorkout(
     processed_at:         new Date().toISOString(),
   }
 }
+
+// ─── Manual entry (DS-06) ───────────────────────────────────────────────────
+
+/**
+ * Hand-entered run payload from the manual "log more" flow. For users with no
+ * device (web/Android, or an iPhone-only runner with no Apple Watch / chest
+ * strap). Distance + duration are required; avg HR is optional. There is no HR
+ * stream — so no time-in-zone histogram is possible (only a coarse avg-HR read,
+ * computed downstream in analysis).
+ */
+export interface ManualRunPayload {
+  source:          'manual'
+  /** Client-generated dedupe key (crypto.randomUUID). Plays apple_health_uuid's role. */
+  manualUuid:      string
+  /** ISO timestamp — the session date the run is being logged against. */
+  startDate:       string
+  distanceMeters:  number
+  durationSeconds: number
+  /** Optional user-entered average HR, bpm. */
+  avgHeartRate?:   number
+  /** Optional user note (e.g. "Parkrun"). */
+  name?:           string
+}
+
+/**
+ * The strava_activities row shape for a manual entry. Same columns as
+ * HealthKitActivityRow but source='manual', keyed by manual_uuid, and every
+ * HR-stream-derived field is null (a single avg HR is not a stream).
+ */
+export interface ManualActivityRow {
+  user_id:              string
+  source:               'manual'
+  manual_uuid:          string
+  apple_health_uuid:    null
+  strava_activity_id:   null
+  activity_type:        'Run'
+  sport_type:           'Run'
+  name:                 string
+  start_date:           string
+  distance_m:           number
+  moving_time_s:        number
+  elapsed_time_s:       number
+  elevation_gain:       null
+  avg_hr:               number | null
+  max_hr:               null
+  avg_speed:            number | null
+  suffer_score:         null
+  hr_in_zone_pct:       null
+  hr_above_ceiling_pct: null
+  hr_below_floor_pct:   null
+  hr_pct_z1:            null
+  hr_pct_z2:            null
+  hr_pct_z3:            null
+  hr_pct_z4_5:          null
+  calories_kcal:        null
+  raw_payload:          ManualRunPayload
+  processed_at:         string
+}
+
+/**
+ * Pure mapper: manual payload → strava_activities row. No zones needed — with no
+ * HR stream there is nothing to bucket. avg_hr is stored raw for the coarse
+ * avg-HR-vs-band read the analysis layer computes.
+ */
+export function adaptManualRun(userId: string, payload: ManualRunPayload): ManualActivityRow {
+  const avgSpeed = payload.durationSeconds > 0
+    ? Math.round((payload.distanceMeters / payload.durationSeconds) * 10000) / 10000
+    : null
+
+  return {
+    user_id:              userId,
+    source:               'manual',
+    manual_uuid:          payload.manualUuid,
+    apple_health_uuid:    null,
+    strava_activity_id:   null,
+    activity_type:        'Run',
+    sport_type:           'Run',
+    name:                 payload.name?.trim() || 'Manual run',
+    start_date:           payload.startDate,
+    distance_m:           Math.round(payload.distanceMeters * 100) / 100,
+    moving_time_s:        Math.round(payload.durationSeconds),
+    elapsed_time_s:       Math.round(payload.durationSeconds),
+    elevation_gain:       null,
+    avg_hr:               payload.avgHeartRate != null ? Math.round(payload.avgHeartRate) : null,
+    max_hr:               null,
+    avg_speed:            avgSpeed,
+    suffer_score:         null,
+    hr_in_zone_pct:       null,
+    hr_above_ceiling_pct: null,
+    hr_below_floor_pct:   null,
+    hr_pct_z1:            null,
+    hr_pct_z2:            null,
+    hr_pct_z3:            null,
+    hr_pct_z4_5:          null,
+    calories_kcal:        null,
+    raw_payload:          payload,
+    processed_at:         new Date().toISOString(),
+  }
+}

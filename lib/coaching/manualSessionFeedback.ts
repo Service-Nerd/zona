@@ -123,3 +123,43 @@ export function manualFeedbackText(
   if (rpe <= 9) return 'Hard session logged. Earn that rest.'
   return 'Maximum effort. Now actually rest.'
 }
+
+/**
+ * DS-06 — one-line feedback for a manual run that carried metrics
+ * (distance / duration / optional avg HR). PAID: paired with scoreSession's
+ * numeric verdict. Zone discipline leads when avg HR is present (the brand);
+ * otherwise falls back to distance-vs-planned. Honest, dry — never celebratory.
+ * A single avg HR is coarser than a stream, so the copy never claims time-in-zone.
+ */
+export interface ManualMetrics {
+  distanceKm: number
+  plannedKm:  number | null
+  avgHr:      number | null
+  hrCeiling:  number | null   // parsed from session.hr_target
+}
+
+export function manualMetricsFeedbackText(sessionType: string, m: ManualMetrics): string {
+  const isEasy = ['easy', 'recovery', 'run', 'long'].includes(sessionType)
+
+  // HR read leads when we have both the average and a band to judge it against.
+  if (m.avgHr != null && m.hrCeiling != null) {
+    const breach = m.avgHr - m.hrCeiling
+    if (isEasy) {
+      if (breach <= 0) return `Average HR ${m.avgHr} — inside the band. That's the discipline.`
+      if (breach <= 8) return `Average HR ${m.avgHr} — a touch over the ceiling. Ease it next time.`
+      return `Average HR ${m.avgHr} — ran hot for an easy day. That's where weeks get quietly wrecked.`
+    }
+    if (breach >= 0) return `Average HR ${m.avgHr} — up in the work. That's the session.`
+    return `Average HR ${m.avgHr} — sat under the target. Room to push next time.`
+  }
+
+  // No HR entered — judge on distance vs planned.
+  if (m.plannedKm && m.plannedKm > 0) {
+    const ratio = m.distanceKm / m.plannedKm
+    if (ratio >= 0.95 && ratio <= 1.1) return `${m.distanceKm.toFixed(1)}km — right on the number.`
+    if (ratio < 0.95)                  return `${m.distanceKm.toFixed(1)}km of ${m.plannedKm}km planned. Short, but logged.`
+    return `${m.distanceKm.toFixed(1)}km — a bit long. Fine if the legs are good.`
+  }
+
+  return `${m.distanceKm.toFixed(1)}km logged.`
+}
