@@ -1373,10 +1373,15 @@ const RACE_SPECIFIC_CATEGORIES = new Set(['race_specific', 'ultra_specific'])
 
 /** Constitutional checks for maintenance weeks (MAINT-01). Called by generateMaintenanceBlock,
  *  not by validatePlan — maintenance weeks are generated separately from the main plan. */
-export function validateMaintenanceBlock(weeks: import('@/types/plan').Week[], planPeakWeeklyKm: number): Violation[] {
+export function validateMaintenanceBlock(
+  weeks: import('@/types/plan').Week[],
+  baseWeeklyKm: number,
+  injured = false,
+): Violation[] {
   const violations: Violation[] = []
   const qualityTypes = new Set(['tempo', 'threshold', 'intervals', 'quality', 'vo2max', 'cruise'])
-  const volumeCeiling = planPeakWeeklyKm * (GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK.PHASE2_VOLUME_CEILING_PCT / 100)
+  // §75 rev — maintenance anchors to BASE; no week (Phase 1 or 2) may exceed it.
+  const volumeCeiling = baseWeeklyKm * (GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK.VOLUME_CEILING_PCT_OF_BASE / 100)
 
   for (const w of weeks) {
     const isPhase1 = w.phase === 'maintenance_restoration'
@@ -1431,17 +1436,36 @@ export function validateMaintenanceBlock(weeks: import('@/types/plan').Week[], p
       }
     }
 
-    // INV-MAINT-VOLUME-CEILING — Phase 2 weekly volume ≤ 75% of plan peak
-    if (!isPhase1 && w.weekly_km > volumeCeiling) {
+    // INV-MAINT-VOLUME-CEILING — no maintenance week exceeds base volume (§75 rev)
+    if (w.weekly_km > volumeCeiling + 0.1) {
       violations.push({
         code: 'INV-MAINT-VOLUME-CEILING',
         principle_ref: 'CoachingPrinciples §75',
         severity: 'error',
         week: w.n,
-        message: `Maintenance Phase 2 weekly volume ${w.weekly_km}km exceeds ceiling ${volumeCeiling.toFixed(1)}km`,
+        message: `Maintenance weekly volume ${w.weekly_km}km exceeds base ceiling ${volumeCeiling.toFixed(1)}km`,
         actual: w.weekly_km,
-        expected: `<= ${volumeCeiling.toFixed(1)}km (75% of plan peak ${planPeakWeeklyKm}km)`,
+        expected: `<= ${volumeCeiling.toFixed(1)}km (base volume ${baseWeeklyKm}km)`,
       })
+    }
+
+    // INV-MAINT-INJURY-EASY-ONLY — injured athletes get no quality return anywhere
+    // in the block (Layer 2). The mild-quality session is type 'easy' with strides,
+    // so it's detected by label, not type.
+    if (injured) {
+      for (const [day, s] of placed) {
+        if (s && /strides/i.test(s.label ?? '')) {
+          violations.push({
+            code: 'INV-MAINT-INJURY-EASY-ONLY',
+            principle_ref: 'CoachingPrinciples §75',
+            severity: 'error',
+            week: w.n, day,
+            message: `Injured athlete's maintenance week contains a strides/quality session`,
+            actual: s.label,
+            expected: 'easy-only when injury_history is non-empty',
+          })
+        }
+      }
     }
 
     // INV-MAINT-NO-RACE-SPECIFIC — no race-specific or ultra-specific sessions in any maintenance week

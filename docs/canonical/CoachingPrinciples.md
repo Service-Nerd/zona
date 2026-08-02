@@ -1340,11 +1340,21 @@ After a goal race, the body's repair work continues well past the finish line. I
 
 **The maintenance block is not optional.** It is not a reward for racing well or a fallback for runners who feel bad. It is the mechanical consequence of what a race does to the body.
 
+**Anchored to BASE, not peak (rev 2026-08-02).** The original model held Phase 2 at 70% of plan *peak* — near-full training load for weeks with no goal race, which is "way too much" for a recovery/maintenance window. Maintenance means "return to your sustainable base and tick over," so volume now anchors to the plan's **base** volume (the level the athlete built from), defaulted **below** it. Distance-general — every plan has a base.
+
 **Two phases:**
 
-*Phase 1 — Restoration.* Quality blackout. Easy runs, rest, cross-training only. Volume follows the post-race recovery curve (same curve as the in-plan reshape engine uses, starting from the race week's final week). Duration is distance-keyed, with modifiers for high RPE (≥8: +1 week) and DNF (+1 week). These stack. A 100K DNF at RPE 9 earns 6 weeks of quality blackout.
+*Phase 1 — Restoration.* Quality blackout — easy runs, rest, cross-training only. Volume ramps from a low start (`RESTORATION_START_PCT_OF_BASE`, 25% of base) up to the Phase 2 target. Distance-keyed duration, extended by the person-and-circumstance modifiers below.
 
-*Phase 2 — Base.* Quality reintroduced at a controlled rate (1 session per week, mildest catalogue entry). Volume held flat at 70% of plan peak — not ramping, not recovering toward anything. Holding a base. The quality session begins in week 2 of Phase 2, not week 1.
+*Phase 2 — Base.* A genuine tick-over: volume held at `PHASE2_VOLUME_PCT_OF_BASE` (55%) of base — scaled by intent (below), never above base. One mild quality session/week from week 2 — **unless injured**.
+
+**True to the athlete, not just the distance (Layers 2–5, rev 2026-08-02).** Every data point available at generation shapes the block; none references a future race (there may not be one). Each modifier extends restoration and they **stack**:
+- **Injury (Layer 2)** — any `injury_history` flag → no quality return anywhere (easy-only) + 1 extra restoration week (`INJURY_PHASE1_EXTENSION_WEEKS`). `INV-MAINT-INJURY-EASY-ONLY`.
+- **Plan response (Layer 3)** — if the completed plan was hard on them (≥ `RESPONSE_HEAVY_TAG_FRACTION_THRESHOLD` of logged sessions tagged Heavy/Wrecked, or mean logged RPE ≥ `RESPONSE_HIGH_RPE_THRESHOLD`) → +1 restoration week. Requires ≥ 4 logged sessions — a hard block is never inferred from noise.
+- **Recovery markers (Layer 4)** — if RHR/HRV are still off the personal baseline at generation (`computeReadiness`, §59) → +1 restoration week. Health data optional; neutral when absent.
+- **Intent (Layer 5)** — what the athlete wants from the period (`rest` / `tick_over` / `stay_sharp`) scales the base-anchored volume via `INTENT_VOLUME_MULTIPLIER`. Default `tick_over`. Captured in the post-plan review — **never inferred from a next race**.
+
+Race-day RPE (≥ 8) and DNF still each add a restoration week, as before.
 
 **Why the specific durations (distance-keyed):**
 - 5K/10K: 1 week blackout. Peripheral damage is low; central fatigue resolves in days.
@@ -1357,14 +1367,14 @@ After a goal race, the body's repair work continues well past the finish line. I
 
 **What is not permitted in any maintenance week:** race-specific or ultra-specific sessions. The race is over. The maintenance block is not race preparation. INV-MAINT-NO-RACE-SPECIFIC enforces this.
 
-**Volume ceiling in Phase 2:** 75% of plan peak weekly_km (configured at 70% with a 5% mechanical tolerance). This is a hard cap regardless of fitness signals. The runner may feel ready for more. The cap holds anyway.
+**Volume ceiling:** no maintenance week — Phase 1 or Phase 2 — exceeds **base** volume (`VOLUME_CEILING_PCT_OF_BASE`, 100% of base). Hard cap regardless of fitness signals or intent (even `stay_sharp` clamps at base). The runner may feel ready for more; the cap holds anyway. `INV-MAINT-VOLUME-CEILING`.
 
 **Voice register during the block:**
 - Phase 1: flat, factual. One sentence. No race reference after week 2. No forward goal language. DNF register: most restrained in the product — zero pressure, zero forward-looking framing. *"The body doesn't know what it didn't finish. Recover anyway."*
 - Phase 2: quiet and settled. *"Back to base."* Nothing to prove. No celebration of what was.
 - No "great job" framing anywhere in the block. The race happened. This is what comes after.
 
-**Config:** `GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK` — all duration parameters live there. No maintenance numeric is hardcoded. `validateMaintenanceBlock()` in `lib/plan/invariants.ts` enforces all structural invariants mechanically.
+**Config:** `GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK` — all numerics (base-volume anchors, intent multipliers, duration modifiers, thresholds) live there; none is hardcoded. Generator: `lib/plan/maintenance.ts → generateMaintenanceBlock()` (person inputs threaded from `app/api/maintenance-block/route.ts`, which derives base volume, injuries, whole-plan response, and recovery markers). `validateMaintenanceBlock()` in `lib/plan/invariants.ts` enforces structure mechanically.
 
 ---
 

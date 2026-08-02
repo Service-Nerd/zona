@@ -609,21 +609,35 @@ export const GENERATION_CONFIG = {
     PHASE2_WEEKS_BY_DISTANCE: {
       '5K': 3, '10K': 3, 'HM': 3, 'MARATHON': 5, '50K': 5, '100K': 7,
     },
-    PHASE2_VOLUME_PCT_OF_PEAK: 70,       // % of plan peak weekly_km — the generation target
-    PHASE2_VOLUME_CEILING_PCT: 75,       // % of plan peak weekly_km — the hard constitutional cap (INV-MAINT-VOLUME-CEILING).
-    // A 5pp buffer above the target absorbs floating-point rounding without
-    // producing spurious violations. Coaches set the target; the ceiling is the
-    // hard backstop. Both are coaching choices — don't inline either.
+    // ── Volume: anchored to plan BASE, not peak (§75, rev 2026-08-02) ──────────
+    // Maintenance is "return to sustainable base and tick over" — NOT "hold near
+    // peak". The old model anchored to plan peak (70%), which prescribed
+    // near-full training load for weeks with no goal race. We now anchor to the
+    // plan's BASE volume (the level the athlete sustainably built from) and
+    // default BELOW it (Option 1 — conservative tick-over). Intent can raise it.
+    PHASE2_VOLUME_PCT_OF_BASE: 55,       // Phase 2 "tick-over" target as % of plan base weekly_km (tick_over intent).
+    RESTORATION_START_PCT_OF_BASE: 25,   // Phase 1 week-1 volume as % of base — starts very low, ramps up to the Phase 2 target.
+    VOLUME_CEILING_PCT_OF_BASE: 100,     // hard cap — no maintenance week exceeds base volume (INV-MAINT-VOLUME-CEILING).
+    // Intent multiplier (§75 Layer 5): scales the base-anchored volume by what the
+    // athlete wants from the period. Default 'tick_over'. Applied to PHASE2 target
+    // then clamped to VOLUME_CEILING_PCT_OF_BASE (never above base).
+    INTENT_VOLUME_MULTIPLIER: { rest: 0.6, tick_over: 1.0, stay_sharp: 1.6 },
     PHASE2_LONG_DAY_PCT: 35,             // % of weekly volume placed on the longer training day (Saturday).
     // Matches the ~35% long-run share in Phase 1 / Phase 2 base weeks. If a coach
     // wants flatter distribution, reduce toward 25% (equal share across 4 days).
     PHASE2_QUALITY_PER_WEEK: 1,          // max quality sessions in Phase 2
-    RPE_BLACKOUT_EXTENSION_THRESHOLD: 8, // rpe >= this → +1 week blackout
+    RPE_BLACKOUT_EXTENSION_THRESHOLD: 8, // race-day rpe >= this → +1 week restoration
     MARATHON_BLACKOUT_RANGE: [2, 3],     // Marathon Phase 1 min/max; RPE selects upper
     PHASE3_LAST_WEEKS: 2,                // final N weeks of Phase 2 become Phase 3 (ambient re-engagement)
-    MIN_PEAK_KM_FLOOR: 20,               // floor for plan peak weekly_km when computing maintenance volumes
-    // Prevents degenerate maintenance plans for users who had unusually low peak volume.
-    // A coach would not want a maintenance block below this floor.
+    MIN_BASE_KM_FLOOR: 15,               // floor for plan base weekly_km when computing maintenance volumes.
+    // Prevents degenerate maintenance plans for users whose plan base was unusually low.
+    // ── Person-aware duration modifiers (§75 Layers 2–4) ──────────────────────
+    // Restoration (Phase 1) extends when the data says the athlete needs longer.
+    RESPONSE_HEAVY_TAG_FRACTION_THRESHOLD: 0.3, // ≥30% of logged sessions tagged Heavy/Wrecked → the plan was hard on them.
+    RESPONSE_HIGH_RPE_THRESHOLD: 7,      // mean logged RPE ≥ this → the plan was hard on them.
+    RESPONSE_FATIGUE_PHASE1_EXTENSION_WEEKS: 1, // hard-block response → +1 restoration week.
+    SUPPRESSED_RECOVERY_PHASE1_EXTENSION_WEEKS: 1, // RHR/HRV still off baseline at generation → +1 restoration week.
+    INJURY_PHASE1_EXTENSION_WEEKS: 1,    // any injury flagged → +1 restoration week AND no quality return (Layer 2).
   },
 } as const
 

@@ -55,7 +55,8 @@ Enforced by `validateMaintenanceBlock()` in `lib/plan/invariants.ts`, called fro
 | `INV-MAINT-REST-DAY` | `CoachingPrinciples §64, §75` | error | Every maintenance week includes ≥1 rest day. Extends §64 to the post-race block. |
 | `INV-MAINT-PHASE1-SESSION-TYPES` | `CoachingPrinciples §75` | error | Phase 1 (`maintenance_restoration`) weeks contain only `easy`, `rest`, or `cross-train`. Any quality/interval/tempo/long session is a violation. |
 | `INV-MAINT-QUALITY-CAP` | `CoachingPrinciples §75` | error | Phase 2 (`maintenance_base`) weeks contain at most `PHASE2_QUALITY_PER_WEEK` (1) quality session. |
-| `INV-MAINT-VOLUME-CEILING` | `CoachingPrinciples §75` | error | Phase 2 weekly volume ≤ 75% of plan peak weekly_km (configured at 70% with 5% mechanical tolerance). Hard cap regardless of fitness signals. |
+| `INV-MAINT-VOLUME-CEILING` | `CoachingPrinciples §75` | error | No maintenance week (Phase 1 or Phase 2) exceeds plan **base** volume (`VOLUME_CEILING_PCT_OF_BASE`, 100%). Re-anchored from plan-peak to base 2026-08-02 — the old 70%-of-peak model was "way too much" for a maintenance window. |
+| `INV-MAINT-INJURY-EASY-ONLY` | `CoachingPrinciples §75` | error | When `injury_history` is non-empty, no maintenance week contains a strides/quality session (detected by label — the mild-quality session is type `easy`). Layer 2. |
 | `INV-MAINT-NO-RACE-SPECIFIC` | `CoachingPrinciples §75` | error | No `race_specific` or `ultra_specific` catalogue sessions permitted in any maintenance week. |
 
 ## Reshape-time invariants

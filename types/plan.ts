@@ -192,6 +192,10 @@ export interface RaceResult {
   rpe?: number
   /** High-level outcome bucket. Drives post-race reshape branching when AI-DEPTH-08 ships. */
   outcome?: 'on_target' | 'off_target' | 'dnf' | 'pb'
+  /** §75 Layer 5 — what the athlete wants from the maintenance period that follows.
+   *  Captured in the post-plan review; scales the base-anchored maintenance volume.
+   *  Absent = 'tick_over' (the conservative default). Never inferred from a next race. */
+  maintenance_intent?: 'rest' | 'tick_over' | 'stay_sharp'
   /** Free-form runner reflection — sole field for unstructured notes. */
   notes?: string
   /** Fueling outcome — what worked, what didn't, where it broke down.

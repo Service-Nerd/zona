@@ -46,28 +46,81 @@ interface MaintenanceDuration {
   phase2Weeks: number
 }
 
-function computeDuration(distanceKm: number, rpe: number | null, outcome: string | null): MaintenanceDuration {
+/** What the athlete wants from the maintenance period (§75 Layer 5). */
+export type MaintenanceIntent = 'rest' | 'tick_over' | 'stay_sharp'
+
+/** Aggregated training response across the completed plan (§75 Layer 3).
+ *  Derived from `session_completions` by `aggregatePlanResponse`. */
+export interface MaintenancePlanResponse {
+  /** Fraction (0–1) of logged sessions tagged Heavy/Wrecked/Cooked. */
+  heavyTagFraction: number
+  /** Mean logged RPE across the plan, or null if none logged. */
+  meanRpe: number | null
+  /** Count of logged sessions (confidence — modifiers stay silent below a floor). */
+  loggedCount: number
+}
+
+const HEAVY_TAGS = new Set(['Heavy', 'Wrecked', 'Cooked'])
+const MIN_LOGGED_FOR_RESPONSE = 4  // structural: don't infer a "hard block" from < 4 data points.
+
+/** Pure aggregation of a plan's training response from completion rows.
+ *  Route passes the raw rows; this decides the signal. Unit-tested. */
+export function aggregatePlanResponse(
+  rows: Array<{ rpe: number | null; fatigue_tag: string | null }>,
+): MaintenancePlanResponse {
+  const tagged = rows.filter(r => r.fatigue_tag)
+  const heavy  = tagged.filter(r => HEAVY_TAGS.has(r.fatigue_tag as string)).length
+  const rpes   = rows.map(r => r.rpe).filter((v): v is number => v != null)
+  return {
+    heavyTagFraction: tagged.length ? heavy / tagged.length : 0,
+    meanRpe:          rpes.length ? rpes.reduce((a, b) => a + b, 0) / rpes.length : null,
+    loggedCount:      rows.length,
+  }
+}
+
+/** Did the athlete find the plan hard? (§75 Layer 3) */
+function planWasHard(response: MaintenancePlanResponse | null | undefined): boolean {
+  if (!response || response.loggedCount < MIN_LOGGED_FOR_RESPONSE) return false
+  const cfg = GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK
+  return response.heavyTagFraction >= cfg.RESPONSE_HEAVY_TAG_FRACTION_THRESHOLD
+    || (response.meanRpe != null && response.meanRpe >= cfg.RESPONSE_HIGH_RPE_THRESHOLD)
+}
+
+interface DurationInputs {
+  rpe:                 number | null
+  outcome:             string | null
+  injured:             boolean
+  planResponse:        MaintenancePlanResponse | null | undefined
+  recoverySuppressed:  boolean
+}
+
+/** Restoration length adapts to the race AND the person: race-day RPE/DNF
+ *  (existing), how hard the whole plan was (Layer 3), whether recovery markers
+ *  are still off baseline (Layer 4), and injury (Layer 2). Each adds restoration
+ *  weeks — the modifiers stack, floored by the distance base. */
+function computeDuration(distanceKm: number, d: DurationInputs): MaintenanceDuration {
   const key = raceDistanceKey(distanceKm)
   const cfg = GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK
 
   let phase1 = cfg.PHASE1_WEEKS_BY_DISTANCE[key]
 
-  // Marathon: RPE modifier selects upper end of range
-  if (key === 'MARATHON' && rpe != null && rpe >= cfg.RPE_BLACKOUT_EXTENSION_THRESHOLD) {
+  // Marathon: race-day RPE selects the upper end of the range.
+  if (key === 'MARATHON' && d.rpe != null && d.rpe >= cfg.RPE_BLACKOUT_EXTENSION_THRESHOLD) {
     phase1 = cfg.MARATHON_BLACKOUT_RANGE[1]
   } else if (key === 'MARATHON') {
     phase1 = cfg.MARATHON_BLACKOUT_RANGE[0]
   }
 
-  // RPE modifier: +1 week Phase 1 (non-marathon — marathon already handled above)
-  if (key !== 'MARATHON' && rpe != null && rpe >= cfg.RPE_BLACKOUT_EXTENSION_THRESHOLD) {
-    phase1 += 1
-  }
-
-  // DNF modifier: +1 week Phase 1
-  if (outcome === 'dnf') {
-    phase1 += 1
-  }
+  // Race-day RPE (non-marathon — marathon handled above).
+  if (key !== 'MARATHON' && d.rpe != null && d.rpe >= cfg.RPE_BLACKOUT_EXTENSION_THRESHOLD) phase1 += 1
+  // DNF.
+  if (d.outcome === 'dnf') phase1 += 1
+  // Layer 3 — the plan was hard on them across its whole length.
+  if (planWasHard(d.planResponse)) phase1 += cfg.RESPONSE_FATIGUE_PHASE1_EXTENSION_WEEKS
+  // Layer 4 — RHR/HRV still off baseline right now.
+  if (d.recoverySuppressed) phase1 += cfg.SUPPRESSED_RECOVERY_PHASE1_EXTENSION_WEEKS
+  // Layer 2 — injury flagged.
+  if (d.injured) phase1 += cfg.INJURY_PHASE1_EXTENSION_WEEKS
 
   return { phase1Weeks: phase1, phase2Weeks: cfg.PHASE2_WEEKS_BY_DISTANCE[key] }
 }
@@ -110,6 +163,7 @@ function buildSessions(
   phase: 'phase1' | 'phase2',
   weekIndexInPhase: number,
   isDnf: boolean,
+  allowQuality: boolean,   // Layer 2 — false when injured: stay easy-only, no quality return.
 ): Week['sessions'] {
   const sessions: Week['sessions'] = {}
   const trainingDayCount = Math.min(daysAvailable, 5)
@@ -131,7 +185,8 @@ function buildSessions(
     const km = isLong ? Math.max(longerKm, perDayKm) : shortKm
 
     // Phase 2 from week 2 onwards: last training day gets a mild quality session
-    if (phase === 'phase2' && weekIndexInPhase >= 1 && isLong) {
+    // — unless injured (Layer 2), in which case the block stays easy-only.
+    if (phase === 'phase2' && weekIndexInPhase >= 1 && isLong && allowQuality) {
       sessions[day] = buildMildQualitySession(km)
     } else {
       sessions[day] = buildEasySession(km, easyNote, isLong ? 'Long easy' : 'Easy run')
@@ -156,23 +211,47 @@ function addWeeks(isoDate: string, weeks: number): string {
 export interface MaintenanceBlockOptions {
   raceResult: RaceResult
   lastRaceWeek: Week        // for n and date
-  peakWeeklyKm: number      // plan's highest weekly_km
+  /** Plan BASE weekly_km — the sustainable level the athlete built from.
+   *  Maintenance anchors here, NOT to plan peak (§75, rev 2026-08-02). */
+  baseWeeklyKm: number
   raceDistanceKm: number    // from plan.meta.race_distance_km
   daysAvailable: number     // from plan.meta.days_available or default 4
+  // ── Person & circumstance (§75 Layers 2–5). All optional — absent = neutral. ──
+  injuryHistory?: string[]                       // Layer 2 — plan.meta.injury_history
+  planResponse?: MaintenancePlanResponse | null  // Layer 3 — aggregated session_completions
+  recoverySuppressed?: boolean                   // Layer 4 — RHR/HRV still off baseline
+  intent?: MaintenanceIntent                     // Layer 5 — default 'tick_over'
 }
 
 export function generateMaintenanceBlock(opts: MaintenanceBlockOptions): Week[] {
-  const { raceResult, lastRaceWeek, peakWeeklyKm, raceDistanceKm, daysAvailable } = opts
-  const isDnf = raceResult.outcome === 'dnf'
-  const rpe   = raceResult.rpe ?? null
+  const {
+    raceResult, lastRaceWeek, baseWeeklyKm, raceDistanceKm, daysAvailable,
+    injuryHistory, planResponse, recoverySuppressed = false, intent = 'tick_over',
+  } = opts
+  const isDnf   = raceResult.outcome === 'dnf'
+  const rpe     = raceResult.rpe ?? null
+  const injured = (injuryHistory ?? []).length > 0
+  const cfg     = GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK
 
-  const { phase1Weeks, phase2Weeks } = computeDuration(raceDistanceKm, rpe, raceResult.outcome ?? null)
+  const { phase1Weeks, phase2Weeks } = computeDuration(raceDistanceKm, {
+    rpe, outcome: raceResult.outcome ?? null, injured, planResponse, recoverySuppressed,
+  })
 
-  const cfg = GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK
-  const recoveryCfg = GENERATION_CONFIG.POST_RACE_RECOVERY_BY_DISTANCE
-  const distKey = raceDistanceKey(raceDistanceKm)
-  const recoveryCurve = recoveryCfg[distKey].volume_curve_pct
-  const phase2VolKm = parseFloat((peakWeeklyKm * cfg.PHASE2_VOLUME_PCT_OF_PEAK / 100).toFixed(1))
+  // ── Volume, anchored to BASE and scaled by intent (§75 Layers 1 + 5) ──────────
+  // Phase 2 target = base × tick-over% × intent-multiplier, clamped to base.
+  const intentMult      = cfg.INTENT_VOLUME_MULTIPLIER[intent]
+  const phase2TargetPct = Math.min(cfg.PHASE2_VOLUME_PCT_OF_BASE * intentMult, cfg.VOLUME_CEILING_PCT_OF_BASE)
+  const phase2VolKm     = parseFloat((baseWeeklyKm * phase2TargetPct / 100).toFixed(1))
+  // Restoration ramps linearly from a low start up to the Phase 2 target.
+  const startPct        = Math.min(cfg.RESTORATION_START_PCT_OF_BASE, phase2TargetPct)
+  const restorationVolKm = (i: number): number => {
+    const pct = phase1Weeks <= 1
+      ? phase2TargetPct
+      : startPct + (phase2TargetPct - startPct) * (i / (phase1Weeks - 1))
+    return parseFloat((baseWeeklyKm * pct / 100).toFixed(1))
+  }
+  // Injured → easy-only, no quality return anywhere in the block (Layer 2).
+  const allowQuality = !injured
 
   const weeks: Week[] = []
   let baseN    = lastRaceWeek.n + 1
@@ -180,9 +259,7 @@ export function generateMaintenanceBlock(opts: MaintenanceBlockOptions): Week[] 
 
   // Phase 1 — restoration
   for (let i = 0; i < phase1Weeks; i++) {
-    const pct   = recoveryCurve[Math.min(i, recoveryCurve.length - 1)]
-    const volKm = parseFloat((peakWeeklyKm * pct / 100).toFixed(1))
-
+    const volKm = restorationVolKm(i)
     weeks.push({
       n: baseN + i,
       date: addWeeks(baseDate, i),
@@ -192,7 +269,7 @@ export function generateMaintenanceBlock(opts: MaintenanceBlockOptions): Week[] 
       phase: 'maintenance_restoration',
       weekly_km: volKm,
       long_run_hrs: null,
-      sessions: buildSessions(volKm, daysAvailable, 'phase1', i, isDnf),
+      sessions: buildSessions(volKm, daysAvailable, 'phase1', i, isDnf, allowQuality),
     })
   }
 
@@ -210,12 +287,12 @@ export function generateMaintenanceBlock(opts: MaintenanceBlockOptions): Week[] 
       phase: 'maintenance_base',
       weekly_km: phase2VolKm,
       long_run_hrs: null,
-      sessions: buildSessions(phase2VolKm, daysAvailable, 'phase2', i, isDnf),
+      sessions: buildSessions(phase2VolKm, daysAvailable, 'phase2', i, isDnf, allowQuality),
     })
   }
 
   // Constitutional check — throws in dev/test, logs in prod (mirrors generateRulePlan)
-  const violations = validateMaintenanceBlock(weeks, peakWeeklyKm)
+  const violations = validateMaintenanceBlock(weeks, baseWeeklyKm, injured)
   if (violations.length > 0) {
     const msg = violations.map(v => `[${v.severity.toUpperCase()}] ${v.code} week ${v.week}: ${v.message}`).join('\n')
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
