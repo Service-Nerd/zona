@@ -72,6 +72,15 @@ const OUTCOMES: Array<{ value: RaceResult['outcome']; label: string; sub: string
   { value: 'dnf',        label: 'Did not finish',   sub: 'Stopped before the line' },
 ]
 
+// §75 Layer 5 — what the athlete wants from the recovery weeks ahead. Scales the
+// maintenance block volume. Defaults to 'tick_over' (the restrained middle).
+type Intent = NonNullable<RaceResult['maintenance_intent']>
+const INTENTS: Array<{ value: Intent; label: string; sub: string }> = [
+  { value: 'rest',       label: 'Rest',       sub: 'Switch off. Recover properly.' },
+  { value: 'tick_over',  label: 'Tick over',  sub: 'Easy running, nothing to chase.' },
+  { value: 'stay_sharp', label: 'Stay sharp', sub: 'Hold fitness for whatever’s next.' },
+]
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function RaceResultSheet({
@@ -88,6 +97,7 @@ export default function RaceResultSheet({
   const [finishM,        setFinishM]        = useState(anchor.m)
   const [finishS,        setFinishS]        = useState(anchor.s)
   const [rpe,            setRpe]            = useState<number | null>(null)
+  const [intent,         setIntent]         = useState<Intent>('tick_over')
   const [notes,          setNotes]          = useState('')
   const [showAdvanced,   setShowAdvanced]   = useState(false)
   const [whatWorked,     setWhatWorked]     = useState('')
@@ -103,6 +113,7 @@ export default function RaceResultSheet({
       outcome:         outcome ?? undefined,
       finish_time:     formatTime(finishH, finishM, finishS),
       rpe:             rpe ?? undefined,
+      maintenance_intent: intent,
       notes:           notes.trim() || undefined,
       what_worked:     whatWorked.trim() || undefined,
       what_broke:      whatBroke.trim() || undefined,
@@ -276,6 +287,49 @@ export default function RaceResultSheet({
             onChange={setRpe}
             hint="1 = walked it · 10 = everything"
           />
+
+          {/* ── Intent: what you want from the weeks after (§75 Layer 5) ── */}
+          <div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)', letterSpacing: '0.02em', marginBottom: '4px' }}>
+              No next race yet — what now?
+            </div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: '10px' }}>
+              Sets how much we keep you running while there’s nothing to chase.
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {INTENTS.map(o => (
+                <button
+                  key={o.value}
+                  onClick={() => setIntent(o.value)}
+                  style={{
+                    display: 'flex', alignItems: 'center',
+                    padding: '11px 14px',
+                    background: intent === o.value ? 'var(--bg-soft)' : 'transparent',
+                    border: `1.5px solid ${intent === o.value ? 'var(--moss)' : 'var(--line)'}`,
+                    borderRadius: '12px',
+                    cursor: 'pointer', textAlign: 'left', gap: '10px',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '16px', height: '16px', borderRadius: '50%',
+                      border: `2px solid ${intent === o.value ? 'var(--moss)' : 'var(--line)'}`,
+                      background: intent === o.value ? 'var(--moss)' : 'transparent',
+                      flexShrink: 0, transition: 'all 0.12s',
+                    }}
+                  />
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2 }}>
+                      {o.label}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.3, marginTop: '1px' }}>
+                      {o.sub}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* ── Notes ──────────────────────────────────── */}
           <div>
