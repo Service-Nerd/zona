@@ -1368,22 +1368,6 @@ After a goal race, the body's repair work continues well past the finish line. I
 
 ---
 
-## 76. Post-race recovery gating — the plan must know what you just ran
-
-**Principle.** A plan generated in the shadow of a recent race must open with recovery, not a build. Aerobic markers (HR, perceived fitness) recover within days; muscle and connective-tissue remodelling after a hard race runs 3–6 weeks. The athlete — and their recent `current_weekly_km` — will read "ready" while the tissue is not. Progressing off that signal is the documented failure mode: intensity onto un-recovered legs is how the returning racer gets hurt. This is the mirror of §62 (post-race recovery *inside* a plan): §62 handles the race the plan builds toward; §76 handles the race the athlete finished *before* generation.
-
-**Why free / safety-class.** This is not intelligence, it is a floor. It prevents the engine being *wrong* for the athlete most likely to be chronically overtrained — the one who races and immediately starts building. Structure is FREE (INV-GATE); the AI voice explaining it is PAID.
-
-**What fires it.** Optional inputs `last_race_date` + `last_race_distance_km` (+ optional `last_race_effort`). Gating fires only when the race was completed within a distance-keyed recency **window** (`RECENT_RACE_RECOVERY_TRIGGER[key].within_days` — 10d for ≤HM, 21d marathon, 28d 50K, 35d 100K). Beyond the window, `current_weekly_km` already reflects recovered training and no gating is applied. Conservative floors (Hutchinson guardrail, SLT 2026-08-02): the engine cannot measure this athlete's exact tissue state, so it prescribes a conservative easing, not a personalised physiological readout.
-
-**What it does.** Prepends a recovery-opening block before Week 1 — structurally a Foundation Block (§57): easy-only, `phase:'foundation'`, negative week index, prepended client-side. It opens at `RECOVERY_OPENING_START_FRACTION` (50%) of current volume and ramps up at the foundation weekly rate, **never exceeding current volume** — it eases back to baseline, it does not build. Depth (number of opening weeks) **reuses** `POST_RACE_RECOVERY_BY_DISTANCE[key].quality_blackout_weeks` (the same §62 table — one source), extended by `RECENT_RACE_EFFORT_BLACKOUT_EXTENSION_WEEKS` for a faded/DNF race, and reduced by whole weeks already elapsed since the race (the recovery clock starts at the finish line), floored at 1. It takes **precedence** over the ordinary Foundation Block — recovery *is* the ease-in.
-
-**What it must not do.** Restart the recovery clock (elapsed weeks are subtracted). Build above current volume during the opening (INV-RECOV-VOLUME-CEILING). Prescribe any quality during the opening (INV-RECOV-SESSION-TYPES). Double-count a race that an active post-race maintenance block (§75) is already recovering from — if the recent race is the one MAINT-01 is handling, the opening trough is suppressed (cross-plan de-dup, wired at the assembly layer).
-
-**Config:** `GENERATION_CONFIG.RECENT_RACE_RECOVERY_TRIGGER`, `RECOVERY_OPENING_START_FRACTION`, `RECENT_RACE_EFFORT_BLACKOUT_EXTENSION_WEEKS` — no recovery-gating numeric is hardcoded. Generator: `lib/plan/foundationBlock.ts → classifyRecentRace()` + `generateRecoveryOpeningBlock()`. `validateRecoveryOpeningBlock()` in `lib/plan/invariants.ts` enforces the structural invariants (INV-RECOV-SESSION-TYPES, INV-RECOV-VOLUME-CEILING, INV-RECOV-NEGATIVE-N) mechanically.
-
----
-
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

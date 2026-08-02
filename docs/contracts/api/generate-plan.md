@@ -57,14 +57,6 @@ Body: GeneratorInput
   preferred_long_run_day?: 'sat' | 'sun'  // R23 rebuild — soft constraint; default 'sun'
   treadmill_primarily?: boolean   // R23 rebuild — affects strides and hill-work plausibility
 
-  // ENGINE-05 — post-race recovery gating (CoachingPrinciples §76). When a race
-  // was completed within a distance-keyed recency window, the engine prepends a
-  // recovery-opening block (easy-only, ramped from a fraction of current volume,
-  // quality blacked out) before Week 1. All optional; absence = no gating.
-  last_race_date?: string          // ISO date of the most recent completed race
-  last_race_distance_km?: number   // keys recovery depth (§62 blackout table) + recency window
-  last_race_effort?: 'finished_strong' | 'faded' | 'dnf'  // faded/dnf extends the blackout
-
   // Profile (paid/trial only)
   hard_session_relationship?: 'avoid' | 'neutral' | 'love' | 'overdo'
   injury_history?: ('achilles' | 'knee' | 'back' | 'shin_splints' | 'hip_flexor' | 'plantar_fasciitis')[]

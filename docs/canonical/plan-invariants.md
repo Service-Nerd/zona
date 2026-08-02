@@ -58,16 +58,6 @@ Enforced by `validateMaintenanceBlock()` in `lib/plan/invariants.ts`, called fro
 | `INV-MAINT-VOLUME-CEILING` | `CoachingPrinciples §75` | error | Phase 2 weekly volume ≤ 75% of plan peak weekly_km (configured at 70% with 5% mechanical tolerance). Hard cap regardless of fitness signals. |
 | `INV-MAINT-NO-RACE-SPECIFIC` | `CoachingPrinciples §75` | error | No `race_specific` or `ultra_specific` catalogue sessions permitted in any maintenance week. |
 
-## Recovery-opening block invariants (ENGINE-05)
-
-Enforced by `validateRecoveryOpeningBlock()` in `lib/plan/invariants.ts`, called from `generateRecoveryOpeningBlock()`. Recovery-opening weeks are prepended before Week 1 (negative `n`, `phase:'foundation'`) client-side — like the Foundation Block, they are not produced by `generateRulePlan` and so do not run inside `validatePlan()`. This validator is their constitutional layer.
-
-| Code | Principle ref | Severity | What it checks |
-|---|---|---|---|
-| `INV-RECOV-SESSION-TYPES` | `CoachingPrinciples §76` | error | Recovery-opening weeks contain only `easy`, `rest`, or `cross-train`. Any quality/interval/tempo/long session is a violation (quality blackout). |
-| `INV-RECOV-VOLUME-CEILING` | `CoachingPrinciples §76` | error | No recovery-opening week exceeds `current_weekly_km`. The block eases back to baseline; it never builds above it. |
-| `INV-RECOV-NEGATIVE-N` | `CoachingPrinciples §76` | error | Recovery-opening weeks are pre-plan (`n <= 0`). Week 1 of the plan proper is always `n = 1`. |
-
 ## Reshape-time invariants
 
 `validatePlan()` is the constitutional layer for *plan generation*. The
