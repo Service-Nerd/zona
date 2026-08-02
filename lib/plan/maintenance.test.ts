@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateMaintenanceBlock, aggregatePlanResponse } from './maintenance'
+import { generateMaintenanceBlock, aggregatePlanResponse, inferRunDaysPerWeek } from './maintenance'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { Week, RaceResult } from '@/types/plan'
 
@@ -165,6 +165,34 @@ describe('generateMaintenanceBlock — Layers 3 & 4: response + recovery', () =>
       + cfg.RESPONSE_FATIGUE_PHASE1_EXTENSION_WEEKS
       + cfg.SUPPRESSED_RECOVERY_PHASE1_EXTENSION_WEEKS
     expect(stacked.length).toBe(neutral.length + added)
+  })
+})
+
+describe('inferRunDaysPerWeek — maintenance matches the plan run cadence, not meta', () => {
+  const wk = (sessions: any, weekly_km = 40): any =>
+    ({ n: 1, date: '', label: '', theme: '', type: 'normal', weekly_km, long_run_hrs: null, sessions })
+
+  it('counts only run-days (excludes strength / cross-train / rest)', () => {
+    // The founder's real pattern: strength Mon/Wed, runs Tue/Fri/Sat/Sun → 4 runs, not 5.
+    const weeks = [wk({
+      mon: { type: 'strength' }, tue: { type: 'easy' }, wed: { type: 'strength' },
+      fri: { type: 'easy' }, sat: { type: 'long' }, sun: { type: 'run' },
+    })]
+    expect(inferRunDaysPerWeek(weeks)).toBe(4)
+  })
+
+  it('returns the median run-days across weeks', () => {
+    const weeks = [
+      wk({ tue: { type: 'easy' }, thu: { type: 'easy' }, sat: { type: 'long' } }),                       // 3
+      wk({ tue: { type: 'easy' }, thu: { type: 'easy' }, sat: { type: 'long' }, sun: { type: 'easy' } }), // 4
+      wk({ tue: { type: 'easy' }, thu: { type: 'easy' }, sat: { type: 'long' }, sun: { type: 'easy' } }), // 4
+    ]
+    expect(inferRunDaysPerWeek(weeks)).toBe(4)
+  })
+
+  it('returns null when there is no run data (caller falls back to meta)', () => {
+    expect(inferRunDaysPerWeek([wk({ mon: { type: 'strength' } }, 40)])).toBeNull()
+    expect(inferRunDaysPerWeek([])).toBeNull()
   })
 })
 

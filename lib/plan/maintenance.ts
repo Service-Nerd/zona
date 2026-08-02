@@ -78,6 +78,25 @@ export function aggregatePlanResponse(
   }
 }
 
+const MAINT_RUN_TYPES = new Set(['easy', 'long', 'quality', 'tempo', 'intervals', 'hard', 'recovery', 'run'])
+
+/**
+ * §75 — maintenance should match the athlete's actual RUN cadence, not a stale
+ * `meta.days_available` (which counts strength/cross-train days too, or may be
+ * aspirational). Counts run-days per trained week — excluding strength,
+ * cross-train and rest — and returns the median. Null when the plan has no run
+ * data (caller falls back to meta.days_available).
+ */
+export function inferRunDaysPerWeek(nonMaintWeeks: Week[]): number | null {
+  const counts = nonMaintWeeks
+    .filter(w => (w.weekly_km ?? 0) > 0)
+    .map(w => Object.values(w.sessions ?? {}).filter(s => s && MAINT_RUN_TYPES.has((s as any).type)).length)
+    .filter(c => c > 0)
+    .sort((a, b) => a - b)
+  if (!counts.length) return null
+  return counts[Math.floor(counts.length / 2)]
+}
+
 /** Did the athlete find the plan hard? (§75 Layer 3) */
 function planWasHard(response: MaintenancePlanResponse | null | undefined): boolean {
   if (!response || response.loggedCount < MIN_LOGGED_FOR_RESPONSE) return false

@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { fetchPlanForUser, savePlanForUser } from '@/lib/plan'
-import { generateMaintenanceBlock, aggregatePlanResponse, type MaintenanceIntent } from '@/lib/plan/maintenance'
+import { generateMaintenanceBlock, aggregatePlanResponse, inferRunDaysPerWeek, type MaintenanceIntent } from '@/lib/plan/maintenance'
 import { enrichMaintenanceBlock } from '@/lib/plan/enrichMaintenance'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { computeReadiness, type DailyHealthSample } from '@/lib/coaching/readinessBaseline'
@@ -82,6 +82,12 @@ export async function POST(req: NextRequest) {
   const medianBase = baseVols.length ? baseVols[Math.floor(baseVols.length / 2)] : 0
   const baseWeeklyKm = Math.max(medianBase, mCfg.MIN_BASE_KM_FLOOR)
 
+  // §75 — match the athlete's ACTUAL run cadence, not meta.days_available (which
+  // counts strength/cross-train days too, or may be aspirational). e.g. a plan
+  // that ran 4×/wk with 2 strength days has days_available=5 but should maintain
+  // at 4 runs, not 5.
+  const runDaysPerWeek = inferRunDaysPerWeek(nonMaint) ?? plan.meta.days_available ?? 4
+
   // Layer 2 — injuries (persisted on plan.meta).
   const injuryHistory = (plan.meta as any).injury_history as string[] | undefined
 
@@ -131,7 +137,7 @@ export async function POST(req: NextRequest) {
       lastRaceWeek,
       baseWeeklyKm,
       raceDistanceKm: plan.meta.race_distance_km,
-      daysAvailable: plan.meta.days_available ?? 4,
+      daysAvailable: runDaysPerWeek,
       injuryHistory,
       planResponse,
       recoverySuppressed,
