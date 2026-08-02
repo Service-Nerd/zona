@@ -95,8 +95,12 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
 
   const currentWeekIndex = getCurrentWeekIndex(weeks)
   const safeIndex = currentWeekIndex >= 0 ? currentWeekIndex : 0
-  const pastWeeks = weeks.slice(0, safeIndex).map((week, i) => ({ week, weekNum: i + 1 }))
-  const currentAndFutureWeeks = weeks.slice(safeIndex).map((week, i) => ({ week, weekNum: safeIndex + i + 1 }))
+  // week_n is keyed by the canonical week.n (NOT array position) so a standalone
+  // maintenance plan (weeks numbered 26+ in a short array) reads/writes completions
+  // at the right key. Falls back to array position for any legacy week missing `n`.
+  // No-op for race plans, where n already equals array position (MAINT-06).
+  const pastWeeks = weeks.slice(0, safeIndex).map((week, i) => ({ week, weekNum: (week as any).n ?? (i + 1) }))
+  const currentAndFutureWeeks = weeks.slice(safeIndex).map((week, i) => ({ week, weekNum: (week as any).n ?? (safeIndex + i + 1) }))
 
   async function handleMove(weekN: number, originalDay: string, newDay: string, currentSlot: string) {
     if (currentSlot === newDay) return

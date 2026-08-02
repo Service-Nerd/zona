@@ -168,18 +168,38 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // ── 6. Append to plan and save ───────────────────────────────────────────────
-  const updatedPlan: Plan = {
-    ...plan,
-    weeks: [...plan.weeks, ...maintWeeks],
+  // ── 6. Build maintenance as its OWN plan object and hand off (§75, MAINT-06) ──
+  // The finished race plan ENDS: it moves to history and the maintenance block
+  // becomes the sole active plan. We DON'T append maintenance weeks to the race
+  // plan. Instead we save a standalone maintenance plan — `savePlanForUser`'s
+  // race-change guard (different race_name) archives the completed race plan into
+  // plan_archive automatically, so we reuse that path rather than duplicating it.
+  //
+  // week_n stays CONTINUOUS (maintWeeks carry n = lastRaceWeek.n + 1 …): the app
+  // keys session_completions/run_analysis by week.n, so continuing the sequence
+  // means maintenance completions never collide with the archived race plan's —
+  // no schema change, no migration.
+  const maintenancePlan: Plan = {
+    meta: {
+      ...plan.meta,
+      plan_kind:               'maintenance',
+      race_name:               plan.meta.race_name ? `After ${plan.meta.race_name}` : 'Post-race maintenance',
+      race_date:               '',   // no upcoming race → countdown / projections no-op
+      source_race_name:        plan.meta.race_name,
+      source_race_distance_km: plan.meta.race_distance_km,
+      source_race_outcome:     (raceResult as any).outcome ?? undefined,
+      source_finish_time:      (raceResult as any).finish_time ?? undefined,
+      last_updated:            new Date().toISOString(),
+    },
+    weeks: maintWeeks,
   }
 
   try {
-    await savePlanForUser(user.id, updatedPlan, serviceClient)
+    await savePlanForUser(user.id, maintenancePlan, serviceClient)
   } catch (err) {
     console.error('[maintenance-block] save failed:', err)
     return NextResponse.json({ error: 'Failed to save plan' }, { status: 500 })
   }
 
-  return NextResponse.json({ plan: updatedPlan, weeks_added: maintWeeks.length })
+  return NextResponse.json({ plan: maintenancePlan, weeks_added: maintWeeks.length })
 }

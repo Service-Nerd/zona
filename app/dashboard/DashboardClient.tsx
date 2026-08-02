@@ -1448,8 +1448,29 @@ export default function DashboardClient() {
     // per race and travels with plan_json (no schema change, cross-device).
     return { sig: plan.meta.race_date ?? `race-${idx}`, race, transitionSeen: !!result.maintenance_transition_seen }
   })()
-  const nextGoalData = (finishedRace && hasPaidAccess && nextGoalDismissedSig !== finishedRace.sig)
-    ? { achievement: achievementLine(finishedRace.race), options: nextGoalOptions(finishedRace.race) }
+  // MAINT-06 — the active plan is now a standalone maintenance plan (`plan_kind`)
+  // once the race is done; the race plan is archived. The finished-race context
+  // the next-goal ladder + maintenance copy need is then carried on the
+  // maintenance plan's `source_*` meta rather than the (now-archived) race week.
+  const isMaintenancePlan = (plan?.meta as any)?.plan_kind === 'maintenance'
+  const finishedRaceForGoal: { sig: string; race: FinishedRace } | null = (() => {
+    if (finishedRace) return { sig: finishedRace.sig, race: finishedRace.race }
+    if (isMaintenancePlan && plan) {
+      const m = plan.meta as any
+      return {
+        sig: m.source_race_name ?? 'maintenance',
+        race: {
+          distanceKm: m.source_race_distance_km ?? plan.meta.race_distance_km,
+          finishTime: m.source_finish_time ?? null,
+          targetTime: plan.meta.target_time ?? null,
+          outcome:    m.source_race_outcome ?? null,
+        },
+      }
+    }
+    return null
+  })()
+  const nextGoalData = (finishedRaceForGoal && hasPaidAccess && nextGoalDismissedSig !== finishedRaceForGoal.sig)
+    ? { achievement: achievementLine(finishedRaceForGoal.race), options: nextGoalOptions(finishedRaceForGoal.race) }
     : null
 
   function handlePickNextGoal(opt: NextGoalOption) {
@@ -1469,27 +1490,27 @@ export default function DashboardClient() {
   }
 
   function handleDismissNextGoal() {
-    if (!finishedRace) return
-    try { localStorage.setItem('zona_next_goal_dismissed', finishedRace.sig) } catch {}
-    setNextGoalDismissedSig(finishedRace.sig)
+    if (!finishedRaceForGoal) return
+    try { localStorage.setItem('zona_next_goal_dismissed', finishedRaceForGoal.sig) } catch {}
+    setNextGoalDismissedSig(finishedRaceForGoal.sig)
   }
 
-  // MAINT-01 — "Base running" card visible during the maintenance block, keyed
-  // by the race signature so it re-surfaces for the next race.
-  const maintCardSig = finishedRace?.sig ?? null
-  const hasMaintenanceWeeks = !!plan?.weeks.some(
-    w => (w as any).phase === 'maintenance_restoration' || (w as any).phase === 'maintenance_base',
-  )
-  // #1 — one-time transition announcement. The block is auto-live, but the
-  // runner hasn't been told the race is done and the plan has eased. Shows once
-  // (until acknowledged), and SUPPRESSES the ongoing status card until then, so
-  // Today shows a single maintenance slot that progresses announce → status.
-  const showMaintTransition = !!(finishedRace && hasMaintenanceWeeks && !finishedRace.transitionSeen)
+  // MAINT-06 — post-race surfaces key off the standalone maintenance plan
+  // (`plan_kind`), not the (now-archived) race week. The transition announcement
+  // + ongoing "Base running" card + their seen/dismiss state live on the
+  // maintenance plan's meta, so they survive the race→maintenance handoff.
+  const maintCardSig = isMaintenancePlan ? ((plan!.meta as any).source_race_name ?? 'maintenance') : null
+  const maintTransitionSeen = !!(plan?.meta as any)?.maintenance_transition_seen
+  // #1 — one-time transition announcement. The maintenance plan is auto-live, but
+  // the runner hasn't been told the race is done and this is the after-block.
+  // Shows once (until acknowledged), and SUPPRESSES the ongoing status card until
+  // then, so Today shows one maintenance slot that progresses announce → status.
+  const showMaintTransition = !!(isMaintenancePlan && !maintTransitionSeen)
   const showMaintCard = !!(
+    isMaintenancePlan &&
+    maintTransitionSeen &&
     maintCardSig &&
-    maintCardDismissedSig !== maintCardSig &&
-    finishedRace?.transitionSeen &&
-    hasMaintenanceWeeks
+    maintCardDismissedSig !== maintCardSig
   )
   function handleDismissMaintCard() {
     if (!maintCardSig) return
@@ -1497,20 +1518,13 @@ export default function DashboardClient() {
     setMaintCardDismissedSig(maintCardSig)
   }
 
-  // #1 — mark the transition announcement seen: set the flag on the race week's
-  // result_embedded and persist. Same-race mutation, so savePlanForUser won't
-  // archive (race-change-guarded). Best-effort save mirrors the plan.meta sync
-  // pattern — the in-memory setPlan is what dismisses the card immediately.
+  // #1 — mark the transition announcement seen on the maintenance plan's meta.
+  // race_name is unchanged, so savePlanForUser won't archive (race-change-guarded).
+  // The in-memory setPlan dismisses the card immediately; the save persists it.
   async function markMaintenanceTransitionSeen() {
-    if (!plan) return
-    const idx = plan.weeks.findLastIndex(w => w.type === 'race' || (w as any).badge === 'race')
-    if (idx < 0) return
-    const week = plan.weeks[idx] as any
-    if (!week?.result_embedded || week.result_embedded.maintenance_transition_seen) return
-    const updatedWeeks = plan.weeks.map((w, i) => i === idx
-      ? { ...w, result_embedded: { ...(w as any).result_embedded, maintenance_transition_seen: true } }
-      : w)
-    const updatedPlan = { ...plan, weeks: updatedWeeks } as Plan
+    if (!plan || !isMaintenancePlan) return
+    if ((plan.meta as any).maintenance_transition_seen) return
+    const updatedPlan = { ...plan, meta: { ...plan.meta, maintenance_transition_seen: true } } as Plan
     setPlan(updatedPlan)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -6373,7 +6387,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   onReshapeDismissed?: () => void
 }) {
   const currentWeek = plan.weeks[weekIndex]
-  const weekNum = weekIndex + 1
+  // week_n keyed by canonical week.n, not array position (MAINT-06) — so a
+  // standalone maintenance plan keys completions at 26+ not 1. No-op for race plans.
+  const weekNum = (currentWeek as any)?.n ?? (weekIndex + 1)
   const totalWeeks = plan.weeks.length
 
   // Guard against empty plan (e.g. failed Gist fetch)
@@ -7159,7 +7175,10 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 800,
                 color: 'var(--ink)', letterSpacing: '-0.01em', marginBottom: '6px',
               }}>
-                {raceName ? `That's ${raceName} done.` : "That's the race done."}
+                {(() => {
+                  const src = (plan.meta as any).source_race_name as string | undefined
+                  return src ? `That's ${src} done.` : "That's the race done."
+                })()}
               </div>
               <p style={{
                 fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)',
@@ -7794,7 +7813,7 @@ function PlanProgressBar({ plan, allCompletions }: { plan: Plan; allCompletions:
   let doneSessions = 0
 
   plan.weeks.forEach((week, wi) => {
-    const weekN = wi + 1
+    const weekN = (week as any).n ?? (wi + 1)   // week.n-keyed (MAINT-06)
     const weekAny = week as any
     const sessions = weekAny.sessions ?? weekAny
     const weekCompletions = allCompletions[weekN] ?? {}
@@ -7846,7 +7865,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   onOpenCoach?: () => void
 }) {
   const currentWeekIndex = getCurrentWeekIndex(plan.weeks)
-  const weekNum = currentWeekIndex + 1
+  const weekNum = (plan.weeks[currentWeekIndex] as any)?.n ?? (currentWeekIndex + 1)
   const totalWeeks = plan.weeks.length
   const raceName = (plan as any)?.meta?.race_name ?? ''
   const raceDate = (plan as any)?.meta?.race_date ? new Date((plan as any).meta.race_date) : null
@@ -7910,7 +7929,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
         const res = await authedFetch('/api/plan-weekly-note', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ week_n: currentWeekIndex + 1 }),
+          body:    JSON.stringify({ week_n: weekNum }),
         })
         if (cancelled) return
         if (!res.ok) { setAiNote('failed'); return }
@@ -7949,7 +7968,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           in PlanCalendar carry it through the week list. Rule-engine → no AIMark. */}
       {inMaintenance && (
         <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--s-recov)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-          After the race · Maintenance
+          Maintenance
         </div>
       )}
 
@@ -8012,8 +8031,8 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
         const ruleItems  = getWeekVoiceItems(ctx, 2)
         const items      = aiItems ?? ruleItems
         const doneKm     = (() => {
-          // Sum completed runs this week from allCompletions
-          const weekN = currentWeekIndex + 1
+          // Sum completed runs this week from allCompletions (week.n-keyed, MAINT-06)
+          const weekN = weekNum
           const weekCompletions = allCompletions[weekN] ?? {}
           const total = Object.values(weekCompletions)
             .reduce((sum: number, c: any) => sum + (c?.distance_km ?? 0), 0)

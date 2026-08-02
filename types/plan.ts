@@ -327,6 +327,17 @@ export interface PlanMeta {
   taper_recalibrated_at?:     string   // ISO timestamp of recalibration
   functional_peak_km?:        number   // actual functional peak used as anchor
   planned_peak_km_at_recal?:  number   // original planned pre-taper volume (for coach card)
+
+  // MAINT-06 — post-race maintenance is its OWN plan object, not weeks appended
+  // to the race plan (§75). When the race completes, the race plan is archived as
+  // completed and the active plan becomes a standalone maintenance plan carrying
+  // this marker. `plan_kind` absent/'race' = a normal goal-race plan.
+  plan_kind?:        'race' | 'maintenance'
+  source_race_name?: string   // maintenance plan: the race it follows (for copy + next-goal)
+  source_race_distance_km?: number  // maintenance plan: race distance (drives next-goal ladder)
+  source_race_outcome?: string      // maintenance plan: on_target | dnf | ...
+  source_finish_time?: string       // maintenance plan: finish time (next-goal achievement line)
+  maintenance_transition_seen?: boolean  // maintenance plan: one-time "after the race" announcement acknowledged
 }
 
 /** Audit entry for a post-pass rule that fired during plan generation. */
