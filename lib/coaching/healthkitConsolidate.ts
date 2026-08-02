@@ -10,9 +10,11 @@
 //
 // On match, we keep `source='apple_health'` (provenance), attach the
 // `strava_activity_id`, override HR-bucket fields with Strava's higher-
-// fidelity stream summary, and mirror the strava_id onto the existing
-// `run_analysis` + `session_completions` rows so downstream queries that
-// look up by either ID type stay consistent.
+// fidelity stream summary, patch the two Strava-only supplement fields
+// HealthKit can't provide (`avg_temp_c`, `splits_metric` — ADR-011 §3), and
+// mirror the strava_id onto the existing `run_analysis` +
+// `session_completions` rows so downstream queries that look up by either ID
+// type stay consistent.
 
 import type { HRStreamSummary } from '@/lib/strava'
 import { decideLateArrival } from './lateArrivalGate'
@@ -23,6 +25,10 @@ interface MatchableStravaActivity {
   distance:     number          // metres
   name?:        string | null
   suffer_score?: number | null
+  // Strava-only supplement fields HealthKit never carries (ADR-011 §3). Patched
+  // onto the canonical HK row on enrich; null when Strava didn't report them.
+  average_temp?:  number | null
+  splits_metric?: unknown
 }
 
 interface ConsolidateResult {
@@ -70,6 +76,11 @@ export async function tryEnrichHealthKitRow(
     strava_activity_id: activity.id,
     name:               activity.name ?? undefined,
     suffer_score:       activity.suffer_score ?? null,
+    // Supplement HealthKit with the two fields it can't provide. Safe against
+    // overwrite: enrich only ever fires on an unattached HK row (strava_activity_id
+    // null match above), so it never clobbers a previously-patched value.
+    avg_temp_c:         activity.average_temp ?? null,
+    splits_metric:      activity.splits_metric ?? null,
     processed_at:       new Date().toISOString(),
   }
   if (hrSummary) {

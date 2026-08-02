@@ -1462,6 +1462,70 @@ export function validateMaintenanceBlock(weeks: import('@/types/plan').Week[], p
   return violations
 }
 
+/**
+ * ENGINE-05 — recovery-opening block invariants (CoachingPrinciples §76).
+ * The block prepended before Week 1 when a recent race gates the plan. It is a
+ * pre-plan trough, not a build: easy-only, at or below current volume, with a
+ * rest day, and non-empty when it exists. Called by generateRecoveryOpeningBlock
+ * (throws in dev/test, logs in prod — mirrors the maintenance + rule-plan path).
+ */
+export function validateRecoveryOpeningBlock(
+  weeks: import('@/types/plan').Week[],
+  currentWeeklyKm: number,
+): Violation[] {
+  const violations: Violation[] = []
+  if (weeks.length === 0) return violations
+
+  for (const w of weeks) {
+    const sessions = Object.entries(w.sessions ?? {}) as [string, import('@/types/plan').Session | undefined][]
+    const placed = sessions.filter(([, s]) => !!s)
+
+    // INV-RECOV-SESSION-TYPES — recovery-opening allows only easy / rest / cross-train
+    for (const [day, s] of placed) {
+      if (!s || s.type === 'rest') continue
+      if (!PHASE1_SESSION_TYPES.has(s.type)) {
+        violations.push({
+          code: 'INV-RECOV-SESSION-TYPES',
+          principle_ref: 'CoachingPrinciples §76',
+          severity: 'error',
+          week: w.n, day,
+          message: `Recovery-opening week contains banned session type: ${s.type}`,
+          actual: s.type,
+          expected: 'easy | rest | cross-train only',
+        })
+      }
+    }
+
+    // INV-RECOV-VOLUME-CEILING — must not build above current volume (it's an ease-in)
+    if (w.weekly_km > currentWeeklyKm + 0.1) {
+      violations.push({
+        code: 'INV-RECOV-VOLUME-CEILING',
+        principle_ref: 'CoachingPrinciples §76',
+        severity: 'error',
+        week: w.n,
+        message: `Recovery-opening week ${w.weekly_km}km exceeds current volume ${currentWeeklyKm}km`,
+        actual: w.weekly_km,
+        expected: `<= ${currentWeeklyKm}km`,
+      })
+    }
+
+    // INV-RECOV-NEGATIVE-N — recovery-opening weeks are pre-plan (n <= 0)
+    if (w.n > 0) {
+      violations.push({
+        code: 'INV-RECOV-NEGATIVE-N',
+        principle_ref: 'CoachingPrinciples §76',
+        severity: 'error',
+        week: w.n,
+        message: `Recovery-opening week has non-negative index ${w.n} (must be <= 0, before Week 1)`,
+        actual: w.n,
+        expected: '<= 0',
+      })
+    }
+  }
+
+  return violations
+}
+
 export function formatViolations(violations: Violation[]): string {
   if (violations.length === 0) return 'No violations.'
   return violations.map(v =>

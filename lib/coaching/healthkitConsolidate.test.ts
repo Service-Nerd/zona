@@ -179,3 +179,62 @@ describe('INV-DATA-008: tryEnrichHealthKitRow discards Strava with no HK match',
     expect(result).toEqual({ enriched: false })
   })
 })
+
+/**
+ * DS-08 — on a match, the enrich patch must carry the two Strava-only supplement
+ * fields HealthKit cannot provide (`avg_temp_c`, `splits_metric` — ADR-011 §3).
+ * Regression pin for the silent-drop bug: they used to be absent from the patch,
+ * so temp/splits were null for the entire HK-canonical population.
+ */
+describe('DS-08: tryEnrichHealthKitRow patches temp + splits onto the canonical row', () => {
+  const matchRow = { id: 'r1', apple_health_uuid: 'HK1', distance_m: 8025, strava_activity_id: null }
+
+  // Capturing stub: select chain returns the match; update captures the patch on
+  // the strava_activities table. `.eq()` returns an awaitable that also chains,
+  // covering both the single-`.eq` strava_activities update and the double-`.eq`
+  // downstream mirrors.
+  const capturingSupabase = (captured: { patch?: Record<string, unknown> }) => {
+    const okChain = (): any => {
+      const p: any = Promise.resolve({ error: null })
+      p.eq = () => okChain()
+      return p
+    }
+    return {
+      from: (table: string) => ({
+        select: () => ({ eq: () => ({ eq: () => ({ gte: () => ({ lte: () => ({
+          order: () => Promise.resolve({ data: [matchRow], error: null }),
+        }) }) }) }) }),
+        update: (patch: Record<string, unknown>) => {
+          if (table === 'strava_activities') captured.patch = patch
+          return okChain()
+        },
+      }),
+    }
+  }
+
+  it('includes avg_temp_c and splits_metric from the Strava activity', async () => {
+    const captured: { patch?: Record<string, unknown> } = {}
+    const splits = [{ distance: 1000, elapsed_time: 300 }]
+    const result = await tryEnrichHealthKitRow(
+      capturingSupabase(captured),
+      'user-1',
+      { id: 777, start_date: '2026-06-23T17:49:55.000Z', distance: 8025, name: '8K', suffer_score: null, average_temp: 24.5, splits_metric: splits },
+      null,
+    )
+    expect(result.enriched).toBe(true)
+    expect(captured.patch?.avg_temp_c).toBe(24.5)
+    expect(captured.patch?.splits_metric).toEqual(splits)
+  })
+
+  it('writes null temp/splits when Strava did not report them', async () => {
+    const captured: { patch?: Record<string, unknown> } = {}
+    await tryEnrichHealthKitRow(
+      capturingSupabase(captured),
+      'user-1',
+      { id: 777, start_date: '2026-06-23T17:49:55.000Z', distance: 8025, name: '8K', suffer_score: null },
+      null,
+    )
+    expect(captured.patch?.avg_temp_c).toBeNull()
+    expect(captured.patch?.splits_metric).toBeNull()
+  })
+})

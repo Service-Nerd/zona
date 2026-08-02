@@ -125,11 +125,13 @@ async function enrichAndPersist(event: StravaEvent) {
     getSupabase(),
     userId,
     {
-      id:           activity.id,
-      start_date:   activity.start_date,
-      distance:     activity.distance,
-      name:         activity.name,
-      suffer_score: activity.suffer_score ?? null,
+      id:            activity.id,
+      start_date:    activity.start_date,
+      distance:      activity.distance,
+      name:          activity.name,
+      suffer_score:  activity.suffer_score ?? null,
+      average_temp:  activity.average_temp ?? null,
+      splits_metric: activity.splits_metric ?? null,
     },
     hrSummary,
   )

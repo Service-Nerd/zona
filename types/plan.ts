@@ -44,6 +44,16 @@ export interface GeneratorInput {
   // constraint; the plan is then generated with maintenance-grade expectations.
   acknowledged_prep_warning?: boolean
 
+  // ENGINE-05 — post-race recovery gating (CoachingPrinciples §76). When a race
+  // was completed within a distance-keyed recency window, the engine prepends a
+  // recovery-opening block (easy-only, ramped from a fraction of current volume,
+  // quality blacked out) before Week 1 — aerobic markers read "ready" before the
+  // tissue is, so building from day one prescribes intensity onto un-recovered
+  // legs. All optional; absence = no gating (backwards compatible).
+  last_race_date?: string          // ISO date of the most recent completed race
+  last_race_distance_km?: number   // its distance — keys recovery depth + window
+  last_race_effort?: 'finished_strong' | 'faded' | 'dnf' // optional; faded/dnf extends the blackout
+
   // R23 rebuild — preferred long-run weekend day (default Sun if absent)
   preferred_long_run_day?: 'sat' | 'sun'
 

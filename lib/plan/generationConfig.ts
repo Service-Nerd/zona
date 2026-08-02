@@ -105,6 +105,36 @@ export const GENERATION_CONFIG = {
     '100K':     { quality_blackout_weeks: 3, volume_curve_pct: [10, 25, 40, 55, 70] },
   } as const,
 
+  // ── Recent-race recovery gating (ENGINE-05, CoachingPrinciples §76) ──────────
+  // When a race was completed shortly BEFORE plan generation, the opening weeks
+  // are seeded with a recovery block (easy-only, ramped up from a fraction of
+  // current volume) instead of building from day one. Aerobic markers recover
+  // before muscle/connective tissue does, so an ungated plan prescribes
+  // intensity onto legs that read "ready" but aren't. Conservative floors
+  // (Hutchinson guardrail, SLT 2026-08-02).
+  //
+  // within_days: gate fires only if (today − last_race_date) ≤ this. Beyond the
+  //   window the race is old enough that current_weekly_km already reflects
+  //   recovered training, so no gating. Keyed by RaceDistanceKey.
+  // The block's DEPTH (number of opening weeks) reuses
+  //   POST_RACE_RECOVERY_BY_DISTANCE[key].quality_blackout_weeks — the same
+  //   principle that governs post-race recovery inside a plan (§62). One source.
+  RECENT_RACE_RECOVERY_TRIGGER: {
+    '5K':       { within_days: 10 },
+    '10K':      { within_days: 10 },
+    'HM':       { within_days: 10 },
+    'MARATHON': { within_days: 21 },
+    '50K':      { within_days: 28 },
+    '100K':     { within_days: 35 },
+  } as const,
+  // Opening week 1 starts at this fraction of current_weekly_km, then ramps up at
+  // FOUNDATION_WEEKLY_INCREASE_PCT/week toward baseline. The tissue, not the
+  // engine, sets the ceiling early.
+  RECOVERY_OPENING_START_FRACTION: 0.5,
+  // A faded / DNF race cost the legs more than the finish time suggests — extend
+  // the recovery-opening block by this many weeks.
+  RECENT_RACE_EFFORT_BLACKOUT_EXTENSION_WEEKS: 1,
+
   // Strength sessions — flagged off until R21 ships full content.
   // When false: engine skips strength placement entirely (frees up day slots
   // for easy fillers, preventing "1 run/week" plans for low-volume runners).

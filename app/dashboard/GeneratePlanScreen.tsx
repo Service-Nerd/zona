@@ -8,7 +8,7 @@ import type { Plan, GeneratorInput, TrainingAge } from '@/types/plan'
 import GeneratingCeremony from '@/components/GeneratingCeremony'
 import { BRAND } from '@/lib/brand'
 import { createClient } from '@/lib/supabase/client'
-import { classifyGap, gapDays, generateFoundationBlock } from '@/lib/plan/foundationBlock'
+import { classifyGap, gapDays, generateFoundationBlock, classifyRecentRace, generateRecoveryOpeningBlock } from '@/lib/plan/foundationBlock'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import { DurationPicker } from '@/components/shared/DurationPicker'
@@ -20,7 +20,7 @@ import { Chip } from '@/components/shared/Chip'
 
 type WizardSubStep =
   | 'distance' | 'race-details' | 'goal' | 'target-time'
-  | 'fitness' | 'benchmark' | 'schedule' | 'constraints'
+  | 'fitness' | 'benchmark' | 'recent-race' | 'schedule' | 'constraints'
   | 'hard-sessions' | 'terrain' | 'injuries'
 
 type AppStep = WizardSubStep | 'generating' | 'preview' | 'error'
@@ -44,6 +44,18 @@ const BENCHMARK_DISTANCES = [
   { label: '10K',  value: 10   },
   { label: 'Half', value: 21.1 },
   { label: 'Full', value: 42.2 },
+]
+
+// ENGINE-05 — recent-race recovery gating. Unlike BENCHMARK_DISTANCES (VDOT,
+// caps at marathon) this includes ultras — the returning-ultra runner is the
+// whole point of the feature.
+const RECENT_RACE_DISTANCES = [
+  { label: '5K',       value: 5    },
+  { label: '10K',      value: 10   },
+  { label: 'Half',     value: 21.1 },
+  { label: 'Marathon', value: 42.2 },
+  { label: '50K',      value: 50   },
+  { label: '100K+',    value: 100  },
 ]
 
 const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -92,6 +104,7 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
   'target-time':     { title: "What's the target?",    subtitle: "Be honest. Optimistic goals make bad training plans." },
   'fitness':         { title: 'Be honest.',             subtitle: "The plan only works if these numbers are real. Flattering yourself here just means a harder race." },
   'benchmark':       { title: 'Recent race result?',   subtitle: 'Gives us precise pace targets for every session. Skip if you haven\'t raced lately.', optional: true },
+  'recent-race':     { title: 'Raced recently?',        subtitle: 'If you\'ve raced hard in the last few weeks, we open with recovery instead of building on tired legs. Skip if not.', optional: true },
   'schedule':        { title: 'Your schedule.',         subtitle: "Training has to fit your life. Not the other way around." },
   'constraints':     { title: 'Any hard limits?',       subtitle: 'Days you can never train, or a max time on weekdays. Skip if you\'re flexible.', optional: true },
   'hard-sessions':   { title: 'You and hard sessions.', subtitle: 'Intervals, tempo, threshold. Where do you land?' },
@@ -104,7 +117,7 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
 function getStepSequence(hasPaidAccess: boolean, goal: 'finish' | 'time_target' | null): WizardSubStep[] {
   const steps: WizardSubStep[] = ['distance', 'race-details', 'goal']
   if (goal === 'time_target') steps.push('target-time')
-  steps.push('fitness', 'benchmark', 'schedule', 'constraints')
+  steps.push('fitness', 'benchmark', 'recent-race', 'schedule', 'constraints')
   if (hasPaidAccess) steps.push('hard-sessions', 'terrain', 'injuries')
   return steps
 }
@@ -353,6 +366,7 @@ function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
 export default function GeneratePlanScreen({
   onBack, firstName: _firstName, lastName: _lastName, restingHR: initialRHR, maxHR: initialMHR,
   birthYear: initialBirthYear, onBirthYearSave, onPlanSaved, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade,
+  activeMaintenanceRace,
 }: {
   onBack: () => void
   firstName?: string
@@ -366,6 +380,10 @@ export default function GeneratePlanScreen({
   hasExistingPlan?: boolean
   hasPaidAccess?: boolean
   onUpgrade?: () => void
+  /** ENGINE-05 #7 — the race an active MAINT-01 maintenance block is recovering
+   *  from (from the current plan). When the wizard's "raced recently" matches it,
+   *  the recovery-opening trough is suppressed to avoid double-counting recovery. */
+  activeMaintenanceRace?: { date: string; distanceKm: number } | null
 }) {
   // ── App-level step state ──────────────────────────────────────────────────
   const [appStep, setAppStep]   = useState<AppStep>('distance')
@@ -413,6 +431,11 @@ export default function GeneratePlanScreen({
   const [benchmarkDate,    setBenchmarkDate]    = useState('')
   const [benchmarkTTDist,  setBenchmarkTTDist]  = useState('')
 
+  // ── ENGINE-05 — Recent race (recovery gating) ────────────────────────────
+  const [recentRaceDate,   setRecentRaceDate]   = useState('')
+  const [recentRaceDistKm, setRecentRaceDistKm] = useState<number | null>(null)
+  const [recentRaceEffort, setRecentRaceEffort] = useState<'finished_strong' | 'faded' | 'dnf' | null>(null)
+
   // ── Step 7 — Schedule ────────────────────────────────────────────────────
   const [daysAvailable,         setDaysAvailable]         = useState<number | null>(null)
   const [preferredLongRunDay,   setPreferredLongRunDay]   = useState<'sat' | 'sun'>('sun')
@@ -453,6 +476,9 @@ export default function GeneratePlanScreen({
       if (typeof s.benchMins  === 'number') setBenchMins(s.benchMins)
       if (s.benchmarkTTDist) setBenchmarkTTDist(s.benchmarkTTDist)
       if (s.benchmarkDate)   setBenchmarkDate(s.benchmarkDate)
+      if (s.recentRaceDate)   setRecentRaceDate(s.recentRaceDate)
+      if (typeof s.recentRaceDistKm === 'number') setRecentRaceDistKm(s.recentRaceDistKm)
+      if (s.recentRaceEffort) setRecentRaceEffort(s.recentRaceEffort)
       if (s.daysAvailable)   setDaysAvailable(s.daysAvailable)
       if (s.preferredLongRunDay === 'sat' || s.preferredLongRunDay === 'sun') setPreferredLongRunDay(s.preferredLongRunDay)
       if (Array.isArray(s.daysOff)) setDaysOff(s.daysOff)
@@ -461,7 +487,7 @@ export default function GeneratePlanScreen({
       if (s.terrain)         setTerrain(s.terrain)
       if (Array.isArray(s.injuries)) setInjuries(s.injuries)
       // Restore sub-step if it's a valid wizard step name
-      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','fitness','benchmark','schedule','constraints','hard-sessions','terrain','injuries']
+      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','fitness','benchmark','recent-race','schedule','constraints','hard-sessions','terrain','injuries']
       if (validSubSteps.includes(s.appStep)) setAppStep(s.appStep)
     } catch {}
   }, [])
@@ -475,6 +501,7 @@ export default function GeneratePlanScreen({
         targetHours, targetMins,
         birthYear, weeklyKmChip, longestRunChip, restingHR, trainingAge,
         benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
+        recentRaceDate, recentRaceDistKm, recentRaceEffort,
         daysAvailable, preferredLongRunDay, daysOff, maxWeekdayChip,
         hardSessions, terrain, injuries,
       }))
@@ -483,6 +510,7 @@ export default function GeneratePlanScreen({
       targetHours, targetMins,
       birthYear, weeklyKmChip, longestRunChip, restingHR, trainingAge,
       benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
+      recentRaceDate, recentRaceDistKm, recentRaceEffort,
       daysAvailable, preferredLongRunDay, daysOff, maxWeekdayChip,
       hardSessions, terrain, injuries])
 
@@ -555,6 +583,10 @@ export default function GeneratePlanScreen({
         if (benchmarkType === 'race')     return !!(benchmarkDistKm && (benchHours > 0 || benchMins > 0))
         if (benchmarkType === 'tt_30min') return benchmarkTTDist !== ''
         return true
+      case 'recent-race':
+        // Optional. But a distance without a date can't gate recovery — require
+        // the date once a distance is picked (else Skip to move on).
+        return recentRaceDistKm === null || recentRaceDate !== ''
       case 'schedule':       return daysAvailable !== null
       case 'constraints':    return true
       case 'hard-sessions':  return true
@@ -630,6 +662,15 @@ export default function GeneratePlanScreen({
       hard_session_relationship: hasPaidAccess ? (hardSessions ?? undefined) : undefined,
       injury_history:            hasPaidAccess && injuries.length ? injuries.map(i => i.toLowerCase()) : undefined,
       terrain:                   hasPaidAccess ? (terrain ?? undefined) : undefined,
+      // ENGINE-05 — only send when both fields present (gating needs date + distance).
+      // FREE-tier safety: sent regardless of tier; the engine gates the structure.
+      ...(recentRaceDistKm != null && recentRaceDate
+        ? {
+            last_race_date:        recentRaceDate,
+            last_race_distance_km: recentRaceDistKm,
+            ...(recentRaceEffort ? { last_race_effort: recentRaceEffort } : {}),
+          }
+        : {}),
     }
 
     try {
@@ -662,6 +703,21 @@ export default function GeneratePlanScreen({
         if (foundationApplied) return incoming
         foundationApplied = true
         const today = new Date().toISOString().split('T')[0]
+
+        // ENGINE-05 — a recent race gates the opening weeks with a recovery
+        // block, which takes precedence over the ordinary Foundation Block:
+        // recovery IS the ease-in. Recovery weeks carry negative `n`, so the
+        // final_plan re-prepend (w.n <= 0 filter, below) preserves them too.
+        const recovery = classifyRecentRace(input, today, activeMaintenanceRace)
+        if (recovery.gates) {
+          const { weeks: recoveryWeeks } = generateRecoveryOpeningBlock({
+            input,
+            planStartDate: incoming.meta.plan_start,
+            weeks: recovery.weeks,
+          })
+          return { ...incoming, weeks: [...recoveryWeeks, ...incoming.weeks] }
+        }
+
         const gap = gapDays(today, incoming.meta.plan_start)
         const gapClass = classifyGap(gap)
         if (gapClass === 'auto') {
@@ -1248,6 +1304,52 @@ export default function GeneratePlanScreen({
               <div style={{ background: 'var(--bg-soft)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55 }}>
                   Without a benchmark we use population estimates for your fitness level. Still works — just less personal.
+                </div>
+              </div>
+            )}
+          </div>
+        )
+
+      // ── Recent race (ENGINE-05 recovery gating) ──────────────────────────────
+      case 'recent-race':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <FieldLabel optional>What did you race?</FieldLabel>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {RECENT_RACE_DISTANCES.map(d => (
+                  <Chip
+                    key={d.value}
+                    label={d.label}
+                    active={recentRaceDistKm === d.value}
+                    onClick={() => setRecentRaceDistKm(recentRaceDistKm === d.value ? null : d.value)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {recentRaceDistKm !== null && (
+              <>
+                <div>
+                  <FieldLabel>When?</FieldLabel>
+                  <WizardInput type="date" value={recentRaceDate} onChange={setRecentRaceDate} />
+                  <FieldNote>We only ease you in if it was recent — the longer the race, the longer that window.</FieldNote>
+                </div>
+                <div>
+                  <FieldLabel optional>How did it go?</FieldLabel>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <Chip label="Finished strong"     active={recentRaceEffort === 'finished_strong'} onClick={() => setRecentRaceEffort(recentRaceEffort === 'finished_strong' ? null : 'finished_strong')} />
+                    <Chip label="Faded / walked it in" active={recentRaceEffort === 'faded'}           onClick={() => setRecentRaceEffort(recentRaceEffort === 'faded' ? null : 'faded')} />
+                    <Chip label="Didn't finish"        active={recentRaceEffort === 'dnf'}             onClick={() => setRecentRaceEffort(recentRaceEffort === 'dnf' ? null : 'dnf')} />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {recentRaceDistKm === null && (
+              <div style={{ background: 'var(--bg-soft)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55 }}>
+                  Nothing recent? Skip this. Raced hard in the last few weeks? Telling us means we open easy instead of building on legs that haven't recovered.
                 </div>
               </div>
             )}
