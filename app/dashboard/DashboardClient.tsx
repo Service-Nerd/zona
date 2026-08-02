@@ -1381,15 +1381,8 @@ export default function DashboardClient() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      // Archive the previous plan before overwriting — data protection, no restore UI at v1
-      if (plan && plan !== EMPTY_PLAN && plan.weeks.length > 0) {
-        void supabase.from('plan_archive').insert({
-          user_id: user.id,
-          plan_json: plan,
-          race_name: (plan.meta as any)?.race_name ?? null,
-          race_date: (plan.meta as any)?.race_date ?? null,
-        })
-      }
+      // Archiving the previous plan now lives in savePlanForUser (single owner —
+      // fires for every mutation path, race-change-guarded, error-surfaced).
       await savePlanForUser(user.id, savedPlan, supabase)
       setPlan(savedPlan)
       setScreen('today')
@@ -1450,7 +1443,10 @@ export default function DashboardClient() {
       targetTime: plan.meta.target_time ?? null,
       outcome:    result.outcome ?? null,
     }
-    return { sig: plan.meta.race_date ?? `race-${idx}`, race }
+    // #1 — has the runner been shown the one-time maintenance transition
+    // announcement for this race? Stored on result_embedded so it's self-keyed
+    // per race and travels with plan_json (no schema change, cross-device).
+    return { sig: plan.meta.race_date ?? `race-${idx}`, race, transitionSeen: !!result.maintenance_transition_seen }
   })()
   const nextGoalData = (finishedRace && hasPaidAccess && nextGoalDismissedSig !== finishedRace.sig)
     ? { achievement: achievementLine(finishedRace.race), options: nextGoalOptions(finishedRace.race) }
@@ -1481,15 +1477,52 @@ export default function DashboardClient() {
   // MAINT-01 — "Base running" card visible during the maintenance block, keyed
   // by the race signature so it re-surfaces for the next race.
   const maintCardSig = finishedRace?.sig ?? null
+  const hasMaintenanceWeeks = !!plan?.weeks.some(
+    w => (w as any).phase === 'maintenance_restoration' || (w as any).phase === 'maintenance_base',
+  )
+  // #1 — one-time transition announcement. The block is auto-live, but the
+  // runner hasn't been told the race is done and the plan has eased. Shows once
+  // (until acknowledged), and SUPPRESSES the ongoing status card until then, so
+  // Today shows a single maintenance slot that progresses announce → status.
+  const showMaintTransition = !!(finishedRace && hasMaintenanceWeeks && !finishedRace.transitionSeen)
   const showMaintCard = !!(
     maintCardSig &&
     maintCardDismissedSig !== maintCardSig &&
-    plan?.weeks.some(w => (w as any).phase === 'maintenance_restoration' || (w as any).phase === 'maintenance_base')
+    finishedRace?.transitionSeen &&
+    hasMaintenanceWeeks
   )
   function handleDismissMaintCard() {
     if (!maintCardSig) return
     try { localStorage.setItem('zona_maint_card_dismissed', maintCardSig) } catch {}
     setMaintCardDismissedSig(maintCardSig)
+  }
+
+  // #1 — mark the transition announcement seen: set the flag on the race week's
+  // result_embedded and persist. Same-race mutation, so savePlanForUser won't
+  // archive (race-change-guarded). Best-effort save mirrors the plan.meta sync
+  // pattern — the in-memory setPlan is what dismisses the card immediately.
+  async function markMaintenanceTransitionSeen() {
+    if (!plan) return
+    const idx = plan.weeks.findLastIndex(w => w.type === 'race' || (w as any).badge === 'race')
+    if (idx < 0) return
+    const week = plan.weeks[idx] as any
+    if (!week?.result_embedded || week.result_embedded.maintenance_transition_seen) return
+    const updatedWeeks = plan.weeks.map((w, i) => i === idx
+      ? { ...w, result_embedded: { ...(w as any).result_embedded, maintenance_transition_seen: true } }
+      : w)
+    const updatedPlan = { ...plan, weeks: updatedWeeks } as Plan
+    setPlan(updatedPlan)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) await savePlanForUser(user.id, updatedPlan, supabase)
+    } catch (err) { console.error('[maintenance] transition-seen save failed', err) }
+  }
+  function handleSeeMaintenancePlan() {
+    void markMaintenanceTransitionSeen()
+    setScreen('plan')
+  }
+  function handleAckMaintenanceTransition() {
+    void markMaintenanceTransitionSeen()
   }
 
   // MAINT-01 — auto-generate maintenance block when the plan is complete and the
@@ -1853,7 +1886,7 @@ export default function DashboardClient() {
         paddingBottom={(bottomNavH ?? 88) + 16}
         disabled={!pullToRefreshEnabled}
       >
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
                   // historical pending rows from repeated test runs (the POST route
@@ -6277,7 +6310,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, onLogRaceResult, onReshapeAccepted, onReshapeDismissed }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   sessionMetricOverrides: Record<string, 'distance' | 'duration'>
@@ -6331,6 +6364,10 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   /** MAINT-01 — quiet "Base running" card visible during the maintenance block. */
   showMaintCard?: boolean
   onDismissMaintCard?: () => void
+  /** #1 — one-time post-race announcement that the maintenance block is live. */
+  showMaintTransition?: boolean
+  onSeeMaintPlan?: () => void
+  onAckMaintTransition?: () => void
   onLogRaceResult?: () => void
   onReshapeAccepted?: (plan: Plan) => void
   onReshapeDismissed?: () => void
@@ -6357,6 +6394,18 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
     currentWeek.phase === 'maintenance_restoration' || currentWeek.phase === 'maintenance_base'
       ? currentWeek.coach_debrief
       : undefined
+
+  // #1 — shape summary for the transition announcement (rule-engine; no AIMark).
+  // Days/week from a representative maintenance week; rest/cross-train excluded.
+  const maintWeeksAll = plan.weeks.filter(
+    w => (w as any).phase === 'maintenance_restoration' || (w as any).phase === 'maintenance_base',
+  )
+  const maintWeekCount = maintWeeksAll.length
+  const maintDaysPerWeek = maintWeekCount
+    ? Object.values(maintWeeksAll[0].sessions ?? {}).filter(
+        (s: any) => s && s.type !== 'rest' && s.type !== 'cross-train' && s.type !== 'cross_train',
+      ).length
+    : 0
 
   // POST-RUN-01: retroactive RPE nudges. Sessions auto-completed via the
   // webhook (strava_activity_id set, status='complete') but missing RPE in the
@@ -7080,6 +7129,75 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
             PAID) has written a weekly debrief, the card carries Kit's voice with a
             CoachByline + moss rail (Pattern 16b); otherwise it shows the rule-engine
             line with NO provenance mark. AIMark marks the enriched copy only. */}
+        {/* #1 — one-time transition announcement. Marks the race done, explains
+            (§75) why the plan eased, shows the block shape. Auto-live: the
+            affordance is "See the plan" (→ adjust on the Plan screen), never
+            accept/decline. Rule-engine copy → NO AIMark. Recovery-green rail
+            mirrors the Plan-screen seam. */}
+        {showMaintTransition && (
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{
+              position: 'relative',
+              background: 'var(--card)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '16px 16px 12px 19px',
+              border: '1px solid var(--line)',
+              overflow: 'hidden',
+            }}>
+              <span style={{
+                position: 'absolute', left: '8px', top: '16px', bottom: '16px',
+                width: '3px', borderRadius: '2px', background: 'var(--s-recov)',
+              }} />
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+                color: 'var(--s-recov)', letterSpacing: '0.12em', textTransform: 'uppercase',
+                marginBottom: '6px',
+              }}>
+                After the race
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 800,
+                color: 'var(--ink)', letterSpacing: '-0.01em', marginBottom: '6px',
+              }}>
+                {raceName ? `That's ${raceName} done.` : "That's the race done."}
+              </div>
+              <p style={{
+                fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)',
+                lineHeight: '1.45', margin: '0 0 10px',
+              }}>
+                Your body&apos;s still repairing — the plan&apos;s eased to base running while it does.
+              </p>
+              {maintWeekCount > 0 && (
+                <div style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600,
+                  color: 'var(--mute)', marginBottom: '14px', letterSpacing: '0.01em',
+                }}>
+                  {maintDaysPerWeek} day{maintDaysPerWeek === 1 ? '' : 's'}/week · {maintWeekCount} week{maintWeekCount === 1 ? '' : 's'} · below your base, on purpose
+                </div>
+              )}
+              <button
+                onClick={onSeeMaintPlan}
+                style={{
+                  width: '100%', padding: '14px',
+                  background: 'var(--moss)', color: 'var(--card)',
+                  border: 'none', borderRadius: 'var(--radius-lg)',
+                  fontFamily: 'var(--font-ui)', fontSize: '13px',
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                  cursor: 'pointer', fontWeight: 600, marginBottom: '4px',
+                }}
+              >
+                See the plan
+              </button>
+              <button
+                onClick={onAckMaintTransition}
+                style={{ background: 'none', border: 'none', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', cursor: 'pointer', padding: '8px 0', width: '100%' }}
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        )}
+
         {showMaintCard && (
           <div style={{ marginBottom: '16px' }}>
             <div style={{

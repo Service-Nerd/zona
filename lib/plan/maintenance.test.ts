@@ -190,6 +190,24 @@ describe('inferRunDaysPerWeek — maintenance matches the plan run cadence, not 
     expect(inferRunDaysPerWeek(weeks)).toBe(4)
   })
 
+  it('excludes recovery jogs — 3 committed runs + 1 recovery reads as 3, not 4', () => {
+    // The Race-to-Stones symptom: an ultra week with 3 committed runs + 1 recovery
+    // jog must not inflate maintenance cadence to 4.
+    const weeks = [wk({
+      tue: { type: 'easy' }, thu: { type: 'quality' }, sat: { type: 'long' },
+      sun: { type: 'recovery' },
+    })]
+    expect(inferRunDaysPerWeek(weeks)).toBe(3)
+  })
+
+  it('uses the LOWER median on an even spread — 3/4 weeks maintain at 3', () => {
+    const weeks = [
+      wk({ tue: { type: 'easy' }, thu: { type: 'easy' }, sat: { type: 'long' } }),                       // 3
+      wk({ tue: { type: 'easy' }, thu: { type: 'easy' }, sat: { type: 'long' }, sun: { type: 'easy' } }), // 4
+    ]
+    expect(inferRunDaysPerWeek(weeks)).toBe(3)
+  })
+
   it('returns null when there is no run data (caller falls back to meta)', () => {
     expect(inferRunDaysPerWeek([wk({ mon: { type: 'strength' } }, 40)])).toBeNull()
     expect(inferRunDaysPerWeek([])).toBeNull()

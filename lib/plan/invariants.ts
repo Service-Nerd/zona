@@ -1377,9 +1377,13 @@ export function validateMaintenanceBlock(
   weeks: import('@/types/plan').Week[],
   baseWeeklyKm: number,
   injured = false,
+  sourceRunDays: number | null = null,
 ): Violation[] {
   const violations: Violation[] = []
   const qualityTypes = new Set(['tempo', 'threshold', 'intervals', 'quality', 'vo2max', 'cruise'])
+  // Maintenance is a tick-over: it must never schedule MORE run days than the
+  // athlete's real cadence (§75). Rest and cross-train aren't runs.
+  const nonRunTypes = new Set(['rest', 'cross-train', 'cross_train'])
   // §75 rev — maintenance anchors to BASE; no week (Phase 1 or 2) may exceed it.
   const volumeCeiling = baseWeeklyKm * (GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK.VOLUME_CEILING_PCT_OF_BASE / 100)
 
@@ -1447,6 +1451,23 @@ export function validateMaintenanceBlock(
         actual: w.weekly_km,
         expected: `<= ${volumeCeiling.toFixed(1)}km (base volume ${baseWeeklyKm}km)`,
       })
+    }
+
+    // INV-MAINT-CADENCE — maintenance never runs MORE days/week than the athlete's
+    // real source cadence (§75 conservative tick-over). Skipped when cadence unknown.
+    if (sourceRunDays != null) {
+      const runDays = placed.filter(([, s]) => s && !nonRunTypes.has(s.type)).length
+      if (runDays > sourceRunDays) {
+        violations.push({
+          code: 'INV-MAINT-CADENCE',
+          principle_ref: 'CoachingPrinciples §75',
+          severity: 'error',
+          week: w.n,
+          message: `Maintenance week schedules ${runDays} run days, above source cadence ${sourceRunDays}`,
+          actual: runDays,
+          expected: `<= ${sourceRunDays} run days/week`,
+        })
+      }
     }
 
     // INV-MAINT-INJURY-EASY-ONLY — injured athletes get no quality return anywhere

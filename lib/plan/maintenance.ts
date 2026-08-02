@@ -78,23 +78,34 @@ export function aggregatePlanResponse(
   }
 }
 
-const MAINT_RUN_TYPES = new Set(['easy', 'long', 'quality', 'tempo', 'intervals', 'hard', 'recovery', 'run'])
+// Session types that count as a COMMITTED run day for cadence detection.
+// `recovery` is deliberately EXCLUDED: a recovery jog is supplemental easy volume
+// the engine layers onto a training week, not a day the athlete commits to running.
+// Counting it inflated maintenance frequency above real cadence (a Race-to-Stones
+// ultra with 3 committed run days + 1 recovery jog read as 4). §75 wants a
+// conservative tick-over, so cadence tracks committed run days only. Strength,
+// cross-train and rest are excluded (not runs).
+const COMMITTED_RUN_TYPES = new Set(['easy', 'long', 'quality', 'tempo', 'intervals', 'hard', 'run'])
 
 /**
  * §75 — maintenance should match the athlete's actual RUN cadence, not a stale
  * `meta.days_available` (which counts strength/cross-train days too, or may be
- * aspirational). Counts run-days per trained week — excluding strength,
- * cross-train and rest — and returns the median. Null when the plan has no run
- * data (caller falls back to meta.days_available).
+ * aspirational). Counts committed run-days per trained week — excluding recovery
+ * jogs, strength, cross-train and rest — and returns the LOWER median. Null when
+ * the plan has no run data (caller falls back to meta.days_available).
+ *
+ * Lower median (not upper): a plan whose run-days drift between 3 and 4 across
+ * weeks should maintain at the lower, sustainable cadence, not the busier
+ * build-week count — again, the conservative-tick-over default of §75.
  */
 export function inferRunDaysPerWeek(nonMaintWeeks: Week[]): number | null {
   const counts = nonMaintWeeks
     .filter(w => (w.weekly_km ?? 0) > 0)
-    .map(w => Object.values(w.sessions ?? {}).filter(s => s && MAINT_RUN_TYPES.has((s as any).type)).length)
+    .map(w => Object.values(w.sessions ?? {}).filter(s => s && COMMITTED_RUN_TYPES.has((s as any).type)).length)
     .filter(c => c > 0)
     .sort((a, b) => a - b)
   if (!counts.length) return null
-  return counts[Math.floor(counts.length / 2)]
+  return counts[Math.floor((counts.length - 1) / 2)]
 }
 
 /** Did the athlete find the plan hard? (§75 Layer 3) */
@@ -311,7 +322,7 @@ export function generateMaintenanceBlock(opts: MaintenanceBlockOptions): Week[] 
   }
 
   // Constitutional check — throws in dev/test, logs in prod (mirrors generateRulePlan)
-  const violations = validateMaintenanceBlock(weeks, baseWeeklyKm, injured)
+  const violations = validateMaintenanceBlock(weeks, baseWeeklyKm, injured, daysAvailable)
   if (violations.length > 0) {
     const msg = violations.map(v => `[${v.severity.toUpperCase()}] ${v.code} week ${v.week}: ${v.message}`).join('\n')
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {

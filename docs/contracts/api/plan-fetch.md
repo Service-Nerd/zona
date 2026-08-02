@@ -27,7 +27,9 @@ Auto-migration is transparent to the user. After the first load, all subsequent 
 
 `lib/plan.ts` — `savePlanForUser(userId, plan, supabase)`.
 Upserts to `plans` table with `onConflict: 'user_id'` (one row per user).
-`DashboardClient.handlePlanSaved` is the only caller for user-initiated saves.
+Called by every plan-mutation path: `DashboardClient.handlePlanSaved` (wizard), the in-client save, and the server routes (`adjust-plan`, `confirm-adjustment`, `revert-adjustment`, `recalibrate-zones`, `recalibrate-taper`, `post-race-reshape*`, `maintenance-block`).
+
+**Archiving (single owner):** before the upsert, `savePlanForUser` reads the currently-stored plan and, **only when the incoming plan is for a different race** (`race_name|race_date` signature differs), inserts the prior plan into `plan_archive` (surfaces the Me → Plan history screen). Same-race mutations — reshape, recalibrate, sub-threshold auto-apply, the appended maintenance block — deliberately do **not** archive, so the race-labelled history screen isn't flooded with near-duplicate "replaced today" rows. Archive failure is logged, never thrown (best-effort vs the primary upsert; N-015-compliant — no silent void write). Because archiving is centralised here, it fires under the same client (and thus the same RLS/service-role context) that successfully persists the plan.
 
 ---
 

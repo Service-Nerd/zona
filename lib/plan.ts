@@ -83,6 +83,43 @@ export async function savePlanForUser(
   plan: Plan,
   supabase: SupabaseClient
 ): Promise<void> {
+  // Plan history (data protection + the Me → Plan history screen): archive the
+  // CURRENTLY-stored plan before it's overwritten. Centralised HERE so every
+  // mutation path archives consistently — previously only the wizard's
+  // handlePlanSaved did, so reshapes, recalibrations, adjustments and the
+  // maintenance block all silently bypassed it and history stayed near-empty.
+  //
+  // Archive only on a RACE-IDENTITY change. Same-race mutations (reshape,
+  // recalibrate, sub-threshold auto-apply, the appended maintenance block) must
+  // NOT create near-duplicate "Race to Stones · replaced today" rows — the
+  // history screen is race-labelled, so that would be pure noise. A genuinely new
+  // race plan replacing a prior one is what belongs in history.
+  const { data: priorRow } = await supabase
+    .from('plans')
+    .select('plan_json')
+    .eq('user_id', userId)
+    .maybeSingle()
+  const prior = priorRow?.plan_json as Plan | undefined
+  if (prior && (prior.weeks?.length ?? 0) > 0) {
+    const priorSig = `${prior.meta?.race_name ?? ''}|${prior.meta?.race_date ?? ''}`
+    const nextSig  = `${plan.meta?.race_name ?? ''}|${plan.meta?.race_date ?? ''}`
+    if (priorSig !== nextSig) {
+      // N-015: don't silently swallow a SOR-adjacent write. Archiving is
+      // best-effort relative to the primary upsert below (it must never block a
+      // plan save), so log — don't throw — but make failure visible, never an
+      // unhandled rejection.
+      const archiveRes = await supabase.from('plan_archive').insert({
+        user_id: userId,
+        plan_json: prior,
+        race_name: prior.meta?.race_name ?? null,
+        race_date: prior.meta?.race_date ?? null,
+      })
+      if (archiveRes.error) {
+        console.error(`[savePlanForUser] plan_archive insert failed — ${archiveRes.error.message}`)
+      }
+    }
+  }
+
   // RESHAPE-FIX-WAVE1 (Defect 9): surface upsert errors. Prior code awaited
   // the upsert without checking `.error`, so RLS rejections, schema issues,
   // and constraint failures landed silently. The reshape engine then

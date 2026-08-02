@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import type { Week, Session } from '@/types/plan'
 import { createClient } from '@/lib/supabase/client'
 import { authedFetch } from '@/lib/supabase/authedFetch'
@@ -223,6 +223,15 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
   const nextWeek    = currentAndFutureWeeks[1]
   const laterWeeks  = currentAndFutureWeeks.slice(2)
 
+  // Post-race maintenance seam (§75, #3b): find the first current/future week
+  // whose phase turns maintenance where the week before it wasn't — the boundary
+  // the "After the race" seam marks. -1 when the plan has no maintenance block.
+  const prevWeekOf = (i: number): Week | undefined =>
+    i > 0 ? currentAndFutureWeeks[i - 1].week : (safeIndex > 0 ? weeks[safeIndex - 1] : undefined)
+  const maintBoundaryIdx = currentAndFutureWeeks.findIndex(
+    (cw, i) => isMaintWeek(cw.week) && !isMaintWeek(prevWeekOf(i))
+  )
+
   return (
     <div style={{ padding: '0 16px 32px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
       {pastWeeks.length > 0 && (
@@ -240,27 +249,37 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
       )}
       {currentWeek && (
         <>
+          {maintBoundaryIdx === 0 && <MaintSeam />}
           <PlanSectionLabel>Now</PlanSectionLabel>
           {renderWeek(currentWeek)}
         </>
       )}
       {nextWeek && (
         <>
+          {maintBoundaryIdx === 1 && <MaintSeam />}
           <PlanSectionLabel>Next</PlanSectionLabel>
           {renderWeek(nextWeek)}
         </>
       )}
       {laterWeeks.length > 0 && (
         <>
+          {maintBoundaryIdx === 2 && <MaintSeam />}
           <PlanSectionLabel right={`${laterWeeks.length} week${laterWeeks.length !== 1 ? 's' : ''}`}>Later</PlanSectionLabel>
-          {laterWeeks.map(w => {
+          {laterWeeks.map((w, j) => {
+            // Boundary can also fall deeper inside Later (race + first maint weeks
+            // still in Now/Next). Combined index of this later week is j + 2.
+            const seam = (j + 2) === maintBoundaryIdx && maintBoundaryIdx > 2
+              ? <MaintSeam key={`seam-${w.weekNum}`} />
+              : null
             // PLAN-STRIP-EXPAND: when this Later week is the currently-expanded
             // one, replace the strip with a full WeekCard preceded by a single
             // brand-restraint eyebrow ("LATER — STILL FLEXIBLE"). Tapping the
             // eyebrow collapses. Single-week expansion at a time.
             if (expandedLaterWeek === w.weekNum) {
               return (
-                <div key={`expanded-${w.weekNum}`} style={{ display: 'flex', flexDirection: 'column', gap: '8px', animation: 'zonna-fade-in 0.18s ease-out' }}>
+                <React.Fragment key={`later-${w.weekNum}`}>
+                {seam}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', animation: 'zonna-fade-in 0.18s ease-out' }}>
                   <button
                     onClick={() => setExpandedLaterWeek(null)}
                     aria-label="Collapse week"
@@ -281,22 +300,52 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
                   </button>
                   {renderWeek(w)}
                 </div>
+                </React.Fragment>
               )
             }
             return (
-              <WeekStripCard
-                key={`strip-${w.weekNum}`}
-                week={w.week}
-                weekNum={w.weekNum}
-                completions={Object.values(allCompletions[w.weekNum] ?? {})}
-                units={units}
-                isPast={false}
-                onTap={() => setExpandedLaterWeek(prev => prev === w.weekNum ? null : w.weekNum)}
-              />
+              <React.Fragment key={`later-${w.weekNum}`}>
+                {seam}
+                <WeekStripCard
+                  week={w.week}
+                  weekNum={w.weekNum}
+                  completions={Object.values(allCompletions[w.weekNum] ?? {})}
+                  units={units}
+                  isPast={false}
+                  onTap={() => setExpandedLaterWeek(prev => prev === w.weekNum ? null : w.weekNum)}
+                />
+              </React.Fragment>
             )
           })}
         </>
       )}
+    </div>
+  )
+}
+
+/** Is this an appended post-race maintenance week? (§75) */
+function isMaintWeek(week?: Week): boolean {
+  const p = (week as any)?.phase as string | undefined
+  return p === 'maintenance_restoration' || p === 'maintenance_base'
+}
+
+/** Seam marking the start of the post-race maintenance block (#3b, §75).
+ *  A recovery-green eyebrow (distinct from the grey Now/Next/Later labels) so the
+ *  block reads as its own "after the race" chapter, not W-n of the race plan. */
+function MaintSeam() {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'baseline', gap: '8px',
+      padding: '0 4px', marginTop: '22px',
+    }}>
+      <span style={{
+        fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
+        color: 'var(--s-recov)', letterSpacing: '0.12em', textTransform: 'uppercase',
+      }}>After the race</span>
+      <span style={{
+        fontFamily: 'var(--font-ui)', fontSize: '10px',
+        color: 'var(--mute)', letterSpacing: '0.04em',
+      }}>maintenance</span>
     </div>
   )
 }
@@ -343,6 +392,8 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   // Race week gets --s-race left-rail accent so it stands out in the calendar
   // — mirrors the PlanArc treatment (which already paints race week --s-race).
   const isRace = (week as any).type === 'race' || (week as any).badge === 'race'
+  const phase = (week as any).phase as string | undefined
+  const isMaint = phase === 'maintenance_restoration' || phase === 'maintenance_base'
   const weekTheme = week.theme ?? ''
   const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()]
   const [movingDay, setMovingDay] = useState<string | null>(null)
@@ -449,7 +500,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
       border: `1px solid ${isCurrent ? 'var(--line-strong)' : 'var(--line)'}`,
       borderLeft: isRace
         ? '3px solid var(--s-race)'
-        : isCurrent ? '3px solid var(--moss)' : undefined,
+        : isCurrent ? '3px solid var(--moss)' : isMaint ? '3px solid var(--s-recov)' : undefined,
       overflow: 'hidden',
       opacity: isCompleted ? 0.65 : 1,
     }}>
@@ -463,10 +514,12 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
         <div>
           <div style={{
             fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-            color: isRace ? 'var(--s-race)' : isCurrent ? 'var(--moss)' : 'var(--mute)',
+            color: isRace ? 'var(--s-race)' : isCurrent ? 'var(--moss)' : isMaint ? 'var(--s-recov)' : 'var(--mute)',
             letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '2px',
           }}>
-            {isRace ? 'Race week · ' : ''}W{weekNum} · {formatDateRange(weekStartDate)}
+            {isMaint
+              ? <>{phase === 'maintenance_restoration' ? 'Restoration' : 'Base'} · {formatDateRange(weekStartDate)}</>
+              : <>{isRace ? 'Race week · ' : ''}W{weekNum} · {formatDateRange(weekStartDate)}</>}
             {movingDay && <span style={{ color: 'var(--moss)', marginLeft: '8px', textTransform: 'none', letterSpacing: 'normal', fontWeight: 500 }}>· Tap where you want it.</span>}
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: isCompleted ? 'var(--mute)' : 'var(--ink)', letterSpacing: '-0.005em' }}>
@@ -846,6 +899,7 @@ function WeekStripCard({ week, weekNum, completions, units, isPast = false, onTa
   const weekStartDate = parseLocalDate(week.date)
   const isRace = (week as any).type === 'race' || (week as any).badge === 'race'
   const phase = (week as any).phase as string | undefined
+  const isMaint = phase === 'maintenance_restoration' || phase === 'maintenance_base'
   const sessionDistances = Object.values(ws).map((s: any) => s?.distance_km as number | undefined)
   const intendedKm = sumRoundedDistance(sessionDistances, units)
   const completionMap: Record<string, string> = {}
@@ -861,7 +915,7 @@ function WeekStripCard({ week, weekNum, completions, units, isPast = false, onTa
       style={{
         background: 'var(--card)',
         border: '1px solid var(--line)',
-        borderLeft: isRace ? '3px solid var(--s-race)' : undefined,
+        borderLeft: isRace ? '3px solid var(--s-race)' : isMaint ? '3px solid var(--s-recov)' : undefined,
         borderRadius: 'var(--radius-lg)',
         padding: '14px 16px',
         opacity: isPast ? 0.65 : 1,
@@ -872,13 +926,17 @@ function WeekStripCard({ week, weekNum, completions, units, isPast = false, onTa
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
         <div style={{
           fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600,
-          color: isRace ? 'var(--s-race)' : isPast ? 'var(--mute)' : 'var(--ink-2)',
+          color: isRace ? 'var(--s-race)' : isMaint ? 'var(--s-recov)' : isPast ? 'var(--mute)' : 'var(--ink-2)',
           letterSpacing: '-0.005em',
         }}>
-          {isRace ? 'Race week' : `W${weekNum} · ${formatDateRange(weekStartDate)}`}
-          {!isRace && phase === 'taper' && <span style={{ color: 'var(--mute)' }}> · taper</span>}
-          {!isRace && (week as any).type === 'deload' && <span style={{ color: 'var(--mute)' }}> · deload</span>}
-          {!isRace && week.label && phase === 'peak' && <span style={{ color: 'var(--mute)' }}> · peak</span>}
+          {isRace
+            ? 'Race week'
+            : isMaint
+            ? `${week.label ?? 'Maintenance'} · ${formatDateRange(weekStartDate)}`
+            : `W${weekNum} · ${formatDateRange(weekStartDate)}`}
+          {!isRace && !isMaint && phase === 'taper' && <span style={{ color: 'var(--mute)' }}> · taper</span>}
+          {!isRace && !isMaint && (week as any).type === 'deload' && <span style={{ color: 'var(--mute)' }}> · deload</span>}
+          {!isRace && !isMaint && week.label && phase === 'peak' && <span style={{ color: 'var(--mute)' }}> · peak</span>}
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
           {headerKm > 0 && (
