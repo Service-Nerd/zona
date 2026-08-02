@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateMaintenanceBlock, aggregatePlanResponse, inferRunDaysPerWeek } from './maintenance'
+import { generateMaintenanceBlock, aggregatePlanResponse, inferRunDaysPerWeek, inferActualRunCadence } from './maintenance'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { Week, RaceResult } from '@/types/plan'
 
@@ -211,6 +211,58 @@ describe('inferRunDaysPerWeek — maintenance matches the plan run cadence, not 
   it('returns null when there is no run data (caller falls back to meta)', () => {
     expect(inferRunDaysPerWeek([wk({ mon: { type: 'strength' } }, 40)])).toBeNull()
     expect(inferRunDaysPerWeek([])).toBeNull()
+  })
+})
+
+describe('inferActualRunCadence — the athlete\'s REAL days + frequency from completions', () => {
+  // A plan prescribing runs on tue/fri/sat/sun (+ strength mon/wed).
+  const planWeek = (n: number): any => ({
+    n, date: '', label: '', theme: '', type: 'normal', weekly_km: 40, long_run_hrs: null,
+    sessions: {
+      mon: { type: 'strength' }, tue: { type: 'easy' }, wed: { type: 'strength' },
+      fri: { type: 'easy' }, sat: { type: 'long' }, sun: { type: 'easy' },
+    },
+  })
+  const weeks = [1, 2, 3, 4].map(planWeek)
+  // Completed all four runs each week → 16 completed runs, days tue/fri/sat/sun.
+  const complete = (week_n: number, days: string[]) =>
+    days.map(d => ({ week_n, session_day: d, status: 'complete' }))
+  const allRuns = weeks.flatMap(w => complete(w.n, ['tue', 'fri', 'sat', 'sun']))
+
+  it('derives the actual days in week order + frequency', () => {
+    const c = inferActualRunCadence(weeks, allRuns, 8)
+    expect(c).not.toBeNull()
+    expect(c!.dayKeys).toEqual(['tue', 'fri', 'sat', 'sun'])
+    expect(c!.daysPerWeek).toBe(4)
+  })
+
+  it('ignores strength days and non-complete rows', () => {
+    const rows = [
+      ...complete(1, ['tue', 'fri', 'sun']),
+      { week_n: 1, session_day: 'mon', status: 'complete' },   // strength — not a run
+      { week_n: 2, session_day: 'tue', status: 'skipped' },    // not complete
+      ...complete(2, ['fri', 'sun']),
+      ...complete(3, ['tue', 'fri', 'sun']),
+      ...complete(4, ['tue', 'fri', 'sun']),
+    ]
+    const c = inferActualRunCadence(weeks, rows, 8)
+    expect(c!.dayKeys).toEqual(['tue', 'fri', 'sun'])   // strength excluded, 3 real days
+    expect(c!.daysPerWeek).toBe(3)
+  })
+
+  it('returns null below the confidence floor (caller falls back to plan cadence)', () => {
+    const few = complete(1, ['tue', 'fri', 'sun'])   // 3 completed runs < 8
+    expect(inferActualRunCadence(weeks, few, 8)).toBeNull()
+    expect(inferActualRunCadence(weeks, [], 8)).toBeNull()
+  })
+
+  it('generator places sessions on the actual days, not the default mon/wed/fri/sat', () => {
+    const w = gen({ trainingDays: ['tue', 'fri', 'sat', 'sun'], daysAvailable: 4 })
+    const runDays = Object.entries(w[0].sessions ?? {})
+      .filter(([, s]: any) => s && s.type !== 'rest').map(([d]) => d).sort()
+    expect(runDays).toEqual(['fri', 'sat', 'sun', 'tue'])
+    expect((w[0].sessions as any).mon.type).toBe('rest')  // strength day → rest in maintenance
+    expect((w[0].sessions as any).wed.type).toBe('rest')
   })
 })
 

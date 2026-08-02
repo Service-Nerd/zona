@@ -108,6 +108,65 @@ export function inferRunDaysPerWeek(nonMaintWeeks: Week[]): number | null {
   return counts[Math.floor((counts.length - 1) / 2)]
 }
 
+const DOW_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+
+/** The athlete's real run rhythm, derived from what they actually completed. */
+export interface ActualRunCadence {
+  /** Frequency — committed runs/week (lower median of completed weeks). */
+  daysPerWeek: number
+  /** WHICH days they ran, week-ordered (e.g. ['tue','fri','sat','sun']). */
+  dayKeys: Array<typeof DOW_ORDER[number]>
+}
+
+/**
+ * §75 — derive the athlete's ACTUAL run cadence from what they *completed*, not
+ * what the plan *prescribed*. Returns both the frequency AND which days, so the
+ * maintenance block lands on the athlete's real rhythm (e.g. tue/fri/sat/sun)
+ * instead of a hardcoded mon/wed/fri/sat that can fall on their strength/rest days.
+ *
+ * Cross-references each completion against the plan session at (week_n, day) to
+ * confirm it was a committed run (recovery jogs excluded, as for cadence detection).
+ * Requires a confidence floor of completed runs — below it returns null and the
+ * caller falls back to plan-prescribed `inferRunDaysPerWeek` (never infer a rhythm
+ * from a handful of logs). Frequency uses the lower median (conservative, matching
+ * the tick-over ethos); days are the most-consistently-run day-of-week slots.
+ */
+export function inferActualRunCadence(
+  nonMaintWeeks: Week[],
+  completions: Array<{ week_n: number; session_day: string; status: string | null }>,
+  minCompletedRuns: number,
+): ActualRunCadence | null {
+  const weekByN = new Map<number, Week>()
+  for (const w of nonMaintWeeks) if (typeof w.n === 'number') weekByN.set(w.n, w)
+
+  const dayTally: Record<string, number> = {}
+  const perWeekRuns = new Map<number, number>()
+  let completedRuns = 0
+  for (const c of completions) {
+    if (c.status !== 'complete') continue
+    const wk = weekByN.get(c.week_n)
+    const sess = wk ? (wk.sessions as any)?.[c.session_day] : null
+    if (sess && COMMITTED_RUN_TYPES.has(sess.type)) {
+      completedRuns++
+      dayTally[c.session_day] = (dayTally[c.session_day] ?? 0) + 1
+      perWeekRuns.set(c.week_n, (perWeekRuns.get(c.week_n) ?? 0) + 1)
+    }
+  }
+  if (completedRuns < minCompletedRuns) return null
+  const counts = Array.from(perWeekRuns.values()).sort((a, b) => a - b)
+  if (!counts.length) return null
+
+  const daysPerWeek = counts[Math.floor((counts.length - 1) / 2)]  // lower median
+  // Rank day-of-week by how often it was actually run; tie-break by week order.
+  const ranked = Object.keys(dayTally)
+    .filter(d => (DOW_ORDER as readonly string[]).includes(d))
+    .sort((a, b) => (dayTally[b] - dayTally[a]) || (DOW_ORDER.indexOf(a as any) - DOW_ORDER.indexOf(b as any)))
+    .slice(0, daysPerWeek)
+  const dayKeys = DOW_ORDER.filter(d => ranked.includes(d))  // return in week order
+  if (!dayKeys.length) return null
+  return { daysPerWeek, dayKeys }
+}
+
 /** Did the athlete find the plan hard? (§75 Layer 3) */
 function planWasHard(response: MaintenancePlanResponse | null | undefined): boolean {
   if (!response || response.loggedCount < MIN_LOGGED_FOR_RESPONSE) return false
@@ -189,29 +248,32 @@ function buildMildQualitySession(distKm: number): Session {
 
 function buildSessions(
   weeklyKm: number,
-  daysAvailable: number,
+  trainingDays: Array<typeof TRAINING_DAYS[number]>,  // resolved run days (actual cadence or default)
   phase: 'phase1' | 'phase2',
   weekIndexInPhase: number,
   isDnf: boolean,
   allowQuality: boolean,   // Layer 2 — false when injured: stay easy-only, no quality return.
 ): Week['sessions'] {
   const sessions: Week['sessions'] = {}
-  const trainingDayCount = Math.min(daysAvailable, 5)
-  // Rest days: Tue + Sun always; training fills Mon, Wed, Fri, Sat (then Thu if >4 days)
-  const preferredTraining: typeof TRAINING_DAYS = ['mon', 'wed', 'fri', 'sat', 'thu']
-  const trainingDays = preferredTraining.slice(0, trainingDayCount)
+  const trainingDayCount = trainingDays.length
   const restDays = TRAINING_DAYS.filter(d => !trainingDays.includes(d))
 
   const perDayKm = parseFloat((weeklyKm / trainingDayCount).toFixed(1))
   const longerKm = parseFloat((weeklyKm * GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK.PHASE2_LONG_DAY_PCT / 100).toFixed(1))
-  const shortKm  = parseFloat(((weeklyKm - longerKm) / (trainingDayCount - 1)).toFixed(1))
+  const shortKm  = trainingDayCount > 1
+    ? parseFloat(((weeklyKm - longerKm) / (trainingDayCount - 1)).toFixed(1))
+    : longerKm
 
   const easyNote = isDnf
     ? 'The body doesn\'t know what it didn\'t finish. Recover anyway.'
     : 'Zone 2 only. If you\'re questioning whether to slow down, you should.'
 
+  // Exactly ONE long day — the last training day in week order (the athlete's
+  // usual weekend long-ish day). Previously also flagged Saturday, which
+  // double-counted the long day whenever Saturday wasn't last.
+  const longDay = trainingDays[trainingDayCount - 1]
   for (const day of trainingDays) {
-    const isLong = day === 'sat' || day === trainingDays[trainingDayCount - 1]
+    const isLong = day === longDay
     const km = isLong ? Math.max(longerKm, perDayKm) : shortKm
 
     // Phase 2 from week 2 onwards: last training day gets a mild quality session
@@ -245,7 +307,11 @@ export interface MaintenanceBlockOptions {
    *  Maintenance anchors here, NOT to plan peak (§75, rev 2026-08-02). */
   baseWeeklyKm: number
   raceDistanceKm: number    // from plan.meta.race_distance_km
-  daysAvailable: number     // from plan.meta.days_available or default 4
+  daysAvailable: number     // frequency — from actual cadence, else inferRunDaysPerWeek, else meta
+  /** WHICH days to run (§75 — actual cadence). When absent, a sensible default
+   *  order is used, sliced to `daysAvailable`. When present, its length IS the
+   *  frequency (it already reflects the athlete's real days + count). */
+  trainingDays?: Array<typeof TRAINING_DAYS[number]>
   // ── Person & circumstance (§75 Layers 2–5). All optional — absent = neutral. ──
   injuryHistory?: string[]                       // Layer 2 — plan.meta.injury_history
   planResponse?: MaintenancePlanResponse | null  // Layer 3 — aggregated session_completions
@@ -256,8 +322,14 @@ export interface MaintenanceBlockOptions {
 export function generateMaintenanceBlock(opts: MaintenanceBlockOptions): Week[] {
   const {
     raceResult, lastRaceWeek, baseWeeklyKm, raceDistanceKm, daysAvailable,
-    injuryHistory, planResponse, recoverySuppressed = false, intent = 'tick_over',
+    trainingDays, injuryHistory, planResponse, recoverySuppressed = false, intent = 'tick_over',
   } = opts
+  // Resolve run days: prefer the athlete's actual days (already count-correct),
+  // else the default order sliced to the inferred/available frequency. Cap at 5.
+  const defaultOrder: typeof TRAINING_DAYS = ['mon', 'wed', 'fri', 'sat', 'thu']
+  const resolvedDays = (trainingDays && trainingDays.length)
+    ? trainingDays.slice(0, 5)
+    : defaultOrder.slice(0, Math.min(daysAvailable, 5))
   const isDnf   = raceResult.outcome === 'dnf'
   const rpe     = raceResult.rpe ?? null
   const injured = (injuryHistory ?? []).length > 0
@@ -299,7 +371,7 @@ export function generateMaintenanceBlock(opts: MaintenanceBlockOptions): Week[] 
       phase: 'maintenance_restoration',
       weekly_km: volKm,
       long_run_hrs: null,
-      sessions: buildSessions(volKm, daysAvailable, 'phase1', i, isDnf, allowQuality),
+      sessions: buildSessions(volKm, resolvedDays, 'phase1', i, isDnf, allowQuality),
     })
   }
 
@@ -317,7 +389,7 @@ export function generateMaintenanceBlock(opts: MaintenanceBlockOptions): Week[] 
       phase: 'maintenance_base',
       weekly_km: phase2VolKm,
       long_run_hrs: null,
-      sessions: buildSessions(phase2VolKm, daysAvailable, 'phase2', i, isDnf, allowQuality),
+      sessions: buildSessions(phase2VolKm, resolvedDays, 'phase2', i, isDnf, allowQuality),
     })
   }
 

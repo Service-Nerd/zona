@@ -631,6 +631,9 @@ export const GENERATION_CONFIG = {
     PHASE3_LAST_WEEKS: 2,                // final N weeks of Phase 2 become Phase 3 (ambient re-engagement)
     MIN_BASE_KM_FLOOR: 15,               // floor for plan base weekly_km when computing maintenance volumes.
     // Prevents degenerate maintenance plans for users whose plan base was unusually low.
+    ACTUAL_CADENCE_MIN_COMPLETED_RUNS: 8, // confidence floor: need ≥ this many COMPLETED runs before
+    // trusting actual-cadence detection (days + frequency from session_completions, §75). Below it,
+    // fall back to plan-prescribed cadence — don't infer an athlete's rhythm from a handful of logs.
     // ── Person-aware duration modifiers (§75 Layers 2–4) ──────────────────────
     // Restoration (Phase 1) extends when the data says the athlete needs longer.
     RESPONSE_HEAVY_TAG_FRACTION_THRESHOLD: 0.3, // ≥30% of logged sessions tagged Heavy/Wrecked → the plan was hard on them.

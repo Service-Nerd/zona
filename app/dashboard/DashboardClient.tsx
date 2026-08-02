@@ -7883,6 +7883,8 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
 
   // Tracked km for the current week (for the This Week card footer)
   const currentWeek = plan.weeks[currentWeekIndex] as any
+  // #3b — is the athlete currently inside the post-race maintenance block?
+  const inMaintenance = currentWeek?.phase === 'maintenance_restoration' || currentWeek?.phase === 'maintenance_base'
   const currentWeekSessions = Object.values((currentWeek as any)?.sessions ?? {}) as any[]
   const weeklyKmTarget = sumRoundedDistance(currentWeekSessions.map((s: any) => s?.distance_km as number | undefined), 'km')
 
@@ -7937,8 +7939,17 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
 
       {/* ── RACE NAME HEADING ────────────────────────────────────── */}
       {raceName && (
-        <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.2 }}>
+        <div style={{ padding: inMaintenance ? '0 16px 2px' : '0 16px 12px', fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.2 }}>
           {raceName}
+        </div>
+      )}
+      {/* #3b — when the athlete is inside the post-race maintenance block, the
+          screen must stop reading as active race prep. A recovery-green eyebrow
+          under the race title names the chapter; the per-week accents + seam
+          in PlanCalendar carry it through the week list. Rule-engine → no AIMark. */}
+      {inMaintenance && (
+        <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--s-recov)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          After the race · Maintenance
         </div>
       )}
 
@@ -10896,6 +10907,11 @@ interface ArchivedPlan {
   race_name:   string | null
   race_date:   string | null
   archived_at: string
+  /** The live plan (from `plans`), surfaced at the top so history is never
+   *  confusingly empty for a single-plan user — `plan_archive` only holds
+   *  SUPERSEDED plans, so the current/just-finished plan would otherwise never
+   *  appear. */
+  isCurrent?:  boolean
 }
 
 function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
@@ -10908,13 +10924,23 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { setStatus('error'); return }
-        const { data, error } = await supabase
-          .from('plan_archive')
-          .select('id, race_name, race_date, archived_at')
-          .eq('user_id', user.id)
-          .order('archived_at', { ascending: false })
+        const [{ data, error }, { data: planRow }] = await Promise.all([
+          supabase
+            .from('plan_archive')
+            .select('id, race_name, race_date, archived_at')
+            .eq('user_id', user.id)
+            .order('archived_at', { ascending: false }),
+          supabase.from('plans').select('plan_json').eq('user_id', user.id).maybeSingle(),
+        ])
         if (error) { setStatus('error'); return }
-        setPlans(data ?? [])
+        // Prepend the live plan so the user's current/just-finished plan is visible
+        // (plan_archive only holds superseded plans).
+        const cur = planRow?.plan_json as any
+        const currentEntry: ArchivedPlan | null =
+          cur && (cur.weeks?.length ?? 0) > 0
+            ? { id: 'current', race_name: cur.meta?.race_name ?? null, race_date: cur.meta?.race_date ?? null, archived_at: '', isCurrent: true }
+            : null
+        setPlans(currentEntry ? [currentEntry, ...(data ?? [])] : (data ?? []))
         setStatus('loaded')
       } catch {
         setStatus('error')
@@ -11001,13 +11027,26 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
         {status === 'loaded' && plans.map(p => {
           const raceName  = p.race_name ?? 'Unnamed plan'
           const raceDate  = formatRaceDate(p.race_date)
-          const archived  = relativeTime(p.archived_at)
-          const subtitle  = [raceDate, archived ? `replaced ${archived}` : ''].filter(Boolean).join(' · ')
+          let subtitle: string
+          if (p.isCurrent) {
+            const raceInPast = p.race_date ? new Date(p.race_date).getTime() < Date.now() : false
+            subtitle = [raceDate, raceInPast ? 'race done' : 'in progress'].filter(Boolean).join(' · ')
+          } else {
+            const archived = relativeTime(p.archived_at)
+            subtitle = [raceDate, archived ? `replaced ${archived}` : ''].filter(Boolean).join(' · ')
+          }
           return (
             <div key={p.id} style={{
               background: 'var(--card)', borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--line)', padding: '14px 16px',
+              border: '1px solid var(--line)',
+              borderLeft: p.isCurrent ? '3px solid var(--moss)' : '1px solid var(--line)',
+              padding: '14px 16px',
             }}>
+              {p.isCurrent && (
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--moss)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' }}>
+                  Current
+                </div>
+              )}
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, marginBottom: '3px' }}>
                 {raceName}
               </div>

@@ -223,14 +223,12 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
   const nextWeek    = currentAndFutureWeeks[1]
   const laterWeeks  = currentAndFutureWeeks.slice(2)
 
-  // Post-race maintenance seam (§75, #3b): find the first current/future week
-  // whose phase turns maintenance where the week before it wasn't — the boundary
-  // the "After the race" seam marks. -1 when the plan has no maintenance block.
-  const prevWeekOf = (i: number): Week | undefined =>
-    i > 0 ? currentAndFutureWeeks[i - 1].week : (safeIndex > 0 ? weeks[safeIndex - 1] : undefined)
-  const maintBoundaryIdx = currentAndFutureWeeks.findIndex(
-    (cw, i) => isMaintWeek(cw.week) && !isMaintWeek(prevWeekOf(i))
-  )
+  // Post-race maintenance seam (§75, #3b): the "After the race" seam marks the
+  // FIRST maintenance week in the current/future list. Using first-maintenance
+  // (not a race→maint transition) means it still renders once the athlete is
+  // already INSIDE the block — the transition itself is in the collapsed past by
+  // then, so a transition-only check showed nothing. -1 when no maintenance.
+  const maintBoundaryIdx = currentAndFutureWeeks.findIndex(cw => isMaintWeek(cw.week))
 
   return (
     <div style={{ padding: '0 16px 32px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
