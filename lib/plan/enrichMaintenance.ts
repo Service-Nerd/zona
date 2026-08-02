@@ -44,6 +44,7 @@ WHAT THE MAINTENANCE BLOCK IS (do not contradict this):
 - It is not a reward for racing well and not a fallback for feeling bad. It is the mechanical consequence of what a race does to the body.
 - Phase "maintenance_restoration" = quality blackout. Easy running, rest, cross-training only. The body is still repairing, not yet adapting.
 - Phase "maintenance_base" = holding a base. Quality reintroduced at one mild session per week. Not ramping toward anything.
+- A "maintenance_base" week flagged "reengagement": true is one of the block's final weeks. The recovery window has been served. The training does not change at all — but this is the one place in the block where looking forward is permitted, lightly.
 
 OUTPUT RULES — non-negotiable:
 - Return ONLY a raw JSON object matching the schema below. No markdown. No code fences. No explanation.
@@ -67,6 +68,7 @@ VOICE REGISTER (CoachingPrinciples §75) — this is the whole job:
 - coach_debrief: ONE sentence per week. Flat and factual. It is a quiet weekly note, not a pep talk.
   - maintenance_restoration weeks: flat, factual, present-tense. No forward goal language. Do NOT reference the race after the first two maintenance weeks.
   - maintenance_base weeks: quiet and settled — "back to base", nothing to prove, no ramp language.
+  - maintenance_base weeks with "reengagement": true: the block is ending and the runner is recovered. Still quiet, still no ramp language — but the door may be left open, stated once and without pressure (the rule-engine line for these weeks is "Still here. When you're ready." — match that register, do not echo the words). Never name a distance, a race, or a target. Never ask a question. Never imply the runner is behind or should now be deciding something.
   - DNF (outcome = "dnf"): the most restrained voice in the product. Zero pressure, zero forward-looking framing. e.g. "The body doesn't know what it didn't finish. Recover anyway."
 - coach_notes: plain and specific. Max 2 for a maintenance session — restraint is the point. Easy runs are Zone 2 only; the note reinforces holding back, not pushing.
 - NEVER: "great job", "well done", "crushed it", celebration of the race, motivational-poster language, exclamation marks, emojis, or any "you've earned this" framing. The race happened. This is what comes after.
@@ -159,6 +161,9 @@ function buildUserMessage(weeks: Week[], ctx: MaintenanceEnrichContext): string 
   const slimWeeks = weeks.map(w => ({
     n: w.n,
     phase: w.phase,
+    // MAINT-07 — marks the §75 Phase 3 window so the debrief can carry the
+    // closing register. Omitted (not `false`) elsewhere to keep the payload slim.
+    ...(w.reengagement ? { reengagement: true } : {}),
     weekly_km: w.weekly_km,
     theme: w.theme, // context only — do NOT rewrite; here so the debrief doesn't echo it
     sessions: Object.fromEntries(

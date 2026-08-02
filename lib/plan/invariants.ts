@@ -1504,6 +1504,45 @@ export function validateMaintenanceBlock(
     }
   }
 
+  // INV-MAINT-REENGAGEMENT-WINDOW — §75 Phase 3 (MAINT-07). The re-engagement
+  // window is exactly the LAST `PHASE3_LAST_WEEKS` Phase 2 weeks (fewer only when
+  // the block's Phase 2 is shorter than that). This is what the CA-03 goal ladder
+  // gates on, so a mis-marked window would either re-open the forward
+  // conversation mid-recovery or never open it at all — neither errors, both are
+  // silent. Restoration weeks may never be marked: Phase 1 is a quality blackout
+  // and forward goal language is forbidden there.
+  const phase2 = weeks.filter(w => w.phase === 'maintenance_base')
+  const expectedFrom = Math.max(0, phase2.length - GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK.PHASE3_LAST_WEEKS)
+  phase2.forEach((w, i) => {
+    const shouldMark = i >= expectedFrom
+    if (!!w.reengagement !== shouldMark) {
+      violations.push({
+        code: 'INV-MAINT-REENGAGEMENT-WINDOW',
+        principle_ref: 'CoachingPrinciples §75 (Phase 3), §67',
+        severity: 'error',
+        week: w.n,
+        message: shouldMark
+          ? 'Phase 2 week inside the re-engagement window is not marked `reengagement`'
+          : 'Phase 2 week outside the re-engagement window is marked `reengagement`',
+        actual: String(!!w.reengagement),
+        expected: `reengagement === ${shouldMark} (last ${GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK.PHASE3_LAST_WEEKS} of ${phase2.length} Phase 2 weeks)`,
+      })
+    }
+  })
+  for (const w of weeks) {
+    if (w.phase === 'maintenance_restoration' && w.reengagement) {
+      violations.push({
+        code: 'INV-MAINT-REENGAGEMENT-WINDOW',
+        principle_ref: 'CoachingPrinciples §75 (Phase 3)',
+        severity: 'error',
+        week: w.n,
+        message: 'Restoration (Phase 1) week is marked `reengagement` — the quality blackout never re-opens the forward conversation',
+        actual: 'true',
+        expected: 'reengagement only on Phase 2 weeks',
+      })
+    }
+  }
+
   return violations
 }
 

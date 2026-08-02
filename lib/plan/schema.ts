@@ -86,6 +86,9 @@ export const WeekSchema = z.object({
   // explicit "race not yet run" sentinel is representable; `.optional()` so
   // legacy plans without the field still parse.
   result_embedded:      RaceResultSchema.nullable().optional(),
+  // MAINT-07 — §75 Phase 3 (re-engagement) marker. Optional: absent on both
+  // non-maintenance weeks and pre-MAINT-07 maintenance plans.
+  reengagement:         z.boolean().optional(),
   // MAINT-02 — AI weekly debrief on maintenance weeks (PAID, `maintenance_coaching`).
   // Optional so legacy + non-enriched plans parse; distinct from `theme` (rule-engine).
   coach_debrief:        z.string().optional(),

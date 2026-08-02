@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateMaintenanceBlock, aggregatePlanResponse, inferRunDaysPerWeek, inferActualRunCadence } from './maintenance'
+import { generateMaintenanceBlock, aggregatePlanResponse, inferRunDaysPerWeek, inferActualRunCadence, isReengagementWeek, PHASE3_THEME } from './maintenance'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { Week, RaceResult } from '@/types/plan'
 
@@ -263,6 +263,75 @@ describe('inferActualRunCadence — the athlete\'s REAL days + frequency from co
     expect(runDays).toEqual(['fri', 'sat', 'sun', 'tue'])
     expect((w[0].sessions as any).mon.type).toBe('rest')  // strength day → rest in maintenance
     expect((w[0].sessions as any).wed.type).toBe('rest')
+  })
+})
+
+// MAINT-07 — §75 Phase 3. The CA-03 goal ladder gates on this window, so a
+// mis-marked window silently either re-opens the forward conversation mid-recovery
+// or never opens it at all.
+describe('Phase 3 re-engagement window', () => {
+  it('marks exactly the last PHASE3_LAST_WEEKS Phase 2 weeks, and no Phase 1 week', () => {
+    const weeks  = gen()
+    const phase2 = weeks.filter(w => w.phase === 'maintenance_base')
+    const marked = weeks.filter(w => w.reengagement)
+
+    expect(marked).toHaveLength(cfg.PHASE3_LAST_WEEKS)
+    expect(marked).toEqual(phase2.slice(-cfg.PHASE3_LAST_WEEKS))
+    expect(weeks.filter(w => w.phase === 'maintenance_restoration' && w.reengagement)).toHaveLength(0)
+  })
+
+  it('marked weeks carry the Phase 3 theme; earlier Phase 2 weeks do not', () => {
+    const weeks = gen()
+    for (const w of weeks) {
+      expect(w.theme === PHASE3_THEME).toBe(!!w.reengagement)
+    }
+  })
+
+  it('Phase 3 weeks stay maintenance_base — training is unchanged, only surfacing differs', () => {
+    const weeks = gen()
+    const p2 = weeks.filter(w => w.phase === 'maintenance_base')
+    const marked = p2.filter(w => w.reengagement)
+    // Same phase string (so the ~14 phase-switching call sites need no third case)
+    // and the same volume as the rest of Phase 2.
+    expect(marked.length).toBeGreaterThan(0)
+    for (const w of marked) expect(w.weekly_km).toBe(p2[0].weekly_km)
+  })
+
+  it('holds across distances — window is always the block tail (5K short, 100K long)', () => {
+    for (const [distKm, key] of [[5, '5K'], [100, '100K']] as const) {
+      const weeks = gen({ raceDistanceKm: distKm })
+      const phase2 = weeks.filter(w => w.phase === 'maintenance_base')
+      const expected = Math.min(cfg.PHASE3_LAST_WEEKS, phase2.length)
+      expect(weeks.filter(w => w.reengagement), key).toHaveLength(expected)
+      expect(weeks[weeks.length - 1].reengagement, key).toBe(true)
+    }
+  })
+
+  it('isReengagementWeek reads the marker', () => {
+    const weeks = gen()
+    for (const w of weeks) {
+      expect(isReengagementWeek(w, weeks)).toBe(!!w.reengagement)
+    }
+    expect(isReengagementWeek(null, weeks)).toBe(false)
+    expect(isReengagementWeek(undefined, weeks)).toBe(false)
+  })
+
+  it('isReengagementWeek DERIVES the window on pre-MAINT-07 plans (no marker, no migration)', () => {
+    // Simulates a maintenance plan generated before the marker existed — this is
+    // the live-data path, so it must agree exactly with the marked version.
+    const marked = gen()
+    const legacy = marked.map(({ reengagement, ...w }) => w) as typeof marked
+
+    legacy.forEach((w, i) => {
+      expect(isReengagementWeek(w, legacy), `week ${w.n}`).toBe(!!marked[i].reengagement)
+    })
+  })
+
+  it('derivation ignores non-maintenance weeks (never marks a race plan tail)', () => {
+    const racePlanWeeks = [BASE_RACE_WEEK, { ...BASE_RACE_WEEK, n: 13, phase: 'peak' as const }]
+    for (const w of racePlanWeeks) {
+      expect(isReengagementWeek(w, racePlanWeeks)).toBe(false)
+    }
   })
 })
 

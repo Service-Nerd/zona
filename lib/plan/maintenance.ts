@@ -24,7 +24,11 @@ const PHASE2_THEMES = [
   'Nothing to prove right now.',
 ]
 
-const PHASE3_THEME = 'Still here. When you\'re ready.'
+/** §75 Phase 3 — the block's closing register. The app has waited out the
+ *  recovery window and re-opens the forward conversation. Exported: the Today
+ *  maintenance card renders the week's `theme`, so this is the single source for
+ *  the Phase 3 line on every surface (no duplicated string). */
+export const PHASE3_THEME = 'Still here. When you\'re ready.'
 
 const DNF_THEME = 'Recover anyway.'
 
@@ -33,10 +37,36 @@ function phase1Theme(weekIndex: number, isDnf: boolean): string {
   return PHASE1_THEMES[weekIndex % PHASE1_THEMES.length]
 }
 
+/** Index within Phase 2 at which Phase 3 (re-engagement) begins. Single source
+ *  for both the theme swap and the `reengagement` marker, so copy and marker can
+ *  never disagree about where the window starts. */
+function phase3StartIndex(totalPhase2: number): number {
+  return Math.max(0, totalPhase2 - GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK.PHASE3_LAST_WEEKS)
+}
+
 function phase2Theme(weekIndexInPhase: number, totalPhase2: number): string {
-  const phase3Start = Math.max(0, totalPhase2 - GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK.PHASE3_LAST_WEEKS)
-  if (weekIndexInPhase >= phase3Start) return PHASE3_THEME
+  if (weekIndexInPhase >= phase3StartIndex(totalPhase2)) return PHASE3_THEME
   return PHASE2_THEMES[weekIndexInPhase % PHASE2_THEMES.length]
+}
+
+/** §75 Phase 3 (MAINT-07) — is this week inside the re-engagement window?
+ *
+ *  The CA-03 goal ladder gates on this: the forward conversation opens here and
+ *  nowhere earlier in the block (§67, board decision 2026-08-02).
+ *
+ *  Reads the first-class `reengagement` marker when present, and otherwise
+ *  DERIVES the window from the block's shape — the last `PHASE3_LAST_WEEKS`
+ *  `maintenance_base` weeks. The fallback is what lets maintenance plans
+ *  generated before MAINT-07 reach Phase 3 without a migration or a regeneration.
+ *
+ *  Pass the whole plan's weeks — the derivation needs the block, not the week. */
+export function isReengagementWeek(week: Week | null | undefined, allWeeks: Week[]): boolean {
+  if (!week) return false
+  if (week.reengagement === true) return true
+  if (week.phase !== 'maintenance_base') return false
+  const baseWeeks = allWeeks.filter(w => w.phase === 'maintenance_base')
+  const idx = baseWeeks.findIndex(w => w.n === week.n)
+  return idx >= 0 && idx >= phase3StartIndex(baseWeeks.length)
 }
 
 // ── Duration calculation ──────────────────────────────────────────────────────
@@ -378,7 +408,11 @@ export function generateMaintenanceBlock(opts: MaintenanceBlockOptions): Week[] 
   baseN    += phase1Weeks
   baseDate  = addWeeks(baseDate, phase1Weeks)
 
-  // Phase 2 — base (includes Phase 3 ambient re-engagement in last PHASE3_LAST_WEEKS)
+  // Phase 2 — base. Its last PHASE3_LAST_WEEKS weeks are Phase 3: identical
+  // training (same volume, same quality cap — hence still `maintenance_base`),
+  // marked `reengagement` so the surfacing layer can re-open the forward
+  // conversation there and nowhere earlier (§75 Phase 3, MAINT-07).
+  const phase3From = phase3StartIndex(phase2Weeks)
   for (let i = 0; i < phase2Weeks; i++) {
     weeks.push({
       n: baseN + i,
@@ -387,6 +421,7 @@ export function generateMaintenanceBlock(opts: MaintenanceBlockOptions): Week[] 
       theme: phase2Theme(i, phase2Weeks),
       type: 'normal',
       phase: 'maintenance_base',
+      ...(i >= phase3From ? { reengagement: true } : {}),
       weekly_km: phase2VolKm,
       long_run_hrs: null,
       sessions: buildSessions(phase2VolKm, resolvedDays, 'phase2', i, isDnf, allowQuality),

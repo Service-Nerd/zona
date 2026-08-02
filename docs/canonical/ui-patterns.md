@@ -1759,6 +1759,34 @@ Reference: `components/training/PostRaceReshapeCard.tsx`, `components/training/R
 
 ---
 
+### 31. Post-race maintenance card (phase-aware)
+
+**MAINT-01 / MAINT-04 / MAINT-07 — the post-race block's one Today slot.** TIER-DIVERGENT.
+
+One slot, progressing through three beats over the block's life. **Only ever one of them renders at a time** — the slot never stacks.
+
+| Beat | When | Anatomy |
+|---|---|---|
+| **Announcement** | Maintenance plan live, `meta.maintenance_transition_seen` false | `--s-recov` rail · eyebrow **AFTER THE RACE** · "That's {race} done." · one-sentence why · shape line (`N days/week · N weeks · below your base, on purpose`) · **See the plan** (moss, full-width) · *Got it* |
+| **Ongoing** | Transition acknowledged, Phase 1–2 | No rail, no eyebrow. The current week's `theme` (rule-engine, already §75 phase-correct) · *Dismiss* |
+| **Re-engagement (Phase 3)** | `isReengagementWeek(currentWeek, weeks)` | `--s-recov` rail + eyebrow **AFTER THE RACE** return · theme is `PHASE3_THEME` ("Still here. When you're ready.") · *Dismiss* · **CA-03 NextGoalCard appears directly below, for the first time in the block** |
+
+**PAID overlay (any beat):** when `week.coach_debrief` is present, the card renders the AI debrief instead — moss rail + `CoachByline role="Maintenance"` (Pattern 16b).
+
+**Rules:**
+- **Never two provenance marks on one card.** The AI debrief state owns the card when present: moss rail + CoachByline, and the Phase 3 eyebrow/recov rail are suppressed. Rule-engine copy carries neither.
+- **The body line is always the week's own `theme`** — never a hardcoded string. The engine writes phase-correct copy (§75 voice register), so Phase 3's register shift needs no separate string and Phase 1 can't leak forward-goal language. Fallback `'Base running.'` only if `theme` is missing.
+- **Phase 3 reuses the announcement's rail and eyebrow deliberately.** Same chapter, same voice returning. Do not invent a new eyebrow — a new label reads as a new feature, which is precisely the register to avoid.
+- Phase state follows the **real current week**, not the viewed week — the register is about where the runner actually is. (The PAID debrief follows the viewed week, by its own design.)
+- **Never an unlock register.** No "available in week N", no lock glyph, no countdown. The wizard is reachable throughout; only the proposal waits (§67).
+- Dismissal is respected permanently for the block (per-race key in `localStorage`). Phase 3 does **not** resurrect a dismissed card — the ladder still arrives on its own.
+
+**Rendering order in TodayScreen:** maintenance card → NextGoalCard (Pattern: CA-03). The announcement beat suppresses both the ongoing beat and the ladder.
+
+Reference: inline in `app/dashboard/DashboardClient.tsx` (`showMaintTransition` / `showMaintCard` / `maintReengagement`). Window reader: `lib/plan/maintenance.ts → isReengagementWeek`. Principles: §75 (block + Phase 3), §67 (ladder timing).
+
+---
+
 ## What Not to Build
 
 | Avoid | Use instead |

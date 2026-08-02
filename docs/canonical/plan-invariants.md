@@ -58,6 +58,7 @@ Enforced by `validateMaintenanceBlock()` in `lib/plan/invariants.ts`, called fro
 | `INV-MAINT-VOLUME-CEILING` | `CoachingPrinciples §75` | error | No maintenance week (Phase 1 or Phase 2) exceeds plan **base** volume (`VOLUME_CEILING_PCT_OF_BASE`, 100%). Re-anchored from plan-peak to base 2026-08-02 — the old 70%-of-peak model was "way too much" for a maintenance window. |
 | `INV-MAINT-INJURY-EASY-ONLY` | `CoachingPrinciples §75` | error | When `injury_history` is non-empty, no maintenance week contains a strides/quality session (detected by label — the mild-quality session is type `easy`). Layer 2. |
 | `INV-MAINT-NO-RACE-SPECIFIC` | `CoachingPrinciples §75` | error | No `race_specific` or `ultra_specific` catalogue sessions permitted in any maintenance week. |
+| `INV-MAINT-REENGAGEMENT-WINDOW` | `CoachingPrinciples §75 (Phase 3), §67` | error | The `reengagement` marker sits on exactly the **last `PHASE3_LAST_WEEKS` (2) Phase 2 weeks** — fewer only when Phase 2 is shorter — and on no Phase 1 week. This is what the CA-03 goal ladder gates on (MAINT-07), so a mis-marked window silently either re-opens the forward conversation mid-recovery or never opens it at all. Neither fails loudly, hence the mechanical check. |
 
 ## Reshape-time invariants
 

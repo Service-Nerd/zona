@@ -50,6 +50,7 @@ import TrendCard from '@/components/shared/TrendCard'
 import RaceResultSheet, { type ReshapeProposal } from '@/components/training/RaceResultSheet'
 import PostRaceReshapeCard from '@/components/training/PostRaceReshapeCard'
 import NextGoalCard from '@/components/training/NextGoalCard'
+import { isReengagementWeek } from '@/lib/plan/maintenance'
 import { nextGoalOptions, achievementLine, parseTimeToSeconds, type FinishedRace, type NextGoalOption } from '@/lib/coaching/goalSequencing'
 import { composeSession } from '@/lib/plan/sessionComposer'
 import { formatDistance, sumRoundedDistance, resolveSessionMetric } from '@/lib/format'
@@ -1469,10 +1470,6 @@ export default function DashboardClient() {
     }
     return null
   })()
-  const nextGoalData = (finishedRaceForGoal && hasPaidAccess && nextGoalDismissedSig !== finishedRaceForGoal.sig)
-    ? { achievement: achievementLine(finishedRaceForGoal.race), options: nextGoalOptions(finishedRaceForGoal.race) }
-    : null
-
   function handlePickNextGoal(opt: NextGoalOption) {
     // Seed the plan wizard with the chosen goal, then open it. GeneratePlanScreen
     // restores this draft on mount (sessionStorage key 'zona_wizard_draft').
@@ -1512,6 +1509,31 @@ export default function DashboardClient() {
     maintCardSig &&
     maintCardDismissedSig !== maintCardSig
   )
+  // MAINT-07 — is the runner inside the §75 Phase 3 re-engagement window?
+  // `getCurrentWeekIndex` saturates at the final week (§73), which is the wanted
+  // behaviour here: once the block is behind them, the last week — a Phase 3 week
+  // — stays current, so the window opens and stays open.
+  const inReengagementWindow = !!(
+    isMaintenancePlan && plan && isReengagementWeek(plan.weeks[currentWeekIndex], plan.weeks)
+  )
+
+  // CA-03 goal ladder (§67, amended 2026-08-02 — SLT decision).
+  // The forward conversation opens in Phase 3 and nowhere earlier. Two reasons,
+  // both from the board: a runner four weeks post-race judges "same distance,
+  // faster" on perceived readiness, which is least reliable exactly then
+  // (Hutchinson); and the card's dismissal persists for the whole block, so
+  // offering it on day one spends the single shot at the moment the runner is
+  // least able to answer (Wood). The wizard stays reachable throughout — this
+  // delays the PROPOSAL, never the action (Fried).
+  //
+  // Gate is scoped to maintenance plans: a finished race with no maintenance
+  // block (generation failed, or a plan shape that produces none) keeps the
+  // original CA-03 behaviour rather than losing the ladder entirely.
+  const nextGoalGateOpen = !isMaintenancePlan || (!showMaintTransition && inReengagementWindow)
+  const nextGoalData = (finishedRaceForGoal && hasPaidAccess && nextGoalGateOpen && nextGoalDismissedSig !== finishedRaceForGoal.sig)
+    ? { achievement: achievementLine(finishedRaceForGoal.race), options: nextGoalOptions(finishedRaceForGoal.race) }
+    : null
+
   function handleDismissMaintCard() {
     if (!maintCardSig) return
     try { localStorage.setItem('zona_maint_card_dismissed', maintCardSig) } catch {}
@@ -1900,7 +1922,7 @@ export default function DashboardClient() {
         paddingBottom={(bottomNavH ?? 88) + 16}
         disabled={!pullToRefreshEnabled}
       >
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
                   // historical pending rows from repeated test runs (the POST route
@@ -6324,7 +6346,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed }: {
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   sessionMetricOverrides: Record<string, 'distance' | 'duration'>
@@ -6380,6 +6402,12 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   onDismissMaintCard?: () => void
   /** #1 — one-time post-race announcement that the maintenance block is live. */
   showMaintTransition?: boolean
+  /** MAINT-07 — runner is in the §75 Phase 3 window (real current week, not the
+   *  viewed one: the register follows where they actually are). */
+  maintReengagement?: boolean
+  /** Rule-engine line for the ongoing maintenance card — the real current week's
+   *  `theme`, which is already phase-correct per §75. */
+  maintThemeLine?: string
   onSeeMaintPlan?: () => void
   onAckMaintTransition?: () => void
   onLogRaceResult?: () => void
@@ -7217,13 +7245,20 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           </div>
         )}
 
+        {/* MAINT-07 — §75 Phase 3. In the block's final weeks the card changes
+            register: it takes back the recovery-green rail and the "After the
+            race" eyebrow it opened the chapter with (the transition card, above),
+            so the block closes in the same voice that opened it — the app coming
+            back, not a card appearing. Rule-engine copy → NO AIMark. When the PAID
+            debrief is present it owns the card instead (CoachByline + moss rail);
+            never both marks at once — provenance stays unambiguous. */}
         {showMaintCard && (
           <div style={{ marginBottom: '16px' }}>
             <div style={{
               position: 'relative',
               background: 'var(--card)',
               borderRadius: 'var(--radius-lg)',
-              padding: maintDebrief ? '14px 16px 10px 19px' : '14px 16px 10px',
+              padding: (maintDebrief || maintReengagement) ? '14px 16px 10px 19px' : '14px 16px 10px',
               border: '1px solid var(--line)',
               overflow: 'hidden',
             }}>
@@ -7245,15 +7280,38 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                   </p>
                 </>
               ) : (
-                <p style={{
-                  fontFamily: 'var(--font-ui)',
-                  fontSize: '13px',
-                  color: 'var(--ink-2)',
-                  lineHeight: '1.4',
-                  margin: '0 0 10px',
-                }}>
-                  Base running while you decide what&apos;s next.
-                </p>
+                <>
+                  {maintReengagement && (
+                    <>
+                      {/* Recovery-green rail — the transition card's rail, returning */}
+                      <span style={{
+                        position: 'absolute', left: '8px', top: '14px', bottom: '34px',
+                        width: '3px', borderRadius: '2px', background: 'var(--s-recov)',
+                      }} />
+                      <div style={{
+                        fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+                        color: 'var(--s-recov)', letterSpacing: '0.12em', textTransform: 'uppercase',
+                        marginBottom: '6px',
+                      }}>
+                        After the race
+                      </div>
+                    </>
+                  )}
+                  {/* The week's own theme — rule-engine copy, already phase-correct
+                      (§75 voice register). Phase 3 weeks carry PHASE3_THEME, so the
+                      closing line needs no separate string. Replaces a hardcoded
+                      "…while you decide what's next", which was forward-goal
+                      language during Phase 1, where §75 forbids it. */}
+                  <p style={{
+                    fontFamily: 'var(--font-ui)',
+                    fontSize: '13px',
+                    color: 'var(--ink-2)',
+                    lineHeight: '1.4',
+                    margin: '0 0 10px',
+                  }}>
+                    {maintThemeLine || 'Base running.'}
+                  </p>
+                </>
               )}
               <button
                 onClick={onDismissMaintCard}
@@ -7265,9 +7323,12 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           </div>
         )}
 
-        {/* CA-03: post-race "what next" goal ladder. Fills the post-race void
-            once the result is logged — sequenced next goals seed the wizard.
-            Rule-engine output (no AIMark). */}
+        {/* CA-03: post-race "what next" goal ladder — sequenced next goals that
+            seed the wizard. Rule-engine output (no AIMark).
+            MAINT-07: when a maintenance block exists, this is held until its §75
+            Phase 3 window (gate: `nextGoalGateOpen`) so it never lands beside the
+            "plan's eased to base running" announcement, and never asks for a
+            racing decision while the runner is still repairing. */}
         {nextGoalData && (
           <div style={{ marginBottom: '16px' }}>
             <NextGoalCard

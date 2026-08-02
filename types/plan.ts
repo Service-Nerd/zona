@@ -157,6 +157,21 @@ export interface Week {
    *  layer can mark only this AI copy. Absent when the enricher is skipped or fails
    *  (silent — ADR-006). Only ever populated on maintenance_restoration/base weeks. */
   coach_debrief?: string
+
+  /** MAINT-07 — §75 Phase 3 marker: the final `PHASE3_LAST_WEEKS` weeks of the
+   *  maintenance block, where the app re-opens the forward conversation (the
+   *  CA-03 goal ladder surfaces here and nowhere earlier — §67).
+   *
+   *  Deliberately NOT a third `phase` value: Phase 3 weeks ARE `maintenance_base`
+   *  weeks in every training respect (same volume, same quality cap, same
+   *  invariants) — only the surfacing differs. A separate phase string would have
+   *  forced ~14 call sites that switch on `maintenance_restoration|maintenance_base`
+   *  to learn a third case, for no training-load reason.
+   *
+   *  Absent on maintenance plans generated before MAINT-07 — read it through
+   *  `isReengagementWeek()`, which falls back to deriving the window from the
+   *  block's shape (no migration, no regeneration). */
+  reengagement?: boolean
 }
 
 /** AI-DEPTH-07 — race-day result envelope.

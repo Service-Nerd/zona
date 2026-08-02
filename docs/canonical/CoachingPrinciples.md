@@ -1114,7 +1114,20 @@ Ordering reflects the outcome: a missed goal leads with chasing the same time ag
 
 **Tier.** PAID (richness, not access — free runners can still start a new plan from the wizard manually; CA-03 is the *intelligent proposal*, gated like other paid coaching). The card is dismissable; dismissal persists per-race in `localStorage` and auto-clears once a new plan moves the goal race into the future.
 
-Config: `GENERATION_CONFIG.GOAL_SEQUENCING`, `PREP_TIME_THRESHOLDS`. Engine: `lib/coaching/goalSequencing.ts → nextGoalOptions` / `achievementLine`. Card: `components/training/NextGoalCard.tsx`.
+**WHEN the ladder appears — amended 2026-08-02 (MAINT-07, SLT decision). The original "meet the runner in the moment of achievement" is wrong, and shipping it that way produced a contradiction on Today:** the maintenance announcement ("your body's still repairing — the plan's eased to base running") rendered directly above "Run another 100K and take time off." The ladder now waits for the maintenance block's **Phase 3 re-engagement window** (§75) and appears there, not at the finish line.
+
+Three reasons, each independently sufficient:
+1. **The decision is made worst at the finish.** Post-race, perceived readiness recovers well before neuromuscular function does. A runner three weeks post-marathon feels ready and is not. Asking them to choose "same distance, faster" — the *lead* option after a goal miss — inside that window systematically biases toward over-reach. This is §75's own argument applied to the surfacing layer.
+2. **It reframes the block.** §75 forbids any maintenance modifier from referencing a future race, and the engine honours that. Hand the runner a next race in maintenance week 1 and the block silently becomes *base for the next thing* in their head. The plan JSON stays honest; the athlete's intent doesn't.
+3. **Dismissal is one-shot.** It persists for the whole block. Offering the ladder on day one spends the single opportunity at the moment the runner is least equipped to use it.
+
+**The delay is proportionate, not fixed** — Phase 3 is the block's tail, so a 5K runner waits ~3 weeks and a 100K runner ~9. It scales with the recovery it protects.
+
+**What is never delayed: the action.** The plan wizard stays reachable throughout the block. This holds back the *proposal*, never the runner. The gate must never read as an unlock or a timed paywall — no "available in week 9" copy, anywhere.
+
+**When there is no maintenance block** (generation failed, or a plan shape producing none) the ladder keeps its original post-result behaviour rather than disappearing.
+
+Config: `GENERATION_CONFIG.GOAL_SEQUENCING`, `PREP_TIME_THRESHOLDS`, `POST_RACE_MAINTENANCE_BLOCK.PHASE3_LAST_WEEKS`. Engine: `lib/coaching/goalSequencing.ts → nextGoalOptions` / `achievementLine`; window reader `lib/plan/maintenance.ts → isReengagementWeek`. Card: `components/training/NextGoalCard.tsx`. Gate: `DashboardClient → nextGoalGateOpen`.
 
 ---
 
@@ -1385,7 +1398,15 @@ Two rules keep it conservative in both paths: **recovery jogs don't count** as a
 
 **Surfacing — announce, never gate (MAINT-04).** The maintenance plan is auto-live; the runner never *approves* it (an accept/decline gate would hand an overtrained runner a way to decline their own recovery — SLT-rejected). But it must not appear silently: a one-time Today announcement marks the race done, explains in one sentence why the plan eased, and shows the shape (days/week · weeks · below base). Its affordance is "See the plan", not accept/decline — editable, not approvable. Seen state lives on `meta.maintenance_transition_seen` (on the maintenance plan). Rule-engine copy carries no AIMark; the PAID weekly debrief does.
 
-**Config:** `GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK` — all numerics (base-volume anchors, intent multipliers, duration modifiers, thresholds) live there; none is hardcoded. Generator: `lib/plan/maintenance.ts → generateMaintenanceBlock()` (person inputs threaded from `app/api/maintenance-block/route.ts`, which derives base volume, injuries, whole-plan response, and recovery markers). `validateMaintenanceBlock()` in `lib/plan/invariants.ts` enforces structure mechanically.
+**Phase 3 — re-engagement (MAINT-07).** The final `PHASE3_LAST_WEEKS` (2) weeks of Phase 2 are the block's closing register. **Training does not change at all** — same volume, same one-mild-quality cap, same invariants; these weeks stay `phase: 'maintenance_base'` and carry a separate `reengagement: true` marker rather than a third phase value (a new phase string would force every call site that switches on `maintenance_restoration|maintenance_base` to learn a case that has no training meaning). What changes is only what the app is permitted to say:
+
+- The rule-engine theme becomes **"Still here. When you're ready."** (`PHASE3_THEME`) — the one place in the block where looking forward is allowed, stated once, without pressure. It never names a distance, a race, or a target, and never asks a question.
+- The **CA-03 goal ladder surfaces here and nowhere earlier** (§67, amended). Phase 3 is the *only* forward-goal surface in the entire block.
+- The PAID weekly debrief may match the register (`enrichMaintenance` prompt), still without naming a target.
+
+**Phase 3 must arrive, not merely stop hiding.** The window is a deliberate beat: the block opened with the "After the race" announcement and closes wearing the same eyebrow and the same recovery-green rail, so it reads as the app coming back after waiting — never as a feature unlocking. `INV-MAINT-REENGAGEMENT-WINDOW` enforces the window's placement mechanically. `isReengagementWeek()` derives the window from the block's shape when the marker is absent, so maintenance plans generated before MAINT-07 reach Phase 3 without a migration.
+
+**Config:** `GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK` — all numerics (base-volume anchors, intent multipliers, duration modifiers, thresholds, `PHASE3_LAST_WEEKS`) live there; none is hardcoded. Generator: `lib/plan/maintenance.ts → generateMaintenanceBlock()` (person inputs threaded from `app/api/maintenance-block/route.ts`, which derives base volume, injuries, whole-plan response, and recovery markers). `validateMaintenanceBlock()` in `lib/plan/invariants.ts` enforces structure mechanically.
 
 ---
 
