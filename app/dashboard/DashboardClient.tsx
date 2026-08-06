@@ -68,8 +68,10 @@ const GeneratePlanScreen = dynamic(() => import('./GeneratePlanScreen'), { ssr: 
 const UpgradeScreen = dynamic(() => import('./UpgradeScreen'), { ssr: false })
 const BenchmarkUpdateScreen = dynamic(() => import('./BenchmarkUpdateScreen'), { ssr: false })
 const FounderNoteScreen = dynamic(() => import('./FounderNoteScreen'), { ssr: false })
+import { RecalibrationReadyTile, RecalibrationEntryScreen } from './RecalibrationTile'
+import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
 
-type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'notifications'
+type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'notifications' | 'recalibration'
 
 /**
  * Data passed to PostRunScreen — the destination screen for a Strava-linked
@@ -269,6 +271,9 @@ export default function DashboardClient() {
 
   // Paid access — default true to avoid flash of locked state during load
   const [hasPaidAccess, setHasPaidAccess] = useState(true)
+
+  // PV2-H — recalibration prompt (the living plan). Status drives the entry screen.
+  const [recalStatus, setRecalStatus] = useState<'idle' | 'confirming' | 'applied' | 'error'>('idle')
   const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null)
   // Trial expired — true when user had a trial that is now over and no active subscription
   const [trialExpired, setTrialExpired] = useState(false)
@@ -1914,6 +1919,41 @@ export default function DashboardClient() {
   const pullToRefreshEnabled =
     appReady && (screen === 'today' || screen === 'plan' || screen === 'coach' || screen === 'me')
 
+  // PV2-H / ADR-014 — the living plan. Flatten completions to the {week_n,
+  // session_day} shape the trigger reads; recalDue is the earliest recovery-week
+  // time trial that's completed and not yet applied (null otherwise).
+  const recalDue = (() => {
+    if (!plan?.weeks?.length) return null
+    const flat: { week_n: number; session_day: string }[] = []
+    for (const [wk, days] of Object.entries(allCompletions)) {
+      for (const day of Object.keys(days ?? {})) flat.push({ week_n: Number(wk), session_day: day })
+    }
+    return nextRecalibrationDue(plan, flat, plan.meta?.recalibrations_applied ?? [])
+  })()
+
+  const recalDistanceKm = GENERATION_CONFIG.RECALIBRATION_TIME_TRIAL.distance_km
+  const secondsToTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+  const handleRecalConfirm = async (timeSeconds: number) => {
+    if (!recalDue) return
+    setRecalStatus('confirming')
+    try {
+      const res = await fetch('/api/recalibrate-zones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          benchmark: { type: 'time_trial', distance_km: recalDistanceKm, time: secondsToTime(timeSeconds) },
+          recalibration_week_n: recalDue.week_n,
+        }),
+      })
+      if (!res.ok) { setRecalStatus('error'); return }
+      const { plan: updatedPlan } = await res.json()
+      if (updatedPlan) setPlan(updatedPlan)
+      setRecalStatus('applied')
+    } catch {
+      setRecalStatus('error')
+    }
+  }
+
   return (
     <div style={s}>
 
@@ -1923,7 +1963,7 @@ export default function DashboardClient() {
         paddingBottom={(bottomNavH ?? 88) + 16}
         disabled={!pullToRefreshEnabled}
       >
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); setScreen(hasPaidAccess ? 'recalibration' : 'upgrade') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
                   // historical pending rows from repeated test runs (the POST route
@@ -2157,6 +2197,7 @@ export default function DashboardClient() {
           setScreen(hasWizardDraft ? 'generate' : 'today')
         }} />}
         {screen === 'benchmark' && plan && <BenchmarkUpdateScreen plan={plan} stravaConnected={stravaConnected} onBack={() => setScreen('me')} onUpdated={(updatedPlan) => { setPlan(updatedPlan) }} />}
+        {screen === 'recalibration' && <RecalibrationEntryScreen distanceKm={recalDistanceKm} status={recalStatus} onBack={() => { setRecalStatus('idle'); setScreen('today') }} onConfirm={handleRecalConfirm} />}
         {screen === 'reshape'   && <ReshapeScreen plan={plan} onBack={() => setScreen('me')} onReshapeApplied={(updatedPlan) => { setPlan(updatedPlan); setPendingAdjustment(null); setScreen('today') }} onChecked={(foundChange) => { setLastAdjustmentCheckAt(new Date().toISOString()); setLastAdjustmentCheckFoundChange(foundChange) }} onOpenBenchmark={() => setScreen('benchmark')} />}
         {screen === 'founder'   && <FounderNoteScreen onBack={() => setScreen('me')} />}
         {screen === 'notifications' && <NotificationsScreen onBack={() => setScreen('today')} onNavigate={navigateFromNotificationUrl} onAllRead={() => setUnreadNotifications(0)} />}
@@ -6348,7 +6389,8 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed }: {
+function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile }: {
+  recalTile?: React.ReactNode
   plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   sessionMetricOverrides: Record<string, 'distance' | 'duration'>
@@ -6809,6 +6851,10 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           so the banner never reappears — the runner can still connect later
           via the Me-screen Apple Health row. */}
       <ConnectRunsBanner />
+
+      {/* PV2-H — recalibration prompt (the living plan). Renders when a recovery-week
+          time trial is completed and not yet applied; null otherwise. */}
+      {recalTile && <div style={{ padding: '12px 16px 0' }}>{recalTile}</div>}
 
       {/* ── WORDMARK ROW ─────────────────────────────────────────────── */}
       <div style={{
