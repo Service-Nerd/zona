@@ -47,7 +47,23 @@ MARATHON     → 82% easy / 18% quality
 
 **Principle.** Weekly volume increases by no more than 10%. Returning runners with a deep training history get a temporary 15% allowance for the first three weeks.
 
-**Why.** Sudden volume spikes are the most reliable predictor of running injury in non-elite athletes. The 10% rule is a coaching cliché because it works. The returning-runner exception acknowledges that an experienced runner rebuilding from a layoff is not the same as a beginner adding load — they have an aerobic and structural base waiting to be reawakened.
+**Why.** Rapid increases in training load relative to what the body is *accustomed to* are associated with injury in non-elite runners. Note the framing carefully — the risk lives in the relationship between acute and chronic load, not in the week-on-week delta considered alone. Nielsen's work points at change relative to recent chronic load; Buist's 2008 RCT found a graded 10%/week programme produced no injury reduction versus a control programme, so the rule is a useful heuristic for *sustained* ramping, not a law of physiology. It is applied here as a guard against enthusiasm, which is what it is good for.
+
+*(Rationale rewritten 2026-08-06 — the previous text read "the 10% rule is a coaching cliché because it works", which is not defensible and led directly to the misapplication below.)*
+
+The returning-runner exception acknowledges that an experienced runner rebuilding from a layoff is not the same as a beginner adding load — they have an aerobic and structural base waiting to be reawakened.
+
+### The cap does not apply to a post-deload bounceback — amended 2026-08-06 (GEN-FIX-07 / D1)
+
+**Principle.** The week following a recovery week may return to the **pre-deload volume** without the 10% cap applying. It may not exceed it; growth resumes from there the following week.
+
+**Why.** The cap previously applied to the bounceback, and the arithmetic is fatal: a deload drops to `RECOVERY_WEEK_VOLUME_PCT` (70%), so the next week could rise only 10% above *that* — 77% of where the runner already was. Every deload ratcheted the ceiling permanently downward, which makes progressive overload **arithmetically impossible in any plan containing a recovery week** — that is, every plan of four weeks or more. The first organic user's 14-week half-marathon plan peaked in **week 3**, in the base phase, and never recovered; four of seven simulated personas peaked outside the peak phase.
+
+Returning to a volume held comfortably two weeks earlier is not a spike. Chronic load has not moved — under any acute:chronic framing (the model this product already uses elsewhere for readiness) it is a **low**-risk week. No mainstream periodisation model applies a ramp cap to a bounceback; the near-universal convention is that a deload is a step back *within* a block and the following week resumes from the pre-deload level.
+
+**Config.** No new numeric — the ceiling is the pre-deload week's volume, read from the sequence itself.
+
+**Enforced by** `INV-PLAN-PEAK-IN-PEAK-PHASE` (warn) and the existing `INV-PLAN-PEAK-OVER-BASE`.
 
 **Config.**
 - `GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT = 10`

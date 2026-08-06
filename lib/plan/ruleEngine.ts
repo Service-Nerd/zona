@@ -495,7 +495,30 @@ function buildVolumeSequence(
     if (volumes[i] <= volumes[i - 1]) continue
 
     const cap = 1 + allowanceForWeek(weekN) / 100
-    const maxAllowed = Math.round(volumes[i - 1] * cap)
+    let maxAllowed = Math.round(volumes[i - 1] * cap)
+
+    // CoachingPrinciples §2 (amended 2026-08-06 / D1) — the cap does NOT apply
+    // to a post-deload bounceback. Previously it did, and the arithmetic was
+    // fatal: a deload drops to 70%, so the next week could rise only 10% above
+    // THAT — 77% of where the runner already was. Every deload ratcheted the
+    // ceiling permanently down, making progressive overload arithmetically
+    // impossible in any plan containing a recovery week. The first organic
+    // user's 14-week plan peaked in week 3, in the base phase.
+    //
+    // Returning to a volume held two weeks ago is not a spike — chronic load
+    // has not moved. The bounceback may return to the pre-deload level, and no
+    // further: growth resumes from there next week.
+    const prevWeekN = weekN - 1
+    const prevPhase = getPhaseForWeek(prevWeekN, phases)
+    const prevWasDeload = prevWeekN >= 1
+      && prevWeekN % recoveryFreq === 0
+      && prevPhase !== 'peak'
+      && prevPhase !== 'taper'
+    if (prevWasDeload) {
+      const preDeload = volumes[i - 2] ?? volumes[i - 1]
+      maxAllowed = Math.max(maxAllowed, preDeload)
+    }
+
     if (volumes[i] > maxAllowed) {
       volumes[i] = maxAllowed
     }
