@@ -686,7 +686,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
     {
       "date": "2026-11-02",
       "label": "Taper — trust the work",
-      "long_run_hrs": 1.7,
+      "long_run_hrs": 1.9,
       "n": 12,
       "phase": "taper",
       "sessions": {
@@ -696,7 +696,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
             "Three week taper. Long enough for adaptation to consolidate without losing sharpness. Intensity stays, volume drops.",
           ],
           "detail": null,
-          "duration_mins": 79,
+          "duration_mins": 90,
           "hr_target": "< 146 bpm",
           "id": "w12-mon",
           "label": "Easy run — Zone 2",
@@ -708,7 +708,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         },
         "sat": {
           "detail": null,
-          "duration_mins": 102,
+          "duration_mins": 114,
           "hr_target": "< 146 bpm",
           "id": "w12-sat",
           "label": "Long run — Zone 2",
@@ -723,7 +723,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
             "Threshold work in repeats. Same effort on rep 3 as rep 1 — that is the test.",
           ],
           "detail": null,
-          "duration_mins": 32,
+          "duration_mins": 38,
           "hr_target": "146–157 bpm",
           "id": "w12-wed",
           "label": "Cruise intervals",
@@ -736,12 +736,12 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
       },
       "theme": "Volume drops. Intensity stays. Trust the work you have done.",
       "type": "normal",
-      "weekly_km": 27,
+      "weekly_km": 31,
     },
     {
       "date": "2026-11-09",
       "label": "Taper — sharpening",
-      "long_run_hrs": 1.3,
+      "long_run_hrs": 1.5,
       "n": 13,
       "phase": "taper",
       "sessions": {
@@ -750,7 +750,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
             "4×20s strides at 5K effort, full recovery between.",
           ],
           "detail": null,
-          "duration_mins": 59,
+          "duration_mins": 71,
           "hr_target": "< 146 bpm",
           "id": "w13-mon",
           "label": "Easy run — Zone 2",
@@ -762,7 +762,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         },
         "sat": {
           "detail": null,
-          "duration_mins": 75,
+          "duration_mins": 90,
           "hr_target": "< 146 bpm",
           "id": "w13-sat",
           "label": "Long run — Zone 2",
@@ -790,7 +790,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
       },
       "theme": "Volume drops. Intensity stays. Trust the work you have done.",
       "type": "normal",
-      "weekly_km": 21,
+      "weekly_km": 25,
     },
     {
       "badge": "race",
@@ -1438,13 +1438,13 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
     {
       "date": "2026-11-09",
       "label": "Taper — trust the work",
-      "long_run_hrs": 0.7,
+      "long_run_hrs": 0.8,
       "n": 11,
       "phase": "taper",
       "sessions": {
         "fri": {
           "detail": null,
-          "duration_mins": 32,
+          "duration_mins": 36,
           "hr_target": "< 150 bpm",
           "id": "w11-fri",
           "label": "Easy run — Zone 2",
@@ -1456,7 +1456,7 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
         },
         "sun": {
           "detail": null,
-          "duration_mins": 44,
+          "duration_mins": 48,
           "hr_target": "< 150 bpm",
           "id": "w11-sun",
           "label": "Long run — Zone 2",
@@ -1473,7 +1473,7 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
             "Two week taper. Long enough for adaptation to consolidate without losing sharpness. Volume drops. Trust the work.",
           ],
           "detail": null,
-          "duration_mins": 32,
+          "duration_mins": 36,
           "hr_target": "< 150 bpm",
           "id": "w11-wed",
           "label": "Easy run — Zone 2",
@@ -1486,7 +1486,7 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
       },
       "theme": "Volume drops. Trust the work you have done.",
       "type": "normal",
-      "weekly_km": 14,
+      "weekly_km": 15,
     },
     {
       "badge": "race",

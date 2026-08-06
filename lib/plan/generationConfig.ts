@@ -96,6 +96,15 @@ export const GENERATION_CONFIG = {
     '100K':     { days: 28, volume_reduction_pct: 60, keep_quality: true },
   },
 
+  // CoachingPrinciples §6 (CD-5) — a low-volume runner has little accumulated
+  // fatigue to shed, so the standard taper cut over-tapers them into detraining.
+  // When peak weekly volume is below the threshold, the taper cut is scaled
+  // shallower (they keep more of what little base they have). This scales the
+  // DEPTH of the cut, not the NUMBER of taper weeks — the latter feeds plan
+  // length and the race-date invariant, so it is left structural-stable.
+  LOW_VOLUME_TAPER_THRESHOLD_KM:         40,
+  LOW_VOLUME_TAPER_REDUCTION_FACTOR_PCT: 70,   // % of the standard cut for low-volume runners
+
   // Race week volume — applied to the LAST week of every plan. Shakeouts only;
   // independent of TAPER_BY_DISTANCE.volume_reduction_pct (which governs the
   // full taper weeks BEFORE race week).

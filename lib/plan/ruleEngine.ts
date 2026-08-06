@@ -583,7 +583,12 @@ function buildVolumeSequence(
     if (weekN === totalWeeks) {
       volumes[i] = Math.round(preTaper * GENERATION_CONFIG.RACE_WEEK_VOLUME_PCT / 100)
     } else {
-      const stepPct = taperConfig.volume_reduction_pct / fullTaperWeeks
+      // CD-5 / §6 — shallower cut for a low-volume runner (little fatigue to
+      // shed; a full cut would just detrain them). Depth only, not week count.
+      const reductionFull = peakKm < GENERATION_CONFIG.LOW_VOLUME_TAPER_THRESHOLD_KM
+        ? taperConfig.volume_reduction_pct * (GENERATION_CONFIG.LOW_VOLUME_TAPER_REDUCTION_FACTOR_PCT / 100)
+        : taperConfig.volume_reduction_pct
+      const stepPct = reductionFull / fullTaperWeeks
       const reductionPct = stepPct * (taperIdx + 1)
       volumes[i] = Math.round(preTaper * (1 - reductionPct / 100))
     }
