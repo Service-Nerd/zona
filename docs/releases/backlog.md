@@ -193,9 +193,11 @@ Follow-on from the v2 review (`docs/incidents/2026-08-06-plan-defects/` analysis
 ✅ **PV2-F/CD-9** build-phase long-run step-backs (`9e6349b`) — guarded by the §9 long-is-longest ratio; a no-op for maximally-constrained plans (User A's 3-day schedule). ✅ **CD-4** confirmed already satisfied by existing canon — time-target peak long runs carry an HM-pace finish (§24/§25), finish-goal correctly has none (§80). No code.
 ✅ **PV2-I/CD-12** largest-sessions spacing warn invariant (`c914ea0`). ⛔ **CD-10a assessed UNNECESSARY** — traced the coupling: "volume peaks in base" is a property of the volume *sequence* (base bounceback vs the fitness-level peak cap), not the counting; the under-count is ~0.8km (within rounding) and changing it carries reclassification risk for no real gain. CD-10 is fully handled by the accepted model + honest note.
 
-**Remaining — each blocked on a specific input, NOT on effort (10 of 13 CDs done):**
-- **CD-5** taper scaling — *structural*: taper weeks cascade through phase distribution → plan length → `INV-PLAN-COVERS-RACE-DATE`. Needs a careful standalone pass, not an end-of-session change.
-- **CD-7 / PV2-G** race arc — needs an **ADR** (extract a `buildRaceArc` owning taper→race week). A design decision.
+✅ **PV2-G/CD-7 (in-week case)** pre-race shakeout+strides for Tue/Wed races on the nearest available day before the race (`53a1372`) — User A's Wed race now gets a Mon shakeout instead of 4 rest days. §77 amended.
+
+**Remaining — 11 of 13 CDs done; each blocked on a specific input, NOT on effort:**
+- **CD-5** taper scaling — *structural*: `taperPhaseWeeks` is read in `computePhases` + `calcPlanLength` + `buildVolumeSequence`; changing it inconsistently re-breaks `INV-PLAN-COVERS-RACE-DATE` (the original P0). Focused standalone pass required. (Low value: ~0.5 week for a 36km runner.)
+- **CD-7 full / PV2-G** — the *Monday-race* case (no in-week day before the race) still needs the cross-week `buildRaceArc` restructure + **ADR**.
 - **CD-11** easy-band-as-ceiling — a **UI/display** change (how pace renders); needs `frontend-design`, not the engine.
 - **CD-13 wiring / PV2-H** living plan (paid) — needs an **ADR** (recalibration application model) + TT-completion trigger + paid gate.
 - **CD-6 braces** — HealthKit client verification (wizard reads synced 4-wk avg).
