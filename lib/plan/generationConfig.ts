@@ -244,6 +244,12 @@ export const GENERATION_CONFIG = {
     HM:       7,    // 6–8 km easy on a non-shakeout day
     MARATHON: 9,    // 8–10 km
   },
+  // CoachingPrinciples §77 — shakeout spacing expressed as days BEFORE the race,
+  // so it generalises to any race weekday. [5, 3] reproduces the historical
+  // Tue/Thu placement for a Sunday race while remaining correct for a Wednesday
+  // one. Offsets landing outside race week, or on a blocked day, are skipped —
+  // never relocated to after the race.
+  RACE_WEEK_SHAKEOUT_DAYS_BEFORE_RACE: [5, 3],
 
   // ── Fresh-from-layoff detection (CoachingPrinciples §29) ───────────────────
   // If weeks_at_current_volume is set and below this threshold, the runner is

@@ -952,7 +952,14 @@ function buildWeekSessions(
   if (isRaceWeek) {
     const sessions: Partial<Record<Day, Session>> = {}
     const raceName = input.race_name ?? 'Target Race'
-    const raceDay = firstAvailableDay(['sun', 'sat', 'fri', 'thu', 'wed'], blocked) ?? 'sun'
+    // CoachingPrinciples §77 — the race sits on the ACTUAL weekday of race_date.
+    // It deliberately ignores `days_cannot_train`: the race is an external fixed
+    // event, not a training session, and a runner who cannot train on Wednesdays
+    // can still race on one. Every other session in this block does respect it.
+    const raceDay = DAY_ORDER[(parseDateLocal(input.race_date).getDay() + 6) % 7]
+    const raceDayIdx = DAY_INDEX[raceDay]
+    // §77 — nothing in race week may fall after the race.
+    const beforeRace = (d: Day): boolean => DAY_INDEX[d] < raceDayIdx
     sessions[raceDay] = raceSession(weekN, raceDay, input.race_distance_km, raceName)
 
     // CoachingPrinciples §30 — race-week shakeouts capped at
@@ -968,7 +975,21 @@ function buildWeekSessions(
       return s
     }
 
-    const shakeout1 = firstAvailableDay(['tue', 'wed', 'mon'], blocked, [raceDay])
+    // §77 — shakeouts are spaced in days BEFORE the race, so the placement
+    // generalises to any race weekday. Offsets landing outside race week (a race
+    // early in the week) or on a blocked day are skipped, never relocated to
+    // after the race — the preceding taper week carries that load instead.
+    const shakeoutDays: Day[] = []
+    for (const daysBefore of GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_DAYS_BEFORE_RACE) {
+      const idx = raceDayIdx - daysBefore
+      if (idx < 0) continue                    // before race week began
+      const d = DAY_ORDER[idx]
+      if (blocked.has(d) || shakeoutDays.includes(d)) continue
+      shakeoutDays.push(d)
+    }
+
+    const [shakeout1, shakeout2] = shakeoutDays
+
     if (shakeout1) {
       const s = enforceCap(shakeoutSession(weekN, shakeout1, zones, pace))
       const e0 = s.coach_notes?.[0]
@@ -977,7 +998,6 @@ function buildWeekSessions(
       sessions[shakeout1] = s
     }
 
-    const shakeout2 = firstAvailableDay(['thu', 'fri'], blocked, [raceDay, shakeout1 ?? raceDay])
     if (shakeout2 && input.days_available >= 3) {
       sessions[shakeout2] = enforceCap(shakeoutSession(weekN, shakeout2, zones, pace))
     }
@@ -990,7 +1010,14 @@ function buildWeekSessions(
       const used: Day[] = [raceDay]
       if (shakeout1) used.push(shakeout1)
       if (sessions[shakeout2 as Day]) used.push(shakeout2 as Day)
-      const easyDay = firstAvailableDay(['sat', 'fri', 'wed', 'mon', 'tue', 'thu'], blocked, used)
+      // Preference order inherited unchanged from the Sunday-race case; §77 adds
+      // the `beforeRace` filter so it stays correct for a midweek race. (Whether
+      // an easy run the day before a race is good coaching is a separate
+      // question — deliberately not relitigated here.)
+      const easyDay = firstAvailableDay(
+        (['sat', 'fri', 'wed', 'mon', 'tue', 'thu'] as Day[]).filter(beforeRace),
+        blocked, used,
+      )
       if (easyDay) {
         sessions[easyDay] = easySession(weekN, easyDay, raceWeekEasyKm, 'distance', zones, pace,
           'Race-week easy', 4,
@@ -2241,7 +2268,6 @@ export function generateRulePlan(
   catalogue: SessionCatalogueRow[] = V1_SESSION_CATALOGUE,
 ): Plan {
   const planStartIso = planStart ?? formatDate(nextMonday())
-  const planStartDate = parseDateLocal(planStartIso)
   const today = formatDate(new Date())
 
   // CoachingPrinciples §55 — reject nonsense / out-of-range inputs before
@@ -2294,7 +2320,14 @@ export function generateRulePlan(
     : null
 
   const config = getDistanceConfig(input.race_distance_km)
-  const { totalWeeks, compressed } = calcPlanLength(input.race_distance_km, input.race_date, planStartIso)
+  // CoachingPrinciples §76 — `planStartIso` is the EARLIEST the plan could begin;
+  // calcPlanLength anchors on race week and returns the actual start. Surplus
+  // weeks delay the start rather than truncating the end. Everything downstream
+  // (week dates, meta.plan_start) must use the anchored value.
+  const planLength = calcPlanLength(input.race_distance_km, input.race_date, planStartIso)
+  const { totalWeeks, compressed } = planLength
+  const anchoredStartIso  = planLength.planStartIso
+  const anchoredStartDate = parseDateLocal(anchoredStartIso)
   const phases = computePhases(totalWeeks, input.race_distance_km)
 
   const metric: 'distance' | 'duration' =
@@ -2376,7 +2409,7 @@ export function generateRulePlan(
     const phase = getPhaseForWeek(weekN, phases)
     phaseWeekCount[phase]++
 
-    const weekDate = formatDate(addDays(planStartDate, i * 7))
+    const weekDate = formatDate(addDays(anchoredStartDate, i * 7))
     const isRaceWeek = weekN === totalWeeks
     // Deload cadence is masters-aware (CoachingPrinciples §3) — set once at top
     // of generateRulePlan so volumes and week badges stay aligned.
@@ -2715,7 +2748,7 @@ export function generateRulePlan(
     race_date:        input.race_date,
     race_distance_km: input.race_distance_km,
     charity:          '',
-    plan_start:       planStartIso,
+    plan_start:       anchoredStartIso,
     quit_date:        '',
 
     resting_hr:    rhr ?? 0,
@@ -2824,7 +2857,7 @@ export function generateRulePlan(
 
   // V6 — pre-plan buffer guidance. Attached at plan top-level (sibling to
   // weeks/phases/meta) per spec. Informational only; no session data.
-  const prePlan = buildV6PrePlanGuidance(prepTime, planStartIso, today)
+  const prePlan = buildV6PrePlanGuidance(prepTime, anchoredStartIso, today)
 
   const plan: Plan = {
     meta,

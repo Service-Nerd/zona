@@ -11,6 +11,8 @@
 
 import type { Plan, GeneratorInput, Session } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
+// Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
+import { parseDateLocal, formatDate } from './length'
 
 export type Severity = 'error' | 'warn'
 
@@ -56,6 +58,8 @@ export const INVARIANT_CODES = [
   'INV-PLAN-FINISH-GOAL-LR-CAP',
   'INV-PLAN-ULTRA-NO-PACE-SEGMENTS',
   'INV-PLAN-WEEK-HAS-REST-DAY',
+  'INV-PLAN-COVERS-RACE-DATE',
+  'INV-PLAN-RACE-ON-RACE-DAY',
   // MAINT-01 — maintenance block invariants (validated by validateMaintenanceBlock,
   // not by validatePlan — maintenance weeks are not produced by generateRulePlan)
   'INV-MAINT-PHASE1-SESSION-TYPES',
@@ -1028,6 +1032,83 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             actual: `${Math.round(fraction * 100)}%`,
             expected: `≤ ${GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY}%`,
           })
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-COVERS-RACE-DATE — the final week must contain race day, and the
+  // race session must sit on race day's actual weekday.
+  // (CoachingPrinciples §76, §77)
+  //
+  // These close the gap that let the highest-severity defect in the 2026-08-06
+  // incident ship: before this, `race_date` appeared in this file exactly once,
+  // in a metadata mapping, and never in an assertion. Every plan the engine had
+  // ever produced finished before race day.
+  //
+  // Foundation weeks (n <= 0) are pre-plan and cannot be the race week.
+  {
+    const raceDateIso = plan.meta.race_date
+    const planWeeks = plan.weeks.filter(w => w.n > 0)
+    const finalWeek = planWeeks[planWeeks.length - 1]
+
+    if (raceDateIso && finalWeek?.date) {
+      const weekStart = parseDateLocal(finalWeek.date)
+      const weekEnd = new Date(weekStart)
+      weekEnd.setDate(weekEnd.getDate() + 6)
+      const race = parseDateLocal(raceDateIso)
+
+      if (race < weekStart || race > weekEnd) {
+        const gapDays = Math.round((race.getTime() - weekEnd.getTime()) / 86_400_000)
+        violations.push({
+          code: 'INV-PLAN-COVERS-RACE-DATE',
+          principle_ref: 'CoachingPrinciples §76',
+          severity: 'error',
+          week: finalWeek.n,
+          message: gapDays > 0
+            ? `Plan ends ${gapDays} day(s) before race day — final week is ${finalWeek.date}–${formatDate(weekEnd)}, race is ${raceDateIso}. The plan must be laid out backwards from race week.`
+            : `Race day ${raceDateIso} falls before the final week (${finalWeek.date}–${formatDate(weekEnd)}).`,
+          actual: `${finalWeek.date}–${formatDate(weekEnd)}`,
+          expected: `a week containing ${raceDateIso}`,
+        })
+      }
+
+      // INV-PLAN-RACE-ON-RACE-DAY — placing the race by weekday preference
+      // rather than by its real date names the right week and still races on
+      // the wrong day.
+      const raceEntry = Object.entries(finalWeek.sessions ?? {})
+        .find(([, s]) => s?.type === 'race')
+      if (raceEntry) {
+        const [placedDay] = raceEntry
+        const expectedDay = DAYS_MON_SUN[(race.getDay() + 6) % 7]
+        if (placedDay !== expectedDay) {
+          violations.push({
+            code: 'INV-PLAN-RACE-ON-RACE-DAY',
+            principle_ref: 'CoachingPrinciples §77',
+            severity: 'error',
+            week: finalWeek.n,
+            day: placedDay,
+            message: `Race session placed on ${placedDay} but ${raceDateIso} is a ${expectedDay}`,
+            actual: placedDay,
+            expected: expectedDay,
+          })
+        }
+        // §77 — no race-week session may fall after the race.
+        const raceIdx = DAYS_MON_SUN.indexOf(expectedDay as DayKey)
+        for (const [day, s] of Object.entries(finalWeek.sessions ?? {})) {
+          if (!s || s.type === 'race' || s.type === 'rest') continue
+          if (DAYS_MON_SUN.indexOf(day as DayKey) > raceIdx) {
+            violations.push({
+              code: 'INV-PLAN-RACE-ON-RACE-DAY',
+              principle_ref: 'CoachingPrinciples §77',
+              severity: 'error',
+              week: finalWeek.n,
+              day,
+              message: `"${s.label ?? day}" is scheduled on ${day}, after the race on ${expectedDay}`,
+              actual: day,
+              expected: `a day before ${expectedDay}`,
+            })
+          }
         }
       }
     }

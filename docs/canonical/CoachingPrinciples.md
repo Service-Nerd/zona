@@ -1410,6 +1410,43 @@ Two rules keep it conservative in both paths: **recovery jogs don't count** as a
 
 ---
 
+## 76. The plan is anchored to race day, not to the start date
+
+**Principle.** A plan is laid out **backwards from the race**, not forwards from the start date. The final week of every plan MUST contain `race_date`. When more calendar weeks are available than the distance's ideal plan length, the surplus **delays the start** — it is never dropped from the end.
+
+**Why.** A training plan is a countdown to a fixed event. Every other rule in this document — taper depth, peak placement, race-specific exposure, recalibration cadence — is expressed relative to the race, so a plan whose final week is not the race week has silently mis-scheduled all of them at once. A runner who finishes the plan eleven days early does not get a longer taper; they get an unplanned, uncoached void at precisely the point where the plan's guidance matters most, and they will fill it by guessing.
+
+The failure is specifically an *end*-truncation: `min(available, ideal)` weeks counted forward from the start discards the tail. Counting backwards from race week discards nothing — it moves the start, and the gap before it is already owned by the foundation block (§ Foundation block), which exists for exactly this situation.
+
+**Consequences that follow from the anchor:**
+- Surplus weeks are absorbed before the plan, never after it.
+- When available weeks are fewer than ideal, the plan simply starts as soon as it can — the race week is still last.
+- `meta.plan_start` is a **derived output**, not the caller's input. The caller proposes the earliest possible start; the engine returns the actual one.
+
+**Config.** No numerics — this is structural. Week boundaries are Monday-anchored (a structural constant, exempt under INV-CFG-003), matching `nextMonday()` and `DAY_ORDER`.
+
+**Enforced by** `INV-PLAN-COVERS-RACE-DATE` (error severity) in `lib/plan/invariants.ts`. Implemented in `calcPlanLength()` (`lib/plan/length.ts`), which owns all plan date arithmetic.
+
+---
+
+## 77. The race sits on race day, and race week builds towards it
+
+**Principle.** The race session MUST be placed on the actual weekday of `race_date`. Race-week supporting sessions (shakeouts, the §39 mid-week easy) MUST fall **before** the race within that week — never after it.
+
+**Why.** Placing the race by day-of-week *preference* rather than by its real date produces a plan that names the right week and still tells the runner to race on the wrong day. It also inverts race week: a shakeout scheduled two days "before" a Sunday race lands *after* a Wednesday one, so the runner is prescribed a warm-up for a race they have already run.
+
+The race is an **external fixed event, not a training session.** Two rules follow:
+- `days_cannot_train` does **not** apply to the race. A runner who cannot train on Wednesdays can still race on one; the constraint describes their training week, not their life.
+- Every other race-week session **does** respect `days_cannot_train`, because those are training.
+
+**Consequences.** A race early in the week leaves little or no room for shakeouts inside race week. That is correct and must not be "fixed" by borrowing days after the race — the preceding taper week carries the load instead. Race week may legitimately contain only the race.
+
+**Config.** `GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_DAYS_BEFORE_RACE` — the preferred spacing, in days before the race, of race-week shakeouts. Default `[5, 3]`, which reproduces the long-standing Tue/Thu placement for the Sunday-race case while generalising to every other race weekday. Offsets that fall outside the race week, or on a blocked day, are skipped rather than relocated.
+
+**Enforced by** `INV-PLAN-RACE-ON-RACE-DAY` (error severity) in `lib/plan/invariants.ts`.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

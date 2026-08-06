@@ -161,9 +161,29 @@ silent fallback is unchanged.
   (`docs/incidents/2026-08-06-plan-defects/analysis.md`, N1).
 
 ### Plan start
-Plan start is always the **next Monday** from the current date, computed using local-time date
-arithmetic (avoids UTC midnight drift). This is computed server-side; the client does not send
-a plan start date.
+The route computes the **next Monday** from the current date (local-time arithmetic, avoiding UTC
+midnight drift) and passes it to the engine. The client does not send a plan start date.
+
+**Changed by GEN-FIX-03 (2026-08-06) — `meta.plan_start` is now a derived output, not the route's
+input.** Per CoachingPrinciples §76 the plan is laid out **backwards from race week**: the route's
+next-Monday value is the *earliest* the plan could begin, and `calcPlanLength()` anchors the final
+week on `race_date` and returns the actual start.
+
+- When more weeks are available than the distance's ideal length, the surplus **delays the start**.
+  It is never dropped off the end. Previously `min(available, ideal)` weeks were laid forward from
+  the start, so **every plan finished before race day** — 3 to 24 days early across all tested
+  personas (analysis F2).
+- `meta.plan_start` may therefore be later than the next Monday. The gap between today and
+  `plan_start` is already consumed by the foundation block (`classifyGap` /
+  `generateFoundationBlock` in `GeneratePlanScreen`), which existed for exactly this case.
+- When available weeks are fewer than ideal, the plan starts as early as it can; race week is
+  still last.
+
+The race session is placed on the **actual weekday of `race_date`** (§77), and deliberately ignores
+`days_cannot_train` — the race is an external fixed event, not a training session. All other
+race-week sessions respect blocked days and must fall *before* the race.
+
+Enforced by `INV-PLAN-COVERS-RACE-DATE` and `INV-PLAN-RACE-ON-RACE-DAY` (both error severity).
 
 ### Guard rails
 Guard rails are checked **before** generation. Invalid inputs never reach the rule engine.
