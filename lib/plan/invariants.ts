@@ -65,6 +65,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-PEAK-IN-PEAK-PHASE',
   'INV-PLAN-NO-PLACEHOLDER-COPY',
   'INV-PLAN-TAPER-COPY-MATCHES-DURATION',
+  'INV-PLAN-LARGEST-SESSIONS-SPACED',
   // MAINT-01 — maintenance block invariants (validated by validateMaintenanceBlock,
   // not by validatePlan — maintenance weeks are not produced by generateRulePlan)
   'INV-MAINT-PHASE1-SESSION-TYPES',
@@ -1198,6 +1199,43 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             })
           }
         }
+      }
+    }
+  }
+
+  // INV-PLAN-LARGEST-SESSIONS-SPACED (CoachingPrinciples §7, CD-12) — the two
+  // largest aerobic sessions of a week should sit ≥48h apart. WARN, not error:
+  // a runner's fixed available days (e.g. 3-day Mon/Wed/Sat) can force them
+  // closer, and life-first scheduling (§18) wins — but a lumpy week should be
+  // surfaced, not shipped silently.
+  {
+    const minGapDays = Math.ceil(GENERATION_CONFIG.MIN_HOURS_BETWEEN_LARGEST_SESSIONS / 24)
+    // Runs only — the race itself isn't a training session; rest is absent and
+    // strength is disabled, so neither appears as a placed session here.
+    const runSize = (s: import('@/types/plan').Session): number =>
+      s.type === 'race' ? 0 : (s.distance_km ?? s.duration_mins ?? 0)
+    for (const w of plan.weeks) {
+      if (w.n <= 0 || w.type === 'deload') continue
+      const placed = (Object.entries(w.sessions ?? {}) as [string, import('@/types/plan').Session | undefined][])
+        .filter(([, s]) => !!s && runSize(s) > 0)
+        .map(([day, s]) => ({ day, size: runSize(s!) }))
+        .sort((a, b) => b.size - a.size)
+      if (placed.length < 2) continue
+      const [a, b] = placed
+      const ia = DAYS_MON_SUN.indexOf(a.day as DayKey)
+      const ib = DAYS_MON_SUN.indexOf(b.day as DayKey)
+      if (ia < 0 || ib < 0) continue
+      const gap = Math.min(Math.abs(ia - ib), 7 - Math.abs(ia - ib))
+      if (gap < minGapDays) {
+        violations.push({
+          code: 'INV-PLAN-LARGEST-SESSIONS-SPACED',
+          principle_ref: 'CoachingPrinciples §7',
+          severity: 'warn',
+          week: w.n,
+          message: `The two largest sessions (${a.day}, ${b.day}) are ${gap} day(s) apart — under the ${minGapDays}-day target. Likely forced by available days.`,
+          actual: `${gap} day(s)`,
+          expected: `>= ${minGapDays} days`,
+        })
       }
     }
   }

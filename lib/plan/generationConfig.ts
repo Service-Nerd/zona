@@ -362,6 +362,13 @@ export const GENERATION_CONFIG = {
   // the day before is the most reliable injury vector. See CoachingPrinciples §7.
   MIN_HOURS_BETWEEN_QUALITY_AND_LONG: 48,
 
+  // CoachingPrinciples §7 (CD-12) — the two LARGEST aerobic sessions of a week
+  // (long run + biggest other run) should sit ≥ this far apart. Enforced by
+  // placement where days are flexible; where blocked days force them closer,
+  // INV-PLAN-LARGEST-SESSIONS-SPACED surfaces it (warn) rather than silently
+  // shipping a lumpy week.
+  MIN_HOURS_BETWEEN_LARGEST_SESSIONS: 48,
+
   // ── Quality session frequency (CoachingPrinciples §8) ───────────────────────
   // OVERRIDE — rebuild spec proposed 3 for experienced. Set to 2 on the basis
   // that the third quality session is rarely accommodated by life and consistently
