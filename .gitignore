@@ -14,3 +14,10 @@ yarn-error.log*
 
 # Claude Code transient agent worktrees — never commit
 .claude/worktrees/
+
+# Incident working data — real user plan JSON / exports. This repo is PUBLIC.
+# Never commit raw user data here: plan JSON carries age, HR and training
+# history, which is health data about an identifiable person. Written-up,
+# aggregated findings in the incident analysis are fine; the raw record is not.
+docs/incidents/**/user-*.json
+docs/incidents/**/*-export.json

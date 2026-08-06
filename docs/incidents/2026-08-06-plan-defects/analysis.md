@@ -5,6 +5,8 @@
 **Subject:** First organic user ("User A") generated a plan on 2026-08-01 containing multiple defects.
 **Status:** Complete. Every finding F1–F15 has a verdict with evidence.
 
+> **The raw plan JSON is deliberately not committed.** This repository is public, and the plan carries age, resting/max HR, benchmark time and full training history — health data about an identifiable person. It is gitignored (`docs/incidents/**/user-*.json`) and held locally only. Everything below is aggregated or redacted; every figure quoted is reproducible from the inputs recorded in the method note.
+
 **Method note.** User A's plan was reproduced byte-for-byte from the live rule engine — identical weekly-km series, long-run series, session-day placement, week labels, themes and `meta.notes`. Recovered inputs: `current_weekly_km: 30`, `longest_recent_run_km: 12`, `preferred_long_run_day: 'sat'`, `days_cannot_train: ['tue','sun']`, plus the values visible in `meta`. Every structural claim below is therefore reproducible, not inferred. A seven-persona simulation established which defects are universal and which are input-conditional.
 
 ---
