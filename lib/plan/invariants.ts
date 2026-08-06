@@ -62,6 +62,8 @@ export const INVARIANT_CODES = [
   'INV-PLAN-COVERS-RACE-DATE',
   'INV-PLAN-RACE-ON-RACE-DAY',
   'INV-PLAN-RECALIBRATION-HAS-SESSION',
+  'INV-PLAN-PEAK-IN-PEAK-PHASE',
+  'INV-PLAN-NO-PLACEHOLDER-COPY',
   // MAINT-01 — maintenance block invariants (validated by validateMaintenanceBlock,
   // not by validatePlan — maintenance weeks are not produced by generateRulePlan)
   'INV-MAINT-PHASE1-SESSION-TYPES',
@@ -1183,6 +1185,76 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           message: `Week ${weekN} is listed as a recalibration week but prescribes no benchmark session — the theme instructs a timed 5K that does not exist`,
           actual: 'no benchmark session',
           expected: 'one session of type "hard"',
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-PEAK-IN-PEAK-PHASE — the plan's highest-volume week should fall in
+  // the peak phase. (CoachingPrinciples §23, §2)
+  //
+  // WARN when the plan is honestly labelled `maintenance`: a runner already near
+  // their level-appropriate peak has little headroom, and a plateau that says so
+  // is a valid outcome (§23). ERROR when the plan claims to be a build, because
+  // then the label and the shape disagree. Before the §2 bounceback amendment
+  // this fired on 4 of 7 personas — every deload ratcheted the ceiling down.
+  {
+    const nonDeload = plan.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
+    const peakPhase = nonDeload.filter(w => w.phase === 'peak')
+    if (nonDeload.length > 1 && peakPhase.length > 0) {
+      const maxKm = Math.max(...nonDeload.map(w => w.weekly_km))
+      // The assertion is that the peak phase REACHES the plan's maximum — not
+      // that the maximum occurs there first. Hitting the ceiling in build and
+      // holding it through peak is a legitimate plateau, and an earlier-first
+      // occurrence is not evidence of the ratchet this guards against.
+      const peakPhaseReachesMax = peakPhase.some(w => w.weekly_km >= maxKm)
+      if (!peakPhaseReachesMax) {
+        const highest = nonDeload.find(w => w.weekly_km === maxKm)!
+        const peakPhaseMax = Math.max(...peakPhase.map(w => w.weekly_km))
+        violations.push({
+          code: 'INV-PLAN-PEAK-IN-PEAK-PHASE',
+          principle_ref: 'CoachingPrinciples §23',
+          severity: plan.meta.volume_profile === 'maintenance' ? 'warn' : 'error',
+          week: highest.n,
+          message: `Peak phase tops out at ${peakPhaseMax}km but the plan reaches ${maxKm}km in week ${highest.n} (${highest.phase})`,
+          actual: `peak-phase max ${peakPhaseMax}km`,
+          expected: `>= ${maxKm}km`,
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-NO-PLACEHOLDER-COPY (warn) — no user-facing string may contain a
+  // fallback placeholder. (analysis F6)
+  //
+  // "Race day: Target Race." shipped to the first organic user. The engine now
+  // writes empty rather than inventing, but this guards reintroduction —
+  // placeholders are truthy, so they render exactly as if they were real.
+  {
+    const PLACEHOLDERS = ['Target Race', 'TBD', 'undefined', 'null']
+    const scan: Array<[string, string | undefined]> = []
+    for (const w of plan.weeks) {
+      scan.push([`w${w.n}.label`, w.label])
+      scan.push([`w${w.n}.theme`, w.theme])
+      scan.push([`w${w.n}.race_notes`, w.race_notes])
+      for (const [day, sess] of Object.entries(w.sessions ?? {})) {
+        if (!sess) continue
+        scan.push([`w${w.n}.${day}.label`, sess.label])
+        for (const n of sess.coach_notes ?? []) scan.push([`w${w.n}.${day}.coach_note`, n])
+      }
+    }
+    for (const [where, text] of scan) {
+      if (!text) continue
+      const hit = PLACEHOLDERS.find(ph => text.includes(ph))
+      if (hit) {
+        violations.push({
+          code: 'INV-PLAN-NO-PLACEHOLDER-COPY',
+          principle_ref: 'analysis F6',
+          severity: 'warn',
+          week: 0,
+          message: `Placeholder "${hit}" in user-facing copy at ${where}: "${text}"`,
+          actual: hit,
+          expected: 'a real value, or copy that omits it',
         })
       }
     }
