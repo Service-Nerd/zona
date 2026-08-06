@@ -14,6 +14,7 @@ import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, isDatePastWeek, parseLocalDate } from '@/lib/plan'
 import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
+import { easyPaceAsCeiling } from '@/lib/plan/easyPaceCeiling'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
@@ -5621,7 +5622,8 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
     ?? (session.zone as string | undefined)
     ?? null
   const pace = (session.type === 'easy' || session.type === 'run')
-    ? (session.pace_target ?? aerobicPace ?? null)
+    // CD-11 / §12 — easy pace reads as a ceiling, not a window.
+    ? easyPaceAsCeiling(session.pace_target ?? aerobicPace ?? null, session.type)
     : (session.type === 'quality' || session.type === 'intervals' || session.type === 'hard' || session.type === 'tempo')
       ? (session.pace_target ?? null)
       : null
@@ -7601,9 +7603,11 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 reflow when aerobicPace lands a beat later. */}
             {(() => {
               const expectsAerobicPace = (selectedSession.type === 'easy' || selectedSession.type === 'run') && !selectedSession.pace_target
-              const paceForDetail = selectedSession.pace_target
+              const rawPaceForDetail = selectedSession.pace_target
                 ?? (expectsAerobicPace ? aerobicPace : null)
                 ?? (expectsAerobicPace && stravaLoading ? '—' : null)
+              // CD-11 / §12 — an easy run's pace is a ceiling, not a window.
+              const paceForDetail = easyPaceAsCeiling(rawPaceForDetail, selectedSession.type)
               // P2 fix: route HR through getSessionHRDisplay (live Karvonen) instead of
               // reading the baked plan string directly. Mirrors what the expanded card does.
               const liveHrStr = getSessionHRDisplay(
