@@ -32,6 +32,8 @@ recordOpsEvent(kind: OpsEventKind, detail?: Record<string, unknown>, userId?: st
 |---|---|---|
 | `plan_save_failed` | `/api/adjust-plan` catch around `savePlanForUser` | A server reshape write threw. `detail`: `{ route, week_n, message }`. |
 | `plan_integrity_mismatch` | the probe | An `auto_applied` adjustment never landed in `plan_json`. `detail`: `{ adjustment_id, week_n, adjustment_at, plan_updated_at }`. |
+| `reshape_invalid` | `/api/adjust-plan` | A reshaped plan failed a constitutional invariant (production soft-degrade). |
+| `plan_enrich_failed` | `/api/generate-plan` stream | **GEN-FIX-02.** AI enrichment fell back silently and the user holds rule-engine output. `detail`: `{ reason, detail, tier, race_distance_km }` where `reason` ∈ `no_api_key` \| `api_error` \| `fetch_failed` \| `parse_error` \| `schema_invalid`. Written for trial **and** paid — a paid user receiving an unenriched plan is a paid feature not delivered. |
 
 ## Probe — `GET|POST /api/ops/reshape-integrity`
 
@@ -51,6 +53,17 @@ recordOpsEvent(kind: OpsEventKind, detail?: Record<string, unknown>, userId?: st
 select kind, count(*) from ops_events group by kind;                          -- overview
 select * from ops_events where kind = 'plan_integrity_mismatch' order by created_at desc; -- stuck plans
 select * from ops_events where kind = 'plan_save_failed' order by created_at desc;         -- caught throws
+
+-- GEN-FIX-02: enrichment failures, newest first + reason breakdown
+select * from ops_events where kind = 'plan_enrich_failed' order by created_at desc;
+select detail->>'reason' as reason, count(*)
+  from ops_events where kind = 'plan_enrich_failed' group by 1 order by 2 desc;
+
+-- The paired question, answered from the plan itself (no ops row needed):
+--   'failed'  → user holds rule-engine output
+--   'pending' → client saved before final_plan arrived (the N8 save race)
+select plan_json->'meta'->>'enrichment' as enrichment, count(*)
+  from plans group by 1;
 ```
 
 ## Apply + verify

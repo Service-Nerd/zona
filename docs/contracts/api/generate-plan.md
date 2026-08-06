@@ -134,8 +134,31 @@ Tier is determined server-side by `getUserTier(userId)`. The client never sends 
 
 ### Enricher fallback
 If the AI enricher fails (timeout, invalid JSON, schema violation), the rule-engine plan is
-returned unchanged. The caller cannot distinguish enriched from unenriched in the 200 response
-(by design — ADR-006: enricher failure is silent).
+returned unchanged. **No error surfaces to the user and generation always succeeds** — ADR-006's
+silent fallback is unchanged.
+
+**Changed by GEN-FIX-02 (2026-08-06):** the failure is no longer silent to *us*.
+
+- `enrich()` now returns `{ plan, outcome }`. `outcome` is `{ status: 'applied' }` or
+  `{ status: 'failed', reason, detail? }` with `reason` ∈ `no_api_key` | `api_error` |
+  `fetch_failed` | `parse_error` | `schema_invalid`. It still never throws; the route keeps a
+  backstop `catch` regardless.
+- On failure the route writes a `plan_enrich_failed` row to `ops_events` (see
+  `docs/contracts/api/ops-events.md`), awaited so it is durable before the stream closes.
+- Every response now carries **`meta.enrichment`**, so a saved plan self-describes:
+
+  | Value | Meaning |
+  |---|---|
+  | `applied` | Enricher ran and its output was merged |
+  | `failed` | Silent fallback — this is rule-engine output |
+  | `skipped` | Free tier; never enriched by design |
+  | `pending` | Stamped on the streamed `rule_plan` before enrichment resolves. **A saved plan reading `pending` means the client persisted before `final_plan` arrived** (the N8 save race) — a defect signal, not a normal terminal state |
+  | *absent* | Plan generated before GEN-FIX-02 shipped |
+
+  This does not breach ADR-006: the field is metadata, is never rendered, and carries no error
+  state to the user. It exists so "did the paid layer actually run?" is a query rather than
+  forensics — the question that took five days to answer for the first organic user
+  (`docs/incidents/2026-08-06-plan-defects/analysis.md`, N1).
 
 ### Plan start
 Plan start is always the **next Monday** from the current date, computed using local-time date

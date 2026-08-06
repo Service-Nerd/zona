@@ -95,10 +95,44 @@ BANNED LANGUAGE — never use these in any field:
 - Do NOT use "light week", "heavy week", "moderate load", or any phrase that judges the athlete's frequency or volume. Use phase-based or session-type language only.
 - Week labels must describe training focus (e.g. phase, session type, physiological goal) — never the perceived difficulty or volume of the schedule.`
 
+// ─── Outcome reporting (GEN-FIX-02) ───────────────────────────────────────────
+//
+// ADR-006 mandates silent fallback *to the user* — a failed enrichment must
+// never break plan generation. It does not mandate silence to US. Before this,
+// all five exits below were `console.error`-only, so a trial user could receive
+// an unenriched (i.e. free-tier) plan and nobody would know. That happened:
+// see docs/incidents/2026-08-06-plan-defects/analysis.md (N1).
+//
+// The commercial edge of it: silent enrichment failure is indistinguishable
+// from "the trial user didn't find it valuable", so it corrupts the conversion
+// diagnosis, not just the one plan.
+//
+// enrich() therefore reports its outcome to the caller rather than recording it
+// here — this module must stay free of the service-role client so it can never
+// leak into a client bundle (see the hazard note in lib/plan.ts).
+
+export type EnrichFailureReason =
+  | 'no_api_key'     // ANTHROPIC_API_KEY absent from the environment
+  | 'api_error'      // Anthropic returned a non-2xx
+  | 'fetch_failed'   // network/transport threw
+  | 'parse_error'    // response was not JSON after fence-stripping
+  | 'schema_invalid' // JSON parsed but failed EnrichedPlanSchema
+
+export type EnrichOutcome =
+  | { status: 'applied' }
+  | { status: 'failed'; reason: EnrichFailureReason; detail?: string }
+
+export interface EnrichResult {
+  plan: Plan
+  outcome: EnrichOutcome
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-export async function enrich(plan: Plan, input: GeneratorInput, tier: Tier): Promise<Plan> {
-  if (!process.env.ANTHROPIC_API_KEY) return plan
+export async function enrich(plan: Plan, input: GeneratorInput, tier: Tier): Promise<EnrichResult> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { plan, outcome: { status: 'failed', reason: 'no_api_key' } }
+  }
 
   const wantPaidFields = tier === 'paid'
 
@@ -127,15 +161,22 @@ export async function enrich(plan: Plan, input: GeneratorInput, tier: Tier): Pro
     })
 
     if (!response.ok) {
-      console.error('[enrich] Anthropic error', response.status, await response.text().catch(() => ''))
-      return plan
+      const body = await response.text().catch(() => '')
+      console.error('[enrich] Anthropic error', response.status, body)
+      return {
+        plan,
+        outcome: { status: 'failed', reason: 'api_error', detail: `${response.status} ${body.slice(0, 200)}` },
+      }
     }
 
     const data = await response.json()
     rawText = data.content?.[0]?.text ?? ''
   } catch (e) {
     console.error('[enrich] fetch failed', e)
-    return plan
+    return {
+      plan,
+      outcome: { status: 'failed', reason: 'fetch_failed', detail: e instanceof Error ? e.message : String(e) },
+    }
   }
 
   // Parse — strip any accidental markdown fences
@@ -145,17 +186,27 @@ export async function enrich(plan: Plan, input: GeneratorInput, tier: Tier): Pro
     parsed = JSON.parse(cleaned)
   } catch {
     console.error('[enrich] JSON parse failed', rawText.slice(0, 300))
-    return plan
+    return {
+      plan,
+      outcome: { status: 'failed', reason: 'parse_error', detail: rawText.slice(0, 200) },
+    }
   }
 
   // Validate shape — only allowed fields accepted
   const result = EnrichedPlanSchema.safeParse(parsed)
   if (!result.success) {
     console.error('[enrich] schema validation failed', result.error.issues.slice(0, 5))
-    return plan
+    return {
+      plan,
+      outcome: {
+        status: 'failed',
+        reason: 'schema_invalid',
+        detail: JSON.stringify(result.error.issues.slice(0, 3)).slice(0, 300),
+      },
+    }
   }
 
-  return mergePlan(plan, result.data, tier)
+  return { plan: mergePlan(plan, result.data, tier), outcome: { status: 'applied' } }
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

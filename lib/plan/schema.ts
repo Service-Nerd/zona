@@ -148,6 +148,17 @@ export const PlanMetaSchema = z.object({
   // enricher) so a re-parse through PlanSchema doesn't strip it on plan load.
   plan_intro:   z.string().optional(),
 
+  // GEN-FIX-02: did the AI enrichment layer actually land on this plan?
+  //   'applied'  — enricher ran and its output was merged
+  //   'failed'   — enricher fell back silently; this is rule-engine output (ADR-006)
+  //   'skipped'  — free tier, never enriched by design
+  //   'pending'  — stamped on the streamed rule_plan before enrichment resolves.
+  //                A *saved* plan reading 'pending' means the client persisted
+  //                before final_plan arrived (the N8 save race) — a real defect
+  //                signal, not a normal terminal state.
+  // Absent = generated before this shipped. Set in the route, like plan_intro.
+  enrichment:   z.enum(['applied', 'failed', 'skipped', 'pending']).optional(),
+
   // R24 — VDOT / zone model fields (these were missing from the schema; added here for completeness)
   age:                z.number().int().positive().optional(),
   vdot:               z.number().positive().optional(),

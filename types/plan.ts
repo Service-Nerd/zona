@@ -274,6 +274,11 @@ export interface PlanMeta {
   coach_intro?: string                    // PAID only — enricher-generated intro paragraph (2–3 sentences + confidence)
   plan_intro?: string                     // FREE first-plan only — CA-01 one-line "why this plan" taste of Kit's voice (Haiku, ~1–2 sentences). Distinct from coach_intro; never co-exists with it.
 
+  // GEN-FIX-02 — enrichment provenance. 'failed' means the user holds rule-engine
+  // output (silent fallback, ADR-006); 'pending' on a SAVED plan means the client
+  // persisted before final_plan arrived (N8 save race). Absent = pre-GEN-FIX-02.
+  enrichment?: 'applied' | 'failed' | 'skipped' | 'pending'
+
   // R24 — VDOT / zone model fields
   age?: number                            // athlete age at time of generation
   vdot?: number                           // Jack Daniels VDOT score (raw, benchmark-derived) — matches Daniels' published tables

@@ -138,6 +138,12 @@ export interface PlanMeta {
   tier?: 'free' | 'trial' | 'paid'  // tier at which plan was generated
   compressed?: boolean               // true if available weeks < ideal plan length for distance
   coach_intro?: string               // PAID only — enricher-generated intro paragraph in ZONNA voice
+
+  // GEN-FIX-02 (2026-08-06) — enrichment provenance. Set in the route, not the
+  // enricher. 'failed' means the user holds rule-engine output (silent fallback,
+  // ADR-006); 'pending' on a SAVED plan means the client persisted before
+  // final_plan arrived (N8 save race). Absent = generated before this shipped.
+  enrichment?: 'applied' | 'failed' | 'skipped' | 'pending'
 }
 
 export interface Phase {

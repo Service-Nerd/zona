@@ -3,7 +3,8 @@ import type { GeneratorInput, Plan } from '@/types/plan'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
-import { enrich } from '@/lib/plan/enrich'
+import { enrich, type EnrichOutcome } from '@/lib/plan/enrich'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { generateFreeIntro } from '@/lib/plan/freeIntro'
 import { nextMonday, formatDate } from '@/lib/plan/length'
 import { PrepTimeError, DaysAvailableError, InputFieldError } from '@/lib/plan/inputs'
@@ -124,6 +125,10 @@ export async function POST(req: NextRequest) {
       } catch (e) {
         console.error('[generate-plan] free intro skipped', e)
       }
+      // GEN-FIX-02 — free plans are never enriched by design (ADR-006 tier split).
+      // Stamping 'skipped' rather than leaving the field absent means an absent
+      // value is unambiguously "generated before this shipped", not "free tier".
+      rulePlan.meta.enrichment = 'skipped'
       return NextResponse.json({ plan: rulePlan })
     }
 
@@ -133,13 +138,41 @@ export async function POST(req: NextRequest) {
     const encoder = new TextEncoder()
     const stream = new ReadableStream({
       async start(controller) {
+        // GEN-FIX-02 — the rule plan goes out before enrichment has run, so its
+        // status is genuinely unknown at this point. Stamping 'pending' gives
+        // the client-side save race (N8) a fingerprint: a *saved* plan reading
+        // 'pending' means the user tapped through before final_plan landed.
+        rulePlan.meta.enrichment = 'pending'
         controller.enqueue(encoder.encode(JSON.stringify({ type: 'rule_plan', plan: rulePlan }) + '\n'))
+
         let finalPlan: Plan = rulePlan
+        let outcome: EnrichOutcome
         try {
-          finalPlan = await enrich(rulePlan, input, tier)
+          const result = await enrich(rulePlan, input, tier)
+          finalPlan = result.plan
+          outcome = result.outcome
         } catch (e) {
+          // enrich() is written not to throw; this is the backstop.
           console.error('[generate-plan] enrich threw unexpectedly', e)
+          outcome = {
+            status: 'failed',
+            reason: 'fetch_failed',
+            detail: e instanceof Error ? e.message : String(e),
+          }
         }
+
+        finalPlan.meta.enrichment = outcome.status === 'applied' ? 'applied' : 'failed'
+
+        // Silent to the user (ADR-006), visible to us. Awaited so the row is
+        // durable before the stream closes — recordOpsEvent never throws.
+        if (outcome.status === 'failed') {
+          await recordOpsEvent(
+            'plan_enrich_failed',
+            { reason: outcome.reason, detail: outcome.detail, tier, race_distance_km: input.race_distance_km },
+            user.id,
+          )
+        }
+
         controller.enqueue(encoder.encode(JSON.stringify({ type: 'final_plan', plan: finalPlan }) + '\n'))
         controller.close()
       },
