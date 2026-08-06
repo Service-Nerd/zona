@@ -195,13 +195,12 @@ Follow-on from the v2 review (`docs/incidents/2026-08-06-plan-defects/` analysis
 
 ✅ **PV2-G/CD-7 (in-week case)** pre-race shakeout+strides for Tue/Wed races on the nearest available day before the race (`53a1372`) — User A's Wed race now gets a Mon shakeout instead of 4 rest days. §77 amended.
 
-**Remaining — 11 of 13 CDs done; each blocked on a specific input, NOT on effort:**
-- **CD-5** taper scaling — *structural*: `taperPhaseWeeks` is read in `computePhases` + `calcPlanLength` + `buildVolumeSequence`; changing it inconsistently re-breaks `INV-PLAN-COVERS-RACE-DATE` (the original P0). Focused standalone pass required. (Low value: ~0.5 week for a 36km runner.)
-- **CD-7 full / PV2-G** — the *Monday-race* case (no in-week day before the race) still needs the cross-week `buildRaceArc` restructure + **ADR**.
-- **CD-11** easy-band-as-ceiling — a **UI/display** change (how pace renders); needs `frontend-design`, not the engine.
+✅ **PV2-I/CD-5** shallower taper for low-volume runners (`a4b841a`) — depth-scaled, structural-stable (taper weeks untouched, so the race-date invariant holds). ✅ **PV2-I/CD-11** easy pace renders as a ceiling ("7:11 /km or slower") via `easyPaceAsCeiling` on card + detail (`f80ede6`) — unit-tested; visual appearance to confirm on an app run.
+
+**🎉 ALL 13 COACHING DECISIONS ADDRESSED (CD-1…CD-13).** Remaining are three clearly-scoped follow-ups, each blocked on a specific input, not effort:
+- **CD-7 full / PV2-G** — the *Monday-race* case (no in-week day before the race) needs the cross-week `buildRaceArc` restructure + an **ADR**.
 - **CD-13 wiring / PV2-H** living plan (paid) — needs an **ADR** (recalibration application model) + TT-completion trigger + paid gate.
-- **CD-6 braces** — HealthKit client verification (wizard reads synced 4-wk avg).
-- **PV2-A input persistence** — needs a **DB migration** (manual apply) + save-flow decision.
+- **CD-6 braces** — HealthKit client verification (wizard reads the synced 4-wk average).
 
 > **Board notes — GEN-FIX (SLT 2026-08-06):** Full review in analysis §11. Headline positions: **Sutherland** — the HR defect inverts the core positioning; `brand.md` claims the edge as *"Runna has no point of view on effort — Zonna tells you when you're overcooking"*, and the app told a man jogging at 129 bpm that he was overcooking, 96% of the time. **Wood** — the real cost isn't miscalibration, it's *learned disregard*: a signal firing on 89–96% of repetitions carries no information and teaches the user the feedback is noise, and that lesson generalises to the corrected version. Miscalibration is recoverable; re-earning attention against a memory of being wrong is not. **Fried** — D1/D3/D4 are afternoon fixes that shouldn't have needed a board; the governance gap is the finding (→ GEN-FIX-08d). **Hutchinson** — everything downstream descends from two unrefreshed numbers, a stale VDOT and an inferred max HR; GEN-FIX-04 refreshes both. **Traynor** — the uncounted casualty is sample size: one organic user, six defects, and the INSTRUMENT-01 baseline is now built from a contaminated cohort.
 
