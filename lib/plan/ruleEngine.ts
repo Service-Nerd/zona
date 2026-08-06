@@ -176,15 +176,59 @@ function tanakaMaxHR(age: number): number {
 // ─── Fitness level derivation ─────────────────────────────────────────────────
 // Uses VDOT when available (more accurate). Falls back to volume-based proxy.
 
-function deriveFitnessLevel(weeklyKm: number, longestKm: number, vdot?: number): FitnessLevel {
-  if (vdot !== undefined && Number.isFinite(vdot)) {
-    if (vdot < 35) return 'beginner'
-    if (vdot <= 50) return 'intermediate'
-    return 'experienced'
-  }
-  if (weeklyKm < 20 || longestKm < 8) return 'beginner'
-  if (weeklyKm >= 55 && longestKm >= 20) return 'experienced'
+const FITNESS_RANK: Record<FitnessLevel, number> = { beginner: 0, intermediate: 1, experienced: 2 }
+
+function fitnessFromVdot(vdot: number): FitnessLevel {
+  const t = GENERATION_CONFIG.FITNESS_VDOT_THRESHOLDS
+  if (vdot < t.intermediate_min) return 'beginner'
+  if (vdot <= t.experienced_min) return 'intermediate'
+  return 'experienced'
+}
+
+function fitnessFromVolume(weeklyKm: number, longestKm: number): FitnessLevel {
+  const t = GENERATION_CONFIG.FITNESS_VOLUME_THRESHOLDS
+  if (weeklyKm < t.beginner_max_weekly_km || longestKm < t.beginner_max_long_km) return 'beginner'
+  if (weeklyKm >= t.experienced_min_weekly_km && longestKm >= t.experienced_min_long_km) return 'experienced'
   return 'intermediate'
+}
+
+/**
+ * CoachingPrinciples §? (D2, 2026-08-06) — VDOT and volume answer different
+ * questions and must both be consulted.
+ *
+ * VDOT measures what a runner can currently RACE. Volume measures what they can
+ * currently ABSORB. The first organic user ran a 29:00 5K (VDOT 30.8 →
+ * "beginner") while running 30 km/week with a 12 km long run (volume →
+ * "intermediate"). Classifying from VDOT alone made them a beginner, and
+ * `QUALITY_SESSIONS_PER_WEEK_MAX.beginner = 0` then removed every quality
+ * session from a 14-week half-marathon plan. One threshold, cascading into the
+ * whole plan shape.
+ *
+ * On disagreement, take the LOWER level for structure (volume, long-run caps —
+ * the things that hurt people when overestimated) and the HIGHER level for the
+ * intensity allowance (the thing that under-trains them when underestimated).
+ */
+interface FitnessAssessment {
+  /** Drives volume, peak km, long-run caps. Conservative on disagreement. */
+  structural: FitnessLevel
+  /** Drives QUALITY_SESSIONS_PER_WEEK_MAX only. Generous on disagreement. */
+  intensity: FitnessLevel
+  /** True when the two signals disagreed — surfaced in meta for honesty. */
+  signalsDisagree: boolean
+}
+
+function assessFitness(weeklyKm: number, longestKm: number, vdot?: number): FitnessAssessment {
+  const byVolume = fitnessFromVolume(weeklyKm, longestKm)
+  if (vdot === undefined || !Number.isFinite(vdot)) {
+    return { structural: byVolume, intensity: byVolume, signalsDisagree: false }
+  }
+  const byVdot = fitnessFromVdot(vdot)
+  if (byVdot === byVolume) {
+    return { structural: byVdot, intensity: byVdot, signalsDisagree: false }
+  }
+  const lower  = FITNESS_RANK[byVdot] < FITNESS_RANK[byVolume] ? byVdot : byVolume
+  const higher = FITNESS_RANK[byVdot] > FITNESS_RANK[byVolume] ? byVdot : byVolume
+  return { structural: lower, intensity: higher, signalsDisagree: true }
 }
 
 // ─── Zone computation ─────────────────────────────────────────────────────────
@@ -1073,6 +1117,11 @@ function buildWeekSessions(
   fitness: FitnessLevel,
   goalPace: string | null | undefined,
   totalWeeks: number,
+  // D2 — the level that governs INTENSITY. Equals `fitness` unless the VDOT and
+  // volume signals disagreed, in which case `fitness` is the lower (structure:
+  // volume, caps) and this is the higher (intensity allowance). See
+  // assessFitness().
+  intensityFitness: FitnessLevel = fitness,
 ): Partial<Record<Day, Session>> {
   const blocked = blockedDays(input)
   const distKey = raceDistanceKey(input.race_distance_km)
@@ -1169,7 +1218,7 @@ function buildWeekSessions(
 
   // Quality count for this week — config-driven (CoachingPrinciples §1, §6, §8).
   // Taper retains intensity per TAPER_QUALITY_PER_WEEK[distKey].
-  const fitnessCeiling = GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX[fitness]
+  const fitnessCeiling = GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX[intensityFitness]
   let plannedQuality = 0
   if (phase === 'taper') {
     const taperPhase = phases.find(p => p.name === 'taper')!
@@ -1177,7 +1226,7 @@ function buildWeekSessions(
     const arr = GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey]
     plannedQuality = arr[Math.min(taperIdx, arr.length - 1)] ?? 0
   } else if (phase === 'peak' && !isDeload) {
-    plannedQuality = fitness === 'experienced' ? 2 : 1
+    plannedQuality = intensityFitness === 'experienced' ? 2 : 1
   } else if (phase === 'build' && !isDeload) {
     plannedQuality = 1
   }
@@ -1395,12 +1444,12 @@ function buildWeekSessions(
           && r.distance_eligibility.includes(distKey)
           && (tier !== 'free' || r.is_free_tier)
         ) ?? selectCatalogueSession({
-          catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 0, preferredCategory,
+          catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
           excludeHillSessions,
         })
       } else {
         cat1 = selectCatalogueSession({
-          catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 0, preferredCategory,
+          catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
           excludeHillSessions,
         })
       }
@@ -2544,8 +2593,10 @@ export function generateRulePlan(
     return discounted
   })()
 
-  const fitness: FitnessLevel = input.fitness_level
-    ?? deriveFitnessLevel(input.current_weekly_km, input.longest_recent_run_km, vdot)
+  // D2 — VDOT and volume answer different questions; consult both.
+  const assessed = assessFitness(input.current_weekly_km, input.longest_recent_run_km, vdot)
+  const fitness: FitnessLevel = input.fitness_level ?? assessed.structural
+  const intensityFitness: FitnessLevel = input.fitness_level ?? assessed.intensity
 
   const rhr = input.resting_hr && input.resting_hr > 0 ? input.resting_hr : undefined
   const pace: PaceGuide = (vdot !== undefined && vdotRaw !== undefined)
@@ -2670,6 +2721,7 @@ export function generateRulePlan(
       fitness,
       goalPace,
       totalWeeks,
+      intensityFitness,
     )
 
     // §78 — the benchmark session is the proof. `isRecalibration` was the
@@ -3001,6 +3053,15 @@ export function generateRulePlan(
     primary_metric: metric,
 
     fitness_level:             fitness,
+    // D2 — when VDOT and volume disagree, `fitness_level` is the conservative
+    // (structural) answer and intensity is allowed at the higher level. Surface
+    // both, plus a plain-English note, so a consumer reading
+    // `fitness_level: 'beginner'` next to a quality session isn't looking at an
+    // apparent contradiction with no explanation.
+    ...(assessed.signalsDisagree ? {
+      fitness_intensity_level: intensityFitness,
+      fitness_signal_note: `Your race benchmark and your training volume point to different levels (${fitnessFromVdot(vdot ?? 0)} on benchmark, ${fitnessFromVolume(input.current_weekly_km, input.longest_recent_run_km)} on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.`,
+    } : {}),
     goal:                      input.goal,
     target_time:               input.target_time,
     days_available:            input.days_available,

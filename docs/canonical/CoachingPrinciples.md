@@ -1513,6 +1513,27 @@ Three further consequences, all deliberate:
 
 ---
 
+## 79. Fitness level — VDOT and volume answer different questions
+
+**Principle.** Fitness level is assessed from **both** the benchmark (VDOT) and current training volume. VDOT measures what a runner can currently *race*; volume measures what they can currently *absorb*. Where the two disagree, the plan takes the **lower** level for structure — weekly volume, peak km, long-run caps — and the **higher** level for the intensity allowance. The disagreement is surfaced in `meta`, never resolved silently.
+
+**Why.** Classification ran from VDOT alone whenever a benchmark existed. The first organic user ran a 29:00 5K (VDOT 30.8 → beginner) while training 30 km/week with a 12 km long run (volume → intermediate). Being labelled a beginner set `QUALITY_SESSIONS_PER_WEEK_MAX` to 0, which removed **every quality session from a 14-week half-marathon plan**. One threshold, read from one signal, cascading into the whole plan shape — and the runner had explicitly said they *like* hard sessions.
+
+The two signals fail in opposite directions, which is exactly why both are needed:
+
+- **Fast but low volume** (a returning runner, or a short-distance specialist stepping up): VDOT says experienced, volume says beginner. Prescribing experienced-level volume risks injury. Prescribing beginner-level intensity wastes a working engine.
+- **Slow but high volume** (the first organic user, and most of this product's audience): VDOT says beginner, volume says intermediate. Prescribing intermediate volume is a real risk. Prescribing zero intensity for fourteen weeks is under-training someone with a functioning aerobic base.
+
+The asymmetry in the resolution is deliberate: **volume is where injuries come from, intensity is where progress is lost.** Being cautious about the first and generous about the second minimises the cost of being wrong in either direction.
+
+**The beginner intensity ceiling itself is unchanged** (§ intensity ceiling, `QUALITY_SESSIONS_PER_WEEK_MAX.beginner = 0`). A genuine beginner — both signals agreeing — still gets no quality sessions, and that remains correct. What changed is *who counts as one*. The classifier was the defect, not the ceiling.
+
+**Config.** `GENERATION_CONFIG.FITNESS_VDOT_THRESHOLDS`, `GENERATION_CONFIG.FITNESS_VOLUME_THRESHOLDS`.
+
+**Meta.** When the signals disagree, `fitness_intensity_level` carries the higher level and `fitness_signal_note` explains the split in plain English — otherwise a consumer reads `fitness_level: 'beginner'` next to a quality session and sees a contradiction with no explanation.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

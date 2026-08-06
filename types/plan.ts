@@ -323,6 +323,12 @@ export interface PlanMeta {
   // CoachingPrinciples §50. The last two added 2026-08-06 (GEN-FIX-05):
   //   observed_max                    — max came from device history, not a measured effort
   //   age_estimate_implausible_input  — supplied max rejected as implausible; Tanaka used
+  // D2 (2026-08-06) — present only when the VDOT and volume signals disagreed.
+  // `fitness_level` is then the conservative answer (drives volume and caps);
+  // this is the higher one (drives the quality-session allowance only).
+  fitness_intensity_level?: 'beginner' | 'intermediate' | 'experienced'
+  fitness_signal_note?: string
+
   hr_zone_method?: 'karvonen' | 'karvonen_estimated_max' | 'percent_of_max' | 'percent_of_estimated_max'
                  | 'observed_max' | 'age_estimate_implausible_input'
   hr_assumption_note?: string

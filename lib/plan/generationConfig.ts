@@ -345,6 +345,21 @@ export const GENERATION_CONFIG = {
     experienced:  2,
   },
 
+  // Fitness classification (D2, 2026-08-06). VDOT measures what a runner can
+  // currently RACE; volume measures what they can currently ABSORB. Both are
+  // consulted — see assessFitness(). On disagreement the lower level drives
+  // structure and the higher drives the intensity allowance.
+  FITNESS_VDOT_THRESHOLDS: {
+    intermediate_min: 35,   // vdot < this → beginner
+    experienced_min:  50,   // vdot > this → experienced
+  },
+  FITNESS_VOLUME_THRESHOLDS: {
+    beginner_max_weekly_km:    20,   // below this weekly volume → beginner
+    beginner_max_long_km:       8,   // or below this longest run → beginner
+    experienced_min_weekly_km: 55,
+    experienced_min_long_km:   20,
+  },
+
   // ── Long-run rules (CoachingPrinciples §9) ──────────────────────────────────
   // Phase-aware fraction of weekly volume.
   LONG_RUN_PCT_OF_WEEKLY_VOLUME: {
