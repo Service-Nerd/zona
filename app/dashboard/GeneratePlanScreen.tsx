@@ -596,6 +596,12 @@ export default function GeneratePlanScreen({
     // The generating ceremony covers this extra async step's wall-clock time.
     let hkRHR: number | null = initialRHR ?? (restingHR ? Number(restingHR) : null)
     let hkMHR: number | null = initialMHR ?? null
+    // CoachingPrinciples §50 — track whether max HR came from device history.
+    // fetchAppleHealthHRSnapshot returns the highest heart rate on record, which
+    // is a floor rather than a maximum for anyone who has never run flat out
+    // wearing a sensor. Only set when WE read it here; a value inherited from
+    // user_settings has no recorded provenance and stays unmarked.
+    let mhrSource: 'observed' | undefined
     if (!hkRHR || !hkMHR) {
       try {
         const { Capacitor } = await import('@capacitor/core')
@@ -604,7 +610,10 @@ export default function GeneratePlanScreen({
           const snap = await fetchAppleHealthHRSnapshot()
           if (snap) {
             hkRHR = hkRHR ?? snap.restingHR
-            hkMHR = hkMHR ?? snap.maxHR
+            if (hkMHR == null && snap.maxHR != null) {
+              hkMHR = snap.maxHR
+              mhrSource = 'observed'
+            }
           }
         }
       } catch {}
@@ -622,6 +631,7 @@ export default function GeneratePlanScreen({
       days_available:        daysAvailable!,
       resting_hr:            hkRHR ?? undefined,
       max_hr:                hkMHR ?? undefined,
+      max_hr_source:         mhrSource,
       training_age:          trainingAge ?? undefined,
       preferred_long_run_day: preferredLongRunDay,
       benchmark,

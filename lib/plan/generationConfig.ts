@@ -26,6 +26,13 @@ export const GENERATION_CONFIG = {
   MAX_WEEKLY_VOLUME_INCREASE_PCT: 10,
   RETURNING_RUNNER_ALLOWANCE_PCT: 15,
   RETURNING_RUNNER_GRACE_WEEKS:    3,
+  // CoachingPrinciples §50 (plausibility, amended 2026-08-06) — a supplied
+  // max_hr deviating from the Tanaka age estimate by more than this is not
+  // trusted; the engine falls back to the estimate and says so. §55 rejects the
+  // physiologically impossible; this rejects the physiologically possible but
+  // almost certainly wrong. Source-independent by design.
+  MAX_HR_PLAUSIBILITY_DEVIATION_PCT: 15,
+
   // CoachingPrinciples §78 — recalibration weeks prescribe a 5K time trial.
   // The session converts the deload week's midweek easy run (same distance, so
   // weekly volume is unchanged) into warm-up / 5K hard / cool-down. `min_slot_km`

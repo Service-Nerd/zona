@@ -786,9 +786,31 @@ The engine NEVER refuses to generate due to missing HR inputs. The philosophy: a
 
 This composes with §55 (input validation): nonsense values (`resting_hr: 0`, `max_hr: 50`) are rejected by §55 as invalid; missing values trigger the fallback hierarchy here. The two cases produce different runner experiences — rejected data prompts the user to fix it; missing data gets an estimate with the caveat surfaced.
 
+### Plausibility — amended 2026-08-06 (GEN-FIX-05)
+
+**The hierarchy above distinguishes *present* from *absent*. It never asked whether a present value was *believable*, and that is where it failed.**
+
+**Principle.** A supplied `max_hr` deviating from the age estimate by more than `MAX_HR_PLAUSIBILITY_DEVIATION_PCT` is not trusted. The engine falls back to the Tanaka estimate, surfaces a note naming both numbers, and tells the runner how to override. §55 rejects values that are physiologically impossible; this rejects values that are physiologically *possible but almost certainly wrong for this runner*.
+
+**Why.** A 43-year-old was issued a plan built on `max_hr: 138` — inside §55's `[120, 220]` range, so it passed validation, and supplied rather than estimated, so §50 emitted no note at all. Tanaka gives 178. Every HR target in that plan was ~28 bpm low, and the runner was never told the number was an inference. The value came from Apple Health's highest *recorded* heart rate, which for someone who has never worn a sensor during a hard effort is a floor, not a maximum — and that describes most of the people this product is built for. The better a runner fits the target audience, the more wrong the number gets. (`docs/incidents/2026-08-06-plan-defects/analysis.md` §6.)
+
+**The fallback is deliberate, not advisory.** An implausible max HR poisons every HR target for the plan's entire duration. The cost of over-riding a genuine physiological outlier is one note and a Profile edit; the cost of trusting a bad number is a whole training block run in the wrong zones. The note always names the override path.
+
+| Condition | Method | Behaviour |
+|---|---|---|
+| Supplied `max_hr` within tolerance of Tanaka | as per table above | unchanged |
+| Supplied `max_hr` outside tolerance | `age_estimate_implausible_input` | **Use Tanaka.** Note names the supplied value, the estimate, and how to override |
+| `max_hr` known to be device-observed (`max_hr_source: 'observed'`) and within tolerance | `observed_max` | Use it, but **always** note that it is derived from recorded activity, not a measured maximum |
+
+**Provenance is best-effort.** `max_hr_source` is set when the wizard reads HealthKit directly. A value arriving via `user_settings` has no recorded provenance, so it degrades to the unmarked path — the plausibility gate still protects it, because that gate is source-independent by design. Adding provenance to `user_settings.max_hr` is tracked separately.
+
+**This composes with §78.** The recalibration time trial is what replaces an estimate with a measurement. Tanaka is a stopgap that gets corrected every four weeks, not a permanent answer.
+
+**Config.** `GENERATION_CONFIG.MAX_HR_PLAUSIBILITY_DEVIATION_PCT = 15`.
+
 Plan meta MUST include:
-- `hr_zone_method` — which of the four methods was used (`karvonen` / `karvonen_estimated_max` / `percent_of_max` / `percent_of_estimated_max`).
-- `hr_assumption_note` — user-facing explanation. Present when method is not `karvonen`.
+- `hr_zone_method` — which method was used (`karvonen` / `karvonen_estimated_max` / `percent_of_max` / `percent_of_estimated_max` / `observed_max` / `age_estimate_implausible_input`).
+- `hr_assumption_note` — user-facing explanation. Present whenever the zones rest on an assumption: any method other than `karvonen`, **and** `karvonen` where the max was device-observed or the supplied value was rejected.
 - `hr_estimated_max` — the Tanaka-estimated max HR. Present when max was estimated.
 
 **Config.** Implemented in `buildHRZonesWithFallback()` (`lib/plan/ruleEngine.ts`). Boundary percentages (Z2 = 70% Karvonen / 80% MaxHR) are inherited from `GENERATION_CONFIG.ZONES`. No new constants — the four-method classification is a control-flow decision, not a tuning knob.

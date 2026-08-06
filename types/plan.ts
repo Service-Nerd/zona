@@ -28,6 +28,15 @@ export interface GeneratorInput {
   fitness_level?: 'beginner' | 'intermediate' | 'experienced'
   resting_hr?: number           // optional — improves zone accuracy via Karvonen
   max_hr?: number               // optional — derived from age (Tanaka: 208 − 0.7 × age)
+  /**
+   * CoachingPrinciples §50 — where max_hr came from. 'observed' means it was read
+   * from device history (the highest heart rate on record), which is a floor, not
+   * a maximum, for anyone who has never run flat out wearing a sensor. Best-effort:
+   * set when the wizard reads HealthKit directly; a value arriving via
+   * user_settings has no recorded provenance and is left unmarked. The
+   * plausibility gate protects both cases — it is source-independent by design.
+   */
+  max_hr_source?: 'observed'
 
   // R23 rebuild — drives returning-runner allowance + reshape decisions
   training_age?: TrainingAge
@@ -311,7 +320,11 @@ export interface PlanMeta {
   // hr_zone_method names which of the four fallback levels was used; non-Karvonen
   // methods carry hr_assumption_note. Estimated max is surfaced when computed
   // from age (Tanaka).
+  // CoachingPrinciples §50. The last two added 2026-08-06 (GEN-FIX-05):
+  //   observed_max                    — max came from device history, not a measured effort
+  //   age_estimate_implausible_input  — supplied max rejected as implausible; Tanaka used
   hr_zone_method?: 'karvonen' | 'karvonen_estimated_max' | 'percent_of_max' | 'percent_of_estimated_max'
+                 | 'observed_max' | 'age_estimate_implausible_input'
   hr_assumption_note?: string
   hr_estimated_max?: number
 

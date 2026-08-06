@@ -1172,8 +1172,15 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     }
   }
 
-  // INV-PLAN-HR-ASSUMPTIONS-SURFACED — every plan declares hr_zone_method;
-  // non-Karvonen methods surface hr_assumption_note. (CoachingPrinciples §50)
+  // INV-PLAN-HR-ASSUMPTIONS-SURFACED — every plan declares hr_zone_method, and
+  // every method that rests on an assumption surfaces hr_assumption_note.
+  // (CoachingPrinciples §50, amended 2026-08-06)
+  //
+  // Previously this exempted `karvonen` outright, on the reasoning that having
+  // both numbers meant having good numbers. It doesn't: a HealthKit-observed max
+  // lands in the karvonen branch, so the runner whose zones were 28 bpm low was
+  // guaranteed to be told nothing at all (analysis N2). Only a karvonen derived
+  // from an unmarked, plausible max is silent now.
   {
     const method = plan.meta.hr_zone_method
     if (!method) {
@@ -1184,7 +1191,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         week: 0,
         message: 'Plan meta missing hr_zone_method — every plan must declare which of the four fallback methods was used',
         actual: 'undefined',
-        expected: "'karvonen' | 'karvonen_estimated_max' | 'percent_of_max' | 'percent_of_estimated_max'",
+        expected: "one of the six §50 methods",
       })
     } else if (method !== 'karvonen' && !plan.meta.hr_assumption_note) {
       violations.push({

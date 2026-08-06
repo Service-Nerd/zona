@@ -240,6 +240,8 @@ type HRZoneMethod =
   | 'karvonen_estimated_max'      // only resting provided; max estimated from age
   | 'percent_of_max'              // only max provided
   | 'percent_of_estimated_max'    // neither provided; max estimated from age
+  | 'observed_max'                // max came from device history, not a measured effort (§50)
+  | 'age_estimate_implausible_input'  // supplied max rejected as implausible (§50)
 
 interface HRZoneFallbackResult {
   zones: ZoneTargets
@@ -255,6 +257,49 @@ function buildHRZonesWithFallback(input: GeneratorInput): HRZoneFallbackResult {
   // as "missing" — the form-default sentinel rejection happens upstream.
   const hasMax = input.max_hr !== undefined && input.max_hr !== null && input.max_hr > 0
   const hasResting = input.resting_hr !== undefined && input.resting_hr !== null && input.resting_hr > 0
+
+  // CoachingPrinciples §50 (plausibility, GEN-FIX-05) — §55 rejects the
+  // physiologically impossible; this rejects the physiologically possible but
+  // almost certainly wrong for THIS runner. Source-independent on purpose: a
+  // value arriving via user_settings carries no provenance, and the harm is
+  // identical whichever way it got here.
+  const tanakaMax = tanakaMaxHR(input.age)
+  const tolerance = GENERATION_CONFIG.MAX_HR_PLAUSIBILITY_DEVIATION_PCT / 100
+  const implausibleMax = hasMax
+    && Math.abs(input.max_hr! - tanakaMax) / tanakaMax > tolerance
+
+  if (implausibleMax) {
+    // Fall back to the age estimate and say so. An implausible max poisons every
+    // HR target for the plan's whole duration; the cost of over-riding a genuine
+    // outlier is one note and a Profile edit.
+    const zones = hasResting ? computeZones(tanakaMax, input.resting_hr!) : computeZones(tanakaMax)
+    return {
+      zones,
+      derived_max: tanakaMax,
+      method: 'age_estimate_implausible_input',
+      estimated_max: tanakaMax,
+      // The two directions have different likely causes, so they get different
+      // explanations. Low is the common one: a device's highest *recorded* rate
+      // is a floor for anyone who has never run flat out wearing it.
+      assumption_note: input.max_hr! < tanakaMax
+        ? `The max HR on file (${input.max_hr} bpm) is well below the typical range for age ${input.age} — usually a sign it was read from recorded activity rather than a genuine maximal effort. Zones use the age estimate of ${tanakaMax} bpm instead (Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). If ${input.max_hr} really is your max, set it in Profile and we'll use it.`
+        : `The max HR on file (${input.max_hr} bpm) is well above the typical range for age ${input.age} — worth double-checking it wasn't a stray reading. Zones use the age estimate of ${tanakaMax} bpm instead (Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). If ${input.max_hr} really is your max, set it in Profile and we'll use it.`,
+    }
+  }
+
+  // Device-observed max within tolerance: usable, but still an inference. The
+  // old hierarchy emitted no note here at all, so the runner had no way to know
+  // their zones rested on an assumption.
+  if (hasMax && input.max_hr_source === 'observed') {
+    const max = input.max_hr!
+    const zones = hasResting ? computeZones(max, input.resting_hr!) : computeZones(max)
+    return {
+      zones,
+      derived_max: max,
+      method: 'observed_max',
+      assumption_note: `Max HR (${max} bpm) is the highest your device has recorded, not a measured maximum — if you have never run flat out wearing it, your true max is likely higher. The ${GENERATION_CONFIG.RECALIBRATION_TIME_TRIAL.distance_km}K time trial in your recalibration weeks will sharpen this.`,
+    }
+  }
 
   if (hasMax && hasResting) {
     const max = input.max_hr!

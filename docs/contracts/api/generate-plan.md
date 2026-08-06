@@ -132,6 +132,24 @@ Triggered by:
 
 Tier is determined server-side by `getUserTier(userId)`. The client never sends a tier claim.
 
+### Max HR plausibility (GEN-FIX-05, 2026-08-06)
+
+`GeneratorInput` gains an optional `max_hr_source?: 'observed'`, set by the wizard when it reads
+max HR directly from HealthKit. Best-effort provenance: a value inherited from `user_settings` has
+no recorded source and stays unmarked.
+
+Per CoachingPrinciples §50 the engine no longer treats a supplied `max_hr` as ground truth:
+
+| Condition | `meta.hr_zone_method` | Behaviour |
+|---|---|---|
+| Deviates from Tanaka by > `MAX_HR_PLAUSIBILITY_DEVIATION_PCT` (15%) | `age_estimate_implausible_input` | **Falls back to the Tanaka estimate.** Note names the supplied value, the estimate, and the Profile override. Source-independent |
+| `max_hr_source: 'observed'`, within tolerance | `observed_max` | Value used; note always surfaced — a device's highest *recorded* rate is a floor, not a maximum |
+| Otherwise | unchanged (`karvonen`, etc.) | unchanged |
+
+`INV-PLAN-HR-ASSUMPTIONS-SURFACED` no longer exempts `karvonen` wholesale — only a `karvonen`
+derived from an unmarked, plausible max is silent. §55's `[120, 220]` range check is unchanged;
+this is a separate gate for values that are physiologically possible but wrong for this runner.
+
 ### Enricher fallback
 If the AI enricher fails (timeout, invalid JSON, schema violation), the rule-engine plan is
 returned unchanged. **No error surfaces to the user and generation always succeeds** — ADR-006's
