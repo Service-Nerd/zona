@@ -955,13 +955,23 @@ function applyRecalibrationTimeTrial(
   s.type = 'hard'
   s.label = `${cfg.distance_km}K time trial`
   s.zone = 'Zone 4–5'
-  s.hr_target = zones.intervalsHR
   s.rpe_target = 9
+  // CD-8 / §78 — a 5K time trial is a DISTANCE-fixed measurement: you cover the
+  // 5 km and the time is the result. It was inheriting the easy slot's shape
+  // (duration-primary, ~63 min, no distance), which is incoherent — the app had
+  // no distance to measure the effort against. Fix the distance; the duration is
+  // a rough estimate of the effort itself (warm-up/cool-down live in the note).
+  s.distance_km = cfg.distance_km
+  s.primary_metric = 'distance'
+  s.duration_mins = dur(cfg.distance_km, pace.minPerKmQuality)
   // A time trial has NO pace target — prescribing one would defeat the point.
   // The session exists to discover the runner's current pace, not to rehearse
-  // the stale one. Leaving the inherited easy band here would read as "run as
-  // hard as you can, at your easy pace".
+  // the stale one.
   delete s.pace_target
+  // CD-8 — HR is RECORDED, not targeted. You don't cap heart rate on a maximal
+  // effort, and the old ceiling (zones.intervalsHR) topped at an estimated max
+  // the runner has never observed. Effort is led by RPE; HR is an output.
+  delete s.hr_target
   s.coach_notes = [
     `Warm up easy for 10 minutes, then ${cfg.distance_km} km as hard as you can hold. Cool down easy.`,
     'This is a measurement, not a session. The result resets your zones and paces for the next block.',
@@ -1106,13 +1116,18 @@ function finishGoalPeakLongRunSession(
 // (back_to_back_long, ultra_race_sim) are awkward as midweek single-day quality
 // — quality stays threshold; ultra-specific work belongs in the long-run slot
 // when the catalogue is widened to support it.
-function preferredQualityCategory(phase: PhaseType, distKey: RaceDistanceKey): CatalogueCategory {
+function preferredQualityCategory(phase: PhaseType, distKey: RaceDistanceKey, isTimeTarget: boolean): CatalogueCategory {
   if (phase === 'base')  return 'aerobic'
   if (phase === 'build') return 'threshold'
   if (phase === 'taper') return 'threshold'
   // peak:
   if (distKey === '5K' || distKey === '10K') return 'vo2max'
-  if (distKey === 'HM')                      return 'race_specific'  // hm_pace_intervals
+  // CD-2 / §22 / §80 — race-pace ("race_specific") work is a TIME-TARGET tool.
+  // A finish-goal runner has no goal pace to run it at, so selecting it here left
+  // the engine naming a session "HM-pace intervals" and then prescribing generic
+  // threshold pace (a §19 label-integrity violation). Finish goals train the peak
+  // on threshold + the long run (§80, time on feet).
+  if (distKey === 'HM' && isTimeTarget)      return 'race_specific'  // hm_pace_intervals
   // MARATHON, 50K, 100K peak quality stays threshold; race-specific work goes in long-run slot.
   return 'threshold'
 }
@@ -1456,9 +1471,14 @@ function buildWeekSessions(
     // CoachingPrinciples §36 — alternate taper category by index so consecutive
     // taper weeks vary their stimulus. Even idx → threshold (default), odd idx
     // → race_specific (sharpener). Race week itself has no quality (§26).
-    let preferredCategory = preferredQualityCategory(phase, distKey)
+    const isTimeTarget = input.goal === 'time_target'
+    let preferredCategory = preferredQualityCategory(phase, distKey, isTimeTarget)
     let taperForceSharpener = false
-    if (phase === 'taper') {
+    // CD-2 / §36 — goal-pace sharpening in the taper is a time-target tool; a
+    // finish-goal taper stays on threshold (§80). Without the goal-gate, a
+    // finish runner's odd taper weeks were named "Goal-pace sharpener" over
+    // generic threshold pace (§19 violation).
+    if (phase === 'taper' && isTimeTarget) {
       const taperPhase = phases.find(p => p.name === 'taper')!
       const taperIdx = weekN - taperPhase.start_week
       if (taperIdx % 2 === 1) {

@@ -68,7 +68,11 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
   {
     id: 'tempo_continuous', name: 'Continuous tempo', category: 'threshold',
     purpose: 'Sustained sub-threshold work. Builds the ceiling.',
-    phase_eligibility: ['build', 'peak'],
+    // CD-2/§36 — taper-eligible so a finish-goal taper has a second honest
+    // threshold flavour to alternate with progressive_tempo (§6 keep intensity,
+    // cut volume). Previously the only taper variety came from goal_pace_sharpener,
+    // which is a time-target-only tool now correctly gated out of finish tapers.
+    phase_eligibility: ['build', 'peak', 'taper'],
     distance_eligibility: ['HM', 'MARATHON', '50K', '100K'],
     fitness_level_min: 'intermediate', difficulty_tier: 3,
     main_set_structure: { type: 'continuous', duration_mins: 30, zone: 'Z3' },

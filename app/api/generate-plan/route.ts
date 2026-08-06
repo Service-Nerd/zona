@@ -3,6 +3,7 @@ import type { GeneratorInput, Plan } from '@/types/plan'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
+import { validatePlan } from '@/lib/plan/invariants'
 import { enrich, type EnrichOutcome } from '@/lib/plan/enrich'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { generateFreeIntro } from '@/lib/plan/freeIntro'
@@ -162,6 +163,28 @@ export async function POST(req: NextRequest) {
         }
 
         finalPlan.meta.enrichment = outcome.status === 'applied' ? 'applied' : 'failed'
+
+        // PV2-A — re-validate AFTER enrichment. The copy invariants
+        // (INV-PLAN-COPY-MATCHES-SESSIONS, -THEME-MATCHES-PRESCRIPTION,
+        // -TAPER-COPY-MATCHES-DURATION, -NO-PLACEHOLDER-COPY) run inside
+        // generateRulePlan, i.e. BEFORE the AI rewrites labels/themes/notes — so
+        // an enricher that promises a session the week doesn't contain sailed
+        // through unchecked. The rule plan is already valid; enriched voice is a
+        // paid nicety, and a correct plan is not negotiable. If enrichment
+        // introduced an error-severity violation, fall back to rule copy.
+        if (outcome.status === 'applied') {
+          const postEnrichErrors = validatePlan(finalPlan, input).filter(v => v.severity === 'error')
+          if (postEnrichErrors.length > 0) {
+            console.error('[generate-plan] enrichment introduced invariant violations, reverting to rule copy', postEnrichErrors.map(v => v.code))
+            await recordOpsEvent(
+              'plan_enrich_failed',
+              { reason: 'post_enrich_invalid', codes: postEnrichErrors.map(v => v.code), tier, race_distance_km: input.race_distance_km },
+              user.id,
+            )
+            finalPlan = rulePlan
+            finalPlan.meta.enrichment = 'failed'
+          }
+        }
 
         // Silent to the user (ADR-006), visible to us. Awaited so the row is
         // durable before the stream closes — recordOpsEvent never throws.
