@@ -394,4 +394,24 @@ Board convened 2026-08-06 on the five §4 decisions plus the §7 remediation cal
 
 ---
 
-*No code was changed in the production of this analysis. No production data was written.*
+## 12. Post-merge review + SLT addendum (GEN-FIX-11 / 12, 2026-08-06)
+
+After Wave 1b merged (`68c994e`), three parallel reviews (correctness, architecture/doctrine, up/downstream impact) ran over the diff. Outcome:
+
+**Two confirmed engineering defects — fixed (GEN-FIX-11).** (1) The GEN-FIX-10 quality-downgrade exemption keyed on the literal `'fatigue'`, but the reshaper emits `'fatigue_accumulation'`, so the fatigue path never stamped `quality_downgraded` and kept firing `reshape_invalid` — the exact noise the fix existed to stop. Extracted to `lib/coaching/qualityDowngrade.ts` (typed `Set<TriggerType>` so a wrong literal fails compilation) + tests. (2) `validateReshapedPlan` ran generation-time whole-plan invariants (`INV-PLAN-COVERS-RACE-DATE`, `INV-PLAN-RACE-ON-RACE-DAY`) against saved *legacy* plans, all of which end before race day (the F2 defect), firing spurious `reshape_invalid` in prod and throwing in dev/test on every reshape of a pre-GEN-FIX-03 plan. Scoped those to generation-time only; `INV-PLAN-COPY-MATCHES-SESSIONS` scoped to the reshaped week. Both verified: 397 tests + 414,720-plan sweep green.
+
+**Two decisions taken to the board (GEN-FIX-12).** The `/slt-review` verdicts:
+
+| Flag | Decision | Verdict |
+|---|---|---|
+| **1(a)** implicit rest = a day with no session | Ratify as canon | **Ratified** — §64 stamped. Representation is not a coaching choice |
+| **1(b)** the six-day training cap | Ratify but stop it being silent | **Ratified + surfaced.** The wizard offers 2–6 only (seven never selectable), so the cap was enforced by omission; now named in one line (*"Six is the cap, on purpose — a rest day does more than a seventh run would."*). Board: restraint the user can't see doesn't change behaviour and forfeits the credibility it earns |
+| **2** missing taper-copy backstop | Build the invariant | **Built** — `INV-PLAN-TAPER-COPY-MATCHES-DURATION` at error severity. Closed the 2-of-3 constitutional gap §9 named deploy-blocking |
+
+**Governance finding.** GEN-FIX-09 rewrote §64 canon directly in code with no board sign-off — the second canon change in one wave to ship without the gate (D1/D3/D4 were the first, flagged by Fried in §11). This is now closed by construction: **D-22** ("changing canon routes through the board; honouring it does not") was added to the architectural principles as D-21's companion. A change that shipped without the gate is not ratified by surviving post-merge review — surface it and get the sign-off, as GEN-FIX-12 did.
+
+**Open hygiene (tracked, GEN-FIX-11):** two `§?` placeholder principle refs in shipped code; a dead duplicate `FITNESS_THRESHOLDS` config; `INV-DATA-008`'s writer list should register `/api/recalibrate-hr` as a legitimate third `strava_activities` writer.
+
+---
+
+*No code was changed in the production of this analysis. No production data was written. (§12 addendum records subsequent Wave 1b remediation — that work did change code, under GEN-FIX-11/12.)*

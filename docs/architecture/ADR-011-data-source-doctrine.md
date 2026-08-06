@@ -240,7 +240,7 @@ These invariants are appended to the `zona-architectural-principles` skill as se
 | INV-DATA-005 | When a coaching metric is absent (null), the UI must render a one-line explanation of why — not a blank, muted placeholder, or silent omission. |
 | INV-DATA-006 | Conflict resolution when the same run arrives from multiple sources is defined in ADR-011 §4. Callers must not implement their own conflict logic. `healthkitConsolidate.ts` is the single owner of dedup and merge. |
 | INV-DATA-007 | The SOR for each data type is the table in ADR-011 §3. No code may treat a different source as authoritative without updating that table and this ADR. |
-| INV-DATA-008 | HealthKit is the System of Record for all run-derived data on iOS. Strava data may only enter as a supplement that patches an existing HealthKit row via `lib/coaching/healthkitConsolidate.ts → tryEnrichHealthKitRow`. If no matching HealthKit row exists, the Strava activity is discarded — never stored as a primary record. Direct writes to `strava_activities` outside of `/api/health/ingest` and the consolidate helper are doctrine violations. |
+| INV-DATA-008 | HealthKit is the System of Record for all run-derived data on iOS. Strava data may only enter as a supplement that patches an existing HealthKit row via `lib/coaching/healthkitConsolidate.ts → tryEnrichHealthKitRow`. If no matching HealthKit row exists, the Strava activity is discarded — never stored as a primary record. Direct writes to `strava_activities` outside of `/api/health/ingest` (insert), the consolidate helper (patch), and `/api/recalibrate-hr` (HR-zone re-bucket — patch-only `.update()` on existing rows, never inserts; registered 2026-08-06 GEN-FIX-11) are doctrine violations. |
 
 ---
 

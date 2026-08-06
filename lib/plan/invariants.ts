@@ -64,6 +64,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RECALIBRATION-HAS-SESSION',
   'INV-PLAN-PEAK-IN-PEAK-PHASE',
   'INV-PLAN-NO-PLACEHOLDER-COPY',
+  'INV-PLAN-TAPER-COPY-MATCHES-DURATION',
   // MAINT-01 — maintenance block invariants (validated by validateMaintenanceBlock,
   // not by validatePlan — maintenance weeks are not produced by generateRulePlan)
   'INV-MAINT-PHASE1-SESSION-TYPES',
@@ -1161,6 +1162,46 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     }
   }
 
+  // INV-PLAN-TAPER-COPY-MATCHES-DURATION — a coach note may not state a taper
+  // length that differs from the actual taper phase. (CoachingPrinciples §6)
+  //
+  // F9 was the note "Two week taper" over a three-week taper: the note's number
+  // came from race distance while the taper length came from the config, two
+  // owners for one fact. GEN-FIX-06 fixed it at source (applyV7TaperRationale
+  // now counts real taper weeks), but the incident's §9 verification strategy
+  // named this a deploy-blocking backstop so a future hardcoded taper string
+  // can't silently reintroduce the lie — the N3/N4 pattern GEN-FIX-08's
+  // governance thesis exists to close. Mirror the source's definition EXACTLY
+  // (weeks whose phase === 'taper', race week included) so this can never
+  // false-positive against the note the engine itself writes.
+  {
+    const actualTaperWeeks = plan.weeks.filter(w => w.phase === 'taper').length
+    if (actualTaperWeeks > 0) {
+      const WORD_TO_NUM: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 }
+      const TAPER_COPY_RE = /\b(one|two|three|four|five|\d+)[\s-]week taper\b/i
+      for (const w of plan.weeks) {
+        for (const [day, s] of Object.entries(w.sessions ?? {})) {
+          const note = (s?.coach_notes ?? []).filter(Boolean).join(' ')
+          const m = TAPER_COPY_RE.exec(note)
+          if (!m) continue
+          const stated = WORD_TO_NUM[m[1].toLowerCase()] ?? Number(m[1])
+          if (Number.isFinite(stated) && stated !== actualTaperWeeks) {
+            violations.push({
+              code: 'INV-PLAN-TAPER-COPY-MATCHES-DURATION',
+              principle_ref: 'CoachingPrinciples §6',
+              severity: 'error',
+              week: w.n,
+              day,
+              message: `Coach note says "${m[0]}" but the plan has ${actualTaperWeeks} taper-phase week(s)`,
+              actual: m[0],
+              expected: `${actualTaperWeeks}-week taper`,
+            })
+          }
+        }
+      }
+    }
+  }
+
   // INV-PLAN-RECALIBRATION-HAS-SESSION — a week listed in
   // meta.recalibration_weeks must actually contain the benchmark session its
   // theme promises. (CoachingPrinciples §78)
@@ -1589,8 +1630,28 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
  * volume-progression and blocked-days invariants are skipped — a within-week
  * reshape doesn't alter those, and the reshape builders respect blocked days at
  * construction.
+ *
+ * Two further generation-time invariants are skipped here for the same reason: a
+ * within-week session swap cannot change whether the plan reaches race day
+ * (`INV-PLAN-COVERS-RACE-DATE`) or whether the race sits on race day
+ * (`INV-PLAN-RACE-ON-RACE-DAY`) — those are properties of the whole-plan week
+ * layout, fixed at generation. Enforcing them here made every *legacy* plan
+ * generated before GEN-FIX-03 (which by definition ends short of race day — that
+ * was the F2 defect) report an error on ANY reshape, emitting a spurious
+ * `reshape_invalid` ops event in prod and throwing in dev/test — attributing a
+ * pre-existing generation defect to a reshape that neither caused nor can fix it.
+ *
+ * `INV-PLAN-COPY-MATCHES-SESSIONS` IS still enforced (a reshape can make a week's
+ * copy false — that's what `refreshWeekCopyIfStale` guards), but only on the
+ * reshaped week when it's known: stale copy on an untouched legacy week is a
+ * pre-GEN-FIX-06 generation defect, not this reshape's responsibility.
  */
-export function validateReshapedPlan(plan: Plan): Violation[] {
+const RESHAPE_SKIP_INVARIANTS = new Set<string>([
+  'INV-PLAN-COVERS-RACE-DATE',
+  'INV-PLAN-RACE-ON-RACE-DAY',
+])
+
+export function validateReshapedPlan(plan: Plan, reshapedWeekN?: number): Violation[] {
   const m = plan.meta
   const input: GeneratorInput = {
     race_date:             m.race_date,
@@ -1607,7 +1668,14 @@ export function validateReshapedPlan(plan: Plan): Violation[] {
     benchmark:             m.benchmark,
     days_cannot_train:     [], // not on meta — blocked-days invariant skipped (see doc)
   }
-  return validatePlan(plan, input)
+  return validatePlan(plan, input).filter(v => {
+    if (RESHAPE_SKIP_INVARIANTS.has(v.code)) return false
+    // Copy-match is the reshaper's concern only for the week it touched.
+    if (v.code === 'INV-PLAN-COPY-MATCHES-SESSIONS' && reshapedWeekN != null && v.week !== reshapedWeekN) {
+      return false
+    }
+    return true
+  })
 }
 
 const PHASE1_SESSION_TYPES = new Set(['easy', 'rest', 'cross-train', 'cross_train'])

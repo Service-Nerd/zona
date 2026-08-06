@@ -1343,6 +1343,7 @@ export default function GeneratePlanScreen({
                   </button>
                 )
               })}
+              <FieldNote>Six is the cap, on purpose — a rest day does more than a seventh run would.</FieldNote>
             </div>
             <div>
               <FieldLabel>Long-run day</FieldLabel>

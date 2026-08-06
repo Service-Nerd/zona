@@ -160,7 +160,7 @@ export interface Week {
    *  can tell an intentional downgrade from a generator defect. Set by the
    *  reshaper; never by generateRulePlan. */
   quality_downgraded?: {
-    trigger: string      // AdjustmentTrigger.type, e.g. 'ef_decline' | 'fatigue'
+    trigger: string      // AdjustmentTrigger.type, e.g. 'ef_decline' | 'fatigue_accumulation'
     at:      string      // ISO timestamp
   }
 

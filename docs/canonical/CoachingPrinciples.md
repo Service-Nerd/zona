@@ -135,6 +135,8 @@ Specific work is selected from the catalogue (`session_catalogue.category = 'rac
 - `GENERATION_CONFIG.TAPER_BY_DISTANCE` — taper duration (days) and volume reduction (% per week) per distance
 - `GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK` — quality session count per taper week, race week always `0`
 
+**Enforcement — taper copy may not misstate taper length.** A coach note that names a taper duration ("Two week taper") MUST match the actual number of taper-phase weeks. `applyV7TaperRationale` (`lib/plan/ruleEngine.ts`) derives the word from the real week count (the source fix for analysis F9, where the note read from race distance while the length read from config — two owners for one fact). `INV-PLAN-TAPER-COPY-MATCHES-DURATION` in `validatePlan()` is the mechanical backstop at **error** severity: it re-derives the taper-week count and errors on any note that disagrees, so a future hardcoded taper string cannot silently reintroduce the lie. *(Backstop added 2026-08-06 per GEN-FIX-12, SLT Flag 2 — closes the 2-of-3 constitutional gap the incident's own §9 named deploy-blocking.)*
+
 ```
 5K / 10K     → 10 days, 35% reduction, [1, 0]
 HM           → 14 days, 45% reduction, [1, 1, 0]
@@ -236,14 +238,16 @@ Implemented in `buildPaceFromVDOT(discountedVdot, rawVdot)` in `lib/plan/ruleEng
 
 ## 13. Fitness classification — VDOT first, volume fallback
 
-**Principle.** Fitness level (`beginner | intermediate | experienced`) is derived from VDOT when a benchmark is available, and from weekly volume + longest recent run otherwise.
+> **Superseded for the classifier logic by §79 (dual-signal), SLT-approved 2026-08-06 (GEN-FIX-07/D2).** VDOT-first with a volume fallback misclassified a 30 km/week runner as a beginner on one slow 5K. §79 now requires VDOT *and* volume to agree before applying the beginner intensity ceiling. This section is retained for the definition of the three levels and their thresholds; the *derivation* rule is §79's.
 
-**Why.** VDOT is the more accurate signal. Volume-based classification is a pragmatic fallback for the no-benchmark case.
+**Principle.** Fitness level is one of `beginner | intermediate | experienced`. VDOT and weekly-volume signals both feed the classification — see §79 for how they combine.
+
+**Why.** VDOT and volume answer different questions (speed vs durability); neither alone is sufficient, which is why §79 requires both.
 
 **Config.**
-- `GENERATION_CONFIG.FITNESS_THRESHOLDS.vdot_beginner_max = 35`
-- `GENERATION_CONFIG.FITNESS_THRESHOLDS.vdot_intermediate_max = 50`
-- Volume fallback: in `lib/plan/ruleEngine.ts` `deriveFitnessLevel()`
+- `GENERATION_CONFIG.FITNESS_VDOT_THRESHOLDS` — `intermediate_min = 35`, `experienced_min = 50`
+- `GENERATION_CONFIG.FITNESS_VOLUME_THRESHOLDS` — beginner/experienced weekly-km + longest-run cutoffs
+- Classifier: `assessFitness()` in `lib/plan/ruleEngine.ts` (§79)
 
 ---
 
@@ -1297,7 +1301,9 @@ Config: `GENERATION_CONFIG.GOAL_SEQUENCING`, `PREP_TIME_THRESHOLDS`, `POST_RACE_
 
 **Principle.** Every plan week must contain at least one rest day. Six-on / one-off is the upper limit for non-elite runners; seven-on is overreaching dressed as commitment. Race week is excluded — the prescribed structure already includes its own rest.
 
-**A rest day is the absence of a session, not a session.** *(Amended 2026-08-06 — GEN-FIX-09.)* A week satisfies this rule when at least one of its seven days carries no training session. An explicit `type: 'rest'` entry also satisfies it — the post-race maintenance block emits those deliberately, because there the rest day is a *prescription* ("do nothing, it helps") rather than a gap.
+**A rest day is the absence of a session, not a session.** *(Amended 2026-08-06 — GEN-FIX-09. Ratified by SLT 2026-08-06 — GEN-FIX-12.)* A week satisfies this rule when at least one of its seven days carries no training session. An explicit `type: 'rest'` entry also satisfies it — the post-race maintenance block emits those deliberately, because there the rest day is a *prescription* ("do nothing, it helps") rather than a gap.
+
+**The six-day ceiling is deliberate and now legible.** *(SLT-ratified 2026-08-06 — GEN-FIX-12, Flag 1.)* `MAX_TRAINING_DAYS_PER_WEEK = 6`: the plan builds at most six training days and forces ≥1 rest day. The Generate-Plan wizard offers 2–6 days only — seven is never selectable — so the ceiling was previously enforced silently by omission. Per the board (Sutherland/Wood/Traynor: restraint the user can't see doesn't change behaviour and forfeits the credibility it earns), the wizard now names it in one line — *"Six is the cap, on purpose — a rest day does more than a seventh run would."* — turning a silent constraint into the product's stated point of view. Ratified: (a) implicit rest as canon, (b) the six-day cap as intended, surfaced not silent.
 
 **Why the amendment.** The rule previously required an explicit `type: 'rest'` session. `generateRulePlan` has never emitted one — a 3-day-a-week plan simply leaves four days empty — so **every plan generated since R23 violated this principle once per non-race week**, and the error-severity invariant fired every time. It went unnoticed for months because `validatePlan` throws in dev/test but only logs in production, and plans are not generated in dev. The engine was right and the rule was wrong: demanding a session object to represent the absence of a session inverts what a rest day is. This is the failure mode §56 warns about — a numeric, or here a shape, with a principle behind it that nobody re-read.
 

@@ -450,12 +450,11 @@ export const GENERATION_CONFIG = {
   USE_PACE_RANGES_NOT_POINTS: true,
   EASY_RUN_ZONE_CAP: 'Z2_TOP', // resolves to top of ZONES.Z2 at runtime
 
-  // ── Fitness classification (CoachingPrinciples §13) ─────────────────────────
-  // VDOT-first; volume fallback for users without a benchmark.
-  FITNESS_THRESHOLDS: {
-    vdot_beginner_max:    35,
-    vdot_intermediate_max: 50,
-  },
+  // Fitness classification config lives in FITNESS_VDOT_THRESHOLDS +
+  // FITNESS_VOLUME_THRESHOLDS above (dual-signal, CoachingPrinciples §79). The
+  // former single FITNESS_THRESHOLDS key was superseded by GEN-FIX-07/D2 and
+  // removed 2026-08-06 (GEN-FIX-11, D-18) — a dead duplicate, same values, no
+  // consumer.
 
   // ── Max HR formula (CoachingPrinciples §14, zone-rules.md) ──────────────────
   // Tanaka: 208 − 0.7 × age. Used as a fallback when user has not provided max_hr.

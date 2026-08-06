@@ -46,7 +46,7 @@ lib/plan/
 | Session spacing | `MIN_HOURS_BETWEEN_QUALITY`, `MIN_HOURS_BETWEEN_QUALITY_AND_LONG`, `QUALITY_SESSIONS_PER_WEEK_MAX` |
 | Long-run rules | `LONG_RUN_PCT_OF_WEEKLY_VOLUME` (per phase), `LONG_RUN_CAP_MINUTES` (per distance), `WEEK_1_2_LONG_RUN_CAP_MULTIPLIER` |
 | VDOT conservatism | `VDOT_CONSERVATIVE_DISCOUNT_PCT`, `VDOT_STALE_BENCHMARK_*` |
-| Fitness classification | `FITNESS_THRESHOLDS` (vdot beginner/intermediate cutoffs) |
+| Fitness classification | `FITNESS_VDOT_THRESHOLDS` + `FITNESS_VOLUME_THRESHOLDS` (dual-signal, §79) |
 | HR zones | `ZONES.Z1…Z5` with both Karvonen % HRR and % MaxHR ranges |
 
 ### What does not live in `GENERATION_CONFIG`

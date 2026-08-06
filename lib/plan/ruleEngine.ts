@@ -193,7 +193,7 @@ function fitnessFromVolume(weeklyKm: number, longestKm: number): FitnessLevel {
 }
 
 /**
- * CoachingPrinciples §? (D2, 2026-08-06) — VDOT and volume answer different
+ * CoachingPrinciples §79 (D2, 2026-08-06) — VDOT and volume answer different
  * questions and must both be consulted.
  *
  * VDOT measures what a runner can currently RACE. Volume measures what they can
@@ -2878,7 +2878,8 @@ export function generateRulePlan(
       long_run_hrs: longRunHrs,
       weekly_km: actualWeeklyKm,
       ...(isRaceWeek ? {
-        // §? F6 — never interpolate an invented race name into user-facing copy.
+        // §77 / INV-PLAN-NO-PLACEHOLDER-COPY (F6) — never interpolate an invented
+        // race name into user-facing copy.
         race_notes: input.race_name
           ? `Race day: ${input.race_name}. Start at Zone 2. The second half is where the race begins.`
           : 'Race day. Start at Zone 2. The second half is where the race begins.',
