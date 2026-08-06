@@ -211,6 +211,8 @@ experienced  → 2
 
 Implemented in `buildPaceFromVDOT(discountedVdot, rawVdot)` in `lib/plan/ruleEngine.ts`. Easy/quality paces use `discountedVdot`; interval pace uses `rawVdot`. The applied discount is surfaced in `plan.meta.vdot_discount_applied_pct` so the user can see what the engine did and why.
 
+**A sub-6-month runner's declared volume is capped, because it is a claim, not a measurement.** *(CD-6, SLT-signed 2026-08-06.)* `current_weekly_km` comes from a wizard bucket ("20–40 km" → midpoint), taken at face value. For a `training_age: '<6mo'` runner that is the whole plan's foundation — it drives the fitness classification, the starting volume, and whether the runner gets any quality at all — and the downside of an over-claim is a genuine beginner handed an intermediate's load. So the starting volume is capped at `GENERATION_CONFIG.BEGINNER_WEEK1_VOLUME_CAP_KM = 30` regardless of what was declared (belt). Where a HealthKit connection exists, the declared figure should additionally be tempered toward the observed 4-week average (braces, ADR-011) — the device-only half, tracked in backlog PV2-E. This is §10's "protect users from themselves" applied to the input, not just the paces.
+
 ---
 
 ## 11. Pace ranges, not points

@@ -2766,9 +2766,14 @@ export function generateRulePlan(
     && input.current_weekly_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_WEEKLY_KM
     && input.longest_recent_run_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_LONG_RUN_KM
   const isFreshReturn = explicitFreshReturn || heuristicFreshReturn
-  const startKm = isFreshReturn
+  const declaredStartKm = isFreshReturn
     ? input.current_weekly_km * GENERATION_CONFIG.FRESH_RETURN_START_FRACTION
     : input.current_weekly_km
+  // CD-6 / §10 — a <6mo runner's declared volume is a self-reported bucket, not
+  // measured; cap the start so an over-claim can't hand a beginner too much.
+  const startKm = input.training_age === '<6mo'
+    ? Math.min(declaredStartKm, GENERATION_CONFIG.BEGINNER_WEEK1_VOLUME_CAP_KM)
+    : declaredStartKm
 
   // Recovery cadence — masters (age ≥ 45) recover every 3 weeks (CoachingPrinciples §3).
   // Computed once and shared between volume sequence + week badging so they stay aligned.

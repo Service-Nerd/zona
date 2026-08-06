@@ -148,6 +148,14 @@ export const GENERATION_CONFIG = {
   BUILD_VOL_INIT_FLOOR_VS_PEAK:   35,
   BUILD_VOL_INIT_CEILING_VS_PEAK: 85,
 
+  // CoachingPrinciples §10 (CD-6) — a `training_age: '<6mo'` runner's declared
+  // weekly volume is a self-reported wizard bucket midpoint, not measured. Cap
+  // the starting volume regardless of the claim, so an over-stated figure can't
+  // hand a genuine beginner an intermediate's load in week 1. Belt (this cap)
+  // protects everyone; braces (verify against synced HealthKit volume) is the
+  // device-only half — see backlog PV2-E.
+  BEGINNER_WEEK1_VOLUME_CAP_KM: 30,
+
   // ── Distance display + minimum session distances ────────────────────────────
   // All session distances round to this precision before display.
   // 0.5 km = whole-number-ish (12.0, 14.5, 9.0) — clean, not nitpicky.
