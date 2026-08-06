@@ -11,6 +11,7 @@ export type NotificationType =
   | 'trial_insight'
   | 'run_feedback'
   | 'plan_adjustment'
+  | 'plan_rebuilt'
 
 export interface NotificationInput {
   type:  NotificationType
