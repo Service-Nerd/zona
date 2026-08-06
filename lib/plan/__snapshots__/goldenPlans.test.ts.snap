@@ -4109,7 +4109,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
     {
       "date": "2026-09-28",
       "label": "Build — holding the work",
-      "long_run_hrs": 1.8,
+      "long_run_hrs": 1.4,
       "n": 9,
       "phase": "build",
       "sessions": {
@@ -4141,8 +4141,8 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         },
         "sun": {
           "detail": null,
-          "distance_km": 19.5,
-          "duration_mins": 108,
+          "distance_km": 15.5,
+          "duration_mins": 86,
           "hr_target": "< 147 bpm",
           "id": "w9-sun",
           "label": "Long run — Zone 2",
@@ -4187,7 +4187,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
       },
       "theme": "One quality session. Everything else stays easy.",
       "type": "normal",
-      "weekly_km": 66,
+      "weekly_km": 62,
     },
     {
       "date": "2026-10-05",
@@ -6302,7 +6302,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
     {
       "date": "2026-09-28",
       "label": "Build — holding the work",
-      "long_run_hrs": 1.9,
+      "long_run_hrs": 1.5,
       "n": 9,
       "phase": "build",
       "sessions": {
@@ -6334,8 +6334,8 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
         },
         "sun": {
           "detail": null,
-          "distance_km": 19.5,
-          "duration_mins": 111,
+          "distance_km": 15.5,
+          "duration_mins": 88,
           "hr_target": "< 148 bpm",
           "id": "w9-sun",
           "label": "Long run — Zone 2",
@@ -6380,7 +6380,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
       },
       "theme": "One quality session. Everything else stays easy.",
       "type": "normal",
-      "weekly_km": 66,
+      "weekly_km": 62,
     },
     {
       "date": "2026-10-05",

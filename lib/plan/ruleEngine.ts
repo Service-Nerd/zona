@@ -2005,6 +2005,55 @@ function applyPeakLongRunAlternation(
 // Walks the plan after the per-week build and clamps any LR that jumps more
 // than +20% / +5km from the prior week's LR. Step-back from a deload week is
 // permitted up to the pre-deload distance (with §45 tolerance).
+// CoachingPrinciples §9 (CD-9) — every Nth BUILD long run steps back so a runner
+// isn't repeating the same long run for weeks. Build phase only: peak long runs
+// are the culmination (and carry the §80 finish-goal floor), deloads already
+// step the whole week back. Metric-agnostic (distance or duration).
+function applyLongRunStepBacks(weeks: Week[], pace: PaceGuide): void {
+  const longRunOf = (w: Week): Session | null => {
+    for (const s of Object.values(w.sessions)) {
+      if (s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)) return s
+    }
+    return null
+  }
+  const buildLRs: Array<{ session: Session; wIdx: number }> = []
+  for (let i = 0; i < weeks.length; i++) {
+    if (weeks[i].phase !== 'build' || weeks[i].type === 'deload') continue
+    const lr = longRunOf(weeks[i])
+    if (lr) buildLRs.push({ session: lr, wIdx: i })
+  }
+  const cadence   = GENERATION_CONFIG.LONG_RUN_STEPBACK_CADENCE_N
+  const factor    = 1 - GENERATION_CONFIG.LONG_RUN_STEPBACK_PCT / 100
+  const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+  const minLong   = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long
+  const ratio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
+  for (let k = 0; k < buildLRs.length; k++) {
+    if ((k + 1) % cadence !== 0) continue  // every Nth: 3rd, 6th, …
+    const s = buildLRs[k].session
+    const w = weeks[buildLRs[k].wIdx]
+    // §9 — the long run must stay the longest run of the week (≥1.25× easy).
+    // Floor the step-back at that ratio; if there's no room to step back without
+    // inverting the ratio, skip this week rather than violate.
+    const maxEasy = Math.max(0, ...Object.values(w.sessions)
+      .filter((x): x is Session => !!x && x.type === 'easy' && !(x.label?.toLowerCase().includes('long') ?? false))
+      .map(x => x.distance_km ?? x.duration_mins ?? 0))
+    if (s.distance_km != null) {
+      const floorKm  = maxEasy * ratio
+      const steppedKm = Math.round((s.distance_km * factor) / precision) * precision
+      if (steppedKm <= floorKm || steppedKm < minLong) continue
+      s.distance_km   = steppedKm
+      s.duration_mins = dur(s.distance_km, pace.minPerKmEasy)
+    } else if (s.duration_mins != null) {
+      const floorMins   = maxEasy * ratio  // easy measured in duration for these plans
+      const steppedMins = Math.round(s.duration_mins * factor)
+      if (steppedMins <= floorMins) continue
+      s.duration_mins = steppedMins
+    }
+    w.weekly_km    = sumWeeklyKm(w.sessions, pace)
+    w.long_run_hrs = computeLongRunHrs(w.sessions, pace)
+  }
+}
+
 function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide): void {
   const capPct = GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT / 100
   const capAbs = GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_ABS_KM
@@ -2934,6 +2983,11 @@ export function generateRulePlan(
   // CoachingPrinciples §45 — long-run progression cap. Walks the plan and
   // clamps any LR that exceeds +20% / +5km from the prior week's LR.
   applyLongRunProgressionCap(weeks, pace)
+
+  // CoachingPrinciples §9 (CD-9) — build-phase long-run step-backs. Runs LAST so
+  // the progression cap can't re-inflate the reduced week. Peak long runs are
+  // left alone (culmination + §80 floor), so this can't create a floor violation.
+  applyLongRunStepBacks(weeks, pace)
 
   // ── V1–V7 post-passes ───────────────────────────────────────────────────────
   // Order matters:

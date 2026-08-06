@@ -244,6 +244,11 @@ export const GENERATION_CONFIG = {
   // No two consecutive peak weeks may both carry a peak-level long run.
   PEAK_LR_ALTERNATION_THRESHOLD_PCT: 90,   // % of peak LR distance defining "peak-level"
   PEAK_LR_STEPBACK_MAX_PCT:          80,   // % of peak LR distance defining a "step-back" LR
+  // CoachingPrinciples §9 (CD-9) — within the build phase, every Nth long run
+  // steps back by this % so a runner isn't repeating the same long run for
+  // weeks. Peak long runs (the culmination) and deloads are left alone.
+  LONG_RUN_STEPBACK_CADENCE_N:        3,   // every 3rd build long run
+  LONG_RUN_STEPBACK_PCT:             20,   // drops 20%
 
   // ── Quality variety across the full plan (CoachingPrinciples §53) ──────────
   // No single quality-session label may appear more than
