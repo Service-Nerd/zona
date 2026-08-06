@@ -139,7 +139,9 @@ export interface AdjustmentCheckInput {
 }
 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
-const HARD_TYPES = new Set(['quality', 'intervals', 'tempo', 'long'])
+// 'hard' added GEN-FIX-04 — see §78. A time trial next to another hard
+// session is exactly what this guard exists to catch.
+const HARD_TYPES = new Set(['quality', 'intervals', 'tempo', 'long', 'hard'])
 const RPE_DISCONNECT_THRESHOLD = 8
 const SKIP_INJURY_VOLUME_REDUCTION = 0.85  // 15% cut per session
 const HILL_TYPES = new Set(['hills', 'hill_repeats'])

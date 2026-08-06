@@ -782,6 +782,64 @@ function shakeoutSession(weekN: number, day: Day, zones: ZoneTargets, pace: Pace
   return session
 }
 
+/**
+ * CoachingPrinciples §78 — convert a deload week's midweek easy run into a 5K
+ * time trial. Converts rather than adds: distance and duration are preserved, so
+ * weekly volume is untouched and the session reads as what a time trial actually
+ * is — warm up, run 5K hard, cool down.
+ *
+ * Typed `hard`, not `quality`, deliberately. `hard` already maps to Z4-5 in
+ * zoneRules (the correct band for a maximal effort, so the coaching pipeline
+ * doesn't flag the runner for exceeding a Z3 ceiling they were never given), and
+ * INV-PLAN-QUALITY-PER-WEEK counts only `quality` — so a beginner on a
+ * zero-quality plan still gets this. A benchmark is a measurement, not a
+ * training stimulus.
+ *
+ * Returns the day converted, or null when no slot is long enough to hold a real
+ * 5K plus warm-up and cool-down. The caller must then NOT list the week as a
+ * recalibration week — metadata follows the plan, never the intent.
+ */
+function applyRecalibrationTimeTrial(
+  sessions: Partial<Record<Day, Session>>,
+  longDay: Day,
+  zones: ZoneTargets,
+  pace: PaceGuide,
+): Day | null {
+  const cfg = GENERATION_CONFIG.RECALIBRATION_TIME_TRIAL
+  const candidates = (Object.keys(sessions) as Day[])
+    .filter(d => d !== longDay)
+    .filter(d => {
+      const s = sessions[d]
+      if (!s || s.type !== 'easy') return false
+      const km = s.distance_km ?? (s.duration_mins ? s.duration_mins / pace.minPerKmEasy : 0)
+      return km >= cfg.min_slot_km
+    })
+    // Furthest from the long run — freshest legs, and it keeps the hard effort
+    // and the week's longest run apart (§7 spacing intent).
+    .sort((a, b) => dayGap(b, longDay) - dayGap(a, longDay))
+
+  const day = candidates[0]
+  if (!day) return null
+
+  const s = sessions[day]!
+  s.type = 'hard'
+  s.label = `${cfg.distance_km}K time trial`
+  s.zone = 'Zone 4–5'
+  s.hr_target = zones.intervalsHR
+  s.rpe_target = 9
+  // A time trial has NO pace target — prescribing one would defeat the point.
+  // The session exists to discover the runner's current pace, not to rehearse
+  // the stale one. Leaving the inherited easy band here would read as "run as
+  // hard as you can, at your easy pace".
+  delete s.pace_target
+  s.coach_notes = [
+    `Warm up easy for 10 minutes, then ${cfg.distance_km} km as hard as you can hold. Cool down easy.`,
+    'This is a measurement, not a session. The result resets your zones and paces for the next block.',
+    'A parkrun counts. So does a solo effort — just make it honest.',
+  ]
+  return day
+}
+
 // ─── Injury adjustments ───────────────────────────────────────────────────────
 
 function hasInjury(input: GeneratorInput, keyword: string): boolean {
@@ -1376,6 +1434,15 @@ function buildWeekSessions(
     }
     sessions[best] = easySession(weekN, best, easyKm, metric, zones, pace)
     used.push(best)
+  }
+
+  // ── 4a. Recalibration time trial (CoachingPrinciples §78) ─────────────────
+  // Deload weeks in base/build carry the benchmark the week's theme has always
+  // promised. Runs before strides so the converted session is no longer type
+  // 'easy' and can't also pick up a stride note.
+  const isRecalibrationWeek = isDeload && (phase === 'base' || phase === 'build')
+  if (isRecalibrationWeek) {
+    applyRecalibrationTimeTrial(sessions, longDay, zones, pace)
   }
 
   // ── 4b. Strides on a midweek easy run (CoachingPrinciples §28) ────────────
@@ -2423,7 +2490,10 @@ export function generateRulePlan(
     const isDeload = !isRaceWeek && weekN % recoveryFreq === 0 && phase !== 'peak' && phase !== 'taper'
     // Recalibration on deload weeks in base/build — fresher legs, good time to benchmark
     const isRecalibration = isDeload && (phase === 'base' || phase === 'build')
-    if (isRecalibration) recalibrationWeeks.push(weekN)
+    // NOTE: recalibrationWeeks is NOT populated here. CoachingPrinciples §78 —
+    // the metadata follows the produced plan, never the intent. A week only
+    // counts as a recalibration week if the time trial was actually placed,
+    // which is resolved after buildWeekSessions returns.
 
     const weeklyKm = volumes[i]
     const prevWeeklyKm = i > 0 ? volumes[i - 1] : startKm
@@ -2438,6 +2508,13 @@ export function generateRulePlan(
       goalPace,
       totalWeeks,
     )
+
+    // §78 — the benchmark session is the proof. `isRecalibration` was the
+    // intent; a placed `hard` session is the fact. If the slot was too short to
+    // hold a real 5K, the week is simply not a recalibration week.
+    if (isRecalibration && Object.values(sessions).some(s => s?.type === 'hard')) {
+      recalibrationWeeks.push(weekN)
+    }
 
     const longRunHrs = computeLongRunHrs(sessions, pace)
     const actualWeeklyKm = sumWeeklyKm(sessions, pace)

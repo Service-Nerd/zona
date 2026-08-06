@@ -1451,6 +1451,30 @@ The race is an **external fixed event, not a training session.** Two rules follo
 
 ---
 
+## 78. Recalibration weeks prescribe the benchmark, they don't just suggest it
+
+**Principle.** A week listed in `meta.recalibration_weeks` MUST contain a benchmark session — a 5K time trial at maximal effort. The week's theme has always instructed the runner to "run a parkrun or timed 5K"; the session must actually be on the plan. `meta.recalibration_weeks` is derived from the produced plan, not from intent: a week only appears there if the session was genuinely placed.
+
+**Distinct from §32.** §32's tune-up callout is an *optional* suggestion on a build week and deliberately adds no session. This is the opposite: a prescribed session on a deload week. They coexist and serve different jobs — §32 defuses "should I race this weekend?", §78 refreshes the numbers the whole plan is derived from.
+
+**Why.** Everything downstream of generation descends from two measurements: a VDOT from one benchmark run, and a max HR. Neither is refreshed anywhere else in a plan's life. Paces, zones, the confidence score and every "you ran too hard" verdict inherit whatever those two values were on day one — and a stale VDOT propagates for the plan's entire duration.
+
+It also closes a loop the engine could not otherwise escape. When max HR is estimated or observed too low, every easy run reads as above-ceiling, the coaching says slow down, the runner never approaches their true max, and the next observation confirms the same depressed value. **A maximal effort is the only exit, and an all-easy plan structurally forbids one.** (See `docs/incidents/2026-08-06-plan-defects/analysis.md` §6 — this is not hypothetical.)
+
+Three further consequences, all deliberate:
+
+- **It is the contrast case.** Zone discipline is a *discrimination* behaviour — the runner must tell easy from hard and commit to whichever is prescribed. A plan where every session is easy offers nothing to discriminate against, so "easy" stops being a choice and becomes just "running". One hard effort per block is what makes the other eleven sessions legible as a decision.
+- **Beginners get it too.** The session is typed `hard`, not `quality`, so it does not count against `QUALITY_SESSIONS_PER_WEEK_MAX` (§ intensity ceiling). A beginner on a zero-quality plan still gets one legitimate hard effort per block. This is intentional: a benchmark is a *measurement*, not a training stimulus, and withholding measurement from the runners whose numbers are least reliable is exactly backwards.
+- **It is placed on a deload week on purpose.** Fresh legs make the measurement meaningful, and the reduced surrounding volume absorbs the cost.
+
+**Implementation.** The session converts the deload week's midweek easy run rather than adding a day — same distance, same duration, so weekly volume is unchanged. It is structured warm-up / 5K hard / cool-down, which is what a time trial actually is. If the slot is too short to contain a real 5K plus warm-up and cool-down, no conversion happens **and the week is not listed as a recalibration week** — the metadata follows the plan, never the intent.
+
+**Config.** `GENERATION_CONFIG.RECALIBRATION_TIME_TRIAL` — `{ distance_km, min_slot_km }`.
+
+**Enforced by** `INV-PLAN-RECALIBRATION-HAS-SESSION` (error severity).
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

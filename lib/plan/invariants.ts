@@ -60,6 +60,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-WEEK-HAS-REST-DAY',
   'INV-PLAN-COVERS-RACE-DATE',
   'INV-PLAN-RACE-ON-RACE-DAY',
+  'INV-PLAN-RECALIBRATION-HAS-SESSION',
   // MAINT-01 — maintenance block invariants (validated by validateMaintenanceBlock,
   // not by validatePlan — maintenance weeks are not produced by generateRulePlan)
   'INV-MAINT-PHASE1-SESSION-TYPES',
@@ -1130,6 +1131,43 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             })
           }
         }
+      }
+    }
+  }
+
+  // INV-PLAN-RECALIBRATION-HAS-SESSION — a week listed in
+  // meta.recalibration_weeks must actually contain the benchmark session its
+  // theme promises. (CoachingPrinciples §78)
+  //
+  // Before this, `recalibration_weeks` was written from intent: the theme told
+  // the runner to "run a parkrun or timed 5K" and no session was ever placed,
+  // in any plan, for any persona (analysis F8).
+  {
+    for (const weekN of plan.meta.recalibration_weeks ?? []) {
+      const week = plan.weeks.find(w => w.n === weekN)
+      if (!week) {
+        violations.push({
+          code: 'INV-PLAN-RECALIBRATION-HAS-SESSION',
+          principle_ref: 'CoachingPrinciples §78',
+          severity: 'error',
+          week: weekN,
+          message: `meta.recalibration_weeks lists week ${weekN}, which does not exist in the plan`,
+          actual: 'missing week',
+          expected: 'a week containing a benchmark session',
+        })
+        continue
+      }
+      const hasBenchmark = Object.values(week.sessions ?? {}).some(s => s?.type === 'hard')
+      if (!hasBenchmark) {
+        violations.push({
+          code: 'INV-PLAN-RECALIBRATION-HAS-SESSION',
+          principle_ref: 'CoachingPrinciples §78',
+          severity: 'error',
+          week: weekN,
+          message: `Week ${weekN} is listed as a recalibration week but prescribes no benchmark session — the theme instructs a timed 5K that does not exist`,
+          actual: 'no benchmark session',
+          expected: 'one session of type "hard"',
+        })
       }
     }
   }

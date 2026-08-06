@@ -26,6 +26,16 @@ export const GENERATION_CONFIG = {
   MAX_WEEKLY_VOLUME_INCREASE_PCT: 10,
   RETURNING_RUNNER_ALLOWANCE_PCT: 15,
   RETURNING_RUNNER_GRACE_WEEKS:    3,
+  // CoachingPrinciples §78 — recalibration weeks prescribe a 5K time trial.
+  // The session converts the deload week's midweek easy run (same distance, so
+  // weekly volume is unchanged) into warm-up / 5K hard / cool-down. `min_slot_km`
+  // is the shortest easy run that can honestly contain that structure — below
+  // it, no conversion happens and the week is not listed as a recalibration week.
+  RECALIBRATION_TIME_TRIAL: {
+    distance_km: 5,
+    min_slot_km: 7,   // 5K + ~1km warm-up + ~1km cool-down
+  },
+
   // CoachingPrinciples §64 — "six-on / one-off is the upper limit for non-elite
   // runners; seven-on is overreaching dressed as commitment." A runner who
   // selects 7 available days still gets 6 training days and one rest day.
