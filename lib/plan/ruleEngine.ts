@@ -1029,7 +1029,14 @@ function buildWeekSessions(
   }
 
   // ── Determine which session types to include ──────────────────────────────
-  const daysAvailable = Math.min(input.days_available, 7 - blocked.size)
+  // CoachingPrinciples §64 — cap at six training days so every week keeps a rest
+  // day. A runner selecting 7 available days is telling us their schedule, not
+  // asking for seven runs. Enforced by INV-PLAN-WEEK-HAS-REST-DAY.
+  const daysAvailable = Math.min(
+    input.days_available,
+    7 - blocked.size,
+    GENERATION_CONFIG.MAX_TRAINING_DAYS_PER_WEEK,
+  )
   // distKey is hoisted above the race-week branch for §39 use.
 
   // Quality count for this week — config-driven (CoachingPrinciples §1, §6, §8).

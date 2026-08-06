@@ -26,6 +26,11 @@ export const GENERATION_CONFIG = {
   MAX_WEEKLY_VOLUME_INCREASE_PCT: 10,
   RETURNING_RUNNER_ALLOWANCE_PCT: 15,
   RETURNING_RUNNER_GRACE_WEEKS:    3,
+  // CoachingPrinciples §64 — "six-on / one-off is the upper limit for non-elite
+  // runners; seven-on is overreaching dressed as commitment." A runner who
+  // selects 7 available days still gets 6 training days and one rest day.
+  MAX_TRAINING_DAYS_PER_WEEK: 6,
+
   RECOVERY_WEEK_FREQUENCY_STANDARD: 4,
   RECOVERY_WEEK_FREQUENCY_MASTERS:  3,
   MASTERS_AGE_THRESHOLD: 45,

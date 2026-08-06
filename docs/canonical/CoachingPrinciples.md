@@ -1250,7 +1250,11 @@ Config: `GENERATION_CONFIG.GOAL_SEQUENCING`, `PREP_TIME_THRESHOLDS`, `POST_RACE_
 
 ## 64. Day-level rest — every training week needs at least one rest day
 
-**Principle.** Every plan week must contain at least one rest day (`session.type === 'rest'`). Six-on / one-off is the upper limit for non-elite runners; seven-on is overreaching dressed as commitment. Race week is excluded — the prescribed structure already includes its own rest.
+**Principle.** Every plan week must contain at least one rest day. Six-on / one-off is the upper limit for non-elite runners; seven-on is overreaching dressed as commitment. Race week is excluded — the prescribed structure already includes its own rest.
+
+**A rest day is the absence of a session, not a session.** *(Amended 2026-08-06 — GEN-FIX-09.)* A week satisfies this rule when at least one of its seven days carries no training session. An explicit `type: 'rest'` entry also satisfies it — the post-race maintenance block emits those deliberately, because there the rest day is a *prescription* ("do nothing, it helps") rather than a gap.
+
+**Why the amendment.** The rule previously required an explicit `type: 'rest'` session. `generateRulePlan` has never emitted one — a 3-day-a-week plan simply leaves four days empty — so **every plan generated since R23 violated this principle once per non-race week**, and the error-severity invariant fired every time. It went unnoticed for months because `validatePlan` throws in dev/test but only logs in production, and plans are not generated in dev. The engine was right and the rule was wrong: demanding a session object to represent the absence of a session inverts what a rest day is. This is the failure mode §56 warns about — a numeric, or here a shape, with a principle behind it that nobody re-read.
 
 **Why.** Day-level recovery sits beneath week-level recovery (§3). The weekly recovery week handles cumulative load over four-week cycles; the per-week rest day handles acute load between hard sessions. Without it, every "easy" day is forced to absorb someone else's recovery duty — which is exactly how easy creeps hot.
 

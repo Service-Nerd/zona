@@ -77,12 +77,32 @@ export const INVARIANT_CODES = [
  * same implementation. D-08 (no duplicate ownership).
  *
  * Accepts either the flat session array `buildReorderAdjustment` uses or
- * the entry tuples `validatePlan` produces — duck-types on `.type === 'rest'`.
+ * the entry tuples `validatePlan` produces.
+ *
+ * GEN-FIX-09 (2026-08-06) — §64 amended: **a rest day is the absence of a
+ * session, not a session.** Two ways to satisfy it:
+ *
+ *   1. An explicit `type: 'rest'` entry. The post-race maintenance block emits
+ *      these deliberately — there the rest day is a prescription, not a gap.
+ *   2. Fewer than 7 training days in the week. This is how `generateRulePlan`
+ *      has always worked: a 3-day plan leaves four days empty.
+ *
+ * Previously only (1) counted, so every generated plan failed this invariant
+ * once per non-race week — invisible because validatePlan throws in dev/test
+ * but logs in production. The engine was right; the rule was wrong.
+ *
+ * The move-time caller keeps its meaning: a reorder cannot change how many
+ * sessions a week has, so it can only lose a rest day by landing on an
+ * explicit one — which is exactly the maintenance-block case it protects.
  */
+const DAYS_IN_WEEK = 7  // structural constant, not a coaching numeric (INV-CFG-003)
+
 export function weekHasRestDay(
   sessions: ReadonlyArray<{ type?: string } | null | undefined>,
 ): boolean {
-  return sessions.some(s => s?.type === 'rest')
+  if (sessions.some(s => s?.type === 'rest')) return true
+  const trainingDays = sessions.filter(s => s && s.type !== 'rest').length
+  return trainingDays < DAYS_IN_WEEK
 }
 
 const DAYS_MON_SUN = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
