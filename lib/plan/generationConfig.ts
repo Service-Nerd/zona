@@ -141,6 +141,14 @@ export const GENERATION_CONFIG = {
   QUALITY_SESSION_PCT_OF_WEEKLY:    18,
   SECONDARY_QUALITY_PCT_OF_PRIMARY: 80,
 
+  // CoachingPrinciples §8 (CD-3) — quality PROGRESSES across the build. Intensity
+  // is held (pace/HR/zone unchanged — §1 polarised); the session grows by
+  // DURATION as the block advances. The multiplier is centred on 1.0 across
+  // build+peak (early ~0.85×, late ~1.15×) so the plan's total intensity budget
+  // is unchanged — a build that builds, without adding grey-zone load. Base and
+  // taper are exempt (aerobic quality / volume-cut sharpening respectively).
+  QUALITY_PROGRESSION_RANGE_PCT:    30,
+
   // ── Volume sequence initialisation ──────────────────────────────────────────
   // buildVolumeSequence clamps the starting volume to a band relative to peakKm:
   //   floor = peakKm × FLOOR_PCT/100  (prevents starting too low for the target)

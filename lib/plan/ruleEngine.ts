@@ -1298,7 +1298,18 @@ function buildWeekSessions(
   //       crammed into few easy slots.)
   const longRunPct       = GENERATION_CONFIG.LONG_RUN_PCT_OF_WEEKLY_VOLUME[phase]
   const qualPct          = GENERATION_CONFIG.QUALITY_SESSION_PCT_OF_WEEKLY
-  const qualKmPerSession = weeklyKm * (qualPct / 100)
+  // CD-3 / §8 — quality grows by duration across build+peak (intensity held).
+  // Centred on 1.0 so the plan's total intensity budget is unchanged.
+  let qualProgression = 1
+  if (phase === 'build' || phase === 'peak') {
+    const buildStart = phases.find(p => p.name === 'build')?.start_week
+    const peakEnd    = phases.find(p => p.name === 'peak')?.end_week
+    if (buildStart != null && peakEnd != null && peakEnd > buildStart) {
+      const t = Math.min(1, Math.max(0, (weekN - buildStart) / (peakEnd - buildStart)))
+      qualProgression = 1 + (GENERATION_CONFIG.QUALITY_PROGRESSION_RANGE_PCT / 100) * (t - 0.5)
+    }
+  }
+  const qualKmPerSession = weeklyKm * (qualPct / 100) * qualProgression
   const totalQualVol     = includeQualityCount * qualKmPerSession
   const easyCount        = Math.max(0, daysAvailable - 1 - includeQualityCount - adjStrength)
 
