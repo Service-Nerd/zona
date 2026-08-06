@@ -1196,6 +1196,23 @@ function buildWeekSessions(
       shakeoutDays.push(d)
     }
 
+    // §77 / §30 (CD-7) — an early-week race (Tue/Wed) leaves no room for the
+    // [5,3]-days-before shakeouts inside race week, so the loop above places
+    // none and the runner gets days of complete rest with no neuromuscular
+    // priming — exactly what §30 warns against. Fallback: place ONE short
+    // pre-race shakeout with strides on the nearest AVAILABLE day before the
+    // race that still sits in race week (respects blocked days). A Monday race
+    // genuinely has no earlier in-week day, so this correctly does nothing there
+    // (the preceding week would carry it — a separate cross-week change).
+    if (shakeoutDays.length === 0) {
+      for (let idx = raceDayIdx - 1; idx >= 0; idx--) {
+        const d = DAY_ORDER[idx]
+        if (blocked.has(d)) continue
+        shakeoutDays.push(d)
+        break
+      }
+    }
+
     const [shakeout1, shakeout2] = shakeoutDays
 
     if (shakeout1) {

@@ -776,6 +776,23 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
       "phase": "taper",
       "race_notes": "Race day. Start at Zone 2. The second half is where the race begins.",
       "sessions": {
+        "mon": {
+          "coach_notes": [
+            "Short and relaxed. Wake the legs, nothing more.",
+            "4×100m strides at 5K effort, full recovery between.",
+          ],
+          "detail": null,
+          "distance_km": 4.5,
+          "duration_mins": 35,
+          "hr_target": "< 136 bpm",
+          "id": "w14-mon",
+          "label": "Easy shakeout",
+          "pace_target": "7:11–8:32 /km",
+          "primary_metric": "distance",
+          "rpe_target": 2,
+          "type": "easy",
+          "zone": "Zone 1",
+        },
         "wed": {
           "coach_notes": [
             "Start slower than feels right. First 5 km at Zone 2.",
@@ -791,7 +808,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
       },
       "theme": "The work is done. Arrive rested.",
       "type": "race",
-      "weekly_km": 21,
+      "weekly_km": 26,
     },
   ],
 }
@@ -1445,6 +1462,23 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
       "phase": "taper",
       "race_notes": "Race day. Start at Zone 2. The second half is where the race begins.",
       "sessions": {
+        "tue": {
+          "coach_notes": [
+            "Short and relaxed. Wake the legs, nothing more.",
+            "4×100m strides at 5K effort, full recovery between.",
+          ],
+          "detail": null,
+          "distance_km": 4.5,
+          "duration_mins": 35,
+          "hr_target": "< 131 bpm",
+          "id": "w12-tue",
+          "label": "Easy shakeout",
+          "pace_target": "7:30–9:00 /km",
+          "primary_metric": "distance",
+          "rpe_target": 2,
+          "type": "easy",
+          "zone": "Zone 1",
+        },
         "wed": {
           "coach_notes": [
             "Start slower than feels right. First 5 km at Zone 2.",
@@ -1460,7 +1494,7 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
       },
       "theme": "The work is done. Arrive rested.",
       "type": "race",
-      "weekly_km": 5,
+      "weekly_km": 10,
     },
   ],
 }
@@ -2343,6 +2377,23 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
       "phase": "taper",
       "race_notes": "Race day. Start at Zone 2. The second half is where the race begins.",
       "sessions": {
+        "tue": {
+          "coach_notes": [
+            "Short and relaxed. Wake the legs, nothing more.",
+            "4×100m strides at 5K effort, full recovery between.",
+          ],
+          "detail": null,
+          "distance_km": 5,
+          "duration_mins": 30,
+          "hr_target": "< 133 bpm",
+          "id": "w12-tue",
+          "label": "Easy shakeout",
+          "pace_target": "5:23–6:27 /km",
+          "primary_metric": "distance",
+          "rpe_target": 2,
+          "type": "easy",
+          "zone": "Zone 1",
+        },
         "wed": {
           "coach_notes": [
             "Start slower than feels right. First 5 km at Zone 2.",
@@ -2358,7 +2409,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
       },
       "theme": "The work is done. Arrive rested.",
       "type": "race",
-      "weekly_km": 10,
+      "weekly_km": 15,
     },
   ],
 }
@@ -3360,6 +3411,23 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "type": "easy",
           "zone": "Zone 2",
         },
+        "tue": {
+          "coach_notes": [
+            "Short and relaxed. Wake the legs, nothing more.",
+            "4×100m strides at 5K effort, full recovery between.",
+          ],
+          "detail": null,
+          "distance_km": 5,
+          "duration_mins": 31,
+          "hr_target": "< 129 bpm",
+          "id": "w14-tue",
+          "label": "Easy shakeout",
+          "pace_target": "5:42–6:49 /km",
+          "primary_metric": "distance",
+          "rpe_target": 2,
+          "type": "easy",
+          "zone": "Zone 1",
+        },
         "wed": {
           "coach_notes": [
             "Start slower than feels right. First 5 km at Zone 2.",
@@ -3375,7 +3443,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
       },
       "theme": "The work is done. Arrive rested.",
       "type": "race",
-      "weekly_km": 28,
+      "weekly_km": 33,
     },
   ],
 }
@@ -4723,6 +4791,23 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "type": "easy",
           "zone": "Zone 2",
         },
+        "tue": {
+          "coach_notes": [
+            "Short and relaxed. Wake the legs, nothing more.",
+            "4×100m strides at 5K effort, full recovery between.",
+          ],
+          "detail": null,
+          "distance_km": 5,
+          "duration_mins": 28,
+          "hr_target": "< 132 bpm",
+          "id": "w16-tue",
+          "label": "Easy shakeout",
+          "pace_target": "5:02–6:02 /km",
+          "primary_metric": "distance",
+          "rpe_target": 2,
+          "type": "easy",
+          "zone": "Zone 1",
+        },
         "wed": {
           "coach_notes": [
             "Start slower than feels right. First 5 km at Zone 2.",
@@ -4738,7 +4823,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
       },
       "theme": "The work is done. Arrive rested.",
       "type": "race",
-      "weekly_km": 51,
+      "weekly_km": 56,
     },
   ],
 }
@@ -5561,6 +5646,23 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
       "phase": "taper",
       "race_notes": "Race day. Start at Zone 2. The second half is where the race begins.",
       "sessions": {
+        "tue": {
+          "coach_notes": [
+            "Short and relaxed. Wake the legs, nothing more.",
+            "4×100m strides at 5K effort, full recovery between.",
+          ],
+          "detail": null,
+          "distance_km": 5,
+          "duration_mins": 35,
+          "hr_target": "< 121 bpm",
+          "id": "w14-tue",
+          "label": "Easy shakeout",
+          "pace_target": "6:30–7:30 /km",
+          "primary_metric": "distance",
+          "rpe_target": 2,
+          "type": "easy",
+          "zone": "Zone 1",
+        },
         "wed": {
           "coach_notes": [
             "Start slower than feels right. First 5 km at Zone 2.",
@@ -5576,7 +5678,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
       },
       "theme": "The work is done. Arrive rested.",
       "type": "race",
-      "weekly_km": 21,
+      "weekly_km": 26,
     },
   ],
 }
@@ -6915,6 +7017,23 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "type": "easy",
           "zone": "Zone 2",
         },
+        "tue": {
+          "coach_notes": [
+            "Short and relaxed. Wake the legs, nothing more.",
+            "4×100m strides at 5K effort, full recovery between.",
+          ],
+          "detail": null,
+          "distance_km": 5,
+          "duration_mins": 28,
+          "hr_target": "< 134 bpm",
+          "id": "w16-tue",
+          "label": "Easy shakeout",
+          "pace_target": "5:11–6:12 /km",
+          "primary_metric": "distance",
+          "rpe_target": 2,
+          "type": "easy",
+          "zone": "Zone 1",
+        },
         "wed": {
           "coach_notes": [
             "Start slower than feels right. First 5 km at Zone 2.",
@@ -6930,7 +7049,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
       },
       "theme": "The work is done. Arrive rested.",
       "type": "race",
-      "weekly_km": 51,
+      "weekly_km": 56,
     },
   ],
 }
