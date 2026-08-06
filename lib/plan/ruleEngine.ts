@@ -1783,6 +1783,62 @@ function weekTheme(c: WeekContent): string {
   }
 }
 
+/**
+ * CoachingPrinciples §27 — re-derive a week's copy when the sessions beneath it
+ * have changed and the existing copy has become false.
+ *
+ * The reshaper (R20) downgrades quality sessions to easy — "aerobic efficiency
+ * trending down" — and never touched `label` / `theme`, so a week could keep
+ * "Build — first quality session" over four easy runs. That is F4 recurring
+ * through the reshape path rather than at generation (analysis open-Q4).
+ *
+ * Deliberately surgical: it rewrites ONLY when the current copy claims something
+ * the week no longer contains. Enriched copy is Kit's voice and a paid
+ * deliverable — blanket-refreshing every reshaped week would silently revert
+ * trial/paid users to rule-engine strings. A lie gets replaced; a voice does not.
+ *
+ * Returns true when the copy was rewritten.
+ */
+export function refreshWeekCopyIfStale(plan: Plan, weekN: number): boolean {
+  const idx = plan.weeks.findIndex(w => w.n === weekN)
+  if (idx < 0) return false
+  const w = plan.weeks[idx]
+  const phase = w.phase
+  // Foundation and maintenance weeks are generated elsewhere with their own copy.
+  if (!phase || phase === 'foundation' || phase === 'maintenance_restoration' || phase === 'maintenance_base') {
+    return false
+  }
+
+  const hasIntensity = Object.values(w.sessions).some(
+    x => x?.type === 'quality' || x?.type === 'intervals' || x?.type === 'tempo')
+  const hasBenchmark = Object.values(w.sessions).some(x => x?.type === 'hard')
+  const copy = `${w.label ?? ''} | ${w.theme ?? ''}`.toLowerCase()
+
+  const claimsIntensity = /quality|threshold|tempo|interval|vo2|sharpen|raising the ceiling|intensity stays|feels? hard/.test(copy)
+  const claimsBenchmark = /benchmark|time trial/.test(copy)
+
+  const copyIsStale = (claimsIntensity && !hasIntensity && !hasBenchmark)
+    || (claimsBenchmark && !hasBenchmark)
+  if (!copyIsStale) return false
+
+  let phaseWeekN = 0
+  for (let i = 0; i <= idx; i++) if (plan.weeks[i].phase === phase) phaseWeekN++
+
+  let prevNonDeloadKm = 0
+  for (let j = idx - 1; j >= 0; j--) {
+    if (plan.weeks[j].type !== 'deload') { prevNonDeloadKm = plan.weeks[j].weekly_km; break }
+  }
+  const isVolumePeak = plan.meta.volume_profile !== 'maintenance' && w.weekly_km > prevNonDeloadKm
+
+  const content = summariseWeek(
+    w.sessions, phase as PhaseType, phaseWeekN,
+    w.type === 'deload', w.type === 'race', isVolumePeak,
+  )
+  w.label = weekLabel(content)
+  w.theme = weekTheme(content)
+  return true
+}
+
 function capitalise(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }

@@ -14,6 +14,7 @@ import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { getCurrentWeekIndex } from '@/lib/plan'
 import { savePlanForUser } from '@/lib/plan'
 import { validateReshapedPlan } from '@/lib/plan/invariants'
+import { refreshWeekCopyIfStale } from '@/lib/plan/ruleEngine'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
@@ -495,5 +496,12 @@ function applyAdjustmentToPlan(plan: Plan, weekN: number, sessionsAfter: any[]):
       week.sessions[day] = sessionsAfter[idx]
     }
   })
+
+  // §27 — a reshape can remove the very session the week's copy promises (the
+  // AEF downgrade swaps quality to easy). Re-derive the copy when, and only
+  // when, it has become false; enriched copy is a paid deliverable and must not
+  // be blanket-reverted to rule-engine strings. (analysis open-Q4)
+  refreshWeekCopyIfStale(updated, weekN)
+
   return updated
 }
