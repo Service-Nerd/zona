@@ -676,7 +676,15 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       const hasAchilles = (input.injury_history ?? []).some(i => i.toLowerCase().includes('achilles'))
       const expectQuality = (planFitness === 'intermediate' || planFitness === 'experienced')
         && hsr !== 'avoid' && !hasAchilles
-      if (expectQuality) {
+      // GEN-FIX-10 (§8, 2026-08-06) — a reshape may deliberately remove this
+      // week's quality session when aerobic efficiency is falling or fatigue has
+      // accumulated. That is the intervention working, and it is the product's
+      // core thesis: back off when the body says so. This invariant asks "did
+      // the GENERATOR build this correctly?", which is the wrong question of a
+      // week the generator no longer owns — so it exempts an intentional,
+      // recorded downgrade. It still fires when quality is simply absent.
+      const intentionallyDowngraded = !!w.quality_downgraded
+      if (expectQuality && !intentionallyDowngraded) {
         const eligibleDays: Day[] = ['wed','thu','tue','mon','fri']
         const blockedSet = new Set((input.days_cannot_train ?? []) as Day[])
         const anyEligibleUnblocked = eligibleDays.some(d => !blockedSet.has(d))

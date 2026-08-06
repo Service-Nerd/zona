@@ -82,6 +82,10 @@ export const WeekSchema = z.object({
   weekly_duration_mins: z.number().nonnegative().optional(),
   race_notes:           z.string().optional(),
   tune_up_callout:      z.string().optional(),
+  // GEN-FIX-10 — set by the reshaper when a fatigue/EF signal removed this
+  // week's quality session. Distinguishes an intentional downgrade from a
+  // generator defect for INV-PLAN-QUALITY-EXPECTED.
+  quality_downgraded: z.object({ trigger: z.string(), at: z.string() }).optional(),
   // AI-DEPTH-07 — populated post-event on the race week. `.nullable()` so an
   // explicit "race not yet run" sentinel is representable; `.optional()` so
   // legacy plans without the field still parse.

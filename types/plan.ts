@@ -154,6 +154,16 @@ export interface Week {
   race_notes?: string
   tune_up_callout?: string                // L-01 — optional mid-build tune-up race suggestion
 
+  /** GEN-FIX-10 (§8, 2026-08-06) — a reshape deliberately removed this week's
+   *  quality session in response to a fatigue or efficiency signal. Records WHY
+   *  the week no longer looks like a build week, so INV-PLAN-QUALITY-EXPECTED
+   *  can tell an intentional downgrade from a generator defect. Set by the
+   *  reshaper; never by generateRulePlan. */
+  quality_downgraded?: {
+    trigger: string      // AdjustmentTrigger.type, e.g. 'ef_decline' | 'fatigue'
+    at:      string      // ISO timestamp
+  }
+
   /** AI-DEPTH-07 — race-day result captured into the plan on the race week.
    *  Populated post-event (by an explicit log-result action; not by Strava
    *  webhooks). Consumed by AI-DEPTH-08 (post-race reshape) and any future

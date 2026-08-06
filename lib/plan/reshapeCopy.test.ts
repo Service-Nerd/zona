@@ -76,4 +76,33 @@ describe('reshape copy refresh (open-Q4)', () => {
     const { plan } = planWithQualityWeek()
     expect(refreshWeekCopyIfStale(plan, 999)).toBe(false)
   })
+
+
+  it('an intentional downgrade is exempt from INV-PLAN-QUALITY-EXPECTED (GEN-FIX-10)', () => {
+    const { plan, week } = planWithQualityWeek()
+    downgradeQualityToEasy(week)
+    refreshWeekCopyIfStale(plan, week.n)
+
+    const codes = () => validateReshapedPlan(plan)
+      .filter(v => v.severity === 'error' && v.code === 'INV-PLAN-QUALITY-EXPECTED')
+
+    // Without the marker this is indistinguishable from a generator defect...
+    expect(codes().length).toBeGreaterThan(0)
+
+    // ...with it, the invariant knows the removal was the intervention working.
+    week.quality_downgraded = { trigger: 'ef_decline', at: '2026-08-06T12:00:00.000Z' }
+    expect(codes()).toEqual([])
+  })
+
+  it('quality absent WITHOUT a recorded reason still violates', () => {
+    // The exemption must be earned by recording why, not by the absence itself —
+    // otherwise it silently excuses a generator defect too.
+    const { plan, week } = planWithQualityWeek()
+    downgradeQualityToEasy(week)
+    refreshWeekCopyIfStale(plan, week.n)
+    expect(week.quality_downgraded).toBeUndefined()
+    expect(validateReshapedPlan(plan)
+      .filter(v => v.severity === 'error' && v.code === 'INV-PLAN-QUALITY-EXPECTED').length)
+      .toBeGreaterThan(0)
+  })
 })
