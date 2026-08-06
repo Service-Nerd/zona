@@ -238,7 +238,7 @@ ATHLETE:
 - Race: ${plan.meta.race_name} — ${plan.meta.race_date} (${input.race_distance_km} km)
 - Current weekly volume: ${input.current_weekly_km} km/week
 - Days available: ${input.days_available}/week
-- Plan compressed (fewer weeks than ideal): ${plan.meta.compressed ?? false}
+- Plan compressed (fewer weeks than ideal): ${plan.meta.time_compressed ?? plan.meta.compressed ?? false}
 ${input.injury_history?.length ? `- Injury history: ${input.injury_history.join(', ')}` : ''}
 ${input.training_style ? `- Training style: ${input.training_style}` : ''}
 ${input.hard_session_relationship ? `- Hard session relationship: ${input.hard_session_relationship}` : ''}

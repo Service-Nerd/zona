@@ -1317,6 +1317,32 @@ function buildWeekSessions(
     if (longKm < lrFloorPrinciple) longKm = lrFloorPrinciple
   }
 
+  // CoachingPrinciples §80 (D3) — finish-goal HM/marathon long-run floor,
+  // expressed in DURATION. §45's ≥85%-of-race-distance floor applies only to
+  // time-targeted plans, so a first-timer had no floor at all: the first organic
+  // user peaked at 1:46 against a ~2:45 projected finish (64%). §45's own
+  // rationale — "the fatigue profile of running for ~2 hours is fundamentally
+  // different" — applies more to them, not less.
+  //
+  // Duration, not distance, because a first-timer is time-on-feet limited rather
+  // than aerobically limited, and because the cap that may override this is
+  // itself in minutes. Projected finish uses easy pace: a finish-goal runner
+  // will not race at threshold, and run-walk is expected.
+  // The run-walk permission attaches to every finish-goal peak long run, not
+  // only the ones this floor happened to lift — a first-timer facing a two-hour
+  // effort needs it either way.
+  const isFinishGoalPeakLongRun = phase === 'peak'
+    && !isDeload
+    && input.goal === 'finish'
+    && (distKey === 'HM' || distKey === 'MARATHON')
+  if (isFinishGoalPeakLongRun
+      && pace.minPerKmEasy > 0) {
+    const projectedRaceMins = input.race_distance_km * pace.minPerKmEasy
+    const floorMins = projectedRaceMins * GENERATION_CONFIG.FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION
+    const floorKm = floorMins / pace.minPerKmEasy
+    if (longKm < floorKm) longKm = floorKm
+  }
+
   longKm = applyLongRunCap(longKm, pace.minPerKmEasy, input)
 
   // Round to DISTANCE_ROUNDING_PRECISION_KM. 0.5 km = whole-number-ish display
@@ -1389,6 +1415,17 @@ function buildWeekSessions(
       }
     }
   }
+  // §80 — when the finish-goal floor lifted this long run, say why, and make
+  // run-walk explicit. "Two and a half hours of moving" is a different
+  // psychological object from "18 kilometres", and only one of them is
+  // achievable for a first-timer. The instruction is time on feet, not pace.
+  if (isFinishGoalPeakLongRun && sessions[longDay]) {
+    appendCoachNote(
+      sessions[longDay]!,
+      'Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.',
+    )
+  }
+
   used.push(longDay)
 
   // ── 2. Quality session(s) ─────────────────────────────────────────────────
@@ -3022,6 +3059,30 @@ export function generateRulePlan(
       }. Plan maintains current fitness rather than building it. To enable a build profile: increase days_available to ${Math.max(daysCheck.days_required_ok, 3)}.`
     : null
 
+  // §80 — if LONG_RUN_CAP_MINUTES stopped the peak long run reaching the
+  // finish-goal floor, say so rather than shipping a silent shortfall. The cap
+  // still wins; the runner is told what the plan cannot give them.
+  const finishGoalLrShortfallNote: string | null = (() => {
+    if (input.goal !== 'finish') return null
+    const dk = raceDistanceKey(input.race_distance_km)
+    if (dk !== 'HM' && dk !== 'MARATHON') return null
+    if (!(pace.minPerKmEasy > 0)) return null
+    const projectedRaceMins = input.race_distance_km * pace.minPerKmEasy
+    const floorMins = projectedRaceMins * GENERATION_CONFIG.FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION
+    let peakLrMins = 0
+    for (const w of weeks) {
+      if (w.phase !== 'peak' || w.type === 'deload') continue
+      for (const sess of Object.values(w.sessions)) {
+        if (!sess || sess.type !== 'easy') continue
+        if (!(sess.label ?? '').toLowerCase().includes('long')) continue
+        const mins = sess.duration_mins ?? ((sess.distance_km ?? 0) * pace.minPerKmEasy)
+        peakLrMins = Math.max(peakLrMins, mins)
+      }
+    }
+    if (peakLrMins === 0 || peakLrMins + 1 >= floorMins) return null
+    return `Your longest run tops out at ${Math.round(peakLrMins)} minutes. For a race you'll likely be moving for around ${Math.round(projectedRaceMins)} minutes, we'd normally want it nearer ${Math.round(floorMins)} — but the long-run time cap for this distance stops us going further. Expect the last stretch of race day to be new territory; go out slower than feels right and take the walk breaks early rather than late.`
+  })()
+
   // Compose final values. §23's note wins (more specific) when both trigger.
   const finalVolumeProfile: 'build' | 'maintenance' | undefined =
     (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance)
@@ -3076,7 +3137,17 @@ export function generateRulePlan(
 
     // INV-PLAN-008: free plans never carry confidence fields
     tier,
-    compressed: compressed || capCompressed,  // OR-combine: too-short plan OR 10%-cap forced
+    // D4 (2026-08-06) — `compressed` OR-combined two unrelated facts, so it was
+    // true for 5 of 6 personas including a 12-week 5K plan with 24 days spare
+    // and a plan classified 'build'. It also feeds the PAID confidence score
+    // ("deduct 2 if compressed"), so that number was dominated by a
+    // near-constant. Split into the two things it actually meant.
+    time_compressed:    compressed,      // fewer calendar weeks than the distance's minimum
+    volume_constrained: capCompressed,   // the ramp never reached target peak volume
+    /** @deprecated Use time_compressed / volume_constrained. Retained for one
+     *  release so existing readers (saved plans, the enricher prompt) keep
+     *  working. */
+    compressed: compressed || capCompressed,
 
     // CoachingPrinciples §31 — differentiated compression classification.
     // Replaces the bare boolean with persona-aware reasoning.
@@ -3093,6 +3164,7 @@ export function generateRulePlan(
     // computation above the meta block for the full rule set.
     ...(finalVolumeProfile ? { volume_profile: finalVolumeProfile } : {}),
     ...(finalVolumeNote    ? { volume_constraint_note: finalVolumeNote } : {}),
+    ...(finishGoalLrShortfallNote ? { long_run_shortfall_note: finishGoalLrShortfallNote } : {}),
 
     // VDOT / zone model fields (CoachingPrinciples §10, §20).
     // `vdot` is raw (benchmark-derived) — what users compare against Daniels' tables.

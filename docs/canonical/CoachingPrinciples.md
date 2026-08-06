@@ -1534,6 +1534,36 @@ The asymmetry in the resolution is deliberate: **volume is where injuries come f
 
 ---
 
+## 80. Finish-goal long run — time on feet, not distance
+
+**Principle.** For finish-goal HM and marathon plans, the peak long run must reach `FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION` (70%) of **projected race duration**, subject to `LONG_RUN_CAP_MINUTES`, which still wins. Projected duration is computed at easy pace — a finish-goal runner will not race at threshold, and run-walk is expected. Every finish-goal peak long run carries explicit permission to walk. When the cap prevents reaching the floor, the plan says so.
+
+**Why.** §45 mandates a peak long run of ≥85% of race distance for *time-targeted* HM, and finish-goal plans had no floor at all. So the runner least equipped for the distance got the least specific preparation: the first organic user peaked at 1:46 against a ~2:45 projected finish — 64%. §45's own rationale is *"the fatigue profile of running for ~2 hours is fundamentally different"*, which applies **more** to a first-timer, not less.
+
+**Duration, not distance, and the distinction is not cosmetic.** A first-timer is time-on-feet limited, not aerobically limited. The constraint that actually binds — `LONG_RUN_CAP_MINUTES` — is already expressed in minutes, so a distance-based floor would hide what is doing the limiting. And "two and a half hours of moving" is a different psychological object from "18 kilometres": only one of them is achievable for someone who has never run either, and only one of them survives contact with a walk break.
+
+**Walking does not undo it.** The session note says so explicitly. Time on feet accumulates whether or not every step is running, and a floor the runner believes they have failed is worse than no floor — they will either abandon the session or grind it out injured.
+
+**The honest failure case.** Where the time cap binds, the plan cannot deliver race-specific endurance and must say that plainly, with the concrete consequence (the late race will be unfamiliar) and the actionable response (start slower, take walk breaks early rather than late). A silent shortfall is the failure mode this whole principle exists to prevent.
+
+**Config.** `GENERATION_CONFIG.FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION = 0.70`. Shortfall surfaced as `meta.long_run_shortfall_note`.
+
+---
+
+## 81. `compressed` means two different things, so it is two fields
+
+**Principle.** A plan can be short of time or short of volume. These are unrelated failures with unrelated remedies, and they are reported separately: `time_compressed` (fewer calendar weeks than the distance's minimum) and `volume_constrained` (the ramp never reached target peak volume).
+
+**Why.** One boolean OR-combined both, and was `true` for five of six test personas — including a 12-week 5K plan with 24 days to spare, and a plan simultaneously classified `volume_profile: 'build'`. A flag that is almost always true carries no information.
+
+It is not merely cosmetic: the flag feeds the **paid** confidence score ("deduct 2 if plan is compressed"), so paying users were seeing a score dominated by a near-constant. The enricher now receives `time_compressed`, which is what that deduction was always describing.
+
+**Remedies differ, which is the point.** Time compression is fixed by racing later or accepting a shorter build. Volume constraint is fixed by more days per week, a higher weekday time budget, or a longer runway. Telling a runner "your plan is compressed" when they have four weeks spare and the real problem is three-days-a-week availability sends them to the wrong lever.
+
+**`compressed` is retained as a deprecated OR of the two** for one release, so saved plans and existing readers keep working.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

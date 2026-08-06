@@ -326,6 +326,17 @@ export interface PlanMeta {
   // D2 (2026-08-06) — present only when the VDOT and volume signals disagreed.
   // `fitness_level` is then the conservative answer (drives volume and caps);
   // this is the higher one (drives the quality-session allowance only).
+  // §80 (D3) — present when LONG_RUN_CAP_MINUTES stopped the peak long run
+  // reaching the finish-goal duration floor. An honest statement of what the
+  // plan cannot give, rather than a silent shortfall.
+  // D4 (2026-08-06) — `compressed` conflated two unrelated facts and was true
+  // for nearly every plan, including ones with weeks to spare. These are the
+  // two things it meant; `compressed` is now a deprecated OR of them.
+  time_compressed?: boolean      // fewer calendar weeks than the distance's minimum
+  volume_constrained?: boolean   // the volume ramp never reached target peak
+
+  long_run_shortfall_note?: string
+
   fitness_intensity_level?: 'beginner' | 'intermediate' | 'experienced'
   fitness_signal_note?: string
 

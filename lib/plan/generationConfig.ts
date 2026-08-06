@@ -408,6 +408,12 @@ export const GENERATION_CONFIG = {
     HM:       0.85,
     MARATHON: 0.75,
   },
+  // CoachingPrinciples §80 (D3, 2026-08-06) — finish-goal HM/marathon peak long
+  // run as a fraction of projected race DURATION, not distance. A first-timer is
+  // time-on-feet limited, not aerobically limited; the number that matters to
+  // them is how long they will be moving, and run-walk counts. Subject to the
+  // LONG_RUN_CAP_MINUTES ceiling, which still wins.
+  FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION: 0.70,
   PEAK_LR_RATIO_TARGET: {
     HM:       0.90,
     MARATHON: 0.80,
