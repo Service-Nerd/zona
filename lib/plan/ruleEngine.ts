@@ -810,10 +810,12 @@ function strengthSession(weekN: number, day: Day): Session {
   }
 }
 
-function raceSession(weekN: number, day: Day, distKm: number, raceName: string): Session {
+function raceSession(weekN: number, day: Day, distKm: number, raceName: string | null): Session {
   return {
     id: `w${weekN}-${day}`,
-    type: 'race', label: `Race — ${raceName}`, detail: null,
+    // F6 — "Race — Target Race" is a placeholder leaking into the plan. When no
+    // name was given, say the true thing instead of inventing one.
+    type: 'race', label: raceName ? `Race — ${raceName}` : `Race day — ${distKm} km`, detail: null,
     distance_km: distKm, primary_metric: 'distance',
     coach_notes: ['Start slower than feels right. First 5 km at Zone 2.', 'No new shoes, no new food.'],
   }
@@ -1054,7 +1056,7 @@ function buildWeekSessions(
 
   if (isRaceWeek) {
     const sessions: Partial<Record<Day, Session>> = {}
-    const raceName = input.race_name ?? 'Target Race'
+    const raceName = input.race_name ?? null
     // CoachingPrinciples §77 — the race sits on the ACTUAL weekday of race_date.
     // It deliberately ignores `days_cannot_train`: the race is an external fixed
     // event, not a training session, and a runner who cannot train on Wednesdays
@@ -1557,27 +1559,103 @@ function buildWeekSessions(
 
 // ─── Week metadata ────────────────────────────────────────────────────────────
 
-function weekLabel(phase: PhaseType, weekN: number, buildWeekN: number, isDeload: boolean): string {
-  if (isDeload) return `${capitalise(phase)} — recovery week`
-  const labels: Record<PhaseType, string[]> = {
-    base:  ['Base — easy start', 'Base — building consistency', 'Base — aerobic development', 'Base — aerobic discipline'],
-    build: ['Build — first quality session', 'Build — extending the work', 'Build — raising the ceiling', 'Build — consistency'],
-    peak:  ['Peak — highest volume', 'Peak — second peak week', 'Peak — sharpening'],
-    taper: ['Taper — trust the work', 'Taper — sharpening', 'Taper — final cut'],
-  }
-  const options = labels[phase]
-  return options[Math.min(buildWeekN - 1, options.length - 1)]
+/**
+ * What a week actually contains. CoachingPrinciples §27 — copy is chosen from
+ * this, never from the phase name alone.
+ *
+ * The 2026-08-06 incident (analysis F4): `weekLabel` and `weekTheme` were pure
+ * functions of `(phase, index)` and never saw `sessions`, so a beginner — for
+ * whom QUALITY_SESSIONS_PER_WEEK_MAX is 0 by design — was told "Build — first
+ * quality session" over three easy runs, for fourteen weeks. The §27 guards
+ * bolted onto the call site patched the peak and taper symptoms and left the
+ * build case, because they were written as string exceptions rather than as a
+ * rule about where copy comes from.
+ */
+interface WeekContent {
+  phase:        PhaseType
+  phaseWeekN:   number   // 1-indexed within the phase
+  isDeload:     boolean
+  isRaceWeek:   boolean
+  hasQuality:   boolean  // a prescribed quality/intervals session
+  hasBenchmark: boolean  // §78 recalibration time trial
+  isVolumePeak: boolean  // highest weekly_km of any non-deload week so far
 }
 
-function weekTheme(phase: PhaseType, isDeload: boolean): string {
-  if (isDeload) return 'Adaptation happens in recovery. This week counts.'
-  const themes: Record<PhaseType, string> = {
-    base:  'HR discipline. Slower than feels right. That is correct.',
-    build: 'One quality session. Everything else stays easy.',
-    peak:  'This is where the fitness is built. It will feel hard. That is correct.',
-    taper: 'Volume drops. Intensity stays. Trust the work you have done.',
+function summariseWeek(
+  sessions: Partial<Record<Day, Session>>,
+  phase: PhaseType,
+  phaseWeekN: number,
+  isDeload: boolean,
+  isRaceWeek: boolean,
+  isVolumePeak: boolean,
+): WeekContent {
+  const values = Object.values(sessions)
+  return {
+    phase, phaseWeekN, isDeload, isRaceWeek, isVolumePeak,
+    hasQuality:   values.some(s => s?.type === 'quality' || s?.type === 'intervals' || s?.type === 'tempo'),
+    hasBenchmark: values.some(s => s?.type === 'hard'),
   }
-  return themes[phase]
+}
+
+// Copy is paired with the content that makes it true. Every string promising
+// intensity lives only in a `withQuality` list; every list is safe for any week
+// that satisfies its key. Adding copy here means answering "what must be in the
+// week for this to be honest?" — which is the whole point.
+const WEEK_LABELS: Record<PhaseType, { withQuality: string[]; easyOnly: string[] }> = {
+  base: {
+    withQuality: ['Base — first quality session', 'Base — adding a little sharpness'],
+    easyOnly:    ['Base — easy start', 'Base — building consistency', 'Base — aerobic development', 'Base — aerobic discipline'],
+  },
+  build: {
+    withQuality: ['Build — first quality session', 'Build — extending the work', 'Build — raising the ceiling', 'Build — holding the work'],
+    easyOnly:    ['Build — building the engine', 'Build — extending the long run', 'Build — aerobic volume', 'Build — consistency'],
+  },
+  peak: {
+    withQuality: ['Peak — highest volume', 'Peak — second peak week', 'Peak — sharpening'],
+    easyOnly:    ['Peak — consistency', 'Peak — holding the volume', 'Peak — steady'],
+  },
+  taper: {
+    withQuality: ['Taper — trust the work', 'Taper — sharpening', 'Taper — final cut'],
+    easyOnly:    ['Taper — trust the work', 'Taper — winding down', 'Taper — final cut'],
+  },
+}
+
+function weekLabel(c: WeekContent): string {
+  if (c.isRaceWeek) return 'Race week'
+  if (c.isDeload) {
+    return c.hasBenchmark ? `${capitalise(c.phase)} — recovery + benchmark` : `${capitalise(c.phase)} — recovery week`
+  }
+  // "highest volume" is a claim about the plan, not just the week.
+  if (c.phase === 'peak' && !c.isVolumePeak) {
+    const opts = WEEK_LABELS.peak.easyOnly
+    return opts[Math.min(c.phaseWeekN - 1, opts.length - 1)]
+  }
+  const opts = c.hasQuality ? WEEK_LABELS[c.phase].withQuality : WEEK_LABELS[c.phase].easyOnly
+  return opts[Math.min(c.phaseWeekN - 1, opts.length - 1)]
+}
+
+function weekTheme(c: WeekContent): string {
+  if (c.isRaceWeek) return 'The work is done. Arrive rested.'
+  if (c.isDeload) {
+    return c.hasBenchmark
+      ? 'Deload week. One hard effort in the middle — your result resets the zones for the next block.'
+      : 'Adaptation happens in recovery. This week counts.'
+  }
+  switch (c.phase) {
+    case 'base':
+      return 'HR discipline. Slower than feels right. That is correct.'
+    case 'build':
+      return c.hasQuality
+        ? 'One quality session. Everything else stays easy.'
+        : 'Aerobic volume. The work is showing up, not going hard.'
+    case 'peak':
+      if (c.hasQuality && c.isVolumePeak) return 'This is where the fitness is built. It will feel hard. That is correct.'
+      return 'Consistency. The work is the volume.'
+    case 'taper':
+      return c.hasQuality
+        ? 'Volume drops. Intensity stays. Trust the work you have done.'
+        : 'Volume drops. Trust the work you have done.'
+  }
 }
 
 function capitalise(s: string): string {
@@ -2294,15 +2372,32 @@ function applyV7TaperRationale(
   const target = firstActiveSession(weeks[firstTaperIdx])
   if (!target) return
 
-  let note: string
-  if (raceDistanceKm <= 21) {
-    note = 'One week taper is appropriate for a short race. More would risk arriving flat. Trust the work.'
-  } else if (raceDistanceKm <= 50) {
-    note = 'Two week taper allows adaptation to consolidate without losing sharpness. Intensity stays, volume drops.'
+  // analysis F9 — the note used to be chosen from race DISTANCE while the taper
+  // length came from TAPER_QUALITY_PER_WEEK[distKey].length. Two owners for one
+  // fact (D-08), so a 21.1 km race got a three-week taper described as "two
+  // week taper". Count the weeks that actually exist.
+  const taperWeeks = weeks.filter(w => w.phase === 'taper').length
+  const WORDS = ['', 'One', 'Two', 'Three', 'Four', 'Five']
+  const word = WORDS[taperWeeks] ?? String(taperWeeks)
+
+  // "Intensity stays" is only true if the taper actually prescribes any.
+  const taperHasQuality = weeks
+    .filter(w => w.phase === 'taper')
+    .some(w => Object.values(w.sessions).some(
+      s => s?.type === 'quality' || s?.type === 'intervals' || s?.type === 'tempo',
+    ))
+
+  let rationale: string
+  if (taperWeeks <= 1) {
+    rationale = 'More would risk arriving flat.'
+  } else if (raceDistanceKm > 50) {
+    rationale = 'Your aerobic base is what carries you — arriving rested matters more than last-minute fitness.'
   } else {
-    note = 'Three week taper. Your aerobic base is what carries you — arriving rested matters more than last-minute fitness.'
+    rationale = 'Long enough for adaptation to consolidate without losing sharpness.'
   }
-  appendCoachNote(target, note)
+
+  const closer = taperHasQuality ? ' Intensity stays, volume drops.' : ' Volume drops. Trust the work.'
+  appendCoachNote(target, `${word} week taper. ${rationale}${closer}`)
 }
 
 // V6 — emit pre-plan buffer guidance when prep_time_weeks_available exceeds
@@ -2571,40 +2666,27 @@ export function generateRulePlan(
     // is built" / "highest volume" themes are misleading when peak weekly_km
     // does not exceed the prior non-deload week. "Intensity stays" themes
     // mislead in taper weeks with no quality session prescribed.
-    const qualityCount = Object.values(sessions).filter(s => s?.type === 'quality').length
+    // CoachingPrinciples §27 — copy is derived from what the week CONTAINS.
+    // The chain of string exceptions that used to live here is gone: weekLabel
+    // and weekTheme now read a WeekContent summary, so a week without quality
+    // cannot be given copy that promises it. (analysis F4 / N4)
     const prevNonDeloadWeeklyKm = (() => {
       for (let j = weeks.length - 1; j >= 0; j--) {
         if (weeks[j].type !== 'deload') return weeks[j].weekly_km
       }
       return 0
     })()
+    const isVolumePeak = !planIsMaintenance && actualWeeklyKm > prevNonDeloadWeeklyKm
 
-    // CoachingPrinciples §27, §41 — theme matches prescription. Effort-
-    // language ("It will feel hard") only applies when the runner is actually
-    // doing hard work (≥1 quality session). All-easy peak weeks get the
-    // consistency framing.
-    let theme: string
-    if (isRaceWeek) {
-      theme = 'The work is done. Arrive rested.'
-    } else if (isRecalibration) {
-      theme = 'Deload week. Run a parkrun or timed 5K — your result sharpens the zones for the next block.'
-    } else if (phase === 'peak' && !isDeload && (planIsMaintenance || actualWeeklyKm <= prevNonDeloadWeeklyKm || qualityCount === 0)) {
-      theme = 'Consistency. The work is the volume.'
-    } else if (phase === 'taper' && !isDeload && qualityCount === 0) {
-      theme = 'Volume drops. Trust the work you have done.'
-    } else {
-      theme = weekTheme(phase, isDeload)
-    }
+    const content = summariseWeek(
+      sessions, phase, phaseWeekCount[phase], isDeload, isRaceWeek, isVolumePeak,
+    )
 
     weeks.push({
       n: weekN,
       date: weekDate,
-      label: isRaceWeek
-        ? 'Race week'
-        : (planIsMaintenance && phase === 'peak' && !isDeload)
-          ? 'Peak — consistency'
-          : weekLabel(phase, weekN, phaseWeekCount[phase], isDeload),
-      theme,
+      label: weekLabel(content),
+      theme: weekTheme(content),
       type: weekType,
       phase,
       ...(badge ? { badge } : {}),
@@ -2612,7 +2694,10 @@ export function generateRulePlan(
       long_run_hrs: longRunHrs,
       weekly_km: actualWeeklyKm,
       ...(isRaceWeek ? {
-        race_notes: `Race day: ${input.race_name ?? 'Target Race'}. Start at Zone 2. The second half is where the race begins.`,
+        // §? F6 — never interpolate an invented race name into user-facing copy.
+        race_notes: input.race_name
+          ? `Race day: ${input.race_name}. Start at Zone 2. The second half is where the race begins.`
+          : 'Race day. Start at Zone 2. The second half is where the race begins.',
       } : {}),
       ...(weekN === tuneUpWeekN ? {
         tune_up_callout: 'Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a race effort.',
@@ -2871,9 +2956,12 @@ export function generateRulePlan(
     peakOverloadResult?.volume_constraint_note ?? (daysLowMaintenance ? daysLowNote ?? undefined : undefined)
 
   const meta: Plan['meta'] = {
-    athlete:          input.athlete_name ?? 'Athlete',
+    // F6 — empty, not invented. Every consumer already falls back gracefully
+    // (`race_name || 'your race'`, `|| 'Your plan'`); a placeholder string does
+    // not, because it is truthy and renders as if it were real.
+    athlete:          input.athlete_name ?? '',
     handle:           '',
-    race_name:        input.race_name ?? 'Target Race',
+    race_name:        input.race_name ?? '',
     race_date:        input.race_date,
     race_distance_km: input.race_distance_km,
     charity:          '',

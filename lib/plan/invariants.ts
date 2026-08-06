@@ -29,6 +29,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE',
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO',
   'INV-PLAN-THEME-MATCHES-PRESCRIPTION',
+  'INV-PLAN-COPY-MATCHES-SESSIONS',
   'INV-PLAN-MIN-SESSION-SIZE',
   'INV-PLAN-EMPTY-SESSION',
   'INV-PLAN-LONG-IS-LONGEST',
@@ -347,41 +348,56 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       const qualityCount = Object.values(w.sessions).filter(s => s?.type === 'quality').length
       const prevNonDeload = plan.weeks.slice(0, plan.weeks.indexOf(w)).reverse().find(p => p.type !== 'deload')
 
-      if ((themeText.includes('highest volume') || themeText.includes('fitness is built'))
+      // INV-PLAN-COPY-MATCHES-SESSIONS (CoachingPrinciples §27) — replaces the
+      // former four-literal denylist ("highest volume", "fitness is built",
+      // "intensity stays", "feel hard"). That version checked specific known-bad
+      // strings rather than the rule, so "One quality session. Everything else
+      // stays easy." and "Build — first quality session" walked straight past it
+      // over three easy runs, for fourteen weeks (analysis F4 / N4).
+      //
+      // The rule: copy that names a session type, or claims an overload, must be
+      // true of THIS week. Applies to the theme AND the label — the label was
+      // never checked at all before.
+      const labelText = (w.label ?? '').toLowerCase()
+      const copy = `${labelText} | ${themeText}`
+      const hasIntensity = placedRunning.some(({ session }) =>
+        session.type === 'quality' || session.type === 'intervals' || session.type === 'tempo')
+      const hasBenchmark = placedRunning.some(({ session }) => session.type === 'hard')
+
+      // Each claim names what must be present for it to be honest.
+      const CLAIMS: Array<{ test: RegExp; ok: boolean; needs: string }> = [
+        { test: /quality|threshold|tempo|interval|vo2/,      ok: hasIntensity || hasBenchmark, needs: 'an intensity session' },
+        { test: /sharpen|raising the ceiling|intensity stays/, ok: hasIntensity,                 needs: 'an intensity session' },
+        { test: /feels? hard/,                                ok: hasIntensity || hasBenchmark, needs: 'a hard session' },
+        { test: /benchmark|time trial/,                       ok: hasBenchmark,                 needs: 'a benchmark session' },
+      ]
+      for (const { test, ok, needs } of CLAIMS) {
+        if (test.test(copy) && !ok) {
+          violations.push({
+            code: 'INV-PLAN-COPY-MATCHES-SESSIONS',
+            principle_ref: 'CoachingPrinciples §27',
+            severity: 'error',
+            week: w.n,
+            message: `Week copy promises what the week does not contain — "${w.label}" / "${w.theme}" requires ${needs}`,
+            actual: 'no matching session',
+            expected: needs,
+          })
+          break
+        }
+      }
+
+      // Overload claims are about the plan, not just the week.
+      if (/highest volume|fitness is built/.test(copy)
           && prevNonDeload
           && w.weekly_km <= prevNonDeload.weekly_km) {
         violations.push({
-          code: 'INV-PLAN-THEME-MATCHES-PRESCRIPTION',
+          code: 'INV-PLAN-COPY-MATCHES-SESSIONS',
           principle_ref: 'CoachingPrinciples §27',
           severity: 'error',
           week: w.n,
-          message: `Theme implies overload but weekly_km ${w.weekly_km}km ≤ prior non-deload ${prevNonDeload.weekly_km}km`,
+          message: `Copy implies overload but weekly_km ${w.weekly_km}km <= prior non-deload ${prevNonDeload.weekly_km}km`,
           actual: `${w.weekly_km}km vs ${prevNonDeload.weekly_km}km`,
           expected: `> ${prevNonDeload.weekly_km}km`,
-        })
-      }
-      if (themeText.includes('intensity stays') && qualityCount === 0) {
-        violations.push({
-          code: 'INV-PLAN-THEME-MATCHES-PRESCRIPTION',
-          principle_ref: 'CoachingPrinciples §27',
-          severity: 'error',
-          week: w.n,
-          message: `Theme says "intensity stays" but week has 0 quality sessions`,
-          actual: 0,
-          expected: '≥ 1 quality session',
-        })
-      }
-      // R2/L-02 — "It will feel hard" / "feel hard" effort copy must coincide
-      // with at least one quality session.
-      if ((themeText.includes('feel hard') || themeText.includes('feels hard')) && qualityCount === 0) {
-        violations.push({
-          code: 'INV-PLAN-THEME-MATCHES-PRESCRIPTION',
-          principle_ref: 'CoachingPrinciples §41',
-          severity: 'error',
-          week: w.n,
-          message: `Theme says "feel hard" but week has 0 quality sessions`,
-          actual: 0,
-          expected: '≥ 1 quality session',
         })
       }
     }
