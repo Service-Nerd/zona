@@ -498,6 +498,7 @@ Three docs run the work pipeline. Keep them in sync:
   - ADR-011: data source doctrine — SOR by data type, source priority, no single external data dependency for paid value *(2026-05-30)*
   - ADR-012: reshape authority model — magnitude-calibrated confirmation; sub-threshold engine changes auto-apply silently, structural changes (day-of-week moves, session-type swaps, >15% trims, >15% week-volume changes) surface confirmation tiles *(2026-06-26, post-incident)*
   - ADR-013: plan lifecycle — post-race maintenance is its own plan object; race plan ends → archived as completed, maintenance becomes sole active plan; `week_n` keyed by `week.n` (not array position) *(2026-08-02)*
+  - ADR-014: recalibration application model — a time-trial result rewrites forward paces only when **prompted + confirmed** (never silent, §69/ADR-012), via the existing `applyRecalibration` → `/api/recalibrate-zones` path, gated PAID (`dynamic_reshape_r20`); the time trial + honest copy stay FREE. Unblocks PV2-H / CD-13 wiring *(2026-08-06)*
 - **Brand authority (positioning, audience, competitors, voice, visual)**: `docs/canonical/brand.md` — the single prose source of truth
 - Brand alignment (v1 launch record — superseded as authority by `brand.md`): `docs/alignment/brand-product-alignment.md`
 - Phase 4 decisions log: `docs/alignment/phase-4-decisions.md`
