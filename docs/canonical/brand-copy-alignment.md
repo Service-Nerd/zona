@@ -6,28 +6,17 @@ It maps canonical values → surfaces → divergences → execution list.
 When `lib/brand.ts` and this doc disagree, `lib/brand.ts` is the truth. Fix this doc.
 When a component and this doc disagree, the component is wrong. Fix the component.
 
-**Last audited**: 2026-05-23
+**Last audited**: 2026-05-23 (values) · 2026-08-06 (registry removed — see §1; §2 surface line-numbers are indicative, not exact — verify against source before editing)
 
 ---
 
-## 1. Canonical String Registry
+## 1. Canonical String Registry — moved to code
 
-Every string that appears in more than one place, or that carries brand weight, lives in `lib/brand.ts`.
-This table is the authoritative source of what each value currently is.
+**The value registry that used to live here has been removed (2026-08-06).** It duplicated `lib/brand.ts` and had drifted out of sync — the exact thing this doc exists to catch. A doc whose "current value" table disagrees with the code is worse than no table.
 
-| Field | Current value | Usage context |
-|---|---|---|
-| `BRAND.name` | `'Zonna'` | Wordmarks, OG image, `<title>` tag |
-| `BRAND.tagline` | `"Slow down. You've got a day job."` | Login, welcome, plan-ready, OG image, loading screen |
-| `BRAND.brandStatement` | `"You can't outrun your easy days."` | Privacy footer, App Store description, editorial only (not login — tagline owns that space) |
-| `BRAND.signupSub` | `'14 days, no limits. After that, you decide.'` | Sign-up sub-text only (not sign-in) |
-| `BRAND.voiceAnchor` | `'Hold the zone.'` | In-product. Used inline in AI-generated coach copy (`lib/coaching/prompts/*`), plan-adjustment coach notes (`lib/coaching/planAdjustment.ts`), and — as of HOLD-THE-ZONE-01 (2026-05-14) — as a visible UI eyebrow on the post-plan-gen zone intro (OrientationScreen), Today screen (above the session card, conditional on zone-bearing sessions), and Session Detail prescription card. Not for marketing — that space is owned by `BRAND.tagline`. |
-| `BRAND.push.weeklyReport` | `'Your week, reviewed.'` | Push notification title — weekly report |
-| `BRAND.push.runAnalysis` | `'Run logged.'` | Push notification title — post-run analysis |
-| `PRICING.annual.savingLabel` | `'Save 37% / year'` | Annual plan pill on UpgradeScreen |
-| `PRICING.monthly.display` | `'£7.99'` | UpgradeScreen monthly price |
-| `PRICING.annual.display` | `'£59.99'` | UpgradeScreen annual price |
-| `PRICING.annual.perMonthDisplay` | `'£5 / month'` | Annual price per-month equivalent |
+**The exact current value of every brand string and price is `lib/brand.ts → BRAND` / `PRICING`.** Read it there. This doc never restates values — it maps *surfaces* (§2), records *divergences from canon* (§3), and holds the pre-ship *voice checklist* (§6).
+
+If a surface below shows a value that disagrees with `lib/brand.ts`, `lib/brand.ts` wins and the surface is the bug.
 
 ---
 
@@ -41,7 +30,7 @@ Every screen/component with user-visible copy, what it currently shows, and its 
 |---|---|---|
 | Wordmark | `'Zonna'` | **Hardcoded** (should be `BRAND.name`) |
 | Under wordmark | `"Slow down. You've got a day job."` | `BRAND.tagline` ✓ |
-| Sign-in sub | `'Access your training plan.'` | **Hardcoded** (no `BRAND` field exists) |
+| Sign-in sub | `BRAND.signinSub` (`'Pick it up where you left off.'`) | ✓ Sourced from `BRAND.signinSub` (DIV-010, 2026-05-23) |
 | Sign-up sub | `'14 days, no limits. After that, you decide.'` | `BRAND.signupSub` ✓ |
 | Google button | `'Continue with Google'` / `'Redirecting...'` | Hardcoded UI copy — acceptable |
 | Submit button | `'Sign in'` / `'Create account'` | Hardcoded UI copy — acceptable |

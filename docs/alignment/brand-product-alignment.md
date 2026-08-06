@@ -1,8 +1,10 @@
 # ZONNA — Brand & Product Alignment
 
-**Status:** Locked 2026-04-23 (v2)
+> **🛑 SUPERSEDED as positioning authority (2026-08-06).** The living brand authority — positioning, audience, competitors, voice, visual principles — is now `docs/canonical/brand.md`. This file is retained as the **v1 launch record**: the launch plan (§9), success criteria (§10), design implications (§11, also now mirrored in `brand.md`), and the 2026-04→05 rebrand history (§13). Do not treat §1–8 as current; where they differ from `brand.md` or `lib/brand.ts`, those win. Kept in place because ADRs, CLAUDE.md, and the backlog link here.
+
+**Status:** Locked 2026-04-23 (v2) · superseded as authority 2026-08-06
 **Supersedes:** All prior informal positioning notes
-**Audience:** This doc is the master brief. Everything else — redesign, landing page, App Store listing, marketing content — inherits from here.
+**Audience:** Historical v1 launch record. The live master is `docs/canonical/brand.md`.
 
 ---
 

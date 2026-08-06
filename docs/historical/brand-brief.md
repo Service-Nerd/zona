@@ -1,6 +1,8 @@
 # Zonna — Brand Brief
 
-**Compiled:** 2026-05-13
+> **🗄️ ARCHIVED SNAPSHOT (moved to `docs/historical/` 2026-08-06).** This is a *derived* point-in-time hand-off compiled on 2026-05-13 for a designer building the full brand identity — it was never a source of truth, and it is now stale in places (App Store subtitle, `signinSub`, `push.runAnalysis`, and the "gaps" list in §8 have all moved on). For current truth: positioning + voice → `docs/canonical/brand.md`; exact strings + pricing → `lib/brand.ts`; visual tokens → `app/globals.css`. If a designer needs a brief again, **regenerate a fresh one** rather than trusting this.
+
+**Compiled:** 2026-05-13 (archived 2026-08-06)
 **Source:** Extracted from `lib/brand.ts`, `app/globals.css`, `docs/canonical/`, `docs/alignment/`, `package.json`, `public/manifest.json`, `assets/*.svg`, `README.md`.
 **Audience:** Designers and developers building the full brand identity.
 

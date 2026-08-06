@@ -494,11 +494,11 @@ Three docs run the work pipeline. Keep them in sync:
   - ADR-011: data source doctrine — SOR by data type, source priority, no single external data dependency for paid value *(2026-05-30)*
   - ADR-012: reshape authority model — magnitude-calibrated confirmation; sub-threshold engine changes auto-apply silently, structural changes (day-of-week moves, session-type swaps, >15% trims, >15% week-volume changes) surface confirmation tiles *(2026-06-26, post-incident)*
   - ADR-013: plan lifecycle — post-race maintenance is its own plan object; race plan ends → archived as completed, maintenance becomes sole active plan; `week_n` keyed by `week.n` (not array position) *(2026-08-02)*
-- Brand alignment: `docs/alignment/brand-product-alignment.md`
+- **Brand authority (positioning, audience, competitors, voice, visual)**: `docs/canonical/brand.md` — the single prose source of truth
+- Brand alignment (v1 launch record — superseded as authority by `brand.md`): `docs/alignment/brand-product-alignment.md`
 - Phase 4 decisions log: `docs/alignment/phase-4-decisions.md`
 - Phase 4 blockers log: `docs/alignment/phase-4-blockers.md`
-- Brand copy registry: `docs/canonical/brand-copy-alignment.md`
-- Brand & tone of voice: `docs/canonical/brand.md`
+- Brand copy registry (surface map + divergences; exact values live in `lib/brand.ts`): `docs/canonical/brand-copy-alignment.md`
 - UX principles: `docs/canonical/ux-principles.md`
 - Screen architecture (one job per screen, what belongs where): `docs/canonical/screen-architecture.md`
 

@@ -1,10 +1,34 @@
 # Brand — Zonna
 
-**Authority**: This document defines Zonna's tone of voice, visual principles, and brand rules. These rules apply to all copy, UI decisions, and feature design. When in doubt: honest, calm, useful.
+**Authority**: This is Zonna's single prose brand authority — positioning, audience, competitors, tone of voice, and visual principles. These rules apply to all copy, UI decisions, and feature design. When in doubt: honest, calm, useful.
+
+> **This document supersedes `docs/alignment/brand-product-alignment.md` as the positioning master (2026-08-06).** That file is retained as the v1 launch-plan record only.
+
+### Where truth lives — this doc never restates exact values
+
+| Layer | Source of truth |
+|---|---|
+| Exact brand strings + pricing | `lib/brand.ts → BRAND` / `PRICING` — reference the constant name, never paste the value |
+| Visual tokens (colour, type) | `app/globals.css` (ADR-007) |
+| AI coaching voice (prompt enforcement) | `lib/coaching/prompts/voiceRules.ts` (derives from the voice table below) |
+| App Store listing copy | `docs/releases/app-store-listing.md` |
+| Copy surface map + divergence log | `docs/canonical/brand-copy-alignment.md` |
+
+If this doc and `lib/brand.ts` ever disagree on a string, `lib/brand.ts` wins — fix this doc.
 
 ---
 
 ## Brand Positioning
+
+### The three-line tagline system (locked strings — never rephrase, never mix two on one surface)
+
+| Line | Job | `BRAND` constant | Where it appears |
+|---|---|---|---|
+| "Training plans that stop you overtraining." | **What the app does** — functional, discovery-facing | `BRAND.appStoreSubtitle` — note: the *field value* is trimmed to Apple's 30-char limit (currently `'Plans to stop you overtraining'`); the line above is the full locked concept it stands for | App Store subtitle, landing hero, paid ads |
+| "Slow down. You've got a day job." | **Who it's for** — the demographic hook | `BRAND.tagline` | Login, loading, OG image, meta description |
+| "You can't outrun your easy days." | **How the brand sounds** — voice moment | `BRAND.brandStatement` | Privacy footer, App Store description (not login — tagline owns that space) |
+
+When in doubt: discovery = #1, in-app = #2, voice moment = #3. Exact values live in `lib/brand.ts` — reference the constant, never paste the string.
 
 **Tagline** (`BRAND.tagline`): "Slow down. You've got a day job."  
 **Brand statement** (`BRAND.brandStatement`, editorial/App Store only): "You can't outrun your easy days."  
@@ -25,9 +49,49 @@ The tagline names a person, not a training philosophy — it speaks directly to 
 
 ---
 
+## Audience
+
+**Internal positioning sentence** (doesn't ship verbatim; every decision should trace to it):
+> Zonna is for runners who always go hard on their easy days — who have a life, a day job, and no business training like professionals.
+
+**Who they are** — adult runners, 1+ years' experience, training for a half / marathon / first ultra. Day job, family, or both. Run 2–5×/week. Use or have used Strava. Tried a free plan or generic app that didn't fit their life. **Age is not a target variable** — the psychographic travels from 25 to 65+.
+
+**What they believe now → what's actually true**
+
+| They believe | The truth |
+|---|---|
+| "I need to run more / harder" | They need to run *easier*, not more |
+| "Pros train hard every day, so should I" | Fitness comes from Zone 2 volume, not threshold efforts |
+| "Rest weeks are for beginners" | Consistency beats intensity, always |
+| "If I skip a session my fitness disappears" | Missed sessions are a feature of adult life, not a failure |
+| "My easy runs feel easy" (HR says 165) | Their body knows more than their watch |
+
+**The gap Zonna lives in:**
+> They think they need more training. They actually need more restraint and a plan that bends with their life.
+
+Every product decision, every piece of copy, every visual choice should reinforce this gap and resolve it for the user.
+
+---
+
+## Competitors, positioned honestly
+
+| App | What they do well | Where Zonna wins |
+|---|---|---|
+| **Runna** | Polished UI, good plan generation, strong brand | Runna assumes you'll follow the plan as written; Zonna assumes you won't, and adapts. Runna has no point of view on effort — Zonna tells you when you're overcooking. Costs less. |
+| **A free plan (magazine / PDF)** | Zero cost, simple | No adaptation, no feedback, no conscience. Skip a week and the plan doesn't know. |
+| **Nothing (running on feel)** | Freedom, no app | "You've been running on feel for years. Has it worked? If not, maybe it's time to listen to someone else." |
+| **Planzy** | Cited as a *design* reference, not a competitor | — |
+| **Coopah** | Named by the founder; no internal contrast text exists yet | Needs a researched position statement |
+
+**The edge:** none of them call the user out for overtraining, enforce zone discipline as a product idea, or reshape the plan when life intervenes. Zonna's edge is the *opinion* it has on the user's effort — not just the sessions it prescribes.
+
+---
+
 ## Tone of Voice
 
 Honest, slightly sarcastic, self-aware, encouraging without cringe.
+
+**The voice has a name: Kit** (`BRAND.coachName`). Kit is the single AI coach persona — he appears via `<CoachByline />` (avatar + sparkle) on every AI-generated surface, and the voice rules below *are* Kit's voice. All coaching-prompt enforcement of this voice lives in `lib/coaching/prompts/voiceRules.ts`. Never hardcode 'Kit' in components — reference `BRAND.coachName`.
 
 - **Not a cheerleader.** Never over-celebrate. Never use exclamation marks to paper over ordinary moments.
 - **Not harsh.** Dry ≠ cold. The app cares — it just doesn't perform caring.
@@ -184,9 +248,9 @@ This is a design gate, not a guideline.
 
 The visual language is defined in full at:
 
-- `CLAUDE.md` — System B palette (locked, non-negotiable)
+- `app/globals.css` — the Warm Slate palette + type tokens; the single source of truth for all colour and typography (ADR-007)
 - `docs/canonical/ui-patterns.md` — component anatomy, spacing, typography
-- `docs/architecture/ADR-001-design-tokens.md` — why `globals.css` is the single source of truth
+- `docs/architecture/ADR-007-warm-slate-palette.md` + `ADR-008-single-theme-only.md` — the current design system (single light theme). System B and ADR-001's colour tokens are superseded; the token-as-single-source-of-truth *principle* is retained.
 
 ### Quick reference: banned values
 
@@ -198,6 +262,20 @@ The visual language is defined in full at:
 | DM Sans | Old font — fully retired |
 | Any hardcoded hex in a component | Must come from CSS custom property in `globals.css` |
 | Red in training UI | Implies danger; use amber or coral instead |
+
+---
+
+## Design Implications (from positioning)
+
+These follow from the positioning above and override earlier preferences:
+
+1. **The Today screen must deliver the "slow down" message in under 3 seconds.** Its hero line is the highest-leverage pixel real estate in the app.
+2. **The pending adjustment card is a hero feature, not a utility.** It's the proof point for "the plan adapts to your life."
+3. **The restraint stat ("78% in Zone 2") is the most distinctive moment in the weekly summary.** It's the counter-intuitive thing that sells the app. Don't bury it.
+4. **The coach voice is the product.** Every instance of Kit's copy is a marketing asset — treat it as such.
+5. **Data density should decrease, not increase.** Zonna wins by showing less than Runna or Garmin.
+6. **Visual polish never overrides copy clarity.** If a layout pushes coach voice into 12pt muted grey, the layout is wrong.
+7. **The free tier must feel honest** — a plan that works, not a crippled experience screaming "upgrade." The pitch is: *"you want the app to know you better."*
 
 ---
 
