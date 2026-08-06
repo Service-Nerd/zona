@@ -34,6 +34,34 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
+## Native release batching — NATIVE-BATCH-01
+
+**Principle.** Zonna loads the web app from Vercel (`server.url`), so ~everything ships instantly via web deploy with **no** App Store submission. Only *native-layer* work needs a new binary: Capacitor plugins, Swift/native code, entitlements, `Info.plist`, capabilities, app icon/splash, extension targets. **Every native binary costs one App Review cycle (~1–2 days).** So native work is *batched*, never shipped piecemeal — and each submission runs a fixed pre-flight checklist, because the silent-plugin-drop regression class (background push + widget both died on a raw `cap sync`, 2026-08) only bites native builds.
+
+**Pre-submission checklist — run on EVERY native submission (do not skip):**
+1. `npm run sync:ios` — **never** raw `npx cap sync ios` (it wipes local plugins from `packageClassList`; the wrapper re-adds via `scripts/fix-cap-config.mjs` then verifies). Confirm `[verify-cap-config] OK`. Local plugin list: `scripts/local-ios-plugins.mjs`.
+2. Confirm required entitlements are in **both** `App.entitlements` (Debug) and `AppRelease.entitlements` (Release/TestFlight/App Store) — they diverge (dev vs prod `aps-environment`) and Xcode's capability UI often edits only one file.
+3. **On-device smoke before archiving** (Xcode ▶ to a tethered iPhone — *not* the simulator) for anything the simulator can't exercise: background HealthKit delivery, real APNs, HR streams, widget.
+4. **ASC ↔ binary parity:** any App Store Connect product/config change must match the binary in the *same* submission (e.g. MON-TRIAL-01 intro-trial removal) or it's a §3.1.2 rejection vector.
+5. `APNS_PRODUCTION=1` in Vercel (already set — App Store/TestFlight builds register production APNs tokens; sandbox tokens are rejected by the prod server and vice-versa).
+
+**Current native release (in flight, 2026-08):** background run-analysis push regression fix + duplicate-push dedup + relights the home-screen widget (`SharedStorePlugin`) — both were disabled by the same `cap sync` plugin-drop. Carries the new `com.apple.developer.healthkit.background-delivery` entitlement. **Do MON-TRIAL-01 (ASC config) at this submission** (W2).
+
+**Batchable native items — group so each doesn't burn its own review cycle:**
+
+| Item | Wave | Native surface | Readiness |
+|---|---|---|---|
+| **Universal Links** | W6 | Associated Domains entitlement (capability enabled in portal 2026-05-08) + AASA file at `zonna.run/.well-known/apple-app-site-association` (ships via web) | **Unblocked** — `zonna.run` is live. Most shovel-ready; biggest trust/UX win for the least native effort. |
+| **POST-RUN-03** rich-media zone push | W4 | New Notification Service Extension target (own bundle ID `app.zonna.ios.NotificationService` + provisioning) | ~2–3 native days. The web image route can be built + validated first with no binary. |
+| **POST-RUN-REFRAME-02** voice memo | W3 | Capacitor mic plugin + `Info.plist` `NSMicrophoneUsageDescription` | Gated on the OpenAI/Whisper vendor decision — resolve before it enters a batch. |
+| **CA-02** Apple Watch app | W4 | New WatchKit/SwiftUI extension target + provisioning | **Its own release, not this batch** — L effort, no spec yet. Start portal provisioning now; build after `/slt-review` + `/frontend-design`. |
+
+**Sequencing.** Ship the current fix now — it's a live-bug fix; do not hold it for feature work. The **next** native batch = **Universal Links + POST-RUN-03** (one review cycle); REFRAME-02 joins once the vendor call is made; CA-02 warrants its own release. Each still runs the checklist above. **Web-first where possible:** POST-RUN-03's `next/og` image route and the Universal Links AASA file both ship via Vercel *ahead* of the binary, so the native submission carries only the thin native shim (validate the web half on PWA first).
+
+> Full per-item specs live in their own W-tagged entries below/above — this item is the release-coordination layer over them, not a duplicate spec.
+
+---
+
 ## NOW — Critical path to App Store submission
 
 Everything in this section blocks v1 launch. Group A (legal/policy) and Group D (external setup) can run in parallel with Groups B (engineering) and C (env config). Group E (QA) must follow.
