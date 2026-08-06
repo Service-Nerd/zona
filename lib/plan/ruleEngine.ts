@@ -3324,6 +3324,14 @@ export function generateRulePlan(
     generated_at:      new Date().toISOString(),
     generator_version: '2.0',
 
+    // PV2-A / §1 — persist the full generator input so a plan can be replayed
+    // byte-for-byte (regression, incident forensics). Fields like
+    // current_weekly_km, longest_recent_run_km, days_cannot_train and
+    // preferred_long_run_day are consumed by the engine and were otherwise
+    // discarded, making a faithful re-generation impossible. Stored in the plan
+    // JSON (no migration); it is the user's own input, already theirs.
+    generator_input: input,
+
     // INV-PLAN-008: free plans never carry confidence fields
     tier,
     // D4 (2026-08-06) — `compressed` OR-combined two unrelated facts, so it was

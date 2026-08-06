@@ -282,6 +282,7 @@ export interface PlanMeta {
   // Generator metadata
   generated_at?: string                   // ISO timestamp of generation
   generator_version?: string              // e.g. "1.0"
+  generator_input?: GeneratorInput        // PV2-A/§1 — full input, for byte-exact replay
 
   // R18 — confidence score produced at generation time (INV-PLAN-008: PAID only)
   confidence_score?: number               // 1–10
