@@ -1,5 +1,7 @@
 # App Store Copy — Zonna v1
 
+> **🛑 SUPERSEDED (2026-06-23).** The canonical App Store listing source is now `docs/releases/app-store-listing.md`. This file is retained as the v1 launch submission record only — do not edit, do not treat as current. Any drift between docs is resolved in favour of `app-store-listing.md`.
+
 **Status:** first draft 2026-05-21. Awaiting Russ's red pen.
 **Constraints:** Apple App Store Connect submission fields.
 
@@ -18,10 +20,10 @@ Zonna
 ## Subtitle (30 chars max) — ✅ locked
 
 ```
-Plans that stop overtraining.
+Plans to stop you overtraining
 ```
 
-29/30. Sourced from `BRAND.appStoreSubtitle` in `lib/brand.ts`. Do not edit here — change at source.
+30/30 (no trailing period — a period would exceed the 30-char limit). Matches the live App Store subtitle. Sourced from `BRAND.appStoreSubtitle` in `lib/brand.ts`. Do not edit here — change at source.
 
 ---
 
@@ -148,7 +150,7 @@ Demo account for review: [TO ADD — create a fresh account with trial expired +
 ## ASC metadata status — 2026-05-28
 
 - [x] Name: `Zonna`
-- [x] Subtitle: `Plans that stop overtraining.`
+- [x] Subtitle: `Plans to stop you overtraining`
 - [x] Description: pasted
 - [x] Keywords: pasted
 - [x] Promotional Text: pasted

@@ -39,7 +39,7 @@ Sign in via Google OAuth (the dominant production path on web). Apple Sign in vi
 
 **Assertions:**
 - Page returns HTTP 200.
-- If marketing on: hero contains text `"Plans that stop overtraining."` (the `BRAND.appStoreSubtitle` value).
+- If marketing on: hero contains text `"Plans to stop you overtraining"` (the `BRAND.appStoreSubtitle` value).
 - If marketing off: URL ends `/dashboard` and the login screen renders.
 
 ---
