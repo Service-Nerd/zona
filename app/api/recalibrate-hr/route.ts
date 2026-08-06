@@ -7,8 +7,9 @@
  * 1. RE-BUCKET (Strava-sourced runs only)
  *    Re-fetches the raw HR stream from Strava for recent activities and
  *    recomputes hr_pct_z1/z2/z3/z4_5 against the user's current zone boundaries.
- *    HealthKit-sourced runs can't be re-bucketed server-side (raw samples aren't
- *    stored) — they're handled by job 2 only.
+ *    HealthKit-sourced runs are re-bucketed from the stored bpm histogram
+ *    (`hr_bpm_histogram`, added 2026-08-06 / N7). Rows ingested before that
+ *    column existed have no histogram and fall through to job 2 only.
  *
  * 2. RECOMPUTE DERIVED COLUMNS
  *    For all recent strava_activities (both sources), recomputes
@@ -25,7 +26,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
-import { getStravaToken, bucketHRSamples, getUserHRZones } from '@/lib/strava'
+import { getStravaToken, bucketHRSamples, bucketHRHistogram, getUserHRZones } from '@/lib/strava'
 import { zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { fetchPlanForUser } from '@/lib/plan'
 
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
   // Load recent activities — both sources
   const { data: activities } = await supabase
     .from('strava_activities')
-    .select('id, source, strava_activity_id, apple_health_uuid, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5, avg_hr, max_hr')
+    .select('id, source, strava_activity_id, apple_health_uuid, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5, avg_hr, max_hr, hr_bpm_histogram')
     .eq('user_id', user.id)
     .gte('start_date', cutoff.toISOString())
     .order('start_date', { ascending: false })
@@ -146,9 +147,34 @@ export async function POST(req: NextRequest) {
           }
         }
       }
-      // HealthKit runs: hr_pct_z* stay as-is (raw samples unavailable server-side).
-      // We can still recompute the derived columns in run_analysis using the
-      // existing (stale) histogram against the new session-type prescription.
+      // ── Job 1b: re-bucket HealthKit runs from the stored bpm histogram ───
+      // N7 (2026-08-06): previously HealthKit rows could not be re-bucketed at
+      // all — the device's raw samples were bucketed at ingest and discarded, so
+      // an HR correction left every HK run scored against the OLD zones,
+      // permanently, for the source that IS the system of record (ADR-011).
+      // `hr_bpm_histogram` is lossless for this: bucketing depends only on how
+      // many samples fall in each band. Rows ingested before that column existed
+      // have no histogram and are skipped — unchanged, not made worse.
+      if (activity.source !== 'strava' && activity.hr_bpm_histogram) {
+        const summary = bucketHRHistogram(activity.hr_bpm_histogram, zones)
+        if (summary) {
+          z1   = summary.histogram.pctZ1
+          z2   = summary.histogram.pctZ2
+          z3   = summary.histogram.pctZ3
+          z4_5 = summary.histogram.pctZ4_5
+
+          await supabase.from('strava_activities').update({
+            hr_pct_z1:            z1,
+            hr_pct_z2:            z2,
+            hr_pct_z3:            z3,
+            hr_pct_z4_5:          z4_5,
+            hr_in_zone_pct:       summary.inZonePct,
+            hr_above_ceiling_pct: summary.abovePct,
+            hr_below_floor_pct:   summary.belowPct,
+          }).eq('id', activity.id)
+        }
+      }
+
 
       // ── Job 2: recompute run_analysis zone columns ────────────────────────
       const analysisKey = activity.source === 'strava'

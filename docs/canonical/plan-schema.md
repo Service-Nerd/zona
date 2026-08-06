@@ -138,6 +138,19 @@ export interface PlanMeta {
   tier?: 'free' | 'trial' | 'paid'  // tier at which plan was generated
   compressed?: boolean               // true if available weeks < ideal plan length for distance
   coach_intro?: string               // PAID only — enricher-generated intro paragraph in ZONNA voice
+
+  // CoachingPrinciples §78 — weeks carrying a 5K time trial. DERIVED FROM THE
+  // PRODUCED PLAN, not from intent: a week appears here only if the benchmark
+  // session was actually placed. The session is typed `hard` (Z4-5), so it does
+  // not count against QUALITY_SESSIONS_PER_WEEK_MAX and beginners get it too.
+  // Enforced by INV-PLAN-RECALIBRATION-HAS-SESSION.
+  recalibration_weeks?: number[]
+
+  // GEN-FIX-02 (2026-08-06) — enrichment provenance. Set in the route, not the
+  // enricher. 'failed' means the user holds rule-engine output (silent fallback,
+  // ADR-006); 'pending' on a SAVED plan means the client persisted before
+  // final_plan arrived (N8 save race). Absent = generated before this shipped.
+  enrichment?: 'applied' | 'failed' | 'skipped' | 'pending'
 }
 
 export interface Phase {

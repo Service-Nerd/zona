@@ -28,6 +28,15 @@ export interface GeneratorInput {
   fitness_level?: 'beginner' | 'intermediate' | 'experienced'
   resting_hr?: number           // optional — improves zone accuracy via Karvonen
   max_hr?: number               // optional — derived from age (Tanaka: 208 − 0.7 × age)
+  /**
+   * CoachingPrinciples §50 — where max_hr came from. 'observed' means it was read
+   * from device history (the highest heart rate on record), which is a floor, not
+   * a maximum, for anyone who has never run flat out wearing a sensor. Best-effort:
+   * set when the wizard reads HealthKit directly; a value arriving via
+   * user_settings has no recorded provenance and is left unmarked. The
+   * plausibility gate protects both cases — it is source-independent by design.
+   */
+  max_hr_source?: 'observed'
 
   // R23 rebuild — drives returning-runner allowance + reshape decisions
   training_age?: TrainingAge
@@ -144,6 +153,16 @@ export interface Week {
   weekly_duration_mins?: number           // for time-based plans, alongside weekly_km
   race_notes?: string
   tune_up_callout?: string                // L-01 — optional mid-build tune-up race suggestion
+
+  /** GEN-FIX-10 (§8, 2026-08-06) — a reshape deliberately removed this week's
+   *  quality session in response to a fatigue or efficiency signal. Records WHY
+   *  the week no longer looks like a build week, so INV-PLAN-QUALITY-EXPECTED
+   *  can tell an intentional downgrade from a generator defect. Set by the
+   *  reshaper; never by generateRulePlan. */
+  quality_downgraded?: {
+    trigger: string      // AdjustmentTrigger.type, e.g. 'ef_decline' | 'fatigue'
+    at:      string      // ISO timestamp
+  }
 
   /** AI-DEPTH-07 — race-day result captured into the plan on the race week.
    *  Populated post-event (by an explicit log-result action; not by Strava
@@ -274,6 +293,11 @@ export interface PlanMeta {
   coach_intro?: string                    // PAID only — enricher-generated intro paragraph (2–3 sentences + confidence)
   plan_intro?: string                     // FREE first-plan only — CA-01 one-line "why this plan" taste of Kit's voice (Haiku, ~1–2 sentences). Distinct from coach_intro; never co-exists with it.
 
+  // GEN-FIX-02 — enrichment provenance. 'failed' means the user holds rule-engine
+  // output (silent fallback, ADR-006); 'pending' on a SAVED plan means the client
+  // persisted before final_plan arrived (N8 save race). Absent = pre-GEN-FIX-02.
+  enrichment?: 'applied' | 'failed' | 'skipped' | 'pending'
+
   // R24 — VDOT / zone model fields
   age?: number                            // athlete age at time of generation
   vdot?: number                           // Jack Daniels VDOT score (raw, benchmark-derived) — matches Daniels' published tables
@@ -306,7 +330,28 @@ export interface PlanMeta {
   // hr_zone_method names which of the four fallback levels was used; non-Karvonen
   // methods carry hr_assumption_note. Estimated max is surfaced when computed
   // from age (Tanaka).
+  // CoachingPrinciples §50. The last two added 2026-08-06 (GEN-FIX-05):
+  //   observed_max                    — max came from device history, not a measured effort
+  //   age_estimate_implausible_input  — supplied max rejected as implausible; Tanaka used
+  // D2 (2026-08-06) — present only when the VDOT and volume signals disagreed.
+  // `fitness_level` is then the conservative answer (drives volume and caps);
+  // this is the higher one (drives the quality-session allowance only).
+  // §80 (D3) — present when LONG_RUN_CAP_MINUTES stopped the peak long run
+  // reaching the finish-goal duration floor. An honest statement of what the
+  // plan cannot give, rather than a silent shortfall.
+  // D4 (2026-08-06) — `compressed` conflated two unrelated facts and was true
+  // for nearly every plan, including ones with weeks to spare. These are the
+  // two things it meant; `compressed` is now a deprecated OR of them.
+  time_compressed?: boolean      // fewer calendar weeks than the distance's minimum
+  volume_constrained?: boolean   // the volume ramp never reached target peak
+
+  long_run_shortfall_note?: string
+
+  fitness_intensity_level?: 'beginner' | 'intermediate' | 'experienced'
+  fitness_signal_note?: string
+
   hr_zone_method?: 'karvonen' | 'karvonen_estimated_max' | 'percent_of_max' | 'percent_of_estimated_max'
+                 | 'observed_max' | 'age_estimate_implausible_input'
   hr_assumption_note?: string
   hr_estimated_max?: number
 

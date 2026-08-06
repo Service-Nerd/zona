@@ -372,6 +372,12 @@ export default function GeneratePlanScreen({
   const [plan, setPlan]         = useState<Plan | null>(null)
   const [error, setError]       = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  // N8 — the ceremony's reveal is time-based, so it can finish before the
+  // enricher does. If the user reached the preview and tapped "Use this plan"
+  // in that window, the RULE plan was persisted and the enriched one discarded,
+  // silently. Both signals must land before the preview is reachable.
+  const [streamComplete, setStreamComplete] = useState(false)
+  const [revealComplete, setRevealComplete] = useState(false)
 
   // ── Foundation Block modal (Phase 4 — gap > 28 days) ─────────────────────
   const [foundationModalOpen, setFoundationModalOpen] = useState(false)
@@ -567,6 +573,8 @@ export default function GeneratePlanScreen({
   // ── Plan generation ───────────────────────────────────────────────────────
 
   async function handleGenerate() {
+    setStreamComplete(false)
+    setRevealComplete(false)
     setAppStep('generating')
     setError(null)
     setPlan(null)
@@ -596,6 +604,12 @@ export default function GeneratePlanScreen({
     // The generating ceremony covers this extra async step's wall-clock time.
     let hkRHR: number | null = initialRHR ?? (restingHR ? Number(restingHR) : null)
     let hkMHR: number | null = initialMHR ?? null
+    // CoachingPrinciples §50 — track whether max HR came from device history.
+    // fetchAppleHealthHRSnapshot returns the highest heart rate on record, which
+    // is a floor rather than a maximum for anyone who has never run flat out
+    // wearing a sensor. Only set when WE read it here; a value inherited from
+    // user_settings has no recorded provenance and stays unmarked.
+    let mhrSource: 'observed' | undefined
     if (!hkRHR || !hkMHR) {
       try {
         const { Capacitor } = await import('@capacitor/core')
@@ -604,7 +618,10 @@ export default function GeneratePlanScreen({
           const snap = await fetchAppleHealthHRSnapshot()
           if (snap) {
             hkRHR = hkRHR ?? snap.restingHR
-            hkMHR = hkMHR ?? snap.maxHR
+            if (hkMHR == null && snap.maxHR != null) {
+              hkMHR = snap.maxHR
+              mhrSource = 'observed'
+            }
           }
         }
       } catch {}
@@ -622,6 +639,7 @@ export default function GeneratePlanScreen({
       days_available:        daysAvailable!,
       resting_hr:            hkRHR ?? undefined,
       max_hr:                hkMHR ?? undefined,
+      max_hr_source:         mhrSource,
       training_age:          trainingAge ?? undefined,
       preferred_long_run_day: preferredLongRunDay,
       benchmark,
@@ -685,6 +703,7 @@ export default function GeneratePlanScreen({
       if (!contentType.includes('ndjson')) {
         const data = await res.json()
         setPlan(applyFoundationIfNeeded(data.plan as Plan))
+        setStreamComplete(true)
         return
       }
 
@@ -722,6 +741,7 @@ export default function GeneratePlanScreen({
           }
         }
       }
+      setStreamComplete(true)
     } catch {
       setError('Could not reach the server. Check your connection.')
       setAppStep('error')
@@ -762,6 +782,12 @@ export default function GeneratePlanScreen({
     } catch { setIsSaving(false) }
   }
 
+  // N8 — advance to preview only when the stream has finished AND the reveal
+  // animation has played out. Whichever lands second triggers the transition.
+  useEffect(() => {
+    if (appStep === 'generating' && streamComplete && revealComplete) setAppStep('preview')
+  }, [appStep, streamComplete, revealComplete])
+
   // ── Special screens (ceremony / preview / error) ──────────────────────────
 
   if (appStep === 'generating') {
@@ -769,7 +795,7 @@ export default function GeneratePlanScreen({
       <GeneratingCeremony
         hasPaidAccess={!!hasPaidAccess}
         plan={plan}
-        onRevealComplete={() => setAppStep('preview')}
+        onRevealComplete={() => setRevealComplete(true)}
       />
     )
   }

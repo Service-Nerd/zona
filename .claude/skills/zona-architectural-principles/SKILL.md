@@ -120,6 +120,7 @@ Do not stop at one layer if the defect crosses boundaries.
 | D-18 | Hard cut means full removal | When retiring a field, palette value, or component, remove it from schema, types, components, globals.css, and docs in the same release. |
 | D-19 | Do not align doctrine downward | If code and contract disagree, fix the code. Contracts must not be weakened to normalise buggy implementation. |
 | D-20 | Free/paid is a first-class concern | Every feature has a free/paid tag in `docs/canonical/feature-registry.md` before implementation. Gates are enforced in both API routes and components. |
+| D-21 | A principle that cannot be satisfied is a defect in the principle | If honouring a written rule *necessarily* produces a bad outcome, the rule is wrong — not the code that honoured it. Fixing it is an engineering call, escalated only if the coaching intent itself is in question. Added 2026-08-06 after the plan-generator incident, where the 10% rule applied to a post-deload bounceback made progressive overload arithmetically impossible in every plan containing a recovery week, and §64 demanded a `type: 'rest'` session the engine had never emitted. Both sat unfixed because the canon is treated as constitutional and no route existed to say "the constitution is wrong here". **Test:** can any valid input satisfy this rule AND produce a plan you would give a runner? If no — the rule is the defect. Record the amendment and its reasoning in `CoachingPrinciples.md`; do not silently diverge from it in code. |
 
 ---
 

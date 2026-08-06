@@ -73,7 +73,9 @@ export interface LimiterInputs {
 }
 
 const EASY_TYPES = new Set(['easy', 'recovery', 'long', 'run'])
-const HARD_TYPES = new Set(['quality', 'tempo', 'intervals', 'threshold'])
+// 'hard' added GEN-FIX-04: the §78 recalibration time trial is a maximal
+// effort and must be read as one by the limiter.
+const HARD_TYPES = new Set(['quality', 'tempo', 'intervals', 'threshold', 'hard'])
 
 /**
  * Picks the single most-defensible limiter hypothesis, or null.

@@ -11,6 +11,8 @@
 
 import type { Plan, GeneratorInput, Session } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
+// Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
+import { parseDateLocal, formatDate } from './length'
 
 export type Severity = 'error' | 'warn'
 
@@ -27,6 +29,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE',
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO',
   'INV-PLAN-THEME-MATCHES-PRESCRIPTION',
+  'INV-PLAN-COPY-MATCHES-SESSIONS',
   'INV-PLAN-MIN-SESSION-SIZE',
   'INV-PLAN-EMPTY-SESSION',
   'INV-PLAN-LONG-IS-LONGEST',
@@ -56,6 +59,11 @@ export const INVARIANT_CODES = [
   'INV-PLAN-FINISH-GOAL-LR-CAP',
   'INV-PLAN-ULTRA-NO-PACE-SEGMENTS',
   'INV-PLAN-WEEK-HAS-REST-DAY',
+  'INV-PLAN-COVERS-RACE-DATE',
+  'INV-PLAN-RACE-ON-RACE-DAY',
+  'INV-PLAN-RECALIBRATION-HAS-SESSION',
+  'INV-PLAN-PEAK-IN-PEAK-PHASE',
+  'INV-PLAN-NO-PLACEHOLDER-COPY',
   // MAINT-01 — maintenance block invariants (validated by validateMaintenanceBlock,
   // not by validatePlan — maintenance weeks are not produced by generateRulePlan)
   'INV-MAINT-PHASE1-SESSION-TYPES',
@@ -73,12 +81,32 @@ export const INVARIANT_CODES = [
  * same implementation. D-08 (no duplicate ownership).
  *
  * Accepts either the flat session array `buildReorderAdjustment` uses or
- * the entry tuples `validatePlan` produces — duck-types on `.type === 'rest'`.
+ * the entry tuples `validatePlan` produces.
+ *
+ * GEN-FIX-09 (2026-08-06) — §64 amended: **a rest day is the absence of a
+ * session, not a session.** Two ways to satisfy it:
+ *
+ *   1. An explicit `type: 'rest'` entry. The post-race maintenance block emits
+ *      these deliberately — there the rest day is a prescription, not a gap.
+ *   2. Fewer than 7 training days in the week. This is how `generateRulePlan`
+ *      has always worked: a 3-day plan leaves four days empty.
+ *
+ * Previously only (1) counted, so every generated plan failed this invariant
+ * once per non-race week — invisible because validatePlan throws in dev/test
+ * but logs in production. The engine was right; the rule was wrong.
+ *
+ * The move-time caller keeps its meaning: a reorder cannot change how many
+ * sessions a week has, so it can only lose a rest day by landing on an
+ * explicit one — which is exactly the maintenance-block case it protects.
  */
+const DAYS_IN_WEEK = 7  // structural constant, not a coaching numeric (INV-CFG-003)
+
 export function weekHasRestDay(
   sessions: ReadonlyArray<{ type?: string } | null | undefined>,
 ): boolean {
-  return sessions.some(s => s?.type === 'rest')
+  if (sessions.some(s => s?.type === 'rest')) return true
+  const trainingDays = sessions.filter(s => s && s.type !== 'rest').length
+  return trainingDays < DAYS_IN_WEEK
 }
 
 const DAYS_MON_SUN = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
@@ -322,41 +350,56 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       const qualityCount = Object.values(w.sessions).filter(s => s?.type === 'quality').length
       const prevNonDeload = plan.weeks.slice(0, plan.weeks.indexOf(w)).reverse().find(p => p.type !== 'deload')
 
-      if ((themeText.includes('highest volume') || themeText.includes('fitness is built'))
+      // INV-PLAN-COPY-MATCHES-SESSIONS (CoachingPrinciples §27) — replaces the
+      // former four-literal denylist ("highest volume", "fitness is built",
+      // "intensity stays", "feel hard"). That version checked specific known-bad
+      // strings rather than the rule, so "One quality session. Everything else
+      // stays easy." and "Build — first quality session" walked straight past it
+      // over three easy runs, for fourteen weeks (analysis F4 / N4).
+      //
+      // The rule: copy that names a session type, or claims an overload, must be
+      // true of THIS week. Applies to the theme AND the label — the label was
+      // never checked at all before.
+      const labelText = (w.label ?? '').toLowerCase()
+      const copy = `${labelText} | ${themeText}`
+      const hasIntensity = placedRunning.some(({ session }) =>
+        session.type === 'quality' || session.type === 'intervals' || session.type === 'tempo')
+      const hasBenchmark = placedRunning.some(({ session }) => session.type === 'hard')
+
+      // Each claim names what must be present for it to be honest.
+      const CLAIMS: Array<{ test: RegExp; ok: boolean; needs: string }> = [
+        { test: /quality|threshold|tempo|interval|vo2/,      ok: hasIntensity || hasBenchmark, needs: 'an intensity session' },
+        { test: /sharpen|raising the ceiling|intensity stays/, ok: hasIntensity,                 needs: 'an intensity session' },
+        { test: /feels? hard/,                                ok: hasIntensity || hasBenchmark, needs: 'a hard session' },
+        { test: /benchmark|time trial/,                       ok: hasBenchmark,                 needs: 'a benchmark session' },
+      ]
+      for (const { test, ok, needs } of CLAIMS) {
+        if (test.test(copy) && !ok) {
+          violations.push({
+            code: 'INV-PLAN-COPY-MATCHES-SESSIONS',
+            principle_ref: 'CoachingPrinciples §27',
+            severity: 'error',
+            week: w.n,
+            message: `Week copy promises what the week does not contain — "${w.label}" / "${w.theme}" requires ${needs}`,
+            actual: 'no matching session',
+            expected: needs,
+          })
+          break
+        }
+      }
+
+      // Overload claims are about the plan, not just the week.
+      if (/highest volume|fitness is built/.test(copy)
           && prevNonDeload
           && w.weekly_km <= prevNonDeload.weekly_km) {
         violations.push({
-          code: 'INV-PLAN-THEME-MATCHES-PRESCRIPTION',
+          code: 'INV-PLAN-COPY-MATCHES-SESSIONS',
           principle_ref: 'CoachingPrinciples §27',
           severity: 'error',
           week: w.n,
-          message: `Theme implies overload but weekly_km ${w.weekly_km}km ≤ prior non-deload ${prevNonDeload.weekly_km}km`,
+          message: `Copy implies overload but weekly_km ${w.weekly_km}km <= prior non-deload ${prevNonDeload.weekly_km}km`,
           actual: `${w.weekly_km}km vs ${prevNonDeload.weekly_km}km`,
           expected: `> ${prevNonDeload.weekly_km}km`,
-        })
-      }
-      if (themeText.includes('intensity stays') && qualityCount === 0) {
-        violations.push({
-          code: 'INV-PLAN-THEME-MATCHES-PRESCRIPTION',
-          principle_ref: 'CoachingPrinciples §27',
-          severity: 'error',
-          week: w.n,
-          message: `Theme says "intensity stays" but week has 0 quality sessions`,
-          actual: 0,
-          expected: '≥ 1 quality session',
-        })
-      }
-      // R2/L-02 — "It will feel hard" / "feel hard" effort copy must coincide
-      // with at least one quality session.
-      if ((themeText.includes('feel hard') || themeText.includes('feels hard')) && qualityCount === 0) {
-        violations.push({
-          code: 'INV-PLAN-THEME-MATCHES-PRESCRIPTION',
-          principle_ref: 'CoachingPrinciples §41',
-          severity: 'error',
-          week: w.n,
-          message: `Theme says "feel hard" but week has 0 quality sessions`,
-          actual: 0,
-          expected: '≥ 1 quality session',
         })
       }
     }
@@ -633,7 +676,15 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       const hasAchilles = (input.injury_history ?? []).some(i => i.toLowerCase().includes('achilles'))
       const expectQuality = (planFitness === 'intermediate' || planFitness === 'experienced')
         && hsr !== 'avoid' && !hasAchilles
-      if (expectQuality) {
+      // GEN-FIX-10 (§8, 2026-08-06) — a reshape may deliberately remove this
+      // week's quality session when aerobic efficiency is falling or fatigue has
+      // accumulated. That is the intervention working, and it is the product's
+      // core thesis: back off when the body says so. This invariant asks "did
+      // the GENERATOR build this correctly?", which is the wrong question of a
+      // week the generator no longer owns — so it exempts an intentional,
+      // recorded downgrade. It still fires when quality is simply absent.
+      const intentionallyDowngraded = !!w.quality_downgraded
+      if (expectQuality && !intentionallyDowngraded) {
         const eligibleDays: Day[] = ['wed','thu','tue','mon','fri']
         const blockedSet = new Set((input.days_cannot_train ?? []) as Day[])
         const anyEligibleUnblocked = eligibleDays.some(d => !blockedSet.has(d))
@@ -1033,8 +1084,199 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     }
   }
 
-  // INV-PLAN-HR-ASSUMPTIONS-SURFACED — every plan declares hr_zone_method;
-  // non-Karvonen methods surface hr_assumption_note. (CoachingPrinciples §50)
+  // INV-PLAN-COVERS-RACE-DATE — the final week must contain race day, and the
+  // race session must sit on race day's actual weekday.
+  // (CoachingPrinciples §76, §77)
+  //
+  // These close the gap that let the highest-severity defect in the 2026-08-06
+  // incident ship: before this, `race_date` appeared in this file exactly once,
+  // in a metadata mapping, and never in an assertion. Every plan the engine had
+  // ever produced finished before race day.
+  //
+  // Foundation weeks (n <= 0) are pre-plan and cannot be the race week.
+  {
+    const raceDateIso = plan.meta.race_date
+    const planWeeks = plan.weeks.filter(w => w.n > 0)
+    const finalWeek = planWeeks[planWeeks.length - 1]
+
+    if (raceDateIso && finalWeek?.date) {
+      const weekStart = parseDateLocal(finalWeek.date)
+      const weekEnd = new Date(weekStart)
+      weekEnd.setDate(weekEnd.getDate() + 6)
+      const race = parseDateLocal(raceDateIso)
+
+      if (race < weekStart || race > weekEnd) {
+        const gapDays = Math.round((race.getTime() - weekEnd.getTime()) / 86_400_000)
+        violations.push({
+          code: 'INV-PLAN-COVERS-RACE-DATE',
+          principle_ref: 'CoachingPrinciples §76',
+          severity: 'error',
+          week: finalWeek.n,
+          message: gapDays > 0
+            ? `Plan ends ${gapDays} day(s) before race day — final week is ${finalWeek.date}–${formatDate(weekEnd)}, race is ${raceDateIso}. The plan must be laid out backwards from race week.`
+            : `Race day ${raceDateIso} falls before the final week (${finalWeek.date}–${formatDate(weekEnd)}).`,
+          actual: `${finalWeek.date}–${formatDate(weekEnd)}`,
+          expected: `a week containing ${raceDateIso}`,
+        })
+      }
+
+      // INV-PLAN-RACE-ON-RACE-DAY — placing the race by weekday preference
+      // rather than by its real date names the right week and still races on
+      // the wrong day.
+      const raceEntry = Object.entries(finalWeek.sessions ?? {})
+        .find(([, s]) => s?.type === 'race')
+      if (raceEntry) {
+        const [placedDay] = raceEntry
+        const expectedDay = DAYS_MON_SUN[(race.getDay() + 6) % 7]
+        if (placedDay !== expectedDay) {
+          violations.push({
+            code: 'INV-PLAN-RACE-ON-RACE-DAY',
+            principle_ref: 'CoachingPrinciples §77',
+            severity: 'error',
+            week: finalWeek.n,
+            day: placedDay,
+            message: `Race session placed on ${placedDay} but ${raceDateIso} is a ${expectedDay}`,
+            actual: placedDay,
+            expected: expectedDay,
+          })
+        }
+        // §77 — no race-week session may fall after the race.
+        const raceIdx = DAYS_MON_SUN.indexOf(expectedDay as DayKey)
+        for (const [day, s] of Object.entries(finalWeek.sessions ?? {})) {
+          if (!s || s.type === 'race' || s.type === 'rest') continue
+          if (DAYS_MON_SUN.indexOf(day as DayKey) > raceIdx) {
+            violations.push({
+              code: 'INV-PLAN-RACE-ON-RACE-DAY',
+              principle_ref: 'CoachingPrinciples §77',
+              severity: 'error',
+              week: finalWeek.n,
+              day,
+              message: `"${s.label ?? day}" is scheduled on ${day}, after the race on ${expectedDay}`,
+              actual: day,
+              expected: `a day before ${expectedDay}`,
+            })
+          }
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-RECALIBRATION-HAS-SESSION — a week listed in
+  // meta.recalibration_weeks must actually contain the benchmark session its
+  // theme promises. (CoachingPrinciples §78)
+  //
+  // Before this, `recalibration_weeks` was written from intent: the theme told
+  // the runner to "run a parkrun or timed 5K" and no session was ever placed,
+  // in any plan, for any persona (analysis F8).
+  {
+    for (const weekN of plan.meta.recalibration_weeks ?? []) {
+      const week = plan.weeks.find(w => w.n === weekN)
+      if (!week) {
+        violations.push({
+          code: 'INV-PLAN-RECALIBRATION-HAS-SESSION',
+          principle_ref: 'CoachingPrinciples §78',
+          severity: 'error',
+          week: weekN,
+          message: `meta.recalibration_weeks lists week ${weekN}, which does not exist in the plan`,
+          actual: 'missing week',
+          expected: 'a week containing a benchmark session',
+        })
+        continue
+      }
+      const hasBenchmark = Object.values(week.sessions ?? {}).some(s => s?.type === 'hard')
+      if (!hasBenchmark) {
+        violations.push({
+          code: 'INV-PLAN-RECALIBRATION-HAS-SESSION',
+          principle_ref: 'CoachingPrinciples §78',
+          severity: 'error',
+          week: weekN,
+          message: `Week ${weekN} is listed as a recalibration week but prescribes no benchmark session — the theme instructs a timed 5K that does not exist`,
+          actual: 'no benchmark session',
+          expected: 'one session of type "hard"',
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-PEAK-IN-PEAK-PHASE — the plan's highest-volume week should fall in
+  // the peak phase. (CoachingPrinciples §23, §2)
+  //
+  // WARN when the plan is honestly labelled `maintenance`: a runner already near
+  // their level-appropriate peak has little headroom, and a plateau that says so
+  // is a valid outcome (§23). ERROR when the plan claims to be a build, because
+  // then the label and the shape disagree. Before the §2 bounceback amendment
+  // this fired on 4 of 7 personas — every deload ratcheted the ceiling down.
+  {
+    const nonDeload = plan.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
+    const peakPhase = nonDeload.filter(w => w.phase === 'peak')
+    if (nonDeload.length > 1 && peakPhase.length > 0) {
+      const maxKm = Math.max(...nonDeload.map(w => w.weekly_km))
+      // The assertion is that the peak phase REACHES the plan's maximum — not
+      // that the maximum occurs there first. Hitting the ceiling in build and
+      // holding it through peak is a legitimate plateau, and an earlier-first
+      // occurrence is not evidence of the ratchet this guards against.
+      const peakPhaseReachesMax = peakPhase.some(w => w.weekly_km >= maxKm)
+      if (!peakPhaseReachesMax) {
+        const highest = nonDeload.find(w => w.weekly_km === maxKm)!
+        const peakPhaseMax = Math.max(...peakPhase.map(w => w.weekly_km))
+        violations.push({
+          code: 'INV-PLAN-PEAK-IN-PEAK-PHASE',
+          principle_ref: 'CoachingPrinciples §23',
+          severity: plan.meta.volume_profile === 'maintenance' ? 'warn' : 'error',
+          week: highest.n,
+          message: `Peak phase tops out at ${peakPhaseMax}km but the plan reaches ${maxKm}km in week ${highest.n} (${highest.phase})`,
+          actual: `peak-phase max ${peakPhaseMax}km`,
+          expected: `>= ${maxKm}km`,
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-NO-PLACEHOLDER-COPY (warn) — no user-facing string may contain a
+  // fallback placeholder. (analysis F6)
+  //
+  // "Race day: Target Race." shipped to the first organic user. The engine now
+  // writes empty rather than inventing, but this guards reintroduction —
+  // placeholders are truthy, so they render exactly as if they were real.
+  {
+    const PLACEHOLDERS = ['Target Race', 'TBD', 'undefined', 'null']
+    const scan: Array<[string, string | undefined]> = []
+    for (const w of plan.weeks) {
+      scan.push([`w${w.n}.label`, w.label])
+      scan.push([`w${w.n}.theme`, w.theme])
+      scan.push([`w${w.n}.race_notes`, w.race_notes])
+      for (const [day, sess] of Object.entries(w.sessions ?? {})) {
+        if (!sess) continue
+        scan.push([`w${w.n}.${day}.label`, sess.label])
+        for (const n of sess.coach_notes ?? []) scan.push([`w${w.n}.${day}.coach_note`, n])
+      }
+    }
+    for (const [where, text] of scan) {
+      if (!text) continue
+      const hit = PLACEHOLDERS.find(ph => text.includes(ph))
+      if (hit) {
+        violations.push({
+          code: 'INV-PLAN-NO-PLACEHOLDER-COPY',
+          principle_ref: 'analysis F6',
+          severity: 'warn',
+          week: 0,
+          message: `Placeholder "${hit}" in user-facing copy at ${where}: "${text}"`,
+          actual: hit,
+          expected: 'a real value, or copy that omits it',
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-HR-ASSUMPTIONS-SURFACED — every plan declares hr_zone_method, and
+  // every method that rests on an assumption surfaces hr_assumption_note.
+  // (CoachingPrinciples §50, amended 2026-08-06)
+  //
+  // Previously this exempted `karvonen` outright, on the reasoning that having
+  // both numbers meant having good numbers. It doesn't: a HealthKit-observed max
+  // lands in the karvonen branch, so the runner whose zones were 28 bpm low was
+  // guaranteed to be told nothing at all (analysis N2). Only a karvonen derived
+  // from an unmarked, plausible max is silent now.
   {
     const method = plan.meta.hr_zone_method
     if (!method) {
@@ -1045,7 +1287,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         week: 0,
         message: 'Plan meta missing hr_zone_method — every plan must declare which of the four fallback methods was used',
         actual: 'undefined',
-        expected: "'karvonen' | 'karvonen_estimated_max' | 'percent_of_max' | 'percent_of_estimated_max'",
+        expected: "one of the six §50 methods",
       })
     } else if (method !== 'karvonen' && !plan.meta.hr_assumption_note) {
       violations.push({

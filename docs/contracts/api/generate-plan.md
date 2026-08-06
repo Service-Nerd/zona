@@ -30,6 +30,13 @@ Body: GeneratorInput
 
 ### GeneratorInput (optional fields)
 
+> **Removed 2026-08-06 (F10):** `longest_run_ever_km` was documented here as
+> "informs week-1–2 long-run cap" but existed nowhere in `GeneratorInput` or the
+> engine — a contract asserting a field the code had never had. The week-1–2 cap
+> is driven by `longest_recent_run_km`, which *is* consumed. Implementing the
+> field is tracked as R23-D1 in `backlog.md`; until then the contract must not
+> claim it.
+
 ```typescript
 {
   // Fitness — all derived server-side; supply to override derivation
@@ -37,7 +44,6 @@ Body: GeneratorInput
   resting_hr?: number             // improves Karvonen zone accuracy; falls back to HRmax%
   max_hr?: number                 // derived from age via Tanaka if absent
   training_age?: '<6mo' | '6-18mo' | '2-5yr' | '5yr+'  // R23 rebuild — drives returning-runner allowance
-  longest_run_ever_km?: number    // R23 rebuild — informs week-1–2 long-run cap
 
   // Benchmark — enables VDOT-based pace targets (Jack Daniels model)
   benchmark?: {
@@ -132,15 +138,76 @@ Triggered by:
 
 Tier is determined server-side by `getUserTier(userId)`. The client never sends a tier claim.
 
+### Max HR plausibility (GEN-FIX-05, 2026-08-06)
+
+`GeneratorInput` gains an optional `max_hr_source?: 'observed'`, set by the wizard when it reads
+max HR directly from HealthKit. Best-effort provenance: a value inherited from `user_settings` has
+no recorded source and stays unmarked.
+
+Per CoachingPrinciples §50 the engine no longer treats a supplied `max_hr` as ground truth:
+
+| Condition | `meta.hr_zone_method` | Behaviour |
+|---|---|---|
+| Deviates from Tanaka by > `MAX_HR_PLAUSIBILITY_DEVIATION_PCT` (15%) | `age_estimate_implausible_input` | **Falls back to the Tanaka estimate.** Note names the supplied value, the estimate, and the Profile override. Source-independent |
+| `max_hr_source: 'observed'`, within tolerance | `observed_max` | Value used; note always surfaced — a device's highest *recorded* rate is a floor, not a maximum |
+| Otherwise | unchanged (`karvonen`, etc.) | unchanged |
+
+`INV-PLAN-HR-ASSUMPTIONS-SURFACED` no longer exempts `karvonen` wholesale — only a `karvonen`
+derived from an unmarked, plausible max is silent. §55's `[120, 220]` range check is unchanged;
+this is a separate gate for values that are physiologically possible but wrong for this runner.
+
 ### Enricher fallback
 If the AI enricher fails (timeout, invalid JSON, schema violation), the rule-engine plan is
-returned unchanged. The caller cannot distinguish enriched from unenriched in the 200 response
-(by design — ADR-006: enricher failure is silent).
+returned unchanged. **No error surfaces to the user and generation always succeeds** — ADR-006's
+silent fallback is unchanged.
+
+**Changed by GEN-FIX-02 (2026-08-06):** the failure is no longer silent to *us*.
+
+- `enrich()` now returns `{ plan, outcome }`. `outcome` is `{ status: 'applied' }` or
+  `{ status: 'failed', reason, detail? }` with `reason` ∈ `no_api_key` | `api_error` |
+  `fetch_failed` | `parse_error` | `schema_invalid`. It still never throws; the route keeps a
+  backstop `catch` regardless.
+- On failure the route writes a `plan_enrich_failed` row to `ops_events` (see
+  `docs/contracts/api/ops-events.md`), awaited so it is durable before the stream closes.
+- Every response now carries **`meta.enrichment`**, so a saved plan self-describes:
+
+  | Value | Meaning |
+  |---|---|
+  | `applied` | Enricher ran and its output was merged |
+  | `failed` | Silent fallback — this is rule-engine output |
+  | `skipped` | Free tier; never enriched by design |
+  | `pending` | Stamped on the streamed `rule_plan` before enrichment resolves. **A saved plan reading `pending` means the client persisted before `final_plan` arrived** (the N8 save race) — a defect signal, not a normal terminal state |
+  | *absent* | Plan generated before GEN-FIX-02 shipped |
+
+  This does not breach ADR-006: the field is metadata, is never rendered, and carries no error
+  state to the user. It exists so "did the paid layer actually run?" is a query rather than
+  forensics — the question that took five days to answer for the first organic user
+  (`docs/incidents/2026-08-06-plan-defects/analysis.md`, N1).
 
 ### Plan start
-Plan start is always the **next Monday** from the current date, computed using local-time date
-arithmetic (avoids UTC midnight drift). This is computed server-side; the client does not send
-a plan start date.
+The route computes the **next Monday** from the current date (local-time arithmetic, avoiding UTC
+midnight drift) and passes it to the engine. The client does not send a plan start date.
+
+**Changed by GEN-FIX-03 (2026-08-06) — `meta.plan_start` is now a derived output, not the route's
+input.** Per CoachingPrinciples §76 the plan is laid out **backwards from race week**: the route's
+next-Monday value is the *earliest* the plan could begin, and `calcPlanLength()` anchors the final
+week on `race_date` and returns the actual start.
+
+- When more weeks are available than the distance's ideal length, the surplus **delays the start**.
+  It is never dropped off the end. Previously `min(available, ideal)` weeks were laid forward from
+  the start, so **every plan finished before race day** — 3 to 24 days early across all tested
+  personas (analysis F2).
+- `meta.plan_start` may therefore be later than the next Monday. The gap between today and
+  `plan_start` is already consumed by the foundation block (`classifyGap` /
+  `generateFoundationBlock` in `GeneratePlanScreen`), which existed for exactly this case.
+- When available weeks are fewer than ideal, the plan starts as early as it can; race week is
+  still last.
+
+The race session is placed on the **actual weekday of `race_date`** (§77), and deliberately ignores
+`days_cannot_train` — the race is an external fixed event, not a training session. All other
+race-week sessions respect blocked days and must fall *before* the race.
+
+Enforced by `INV-PLAN-COVERS-RACE-DATE` and `INV-PLAN-RACE-ON-RACE-DAY` (both error severity).
 
 ### Guard rails
 Guard rails are checked **before** generation. Invalid inputs never reach the rule engine.

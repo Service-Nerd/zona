@@ -26,6 +26,28 @@ export const GENERATION_CONFIG = {
   MAX_WEEKLY_VOLUME_INCREASE_PCT: 10,
   RETURNING_RUNNER_ALLOWANCE_PCT: 15,
   RETURNING_RUNNER_GRACE_WEEKS:    3,
+  // CoachingPrinciples §50 (plausibility, amended 2026-08-06) — a supplied
+  // max_hr deviating from the Tanaka age estimate by more than this is not
+  // trusted; the engine falls back to the estimate and says so. §55 rejects the
+  // physiologically impossible; this rejects the physiologically possible but
+  // almost certainly wrong. Source-independent by design.
+  MAX_HR_PLAUSIBILITY_DEVIATION_PCT: 15,
+
+  // CoachingPrinciples §78 — recalibration weeks prescribe a 5K time trial.
+  // The session converts the deload week's midweek easy run (same distance, so
+  // weekly volume is unchanged) into warm-up / 5K hard / cool-down. `min_slot_km`
+  // is the shortest easy run that can honestly contain that structure — below
+  // it, no conversion happens and the week is not listed as a recalibration week.
+  RECALIBRATION_TIME_TRIAL: {
+    distance_km: 5,
+    min_slot_km: 7,   // 5K + ~1km warm-up + ~1km cool-down
+  },
+
+  // CoachingPrinciples §64 — "six-on / one-off is the upper limit for non-elite
+  // runners; seven-on is overreaching dressed as commitment." A runner who
+  // selects 7 available days still gets 6 training days and one rest day.
+  MAX_TRAINING_DAYS_PER_WEEK: 6,
+
   RECOVERY_WEEK_FREQUENCY_STANDARD: 4,
   RECOVERY_WEEK_FREQUENCY_MASTERS:  3,
   MASTERS_AGE_THRESHOLD: 45,
@@ -240,10 +262,22 @@ export const GENERATION_CONFIG = {
   // without adding race-day fatigue. For HM/marathon, an additional easy
   // mid-week run prevents the taper from going too deep.
   RACE_WEEK_SHAKEOUT_MAX_MINS: 35,
+  // §30 (amended, F14) — the two shakeouts do different jobs. The earlier one
+  // keeps the legs turning over and carries the strides; the final one is
+  // minimal, because the last run before a race should leave the runner
+  // wondering whether it was enough. Index-aligned with
+  // RACE_WEEK_SHAKEOUT_DAYS_BEFORE_RACE.
+  RACE_WEEK_SHAKEOUT_KM: [5, 3],
   RACE_WEEK_EASY_KM: {
     HM:       7,    // 6–8 km easy on a non-shakeout day
     MARATHON: 9,    // 8–10 km
   },
+  // CoachingPrinciples §77 — shakeout spacing expressed as days BEFORE the race,
+  // so it generalises to any race weekday. [5, 3] reproduces the historical
+  // Tue/Thu placement for a Sunday race while remaining correct for a Wednesday
+  // one. Offsets landing outside race week, or on a blocked day, are skipped —
+  // never relocated to after the race.
+  RACE_WEEK_SHAKEOUT_DAYS_BEFORE_RACE: [5, 3],
 
   // ── Fresh-from-layoff detection (CoachingPrinciples §29) ───────────────────
   // If weeks_at_current_volume is set and below this threshold, the runner is
@@ -317,6 +351,21 @@ export const GENERATION_CONFIG = {
     experienced:  2,
   },
 
+  // Fitness classification (D2, 2026-08-06). VDOT measures what a runner can
+  // currently RACE; volume measures what they can currently ABSORB. Both are
+  // consulted — see assessFitness(). On disagreement the lower level drives
+  // structure and the higher drives the intensity allowance.
+  FITNESS_VDOT_THRESHOLDS: {
+    intermediate_min: 35,   // vdot < this → beginner
+    experienced_min:  50,   // vdot > this → experienced
+  },
+  FITNESS_VOLUME_THRESHOLDS: {
+    beginner_max_weekly_km:    20,   // below this weekly volume → beginner
+    beginner_max_long_km:       8,   // or below this longest run → beginner
+    experienced_min_weekly_km: 55,
+    experienced_min_long_km:   20,
+  },
+
   // ── Long-run rules (CoachingPrinciples §9) ──────────────────────────────────
   // Phase-aware fraction of weekly volume.
   LONG_RUN_PCT_OF_WEEKLY_VOLUME: {
@@ -365,6 +414,12 @@ export const GENERATION_CONFIG = {
     HM:       0.85,
     MARATHON: 0.75,
   },
+  // CoachingPrinciples §80 (D3, 2026-08-06) — finish-goal HM/marathon peak long
+  // run as a fraction of projected race DURATION, not distance. A first-timer is
+  // time-on-feet limited, not aerobically limited; the number that matters to
+  // them is how long they will be moving, and run-walk counts. Subject to the
+  // LONG_RUN_CAP_MINUTES ceiling, which still wins.
+  FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION: 0.70,
   PEAK_LR_RATIO_TARGET: {
     HM:       0.90,
     MARATHON: 0.80,

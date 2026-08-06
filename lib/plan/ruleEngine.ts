@@ -176,15 +176,59 @@ function tanakaMaxHR(age: number): number {
 // ─── Fitness level derivation ─────────────────────────────────────────────────
 // Uses VDOT when available (more accurate). Falls back to volume-based proxy.
 
-function deriveFitnessLevel(weeklyKm: number, longestKm: number, vdot?: number): FitnessLevel {
-  if (vdot !== undefined && Number.isFinite(vdot)) {
-    if (vdot < 35) return 'beginner'
-    if (vdot <= 50) return 'intermediate'
-    return 'experienced'
-  }
-  if (weeklyKm < 20 || longestKm < 8) return 'beginner'
-  if (weeklyKm >= 55 && longestKm >= 20) return 'experienced'
+const FITNESS_RANK: Record<FitnessLevel, number> = { beginner: 0, intermediate: 1, experienced: 2 }
+
+function fitnessFromVdot(vdot: number): FitnessLevel {
+  const t = GENERATION_CONFIG.FITNESS_VDOT_THRESHOLDS
+  if (vdot < t.intermediate_min) return 'beginner'
+  if (vdot <= t.experienced_min) return 'intermediate'
+  return 'experienced'
+}
+
+function fitnessFromVolume(weeklyKm: number, longestKm: number): FitnessLevel {
+  const t = GENERATION_CONFIG.FITNESS_VOLUME_THRESHOLDS
+  if (weeklyKm < t.beginner_max_weekly_km || longestKm < t.beginner_max_long_km) return 'beginner'
+  if (weeklyKm >= t.experienced_min_weekly_km && longestKm >= t.experienced_min_long_km) return 'experienced'
   return 'intermediate'
+}
+
+/**
+ * CoachingPrinciples §? (D2, 2026-08-06) — VDOT and volume answer different
+ * questions and must both be consulted.
+ *
+ * VDOT measures what a runner can currently RACE. Volume measures what they can
+ * currently ABSORB. The first organic user ran a 29:00 5K (VDOT 30.8 →
+ * "beginner") while running 30 km/week with a 12 km long run (volume →
+ * "intermediate"). Classifying from VDOT alone made them a beginner, and
+ * `QUALITY_SESSIONS_PER_WEEK_MAX.beginner = 0` then removed every quality
+ * session from a 14-week half-marathon plan. One threshold, cascading into the
+ * whole plan shape.
+ *
+ * On disagreement, take the LOWER level for structure (volume, long-run caps —
+ * the things that hurt people when overestimated) and the HIGHER level for the
+ * intensity allowance (the thing that under-trains them when underestimated).
+ */
+interface FitnessAssessment {
+  /** Drives volume, peak km, long-run caps. Conservative on disagreement. */
+  structural: FitnessLevel
+  /** Drives QUALITY_SESSIONS_PER_WEEK_MAX only. Generous on disagreement. */
+  intensity: FitnessLevel
+  /** True when the two signals disagreed — surfaced in meta for honesty. */
+  signalsDisagree: boolean
+}
+
+function assessFitness(weeklyKm: number, longestKm: number, vdot?: number): FitnessAssessment {
+  const byVolume = fitnessFromVolume(weeklyKm, longestKm)
+  if (vdot === undefined || !Number.isFinite(vdot)) {
+    return { structural: byVolume, intensity: byVolume, signalsDisagree: false }
+  }
+  const byVdot = fitnessFromVdot(vdot)
+  if (byVdot === byVolume) {
+    return { structural: byVdot, intensity: byVdot, signalsDisagree: false }
+  }
+  const lower  = FITNESS_RANK[byVdot] < FITNESS_RANK[byVolume] ? byVdot : byVolume
+  const higher = FITNESS_RANK[byVdot] > FITNESS_RANK[byVolume] ? byVdot : byVolume
+  return { structural: lower, intensity: higher, signalsDisagree: true }
 }
 
 // ─── Zone computation ─────────────────────────────────────────────────────────
@@ -240,6 +284,8 @@ type HRZoneMethod =
   | 'karvonen_estimated_max'      // only resting provided; max estimated from age
   | 'percent_of_max'              // only max provided
   | 'percent_of_estimated_max'    // neither provided; max estimated from age
+  | 'observed_max'                // max came from device history, not a measured effort (§50)
+  | 'age_estimate_implausible_input'  // supplied max rejected as implausible (§50)
 
 interface HRZoneFallbackResult {
   zones: ZoneTargets
@@ -255,6 +301,49 @@ function buildHRZonesWithFallback(input: GeneratorInput): HRZoneFallbackResult {
   // as "missing" — the form-default sentinel rejection happens upstream.
   const hasMax = input.max_hr !== undefined && input.max_hr !== null && input.max_hr > 0
   const hasResting = input.resting_hr !== undefined && input.resting_hr !== null && input.resting_hr > 0
+
+  // CoachingPrinciples §50 (plausibility, GEN-FIX-05) — §55 rejects the
+  // physiologically impossible; this rejects the physiologically possible but
+  // almost certainly wrong for THIS runner. Source-independent on purpose: a
+  // value arriving via user_settings carries no provenance, and the harm is
+  // identical whichever way it got here.
+  const tanakaMax = tanakaMaxHR(input.age)
+  const tolerance = GENERATION_CONFIG.MAX_HR_PLAUSIBILITY_DEVIATION_PCT / 100
+  const implausibleMax = hasMax
+    && Math.abs(input.max_hr! - tanakaMax) / tanakaMax > tolerance
+
+  if (implausibleMax) {
+    // Fall back to the age estimate and say so. An implausible max poisons every
+    // HR target for the plan's whole duration; the cost of over-riding a genuine
+    // outlier is one note and a Profile edit.
+    const zones = hasResting ? computeZones(tanakaMax, input.resting_hr!) : computeZones(tanakaMax)
+    return {
+      zones,
+      derived_max: tanakaMax,
+      method: 'age_estimate_implausible_input',
+      estimated_max: tanakaMax,
+      // The two directions have different likely causes, so they get different
+      // explanations. Low is the common one: a device's highest *recorded* rate
+      // is a floor for anyone who has never run flat out wearing it.
+      assumption_note: input.max_hr! < tanakaMax
+        ? `The max HR on file (${input.max_hr} bpm) is well below the typical range for age ${input.age} — usually a sign it was read from recorded activity rather than a genuine maximal effort. Zones use the age estimate of ${tanakaMax} bpm instead (Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). If ${input.max_hr} really is your max, set it in Profile and we'll use it.`
+        : `The max HR on file (${input.max_hr} bpm) is well above the typical range for age ${input.age} — worth double-checking it wasn't a stray reading. Zones use the age estimate of ${tanakaMax} bpm instead (Zone 2 ceiling ≈ ${zones.zone2Ceiling} bpm). If ${input.max_hr} really is your max, set it in Profile and we'll use it.`,
+    }
+  }
+
+  // Device-observed max within tolerance: usable, but still an inference. The
+  // old hierarchy emitted no note here at all, so the runner had no way to know
+  // their zones rested on an assumption.
+  if (hasMax && input.max_hr_source === 'observed') {
+    const max = input.max_hr!
+    const zones = hasResting ? computeZones(max, input.resting_hr!) : computeZones(max)
+    return {
+      zones,
+      derived_max: max,
+      method: 'observed_max',
+      assumption_note: `Max HR (${max} bpm) is the highest your device has recorded, not a measured maximum — if you have never run flat out wearing it, your true max is likely higher. The ${GENERATION_CONFIG.RECALIBRATION_TIME_TRIAL.distance_km}K time trial in your recalibration weeks will sharpen this.`,
+    }
+  }
 
   if (hasMax && hasResting) {
     const max = input.max_hr!
@@ -450,7 +539,30 @@ function buildVolumeSequence(
     if (volumes[i] <= volumes[i - 1]) continue
 
     const cap = 1 + allowanceForWeek(weekN) / 100
-    const maxAllowed = Math.round(volumes[i - 1] * cap)
+    let maxAllowed = Math.round(volumes[i - 1] * cap)
+
+    // CoachingPrinciples §2 (amended 2026-08-06 / D1) — the cap does NOT apply
+    // to a post-deload bounceback. Previously it did, and the arithmetic was
+    // fatal: a deload drops to 70%, so the next week could rise only 10% above
+    // THAT — 77% of where the runner already was. Every deload ratcheted the
+    // ceiling permanently down, making progressive overload arithmetically
+    // impossible in any plan containing a recovery week. The first organic
+    // user's 14-week plan peaked in week 3, in the base phase.
+    //
+    // Returning to a volume held two weeks ago is not a spike — chronic load
+    // has not moved. The bounceback may return to the pre-deload level, and no
+    // further: growth resumes from there next week.
+    const prevWeekN = weekN - 1
+    const prevPhase = getPhaseForWeek(prevWeekN, phases)
+    const prevWasDeload = prevWeekN >= 1
+      && prevWeekN % recoveryFreq === 0
+      && prevPhase !== 'peak'
+      && prevPhase !== 'taper'
+    if (prevWasDeload) {
+      const preDeload = volumes[i - 2] ?? volumes[i - 1]
+      maxAllowed = Math.max(maxAllowed, preDeload)
+    }
+
     if (volumes[i] > maxAllowed) {
       volumes[i] = maxAllowed
     }
@@ -765,21 +877,97 @@ function strengthSession(weekN: number, day: Day): Session {
   }
 }
 
-function raceSession(weekN: number, day: Day, distKm: number, raceName: string): Session {
+function raceSession(weekN: number, day: Day, distKm: number, raceName: string | null): Session {
   return {
     id: `w${weekN}-${day}`,
-    type: 'race', label: `Race — ${raceName}`, detail: null,
+    // F6 — "Race — Target Race" is a placeholder leaking into the plan. When no
+    // name was given, say the true thing instead of inventing one.
+    type: 'race', label: raceName ? `Race — ${raceName}` : `Race day — ${distKm} km`, detail: null,
     distance_km: distKm, primary_metric: 'distance',
     coach_notes: ['Start slower than feels right. First 5 km at Zone 2.', 'No new shoes, no new food.'],
   }
 }
 
-function shakeoutSession(weekN: number, day: Day, zones: ZoneTargets, pace: PaceGuide): Session {
-  const session = easySession(weekN, day, 4, 'distance', zones, pace, 'Easy shakeout', 2,
-    ['Short and relaxed. Wake the legs, nothing more.'])
+/**
+ * §30 (amended, F14) — the two race-week shakeouts are not the same session.
+ * They were emitted identically (4 km, same label, differing only by a stride
+ * note), which reads as a copy-paste rather than a plan.
+ *
+ * `slot` 0 is the earlier one: longer, carries the strides. `slot` 1 is the
+ * final run before the race: minimal, and meant to leave the runner wondering
+ * whether it was enough.
+ */
+function shakeoutSession(
+  weekN: number, day: Day, zones: ZoneTargets, pace: PaceGuide, slot: 0 | 1 = 0,
+): Session {
+  const km = GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_KM[slot]
+    ?? GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_KM[0]
+  const label = slot === 0 ? 'Easy shakeout' : 'Pre-race shakeout'
+  const note = slot === 0
+    ? 'Short and relaxed. Wake the legs, nothing more.'
+    : 'The last one before race day. Short on purpose — if it feels too easy, that is the point.'
+  const session = easySession(weekN, day, km, 'distance', zones, pace, label, 2, [note])
   session.zone = 'Zone 1'
   session.hr_target = zones.shakeoutHR
   return session
+}
+
+/**
+ * CoachingPrinciples §78 — convert a deload week's midweek easy run into a 5K
+ * time trial. Converts rather than adds: distance and duration are preserved, so
+ * weekly volume is untouched and the session reads as what a time trial actually
+ * is — warm up, run 5K hard, cool down.
+ *
+ * Typed `hard`, not `quality`, deliberately. `hard` already maps to Z4-5 in
+ * zoneRules (the correct band for a maximal effort, so the coaching pipeline
+ * doesn't flag the runner for exceeding a Z3 ceiling they were never given), and
+ * INV-PLAN-QUALITY-PER-WEEK counts only `quality` — so a beginner on a
+ * zero-quality plan still gets this. A benchmark is a measurement, not a
+ * training stimulus.
+ *
+ * Returns the day converted, or null when no slot is long enough to hold a real
+ * 5K plus warm-up and cool-down. The caller must then NOT list the week as a
+ * recalibration week — metadata follows the plan, never the intent.
+ */
+function applyRecalibrationTimeTrial(
+  sessions: Partial<Record<Day, Session>>,
+  longDay: Day,
+  zones: ZoneTargets,
+  pace: PaceGuide,
+): Day | null {
+  const cfg = GENERATION_CONFIG.RECALIBRATION_TIME_TRIAL
+  const candidates = (Object.keys(sessions) as Day[])
+    .filter(d => d !== longDay)
+    .filter(d => {
+      const s = sessions[d]
+      if (!s || s.type !== 'easy') return false
+      const km = s.distance_km ?? (s.duration_mins ? s.duration_mins / pace.minPerKmEasy : 0)
+      return km >= cfg.min_slot_km
+    })
+    // Furthest from the long run — freshest legs, and it keeps the hard effort
+    // and the week's longest run apart (§7 spacing intent).
+    .sort((a, b) => dayGap(b, longDay) - dayGap(a, longDay))
+
+  const day = candidates[0]
+  if (!day) return null
+
+  const s = sessions[day]!
+  s.type = 'hard'
+  s.label = `${cfg.distance_km}K time trial`
+  s.zone = 'Zone 4–5'
+  s.hr_target = zones.intervalsHR
+  s.rpe_target = 9
+  // A time trial has NO pace target — prescribing one would defeat the point.
+  // The session exists to discover the runner's current pace, not to rehearse
+  // the stale one. Leaving the inherited easy band here would read as "run as
+  // hard as you can, at your easy pace".
+  delete s.pace_target
+  s.coach_notes = [
+    `Warm up easy for 10 minutes, then ${cfg.distance_km} km as hard as you can hold. Cool down easy.`,
+    'This is a measurement, not a session. The result resets your zones and paces for the next block.',
+    'A parkrun counts. So does a solo effort — just make it honest.',
+  ]
+  return day
 }
 
 // ─── Injury adjustments ───────────────────────────────────────────────────────
@@ -945,14 +1133,26 @@ function buildWeekSessions(
   fitness: FitnessLevel,
   goalPace: string | null | undefined,
   totalWeeks: number,
+  // D2 — the level that governs INTENSITY. Equals `fitness` unless the VDOT and
+  // volume signals disagreed, in which case `fitness` is the lower (structure:
+  // volume, caps) and this is the higher (intensity allowance). See
+  // assessFitness().
+  intensityFitness: FitnessLevel = fitness,
 ): Partial<Record<Day, Session>> {
   const blocked = blockedDays(input)
   const distKey = raceDistanceKey(input.race_distance_km)
 
   if (isRaceWeek) {
     const sessions: Partial<Record<Day, Session>> = {}
-    const raceName = input.race_name ?? 'Target Race'
-    const raceDay = firstAvailableDay(['sun', 'sat', 'fri', 'thu', 'wed'], blocked) ?? 'sun'
+    const raceName = input.race_name ?? null
+    // CoachingPrinciples §77 — the race sits on the ACTUAL weekday of race_date.
+    // It deliberately ignores `days_cannot_train`: the race is an external fixed
+    // event, not a training session, and a runner who cannot train on Wednesdays
+    // can still race on one. Every other session in this block does respect it.
+    const raceDay = DAY_ORDER[(parseDateLocal(input.race_date).getDay() + 6) % 7]
+    const raceDayIdx = DAY_INDEX[raceDay]
+    // §77 — nothing in race week may fall after the race.
+    const beforeRace = (d: Day): boolean => DAY_INDEX[d] < raceDayIdx
     sessions[raceDay] = raceSession(weekN, raceDay, input.race_distance_km, raceName)
 
     // CoachingPrinciples §30 — race-week shakeouts capped at
@@ -968,18 +1168,31 @@ function buildWeekSessions(
       return s
     }
 
-    const shakeout1 = firstAvailableDay(['tue', 'wed', 'mon'], blocked, [raceDay])
+    // §77 — shakeouts are spaced in days BEFORE the race, so the placement
+    // generalises to any race weekday. Offsets landing outside race week (a race
+    // early in the week) or on a blocked day are skipped, never relocated to
+    // after the race — the preceding taper week carries that load instead.
+    const shakeoutDays: Day[] = []
+    for (const daysBefore of GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_DAYS_BEFORE_RACE) {
+      const idx = raceDayIdx - daysBefore
+      if (idx < 0) continue                    // before race week began
+      const d = DAY_ORDER[idx]
+      if (blocked.has(d) || shakeoutDays.includes(d)) continue
+      shakeoutDays.push(d)
+    }
+
+    const [shakeout1, shakeout2] = shakeoutDays
+
     if (shakeout1) {
-      const s = enforceCap(shakeoutSession(weekN, shakeout1, zones, pace))
+      const s = enforceCap(shakeoutSession(weekN, shakeout1, zones, pace, 0))
       const e0 = s.coach_notes?.[0]
       const strideNote = '4×100m strides at 5K effort, full recovery between.'
       s.coach_notes = e0 ? [e0, strideNote] : [strideNote]
       sessions[shakeout1] = s
     }
 
-    const shakeout2 = firstAvailableDay(['thu', 'fri'], blocked, [raceDay, shakeout1 ?? raceDay])
     if (shakeout2 && input.days_available >= 3) {
-      sessions[shakeout2] = enforceCap(shakeoutSession(weekN, shakeout2, zones, pace))
+      sessions[shakeout2] = enforceCap(shakeoutSession(weekN, shakeout2, zones, pace, 1))
     }
 
     // CoachingPrinciples §39 — race-week mid-week easy for HM/marathon.
@@ -990,7 +1203,14 @@ function buildWeekSessions(
       const used: Day[] = [raceDay]
       if (shakeout1) used.push(shakeout1)
       if (sessions[shakeout2 as Day]) used.push(shakeout2 as Day)
-      const easyDay = firstAvailableDay(['sat', 'fri', 'wed', 'mon', 'tue', 'thu'], blocked, used)
+      // Preference order inherited unchanged from the Sunday-race case; §77 adds
+      // the `beforeRace` filter so it stays correct for a midweek race. (Whether
+      // an easy run the day before a race is good coaching is a separate
+      // question — deliberately not relitigated here.)
+      const easyDay = firstAvailableDay(
+        (['sat', 'fri', 'wed', 'mon', 'tue', 'thu'] as Day[]).filter(beforeRace),
+        blocked, used,
+      )
       if (easyDay) {
         sessions[easyDay] = easySession(weekN, easyDay, raceWeekEasyKm, 'distance', zones, pace,
           'Race-week easy', 4,
@@ -1002,12 +1222,19 @@ function buildWeekSessions(
   }
 
   // ── Determine which session types to include ──────────────────────────────
-  const daysAvailable = Math.min(input.days_available, 7 - blocked.size)
+  // CoachingPrinciples §64 — cap at six training days so every week keeps a rest
+  // day. A runner selecting 7 available days is telling us their schedule, not
+  // asking for seven runs. Enforced by INV-PLAN-WEEK-HAS-REST-DAY.
+  const daysAvailable = Math.min(
+    input.days_available,
+    7 - blocked.size,
+    GENERATION_CONFIG.MAX_TRAINING_DAYS_PER_WEEK,
+  )
   // distKey is hoisted above the race-week branch for §39 use.
 
   // Quality count for this week — config-driven (CoachingPrinciples §1, §6, §8).
   // Taper retains intensity per TAPER_QUALITY_PER_WEEK[distKey].
-  const fitnessCeiling = GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX[fitness]
+  const fitnessCeiling = GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX[intensityFitness]
   let plannedQuality = 0
   if (phase === 'taper') {
     const taperPhase = phases.find(p => p.name === 'taper')!
@@ -1015,7 +1242,7 @@ function buildWeekSessions(
     const arr = GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey]
     plannedQuality = arr[Math.min(taperIdx, arr.length - 1)] ?? 0
   } else if (phase === 'peak' && !isDeload) {
-    plannedQuality = fitness === 'experienced' ? 2 : 1
+    plannedQuality = intensityFitness === 'experienced' ? 2 : 1
   } else if (phase === 'build' && !isDeload) {
     plannedQuality = 1
   }
@@ -1106,6 +1333,32 @@ function buildWeekSessions(
     if (longKm < lrFloorPrinciple) longKm = lrFloorPrinciple
   }
 
+  // CoachingPrinciples §80 (D3) — finish-goal HM/marathon long-run floor,
+  // expressed in DURATION. §45's ≥85%-of-race-distance floor applies only to
+  // time-targeted plans, so a first-timer had no floor at all: the first organic
+  // user peaked at 1:46 against a ~2:45 projected finish (64%). §45's own
+  // rationale — "the fatigue profile of running for ~2 hours is fundamentally
+  // different" — applies more to them, not less.
+  //
+  // Duration, not distance, because a first-timer is time-on-feet limited rather
+  // than aerobically limited, and because the cap that may override this is
+  // itself in minutes. Projected finish uses easy pace: a finish-goal runner
+  // will not race at threshold, and run-walk is expected.
+  // The run-walk permission attaches to every finish-goal peak long run, not
+  // only the ones this floor happened to lift — a first-timer facing a two-hour
+  // effort needs it either way.
+  const isFinishGoalPeakLongRun = phase === 'peak'
+    && !isDeload
+    && input.goal === 'finish'
+    && (distKey === 'HM' || distKey === 'MARATHON')
+  if (isFinishGoalPeakLongRun
+      && pace.minPerKmEasy > 0) {
+    const projectedRaceMins = input.race_distance_km * pace.minPerKmEasy
+    const floorMins = projectedRaceMins * GENERATION_CONFIG.FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION
+    const floorKm = floorMins / pace.minPerKmEasy
+    if (longKm < floorKm) longKm = floorKm
+  }
+
   longKm = applyLongRunCap(longKm, pace.minPerKmEasy, input)
 
   // Round to DISTANCE_ROUNDING_PRECISION_KM. 0.5 km = whole-number-ish display
@@ -1178,6 +1431,17 @@ function buildWeekSessions(
       }
     }
   }
+  // §80 — when the finish-goal floor lifted this long run, say why, and make
+  // run-walk explicit. "Two and a half hours of moving" is a different
+  // psychological object from "18 kilometres", and only one of them is
+  // achievable for a first-timer. The instruction is time on feet, not pace.
+  if (isFinishGoalPeakLongRun && sessions[longDay]) {
+    appendCoachNote(
+      sessions[longDay]!,
+      'Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.',
+    )
+  }
+
   used.push(longDay)
 
   // ── 2. Quality session(s) ─────────────────────────────────────────────────
@@ -1233,12 +1497,12 @@ function buildWeekSessions(
           && r.distance_eligibility.includes(distKey)
           && (tier !== 'free' || r.is_free_tier)
         ) ?? selectCatalogueSession({
-          catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 0, preferredCategory,
+          catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
           excludeHillSessions,
         })
       } else {
         cat1 = selectCatalogueSession({
-          catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 0, preferredCategory,
+          catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
           excludeHillSessions,
         })
       }
@@ -1344,6 +1608,15 @@ function buildWeekSessions(
     used.push(best)
   }
 
+  // ── 4a. Recalibration time trial (CoachingPrinciples §78) ─────────────────
+  // Deload weeks in base/build carry the benchmark the week's theme has always
+  // promised. Runs before strides so the converted session is no longer type
+  // 'easy' and can't also pick up a stride note.
+  const isRecalibrationWeek = isDeload && (phase === 'base' || phase === 'build')
+  if (isRecalibrationWeek) {
+    applyRecalibrationTimeTrial(sessions, longDay, zones, pace)
+  }
+
   // ── 4b. Strides on a midweek easy run (CoachingPrinciples §28) ────────────
   // From W3 onwards (skip race week and deloads), pick a midweek easy session
   // that is NOT the day before the long run, NOT the day after a quality, and
@@ -1411,27 +1684,159 @@ function buildWeekSessions(
 
 // ─── Week metadata ────────────────────────────────────────────────────────────
 
-function weekLabel(phase: PhaseType, weekN: number, buildWeekN: number, isDeload: boolean): string {
-  if (isDeload) return `${capitalise(phase)} — recovery week`
-  const labels: Record<PhaseType, string[]> = {
-    base:  ['Base — easy start', 'Base — building consistency', 'Base — aerobic development', 'Base — aerobic discipline'],
-    build: ['Build — first quality session', 'Build — extending the work', 'Build — raising the ceiling', 'Build — consistency'],
-    peak:  ['Peak — highest volume', 'Peak — second peak week', 'Peak — sharpening'],
-    taper: ['Taper — trust the work', 'Taper — sharpening', 'Taper — final cut'],
-  }
-  const options = labels[phase]
-  return options[Math.min(buildWeekN - 1, options.length - 1)]
+/**
+ * What a week actually contains. CoachingPrinciples §27 — copy is chosen from
+ * this, never from the phase name alone.
+ *
+ * The 2026-08-06 incident (analysis F4): `weekLabel` and `weekTheme` were pure
+ * functions of `(phase, index)` and never saw `sessions`, so a beginner — for
+ * whom QUALITY_SESSIONS_PER_WEEK_MAX is 0 by design — was told "Build — first
+ * quality session" over three easy runs, for fourteen weeks. The §27 guards
+ * bolted onto the call site patched the peak and taper symptoms and left the
+ * build case, because they were written as string exceptions rather than as a
+ * rule about where copy comes from.
+ */
+interface WeekContent {
+  phase:        PhaseType
+  phaseWeekN:   number   // 1-indexed within the phase
+  isDeload:     boolean
+  isRaceWeek:   boolean
+  hasQuality:   boolean  // a prescribed quality/intervals session
+  hasBenchmark: boolean  // §78 recalibration time trial
+  isVolumePeak: boolean  // highest weekly_km of any non-deload week so far
 }
 
-function weekTheme(phase: PhaseType, isDeload: boolean): string {
-  if (isDeload) return 'Adaptation happens in recovery. This week counts.'
-  const themes: Record<PhaseType, string> = {
-    base:  'HR discipline. Slower than feels right. That is correct.',
-    build: 'One quality session. Everything else stays easy.',
-    peak:  'This is where the fitness is built. It will feel hard. That is correct.',
-    taper: 'Volume drops. Intensity stays. Trust the work you have done.',
+function summariseWeek(
+  sessions: Partial<Record<Day, Session>>,
+  phase: PhaseType,
+  phaseWeekN: number,
+  isDeload: boolean,
+  isRaceWeek: boolean,
+  isVolumePeak: boolean,
+): WeekContent {
+  const values = Object.values(sessions)
+  return {
+    phase, phaseWeekN, isDeload, isRaceWeek, isVolumePeak,
+    hasQuality:   values.some(s => s?.type === 'quality' || s?.type === 'intervals' || s?.type === 'tempo'),
+    hasBenchmark: values.some(s => s?.type === 'hard'),
   }
-  return themes[phase]
+}
+
+// Copy is paired with the content that makes it true. Every string promising
+// intensity lives only in a `withQuality` list; every list is safe for any week
+// that satisfies its key. Adding copy here means answering "what must be in the
+// week for this to be honest?" — which is the whole point.
+const WEEK_LABELS: Record<PhaseType, { withQuality: string[]; easyOnly: string[] }> = {
+  base: {
+    withQuality: ['Base — first quality session', 'Base — adding a little sharpness'],
+    easyOnly:    ['Base — easy start', 'Base — building consistency', 'Base — aerobic development', 'Base — aerobic discipline'],
+  },
+  build: {
+    withQuality: ['Build — first quality session', 'Build — extending the work', 'Build — raising the ceiling', 'Build — holding the work'],
+    easyOnly:    ['Build — building the engine', 'Build — extending the long run', 'Build — aerobic volume', 'Build — consistency'],
+  },
+  peak: {
+    withQuality: ['Peak — highest volume', 'Peak — second peak week', 'Peak — sharpening'],
+    easyOnly:    ['Peak — consistency', 'Peak — holding the volume', 'Peak — steady'],
+  },
+  taper: {
+    withQuality: ['Taper — trust the work', 'Taper — sharpening', 'Taper — final cut'],
+    easyOnly:    ['Taper — trust the work', 'Taper — winding down', 'Taper — final cut'],
+  },
+}
+
+function weekLabel(c: WeekContent): string {
+  if (c.isRaceWeek) return 'Race week'
+  if (c.isDeload) {
+    return c.hasBenchmark ? `${capitalise(c.phase)} — recovery + benchmark` : `${capitalise(c.phase)} — recovery week`
+  }
+  // "highest volume" is a claim about the plan, not just the week.
+  if (c.phase === 'peak' && !c.isVolumePeak) {
+    const opts = WEEK_LABELS.peak.easyOnly
+    return opts[Math.min(c.phaseWeekN - 1, opts.length - 1)]
+  }
+  const opts = c.hasQuality ? WEEK_LABELS[c.phase].withQuality : WEEK_LABELS[c.phase].easyOnly
+  return opts[Math.min(c.phaseWeekN - 1, opts.length - 1)]
+}
+
+function weekTheme(c: WeekContent): string {
+  if (c.isRaceWeek) return 'The work is done. Arrive rested.'
+  if (c.isDeload) {
+    return c.hasBenchmark
+      ? 'Deload week. One hard effort in the middle — your result resets the zones for the next block.'
+      : 'Adaptation happens in recovery. This week counts.'
+  }
+  switch (c.phase) {
+    case 'base':
+      return 'HR discipline. Slower than feels right. That is correct.'
+    case 'build':
+      return c.hasQuality
+        ? 'One quality session. Everything else stays easy.'
+        : 'Aerobic volume. The work is showing up, not going hard.'
+    case 'peak':
+      if (c.hasQuality && c.isVolumePeak) return 'This is where the fitness is built. It will feel hard. That is correct.'
+      return 'Consistency. The work is the volume.'
+    case 'taper':
+      return c.hasQuality
+        ? 'Volume drops. Intensity stays. Trust the work you have done.'
+        : 'Volume drops. Trust the work you have done.'
+  }
+}
+
+/**
+ * CoachingPrinciples §27 — re-derive a week's copy when the sessions beneath it
+ * have changed and the existing copy has become false.
+ *
+ * The reshaper (R20) downgrades quality sessions to easy — "aerobic efficiency
+ * trending down" — and never touched `label` / `theme`, so a week could keep
+ * "Build — first quality session" over four easy runs. That is F4 recurring
+ * through the reshape path rather than at generation (analysis open-Q4).
+ *
+ * Deliberately surgical: it rewrites ONLY when the current copy claims something
+ * the week no longer contains. Enriched copy is Kit's voice and a paid
+ * deliverable — blanket-refreshing every reshaped week would silently revert
+ * trial/paid users to rule-engine strings. A lie gets replaced; a voice does not.
+ *
+ * Returns true when the copy was rewritten.
+ */
+export function refreshWeekCopyIfStale(plan: Plan, weekN: number): boolean {
+  const idx = plan.weeks.findIndex(w => w.n === weekN)
+  if (idx < 0) return false
+  const w = plan.weeks[idx]
+  const phase = w.phase
+  // Foundation and maintenance weeks are generated elsewhere with their own copy.
+  if (!phase || phase === 'foundation' || phase === 'maintenance_restoration' || phase === 'maintenance_base') {
+    return false
+  }
+
+  const hasIntensity = Object.values(w.sessions).some(
+    x => x?.type === 'quality' || x?.type === 'intervals' || x?.type === 'tempo')
+  const hasBenchmark = Object.values(w.sessions).some(x => x?.type === 'hard')
+  const copy = `${w.label ?? ''} | ${w.theme ?? ''}`.toLowerCase()
+
+  const claimsIntensity = /quality|threshold|tempo|interval|vo2|sharpen|raising the ceiling|intensity stays|feels? hard/.test(copy)
+  const claimsBenchmark = /benchmark|time trial/.test(copy)
+
+  const copyIsStale = (claimsIntensity && !hasIntensity && !hasBenchmark)
+    || (claimsBenchmark && !hasBenchmark)
+  if (!copyIsStale) return false
+
+  let phaseWeekN = 0
+  for (let i = 0; i <= idx; i++) if (plan.weeks[i].phase === phase) phaseWeekN++
+
+  let prevNonDeloadKm = 0
+  for (let j = idx - 1; j >= 0; j--) {
+    if (plan.weeks[j].type !== 'deload') { prevNonDeloadKm = plan.weeks[j].weekly_km; break }
+  }
+  const isVolumePeak = plan.meta.volume_profile !== 'maintenance' && w.weekly_km > prevNonDeloadKm
+
+  const content = summariseWeek(
+    w.sessions, phase as PhaseType, phaseWeekN,
+    w.type === 'deload', w.type === 'race', isVolumePeak,
+  )
+  w.label = weekLabel(content)
+  w.theme = weekTheme(content)
+  return true
 }
 
 function capitalise(s: string): string {
@@ -2148,15 +2553,32 @@ function applyV7TaperRationale(
   const target = firstActiveSession(weeks[firstTaperIdx])
   if (!target) return
 
-  let note: string
-  if (raceDistanceKm <= 21) {
-    note = 'One week taper is appropriate for a short race. More would risk arriving flat. Trust the work.'
-  } else if (raceDistanceKm <= 50) {
-    note = 'Two week taper allows adaptation to consolidate without losing sharpness. Intensity stays, volume drops.'
+  // analysis F9 — the note used to be chosen from race DISTANCE while the taper
+  // length came from TAPER_QUALITY_PER_WEEK[distKey].length. Two owners for one
+  // fact (D-08), so a 21.1 km race got a three-week taper described as "two
+  // week taper". Count the weeks that actually exist.
+  const taperWeeks = weeks.filter(w => w.phase === 'taper').length
+  const WORDS = ['', 'One', 'Two', 'Three', 'Four', 'Five']
+  const word = WORDS[taperWeeks] ?? String(taperWeeks)
+
+  // "Intensity stays" is only true if the taper actually prescribes any.
+  const taperHasQuality = weeks
+    .filter(w => w.phase === 'taper')
+    .some(w => Object.values(w.sessions).some(
+      s => s?.type === 'quality' || s?.type === 'intervals' || s?.type === 'tempo',
+    ))
+
+  let rationale: string
+  if (taperWeeks <= 1) {
+    rationale = 'More would risk arriving flat.'
+  } else if (raceDistanceKm > 50) {
+    rationale = 'Your aerobic base is what carries you — arriving rested matters more than last-minute fitness.'
   } else {
-    note = 'Three week taper. Your aerobic base is what carries you — arriving rested matters more than last-minute fitness.'
+    rationale = 'Long enough for adaptation to consolidate without losing sharpness.'
   }
-  appendCoachNote(target, note)
+
+  const closer = taperHasQuality ? ' Intensity stays, volume drops.' : ' Volume drops. Trust the work.'
+  appendCoachNote(target, `${word} week taper. ${rationale}${closer}`)
 }
 
 // V6 — emit pre-plan buffer guidance when prep_time_weeks_available exceeds
@@ -2241,7 +2663,6 @@ export function generateRulePlan(
   catalogue: SessionCatalogueRow[] = V1_SESSION_CATALOGUE,
 ): Plan {
   const planStartIso = planStart ?? formatDate(nextMonday())
-  const planStartDate = parseDateLocal(planStartIso)
   const today = formatDate(new Date())
 
   // CoachingPrinciples §55 — reject nonsense / out-of-range inputs before
@@ -2281,8 +2702,10 @@ export function generateRulePlan(
     return discounted
   })()
 
-  const fitness: FitnessLevel = input.fitness_level
-    ?? deriveFitnessLevel(input.current_weekly_km, input.longest_recent_run_km, vdot)
+  // D2 — VDOT and volume answer different questions; consult both.
+  const assessed = assessFitness(input.current_weekly_km, input.longest_recent_run_km, vdot)
+  const fitness: FitnessLevel = input.fitness_level ?? assessed.structural
+  const intensityFitness: FitnessLevel = input.fitness_level ?? assessed.intensity
 
   const rhr = input.resting_hr && input.resting_hr > 0 ? input.resting_hr : undefined
   const pace: PaceGuide = (vdot !== undefined && vdotRaw !== undefined)
@@ -2294,7 +2717,14 @@ export function generateRulePlan(
     : null
 
   const config = getDistanceConfig(input.race_distance_km)
-  const { totalWeeks, compressed } = calcPlanLength(input.race_distance_km, input.race_date, planStartIso)
+  // CoachingPrinciples §76 — `planStartIso` is the EARLIEST the plan could begin;
+  // calcPlanLength anchors on race week and returns the actual start. Surplus
+  // weeks delay the start rather than truncating the end. Everything downstream
+  // (week dates, meta.plan_start) must use the anchored value.
+  const planLength = calcPlanLength(input.race_distance_km, input.race_date, planStartIso)
+  const { totalWeeks, compressed } = planLength
+  const anchoredStartIso  = planLength.planStartIso
+  const anchoredStartDate = parseDateLocal(anchoredStartIso)
   const phases = computePhases(totalWeeks, input.race_distance_km)
 
   const metric: 'distance' | 'duration' =
@@ -2376,14 +2806,17 @@ export function generateRulePlan(
     const phase = getPhaseForWeek(weekN, phases)
     phaseWeekCount[phase]++
 
-    const weekDate = formatDate(addDays(planStartDate, i * 7))
+    const weekDate = formatDate(addDays(anchoredStartDate, i * 7))
     const isRaceWeek = weekN === totalWeeks
     // Deload cadence is masters-aware (CoachingPrinciples §3) — set once at top
     // of generateRulePlan so volumes and week badges stay aligned.
     const isDeload = !isRaceWeek && weekN % recoveryFreq === 0 && phase !== 'peak' && phase !== 'taper'
     // Recalibration on deload weeks in base/build — fresher legs, good time to benchmark
     const isRecalibration = isDeload && (phase === 'base' || phase === 'build')
-    if (isRecalibration) recalibrationWeeks.push(weekN)
+    // NOTE: recalibrationWeeks is NOT populated here. CoachingPrinciples §78 —
+    // the metadata follows the produced plan, never the intent. A week only
+    // counts as a recalibration week if the time trial was actually placed,
+    // which is resolved after buildWeekSessions returns.
 
     const weeklyKm = volumes[i]
     const prevWeeklyKm = i > 0 ? volumes[i - 1] : startKm
@@ -2397,7 +2830,15 @@ export function generateRulePlan(
       fitness,
       goalPace,
       totalWeeks,
+      intensityFitness,
     )
+
+    // §78 — the benchmark session is the proof. `isRecalibration` was the
+    // intent; a placed `hard` session is the fact. If the slot was too short to
+    // hold a real 5K, the week is simply not a recalibration week.
+    if (isRecalibration && Object.values(sessions).some(s => s?.type === 'hard')) {
+      recalibrationWeeks.push(weekN)
+    }
 
     const longRunHrs = computeLongRunHrs(sessions, pace)
     const actualWeeklyKm = sumWeeklyKm(sessions, pace)
@@ -2409,40 +2850,27 @@ export function generateRulePlan(
     // is built" / "highest volume" themes are misleading when peak weekly_km
     // does not exceed the prior non-deload week. "Intensity stays" themes
     // mislead in taper weeks with no quality session prescribed.
-    const qualityCount = Object.values(sessions).filter(s => s?.type === 'quality').length
+    // CoachingPrinciples §27 — copy is derived from what the week CONTAINS.
+    // The chain of string exceptions that used to live here is gone: weekLabel
+    // and weekTheme now read a WeekContent summary, so a week without quality
+    // cannot be given copy that promises it. (analysis F4 / N4)
     const prevNonDeloadWeeklyKm = (() => {
       for (let j = weeks.length - 1; j >= 0; j--) {
         if (weeks[j].type !== 'deload') return weeks[j].weekly_km
       }
       return 0
     })()
+    const isVolumePeak = !planIsMaintenance && actualWeeklyKm > prevNonDeloadWeeklyKm
 
-    // CoachingPrinciples §27, §41 — theme matches prescription. Effort-
-    // language ("It will feel hard") only applies when the runner is actually
-    // doing hard work (≥1 quality session). All-easy peak weeks get the
-    // consistency framing.
-    let theme: string
-    if (isRaceWeek) {
-      theme = 'The work is done. Arrive rested.'
-    } else if (isRecalibration) {
-      theme = 'Deload week. Run a parkrun or timed 5K — your result sharpens the zones for the next block.'
-    } else if (phase === 'peak' && !isDeload && (planIsMaintenance || actualWeeklyKm <= prevNonDeloadWeeklyKm || qualityCount === 0)) {
-      theme = 'Consistency. The work is the volume.'
-    } else if (phase === 'taper' && !isDeload && qualityCount === 0) {
-      theme = 'Volume drops. Trust the work you have done.'
-    } else {
-      theme = weekTheme(phase, isDeload)
-    }
+    const content = summariseWeek(
+      sessions, phase, phaseWeekCount[phase], isDeload, isRaceWeek, isVolumePeak,
+    )
 
     weeks.push({
       n: weekN,
       date: weekDate,
-      label: isRaceWeek
-        ? 'Race week'
-        : (planIsMaintenance && phase === 'peak' && !isDeload)
-          ? 'Peak — consistency'
-          : weekLabel(phase, weekN, phaseWeekCount[phase], isDeload),
-      theme,
+      label: weekLabel(content),
+      theme: weekTheme(content),
       type: weekType,
       phase,
       ...(badge ? { badge } : {}),
@@ -2450,7 +2878,10 @@ export function generateRulePlan(
       long_run_hrs: longRunHrs,
       weekly_km: actualWeeklyKm,
       ...(isRaceWeek ? {
-        race_notes: `Race day: ${input.race_name ?? 'Target Race'}. Start at Zone 2. The second half is where the race begins.`,
+        // §? F6 — never interpolate an invented race name into user-facing copy.
+        race_notes: input.race_name
+          ? `Race day: ${input.race_name}. Start at Zone 2. The second half is where the race begins.`
+          : 'Race day. Start at Zone 2. The second half is where the race begins.',
       } : {}),
       ...(weekN === tuneUpWeekN ? {
         tune_up_callout: 'Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a race effort.',
@@ -2700,6 +3131,30 @@ export function generateRulePlan(
       }. Plan maintains current fitness rather than building it. To enable a build profile: increase days_available to ${Math.max(daysCheck.days_required_ok, 3)}.`
     : null
 
+  // §80 — if LONG_RUN_CAP_MINUTES stopped the peak long run reaching the
+  // finish-goal floor, say so rather than shipping a silent shortfall. The cap
+  // still wins; the runner is told what the plan cannot give them.
+  const finishGoalLrShortfallNote: string | null = (() => {
+    if (input.goal !== 'finish') return null
+    const dk = raceDistanceKey(input.race_distance_km)
+    if (dk !== 'HM' && dk !== 'MARATHON') return null
+    if (!(pace.minPerKmEasy > 0)) return null
+    const projectedRaceMins = input.race_distance_km * pace.minPerKmEasy
+    const floorMins = projectedRaceMins * GENERATION_CONFIG.FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION
+    let peakLrMins = 0
+    for (const w of weeks) {
+      if (w.phase !== 'peak' || w.type === 'deload') continue
+      for (const sess of Object.values(w.sessions)) {
+        if (!sess || sess.type !== 'easy') continue
+        if (!(sess.label ?? '').toLowerCase().includes('long')) continue
+        const mins = sess.duration_mins ?? ((sess.distance_km ?? 0) * pace.minPerKmEasy)
+        peakLrMins = Math.max(peakLrMins, mins)
+      }
+    }
+    if (peakLrMins === 0 || peakLrMins + 1 >= floorMins) return null
+    return `Your longest run tops out at ${Math.round(peakLrMins)} minutes. For a race you'll likely be moving for around ${Math.round(projectedRaceMins)} minutes, we'd normally want it nearer ${Math.round(floorMins)} — but the long-run time cap for this distance stops us going further. Expect the last stretch of race day to be new territory; go out slower than feels right and take the walk breaks early rather than late.`
+  })()
+
   // Compose final values. §23's note wins (more specific) when both trigger.
   const finalVolumeProfile: 'build' | 'maintenance' | undefined =
     (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance)
@@ -2709,13 +3164,16 @@ export function generateRulePlan(
     peakOverloadResult?.volume_constraint_note ?? (daysLowMaintenance ? daysLowNote ?? undefined : undefined)
 
   const meta: Plan['meta'] = {
-    athlete:          input.athlete_name ?? 'Athlete',
+    // F6 — empty, not invented. Every consumer already falls back gracefully
+    // (`race_name || 'your race'`, `|| 'Your plan'`); a placeholder string does
+    // not, because it is truthy and renders as if it were real.
+    athlete:          input.athlete_name ?? '',
     handle:           '',
-    race_name:        input.race_name ?? 'Target Race',
+    race_name:        input.race_name ?? '',
     race_date:        input.race_date,
     race_distance_km: input.race_distance_km,
     charity:          '',
-    plan_start:       planStartIso,
+    plan_start:       anchoredStartIso,
     quit_date:        '',
 
     resting_hr:    rhr ?? 0,
@@ -2728,6 +3186,15 @@ export function generateRulePlan(
     primary_metric: metric,
 
     fitness_level:             fitness,
+    // D2 — when VDOT and volume disagree, `fitness_level` is the conservative
+    // (structural) answer and intensity is allowed at the higher level. Surface
+    // both, plus a plain-English note, so a consumer reading
+    // `fitness_level: 'beginner'` next to a quality session isn't looking at an
+    // apparent contradiction with no explanation.
+    ...(assessed.signalsDisagree ? {
+      fitness_intensity_level: intensityFitness,
+      fitness_signal_note: `Your race benchmark and your training volume point to different levels (${fitnessFromVdot(vdot ?? 0)} on benchmark, ${fitnessFromVolume(input.current_weekly_km, input.longest_recent_run_km)} on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.`,
+    } : {}),
     goal:                      input.goal,
     target_time:               input.target_time,
     days_available:            input.days_available,
@@ -2742,7 +3209,17 @@ export function generateRulePlan(
 
     // INV-PLAN-008: free plans never carry confidence fields
     tier,
-    compressed: compressed || capCompressed,  // OR-combine: too-short plan OR 10%-cap forced
+    // D4 (2026-08-06) — `compressed` OR-combined two unrelated facts, so it was
+    // true for 5 of 6 personas including a 12-week 5K plan with 24 days spare
+    // and a plan classified 'build'. It also feeds the PAID confidence score
+    // ("deduct 2 if compressed"), so that number was dominated by a
+    // near-constant. Split into the two things it actually meant.
+    time_compressed:    compressed,      // fewer calendar weeks than the distance's minimum
+    volume_constrained: capCompressed,   // the ramp never reached target peak volume
+    /** @deprecated Use time_compressed / volume_constrained. Retained for one
+     *  release so existing readers (saved plans, the enricher prompt) keep
+     *  working. */
+    compressed: compressed || capCompressed,
 
     // CoachingPrinciples §31 — differentiated compression classification.
     // Replaces the bare boolean with persona-aware reasoning.
@@ -2759,6 +3236,7 @@ export function generateRulePlan(
     // computation above the meta block for the full rule set.
     ...(finalVolumeProfile ? { volume_profile: finalVolumeProfile } : {}),
     ...(finalVolumeNote    ? { volume_constraint_note: finalVolumeNote } : {}),
+    ...(finishGoalLrShortfallNote ? { long_run_shortfall_note: finishGoalLrShortfallNote } : {}),
 
     // VDOT / zone model fields (CoachingPrinciples §10, §20).
     // `vdot` is raw (benchmark-derived) — what users compare against Daniels' tables.
@@ -2824,7 +3302,7 @@ export function generateRulePlan(
 
   // V6 — pre-plan buffer guidance. Attached at plan top-level (sibling to
   // weeks/phases/meta) per spec. Informational only; no session data.
-  const prePlan = buildV6PrePlanGuidance(prepTime, planStartIso, today)
+  const prePlan = buildV6PrePlanGuidance(prepTime, anchoredStartIso, today)
 
   const plan: Plan = {
     meta,

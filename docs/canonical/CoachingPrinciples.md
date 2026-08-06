@@ -47,7 +47,23 @@ MARATHON     → 82% easy / 18% quality
 
 **Principle.** Weekly volume increases by no more than 10%. Returning runners with a deep training history get a temporary 15% allowance for the first three weeks.
 
-**Why.** Sudden volume spikes are the most reliable predictor of running injury in non-elite athletes. The 10% rule is a coaching cliché because it works. The returning-runner exception acknowledges that an experienced runner rebuilding from a layoff is not the same as a beginner adding load — they have an aerobic and structural base waiting to be reawakened.
+**Why.** Rapid increases in training load relative to what the body is *accustomed to* are associated with injury in non-elite runners. Note the framing carefully — the risk lives in the relationship between acute and chronic load, not in the week-on-week delta considered alone. Nielsen's work points at change relative to recent chronic load; Buist's 2008 RCT found a graded 10%/week programme produced no injury reduction versus a control programme, so the rule is a useful heuristic for *sustained* ramping, not a law of physiology. It is applied here as a guard against enthusiasm, which is what it is good for.
+
+*(Rationale rewritten 2026-08-06 — the previous text read "the 10% rule is a coaching cliché because it works", which is not defensible and led directly to the misapplication below.)*
+
+The returning-runner exception acknowledges that an experienced runner rebuilding from a layoff is not the same as a beginner adding load — they have an aerobic and structural base waiting to be reawakened.
+
+### The cap does not apply to a post-deload bounceback — amended 2026-08-06 (GEN-FIX-07 / D1)
+
+**Principle.** The week following a recovery week may return to the **pre-deload volume** without the 10% cap applying. It may not exceed it; growth resumes from there the following week.
+
+**Why.** The cap previously applied to the bounceback, and the arithmetic is fatal: a deload drops to `RECOVERY_WEEK_VOLUME_PCT` (70%), so the next week could rise only 10% above *that* — 77% of where the runner already was. Every deload ratcheted the ceiling permanently downward, which makes progressive overload **arithmetically impossible in any plan containing a recovery week** — that is, every plan of four weeks or more. The first organic user's 14-week half-marathon plan peaked in **week 3**, in the base phase, and never recovered; four of seven simulated personas peaked outside the peak phase.
+
+Returning to a volume held comfortably two weeks earlier is not a spike. Chronic load has not moved — under any acute:chronic framing (the model this product already uses elsewhere for readiness) it is a **low**-risk week. No mainstream periodisation model applies a ramp cap to a bounceback; the near-universal convention is that a deload is a step back *within* a block and the following week resumes from the pre-deload level.
+
+**Config.** No new numeric — the ceiling is the pre-deload week's volume, read from the sequence itself.
+
+**Enforced by** `INV-PLAN-PEAK-IN-PEAK-PHASE` (warn) and the existing `INV-PLAN-PEAK-OVER-BASE`.
 
 **Config.**
 - `GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT = 10`
@@ -472,7 +488,14 @@ Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) where `startKm` i
 
 **Why.** A shakeout is a wake-up for the legs, not training. Anything longer than ~35 minutes has crossed into being a session, and starts to add fatigue the runner cannot recover from before race day. Strides on the earlier shakeout preserve fast-twitch coordination — the runner has rehearsed near-race-pace turnover within 48 hours of the gun, but only for 80 seconds of work. Without strides, six days of taper-pace running can leave the runner feeling flat-footed at the start.
 
-**Config.** `GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS = 35`. Implemented in the race-week branch of `buildWeekSessions()`. Distance is reduced proportionally when the cap binds (preserving easy pace).
+**Amended 2026-08-06 (F14) — the two shakeouts are not the same session.** They were emitted identically (4 km, same label, differing only by the stride note), which reads as a copy-paste rather than a plan. They do different jobs and are now sized and named accordingly:
+
+| Position | Distance | Job |
+|---|---|---|
+| Earlier (`RACE_WEEK_SHAKEOUT_DAYS_BEFORE_RACE[0]`) | `RACE_WEEK_SHAKEOUT_KM[0]` | Keep the legs turning over; carries the strides |
+| Final (`[1]`) | `RACE_WEEK_SHAKEOUT_KM[1]` | Minimal. The last run before a race should leave the runner wondering if it was enough — that is the correct feeling |
+
+**Config.** `GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS = 35`, `GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_KM = [5, 3]`, `GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_DAYS_BEFORE_RACE = [5, 3]` (§77). Implemented in the race-week branch of `buildWeekSessions()`. Distance is reduced proportionally when the cap binds (preserving easy pace).
 
 ---
 
@@ -786,9 +809,31 @@ The engine NEVER refuses to generate due to missing HR inputs. The philosophy: a
 
 This composes with §55 (input validation): nonsense values (`resting_hr: 0`, `max_hr: 50`) are rejected by §55 as invalid; missing values trigger the fallback hierarchy here. The two cases produce different runner experiences — rejected data prompts the user to fix it; missing data gets an estimate with the caveat surfaced.
 
+### Plausibility — amended 2026-08-06 (GEN-FIX-05)
+
+**The hierarchy above distinguishes *present* from *absent*. It never asked whether a present value was *believable*, and that is where it failed.**
+
+**Principle.** A supplied `max_hr` deviating from the age estimate by more than `MAX_HR_PLAUSIBILITY_DEVIATION_PCT` is not trusted. The engine falls back to the Tanaka estimate, surfaces a note naming both numbers, and tells the runner how to override. §55 rejects values that are physiologically impossible; this rejects values that are physiologically *possible but almost certainly wrong for this runner*.
+
+**Why.** A 43-year-old was issued a plan built on `max_hr: 138` — inside §55's `[120, 220]` range, so it passed validation, and supplied rather than estimated, so §50 emitted no note at all. Tanaka gives 178. Every HR target in that plan was ~28 bpm low, and the runner was never told the number was an inference. The value came from Apple Health's highest *recorded* heart rate, which for someone who has never worn a sensor during a hard effort is a floor, not a maximum — and that describes most of the people this product is built for. The better a runner fits the target audience, the more wrong the number gets. (`docs/incidents/2026-08-06-plan-defects/analysis.md` §6.)
+
+**The fallback is deliberate, not advisory.** An implausible max HR poisons every HR target for the plan's entire duration. The cost of over-riding a genuine physiological outlier is one note and a Profile edit; the cost of trusting a bad number is a whole training block run in the wrong zones. The note always names the override path.
+
+| Condition | Method | Behaviour |
+|---|---|---|
+| Supplied `max_hr` within tolerance of Tanaka | as per table above | unchanged |
+| Supplied `max_hr` outside tolerance | `age_estimate_implausible_input` | **Use Tanaka.** Note names the supplied value, the estimate, and how to override |
+| `max_hr` known to be device-observed (`max_hr_source: 'observed'`) and within tolerance | `observed_max` | Use it, but **always** note that it is derived from recorded activity, not a measured maximum |
+
+**Provenance is best-effort.** `max_hr_source` is set when the wizard reads HealthKit directly. A value arriving via `user_settings` has no recorded provenance, so it degrades to the unmarked path — the plausibility gate still protects it, because that gate is source-independent by design. Adding provenance to `user_settings.max_hr` is tracked separately.
+
+**This composes with §78.** The recalibration time trial is what replaces an estimate with a measurement. Tanaka is a stopgap that gets corrected every four weeks, not a permanent answer.
+
+**Config.** `GENERATION_CONFIG.MAX_HR_PLAUSIBILITY_DEVIATION_PCT = 15`.
+
 Plan meta MUST include:
-- `hr_zone_method` — which of the four methods was used (`karvonen` / `karvonen_estimated_max` / `percent_of_max` / `percent_of_estimated_max`).
-- `hr_assumption_note` — user-facing explanation. Present when method is not `karvonen`.
+- `hr_zone_method` — which method was used (`karvonen` / `karvonen_estimated_max` / `percent_of_max` / `percent_of_estimated_max` / `observed_max` / `age_estimate_implausible_input`).
+- `hr_assumption_note` — user-facing explanation. Present whenever the zones rest on an assumption: any method other than `karvonen`, **and** `karvonen` where the max was device-observed or the supplied value was rejected.
 - `hr_estimated_max` — the Tanaka-estimated max HR. Present when max was estimated.
 
 **Config.** Implemented in `buildHRZonesWithFallback()` (`lib/plan/ruleEngine.ts`). Boundary percentages (Z2 = 70% Karvonen / 80% MaxHR) are inherited from `GENERATION_CONFIG.ZONES`. No new constants — the four-method classification is a control-flow decision, not a tuning knob.
@@ -1250,7 +1295,11 @@ Config: `GENERATION_CONFIG.GOAL_SEQUENCING`, `PREP_TIME_THRESHOLDS`, `POST_RACE_
 
 ## 64. Day-level rest — every training week needs at least one rest day
 
-**Principle.** Every plan week must contain at least one rest day (`session.type === 'rest'`). Six-on / one-off is the upper limit for non-elite runners; seven-on is overreaching dressed as commitment. Race week is excluded — the prescribed structure already includes its own rest.
+**Principle.** Every plan week must contain at least one rest day. Six-on / one-off is the upper limit for non-elite runners; seven-on is overreaching dressed as commitment. Race week is excluded — the prescribed structure already includes its own rest.
+
+**A rest day is the absence of a session, not a session.** *(Amended 2026-08-06 — GEN-FIX-09.)* A week satisfies this rule when at least one of its seven days carries no training session. An explicit `type: 'rest'` entry also satisfies it — the post-race maintenance block emits those deliberately, because there the rest day is a *prescription* ("do nothing, it helps") rather than a gap.
+
+**Why the amendment.** The rule previously required an explicit `type: 'rest'` session. `generateRulePlan` has never emitted one — a 3-day-a-week plan simply leaves four days empty — so **every plan generated since R23 violated this principle once per non-race week**, and the error-severity invariant fired every time. It went unnoticed for months because `validatePlan` throws in dev/test but only logs in production, and plans are not generated in dev. The engine was right and the rule was wrong: demanding a session object to represent the absence of a session inverts what a rest day is. This is the failure mode §56 warns about — a numeric, or here a shape, with a principle behind it that nobody re-read.
 
 **Why.** Day-level recovery sits beneath week-level recovery (§3). The weekly recovery week handles cumulative load over four-week cycles; the per-week rest day handles acute load between hard sessions. Without it, every "easy" day is forced to absorb someone else's recovery duty — which is exactly how easy creeps hot.
 
@@ -1407,6 +1456,134 @@ Two rules keep it conservative in both paths: **recovery jogs don't count** as a
 **Phase 3 must arrive, not merely stop hiding.** The window is a deliberate beat: the block opened with the "After the race" announcement and closes wearing the same eyebrow and the same recovery-green rail, so it reads as the app coming back after waiting — never as a feature unlocking. `INV-MAINT-REENGAGEMENT-WINDOW` enforces the window's placement mechanically. `isReengagementWeek()` derives the window from the block's shape when the marker is absent, so maintenance plans generated before MAINT-07 reach Phase 3 without a migration.
 
 **Config:** `GENERATION_CONFIG.POST_RACE_MAINTENANCE_BLOCK` — all numerics (base-volume anchors, intent multipliers, duration modifiers, thresholds, `PHASE3_LAST_WEEKS`) live there; none is hardcoded. Generator: `lib/plan/maintenance.ts → generateMaintenanceBlock()` (person inputs threaded from `app/api/maintenance-block/route.ts`, which derives base volume, injuries, whole-plan response, and recovery markers). `validateMaintenanceBlock()` in `lib/plan/invariants.ts` enforces structure mechanically.
+
+---
+
+## 76. The plan is anchored to race day, not to the start date
+
+**Principle.** A plan is laid out **backwards from the race**, not forwards from the start date. The final week of every plan MUST contain `race_date`. When more calendar weeks are available than the distance's ideal plan length, the surplus **delays the start** — it is never dropped from the end.
+
+**Why.** A training plan is a countdown to a fixed event. Every other rule in this document — taper depth, peak placement, race-specific exposure, recalibration cadence — is expressed relative to the race, so a plan whose final week is not the race week has silently mis-scheduled all of them at once. A runner who finishes the plan eleven days early does not get a longer taper; they get an unplanned, uncoached void at precisely the point where the plan's guidance matters most, and they will fill it by guessing.
+
+The failure is specifically an *end*-truncation: `min(available, ideal)` weeks counted forward from the start discards the tail. Counting backwards from race week discards nothing — it moves the start, and the gap before it is already owned by the foundation block (§ Foundation block), which exists for exactly this situation.
+
+**Consequences that follow from the anchor:**
+- Surplus weeks are absorbed before the plan, never after it.
+- When available weeks are fewer than ideal, the plan simply starts as soon as it can — the race week is still last.
+- `meta.plan_start` is a **derived output**, not the caller's input. The caller proposes the earliest possible start; the engine returns the actual one.
+
+**Config.** No numerics — this is structural. Week boundaries are Monday-anchored (a structural constant, exempt under INV-CFG-003), matching `nextMonday()` and `DAY_ORDER`.
+
+**Enforced by** `INV-PLAN-COVERS-RACE-DATE` (error severity) in `lib/plan/invariants.ts`. Implemented in `calcPlanLength()` (`lib/plan/length.ts`), which owns all plan date arithmetic.
+
+---
+
+## 77. The race sits on race day, and race week builds towards it
+
+**Principle.** The race session MUST be placed on the actual weekday of `race_date`. Race-week supporting sessions (shakeouts, the §39 mid-week easy) MUST fall **before** the race within that week — never after it.
+
+**Why.** Placing the race by day-of-week *preference* rather than by its real date produces a plan that names the right week and still tells the runner to race on the wrong day. It also inverts race week: a shakeout scheduled two days "before" a Sunday race lands *after* a Wednesday one, so the runner is prescribed a warm-up for a race they have already run.
+
+The race is an **external fixed event, not a training session.** Two rules follow:
+- `days_cannot_train` does **not** apply to the race. A runner who cannot train on Wednesdays can still race on one; the constraint describes their training week, not their life.
+- Every other race-week session **does** respect `days_cannot_train`, because those are training.
+
+**Consequences.** A race early in the week leaves little or no room for shakeouts inside race week. That is correct and must not be "fixed" by borrowing days after the race — the preceding taper week carries the load instead. Race week may legitimately contain only the race.
+
+**Config.** `GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_DAYS_BEFORE_RACE` — the preferred spacing, in days before the race, of race-week shakeouts. Default `[5, 3]`, which reproduces the long-standing Tue/Thu placement for the Sunday-race case while generalising to every other race weekday. Offsets that fall outside the race week, or on a blocked day, are skipped rather than relocated.
+
+**Enforced by** `INV-PLAN-RACE-ON-RACE-DAY` (error severity) in `lib/plan/invariants.ts`.
+
+---
+
+## 78. Recalibration weeks prescribe the benchmark, they don't just suggest it
+
+**Principle.** A week listed in `meta.recalibration_weeks` MUST contain a benchmark session — a 5K time trial at maximal effort. The week's theme has always instructed the runner to "run a parkrun or timed 5K"; the session must actually be on the plan. `meta.recalibration_weeks` is derived from the produced plan, not from intent: a week only appears there if the session was genuinely placed.
+
+**Distinct from §32.** §32's tune-up callout is an *optional* suggestion on a build week and deliberately adds no session. This is the opposite: a prescribed session on a deload week. They coexist and serve different jobs — §32 defuses "should I race this weekend?", §78 refreshes the numbers the whole plan is derived from.
+
+**Why.** Everything downstream of generation descends from two measurements: a VDOT from one benchmark run, and a max HR. Neither is refreshed anywhere else in a plan's life. Paces, zones, the confidence score and every "you ran too hard" verdict inherit whatever those two values were on day one — and a stale VDOT propagates for the plan's entire duration.
+
+It also closes a loop the engine could not otherwise escape. When max HR is estimated or observed too low, every easy run reads as above-ceiling, the coaching says slow down, the runner never approaches their true max, and the next observation confirms the same depressed value. **A maximal effort is the only exit, and an all-easy plan structurally forbids one.** (See `docs/incidents/2026-08-06-plan-defects/analysis.md` §6 — this is not hypothetical.)
+
+Three further consequences, all deliberate:
+
+- **It is the contrast case.** Zone discipline is a *discrimination* behaviour — the runner must tell easy from hard and commit to whichever is prescribed. A plan where every session is easy offers nothing to discriminate against, so "easy" stops being a choice and becomes just "running". One hard effort per block is what makes the other eleven sessions legible as a decision.
+- **Beginners get it too.** The session is typed `hard`, not `quality`, so it does not count against `QUALITY_SESSIONS_PER_WEEK_MAX` (§ intensity ceiling). A beginner on a zero-quality plan still gets one legitimate hard effort per block. This is intentional: a benchmark is a *measurement*, not a training stimulus, and withholding measurement from the runners whose numbers are least reliable is exactly backwards.
+- **It is placed on a deload week on purpose.** Fresh legs make the measurement meaningful, and the reduced surrounding volume absorbs the cost.
+
+**Implementation.** The session converts the deload week's midweek easy run rather than adding a day — same distance, same duration, so weekly volume is unchanged. It is structured warm-up / 5K hard / cool-down, which is what a time trial actually is. If the slot is too short to contain a real 5K plus warm-up and cool-down, no conversion happens **and the week is not listed as a recalibration week** — the metadata follows the plan, never the intent.
+
+**Config.** `GENERATION_CONFIG.RECALIBRATION_TIME_TRIAL` — `{ distance_km, min_slot_km }`.
+
+**Enforced by** `INV-PLAN-RECALIBRATION-HAS-SESSION` (error severity).
+
+---
+
+## 79. Fitness level — VDOT and volume answer different questions
+
+**Principle.** Fitness level is assessed from **both** the benchmark (VDOT) and current training volume. VDOT measures what a runner can currently *race*; volume measures what they can currently *absorb*. Where the two disagree, the plan takes the **lower** level for structure — weekly volume, peak km, long-run caps — and the **higher** level for the intensity allowance. The disagreement is surfaced in `meta`, never resolved silently.
+
+**Why.** Classification ran from VDOT alone whenever a benchmark existed. The first organic user ran a 29:00 5K (VDOT 30.8 → beginner) while training 30 km/week with a 12 km long run (volume → intermediate). Being labelled a beginner set `QUALITY_SESSIONS_PER_WEEK_MAX` to 0, which removed **every quality session from a 14-week half-marathon plan**. One threshold, read from one signal, cascading into the whole plan shape — and the runner had explicitly said they *like* hard sessions.
+
+The two signals fail in opposite directions, which is exactly why both are needed:
+
+- **Fast but low volume** (a returning runner, or a short-distance specialist stepping up): VDOT says experienced, volume says beginner. Prescribing experienced-level volume risks injury. Prescribing beginner-level intensity wastes a working engine.
+- **Slow but high volume** (the first organic user, and most of this product's audience): VDOT says beginner, volume says intermediate. Prescribing intermediate volume is a real risk. Prescribing zero intensity for fourteen weeks is under-training someone with a functioning aerobic base.
+
+The asymmetry in the resolution is deliberate: **volume is where injuries come from, intensity is where progress is lost.** Being cautious about the first and generous about the second minimises the cost of being wrong in either direction.
+
+**The beginner intensity ceiling itself is unchanged** (§ intensity ceiling, `QUALITY_SESSIONS_PER_WEEK_MAX.beginner = 0`). A genuine beginner — both signals agreeing — still gets no quality sessions, and that remains correct. What changed is *who counts as one*. The classifier was the defect, not the ceiling.
+
+**Config.** `GENERATION_CONFIG.FITNESS_VDOT_THRESHOLDS`, `GENERATION_CONFIG.FITNESS_VOLUME_THRESHOLDS`.
+
+**Meta.** When the signals disagree, `fitness_intensity_level` carries the higher level and `fitness_signal_note` explains the split in plain English — otherwise a consumer reads `fitness_level: 'beginner'` next to a quality session and sees a contradiction with no explanation.
+
+---
+
+## 80. Finish-goal long run — time on feet, not distance
+
+**Principle.** For finish-goal HM and marathon plans, the peak long run must reach `FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION` (70%) of **projected race duration**, subject to `LONG_RUN_CAP_MINUTES`, which still wins. Projected duration is computed at easy pace — a finish-goal runner will not race at threshold, and run-walk is expected. Every finish-goal peak long run carries explicit permission to walk. When the cap prevents reaching the floor, the plan says so.
+
+**Why.** §45 mandates a peak long run of ≥85% of race distance for *time-targeted* HM, and finish-goal plans had no floor at all. So the runner least equipped for the distance got the least specific preparation: the first organic user peaked at 1:46 against a ~2:45 projected finish — 64%. §45's own rationale is *"the fatigue profile of running for ~2 hours is fundamentally different"*, which applies **more** to a first-timer, not less.
+
+**Duration, not distance, and the distinction is not cosmetic.** A first-timer is time-on-feet limited, not aerobically limited. The constraint that actually binds — `LONG_RUN_CAP_MINUTES` — is already expressed in minutes, so a distance-based floor would hide what is doing the limiting. And "two and a half hours of moving" is a different psychological object from "18 kilometres": only one of them is achievable for someone who has never run either, and only one of them survives contact with a walk break.
+
+**Walking does not undo it.** The session note says so explicitly. Time on feet accumulates whether or not every step is running, and a floor the runner believes they have failed is worse than no floor — they will either abandon the session or grind it out injured.
+
+**The honest failure case.** Where the time cap binds, the plan cannot deliver race-specific endurance and must say that plainly, with the concrete consequence (the late race will be unfamiliar) and the actionable response (start slower, take walk breaks early rather than late). A silent shortfall is the failure mode this whole principle exists to prevent.
+
+**Config.** `GENERATION_CONFIG.FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION = 0.70`. Shortfall surfaced as `meta.long_run_shortfall_note`.
+
+---
+
+## 81. `compressed` means two different things, so it is two fields
+
+**Principle.** A plan can be short of time or short of volume. These are unrelated failures with unrelated remedies, and they are reported separately: `time_compressed` (fewer calendar weeks than the distance's minimum) and `volume_constrained` (the ramp never reached target peak volume).
+
+**Why.** One boolean OR-combined both, and was `true` for five of six test personas — including a 12-week 5K plan with 24 days to spare, and a plan simultaneously classified `volume_profile: 'build'`. A flag that is almost always true carries no information.
+
+It is not merely cosmetic: the flag feeds the **paid** confidence score ("deduct 2 if plan is compressed"), so paying users were seeing a score dominated by a near-constant. The enricher now receives `time_compressed`, which is what that deduction was always describing.
+
+**Remedies differ, which is the point.** Time compression is fixed by racing later or accepting a shorter build. Volume constraint is fixed by more days per week, a higher weekday time budget, or a longer runway. Telling a runner "your plan is compressed" when they have four weeks spare and the real problem is three-days-a-week availability sends them to the wrong lever.
+
+**`compressed` is retained as a deprecated OR of the two** for one release, so saved plans and existing readers keep working.
+
+---
+
+## 82. An intentional downgrade is not a missing session
+
+**Principle.** `INV-PLAN-QUALITY-EXPECTED` — build and peak weeks for intermediate/experienced runners must contain a quality session — is exempted when a reshape **deliberately removed** it in response to a fatigue or aerobic-efficiency signal, and the week records that it did (`Week.quality_downgraded`). Quality that is simply absent, with no recorded reason, still violates.
+
+**Why.** The invariant asks *"did the generator build this week correctly?"*. That is the wrong question to ask of a week the generator no longer owns. When aerobic efficiency is falling or heavy sessions have stacked up, the reshaper swaps quality to easy — and that is the intervention working. It is also the product's whole thesis: back off when the body says so. Flagging it as a constitutional violation puts a structural rule in charge of a coaching decision, which is backwards.
+
+Before this, every such reshape wrote a `reshape_invalid` ops event and soft-degraded in production — alert noise generated by the system doing the right thing, which is how teams learn to ignore alerts.
+
+**The exemption must be earned.** It keys on a recorded reason, not on the absence itself. An engine that simply fails to place quality is still caught — otherwise this would quietly excuse the defect it is meant to distinguish from.
+
+**Decision (SLT, 2026-08-06).** Option B of two: (A) keep the invariant and make the reshaper soften rather than remove quality; (B) exempt recorded downgrades. B chosen — A would have a structural invariant override a coaching intervention responding to real signal. **Revisit if** `ops_events` shows EF-triggered downgrades firing on runners who are not actually fatigued; that would mean the reshape trigger is too sensitive and A becomes the right answer.
+
+**Config.** No numerics. Triggers that qualify: `INTENSITY_DOWNGRADE_TRIGGERS` in `app/api/adjust-plan/route.ts` (`ef_decline`, `fatigue`).
 
 ---
 

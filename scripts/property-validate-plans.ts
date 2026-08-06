@@ -38,6 +38,18 @@ const hardSets = ['love', 'avoid', 'neutral']
 const injurySets = [[], ['knee'], ['achilles'], ['shin_splints'], ['hip_flexor'], ['back']]
 const maxWeekdays = [undefined, 45, 60, 90]
 
+// GEN-FIX-08 — HR dimension. The sweep had no HR axis at all, which is why F1
+// (a HealthKit-observed max HR 22% below the age estimate, producing a Zone 2
+// ceiling 28 bpm low) was invisible to 103,680 generated plans. baseInput.age is
+// 35, so Tanaka gives 208 - 0.7*35 = 184.
+const TANAKA_AT_35 = 184
+const hrSets: any[] = [
+  { label: 'absent',        hr: {} },
+  { label: 'tanaka',        hr: { resting_hr: 55, max_hr: TANAKA_AT_35 } },
+  { label: 'observed-low',  hr: { resting_hr: 55, max_hr: Math.round(TANAKA_AT_35 * 0.7), max_hr_source: 'observed' } },
+  { label: 'max-only',      hr: { max_hr: TANAKA_AT_35 } },
+]
+
 let totalPlans = 0
 let violatingPlans = 0
 const violationsByCode = new Map<string, number>()
@@ -45,10 +57,10 @@ const samples: { input: any, violation: Violation }[] = []
 
 for (const d of distancesAndDates) for (const cwk of cwks) for (const lrr of lrrs)
 for (const days of dayOptions) for (const f of fitnessSets) for (const hs of hardSets)
-for (const injuries of injurySets) for (const mw of maxWeekdays) {
+for (const injuries of injurySets) for (const mw of maxWeekdays) for (const hrSet of hrSets) {
   const input: any = { ...baseInput, ...d, current_weekly_km: cwk, longest_recent_run_km: lrr,
     ...days, fitness_level: f, hard_session_relationship: hs,
-    injury_history: injuries, max_weekday_mins: mw,
+    injury_history: injuries, max_weekday_mins: mw, ...hrSet.hr,
   }
   totalPlans++
   let plan

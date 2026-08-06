@@ -14,6 +14,7 @@ import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { getCurrentWeekIndex } from '@/lib/plan'
 import { savePlanForUser } from '@/lib/plan'
 import { validateReshapedPlan } from '@/lib/plan/invariants'
+import { refreshWeekCopyIfStale } from '@/lib/plan/ruleEngine'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
@@ -375,7 +376,7 @@ export async function POST(req: NextRequest) {
   // violations throw so property/matrix tests fail loudly. Prod: record to
   // ops_events + soft-degrade (don't break the runner's flow), mirroring
   // generateRulePlan's constitutional-review posture.
-  const updatedPlan = applyAdjustmentToPlan(plan, weekN, proposed.sessionsAfter)
+  const updatedPlan = applyAdjustmentToPlan(plan, weekN, proposed.sessionsAfter, proposed.trigger?.type)
   const reshapeErrors = validateReshapedPlan(updatedPlan).filter(v => v.severity === 'error')
   if (reshapeErrors.length > 0) {
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
@@ -484,7 +485,14 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ adjustment: inserted, requires_confirmation: requiresConfirmation })
 }
 
-function applyAdjustmentToPlan(plan: Plan, weekN: number, sessionsAfter: any[]): Plan {
+// GEN-FIX-10 — triggers whose intervention IS removing intensity. When one of
+// these fires and the week ends up with no quality session, the week records
+// why, so INV-PLAN-QUALITY-EXPECTED can tell a deliberate downgrade from a
+// generator defect. Anything not listed here that strips quality is still a
+// violation, which is the point.
+const INTENSITY_DOWNGRADE_TRIGGERS = new Set(['ef_decline', 'fatigue'])
+
+function applyAdjustmentToPlan(plan: Plan, weekN: number, sessionsAfter: any[], triggerType?: string): Plan {
   const updated = JSON.parse(JSON.stringify(plan)) as Plan
   const week    = updated.weeks.find(w => w.n === weekN)
   if (!week) return updated
@@ -495,5 +503,21 @@ function applyAdjustmentToPlan(plan: Plan, weekN: number, sessionsAfter: any[]):
       week.sessions[day] = sessionsAfter[idx]
     }
   })
+
+  // GEN-FIX-10 — record an intentional intensity downgrade before validating,
+  // so the invariant can distinguish it from a generator defect.
+  if (triggerType && INTENSITY_DOWNGRADE_TRIGGERS.has(triggerType)) {
+    const stillHasQuality = Object.values(week.sessions).some(s => s?.type === 'quality')
+    if (!stillHasQuality) {
+      week.quality_downgraded = { trigger: triggerType, at: new Date().toISOString() }
+    }
+  }
+
+  // §27 — a reshape can remove the very session the week's copy promises (the
+  // AEF downgrade swaps quality to easy). Re-derive the copy when, and only
+  // when, it has become false; enriched copy is a paid deliverable and must not
+  // be blanket-reverted to rule-engine strings. (analysis open-Q4)
+  refreshWeekCopyIfStale(updated, weekN)
+
   return updated
 }

@@ -121,6 +121,43 @@ Honest, slightly sarcastic, self-aware, encouraging without cringe.
 
 The canonical response matrix for session-type-aware coaching lives in `getReflectResponse()` in `DashboardClient.tsx` and must stay consistent with these guidelines.
 
+### Correction Voice — "we got something wrong" (added 2026-08-06)
+
+The second sanctioned multi-sentence exception. Zonna voice is one sentence; the post-run reframe is the other exception. This one exists because **the app will sometimes be wrong about the runner's data, and it is going to have to say so.**
+
+Precedent: a user's Zone 2 ceiling was set 28 bpm too low from a bad max-HR reading, and every HR target in their plan was wrong for five days. There was no voice pattern for telling them, and no obvious way to write it without either under-explaining or grovelling.
+
+**Structure — four sentences, in this order:**
+
+| # | Job | Rule |
+|---|---|---|
+| 1 | **Name it, and say it's fixed** | Both halves in one line. Never lead with an apology; the runner wants to know the state, not the feeling |
+| 2 | **Cause, mechanically** | What the app did and why it produced the wrong answer. No passive voice hiding the actor — "we set your ceiling from…", not "your ceiling was set from…" |
+| 3 | **What is true now** | The corrected value, stated plainly |
+| 4 | **Scope** | What else changed — usually "nothing" |
+
+**Rules:**
+
+- **Never install a memory the runner doesn't have.** Do not describe how the error felt to them ("every easy run has looked like you were pushing") — they may not have noticed, and inviting them to re-examine weeks of runs is a worse outcome than the error. State what was wrong, not what it did to their experience.
+- **No apology performance.** "Sorry" once, or not at all. Never "we're really sorry", never an explanation of how seriously it's taken.
+- **End on the reassuring clause.** It is the sentence they retain.
+- **No compensation reflex.** Do not offer a trial extension or discount to soften a data correction — it signals the problem was commercial when it wasn't.
+- **Founder-sent when the affected population is small enough to write to individually.** A system notification for a handful of users reads as evasion.
+
+**Reference (the one that shipped):**
+
+> **Your zones were wrong. They're fixed.**
+>
+> We set your Zone 2 ceiling from the highest heart rate Apple Health had on record. You'd never worn it for a hard effort, so the number was too low.
+>
+> Your ceiling is now 146. Your recent runs were in Zone 2 after all.
+>
+> Nothing else has changed.
+
+Note what sentence 3 does: it reframes the runner's own history correctly ("your recent runs were in Zone 2 after all") without ever having told them it looked otherwise.
+
+---
+
 ### Reframe Voice (POST-RUN-REFRAME-01)
 
 The post-run reframe is the **only surface** where Zonna's voice extends beyond one sentence. It is also the only surface where Zonna gets to give the runner **the hug + the truth**, not just the truth. Read the structure carefully — the warmth lives in sentence 1, never the closer.
