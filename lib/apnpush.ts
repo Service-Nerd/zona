@@ -58,7 +58,13 @@ export async function sendApnsPush(
   note.topic    = topic
   note.alert    = { title: payload.title, body: payload.body }
   note.sound    = 'default'
-  if (payload.tag)  note.threadId = payload.tag
+  if (payload.tag) {
+    note.threadId   = payload.tag  // groups related notifications in Notification Center
+    // apns-collapse-id: iOS REPLACES an on-screen notification that shares this
+    // id instead of stacking a new banner. Belt-and-braces against duplicate
+    // sends of the same event (e.g. concurrent ingests of one run) — max 64 bytes.
+    note.collapseId = payload.tag
+  }
   if (payload.data) note.payload  = payload.data
 
   try {

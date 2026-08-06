@@ -17,7 +17,7 @@ import type { PluginListenerHandle } from '@capacitor/core'
 interface HealthObserverPlugin {
   register(): Promise<{ ok: boolean; skipped: boolean }>
   addListener(
-    eventName: 'hrDataArrived' | 'recoveryDataArrived',
+    eventName: 'workoutDataArrived' | 'hrDataArrived' | 'recoveryDataArrived',
     listenerFunc: () => void,
   ): Promise<PluginListenerHandle>
 }
@@ -44,10 +44,12 @@ export async function initHealthObserver(): Promise<void> {
   try {
     await HealthObserver.register()
 
-    // Both event types use the same pipeline. syncOnAppOpen includes:
+    // All event types use the same pipeline. syncOnAppOpen includes:
     //   - syncRecentWorkouts     (new runs since last sync)
     //   - syncRecoverySamples    (RHR / HRV / sleep — 14-day window)
     //   - retryPendingHrRows     (HR-null apple_health rows → re-post with fresh HR)
+    // Duplicate concurrent runs of this pipeline are safe: the server-side push
+    // is deduped atomically (claimAutoLink in lib/coaching/autoAnalyse).
     const { syncOnAppOpen } = await import('@/lib/health/clientSync')
 
     const onData = () => {
@@ -61,6 +63,7 @@ export async function initHealthObserver(): Promise<void> {
       })()
     }
 
+    await HealthObserver.addListener('workoutDataArrived', onData)
     await HealthObserver.addListener('hrDataArrived', onData)
     await HealthObserver.addListener('recoveryDataArrived', onData)
   } catch (err) {

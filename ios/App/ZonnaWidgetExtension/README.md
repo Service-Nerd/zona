@@ -148,11 +148,14 @@ Confirm the entry exists:
 "packageClassList": [
   "AppPlugin",
   …,
-  "SharedStorePlugin"   ← must be present
+  "SharedStorePlugin",     ← widget App-Group bridge — must be present
+  "HealthObserverPlugin"   ← HKObserverQuery background delivery — must be present
 ]
 ```
 
-**`npx cap sync ios` regenerates this list by scanning installed npm packages** — it doesn't know about local plugins, so it will silently remove the manual entry every time it runs. **Re-add `"SharedStorePlugin"` after every `cap sync`.** The plugin source file has a comment header repeating this warning.
+**`npx cap sync ios` regenerates this list by scanning installed npm packages** — it doesn't know about local plugins, so it silently removes every manual entry each run. **Never run raw `npx cap sync ios` — always `npm run sync:ios`**, which re-adds the local plugins (`scripts/fix-cap-config.mjs`) and then verifies (`scripts/verify-cap-config.mjs`, exit 1 if any missing). The canonical list of local plugins lives in `scripts/local-ios-plugins.mjs` — add every new one there. Run `npm run verify:ios-plugins` standalone, or wire it as an Xcode "Run Script" build phase before Compile Sources so a broken config can't ship.
+
+> Both `SharedStorePlugin` **and** `HealthObserverPlugin` are local. `HealthObserverPlugin` missing = no background HealthKit delivery = the run-analysis push only fires when the user manually opens the app (regressed exactly this way in 2026-08 because it wasn't in the re-add list).
 
 ---
 

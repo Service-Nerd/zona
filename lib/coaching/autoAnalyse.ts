@@ -101,35 +101,15 @@ export async function autoMatchAndAnalyse(
   }
   if (!bestDay) return
 
-  // POST-RUN-01 race-condition guard: never clobber an existing user-manual
-  // completion, and never re-fire push/analyse for an activity already linked.
-  // Two cases to block:
-  //   (a) Activity already linked — idempotent or user-chosen, don't touch.
-  //   (b) Session already manually marked complete (no activity link) — user
-  //       explicitly said "done" (e.g. logged a hike, planned a top-up run).
-  //       Auto-match overwriting that with a partial activity is wrong.
-  const { data: existing } = await supabase
-    .from('session_completions')
-    .select('strava_activity_id, apple_health_uuid, status')
-    .eq('user_id', userId)
-    .eq('week_n', week.n)
-    .eq('session_day', bestDay)
-    .maybeSingle()
-
-  if (existing) {
-    const existingRef: number | string | null =
-      existing.strava_activity_id ?? existing.apple_health_uuid ?? null
-    if (existingRef != null) {
-      // Already linked — idempotent or user-chosen. Done.
-      return
-    }
-    if (existing.status === 'complete') {
-      // User manually marked the session done without an activity link.
-      // Respect that — don't silently replace it with an auto-matched run.
-      return
-    }
-  }
-
+  // The link-time push must fire EXACTLY ONCE per linked run. The same run is
+  // frequently ingested more than once concurrently on app-open (foreground JS
+  // sync + the HealthKit observer + multiple boot/resume triggers), so the old
+  // read-then-write guard raced: every concurrent invocation read "not linked
+  // yet" and each sent a push — the "3× notification" bug. We claim the link
+  // ATOMICALLY instead: the unique constraint on session_completions
+  // (user_id, week_n, session_day) elects exactly one winner. Only the winner
+  // pushes; the winner and any fresh-attach also analyse; already-linked /
+  // manually-complete / losing calls do nothing.
   const completionRow: Record<string, unknown> = {
     user_id:              userId,
     week_n:               week.n,
@@ -146,16 +126,15 @@ export async function autoMatchAndAnalyse(
     completionRow.apple_health_uuid = ref.appleHealthUuid
   }
 
-  await supabase.from('session_completions').upsert(
-    completionRow,
-    { onConflict: 'user_id,week_n,session_day' }
-  )
+  const claim = await claimAutoLink(supabase, completionRow)
+  if (claim === 'exists') return   // already linked / manually complete / a concurrent winner handled it — no push, no re-analysis
+  const shouldPush = claim === 'won'  // a fresh attach onto a pre-existing stub analyses but does not push
 
   // POST-RUN-01 link-time push. Fires immediately on confident auto-link, so
   // the user is brought back BEFORE the LLM round-trip — the wait gets covered
   // by RPE entry inside the Post-Run screen instead of a silent 30s gap.
   // Replaces the older post-analysis push (now removed from /api/analyse-run).
-  try {
+  if (shouldPush) try {
     const { notifyUser }       = await import('@/lib/webpush')
     const { buildLinkPushCopy } = await import('@/lib/coaching/voiceLines')
     // POST-RUN-02: the lock-screen line proves Kit looked (a morsel built from
@@ -198,6 +177,69 @@ export async function autoMatchAndAnalyse(
   } catch (err) {
     console.warn('[auto-analyse] analyse-run call failed', err)
   }
+}
+
+/**
+ * Atomically claim the auto-link so the link-time push fires exactly once.
+ *
+ * The unique constraint on session_completions (user_id, week_n, session_day)
+ * is the arbiter: among concurrent ingests of the same run, exactly one INSERT
+ * succeeds. Returns:
+ *   'won'      — this call created the completion → caller pushes + analyses.
+ *   'attached' — a row existed as a fully-unlinked, non-complete stub and this
+ *                call attached the device link → caller analyses but does NOT
+ *                push (attaching to a pre-existing row isn't a fresh-run event).
+ *   'exists'   — a row already existed and was already linked or manually
+ *                complete (or a concurrent winner beat us) → caller does nothing.
+ *
+ * `completionRow` must include user_id, week_n, session_day and exactly one of
+ * strava_activity_id / apple_health_uuid.
+ */
+export async function claimAutoLink(
+  supabase: any,
+  completionRow: Record<string, unknown>,
+): Promise<'won' | 'attached' | 'exists'> {
+  const insertRes = await supabase
+    .from('session_completions')
+    .insert(completionRow)
+    .select('week_n')
+    .maybeSingle()
+
+  if (!insertRes.error) return 'won'
+
+  // 23505 = unique_violation → a row already exists for this session.
+  if (insertRes.error.code === '23505') {
+    const link = completionRow.strava_activity_id != null
+      ? { strava_activity_id: completionRow.strava_activity_id }
+      : { apple_health_uuid: completionRow.apple_health_uuid }
+    // Attach the link onto a fully-unlinked, non-complete stub ONLY. The
+    // `.is(... null)` guards skip already-linked rows; `.neq('status',
+    // 'complete')` respects a manual completion. `.select()` tells us whether a
+    // row was actually attached (→ analyse) vs nothing matched (→ do nothing).
+    const upd = await supabase
+      .from('session_completions')
+      .update({
+        ...link,
+        status:               'complete',
+        strava_activity_name: completionRow.strava_activity_name ?? null,
+        strava_activity_km:   completionRow.strava_activity_km ?? null,
+        avg_hr:               completionRow.avg_hr ?? null,
+        updated_at:           completionRow.updated_at,
+      })
+      .eq('user_id', completionRow.user_id)
+      .eq('week_n', completionRow.week_n)
+      .eq('session_day', completionRow.session_day)
+      .is('strava_activity_id', null)
+      .is('apple_health_uuid', null)
+      .neq('status', 'complete')
+      .select('week_n')
+    const attached = Array.isArray(upd.data) ? upd.data.length > 0 : upd.data != null
+    return attached ? 'attached' : 'exists'
+  }
+
+  // Unexpected DB error — never push on uncertainty.
+  console.warn('[auto-analyse] claimAutoLink insert failed', insertRes.error.message)
+  return 'exists'
 }
 
 export function getInternalBaseUrl(): string {

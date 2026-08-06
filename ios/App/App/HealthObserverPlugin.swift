@@ -4,11 +4,17 @@ import HealthKit
 
 // HR-SYNC-03 — HKObserverQuery background delivery plugin.
 //
-// Registers HKObserverQuery + enableBackgroundDelivery for the four sample
-// types that drive the coaching pipeline: heartRate, restingHeartRate,
-// heartRateVariabilitySDNN, sleepAnalysis. When HealthKit notifies the app
-// (foreground or warm-background), notifyListeners fires the JS event, which
-// calls clientSync.syncOnAppOpen() and picks up any pending HR samples.
+// Registers HKObserverQuery + enableBackgroundDelivery for the sample types
+// that drive the coaching pipeline: workouts (runs), heartRate,
+// restingHeartRate, heartRateVariabilitySDNN, sleepAnalysis. When HealthKit
+// notifies the app (foreground or warm-background), notifyListeners fires the
+// JS event, which calls clientSync.syncOnAppOpen() to ingest the run + pending
+// HR samples — which is what triggers the server-side run-analysis push.
+//
+// Observing `workouts` directly (not just heartRate) is essential: an
+// iPhone-only runner with no Apple Watch produces a run with NO HR stream, so
+// an HR-only observer would never wake for their runs. The workout observer
+// fires on the run itself.
 //
 // Thread safety: HKObserverQuery callbacks run on arbitrary background
 // threads. notifyListeners() dispatches to the main thread internally
@@ -57,9 +63,17 @@ public class HealthObserverPlugin: CAPPlugin {
         let hrvType   = HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN)!
         let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
 
+        // Workouts — a completed run writes to HealthKit when it ends (Apple
+        // Watch on end, or the source app on save). Observing the workout type
+        // directly is what wakes the app to ingest a new run and fire the
+        // server-side run-analysis push — including HR-less iPhone-only runs
+        // that the heartRate observer never sees.
+        let workoutType = HKObjectType.workoutType()
+
         let hrTypes:       [HKObjectType] = [hrType]
         let recoveryTypes: [HKObjectType] = [rhrType, hrvType, sleepType]
 
+        observe(workoutType, event: "workoutDataArrived")
         for type in hrTypes {
             observe(type, event: "hrDataArrived")
         }

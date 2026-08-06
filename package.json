@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "sync:ios": "npx cap sync ios && node scripts/fix-cap-config.mjs"
+    "sync:ios": "npx cap sync ios && node scripts/fix-cap-config.mjs && node scripts/verify-cap-config.mjs",
+    "verify:ios-plugins": "node scripts/verify-cap-config.mjs"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",
