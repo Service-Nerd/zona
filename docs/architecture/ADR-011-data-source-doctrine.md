@@ -255,3 +255,15 @@ These invariants are appended to the `zona-architectural-principles` skill as se
 - `app/api/race-times/route.ts` — Race time estimation (States 1–5)
 - `lib/coaching/constants.ts` — Scoring weights, verdict bands
 - `docs/canonical/CoachingPrinciples.md` §50 — HR zone fallback hierarchy
+
+---
+
+## Amendment 2026-08-06 — HealthKit runs are re-bucketable (N7)
+
+`/api/recalibrate-hr` could re-bucket Strava runs by re-fetching the raw HR stream from Strava's API, but not HealthKit runs: the device sends raw samples to `/api/health/ingest`, the server buckets them against the user's zones, and discarded them. Correcting a user's HR zones therefore left every HealthKit-sourced run scored against the **old** zones, permanently — for the source this ADR designates as the system of record.
+
+That was found when a real user's max HR was corrected by 40 bpm and their seven logged runs could not be re-scored (`docs/incidents/2026-08-06-plan-defects/analysis.md`, N7).
+
+`strava_activities.hr_bpm_histogram` (migration `20260806_hr_bpm_histogram.sql`) stores a bpm → sample-count map at ingest. This is **lossless for zone bucketing** — bucketing depends only on how many samples fall in each band, never on their order — at roughly 1 KB per run instead of thousands of raw values. `bucketHRHistogram()` in `lib/strava.ts` is now the sole implementation of the zone maths; `bucketHRSamples()` delegates to it, so the raw-stream and histogram paths cannot drift.
+
+**Rows ingested before this migration have no histogram and remain un-re-bucketable.** They are not made worse, and there is no backfill — the raw samples were never stored, so none is possible. This is a known, permanent gap for pre-2026-08-06 HealthKit activity.

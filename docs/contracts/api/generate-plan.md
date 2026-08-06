@@ -30,6 +30,13 @@ Body: GeneratorInput
 
 ### GeneratorInput (optional fields)
 
+> **Removed 2026-08-06 (F10):** `longest_run_ever_km` was documented here as
+> "informs week-1–2 long-run cap" but existed nowhere in `GeneratorInput` or the
+> engine — a contract asserting a field the code had never had. The week-1–2 cap
+> is driven by `longest_recent_run_km`, which *is* consumed. Implementing the
+> field is tracked as R23-D1 in `backlog.md`; until then the contract must not
+> claim it.
+
 ```typescript
 {
   // Fitness — all derived server-side; supply to override derivation
@@ -37,7 +44,6 @@ Body: GeneratorInput
   resting_hr?: number             // improves Karvonen zone accuracy; falls back to HRmax%
   max_hr?: number                 // derived from age via Tanaka if absent
   training_age?: '<6mo' | '6-18mo' | '2-5yr' | '5yr+'  // R23 rebuild — drives returning-runner allowance
-  longest_run_ever_km?: number    // R23 rebuild — informs week-1–2 long-run cap
 
   // Benchmark — enables VDOT-based pace targets (Jack Daniels model)
   benchmark?: {

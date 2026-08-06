@@ -1,4 +1,4 @@
-import { bucketHRSamples, type HRZones, type HRStreamSummary } from '@/lib/strava'
+import { bucketHRSamples, bpmHistogramFromSamples, type HRZones, type HRStreamSummary, type BpmHistogram } from '@/lib/strava'
 
 /**
  * HealthKit workout payload from the iOS sync.
@@ -63,6 +63,9 @@ export interface HealthKitActivityRow {
   hr_pct_z2:            number | null
   hr_pct_z3:            number | null
   hr_pct_z4_5:          number | null
+  /** N7 — bpm → sample count. Lets /api/recalibrate-hr re-bucket this run
+   *  against corrected zones later. Null when the run carried no HR stream. */
+  hr_bpm_histogram:     BpmHistogram | null
   calories_kcal:        number | null  // DS-02: active energy burned per workout
   raw_payload:          HealthKitWorkoutPayload
   processed_at:         string
@@ -115,6 +118,7 @@ export function adaptHealthKitWorkout(
     hr_pct_z2:            summary?.histogram.pctZ2   ?? null,
     hr_pct_z3:            summary?.histogram.pctZ3   ?? null,
     hr_pct_z4_5:          summary?.histogram.pctZ4_5 ?? null,
+    hr_bpm_histogram:     hrValues.length ? bpmHistogramFromSamples(hrValues) : null,
     calories_kcal:        payload.totalEnergyKcal != null
                             ? Math.round(payload.totalEnergyKcal * 10) / 10
                             : null,
@@ -176,6 +180,7 @@ export interface ManualActivityRow {
   hr_pct_z2:            null
   hr_pct_z3:            null
   hr_pct_z4_5:          null
+  hr_bpm_histogram:     null
   calories_kcal:        null
   raw_payload:          ManualRunPayload
   processed_at:         string
@@ -216,6 +221,7 @@ export function adaptManualRun(userId: string, payload: ManualRunPayload): Manua
     hr_pct_z2:            null,
     hr_pct_z3:            null,
     hr_pct_z4_5:          null,
+    hr_bpm_histogram:     null,
     calories_kcal:        null,
     raw_payload:          payload,
     processed_at:         new Date().toISOString(),

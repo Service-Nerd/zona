@@ -372,6 +372,12 @@ export default function GeneratePlanScreen({
   const [plan, setPlan]         = useState<Plan | null>(null)
   const [error, setError]       = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  // N8 — the ceremony's reveal is time-based, so it can finish before the
+  // enricher does. If the user reached the preview and tapped "Use this plan"
+  // in that window, the RULE plan was persisted and the enriched one discarded,
+  // silently. Both signals must land before the preview is reachable.
+  const [streamComplete, setStreamComplete] = useState(false)
+  const [revealComplete, setRevealComplete] = useState(false)
 
   // ── Foundation Block modal (Phase 4 — gap > 28 days) ─────────────────────
   const [foundationModalOpen, setFoundationModalOpen] = useState(false)
@@ -567,6 +573,8 @@ export default function GeneratePlanScreen({
   // ── Plan generation ───────────────────────────────────────────────────────
 
   async function handleGenerate() {
+    setStreamComplete(false)
+    setRevealComplete(false)
     setAppStep('generating')
     setError(null)
     setPlan(null)
@@ -695,6 +703,7 @@ export default function GeneratePlanScreen({
       if (!contentType.includes('ndjson')) {
         const data = await res.json()
         setPlan(applyFoundationIfNeeded(data.plan as Plan))
+        setStreamComplete(true)
         return
       }
 
@@ -732,6 +741,7 @@ export default function GeneratePlanScreen({
           }
         }
       }
+      setStreamComplete(true)
     } catch {
       setError('Could not reach the server. Check your connection.')
       setAppStep('error')
@@ -772,6 +782,12 @@ export default function GeneratePlanScreen({
     } catch { setIsSaving(false) }
   }
 
+  // N8 — advance to preview only when the stream has finished AND the reveal
+  // animation has played out. Whichever lands second triggers the transition.
+  useEffect(() => {
+    if (appStep === 'generating' && streamComplete && revealComplete) setAppStep('preview')
+  }, [appStep, streamComplete, revealComplete])
+
   // ── Special screens (ceremony / preview / error) ──────────────────────────
 
   if (appStep === 'generating') {
@@ -779,7 +795,7 @@ export default function GeneratePlanScreen({
       <GeneratingCeremony
         hasPaidAccess={!!hasPaidAccess}
         plan={plan}
-        onRevealComplete={() => setAppStep('preview')}
+        onRevealComplete={() => setRevealComplete(true)}
       />
     )
   }

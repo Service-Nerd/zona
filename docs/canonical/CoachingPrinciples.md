@@ -488,7 +488,14 @@ Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) where `startKm` i
 
 **Why.** A shakeout is a wake-up for the legs, not training. Anything longer than ~35 minutes has crossed into being a session, and starts to add fatigue the runner cannot recover from before race day. Strides on the earlier shakeout preserve fast-twitch coordination — the runner has rehearsed near-race-pace turnover within 48 hours of the gun, but only for 80 seconds of work. Without strides, six days of taper-pace running can leave the runner feeling flat-footed at the start.
 
-**Config.** `GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS = 35`. Implemented in the race-week branch of `buildWeekSessions()`. Distance is reduced proportionally when the cap binds (preserving easy pace).
+**Amended 2026-08-06 (F14) — the two shakeouts are not the same session.** They were emitted identically (4 km, same label, differing only by the stride note), which reads as a copy-paste rather than a plan. They do different jobs and are now sized and named accordingly:
+
+| Position | Distance | Job |
+|---|---|---|
+| Earlier (`RACE_WEEK_SHAKEOUT_DAYS_BEFORE_RACE[0]`) | `RACE_WEEK_SHAKEOUT_KM[0]` | Keep the legs turning over; carries the strides |
+| Final (`[1]`) | `RACE_WEEK_SHAKEOUT_KM[1]` | Minimal. The last run before a race should leave the runner wondering if it was enough — that is the correct feeling |
+
+**Config.** `GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS = 35`, `GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_KM = [5, 3]`, `GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_DAYS_BEFORE_RACE = [5, 3]` (§77). Implemented in the race-week branch of `buildWeekSessions()`. Distance is reduced proportionally when the cap binds (preserving easy pace).
 
 ---
 

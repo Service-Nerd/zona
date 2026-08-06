@@ -262,6 +262,12 @@ export const GENERATION_CONFIG = {
   // without adding race-day fatigue. For HM/marathon, an additional easy
   // mid-week run prevents the taper from going too deep.
   RACE_WEEK_SHAKEOUT_MAX_MINS: 35,
+  // §30 (amended, F14) — the two shakeouts do different jobs. The earlier one
+  // keeps the legs turning over and carries the strides; the final one is
+  // minimal, because the last run before a race should leave the runner
+  // wondering whether it was enough. Index-aligned with
+  // RACE_WEEK_SHAKEOUT_DAYS_BEFORE_RACE.
+  RACE_WEEK_SHAKEOUT_KM: [5, 3],
   RACE_WEEK_EASY_KM: {
     HM:       7,    // 6–8 km easy on a non-shakeout day
     MARATHON: 9,    // 8–10 km

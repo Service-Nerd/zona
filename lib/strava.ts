@@ -78,18 +78,50 @@ export interface HRZones {
  * ceiling) and we don't pretend to know the Z3/Z4-5 split — the missing pcts
  * land in Z4_5 as a single "above" bucket so the histogram still sums to 100.
  */
-export function bucketHRSamples(hrData: number[], zones: HRZones): HRStreamSummary | null {
-  if (!hrData?.length) return null
+/**
+ * bpm → sample-count. A lossless substitute for the raw HR stream *for zone
+ * bucketing*, because bucketing depends only on how many samples fall in each
+ * band, never on their order. ~1 KB per run versus thousands of raw values.
+ *
+ * N7 (2026-08-06): HealthKit samples reach the server at ingest and were
+ * discarded after bucketing, so a later HR-zone correction could not re-bucket
+ * HealthKit runs — and HealthKit is the SOR for run data (ADR-011). Persisting
+ * this makes every run re-bucketable for good.
+ */
+export type BpmHistogram = Record<string, number>
+
+export function bpmHistogramFromSamples(hrData: number[]): BpmHistogram {
+  const hist: BpmHistogram = {}
+  for (const v of hrData) {
+    if (!(v > 0)) continue
+    const k = String(Math.round(v))
+    hist[k] = (hist[k] ?? 0) + 1
+  }
+  return hist
+}
+
+/** Sole implementation of the zone maths. `bucketHRSamples` delegates here so
+ *  raw-stream and histogram paths can never drift (D-08). */
+export function bucketHRHistogram(hist: BpmHistogram | null | undefined, zones: HRZones): HRStreamSummary | null {
+  if (!hist) return null
+  const entries = Object.entries(hist)
+    .map(([bpm, n]) => [Number(bpm), n] as const)
+    .filter(([bpm, n]) => bpm > 0 && n > 0)
+  if (!entries.length) return null
+
   const ceiling = zones.zone2Ceiling ?? (zones.maxHR ? Math.round(zones.maxHR * 0.76) : null)
   const floor   = zones.maxHR ? Math.round(zones.maxHR * 0.60) : null
   if (!ceiling) return null
 
-  const total = hrData.length
+  const countWhere = (pred: (bpm: number) => boolean): number =>
+    entries.reduce((acc, [bpm, n]) => acc + (pred(bpm) ? n : 0), 0)
+
+  const total = entries.reduce((acc, [, n]) => acc + n, 0)
 
   // Z2-anchored counts — legacy fields.
-  const inZoneCount = hrData.filter(hr => (!floor || hr >= floor) && hr <= ceiling).length
-  const aboveCount  = hrData.filter(hr => hr > ceiling).length
-  const belowCount  = floor ? hrData.filter(hr => hr < floor).length : 0
+  const inZoneCount = countWhere(hr => (!floor || hr >= floor) && hr <= ceiling)
+  const aboveCount  = countWhere(hr => hr > ceiling)
+  const belowCount  = floor ? countWhere(hr => hr < floor) : 0
 
   // Full histogram. When maxHR is unknown we can't split the "above ceiling"
   // bucket between Z3 and Z4-5 — lump it under Z4-5 so the sum stays at 100.
@@ -99,8 +131,8 @@ export function bucketHRSamples(hrData: number[], zones: HRZones): HRStreamSumma
   let pctZ3Count = 0
   let pctZ4_5Count = 0
   if (z3Boundary != null) {
-    pctZ3Count   = hrData.filter(hr => hr > ceiling && hr <= z3Boundary).length
-    pctZ4_5Count = hrData.filter(hr => hr > z3Boundary).length
+    pctZ3Count   = countWhere(hr => hr > ceiling && hr <= z3Boundary)
+    pctZ4_5Count = countWhere(hr => hr > z3Boundary)
   } else {
     pctZ4_5Count = aboveCount
   }
@@ -116,6 +148,11 @@ export function bucketHRSamples(hrData: number[], zones: HRZones): HRStreamSumma
       pctZ4_5: Math.round((pctZ4_5Count / total) * 100 * 100) / 100,
     },
   }
+}
+
+export function bucketHRSamples(hrData: number[], zones: HRZones): HRStreamSummary | null {
+  if (!hrData?.length) return null
+  return bucketHRHistogram(bpmHistogramFromSamples(hrData), zones)
 }
 
 /** Reads the user's HR zones. Source of truth: live user_settings.resting_hr

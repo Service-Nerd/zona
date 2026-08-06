@@ -888,9 +888,25 @@ function raceSession(weekN: number, day: Day, distKm: number, raceName: string |
   }
 }
 
-function shakeoutSession(weekN: number, day: Day, zones: ZoneTargets, pace: PaceGuide): Session {
-  const session = easySession(weekN, day, 4, 'distance', zones, pace, 'Easy shakeout', 2,
-    ['Short and relaxed. Wake the legs, nothing more.'])
+/**
+ * §30 (amended, F14) — the two race-week shakeouts are not the same session.
+ * They were emitted identically (4 km, same label, differing only by a stride
+ * note), which reads as a copy-paste rather than a plan.
+ *
+ * `slot` 0 is the earlier one: longer, carries the strides. `slot` 1 is the
+ * final run before the race: minimal, and meant to leave the runner wondering
+ * whether it was enough.
+ */
+function shakeoutSession(
+  weekN: number, day: Day, zones: ZoneTargets, pace: PaceGuide, slot: 0 | 1 = 0,
+): Session {
+  const km = GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_KM[slot]
+    ?? GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_KM[0]
+  const label = slot === 0 ? 'Easy shakeout' : 'Pre-race shakeout'
+  const note = slot === 0
+    ? 'Short and relaxed. Wake the legs, nothing more.'
+    : 'The last one before race day. Short on purpose — if it feels too easy, that is the point.'
+  const session = easySession(weekN, day, km, 'distance', zones, pace, label, 2, [note])
   session.zone = 'Zone 1'
   session.hr_target = zones.shakeoutHR
   return session
@@ -1168,7 +1184,7 @@ function buildWeekSessions(
     const [shakeout1, shakeout2] = shakeoutDays
 
     if (shakeout1) {
-      const s = enforceCap(shakeoutSession(weekN, shakeout1, zones, pace))
+      const s = enforceCap(shakeoutSession(weekN, shakeout1, zones, pace, 0))
       const e0 = s.coach_notes?.[0]
       const strideNote = '4×100m strides at 5K effort, full recovery between.'
       s.coach_notes = e0 ? [e0, strideNote] : [strideNote]
@@ -1176,7 +1192,7 @@ function buildWeekSessions(
     }
 
     if (shakeout2 && input.days_available >= 3) {
-      sessions[shakeout2] = enforceCap(shakeoutSession(weekN, shakeout2, zones, pace))
+      sessions[shakeout2] = enforceCap(shakeoutSession(weekN, shakeout2, zones, pace, 1))
     }
 
     // CoachingPrinciples §39 — race-week mid-week easy for HM/marathon.
