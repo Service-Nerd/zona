@@ -50,7 +50,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
     "vdot_training_anchor": 30.8,
     "version": "2.0",
     "volume_constrained": false,
-    "volume_constraint_note": "Peak volume 36 km is 109% of week 1 (33 km) — below the 110% overload threshold. Plan maintains current fitness rather than building it. To enable a build profile: increase days_available from 3 to 4.",
+    "volume_constraint_note": "Peak-phase volume 36 km is 109% of week 1 (33 km) — below the 110% overload threshold. The plan's highest week is 37 km, earlier in the block — volume holds rather than building into the peak, which is by design for this level. Plan maintains current fitness rather than building it. To enable a build profile: increase days_available from 3 to 4.",
     "volume_profile": "maintenance",
     "zone2_ceiling": 146,
   },
@@ -259,7 +259,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         "wed": {
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
-            "This is a measurement, not a session. The result resets your zones and paces for the next block.",
+            "This is a measurement, not a session. Log the result in your profile and your paces update for the next block.",
             "A parkrun counts. So does a solo effort — just make it honest.",
           ],
           "detail": null,
@@ -273,7 +273,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — your result resets the zones for the next block.",
+      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 23,
     },
@@ -471,7 +471,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         "wed": {
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
-            "This is a measurement, not a session. The result resets your zones and paces for the next block.",
+            "This is a measurement, not a session. Log the result in your profile and your paces update for the next block.",
             "A parkrun counts. So does a solo effort — just make it honest.",
           ],
           "detail": null,
@@ -485,7 +485,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — your result resets the zones for the next block.",
+      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 23,
     },
@@ -1808,7 +1808,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         "wed": {
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
-            "This is a measurement, not a session. The result resets your zones and paces for the next block.",
+            "This is a measurement, not a session. Log the result in your profile and your paces update for the next block.",
             "A parkrun counts. So does a solo effort — just make it honest.",
           ],
           "detail": null,
@@ -1822,7 +1822,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — your result resets the zones for the next block.",
+      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 28,
     },
@@ -2096,7 +2096,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         "wed": {
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
-            "This is a measurement, not a session. The result resets your zones and paces for the next block.",
+            "This is a measurement, not a session. Log the result in your profile and your paces update for the next block.",
             "A parkrun counts. So does a solo effort — just make it honest.",
           ],
           "detail": null,
@@ -2110,7 +2110,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — your result resets the zones for the next block.",
+      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 30,
     },
@@ -2683,7 +2683,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
         "wed": {
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
-            "This is a measurement, not a session. The result resets your zones and paces for the next block.",
+            "This is a measurement, not a session. Log the result in your profile and your paces update for the next block.",
             "A parkrun counts. So does a solo effort — just make it honest.",
           ],
           "detail": null,
@@ -2697,7 +2697,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — your result resets the zones for the next block.",
+      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 32,
     },
@@ -2958,7 +2958,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
         "wed": {
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
-            "This is a measurement, not a session. The result resets your zones and paces for the next block.",
+            "This is a measurement, not a session. Log the result in your profile and your paces update for the next block.",
             "A parkrun counts. So does a solo effort — just make it honest.",
           ],
           "detail": null,
@@ -2972,7 +2972,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — your result resets the zones for the next block.",
+      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 32,
     },
@@ -3437,7 +3437,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
     "vdot_training_anchor": 48.2,
     "version": "2.0",
     "volume_constrained": false,
-    "volume_constraint_note": "Peak volume 62 km is 102% of week 1 (61 km) — below the 110% overload threshold. Peak long run 29.5 km is below the 31.7 km floor (75% of race distance) — week-on-week long-run cap (§45) prevented reaching the ratio. Plan maintains current fitness rather than building it. To enable a build profile: increase days_available from 5 to 6, OR defer the race so the build has more weeks (current 16, recommended ≥16).",
+    "volume_constraint_note": "Peak-phase volume 62 km is 102% of week 1 (61 km) — below the 110% overload threshold. The plan's highest week is 66 km, earlier in the block — volume holds rather than building into the peak, which is by design for this level. Peak long run 29.5 km is below the 31.7 km floor (75% of race distance) — week-on-week long-run cap (§45) prevented reaching the ratio. Plan maintains current fitness rather than building it. To enable a build profile: increase days_available from 5 to 6, OR defer the race so the build has more weeks (current 16, recommended ≥16).",
     "volume_profile": "maintenance",
     "zone2_ceiling": 147,
   },
@@ -3761,7 +3761,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         "wed": {
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
-            "This is a measurement, not a session. The result resets your zones and paces for the next block.",
+            "This is a measurement, not a session. Log the result in your profile and your paces update for the next block.",
             "A parkrun counts. So does a solo effort — just make it honest.",
           ],
           "detail": null,
@@ -3775,7 +3775,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — your result resets the zones for the next block.",
+      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 43,
     },
@@ -4088,7 +4088,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         "wed": {
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
-            "This is a measurement, not a session. The result resets your zones and paces for the next block.",
+            "This is a measurement, not a session. Log the result in your profile and your paces update for the next block.",
             "A parkrun counts. So does a solo effort — just make it honest.",
           ],
           "detail": null,
@@ -4102,7 +4102,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — your result resets the zones for the next block.",
+      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 43,
     },
@@ -5297,7 +5297,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         "wed": {
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
-            "This is a measurement, not a session. The result resets your zones and paces for the next block.",
+            "This is a measurement, not a session. Log the result in your profile and your paces update for the next block.",
             "A parkrun counts. So does a solo effort — just make it honest.",
           ],
           "detail": null,
@@ -5311,7 +5311,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — your result resets the zones for the next block.",
+      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 22,
     },
@@ -5630,7 +5630,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
     "vdot_training_anchor": 46.6,
     "version": "2.0",
     "volume_constrained": false,
-    "volume_constraint_note": "Peak volume 65 km is 107% of week 1 (61 km) — below the 110% overload threshold. Plan maintains current fitness rather than building it. To enable a build profile: increase days_available from 5 to 6.",
+    "volume_constraint_note": "Peak-phase volume 65 km is 107% of week 1 (61 km) — below the 110% overload threshold. The plan's highest week is 66 km, earlier in the block — volume holds rather than building into the peak, which is by design for this level. Plan maintains current fitness rather than building it. To enable a build profile: increase days_available from 5 to 6.",
     "volume_profile": "maintenance",
     "zone2_ceiling": 148,
   },
@@ -5954,7 +5954,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
         "wed": {
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
-            "This is a measurement, not a session. The result resets your zones and paces for the next block.",
+            "This is a measurement, not a session. Log the result in your profile and your paces update for the next block.",
             "A parkrun counts. So does a solo effort — just make it honest.",
           ],
           "detail": null,
@@ -5968,7 +5968,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — your result resets the zones for the next block.",
+      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 43,
     },
@@ -6281,7 +6281,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
         "wed": {
           "coach_notes": [
             "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
-            "This is a measurement, not a session. The result resets your zones and paces for the next block.",
+            "This is a measurement, not a session. Log the result in your profile and your paces update for the next block.",
             "A parkrun counts. So does a solo effort — just make it honest.",
           ],
           "detail": null,
@@ -6295,7 +6295,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "zone": "Zone 4–5",
         },
       },
-      "theme": "Deload week. One hard effort in the middle — your result resets the zones for the next block.",
+      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
       "type": "deload",
       "weekly_km": 43,
     },

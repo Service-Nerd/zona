@@ -974,7 +974,7 @@ function applyRecalibrationTimeTrial(
   delete s.hr_target
   s.coach_notes = [
     `Warm up easy for 10 minutes, then ${cfg.distance_km} km as hard as you can hold. Cool down easy.`,
-    'This is a measurement, not a session. The result resets your zones and paces for the next block.',
+    'This is a measurement, not a session. Log the result in your profile and your paces update for the next block.',
     'A parkrun counts. So does a solo effort — just make it honest.',
   ]
   return day
@@ -1783,7 +1783,7 @@ function weekTheme(c: WeekContent): string {
   if (c.isRaceWeek) return 'The work is done. Arrive rested.'
   if (c.isDeload) {
     return c.hasBenchmark
-      ? 'Deload week. One hard effort in the middle — your result resets the zones for the next block.'
+      ? 'Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.'
       : 'Adaptation happens in recovery. This week counts.'
   }
   switch (c.phase) {
@@ -3103,7 +3103,16 @@ export function generateRulePlan(
 
           const reasons: string[] = []
           if (ratioFails) {
-            reasons.push(`Peak volume ${peakKmActual} km is ${Math.round(ratio * 100)}% of week 1 (${w1} km) — below the ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% overload threshold.`)
+            // V7 / CD-10 — the ratio is deliberately peak-PHASE-scoped (§23: does the
+            // plan overload INTO the peak?), but the note must not imply peakKmActual
+            // is the plan's maximum. For a beginner the highest week can sit in base
+            // (peak = long run + specificity, not tonnage — §80). State both figures
+            // so the note is arithmetically honest about the plan the runner holds.
+            const planMaxKm = Math.max(...weeks.map(wk => wk.weekly_km), 0)
+            const baseNote = planMaxKm > peakKmActual
+              ? ` The plan's highest week is ${planMaxKm} km, earlier in the block — volume holds rather than building into the peak, which is by design for this level.`
+              : ''
+            reasons.push(`Peak-phase volume ${peakKmActual} km is ${Math.round(ratio * 100)}% of week 1 (${w1} km) — below the ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% overload threshold.${baseNote}`)
           }
           if (volumeFails) {
             reasons.push(`Peak weekly volume ${peakKmActual} km is below the ${Math.round(volumeFloor)} km floor for a time-targeted ${distKey} (${Math.round((volumeFloor / distKm) * 100)}% of race distance).`)
