@@ -6916,17 +6916,30 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 color: 'var(--moss)',
                 letterSpacing: '-2.5px',
               }}>
-                Until then, rest up.
+                {/* CD-5/N7 — a short gap before the plan can rest; a longer one
+                    must keep ticking over, or the runner detrains before week 1. */}
+                Until then, {daysToPlanStart > 3 ? 'keep it easy.' : 'rest up.'}
               </span>
             </div>
             <div style={{
               fontFamily: 'var(--font-ui)',
               fontSize: '13px',
               color: 'var(--mute)',
-              marginBottom: '20px',
+              marginBottom: daysToPlanStart > 3 ? '8px' : '20px',
             }}>
               Plan begins {planStartDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}.
             </div>
+            {daysToPlanStart > 3 && (
+              <div style={{
+                fontFamily: 'var(--font-ui)',
+                fontSize: '14px',
+                color: 'var(--ink-2)',
+                lineHeight: 1.5,
+                marginBottom: '20px',
+              }}>
+                A few easy runs a week, nothing hard. Arrive at week one fresh.
+              </div>
+            )}
           </>
         ) : showSessionHero && selectedSession ? (
           <>
