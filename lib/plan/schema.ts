@@ -172,6 +172,19 @@ export const PlanMetaSchema = z.object({
     resolution:     z.string(),
     weeks_affected: z.array(z.number().int().positive()),
   })).optional(),
+
+  // ADR-013 — post-race maintenance plan lifecycle. `plan_kind` marks a plan as
+  // a standalone maintenance block; the `source_*` fields carry the finished
+  // race forward. These MUST be registered here so a re-parse through the schema
+  // doesn't strip them (same reason as `plan_intro` above). `source_race_date`
+  // drives "N weeks post-race" coaching recency in sessionFeedback.
+  plan_kind:                   z.enum(['race', 'maintenance']).optional(),
+  source_race_name:            z.string().optional(),
+  source_race_distance_km:     z.number().positive().optional(),
+  source_race_date:            z.string().optional(),
+  source_race_outcome:         z.string().optional(),
+  source_finish_time:          z.string().optional(),
+  maintenance_transition_seen: z.boolean().optional(),
 })
 
 export const PrePlanGuidanceSchema = z.object({

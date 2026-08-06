@@ -138,12 +138,62 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
   // fade-as-fault citations. Race efforts are already handled by isRace.
   const isUltraEffort = !isRace && actualDistKm >= LIMITER.SUPPRESS_ULTRA_DISTANCE_KM
 
-  const weeksToRace = plan.meta.race_date
-    ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
+  const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000
+  const isMaintenance = plan.meta.plan_kind === 'maintenance'
+
+  // Signed weeks-to-race. A race in the PAST reads "run N weeks ago" / "this
+  // week" — never "0 weeks away". The old Math.max(0, …) clamp made a finished
+  // race look imminent (the §73 in-flight-vs-done bug class). Maintenance plans
+  // wipe race_date to '' → null here; their recency comes from the block below.
+  const signedWeeksToRace = plan.meta.race_date
+    ? Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / MS_PER_WEEK)
     : null
+  const raceTiming =
+    signedWeeksToRace === null ? ''
+    : signedWeeksToRace > 0    ? `, ${signedWeeksToRace} week${signedWeeksToRace === 1 ? '' : 's'} away`
+    : signedWeeksToRace === 0  ? ', this week'
+    :                            ` — run ${Math.abs(signedWeeksToRace)} week${signedWeeksToRace === -1 ? '' : 's'} ago`
+
   const raceContext = plan.meta.race_name
-    ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${plan.meta.race_distance_km}km)` : ''}${weeksToRace !== null ? `, ${weeksToRace} weeks away` : ''}`
+    ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${plan.meta.race_distance_km}km)` : ''}${isMaintenance ? '' : raceTiming}`
     : 'target race'
+
+  // Maintenance weeks keep continuous `n` carried from the race plan (e.g. n=21)
+  // while plan.weeks holds only the maintenance block — so "Week 21 of 4" is
+  // incoherent. Show maintenance-relative position instead.
+  const maintIdx = isMaintenance ? plan.weeks.findIndex(w => w.n === weekN) : -1
+  const weekLine = maintIdx >= 0
+    ? `Maintenance week: ${maintIdx + 1} of ${plan.weeks.length}`
+    : `Week: ${weekN} of ${plan.weeks.length}`
+
+  // ADR-013 — post-race maintenance context. The runner has NO upcoming race;
+  // recency is measured from the source race. Without this the prompt supplied
+  // no elapsed-time ground truth and the model fabricated one (e.g. "two days
+  // after your 100km effort" three weeks post-race). Supply the real figure —
+  // or, when the date wasn't carried (pre-fix plans), explicitly forbid inventing one.
+  const maintenanceBlock = isMaintenance
+    ? (() => {
+        const srcName = plan.meta.source_race_name
+          ?? plan.meta.race_name?.replace(/^After\s+/i, '')
+          ?? 'your race'
+        const srcDist = plan.meta.source_race_distance_km ?? plan.meta.race_distance_km ?? null
+        const distStr = srcDist ? ` (${srcDist}km)` : ''
+        const srcDate = plan.meta.source_race_date
+        let recency: string
+        if (srcDate) {
+          const days  = Math.max(0, Math.round((Date.now() - new Date(srcDate).getTime()) / 86_400_000))
+          const weeks = Math.round(days / 7)
+          recency = days < 10
+            ? `It has been ${days} day${days === 1 ? '' : 's'} since the race. Do not state a different figure.`
+            : `It has been about ${weeks} week${weeks === 1 ? '' : 's'} since the race. Do not state a different figure.`
+        } else {
+          recency = 'The exact time since the race is not known here — do NOT state or imply a specific number of days or weeks since it, and do not describe this run as being "X days after" the race.'
+        }
+        return `
+POST-RACE MAINTENANCE — this run is part of a recovery/maintenance block after ${srcName}${distStr}. There is no upcoming race: do not coach toward a countdown, taper, or race prep, and do not invent one. ${recency}
+`
+      })()
+    : ''
 
   // Prescribed zone band: ceiling for Z2, range for Z3+.
   const zoneTarget = prescribedHrBand
@@ -294,7 +344,7 @@ ${firstRunNote}
 Now write feedback for this session:
 
 Race context: ${raceContext}
-Week: ${weekN} of ${plan.weeks.length}${weekPhase ? ` — ${weekPhase} phase` : ''}
+${weekLine}${weekPhase ? ` — ${weekPhase} phase` : ''}
 
 Session type: ${session.type} (${session.label})
 Planned distance: ${session.distance_km ? `${session.distance_km}km` : 'not set'}
@@ -302,7 +352,7 @@ Actual distance: ${actualDistKm.toFixed(1)}km
 ${paceLine ? paceLine + '\n' : ''}${hrLine}
 ${efLine ? efLine + '\n' : ''}RPE: ${rpe !== null ? rpe : 'not logged'}
 Fatigue: ${fatigueTag ?? 'not logged'}${isRace ? '' : `\nVerdict: ${verdict}`}
-${isRace ? raceDebriefBlock : `${previousSimilarBlock}${isUltraEffort ? ultraEffortBlock : `${streamBlock}${paceFadeBlock}`}${cohortBlock}${tempBlock}${limiterBlock}`}
+${isRace ? raceDebriefBlock : `${maintenanceBlock}${previousSimilarBlock}${isUltraEffort ? ultraEffortBlock : `${streamBlock}${paceFadeBlock}`}${cohortBlock}${tempBlock}${limiterBlock}`}
 Write 2–4 sentences of honest, specific feedback. No headers. No bullet points. Plain text only.`
 }
 

@@ -350,6 +350,7 @@ export interface PlanMeta {
   plan_kind?:        'race' | 'maintenance'
   source_race_name?: string   // maintenance plan: the race it follows (for copy + next-goal)
   source_race_distance_km?: number  // maintenance plan: race distance (drives next-goal ladder)
+  source_race_date?: string         // maintenance plan: ISO date the source race was run — drives "N weeks post-race" coaching recency (ADR-013). Carried from the race plan's race_date before it's cleared.
   source_race_outcome?: string      // maintenance plan: on_target | dnf | ...
   source_finish_time?: string       // maintenance plan: finish time (next-goal achievement line)
   maintenance_transition_seen?: boolean  // maintenance plan: one-time "after the race" announcement acknowledged

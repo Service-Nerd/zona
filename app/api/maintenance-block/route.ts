@@ -187,6 +187,10 @@ export async function POST(req: NextRequest) {
       race_date:               '',   // no upcoming race → countdown / projections no-op
       source_race_name:        plan.meta.race_name,
       source_race_distance_km: plan.meta.race_distance_km,
+      // Capture the race date BEFORE race_date is wiped to '' above. Without
+      // this, nothing downstream knows when the race was, and post-race coaching
+      // fabricates the elapsed time (ADR-013 / sessionFeedback maintenance block).
+      source_race_date:        plan.meta.race_date || undefined,
       source_race_outcome:     (raceResult as any).outcome ?? undefined,
       source_finish_time:      (raceResult as any).finish_time ?? undefined,
       last_updated:            new Date().toISOString(),
