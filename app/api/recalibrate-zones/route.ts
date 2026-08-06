@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
     }
 
-    const { benchmark }: { benchmark: BenchmarkInput } = await req.json()
+    const { benchmark, recalibration_week_n }: { benchmark: BenchmarkInput; recalibration_week_n?: number } = await req.json()
     if (!benchmark?.type || !benchmark?.distance_km || !benchmark?.time) {
       return NextResponse.json({ error: 'Invalid benchmark input.' }, { status: 422 })
     }
@@ -32,6 +32,13 @@ export async function POST(req: NextRequest) {
     const fromWeekN = currentWeek?.n ?? 1
 
     const updatedPlan = applyRecalibration(plan, benchmark, fromWeekN)
+    // PV2-H — record the recalibration week so the "your time trial is in" prompt
+    // fires once (nextRecalibrationDue reads meta.recalibrations_applied).
+    if (recalibration_week_n != null) {
+      const applied = new Set(updatedPlan.meta.recalibrations_applied ?? [])
+      applied.add(recalibration_week_n)
+      updatedPlan.meta.recalibrations_applied = Array.from(applied).sort((a, b) => a - b)
+    }
     await savePlanForUser(user.id, updatedPlan, supabase)
 
     const weeksUpdated = plan.weeks.length - (fromWeekN - 1)

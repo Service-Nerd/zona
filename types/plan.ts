@@ -305,6 +305,7 @@ export interface PlanMeta {
   vdot_training_anchor?: number           // discounted VDOT used to derive training paces (CoachingPrinciples §10)
   goal_pace_per_km?: string               // e.g. "5:04 /km" — target race pace, not a training zone
   recalibration_weeks?: number[]          // week numbers where a benchmark re-test is scheduled
+  recalibrations_applied?: number[]       // PV2-H — recalibration weeks whose TT result has been applied (so the prompt fires once)
   benchmark?: BenchmarkInput              // stored so recalibration can reference original
 
   // R23 rebuild — VDOT conservatism + returning runner + compressed flag
