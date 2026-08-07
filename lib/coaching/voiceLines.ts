@@ -1,5 +1,6 @@
 import type { Session } from '@/types/plan'
 import { BRAND } from '@/lib/brand'
+import { formatDistance } from '@/lib/format'
 
 // One-line voice anchors per session type — used wherever the app needs a
 // single concrete coaching sentence in Zonna voice. Extracted from
@@ -38,8 +39,10 @@ function sessionMetricSummary(session: Pick<Session, 'duration_mins' | 'distance
     return `${mins}m`
   }
   if (session.distance_km) {
-    const km = session.distance_km
-    return Number.isInteger(km) ? `${km}km` : `${km.toFixed(1)}km`
+    // Route through the single source of truth for distance display so the push
+    // and the in-app session card never disagree (formatDistance rounds to whole
+    // km; the old inline toFixed(1) here said "5.7km" while the card said "6km").
+    return formatDistance(session.distance_km, 'km')
   }
   return null
 }

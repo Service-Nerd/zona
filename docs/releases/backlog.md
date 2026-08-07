@@ -227,7 +227,7 @@ After Vercel deploy, verify with agent-browser:
 
 ### Notifications
 
-*(no open items — see NOTIF-01 in feature-registry for the shipped inbox + bell.)*
+- 🔲 **[W6]** **PUSH-UNITS-01 — daily push must honour the user's distance unit** *(scoped 2026-08-07, found during the maintenance-plan bug sweep)* — the daily-session push always renders distance in **km**, even for a user whose preferred unit is miles, so the push and the in-app session card disagree for mile users. `buildDailyPushTitle` / `sessionMetricSummary` in `lib/coaching/voiceLines.ts` now route through the shared `formatDistance` helper (rounding is fixed — that was the 5.7km-vs-6km bug), but the helper is still called with a hardcoded `'km'` because the push builder never receives the user's unit. **Fix:** thread `preferredUnits` (from `user_settings`) into the push builder in `app/api/push/send-daily/route.ts` and pass it to `sessionMetricSummary`/`buildDailyPushTitle`. Low impact today (tiny user base, most on km) → W6, but it is a genuine correctness gap for mile users. Tier: **FREE** (formula-derived copy, no AI). Effort: **XS**.
 
 ### Post-run journey
 

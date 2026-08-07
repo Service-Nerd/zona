@@ -1983,7 +1983,12 @@ export default function DashboardClient() {
         {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} />}
         {screen === 'coach'    && (hasPaidAccess
           ? (() => {
-              const wn = getCurrentWeekIndex(plan.weeks) + 1
+              // ADR-013 §22-27: allCompletions and runAnalysisMap are keyed by
+              // week.n, NOT array position. On a standalone maintenance plan the
+              // array restarts at index 0 but week.n continues (26+), so the old
+              // `getCurrentWeekIndex+1` key collided with the archived race plan's
+              // week-1 completions (all 'complete') → false 4/4. Derive from week.n.
+              const wn = (currentWeek as any)?.n ?? (getCurrentWeekIndex(plan.weeks) + 1)
               const comps = allCompletions[wn] ?? {}
               const wSessions = Object.entries((currentWeek as any).sessions ?? {})
                 .map(([day, s]: [string, any]) => ({ ...(s as any), key: day }))
@@ -8377,6 +8382,9 @@ function getWeekVoiceItems(ctx: WeekVoiceContext, max = 3): string[] {
 
 const PHASE_LABELS: Record<string, string> = {
   foundation: 'Foundation Block', base: 'Base', build: 'Build', peak: 'Peak', taper: 'Taper',
+  // ADR-013 maintenance-plan phases — without these the raw lowercase phase leaks
+  // through and the uppercase CSS renders "MAINTENANCE_RESTORATION" on the Plan card.
+  maintenance_restoration: 'Restoration', maintenance_base: 'Base',
 }
 
 function PlanCoachingCard({ plan, currentWeek, units = 'km', trackedKm }: {
@@ -9000,7 +9008,12 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
     ?? (reportIsCurrent ? (weeklyReport?.sessions_completed ?? null) : null)
   const sessionsPlanned: number | null   = liveSessionsPlanned
     ?? (reportIsCurrent ? (weeklyReport?.sessions_planned ?? null) : null)
-  const weeksToRace = Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
+  // ADR-013 maintenance plans carry race_date === '' (no upcoming race), so the
+  // date math below yields NaN. Detect that plan kind and guard the value — the
+  // "Weeks left" tile is swapped for a Phase tile when there's no race to count to.
+  const isMaintenancePlan = (plan.meta as any)?.plan_kind === 'maintenance'
+  const rawWeeksToRace = Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000))
+  const weeksToRace = Number.isFinite(rawWeeksToRace) ? Math.max(0, rawWeeksToRace) : 0
   // On a race week the zone-discipline % and load-ratio spike by design — a race
   // is run at race effort, not by holding easy zones. The verdict copy on those
   // two tiles must NOT scold ("ran too hot" / "overloading") on this week.
@@ -9599,13 +9612,21 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               subColor: sc.color,
               onTap: undefined,
             },
-            {
-              label: 'Weeks left',
-              value: weeksToRace > 0 ? String(weeksToRace) : 'Race',
-              sub: wtrc.label,
-              subColor: wtrc.color,
-              onTap: undefined,
-            },
+            isMaintenancePlan
+              ? {
+                  label: 'Phase',
+                  value: 'Maintenance',
+                  sub: PHASE_LABELS[(currentWeek as any)?.phase] ?? 'Base',
+                  subColor: 'var(--mute)',
+                  onTap: undefined,
+                }
+              : {
+                  label: 'Weeks left',
+                  value: weeksToRace > 0 ? String(weeksToRace) : 'Race',
+                  sub: wtrc.label,
+                  subColor: wtrc.color,
+                  onTap: undefined,
+                },
           ] as const).map((m) => {
             const inner = (
               <>
