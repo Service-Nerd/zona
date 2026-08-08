@@ -6467,6 +6467,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   // week_n keyed by canonical week.n, not array position (MAINT-06) — so a
   // standalone maintenance plan keys completions at 26+ not 1. No-op for race plans.
   const weekNum = (currentWeek as any)?.n ?? (weekIndex + 1)
+  // Display ordinal (1-indexed array position) — what the user sees ("Week 4"),
+  // never the week.n key (which reads "Week 29" on a maintenance plan). ADR-013.
+  const weekOrdinal = weekIndex + 1
   const totalWeeks = plan.weeks.length
 
   // Guard against empty plan (e.g. failed Gist fetch)
@@ -6912,7 +6915,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
           }}>
-            {weekPhaseLabel ? `${weekPhaseLabel} · ` : ''}Week {weekNum}
+            {weekPhaseLabel ? `${weekPhaseLabel} · ` : ''}Week {weekOrdinal}
           </span>
           <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
           {daysToRace > 0 && (
@@ -7994,7 +7997,13 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   onOpenCoach?: () => void
 }) {
   const currentWeekIndex = getCurrentWeekIndex(plan.weeks)
+  // ADR-013: two distinct week numbers. `weekNum` is the canonical week.n KEY
+  // (session_completions, plan-weekly-note) — continues at 26+ on a standalone
+  // maintenance plan. `weekOrdinal` is the 1-indexed array POSITION, and is the
+  // only value shown to the user ("Wk 4 of 11") or fed to the PlanArc — never
+  // week.n, which would render the nonsensical "Wk 29 of 11".
   const weekNum = (plan.weeks[currentWeekIndex] as any)?.n ?? (currentWeekIndex + 1)
+  const weekOrdinal = currentWeekIndex + 1
   const totalWeeks = plan.weeks.length
   const raceName = (plan as any)?.meta?.race_name ?? ''
   const raceDate = (plan as any)?.meta?.race_date ? new Date((plan as any).meta.race_date) : null
@@ -8022,8 +8031,10 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   // Phase label: "base → build → peak → taper" or from plan phases
   const phaseLabel = (() => {
     const phases = Array.from(new Set(plan.weeks.map((wk) => (wk as any).phase).filter(Boolean)))
-    const caps: Record<string, string> = { base: 'base', build: 'build', peak: 'peak', taper: 'taper' }
-    return phases.map(p => caps[p] ?? p).join(' → ')
+    // Use the shared PHASE_LABELS map so maintenance phases (ADR-013) render as
+    // "Restoration"/"Base" — a local partial map leaked raw "maintenance_restoration"
+    // strings that CSS then uppercased on the Plan arc.
+    return phases.map(p => PHASE_LABELS[p as string] ?? p).join(' → ')
   })()
 
   // Race Projections sheet — tapping the Plan Arc opens this (screen-architecture.md)
@@ -8109,7 +8120,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
       >
         <PlanArc
           totalWeeks={totalWeeks}
-          currentWeek={weekNum}
+          currentWeek={weekOrdinal}
           doneWeeks={doneWeeksCount}
           deloadWeeks={deloadWeekNumbers}
           raceWeek={raceWeekNumber}
@@ -8977,14 +8988,20 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
 
   const weekNum    = getCurrentWeekIndex(plan.weeks) + 1
   const totalWeeks = plan.weeks.length
-  const reportIsCurrent = weeklyReport?.week_n === weekNum
+  // ADR-013: `weekNum` is the display ordinal (array position, shown as
+  // "W4 of 11"). `weekKey` is the canonical week.n — the key weekly_reports,
+  // phase_summaries and plan.weeks lookups use. They diverge on a standalone
+  // maintenance plan (position 4 vs n 29); keying by the ordinal there reads the
+  // archived race plan's rows. No-op on race plans (position == n).
+  const weekKey    = (currentWeek as any)?.n ?? weekNum
+  const reportIsCurrent = weeklyReport?.week_n === weekKey
   // Live score from completions (passed in from DashboardClient — requires Strava HR data).
   // Falls back to the most recent report score if no live data is available.
   const currentScore: number | null =
     zoneDisciplinePercent ?? (reportIsCurrent ? (weeklyReport.zone_discipline_score ?? null) : null)
   // If the cached report is from last week, surface it as a reference point
   const lastWeekScore: number | null =
-    weeklyReport?.week_n === weekNum - 1 ? (weeklyReport.zone_discipline_score ?? null) : null
+    weeklyReport?.week_n === weekKey - 1 ? (weeklyReport.zone_discipline_score ?? null) : null
 
   // Tracked km from Strava runs this week
   const trackedKm: number | null = (() => {
@@ -9024,12 +9041,12 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   const isRaceWindow = daysToRace >= 0 && daysToRace <= 14
 
   // Phase transition: compare current week's phase with previous week's phase
-  const prevWeek = plan.weeks.find((w: any) => w.n === weekNum - 1)
+  const prevWeek = plan.weeks.find((w: any) => w.n === weekKey - 1)
   const currentPhase: string | null = (currentWeek as any).phase ?? null
   const prevPhase: string | null    = (prevWeek as any)?.phase ?? null
   const phaseJustChanged = !!(currentPhase && prevPhase && currentPhase !== prevPhase)
   const phaseEnded       = phaseJustChanged ? prevPhase! : null
-  const transitionWeekN  = phaseJustChanged ? weekNum : null
+  const transitionWeekN  = phaseJustChanged ? weekKey : null
 
   // Validate cached phase summary against current transition (stale rows from prior phases are ignored)
   const cachedPhaseSummaryValid =

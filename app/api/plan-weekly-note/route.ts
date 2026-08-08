@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { findWeekByN } from '@/lib/plan'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import {
@@ -96,7 +97,11 @@ export async function POST(req: NextRequest) {
   const plan = planRes.data?.plan_json as Plan | null
   if (!plan) return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
 
-  const week = plan.weeks[week_n - 1] as any
+  // ADR-013: week_n is the canonical week.n key, NOT an array index. A standalone
+  // maintenance plan's array restarts at 0 while week.n continues (26+), so
+  // plan.weeks[week_n - 1] was out of bounds → 404 → the AI plan-voice card
+  // silently fell back to rule copy on every maintenance week.
+  const week = findWeekByN(plan.weeks, week_n) as any
   if (!week) {
     return NextResponse.json({ error: `Week ${week_n} not found in plan` }, { status: 404 })
   }

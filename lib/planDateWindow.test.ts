@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isDateWithinWeek, isDatePastWeek, isPlanComplete } from './plan'
+import { isDateWithinWeek, isDatePastWeek, isPlanComplete, findWeekByN } from './plan'
 import type { Plan } from '@/types/plan'
 
 // Week 25 runs Mon 2026-07-06 → Sun 2026-07-12 (window [start, start+7)).
@@ -62,6 +62,41 @@ describe('isPlanComplete', () => {
     const last = weeks[weeks.length - 1]
     for (const d of [new Date(2026, 6, 11), new Date(2026, 6, 12), new Date(2026, 6, 13)]) {
       expect(isPlanComplete(weeks, d)).toBe(isDatePastWeek(last, d))
+    }
+  })
+})
+
+// ADR-013 — a standalone maintenance plan's array restarts at index 0 while
+// week.n continues the race sequence (26+). week_n (the shared key for
+// completions/reports/notes) must resolve a week by n, never by array index —
+// plan.weeks[week_n - 1] is out of bounds and was the "Week 29 not found" /
+// silent AI-note failure on maintenance plans.
+describe('findWeekByN', () => {
+  const maintenancePlan = [
+    { n: 26, phase: 'maintenance_restoration' },
+    { n: 27, phase: 'maintenance_restoration' },
+    { n: 28, phase: 'maintenance_base' },
+  ] as unknown as Plan['weeks']
+
+  it('resolves a maintenance week by its canonical n, not array position', () => {
+    expect(findWeekByN(maintenancePlan, 28)).toBe(maintenancePlan[2])
+    // The bug: indexing by the key. weeks[28 - 1] is out of bounds here.
+    expect(maintenancePlan[28 - 1]).toBeUndefined()
+  })
+
+  it('returns undefined when no week carries that n', () => {
+    expect(findWeekByN(maintenancePlan, 4)).toBeUndefined()
+  })
+
+  it('falls back to array position for legacy plans with no n', () => {
+    const legacy = [{ date: 'a' }, { date: 'b' }, { date: 'c' }] as unknown as Plan['weeks']
+    expect(findWeekByN(legacy, 2)).toBe(legacy[1]) // 1-indexed position
+  })
+
+  it('is identical to position indexing on a race plan where n == position', () => {
+    const racePlan = [{ n: 1 }, { n: 2 }, { n: 3 }] as unknown as Plan['weeks']
+    for (const n of [1, 2, 3]) {
+      expect(findWeekByN(racePlan, n)).toBe(racePlan[n - 1])
     }
   })
 })

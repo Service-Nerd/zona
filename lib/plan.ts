@@ -104,18 +104,39 @@ export async function savePlanForUser(
     const priorSig = `${prior.meta?.race_name ?? ''}|${prior.meta?.race_date ?? ''}`
     const nextSig  = `${plan.meta?.race_name ?? ''}|${plan.meta?.race_date ?? ''}`
     if (priorSig !== nextSig) {
-      // N-015: don't silently swallow a SOR-adjacent write. Archiving is
-      // best-effort relative to the primary upsert below (it must never block a
-      // plan save), so log — don't throw — but make failure visible, never an
-      // unhandled rejection.
-      const archiveRes = await supabase.from('plan_archive').insert({
-        user_id: userId,
-        plan_json: prior,
-        race_name: prior.meta?.race_name ?? null,
-        race_date: prior.meta?.race_date ?? null,
-      })
-      if (archiveRes.error) {
-        console.error(`[savePlanForUser] plan_archive insert failed — ${archiveRes.error.message}`)
+      // Idempotency (ADR-013 follow-on): the race→maintenance handoff fired
+      // savePlanForUser 3× near-simultaneously and archived the SAME completed
+      // race plan 3× — every concurrent read saw the pre-handoff plan before any
+      // upsert landed. Skip if an identical prior snapshot was already archived
+      // in the last few minutes: dedupes the handoff burst without blocking a
+      // genuine re-archive of the same-named race months later. (Residual: two
+      // truly simultaneous callers can still race between this SELECT and the
+      // INSERT — the only airtight fix is a unique index, deferred to avoid a
+      // migration; the recency window closed the observed 140–350ms burst.)
+      const RECENT_ARCHIVE_WINDOW_MS = 10 * 60_000
+      const since = new Date(Date.now() - RECENT_ARCHIVE_WINDOW_MS).toISOString()
+      const { data: recent } = await supabase
+        .from('plan_archive')
+        .select('race_name, race_date')
+        .eq('user_id', userId)
+        .gte('archived_at', since)
+      const alreadyArchived = (recent ?? []).some(
+        (r: any) => `${r.race_name ?? ''}|${r.race_date ?? ''}` === priorSig
+      )
+      if (!alreadyArchived) {
+        // N-015: don't silently swallow a SOR-adjacent write. Archiving is
+        // best-effort relative to the primary upsert below (it must never block a
+        // plan save), so log — don't throw — but make failure visible, never an
+        // unhandled rejection.
+        const archiveRes = await supabase.from('plan_archive').insert({
+          user_id: userId,
+          plan_json: prior,
+          race_name: prior.meta?.race_name ?? null,
+          race_date: prior.meta?.race_date ?? null,
+        })
+        if (archiveRes.error) {
+          console.error(`[savePlanForUser] plan_archive insert failed — ${archiveRes.error.message}`)
+        }
       }
     }
   }
@@ -248,6 +269,21 @@ export function isDatePastWeek(week: Plan['weeks'][number], date: Date): boolean
   const d = new Date(date)
   d.setHours(0, 0, 0, 0)
   return d >= weekEnd
+}
+
+/**
+ * Resolve a plan week by its canonical `week.n` key (ADR-013), NOT array
+ * position. A standalone maintenance plan's array restarts at index 0 while
+ * `week.n` continues the race sequence (26+), so `weeks[week_n - 1]` is out of
+ * bounds for it — the source of the "week 29 not found" / silent AI-note
+ * failure on maintenance plans. `week_n` is the shared key for
+ * `session_completions`, `run_analysis`, `weekly_reports`, `plan_weekly_notes`
+ * and `session_reflections`; anything resolving a week from one of those values
+ * must go through here. Falls back to array position only when `n` is absent
+ * (pre-`n` legacy plans, where position == n anyway).
+ */
+export function findWeekByN(weeks: Plan['weeks'], n: number): Plan['weeks'][number] | undefined {
+  return weeks.find(w => (w as any).n === n) ?? weeks[n - 1]
 }
 
 /**

@@ -59,9 +59,14 @@ export async function POST(req: NextRequest) {
   }
 
   const weekIndex = getCurrentWeekIndex(plan.weeks)
-  const weekN     = weekIndex + 1
   const week      = plan.weeks[weekIndex]
   if (!week) return NextResponse.json({ error: 'No current week in plan' }, { status: 404 })
+  // ADR-013: key the report (and its completions/run_analysis reads below) by
+  // canonical week.n, NOT array position. A standalone maintenance plan's array
+  // restarts at 0 while week.n continues (26+); keying by position would read
+  // the archived race plan's rows at that index and store the report under the
+  // wrong week. No-op on race plans (position == n).
+  const weekN     = (week as any).n ?? (weekIndex + 1)
 
   // Check existing report
   const { data: existing } = await serviceSupabase
