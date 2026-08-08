@@ -16,7 +16,7 @@
 | Field | Required | Description |
 |-------|----------|-------------|
 | `phase_ended` | Yes | Phase that just finished: `'base'` \| `'build'` \| `'peak'` \| `'foundation'` |
-| `transition_week_n` | Yes | Plan week number when the new phase starts (first week of new phase) |
+| `transition_week_n` | Yes | Canonical `week.n` of the first week of the new phase (ADR-013 — not array position; matched via `w.n === transition_week_n`) |
 
 ## Response — 200
 

@@ -14,7 +14,7 @@
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `week_n` | Yes | 1-indexed week number within the user's plan (must be a positive integer) |
+| `week_n` | Yes | Canonical `week.n` key (ADR-013), not array position. Equals the 1-indexed position on race plans, but continues at 26+ on a standalone maintenance plan whose array restarts at 0. Must be a positive integer. |
 
 ## Response — 200
 
@@ -41,7 +41,7 @@
 |--------|-----------|
 | 401 | Missing or invalid session |
 | 403 | Free tier user |
-| 404 | Plan not found OR `week_n` exceeds plan length |
+| 404 | Plan not found OR no week in the plan carries `week.n === week_n` |
 | 422 | Missing or non-positive `week_n` |
 | 503 | AI generation failed OR response unparseable (ephemeral — no row written; client falls back to rule-engine voice silently per ADR-006) |
 
@@ -69,7 +69,7 @@ Null on week 1, or after cache invalidation cleared the row.
 
 ## Data used by the route
 
-- `plans` — current plan; reads `plan.weeks[week_n - 1]` for session shape, `meta.race_date` / `meta.race_name` / `meta.race_distance` for race countdown
+- `plans` — current plan; resolves the week via `findWeekByN(plan.weeks, week_n)` (by `week.n`, never `plan.weeks[week_n - 1]` — out of bounds on a maintenance plan) for session shape, `meta.race_date` / `meta.race_name` / `meta.race_distance` for race countdown
 - `user_settings` — `first_name` for the single-mention voice rule
 - `plan_weekly_notes` — most recent prior week's note for continuity
 

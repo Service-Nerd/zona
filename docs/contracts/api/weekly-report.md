@@ -49,6 +49,7 @@ Empty body accepted.
 ## Notes
 
 - Returns existing report for the current week unless `?force=true`.
+- Keyed by the current week's canonical `week.n` (ADR-013), not array position — so `session_completions` / `run_analysis` reads land on the maintenance plan's rows (26+), never the archived race plan's rows at the same array index.
 - Aggregates `session_completions` + `run_analysis` + load history for the current week.
 - AI generates Headline/Body/CTA via claude-haiku (max 300 tokens). Silent fallback to rule-based strings.
 - Internal cron path used by `/api/push/send-weekly-report`.
