@@ -5,7 +5,7 @@
 // See docs/canonical/ui-patterns.md § SessionCard and docs/alignment/phase-2-decisions.md D-003, D-010.
 
 import { getSessionColor } from '@/lib/session-types'
-import { formatDistance, type DistanceUnits, type SessionMetric } from '@/lib/format'
+import { formatDistance, formatDuration, type DistanceUnits, type SessionMetric } from '@/lib/format'
 import HrPendingStatusRow, { type HrPendingState } from './HrPendingStatusRow'
 
 type SessionState = 'future' | 'current' | 'done' | 'skipped'
@@ -71,14 +71,6 @@ export default function SessionCard({
   const showHrPending = isDone && hrPendingState != null
   const renderAsDone  = isDone && !showHrPending
 
-  // Format duration: "46min" or "1h 12min"
-  function fmtDur(mins: number): string {
-    if (mins < 60) return `${mins}min`
-    const h = Math.floor(mins / 60)
-    const m = mins % 60
-    return m > 0 ? `${h}h ${m}min` : `${h}h`
-  }
-
   // Right-side metric: render the metric the caller chose. Falls back to the
   // other one if the chosen value isn't available (e.g. session has distance
   // but no duration), so the card never goes blank. Completion km wins over
@@ -90,7 +82,7 @@ export default function SessionCard({
     : distanceKm != null
     ? formatDistance(distanceKm, units, { exact: isRace })
     : null
-  const durText = durationMin != null ? fmtDur(durationMin) : null
+  const durText = formatDuration(durationMin)
 
   const rightValue = metric === 'duration'
     ? (durText ?? distText)

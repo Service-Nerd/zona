@@ -15,10 +15,14 @@
 // Mixing provenance signals here would teach users to ignore the mark.
 
 import { computeSessionDiff, labelSession, type SessionLike } from '@/lib/coaching/diff/sessionDiff'
+import type { DistanceUnits } from '@/lib/format'
 
 interface Props {
   sessionsBefore: ReadonlyArray<SessionLike | null | undefined>
   sessionsAfter:  ReadonlyArray<SessionLike | null | undefined>
+  /** User's preferred distance units — so the diff reads in the same units as
+   *  the rest of the app (ADR-015 / INV-PREF-001). Defaults to 'km'. */
+  units?: DistanceUnits
 }
 
 const DAY_LABEL: Record<string, string> = {
@@ -26,7 +30,7 @@ const DAY_LABEL: Record<string, string> = {
   fri: 'Fri', sat: 'Sat', sun: 'Sun',
 }
 
-export default function AdjustmentDiff({ sessionsBefore, sessionsAfter }: Props) {
+export default function AdjustmentDiff({ sessionsBefore, sessionsAfter, units = 'km' }: Props) {
   const diff = computeSessionDiff(sessionsBefore, sessionsAfter)
   const changes = diff.filter(d => d.kind !== 'unchanged')
 
@@ -50,8 +54,8 @@ export default function AdjustmentDiff({ sessionsBefore, sessionsAfter }: Props)
     >
       {changes.map(entry => {
         const dayLabel = DAY_LABEL[entry.day] ?? entry.day
-        const beforeLabel = entry.before ? labelSession(entry.before) : 'empty'
-        const afterLabel  = entry.after  ? labelSession(entry.after)  : 'empty'
+        const beforeLabel = entry.before ? labelSession(entry.before, units) : 'empty'
+        const afterLabel  = entry.after  ? labelSession(entry.after, units)  : 'empty'
 
         return (
           <div

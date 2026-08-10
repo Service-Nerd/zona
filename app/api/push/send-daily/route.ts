@@ -3,10 +3,13 @@ import { createClient } from '@supabase/supabase-js'
 import { sendWebPush } from '@/lib/webpush'
 import { sendApnsPush } from '@/lib/apnpush'
 import { getUserTier } from '@/lib/trial'
-import { getCurrentWeekIndex, isPlanComplete } from '@/lib/plan'
+import { getSessionForDate, isDateBeforePlan, isPlanComplete, parseLocalDate } from '@/lib/plan'
 import { resolveEffectiveSessions, DAY_KEYS, type DayKey, type SessionOverride } from '@/lib/plan/effectiveSessions'
 import { buildDailyPushTitle, buildDailyPushBody, type NextKeySession } from '@/lib/coaching/voiceLines'
 import { recordNotification } from '@/lib/notifications'
+import { normalizeDisplayPrefs } from '@/lib/userPrefs'
+import { loadSessionMetricOverrides } from '@/lib/sessionMetricOverrides'
+import { resolveSessionMetric } from '@/lib/format'
 import type { Plan, Session } from '@/types/plan'
 
 // POST /api/push/send-daily
@@ -32,8 +35,6 @@ import type { Plan, Session } from '@/types/plan'
 //
 // Protected by CRON_SECRET header — must match env var. Vercel cron sends
 // this automatically via the header configured in vercel.json.
-
-const DOW_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const
 
 const FULL_DAY_NAMES: Record<DayKey, string> = {
   mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday',
@@ -183,7 +184,7 @@ export async function POST(req: NextRequest) {
     try {
       const { data: settings } = await supabase
         .from('user_settings')
-        .select('timezone, daily_push_enabled, daily_push_last_sent_on, last_today_open_at, is_admin')
+        .select('timezone, daily_push_enabled, daily_push_last_sent_on, last_today_open_at, is_admin, preferred_units, preferred_metric')
         .eq('id', userId)
         .maybeSingle()
 
@@ -222,47 +223,69 @@ export async function POST(req: NextRequest) {
       const tier = await getUserTier(userId)
       if (tier === 'free') { skip('free_tier'); continue }
 
-      const [planRes, overridesRes] = await Promise.all([
+      const [planRes, overridesRes, metricOverrides] = await Promise.all([
         supabase.from('plans').select('plan_json').eq('user_id', userId).single(),
         supabase.from('session_overrides')
           .select('week_n, original_day, new_day')
           .eq('user_id', userId),
+        loadSessionMetricOverrides(supabase, userId),
       ])
 
       const plan = planRes.data?.plan_json as Plan | null
       if (!plan || plan.weeks.length === 0) { skip('no_plan'); continue }
 
-      // Don't push after the plan ends. getCurrentWeekIndex falls back to the
-      // last week when today is past the plan — without this guard the cron
-      // replays the final week's sessions by day-of-week indefinitely.
-      const localToday = new Date(clock.isoDate + 'T00:00:00')
-      if (isPlanComplete(plan.weeks, localToday)) { skip('plan_complete'); continue }
-
-      const weekIndex = getCurrentWeekIndex(plan.weeks)
-      const week      = plan.weeks[weekIndex]
-      if (!week) { skip('no_current_week'); continue }
-      const weekN = weekIndex + 1
-
+      // Canonical date-aware resolution (ADR-016 / INV-TIME-001): the real
+      // session for the user's local calendar date, or null when there is
+      // genuinely nothing to push about — before the plan starts, after it ends,
+      // a between-week gap, or an empty day. Replaces the old getCurrentWeekIndex
+      // + day-of-week lookup, which SATURATED to week 1 before the plan began and
+      // fired a "today's session" push a week early.
+      const localToday = parseLocalDate(clock.isoDate)
       const allOverrides: SessionOverride[] = (overridesRes.data as SessionOverride[] | null) ?? []
-      const currentWeekOverrides = allOverrides.filter(o => o.week_n === weekN)
-      const effectiveWeek = resolveEffectiveSessions(week, currentWeekOverrides)
+      const resolved = getSessionForDate(plan.weeks, localToday, allOverrides)
 
-      // Local day-of-week — derived from the user's tz isoDate so DST + early
-      // morning timezones don't pull the wrong day.
-      const dayOfWeek = new Date(clock.isoDate + 'T00:00:00Z').getUTCDay()
-      const dowKey    = DOW_KEYS[dayOfWeek]
-      const session   = (effectiveWeek[dowKey]?.session ?? null) as Session | null
+      // No active session for today → don't send. Distinguish the reasons so the
+      // skip tally (D-04) reads not-yet-started vs finished vs ordinary empty day.
+      // Test mode still falls through to a generic payload so the delivery test
+      // works regardless of plan state.
+      if (!resolved && !testMode) {
+        skip(
+          isDateBeforePlan(plan.weeks, localToday) ? 'plan_not_started'
+          : isPlanComplete(plan.weeks, localToday) ? 'plan_complete'
+          : 'no_session',
+        )
+        continue
+      }
 
-      // Every planned day notifies (rest included). Only a day with no session
-      // at all is skipped on a real run; in test mode we still fire a generic
-      // payload so the delivery test works regardless of today's plan.
-      if (!session && !testMode) { skip('no_session'); continue }
+      const session = (resolved?.session ?? null) as Session | null
 
-      const nextKey = session ? findNextKeyThisWeek(effectiveWeek, dowKey as DayKey) : null
+      // "Next key session later THIS week" for the easy/recovery-day "why" tag —
+      // computed from the effective week the resolved session lives in.
+      let nextKey: NextKeySession | null = null
+      if (resolved) {
+        const weekOverrides = allOverrides.filter(o => o.week_n === resolved.weekN)
+        const effectiveWeek = resolveEffectiveSessions(resolved.week, weekOverrides)
+        nextKey = findNextKeyThisWeek(effectiveWeek, resolved.dayKey)
+      }
+
+      // Resolve how to render the session metric: per-session override → plan
+      // primary_metric → global preference, plus km/mi. This is why the push now
+      // reads "Easy 1h 18 today" in the user's own units instead of a hardcoded
+      // 'km' (ADR-015 / INV-PREF-001).
+      const prefs = normalizeDisplayPrefs(settings)
+      const display = resolved
+        ? {
+            units: prefs.units,
+            metric: resolveSessionMetric(
+              resolved.weekN, resolved.originalDay,
+              resolved.session.primary_metric, metricOverrides, prefs.metric,
+            ),
+          }
+        : prefs
 
       const payload = session
         ? {
-            title: buildDailyPushTitle(session, nextKey),
+            title: buildDailyPushTitle(session, nextKey, display),
             body:  buildDailyPushBody(session.type),
             tag:   `daily-push-${clock.isoDate}`,
             data:  { url: '/dashboard?screen=today' },

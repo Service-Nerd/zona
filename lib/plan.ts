@@ -1,5 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Plan } from '@/types/plan'
+import type { Plan, Session, Week } from '@/types/plan'
+import {
+  resolveEffectiveSessions,
+  type DayKey,
+  type SessionOverride,
+} from '@/lib/plan/effectiveSessions'
 
 export const DEFAULT_GIST_URL = process.env.NEXT_PUBLIC_GIST_URL ||
   'https://gist.githubusercontent.com/Service-Nerd/efec07a87f65494f0e078a1ccb136100/raw/rts_plan.json'
@@ -297,4 +302,84 @@ export function isPlanComplete(weeks: Plan['weeks'], date: Date): boolean {
   const last = weeks[weeks.length - 1]
   if (!last) return false
   return isDatePastWeek(last, date)
+}
+
+/**
+ * True when `date` is strictly BEFORE the plan's first week begins — i.e. the
+ * plan exists but has not started yet.
+ *
+ * The missing counterpart to {@link isPlanComplete} (§73 / ADR-016). `getCurrentWeek`
+ * SATURATES to `weeks[0]` when today is before the plan (there is no earlier week
+ * for its fallback to land on), so `getCurrentWeekIndex()` reads "week 1" for a
+ * plan that hasn't begun. Any surface that derives "today's session" from that
+ * index — the daily push, pre-session readiness, weekly report — will prescribe
+ * week 1's weekday session a week (or more) early unless it FIRST asks this.
+ * The before-start bug that shipped a "Easy 1h 18 today" push for a plan starting
+ * the following Monday.
+ */
+export function isDateBeforePlan(weeks: Plan['weeks'], date: Date): boolean {
+  const first = weeks[0]
+  if (!first) return false
+  const start = parseLocalDate((first as any).date)
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  return d < start
+}
+
+// Map a local-midnight Date to its plan day key. Local getDay() (0=Sun) matched
+// against DAY_KEYS (0=Mon) — the caller MUST pass a date built as local midnight
+// of the intended calendar day (use parseLocalDate on a YYYY-MM-DD string), so
+// this agrees with the local-date windows isDateWithinWeek compares against.
+const DOW_TO_KEY: readonly DayKey[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+export function dayKeyForDate(date: Date): DayKey {
+  return DOW_TO_KEY[date.getDay()]
+}
+
+export interface ResolvedSession {
+  session: Session
+  week: Week
+  /** Canonical `week.n` key (ADR-013), not array position. */
+  weekN: number
+  /** Calendar-day slot the session currently lives on (after move/swap overrides). */
+  dayKey: DayKey
+  /** Day the session is defined on in `week.sessions` — the completion key. */
+  originalDay: DayKey
+}
+
+/**
+ * THE canonical "is there a real planned session on calendar date D?" resolver
+ * (ADR-016). Returns the effective session for `date` — after applying move/swap
+ * overrides — or `null` when there is genuinely nothing to show: before the plan
+ * starts, after it ends, in a between-week gap, or on an empty day.
+ *
+ * This is date-aware, not day-of-week-aware: it locates the week whose 7-day
+ * window actually CONTAINS `date` (never the saturating `getCurrentWeek` fallback),
+ * then reads that week's slot for that weekday. A date outside every window
+ * resolves to `null` — which is exactly the guard every scheduled send needs
+ * (no plan/session → no push). Callers must treat `null` as "do not send / show
+ * the empty state", never fall back to `weeks[0]`.
+ *
+ * `date` must be local midnight of the target calendar day (see dayKeyForDate).
+ */
+export function getSessionForDate(
+  weeks: Plan['weeks'],
+  date: Date,
+  overrides: ReadonlyArray<SessionOverride> = [],
+): ResolvedSession | null {
+  const idx = weeks.findIndex(w => isDateWithinWeek(w, date))
+  if (idx < 0) return null
+  const week = weeks[idx]
+  const weekN = (week as any).n ?? idx + 1
+  const dayKey = dayKeyForDate(date)
+  const weekOverrides = overrides.filter(o => o.week_n === weekN)
+  const effective = resolveEffectiveSessions(week, weekOverrides)
+  const entry = effective[dayKey]
+  if (!entry) return null
+  return {
+    session: entry.session,
+    week,
+    weekN,
+    dayKey,
+    originalDay: entry.originalDay,
+  }
 }

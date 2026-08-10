@@ -3,11 +3,11 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
-import { getCurrentWeekIndex } from '@/lib/plan'
+import { getSessionForDate } from '@/lib/plan'
 import { computeReadiness, type DailyHealthSample, type SleepStageMinutes } from '@/lib/coaching/readinessBaseline'
 import { checkAdjustmentTriggers, type AdjustmentCheckInput } from '@/lib/coaching/planAdjustment'
 import { READINESS, COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
-import type { Plan, Session } from '@/types/plan'
+import type { Plan } from '@/types/plan'
 
 // GET /api/pre-session-readiness
 //
@@ -20,8 +20,6 @@ import type { Plan, Session } from '@/types/plan'
 //
 // CoachingPrinciples §59. The only adjustment trigger that fires *before*
 // the run, not after.
-
-const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 
 let _supabase: ReturnType<typeof createServiceClient> | undefined
 function getSupabase(): any {
@@ -55,15 +53,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ adjustment: null, reason: 'no_plan' })
   }
 
-  const weekIndex = getCurrentWeekIndex(plan.weeks)
-  const week      = plan.weeks[weekIndex]
-  if (!week) return NextResponse.json({ adjustment: null, reason: 'no_week' })
+  // Date-aware resolution (ADR-016): the real session for today, or null before
+  // the plan starts / after it ends / on an empty day. Guards against the
+  // saturating getCurrentWeekIndex, which would otherwise resolve week 1's
+  // weekday session for a plan that hasn't begun and propose a pre-run softening
+  // for a session that isn't live yet (INV-TIME-001).
+  const resolved = getSessionForDate(plan.weeks, new Date())
+  if (!resolved) return NextResponse.json({ adjustment: null, reason: 'no_active_session' })
 
-  const todayIdx = (new Date().getDay() + 6) % 7  // mon=0 ... sun=6
-  const todayDay = DAYS[todayIdx]
-  const todaySession = week.sessions[todayDay] as Session | undefined
+  const week         = resolved.week
+  const todayDay     = resolved.dayKey
+  const todaySession = resolved.session
 
-  if (!todaySession) return NextResponse.json({ adjustment: null, reason: 'no_session' })
   if (!isQualityOrLong(todaySession.type)) {
     return NextResponse.json({ adjustment: null, reason: 'session_type_not_eligible' })
   }

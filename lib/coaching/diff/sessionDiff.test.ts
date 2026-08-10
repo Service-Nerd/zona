@@ -68,13 +68,15 @@ describe('labelSession', () => {
     expect(labelSession(rest())).toBe('rest')
   })
 
-  it('prefers distance when available', () => {
+  it('prefers distance when available, honouring units', () => {
     expect(labelSession(easy(8))).toBe('easy 8km')
+    expect(labelSession(easy(8), 'mi')).toBe('easy 5mi')
   })
 
-  it('falls back to duration in h-mm format when distance is absent', () => {
-    expect(labelSession({ type: 'long', label: null, duration_mins: 180 } as any)).toBe('long 3h00')
-    expect(labelSession({ type: 'long', label: null, duration_mins: 45  } as any)).toBe('long 45min')
+  it('falls back to the canonical duration glyph when distance is absent', () => {
+    expect(labelSession({ type: 'long', label: null, duration_mins: 180 } as any)).toBe('long 3h')
+    expect(labelSession({ type: 'long', label: null, duration_mins: 45  } as any)).toBe('long 45 min')
+    expect(labelSession({ type: 'long', label: null, duration_mins: 90  } as any)).toBe('long 1h 30')
   })
 
   it('uses label in parens for non-distance non-duration sessions', () => {

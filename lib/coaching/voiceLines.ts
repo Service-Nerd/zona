@@ -1,6 +1,6 @@
 import type { Session } from '@/types/plan'
 import { BRAND } from '@/lib/brand'
-import { formatDistance } from '@/lib/format'
+import { formatSessionMetric, type DistanceUnits, type SessionMetric } from '@/lib/format'
 
 // One-line voice anchors per session type — used wherever the app needs a
 // single concrete coaching sentence in Zonna voice. Extracted from
@@ -25,27 +25,17 @@ export function getSessionVoiceLine(sessionType: string | null | undefined): str
   }
 }
 
-// Concise duration/distance summary appended to the title — "45m" or "8km".
-// Duration wins when both present (matches how the runner reads the day).
-function sessionMetricSummary(session: Pick<Session, 'duration_mins' | 'distance_km'>): string | null {
-  if (session.duration_mins) {
-    const mins = Math.round(session.duration_mins)
-    if (mins >= 60 && mins % 60 === 0) return `${mins / 60}h`
-    if (mins >= 90) {
-      const h = Math.floor(mins / 60)
-      const m = mins % 60
-      return `${h}h${m.toString().padStart(2, '0')}`
-    }
-    return `${mins}m`
-  }
-  if (session.distance_km) {
-    // Route through the single source of truth for distance display so the push
-    // and the in-app session card never disagree (formatDistance rounds to whole
-    // km; the old inline toFixed(1) here said "5.7km" while the card said "6km").
-    return formatDistance(session.distance_km, 'km')
-  }
-  return null
+// The distance/duration summary appended to the title comes from the single
+// formatter (ADR-015 / INV-FMT-001). The caller passes the ALREADY-RESOLVED
+// metric + units: send-daily resolves per-session override → plan primary_metric
+// → global preference via resolveSessionMetric, and fetches units via
+// getUserDisplayPrefs. So the push and the in-app card can never disagree, and
+// the push honours km/mi instead of the old hardcoded 'km'.
+export interface PushDisplay {
+  units: DistanceUnits
+  metric: SessionMetric
 }
+const DEFAULT_PUSH_DISPLAY: PushDisplay = { units: 'km', metric: 'distance' }
 
 /** The next demanding session this training week, used to give an easy/recovery
  *  day its purpose ("Intervals Thursday"). Computed by the caller from the plan. */
@@ -81,9 +71,10 @@ function keySessionNoun(type: string): string {
 export function buildDailyPushTitle(
   session: Pick<Session, 'type' | 'duration_mins' | 'distance_km'> | null,
   nextKey: NextKeySession | null = null,
+  display: PushDisplay = DEFAULT_PUSH_DISPLAY,
 ): string {
   if (!session) return 'Nothing today. On purpose.'
-  const metric = sessionMetricSummary(session)
+  const metric = formatSessionMetric(session, display.metric, display.units)
 
   switch (session.type) {
     case 'easy':

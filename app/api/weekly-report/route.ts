@@ -10,7 +10,7 @@ import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildWeeklyReportPrompt } from '@/lib/coaching/prompts/weeklyReport'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
-import { getCurrentWeekIndex, isDateWithinWeek } from '@/lib/plan'
+import { getCurrentWeekIndex, isDateWithinWeek, isDateBeforePlan } from '@/lib/plan'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 
@@ -56,6 +56,14 @@ export async function POST(req: NextRequest) {
   const plan = planRes.data?.plan_json as Plan | null
   if (!plan || plan.weeks.length === 0) {
     return NextResponse.json({ error: 'No plan found' }, { status: 404 })
+  }
+
+  // Before-start guard (ADR-016 / INV-TIME-001): getCurrentWeekIndex saturates to
+  // week 1 when today is before the plan begins, so without this the report would
+  // narrate a training week that hasn't happened. Nothing to report yet.
+  const nowMidnight = new Date(); nowMidnight.setHours(0, 0, 0, 0)
+  if (isDateBeforePlan(plan.weeks, nowMidnight)) {
+    return NextResponse.json({ error: 'Plan not yet started' }, { status: 404 })
   }
 
   const weekIndex = getCurrentWeekIndex(plan.weeks)

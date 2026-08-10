@@ -3,6 +3,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { deriveManualVerdict, manualFeedbackText, manualMetricsFeedbackText } from '@/lib/coaching/manualSessionFeedback'
 import { scoreSession, parseHRCeiling } from '@/lib/coaching/sessionScore'
+import { getUserDisplayPrefs } from '@/lib/userPrefs'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
@@ -124,13 +125,14 @@ export async function POST(req: NextRequest) {
           efBaseline:       null,
         })
         const hrCeiling = session.hr_target ? parseHRCeiling(session.hr_target) : null
+        const { units } = await getUserDisplayPrefs(serviceSupabase, user.id)
         verdict      = result.verdict
         feedbackText = manualMetricsFeedbackText(session.type, {
           distanceKm: distance_km!,
           plannedKm:  session.distance_km ?? null,
           avgHr:      avg_hr ?? null,
           hrCeiling,
-        })
+        }, units)
         scores = {
           hr_discipline_score: result.hrDisciplineScore,
           distance_score:      result.distanceScore,

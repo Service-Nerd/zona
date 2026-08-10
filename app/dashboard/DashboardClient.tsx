@@ -54,7 +54,8 @@ import NextGoalCard from '@/components/training/NextGoalCard'
 import { isReengagementWeek } from '@/lib/plan/maintenance'
 import { nextGoalOptions, achievementLine, parseTimeToSeconds, type FinishedRace, type NextGoalOption } from '@/lib/coaching/goalSequencing'
 import { composeSession } from '@/lib/plan/sessionComposer'
-import { formatDistance, sumRoundedDistance, resolveSessionMetric } from '@/lib/format'
+import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric } from '@/lib/format'
+import { backfillAndLoadSessionMetricOverrides, setSessionMetricOverride, clearSessionMetricOverride } from '@/lib/sessionMetricOverrides'
 import { didSessionHitZone, sessionHRBand, zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { getSessionVoiceLine } from '@/lib/coaching/voiceLines'
 import { renderGuidance, guidanceContextFromSession } from '@/lib/plan/renderGuidance'
@@ -255,9 +256,10 @@ export default function DashboardClient() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [preferredUnits, setPreferredUnits] = useState<'km' | 'mi'>('km')
   const [preferredMetric, setPreferredMetric] = useState<'distance' | 'duration'>('distance')
-  // Per-session metric overrides, mirrored from localStorage (`rts_metric_*`).
-  // Drives the metric resolver on collapsed cards so they stay in sync with
-  // the per-session toggle in SessionPopupInner. Keyed `${weekN}_${sessionKey}`.
+  // Per-session metric overrides — canonical store is the DB table
+  // `session_metric_overrides` (ADR-015), loaded once userId is known and kept in
+  // this map so cross-device + notifications agree. Drives the metric resolver on
+  // collapsed cards / PlanCalendar / the session toggle. Keyed `${weekN}_${sessionKey}`.
   const [sessionMetricOverrides, setSessionMetricOverrides] = useState<Record<string, 'distance' | 'duration'>>({})
   const [restingHR, setRestingHR] = useState<number | null>(null)
   const [maxHR, setMaxHR] = useState<number | null>(null)
@@ -566,27 +568,32 @@ export default function DashboardClient() {
       }
     }
 
-    // Hydrate per-session metric overrides from localStorage so the resolver
-    // on collapsed SessionCards / DayRows matches the SessionScreen toggle.
-    // The keys are written by SessionPopupInner.updateSessionMetric as
-    // `rts_metric_${weekN}_${sessionKey}`.
-    try {
-      const map: Record<string, 'distance' | 'duration'> = {}
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
-        if (!key || !key.startsWith('rts_metric_')) continue
-        const value = localStorage.getItem(key)
-        if (value === 'distance' || value === 'duration') {
-          map[key.slice('rts_metric_'.length)] = value
-        }
-      }
-      setSessionMetricOverrides(map)
-    } catch {}
+    // Per-session metric overrides now load from the DB in a userId-keyed effect
+    // below (with a one-time localStorage backfill), so they survive across
+    // devices and are visible to server sends. See loadMetricOverrides effect.
   }, [])
 
-  // Keep the override map in sync with the per-session toggle. Called by
-  // SessionPopupInner whenever it writes localStorage. Passing null clears
-  // the override (back to plan default / global).
+  // Load per-session metric overrides from the DB once we know who the user is.
+  // backfillAndLoadSessionMetricOverrides migrates any legacy localStorage entries
+  // on first run, then reads the canonical table (ADR-015).
+  useEffect(() => {
+    if (!userId) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const map = await backfillAndLoadSessionMetricOverrides(supabase, userId)
+        if (!cancelled) setSessionMetricOverrides(map)
+      } catch (e) {
+        console.error('[metric-overrides] load failed', e)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [userId])
+
+  // Keep the override map in sync with the per-session toggle AND persist to the
+  // DB (ADR-015). Called by SessionPopupInner. Passing null clears the override
+  // (back to plan default / global). State updates optimistically; the DB write
+  // is fire-and-forget but logs on failure (N-015).
   const handleSessionMetricChange = useCallback((weekN: number, sessionKey: string, metric: 'distance' | 'duration' | null) => {
     setSessionMetricOverrides(prev => {
       const k = `${weekN}_${sessionKey}`
@@ -599,7 +606,12 @@ export default function DashboardClient() {
       if (prev[k] === metric) return prev
       return { ...prev, [k]: metric }
     })
-  }, [])
+    if (!userId) return
+    const persist = metric == null
+      ? clearSessionMetricOverride(supabase, userId, weekN, sessionKey)
+      : setSessionMetricOverride(supabase, userId, weekN, sessionKey, metric)
+    persist.catch(e => console.error('[metric-overrides] persist failed', e))
+  }, [userId])
 
   // Strava safety timer: if the activities fetch hasn't settled within 2s
   // of mount, release the splash anyway. Strava can be slow / unreachable
@@ -2176,7 +2188,7 @@ export default function DashboardClient() {
   } catch {}
 }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onDone={() => {
           // POST-RUN-02: terminus. Route to SessionScreen for this session
           // with the freshest completion merged in, so the verdict (which
@@ -2203,7 +2215,7 @@ export default function DashboardClient() {
         }} />}
         {screen === 'benchmark' && plan && <BenchmarkUpdateScreen plan={plan} stravaConnected={stravaConnected} onBack={() => setScreen('me')} onUpdated={(updatedPlan) => { setPlan(updatedPlan) }} />}
         {screen === 'recalibration' && <RecalibrationEntryScreen distanceKm={recalDistanceKm} status={recalStatus} onBack={() => { setRecalStatus('idle'); setScreen('today') }} onConfirm={handleRecalConfirm} />}
-        {screen === 'reshape'   && <ReshapeScreen plan={plan} onBack={() => setScreen('me')} onReshapeApplied={(updatedPlan) => { setPlan(updatedPlan); setPendingAdjustment(null); setScreen('today') }} onChecked={(foundChange) => { setLastAdjustmentCheckAt(new Date().toISOString()); setLastAdjustmentCheckFoundChange(foundChange) }} onOpenBenchmark={() => setScreen('benchmark')} />}
+        {screen === 'reshape'   && <ReshapeScreen plan={plan} onBack={() => setScreen('me')} onReshapeApplied={(updatedPlan) => { setPlan(updatedPlan); setPendingAdjustment(null); setScreen('today') }} onChecked={(foundChange) => { setLastAdjustmentCheckAt(new Date().toISOString()); setLastAdjustmentCheckFoundChange(foundChange) }} onOpenBenchmark={() => setScreen('benchmark')} preferredUnits={preferredUnits} />}
         {screen === 'founder'   && <FounderNoteScreen onBack={() => setScreen('me')} />}
         {screen === 'notifications' && <NotificationsScreen onBack={() => setScreen('today')} onNavigate={navigateFromNotificationUrl} onAllRead={() => setUnreadNotifications(0)} />}
       </PullToRefresh>
@@ -3431,11 +3443,14 @@ function getSkipResponse(reason: string): string {
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
-function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, restingHR, maxHR, aerobicPace, stravaLoading, hasPaidAccess, onUpgrade, goalPace, guidance, onLinkedComplete, autoMatch }: {
+function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, savedMetricOverride = null, restingHR, maxHR, aerobicPace, stravaLoading, hasPaidAccess, onUpgrade, goalPace, guidance, onLinkedComplete, autoMatch }: {
   session: any; weekTheme: string; weekN: number; preloadedRuns: any[]
   onClose: () => void; onSaved?: () => void
   preferredUnits: 'km' | 'mi'; zone2Ceiling: number | null; preferredMetric?: 'distance' | 'duration'
   onSessionMetricChange?: (weekN: number, sessionKey: string, metric: 'distance' | 'duration' | null) => void
+  /** Current per-session override for this session from the DB-backed parent map
+   *  (ADR-015). Seeds the toggle; null = no override (plan default / global). */
+  savedMetricOverride?: 'distance' | 'duration' | null
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
   stravaLoading?: boolean
   hasPaidAccess?: boolean; onUpgrade?: () => void
@@ -3486,29 +3501,22 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   // Staged activity link — set in saveCompletion, fired in handleReflectDone so
   // RPE + fatigue are already in the DB when analyse-run reads the completion row.
   const pendingLinkRef = useRef<number | null>(null)
-  const [sessionMetric, setSessionMetric] = useState<'distance' | 'duration' | null>(null)
+  const [sessionMetric, setSessionMetric] = useState<'distance' | 'duration' | null>(savedMetricOverride)
   const supabase = createClient()
-  const metricStorageKey = `rts_metric_${weekN}_${session.key}`
   const sessionDefault = session.primary_metric ?? preferredMetric ?? 'distance'
   const effectiveMetric = sessionMetric ?? sessionDefault
   const isMetricCustom = sessionMetric !== null && sessionMetric !== sessionDefault
 
-  // Load saved per-session metric from localStorage on mount
+  // Seed from the DB-backed parent override (ADR-015) — no localStorage. Tracks
+  // changes if the parent map updates while the screen is open.
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(metricStorageKey)
-      if (saved === 'distance' || saved === 'duration') setSessionMetric(saved)
-    } catch {}
-  }, [metricStorageKey])
+    setSessionMetric(savedMetricOverride ?? null)
+  }, [savedMetricOverride])
 
   function updateSessionMetric(m: 'distance' | 'duration' | null) {
     setSessionMetric(m)
-    try {
-      if (m) localStorage.setItem(metricStorageKey, m)
-      else localStorage.removeItem(metricStorageKey)
-    } catch {}
-    // Lift to DashboardClient so the collapsed SessionCards / PlanCalendar
-    // pick up the change immediately, not only on the next mount.
+    // Lift to DashboardClient, which updates the shared map AND persists to the
+    // DB so collapsed cards, other devices, and notifications all agree.
     onSessionMetricChange?.(weekN, session.key, m)
   }
 
@@ -4477,7 +4485,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             return (
               <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)' }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Session structure</div>
-                {partRow('Warm-up', `${structure.warmup.duration_mins} min`, structure.warmup.zone, structure.warmup.description, 'var(--mute-2)')}
+                {partRow('Warm-up', fmtDurationMins(structure.warmup.duration_mins), structure.warmup.zone, structure.warmup.description, 'var(--mute-2)')}
                 {structure.strides && (
                   <div style={{ marginLeft: '15px', marginBottom: '10px', paddingLeft: '12px', borderLeft: '1px dashed var(--line)' }}>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss)' }}>
@@ -4486,7 +4494,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.5 }}>{structure.strides.description}</div>
                   </div>
                 )}
-                {partRow('Main set', `${structure.main.duration_mins} min`, structure.main.zone, structure.main.description, getSessionColor(session.type ?? 'easy'), true)}
+                {partRow('Main set', fmtDurationMins(structure.main.duration_mins), structure.main.zone, structure.main.description, getSessionColor(session.type ?? 'easy'), true)}
                 {structure.race_pace_segment && (
                   <div style={{ marginLeft: '15px', marginBottom: '10px', paddingLeft: '12px', borderLeft: '1px dashed var(--line)' }}>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)' }}>
@@ -4495,7 +4503,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.5 }}>{structure.race_pace_segment.description}</div>
                   </div>
                 )}
-                {partRow('Cool-down', `${structure.cooldown.duration_mins} min`, structure.cooldown.zone, structure.cooldown.description, 'var(--mute-2)')}
+                {partRow('Cool-down', fmtDurationMins(structure.cooldown.duration_mins), structure.cooldown.zone, structure.cooldown.description, 'var(--mute-2)')}
               </div>
             )
           })()}
@@ -4810,7 +4818,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                     <div>
                       <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>{run.name}</div>
                       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        {new Date(run.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {(run.distance / 1000).toFixed(1)}km {run.average_heartrate ? `· ${Math.round(run.average_heartrate)} bpm` : ''} · {run.source === 'apple_health' ? 'Apple Health' : 'Strava'}
+                        {new Date(run.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {formatDistance(run.distance / 1000, preferredUnits, { exact: true })} {run.average_heartrate ? `· ${Math.round(run.average_heartrate)} bpm` : ''} · {run.source === 'apple_health' ? 'Apple Health' : 'Strava'}
                       </div>
                     </div>
                     {isSelected && <span style={{ color: 'var(--teal)', fontSize: '16px' }}>✓</span>}
@@ -5575,12 +5583,12 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
 
 // ── UTILITIES ─────────────────────────────────────────────────────────────
 
-/** Format a duration in minutes as a human-readable string: 45 → "45min", 90 → "1h30", 120 → "2h00" */
+/** Canonical duration display (45 → "45 min", 90 → "1h 30", 120 → "2h").
+ *  Delegates to lib/format so the ≥60→hours rule lives in exactly one place
+ *  (ADR-015 / INV-FMT-001). Kept as a named local so existing call sites are
+ *  unchanged. */
 function fmtDurationMins(mins: number): string {
-  if (mins < 60) return `${mins}min`
-  const h = Math.floor(mins / 60)
-  const m = mins % 60
-  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`
+  return formatDuration(mins) ?? ''
 }
 
 /** Parse legacy free-text detail field into structured distance/duration */
@@ -6164,10 +6172,11 @@ function ReadinessSteadyChip({ detail }: {
 
 // AdjustmentBanner — now wraps PendingAdjustmentBanner with API call logic.
 // State management lives here (and in DashboardClient), UI delegated to the shared component.
-function AdjustmentBanner({ adjustment, onConfirmed, onReverted }: {
+function AdjustmentBanner({ adjustment, onConfirmed, onReverted, preferredUnits = 'km' }: {
   adjustment: any
   onConfirmed?: (plan: any) => void
   onReverted?:  (plan: any) => void
+  preferredUnits?: 'km' | 'mi'
 }) {
   const [loading, setLoading] = useState(false)
   const [dismissed, setDismissed] = useState(false)
@@ -6215,6 +6224,7 @@ function AdjustmentBanner({ adjustment, onConfirmed, onReverted }: {
         loading={loading}
         sessionsBefore={adjustment.sessions_before ?? undefined}
         sessionsAfter={adjustment.sessions_after ?? undefined}
+        units={preferredUnits}
       >
         {adjustment.summary}
       </PendingAdjustmentBanner>
@@ -6225,7 +6235,7 @@ function AdjustmentBanner({ adjustment, onConfirmed, onReverted }: {
 // ── ReshapeScreen ─────────────────────────────────────────────────────────────
 // User-initiated plan reshape. Calls /api/adjust-plan with manual:true, shows result.
 
-function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpenBenchmark }: {
+function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpenBenchmark, preferredUnits = 'km' }: {
   plan: Plan | null
   onBack: () => void
   onReshapeApplied: (plan: any) => void
@@ -6234,6 +6244,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
   onChecked?: (foundChange: boolean) => void
   /** ENGINE-01 fitness_signal: CTA routes to BenchmarkUpdateScreen. */
   onOpenBenchmark?: () => void
+  preferredUnits?: 'km' | 'mi'
 }) {
   const [status, setStatus]               = useState<'loading' | 'found' | 'clean' | 'error'>('loading')
   const [adjustment, setAdjustment]       = useState<any | null>(null)
@@ -6332,6 +6343,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
               loading={actionLoading}
               sessionsBefore={adjustment.sessions_before ?? undefined}
               sessionsAfter={adjustment.sessions_after ?? undefined}
+              units={preferredUnits}
             >
               {adjustment.summary}
             </PendingAdjustmentBanner>
@@ -7428,6 +7440,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 adjustment={pendingAdjustment}
                 onConfirmed={onAdjustmentConfirmed}
                 onReverted={onAdjustmentReverted}
+                preferredUnits={preferredUnits}
               />
             </div>
           )
@@ -8045,7 +8058,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   // #3b — is the athlete currently inside the post-race maintenance block?
   const inMaintenance = currentWeek?.phase === 'maintenance_restoration' || currentWeek?.phase === 'maintenance_base'
   const currentWeekSessions = Object.values((currentWeek as any)?.sessions ?? {}) as any[]
-  const weeklyKmTarget = sumRoundedDistance(currentWeekSessions.map((s: any) => s?.distance_km as number | undefined), 'km')
+  const weeklyKmTarget = sumRoundedDistance(currentWeekSessions.map((s: any) => s?.distance_km as number | undefined), preferredUnits)
 
   // PLAN-VOICE-AI — paid/trial users get an AI-voiced headline + items via
   // /api/plan-weekly-note (cached per week, regenerated when the plan changes).
@@ -8246,13 +8259,13 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
               {weeklyKmTarget > 0 && (
                 <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)' }}>
-                    {weeklyKmTarget}km target
+                    {weeklyKmTarget}{preferredUnits} target
                   </span>
                   {doneKm ? (
                     <>
                       <span style={{ color: 'var(--line-strong)', fontSize: '12px' }}>·</span>
                       <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--moss)', fontWeight: 500 }}>
-                        {doneKm}km done
+                        {formatDistance(doneKm, preferredUnits, { exact: true })} done
                       </span>
                     </>
                   ) : (
@@ -11857,7 +11870,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', lineHeight: 1.45 }}>
                         {c.summary}
                       </div>
-                      <AdjustmentDiff sessionsBefore={c.sessions_before ?? []} sessionsAfter={c.sessions_after ?? []} />
+                      <AdjustmentDiff sessionsBefore={c.sessions_before ?? []} sessionsAfter={c.sessions_after ?? []} units={preferredUnits} />
                       <button
                         onClick={() => dismissChange(c.id)}
                         style={{ marginTop: '10px', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--mute)' }}
@@ -12153,6 +12166,7 @@ function buildScoreExplanations(
   analysis: any,
   paceTarget: string | null,
   actualAvgSpeedMs: number | null,
+  units: 'km' | 'mi' = 'km',
 ): { label: string; value: number | undefined; line: string }[] {
   // HR
   const inZone = analysis.hr_in_zone_pct as number | null | undefined
@@ -12179,11 +12193,11 @@ function buildScoreExplanations(
   if (planned == null || actual == null) {
     distLine = 'No distance data.'
   } else if (Math.abs(actual - planned) < 0.3) {
-    distLine = `Hit the planned distance — ${actual.toFixed(1)}km.`
+    distLine = `Hit the planned distance — ${formatDistance(actual, units, { exact: true })}.`
   } else if (actual > planned) {
-    distLine = `Planned ${planned.toFixed(1)}km, ran ${actual.toFixed(1)}km.`
+    distLine = `Planned ${formatDistance(planned, units, { exact: true })}, ran ${formatDistance(actual, units, { exact: true })}.`
   } else {
-    distLine = `Planned ${planned.toFixed(1)}km, ran ${actual.toFixed(1)}km — short.`
+    distLine = `Planned ${formatDistance(planned, units, { exact: true })}, ran ${formatDistance(actual, units, { exact: true })} — short.`
   }
 
   // Pace
@@ -12235,11 +12249,13 @@ function RunFeedbackCard({
   paceTarget = null,
   actualAvgSpeedMs = null,
   onOpenCoach,
+  preferredUnits = 'km',
 }: {
   analysis: any
   paceTarget?: string | null
   actualAvgSpeedMs?: number | null
   onOpenCoach?: () => void
+  preferredUnits?: 'km' | 'mi'
 }) {
   const verdict    = analysis.verdict as string
   const score      = analysis.total_score as number | null
@@ -12247,7 +12263,7 @@ function RunFeedbackCard({
   const isManual   = (analysis.source as string | undefined) === 'manual'
   const voice      = getVerdictVoice(verdict)
   const [expanded, setExpanded] = useState(false)
-  const explanations = buildScoreExplanations(analysis, paceTarget, actualAvgSpeedMs)
+  const explanations = buildScoreExplanations(analysis, paceTarget, actualAvgSpeedMs, preferredUnits)
 
   const metrics: { label: string; value: number | null | undefined }[] = [
     { label: 'HR',         value: analysis.hr_discipline_score as number | null },
@@ -12435,12 +12451,14 @@ function RunFeedbackCard({
   )
 }
 
-function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, restingHR, maxHR, aerobicPace, stravaLoading, runAnalysis, hasPaidAccess, onUpgrade, onOpenCoach, goalPace, guidance, nextSession, onLinkedComplete, autoMatch }: {
+function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, savedMetricOverride = null, restingHR, maxHR, aerobicPace, stravaLoading, runAnalysis, hasPaidAccess, onUpgrade, onOpenCoach, goalPace, guidance, nextSession, onLinkedComplete, autoMatch }: {
   session: any; preloadedRuns: any[]; onBack: () => void; onSaved?: () => void
   preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number; preferredMetric?: 'distance' | 'duration'
   /** Lifts per-session metric toggle into DashboardClient so collapsed cards
-   *  stay in sync without waiting for a localStorage re-read on next mount. */
+   *  stay in sync and it persists to the DB (ADR-015). */
   onSessionMetricChange?: (weekN: number, sessionKey: string, metric: 'distance' | 'duration' | null) => void
+  /** Current DB-backed per-session override for this session (null = none). */
+  savedMetricOverride?: 'distance' | 'duration' | null
   restingHR?: number | null; maxHR?: number | null; aerobicPace?: string | null
   stravaLoading?: boolean
   runAnalysis?: any | null; hasPaidAccess?: boolean; onUpgrade?: () => void
@@ -12623,7 +12641,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z" fill="var(--mute)" opacity="0.5"/>
                   </svg>
-                  Apple Health{actKm ? ` · ${actKm}km` : ''}
+                  Apple Health{actKm ? ` · ${formatDistance(actKm, preferredUnits, { exact: true })}` : ''}
                 </div>
               )}
               <RunFeedbackCard
@@ -12631,6 +12649,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
                 paceTarget={session.pace_target ?? null}
                 actualAvgSpeedMs={linkedAct?.average_speed ?? null}
                 onOpenCoach={onOpenCoach}
+                preferredUnits={preferredUnits}
               />
               {/* Unlink — only shown when an activity is actually linked (not manual rows) */}
               {analysis.source !== 'manual' && <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -12708,7 +12727,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)',
               }}>
-                {nextSession.day} · {getSessionLabel(nextSession.type)}{nextSession.distanceKm ? ` · ${nextSession.distanceKm}km` : ''}
+                {nextSession.day} · {getSessionLabel(nextSession.type)}{nextSession.distanceKm ? ` · ${formatDistance(nextSession.distanceKm, preferredUnits, { exact: true })}` : ''}
               </div>
             </div>
           </div>
@@ -12774,6 +12793,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
               zone2Ceiling={zone2Ceiling ?? null}
               preferredMetric={preferredMetric}
               onSessionMetricChange={onSessionMetricChange}
+              savedMetricOverride={savedMetricOverride}
               restingHR={restingHR}
               maxHR={maxHR}
               aerobicPace={aerobicPace}
@@ -13198,6 +13218,7 @@ function PostRunScreen({
             paceTarget={paceTarget}
             actualAvgSpeedMs={null}
             onOpenCoach={onOpenCoach}
+            preferredUnits={preferredUnits}
           />
         )}
         {hasPaidAccess && !hrPendingState && !analysis && !pollGaveUp && (

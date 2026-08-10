@@ -83,7 +83,7 @@ describe('buildDailyPushTitle', () => {
   })
 
   it('frames easy days as easy, keeping the metric and a "today" anchor', () => {
-    expect(buildDailyPushTitle(s('easy', { duration_mins: 45 }))).toBe('Easy 45m today.')
+    expect(buildDailyPushTitle(s('easy', { duration_mins: 45 }))).toBe('Easy 45 min today.')
   })
 
   it('names the upcoming key session on an easy day', () => {
@@ -91,7 +91,7 @@ describe('buildDailyPushTitle', () => {
       s('easy', { duration_mins: 45 }),
       { type: 'intervals', dayName: 'Thursday' },
     )
-    expect(title).toBe('Easy 45m today. Intervals Thursday.')
+    expect(title).toBe('Easy 45 min today. Intervals Thursday.')
   })
 
   it('applies the same purpose hook to recovery days', () => {
@@ -99,7 +99,24 @@ describe('buildDailyPushTitle', () => {
       s('recovery', { duration_mins: 30 }),
       { type: 'tempo', dayName: 'Friday' },
     )
-    expect(title).toBe('Recovery 30m today. Tempo Friday.')
+    expect(title).toBe('Recovery 30 min today. Tempo Friday.')
+  })
+
+  it('uses the ≥60→hours glyph for durations (the "78m" ambiguity is retired)', () => {
+    // The bug that started ADR-015: a 78-min easy run must never read "78m".
+    expect(buildDailyPushTitle(
+      s('easy', { duration_mins: 78 }),
+      null,
+      { units: 'km', metric: 'duration' },
+    )).toBe('Easy 1h 18 today.')
+  })
+
+  it('honours the resolved metric + units passed by the caller', () => {
+    const both = s('tempo', { distance_km: 8.04672, duration_mins: 40 })
+    expect(buildDailyPushTitle(both, null, { units: 'mi', metric: 'distance' }))
+      .toBe("The hard one's today. 5mi.")
+    expect(buildDailyPushTitle(both, null, { units: 'km', metric: 'duration' }))
+      .toBe("The hard one's today. 40 min.")
   })
 
   it('gives the long and hard days their own register', () => {

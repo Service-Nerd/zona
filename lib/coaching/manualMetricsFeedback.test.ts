@@ -39,7 +39,12 @@ describe('manualMetricsFeedbackText (DS-06)', () => {
   it('no HR, short of planned → honest short line', () => {
     const t = manualMetricsFeedbackText('easy', { distanceKm: 5, plannedKm: 8, avgHr: null, hrCeiling: null })
     expect(t.toLowerCase()).toContain('short')
-    expect(t).toContain('5.0km')
+    expect(t).toContain('5km')
+  })
+
+  it('honours miles when the user prefers them', () => {
+    const t = manualMetricsFeedbackText('run', { distanceKm: 8.04672, plannedKm: null, avgHr: null, hrCeiling: null }, 'mi')
+    expect(t).toBe('5mi logged.')
   })
 
   it('no HR, long → a-bit-long line', () => {

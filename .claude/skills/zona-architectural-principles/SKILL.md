@@ -217,6 +217,26 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 | INV-CFG-004 | Tunability Test | When in doubt about whether a numeric is "coaching" or "structural": ask if a coach could reasonably want to tune it. If yes → config. If it's a fact (days/week, π, JS-language constraint) → inline. |
 | INV-CFG-005 | Brand & Pricing Singularity | Brand strings (taglines, app name) and pricing values (£, billing frequency, trial length) live in `lib/brand.ts → BRAND` and `lib/brand.ts → PRICING`. Never hardcoded in components, copy, or routes. |
 
+---
+
+## 5c. Display Formatting, Preference & Temporal Invariants
+
+**Authority**: ADR-015 (display formatting & preference singularity), ADR-016 (date-aware plan resolution). Added 2026-08-10 after a daily push read "Easy 79m today" — ambiguous units — for a plan that had not started yet. Three singularity failures in one push: formatting re-implemented 5+ ways, unit/metric preference ignored server-side, and "today's session" derived by weekday from a saturating week index.
+
+| ID | Name | Guarantee |
+|---|---|---|
+| INV-FMT-001 | Metric Format Singularity | Every user-visible time, distance, and metric string is produced by `lib/format.ts` (`formatDuration`, `formatDistance`, `formatSessionMetric`). No component, route, prompt, or cron re-implements duration/distance formatting inline. Pace (`m:ss/km`) and race-clock (`h:mm:ss`) are separate, single-owner formatters — genuinely different domains (D-17), not duplicated. |
+| INV-FMT-002 | Duration Rule Defined Once | The "≥60 min → hours" rule lives only in `formatDuration`: `< 60` → `"45 min"`; whole hour → `"2h"`; otherwise `"1h 18"` (minutes zero-padded, no unit suffix). **Never a bare `m` glyph** (`"78m"`) — that minutes/miles/metres ambiguity is the defect this retired. |
+| INV-PREF-001 | Preference Singularity | Unit (`preferred_units`) and metric (`preferred_metric`) preference has one source: `user_settings`. Client lifts it in `DashboardClient` and passes as props (M-007); server paths fetch it via `getUserDisplayPrefs` (`lib/userPrefs.ts`). **No hardcoded `'km'`/`'mi'`** anywhere. No send path formats a distance/duration without the fetched preference. Per-session overrides live in `session_metric_overrides` (DB, cross-device), not localStorage. |
+| INV-TIME-001 | Date-Aware Send-Gating | No user-facing session may be derived by day-of-week alone. "Is there a real session on calendar date D?" resolves through `getSessionForDate()` (`lib/plan.ts`), which returns `null` before-start / after-end / gap / empty-day. **No scheduled send (push, email, digest) fires without an active plan AND a real session for the target date.** A `null` result means "do not send / show empty state" — never fall back to `weeks[0]`. Temporal position uses date-window predicates, never `getCurrentWeekIndex()` comparisons (§73). |
+
+**Pre-ship checklist (verify ALL before closing any release that touches display, preference, or scheduled sends):**
+
+1. Any new duration/distance/metric string routes through `lib/format.ts` — no inline formatting, no bare `78m`.
+2. Any surface that renders distance/duration receives `units`/`metric` (client: prop from `DashboardClient`; server: `getUserDisplayPrefs`). Grep the diff for hardcoded `'km'`/`'mi'`.
+3. Any new scheduled send or "today's session" derivation gates on `getSessionForDate(...) !== null` and does not trust `getCurrentWeekIndex()` for before/after-plan reasoning.
+4. Toggling units or metric (global or per-session) is verified to propagate to every affected surface — cards, plan, session detail, notifications — via agent-browser (M-010).
+
 **Warm Slate palette (ADR-007):**
 
 | Token | Value | Role |

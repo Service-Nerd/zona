@@ -18,6 +18,7 @@
 import CoachByline from './CoachByline'
 import AdjustmentDiff from './AdjustmentDiff'
 import type { SessionLike } from '@/lib/coaching/diff/sessionDiff'
+import type { DistanceUnits } from '@/lib/format'
 
 type Props = {
   /** Byline role line — default "PLAN ADJUSTED". Use coach voice (e.g. "MOVED YOUR TEMPO"). */
@@ -38,6 +39,8 @@ type Props = {
    */
   sessionsBefore?: ReadonlyArray<SessionLike | null | undefined>
   sessionsAfter?:  ReadonlyArray<SessionLike | null | undefined>
+  /** User's preferred distance units, forwarded to the diff strip. Default 'km'. */
+  units?: DistanceUnits
 }
 
 export default function PendingAdjustmentBanner({
@@ -48,6 +51,7 @@ export default function PendingAdjustmentBanner({
   loading = false,
   sessionsBefore,
   sessionsAfter,
+  units = 'km',
 }: Props) {
   const verticalPadding   = 14
   const horizontalPadding = 16
@@ -97,7 +101,7 @@ export default function PendingAdjustmentBanner({
       {/* RESHAPE-FIX-WAVE2A — Rule-engine diff (WHAT). No AIMark. */}
       {sessionsBefore && sessionsAfter && (
         <div style={{ marginBottom: '14px' }}>
-          <AdjustmentDiff sessionsBefore={sessionsBefore} sessionsAfter={sessionsAfter} />
+          <AdjustmentDiff sessionsBefore={sessionsBefore} sessionsAfter={sessionsAfter} units={units} />
         </div>
       )}
 

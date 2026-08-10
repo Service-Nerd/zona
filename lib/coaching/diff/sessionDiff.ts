@@ -22,6 +22,8 @@
 // `removed` / `added` are kept for completeness even though the engine
 // shouldn't currently produce them (a 7-day week stays 7 days).
 
+import { formatDistance, formatDuration, type DistanceUnits } from '@/lib/format'
+
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 type Day = typeof DAY_ORDER[number]
 
@@ -164,21 +166,18 @@ export function summariseDiff(
  *
  * Examples:
  *   { type: 'rest' }                                  → "rest"
- *   { type: 'easy', distance_km: 8 }                  → "easy 8km"
- *   { type: 'long', duration_mins: 180 }              → "long 3h00"
+ *   { type: 'easy', distance_km: 8 }                  → "easy 8km"  ("easy 5mi" with units='mi')
+ *   { type: 'long', duration_mins: 180 }              → "long 3h"
  *   { type: 'strength', label: 'Mobility only' }      → "strength (Mobility only)"
  */
-export function labelSession(s: SessionLike): string {
+export function labelSession(s: SessionLike, units: DistanceUnits = 'km'): string {
   const type = String(s.type ?? 'session')
   if (type === 'rest') return 'rest'
   if (typeof s.distance_km === 'number' && s.distance_km > 0) {
-    return `${type} ${s.distance_km}km`
+    return `${type} ${formatDistance(s.distance_km, units, { exact: true })}`
   }
   if (typeof s.duration_mins === 'number' && s.duration_mins > 0) {
-    const h = Math.floor(s.duration_mins / 60)
-    const m = s.duration_mins % 60
-    const dur = h > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${m}min`
-    return `${type} ${dur}`
+    return `${type} ${formatDuration(s.duration_mins)}`
   }
   // Non-distance/duration session (strength, cross, etc.) — surface label
   // when present, otherwise just the type.

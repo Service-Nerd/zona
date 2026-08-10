@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { SESSION_COLORS, SESSION_LABELS } from '@/lib/session-types'
 import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
-import { formatDistance, sumRoundedDistance, resolveSessionMetric, type DistanceUnits, type SessionMetric, type SessionMetricOverrides } from '@/lib/format'
+import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric, type DistanceUnits, type SessionMetric, type SessionMetricOverrides } from '@/lib/format'
 
 interface Completion {
   session_day: string
@@ -788,13 +788,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
                 const distStr = session.distance_km != null
                   ? formatDistance(session.distance_km, units, { exact: session.type === 'race' })
                   : null
-                const durStr = session.duration_mins != null
-                  ? (session.duration_mins < 60
-                      ? `${session.duration_mins}min`
-                      : (session.duration_mins % 60 === 0
-                          ? `${Math.floor(session.duration_mins / 60)}h`
-                          : `${Math.floor(session.duration_mins / 60)}h ${session.duration_mins % 60}min`))
-                  : null
+                const durStr = formatDuration(session.duration_mins)
                 const value = metric === 'duration' ? (durStr ?? distStr) : (distStr ?? durStr)
                 return value ? (
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', fontVariantNumeric: 'tabular-nums' }}>

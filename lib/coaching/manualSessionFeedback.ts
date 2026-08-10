@@ -28,6 +28,8 @@
  *   no RPE → 'close' (something was logged; we just don't have effort data)
  */
 
+import { formatDistance, type DistanceUnits } from '@/lib/format'
+
 export type ManualVerdict = 'nailed' | 'close' | 'off_target' | 'concerning'
 
 export function deriveManualVerdict(
@@ -138,7 +140,7 @@ export interface ManualMetrics {
   hrCeiling:  number | null   // parsed from session.hr_target
 }
 
-export function manualMetricsFeedbackText(sessionType: string, m: ManualMetrics): string {
+export function manualMetricsFeedbackText(sessionType: string, m: ManualMetrics, units: DistanceUnits = 'km'): string {
   const isEasy = ['easy', 'recovery', 'run', 'long'].includes(sessionType)
 
   // HR read leads when we have both the average and a band to judge it against.
@@ -153,13 +155,15 @@ export function manualMetricsFeedbackText(sessionType: string, m: ManualMetrics)
     return `Average HR ${m.avgHr} — sat under the target. Room to push next time.`
   }
 
-  // No HR entered — judge on distance vs planned.
+  // No HR entered — judge on distance vs planned. Distance honours the user's
+  // units via the single formatter (ADR-015 / INV-PREF-001).
+  const dist = formatDistance(m.distanceKm, units, { exact: true })
   if (m.plannedKm && m.plannedKm > 0) {
     const ratio = m.distanceKm / m.plannedKm
-    if (ratio >= 0.95 && ratio <= 1.1) return `${m.distanceKm.toFixed(1)}km — right on the number.`
-    if (ratio < 0.95)                  return `${m.distanceKm.toFixed(1)}km of ${m.plannedKm}km planned. Short, but logged.`
-    return `${m.distanceKm.toFixed(1)}km — a bit long. Fine if the legs are good.`
+    if (ratio >= 0.95 && ratio <= 1.1) return `${dist} — right on the number.`
+    if (ratio < 0.95)                  return `${dist} of ${formatDistance(m.plannedKm, units, { exact: true })} planned. Short, but logged.`
+    return `${dist} — a bit long. Fine if the legs are good.`
   }
 
-  return `${m.distanceKm.toFixed(1)}km logged.`
+  return `${dist} logged.`
 }
