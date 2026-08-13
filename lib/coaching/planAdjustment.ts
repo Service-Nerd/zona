@@ -21,6 +21,7 @@ import {
 } from './constants'
 import { acuteChronicRatio, shadowLoadPct, zoneDisciplineScore } from './loadCalc'
 import { weekHasRestDay, findQualityLongSpacingViolations } from '@/lib/plan/invariants'
+import { isLongRun } from '@/lib/plan/sessionRole'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { BRAND } from '@/lib/brand'
 import type { Session } from '@/types/plan'
@@ -278,7 +279,7 @@ function buildReduceVolumeAdjustment(input: AdjustmentCheckInput, ratio: number)
   const sessions       = input.currentWeekSessions
   const sessionsBefore = sessions.map(s => ({ ...s }))
   const sessionsAfter  = sessions.map(s => {
-    if (s.type === 'easy' || s.type === 'long') {
+    if (s.type === 'easy' || isLongRun(s)) {
       const reduced = s.distance_km ? Math.round(s.distance_km * 0.85 * 10) / 10 : undefined
       return { ...s, distance_km: reduced }
     }
@@ -299,7 +300,7 @@ function buildZoneDriftAdjustment(input: AdjustmentCheckInput, zdScore: number):
   const sessions       = input.currentWeekSessions
   const sessionsBefore = sessions.map(s => ({ ...s }))
   const sessionsAfter  = sessions.map(s => {
-    if (s.type === 'easy' || s.type === 'long') {
+    if (s.type === 'easy' || isLongRun(s)) {
       return { ...s, coach_notes: ['Zone 2 only. HR ceiling enforced — if HR climbs, slow down.'] as [string] }
     }
     return { ...s }
@@ -380,7 +381,7 @@ function buildFatigueAdjustment(input: AdjustmentCheckInput, consecutiveCount: n
         coach_notes: [`Swapped to easy — ${consecutiveCount} consecutive heavy sessions. Let the adaptation catch up.`] as [string],
       }
     }
-    if (s.type === 'long' && s.distance_km) {
+    if (isLongRun(s) && s.distance_km) {
       return {
         ...s,
         distance_km: Math.round(s.distance_km * FATIGUE_SOFTENING_LONG_RUN_PCT * 10) / 10,
@@ -409,7 +410,7 @@ function buildRpeDisconnectAdjustment(input: AdjustmentCheckInput, rpe: number, 
   const sessions       = input.currentWeekSessions
   const sessionsBefore = sessions.map(s => ({ ...s }))
   const sessionsAfter  = sessions.map(s => {
-    if (s.type === 'easy' || s.type === 'long') {
+    if (s.type === 'easy' || isLongRun(s)) {
       return {
         ...s,
         coach_notes: [`RPE ${rpe} on ${sessionType} run. Keep HR in Zone 2 — if it felt hard, it was too hard.`] as [string],
@@ -459,7 +460,7 @@ function buildReadinessAdjustment(
         coach_notes: [`${BRAND.voiceAnchor} Recovery signals are off (${reasonStr}). Easy day instead — the quality is on the bench.`] as [string],
       }
     }
-    if (s.type === 'long' && s.distance_km) {
+    if (isLongRun(s) && s.distance_km) {
       return {
         ...s,
         distance_km: Math.round(s.distance_km * READINESS.LONG_RUN_SOFTEN_PCT * 10) / 10,
@@ -561,7 +562,7 @@ function buildSkipAdjustment(
         }
       }
       // Easy/long sessions: 15% volume reduction
-      if ((s.type === 'easy' || s.type === 'long') && s.distance_km) {
+      if ((s.type === 'easy' || isLongRun(s)) && s.distance_km) {
         return {
           ...s,
           distance_km: Math.round(s.distance_km * SKIP_INJURY_VOLUME_REDUCTION * 10) / 10,
@@ -743,7 +744,7 @@ function buildLongRunShortfallAdjustment(input: AdjustmentCheckInput): ProposedA
   const sessions       = input.currentWeekSessions
   const sessionsBefore = sessions.map(s => ({ ...s }))
   const sessionsAfter  = sessions.map(s => {
-    if (s.type === 'long' && s.distance_km) {
+    if (isLongRun(s) && s.distance_km) {
       const reduced = Math.round(s.distance_km * LONG_RUN_SHORTFALL_REDUCE_PCT * 10) / 10
       return {
         ...s,

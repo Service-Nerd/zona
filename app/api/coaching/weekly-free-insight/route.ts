@@ -5,6 +5,7 @@ import { getUserTier } from '@/lib/trial'
 import { buildFreeInsightPrompt } from '@/lib/coaching/prompts/freeInsight'
 import { assessReframeRiskGate, type CoachingFlag, type FatigueTag } from '@/lib/coaching/reframeRiskGate'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { coachingSessionType } from '@/lib/plan/sessionRole'
 
 // GET /api/coaching/weekly-free-insight
 //
@@ -162,7 +163,7 @@ export async function GET(req: NextRequest) {
     const updated = new Date(c.updated_at as string)
     const daysAgo = Math.max(0, Math.round((now.getTime() - updated.getTime()) / MS_PER_DAY))
     return {
-      sessionType:       (slot?.type as string) ?? 'unknown',
+      sessionType:       slot ? coachingSessionType(slot) : 'unknown',
       daysAgo,
       plannedDistanceKm: typeof slot?.distance_km === 'number' ? slot.distance_km : null,
       rpe:               (c.rpe as number | null) ?? null,

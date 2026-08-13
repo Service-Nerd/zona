@@ -16,6 +16,7 @@
 
 import type { Plan, Week, Session, Phase } from '@/types/plan'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
+import { isLongRun } from '@/lib/plan/sessionRole'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -44,7 +45,7 @@ export interface TaperRecalibrationResult {
 function scaleSession(session: Session, scaleFactor: number): Session {
   if (!session.distance_km) return session
   const minFloor =
-    session.type === 'long'     ? GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long
+    isLongRun(session)          ? GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long
     : session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals' || session.type === 'hard'
       ? GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.quality
       : GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy

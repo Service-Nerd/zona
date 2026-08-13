@@ -116,6 +116,27 @@ describe('enrich — outcome reporting (GEN-FIX-02)', () => {
     expect(RULE_PLAN.weeks[0].label).toBe('Base — easy start')
   })
 
+  it('accepts a partial-week sessions object (zod v4 partialRecord regression)', async () => {
+    // The enricher returns coach_notes only for days that have sessions — never
+    // all seven. Under a plain z.record(enum, …) this failed EnrichedPlanSchema
+    // ("expected object, received undefined" for the absent days) and enrichment
+    // fell back to rule copy silently for ~4 months after the zod v4 upgrade.
+    // This fixture reproduces the real enricher output shape; it must apply.
+    const payload = JSON.stringify({
+      meta: { notes: 'n' },
+      weeks: [{
+        n: 1, label: 'Base — hold the zone', theme: 'Slower than feels right.',
+        sessions: { mon: { coach_notes: ['Keep it in Zone 2. If HR climbs, walk.'] } },
+      }],
+    })
+    global.fetch = mockAnthropic(payload) as unknown as typeof fetch
+
+    const { plan, outcome } = await enrich(RULE_PLAN, INPUT, 'trial')
+
+    expect(outcome).toEqual({ status: 'applied' })
+    expect(plan.weeks[0].sessions!.mon!.coach_notes).toEqual(['Keep it in Zone 2. If HR climbs, walk.'])
+  })
+
   it('a successfully enriched plan no longer carries rule-engine labels', async () => {
     // This is the assertion that would have caught N1: User A's saved plan had
     // labels byte-identical to weekLabel() output, which is how we knew the

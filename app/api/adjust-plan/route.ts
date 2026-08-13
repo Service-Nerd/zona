@@ -5,6 +5,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { checkAdjustmentTriggers } from '@/lib/coaching/planAdjustment'
+import { isLongRun } from '@/lib/plan/sessionRole'
 import { recordQualityDowngrade } from '@/lib/coaching/qualityDowngrade'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildAdjustmentExplanationPrompt } from '@/lib/coaching/prompts/planAdjustment'
@@ -258,7 +259,7 @@ export async function POST(req: NextRequest) {
       if (a.actual_load_km === null || a.actual_load_km === undefined) return false
       const w = plan.weeks.find((pw: any) => pw.n === a.week_n)
       const s = (w?.sessions as any)?.[a.session_day as string]
-      return s && (s as any).type === 'long'
+      return !!s && isLongRun(s as any)
     })
     .slice(0, 4) // last 4 long runs at most
     .map((a: any) => {

@@ -16,6 +16,7 @@ import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, 
 import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
 import { easyPaceAsCeiling } from '@/lib/plan/easyPaceCeiling'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
+import { isLongRun, coachingSessionType } from '@/lib/plan/sessionRole'
 import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
 import { isTrialActive, TRIAL_DAYS } from '@/lib/trial'
@@ -2255,7 +2256,7 @@ export default function DashboardClient() {
                   method: 'POST',
                   body: JSON.stringify({
                     skipReason: reason,
-                    sessionType: missedSessionPrompt.session.type,
+                    sessionType: coachingSessionType(missedSessionPrompt.session),
                     sessionDay: completionKey,
                   }),
                 })
@@ -3543,7 +3544,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const flag = getCoachingFlag({
-        sessionType: session.type,
+        sessionType: coachingSessionType(session),
         rpe: newRpe,
         avgHr: completion?.avg_hr ?? null,
         zone2Ceiling: zone2Ceiling ?? undefined,
@@ -3563,8 +3564,8 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
         void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({}) })
       }
       // Trigger 5: RPE disconnect check — fires when RPE ≥ 8 on easy/long session
-      if (newRpe != null && newRpe >= 8 && (session.type === 'easy' || session.type === 'long')) {
-        void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({ rpe: newRpe, sessionType: session.type }) })
+      if (newRpe != null && newRpe >= 8 && (session.type === 'easy' || isLongRun(session))) {
+        void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({ rpe: newRpe, sessionType: coachingSessionType(session) }) })
       }
       onSaved?.()
     } catch {} finally { setSavingRPE(false) }
@@ -4067,7 +4068,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                     if (reason !== 'Too tired') {
                       void authedFetch('/api/adjust-plan', {
                         method: 'POST',
-                        body: JSON.stringify({ skipReason: reason, sessionType: session.type, sessionDay: session.key }),
+                        body: JSON.stringify({ skipReason: reason, sessionType: coachingSessionType(session), sessionDay: session.key }),
                       })
                     }
                     onSaved?.()
@@ -4292,7 +4293,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
           ) && (() => {
             const plannedZone = (session.zone as string | undefined) ?? (
               session.type === 'recovery' ? 'Zone 1' :
-              session.type === 'easy' || session.type === 'run' || session.type === 'long' ? 'Zone 2' :
+              session.type === 'easy' || session.type === 'run' || isLongRun(session) ? 'Zone 2' :
               session.type === 'quality' || session.type === 'tempo' ? 'Zone 3' :
               session.type === 'intervals' || session.type === 'hard' ? 'Zone 4–5' : null
             )
@@ -5687,7 +5688,7 @@ function SessionHero({ session, completion, onTap, zone2Ceiling, preferredUnits,
   const showMetrics = ['easy', 'run', 'quality', 'intervals', 'hard', 'tempo', 'race', 'recovery'].includes(session.type)
   const zoneLabel: string | null = (session.zone as string | undefined) ?? (
     session.type === 'recovery' ? 'Zone 1' :
-    session.type === 'easy' || session.type === 'run' || session.type === 'long' ? 'Zone 2' :
+    session.type === 'easy' || session.type === 'run' || isLongRun(session) ? 'Zone 2' :
     session.type === 'quality' || session.type === 'tempo' ? 'Zone 3' :
     session.type === 'intervals' || session.type === 'hard' ? 'Zone 4–5' : null
   )
@@ -6807,7 +6808,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
     const ws = (currentWeek as any).sessions ?? {}
     const sessionList = Object.values(ws) as any[]
     const hasQuality = sessionList.some(s => s && ['quality','tempo','intervals','hard'].includes(s.type))
-    const hasLong    = sessionList.some(s => s && s.type === 'long')
+    const hasLong    = sessionList.some(s => s && isLongRun(s))
     const injuries   = (plan.meta as any)?.injury_history as string[] | undefined
 
     // Fatigue context — prepend when there's a heavy trend
@@ -8368,7 +8369,7 @@ function buildWeekVoiceContext(currentWeek: Week, plan: Plan): WeekVoiceContext 
   return {
     phase: (currentWeek as any).phase as string | undefined,
     hasQuality: sessions.some(s => s && ['quality','tempo','intervals','hard'].includes(s.type)),
-    hasLong: sessions.some(s => s && s.type === 'long'),
+    hasLong: sessions.some(s => s && isLongRun(s)),
     weeksToRace: Math.max(
       0,
       Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000))
@@ -9256,7 +9257,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
       for (const week of plan.weeks) {
         const sessions = (week as any).sessions ?? {}
         for (const s of Object.values(sessions)) {
-          if ((s as any)?.type === 'long' && (s as any)?.distance_km) {
+          if (isLongRun(s as any) && (s as any)?.distance_km) {
             longRunDistances.push((s as any).distance_km as number)
           }
         }
@@ -13044,7 +13045,7 @@ function PostRunScreen({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const flag = getCoachingFlag({
-        sessionType: session.type,
+        sessionType: coachingSessionType(session),
         rpe:         newRpe,
         avgHr:       null,
         zone2Ceiling: zone2Ceiling ?? undefined,
@@ -13064,8 +13065,8 @@ function PostRunScreen({
         void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({}) })
       }
       // Trigger 5: RPE disconnect check on easy/long
-      if (newRpe != null && newRpe >= 8 && (session.type === 'easy' || session.type === 'long')) {
-        void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({ rpe: newRpe, sessionType: session.type }) })
+      if (newRpe != null && newRpe >= 8 && (session.type === 'easy' || isLongRun(session))) {
+        void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({ rpe: newRpe, sessionType: coachingSessionType(session) }) })
       }
       onSaved?.()
       // Re-run analyse-run so the verdict card reflects the just-saved RPE/fatigue.

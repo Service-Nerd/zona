@@ -87,6 +87,50 @@ if [ -n "$STAGED_ALL_TS" ]; then
   done
 fi
 
+# ── Zod v4 record-key footgun: z.record(<enum>, …) is exhaustive ─────────────
+# Under Zod v4, z.record(z.enum(...) | DayKeySchema, value) requires EVERY enum
+# key present, so a producer that emits only the keys it has (partial weeks,
+# sparse day maps) silently fails validation. This broke AI enrichment for ~4
+# months (EnrichedPlanSchema). Use z.partialRecord(...) for fixed-keyset records.
+ZOD_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.tsx?$' || true)
+if [ -n "$ZOD_TS" ]; then
+  for f in $ZOD_TS; do
+    [ -f "$f" ] || continue
+    if perl -0777 -ne 'exit 1 unless /z\.record\(\s*(DayKeySchema|z\.enum\()/' "$f"; then
+      echo ""
+      echo "✗  z.record(<enum key>, …) detected — this is exhaustive under Zod v4."
+      echo "   A partial keyset (e.g. only the days that have sessions) will fail"
+      echo "   validation silently. Use z.partialRecord(<enum>, …) instead."
+      echo "   See lib/plan/enrichMaintenance.ts for the correct pattern."
+      grep -nE 'z\.record\(' "$f" | head -3 | sed "s|^|   $f:|"
+      FAIL=1
+    fi
+  done
+fi
+
+# ── Session classification by display label (D-16/D-17) ──────────────────────
+# A long run / shakeout is classified by `role` (or type), never by matching
+# words in the display label — the AI enricher rewrites labels, silently breaking
+# any label-based classifier (this caused two production bugs). The single owner
+# is lib/plan/sessionRole.ts (isLongRun / isShakeout / coachingSessionType); it is
+# the only file allowed to fall back to a label heuristic. Logic layers only —
+# display maps in components legitimately read labels.
+CLASS_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.tsx?$' | grep -E '^(lib/plan/|lib/coaching/|app/api/)' | grep -v 'lib/plan/sessionRole\.ts$' || true)
+if [ -n "$CLASS_TS" ]; then
+  for f in $CLASS_TS; do
+    [ -f "$f" ] || continue
+    if perl -0777 -ne 'exit 1 unless /\.label[^;{}]{0,40}includes\(\s*["'"'"'](?:long|shakeout)/i' "$f"; then
+      echo ""
+      echo "✗  Session classification by display label in $f."
+      echo "   A long run / shakeout must be classified structurally, not by label"
+      echo "   substring — the AI enricher rewrites labels. Use isLongRun / isShakeout"
+      echo "   / coachingSessionType from lib/plan/sessionRole.ts (the single owner)."
+      grep -nE '\.label.*includes\(' "$f" | head -3 | sed "s|^|   $f:|"
+      FAIL=1
+    fi
+  done
+fi
+
 if [ $FAIL -ne 0 ]; then
   echo ""
   echo "  Commit blocked. Fix the issues above before committing."

@@ -18,6 +18,9 @@ export const SessionSchema = z.object({
   // INV-PLAN-009: deterministic IDs on R23+ plans; absent on legacy
   id:             z.string().optional(),
   type:           SessionTypeSchema,
+  // Generator-stamped structural classification (label-independent). See
+  // types/plan.ts Session.role and lib/plan/sessionRole.ts.
+  role:           z.enum(['long_run', 'shakeout']).optional(),
   label:          z.string(),
   detail:         z.string().nullable(),
   distance_km:    z.number().nonnegative().optional(),
@@ -76,7 +79,9 @@ export const WeekSchema = z.object({
   type:                 WeekTypeSchema,
   phase:                z.enum(['base', 'build', 'peak', 'taper', 'foundation', 'maintenance_restoration', 'maintenance_base']).optional(),
   badge:                z.enum(['deload', 'holiday', 'race']).optional(),
-  sessions:             z.record(DayKeySchema, SessionSchema).optional(),
+  // partialRecord (Zod v4): the plan populates only the days that have sessions.
+  // Plain z.record(enum, …) requires ALL seven day keys — see enrichMaintenance.ts.
+  sessions:             z.partialRecord(DayKeySchema, SessionSchema).optional(),
   long_run_hrs:         z.number().nullable(),
   weekly_km:            z.number().nonnegative(),
   weekly_duration_mins: z.number().nonnegative().optional(),
@@ -226,7 +231,12 @@ export const PlanSchema = z.object({
 export const EnrichedWeekSchema = WeekSchema.pick({
   label: true, theme: true, n: true,
 }).extend({
-  sessions: z.record(DayKeySchema, SessionSchema.pick({
+  // partialRecord (Zod v4): the enricher returns only the days it wrote voice
+  // for. Plain z.record(enum, …) requires ALL seven day keys present, which
+  // silently failed EnrichedPlanSchema for ~every plan post the zod v4 upgrade
+  // (2026-04-21) — enrichment fell back to rule copy invisibly. See
+  // enrichMaintenance.ts, which already used partialRecord for the same reason.
+  sessions: z.partialRecord(DayKeySchema, SessionSchema.pick({
     label: true, coach_notes: true,
   }).partial()).optional(),
 })

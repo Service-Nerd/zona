@@ -16,6 +16,7 @@ import {
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
 import { validatePlan, formatViolations } from './invariants'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
+import { isLongRun, isShakeout } from './sessionRole'
 import {
   V1_SESSION_CATALOGUE, selectCatalogueSession,
   type SessionCatalogueRow, type CatalogueCategory,
@@ -914,6 +915,7 @@ function shakeoutSession(
   const session = easySession(weekN, day, km, 'distance', zones, pace, label, 2, [note])
   session.zone = 'Zone 1'
   session.hr_target = zones.shakeoutHR
+  session.role = 'shakeout'   // structural, label-independent (see sessionRole.ts)
   return session
 }
 
@@ -1479,6 +1481,11 @@ function buildWeekSessions(
       }
     }
   }
+  // Stamp the structural role at the placement boundary. The code that DECIDES
+  // which session is the long run owns the fact (D-07), independent of the label
+  // any of the four long-run builders wrote — or that the enricher later rewrites.
+  if (sessions[longDay]) sessions[longDay]!.role = 'long_run'
+
   // §80 — when the finish-goal floor lifted this long run, say why, and make
   // run-walk explicit. "Two and a half hours of moving" is a different
   // psychological object from "18 kilometres", and only one of them is
@@ -1699,7 +1706,7 @@ function buildWeekSessions(
       if (blocked.has(d) || blockedFromStrides.has(d)) continue
       const s = sessions[d]
       if (!s || s.type !== 'easy') continue
-      if (s.label?.toLowerCase().includes('long') || s.label?.toLowerCase().includes('shakeout')) continue
+      if (isLongRun(s) || isShakeout(s)) continue
       const note = '4×20s strides at 5K effort, full recovery between.'
       const e0 = s.coach_notes?.[0]
       const e1 = s.coach_notes?.[1]
@@ -1898,7 +1905,7 @@ function capitalise(s: string): string {
 
 function computeLongRunHrs(sessions: Partial<Record<Day, Session>>, pace: PaceGuide): number | null {
   for (const session of Object.values(sessions)) {
-    if (session?.type === 'easy' && session.label?.toLowerCase().includes('long')) {
+    if (session != null && isLongRun(session)) {
       const mins = session.duration_mins ?? (session.distance_km ? session.distance_km * pace.minPerKmEasy : null)
       if (mins) return Math.round((mins / 60) * 10) / 10
     }
@@ -1934,7 +1941,7 @@ function applyPeakLongRunAlternation(
   // Find max peak-level LR distance to anchor the step-back fraction.
   const longRunOf = (w: Week): { day: Day; session: Session } | null => {
     for (const [d, s] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
-      if (s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)) {
+      if (s && isLongRun(s)) {
         return { day: d, session: s }
       }
     }
@@ -2034,7 +2041,7 @@ function applyPeakLongRunAlternation(
 function applyLongRunStepBacks(weeks: Week[], pace: PaceGuide): void {
   const longRunOf = (w: Week): Session | null => {
     for (const s of Object.values(w.sessions)) {
-      if (s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)) return s
+      if (s && isLongRun(s)) return s
     }
     return null
   }
@@ -2057,7 +2064,7 @@ function applyLongRunStepBacks(weeks: Week[], pace: PaceGuide): void {
     // Floor the step-back at that ratio; if there's no room to step back without
     // inverting the ratio, skip this week rather than violate.
     const maxEasy = Math.max(0, ...Object.values(w.sessions)
-      .filter((x): x is Session => !!x && x.type === 'easy' && !(x.label?.toLowerCase().includes('long') ?? false))
+      .filter((x): x is Session => !!x && x.type === 'easy' && !isLongRun(x))
       .map(x => x.distance_km ?? x.duration_mins ?? 0))
     if (s.distance_km != null) {
       const floorKm  = maxEasy * ratio
@@ -2085,7 +2092,7 @@ function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide): void {
 
   const findLong = (w: Week): { day: Day; session: Session } | null => {
     for (const [d, s] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
-      if (s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)) {
+      if (s && isLongRun(s)) {
         return { day: d, session: s }
       }
     }
@@ -2179,7 +2186,7 @@ function firstActiveSession(week: Week): Session | null {
 // applyLongRunProgressionCap). Returns null if none.
 function longRunOfWeek(week: Week): { day: Day; session: Session } | null {
   for (const [d, s] of Object.entries(week.sessions) as [Day, Session | undefined][]) {
-    if (s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)) {
+    if (s && isLongRun(s)) {
       return { day: d, session: s }
     }
   }
@@ -2745,7 +2752,7 @@ export function applyRecalibration(
     if (week.n < fromWeekN) continue
     for (const session of Object.values(week.sessions)) {
       if (!session || session.type === 'strength' || session.type === 'rest') continue
-      if (session.type === 'easy' || session.type === 'long' || session.type === 'recovery') {
+      if (session.type === 'easy' || isLongRun(session) || session.type === 'recovery') {
         session.hr_target    = zones.easyHR
         session.pace_target  = pace.easyPaceStr
       } else if (session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals') {
@@ -3178,7 +3185,7 @@ export function generateRulePlan(
             for (const wk of weeks) {
               if (wk.phase !== 'peak' || wk.type === 'deload') continue
               for (const s of Object.values(wk.sessions)) {
-                if (s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)) {
+                if (s && isLongRun(s)) {
                   actualPeakLrKm = Math.max(actualPeakLrKm, s.distance_km ?? 0)
                 }
               }
@@ -3268,7 +3275,7 @@ export function generateRulePlan(
       if (w.phase !== 'peak' || w.type === 'deload') continue
       for (const sess of Object.values(w.sessions)) {
         if (!sess || sess.type !== 'easy') continue
-        if (!(sess.label ?? '').toLowerCase().includes('long')) continue
+        if (!isLongRun(sess)) continue
         const mins = sess.duration_mins ?? ((sess.distance_km ?? 0) * pace.minPerKmEasy)
         peakLrMins = Math.max(peakLrMins, mins)
       }

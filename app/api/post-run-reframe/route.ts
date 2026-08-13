@@ -33,6 +33,7 @@ import { detectReframeTier } from '@/lib/coaching/reframeTier'
 import { assessReframeRiskGate, type CoachingFlag, type FatigueTag } from '@/lib/coaching/reframeRiskGate'
 import { COHORT_SIMILARITY, REFRAME_RISK, REFRAME_TIER, FATIGUE_HIGH_TAGS } from '@/lib/coaching/constants'
 import { inferLimiter } from '@/lib/coaching/limiter'
+import { coachingSessionType } from '@/lib/plan/sessionRole'
 import { raceInjuryFlagged } from '@/lib/coaching/raceNarrative'
 import { sessionHRBand } from '@/lib/coaching/zoneRules'
 import {
@@ -187,7 +188,7 @@ export async function POST(req: NextRequest) {
       if (actualDistKm != null) {
         trendSeries = buildHrTrendSeries(
           fullHistory,
-          { sessionType: session.type, distanceKm: actualDistKm },
+          { sessionType: coachingSessionType(session), distanceKm: actualDistKm },
           TREND_SERIES.DEFAULT_WINDOW_MONTHS,
         )
       }
@@ -295,7 +296,7 @@ export async function POST(req: NextRequest) {
         const earlierAvg = earlier.reduce((s, x) => s + x.rpe, 0) / earlier.length
         const recentAvg = recent2.reduce((s, x) => s + x.rpe, 0) / recent2.length
         recentRpePattern = {
-          sessionType: session.type,
+          sessionType: coachingSessionType(session),
           recentAvg,
           earlierAvg,
           windowWeeks: 4,
@@ -405,7 +406,7 @@ export async function POST(req: NextRequest) {
   const raceResult = (week as any)?.result_embedded ?? null
 
   const limiter = inferLimiter({
-    sessionType:            session.type,
+    sessionType:            coachingSessionType(session),
     actualAvgHr,
     prescribedHrCeiling:    liveBand?.hi ?? null,
     hrAboveCeilingPct,

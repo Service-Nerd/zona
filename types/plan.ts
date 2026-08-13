@@ -103,6 +103,14 @@ export interface Session {
   /** INV-PLAN-009: deterministic ID "w{N}-{day}" e.g. "w5-wed". Present on R23+ plans; absent on legacy. */
   id?: string
   type: SessionType
+  /** Structural classification, generator-stamped. A long run and a race-week
+   *  shakeout are both `type: 'easy'`; before `role`, they were told apart by
+   *  matching words in `label` — which the AI enricher rewrites, silently
+   *  breaking classification (D-17). `role` is the label-independent signal:
+   *  the enricher cannot set it (EnrichedWeekSchema exposes only label +
+   *  coach_notes). Absent on legacy plans → consumers fall back to the label
+   *  heuristic (see lib/plan/sessionRole.ts). */
+  role?: 'long_run' | 'shakeout'
   label: string
   /** Legacy free-text display field. Kept for backward compat with hand-authored gists.
    *  Generator writes structured fields below instead. App prefers structured when present. */

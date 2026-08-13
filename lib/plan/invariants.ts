@@ -11,6 +11,7 @@
 
 import type { Plan, GeneratorInput, Session } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
+import { isLongRun, isShakeout } from './sessionRole'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
 import { parseDateLocal, formatDate } from './length'
 
@@ -129,10 +130,13 @@ type DayKey = typeof DAYS_MON_SUN[number]
  * here; both triggers import and call it. D-08.
  */
 export function findQualityLongSpacingViolations(
-  weekSessions: ReadonlyArray<{ type?: string } | null | undefined>,
+  weekSessions: ReadonlyArray<{ type?: string; role?: 'long_run' | 'shakeout'; label?: string | null } | null | undefined>,
   minDays: number,
 ): Array<{ qualityDay: string; longDay: string; gap: number }> {
-  const longIdx = weekSessions.findIndex(s => s?.type === 'long')
+  // The long run is `type: 'easy'` (+ role/label) in generated plans — never
+  // `type: 'long'`. Classify structurally via the canonical owner, or this §7
+  // spacing check silently finds no long run and never fires (INV was dead).
+  const longIdx = weekSessions.findIndex(s => !!s && isLongRun(s))
   if (longIdx < 0) return []
   const out: Array<{ qualityDay: string; longDay: string; gap: number }> = []
   for (let qi = 0; qi < weekSessions.length; qi++) {
@@ -213,13 +217,10 @@ function parseBlockedDays(input: GeneratorInput): Set<Day> {
   return s
 }
 
-function isLongRun(s: Session): boolean {
-  return s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)
-}
-
-function isShakeout(s: Session): boolean {
-  return s.label?.toLowerCase().includes('shakeout') ?? false
-}
+// isLongRun / isShakeout now live in ./sessionRole (single owner). They read the
+// generator-stamped structural `role`, falling back to the label heuristic only
+// for legacy plans — so a plan whose labels the enricher rewrote still classifies
+// correctly (D-17). Imported above.
 
 function raceDistanceKey(km: number): keyof typeof GENERATION_CONFIG.LONG_RUN_CAP_MINUTES {
   if (km <= 5)  return '5K'
@@ -541,7 +542,16 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     // INV-PLAN-MIN-SESSION-SIZE — every placed session ≥ MIN_SESSION_DISTANCE_KM
     // (CoachingPrinciples §9 — "Below these, the session is too short to be coaching-meaningful.")
     for (const { day, session } of placedRunning) {
-      if (session.type === 'race' || isShakeout(session)) continue  // exempt
+      // Exempt the race and the §30 race-week shakeouts (intentionally below the
+      // floor). Classify shakeouts STRUCTURALLY — a race-week easy session — not
+      // by label. The AI enricher rewrites labels, so a label-only exemption
+      // (isShakeout) was silently lost on enrichment: the renamed 3 km shakeout
+      // tripped this floor, and route.ts reverted the whole enriched plan to rule
+      // copy (D-17 — never couple logic to a display string). isShakeout kept as a
+      // legacy fallback for any pre-race-week-typed plans.
+      if (session.type === 'race') continue
+      if (isRaceWeek && session.type === 'easy') continue
+      if (isShakeout(session)) continue
       const isLong = isLongRun(session)
       const expected = isLong ? minDist.long : session.type === 'quality' ? minDist.quality : minDist.easy
       const dist = session.distance_km ?? 0
@@ -740,7 +750,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     const peakLongRuns = plan.weeks
       .filter(w => w.phase === 'peak' && w.type !== 'deload')
       .flatMap(w => Object.values(w.sessions).filter((s): s is Session =>
-        !!s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)
+        !!s && isLongRun(s)
       ))
     const hasRaceSpecific = peakLongRuns.some(s => {
       const l = (s.label ?? '').toLowerCase()
@@ -773,7 +783,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     if (peakWeeks.length > 0) {
       const peakLrKm = Math.max(...peakWeeks.flatMap(w => {
         const long = Object.values(w.sessions).find(s =>
-          s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)
+          s && isLongRun(s)
         )
         return long?.distance_km != null ? [long.distance_km] : [0]
       }))
@@ -949,7 +959,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     const stepBackTol = 1 + GENERATION_CONFIG.LONG_RUN_DELOAD_STEP_BACK_TOLERANCE_PCT / 100
     const longRunForWeek = (week: typeof plan.weeks[number]): number | null => {
       const long = Object.values(week.sessions).find(s =>
-        !!s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)
+        !!s && isLongRun(s)
       )
       return long?.distance_km ?? null
     }
@@ -1444,7 +1454,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     if (peakWeeks.length >= 2) {
       const peakLrKms = peakWeeks.map(w => {
         const lr = Object.values(w.sessions).find(s =>
-          !!s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)
+          !!s && isLongRun(s)
         )
         return lr?.distance_km ?? 0
       })
@@ -1452,7 +1462,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       const threshold = (GENERATION_CONFIG.PEAK_LR_ALTERNATION_THRESHOLD_PCT / 100) * maxPeakLrKm
       const isPeakLevel = (week: typeof plan.weeks[number]): boolean => {
         const lr = Object.values(week.sessions).find(s =>
-          !!s && s.type === 'easy' && (s.label?.toLowerCase().includes('long') ?? false)
+          !!s && isLongRun(s)
         )
         if (!lr || lr.distance_km == null) return false
         if (lr.distance_km + 0.01 < threshold) return false

@@ -6,6 +6,7 @@ import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { getSessionForDate } from '@/lib/plan'
 import { computeReadiness, type DailyHealthSample, type SleepStageMinutes } from '@/lib/coaching/readinessBaseline'
 import { checkAdjustmentTriggers, type AdjustmentCheckInput } from '@/lib/coaching/planAdjustment'
+import { coachingSessionType } from '@/lib/plan/sessionRole'
 import { READINESS, COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import type { Plan } from '@/types/plan'
 
@@ -65,7 +66,10 @@ export async function GET(req: NextRequest) {
   const todayDay     = resolved.dayKey
   const todaySession = resolved.session
 
-  if (!isQualityOrLong(todaySession.type)) {
+  // Classify via the canonical owner — a long run is `type: 'easy'`, so
+  // `todaySession.type` alone would fail this gate and readiness would never
+  // fire for long-run days (sessionRole.ts).
+  if (!isQualityOrLong(coachingSessionType(todaySession))) {
     return NextResponse.json({ adjustment: null, reason: 'session_type_not_eligible' })
   }
 
@@ -122,7 +126,7 @@ export async function GET(req: NextRequest) {
     adjustmentsThisWeek: 0,
     currentPhase:        (week as any).phase,
     readinessSignal: {
-      sessionType:        todaySession.type,
+      sessionType:        coachingSessionType(todaySession),
       sessionDay:         todayDay,
       isElevatedRHR:      readiness.isElevatedRHR,
       isLowHRV:           readiness.isLowHRV,

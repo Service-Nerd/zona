@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { Plan, BenchmarkInput } from '@/types/plan'
 import { authedFetch } from '@/lib/supabase/authedFetch'
+import { isLongRun } from '@/lib/plan/sessionRole'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import { TextField } from '@/components/shared/TextField'
 import { Chip } from '@/components/shared/Chip'
@@ -59,7 +60,7 @@ function getPaceBands(plan: Plan): { easy: string | null; quality: string | null
   for (const week of plan.weeks) {
     for (const session of Object.values(week.sessions)) {
       if (!session) continue
-      if (!easy && (session.type === 'easy' || session.type === 'long' || session.type === 'recovery')) {
+      if (!easy && (session.type === 'easy' || isLongRun(session) || session.type === 'recovery')) {
         if (session.pace_target) easy = session.pace_target
       }
       if (!quality && (session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals')) {

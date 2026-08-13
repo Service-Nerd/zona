@@ -10,6 +10,7 @@
 // falling back to whatever data is available; never throws.
 
 import { SESSION_FORMAT } from './sessionFormat'
+import { isLongRun, isShakeout } from './sessionRole'
 import type { Session } from '@/types/plan'
 import type { SessionCatalogueRow } from './sessionCatalogueData'
 
@@ -81,9 +82,11 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
   if (total <= 0) return null
 
   const isQuality = session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals' || session.type === 'hard'
-  const isLong    = (session.type === 'easy' || session.type === 'long') && (session.label?.toLowerCase().includes('long') ?? false)
+  const isLong    = isLongRun(session)
+  // marathon-pace is a display sub-shape of the long run, not a correctness
+  // classification — kept label-derived.
   const isMpLong  = isLong && (session.label?.toLowerCase().includes('marathon-pace') ?? false)
-  const isShake   = session.type === 'easy' && (session.label?.toLowerCase().includes('shakeout') ?? false)
+  const isShake   = isShakeout(session)
 
   // Shakeout: short Z1 with brief warm-up only.
   if (isShake) {

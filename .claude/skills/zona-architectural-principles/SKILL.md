@@ -281,6 +281,19 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 | INV-PLAN-005 | `primary_metric` flag determines whether distance or duration is the primary display value for a session. Both fields exist in schema. |
 | INV-PLAN-006 | Strength session stubs exist in the plan generator output from R21 onwards. Stub sessions do not carry HR targets or zone assignments. |
 
+### 6a. Session Classification — Single Owner (INV-CLASS)
+
+**Authority**: `lib/plan/sessionRole.ts` is the single source of truth for "what kind of session is this." Added 2026-08-13 after two production bugs from classifying by the wrong signal: (1) the AI enricher rewrites session **labels**, so any `label.includes('long'|'shakeout')` classifier silently broke once enrichment shipped; (2) the generator models a long run as **`type: 'easy'`** (it *is* easy-effort) with `role: 'long_run'`, so every `session.type === 'long'` check was silently dead — long-run fatigue/readiness trimming, the §7 quality-long spacing invariant, and readiness eligibility all never fired.
+
+| ID | Guarantee |
+|---|---|
+| INV-CLASS-001 | Long-run / shakeout classification comes from `lib/plan/sessionRole.ts` (`isLongRun`, `isShakeout`). Only that file may fall back to a label heuristic (for legacy plans). No other file in `lib/` or `app/` classifies by a `label` substring. **Enforced by the pre-commit hook.** |
+| INV-CLASS-002 | `Session.role` (`'long_run' \| 'shakeout'`) is the label-independent structural signal, **stamped by the generator at construction** and never settable by the enricher (`EnrichedWeekSchema` exposes only `label`/`coach_notes`). |
+| INV-CLASS-003 | The coaching **signal** `sessionType` (consumed by `planAdjustment`, `limiter`, `manualSessionFeedback`, readiness gating) is derived through `coachingSessionType(session)`, never a raw `session.type`. A long run must classify as `'long'` or long-specific coaching silently misses it. |
+| INV-CLASS-004 | `session.type === 'long'` is a **code smell**: the R23+ generator never emits it. Use `isLongRun(s)`. (`type: 'long'` is tolerated only as a legacy/gist/manual value, which `isLongRun` already recognises.) |
+
+**Before adding ANY new branch on "is this a long run / shakeout / hard session," or any new `sessionType`-string derivation:** check `sessionRole.ts` first — the predicate almost certainly already exists. If you need a new classification, add it *there* (one owner), give it a structural signal (not a label), and note the impact on the surfaces that consume it. Adding a parallel classifier is a D-16 violation.
+
 ---
 
 ## 7. Supabase / Data Invariants

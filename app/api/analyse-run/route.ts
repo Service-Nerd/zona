@@ -14,6 +14,7 @@ import { computePaceFadeSummary, type StravaSplitMetric } from '@/lib/coaching/p
 import { fetchRunHistory, findSimilarRuns, summariseCohort, pickWindowDays } from '@/lib/coaching/runHistory'
 import { zoneForSessionType, sessionHRBand } from '@/lib/coaching/zoneRules'
 import { inferLimiter } from '@/lib/coaching/limiter'
+import { coachingSessionType } from '@/lib/plan/sessionRole'
 import { raceInjuryFlagged } from '@/lib/coaching/raceNarrative'
 import { FATIGUE_HIGH_TAGS } from '@/lib/coaching/constants'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
@@ -308,7 +309,7 @@ export async function POST(req: NextRequest) {
     const raceResult = (week as any)?.result_embedded ?? null
 
     const limiter = inferLimiter({
-      sessionType:            (session as any).type,
+      sessionType:            coachingSessionType(session as any),
       actualAvgHr:            activity.avg_hr ?? null,
       prescribedHrCeiling:    liveBand?.hi ?? null,
       hrAboveCeilingPct:      prescribedHrFigures.hrAboveCeilingPct,
