@@ -1,0 +1,36 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-bash.py\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c 'select((.tool_input.command // \"\") | test(\"^git commit\")) | {hookSpecificOutput: {hookEventName: \"PostToolUse\", additionalContext: \"A git commit just happened. Inspect it with git log -1 + git show HEAD and decide if it shipped a tracked backlog item. If yes, invoke /ship. If bug fix / refactor / partial step, do nothing.\"}}'"
+          }
+        ]
+      }
+    ]
+  }
+}

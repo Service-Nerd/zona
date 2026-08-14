@@ -261,6 +261,12 @@ All colour MUST come from CSS custom properties in `globals.css`. Nothing hardco
 - Blocks DM Mono, DM Sans, Bebas Neue font references
 - Blocks ember orange and warm beige values
 
+### Claude Code Hooks (`.claude/settings.json`, committed)
+Hooks are versioned in `.claude/settings.json` (project behaviour, git-tracked) — **not** `settings.local.json` (machine-local permission grants, gitignored). Scripts live in `.claude/hooks/`.
+- **PreToolUse safety guard** (`guard-bash.py`): blocks unrecoverable Bash before it runs — `git reset --hard`, `git clean -f`, force-push (allows `--force-with-lease`), `git stash drop/clear`, and `rm -rf` against root/home/repo-root/bare-wildcard. Everyday `rm -rf node_modules|.next|/tmp/*` passes. Edit the `RULES` list to tune.
+- **SessionStart context** (`session-start.sh`): injects date + recent commits + uncommitted count, and flags Supabase migration files not recorded in `.claude/state/applied-migrations.txt`. **After applying a new migration, append its basename to that ledger** or every session will warn. This exists to catch the silent-unapplied-migration outage class (avg_temp_c, calories_kcal).
+- **PostToolUse** (`git commit` → `/ship` check): unchanged, moved here from `settings.local.json`.
+
 ### Global State Pattern
 - Overrides and settings fetched once at `DashboardClient` level
 - Passed as props to child components
