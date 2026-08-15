@@ -28,7 +28,7 @@ export interface RaceReadinessPromptInput {
 
 export function buildRaceReadinessPrompt(input: RaceReadinessPromptInput): string {
   const units: DistanceUnits = input.units ?? 'km'
-  const fmtDist = (v: number | null | undefined, dp = 1) => formatDistanceForPrompt(v, units, dp) ?? '—'
+  const fmtDist = (v: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(v, units, dp) ?? '—'
   const {
     raceName, raceDistanceKm, daysToRace,
     totalPlannedSessions, completedSessions,

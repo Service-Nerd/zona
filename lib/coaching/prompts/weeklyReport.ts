@@ -94,7 +94,7 @@ export function buildWeeklyReportPrompt(
    *  call — including the tests — defaults to 'km' and stays byte-identical. */
   units: DistanceUnits = 'km',
 ): string {
-  const fmtDist = (v: number | null | undefined, dp = 1) => formatDistanceForPrompt(v, units, dp) ?? '—'
+  const fmtDist = (v: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(v, units, dp) ?? '—'
   const weeksToRace = plan.meta.race_date
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
     : null
@@ -146,8 +146,8 @@ RACE WEEK — this is a debrief, not a scorecard. The athlete's goal race (${rac
     ? `Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned} this week (${sessionsPlannedToDate} due by end of yesterday)`
     : `Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned}`
   const volumeLine = (isInFlight && plannedKmToDate !== undefined)
-    ? `Volume: ${fmtDist(data.totalKmActual)} actual vs ${fmtDist(plannedKmToDate)} due by end of yesterday (${fmtDist(data.totalKmPlanned)} full-week target)`
-    : `Volume: ${fmtDist(data.totalKmActual)} actual vs ${fmtDist(data.totalKmPlanned)} planned`
+    ? `Volume: ${fmtDist(data.totalKmActual, 1)} actual vs ${fmtDist(plannedKmToDate, 1)} due by end of yesterday (${fmtDist(data.totalKmPlanned, 1)} full-week target)`
+    : `Volume: ${fmtDist(data.totalKmActual, 1)} actual vs ${fmtDist(data.totalKmPlanned, 1)} planned`
 
   const remainingLine = (remainingScheduledSessions && remainingScheduledSessions.length > 0)
     ? `\n- Remaining sessions already in the plan: ${remainingScheduledSessions.join(', ')}`

@@ -60,7 +60,7 @@ const PHASE_LABELS: Record<string, string> = {
  */
 export function buildPlanWeeklyNotePrompt(input: PlanWeeklyNotePromptInput): string {
   const units: DistanceUnits = input.units ?? 'km'
-  const fmtDist = (v: number | null | undefined, dp = 1) => formatDistanceForPrompt(v, units, dp) ?? '—'
+  const fmtDist = (v: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(v, units, dp) ?? '—'
   const {
     weekN, phase, weeksToRace, raceName, raceDistance,
     sessions, firstName, athleteContext, previousWeeklyNote, isRestHeavyWeek,

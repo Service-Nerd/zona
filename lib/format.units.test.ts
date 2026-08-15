@@ -61,12 +61,23 @@ describe('formatDistanceForPrompt — converts units, keeps precision', () => {
   })
 
   it('converts for miles', () => {
-    expect(formatDistanceForPrompt(10, 'mi')).toBe('6.2mi')
+    expect(formatDistanceForPrompt(10, 'mi')).toBe('6.21mi')
+    // whole numbers must not carry dead decimals
+    expect(formatDistanceForPrompt(1.609344, 'mi')).toBe('1mi')
   })
 
-  it('honours the caller precision so km output is unchanged', () => {
+  it('honours an explicit precision when the call site had one', () => {
     expect(formatDistanceForPrompt(42.195, 'km', 0)).toBe('42km')
     expect(formatDistanceForPrompt(42.195, 'km', 1)).toBe('42.2km')
+  })
+
+  it('IDENTITY on the km path — never reformats a number it is not converting', () => {
+    // The zero-regression guarantee, and the one a first cut got wrong: forcing
+    // 1dp silently turned "8.02km" into "8.0km" and "(100km)" into "(100.0km)".
+    // Caught by diffing real prompt output against the pre-FMT-01 builder.
+    for (const v of [8.02, 100, 5.7, 21.0975, 0.5]) {
+      expect(formatDistanceForPrompt(v, 'km')).toBe(`${v}km`)
+    }
   })
 })
 
@@ -95,13 +106,13 @@ describe('sessionFeedback prompt — units propagation', () => {
 
   it('a km prompt states distances in km', () => {
     const p = build('km')
-    expect(p).toContain('10.0km')
+    expect(p).toContain('10km')
     expect(p).toContain('5:30/km')
   })
 
   it('a mi prompt converts distance and pace, and never says km', () => {
     const p = build('mi')
-    expect(p).toContain('6.2mi')
+    expect(p).toContain('6.21mi')
     expect(p).toContain('8:51/mi')
     // The data section must not leak km to a miles reader.
     const dataSection = p.slice(p.indexOf('Now write feedback'))

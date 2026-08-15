@@ -99,14 +99,29 @@ export function formatPaceDelta(
 // `dp` mirrors whatever precision the call site already used, so km output stays
 // byte-identical to pre-FMT-01 and only mi users see a change. Do not use this
 // for anything the user reads directly — that is formatDistance's job.
+// `dp` mirrors whatever precision the call site already used. Pass `null` (the
+// default) for "natural precision" — the sites that previously interpolated the
+// raw number. On the km path natural precision is EXACT IDENTITY: the value is
+// stringified untouched, so those prompts are byte-for-byte what they were before
+// FMT-01. That property is verified, not assumed — a first cut forced 1dp here and
+// silently turned "8.02km" into "8.0km" and "(100km)" into "(100.0km)".
+//
+// Do not use this for anything the user reads directly — that is formatDistance's job.
 export function formatDistanceForPrompt(
   km: number | null | undefined,
   units: DistanceUnits = 'km',
-  dp: number = 1,
+  dp: number | null = null,
 ): string | null {
   if (km == null || !Number.isFinite(km)) return null
-  const value = units === 'mi' ? km / KM_PER_MI : km
-  return `${value.toFixed(dp)}${units}`
+  if (units === 'km') {
+    // Identity on the km path — never reformat a number we aren't converting.
+    return `${dp == null ? km : km.toFixed(dp)}km`
+  }
+  const value = km / KM_PER_MI
+  // Converted values need rounding; strip trailing zeros so a whole number reads
+  // as "62mi", not "62.00mi".
+  const body = dp == null ? String(Number(value.toFixed(2))) : value.toFixed(dp)
+  return `${body}mi`
 }
 
 export type SessionMetric = 'distance' | 'duration'

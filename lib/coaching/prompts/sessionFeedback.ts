@@ -136,7 +136,7 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
   // byte-identical; only a miles reader sees a different string.
   const units: DistanceUnits = input.units ?? 'km'
   const pace = (secPerKm: number | null | undefined) => formatPace(secPerKm, units) ?? '—'
-  const fmtDist = (km: number | null | undefined, dp = 1) => formatDistanceForPrompt(km, units, dp) ?? '—'
+  const fmtDist = (km: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(km, units, dp) ?? '—'
   // The fade thresholds are coaching numerics expressed as a RATE, so they must
   // be restated in the reader's unit or the model compares 15s/km against a
   // s/mi figure. Restating a rate is arithmetic, not a coaching change.
@@ -298,7 +298,7 @@ Past-self cohort — your last ${cohortContext.cohortSize} similar runs (matched
 - Avg HR: ${cohortContext.avgHr ?? '—'} bpm
 - Avg pace: ${pace(cohortContext.avgPaceSecPerKm)}
 - Avg in-zone: ${cohortContext.avgInZonePct !== null ? `${cohortContext.avgInZonePct}%` : '—'}
-- Typical distance: ${fmtDist(cohortContext.medianDistanceKm)}
+- Typical distance: ${fmtDist(cohortContext.medianDistanceKm, 1)}
 
 If today's numbers diverge meaningfully from this cohort (HR ±5 bpm, pace ±${formatPaceDelta(10, units)}, in-zone ±15%), reference the comparison directly in your feedback. Don't speculate causes — observation only.
 `
@@ -373,7 +373,7 @@ ${weekLine}${weekPhase ? ` — ${weekPhase} phase` : ''}
 
 Session type: ${session.type} (${session.label})
 Planned distance: ${session.distance_km ? fmtDist(session.distance_km) : 'not set'}
-Actual distance: ${fmtDist(actualDistKm)}
+Actual distance: ${fmtDist(actualDistKm, 1)}
 ${paceLine ? paceLine + '\n' : ''}${hrLine}
 ${efLine ? efLine + '\n' : ''}RPE: ${rpe !== null ? rpe : 'not logged'}
 Fatigue: ${fatigueTag ?? 'not logged'}${isRace ? '' : `\nVerdict: ${verdict}`}

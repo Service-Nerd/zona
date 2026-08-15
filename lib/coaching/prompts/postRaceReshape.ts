@@ -67,7 +67,7 @@ function formatTime(t?: string): string {
 export function buildPostRaceReshapePrompt(ctx: PostRaceReshapePromptContext): string {
   const { plan, result, raceWeekN, weeksAffected, distanceBucket, peakWeeklyKm, reshapedWeeks } = ctx
   const units: DistanceUnits = ctx.units ?? 'km'
-  const fmtDist = (v: number | null | undefined, dp = 1) => formatDistanceForPrompt(v, units, dp) ?? '—'
+  const fmtDist = (v: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(v, units, dp) ?? '—'
   const athlete = plan.meta.athlete ?? 'the runner'
   const raceName = plan.meta.race_name ?? 'the race'
   const raceDistKm = result.distance_km ?? plan.meta.race_distance_km

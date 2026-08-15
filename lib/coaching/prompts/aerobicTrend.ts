@@ -55,7 +55,7 @@ export function buildAerobicTrendPrompt(ctx: AerobicTrendContext): string {
 
 Trend data:
 - Long runs${paceCtx}: average HR ${directionLabel} ${absDelta} bpm from ${ctx.earlierHr} bpm (${ctx.earlierMonth}) to ${ctx.nowHr} bpm (now)
-- Anchor distance: approximately ${formatDistanceForPrompt(ctx.anchorDistanceKm, units) ?? '—'} long runs
+- Anchor distance: approximately ${formatDistanceForPrompt(ctx.anchorDistanceKm, units, 1) ?? '—'} long runs
 
 Voice examples (match this register):
   HR down → "Long run at ${examplePace}. Easy is easier than it was."

@@ -163,7 +163,7 @@ Output: "You're not running the wrong plan — week 2 is exactly when this hits.
 export function buildSessionReframePrompt(input: SessionReframePromptInput): string {
   const units: DistanceUnits = input.units ?? 'km'
   const pace = (v: number | null | undefined) => formatPace(v, units) ?? '—'
-  const fmtDist = (v: number | null | undefined, dp = 1) => formatDistanceForPrompt(v, units, dp) ?? '—'
+  const fmtDist = (v: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(v, units, dp) ?? '—'
   const {
     userNote,
     tier,
@@ -239,7 +239,7 @@ Past-self cohort — your last ${cohortContext.cohortSize} similar runs (matched
 - Avg HR: ${cohortContext.avgHr ?? '—'} bpm
 - Avg pace: ${pace(cohortContext.avgPaceSecPerKm)}
 - Avg in-zone: ${cohortContext.avgInZonePct !== null ? `${cohortContext.avgInZonePct}%` : '—'}
-- Typical distance: ${fmtDist(cohortContext.medianDistanceKm)}
+- Typical distance: ${fmtDist(cohortContext.medianDistanceKm, 1)}
 `
     : ''
 
@@ -248,7 +248,7 @@ Past-self cohort — your last ${cohortContext.cohortSize} similar runs (matched
   // noise, not signal. (AI-DEPTH-03)
   const trendBlock = trendSeries && (trendSeries.hrIsTrending || trendSeries.paceIsTrending)
     ? `
-Multi-month trend — ${trendSeries.sessionType} runs at ${fmtDist(trendSeries.distanceKm)} (±15%) over the last ${trendSeries.windowMonths} months:
+Multi-month trend — ${trendSeries.sessionType} runs at ${fmtDist(trendSeries.distanceKm, 1)} (±15%) over the last ${trendSeries.windowMonths} months:
 ${trendSeries.buckets.map(b => `- ${b.shortLabel}: avg HR ${b.avgHr ?? '—'} bpm${b.avgPaceSecPerKm ? `, avg pace ${pace(b.avgPaceSecPerKm)}` : ''} (${b.cohortSize} run${b.cohortSize === 1 ? '' : 's'})`).join('\n')}
 ${trendSeries.hrIsTrending && trendSeries.hrDeltaBpm !== null
   ? `Direction: HR has ${trendSeries.hrDeltaBpm < 0 ? 'dropped' : 'risen'} ${Math.abs(trendSeries.hrDeltaBpm)} bpm over the window at this distance.`
@@ -380,7 +380,7 @@ Runner said: "${userNote}"
 Session type: ${session.type} (${session.label})
 Week: ${weekN} of ${plan.weeks.length}
 Planned distance: ${session.distance_km ? fmtDist(session.distance_km) : 'not set'}
-Actual distance: ${actualDistKm !== null ? fmtDist(actualDistKm) : 'not logged'}
+Actual distance: ${actualDistKm !== null ? fmtDist(actualDistKm, 1) : 'not logged'}
 ${hrLine}
 RPE: ${rpe !== null ? rpe : 'not logged'}
 Fatigue: ${fatigueTag ?? 'not logged'}

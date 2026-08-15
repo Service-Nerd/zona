@@ -161,7 +161,7 @@ Output: "The marathon's in the book. Rest is the work now — the next goal can 
 
 export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
   const units: DistanceUnits = input.units ?? 'km'
-  const fmtDist = (v: number | null | undefined, dp = 1) => formatDistanceForPrompt(v, units, dp) ?? '—'
+  const fmtDist = (v: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(v, units, dp) ?? '—'
   // Plan-complete branch — the plan is over, so there is no "today's session".
   // Prescribing one (the old bug pulled the final week's stale weekday slot)
   // is wrong; the note is a recovery / what's-next line anchored on the last run.

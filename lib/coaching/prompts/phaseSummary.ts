@@ -29,7 +29,7 @@ const PHASE_LABELS: Record<string, string> = {
 
 export function buildPhaseSummaryPrompt(input: PhaseSummaryPromptInput): string {
   const units: DistanceUnits = input.units ?? 'km'
-  const fmtDist = (v: number | null | undefined, dp = 1) => formatDistanceForPrompt(v, units, dp) ?? '—'
+  const fmtDist = (v: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(v, units, dp) ?? '—'
   const {
     phaseEnded, phaseNewName, totalWeeksInPhase,
     avgZoneDisciplinePct, efTrendPct, completionRate,

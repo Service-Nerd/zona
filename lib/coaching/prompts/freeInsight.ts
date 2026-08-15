@@ -55,7 +55,7 @@ Output: {"headline": "Two on the board.", "body": "RPE 6 both times, Fine both t
 
 export function buildFreeInsightPrompt(input: FreeInsightInput): string {
   const units: DistanceUnits = input.units ?? 'km'
-  const fmtDist = (v: number | null | undefined, dp = 1) => formatDistanceForPrompt(v, units, dp) ?? '—'
+  const fmtDist = (v: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(v, units, dp) ?? '—'
   const voiceHeader = buildVoiceHeader({
     role: 'writing a short weekly check-in for a free-tier runner',
     outputConstraint: 'Return JSON exactly: {"headline": "...", "body": "..."}. Headline: 3–6 words. Body: one or two sentences, max 200 chars.',
