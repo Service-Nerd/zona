@@ -270,6 +270,19 @@ Every solution must be: **Maintainable, Reliable, Accurate, Sensible, Testable, 
 
 ---
 
+## 5d. Coaching Governance Invariants
+
+**Authority**: ADR-017 (Coaching Board authority model). Added 2026-08-15. The three existing layers — principle (`CoachingPrinciples.md`), numeric (`GENERATION_CONFIG`), mechanical check (`validatePlan()`) — guarantee the engine honours what was decided. None of them can tell you whether the decision was *right*: `validatePlan()` will enforce a bad principle with perfect fidelity. At 80 principles, cross-corpus conflict detection is also past what any reviewer holds in working memory.
+
+| ID | Name | Guarantee |
+|---|---|---|
+| INV-COACH-001 | Coaching Doctrine Review | No change to coaching doctrine ships without a Coaching Board ruling (`/coaching-board`, Hutchinson chairing with Seiler, McMillan, Willy, Sims). **Doctrine files**: `CoachingPrinciples.md`, `session-catalogue.md`, `zone-rules.md`, `coaching-rules.md`, `generationConfig.ts`, `planSignatures.ts`, `sessionFormat.ts`. Enforced automatically by `.claude/hooks/coaching-guard.py` (PreToolUse), the SessionStart doctrine check, and the PostToolUse commit backstop. **Exempt**: defect fixes restoring documented intent, formatting, no-behaviour-delta refactors — state the exemption in one line. |
+| INV-COACH-002 | Three Artifacts, One Commit | A CORRECT ruling lands all three together: the principle (§ in `CoachingPrinciples.md`), the numeric (`GENERATION_CONFIG` or sibling), and the mechanical check (`validatePlan()` + row in `plan-invariants.md`). The invariant is the one that gets forgotten; the commit hook checks for it. A principle that genuinely cannot be mechanically checked must say so in its own section — a recorded risk, not a silent gap. |
+| INV-COACH-003 | Correctness Veto | An INCORRECT ruling from the Coaching Board is binding. The SLT may not overrule it on commercial grounds — no conversion argument makes wrong coaching right. The SLT retains full authority over build, tier, order, and cost. Escalation runs through Hutchinson, who holds both seats. |
+| INV-COACH-004 | Five-Zone Canon | Zonna's five-zone model (§14) is canonical: **Z2 is easy** (easy runs capped at Z2 top, §12), **Z3 is the grey zone** (§1). Three-zone models — including Seiler's, the origin of the 80/20 finding — label the moderate band "Zone 2" and call *that* the grey zone. Translate external three-zone reasoning on the way in. An objection to "too much Zone 2" from an external source means Zonna's Z3. |
+
+---
+
 ## 6. Plan Schema Invariants
 
 | ID | Guarantee |

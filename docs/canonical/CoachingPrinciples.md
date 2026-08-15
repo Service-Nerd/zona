@@ -25,6 +25,28 @@ If you are editing a numeric, you are editing this document. If you are editing 
 
 ---
 
+## How this document is amended
+
+This document is the constitution. It is not edited casually, and it is not edited alone.
+
+**Every change goes through the Coaching Board** — the `coaching-board` skill, chaired by Hutchinson with Seiler (intensity distribution), McMillan (practical coaching), Willy (injury/load), and Sims (female physiology). The board rules on **correctness**; the SLT rules on whether to build, tier, and fund. An INCORRECT ruling is a veto the SLT cannot overturn on commercial grounds. Full model: `docs/architecture/ADR-017-coaching-board-authority.md`.
+
+Convening is automatic. `.claude/hooks/coaching-guard.py` fires on any edit to this file, `session-catalogue.md`, `zone-rules.md`, `coaching-rules.md`, `generationConfig.ts`, `planSignatures.ts`, or `sessionFormat.ts`.
+
+**A CORRECT ruling produces three artifacts, in one commit:**
+
+1. **The principle** — a new or amended section here, with its *why*
+2. **The numeric** — the named constant in `GENERATION_CONFIG` (or a sibling config)
+3. **The mechanical check** — the invariant in `lib/plan/invariants.ts` plus its row in `plan-invariants.md`
+
+A principle without an invariant is unenforced; if a principle genuinely cannot be mechanically checked, say so explicitly in its section. That is a recorded risk, not an oversight.
+
+Before the board speaks it runs a **conflict scan** across every section here, naming the section numbers a proposal touches, contradicts, or weakens. At 80 sections this is the step no reviewer can reliably do from memory — it is the reason the board exists.
+
+**Exempt from review** (state the exemption in one line and proceed): defect fixes restoring already-documented intent; formatting and typo corrections; refactors with no behavioural delta; and writing up artifacts for a review that has already ruled.
+
+---
+
 ## 1. Polarised training — protection from grey zone
 
 **Principle.** Most running should be easy. The rest should be genuinely hard. Almost nothing should sit in the middle.
@@ -270,6 +292,20 @@ Z5 → 90–100% HRR / 93–100% MHR
 ```
 
 The forward-compat hook for a future paid "zone method selector" feature lives here. Adding Daniels, Coggan, or Friel zone tables means adding a new key under `ZONES` and a single `user_settings.zone_method` lookup. See `docs/canonical/zone-rules.md`.
+
+> **⚠️ Zone-label collision — read before importing any external source.**
+> This five-zone model is **canonical for Zonna**. In it, **Z2 is easy** (the target
+> for easy runs, capped at the top of Z2 per §12) and **Z3 is the grey zone** (§1).
+>
+> Three-zone models — including Stephen Seiler's, the origin of the 80/20 finding —
+> label the moderate/threshold band **"Zone 2"** and call *that* the grey zone.
+> **The same label means the opposite thing.** Any three-zone reasoning must be
+> translated on the way in: an external "too much Zone 2" means "too much Zonna Z3."
+>
+> A review note that appears to attack Z2 easy running is almost certainly a
+> translation failure rather than a real finding. Recorded here because zones are the
+> brand and this collision would otherwise produce confident, entirely phantom
+> conflicts. See ADR-017 §6.
 
 ---
 

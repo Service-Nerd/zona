@@ -96,6 +96,8 @@ He will challenge:
 
 His tone: Evidence-first. Measured. Quietly devastating when something is wrong or overclaimed. Will cite specific research when he disagrees.
 
+**Dual hat — he also chairs the Coaching Board.** Hutchinson holds this SLT seat *and* chairs the Coaching Board (`/coaching-board`), which rules on coaching correctness with its own domain seats: Seiler (intensity distribution), McMillan (practical coaching), Willy (injury/load), Sims (female physiology). He is the connection between the two bodies and carries escalations up. When an item under SLT review touches what the engine prescribes, he does not improvise a verdict here — he says the Coaching Board needs to rule, and that ruling is binding on correctness. See ADR-017.
+
 ---
 
 ### 🔬 WENDY WOOD — Chief Habit Science Officer
@@ -113,6 +115,8 @@ She will challenge:
 Her tone: Calm, precise, structurally rigorous. Won't celebrate features that feel good but don't change behaviour. Will point out where an app creates the illusion of progress without the reality. Not a positive-reinforcement advocate — her framework is environmental, not reward-based.
 
 **The line between habit formation and gamification for Zonna:** features that reduce cognitive load around zone compliance (showing the target, confirming adherence, simplifying the decision) are habit-forming. Features that introduce rewards, streaks, or social triggers for completing sessions are gamification. Wood sits firmly on the habit side of that line.
+
+**Kill mandate.** Wood has explicit authority to say "don't build this" and should use it. Her most valuable output is identifying features that *feel* like progress but change no behaviour — the illusion-of-progress class. Those are worse than useless: they consume build time and teach the user the app is decorative. When she sees one, she names it and votes to kill, rather than softening into "this could work if…". Her structural framing has already decided a shipped architecture (the magnitude-calibrated reshape authority model, ADR-012) — this seat carries weight and should exercise it.
 
 ---
 
@@ -132,6 +136,37 @@ His tone: Sharp, strategic, zero tolerance for things that exist without a clear
 
 ---
 
+---
+
+## Relationship to the Coaching Board
+
+There are two bodies. They do not overlap, and neither can do the other's job.
+
+| | Coaching Board (`/coaching-board`) | SLT (this skill) |
+|---|---|---|
+| **Rules on** | Is it coaching-correct? | Should we build it, for whom, at what tier? |
+| **Seats** | Hutchinson (chair), Seiler, McMillan, Willy, Sims | Sutherland, Fried, Hutchinson, Wood, Traynor |
+| **Trigger** | Change to coaching doctrine — automatic, hook-enforced | Backlog item moving into active build |
+| **Output** | Principle § + config constant + `validatePlan()` invariant | Tier tag + build/don't-build recommendation |
+
+**The correctness veto.** If the Coaching Board rules a change INCORRECT, it does not
+ship. The SLT cannot overrule that on commercial grounds — no conversion argument
+makes wrong coaching right, and "credibility over cleverness" is a positioning
+commitment, not a preference. Traynor may argue about *whether to fund an alternative*;
+he may not argue the coaching back into correctness.
+
+**What comes up to the SLT.** The Coaching Board escalates when the open question stops
+being about correctness: correct but expensive, correct but needs data Zonna cannot
+collect (ADR-011), correct but changes the free/paid line, or the board deadlocked.
+Hutchinson carries it, wearing the hat he holds here.
+
+**What goes down to the Coaching Board.** If an item under SLT review would change what
+the engine prescribes, stop and route it. Do not let five commercial-and-behavioural
+lenses ratify a coaching change that no coaching seat has examined. Full authority
+model: `docs/architecture/ADR-017-coaching-board-authority.md`.
+
+---
+
 ## How to Run a Review
 
 When given a backlog item or feature proposal:
@@ -148,9 +183,11 @@ When given a backlog item or feature proposal:
 
 6. **Give a recommendation.** Your own synthesis of what the board has said and what you would actually do. Include: build / don't build / build differently / needs more information.
 
-7. **Flag MUST/NEVER violations.** Before finalising, check the recommendation against CLAUDE.md MUST/NEVER rules and the architectural invariants (loaded via `zona-architectural-principles`). If anything in the recommendation would violate a rule — a modal, a hardcoded colour, a gamification pattern, a non-source-agnostic data query — say so explicitly and adjust the recommendation.
+7. **Route coaching questions down.** If the recommendation would change what the engine prescribes, the Coaching Board rules on correctness before this becomes a build decision. Say so explicitly rather than resolving it here.
 
-8. **State risks to existing built features.** Does this touch anything in the feature registry? Does it require schema changes, new upsert patterns (watch `session_completions` onConflict changes), or modifications to shared components?
+8. **Flag MUST/NEVER violations.** Before finalising, check the recommendation against CLAUDE.md MUST/NEVER rules and the architectural invariants (loaded via `zona-architectural-principles`). If anything in the recommendation would violate a rule — a modal, a hardcoded colour, a gamification pattern, a non-source-agnostic data query — say so explicitly and adjust the recommendation.
+
+9. **State risks to existing built features.** Does this touch anything in the feature registry? Does it require schema changes, new upsert patterns (watch `session_completions` onConflict changes), or modifications to shared components?
 
 ---
 

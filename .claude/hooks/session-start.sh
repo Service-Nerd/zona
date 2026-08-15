@@ -42,4 +42,21 @@ if [ -d "$MIG_DIR" ]; then
     echo "   After applying, append the filename to $LEDGER."
   fi
 fi
+
+# Coaching-doctrine check. Catches a doctrine change already in flight from a
+# previous session, which the PreToolUse guard (coaching-guard.py) can't see
+# because the edit already happened. Same failure class as the migration check:
+# a change that is live but never went through review.
+DOCTRINE=$(git status --porcelain 2>/dev/null | grep -E \
+  'docs/canonical/(CoachingPrinciples|session-catalogue|zone-rules|coaching-rules)\.md|lib/plan/(generationConfig|planSignatures|sessionFormat)\.ts' \
+  | sed 's/^/  /' || true)
+if [ -n "$DOCTRINE" ]; then
+  echo ""
+  echo "⚖️  UNCOMMITTED COACHING-DOCTRINE CHANGE(S):"
+  printf '%s\n' "$DOCTRINE"
+  echo "   These change what the engine prescribes. Confirm a Coaching Board"
+  echo "   review ruled on them (/coaching-board) and that all three artifacts"
+  echo "   landed — principle §, GENERATION_CONFIG constant, validatePlan()"
+  echo "   invariant. See ADR-017."
+fi
 echo "─────────────────────────────────────────────────"

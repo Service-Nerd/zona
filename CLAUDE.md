@@ -263,9 +263,10 @@ All colour MUST come from CSS custom properties in `globals.css`. Nothing hardco
 
 ### Claude Code Hooks (`.claude/settings.json`, committed)
 Hooks are versioned in `.claude/settings.json` (project behaviour, git-tracked) — **not** `settings.local.json` (machine-local permission grants, gitignored). Scripts live in `.claude/hooks/`.
+- **PreToolUse coaching guard** (`coaching-guard.py`): fires on `Edit|Write|MultiEdit` against any **coaching-doctrine file** (`CoachingPrinciples.md`, `session-catalogue.md`, `zone-rules.md`, `coaching-rules.md`, `generationConfig.ts`, `planSignatures.ts`, `sessionFormat.ts`) and requires a `/coaching-board` review or a stated exemption before the edit proceeds (ADR-017, INV-COACH-001). Advisory by default; flip `HARD_BLOCK = True` in the script to deny outright. Deliberately does **not** match `ruleEngine.ts` / `lib/coaching/*` — those carry ordinary bug fixes, and a hook that fires on every one of them gets disabled, which is the same as having no hook. Tests: `python3 .claude/hooks/coaching-guard.test.py`.
 - **PreToolUse safety guard** (`guard-bash.py`): blocks unrecoverable Bash before it runs — `git reset --hard`, `git clean -f`, force-push (allows `--force-with-lease`), `git stash drop/clear`, and `rm -rf` against root/home/repo-root/bare-wildcard. Everyday `rm -rf node_modules|.next|/tmp/*` passes. Edit the `RULES` list to tune.
-- **SessionStart context** (`session-start.sh`): injects date + recent commits + uncommitted count, and flags Supabase migration files not recorded in `.claude/state/applied-migrations.txt`. **After applying a new migration, append its basename to that ledger** or every session will warn. This exists to catch the silent-unapplied-migration outage class (avg_temp_c, calories_kcal).
-- **PostToolUse** (`git commit` → `/ship` check): unchanged, moved here from `settings.local.json`.
+- **SessionStart context** (`session-start.sh`): injects date + recent commits + uncommitted count, and flags Supabase migration files not recorded in `.claude/state/applied-migrations.txt`. **After applying a new migration, append its basename to that ledger** or every session will warn. This exists to catch the silent-unapplied-migration outage class (avg_temp_c, calories_kcal). Also flags **uncommitted coaching-doctrine changes** — the same failure class as an unapplied migration: live but never reviewed.
+- **PostToolUse** (`git commit`): two checks — the `/ship` backlog check, and a **coaching-doctrine backstop** verifying that a doctrine commit carries all three artifacts (principle §, `GENERATION_CONFIG` constant, `validatePlan()` invariant + `plan-invariants.md` row). Moved here from `settings.local.json`.
 
 ### Global State Pattern
 - Overrides and settings fetched once at `DashboardClient` level
@@ -339,6 +340,24 @@ When all three agree, the engine is provably honouring its constitution.
 - `scripts/property-validate-plans.ts` — property sweep across a wide input grid (race × fitness × days × volume × injuries × ...). Catches edge cases the archetype matrix misses. Exit 1 on any violation.
 
 **When changing engine behaviour or adding a coaching principle:** add the invariant to `validatePlan()` in the same commit. See `docs/canonical/plan-invariants.md` for the full registry and the procedure.
+
+### The Coaching Board — the layer above (ADR-017)
+
+The three layers above guarantee the engine **honours what was decided**. None of them can tell you whether the decision was **right** — `validatePlan()` will enforce a bad principle with perfect fidelity. At 80 principles, spotting that a new one contradicts an existing one is also past what any reviewer holds in working memory.
+
+The **Coaching Board** (`/coaching-board`) is the fourth layer. If `validatePlan()` is the judiciary and `GENERATION_CONFIG` is the statute book, the board is the legislature — it authors and amends the constitution.
+
+| | Coaching Board | SLT (`/slt-review`) |
+|---|---|---|
+| Rules on | Is it coaching-**correct**? | Should we **build** it, for whom, at what tier? |
+| Seats | Hutchinson (chair), Seiler, McMillan, Willy, Sims | Sutherland, Fried, Hutchinson, Wood, Traynor |
+| Output | Principle § + config constant + `validatePlan()` invariant | Tier tag + build/don't-build |
+
+- **The board's INCORRECT ruling is a veto.** The SLT cannot overrule it commercially (INV-COACH-003). Hutchinson holds both seats and carries escalations up.
+- **Convening is automatic** — `.claude/hooks/coaching-guard.py` fires on any edit to a doctrine file. Do not rely on remembering.
+- **Doctrine files**: `CoachingPrinciples.md`, `session-catalogue.md`, `zone-rules.md`, `coaching-rules.md`, `generationConfig.ts`, `planSignatures.ts`, `sessionFormat.ts`.
+- **Exempt** (state it in one line and proceed): defect fixes restoring documented intent, formatting, no-behaviour-delta refactors.
+- **Zone-label trap**: Zonna's five-zone model is canonical — **Z2 is easy, Z3 is the grey zone**. Seiler's three-zone model calls the *moderate* band "Zone 2". Translate external reasoning on the way in (INV-COACH-004).
 
 ### Auth at the Route Boundary
 
@@ -506,6 +525,7 @@ Three docs run the work pipeline. Keep them in sync:
   - ADR-013: plan lifecycle — post-race maintenance is its own plan object; race plan ends → archived as completed, maintenance becomes sole active plan; `week_n` keyed by `week.n` (not array position) *(2026-08-02)*
   - ADR-014: recalibration application model — a time-trial result rewrites forward paces only when **prompted + confirmed** (never silent, §69/ADR-012), via the existing `applyRecalibration` → `/api/recalibrate-zones` path, gated PAID (`dynamic_reshape_r20`); the time trial + honest copy stay FREE. Unblocks PV2-H / CD-13 wiring *(2026-08-06)*
   - ADR-015: display formatting & preference singularity — `lib/format.ts` is the sole owner of every time/distance/metric string; `formatDuration` locks the ≥60→hours rule (`45 min` / `1h 18`, never a bare `78m`); global + per-session unit/metric preference propagates everywhere incl. notifications (server reads `getUserDisplayPrefs`; per-session override moves localStorage → `session_metric_overrides` table). INV-FMT-001/002, INV-PREF-001 *(2026-08-10)*
+  - ADR-017: coaching board authority model — a five-seat domain board (Hutchinson chairing, with Seiler, McMillan, Willy, Sims) rules on coaching **correctness** as the layer above principle/config/invariant; INCORRECT is a **veto** the SLT cannot overrule commercially; convening is hook-enforced, not remembered; every CORRECT ruling lands three artifacts in one commit; five-zone model pinned as canonical against Seiler's three-zone labels. INV-COACH-001…004 *(2026-08-15)*
   - ADR-016: date-aware plan resolution & send-gating — `getSessionForDate()` is the canonical "real session on calendar date D?" resolver (returns `null` before-start / after-end / gap / empty day); `isDateBeforePlan()` is the missing before-start guard. No scheduled send may fire without an active plan AND a real session for the target date (never fall back to `weeks[0]`). INV-TIME-001 *(2026-08-10)*
 - **Brand authority (positioning, audience, competitors, voice, visual)**: `docs/canonical/brand.md` — the single prose source of truth
 - Brand alignment (v1 launch record — superseded as authority by `brand.md`): `docs/alignment/brand-product-alignment.md`
@@ -536,6 +556,20 @@ Do NOT load for:
 Trigger with `/frontend-design` for ALL UI work — screens, components, layouts.
 This skill biases output toward high-quality, non-generic design.
 Use the prompt template in `docs/canonical/ui-patterns.md` alongside it.
+
+### `coaching-board`
+**Fires automatically** via `.claude/hooks/coaching-guard.py` on any edit to a coaching-doctrine file — you should not need to remember it. Can also be invoked directly with `/coaching-board [change]`.
+
+Five domain seats rule on whether a coaching change is **correct** (not whether to build it — that's the SLT):
+- **Alex Hutchinson** (chair) — performance science. Is it defensible to an experienced runner?
+- **Stephen Seiler** — intensity distribution. Is the distribution real, and does it hold for a four-hour-a-week runner rather than an elite?
+- **Greg McMillan** — practical coaching. Does it survive contact with a real amateur's week?
+- **Rich Willy** — injury and load. What's the injury vector? Does tissue tolerance keep up with fitness?
+- **Stacy Sims** — female physiology. Does it hold for the women using it, or was it derived from male subjects?
+
+Output is not prose — every CORRECT ruling produces three artifacts in one commit: principle §, config constant, `validatePlan()` invariant. Includes a mandatory conflict scan naming which of the 80 existing principles a change touches or contradicts. Full authority model: ADR-017.
+
+Do NOT load for: display/formatting changes (ADR-015), coaching *copy* and voice (that's brand), or defect fixes restoring documented intent.
 
 ### `slt-review`
 Trigger with `/slt-review [item]` when deciding what to build next — specifically when pulling an item from the backlog into active development.

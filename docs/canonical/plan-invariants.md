@@ -94,6 +94,11 @@ volume-sequence layer where it's already enforced.
 
 ## Adding a new invariant
 
+0. **Has the Coaching Board ruled?** If this invariant encodes a *new or changed*
+   coaching decision, the board rules on correctness first — `/coaching-board`,
+   chaired by Hutchinson. If it mechanises a principle that already exists and is
+   already agreed, proceed; you are closing an enforcement gap, not making a
+   coaching decision. See ADR-017.
 1. Identify the principle in `CoachingPrinciples.md`. If it's not there, write
    it first — INV-CFG-002 ("principle backstop").
 2. Confirm the numeric lives in `GENERATION_CONFIG` (or a sibling config). If
@@ -101,3 +106,14 @@ volume-sequence layer where it's already enforced.
 3. Add the check to `validatePlan()` with a `code`, `principle_ref`, and severity.
 4. Add the row to the table above.
 5. Run the matrix and the property sweep. Address any violations the new check surfaces.
+
+**The three artifacts move together.** A coaching change is not complete until the
+principle (`CoachingPrinciples.md`), the numeric (`GENERATION_CONFIG`), and the
+mechanical check (here + `validatePlan()`) all land **in one commit** — INV-COACH-001.
+This registry is where the third one is most often forgotten, which is why the
+PostToolUse commit hook checks for it.
+
+Where a principle genuinely cannot be mechanically checked, record that explicitly in
+its `CoachingPrinciples.md` section rather than leaving a silent gap. An unenforceable
+principle is a known risk; an undocumented one is a defect waiting to be discovered by
+a runner.

@@ -13,6 +13,7 @@
    - **Merge / drop** — any items that should combine, or that don't earn their place.
    - **The portfolio question:** if only THREE of these ship this quarter, which three, and why?
 3. Keep the mandatory checks: FREE/PAID tag per item, MUST/NEVER check, risks to existing built features.
+4. **Route coaching-correctness questions down to the Coaching Board** (`/coaching-board`, ADR-017). Several "Board watch" notes below name Hutchinson on whether a rule or rationale is *correct* — that is now the Coaching Board's ruling (Hutchinson chairing, with Seiler, McMillan, Willy, Sims), not something to settle here. The SLT decides tier, sequencing, and whether to build; correctness comes back as a binding CORRECT / INCORRECT. Items where this applies: **TD-READY** (are the guard rules right?) and **SD-WHY** (is the per-session-type rationale true?).
 
 ---
 

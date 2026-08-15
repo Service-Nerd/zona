@@ -9,6 +9,15 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-bash.py\""
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/coaching-guard.py\""
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -27,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -c 'select((.tool_input.command // \"\") | test(\"^git commit\")) | {hookSpecificOutput: {hookEventName: \"PostToolUse\", additionalContext: \"A git commit just happened. Inspect it with git log -1 + git show HEAD and decide if it shipped a tracked backlog item. If yes, invoke /ship. If bug fix / refactor / partial step, do nothing.\"}}'"
+            "command": "jq -c 'select((.tool_input.command // \"\") | test(\"^git commit\")) | {hookSpecificOutput: {hookEventName: \"PostToolUse\", additionalContext: \"A git commit just happened. Inspect it with git log -1 + git show HEAD, then: (1) decide if it shipped a tracked backlog item — if yes, invoke /ship; if bug fix / refactor / partial step, do nothing. (2) COACHING DOCTRINE BACKSTOP — if the commit touched CoachingPrinciples.md, generationConfig.ts, planSignatures.ts, sessionFormat.ts, session-catalogue.md, zone-rules.md or coaching-rules.md, verify a Coaching Board review ruled on it AND that all three artifacts landed together (principle section, GENERATION_CONFIG constant, validatePlan() invariant + plan-invariants.md row). If an artifact is missing, say so now — see ADR-017.\"}}'"
           }
         ]
       }
