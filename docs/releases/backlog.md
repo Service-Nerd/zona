@@ -245,12 +245,6 @@ After Vercel deploy, verify with agent-browser:
 
   > **Board note (Wendy Wood):** Voice is the highest friction-reduction change on the list for post-run reflection. Typing after a run is a significant barrier — voice removes it. The quality of reframe input (and therefore the quality of the AI output) improves when the medium suits the moment. This is worth the vendor dependency.
 
-- 🔲 **[W3]** **REFRAME-COHORT-01 — Long-run comparison cohort in the post-run reframe** *(scoped 2026-08-13 — take to coach)* — decide whether a long run's reframe should compare against **long runs only** or against the **whole easy-effort pool** (today's behaviour). The reframe's "previous similar session" and "recent RPE pattern" cohorts filter by raw `session.type` (`app/api/post-run-reframe/route.ts:227` and `:285`). Because the generator models a long run as `type: 'easy'` (INV-CLASS / `lib/plan/sessionRole.ts`), a long run currently compares against **all** easy-typed sessions — short easy runs *and* long runs — not long-runs-only.
-  - **The change, if wanted, is small:** swap the `!== session.type` equality for `coachingSessionType(...)` equality at both sites, so long-runs compare to long-runs and easy-to-easy.
-  - **This is a coaching judgment, not a bug.** Comparing a long run's HR/pace to a short easy run's is arguably apples-to-oranges; but the broader pool yields more data points (cohort thresholds `MIN_TOTAL_RUNS` / `MIN_RUNS_PER_BUCKET` are easier to satisfy, so narrowing could push some reframes below the bar and show no comparison at all). **The question for the coach:** which cohort is more coaching-valid for a long-run reframe?
-  - **Gates:** (a) coach decision on the cohort definition; (b) per D-22 this changes coaching behaviour on a locked surface — run the reframe golden suite (`docs/canonical/reframe-golden-cases.md`, cases A–D) before/after and confirm no regressions; consider `/slt-review`. **Not blocking anything.**
-  - Effort: **XS** (2 call sites + golden re-run). Tier: **PAID** (inherits `post_run_reframe` gate). Context: surfaced 2026-08-13 during the long-run classification single-owner migration (`role` / `coachingSessionType`); the label-only trend/RPE copy was aligned then — this is the cohort-*filter* half, deliberately left for coach input.
-
 ### Plan screen
 
 ### Review 2026-05-23
