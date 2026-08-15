@@ -9,22 +9,31 @@ One approach, every time. The symptoms and repro steps change; the method does n
 
 ---
 
-## The input
+## The input — say it however you like
 
-Paste this. Only the values change — leave anything you don't know blank rather than guessing.
+**A sentence is enough.** "The push says 6km but the card says 5.7." "Coach screen is
+blank for the trial user." "Push stopped arriving after Tuesday."
 
-```
-Symptom:   [what is wrong, in one line]
-Surfaces:  [where you saw it — screen, push, email, API]
-Expected:  [what should happen]
-Actual:    [what happens]
-Repro:     [steps, or "not reproduced — reported only"]
-Since:     [when it started, if known]
-Hint:      [optional — a file, a recent change, a suspicion]
-```
+Nobody remembers a template mid-bug, and a standard that depends on remembering one
+is the same failure mode as every other process in this repo. **Filling in the fields
+is the assistant's job, not the reporter's.**
 
-Anything absent is a thing to establish, not a blocker. "Not reproduced" is a normal
-and common starting state here — see *Ground truth without reproduction* below.
+So: take whatever was said, and restate it as the grid below — inferring what's
+implied, marking what's genuinely unknown. Show it back in the first response so a
+wrong inference gets corrected in one line rather than after an hour of investigation.
+
+| Field | From a bare sentence |
+|---|---|
+| **Symptom** | usually stated |
+| **Surfaces** | often implied ("the push", "the card") — name every surface that shows this value, including ones not mentioned; disagreement between them is the strongest signal available |
+| **Expected / Actual** | often only Actual is given. **Do not assume the reported side is the wrong one** — that's Step 2 |
+| **Repro** | assume "not reproduced" unless stated. Normal here |
+| **Since** | usually unknown. Worth establishing for silent classes — `git log -S` on the owner is often faster than asking |
+| **Hint** | whatever they volunteered |
+
+Only ask a question back when the answer would **change what you investigate first**.
+Otherwise state the assumption and proceed — a wrong assumption surfaces in seconds,
+a blocked question costs the whole exchange.
 
 ---
 
@@ -216,6 +225,9 @@ A fix is not done until all of these are true or explicitly waived with a reason
 
 ```
 ## Bug: [one line]
+
+**Read as:** [the grid, filled in from whatever was said — with `?` where genuinely
+unknown and (assumed) on anything inferred, so a wrong read gets corrected in one line]
 
 **Triage:** Trivial / Contained / Systemic — [why]
 **Still real:** confirmed at `file:line` / not reproducible — [what the code does now]

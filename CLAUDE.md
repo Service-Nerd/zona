@@ -562,7 +562,7 @@ Use the prompt template in `docs/canonical/ui-patterns.md` alongside it.
 ### `zona-debug`
 Trigger with `/zona-debug` (or automatically on bug language) for **any** bug analysis, investigation, RCA, or fix. One pipeline, every time — only the symptoms change.
 
-Paste the input template (symptom / surfaces / expected / actual / repro / since / hint) and it runs: **triage → is it still real → which side is correct → localise → RCA → fix options + blast radius → governance routing → exit criteria.**
+**Describe the bug in a sentence** — no template to remember. The skill restates it as the structured grid (symptom / surfaces / expected / actual / repro / since / hint), marking assumptions so a wrong read is corrected in one line, then runs: **triage → is it still real → which side is correct → localise → RCA → fix options + blast radius → governance routing → exit criteria.**
 
 Why it's Zonna-specific rather than generic debugging advice:
 - **Almost none of this app's bugs are crashes — they're silent.** The skill carries a catalogue of the ten real classes (unapplied migration, silent fallback, unchecked `res.ok`, wrong Supabase client on native, label-based classification, parallel classifier drift, `cap sync` config wipe, two-writer split, shadowed identifier, claim/computation mismatch).
