@@ -266,6 +266,7 @@ Hooks are versioned in `.claude/settings.json` (project behaviour, git-tracked) 
 - **PreToolUse coaching guard** (`coaching-guard.py`): fires on `Edit|Write|MultiEdit` against any **coaching-doctrine file** (`CoachingPrinciples.md`, `session-catalogue.md`, `zone-rules.md`, `coaching-rules.md`, `generationConfig.ts`, `planSignatures.ts`, `sessionFormat.ts`) and requires a `/coaching-board` review or a stated exemption before the edit proceeds (ADR-017, INV-COACH-001). Advisory by default; flip `HARD_BLOCK = True` in the script to deny outright. Deliberately does **not** match `ruleEngine.ts` / `lib/coaching/*` — those carry ordinary bug fixes, and a hook that fires on every one of them gets disabled, which is the same as having no hook. Tests: `python3 .claude/hooks/coaching-guard.test.py`.
 - **PreToolUse safety guard** (`guard-bash.py`): blocks unrecoverable Bash before it runs — `git reset --hard`, `git clean -f`, force-push (allows `--force-with-lease`), `git stash drop/clear`, and `rm -rf` against root/home/repo-root/bare-wildcard. Everyday `rm -rf node_modules|.next|/tmp/*` passes. Edit the `RULES` list to tune.
 - **SessionStart context** (`session-start.sh`): injects date + recent commits + uncommitted count, and flags Supabase migration files not recorded in `.claude/state/applied-migrations.txt`. **After applying a new migration, append its basename to that ledger** or every session will warn. This exists to catch the silent-unapplied-migration outage class (avg_temp_c, calories_kcal). Also flags **uncommitted coaching-doctrine changes** — the same failure class as an unapplied migration: live but never reviewed.
+- **PostToolUse fix-test-check** (`fix-test-check.py`): on a `fix:`-subject commit that changed source but no test file, prompts for a regression test. This app's bugs are silent rather than crashing, so a test that fails-before/passes-after is the only durable defence — there's no symptom to notice next time. Advisory; exempts docs/migrations/tooling/native, and accepts "not unit-testable, here's what I verified instead". Pairs with the `zona-debug` skill's exit criteria.
 - **PostToolUse backlog-touch** (`backlog-touch.py`): on every `git commit`, greps the commit's **changed file paths** against file references in `backlog.md` and flags open entries that name them. Exists because the `/ship` check only catches items you *set out* to close — PUSH-UNITS-01 was fixed incidentally by the ADR-015 Phase-2 sweep and then sat open for weeks. A touched file is a prompt to check, **not** proof the item shipped. Parses all **three** item formats (status bullets, LATER table rows, unscheduled bullets) — a bullet-only grep misses ~40% of open items, which is how CA-08 once looked like it had dropped out. Tests: `python3 .claude/hooks/backlog-touch.test.py`.
 - **PostToolUse** (`git commit`): two checks — the `/ship` backlog check, and a **coaching-doctrine backstop** verifying that a doctrine commit carries all three artifacts (principle §, `GENERATION_CONFIG` constant, `validatePlan()` invariant + `plan-invariants.md` row). Moved here from `settings.local.json`.
 
@@ -557,6 +558,22 @@ Do NOT load for:
 Trigger with `/frontend-design` for ALL UI work — screens, components, layouts.
 This skill biases output toward high-quality, non-generic design.
 Use the prompt template in `docs/canonical/ui-patterns.md` alongside it.
+
+### `zona-debug`
+Trigger with `/zona-debug` (or automatically on bug language) for **any** bug analysis, investigation, RCA, or fix. One pipeline, every time — only the symptoms change.
+
+Paste the input template (symptom / surfaces / expected / actual / repro / since / hint) and it runs: **triage → is it still real → which side is correct → localise → RCA → fix options + blast radius → governance routing → exit criteria.**
+
+Why it's Zonna-specific rather than generic debugging advice:
+- **Almost none of this app's bugs are crashes — they're silent.** The skill carries a catalogue of the ten real classes (unapplied migration, silent fallback, unchecked `res.ok`, wrong Supabase client on native, label-based classification, parallel classifier drift, `cap sync` config wipe, two-writer split, shadowed identifier, claim/computation mismatch).
+- **Localisation uses the singularity doctrine as a diagnostic asset** — start at the single owner, enumerate the only mechanisms that produce the wrong output, grep those.
+- **Ground truth without reproduction** — reduce to the pure `lib/` function and assert, when auth/device blocks the UI.
+- **Blast radius is mandatory** — eight dimensions, each named or explicitly "none".
+- **Governance default is neither board.** A defect fix restoring documented intent is exempt from the Coaching Board; only a fix that changes *new* prescription convenes it.
+
+New silent-failure classes get added to the catalogue in the same commit as the incident write-up (`docs/incidents/TEMPLATE.md`). That loop is what stops it decaying.
+
+Backstop: `.claude/hooks/fix-test-check.py` flags a `fix:` commit that changed source but no tests.
 
 ### `coaching-board`
 **Fires automatically** via `.claude/hooks/coaching-guard.py` on any edit to a coaching-doctrine file — you should not need to remember it. Can also be invoked directly with `/coaching-board [change]`.
