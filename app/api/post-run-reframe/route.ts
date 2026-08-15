@@ -48,6 +48,7 @@ import { computeHrStreamSummary } from '@/lib/coaching/streamAnalysis'
 import { computePaceFadeSummary, type StravaSplitMetric } from '@/lib/coaching/paceAnalysis'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import type { Plan, Session } from '@/types/plan'
+import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
 const DAY_NAME: Record<string, string> = {
   mon: 'Monday',    tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday',
@@ -439,7 +440,10 @@ export async function POST(req: NextRequest) {
   })
 
   // ── Build prompt + call Sonnet ────────────────────────────────────────
+  // FMT-01 — render distances/paces in the reader's unit (INV-PREF-001).
+  const { units: displayUnits } = await getUserDisplayPrefs(service, userId)
   const prompt = buildSessionReframePrompt({
+    units: displayUnits,
     userNote,
     tier: dataTier,
     session,

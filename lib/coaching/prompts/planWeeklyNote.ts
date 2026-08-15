@@ -1,6 +1,10 @@
 import { buildVoiceHeader } from './voiceRules'
+import { formatPace, formatPaceDelta, formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
 
 export interface PlanWeeklyNotePromptInput {
+  /** Reader's preferred units (FMT-01). Defaults to 'km' so km prompts stay
+   *  byte-identical; only a miles reader sees a change. */
+  units?: DistanceUnits
   /** 1-indexed week number. */
   weekN: number
   /** Phase label for this week: 'foundation' | 'base' | 'build' | 'peak' | 'taper'. */
@@ -55,6 +59,8 @@ const PHASE_LABELS: Record<string, string> = {
  * the rule-engine voice on parse failure (silent degrade per ADR-006).
  */
 export function buildPlanWeeklyNotePrompt(input: PlanWeeklyNotePromptInput): string {
+  const units: DistanceUnits = input.units ?? 'km'
+  const fmtDist = (v: number | null | undefined, dp = 1) => formatDistanceForPrompt(v, units, dp) ?? '—'
   const {
     weekN, phase, weeksToRace, raceName, raceDistance,
     sessions, firstName, athleteContext, previousWeeklyNote, isRestHeavyWeek,
@@ -74,7 +80,7 @@ export function buildPlanWeeklyNotePrompt(input: PlanWeeklyNotePromptInput): str
     : sessions
         .map(s => {
           const dist = s.distanceKm != null && s.distanceKm > 0
-            ? ` · ${s.distanceKm.toFixed(s.distanceKm < 10 ? 1 : 0)}km`
+            ? ` · ${fmtDist(s.distanceKm, s.distanceKm < 10 ? 1 : 0)}`
             : ''
           return `${s.day}: ${s.type}${dist}`
         })

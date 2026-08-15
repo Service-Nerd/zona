@@ -13,6 +13,7 @@ import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { getCurrentWeekIndex, isDateWithinWeek, isDateBeforePlan } from '@/lib/plan'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
+import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
 // POST /api/weekly-report
 // Auth-gated (paid/trial). Computes this week's coaching report.
@@ -343,6 +344,8 @@ export async function POST(req: NextRequest) {
   let cta:      string | null = null
 
   try {
+    // FMT-01 — render distances in the reader's unit (INV-PREF-001).
+    const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userId)
     const prompt = buildWeeklyReportPrompt(
       reportDataWithRpe,
       plan,
@@ -357,6 +360,7 @@ export async function POST(req: NextRequest) {
       buildAthleteContext({ plan }),
       previousReport,
       raceDebrief,
+      displayUnits,
     )
 
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {

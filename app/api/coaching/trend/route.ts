@@ -30,6 +30,7 @@ import { buildHrTrendSeries, fetchRunHistory } from '@/lib/coaching/runHistory'
 import { COHORT_SIMILARITY, TREND_SERIES } from '@/lib/coaching/constants'
 import { buildAerobicTrendPrompt } from '@/lib/coaching/prompts/aerobicTrend'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
 export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
@@ -79,7 +80,10 @@ export async function GET(req: NextRequest) {
   if (includeGloss && trend?.hrIsTrending) {
     const first  = trend.buckets[0]
     const last   = trend.buckets[trend.buckets.length - 1]
+    // FMT-01 — render pace/distance in the reader's unit (INV-PREF-001).
+    const { units: displayUnits } = await getUserDisplayPrefs(service, user.id)
     const prompt = buildAerobicTrendPrompt({
+      units:            displayUnits,
       earlierMonth:     first.shortLabel,
       nowMonth:         last.shortLabel,
       earlierHr:        first.avgHr ?? 0,

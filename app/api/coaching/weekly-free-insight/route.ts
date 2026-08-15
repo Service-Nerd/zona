@@ -6,6 +6,7 @@ import { buildFreeInsightPrompt } from '@/lib/coaching/prompts/freeInsight'
 import { assessReframeRiskGate, type CoachingFlag, type FatigueTag } from '@/lib/coaching/reframeRiskGate'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import { coachingSessionType } from '@/lib/plan/sessionRole'
+import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
 // GET /api/coaching/weekly-free-insight
 //
@@ -184,7 +185,10 @@ export async function GET(req: NextRequest) {
 
   // 5. Haiku call. Failure → 'unavailable' (no cache write — next pageview retries).
   try {
+    // FMT-01 — render distances/paces in the reader's unit (INV-PREF-001).
+    const { units: displayUnits } = await getUserDisplayPrefs(service, user.id)
     const prompt = buildFreeInsightPrompt({
+    units: displayUnits,
       weekLabel:    weekStart,
       loggedCount:  withRpe.length,
       plannedCount,

@@ -48,6 +48,67 @@ export function sumRoundedDistance(
   }, 0)
 }
 
+// ─── Pace formatting — single source of truth (ADR-015, INV-FMT-001) ─────────
+//
+// Pace is stored as seconds per KILOMETRE everywhere (analysis, cohort, splits),
+// regardless of what the runner prefers to read. This is the only place that
+// becomes a display string, and the only place the mi conversion happens.
+//
+// Deliberately separate from formatDistance: pace is a rate, and "8:51/mi" is a
+// different number from "5:30/km", not a relabelling. Before FMT-01 this rule was
+// implemented four times (paceAnalysis.ts + private copies in sessionFeedback.ts
+// and sessionReframe.ts + strava.ts), all of them km-only, so a miles runner was
+// told their pace in km by every AI surface.
+export function formatPace(
+  secPerKm: number | null | undefined,
+  units: DistanceUnits = 'km',
+  opts: { noSuffix?: boolean } = {},
+): string | null {
+  if (secPerKm == null || !Number.isFinite(secPerKm) || secPerKm <= 0) return null
+  const secPerUnit = units === 'mi' ? secPerKm * KM_PER_MI : secPerKm
+  const m = Math.floor(secPerUnit / 60)
+  const s = Math.round(secPerUnit % 60)
+  // Carry a 60s rounding artefact into the minute rather than printing "5:60".
+  const mm = s === 60 ? m + 1 : m
+  const ss = s === 60 ? 0 : s
+  const body = `${mm}:${String(ss).padStart(2, '0')}`
+  return opts.noSuffix ? body : `${body}/${units}`
+}
+
+/** A pace DELTA (e.g. "fade of 15s/km") converted to the reader's unit.
+ *  Same rate conversion, expressed in whole seconds. */
+export function formatPaceDelta(
+  secPerKm: number | null | undefined,
+  units: DistanceUnits = 'km',
+): string | null {
+  if (secPerKm == null || !Number.isFinite(secPerKm)) return null
+  const v = units === 'mi' ? secPerKm * KM_PER_MI : secPerKm
+  return `${Math.round(v)}s/${units}`
+}
+
+// ─── Distance for AI prompts (FMT-01) ────────────────────────────────────────
+//
+// formatDistance() rounds to whole units on purpose — the UI reads calmer, and
+// four surfaces agreeing matters more than a tenth of a km (ADR-015).
+//
+// Prompts need the opposite. If the model is told a session was "6km" when it was
+// 5.7km and the runner logged 5.8km, it narrates a shortfall the engine does not
+// recognise (§66 fires from planAdjustment.ts arithmetic, not from prose) — the
+// model would contradict the plan. So prompts convert units but keep precision.
+//
+// `dp` mirrors whatever precision the call site already used, so km output stays
+// byte-identical to pre-FMT-01 and only mi users see a change. Do not use this
+// for anything the user reads directly — that is formatDistance's job.
+export function formatDistanceForPrompt(
+  km: number | null | undefined,
+  units: DistanceUnits = 'km',
+  dp: number = 1,
+): string | null {
+  if (km == null || !Number.isFinite(km)) return null
+  const value = units === 'mi' ? km / KM_PER_MI : km
+  return `${value.toFixed(dp)}${units}`
+}
+
 export type SessionMetric = 'distance' | 'duration'
 
 /** Map of per-session metric overrides, keyed as `${weekN}_${sessionKey}`

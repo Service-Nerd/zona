@@ -22,6 +22,7 @@ import {
 } from '@/lib/coaching/prompts/postRaceReshape'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import type { Plan, RaceResult, Session, Week } from '@/types/plan'
+import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
 const AI_PROMPT_VERSION = '1.0'
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
@@ -105,7 +106,10 @@ export async function POST(req: NextRequest) {
   let aiEnrichedAt: string | null = null
 
   try {
+    // FMT-01 — render distances/paces in the reader's unit (INV-PREF-001).
+    const { units: displayUnits } = await getUserDisplayPrefs(serviceClient, user.id)
     const prompt = buildPostRaceReshapePrompt({
+    units: displayUnits,
       plan,
       result: raceResult,
       raceWeekN,

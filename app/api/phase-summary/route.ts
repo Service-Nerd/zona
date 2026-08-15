@@ -8,6 +8,7 @@ import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import type { Plan } from '@/types/plan'
+import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
 // POST /api/phase-summary
 // Generates and caches a one-off AI coaching summary for the phase that just ended.
@@ -138,7 +139,10 @@ export async function POST(req: NextRequest) {
   const completionRate = totalSessions > 0 ? completed / totalSessions : null
 
   // ── Build prompt + call AI ──────────────────────────────────────────────
+  // FMT-01 — render distances/paces in the reader's unit (INV-PREF-001).
+  const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, user.id)
   const prompt = buildPhaseSummaryPrompt({
+    units: displayUnits,
     phaseEnded:            phase_ended,
     phaseNewName:          nextPhaseName,
     totalWeeksInPhase:     phaseWeeks.length,

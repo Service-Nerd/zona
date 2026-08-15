@@ -1,6 +1,10 @@
 import { buildVoiceHeader } from './voiceRules'
+import { formatPace, formatPaceDelta, formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
 
 export interface PhaseSummaryPromptInput {
+  /** Reader's preferred units (FMT-01). Defaults to 'km' so km prompts stay
+   *  byte-identical; only a miles reader sees a change. */
+  units?: DistanceUnits
   phaseEnded: string              // 'base' | 'build' | 'peak' | 'foundation'
   phaseNewName: string            // 'build' | 'peak' | 'taper'
   totalWeeksInPhase: number
@@ -24,6 +28,8 @@ const PHASE_LABELS: Record<string, string> = {
 }
 
 export function buildPhaseSummaryPrompt(input: PhaseSummaryPromptInput): string {
+  const units: DistanceUnits = input.units ?? 'km'
+  const fmtDist = (v: number | null | undefined, dp = 1) => formatDistanceForPrompt(v, units, dp) ?? '—'
   const {
     phaseEnded, phaseNewName, totalWeeksInPhase,
     avgZoneDisciplinePct, efTrendPct, completionRate,
@@ -53,7 +59,7 @@ export function buildPhaseSummaryPrompt(input: PhaseSummaryPromptInput): string 
       ? `Session completion rate: ${Math.round(completionRate * 100)}% of scheduled sessions`
       : 'Session completion: unknown',
     totalLoadKm !== null
-      ? `Total load this phase: ${totalLoadKm.toFixed(0)}km`
+      ? `Total load this phase: ${fmtDist(totalLoadKm, 0)}`
       : null,
   ].filter(Boolean).join('\n')
 

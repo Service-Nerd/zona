@@ -19,6 +19,7 @@ import { raceInjuryFlagged } from '@/lib/coaching/raceNarrative'
 import { FATIGUE_HIGH_TAGS } from '@/lib/coaching/constants'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import type { Plan, Session } from '@/types/plan'
+import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
 // POST /api/analyse-run
 // Auth-gated (paid/trial). Called after a Strava activity is linked to a planned session.
@@ -325,7 +326,10 @@ export async function POST(req: NextRequest) {
       injuryFlagged:          raceInjuryFlagged(raceResult),
     })
 
+    // FMT-01 — render distances/paces in the reader's unit (INV-PREF-001).
+    const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userId)
     const prompt = buildSessionFeedbackPrompt({
+    units: displayUnits,
       session,
       weekN:               week_n,
       plan,

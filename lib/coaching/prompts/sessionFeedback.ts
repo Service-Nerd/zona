@@ -8,12 +8,17 @@ import { limiterLabel } from '../limiter'
 import { buildRaceNarrativeBlock } from '../raceNarrative'
 import { LIMITER } from '../constants'
 import { buildVoiceHeader } from './voiceRules'
+import { formatPace, formatPaceDelta, formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
 
 export interface SessionFeedbackPromptInput {
   session: Session
   weekN: number
   plan: Plan
   verdict: Verdict
+  /** Reader's preferred units (FMT-01). Distances and paces in the prompt render
+   *  in this unit, and the model is instructed to answer in it. Defaults to 'km',
+   *  which keeps every km user's prompt byte-identical to pre-FMT-01. */
+  units?: DistanceUnits
   actualDistKm: number
   actualAvgHr: number | null
   /** Actual average pace in seconds per km — derived from avg_speed. Null if unavailable. */
@@ -127,6 +132,15 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
     prescribedZoneLabel, prescribedHrBand, cohortContext,
     isFirstAnalysis, athleteContext, streamSummary, previousSimilarSession, tempC, limiter, paceFadeSummary,
     raceResult } = input
+  // FMT-01 — reader's units. Defaults to 'km' so every existing km prompt is
+  // byte-identical; only a miles reader sees a different string.
+  const units: DistanceUnits = input.units ?? 'km'
+  const pace = (secPerKm: number | null | undefined) => formatPace(secPerKm, units) ?? '—'
+  const fmtDist = (km: number | null | undefined, dp = 1) => formatDistanceForPrompt(km, units, dp) ?? '—'
+  // The fade thresholds are coaching numerics expressed as a RATE, so they must
+  // be restated in the reader's unit or the model compares 15s/km against a
+  // s/mi figure. Restating a rate is arithmetic, not a coaching change.
+  const fadeRefThreshold = formatPaceDelta(LIMITER.PACE_FADE_REFERENCE_SEC, units) ?? '15s/km'
 
   // §71 — a race is debriefed, not scored. Suppress the zone/drift/fade
   // citations and the plan-scoring verdict; frame the read as a race debrief.
@@ -155,7 +169,7 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
     :                            ` — run ${Math.abs(signedWeeksToRace)} week${signedWeeksToRace === -1 ? '' : 's'} ago`
 
   const raceContext = plan.meta.race_name
-    ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${plan.meta.race_distance_km}km)` : ''}${isMaintenance ? '' : raceTiming}`
+    ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${fmtDist(plan.meta.race_distance_km)})` : ''}${isMaintenance ? '' : raceTiming}`
     : 'target race'
 
   // Maintenance weeks keep continuous `n` carried from the race plan (e.g. n=21)
@@ -177,7 +191,7 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
           ?? plan.meta.race_name?.replace(/^After\s+/i, '')
           ?? 'your race'
         const srcDist = plan.meta.source_race_distance_km ?? plan.meta.race_distance_km ?? null
-        const distStr = srcDist ? ` (${srcDist}km)` : ''
+        const distStr = srcDist ? ` (${fmtDist(srcDist)})` : ''
         const srcDate = plan.meta.source_race_date
         let recency: string
         if (srcDate) {
@@ -240,15 +254,15 @@ Drift rule: when the absolute drift is ≥ 10 bpm or ≥ 7%, reference it direct
 
   // Pace fade across the run (Strava per-km splits). Same shape as the HR
   // drift block — surfaces a back-half slowdown that the aggregate avg pace
-  // hides. Threshold for reference in feedback: ≥ 15s/km.
+  // hides. Reference threshold: LIMITER.PACE_FADE_REFERENCE_SEC, restated in the reader's unit.
   const paceFadeBlock = paceFadeSummary
     ? `
-Pace fade across the run (back half vs first half, ${paceFadeSummary.splitsUsed} per-km splits):
-- First half: ${formatPaceSec(paceFadeSummary.firstHalfAvgPaceSecPerKm)}
-- Back half:  ${formatPaceSec(paceFadeSummary.backHalfAvgPaceSecPerKm)}
-- Fade: ${paceFadeSummary.paceFadeSecPerKm >= 0 ? '+' : ''}${paceFadeSummary.paceFadeSecPerKm}s/km (${paceFadeSummary.paceFadePct >= 0 ? '+' : ''}${(paceFadeSummary.paceFadePct * 100).toFixed(1)}%)${paceFadeSummary.sparse ? '\n- Splits: minimum sample — treat as hint, not hard signal' : ''}
+Pace fade across the run (back half vs first half, ${paceFadeSummary.splitsUsed} splits):
+- First half: ${pace(paceFadeSummary.firstHalfAvgPaceSecPerKm)}
+- Back half:  ${pace(paceFadeSummary.backHalfAvgPaceSecPerKm)}
+- Fade: ${paceFadeSummary.paceFadeSecPerKm >= 0 ? '+' : ''}${formatPaceDelta(paceFadeSummary.paceFadeSecPerKm, units)} (${paceFadeSummary.paceFadePct >= 0 ? '+' : ''}${(paceFadeSummary.paceFadePct * 100).toFixed(1)}%)${paceFadeSummary.sparse ? '\n- Splits: minimum sample — treat as hint, not hard signal' : ''}
 
-Pace-fade rule: when fade is ≥ 15s/km in the back half, reference it directly ("pace dropped 22s/km in the back half"). Cross-reference with HR drift: pace fade + flat HR = legs went before lungs (muscular); pace fade + HR rise = engine pushed (aerobic). Negative fade is a negative split — call it out as a strength when the session called for even effort. Below 15s/km, ignore unless it's the dominant story.
+Pace-fade rule: when fade is ≥ ${fadeRefThreshold} in the back half, reference it directly ("pace dropped ${formatPaceDelta(22, units)} in the back half"). Cross-reference with HR drift: pace fade + flat HR = legs went before lungs (muscular); pace fade + HR rise = engine pushed (aerobic). Negative fade is a negative split — call it out as a strength when the session called for even effort. Below ${fadeRefThreshold}, ignore unless it's the dominant story.
 `
     : ''
 
@@ -282,11 +296,11 @@ Limiter rule: when confidence is high, name the limiter as part of the read — 
     ? `
 Past-self cohort — your last ${cohortContext.cohortSize} similar runs (matched on distance ±15% and HR band):
 - Avg HR: ${cohortContext.avgHr ?? '—'} bpm
-- Avg pace: ${cohortContext.avgPaceSecPerKm ? formatPaceSec(cohortContext.avgPaceSecPerKm) : '—'}
+- Avg pace: ${pace(cohortContext.avgPaceSecPerKm)}
 - Avg in-zone: ${cohortContext.avgInZonePct !== null ? `${cohortContext.avgInZonePct}%` : '—'}
-- Typical distance: ${cohortContext.medianDistanceKm.toFixed(1)}km
+- Typical distance: ${fmtDist(cohortContext.medianDistanceKm)}
 
-If today's numbers diverge meaningfully from this cohort (HR ±5 bpm, pace ±10s/km, in-zone ±15%), reference the comparison directly in your feedback. Don't speculate causes — observation only.
+If today's numbers diverge meaningfully from this cohort (HR ±5 bpm, pace ±${formatPaceDelta(10, units)}, in-zone ±15%), reference the comparison directly in your feedback. Don't speculate causes — observation only.
 `
     : ''
 
@@ -296,7 +310,7 @@ If today's numbers diverge meaningfully from this cohort (HR ±5 bpm, pace ±10s
   })
 
   const paceLine = actualPaceSecPerKm
-    ? `Actual pace: ${formatPaceSec(actualPaceSecPerKm)}/km avg`
+    ? `Actual pace: ${pace(actualPaceSecPerKm)} avg`
     : ''
 
   const firstRunNote = isFirstAnalysis
@@ -333,22 +347,33 @@ ${raceNarrativeBlock}${raceTempBlock}`
   // fade as expected and replace the fade-as-fault citation blocks.
   const ultraEffortBlock = isUltraEffort
     ? `
-ULTRA-DISTANCE EFFORT (${actualDistKm.toFixed(0)}km) — this is time-on-feet, not a pace session. Back-half pace fade and late HR drift over this distance are expected physiology (glycogen depletion), not a fault. Don't cite the fade as a problem or tell them to "start slower" — read it as the fatigue-resistance work it is.
+ULTRA-DISTANCE EFFORT (${fmtDist(actualDistKm, 0)}) — this is time-on-feet, not a pace session. Back-half pace fade and late HR drift over this distance are expected physiology (glycogen depletion), not a fault. Don't cite the fade as a problem or tell them to "start slower" — read it as the fatigue-resistance work it is.
+`
+    : ''
+
+  // The few-shot examples stay in km whatever the reader prefers — they teach
+  // voice and structure, and rewriting locked exemplar copy per-unit would risk
+  // the voice for no gain. But their outputs quote km ("Cut it 2km short"), so a
+  // miles reader needs an explicit override or the model pattern-matches the
+  // examples' unit instead of the data's. Empty for km — zero prompt delta.
+  const unitsInstruction = units === 'mi'
+    ? `
+UNITS — IMPORTANT: the examples above are written in kilometres. This athlete reads in MILES. Every distance and pace in the session data below is already in miles. Write your feedback in miles ("mi", "/mi") and never mention kilometres.
 `
     : ''
 
   return `${voiceHeader}
 ${athleteContext ?? ''}
 ${FEW_SHOT_EXAMPLES}
-${firstRunNote}
+${unitsInstruction}${firstRunNote}
 Now write feedback for this session:
 
 Race context: ${raceContext}
 ${weekLine}${weekPhase ? ` — ${weekPhase} phase` : ''}
 
 Session type: ${session.type} (${session.label})
-Planned distance: ${session.distance_km ? `${session.distance_km}km` : 'not set'}
-Actual distance: ${actualDistKm.toFixed(1)}km
+Planned distance: ${session.distance_km ? fmtDist(session.distance_km) : 'not set'}
+Actual distance: ${fmtDist(actualDistKm)}
 ${paceLine ? paceLine + '\n' : ''}${hrLine}
 ${efLine ? efLine + '\n' : ''}RPE: ${rpe !== null ? rpe : 'not logged'}
 Fatigue: ${fatigueTag ?? 'not logged'}${isRace ? '' : `\nVerdict: ${verdict}`}
@@ -356,8 +381,5 @@ ${isRace ? raceDebriefBlock : `${maintenanceBlock}${previousSimilarBlock}${isUlt
 Write 2–4 sentences of honest, specific feedback. No headers. No bullet points. Plain text only.`
 }
 
-function formatPaceSec(secPerKm: number): string {
-  const m = Math.floor(secPerKm / 60)
-  const s = Math.round(secPerKm % 60)
-  return `${m}:${String(s).padStart(2, '0')}/km`
-}
+// formatPaceSec removed (FMT-01) — this was one of four copies of the pace rule,
+// all km-only. lib/format.ts → formatPace is the single owner (INV-FMT-001).

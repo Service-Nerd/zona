@@ -21,8 +21,12 @@
 
 import type { Plan, RaceResult, Week } from '@/types/plan'
 import type { DistanceBucket } from '@/lib/coaching/postRaceReshape'
+import { formatPace, formatPaceDelta, formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
 
 export interface PostRaceReshapePromptContext {
+  /** Reader's preferred units (FMT-01). Defaults to 'km' so km prompts stay
+   *  byte-identical; only a miles reader sees a change. */
+  units?: DistanceUnits
   plan: Plan
   result: RaceResult
   raceWeekN: number         // 1-indexed
@@ -62,6 +66,8 @@ function formatTime(t?: string): string {
 
 export function buildPostRaceReshapePrompt(ctx: PostRaceReshapePromptContext): string {
   const { plan, result, raceWeekN, weeksAffected, distanceBucket, peakWeeklyKm, reshapedWeeks } = ctx
+  const units: DistanceUnits = ctx.units ?? 'km'
+  const fmtDist = (v: number | null | undefined, dp = 1) => formatDistanceForPrompt(v, units, dp) ?? '—'
   const athlete = plan.meta.athlete ?? 'the runner'
   const raceName = plan.meta.race_name ?? 'the race'
   const raceDistKm = result.distance_km ?? plan.meta.race_distance_km
@@ -84,9 +90,9 @@ export function buildPostRaceReshapePrompt(ctx: PostRaceReshapePromptContext): s
     if (!w) return null
     const sessions = Object.entries(w.sessions)
       .filter(([, s]) => s)
-      .map(([day, s]) => `  ${day}: ${s!.type} ${s!.distance_km ? `(${s!.distance_km}km)` : ''}`)
+      .map(([day, s]) => `  ${day}: ${s!.type} ${s!.distance_km ? `(${fmtDist(s!.distance_km)})` : ''}`)
       .join('\n')
-    return `Week ${wn} — ${w.label ?? ''} — target ${w.weekly_km}km:\n${sessions}`
+    return `Week ${wn} — ${w.label ?? ''} — target ${fmtDist(w.weekly_km, 0)}:\n${sessions}`
   }).filter(Boolean).join('\n\n')
 
   const firstQualityWeek = (() => {
@@ -102,7 +108,7 @@ export function buildPostRaceReshapePrompt(ctx: PostRaceReshapePromptContext): s
     return null
   })()
 
-  return `You are Kit, the ${raceName} running coach inside Zonna. Write recovery coaching content for ${athlete} after their ${raceDistKm}km race.
+  return `You are Kit, the ${raceName} running coach inside Zonna. Write recovery coaching content for ${athlete} after their ${fmtDist(raceDistKm)} race.
 
 Race outcome: ${outcome}
 Finish time: ${finishTime}
@@ -113,7 +119,7 @@ The plan has been structurally reshaped — ${weeksAffected.length} weeks modifi
 
 ${weekDescriptions}
 
-Peak weekly volume (pre-taper): ${peakWeeklyKm}km
+Peak weekly volume (pre-taper): ${fmtDist(peakWeeklyKm, 0)}
 Distance bucket: ${distanceBucket}
 ${firstQualityWeek ? `First quality session returns at week ${firstQualityWeek}.` : 'No quality sessions in the reshaped window.'}
 

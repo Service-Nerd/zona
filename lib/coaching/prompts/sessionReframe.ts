@@ -31,6 +31,7 @@ import { limiterLabel } from '../limiter'
 import { buildRaceNarrativeBlock } from '../raceNarrative'
 import { LIMITER } from '../constants'
 import { buildVoiceHeader } from './voiceRules'
+import { formatPace, formatPaceDelta, formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
 import type { ReframeTier } from '../reframeTier'
 
 /** Builder version — bump when the prompt structure or instructions change.
@@ -38,6 +39,9 @@ import type { ReframeTier } from '../reframeTier'
 export const REFRAME_PROMPT_VERSION = '1.0.0'
 
 export interface SessionReframePromptInput {
+  /** Reader's preferred units (FMT-01). Defaults to 'km', keeping every km
+   *  prompt — and therefore every reframe golden case — byte-identical. */
+  units?: DistanceUnits
   // The user's voice — required. Sanitised and length-capped by the route.
   userNote: string
 
@@ -157,6 +161,9 @@ Output: "You're not running the wrong plan — week 2 is exactly when this hits.
 `
 
 export function buildSessionReframePrompt(input: SessionReframePromptInput): string {
+  const units: DistanceUnits = input.units ?? 'km'
+  const pace = (v: number | null | undefined) => formatPace(v, units) ?? '—'
+  const fmtDist = (v: number | null | undefined, dp = 1) => formatDistanceForPrompt(v, units, dp) ?? '—'
   const {
     userNote,
     tier,
@@ -200,7 +207,7 @@ export function buildSessionReframePrompt(input: SessionReframePromptInput): str
   // §72 — ultra non-race override for the CAUSE. Race efforts use RACE OVERRIDE.
   const ultraOverride = isUltraEffort
     ? `
-ULTRA-DISTANCE EFFORT (${actualDistKm!.toFixed(0)}km) — for sentence 2 (CAUSE), do NOT cite back-half pace fade or late HR drift as a fault: over this distance that is expected physiology (glycogen depletion), not a failure. The cause is the distance itself, or what the runner's note names. Never tell them to "start slower".
+ULTRA-DISTANCE EFFORT (${fmtDist(actualDistKm, 0)}) — for sentence 2 (CAUSE), do NOT cite back-half pace fade or late HR drift as a fault: over this distance that is expected physiology (glycogen depletion), not a failure. The cause is the distance itself, or what the runner's note names. Never tell them to "start slower".
 `
     : ''
   const raceTempBlock = isRace
@@ -214,7 +221,7 @@ ULTRA-DISTANCE EFFORT (${actualDistKm!.toFixed(0)}km) — for sentence 2 (CAUSE)
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
     : null
   const raceContext = plan.meta.race_name
-    ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${plan.meta.race_distance_km}km)` : ''}${weeksToRace !== null ? `, ${weeksToRace} weeks away` : ''}`
+    ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${fmtDist(plan.meta.race_distance_km)})` : ''}${weeksToRace !== null ? `, ${weeksToRace} weeks away` : ''}`
     : null
   const anchorInstruction = raceContext
     ? `Sentence 4 (anchor): name the race ("${plan.meta.race_name}") and the time-to-race (${weeksToRace !== null ? `${weeksToRace} weeks` : 'unknown'}). Factual, not motivational.`
@@ -230,9 +237,9 @@ ULTRA-DISTANCE EFFORT (${actualDistKm!.toFixed(0)}km) — for sentence 2 (CAUSE)
     ? `
 Past-self cohort — your last ${cohortContext.cohortSize} similar runs (matched on distance ±15% and HR band):
 - Avg HR: ${cohortContext.avgHr ?? '—'} bpm
-- Avg pace: ${cohortContext.avgPaceSecPerKm ? formatPaceSec(cohortContext.avgPaceSecPerKm) : '—'}
+- Avg pace: ${pace(cohortContext.avgPaceSecPerKm)}
 - Avg in-zone: ${cohortContext.avgInZonePct !== null ? `${cohortContext.avgInZonePct}%` : '—'}
-- Typical distance: ${cohortContext.medianDistanceKm.toFixed(1)}km
+- Typical distance: ${fmtDist(cohortContext.medianDistanceKm)}
 `
     : ''
 
@@ -241,12 +248,12 @@ Past-self cohort — your last ${cohortContext.cohortSize} similar runs (matched
   // noise, not signal. (AI-DEPTH-03)
   const trendBlock = trendSeries && (trendSeries.hrIsTrending || trendSeries.paceIsTrending)
     ? `
-Multi-month trend — ${trendSeries.sessionType} runs at ${trendSeries.distanceKm.toFixed(1)}km (±15%) over the last ${trendSeries.windowMonths} months:
-${trendSeries.buckets.map(b => `- ${b.shortLabel}: avg HR ${b.avgHr ?? '—'} bpm${b.avgPaceSecPerKm ? `, avg pace ${formatPaceSec(b.avgPaceSecPerKm)}` : ''} (${b.cohortSize} run${b.cohortSize === 1 ? '' : 's'})`).join('\n')}
+Multi-month trend — ${trendSeries.sessionType} runs at ${fmtDist(trendSeries.distanceKm)} (±15%) over the last ${trendSeries.windowMonths} months:
+${trendSeries.buckets.map(b => `- ${b.shortLabel}: avg HR ${b.avgHr ?? '—'} bpm${b.avgPaceSecPerKm ? `, avg pace ${pace(b.avgPaceSecPerKm)}` : ''} (${b.cohortSize} run${b.cohortSize === 1 ? '' : 's'})`).join('\n')}
 ${trendSeries.hrIsTrending && trendSeries.hrDeltaBpm !== null
   ? `Direction: HR has ${trendSeries.hrDeltaBpm < 0 ? 'dropped' : 'risen'} ${Math.abs(trendSeries.hrDeltaBpm)} bpm over the window at this distance.`
   : ''}${trendSeries.paceIsTrending && trendSeries.paceDeltaSec !== null
-  ? `\nDirection: Pace has ${trendSeries.paceDeltaSec < 0 ? 'improved' : 'slowed'} ${Math.abs(trendSeries.paceDeltaSec)}s/km over the window.`
+  ? `\nDirection: Pace has ${trendSeries.paceDeltaSec < 0 ? 'improved' : 'slowed'} ${formatPaceDelta(Math.abs(trendSeries.paceDeltaSec), units)} over the window.`
   : ''}
 
 Trend rule: if HR has dropped (or pace has improved) over the window, this is the strongest "engine getting stronger" evidence available. Cite it in sentence 3 (progress) — quote specific numbers. If the direction is the wrong way (HR rising, pace slowing) at this same distance, the rule engine will normally fire a risk flag; this block won't appear under reframe-positive conditions.
@@ -265,9 +272,9 @@ HR drift across the run (back third vs first third):
   const paceFadeBlock = paceFadeSummary
     ? `
 Pace fade across the run (back half vs first half):
-- First half: ${formatPaceSec(paceFadeSummary.firstHalfAvgPaceSecPerKm)}
-- Back half:  ${formatPaceSec(paceFadeSummary.backHalfAvgPaceSecPerKm)}
-- Fade: ${paceFadeSummary.paceFadeSecPerKm >= 0 ? '+' : ''}${paceFadeSummary.paceFadeSecPerKm}s/km${paceFadeSummary.sparse ? '  (minimum splits — treat as hint)' : ''}
+- First half: ${pace(paceFadeSummary.firstHalfAvgPaceSecPerKm)}
+- Back half:  ${pace(paceFadeSummary.backHalfAvgPaceSecPerKm)}
+- Fade: ${paceFadeSummary.paceFadeSecPerKm >= 0 ? '+' : ''}${formatPaceDelta(paceFadeSummary.paceFadeSecPerKm, units)}${paceFadeSummary.sparse ? '  (minimum splits — treat as hint)' : ''}
 `
     : ''
 
@@ -363,15 +370,17 @@ ${raceNarrativeBlock}` : ''}${ultraOverride}
 ${tierInstruction}
 
 ${FEW_SHOT_EXAMPLES}
-
+${units === 'mi' ? `
+UNITS — IMPORTANT: the examples above are written in kilometres. This athlete reads in MILES. Every distance and pace below is already in miles. Write the reframe in miles ("mi", "/mi") and never mention kilometres.
+` : ''}
 Now write the reframe for this runner:
 
 Runner said: "${userNote}"
 
 Session type: ${session.type} (${session.label})
 Week: ${weekN} of ${plan.weeks.length}
-Planned distance: ${session.distance_km ? `${session.distance_km}km` : 'not set'}
-Actual distance: ${actualDistKm !== null ? `${actualDistKm.toFixed(1)}km` : 'not logged'}
+Planned distance: ${session.distance_km ? fmtDist(session.distance_km) : 'not set'}
+Actual distance: ${actualDistKm !== null ? fmtDist(actualDistKm) : 'not logged'}
 ${hrLine}
 RPE: ${rpe !== null ? rpe : 'not logged'}
 Fatigue: ${fatigueTag ?? 'not logged'}
@@ -380,8 +389,4 @@ ${trendBlock}${cohortBlock}${suppressFade ? '' : streamBlock}${suppressFade ? ''
 Write the reframe now. 3-4 sentences. Plain text only. No headers.`
 }
 
-function formatPaceSec(secPerKm: number): string {
-  const m = Math.floor(secPerKm / 60)
-  const s = Math.round(secPerKm % 60)
-  return `${m}:${String(s).padStart(2, '0')}/km`
-}
+// formatPaceSec removed (FMT-01) — lib/format.ts -> formatPace is the single owner.

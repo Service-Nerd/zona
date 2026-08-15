@@ -8,6 +8,7 @@ import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import type { Plan } from '@/types/plan'
+import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
 // POST /api/race-readiness
 // Generates and caches a pre-race readiness assessment for the user.
@@ -174,7 +175,10 @@ export async function POST(req: NextRequest) {
     : null
 
   // ── Build prompt + call AI ──────────────────────────────────────────────
+  // FMT-01 — render distances/paces in the reader's unit (INV-PREF-001).
+  const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, user.id)
   const prompt = buildRaceReadinessPrompt({
+    units: displayUnits,
     raceName:              race_name ?? 'your race',
     raceDistanceKm:        race_distance_km ?? null,
     daysToRace,

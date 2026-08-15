@@ -18,6 +18,8 @@
  * See: docs/canonical/brand.md § Reframe Voice for tone reference.
  */
 
+import { formatPace, formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
+
 export interface AerobicTrendContext {
   /** Short month label for the oldest bucket e.g. 'Feb'. */
   earlierMonth: string
@@ -33,16 +35,18 @@ export interface AerobicTrendContext {
   anchorDistanceKm: number
   /** Avg pace for the anchor cohort (sec/km) — converted to display string in the builder. */
   avgPaceSecPerKm: number | null
+  /** Reader's preferred units (FMT-01). Defaults to 'km' — km output unchanged. */
+  units?: DistanceUnits
 }
 
-function secPerKmToDisplay(sec: number): string {
-  const mins = Math.floor(sec / 60)
-  const secs = Math.round(sec % 60)
-  return `${mins}:${String(secs).padStart(2, '0')}/km`
-}
+// secPerKmToDisplay removed (FMT-01) — the fifth copy of the pace rule.
+// lib/format.ts -> formatPace is the single owner (INV-FMT-001).
 
 export function buildAerobicTrendPrompt(ctx: AerobicTrendContext): string {
-  const pace = ctx.avgPaceSecPerKm ? secPerKmToDisplay(ctx.avgPaceSecPerKm) : null
+  const units: DistanceUnits = ctx.units ?? 'km'
+  const pace = formatPace(ctx.avgPaceSecPerKm, units)
+  // Voice examples must quote the reader's unit or the model copies '/km' back.
+  const examplePace = formatPace(340, units) ?? '5:40/km'
   const directionLabel = ctx.hrDeltaBpm < 0 ? 'dropped' : 'risen'
   const absDelta = Math.abs(ctx.hrDeltaBpm)
   const paceCtx = pace ? ` at around ${pace} pace` : ''
@@ -51,12 +55,12 @@ export function buildAerobicTrendPrompt(ctx: AerobicTrendContext): string {
 
 Trend data:
 - Long runs${paceCtx}: average HR ${directionLabel} ${absDelta} bpm from ${ctx.earlierHr} bpm (${ctx.earlierMonth}) to ${ctx.nowHr} bpm (now)
-- Anchor distance: approximately ${ctx.anchorDistanceKm.toFixed(1)} km long runs
+- Anchor distance: approximately ${formatDistanceForPrompt(ctx.anchorDistanceKm, units) ?? '—'} long runs
 
 Voice examples (match this register):
-  HR down → "Long run at 5:40/km. Easy is easier than it was."
-  HR flat  → "Long run at 5:40/km. Steady — and that's the point."
-  HR up    → "Long run at 5:40/km. HR's drifted up. Worth checking what changed."
+  HR down → "Long run at ${examplePace}. Easy is easier than it was."
+  HR flat  → "Long run at ${examplePace}. Steady — and that's the point."
+  HR up    → "Long run at ${examplePace}. HR's drifted up. Worth checking what changed."
 
 Rules:
 - If HR dropped: frame it as "easier", not "better" or "faster". The brand is zone discipline, not performance.

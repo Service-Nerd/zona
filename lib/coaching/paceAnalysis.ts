@@ -14,6 +14,8 @@
  *    prompt + limiter decide how to frame them.
  */
 
+import { formatPace, type DistanceUnits } from '@/lib/format'
+
 /** Minimum splits before the comparison is defensible (3+3 either side). */
 const MIN_SPLITS_FOR_FADE = 6
 
@@ -106,9 +108,10 @@ export function computePaceFadeSummary(
   }
 }
 
-/** Format seconds-per-km as m:ss/km. Mirrors the prompt files' helper. */
-export function formatPaceSec(secPerKm: number): string {
-  const m = Math.floor(secPerKm / 60)
-  const s = Math.round(secPerKm % 60)
-  return `${m}:${String(s).padStart(2, '0')}/km`
+/** Format seconds-per-km for display. Delegates to the single owner in
+ *  lib/format.ts (INV-FMT-001) — this used to be one of four copies of the rule,
+ *  all km-only. Kept as a named re-export so existing call sites keep working;
+ *  pass `units` to render miles. */
+export function formatPaceSec(secPerKm: number, units: DistanceUnits = 'km'): string {
+  return formatPace(secPerKm, units) ?? '—'
 }

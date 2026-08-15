@@ -171,6 +171,13 @@ export const LIMITER = {
   AEROBIC_DRIFT_BPM: 12,
   /** Pace fade seconds/km (back half vs first half) that points at muscular limiter. */
   MUSCULAR_PACE_FADE_SEC: 20,
+  /** Pace fade seconds/km at which feedback should REFERENCE the fade directly.
+   *  Below this, ignore it unless it's the dominant story. Lower than
+   *  MUSCULAR_PACE_FADE_SEC — worth mentioning before it's worth diagnosing.
+   *  Promoted from a prose literal in sessionFeedback.ts (FMT-01, INV-CFG-003);
+   *  value unchanged, so no coaching behaviour changed. Stored per-km like all
+   *  pace data; render via formatPaceDelta for the reader's unit. */
+  PACE_FADE_REFERENCE_SEC: 15,
   /** HR drift below this threshold means the legs faded WITHOUT the engine
    *  ramping — classic muscular-endurance signature rather than aerobic. */
   MUSCULAR_HR_DRIFT_BELOW_BPM: 8,

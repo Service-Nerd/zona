@@ -1,6 +1,7 @@
 import type { Plan } from '@/types/plan'
 import type { InsightPriority, SpotlightSession, WeeklyReportData } from '../weeklyReport'
 import { buildVoiceHeader } from './voiceRules'
+import { formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
 
 // Few-shot examples — Zonna voice for each insight type
 const FEW_SHOT_EXAMPLES: Partial<Record<InsightPriority, string>> = {
@@ -89,21 +90,25 @@ export function buildWeeklyReportPrompt(
   athleteContext?: string,
   previousReport?: PreviousReportSummary | null,
   raceDebrief?: RaceDebrief | null,
+  /** Reader's units (FMT-01). Optional + last so every existing positional
+   *  call — including the tests — defaults to 'km' and stays byte-identical. */
+  units: DistanceUnits = 'km',
 ): string {
+  const fmtDist = (v: number | null | undefined, dp = 1) => formatDistanceForPrompt(v, units, dp) ?? '—'
   const weeksToRace = plan.meta.race_date
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
     : null
   const raceName = plan.meta.race_name ?? 'target race'
   const raceContext = raceDebrief
-    ? `${raceName}${raceDebrief.distanceKm ? ` (${raceDebrief.distanceKm}km)` : ''} — run on ${raceDebrief.dayName}, now complete`
+    ? `${raceName}${raceDebrief.distanceKm ? ` (${fmtDist(raceDebrief.distanceKm)})` : ''} — run on ${raceDebrief.dayName}, now complete`
     : plan.meta.race_name
-      ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${plan.meta.race_distance_km}km)` : ''}${weeksToRace !== null ? `, ${weeksToRace} weeks away` : ''}`
+      ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${fmtDist(plan.meta.race_distance_km)})` : ''}${weeksToRace !== null ? `, ${weeksToRace} weeks away` : ''}`
       : 'target race'
 
   // Race debrief instruction block — the single most important framing override.
   const raceDebriefBlock = raceDebrief
     ? `
-RACE WEEK — this is a debrief, not a scorecard. The athlete's goal race (${raceDebrief.dayName}${raceDebrief.distanceKm ? `, ${raceDebrief.distanceKm}km` : ''}) is done. Rules:
+RACE WEEK — this is a debrief, not a scorecard. The athlete's goal race (${raceDebrief.dayName}${raceDebrief.distanceKm ? `, ${fmtDist(raceDebrief.distanceKm)}` : ''}) is done. Rules:
 - Acknowledge the race first. Reference it by its day — "${raceDebrief.dayName}'s race".
 - Do NOT judge the race by zone discipline or load ratio. A race is run at race effort, not by holding easy zones; the load-ratio spike and low zone-discipline figure on a race week are EXPECTED and correct — never frame them as overload, drift, or "ignoring the plan".${
       raceDebrief.zoneDirection === 'below'
@@ -141,8 +146,8 @@ RACE WEEK — this is a debrief, not a scorecard. The athlete's goal race (${rac
     ? `Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned} this week (${sessionsPlannedToDate} due by end of yesterday)`
     : `Sessions completed: ${data.sessionsCompleted} of ${data.sessionsPlanned}`
   const volumeLine = (isInFlight && plannedKmToDate !== undefined)
-    ? `Volume: ${data.totalKmActual.toFixed(1)}km actual vs ${plannedKmToDate.toFixed(1)}km due by end of yesterday (${data.totalKmPlanned.toFixed(1)}km full-week target)`
-    : `Volume: ${data.totalKmActual.toFixed(1)}km actual vs ${data.totalKmPlanned.toFixed(1)}km planned`
+    ? `Volume: ${fmtDist(data.totalKmActual)} actual vs ${fmtDist(plannedKmToDate)} due by end of yesterday (${fmtDist(data.totalKmPlanned)} full-week target)`
+    : `Volume: ${fmtDist(data.totalKmActual)} actual vs ${fmtDist(data.totalKmPlanned)} planned`
 
   const remainingLine = (remainingScheduledSessions && remainingScheduledSessions.length > 0)
     ? `\n- Remaining sessions already in the plan: ${remainingScheduledSessions.join(', ')}`
@@ -172,7 +177,7 @@ Continuity rule: you may reference last week's coaching at most ONCE in the Body
 
         const dataLines = [
           `- Day: ${spotlight.dayLabel}`,
-          `- Session: ${spotlight.type}${spotlight.distanceKm != null ? ` (${spotlight.distanceKm}km planned)` : ''}`,
+          `- Session: ${spotlight.type}${spotlight.distanceKm != null ? ` (${fmtDist(spotlight.distanceKm)} planned)` : ''}`,
           `- Score: ${spotlight.totalScore}/100, verdict: ${spotlight.verdict}`,
           spotlight.hrInZonePct != null
             ? `- Time in prescribed zone: ${spotlight.hrInZonePct.toFixed(0)}%`

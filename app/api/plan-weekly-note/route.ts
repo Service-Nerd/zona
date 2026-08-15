@@ -11,6 +11,7 @@ import {
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import type { Plan } from '@/types/plan'
+import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
 // POST /api/plan-weekly-note
 // Generates and caches an AI-voiced week-ahead headline + 1–2 items for the
@@ -145,7 +146,10 @@ export async function POST(req: NextRequest) {
   )
 
   // ── Build prompt + call AI ──────────────────────────────────────────────
+  // FMT-01 — render distances/paces in the reader's unit (INV-PREF-001).
+  const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, user.id)
   const prompt = buildPlanWeeklyNotePrompt({
+    units: displayUnits,
     weekN:           week_n,
     phase,
     weeksToRace,

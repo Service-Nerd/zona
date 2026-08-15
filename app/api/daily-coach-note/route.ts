@@ -13,6 +13,7 @@ import { getCurrentWeekIndex, isDateWithinWeek, isPlanComplete, parseLocalDate }
 import { resolveEffectiveSessions, slotForOriginalDay, type SessionOverride } from '@/lib/plan/effectiveSessions'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
 // GET /api/daily-coach-note?date=YYYY-MM-DD
 // Auth-gated (paid/trial). Returns the cached daily note if it exists; else
@@ -244,7 +245,10 @@ export async function GET(req: NextRequest) {
       })
     : null
 
+  // FMT-01 — render distances in the reader's unit (INV-PREF-001).
+  const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userId)
   const promptInput = {
+    units: displayUnits,
     todayDayName,
     todaySessionType:  todaySession?.type ?? null,
     todaySessionLabel: todaySession?.label ?? null,

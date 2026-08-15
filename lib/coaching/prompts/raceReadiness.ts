@@ -1,6 +1,10 @@
 import { buildVoiceHeader } from './voiceRules'
+import { formatPace, formatPaceDelta, formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
 
 export interface RaceReadinessPromptInput {
+  /** Reader's preferred units (FMT-01). Defaults to 'km' so km prompts stay
+   *  byte-identical; only a miles reader sees a change. */
+  units?: DistanceUnits
   raceName: string
   raceDistanceKm: number | null
   daysToRace: number
@@ -23,6 +27,8 @@ export interface RaceReadinessPromptInput {
 }
 
 export function buildRaceReadinessPrompt(input: RaceReadinessPromptInput): string {
+  const units: DistanceUnits = input.units ?? 'km'
+  const fmtDist = (v: number | null | undefined, dp = 1) => formatDistanceForPrompt(v, units, dp) ?? '—'
   const {
     raceName, raceDistanceKm, daysToRace,
     totalPlannedSessions, completedSessions,
@@ -42,7 +48,7 @@ export function buildRaceReadinessPrompt(input: RaceReadinessPromptInput): strin
     : null
 
   const dataBlock = [
-    `Race: ${raceName}${raceDistanceKm ? ` (${raceDistanceKm}km)` : ''}`,
+    `Race: ${raceName}${raceDistanceKm ? ` (${fmtDist(raceDistanceKm)})` : ''}`,
     `Days to race: ${daysToRace}`,
     `Current training phase: ${currentPhase ?? 'unknown'}`,
     completionRate !== null
@@ -55,7 +61,7 @@ export function buildRaceReadinessPrompt(input: RaceReadinessPromptInput): strin
       ? `Aerobic efficiency trend (plan start vs recent): ${efTrendPct > 0 ? '+' : ''}${efTrendPct.toFixed(1)}%`
       : 'Aerobic efficiency trend: insufficient data',
     totalLoadKm !== null
-      ? `Total training load logged: ${totalLoadKm.toFixed(0)}km`
+      ? `Total training load logged: ${fmtDist(totalLoadKm, 0)}`
       : null,
     recentEasyRpe !== null
       ? `Avg RPE on easy/recovery sessions (last 3 weeks): ${recentEasyRpe.toFixed(1)} / 10 ${recentEasyRpe > 5 ? '(elevated — easy days running hard)' : '(good — appropriate effort)'}`
