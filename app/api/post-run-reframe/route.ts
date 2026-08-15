@@ -219,12 +219,15 @@ export async function POST(req: NextRequest) {
         .select('week_n, session_day, verdict, hr_in_zone_pct, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-        .limit(20)
+        .limit(REFRAME_TIER.PREVIOUS_SIMILAR_SCAN_ROWS)
       for (const row of priorRows ?? []) {
         if (row.week_n === weekN && row.session_day === sessionDay) continue
         const priorWeek = plan.weeks[(row.week_n as number) - 1] as { sessions?: Record<string, Session> } | undefined
         const priorSession = priorWeek?.sessions?.[row.session_day as string]
-        if (!priorSession || priorSession.type !== session.type) continue
+        // §58 role axis: a long run compares against long runs, not against every
+        // `type: 'easy'` session. The generator models long runs as easy, so raw
+        // `.type` equality pooled a 2h long run with a 30-min shakeout.
+        if (!priorSession || coachingSessionType(priorSession) !== coachingSessionType(session)) continue
         const createdMs = new Date(row.created_at as string).getTime()
         const daysAgo = Math.max(1, Math.round((Date.now() - createdMs) / 86_400_000))
         previousSimilarSession = {
@@ -245,17 +248,26 @@ export async function POST(req: NextRequest) {
   let recentRpePattern = null
 
   if (dataTier === 'B' || dataTier === 'A') {
-    // Pull last 4 weeks of completions to compute both completion rate + RPE trend
-    const windowStart = new Date()
-    windowStart.setDate(windowStart.getDate() - REFRAME_TIER.TIER_B_WINDOW_DAYS)
+    // Two different windows, deliberately. The RPE cohort is role-filtered (§58)
+    // so it needs the wider window to stay above its sample floor; the completion
+    // ratio must stay on the 4-week window its `scheduled` count is derived from,
+    // or an 8-week `completed` gets divided by a 4-week `scheduled`.
+    const rpeWindowStart = new Date()
+    rpeWindowStart.setDate(rpeWindowStart.getDate() - REFRAME_TIER.RPE_PATTERN_WINDOW_DAYS)
+    const completionWindowStart = new Date()
+    completionWindowStart.setDate(completionWindowStart.getDate() - REFRAME_TIER.TIER_B_WINDOW_DAYS)
     try {
       const { data: recent } = await service
         .from('session_completions')
         .select('week_n, session_day, status, rpe, updated_at')
         .eq('user_id', userId)
-        .gte('updated_at', windowStart.toISOString())
+        .gte('updated_at', rpeWindowStart.toISOString())
       const completionsList = recent ?? []
-      const completedCount = completionsList.filter(c => c.status === 'complete').length
+      const completionWindowMs = completionWindowStart.getTime()
+      const completedCount = completionsList.filter(
+        c => c.status === 'complete' &&
+          new Date(c.updated_at as string).getTime() >= completionWindowMs
+      ).length
 
       // Scheduled count = sessions in the last 4 plan weeks (approx — counts non-rest days)
       const currentWeekIdx = weekN - 1
@@ -276,30 +288,34 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // RPE pattern for same session type — last 4 weeks split into recent half vs earlier half
-      const sameTypeRpes: Array<{ rpe: number; ms: number }> = []
+      // RPE pattern for the same COACHING ROLE — §58 third axis. The label on this
+      // object has always said `coachingSessionType(session)` ("long"), so filtering
+      // by raw `.type` printed "your long runs" over a pool of short easy runs.
+      // Cohort label and cohort pool must agree (§60).
+      const sessionRole = coachingSessionType(session)
+      const sameRoleRpes: Array<{ rpe: number; ms: number }> = []
       for (const c of completionsList) {
         if (c.rpe == null) continue
         const w = plan.weeks[(c.week_n as number) - 1] as { sessions?: Record<string, Session> } | undefined
         const s = w?.sessions?.[c.session_day as string]
-        if (!s || s.type !== session.type) continue
-        sameTypeRpes.push({
+        if (!s || coachingSessionType(s) !== sessionRole) continue
+        sameRoleRpes.push({
           rpe: Number(c.rpe),
           ms: new Date(c.updated_at as string).getTime(),
         })
       }
-      if (sameTypeRpes.length >= 4) {
-        sameTypeRpes.sort((a, b) => a.ms - b.ms)
-        const half = Math.floor(sameTypeRpes.length / 2)
-        const earlier = sameTypeRpes.slice(0, half)
-        const recent2 = sameTypeRpes.slice(-half)
+      if (sameRoleRpes.length >= REFRAME_TIER.RPE_PATTERN_MIN_SAMPLES) {
+        sameRoleRpes.sort((a, b) => a.ms - b.ms)
+        const half = Math.floor(sameRoleRpes.length / 2)
+        const earlier = sameRoleRpes.slice(0, half)
+        const recent2 = sameRoleRpes.slice(-half)
         const earlierAvg = earlier.reduce((s, x) => s + x.rpe, 0) / earlier.length
         const recentAvg = recent2.reduce((s, x) => s + x.rpe, 0) / recent2.length
         recentRpePattern = {
-          sessionType: coachingSessionType(session),
+          sessionType: sessionRole,
           recentAvg,
           earlierAvg,
-          windowWeeks: 4,
+          windowWeeks: Math.round(REFRAME_TIER.RPE_PATTERN_WINDOW_DAYS / 7),
         }
       }
     } catch (err) {

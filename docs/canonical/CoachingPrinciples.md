@@ -1031,7 +1031,15 @@ DENSE_THRESHOLD         → 30      (runs in last 6 months that triggers dense w
 HR_BAND_BREAKPOINTS     → { low: 145, mid: 165 }  (three-bucket effort classification)
 ```
 
-**How.** Two-axis match (cut #1): same distance band (±`DISTANCE_TOLERANCE_PCT`) and same HR band per `HR_BAND_BREAKPOINTS`. Cohort summary statistics injected into the run-feedback AI prompt for narrative voice; the AI never invents the comparison — it formats deterministic numbers. Hybrid generation pattern (ADR-006): rule engine produces the cohort summary, AI enrichment uses it for voice, AI failure is silent. Three-axis match (adding `session.type`) deferred to cuts #2/#3.
+**How.** Two-axis match (cut #1): same distance band (±`DISTANCE_TOLERANCE_PCT`) and same HR band per `HR_BAND_BREAKPOINTS`. Cohort summary statistics injected into the run-feedback AI prompt for narrative voice; the AI never invents the comparison — it formats deterministic numbers. Hybrid generation pattern (ADR-006): rule engine produces the cohort summary, AI enrichment uses it for voice, AI failure is silent.
+
+**Third axis — coaching role (cut #2, REFRAME-COHORT-01, Coaching Board 2026-08-15).** Cohort matching also requires the same **coaching role**, resolved through `coachingSessionType()` (`lib/plan/sessionRole.ts`) — never a raw `session.type`. The generator models a long run as `type: 'easy'` (INV-CLASS), so raw-type equality pooled a two-hour long run with a thirty-minute shakeout.
+
+**Why the role axis, when the distance band already separates most of them:** the long run is where musculoskeletal load and low-energy-availability risk concentrate. A rising RPE trend *specifically on long runs* is an early tissue-tolerance warning; pooled with short easy runs it averages away — long-run RPE climbing 5 → 7 against flat short-easy 3s reads as no change, and the warning never fires. The band alone also pools a midweek 14 km easy with a 16 km long run in higher-volume runners, which are not the same session.
+
+**Cost, and how it is paid.** Narrowing a cohort shrinks it. For the reframe's RPE pattern this binds hard — a runner gets roughly one long run a week, so the 28-day Tier-B window would leave no tolerance for a missed session or an unlogged RPE. The role axis is therefore always paired with a wider window (`REFRAME_TIER.RPE_PATTERN_WINDOW_DAYS`). Tier *qualification* still uses `TIER_B_WINDOW_DAYS` — the two must not be conflated.
+
+**This section binds the reframe route.** `app/api/post-run-reframe/route.ts` is a consumer of this principle, not the owner of a parallel cohort model. Any new comparison surface matches here.
 
 **Surface.** `RunFeedbackCard` (`DashboardClient.tsx`), where `run_analysis.feedback_text` already renders below the completed session. AIMark provenance unchanged — the AI is still the author of the paragraph, the cohort numbers just inform it.
 
@@ -1098,6 +1106,7 @@ When a runner logs a tough session and writes a reflection, the AI's job is refr
 4. **Risk flags trump reframe.** When `acuteChronicRatio` overload, `coaching_flag === 'flag'`, fatigue accumulation (3 consecutive Heavy/Wrecked), or severe HR drift (≥15 bpm / ≥10%) fires, the reframe is silenced. The coaching warning surfaces instead. Reframe-positive against a risk signal is harm.
 5. **AIMark on every reframe.** This is model output. The runner is owed provenance.
 6. **PAID-only.** Gate `post_run_reframe`. Free users see the existing static post-RPE one-liner; the reframe surface is part of the subscription value.
+7. **A cohort's label must match its pool.** When the reframe names the sessions it compared against — "your recent long runs" — the pool must actually be those sessions. Cohort selection resolves through `coachingSessionType()` per §58, and the reported label is the same value the filter used. A mismatch is not a rounding error: it makes a specific claim about training the runner did not do, which is the failure §61 ("no signal → no claim") exists to prevent, and it is exactly the evidence §60.2 says every reframe must carry. Locked by `lib/coaching/reframeCohort.test.ts`.
 
 **Where this lives:**
 - Numerics: `REFRAME_TIER`, `REFRAME_RISK`, `TREND_SERIES` in `lib/coaching/constants.ts`

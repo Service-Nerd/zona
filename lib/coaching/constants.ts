@@ -135,8 +135,23 @@ export const REFRAME_TIER = {
   TIER_B_MIN_COMPLETIONS: 6,
   /** Lookback window for the Tier B completion count. */
   TIER_B_WINDOW_DAYS: 28,
-  /** Max characters accepted for a user reflection note before trimming. */
+  /** Max characters accepted for a user reflection note before trimming.  */
   USER_NOTE_MAX_CHARS: 2000,
+
+  // ── RPE-pattern cohort (REFRAME-COHORT-01, Coaching Board 2026-08-15) ──
+  // The cohort filters by coaching ROLE (§58 third axis), so a long run compares
+  // against long runs. That narrowing needs a wider window: a runner gets ~1 long
+  // run per week, so the 28-day Tier-B window would yield ~4 — no tolerance for a
+  // missed session or an unlogged RPE, and the trend silently disappears at the
+  // moment it matters. 8 weeks yields ~8 long runs.
+  /** Lookback window for the RPE-pattern cohort. Wider than TIER_B_WINDOW_DAYS
+   *  because the cohort is role-filtered. Tier *qualification* still uses
+   *  TIER_B_WINDOW_DAYS — do not conflate the two. */
+  RPE_PATTERN_WINDOW_DAYS: 56,
+  /** Minimum same-role RPE samples before a pattern is reported. */
+  RPE_PATTERN_MIN_SAMPLES: 4,
+  /** Rows of run_analysis scanned for the previous-similar-session comparison. */
+  PREVIOUS_SIMILAR_SCAN_ROWS: 20,
 } as const
 
 // Limiter hypothesis classifier — picks ONE most-likely physiological cause
