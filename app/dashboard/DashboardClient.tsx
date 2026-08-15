@@ -4245,7 +4245,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 500, color: config.color, lineHeight: 1, marginBottom: '6px' }}>
                 {effectiveMetric === 'distance'
-                  ? <>{estimatedDistance ?? '—'}<span style={{ fontSize: '11px', fontWeight: 400, color: config.color, opacity: 0.7 }}> {preferredUnits}</span></>
+                  ? <>{formatDistance(estimatedDistance, preferredUnits, { noSuffix: true, exact: session.type === 'race' }) ?? '—'}<span style={{ fontSize: '11px', fontWeight: 400, color: config.color, opacity: 0.7 }}> {preferredUnits}</span></>
                   : <span style={{ fontSize: '18px' }}>{estimatedDuration ?? '—'}</span>
                 }
               </div>
@@ -4329,7 +4329,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                       {(estimatedDistance || estimatedDuration) && (
                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)' }}>
-                          {effectiveMetric === 'distance' ? `${estimatedDistance ?? '—'}${preferredUnits}` : (estimatedDuration ?? '—')}
+                          {effectiveMetric === 'distance' ? (formatDistance(estimatedDistance, preferredUnits, { exact: session.type === 'race' }) ?? '—') : (estimatedDuration ?? '—')}
                         </span>
                       )}
                       {(() => {
