@@ -726,6 +726,12 @@ function qualitySession(
 
 // Catalogue-aware quality session builder. Uses catalogue row's name and voice
 // notes when available; falls back to a Phase-appropriate inline label.
+// CoachingPrinciples §1 / Q2 (Coaching Board 2026-08-18, "learn the cue, refuse
+// the method") — controlled-threshold execution cue. One sentence, dry, echoes
+// BRAND.voiceAnchor "Hold the zone". Placed on the FIRST genuine threshold session
+// of the plan only (taught once, then trusted — repetition turns it to wallpaper).
+const CONTROLLED_THRESHOLD_CUE = 'Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.'
+
 function makeQualitySession(args: {
   weekN: number; day: Day; distKm: number; metric: 'distance' | 'duration'
   zones: ZoneTargets; pace: PaceGuide
@@ -734,8 +740,13 @@ function makeQualitySession(args: {
   goalPace: string | null | undefined
   goalPaceWeek?: boolean
   distLabel?: string  // e.g. "10K", "HM" — used when goalPaceWeek triggers race-distance-named session
+  // Plan-level mutable flag for the first-threshold cue (§1/Q2). makeQualitySession
+  // owns the decision using its own category/vo2max/goal-pace predicates so no
+  // classification logic is duplicated at the call site; it flips the flag when it
+  // actually places the cue. Absent → cue never placed (safe degradation).
+  cueCtx?: { thresholdCuePlaced: boolean }
 }): Session {
-  const { weekN, day, distKm, metric, zones, pace, catalogueRow, phase, fitness, isDeload, goalPace, goalPaceWeek, distLabel } = args
+  const { weekN, day, distKm, metric, zones, pace, catalogueRow, phase, fitness, isDeload, goalPace, goalPaceWeek, distLabel, cueCtx } = args
 
   // Fallback label if no catalogue row matched (e.g. 5K/10K taper week).
   const fallbackLabel = phase === 'taper' ? 'Tempo run — short'
@@ -821,6 +832,19 @@ function makeQualitySession(args: {
       notes.push(`Race-pace work. Target: ${goalPace}. Controlled — not all-out.`)
     }
   }
+
+  // §1/Q2 — first genuine threshold session of the plan gets the controlled-effort
+  // cue. Keyed on the structural catalogue category (never a label — INV-CLASS);
+  // skipped for vo2max, goal-pace overrides and deload weeks, where the
+  // "say a short sentence" test doesn't describe the prescribed effort. Pushed
+  // before truncation so it respects the 3-note cap like any other note.
+  if (cueCtx && !cueCtx.thresholdCuePlaced
+      && catalogueRow?.category === 'threshold'
+      && !isVo2max && !useGoalPace && !isDeload) {
+    notes.push(CONTROLLED_THRESHOLD_CUE)
+    cueCtx.thresholdCuePlaced = true
+  }
+
   const coach_notes = notes.length === 0 ? undefined
     : notes.length === 1 ? [notes[0]] as [string]
     : notes.length === 2 ? [notes[0], notes[1]] as [string, string]
@@ -1160,6 +1184,10 @@ function buildWeekSessions(
   // volume, caps) and this is the higher (intensity allowance). See
   // assessFitness().
   intensityFitness: FitnessLevel = fitness,
+  // Plan-level flag for the first-threshold cue (§1/Q2). Threaded from
+  // generateRulePlan so "first in the plan" persists across weeks. Optional so
+  // legacy/test callers keep working (cue simply never places).
+  cueCtx?: { thresholdCuePlaced: boolean },
 ): Partial<Record<Day, Session>> {
   const blocked = blockedDays(input)
   const distKey = raceDistanceKey(input.race_distance_km)
@@ -1569,7 +1597,7 @@ function buildWeekSessions(
       sessions[qualDay] = makeQualitySession({
         weekN, day: qualDay, distKm: qualKm, metric, zones, pace,
         catalogueRow: cat1, phase, fitness, isDeload, goalPace,
-        goalPaceWeek, distLabel: distKey,
+        goalPaceWeek, distLabel: distKey, cueCtx,
       })
       used.push(qualDay)
 
@@ -1593,7 +1621,7 @@ function buildWeekSessions(
             distKm: Math.max(roundDist(qualKm * secondaryFraction), minDist.secondary_quality),
             metric, zones, pace,
             catalogueRow: cat2, phase, fitness, isDeload, goalPace,
-            goalPaceWeek, distLabel: distKey,
+            goalPaceWeek, distLabel: distKey, cueCtx,
           })
           used.push(qual2Day)
         }
@@ -2915,6 +2943,10 @@ export function generateRulePlan(
     }
   }
 
+  // §1/Q2 — plan-level flag so the controlled-threshold cue lands on the FIRST
+  // genuine threshold session across the whole plan (weeks build in order below).
+  const cueCtx = { thresholdCuePlaced: false }
+
   for (let i = 0; i < totalWeeks; i++) {
     const weekN = i + 1
     const phase = getPhaseForWeek(weekN, phases)
@@ -2945,6 +2977,7 @@ export function generateRulePlan(
       goalPace,
       totalWeeks,
       intensityFitness,
+      cueCtx,
     )
 
     // §78 — the benchmark session is the proof. `isRecalibration` was the

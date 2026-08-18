@@ -328,6 +328,38 @@ function ConfidenceBadge({ score, risks }: { score: number; risks?: string[] }) 
   )
 }
 
+// FREE plan-demand card (CoachingPrinciples §44 amendment / §31). Rule-engine
+// output, so NO AIMark. Renders ONLY the demanding tiers — 'comfortable' and
+// legacy plans (no band) render nothing (SLT 2026-08-18: silent on comfortable;
+// the sentence is the surface, not a label/score). Amber = coaching caution
+// (--warn), never --danger. Describes demand on the runner's timeline, not a
+// verdict on the runner. Sits above the PAID ConfidenceBadge: feasibility (free)
+// over quality (paid), so the two never read as competing scores. very_demanding
+// additionally lists the §44 plan-level alternatives (never an upsell).
+function DifficultyCard({ band, note, alternatives }: {
+  band?: 'comfortable' | 'demanding' | 'very_demanding'
+  note?: string
+  alternatives?: string[]
+}) {
+  if (!band || band === 'comfortable' || !note) return null
+  return (
+    <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', borderLeft: '3px solid var(--warn)', padding: '14px 16px', margin: '16px 0' }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.65 }}>
+        {note}
+      </div>
+      {band === 'very_demanding' && alternatives?.length ? (
+        <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          {alternatives.map((alt, i) => (
+            <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
+              {alt}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 // Teaser card shown to free users on the last free step
 function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
   return (
@@ -843,6 +875,8 @@ export default function GeneratePlanScreen({
         </div>
 
         <div style={{ flex: 1, padding: '0 20px', overflowY: 'auto' }}>
+          {/* FREE demand band — feasibility read, above the PAID confidence score */}
+          <DifficultyCard band={meta.difficulty_band} note={meta.difficulty_note} alternatives={meta.prep_time_alternatives} />
           {meta.confidence_score != null && (
             <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '4px 16px 20px', margin: '16px 0' }}>
               <ConfidenceBadge score={meta.confidence_score} risks={meta.confidence_risks} />

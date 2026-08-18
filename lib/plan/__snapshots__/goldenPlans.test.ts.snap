@@ -397,6 +397,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         "wed": {
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
+            "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
           ],
           "detail": null,
           "duration_mins": 38,
@@ -2992,6 +2993,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
         "wed": {
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
+            "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
           ],
           "detail": null,
           "distance_km": 8,
@@ -4149,6 +4151,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         "wed": {
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
+            "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
           ],
           "detail": null,
           "distance_km": 10,
@@ -5455,6 +5458,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         "wed": {
           "coach_notes": [
             "Rep three is the test. Not rep one.",
+            "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
           ],
           "detail": null,
           "distance_km": 5,
@@ -6437,6 +6441,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
         "wed": {
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
+            "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
           ],
           "detail": null,
           "distance_km": 10,

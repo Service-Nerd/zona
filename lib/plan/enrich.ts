@@ -64,6 +64,7 @@ ${BRAND.name.toUpperCase()} VOICE:
 - Week themes: one honest sentence. e.g. "HR discipline this week. Slower than feels right. That is correct."
 - Coach notes: plain and specific. Max 3 per session. e.g. "Keep HR below your zone 2 ceiling — walk if needed.", "This is the session that builds the engine, not the race."
 - coach_intro (when requested): 2–3 sentences from coach to athlete. Honest assessment of the plan, what the athlete should focus on, and one thing that will make the difference. ${BRAND.name} tone — no cringe.
+- Plan demand consistency: when the athlete brief states a plan demand (comfortable / demanding / very_demanding), no field may contradict it — never call a "very_demanding" plan a breeze or a "comfortable" one brutal. Match that honesty; do NOT restate the label verbatim (the app already shows it).
 
 PLACEHOLDERS IN coach_notes — REQUIRED:
 When a coach note refers to a numeric value the athlete might change later (HR ceilings, HR targets, paces, distances, durations), use a placeholder token instead of writing the literal number. The render layer substitutes the live value. This keeps the note correct after the athlete updates their resting HR, max HR, or other inputs.
@@ -239,6 +240,7 @@ ATHLETE:
 - Current weekly volume: ${input.current_weekly_km} km/week
 - Days available: ${input.days_available}/week
 - Plan compressed (fewer weeks than ideal): ${plan.meta.time_compressed ?? plan.meta.compressed ?? false}
+${plan.meta.difficulty_band ? `- Plan demand (already assessed by the engine — stay consistent, do not contradict): ${plan.meta.difficulty_band}${plan.meta.difficulty_note ? ` ("${plan.meta.difficulty_note}")` : ''}` : ''}
 ${input.injury_history?.length ? `- Injury history: ${input.injury_history.join(', ')}` : ''}
 ${input.training_style ? `- Training style: ${input.training_style}` : ''}
 ${input.hard_session_relationship ? `- Hard session relationship: ${input.hard_session_relationship}` : ''}
