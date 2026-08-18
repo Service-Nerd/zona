@@ -498,7 +498,7 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. The race-distan
 
 **Why.** A theme that contradicts the prescription gives the runner two messages — one from the words, one from the work — and they will believe the words. "Volume drops. Intensity stays." on a week with no intensity teaches the runner to disbelieve the engine's framing on every other week too. The cost of inconsistency is paid permanently in user trust. The standard is: read the theme, look at the week, no surprise.
 
-**Config.** Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) which selects the theme per week with awareness of `actualWeeklyKm`, `qualityCount`, and the prior non-deload weekly volume. `weekLabel()` taper labels extended from 2 to 3 entries so multi-week tapers (HM, marathon) don't reuse "Race week" for the second-to-last week. Enforced by `INV-PLAN-THEME-MATCHES-PRESCRIPTION` in `lib/plan/invariants.ts`.
+**Config.** Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) which selects the theme per week with awareness of `actualWeeklyKm`, `qualityCount`, and the prior non-deload weekly volume. `weekLabel()` taper labels extended from 2 to 3 entries so multi-week tapers (HM, marathon) don't reuse "Race week" for the second-to-last week. Enforced by `INV-PLAN-COPY-MATCHES-SESSIONS` in `lib/plan/invariants.ts`.
 
 ---
 
@@ -554,6 +554,8 @@ Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) where `startKm` i
 **Why.** A binary "compressed" flag tells the runner something is wrong but not what or whether to act. For Sarah (beginner, finish goal), nothing is wrong — her plan is the right shape for her aim, even at modest volume. For Mark (intermediate, time goal) hitting the same flag, the runner needs to know which input is the bottleneck so they can decide whether to trade life-flexibility for fitness ceiling. The same warning means different things; surfacing the difference respects the runner's agency.
 
 **Config.** `plan.meta.compression_classification: 'optimal' | 'appropriate_for_persona' | 'constrained_by_inputs'`. Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) using the `compressed` boolean plus the (fitness, goal) pair as the discriminator. The bare `compressed` flag is retained for back-compat with existing UI.
+
+**Feeds the difficulty band (§44).** This classification is a load-bearing input to the ordinal difficulty band: `constrained_by_inputs` forces the band off `comfortable`. The two are computed from the same `compressionClassification` const so they can never disagree. See §44 "The floor stays; the warn band becomes an honest difficulty signal".
 
 ---
 
@@ -672,7 +674,7 @@ When neither suggestion applies, the diagnosis is surfaced alone (no false guida
 
 **Why.** Round-2 review flagged Sarah's peak weeks (W8/W9, all-easy) reading "It will feel hard. That is correct." A beginner being told to expect hard effort on a Zone 2 run will either push too hard (going beyond Z2 to satisfy the framing — exactly the brand failure) or distrust the engine when the run feels normal-easy. Coaching framing must match the prescription. Hard sessions get hard framing; easy weeks get steady framing.
 
-**Config.** Implemented in `generateRulePlan()` theme selection: peak weeks with `qualityCount === 0` use "Consistency. The work is the volume." regardless of overload status. Enforced by `INV-PLAN-THEME-MATCHES-PRESCRIPTION` extension catching "feel hard" / "feels hard" copy on zero-quality weeks.
+**Config.** Implemented in `generateRulePlan()` theme selection: peak weeks with `qualityCount === 0` use "Consistency. The work is the volume." regardless of overload status. Enforced by `INV-PLAN-COPY-MATCHES-SESSIONS` extension catching "feel hard" / "feels hard" copy on zero-quality weeks.
 
 ---
 
@@ -733,6 +735,30 @@ This principle composes with §23 (peak overload requirement). A plan that proce
 - `validatePrepTime()` in `lib/plan/inputs.ts`. Called at the top of `generateRulePlan()`.
 
 Enforced by `INV-PLAN-PREP-TIME-STATUS-ANNOTATED` — every plan output carries `prep_time_status`.
+
+### The floor stays; the warn band becomes an honest difficulty signal — amended 2026-08-18 (Coaching Board, Q1)
+
+**Principle.** Refusal (`block`) is retained for the narrow band where no coachable plan exists — a prep window too short to build the race, or a goal reachable only by violating the ramp cap (§2/§45). For everything above that floor, the engine does not merely say "ok" — it surfaces an **ordinal difficulty band** on every generated plan describing how demanding the plan is *on the runner's chosen timeline and constraints*:
+
+- `comfortable` — adequate timeline, plan reaches its target (or is `appropriate_for_persona`).
+- `demanding` — safe but a real ask: a tight-but-adequate time-goal clock, or a plan the runner's inputs (`days_available`, `max_weekday_mins`, starting volume) hold below target (`constrained_by_inputs`).
+- `very_demanding` — generated under an acknowledged prep-time `warn` (below the recommended minimum, above the block floor).
+
+The refusal tier — *"not achievable in this window"* — **is** the §44 `block`; it throws before a plan exists, so it never appears as a band.
+
+**Why.** A hard wall with no door loses the eager runner to a worse app that simply says yes; but "Hard, go for it!" where the goal is physiologically impossible is a lie with a smile. The honest middle is a *graded* signal: keep the floor for the impossible and the unsafe, and turn the large "warn" band into a difficulty read the runner can act on. Three constraints, all Coaching-Board rulings:
+
+1. **Ordinal, never a percentage.** With one benchmark run and one max HR the engine cannot defend a probability — a "72% chance" is fabricated precision, and false precision is an overclaim. The ladder maps to something real (prep-time margin + input constraint); a number does not.
+2. **The band describes demand on the *timeline/life*, not a verdict on the *runner*.** "Very Demanding" (of you) reads as respect and keeps the runner in the app; "low chance of success" reads as an insult and closes it. When the band lands in the top tiers it carries the same §44 alternatives (defer, drop to finish, shorter distance).
+3. **A friendly band may never front a constrained or warned plan** (Willy). The band is derived *only* from prep-time margin + `compression_classification` — a **pre-generation feasibility** read — never from plan-quality/enrichment signals. That keeps it structurally distinct from the **PAID** numeric confidence score (a *post-generation quality* read), so the two can never become competing verdicts on the same plan (SLT boundary, 2026-08-18).
+
+**Tier.** The difficulty band is **FREE** — it extends the already-FREE prep-time gate and is the honesty the brand is built on ("training plans that stop you overtraining"). The numeric confidence score stays **PAID**. SLT-signed 2026-08-18 (unanimous). `FEATURE_GATES.FREE_ALWAYS += 'plan_difficulty_band'`.
+
+**Config.**
+- `GENERATION_CONFIG.DIFFICULTY_COMFORTABLE_MARGIN_WEEKS = 2` — a time-target plan whose weeks-available is within this many weeks of the recommended (`ok`) minimum reads `demanding` rather than `comfortable`.
+- `plan.meta.difficulty_band` (enum) + `plan.meta.difficulty_note` (present only for the demanding tiers — a one-line honest "why", mirroring `volume_constraint_note`). Derived in `generateRulePlan()` from the same `prepTime` result and `compressionClassification` const that §31 uses.
+
+**Enforced by** `INV-PLAN-DIFFICULTY-ANNOTATED` (every plan carries a band) and `INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE` (a `warned` plan must read `very_demanding`; a `constrained_by_inputs` plan may not read `comfortable`) — both **error** severity.
 
 ---
 
@@ -1010,7 +1036,7 @@ Foundation weeks use `n` values ≤ 0 (e.g., −2, −1, 0 for a 3-week block). 
 ### Invariants
 
 - `INV-PLAN-FOUNDATION-BLOCK` — validates that foundation weeks contain no forbidden session types, volume does not exceed effective baseline, and the +10%/week cap is respected.
-- Existing invariants `INV-PLAN-PEAK-OVER-BASE`, `INV-PLAN-LR-PROGRESSION-CAP`, `INV-PLAN-QUALITY-EXPECTED`, and `INV-PLAN-THEME-MATCHES-PRESCRIPTION` all skip foundation-phase weeks.
+- Existing invariants `INV-PLAN-PEAK-OVER-BASE`, `INV-PLAN-LR-PROGRESSION-CAP`, `INV-PLAN-QUALITY-EXPECTED`, and `INV-PLAN-COPY-MATCHES-SESSIONS` all skip foundation-phase weeks.
 
 ---
 

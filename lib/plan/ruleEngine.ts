@@ -3292,6 +3292,47 @@ export function generateRulePlan(
   const finalVolumeNote: string | undefined =
     peakOverloadResult?.volume_constraint_note ?? (daysLowMaintenance ? daysLowNote ?? undefined : undefined)
 
+  // CoachingPrinciples §31 — persona-aware compression classification. Computed
+  // here (not inline in meta) so the difficulty band below reads the SAME value,
+  // keeping the two consistent by construction.
+  const compressionClassification: 'optimal' | 'appropriate_for_persona' | 'constrained_by_inputs' =
+    (!compressed && !capCompressed) ? 'optimal'
+    // Beginner with a finish goal doesn't need more volume — race-day success is
+    // reaching the start line healthy. Compression here is appropriate, not a bind.
+    : (fitness === 'beginner' && input.goal === 'finish') ? 'appropriate_for_persona'
+    : 'constrained_by_inputs'
+
+  // CoachingPrinciples §44 (amended) + §31 — ordinal difficulty band. A
+  // *pre-generation feasibility* read of the runner's chosen timeline, derived
+  // ONLY from prep-time margin + compression_classification (SLT boundary,
+  // 2026-08-18: never from plan-quality signals — that is the PAID confidence
+  // score's job). Ordinal, never a percentage (Coaching Board veto). Block-status
+  // inputs throw before reaching here, so the refusal tier is never surfaced.
+  //
+  // Ordered so both difficulty invariants hold by construction:
+  //   prep warned                        → very_demanding  (never fronts a warned plan)
+  //   constrained_by_inputs              → demanding       (never reads 'comfortable')
+  //   time goal on a tight-but-ok clock  → demanding
+  //   otherwise                          → comfortable
+  const prepMargin = prepTime.weeks_available - prepTime.weeks_required_ok
+  const difficultyBand: 'comfortable' | 'demanding' | 'very_demanding' =
+    prepTime.status === 'warn' ? 'very_demanding'
+    : compressionClassification === 'constrained_by_inputs' ? 'demanding'
+    : (input.goal === 'time_target' && prepMargin < GENERATION_CONFIG.DIFFICULTY_COMFORTABLE_MARGIN_WEEKS) ? 'demanding'
+    : 'comfortable'
+
+  // One-line honest "why" for the demanding tiers only (mirrors
+  // volume_constraint_note). 'comfortable' needs no explanation. Voice: honest,
+  // dry, names the constraint and the lever — never motivational, never a verdict
+  // on the runner (§44 amendment: the demand is on the timeline, not the athlete).
+  const difficultyNote: string | undefined =
+    difficultyBand === 'comfortable' ? undefined
+    : prepTime.status === 'warn'
+      ? `Very demanding on ${prepTime.weeks_available} weeks — below the ${prepTime.weeks_required_ok}-week mark for this race. It can be run; the timeline is the constraint, not your effort.`
+    : compressionClassification === 'constrained_by_inputs'
+      ? `Demanding — your inputs (days available, weekday time, or starting volume) cap how far the plan can build. Freeing one of those lifts the ceiling.`
+      : `Demanding on ${prepTime.weeks_available} weeks — a tight but workable timeline for the time you're chasing. Hold the easy days and it stays honest.`
+
   const meta: Plan['meta'] = {
     // F6 — empty, not invented. Every consumer already falls back gracefully
     // (`race_name || 'your race'`, `|| 'Your plan'`); a placeholder string does
@@ -3359,14 +3400,17 @@ export function generateRulePlan(
     compressed: compressed || capCompressed,
 
     // CoachingPrinciples §31 — differentiated compression classification.
-    // Replaces the bare boolean with persona-aware reasoning.
-    compression_classification: ((): 'optimal' | 'appropriate_for_persona' | 'constrained_by_inputs' => {
-      if (!compressed && !capCompressed) return 'optimal'
-      // Beginner with a finish goal doesn't need more volume — race-day success
-      // is reaching the start line healthy. Compression here is appropriate.
-      if (fitness === 'beginner' && input.goal === 'finish') return 'appropriate_for_persona'
-      return 'constrained_by_inputs'
-    })(),
+    // Replaces the bare boolean with persona-aware reasoning. Computed above as
+    // `compressionClassification` so the difficulty band reads the same value.
+    compression_classification: compressionClassification,
+
+    // CoachingPrinciples §44 (amended) + §31 — ordinal difficulty band + honest
+    // "why" note (demanding tiers only). FREE honesty signal (SLT 2026-08-18);
+    // distinct from the PAID confidence score. Every generated plan carries a band
+    // (INV-PLAN-DIFFICULTY-ANNOTATED); it may never under-state the plan's own
+    // constraint signals (INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE).
+    difficulty_band: difficultyBand,
+    ...(difficultyNote ? { difficulty_note: difficultyNote } : {}),
 
     // CoachingPrinciples §23/§38/§45/§46 (peak overload) + §52 (low-day) —
     // composed maintenance trigger. See peakOverloadResult / daysLowMaintenance

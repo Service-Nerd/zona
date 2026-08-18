@@ -223,6 +223,28 @@ export const GENERATION_CONFIG = {
   },
   PREP_TIME_RETURNING_RUNNER_SHIFT_WEEKS: 2,
 
+  // ── Difficulty band (CoachingPrinciples §44 amendment + §31) ────────────────
+  // The engine surfaces an ordinal demand label on every GENERATED plan:
+  //   'comfortable' | 'demanding' | 'very_demanding'.
+  // (The fourth, refusal tier — "not achievable in this window" — is the §44
+  // `block`, which throws PrepTimeError and never reaches plan.meta.)
+  // Deliberately ordinal, never a percentage: with one benchmark run + one max
+  // HR the engine cannot defend a probability, and false precision is an
+  // overclaim (Coaching Board veto, 2026-08-18). It describes the demand the
+  // plan places on the RUNNER's timeline/life, not a verdict on the runner.
+  //
+  // BOUNDARY (SLT, 2026-08-18): the band is a *pre-generation feasibility* read,
+  // derived ONLY from prep-time margin + compression_classification — never from
+  // plan-quality / enrichment signals. This keeps it structurally distinct from
+  // the PAID numeric confidence score (a *post-generation quality* read) so the
+  // two can never become competing verdicts. The band is FREE; the score is PAID.
+  //
+  // A time-target plan whose weeks-available sits within this many weeks of the
+  // recommended (`ok`) minimum is 'demanding' rather than 'comfortable' — a tight
+  // but safe timeline is a real ask. Finish goals never trip this (their warn
+  // band is treated as ok per §44), so they read 'comfortable' unless constrained.
+  DIFFICULTY_COMFORTABLE_MARGIN_WEEKS: 2,
+
   // ── CA-03 post-race goal-ladder suggestion seeds (CoachingPrinciples §67) ───
   // These seed the "what next" wizard prefill; the runner edits before generating.
   GOAL_SEQUENCING: {

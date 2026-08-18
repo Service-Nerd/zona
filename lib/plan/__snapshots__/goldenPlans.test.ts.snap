@@ -17,6 +17,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
     "days_available": 3,
     "days_available_status": "ok",
     "days_required_ok": 3,
+    "difficulty_band": "comfortable",
     "fitness_intensity_level": "intermediate",
     "fitness_level": "beginner",
     "fitness_signal_note": "Your race benchmark and your training volume point to different levels (beginner on benchmark, intermediate on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.",
@@ -864,6 +865,7 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
     "days_available": 3,
     "days_available_status": "ok",
     "days_required_ok": 2,
+    "difficulty_band": "comfortable",
     "fitness_level": "beginner",
     "generator_input": {
       "age": 30,
@@ -1578,6 +1580,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
     "days_available": 4,
     "days_available_status": "ok",
     "days_required_ok": 2,
+    "difficulty_band": "comfortable",
     "fitness_level": "intermediate",
     "generator_input": {
       "age": 35,
@@ -2524,6 +2527,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
     "days_available": 4,
     "days_available_status": "ok",
     "days_required_ok": 3,
+    "difficulty_band": "comfortable",
     "fitness_level": "intermediate",
     "generator_input": {
       "age": 40,
@@ -3591,6 +3595,8 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
     "days_available": 5,
     "days_available_status": "ok",
     "days_required_ok": 4,
+    "difficulty_band": "very_demanding",
+    "difficulty_note": "Very demanding on 15 weeks — below the 16-week mark for this race. It can be run; the timeline is the constraint, not your effort.",
     "fitness_intensity_level": "experienced",
     "fitness_level": "intermediate",
     "fitness_signal_note": "Your race benchmark and your training volume point to different levels (intermediate on benchmark, experienced on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.",
@@ -5001,6 +5007,8 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
     "days_available": 3,
     "days_available_status": "ok",
     "days_required_ok": 3,
+    "difficulty_band": "demanding",
+    "difficulty_note": "Demanding — your inputs (days available, weekday time, or starting volume) cap how far the plan can build. Freeing one of those lifts the ceiling.",
     "fitness_level": "intermediate",
     "generator_input": {
       "age": 50,
@@ -5886,6 +5894,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
     "days_available": 5,
     "days_available_status": "ok",
     "days_required_ok": 4,
+    "difficulty_band": "comfortable",
     "fitness_intensity_level": "experienced",
     "fitness_level": "intermediate",
     "fitness_signal_note": "Your race benchmark and your training volume point to different levels (intermediate on benchmark, experienced on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.",

@@ -29,7 +29,10 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RACE-WEEK-SHARPENING',
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE',
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO',
-  'INV-PLAN-THEME-MATCHES-PRESCRIPTION',
+  // INV-PLAN-THEME-MATCHES-PRESCRIPTION retired by GEN-FIX-06 (incident N4, P0,
+  // 2026-08-06) — its four-literal denylist was replaced by the semantic
+  // INV-PLAN-COPY-MATCHES-SESSIONS below, which checks the label as well as the
+  // theme. The old code emitted nowhere; removed from the registry here.
   'INV-PLAN-COPY-MATCHES-SESSIONS',
   'INV-PLAN-MIN-SESSION-SIZE',
   'INV-PLAN-EMPTY-SESSION',
@@ -46,6 +49,8 @@ export const INVARIANT_CODES = [
   'INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR',
   'INV-PLAN-TAPER-VARIETY',
   'INV-PLAN-PREP-TIME-STATUS-ANNOTATED',
+  'INV-PLAN-DIFFICULTY-ANNOTATED',
+  'INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE',
   'INV-PLAN-LR-PROGRESSION-CAP',
   'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES',
   'INV-PLAN-PEAK-LR-ALTERNATION',
@@ -74,6 +79,9 @@ export const INVARIANT_CODES = [
   'INV-MAINT-VOLUME-CEILING',
   'INV-MAINT-REST-DAY',
   'INV-MAINT-NO-RACE-SPECIFIC',
+  'INV-MAINT-CADENCE',
+  'INV-MAINT-INJURY-EASY-ONLY',
+  'INV-MAINT-REENGAGEMENT-WINDOW',
 ] as const
 
 /**
@@ -342,10 +350,11 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       }
     }
 
-    // INV-PLAN-THEME-MATCHES-PRESCRIPTION — weekly theme must not contradict
-    // the prescription. "highest volume" / "fitness is built" requires
+    // INV-PLAN-COPY-MATCHES-SESSIONS — weekly copy (label AND theme) must not
+    // contradict the prescription. "highest volume" / "fitness is built" requires
     // overload vs prior non-deload week; "intensity stays" requires ≥1
-    // quality session. (CoachingPrinciples §27)
+    // quality session. (CoachingPrinciples §27, §41. Supersedes the retired
+    // INV-PLAN-THEME-MATCHES-PRESCRIPTION denylist — GEN-FIX-06 / N4.)
     // Foundation weeks are exempt: their themes describe preparation, not
     // periodisation progress — overload and quality rules don't apply.
     if (w.phase !== 'foundation') {
@@ -946,6 +955,53 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       actual: `warning=${!!plan.meta.prep_time_warning} alternatives=${!!plan.meta.prep_time_alternatives}`,
       expected: 'both present',
     })
+  }
+
+  // INV-PLAN-DIFFICULTY-ANNOTATED — every generated plan carries a difficulty
+  // band. (CoachingPrinciples §44 amendment — block-status inputs throw before
+  // reaching here, so any plan that exists must surface a demand label.)
+  if (!plan.meta.difficulty_band) {
+    violations.push({
+      code: 'INV-PLAN-DIFFICULTY-ANNOTATED',
+      principle_ref: 'CoachingPrinciples §44',
+      severity: 'error',
+      week: 0,
+      message: 'Plan meta missing difficulty_band — every plan must surface its demand label',
+      actual: 'undefined',
+      expected: "'comfortable' | 'demanding' | 'very_demanding'",
+    })
+  }
+
+  // INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE — the demand label may never be more
+  // reassuring than the plan's own honesty signals. (CoachingPrinciples §44
+  // amendment / Coaching Board 2026-08-18: a friendly band must not front a
+  // warned timeline or an input-constrained plan.)
+  //   (1) prep_time_status 'warned'                 → band MUST be 'very_demanding'
+  //   (2) compression_classification constrained    → band MUST NOT be 'comfortable'
+  if (plan.meta.difficulty_band) {
+    if (plan.meta.prep_time_status === 'warned' && plan.meta.difficulty_band !== 'very_demanding') {
+      violations.push({
+        code: 'INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE',
+        principle_ref: 'CoachingPrinciples §44',
+        severity: 'error',
+        week: 0,
+        message: `Plan generated under a prep-time warning must read 'very_demanding', not '${plan.meta.difficulty_band}'`,
+        actual: plan.meta.difficulty_band,
+        expected: "'very_demanding'",
+      })
+    }
+    if (plan.meta.compression_classification === 'constrained_by_inputs'
+        && plan.meta.difficulty_band === 'comfortable') {
+      violations.push({
+        code: 'INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE',
+        principle_ref: 'CoachingPrinciples §44',
+        severity: 'error',
+        week: 0,
+        message: "Input-constrained plan (constrained_by_inputs) must not read 'comfortable'",
+        actual: 'comfortable',
+        expected: "'demanding' | 'very_demanding'",
+      })
+    }
   }
 
   // INV-PLAN-LR-PROGRESSION-CAP — long-run distance increase week-on-week

@@ -326,6 +326,18 @@ export interface PlanMeta {
   // M-05 — replace single `compressed` boolean with persona-aware classification.
   // (CoachingPrinciples §31)
   compression_classification?: 'optimal' | 'appropriate_for_persona' | 'constrained_by_inputs'
+
+  // Difficulty band (CoachingPrinciples §44 amendment + §31) — ordinal demand
+  // label on every generated plan. FREE (SLT 2026-08-18). Distinct from the PAID
+  // numeric confidence score: this is a *pre-generation feasibility* read of the
+  // runner's chosen timeline/constraints, derived only from prep-time margin +
+  // compression_classification. Never a percentage (Coaching Board veto). The
+  // refusal tier is the §44 block, which throws before a plan exists.
+  // `difficulty_note` is present only for 'demanding' / 'very_demanding' — a
+  // one-line honest statement of what makes the plan a real ask (mirrors
+  // volume_constraint_note). 'comfortable' needs no explanation.
+  difficulty_band?: 'comfortable' | 'demanding' | 'very_demanding'
+  difficulty_note?: string
   training_age?: TrainingAge             // stored for R20 reshaper
   returning_runner_allowance_active?: boolean  // true if 15%/3wk allowance applied
   fresh_return_active?: boolean                  // true if M-02 layoff start-fraction applied

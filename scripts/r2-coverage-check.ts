@@ -17,8 +17,22 @@ import path from 'node:path'
 import { generateRulePlan, type Tier } from '../lib/plan/ruleEngine'
 import { validatePlan, INVARIANT_CODES, formatViolations } from '../lib/plan/invariants'
 import type { GeneratorInput } from '../types/plan'
+import { nextMonday, formatDate, addDays } from '../lib/plan/length'
 
-const PLAN_START = '2026-04-27'
+// Dates are computed relative to "today" so the canonical cases never date-rot.
+// (Previously hardcoded 2026-04-27 / 2026-07-20 / 2026-08-03. Once those race
+// dates fell into the past, the prep-time gate (§44) threw PrepTimeError before
+// validatePlan could run — silently disabling the §34 canonical-case check.
+// Relative dates keep the 12 / 12 / 14-week prep intents intact forever.)
+const PLAN_START_DATE = nextMonday()
+const PLAN_START = formatDate(PLAN_START_DATE)
+/** race date = the Sunday of week N (plan_start is a Monday; races land on the
+ *  conventional Sunday, which none of the personas block, and preserves each
+ *  case's original prep length). */
+const raceDate = (weeks: number): string => formatDate(addDays(PLAN_START_DATE, (weeks - 1) * 7 + 6))
+/** a not-quite-fresh benchmark ~6 weeks before plan start — exercises the mild
+ *  VDOT staleness discount the original fixtures carried. */
+const BENCHMARK_DATE = formatDate(addDays(PLAN_START_DATE, -6 * 7))
 
 interface Case {
   id: string
@@ -31,7 +45,7 @@ const cases: Case[] = [
     id: '01-5k-beginner',
     tier: 'free',
     input: {
-      race_date: '2026-07-20',
+      race_date: raceDate(12),
       race_distance_km: 5,
       race_name: 'Local 5K',
       goal: 'finish',
@@ -53,7 +67,7 @@ const cases: Case[] = [
     id: '02-10k-intermediate',
     tier: 'paid',
     input: {
-      race_date: '2026-07-20',
+      race_date: raceDate(12),
       race_distance_km: 10,
       race_name: 'Local 10K',
       goal: 'time_target',
@@ -72,7 +86,7 @@ const cases: Case[] = [
       injury_history: ['knee'],
       terrain: 'road',
       primary_metric: 'distance',
-      benchmark: { type: 'race', distance_km: 5, time: '0:23:30', benchmark_date: '2026-03-15' },
+      benchmark: { type: 'race', distance_km: 5, time: '0:23:30', benchmark_date: BENCHMARK_DATE },
       plan_start: PLAN_START,
     } as any,
   },
@@ -80,7 +94,7 @@ const cases: Case[] = [
     id: '03-hm-intermediate',
     tier: 'paid',
     input: {
-      race_date: '2026-08-03',
+      race_date: raceDate(14),
       race_distance_km: 21.1,
       race_name: 'Target HM',
       goal: 'time_target',
@@ -99,7 +113,7 @@ const cases: Case[] = [
       injury_history: [],
       terrain: 'trail',
       primary_metric: 'distance',
-      benchmark: { type: 'race', distance_km: 10, time: '0:50:30', benchmark_date: '2026-03-08' },
+      benchmark: { type: 'race', distance_km: 10, time: '0:50:30', benchmark_date: BENCHMARK_DATE },
       plan_start: PLAN_START,
     } as any,
   },

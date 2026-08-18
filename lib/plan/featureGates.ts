@@ -53,6 +53,7 @@ export const FEATURE_GATES = {
     'manual_session_completion', // marking a session done without Strava
     'plan_view',                 // reading the existing plan
     'basic_strength_sessions',   // placeholder strength stubs
+    'plan_difficulty_band',      // ordinal demand label (§44/§31) — honesty signal, extends the FREE prep-time gate. SLT-signed FREE 2026-08-18. The numeric confidence score stays PAID.
   ],
 } as const
 
