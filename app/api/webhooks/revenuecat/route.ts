@@ -1,10 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
 
 // RevenueCat webhook docs: https://www.revenuecat.com/docs/integrations/webhooks
-// Authorization: header value compared directly against REVENUECAT_WEBHOOK_SECRET
+// Authorization: header value compared against REVENUECAT_WEBHOOK_SECRET
 
 const REVENUECAT_WEBHOOK_SECRET = process.env.REVENUECAT_WEBHOOK_SECRET
+
+/** Constant-time string comparison; false on any length/format mismatch. */
+function secretMatches(provided: string | null, expected: string): boolean {
+  if (!provided) return false
+  const a = Buffer.from(provided)
+  const b = Buffer.from(expected)
+  return a.length === b.length && timingSafeEqual(a, b)
+}
 
 function toStatus(eventType: string): 'trialing' | 'active' | 'cancelled' | 'expired' | null {
   switch (eventType) {
@@ -25,20 +34,22 @@ function toStatus(eventType: string): 'trialing' | 'active' | 'cancelled' | 'exp
 }
 
 export async function POST(req: NextRequest) {
+  // Finding 3: fail closed. A missing secret must never mean "accept every
+  // request" — that let anyone forge a subscription for any user_id. Reject
+  // unless the secret is configured AND the Authorization header matches it.
+  if (!REVENUECAT_WEBHOOK_SECRET) {
+    console.error('[revenuecat webhook] REVENUECAT_WEBHOOK_SECRET not set — rejecting request')
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 })
+  }
+  if (!secretMatches(req.headers.get('Authorization'), REVENUECAT_WEBHOOK_SECRET)) {
+    return NextResponse.json({ error: 'Invalid authorization' }, { status: 401 })
+  }
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
   const rawBody = await req.text()
-
-  // Verify Authorization header matches configured secret
-  if (REVENUECAT_WEBHOOK_SECRET) {
-    const auth = req.headers.get('Authorization')
-    if (!auth) return NextResponse.json({ error: 'Missing authorization' }, { status: 401 })
-    if (auth !== REVENUECAT_WEBHOOK_SECRET) {
-      return NextResponse.json({ error: 'Invalid authorization' }, { status: 401 })
-    }
-  }
 
   let event: any
   try {
