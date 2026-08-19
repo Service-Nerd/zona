@@ -17,7 +17,7 @@ hardening must be applied per-route (or via a new shared wrapper).
 | 3 | HIGH | RevenueCat webhook fails **open** — grants subscriptions from a body field | ✅ fixed (this branch) |
 | 4 | HIGH | No rate limiting / spend cap on any AI route (cost abuse) | ✅ fixed (this branch) |
 | 5 | HIGH | No request body-size limit before user text becomes prompt tokens | ✅ fixed (this branch) |
-| 6 | HIGH | Runtime dependency CVEs (next, tar, apn→node-forge/jsonwebtoken, ws, nanoid) | 🔴 open |
+| 6 | HIGH | Runtime dependency CVEs (next, tar, apn→node-forge/jsonwebtoken, ws, nanoid) | 🟡 partial — safe fixes applied; majors need sign-off |
 | 7 | MEDIUM | Strava OAuth `state` is not a CSRF nonce (account-linking CSRF) | ✅ fixed (this branch) |
 | 8 | MEDIUM | Service-role + manual filtering trades away RLS defence-in-depth (systemic) | 🔴 open |
 | 9 | MEDIUM | `analyse-run` / `weekly-report` impersonation via `x-service-key` + `x-user-id` | 🟡 accepted |
@@ -98,11 +98,24 @@ prompt is built — replaces the raw `req.json()` in every body-parsing AI route
 
 ## 6 — HIGH — Runtime dependency CVEs
 
-`npm audit`: 29 total (2 critical, 23 high). Runtime: `next` (→14.2.35), `tar`
-(→7.5.21), the `apn → jsonwebtoken ≤8.5.1 → node-forge ≤1.3.3` crypto-forgery
-cluster (signs APNs tokens — review before bumping), `ws`, `nanoid`,
-`brace-expansion`. Dev-only chain (Capacitor/eslint/vite/`sharp` no-fix) lower
-priority. *(Open.)*
+`npm audit`: was 29 total (2 critical, 23 high).
+
+**Fixed (safe, non-breaking — `npm audit fix`):** `next`→14.2.35 (finding 2),
+`tar`, `ws`, `nanoid`, `brace-expansion`, and the rest of the auto-fixable
+transitives. Count 29 → 17 total; build + 496 tests pass.
+
+**Residual — all require MAJOR upgrades, deferred for explicit sign-off** (do NOT
+auto-apply on a live payments/auth app):
+- `apn → jsonwebtoken ≤8.5.1 → node-forge ≤1.3.3` (HIGH, crypto-forgery). Fix is
+  `apn@2.0.0`, flagged major/downgrade — `apn` signs the APNs auth tokens for iOS
+  push, so needs a real test on device before bumping. **Highest-value residual.**
+- `next`/`postcss` remaining advisories fix only in `next@16.3.1` (major). The
+  CVEs actually exploitable for this app (middleware bypass, SSRF) are already
+  closed at 14.2.35; the rest are lower-relevance and not worth a Next 16 jump now.
+- `@supabase/ssr`/`cookie` (LOW) fix in `@supabase/ssr@0.12.4` (major) — auth
+  client, test carefully.
+- Dev-only chain (Capacitor tooling, `sharp` no-fix, eslint/vite) — build-time
+  only, lowest priority.
 
 ## 7 — MEDIUM — Strava OAuth `state` is not a CSRF nonce
 
