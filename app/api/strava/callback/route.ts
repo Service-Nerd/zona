@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { NATIVE_STRAVA_CALLBACK } from '@/lib/native'
+import { verifyStravaState } from '@/lib/strava/oauthState'
 
 // NATIVE_STRAVA_CALLBACK is the same scheme registered in iOS Info.plist for
 // the Google OAuth flow. The Capacitor app catches anything at this URL via
@@ -23,21 +24,22 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const error = searchParams.get('error')
-  const rawState = searchParams.get('state') ?? ''
+  const rawState = searchParams.get('state')
 
-  // State is "userId" (web, legacy) or "userId|ios" (native). Parse both.
-  const [userId, platformTag] = rawState.includes('|')
-    ? rawState.split('|')
-    : [rawState, null]
-  const platform: 'ios' | null = platformTag === 'ios' ? 'ios' : null
+  // Finding 7: verify the HMAC-signed state and trust ONLY the userId it
+  // carries. A missing/tampered/expired state is rejected outright — the
+  // previous code parsed the userId out of a plaintext, unsigned state.
+  const verified = verifyStravaState(rawState)
+  const platform: 'ios' | null = verified?.platform ?? null
+
+  if (!verified) {
+    console.error('Strava callback: invalid or expired state param')
+    return NextResponse.redirect(buildRedirect(origin, platform, 'error'))
+  }
+  const userId = verified.userId
 
   if (error || !code) {
     return NextResponse.redirect(buildRedirect(origin, platform, 'denied'))
-  }
-
-  if (!userId) {
-    console.error('Strava callback: no user ID in state param')
-    return NextResponse.redirect(buildRedirect(origin, platform, 'error'))
   }
 
   const tier = await getUserTier(userId)
