@@ -42,6 +42,12 @@ refreshable indefinitely; it also acted as a "is this user connected?" oracle.
 ignore any body `userId`, scope the lookup to `user.id`. Caller updated to
 `authedFetch` (attaches the token; body param dropped).
 
+**Regression guard (findings 1 & 11):** `.githooks/pre-commit` now blocks any new
+`app/api/**/route.ts` that has no auth boundary (`getUserFromRequest` or a
+shared-secret / webhook-signature check). Public routes are allowlisted by path
+(`og/`, `waitlist/`); a deliberate exception is marked in-file with
+`// @public-route: <reason>`.
+
 ## 2 — CRITICAL — Next.js 14.2.3 middleware authorization-bypass (CVE-2025-29927)
 
 Affects `>=14.0.0 <14.2.25`. This app uses `middleware.ts` on the session path, so

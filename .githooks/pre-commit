@@ -131,6 +131,37 @@ if [ -n "$CLASS_TS" ]; then
   done
 fi
 
+# ── API route auth boundary (security audit findings 1 & 11) ─────────────────
+# Every new/changed app/api/**/route.ts must authenticate at the boundary before
+# doing work: getUserFromRequest (user routes) OR a shared-secret / webhook-
+# signature check (cron + webhook routes). This is the class that let
+# /api/strava/refresh leak any user's token unauthenticated (finding 1) and left
+# the auth-check debug endpoint exposed (finding 11).
+#
+# Intentionally-public routes (og images, waitlist signup) are allowlisted by
+# path. Any other deliberate exception must be marked IN-FILE with a line
+# comment `// @public-route: <reason>` — which both satisfies this check and
+# documents the intent for the next reader.
+PUBLIC_ROUTE_REGEX='^app/api/(og/|waitlist/)'
+AUTH_SIGNAL_REGEX='getUserFromRequest|secretMatches|CRON_SECRET|STRIPE_WEBHOOK_SECRET|constructEvent|verifyStravaState|REVENUECAT_WEBHOOK_SECRET|STRAVA_WEBHOOK_VERIFY_TOKEN|x-service-key|@public-route'
+
+ROUTE_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^app/api/.*/route\.tsx?$' | grep -vE "$PUBLIC_ROUTE_REGEX" || true)
+if [ -n "$ROUTE_TS" ]; then
+  for f in $ROUTE_TS; do
+    [ -f "$f" ] || continue
+    if ! grep -qE "$AUTH_SIGNAL_REGEX" "$f"; then
+      echo ""
+      echo "✗  API route with no auth boundary: $f"
+      echo "   Every route must authenticate before doing work — call"
+      echo "   getUserFromRequest (user routes) or verify a shared secret /"
+      echo "   webhook signature (cron/webhook routes)."
+      echo "   See security audit findings 1 & 11 (docs/security-audit-2026-08.md)."
+      echo "   Intentionally public? Add a line comment: // @public-route: <why>"
+      FAIL=1
+    fi
+  done
+fi
+
 if [ $FAIL -ne 0 ]; then
   echo ""
   echo "  Commit blocked. Fix the issues above before committing."
