@@ -22,7 +22,7 @@ hardening must be applied per-route (or via a new shared wrapper).
 | 8 | MEDIUM | Service-role + manual filtering trades away RLS defence-in-depth (systemic) | 🔴 open |
 | 9 | MEDIUM | `analyse-run` / `weekly-report` impersonation via `x-service-key` + `x-user-id` | 🟡 accepted |
 | 10 | MEDIUM | Stripe webhook has no ordering / idempotency guard | 🔴 open |
-| 11 | LOW | `auth-check` debug endpoint left in place | 🔴 open |
+| 11 | LOW | `auth-check` debug endpoint left in place | ✅ fixed (this branch) |
 | 12 | LOW | Timing-unsafe secret comparisons across cron/webhook routes | 🔴 open |
 | 13 | LOW | `checkout` builds redirect URLs from the request `Origin` header | 🔴 open |
 | 14 | LOW | Prompt injection: user free-text concatenated into prompts (contained) | 🟡 accepted |
@@ -122,7 +122,9 @@ duplicates harmless — only out-of-order is the residual risk. *(Open.)*
 ## 11 — LOW — `auth-check` debug endpoint
 
 Self-described temporary endpoint echoing the caller's own `userId`/`email`/`tier`.
-Properly gated (no cross-user leak) but should be removed. *(Open.)*
+Properly gated (no cross-user leak) but should be removed.
+
+**Fix:** route deleted (`app/api/auth-check/`). No callers in the codebase.
 
 ## 12 — LOW — Timing-unsafe secret comparisons
 
