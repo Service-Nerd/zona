@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { buildPhaseSummaryPrompt } from '@/lib/coaching/prompts/phaseSummary'
@@ -28,7 +29,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
   }
 
-  const body = await req.json()
+  const guard = await guardAiRequest(req, user.id, 'phase-summary')
+  if (!guard.ok) return guard.response
+  const body = guard.body
   const { phase_ended, transition_week_n } = body as {
     phase_ended:         string
     transition_week_n:   number

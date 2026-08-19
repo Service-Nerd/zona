@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { fetchPlanForUser, savePlanForUser } from '@/lib/plan'
 import { generateMaintenanceBlock, aggregatePlanResponse, inferRunDaysPerWeek, inferActualRunCadence, type MaintenanceIntent } from '@/lib/plan/maintenance'
@@ -28,6 +29,9 @@ export async function POST(req: NextRequest) {
 
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const limited = await enforceAiRateLimit(user.id, 'maintenance-block')
+  if (limited) return limited
 
   // ── 1. Fetch plan via service client (native auth — Bearer token) ─────────────
   const { data: settings } = await serviceClient

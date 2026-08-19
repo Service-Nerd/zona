@@ -15,8 +15,8 @@ hardening must be applied per-route (or via a new shared wrapper).
 | 1 | CRITICAL | `strava/refresh` issues any user's live Strava token, unauthenticated | ✅ fixed (this branch) |
 | 2 | CRITICAL | Next.js 14.2.3 middleware authorization-bypass CVE (CVE-2025-29927) | 🔴 open |
 | 3 | HIGH | RevenueCat webhook fails **open** — grants subscriptions from a body field | ✅ fixed (this branch) |
-| 4 | HIGH | No rate limiting / spend cap on any AI route (cost abuse) | 🔴 open |
-| 5 | HIGH | No request body-size limit before user text becomes prompt tokens | 🔴 open |
+| 4 | HIGH | No rate limiting / spend cap on any AI route (cost abuse) | ✅ fixed (this branch) |
+| 5 | HIGH | No request body-size limit before user text becomes prompt tokens | ✅ fixed (this branch) |
 | 6 | HIGH | Runtime dependency CVEs (next, tar, apn→node-forge/jsonwebtoken, ws, nanoid) | 🔴 open |
 | 7 | MEDIUM | Strava OAuth `state` is not a CSRF nonce (account-linking CSRF) | ✅ fixed (this branch) |
 | 8 | MEDIUM | Service-role + manual filtering trades away RLS defence-in-depth (systemic) | 🔴 open |
@@ -67,13 +67,33 @@ comparison before any DB write.
 No limiter anywhere in the app. Every Claude route is authenticated and
 tier-gated, but a single trial user (14 days full access, no billing artifact)
 can script `post-race-reshape` (Sonnet, `max_tokens: 2048`), `generate-plan`, or
-`post-run-reframe` in a loop and drive unbounded Anthropic spend. *(Open.)*
+`post-run-reframe` in a loop and drive unbounded Anthropic spend.
+
+**Fix:** per-user, per-route fixed-window rate limit backed by Supabase
+(`ai_rate_limits` table + `check_rate_limit()` RPC, migration
+`20260819_ai_rate_limits.sql`). Helper `lib/ai/rateLimit.ts`; limits in
+`lib/ai/limits.ts` (expensive generation/reshape routes get a tighter 10/hr
+budget, others 30/hr). Applied to all 11 Anthropic-calling user routes via
+`guardAiRequest` (body routes) / `enforceAiRateLimit` (no-body routes). Fails
+open on limiter-infra error so a limiter outage can't take down paid features.
+
+**Requires an ops step:** apply the migration to Supabase and record it in
+`.claude/state/applied-migrations.txt`, or the limiter fails open (no limiting)
+and the session-start hook will flag the file as unapplied.
+
+**Not covered (documented, low abuse value):** `analyse-run` and `weekly-report`
+are event/cron-driven with an internal `x-service-key` bypass, not free-form
+loopable; `analyse-run/manual` uses the rule engine, not Anthropic.
 
 ## 5 — HIGH — No request body-size limit
 
 App Router `req.json()` has no size cap; only `post-run-reframe` caps one field
 (`user_note`, 2000 chars). Other AI routes accept arbitrary JSON that flows into
-the prompt, making per-call token cost attacker-controlled. *(Open.)*
+the prompt, making per-call token cost attacker-controlled.
+
+**Fix:** `guardAiRequest` reads the body with a size cap (`AI_LIMITS`
+`DEFAULT_MAX_BYTES = 64 KB`) and rejects oversize payloads with 413 before any
+prompt is built — replaces the raw `req.json()` in every body-parsing AI route.
 
 ## 6 — HIGH — Runtime dependency CVEs
 

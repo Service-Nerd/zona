@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
 import { getUserTier } from '@/lib/trial'
 import { buildFreeInsightPrompt } from '@/lib/coaching/prompts/freeInsight'
 import { assessReframeRiskGate, type CoachingFlag, type FatigueTag } from '@/lib/coaching/reframeRiskGate'
@@ -79,6 +80,9 @@ export async function GET(req: NextRequest) {
   if (tier !== 'free') {
     return NextResponse.json({ error: 'Free tier only' }, { status: 400 })
   }
+
+  const limited = await enforceAiRateLimit(user.id, 'weekly-free-insight')
+  if (limited) return limited
 
   const service = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

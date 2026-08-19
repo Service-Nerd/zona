@@ -11,6 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
@@ -41,7 +42,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
   }
 
-  const body = await req.json().catch(() => ({}))
+  const guard = await guardAiRequest(req, user.id, 'post-race-reshape')
+  if (!guard.ok) return guard.response
+  const body = guard.body
   const raceResult: RaceResult = body?.race_result ?? {}
   const raceWeekN: number      = Number(body?.race_week_n)
   // §74 — when false ("keep my plan as-is"), the result is still persisted but

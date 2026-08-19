@@ -23,6 +23,7 @@
  */
 
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
@@ -69,7 +70,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
   }
 
-  const body = await req.json().catch(() => null) as
+  const guard = await guardAiRequest(req, user.id, 'post-run-reframe')
+  if (!guard.ok) return guard.response
+  const body = guard.body as
     | { week_n?: number; session_day?: string; user_note?: string }
     | null
   if (!body || typeof body.week_n !== 'number' || !body.session_day || !body.user_note) {

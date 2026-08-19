@@ -1,4 +1,5 @@
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
@@ -62,7 +63,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Parse body signals
-  const body        = await req.json().catch(() => ({}))
+  const guard = await guardAiRequest(req, user.id, 'adjust-plan')
+  if (!guard.ok) return guard.response
+  const body        = guard.body
   const isManual    = body?.manual === true
   // Trigger 5: RPE disconnect
   const rpeSignal: { rpe: number; sessionType: string } | undefined =
