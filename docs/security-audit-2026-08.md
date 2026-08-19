@@ -21,7 +21,7 @@ hardening must be applied per-route (or via a new shared wrapper).
 | 7 | MEDIUM | Strava OAuth `state` is not a CSRF nonce (account-linking CSRF) | ✅ fixed (this branch) |
 | 8 | MEDIUM | Service-role + manual filtering trades away RLS defence-in-depth (systemic) | 🔴 open |
 | 9 | MEDIUM | `analyse-run` / `weekly-report` impersonation via `x-service-key` + `x-user-id` | 🟡 accepted |
-| 10 | MEDIUM | Stripe webhook has no ordering / idempotency guard | 🔴 open |
+| 10 | MEDIUM | Stripe webhook has no ordering / idempotency guard | ✅ fixed (this branch) |
 | 11 | LOW | `auth-check` debug endpoint left in place | ✅ fixed (this branch) |
 | 12 | LOW | Timing-unsafe secret comparisons across cron/webhook routes | 🔴 open |
 | 13 | LOW | `checkout` builds redirect URLs from the request `Origin` header | 🔴 open |
@@ -134,10 +134,19 @@ but a broad impersonation primitive keyed on the most powerful secret. *(Accepte
 
 ## 10 — MEDIUM — Stripe webhook ordering / idempotency
 
-`webhooks/stripe/route.ts` is signature-verified and fails closed (good), but has
+`webhooks/stripe/route.ts` is signature-verified and fails closed (good), but had
 no processed-`event.id` dedup and no timestamp gating; a stale `updated` arriving
-after a `deleted` could re-activate a cancelled subscription. The `upsert` makes
-duplicates harmless — only out-of-order is the residual risk. *(Open.)*
+after a `deleted` could re-activate a cancelled subscription.
+
+**Fix:** `last_event_at` column + `apply_subscription_event()` RPC (migration
+`20260819_subscription_event_ordering.sql`) — an atomic conditional upsert that
+applies a write only when the incoming Stripe `event.created` is newer than the
+last event applied. Out-of-order events are suppressed (logged); duplicate
+deliveries are no-ops. Provider-agnostic, so the RevenueCat webhook can adopt it
+later.
+
+**Requires an ops step:** apply the migration to Supabase and record it in
+`.claude/state/applied-migrations.txt`.
 
 ## 11 — LOW — `auth-check` debug endpoint
 

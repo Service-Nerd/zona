@@ -65,22 +65,25 @@ export async function POST(req: NextRequest) {
   }
   const currentPeriodEnd = new Date(periodEnd * 1000).toISOString()
 
-  const { error } = await supabase
-    .from('subscriptions')
-    .upsert(
-      {
-        user_id: userId,
-        provider: 'stripe',
-        status,
-        current_period_end: currentPeriodEnd,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id' }
-    )
+  // Finding 10: apply through the ordering guard. Stripe doesn't guarantee
+  // delivery order, so we gate the write on the source event's timestamp —
+  // a stale `updated` arriving after a `deleted` is suppressed rather than
+  // re-activating a cancelled subscription. Also idempotent for replays.
+  const eventAt = new Date(event.created * 1000).toISOString()
+  const { data: applied, error } = await (supabase.rpc as any)('apply_subscription_event', {
+    p_user_id:    userId,
+    p_provider:   'stripe',
+    p_status:     status,
+    p_period_end: currentPeriodEnd,
+    p_event_at:   eventAt,
+  })
 
   if (error) {
-    console.error('[stripe webhook] upsert failed', error)
+    console.error('[stripe webhook] apply_subscription_event failed', error)
     return NextResponse.json({ error: 'DB write failed' }, { status: 500 })
+  }
+  if (applied === false) {
+    console.log('[stripe webhook] stale/out-of-order event suppressed', subscription.id, event.id)
   }
 
   return NextResponse.json({ received: true })
