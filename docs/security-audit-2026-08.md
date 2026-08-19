@@ -13,7 +13,7 @@ hardening must be applied per-route (or via a new shared wrapper).
 | # | Severity | Finding | Status |
 |---|---|---|---|
 | 1 | CRITICAL | `strava/refresh` issues any user's live Strava token, unauthenticated | ✅ fixed (this branch) |
-| 2 | CRITICAL | Next.js 14.2.3 middleware authorization-bypass CVE (CVE-2025-29927) | 🔴 open |
+| 2 | CRITICAL | Next.js 14.2.3 middleware authorization-bypass CVE (CVE-2025-29927) | ✅ fixed (this branch) |
 | 3 | HIGH | RevenueCat webhook fails **open** — grants subscriptions from a body field | ✅ fixed (this branch) |
 | 4 | HIGH | No rate limiting / spend cap on any AI route (cost abuse) | ✅ fixed (this branch) |
 | 5 | HIGH | No request body-size limit before user text becomes prompt tokens | ✅ fixed (this branch) |
@@ -46,9 +46,10 @@ ignore any body `userId`, scope the lookup to `user.id`. Caller updated to
 
 Affects `>=14.0.0 <14.2.25`. This app uses `middleware.ts` on the session path, so
 a crafted `x-middleware-subrequest` header can skip middleware. Same upgrade closes
-HIGH SSRF / cache-poisoning / Server-Component DoS advisories. **Upgrade `next` →
-14.2.35** (non-breaking within 14.2.x). *(Open — dependency change, out of scope
-for this branch.)*
+HIGH SSRF / cache-poisoning / Server-Component DoS advisories.
+
+**Fix:** `next` 14.2.3 → 14.2.35 (+ matching `eslint-config-next`). Full test
+suite (496 tests) and production build pass unchanged.
 
 ## 3 — HIGH — RevenueCat webhook fails open
 
