@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { secretMatches } from '@/lib/security/secrets'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 
 // GET/POST /api/ops/reshape-integrity — OPS-01 daily integrity probe.
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) { return POST(req) }
 export async function POST(req: NextRequest) {
   const bearer = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? null
   const secret = bearer || req.headers.get('x-cron-secret')
-  if (!secret || secret !== process.env.CRON_SECRET) {
+  if (!secretMatches(secret, process.env.CRON_SECRET)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

@@ -23,8 +23,8 @@ hardening must be applied per-route (or via a new shared wrapper).
 | 9 | MEDIUM | `analyse-run` / `weekly-report` impersonation via `x-service-key` + `x-user-id` | 🟡 accepted |
 | 10 | MEDIUM | Stripe webhook has no ordering / idempotency guard | ✅ fixed (this branch) |
 | 11 | LOW | `auth-check` debug endpoint left in place | ✅ fixed (this branch) |
-| 12 | LOW | Timing-unsafe secret comparisons across cron/webhook routes | 🔴 open |
-| 13 | LOW | `checkout` builds redirect URLs from the request `Origin` header | 🔴 open |
+| 12 | LOW | Timing-unsafe secret comparisons across cron/webhook routes | ✅ fixed (this branch) |
+| 13 | LOW | `checkout` builds redirect URLs from the request `Origin` header | ✅ fixed (this branch) |
 | 14 | LOW | Prompt injection: user free-text concatenated into prompts (contained) | 🟡 accepted |
 
 ---
@@ -200,12 +200,23 @@ Properly gated (no cross-user leak) but should be removed.
 ## 12 — LOW — Timing-unsafe secret comparisons
 
 Cron/webhook secret checks use plain `!==` rather than constant-time compare. The
-secret is checked in every case, so low. *(Open.)*
+secret is checked in every case, so low.
+
+**Fix:** shared `secretMatches()` (`lib/security/secrets.ts`, `timingSafeEqual`,
+fails closed on missing/mismatched-length) applied to all 5 CRON_SECRET routes
+(`push/send-daily`, `push/send-trial-insight`, `push/send-weekly-report`,
+`email/send-trial`, `ops/reshape-integrity`), the Strava webhook verify-token,
+and the `x-service-key` internal checks in `analyse-run` + `weekly-report`. The
+RevenueCat webhook's inline constant-time compare was deduped onto the helper.
 
 ## 13 — LOW — `checkout` trusts the request `Origin` header for redirect URLs
 
 Only affects where the attacker's own browser lands post-checkout, not the charge.
-Pin to an allowlist for tidiness. *(Open.)*
+Pin to an allowlist for tidiness.
+
+**Fix:** `checkout` now validates the `Origin` header against an allowlist
+(`https://www.zonna.run`, `NEXT_PUBLIC_APP_URL`, `localhost:3000` in dev) and
+falls back to the canonical origin for `success_url`/`cancel_url`.
 
 ## 14 — LOW — Prompt injection (contained)
 

@@ -1,19 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import { timingSafeEqual } from 'crypto'
+import { secretMatches } from '@/lib/security/secrets'
 
 // RevenueCat webhook docs: https://www.revenuecat.com/docs/integrations/webhooks
 // Authorization: header value compared against REVENUECAT_WEBHOOK_SECRET
 
 const REVENUECAT_WEBHOOK_SECRET = process.env.REVENUECAT_WEBHOOK_SECRET
-
-/** Constant-time string comparison; false on any length/format mismatch. */
-function secretMatches(provided: string | null, expected: string): boolean {
-  if (!provided) return false
-  const a = Buffer.from(provided)
-  const b = Buffer.from(expected)
-  return a.length === b.length && timingSafeEqual(a, b)
-}
 
 function toStatus(eventType: string): 'trialing' | 'active' | 'cancelled' | 'expired' | null {
   switch (eventType) {

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { waitUntil } from '@vercel/functions'
 import { NextRequest, NextResponse } from 'next/server'
+import { secretMatches } from '@/lib/security/secrets'
 import { getStravaToken, fetchHRStreamSummary } from '@/lib/strava'
 import { autoMatchAndAnalyse, getInternalBaseUrl } from '@/lib/coaching/autoAnalyse'
 import { tryEnrichHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid verification request' }, { status: 400 })
   }
 
-  if (token !== process.env.STRAVA_WEBHOOK_VERIFY_TOKEN) {
+  if (!secretMatches(token, process.env.STRAVA_WEBHOOK_VERIFY_TOKEN)) {
     return NextResponse.json({ error: 'Token mismatch' }, { status: 403 })
   }
 
