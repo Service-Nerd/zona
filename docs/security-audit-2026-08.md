@@ -19,7 +19,7 @@ hardening must be applied per-route (or via a new shared wrapper).
 | 5 | HIGH | No request body-size limit before user text becomes prompt tokens | ✅ fixed (this branch) |
 | 6 | HIGH | Runtime dependency CVEs (next, tar, apn→node-forge/jsonwebtoken, ws, nanoid) | 🟡 partial — safe fixes applied; majors need sign-off |
 | 7 | MEDIUM | Strava OAuth `state` is not a CSRF nonce (account-linking CSRF) | ✅ fixed (this branch) |
-| 8 | MEDIUM | Service-role + manual filtering trades away RLS defence-in-depth (systemic) | 🔴 open |
+| 8 | MEDIUM | Service-role + manual filtering trades away RLS defence-in-depth (systemic) | 🟡 partial — infra + 2 pilots; rollout staged |
 | 9 | MEDIUM | `analyse-run` / `weekly-report` impersonation via `x-service-key` + `x-user-id` | 🟡 accepted |
 | 10 | MEDIUM | Stripe webhook has no ordering / idempotency guard | ✅ fixed (this branch) |
 | 11 | LOW | `auth-check` debug endpoint left in place | ✅ fixed (this branch) |
@@ -136,8 +136,36 @@ the native `SFSafariViewController` flow (no session cookie) keeps working.
 
 ~25 per-user routes authenticate correctly, then query with the service-role
 client (RLS bypassed) scoped by a manual `.eq('user_id', user.id)`. Correct today,
-but IDOR protection rests entirely on that one filter with no backstop. Preferred
-long-term pattern: anon client with the forwarded user JWT. *(Open — systemic.)*
+but IDOR protection rests entirely on that one filter with no backstop.
+
+**Infra + pilots delivered this branch:**
+- `lib/supabase/userScopedClient.ts` — `createUserScopedClient(req)` returns an
+  anon client carrying the user's Bearer JWT, so RLS (`auth.uid() = user_id`)
+  applies. Works on native (Bearer) where the cookie client's `auth.uid()` is NULL.
+- Converted 2 pilots (every table confirmed RLS-covered): `discipline-ledger`
+  (reads `plans`, `session_completions`, `run_analysis`) and `me/today-heartbeat`
+  (updates `user_settings`). The `.eq('user_id')` filters are kept as
+  defence-in-depth; RLS is now the backstop.
+
+**Live RLS inventory (verified via `pg_policy`, 2026-08-19) — safe to convert:**
+`plans` (CRUD), `run_analysis` (SEL/INS/UPD), `session_completions` (ALL),
+`user_settings` (SEL/INS/UPD), `session_reflections` (CRUD), `post_race_reshapes`
+(SEL/INS/UPD), `plan_weekly_notes`, `daily_coach_notes`, `phase_summaries`,
+`session_metric_overrides`, `notifications` (SEL+UPD), `health_daily_samples`
+(SEL), `plan_archive` (SEL+INS), `push_subscriptions` (ALL), `subscriptions` (SEL).
+
+**Staged rollout for the remaining routes (per route):**
+1. List every table the route touches.
+2. Confirm each has the RLS policy for the operation (SELECT for reads, INSERT/
+   UPDATE for writes) — query `pg_policy`, don't assume from migrations (several
+   policies live only in the DB, not in tracked SQL).
+3. If a policy is missing, add it in a migration FIRST (do not convert without it —
+   a JWT client on a policy-less table silently returns empty / rejects writes).
+4. Swap `createServiceClient` → `createUserScopedClient(req)`, keep the manual
+   `.eq('user_id')` filters, build, and smoke-test the route.
+5. Leave genuinely cross-user / no-session contexts (cron fan-out, webhooks,
+   `getUserTier`, the `x-service-key` internal paths) on the service role — those
+   legitimately need it. *(Partial — systemic; convert incrementally.)*
 
 ## 9 — MEDIUM — `analyse-run` / `weekly-report` impersonation primitive
 
