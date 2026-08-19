@@ -31,7 +31,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Price not configured.' }, { status: 503 })
   }
 
-  const origin = req.headers.get('origin') ?? 'https://www.zonna.run'
+  // Finding 13: pin redirect URLs to a known-origin allowlist rather than
+  // reflecting an attacker-controllable Origin header into success/cancel URLs.
+  const CANONICAL_ORIGIN = 'https://www.zonna.run'
+  const allowedOrigins = new Set(
+    [
+      CANONICAL_ORIGIN,
+      process.env.NEXT_PUBLIC_APP_URL,
+      process.env.NODE_ENV !== 'production' ? 'http://localhost:3000' : null,
+    ].filter(Boolean) as string[],
+  )
+  const requestedOrigin = req.headers.get('origin')
+  const origin = requestedOrigin && allowedOrigins.has(requestedOrigin)
+    ? requestedOrigin
+    : CANONICAL_ORIGIN
 
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',

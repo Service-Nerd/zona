@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { GeneratorInput, Plan } from '@/types/plan'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { getUserTier } from '@/lib/trial'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { validatePlan } from '@/lib/plan/invariants'
@@ -40,7 +41,9 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const tier = await getUserTier(user.id)
-    const input: GeneratorInput = await req.json()
+    const guard = await guardAiRequest(req, user.id, 'generate-plan')
+    if (!guard.ok) return guard.response
+    const input: GeneratorInput = guard.body
     const planStart = formatDate(nextMonday())
 
     const guardError = validate(input)

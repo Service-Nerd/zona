@@ -22,6 +22,7 @@
  */
 
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
@@ -40,6 +41,9 @@ export async function GET(req: NextRequest) {
   if (!isFeatureAllowed('activity_intelligence', tier)) {
     return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
   }
+
+  const limited = await enforceAiRateLimit(user.id, 'coaching-trend')
+  if (limited) return limited
 
   const sessionType   = req.nextUrl.searchParams.get('session_type')
   const distanceKmStr = req.nextUrl.searchParams.get('distance_km')

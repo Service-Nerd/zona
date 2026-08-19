@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { findWeekByN } from '@/lib/plan'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
@@ -49,7 +50,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
   }
 
-  const body = await req.json().catch(() => ({}))
+  const guard = await guardAiRequest(req, user.id, 'plan-weekly-note')
+  if (!guard.ok) return guard.response
+  const body = guard.body
   const week_n = Number((body as { week_n?: number }).week_n)
   if (!Number.isInteger(week_n) || week_n < 1) {
     return NextResponse.json({ error: 'week_n (positive integer) required' }, { status: 422 })

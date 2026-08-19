@@ -1,4 +1,5 @@
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
@@ -39,6 +40,9 @@ export async function GET(req: NextRequest) {
   if (!isFeatureAllowed('activity_intelligence', tier)) {
     return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
   }
+
+  const limited = await enforceAiRateLimit(user.id, 'daily-coach-note')
+  if (limited) return limited
 
   const userId = user.id
   const dateParam = req.nextUrl.searchParams.get('date')

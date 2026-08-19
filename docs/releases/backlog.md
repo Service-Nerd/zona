@@ -399,6 +399,19 @@ The Vetra → Zonna rename (commits `fda3ff6` + `ba469df`) is complete in code, 
 - 🔲 **[W6]** **FMT-02 — StravaPanel hardcoded `km`** *(P3, ~30 min)* — `components/strava/StravaPanel.tsx` stat tiles hardcode `km` (`this week`, `longest`, popup distance). **Admin-only** surface (nav entry removed), so lowest value. Fix: thread `preferredUnits` from the parent and render via `formatDistance` (INV-PREF-001).
   - **Verify still open:** `grep -c "km'" components/strava/StravaPanel.tsx` → **non-zero = still open** (3 as of 2026-08-15); `grep -c preferredUnits` → 0 confirms it's unthreaded.
 
+### Security audit follow-ups (from docs/security-audit-2026-08.md)
+
+*Source: full security audit 2026-08-19 (`docs/security-audit-2026-08.md` — the source of truth for status + fix direction). 10 of 14 findings fully fixed on branch `security/audit-2026-08-fixes` (2 more partial, 2 accepted); the items below are the deliberately-deferred remainder.*
+
+- 🔲 **SEC-07-VERIFY — Native Strava OAuth smoke test** *(P1, external — before next TestFlight)* — finding 7 changed `/api/strava/connect` from a redirect to an authed JSON endpoint + HMAC-signed state. Web path verified; the native `SFSafariViewController` round-trip needs a real-device test.
+  - **Verify still open:** External — device test. Confirm Connect Strava works end-to-end on iOS native.
+- 🔲 **SEC-06 — Residual dependency-CVE majors** *(P2, needs testing before bump)* — safe non-breaking fixes shipped (finding 6). Remaining need major bumps held for sign-off: `apn` → `node-forge`/`jsonwebtoken` (highest value; `apn@2.0.0` is major → needs an on-device iOS push test first), Next 16, `@supabase/ssr@0.12.4`. Not live-exploitable in current usage (apn only *signs* outbound APNs tokens; the exploitable Next CVEs already closed at 14.2.35).
+  - **Verify still open:** `npm audit --omit=dev` → any HIGH remaining = still open.
+- 🔲 **SEC-08 — RLS defence-in-depth rollout (remaining ~23 routes)** *(P2, incremental)* — `createUserScopedClient` infra + 2 pilots (`discipline-ledger`, `me/today-heartbeat`) shipped (finding 8). Convert the remaining service-role per-user routes one at a time, each preceded by a per-table RLS-policy check (query `pg_policy`; add the policy in a migration first if missing — a JWT client on a policy-less table silently returns empty). Recipe + verified live policy inventory in the audit doc.
+  - **Verify still open:** service-role per-user read/write routes not yet converted to `createUserScopedClient` = still open.
+- 🔲 **SEC-09 — `x-service-key` impersonation hardening (optional)** *(P3)* — `analyse-run`/`weekly-report` accept the service-role key + arbitrary `x-user-id` as an internal bypass (finding 9, accepted). Not client-forgeable; only worth a signature/allowlist if the service key's blast radius becomes a concern.
+- 🔲 **SEC-14 — Prompt-injection delimiter escaping (optional)** *(P3)* — user free-text (`user_note`, `race_name`) is concatenated into prompts unescaped (finding 14, accepted). Contained (deterministic engine, React-text render, per-user keyed). Add delimiter-escaping + a "treat quoted text as data" guard for belt-and-suspenders.
+
 ### General
 
 - 🔲 **[W6]** **Tier-divergent rendering utility** — once a second tier-divergent component lands (after `GeneratingCeremony.tsx`), centralise the `tier` prop pattern into shared context or typed convention. Document in `ui-patterns.md`

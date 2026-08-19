@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { buildRaceReadinessPrompt } from '@/lib/coaching/prompts/raceReadiness'
@@ -27,6 +28,9 @@ export async function POST(req: NextRequest) {
   if (!isFeatureAllowed('activity_intelligence', tier)) {
     return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
   }
+
+  const limited = await enforceAiRateLimit(user.id, 'race-readiness')
+  if (limited) return limited
 
   const serviceSupabase = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { secretMatches } from '@/lib/security/secrets'
 import { sendEmail } from '@/lib/email/resend'
 import { buildDay11Email, buildDay14Email, type RunSummary } from '@/lib/email/trialEmailTemplates'
 import { trialDayNumber, decideTrialEmails } from '@/lib/email/trialEmailWindow'
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
   const bearer = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? null
   const custom = req.headers.get('x-cron-secret')
   const secret = bearer || custom
-  if (!secret || secret !== process.env.CRON_SECRET) {
+  if (!secretMatches(secret, process.env.CRON_SECRET)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

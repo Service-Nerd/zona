@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { computeLedger } from '@/lib/coaching/disciplineLedger'
@@ -24,22 +24,23 @@ export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const service = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  )
+  // Finding 8: RLS-scoped client. plans / session_completions / run_analysis
+  // all have per-user RLS policies, so auth.uid() backstops the .eq('user_id')
+  // filters below (defence-in-depth) rather than the service role bypassing RLS.
+  const db = createUserScopedClient(req)
+  if (!db) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const tier = await getUserTier(user.id)
 
   const [planRes, completionsRes, analysesRes] = await Promise.all([
-    service.from('plans').select('plan_json').eq('user_id', user.id).maybeSingle(),
-    service.from('session_completions')
+    db.from('plans').select('plan_json').eq('user_id', user.id).maybeSingle(),
+    db.from('session_completions')
       .select('week_n, session_day, status, fatigue_tag')
       .eq('user_id', user.id),
     // Only fetch analyses for paid/trial — free criteria don't read them.
     tier === 'free'
       ? Promise.resolve({ data: [] as any[] })
-      : service.from('run_analysis')
+      : db.from('run_analysis')
           .select('week_n, hr_in_zone_pct')
           .eq('user_id', user.id),
   ])

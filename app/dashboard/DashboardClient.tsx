@@ -1238,11 +1238,11 @@ export default function DashboardClient() {
         if (cachedToken && cachedExpiry && nowSec < Number(cachedExpiry) - 300) {
           access_token = cachedToken
         } else {
-          // Refresh token via server-side route — keeps client secret safe
-          const tokenRes = await fetch('/api/strava/refresh', {
+          // Refresh token via server-side route — keeps client secret safe.
+          // authedFetch attaches the bearer token; the route derives the user
+          // from it (Finding 1) rather than trusting a body-supplied userId.
+          const tokenRes = await authedFetch('/api/strava/refresh', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id }),
           })
           if (!tokenRes.ok) { setStravaTokenFailed(true); setStravaLoading(false); return }
           const tokenData = await tokenRes.json()
@@ -10172,20 +10172,25 @@ function StravaConnectionRow() {
           ) : (
             <button onClick={async () => {
               if (!userId) return
-              // Native: open Strava OAuth in SFSafariViewController. Returns
-              // via NATIVE_STRAVA_CALLBACK (see lib/native.ts) — handled in
-              // CapacitorBoot.tsx. `platform=ios` param threads through to
-              // the OAuth state so the callback knows where to redirect back.
-              // Web: legacy full-page redirect. Dynamic Capacitor import
-              // keeps the web bundle from paying for the native shims.
+              // Finding 7: mint the authorize URL via an authenticated request
+              // (authedFetch attaches the bearer token) so the server derives
+              // the userId from the session and signs the OAuth state. The
+              // route returns the URL as JSON; native opens it in
+              // SFSafariViewController (returns via NATIVE_STRAVA_CALLBACK,
+              // handled in CapacitorBoot.tsx), web navigates to it. Dynamic
+              // Capacitor import keeps the web bundle free of native shims.
               const { Capacitor } = await import('@capacitor/core')
-              if (Capacitor.isNativePlatform()) {
+              const isNative = Capacitor.isNativePlatform()
+              const res = await authedFetch(`/api/strava/connect${isNative ? '?platform=ios' : ''}`)
+              if (!res.ok) return
+              const { url } = await res.json()
+              if (!url) return
+              if (isNative) {
                 const { Browser } = await import('@capacitor/browser')
-                const url = `${window.location.origin}/api/strava/connect?user_id=${userId}&platform=ios`
                 await Browser.open({ url, presentationStyle: 'popover' })
                 return
               }
-              window.location.href = `/api/strava/connect?user_id=${userId}`
+              window.location.href = url
             }} disabled={!userId} style={{
               background: 'var(--strava)', color: 'var(--card)',
               border: 'none', borderRadius: '8px', padding: '8px 14px',
