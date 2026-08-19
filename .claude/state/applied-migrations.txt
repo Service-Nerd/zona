@@ -55,3 +55,5 @@
 20260730_manual_activity_source.sql
 20260806_hr_bpm_histogram.sql
 20260810_session_metric_overrides.sql
+20260819_ai_rate_limits.sql
+20260819_subscription_event_ordering.sql
