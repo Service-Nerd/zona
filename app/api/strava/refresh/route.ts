@@ -1,12 +1,16 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getStravaToken } from '@/lib/strava'
+import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { userId } = await request.json()
-    if (!userId) {
-      return NextResponse.json({ error: 'No user ID' }, { status: 400 })
+    // Finding 1: derive the user from the validated bearer token — never trust
+    // a userId supplied in the request body. Previously this route was
+    // unauthenticated and returned any user's live Strava access token.
+    const user = await getUserFromRequest(request)
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Use service role to bypass RLS — safe, server-side only
@@ -18,7 +22,7 @@ export async function POST(request: Request) {
     const { data: settings, error } = await supabase
       .from('user_settings')
       .select('strava_refresh_token')
-      .eq('id', userId)
+      .eq('id', user.id)
       .single()
 
     if (error || !settings?.strava_refresh_token) {

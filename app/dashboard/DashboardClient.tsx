@@ -1238,11 +1238,11 @@ export default function DashboardClient() {
         if (cachedToken && cachedExpiry && nowSec < Number(cachedExpiry) - 300) {
           access_token = cachedToken
         } else {
-          // Refresh token via server-side route — keeps client secret safe
-          const tokenRes = await fetch('/api/strava/refresh', {
+          // Refresh token via server-side route — keeps client secret safe.
+          // authedFetch attaches the bearer token; the route derives the user
+          // from it (Finding 1) rather than trusting a body-supplied userId.
+          const tokenRes = await authedFetch('/api/strava/refresh', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id }),
           })
           if (!tokenRes.ok) { setStravaTokenFailed(true); setStravaLoading(false); return }
           const tokenData = await tokenRes.json()
