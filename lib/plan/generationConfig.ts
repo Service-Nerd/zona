@@ -201,12 +201,72 @@ export const GENERATION_CONFIG = {
   // behaviour). See backlog § R21 — Strength Sessions.
   STRENGTH_ENABLED: false,
 
-  // ── Quality session sizing ───────────────────────────────────────────────────
+  // ── Quality session sizing (CoachingPrinciples §8 — SC-10 / CD-14) ──────────
+  //
+  // STILL A FLAT SHARE, and that is now a RECORDED DEFECT rather than an
+  // unexamined default. CD-14 ruled category-specific sizing correct; the
+  // implementation was built, measured against the property sweep, and DID NOT
+  // SHIP. What the sweep found is worth more than the number would have been.
+  //
+  // The defect it was meant to fix is real. Delivered MAIN SET on the traced
+  // 12-week 10K (session minus the warm-up floor and cool-down):
+  //
+  //     vo2max     W9 30 min,  W10 32 min    <- the LARGEST sessions in the plan
+  //     race pace  W6 22 min,  W7  26 min
+  //
+  // The coaching truth is the reverse — 25 minutes of threshold is a normal
+  // session, 25 minutes of VO2max is a race — so the flat share INVERTS the
+  // ordering. Tracked by INV-PLAN-MAIN-SET-ORDERING (warn), which is exactly the
+  // §34 position: declared AND exercised, with the value open.
+  //
+  // WHY THE FIX DID NOT SHIP, and it is not a calibration problem. Sizing keys
+  // off WEEKLY VOLUME, so the biggest sessions land in the biggest weeks whatever
+  // their category — and VO2max is scheduled in peak, the biggest weeks of all.
+  // A category percentage can only offset that by going low enough to drive
+  // sessions under MIN_SESSION_DISTANCE_KM. Swept 13-17% for vo2max:
+  //
+  //     13-14%  peak week falls BELOW the build week before it (§23) — volume
+  //             freed from quality has nowhere to go, because the easy runs are
+  //             already at their §9 ceiling (easy <= long / MIN_RATIO), so it is
+  //             LOST from the week rather than reallocated
+  //     15%     passes the canonical 10K case, then fails at scale: 187 ordering
+  //             breaches, 220 sessions under the size floor, 37 peak inversions
+  //     17%     ordering breaks outright
+  //
+  // THE CONCLUSION IS ABOUT CD-14'S PREMISE, NOT ITS PERCENTAGES: sizing quality
+  // as a share of weekly volume cannot express "VO2max is the least sustainable
+  // per minute", because share-of-volume makes every session scale with the week
+  // it sits in. The ordering needs the main set sized in ABSOLUTE minutes,
+  // decoupled from weekly volume. That is an architectural change to the
+  // duration model, not a config edit — recorded as SIZING-REALLOC-01, paired
+  // with SC-08 which reworks session structure anyway.
+  //
+  // Per CD-21's precedent: a breach is a finding about the value, not a number
+  // to tune until the sweep goes quiet.
+  //
   // Quality session distance as % of weekly volume (single source — was hardcoded
   // 0.18 in multiple places before). When two quality sessions in a peak week,
   // the second is scaled down by SECONDARY_QUALITY_PCT_OF_PRIMARY.
   QUALITY_SESSION_PCT_OF_WEEKLY:    18,
   SECONDARY_QUALITY_PCT_OF_PRIMARY: 80,
+
+  // Tolerance on the vo2max < race_specific <= threshold main-set ordering
+  // (INV-PLAN-MAIN-SET-ORDERING, §8). GROUNDED IN THE SYSTEM'S OWN GRANULARITY,
+  // not chosen to make a plan pass: session distances round to
+  // DISTANCE_ROUNDING_PRECISION_KM (0.5 km), which at quality paces of roughly
+  // 4:30-5:15/km is ~2.3-2.6 minutes, and the warm-up floor is a step function
+  // on top of that. An ordering asserted finer than one rounding step is
+  // asserting noise.
+  //
+  // Same reasoning as §83's INTENSITY_ORDERING_TOLERANCE_PCT — "two independent
+  // derivations landing within a rounding width of each other is noise, not an
+  // inversion" — and the same precedent for why a tolerance here is doctrine
+  // rather than tuning-to-pass.
+  //
+  // Calibration check: the defect this invariant exists to catch was 32 min of
+  // VO2max against 26 of race pace, a 6-minute inversion. That still fires. The
+  // case this tolerance admits was 24 against 23.
+  MAIN_SET_ORDERING_TOLERANCE_MINS: 3,
 
   // CoachingPrinciples §8 (CD-20 / SC-01, 2026-08-20) — a second quality session
   // requires at least this many training days in the week.

@@ -301,6 +301,31 @@ experienced  → 2
 - `GENERATION_CONFIG.QUALITY_SESSION_PCT_OF_WEEKLY = 18` — primary quality session distance as % of weekly volume.
 - `GENERATION_CONFIG.SECONDARY_QUALITY_PCT_OF_PRIMARY = 80` — when two quality sessions are scheduled (peak experienced), the second is 80% of the first. Different stressor profile, slightly less volume.
 
+> **⚠️ The flat share inverts the main-set ordering. Known-open defect, measured but not fixed — SC-10 / CD-14, 2026-08-20.**
+>
+> Every quality session is sized identically, whatever kind it is. That is the CD-1 error one layer down, and it is **not neutral**. Delivered **main set** (session minus the warm-up floor and cool-down — the coaching-meaningful quantity) on the traced 12-week 10K:
+>
+> | Stimulus | Main set |
+> |---|---|
+> | **vo2max** | W9 **30 min**, W10 **32 min** |
+> | race pace | W6 22 min, W7 26 min |
+>
+> The coaching truth is the reverse: *twenty-five minutes of threshold work is a normal session; twenty-five minutes of VO2max work is a race.* 32 minutes of continuous Zone 4–5 for a 43-year-old on 57 km/week is roughly a 10K race. And because sizing keys off weekly volume, **the VO2max session grows as volume peaks** — anti-correlated with the capacity to absorb it (Seiler), and worst for peri- and post-menopausal runners whose between-bout recovery is slower (Sims).
+>
+> **Why the fix was built and did not ship, and it is not a calibration problem.** Category percentages were implemented and swept across 13–17% for `vo2max`:
+>
+> | Value | Result |
+> |---|---|
+> | 13–14% | Peak week falls **below** the build week before it (§23) — volume freed from quality has nowhere to go, because easy runs are already at their §9 ceiling (`easy ≤ long / LONG_RUN_MIN_RATIO_VS_EASY`), so it is **lost** from the week rather than reallocated |
+> | 15% | Passes the canonical 10K case, then fails at scale: **187 ordering breaches, 220 sessions under the size floor, 37 peak inversions** across 18,056 plans |
+> | 17% | Ordering breaks outright |
+>
+> **The conclusion is about CD-14's premise, not its percentages.** Sizing quality as a *share of weekly volume* cannot express "VO2max is the least sustainable per minute", because share-of-volume makes every session scale with the week it sits in — and VO2max is scheduled in peak, the biggest weeks of all. **The main set needs sizing in absolute minutes, decoupled from weekly volume.** That is a change to the duration model, not a config edit: tracked as **SIZING-REALLOC-01**, paired with SC-08.
+>
+> **Hutchinson's CD-14 amendment 3, discharged:** the audit's claim that its model "validates" the 18% constant recovered its own inputs and is **withdrawn**. 18 was never justified either. Neither number has external support, and this section no longer implies otherwise.
+>
+> Checked by `INV-PLAN-MAIN-SET-ORDERING` at **`warn`** — declared *and* exercised (§34 satisfied), with the value open. It returns to `error` when SIZING-REALLOC-01 lands. Willy's CD-14 amendment 2 (a rep-count ceiling per category, with the budget overflowing into rep *length*) is **blocked on SC-08** — reps do not reach the plan at all today, so a ceiling on them cannot be expressed or checked.
+
 ### A second quality session needs a week long enough to hold it — added 2026-08-20 (CD-20 / SC-01)
 
 **Principle.** The fitness ceiling above caps how many quality sessions a runner may be *given*. This is the second constraint: the **week** must be able to carry it. Below `GENERATION_CONFIG.MIN_TRAINING_DAYS_FOR_SECOND_QUALITY` (**5**) training days, the engine places one quality session regardless of fitness — and **records the decision** rather than leaving a silent absence.

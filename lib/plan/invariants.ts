@@ -14,6 +14,7 @@ import { GENERATION_CONFIG } from './generationConfig'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { isLongRun, isShakeout, classifyStimulus } from './sessionRole'
+import { mainSetMinutes } from './sessionFormat'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
 import { parseDateLocal, formatDate } from './length'
 
@@ -24,6 +25,7 @@ export type Severity = 'error' | 'warn'
 // enforced — adding a code here without enforcement (or vice versa) is a defect.
 // (CoachingPrinciples §34, R2/H-04)
 export const INVARIANT_CODES = [
+  'INV-PLAN-MAIN-SET-ORDERING',
   'INV-PLAN-VO2MAX-ONSET',
   'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS',
   'INV-PLAN-COACH-NOTES-MATCH-INTENT',
@@ -1149,6 +1151,64 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // survived: nothing computed the number, so nobody could see which quantity
   // it was. The value being wrong was downstream of it being unexercised.
   //
+  // INV-PLAN-MAIN-SET-ORDERING (CoachingPrinciples §8 — SC-10 / CD-14)
+  //
+  // The three kinds of hard running have different sustainable volumes:
+  // twenty-five minutes of threshold work is a normal session, twenty-five
+  // minutes of VO2max work is a race. A plan's largest VO2max main set must
+  // therefore not exceed its largest threshold or race-pace main set.
+  //
+  // THE FLAT 18% SHARE INVERTED THIS, and nothing noticed for the same reason
+  // §34 exists: the ordering was never computed. On the traced 12-week 10K the
+  // VO2max sessions delivered 30 and 32-minute main sets against 22 and 26 for
+  // race pace — the hardest sessions were also the longest, and they grew with
+  // weekly volume, i.e. anti-correlated with the capacity to absorb them.
+  //
+  // Compares MAIN SET, not session length: warm-up carries a floor, so session
+  // length is a poor proxy. Derived via sessionFormat.mainSetMinutes (single
+  // owner) rather than re-deriving the split here.
+  //
+  // Categories absent from a plan are simply skipped — this asserts an ordering
+  // among what is present, never that a plan must contain all three.
+  {
+    const maxMain: Record<string, { mins: number, week: number, label: string }> = {}
+    for (const w of plan.weeks) {
+      for (const sn of Object.values(w.sessions)) {
+        if (!sn || !(sn.type === 'quality' || sn.type === 'intervals' || sn.type === 'tempo')) continue
+        const stim = classifyStimulus(sn)
+        if (!stim) continue
+        const mins = mainSetMinutes(sn.duration_mins ?? 0)
+        if (!maxMain[stim] || mins > maxMain[stim].mins) {
+          maxMain[stim] = { mins, week: w.n, label: sn.label ?? '' }
+        }
+      }
+    }
+
+    const vo2 = maxMain['vo2max']
+    // `tempo` covers threshold rows; `race_pace` covers race-specific work.
+    for (const softer of ['tempo', 'race_pace'] as const) {
+      const other = maxMain[softer]
+      if (!vo2 || !other) continue
+      if (vo2.mins > other.mins + GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS) {
+        violations.push({
+          code: 'INV-PLAN-MAIN-SET-ORDERING',
+          principle_ref: 'CoachingPrinciples §8',
+          // `warn`, because the ordering is CURRENTLY VIOLATED BY DESIGN — the
+          // flat QUALITY_SESSION_PCT_OF_WEEKLY inverts it, and the fix did not
+          // ship (see the config comment: share-of-weekly-volume cannot express
+          // this ordering at all). Declared AND exercised, with the value open —
+          // the §34 position, and the same one CD-21 took on §1's ceiling.
+          // Returns to `error` when SIZING-REALLOC-01 lands.
+          severity: 'warn',
+          week: vo2.week,
+          message: `Largest VO2max main set is ${vo2.mins.toFixed(0)} min ("${vo2.label}", week ${vo2.week}), exceeding the largest ${softer} main set of ${other.mins.toFixed(0)} min ("${other.label}", week ${other.week}). VO2max work is the least sustainable per minute and must not be the plan's longest quality session.`,
+          actual: `${vo2.mins.toFixed(0)} min`,
+          expected: `<= ${(other.mins + GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS).toFixed(0)} min (${softer} + ${GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS} min rounding tolerance)`,
+        })
+      }
+    }
+  }
+
   // INV-PLAN-VO2MAX-ONSET (CoachingPrinciples §5/§17 — SC-07 / CD-16 + CD-22)
   //
   // The first VO2max session must leave at least

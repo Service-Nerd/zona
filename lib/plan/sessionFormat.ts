@@ -47,3 +47,24 @@ export const SESSION_FORMAT = {
     race_pace_distances:   ['HM', 'MARATHON'],
   },
 } as const
+
+/**
+ * The MAIN SET of a quality session, in minutes — the coaching-meaningful
+ * quantity, and the one nothing in the engine governed directly until SC-10.
+ *
+ * A stored session carries only its total duration. Warm-up and cool-down are
+ * carved out of it by the UNIVERSAL split, and the warm-up floor
+ * (`quality_warmup_min_mins`) means the carve-out is NOT a fixed fraction: on a
+ * short taper session the floor consumes most of the session, which is how a
+ * 29-minute session came to hold 11 minutes of work.
+ *
+ * Exported so the invariant layer and any analysis derive it from ONE place.
+ * SC-10 needed this number in three (config reasoning, invariant, tracer), and
+ * three copies of a formula is how they stop agreeing.
+ */
+export function mainSetMinutes(durationMins: number): number {
+  const u = SESSION_FORMAT.UNIVERSAL
+  const warmup = Math.max(u.quality_warmup_min_mins, durationMins * u.warmup_pct / 100)
+  const cooldown = durationMins * u.cooldown_pct / 100
+  return Math.max(0, durationMins - warmup - cooldown)
+}
