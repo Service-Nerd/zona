@@ -1,9 +1,11 @@
 # Session Catalogue — Domain Reference
 
-**Authority**: This document defines the catalogue of concrete training sessions the rule engine may schedule. The runtime source of truth is the Supabase `session_catalogue` table — this document describes the schema, the v1 contents, and the selection rules.
+**Authority**: This document defines the catalogue of concrete training sessions the rule engine may schedule. **The runtime source of truth is `lib/plan/sessionCatalogueData.ts` (`V1_SESSION_CATALOGUE`)** — this document describes the schema, the contents, and the selection rules.
+
+> **⚠️ Corrected 2026-08-20 (SC-00).** This line previously named the Supabase `session_catalogue` table as the runtime source of truth. **That was never true.** No code path has ever read the table; every plan ever generated came from the in-repo constant. The table was seeded once (14 rows) and diverged — the constant holds 16. The table is now **retired**. Do not re-point the engine at it: as it stands that would empty the 5K and 10K taper. Ruling: `docs/decisions/coaching-board-2026-08-19-session-catalogue.md`; evidence: `docs/coaching-review/2026-08-19/session-catalogue-audit.md` § A.0.
 
 **Related**:
-- `docs/architecture/ADR-010-session-catalogue.md` — why the catalogue exists
+- `docs/architecture/ADR-010-session-catalogue.md` — why the catalogue exists (amended 2026-08-20)
 - `docs/canonical/CoachingPrinciples.md` §17 — plan signatures and distance shape
 - `docs/canonical/coaching-rules.md` — operational rules consuming the catalogue
 
@@ -18,7 +20,9 @@ The system uses two orthogonal session classifications. Both must remain distinc
 | **`SessionType`** | The slot kind on the calendar | Card colour, label, the user's at-a-glance read | `types/plan.ts` (TypeScript union) |
 | **Catalogue `category`** | The coaching content of a quality session | Which session goes where, by phase and distance | `session_catalogue.category` (database enum) |
 
-A scheduled session in the plan JSON carries a `SessionType` (e.g. `quality`, `intervals`, `long`) **and** — if it is a quality session — a reference to the catalogue row that produced its main-set content.
+A scheduled session in the plan JSON carries a `SessionType` (e.g. `quality`, `intervals`, `long`).
+
+> **⚠️ Corrected 2026-08-20 (SC-00).** This paragraph previously continued: *"**and** — if it is a quality session — a reference to the catalogue row that produced its main-set content."* **The plan JSON carries no such reference.** A generated session stores name, distance, duration, pace band, HR band, RPE and coach's notes — nothing else. The rep structure is reattached at *display* time by matching the session's **name** against the catalogue (`DashboardClient.tsx:4445`, `:4517`), a join that already fails on four of the eight quality sessions in the traced 10K plan — every session the engine renames, and every label the AI enricher rewrites. Closing this is **SC-08**, and it is the blocking prerequisite for any v2 structure work.
 
 ### `SessionType` (slot type, drives card colour)
 

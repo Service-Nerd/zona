@@ -1,13 +1,28 @@
 // FREE — infrastructure
-// In-memory mirror of the Supabase `session_catalogue` table for engine use.
-// The migration (supabase/migrations/20260425_session_catalogue.sql) is the
-// canonical store; this constant must stay in sync.
 //
-// Why a mirror file:
-// - Keeps `lib/plan/ruleEngine.ts` a pure function (testable without Supabase).
-// - Phase 7 validation diffs DB rows against this constant as a sync check.
-// - Future: Phase 6 / API route reads from Supabase live; engine consumes
-//   whatever array is passed in. The mirror is the dev/test default.
+// ⚖️  COACHING DOCTRINE FILE. This is the canonical catalogue of concrete
+// sessions the engine is allowed to prescribe. Changes to what a runner can
+// be given require a Coaching Board review (ADR-017, INV-COACH-001).
+// Enforced by .claude/hooks/coaching-guard.py.
+//
+// SOURCE OF TRUTH (SC-00, 2026-08-20 — was previously mis-stated).
+// This constant IS the runtime source of truth. It is not a mirror.
+//
+// The Supabase `session_catalogue` table is RETIRED and read by nothing.
+// It was seeded once (supabase/migrations/20260425_session_catalogue.sql,
+// 14 rows) and then diverged: this file gained `goal_pace_sharpener`,
+// `hm_pace_long_run`, and taper eligibility on `tempo_continuous`, none of
+// which were ever migrated. Every plan ever generated came from this file.
+// Do not re-point the engine at the table — as it stands that would empty
+// the 5K and 10K taper (zero eligible rows → the engine falls through to an
+// unnamed inline label with no purpose, structure or coach's voice).
+//
+// Why the file and not the table (ADR-010 amended 2026-08-20):
+// - A table is invisible to the coaching-guard hook. Prescription could be
+//   changed by a SQL update with no board review — an INV-COACH-001 hole.
+// - Keeps `lib/plan/ruleEngine.ts` a pure function of its inputs, with no
+//   network dependency on a path that must never fail (ADR-006, ADR-009).
+// The cost, accepted: catalogue changes require a deploy.
 
 export type CatalogueCategory =
   | 'aerobic' | 'threshold' | 'vo2max' | 'race_specific' | 'ultra_specific'

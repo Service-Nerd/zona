@@ -40,6 +40,13 @@ DOCTRINE_FILES = [
     "lib/plan/generationConfig.ts",
     "lib/plan/planSignatures.ts",
     "lib/plan/sessionFormat.ts",
+    # Added 2026-08-20 (SC-00). This file IS the catalogue of concrete sessions
+    # the engine may prescribe — doctrine by any reading. It was omitted because
+    # the Supabase `session_catalogue` table was believed to be the runtime
+    # source; it never was, so for four months what a runner could be given was
+    # editable with no board review. Same regression class as HealthObserverPlugin
+    # missing from the cap-config re-add list: the guard existed, the entry didn't.
+    "lib/plan/sessionCatalogueData.ts",
 ]
 
 TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}

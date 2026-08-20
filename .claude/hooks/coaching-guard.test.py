@@ -28,7 +28,13 @@ CASES = [
     ("generation config",        "Edit",  "lib/plan/generationConfig.ts",                FLAG),
     ("plan signatures",          "Write", "lib/plan/planSignatures.ts",                  FLAG),
     ("session format",           "Edit",  "lib/plan/sessionFormat.ts",                   FLAG),
-    ("session catalogue",        "Edit",  "docs/canonical/session-catalogue.md",         FLAG),
+    ("session catalogue doc",    "Edit",  "docs/canonical/session-catalogue.md",         FLAG),
+    # SC-00 regression: the catalogue DATA file is the runtime source of truth
+    # for what the engine may prescribe, and was absent from DOCTRINE_FILES for
+    # four months. A missing entry is silent — this case is the only thing that
+    # would notice it going missing again.
+    ("session catalogue data",   "Edit",  "lib/plan/sessionCatalogueData.ts",            FLAG),
+    ("catalogue data, absolute", "Write", REPO + "lib/plan/sessionCatalogueData.ts",     FLAG),
     ("zone rules",               "Edit",  "docs/canonical/zone-rules.md",                FLAG),
     ("coaching rules",           "Edit",  "docs/canonical/coaching-rules.md",            FLAG),
     ("MultiEdit counts",         "MultiEdit", "lib/plan/generationConfig.ts",            FLAG),

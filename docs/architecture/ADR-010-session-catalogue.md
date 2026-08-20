@@ -1,8 +1,29 @@
 # ADR-010 — Session Catalogue (Selection over Generation)
 
-**Status**: Accepted
+**Status**: Accepted — **amended 2026-08-20 (SC-00), see below**
 **Date**: 2026-04-25
 **Releases**: R23 (rebuild)
+
+---
+
+## Amendment 2026-08-20 — the store is a file, not a table (SC-00)
+
+**The decision below specifies a Supabase `session_catalogue` table as the catalogue store. That half of the ADR is superseded. The runtime store is `lib/plan/sessionCatalogueData.ts` (`V1_SESSION_CATALOGUE`).**
+
+**What actually happened.** The table was created and seeded with 14 rows on 2026-04-25 and **no code path ever read it.** The generator has always defaulted to the in-repo constant (`ruleEngine.ts:2800`), and the sole production call site passes three arguments, never a catalogue. The constant then drifted to 16 rows — gaining `goal_pace_sharpener`, `hm_pace_long_run` and taper eligibility on `tempo_continuous` — none of it migrated. **Every plan ever generated came from the file.** Discovered by the 2026-08-19 catalogue audit (§ A.0); the Coaching Board recorded it as an engineering finding blocking all of its rulings.
+
+**Why the file wins, on review.** Two reasons, the first decisive:
+
+1. **A table is invisible to the coaching-doctrine hook.** `.claude/hooks/coaching-guard.py` fires on edits to doctrine *files*. What the engine is allowed to prescribe is doctrine — but a `session_catalogue` row is editable by SQL with no Coaching Board review, no diff, and no commit. That is a hole in INV-COACH-001, and it is exactly the class of gap ADR-017 exists to close. The catalogue is now in `DOCTRINE_FILES` and cannot be changed without the hook firing.
+2. **It keeps the rule engine a pure function of its inputs.** ADR-006 requires the deterministic engine to always succeed and ADR-009 makes it config-driven; a network fetch on that path adds a failure mode to the one code path that is not allowed to have one.
+
+**What is retained.** Everything else in this ADR stands: selection-over-generation, the two-taxonomy split (`SessionType` vs catalogue `category`), the row shape, and the selection rules. **Only the storage medium changes.** The `CREATE TABLE` below is retained as the historical record and as the row-shape reference — the TypeScript interface `SessionCatalogueRow` mirrors it field for field.
+
+**Consequences accepted.** Catalogue edits require a deploy rather than a SQL update. Given that a catalogue edit *should* convene the board, needing a commit is a feature.
+
+**Do not re-point the engine at the table.** As it stands the table has no eligible row for a 5K or 10K taper; wiring it in would empty that phase and fall through to an unnamed inline session with no purpose, structure or coach's voice. If the table is ever revived it must be seeded from the file, not the reverse.
+
+**The `session_catalogue` table is retired in place** — left in the database, read by nothing. Dropping it is optional cleanup, not required by SC-00.
 
 ---
 
