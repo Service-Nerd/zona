@@ -509,6 +509,22 @@ export const GENERATION_CONFIG = {
   USE_PACE_RANGES_NOT_POINTS: true,
   EASY_RUN_ZONE_CAP: 'Z2_TOP', // resolves to top of ZONES.Z2 at runtime
 
+  // ── Cross-session intensity ordering (CoachingPrinciples §83, CD-16/SC-06) ──
+  // How much faster than derived INTERVAL pace a runner's stated GOAL pace may
+  // be before the plan must admit the target sits beyond measured fitness.
+  //
+  // Why a tolerance at all rather than a strict comparison: goal pace comes from
+  // the runner's stated target time, interval pace from their benchmark VDOT.
+  // Two independent derivations landing within a rounding width of each other is
+  // noise, not an inversion. Beyond this width it is a real ordering failure —
+  // the sessions labelled VO2max are prescribed slower than the sessions labelled
+  // race pace, and a runner following pace and a runner following heart rate are
+  // running two different plans.
+  //
+  // 0.5% ≈ 1.4 s/km at 4:30/km. The audit's traced case sits ~1.1% inside the
+  // inversion (goal 4:30 vs interval 4:33), so it is caught with margin to spare.
+  INTENSITY_ORDERING_TOLERANCE_PCT: 0.5,
+
   // Fitness classification config lives in FITNESS_VDOT_THRESHOLDS +
   // FITNESS_VOLUME_THRESHOLDS above (dual-signal, CoachingPrinciples §79). The
   // former single FITNESS_THRESHOLDS key was superseded by GEN-FIX-07/D2 and

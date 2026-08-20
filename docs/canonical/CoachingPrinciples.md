@@ -756,7 +756,17 @@ The refusal tier — *"not achievable in this window"* — **is** the §44 `bloc
 
 1. **Ordinal, never a percentage.** With one benchmark run and one max HR the engine cannot defend a probability — a "72% chance" is fabricated precision, and false precision is an overclaim. The ladder maps to something real (prep-time margin + input constraint); a number does not.
 2. **The band describes demand on the *timeline/life*, not a verdict on the *runner*.** "Very Demanding" (of you) reads as respect and keeps the runner in the app; "low chance of success" reads as an insult and closes it. When the band lands in the top tiers it carries the same §44 alternatives (defer, drop to finish, shorter distance).
-3. **A friendly band may never front a constrained or warned plan** (Willy). The band is derived *only* from prep-time margin + `compression_classification` — a **pre-generation feasibility** read — never from plan-quality/enrichment signals. That keeps it structurally distinct from the **PAID** numeric confidence score (a *post-generation quality* read), so the two can never become competing verdicts on the same plan (SLT boundary, 2026-08-18).
+3. **A friendly band may never front a constrained or warned plan** (Willy). The band is derived *only* from **pre-generation feasibility** signals — never from plan-quality/enrichment signals. That keeps it structurally distinct from the **PAID** numeric confidence score (a *post-generation quality* read), so the two can never become competing verdicts on the same plan (SLT boundary, 2026-08-18).
+
+### A target beyond measured fitness is the same class of statement — amended 2026-08-20 (CD-16 / SC-06)
+
+**Principle.** The band takes a **third** feasibility input alongside prep-time margin and `compression_classification`: whether the runner's stated target pace is faster than the interval pace their benchmark supports. When it is, the band reads at least `demanding` and `meta.goal_beyond_measured_fitness` is set.
+
+**Why this belongs to the band and not the confidence score.** It is computed from two *inputs* — target time and benchmark — **before any session exists**. It is a read on the feasibility of the runner's chosen goal, exactly like prep-time margin, not a judgement about the plan that was produced. The SLT boundary above is about *pre-generation feasibility vs post-generation quality*, not about which particular fields are consulted; this stays on the pre-generation side. The board named the band as the correct surface precisely because it is already ordinal, already FREE, and already exists to say "this is a real ask" without pretending to a probability.
+
+**What the runner is being told.** Not "you will fail". The plan is built toward the target as stated; the band says the gap is real and names the artefact the runner would otherwise discover mid-plan — that their race-pace sessions bite harder than their interval sessions (see §83). Per constraint 2 above, the demand is on the **target**, not the athlete.
+
+**Config.** `GENERATION_CONFIG.INTENSITY_ORDERING_TOLERANCE_PCT` (0.5%) — how far goal pace may exceed derived interval pace before the target counts as beyond measured fitness. Enforced by `INV-PLAN-INTENSITY-ORDERING`.
 
 **Tier.** The difficulty band is **FREE** — it extends the already-FREE prep-time gate and is the honesty the brand is built on ("training plans that stop you overtraining"). The numeric confidence score stays **PAID**. SLT-signed 2026-08-18 (unanimous). `FEATURE_GATES.FREE_ALWAYS += 'plan_difficulty_band'`.
 
@@ -1671,6 +1681,26 @@ Before this, every such reshape wrote a `reshape_invalid` ops event and soft-deg
 **Decision (SLT, 2026-08-06).** Option B of two: (A) keep the invariant and make the reshaper soften rather than remove quality; (B) exempt recorded downgrades. B chosen — A would have a structural invariant override a coaching intervention responding to real signal. **Revisit if** `ops_events` shows EF-triggered downgrades firing on runners who are not actually fatigued; that would mean the reshape trigger is too sensitive and A becomes the right answer.
 
 **Config.** No numerics. Triggers that qualify: `INTENSITY_DOWNGRADE_TRIGGERS` in `app/api/adjust-plan/route.ts` (`ef_decline`, `fatigue`).
+
+---
+
+## 83. Sessions must be coherent with each other, not only with themselves
+
+*Added 2026-08-20 — Coaching Board CD-16 / SC-06.*
+
+**Principle.** A plan's sessions form an intensity ladder, and the ladder must not invert. Within one plan, a session prescribed in the threshold/race band (Zone 3) MUST NOT be prescribed **faster** than a session in the VO2max band (Zone 4–5), beyond `INTENSITY_ORDERING_TOLERANCE_PCT`. Where the runner's stated target creates such an inversion, the engine MUST either reconcile the two prescriptions or declare the inversion — `meta.goal_beyond_measured_fitness` set, and a difficulty band that does not read `comfortable` (§44). **A plan may be a stretch. It may not pretend not to be.**
+
+**Why this is its own principle and not a clause in §19.** §19 asks whether a session's *name* matches its *own* prescription, and every session in the traced plan passed it. The defect only exists between two sessions:
+
+> The goal-pace sessions were prescribed at **4:30/km** with a heart-rate ceiling of **160**. The VO2max sessions were prescribed at **4:33/km** with a heart-rate band of **160–188**. The sessions labelled VO2max were three seconds per kilometre *slower* than the sessions labelled race pace, while carrying a band 28 beats wider at the top.
+
+A runner following pace finds the "VO2max" work easier than the race-pace work. A runner following heart rate finds the opposite. **The plan cannot be executed as written by both metrics.** The cause is structural rather than a slip: interval pace derives from *measured* fitness (VDOT), goal pace from the *stated target*. Any sufficiently ambitious target produces it — it is not an edge case.
+
+**The general lesson, which is the reason this section exists.** Every invariant written before this one validated a single session against its own prescription. That is why nothing caught this: each session was individually defensible and the plan was only incoherent when two of them were placed side by side. **A constitution enforced one session at a time cannot see a contradiction that lives between sessions.** When adding a principle, ask which of its failures would survive a per-session check.
+
+**Known gap.** The check compares the fastest Zone 3 session against the fastest Zone 4–5 session across the whole plan. It does not yet assert the finer ordering *within* a band, nor that heart-rate bands respect the same ladder as paces — the HR half of the incoherence above is currently unchecked.
+
+**Config.** `GENERATION_CONFIG.INTENSITY_ORDERING_TOLERANCE_PCT` (0.5% — two independent derivations landing within a rounding width of each other is noise, not an inversion). Enforced by `INV-PLAN-INTENSITY-ORDERING` in `lib/plan/invariants.ts`. Surfaced via §44's difficulty band.
 
 ---
 

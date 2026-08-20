@@ -3379,9 +3379,29 @@ export function generateRulePlan(
   //   time goal on a tight-but-ok clock  → demanding
   //   otherwise                          → comfortable
   const prepMargin = prepTime.weeks_available - prepTime.weeks_required_ok
+
+  // SC-06 / CD-16 — the pace inversion. Goal pace comes from the runner's stated
+  // target; interval pace from their measured benchmark. When the target is
+  // ambitious enough, goal pace OVERTAKES interval pace, and the plan prescribes
+  // its "VO2max" sessions slower than its "race pace" sessions while giving them
+  // a heart-rate band 28 beats wider at the top. A runner following pace and a
+  // runner following heart rate then run two different plans. This is not rare —
+  // any sufficiently ambitious target produces it — and nothing caught it,
+  // because every existing invariant validates one session in isolation.
+  //
+  // Stays inside the §44 band's SLT boundary (2026-08-18: the band reads
+  // *pre-generation feasibility*, never plan quality — that is the PAID
+  // confidence score's job). This is derived from two INPUTS, target time and
+  // benchmark, before any session exists. It is the same class of statement as
+  // prep-time margin: your chosen goal is a real ask.
+  const goalPaceMins = goalPace ? paceStrToMins(goalPace) : null
+  const goalBeyondMeasuredFitness = goalPaceMins != null
+    && goalPaceMins < pace.minPerKmInterval * (1 - GENERATION_CONFIG.INTENSITY_ORDERING_TOLERANCE_PCT / 100)
+
   const difficultyBand: 'comfortable' | 'demanding' | 'very_demanding' =
     prepTime.status === 'warn' ? 'very_demanding'
     : compressionClassification === 'constrained_by_inputs' ? 'demanding'
+    : goalBeyondMeasuredFitness ? 'demanding'
     : (input.goal === 'time_target' && prepMargin < GENERATION_CONFIG.DIFFICULTY_COMFORTABLE_MARGIN_WEEKS) ? 'demanding'
     : 'comfortable'
 
@@ -3395,6 +3415,11 @@ export function generateRulePlan(
       ? `Very demanding on ${prepTime.weeks_available} weeks — below the ${prepTime.weeks_required_ok}-week mark for this race. It can be run; the timeline is the constraint, not your effort.`
     : compressionClassification === 'constrained_by_inputs'
       ? `Demanding — your inputs (days available, weekday time, or starting volume) cap how far the plan can build. Freeing one of those lifts the ceiling.`
+    : goalBeyondMeasuredFitness
+      // §44 voice: the demand is on the target, not the athlete. Says the thing
+      // the runner would otherwise discover mid-plan — that their race-pace
+      // sessions feel harder than their interval sessions — and why.
+      ? `Demanding — the pace you're targeting is quicker than your benchmark currently supports, so race-pace sessions will bite harder than the interval work. That gap is the plan's job.`
       : `Demanding on ${prepTime.weeks_available} weeks — a tight but workable timeline for the time you're chasing. Hold the easy days and it stays honest.`
 
   const meta: Plan['meta'] = {
@@ -3474,6 +3499,9 @@ export function generateRulePlan(
     // (INV-PLAN-DIFFICULTY-ANNOTATED); it may never under-state the plan's own
     // constraint signals (INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE).
     difficulty_band: difficultyBand,
+    // SC-06 — structured, so INV-PLAN-INTENSITY-ORDERING can check the plan is
+    // honest about the inversion without parsing the prose note.
+    ...(goalBeyondMeasuredFitness ? { goal_beyond_measured_fitness: true } : {}),
     ...(difficultyNote ? { difficulty_note: difficultyNote } : {}),
 
     // CoachingPrinciples §23/§38/§45/§46 (peak overload) + §52 (low-day) —

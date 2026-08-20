@@ -51,6 +51,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-PREP-TIME-STATUS-ANNOTATED',
   'INV-PLAN-DIFFICULTY-ANNOTATED',
   'INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE',
+  'INV-PLAN-INTENSITY-ORDERING',
   'INV-PLAN-LR-PROGRESSION-CAP',
   'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES',
   'INV-PLAN-PEAK-LR-ALTERNATION',
@@ -1029,6 +1030,64 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         actual: 'comfortable',
         expected: "'demanding' | 'very_demanding'",
       })
+    }
+  }
+
+  // INV-PLAN-INTENSITY-ORDERING — a NEW CLASS OF CHECK (§83, SC-06 / CD-16).
+  //
+  // Every other invariant in this file validates one session against its own
+  // prescription. That is exactly why nothing caught the pace inversion: each
+  // session was individually defensible, and the plan was only incoherent when
+  // you put two of them side by side.
+  //
+  // The rule: within a plan, a session prescribed in the THRESHOLD/race band
+  // (Zone 3) may not be prescribed FASTER than a session in the VO2max band
+  // (Zone 4–5). Zone ordering is an intensity ordering; if the paces disagree
+  // with it, a runner following pace and a runner following heart rate are
+  // running two different plans.
+  //
+  // The board's ruling is "reconcile it, or surface the honesty signal" — so
+  // this does not forbid the inversion outright. It forbids an inversion the
+  // plan is SILENT about: `meta.goal_beyond_measured_fitness` must be set and
+  // the difficulty band must not read 'comfortable'. A plan may be a stretch;
+  // it may not pretend not to be.
+  {
+    const tol = GENERATION_CONFIG.INTENSITY_ORDERING_TOLERANCE_PCT / 100
+    let fastestVo2: { mid: number, label: string, week: number } | null = null
+    let fastestThreshold: { mid: number, label: string, week: number } | null = null
+
+    for (const w of plan.weeks) {
+      for (const session of Object.values(w.sessions)) {
+        if (!session || session.type !== 'quality' || !session.pace_target) continue
+        const mid = parsePaceMidpoint(session.pace_target)
+        if (mid == null) continue
+        const zone = (session.zone ?? '').toLowerCase()
+        const isVo2Band = zone.includes('zone 4') || zone.includes('zone 5')
+        const isThresholdBand = zone.includes('zone 3') && !isVo2Band
+        const entry = { mid, label: session.label ?? '(unlabelled)', week: w.n }
+
+        // "Fastest" is the SMALLEST minutes-per-km.
+        if (isVo2Band && (fastestVo2 == null || mid < fastestVo2.mid)) fastestVo2 = entry
+        if (isThresholdBand && (fastestThreshold == null || mid < fastestThreshold.mid)) fastestThreshold = entry
+      }
+    }
+
+    if (fastestVo2 && fastestThreshold
+        && fastestThreshold.mid < fastestVo2.mid * (1 - tol)) {
+      const surfaced = plan.meta.goal_beyond_measured_fitness === true
+        && plan.meta.difficulty_band !== undefined
+        && plan.meta.difficulty_band !== 'comfortable'
+      if (!surfaced) {
+        violations.push({
+          code: 'INV-PLAN-INTENSITY-ORDERING',
+          principle_ref: 'CoachingPrinciples §83, §44',
+          severity: 'error',
+          week: fastestThreshold.week,
+          message: `"${fastestThreshold.label}" (week ${fastestThreshold.week}, ${fastestThreshold.mid.toFixed(2)}/km, Zone 3) is prescribed faster than "${fastestVo2.label}" (week ${fastestVo2.week}, ${fastestVo2.mid.toFixed(2)}/km, Zone 4–5). The plan must either reconcile the two or declare the target beyond measured fitness (meta.goal_beyond_measured_fitness + a non-comfortable difficulty band).`,
+          actual: `Zone 3 ${fastestThreshold.mid.toFixed(2)}/km vs Zone 4–5 ${fastestVo2.mid.toFixed(2)}/km, band '${plan.meta.difficulty_band ?? 'unset'}'`,
+          expected: 'Zone 3 no faster than Zone 4–5, or the inversion surfaced',
+        })
+      }
     }
   }
 

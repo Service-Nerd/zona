@@ -338,6 +338,16 @@ export interface PlanMeta {
   // volume_constraint_note). 'comfortable' needs no explanation.
   difficulty_band?: 'comfortable' | 'demanding' | 'very_demanding'
   difficulty_note?: string
+
+  /** SC-06 / CD-16 — the runner's stated target pace is faster than the interval
+   *  pace their benchmark supports, so the sessions labelled VO2max are prescribed
+   *  SLOWER than the sessions labelled race pace. The plan cannot be executed as
+   *  written by both pace and heart rate. Set pre-generation from inputs (target
+   *  vs benchmark), so it stays inside the §44 band's SLT boundary — a feasibility
+   *  read of the runner's chosen goal, not a quality judgement on the plan.
+   *  `INV-PLAN-INTENSITY-ORDERING` requires that a plan containing the inversion
+   *  surfaces it: the board's ruling is "reconcile it or be honest about it". */
+  goal_beyond_measured_fitness?: boolean
   training_age?: TrainingAge             // stored for R20 reshaper
   returning_runner_allowance_active?: boolean  // true if 15%/3wk allowance applied
   fresh_return_active?: boolean                  // true if M-02 layoff start-fraction applied
