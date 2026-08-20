@@ -347,13 +347,12 @@ const BASELINE: Record<string, number> = {
   'INV-PLAN-PEAK-IN-PEAK-PHASE':          0,
   // 981 -> 587 (2026-08-20): the §12 injury cap now compounds instead of
   // resetting to the raw curve each week. See ruleEngine's prevAdjustedKm.
-  // 981 -> 450 across three changes on 2026-08-20: the §12 injury cap now
-  // compounds inside the volume curve, §45 gained one rounding step of headroom
-  // (it differences two ROUNDED distances against an unrounded cap), and the
-  // grid stopped pairing impossible volumes. The last step traded 62 of these
-  // back for 235 fewer undersized sessions — a deliberate, net-positive swap:
-  // an over-long long run is visible to a runner, a sub-floor session is not.
-  'INV-PLAN-LR-PROGRESSION-CAP':        430,
+  // 981 -> 0 (2026-08-20). Four causes: the §12 injury cap now compounds inside
+  // the volume curve; §45 gained one rounding step of headroom; the grid stopped
+  // pairing impossible volumes; and finally the cap now runs AFTER
+  // applyLongRunStepBacks and recognises a step-back bounceback the same way it
+  // already recognised a deload one. That last change alone cleared 430.
+  'INV-PLAN-LR-PROGRESSION-CAP':          0,
 
   // 211 -> 537 -> 0 (2026-08-20). Went UP before it went down: making the §12
   // injury cap compound held volume lower, which exposed sessions that had
@@ -366,7 +365,7 @@ const BASELINE: Record<string, number> = {
   // 54 -> 98, same cause and same band as MIN-SESSION-SIZE above.
   'INV-PLAN-TAPER-VARIETY':              98,
   // Same band again: a lopsided week at very low volume. Pending INPUT-FLOOR-01.
-  'INV-PLAN-LR-MAX-WEEKLY-PCT':          36,
+  'INV-PLAN-LR-MAX-WEEKLY-PCT':          35,
 }
 
 const regressions: string[] = []

@@ -2463,11 +2463,27 @@ function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide): void {
     if (!prevLR || !currLR) continue
     if (prevLR.session.distance_km == null || currLR.session.distance_km == null) continue
 
-    // Step-back from a deload — allow up to pre-deload distance × tolerance.
-    if (prev.type === 'deload') {
-      const preDeloadLR = i >= 2 ? findLong(weeks[i - 2]) : null
-      const preKm = preDeloadLR?.session.distance_km
-      if (preKm != null && currLR.session.distance_km <= preKm * stepBackTol + 0.01) continue
+    // BOUNCEBACK EXEMPTION — from a deload OR from a long-run step-back.
+    //
+    // Returning to a distance the runner covered two weeks ago is not a spike:
+    // chronic load has not moved. §45's tolerance already said this for deloads;
+    // it did not know about `applyLongRunStepBacks`, which deliberately cuts
+    // every Nth BUILD long run in a non-deload week.
+    //
+    // Without this, capping after the step-backs run would clamp every
+    // bounceback and ratchet the long run permanently down — the same fatal
+    // arithmetic D-21 records for volume deloads, where "the first organic
+    // user's 14-week plan peaked in week 3".
+    //
+    // Detected STRUCTURALLY (prev long run shorter than the one before it)
+    // rather than by re-deriving the step-back cadence, so the two cannot drift.
+    const prevPrevLR = i >= 2 ? findLong(weeks[i - 2]) : null
+    const prevPrevKm = prevPrevLR?.session.distance_km
+    const prevWasStepBack = prevPrevKm != null
+      && prev.type !== 'race'
+      && prevLR.session.distance_km < prevPrevKm - 0.01
+    if (prev.type === 'deload' || prevWasStepBack) {
+      if (prevPrevKm != null && currLR.session.distance_km <= prevPrevKm * stepBackTol + 0.01) continue
     }
 
     const allowedJumpKm = Math.max(prevLR.session.distance_km * capPct, capAbs)
@@ -3475,12 +3491,17 @@ export function generateRulePlan(
 
   // CoachingPrinciples §45 — long-run progression cap. Walks the plan and
   // clamps any LR that exceeds +20% / +5km from the prior week's LR.
-  applyLongRunProgressionCap(weeks, pace)
 
   // CoachingPrinciples §9 (CD-9) — build-phase long-run step-backs. Runs LAST so
   // the progression cap can't re-inflate the reduced week. Peak long runs are
   // left alone (culmination + §80 floor), so this can't create a floor violation.
   applyLongRunStepBacks(weeks, pace)
+  // §45 runs AFTER the step-backs, not before (fixed 2026-08-20). Running it
+  // first meant it never saw the sequence the runner actually gets:
+  // applyLongRunStepBacks then cut every Nth build long run, and the week after
+  // became a jump nothing re-checked. All 430 remaining sweep violations of this
+  // code were that ordering — re-running the cap at the end cleared every one.
+  applyLongRunProgressionCap(weeks, pace)
 
   // ── V1–V7 post-passes ───────────────────────────────────────────────────────
   // Order matters:
@@ -3533,6 +3554,7 @@ export function generateRulePlan(
       }
     }
   }
+  // DIAGNOSTIC: re-run the cap last to test whether a later pass undoes it.
   applyV3HrEstimationNotePropagation(weeks, hrFallback.method, recalibrationWeeks)
   applyV7TaperRationale(weeks, input.race_distance_km)
 

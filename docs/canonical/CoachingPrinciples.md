@@ -1085,6 +1085,17 @@ When the §24 floor (peak long-run race ratio) cannot be reached without violati
 
 Enforced by `INV-PLAN-LR-PROGRESSION-CAP`. Engine-side: long-run distances are clamped during week-by-week assembly in `generateRulePlan` via `applyLongRunProgressionCap`.
 
+
+> **⚠️ The bounceback exemption covers long-run STEP-BACKS, not just deloads — corrected 2026-08-20.**
+>
+> `applyLongRunStepBacks` deliberately cuts every Nth **build** long run, in a week that is **not** a deload. The cap's tolerance only recognised `prev.type === 'deload'`, so the week following a step-back was measured against the reduced distance and read as a spike.
+>
+> **Two defects, one cause.** The cap also ran *before* the step-backs, so it never saw the sequence the runner actually gets. **All 430 remaining sweep violations of §45 were that ordering.**
+>
+> **Reordering alone would have been worse than the bug.** Capping after the step-backs without extending the exemption clamps every bounceback and ratchets the long run permanently down — the same fatal arithmetic **D-21** records for volume deloads, where *"the first organic user's 14-week plan peaked in week 3, in the base phase."* Returning to a distance covered two weeks ago is not a spike: chronic load has not moved.
+>
+> Engine and invariant detect a step-back the **same structural way** — the previous week's long run is shorter than the one before it — rather than re-deriving the step-back cadence, so the two cannot drift apart.
+
 ---
 
 ## 46. Peak weekly volume floor for marathon and ultra

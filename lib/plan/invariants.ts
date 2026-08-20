@@ -1726,10 +1726,24 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       const prevLR = longRunForWeek(prev)
       const currLR = longRunForWeek(curr)
       if (prevLR == null || currLR == null) continue
-      // Step-back from a deload — accept up to pre-deload distance.
-      if (prev.type === 'deload') {
-        const preDeload = i >= 2 ? longRunForWeek(plan.weeks[i - 2]) : null
-        if (preDeload != null && currLR <= preDeload * stepBackTol + 0.01) continue
+      // BOUNCEBACK EXEMPTION — from a deload OR from a long-run step-back.
+      //
+      // Mirrors the engine's applyLongRunProgressionCap exactly. This used to
+      // check `prev.type === 'deload'` only, and knew nothing about
+      // applyLongRunStepBacks, which deliberately cuts every Nth BUILD long run
+      // in a NON-deload week. The week after that cut is a return to a distance
+      // the runner covered two weeks ago — not a spike; chronic load has not
+      // moved — and was being reported as a §45 violation.
+      //
+      // Detected structurally (the previous week's long run is shorter than the
+      // one before it) rather than by re-deriving the step-back cadence, so the
+      // engine and this check cannot drift apart.
+      const prevPrev = i >= 2 ? longRunForWeek(plan.weeks[i - 2]) : null
+      const prevWasStepBack = prevPrev != null
+        && prev.type !== 'race'
+        && prevLR < prevPrev - 0.01
+      if (prev.type === 'deload' || prevWasStepBack) {
+        if (prevPrev != null && currLR <= prevPrev * stepBackTol + 0.01) continue
       }
       // ROUNDING HEADROOM (2026-08-20). Session distances round to
       // DISTANCE_ROUNDING_PRECISION_KM, so the two values being differenced are
