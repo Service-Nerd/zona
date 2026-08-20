@@ -111,6 +111,23 @@ export interface Session {
    *  coach_notes). Absent on legacy plans → consumers fall back to the label
    *  heuristic (see lib/plan/sessionRole.ts). */
   role?: 'long_run' | 'shakeout'
+  /** SC-08a — the catalogue row this session was produced from.
+   *
+   *  The rep structure a runner sees ("4 × 1000 m at 5K pace, 2 min jog") lives
+   *  on the catalogue row, not on the session. Before this field the app
+   *  re-joined them AT DISPLAY TIME by matching `label` against row `name` —
+   *  and that join failed on 31% of quality sessions, systematically the ones
+   *  §22 renames for a time goal ("MARATHON-pace progression"). A marathon
+   *  time-goal plan lost 5 of its 9 quality sessions to it: the runner saw a
+   *  distance, a duration and a pace band, and no indication of what to DO.
+   *
+   *  Same remedy as `role`, for the same reason (D-17: never couple logic to a
+   *  display string). The enricher cannot set it — EnrichedWeekSchema exposes
+   *  only `label` and `coach_notes` — so an enriched plan keeps its structure.
+   *  Absent on legacy plans and on inline-generated sessions with no row behind
+   *  them; consumers fall back to the name match via
+   *  lib/plan/catalogueLink.ts. */
+  catalogue_id?: string
   label: string
   /** Legacy free-text display field. Kept for backward compat with hand-authored gists.
    *  Generator writes structured fields below instead. App prefers structured when present. */

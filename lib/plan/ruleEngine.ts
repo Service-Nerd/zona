@@ -893,7 +893,11 @@ function makeQualitySession(args: {
     pace_target: paceTarget,
     rpe_target: isDeload ? 6 : 7,
     ...(coach_notes ? { coach_notes } : {}),
-    ...(catalogueRow ? {} : {}),  // future: surface catalogue_id when schema permits
+    // SC-08a — stamp the row's identity. The schema now permits it, and the
+    // "future" this comment waited for had a live cost: 31% of quality sessions
+    // showed the runner no rep structure, because the display re-joined by
+    // LABEL and §22 renames race-pace sessions.
+    ...(catalogueRow ? { catalogue_id: catalogueRow.id } : {}),
   }
 }
 
@@ -917,6 +921,11 @@ function raceSpecificLongRunSession(
   return {
     id: `w${weekN}-${day}`,
     type: 'easy',  // long run slot — display contract; SessionType drives card colour
+    // SC-08a — stamped here too. This session keeps the row's own name today, so
+    // the label join happens to work; stamping it anyway means the link does not
+    // depend on that continuing to be true (the enricher may rewrite the label,
+    // and §22 already renames its sibling sessions).
+    catalogue_id: catalogueRow.id,
     label: catalogueRow.name,
     detail: null,
     ...(metric === 'distance' ? { distance_km: rounded } : {}),

@@ -25,6 +25,7 @@ export type Severity = 'error' | 'warn'
 // enforced — adding a code here without enforcement (or vice versa) is a defect.
 // (CoachingPrinciples §34, R2/H-04)
 export const INVARIANT_CODES = [
+  'INV-PLAN-CATALOGUE-LINK',
   'INV-PLAN-MAIN-SET-ORDERING',
   'INV-PLAN-VO2MAX-ONSET',
   'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS',
@@ -1151,6 +1152,43 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // survived: nothing computed the number, so nobody could see which quantity
   // it was. The value being wrong was downstream of it being unexercised.
   //
+  // INV-PLAN-CATALOGUE-LINK (SC-08a) — a session produced from a catalogue row
+  // must CARRY that row's identity, not be re-joined to it by name later.
+  //
+  // The rep structure the runner sees lives on the row. Before the stamp, the
+  // app re-joined at display time by matching `label` against `name`, and that
+  // failed on 31% of quality sessions — systematically the ones §22 renames for
+  // a time goal. A marathon time-goal plan lost 5 of its 9: distance, duration
+  // and a pace band, with no indication of what to actually DO.
+  //
+  // WHAT THIS CATCHES is the stamp being dropped for a session that clearly had
+  // a row — detected by the session still matching a row BY NAME while carrying
+  // no `catalogue_id`. That is precisely the state the legacy fallback exists to
+  // rescue, so without this check a regression would be invisible: the fallback
+  // would quietly cover it until someone renamed the session.
+  //
+  // Sessions generated inline with no row behind them carry neither id nor a
+  // matching name, and are correctly ignored.
+  for (const w of plan.weeks) {
+    for (const [day, sn] of Object.entries(w.sessions)) {
+      if (!sn) continue
+      if (!(sn.type === 'quality' || sn.type === 'intervals' || sn.type === 'tempo')) continue
+      if (sn.catalogue_id) continue
+      const nameMatch = V1_SESSION_CATALOGUE.find(r => r.name === sn.label)
+      if (nameMatch) {
+        violations.push({
+          code: 'INV-PLAN-CATALOGUE-LINK',
+          principle_ref: 'ADR-018',
+          severity: 'error',
+          week: w.n, day,
+          message: `Session "${sn.label}" matches catalogue row "${nameMatch.id}" by name but carries no catalogue_id. The name join is a LEGACY fallback — a freshly generated session must stamp its row, or its rep structure is lost the moment the label changes.`,
+          actual: 'no catalogue_id',
+          expected: `catalogue_id: "${nameMatch.id}"`,
+        })
+      }
+    }
+  }
+
   // INV-PLAN-MAIN-SET-ORDERING (CoachingPrinciples §8 — SC-10 / CD-14)
   //
   // The three kinds of hard running have different sustainable volumes:

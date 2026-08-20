@@ -21,6 +21,9 @@ export const SessionSchema = z.object({
   // Generator-stamped structural classification (label-independent). See
   // types/plan.ts Session.role and lib/plan/sessionRole.ts.
   role:           z.enum(['long_run', 'shakeout']).optional(),
+  // SC-08a — identity of the catalogue row that produced this session, so the
+  // rep structure survives renaming and enrichment. See types/plan.ts.
+  catalogue_id:   z.string().optional(),
   label:          z.string(),
   detail:         z.string().nullable(),
   distance_km:    z.number().nonnegative().optional(),

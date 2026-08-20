@@ -395,6 +395,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
             "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
@@ -451,6 +452,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_cruise",
           "coach_notes": [
             "Rep three is the test. Not rep one.",
           ],
@@ -560,6 +562,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
           ],
@@ -619,6 +622,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
           ],
@@ -677,6 +681,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "progressive_tempo",
           "coach_notes": [
             "Hold back early. Finish honest.",
           ],
@@ -733,6 +738,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Threshold work in repeats. Same effort on rep 3 as rep 1 — that is the test.",
           ],
@@ -788,6 +794,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "progressive_tempo",
           "coach_notes": [
             "Hold back early. Finish honest.",
           ],
@@ -1994,6 +2001,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "intervals_long",
           "coach_notes": [
             "Heroic openers ruin it. Even splits.",
           ],
@@ -2068,6 +2076,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_cruise_short",
           "coach_notes": [
             "10K-pace work. Target 4:30 /km. Controlled, even splits — exit each rep wanting more.",
           ],
@@ -2142,6 +2151,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "progressive_tempo",
           "coach_notes": [
             "10K-pace work. Target 4:30 /km. Controlled, even splits — exit each rep wanting more.",
           ],
@@ -2286,6 +2296,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "intervals_long",
           "coach_notes": [
             "Heroic openers ruin it. Even splits.",
           ],
@@ -2363,6 +2374,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "zone": "Zone 2–3",
         },
         "wed": {
+          "catalogue_id": "intervals_classic",
           "coach_notes": [
             "Three minutes is long. Don't blow rep one.",
           ],
@@ -2435,6 +2447,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tenk_pace_intervals",
           "coach_notes": [
             "10K-pace work. Target 4:30 /km. Controlled, even splits — exit each rep wanting more.",
           ],
@@ -2983,6 +2996,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
             "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
@@ -3055,6 +3069,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_cruise",
           "coach_notes": [
             "HM-pace work. Target 4:59 /km. Controlled, even splits — exit each rep wanting more.",
           ],
@@ -3195,6 +3210,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "HM-pace work. Target 4:59 /km. Controlled, even splits — exit each rep wanting more.",
           ],
@@ -3253,6 +3269,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "zone": "Zone 2",
         },
         "sun": {
+          "catalogue_id": "hm_pace_long_run",
           "coach_notes": [
             "Step-back week. Easy aerobic — let the legs absorb last week's peak before the next push.",
           ],
@@ -3270,6 +3287,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "hm_pace_intervals",
           "coach_notes": [
             "HM-pace work. Target 4:59 /km. Controlled, even splits — exit each rep wanting more.",
           ],
@@ -3327,6 +3345,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "zone": "Zone 2",
         },
         "sun": {
+          "catalogue_id": "hm_pace_long_run",
           "coach_notes": [
             "Easy first. Final third at HM goal pace.",
             "Final third at HM pace: 4:59 /km.",
@@ -3345,6 +3364,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "zone": "Zone 2–3",
         },
         "wed": {
+          "catalogue_id": "hm_pace_intervals",
           "coach_notes": [
             "HM-pace work. Target 4:59 /km. Controlled, even splits — exit each rep wanting more.",
           ],
@@ -3417,6 +3437,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
           ],
@@ -3488,6 +3509,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "goal_pace_sharpener",
           "coach_notes": [
             "HM-pace work. Target 4:59 /km. Controlled, even splits — exit each rep wanting more.",
           ],
@@ -4141,6 +4163,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
             "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
@@ -4226,6 +4249,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_cruise",
           "coach_notes": [
             "Rep three is the test. Not rep one.",
           ],
@@ -4392,6 +4416,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "MARATHON-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
           ],
@@ -4476,6 +4501,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_cruise",
           "coach_notes": [
             "MARATHON-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
           ],
@@ -4505,6 +4531,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
       "phase": "peak",
       "sessions": {
         "fri": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "MARATHON-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
           ],
@@ -4534,6 +4561,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 2",
         },
         "sun": {
+          "catalogue_id": "mp_long_run",
           "coach_notes": [
             "Step-back week. Easy aerobic — let the legs absorb last week's peak before the next push.",
           ],
@@ -4567,6 +4595,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "progressive_tempo",
           "coach_notes": [
             "MARATHON-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
           ],
@@ -4595,6 +4624,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
       "phase": "peak",
       "sessions": {
         "fri": {
+          "catalogue_id": "progressive_tempo",
           "coach_notes": [
             "MARATHON-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
           ],
@@ -4624,6 +4654,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 2",
         },
         "sun": {
+          "catalogue_id": "mp_long_run",
           "coach_notes": [
             "Easy first. Hit goal pace on tired legs.",
             "Final 30–50% at MP: 4:37 /km.",
@@ -4658,6 +4689,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "MARATHON-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
           ],
@@ -4745,6 +4777,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "progressive_tempo",
           "coach_notes": [
             "Hold back early. Finish honest.",
           ],
@@ -4829,6 +4862,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "goal_pace_sharpener",
           "coach_notes": [
             "MARATHON-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
           ],
@@ -4913,6 +4947,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "progressive_tempo",
           "coach_notes": [
             "Hold back early. Finish honest.",
           ],
@@ -5454,6 +5489,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_cruise",
           "coach_notes": [
             "Rep three is the test. Not rep one.",
             "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
@@ -5513,6 +5549,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "progressive_tempo",
           "coach_notes": [
             "Hold back early. Finish honest.",
           ],
@@ -5631,6 +5668,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
             "HR zones in this plan are estimated from age. Run the first session by feel (RPE 4 = conversational, easy). If your HR sits consistently above or below target at that effort, flag it for zone recalibration.",
@@ -5693,6 +5731,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "progressive_tempo",
           "coach_notes": [
             "Hold back early. Finish honest.",
           ],
@@ -5751,6 +5790,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
             "HR zones in this plan are estimated from age. Run the first session by feel (RPE 4 = conversational, easy). If your HR sits consistently above or below target at that effort, flag it for zone recalibration.",
@@ -5811,6 +5851,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "progressive_tempo",
           "coach_notes": [
             "Hold back early. Finish honest.",
           ],
@@ -6437,6 +6478,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
             "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
@@ -6522,6 +6564,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_cruise",
           "coach_notes": [
             "Rep three is the test. Not rep one.",
           ],
@@ -6688,6 +6731,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
           ],
@@ -6772,6 +6816,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_cruise",
           "coach_notes": [
             "Rep three is the test. Not rep one.",
           ],
@@ -6801,6 +6846,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
       "phase": "peak",
       "sessions": {
         "fri": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
           ],
@@ -6863,6 +6909,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "progressive_tempo",
           "coach_notes": [
             "Hold back early. Finish honest.",
           ],
@@ -6891,6 +6938,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
       "phase": "peak",
       "sessions": {
         "fri": {
+          "catalogue_id": "progressive_tempo",
           "coach_notes": [
             "Hold back early. Finish honest.",
           ],
@@ -6953,6 +7001,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Sustainable. Same pace at the end as at the start.",
           ],
@@ -7040,6 +7089,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "progressive_tempo",
           "coach_notes": [
             "Hold back early. Finish honest.",
           ],
@@ -7124,6 +7174,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "tempo_continuous",
           "coach_notes": [
             "Threshold work in repeats. Same effort on rep 3 as rep 1 — that is the test.",
           ],
@@ -7208,6 +7259,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
           "zone": "Zone 2",
         },
         "wed": {
+          "catalogue_id": "progressive_tempo",
           "coach_notes": [
             "Hold back early. Finish honest.",
           ],

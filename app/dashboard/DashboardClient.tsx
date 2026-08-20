@@ -60,7 +60,7 @@ import { backfillAndLoadSessionMetricOverrides, setSessionMetricOverride, clearS
 import { didSessionHitZone, sessionHRBand, zoneForSessionType } from '@/lib/coaching/zoneRules'
 import { getSessionVoiceLine } from '@/lib/coaching/voiceLines'
 import { renderGuidance, guidanceContextFromSession } from '@/lib/plan/renderGuidance'
-import { V1_SESSION_CATALOGUE } from '@/lib/plan/sessionCatalogueData'
+import { catalogueRowFor } from '@/lib/plan/catalogueLink'
 import dynamic from 'next/dynamic'
 import { Capacitor } from '@capacitor/core'
 import { App as CapacitorApp } from '@capacitor/app'
@@ -4442,7 +4442,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                "what to do". The plain `session.detail` description below is
                suppressed in that case — same instruction, two formats. */}
           {(() => {
-            const catalogueRow = V1_SESSION_CATALOGUE.find(r => r.name === session.label) ?? null
+            const catalogueRow = catalogueRowFor(session)
             const structure = composeSession({ session, catalogueRow, goalPace })
             if (!structure) return null
             const skipShapes = ['rest', 'race', 'strength']
@@ -4514,7 +4514,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                race/rest/strength shapes or sessions without a catalogue row.
                Avoids duplicating the same instruction in two formats. */}
           {session.detail && (() => {
-            const catalogueRow = V1_SESSION_CATALOGUE.find(r => r.name === session.label) ?? null
+            const catalogueRow = catalogueRowFor(session)
             const structure = composeSession({ session, catalogueRow, goalPace })
             const skipShapes = ['rest', 'race', 'strength']
             const hasStructure = !!structure && !skipShapes.includes(structure.shape)
