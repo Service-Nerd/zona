@@ -209,12 +209,21 @@ describe('SC-08b — the rules that make it safe', () => {
 })
 
 describe('SC-08b — migration posture (D-03)', () => {
-  it('every catalogue row is still v1, and reads as v1', () => {
-    // Phase 1 ships the structure layer only. A v2 row IS prescription, so the
-    // first one belongs to SC-09's Coaching Board ruling — not to an
-    // infrastructure commit. This asserts the behaviour-neutrality claim.
+  it('exactly the ruled rows are v2; everything else stays v1', () => {
+    // ADR-019 Phase 1 shipped with this asserting NO row was v2 — a v2 row IS
+    // prescription, so the first belonged to a board ruling rather than an
+    // infrastructure commit. SC-09 (CD-17a) is that ruling and `hill_reps` is
+    // that row.
+    //
+    // Kept as an ALLOWLIST rather than deleted: migrating a row changes what a
+    // runner is told to do, so it must be a deliberate act with a ruling behind
+    // it. A row migrated without one fails here.
+    const RULED_V2 = new Set(['hill_reps'])   // SC-09 / CD-17a
     for (const row of V1_SESSION_CATALOGUE) {
-      expect(isV2Structure(row.main_set_structure), `${row.id} must stay v1`).toBe(false)
+      expect(
+        isV2Structure(row.main_set_structure),
+        `${row.id}: v2 status must match its board ruling`,
+      ).toBe(RULED_V2.has(row.id))
     }
   })
 

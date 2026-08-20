@@ -77,3 +77,28 @@ export function classifyStimulus(
   if (label.includes('aerobic') || label.includes('steady')) return 'steady_aerobic'
   return null
 }
+
+/**
+ * Is this session VO2max work — structurally, not by what it is called?
+ *
+ * Added 2026-08-20 (SC-09). The label test `label.includes('vo2max')` was
+ * correct while every VO2max session was NAMED "… VO2max". `hill_reps` broke
+ * that: it is `category: 'vo2max'` and labelled "Hill reps — 45s", so §22's
+ * VO2max exemption silently stopped applying to it and the plan failed its own
+ * race-specific-exposure check.
+ *
+ * D-17 again, and the third site this week where `catalogue_id` (ADR-018) makes
+ * the structural answer available. The label fallback stays for legacy plans
+ * generated before the stamp.
+ */
+export function isVo2maxSession(
+  session: { catalogue_id?: string; label?: string | null },
+  catalogue: Array<{ id: string; category: string }>,
+): boolean {
+  if (session.catalogue_id) {
+    const row = catalogue.find(r => r.id === session.catalogue_id)
+    if (row) return row.category === 'vo2max'
+  }
+  const label = (session.label ?? '').toLowerCase()
+  return label.includes('vo2max') || label.includes('vo2 max')
+}

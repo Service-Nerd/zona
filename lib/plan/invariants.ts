@@ -13,7 +13,7 @@ import type { Plan, GeneratorInput, Session } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
-import { isLongRun, isShakeout, classifyStimulus } from './sessionRole'
+import { isLongRun, isShakeout, classifyStimulus, isVo2maxSession } from './sessionRole'
 import { mainSetMinutes } from './sessionFormat'
 import { isV2Structure } from './sessionStructureV2'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
@@ -26,6 +26,7 @@ export type Severity = 'error' | 'warn'
 // enforced — adding a code here without enforcement (or vice versa) is a defect.
 // (CoachingPrinciples §34, R2/H-04)
 export const INVARIANT_CODES = [
+  'INV-PLAN-EFFORT-OR-PACE',
   'INV-PLAN-DERIVED-SET',
   'INV-PLAN-CATALOGUE-LINK',
   'INV-PLAN-MAIN-SET-ORDERING',
@@ -365,8 +366,11 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       for (const { day, session } of placedRunning) {
         if (session.type !== 'quality') continue
         const label = (session.label ?? '').toLowerCase()
-        const isVo2 = label.includes('vo2max') || label.includes('vo2 max')
-        if (isVo2) continue
+        // SC-09 — STRUCTURAL, not by name. The label test held while every
+        // VO2max session was called "… VO2max"; `hill_reps` is vo2max work
+        // labelled "Hill reps — 45s", and the exemption silently stopped
+        // applying to it (D-17).
+        if (isVo2maxSession(session, V1_SESSION_CATALOGUE)) continue
         if (!label.includes('pace')) {
           violations.push({
             code: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE',
@@ -487,8 +491,29 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       })
       if (hasRestricting) {
         for (const { day, session } of placedRunning) {
+          // SC-09 — structural first, label second. The label check alone is
+          // D-17: the enricher rewrites labels, and a renamed hill session
+          // would have slipped past silently. `catalogue_id` (ADR-018) makes
+          // the real test available, and the v2 row states `terrain: 'uphill'`
+          // on the step itself.
+          const row = session.catalogue_id
+            ? V1_SESSION_CATALOGUE.find(r => r.id === session.catalogue_id)
+            : undefined
+          const structuralHill = !!row && (() => {
+            const m = row.main_set_structure as {
+              terrain?: string
+              blocks?: Array<{ steps?: Array<{ terrain?: string }> }>
+            }
+            if (m.terrain === 'hills') return true
+            for (const b of m.blocks ?? []) {
+              for (const st of b.steps ?? []) {
+                if (st.terrain === 'uphill' || st.terrain === 'downhill') return true
+              }
+            }
+            return false
+          })()
           const label = (session.label ?? '').toLowerCase()
-          if (label.includes('hill')) {
+          if (structuralHill || label.includes('hill')) {
             violations.push({
               code: 'INV-PLAN-INJURY-NO-HILLS',
               principle_ref: 'CoachingPrinciples §21',
@@ -1154,6 +1179,43 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // survived: nothing computed the number, so nobody could see which quantity
   // it was. The value being wrong was downstream of it being unexercised.
   //
+  // INV-PLAN-EFFORT-OR-PACE (CoachingPrinciples §19/§41 — SC-09 / CD-17a)
+  //
+  // Every quality session must tell the runner HOW HARD, by one route or the
+  // other: a pace target, or an effort target. Never neither.
+  //
+  // §19 checks that a session's LABEL matches its PACE. Hill reps are the first
+  // session with no pace to check — the gradient sets it, and prescribing a
+  // number would give the runner something they cannot act on. That is a
+  // legitimate absence, but it opens a hole: a session that has simply LOST its
+  // pace target now looks identical to one deliberately governed by effort.
+  //
+  // This is the effort-governed counterpart the board required alongside the
+  // first such session (§41 — these are the first sessions where effort is the
+  // primary prescription rather than a supporting note).
+  //
+  // Zone alone does not satisfy it. "Zone 4-5" describes a physiological band,
+  // not an instruction a runner can execute on a hill.
+  for (const w of plan.weeks) {
+    for (const [day, sn] of Object.entries(w.sessions)) {
+      if (!sn) continue
+      if (!(sn.type === 'quality' || sn.type === 'intervals' || sn.type === 'tempo')) continue
+      const hasPace = typeof sn.pace_target === 'string' && sn.pace_target.trim().length > 0
+      const hasEffort = typeof sn.rpe_target === 'number' && sn.rpe_target > 0
+      if (!hasPace && !hasEffort) {
+        violations.push({
+          code: 'INV-PLAN-EFFORT-OR-PACE',
+          principle_ref: 'CoachingPrinciples §19, §41',
+          severity: 'error',
+          week: w.n, day,
+          message: `Quality session "${sn.label}" prescribes neither a pace target nor an effort target. A session with no pace is legitimate (hill reps are governed by gradient), but it must then say how hard by RPE — otherwise a LOST pace is indistinguishable from a deliberate absence.`,
+          actual: 'neither pace_target nor rpe_target',
+          expected: 'a pace target, or an effort (RPE) target',
+        })
+      }
+    }
+  }
+
   // INV-PLAN-DERIVED-SET (SC-08b) — a session from a v2 row carries its
   // resolved set.
   //

@@ -830,6 +830,26 @@ When neither suggestion applies, the diagnosis is surfaced alone (no false guida
 
 ---
 
+## 40b. Effort-governed sessions — when there is no pace to check
+
+*Added 2026-08-20 — Coaching Board CD-17a (SC-09), unanimous.*
+
+**Principle.** A session may prescribe **effort instead of pace**, but never *neither*. Where the terrain sets the intensity, the plan states the effort and **omits the pace target entirely** — it does not invent a number the runner cannot act on.
+
+**Why.** Hill repeats are the first session Zonna prescribes where effort is the primary instruction rather than a supporting note. A pace up a hill is meaningless: the gradient decides it, and the same effort produces a different pace on every hill. McMillan's argument for the session is exactly this — *no track, no measured loop, self-limiting by gradient, effort-governed so it works on a day when the legs are flat.* That is a feature, and prescribing a pace anyway would remove it.
+
+**The problem this creates, and the rule that closes it.** §19 checks that a session's **label** matches its **pace**. A session with no pace cannot be checked that way — so an absent pace target is indistinguishable from a *lost* one. **`INV-PLAN-EFFORT-OR-PACE` closes that hole:** every quality session must carry a pace target **or** an RPE target. A zone alone does not satisfy it — "Zone 4–5" describes a physiological band, not an instruction a runner can execute on a hill.
+
+**Reconciliation with §28 (strides).** Strides are already effort-governed — *"4×20s strides at 5K effort"* — and are the precedent, not an exception. The difference is scope: strides are a four-minute **appendix** appended to an easy run's coach notes, never a session in their own right, so they carry no pace target to check and §19 never engages. §40b governs sessions where effort is the **whole prescription**. Both express the same idea: some work is better instructed by feel than by a number.
+
+**Tension with §11 (pace ranges, not points), recorded.** §11 requires a range rather than a single figure, on the grounds that a point target invites false precision. A hill rep has **no** pace at all — a case §11 does not contemplate. §40b does not weaken §11; it names the boundary of it. Where a pace exists it is still a range.
+
+**What effort-governed does NOT license.** It is not a way to avoid prescribing. An effort-governed session still states the rep length, the rep count, the recovery and the descent. What is absent is the pace, and only the pace.
+
+**Config.** No numeric of its own — the effort target lives on the catalogue row's step (`target: { kind: 'effort', rpe }`, ADR-019). Enforced by `INV-PLAN-EFFORT-OR-PACE`.
+
+---
+
 ## 41. Effort copy matches the work prescribed
 
 **Principle.** Theme copy that promises effort ("It will feel hard. That is correct.") MUST appear only on weeks that actually contain ≥1 quality session. An all-easy peak week — common for beginners and finish-goal plans — uses the consistency framing instead. Race week's "The work is done" is exempt (it describes a different state).

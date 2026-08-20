@@ -126,8 +126,13 @@ describe('SC-07 — blast radius: only 5K and 10K move', () => {
     }
   })
 
-  it('the three VO2max catalogue rows are build+peak eligible and nothing else moved', () => {
-    const vo2Rows = V1_SESSION_CATALOGUE.filter(r => r.category === 'vo2max')
+  it('the interval VO2max rows are build+peak eligible and nothing else moved', () => {
+    // Was `toBe(3)` — SC-09 added `hill_reps` as a fourth vo2max row, and this
+    // assertion caught it, which is what it was for. Scoped to the three
+    // INTERVAL rows SC-07 actually moved; hill_reps carries its own eligibility
+    // from CD-17a and is asserted in hillReps.test.ts.
+    const vo2Rows = V1_SESSION_CATALOGUE.filter(
+      r => r.category === 'vo2max' && r.id.startsWith('intervals_'))
     expect(vo2Rows.length).toBe(3)
     for (const r of vo2Rows) {
       expect(r.phase_eligibility).toContain('build')

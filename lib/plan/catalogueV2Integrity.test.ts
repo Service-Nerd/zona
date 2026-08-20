@@ -83,6 +83,10 @@ describe('INV-CAT-V2-NO-LITERAL-PACE', () => {
     // there are no v2 rows, which is exactly the SWEEP-VACUOUS-01 failure mode.
     expect(LOOKS_LIKE_A_PACE.test('{"anchor":"4:30 /km"}')).toBe(true)
     expect(LOOKS_LIKE_A_PACE.test('{"anchor":"I"}')).toBe(false)
-    expect(v2Rows().length, 'no v2 rows yet — these checks are armed, not exercised (ADR-019)').toBe(0)
+    // Phase 1 (ADR-019) shipped with this asserting ZERO — the checks were armed
+    // but unexercised, and a vacuous pass would have looked identical to a real
+    // one. SC-09 added `hill_reps`, the first v2 row, and that assertion fired
+    // on cue. It now asserts the opposite: the checks above are exercised.
+    expect(v2Rows().length, 'the v2 checks must run against at least one real row').toBeGreaterThan(0)
   })
 })

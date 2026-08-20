@@ -751,6 +751,44 @@ function makeQualitySession(args: {
 }): Session {
   const { weekN, day, distKm, metric, zones, pace, catalogueRow, phase, fitness, isDeload, goalPace, goalPaceWeek, distLabel, cueCtx } = args
 
+  // SC-09 / CD-17a — pick the variant for a parameterised row.
+  //
+  // Deterministic on weekN so a plan alternates its rep lengths rather than
+  // repeating one, which is what makes ONE row satisfy §53's variety rule: the
+  // label template renders the parameter, so "Hill reps — 45s" and
+  // "Hill reps — 90s" count as distinct labels from a single entry.
+  const variant = (() => {
+    const p = catalogueRow?.parameterisation
+    if (!p || p.variants.length === 0) return null
+    return p.variants[weekN % p.variants.length]
+  })()
+
+  // Is this session governed by EFFORT rather than pace? True when the row's v2
+  // work steps carry an effort target and no pace.
+  //
+  // This is the first session type where effort is the primary prescription
+  // rather than a supporting note (§41). A hill rep has no pace and cannot have
+  // one — the gradient decides it — so prescribing `intervalPaceStr` here
+  // because the row is categorised `vo2max` would ship a number the runner
+  // cannot act on and that §19 would then "verify" against a label. The
+  // absence of a pace is the prescription.
+  const isEffortGoverned = (() => {
+    if (!catalogueRow || !isV2Structure(catalogueRow.main_set_structure)) return false
+    const parsed = StructureV2Schema.safeParse(catalogueRow.main_set_structure)
+    if (!parsed.success) return false
+    const work = parsed.data.blocks.flatMap(b => b.steps).filter(st => st.role === 'work')
+    return work.length > 0 && work.every(st => st.target.kind === 'effort')
+  })()
+
+  const effortRpe = (() => {
+    if (!isEffortGoverned || !catalogueRow) return null
+    const parsed = StructureV2Schema.safeParse(catalogueRow.main_set_structure)
+    if (!parsed.success) return null
+    const work = parsed.data.blocks.flatMap(b => b.steps)
+      .find(st => st.role === 'work' && st.target.kind === 'effort')
+    return work && work.target.kind === 'effort' ? work.target.rpe : null
+  })()
+
   // SC-08b — resolve a v2 row's shape against this runner's paces.
   //
   // ANCHORS RESOLVE TO PACES HERE AND NOWHERE ELSE. A catalogue row never
@@ -772,7 +810,7 @@ function makeQualitySession(args: {
       ...(pace.marathonPaceStr ? { M: pace.marathonPaceStr } : {}),
       ...(goalPace ? { goal: goalPace } : {}),
     }
-    return resolveMainSet(parsed.data, { anchors, easyPaceStr: pace.easyPaceStr })
+    return resolveMainSet(parsed.data, { anchors, easyPaceStr: pace.easyPaceStr, params: variant?.values })
   })()
 
   // Fallback label if no catalogue row matched (e.g. 5K/10K taper week).
@@ -841,6 +879,22 @@ function makeQualitySession(args: {
     paceTarget = paceBandStr(goalCenterMins, 2)
     zone = 'Zone 3–4'
     hrTarget = zones.qualityHR
+  } else if (isEffortGoverned) {
+    // SC-09 / CD-17a — NO PACE, deliberately. Placed before the vo2max branch
+    // because `hill_reps` is categorised vo2max and would otherwise inherit
+    // interval pace, which is the defect this session exists to avoid.
+    //
+    // The label renders the variant: "Hill reps — 45s".
+    label = variant && catalogueRow?.parameterisation
+      ? catalogueRow.parameterisation.name_template.replace('{param}', variant.label_suffix)
+      : (catalogueRow?.name ?? fallbackLabel)
+    // Duration still needs a pace to estimate against; easy pace is the honest
+    // choice, since the climb is short and most of the session is transition
+    // and recovery. It is NOT surfaced as a target — see paceTarget below.
+    minPerKm = pace.minPerKmEasy
+    paceTarget = ''
+    zone = 'Zone 4–5'
+    hrTarget = zones.intervalsHR
   } else if (isVo2max) {
     label = catalogueRow?.name ?? fallbackLabel
     minPerKm = pace.minPerKmInterval
@@ -916,8 +970,10 @@ function makeQualitySession(args: {
     duration_mins: dur(rounded, minPerKm),
     primary_metric: metric,
     zone, hr_target: hrTarget,
-    pace_target: paceTarget,
-    rpe_target: isDeload ? 6 : 7,
+    // SC-09 — an effort-governed session carries NO pace target. The absence is
+    // the prescription, not a missing value.
+    ...(paceTarget ? { pace_target: paceTarget } : {}),
+    rpe_target: effortRpe ?? (isDeload ? 6 : 7),
     ...(coach_notes ? { coach_notes } : {}),
     // SC-08a — stamp the row's identity. The schema now permits it, and the
     // "future" this comment waited for had a live cost: 31% of quality sessions

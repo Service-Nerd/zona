@@ -39,6 +39,21 @@ export interface SessionCatalogueRow {
   fitness_level_min:    CatalogueFitness
   difficulty_tier:      number
   main_set_structure:   Record<string, unknown>
+  /**
+   * SC-09 / CD-17a — one parameterised row rather than three near-identical
+   * ones. The label template renders the parameter ("Hill reps — 45s" /
+   * "Hill reps — 90s") so §53's variety rule, which counts LABELS, still works
+   * from a single entry with one set of voice copy.
+   *
+   * A parameter is a DIAL SETTING, not a different session: every variant must
+   * share this row's `category`. A 3-minute hill rep is a threshold stimulus on
+   * a gradient — a different session, which gets its own row and its own board
+   * ruling (CD-17a addendum, 2026-08-20).
+   */
+  parameterisation?: {
+    name_template: string
+    variants: Array<{ label_suffix: string; values: Record<string, number> }>
+  }
   intensity_zones:      string[]
   typical_duration_min: number
   typical_duration_max: number
@@ -176,6 +191,121 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     typical_duration_min: 40, typical_duration_max: 55, is_free_tier: true,
     coach_voice_notes: 'Heroic openers ruin it. Even splits.',
   },
+  // ── SC-09 / CD-17a — hill repeats. THE FIRST v2 ROW. ──────────────────────
+  //
+  // Ruled CORRECT, unanimous. The engine's own stimulus ladder already had a
+  // rung called "hills" (STIMULUS_RANK.hills = 3, between steady_aerobic and
+  // tempo) that NOTHING in the catalogue could occupy. Adding this makes an
+  // existing rule true rather than inventing one.
+  //
+  // Why the board wanted it: one of the highest-value sessions available to a
+  // time-limited amateur — strength, economy and a VO2max-adjacent stimulus at
+  // lower impact loading than flat intervals, and no track required. McMillan:
+  // "self-limiting by gradient, effort-governed so it works on a day when the
+  // legs are flat." Sims: bone stimulus at sub-maximal speed, specifically hard
+  // to get elsewhere in a training week and specifically valuable perimenopause.
+  //
+  // ONE PARAMETERISED ROW, not three (see `parameterisation`).
+  //
+  // NO MANUAL REP ADVANCE — CD-17a struck the audit's `advance: "manual"`.
+  // McMillan: "you are asking a runner to interact with their watch at the top
+  // of every rep while breathing hard." Build from the ruling, not audit §E.3.
+  //
+  // EFFORT GOVERNS THE CLIMB, and that is deliberate: the work step carries
+  // `target: { kind: 'effort' }` with NO pace. A pace up a hill is meaningless —
+  // gradient decides it. This is the first session where effort is the primary
+  // prescription rather than a supporting note (§41), which is why §19's
+  // label-vs-pace check needs its effort-governed counterpart.
+  //
+  // The descent is PRESCRIBED, not left to the runner, and capped at easy pace.
+  // Willy: the descent loads the knee hardest, and it is the reason the injury
+  // exclusion matters MORE here, not less.
+  {
+    id: 'hill_reps',
+    name: 'Hill reps',
+    category: 'vo2max',
+    purpose: 'Strength and running economy under load. Effort governs the climb; the watch does not.',
+    phase_eligibility: ['build', 'peak'],
+    // ⚠️ NARROWED FROM CD-17a's "5K through marathon" — 5K and 10K ONLY, because
+    // those are the only distances that can REACH a vo2max-category row.
+    //
+    // Verified before shipping, not assumed: `preferredQualityCategory` gives
+    // HM and MARATHON `threshold` in build (their signature focus is
+    // ['threshold', 'race_specific'], and race_specific filters out of the
+    // midweek ladder) and `race_specific`/`threshold` in peak. A vo2max row is
+    // never selectable for them, so declaring the eligibility would ship DEAD
+    // WEIGHT — precisely the defect SC-05 was created to fix ("the row would
+    // have been dead weight as specced").
+    //
+    // Extending hills to HM/MARATHON is a real coaching ask — McMillan rates it
+    // highly for exactly those runners — but it needs their signature focus
+    // changed, which alters marathon prescription well beyond CD-17a. Filed as
+    // a separate ruling rather than smuggled in via an eligibility array.
+    distance_eligibility: ['5K', '10K'],
+    fitness_level_min: 'intermediate',
+    difficulty_tier: 3,
+    parameterisation: {
+      name_template: 'Hill reps — {param}',
+      // Both variants are `vo2max` — that is the test for whether something is
+      // a variant at all. The 3-minute rep from the audit's set is threshold
+      // work on a gradient and is DEFERRED to its own row and ruling.
+      variants: [
+        { label_suffix: '45s', values: { rep_secs: 45, reps: 10 } },
+        { label_suffix: '90s', values: { rep_secs: 90, reps: 8 } },
+      ],
+    },
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [
+        {
+          repeat: 1,
+          label: 'to the hill',
+          steps: [
+            {
+              role: 'transition', modality: 'run',
+              length: { kind: 'to_landmark', landmark: 'hill_base' },
+              // Ceiling, not a target: getting to the hill is not the session.
+              target: { kind: 'pace', anchor: 'E', mode: 'ceiling' },
+              advance: 'auto',
+            },
+          ],
+        },
+        {
+          repeat: { kind: 'parameter', param: 'reps' },
+          label: 'reps',
+          steps: [
+            {
+              role: 'work', modality: 'run', terrain: 'uphill', grade_pct: [5, 8],
+              length: { kind: 'parameter', param: 'rep_secs' },
+              target: { kind: 'effort', rpe: 8 },
+              advance: 'auto',
+              note: 'Strong and controlled, not a sprint. The hill sets the pace.',
+            },
+            {
+              role: 'recovery', modality: 'stand',
+              length: { kind: 'open' },
+              target: { kind: 'none' },
+              advance: 'auto',
+              note: 'Turn around, get your breath back. No rush.',
+            },
+            {
+              role: 'recovery', modality: 'jog', terrain: 'downhill',
+              length: { kind: 'mirror', of: 'previous_work' },
+              target: { kind: 'pace', anchor: 'E', mode: 'ceiling' },
+              advance: 'auto',
+              note: 'Easy on the way down. The descent is where the damage happens.',
+            },
+          ],
+        },
+      ],
+    },
+    intensity_zones: ['Z4', 'Z5'],
+    typical_duration_min: 35,
+    typical_duration_max: 50,
+    is_free_tier: true,
+    coach_voice_notes: 'No track, no measured loop, no pace to chase. The gradient does the work — you just have to keep the effort honest and come back down slowly.',
+  },
   {
     id: 'goal_pace_sharpener', name: 'Goal-pace sharpener', category: 'race_specific',
     purpose: 'Short reps at race pace with full recovery. Sharpens neuromuscular pace memory for race day.',
@@ -299,8 +429,25 @@ export interface CatalogueSelectorArgs {
 // Hill rows are tagged via main_set_structure.terrain === 'hills' OR id includes 'hill'.
 // Defensive across both since not every future hill row will have terrain set.
 function isHillSession(row: SessionCatalogueRow): boolean {
-  const terrain = (row.main_set_structure as { terrain?: string }).terrain
-  return terrain === 'hills' || row.id.includes('hill')
+  const m = row.main_set_structure as {
+    terrain?: string
+    blocks?: Array<{ steps?: Array<{ terrain?: string }> }>
+  }
+  // v1: terrain is a tag on the whole session.
+  if (m.terrain === 'hills') return true
+  // v2 (SC-09): terrain is a property of a STEP, which is the point — a hill
+  // session is one that sends the runner up (or down) a hill, and that is now
+  // stated structurally rather than inferred. Checked before the id fallback so
+  // a future gradient session is caught without being named "hill".
+  if (Array.isArray(m.blocks)) {
+    for (const b of m.blocks) {
+      for (const st of b.steps ?? []) {
+        if (st.terrain === 'uphill' || st.terrain === 'downhill') return true
+      }
+    }
+  }
+  // Legacy fallback for v1 rows whose terrain lives only in the id.
+  return row.id.includes('hill')
 }
 
 // Long-run-with-segment rows are race-specific long runs (e.g. mp_long_run,

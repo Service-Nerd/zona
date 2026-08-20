@@ -61,6 +61,15 @@ export const LengthSchema = z.discriminatedUnion('kind', [
   // Open-ended: until the runner is ready. Not a duration we can resolve, and
   // deliberately so.
   z.object({ kind: z.literal('open') }),
+  // A PARAMETER of the row, resolved per variant (SC-09 / CD-17a). This is what
+  // makes "one parameterised row rather than three" real: `hill_reps` is one
+  // entry, one set of voice copy, one eligibility array, whose only variable is
+  // rep length.
+  //
+  // A TYPED REFERENCE, not a placeholder string. ADR-019's design goal is that
+  // no session content is ever a string the engine has to parse — "{rep_length}"
+  // in a duration field would have broken that on the first row to use it.
+  z.object({ kind: z.literal('parameter'), param: z.string() }),
 ])
 export type StepLength = z.infer<typeof LengthSchema>
 
@@ -83,8 +92,17 @@ export const StepSchema = z.object({
 })
 export type Step = z.infer<typeof StepSchema>
 
+// `repeat` may itself be a parameter: 45-second reps and 90-second reps are the
+// same session at two dial settings, but not at the same count — 10 x 45s and
+// 8 x 90s are both coherent sessions; 8 x 45s is a warm-up and 10 x 90s is a
+// race. Rep count is not derived from a volume budget (see StructureV2Schema).
+export const RepeatSchema = z.union([
+  z.number().int().positive(),
+  z.object({ kind: z.literal('parameter'), param: z.string() }),
+])
+
 export const BlockSchema = z.object({
-  repeat: z.number().int().positive(),
+  repeat: RepeatSchema,
   label: z.string().optional(),
   steps: z.array(StepSchema).min(1),
 })
@@ -110,6 +128,37 @@ export const StructureV2Schema = z.object({
   blocks: z.array(BlockSchema).min(1),
 })
 export type StructureV2 = z.infer<typeof StructureV2Schema>
+
+// ── Row parameterisation (SC-09 / CD-17a) ───────────────────────────────────
+//
+// The board's reasoning, worth keeping next to the code: three rows would mean
+// three sets of voice copy, three eligibility arrays and three difficulty tiers
+// describing one session whose only real variable is rep length, and every
+// future change made three times. The usual argument FOR three rows is §53's
+// variety rule, which counts LABELS — one row would mean one label repeated,
+// tripping the repetition cap. That is answerable within one row by giving it a
+// label template that renders its parameter.
+//
+// CD-17a ADDENDUM (2026-08-20): a parameter is a DIAL SETTING, not a different
+// session. 45s and 90s hill reps are one session at two settings. A 3-minute
+// hill rep is a threshold stimulus on a gradient — a different session, and it
+// gets its own row and its own ruling rather than being smuggled in as a third
+// value. The test is whether the variants share a `category`; if they do not,
+// they are not variants.
+export const VariantSchema = z.object({
+  /** Rendered into `name_template` in place of `{param}`. */
+  label_suffix: z.string(),
+  /** Values for every `{ kind: 'parameter' }` reference in the structure. */
+  values: z.record(z.string(), z.number()),
+})
+export type Variant = z.infer<typeof VariantSchema>
+
+export const ParameterisationSchema = z.object({
+  /** e.g. "Hill reps — {param}" */
+  name_template: z.string(),
+  variants: z.array(VariantSchema).min(2),
+})
+export type Parameterisation = z.infer<typeof ParameterisationSchema>
 
 /** A row is v2 if — and only if — it says so. Unversioned rows keep v1 semantics forever (D-03). */
 export function isV2Structure(s: unknown): s is StructureV2 {

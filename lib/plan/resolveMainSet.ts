@@ -20,6 +20,15 @@ export interface ResolveContext {
   anchors: PaceAnchorMap
   /** Easy pace, used for `mirror` and `to_landmark` steps whose pace is not prescribed. */
   easyPaceStr?: string
+  /**
+   * Values for the row's `{ kind: 'parameter' }` references (SC-09 / CD-17a).
+   * Supplied by the chosen variant — e.g. `{ rep_secs: 45, reps: 10 }` for
+   * "Hill reps — 45s". A parameter with no value is a data defect, not a
+   * runtime condition: the resolver throws rather than silently emitting a
+   * zero-length step, because a session with a 0-second work interval is worse
+   * than no session at all.
+   */
+  params?: Record<string, number>
 }
 
 /** One step, with everything the runner needs to execute it. No anchors remain. */
@@ -80,6 +89,17 @@ function resolvePace(target: StepTarget, ctx: ResolveContext): string | null {
   return ctx.anchors[target.anchor] ?? null
 }
 
+function requireParam(param: string, ctx: ResolveContext): number {
+  const v = ctx.params?.[param]
+  if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) {
+    // Loud on purpose. A missing parameter means the row and the variant
+    // disagree, which is a catalogue defect — INV-CAT-V2-WELL-FORMED catches it
+    // ahead of generation. Failing soft here would ship a 0-second interval.
+    throw new Error(`resolveMainSet: parameter "${param}" has no value in this variant`)
+  }
+  return v
+}
+
 export function resolveMainSet(structure: StructureV2, ctx: ResolveContext): DerivedSet {
   return {
     version: 2,
@@ -97,6 +117,7 @@ export function resolveMainSet(structure: StructureV2, ctx: ResolveContext): Der
           case 'distance':    length = formatDistance(step.length.m); break
           case 'to_landmark': length = LANDMARK_TEXT[step.length.landmark] ?? step.length.landmark; break
           case 'open':        length = 'until ready'; break
+          case 'parameter':   length = formatSecs(requireParam(step.length.param, ctx)); break
           case 'mirror':
             // A mirror with no preceding work step is malformed data, not a
             // runtime condition to paper over — INV-CAT-V2-WELL-FORMED rejects
@@ -123,7 +144,10 @@ export function resolveMainSet(structure: StructureV2, ctx: ResolveContext): Der
         if (step.role === 'work') lastWorkLength = length
       }
 
-      return { repeat: block.repeat, ...(block.label ? { label: block.label } : {}), steps }
+      const repeat = typeof block.repeat === 'number'
+        ? block.repeat
+        : requireParam(block.repeat.param, ctx)
+      return { repeat, ...(block.label ? { label: block.label } : {}), steps }
     }),
   }
 }
