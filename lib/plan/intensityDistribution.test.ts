@@ -93,6 +93,12 @@ describe('SC-03 — intensity distribution is a session-share ceiling', () => {
     // checked by nothing. Poison a plan past its ceiling and assert rejection.
     const plan = generateRulePlan(TENK, 'paid', '2026-09-07')
     const over = structuredClone(plan)
+    // CD-21 (2026-08-20): TENK generates as `maintenance`, and maintenance
+    // plans are now exempt from this ceiling — a distribution ratio presupposes
+    // enough sessions to distribute. This test is about the ceiling BITING, so
+    // it asserts against a build profile. The exemption itself is covered in
+    // intensityDistributionCd21.test.ts.
+    over.meta = { ...over.meta, volume_profile: 'build' }
     for (const w of over.weeks) {
       for (const [day, s] of Object.entries(w.sessions)) {
         if (s && s.type === 'easy') {

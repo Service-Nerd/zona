@@ -291,8 +291,27 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     // unblocked day, including in race week.
     // (CoachingPrinciples §18 — life-first scheduling. Hardcoded race-week
     //  shakeout patterns broke this in 2026-04-27 review for all three cases.)
+    //
+    // THE RACE IS EXCLUDED (fixed 2026-08-20) — restoring §77's documented
+    // intent, which this check contradicted. §77: the race sits on the ACTUAL
+    // weekday of race_date and "deliberately ignores `days_cannot_train`: the
+    // race is an external fixed event, not a training session, and a runner who
+    // cannot train on Wednesdays can still race on one" (ruleEngine.ts:1230).
+    // The engine was right; this invariant was wrong, and flagged the runner's
+    // own race as a scheduling defect whenever race day fell on a blocked day.
+    //
+    // Invisible until 2026-08-20 because the property sweep passed the day
+    // constraint as `blocked_days` — a field GeneratorInput does not have, so
+    // the engine read `days_cannot_train` as undefined and every blocked-day row
+    // in the grid was inert. Renaming it surfaced 2,954 violations, all of them
+    // the race. Same class as SWEEP-VACUOUS-01, in the file just repaired for it:
+    // AN INPUT THE ENGINE NEVER READS TESTS NOTHING. The sweep is typed `any`,
+    // which is why tsc never caught it.
+    //
+    // The same carve-out §1's numerator makes for the same reason — the race is
+    // the goal, not training.
     for (const [day, session] of sessions) {
-      if (!session || session.type === 'rest') continue
+      if (!session || session.type === 'rest' || session.type === 'race') continue
       if (blocked.has(day)) {
         violations.push({
           code: 'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS',
@@ -1160,9 +1179,53 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           if (HARD_TYPES.has(sn.type)) hard++
         }
       }
-      if (running > 0) {
+      // MAINTENANCE-PROFILE PLANS ARE EXEMPT — Coaching Board CD-21 (2026-08-20).
+      //
+      // Not a day-count exemption. A PROFILE exemption, keyed to the state §52
+      // already assigns, and the distinction matters: the first draft of this
+      // finding called the breach "day-count sensitive", which is wrong and
+      // would have produced an exemption that left the real defect standing.
+      // Per-cell breakdown (6 distances x 6 day-counts x volume x fitness):
+      //
+      //   Bucket A — 5K/10K/HM @ 2d, 50K @ 3d, 100K @ 3d. Worst 28.6%.
+      //              `volume_profile: 'maintenance'` in EVERY case.
+      //   Bucket B — 100K @ 4d (14.0%), 5d (14.7%), 6d (12.2%), 7d (12.2%).
+      //              `volume_profile: 'build'` — nothing to do with day count.
+      //
+      // Bucket A correlates perfectly with `maintenance`; day count is merely
+      // what triggers §52. Bucket B is the ultra value being wrong and is fixed
+      // in GENERATION_CONFIG (100K 12 -> 15), not here.
+      //
+      // Why maintenance plans are exempt rather than tolerated: A DISTRIBUTION
+      // RATIO PRESUPPOSES ENOUGH SESSIONS TO DISTRIBUTE. At two runs a week the
+      // ratio is not violated — it is undefined (Seiler). §9 forces the long run
+      // to ~56% of a 2-day week's volume, so "long run + one quality" is the
+      // shape, and it is also what a coach would actually write for a
+      // time-crunched runner chasing a 5K (McMillan). Forcing compliance means
+      // two easy runs and no quality — which for the peri/post-menopausal
+      // runners in this cohort removes the single highest-value stimulus in the
+      // plan, and there are only two sessions to take it from (Sims).
+      //
+      // SCOPED STRICTLY TO THIS CEILING (Willy's condition of approval). §7's
+      // 48-hour spacing, §2's 10% rule, §9's ratio and §45's progression cap all
+      // remain fully binding on maintenance plans. This is not exempt-from-load.
+      //
+      // NOT SILENTLY SKIPPED: §52 already emits `volume_constraint_note` telling
+      // the runner why their plan is shaped this way, which is the runner-facing
+      // record. The skip itself is asserted in intensityDistributionCd21.test.ts
+      // so that widening the maintenance trigger cannot quietly drop plans out
+      // of this check. Precedent: INV-PLAN-PEAK-LR-RACE-RATIO above relaxes on
+      // the same flag for the same reason.
+      const isMaintenance = plan.meta.volume_profile === 'maintenance'
+
+      if (running > 0 && !isMaintenance) {
         const pct = (hard / running) * 100
         if (pct > dist.max_quality_session_pct) {
+          // Severity restored to `error` by CD-21. It was `warn` for exactly one
+          // day while the values were unratified. Willy, decisive: an `error`
+          // that fires on 71% of a distance's plans is not a safety mechanism,
+          // it is noise, and noise gets suppressed — which is how a real
+          // violation gets missed later.
           violations.push({
             code: 'INV-PLAN-INTENSITY-DISTRIBUTION',
             principle_ref: 'CoachingPrinciples §1',

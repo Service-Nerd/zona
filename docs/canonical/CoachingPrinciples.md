@@ -81,7 +81,53 @@ The reason the error survived is §34, not coaching judgement: **the table was r
 
 **§7 remains independently binding.** A plan can satisfy this ceiling and still stack its hard days. The ratio is not a substitute for the 48-hour spacing rule.
 
-**Config.** `GENERATION_CONFIG.INTENSITY_DISTRIBUTION` — keyed by race distance, field `max_quality_session_pct`. The field is named for its unit so a call site cannot mistake it again. Enforced by `INV-PLAN-INTENSITY-DISTRIBUTION`. Values verified against a 1,244,160-plan property sweep at the time of correction.
+**Config.** `GENERATION_CONFIG.INTENSITY_DISTRIBUTION` — keyed by race distance, field `max_quality_session_pct`. The field is named for its unit so a call site cannot mistake it again. Checked by `INV-PLAN-INTENSITY-DISTRIBUTION`.
+
+**The values are ratified, with two amendments — Coaching Board CD-21 (2026-08-20).**
+
+An earlier version of this section claimed the six values were *"verified against a 1,244,160-plan sweep"*. **That claim was void** — the sweep was silently generating *zero* plans (SWEEP-VACUOUS-01), so it verified nothing. Once repaired it produced a real finding, and the shape of that finding matters more than the numbers:
+
+| Bucket | Cases | Worst | `volume_profile` |
+|---|---|---|---|
+| **A** — low-frequency | 5K/10K/HM @ 2 days · 50K @ 3 days · 100K @ 3 days | 28.6% | **`maintenance`** in every case |
+| **B** — 100K build | 4d (14.0%) · 5d (14.7%) · 6d (12.2%) · 7d (12.2%) | 14.7% | **`build`** |
+
+**The first reading of this — "the ceiling is day-count sensitive" — was wrong, and acting on it would have left the real defect standing.** Bucket A correlates perfectly with the *volume profile*; day count is merely what triggers §52. Bucket B has nothing to do with day count at all — a **seven-day** 100K build plan breaches. Two buckets, opposite treatments.
+
+### Amendment 1 — the ceiling does not apply to `maintenance`-profile plans
+
+Not a day-count exemption. A **profile** exemption, keyed to the state §52 already assigns.
+
+**Why.** A distribution ratio presupposes enough sessions to distribute. At two runs a week there is no distribution to describe — **the ratio is not violated, it is undefined** (Seiler). §9 forces the long run to ~56% of a 2-day week's volume, so "long run plus one quality" is the only shape available; it is also exactly what a coach would write for a time-crunched runner chasing a 5K (McMillan). Forcing compliance would mean two easy runs and no quality — which for the peri- and post-menopausal runners in this cohort removes the single highest-value stimulus in the plan, and there are only two sessions to take it from (Sims).
+
+**Scoped strictly to this ceiling** (Willy's condition of approval). §7's 48-hour spacing, §2's 10% rule, §9's ratio and §45's progression cap all remain fully binding on maintenance plans. This is not exempt-from-load.
+
+**Recorded, not silently skipped.** §52 already emits `volume_constraint_note` explaining the plan's shape to the runner — that is the runner-facing half, and duplicating it in `rule_adjustments` would be noise. The skip itself is asserted in `intensityDistributionCd21.test.ts`, so widening the maintenance trigger cannot quietly drop plans out of this check. Precedent: `INV-PLAN-PEAK-LR-RACE-RATIO` relaxes on the same flag for the same reason.
+
+### Amendment 2 — 100K: 12% → 15%
+
+**The six values were authored under the MINUTES basis and carried across the basis change unchanged** — the same class of error as the original misfiling: a number surviving a change to what it means.
+
+Seiler, on his own finding: under a **time** denominator ultra training genuinely does look far more skewed than 10K training, and a descending ladder 25 → 12 is defensible. Under a **session** denominator the two **converge**, because the ultra runner's easy sessions are long, not numerous. **The descending ladder is an artifact of the old unit.** He can ratify ~25% as a session share for road; nothing he published supports 12% for 100K on that basis.
+
+The failing evidence — a 24-week, 6-day 100K build plan:
+
+| phase | weeks | quality | running | share |
+|---|---|---|---|---|
+| base | 8 | 0 | 48 | 0.0% |
+| build | 8 | 6 | 48 | 12.5% |
+| **peak** | 4 | 8 | 24 | **33.3%** |
+| taper | 4 | 3 | 19 | 15.8% |
+| **total** | 24 | 17 | 139 | **12.2%** |
+
+**Its peak runs two quality sessions a week — exactly what §8 grants an experienced runner.** At 12% this section and §8 were arithmetically incompatible, and the engine obeyed §8. **§1 is the section that yielded**, and that is recorded here so the next person to tighten it knows what they would break. `QUALITY_SESSIONS_PER_WEEK_MAX` stays distance-blind.
+
+15% clears every observed build-profile 100K plan (worst 14.7%) without clearing them so widely the check stops binding.
+
+**Unchanged, deliberately:** 5K/10K 25%, HM 20%, MARATHON 18%, 50K 15%. No build-profile plan fails them. **Seiler's dissent is recorded against 50K's 15%** — he holds it carries the same discredited basis. Hutchinson (chair) prevails: unfounded is not the same as wrong, and moving numerics with no failing evidence is how this config drifted from the engine in the first place. A 50K build-profile breach reopens it.
+
+**Severity restored to `error`.** It was `warn` for one day while the values were unratified. Willy, decisive: an `error` firing on 71% of a distance's plans is not a safety mechanism — it is noise, and noise gets suppressed, which is how a real violation gets missed later.
+
 
 ---
 
@@ -1751,7 +1797,13 @@ A runner following pace finds the "VO2max" work easier than the race-pace work. 
 
 **The general lesson, which is the reason this section exists.** Every invariant written before this one validated a single session against its own prescription. That is why nothing caught this: each session was individually defensible and the plan was only incoherent when two of them were placed side by side. **A constitution enforced one session at a time cannot see a contradiction that lives between sessions.** When adding a principle, ask which of its failures would survive a per-session check.
 
-**Known gap.** The check compares the fastest Zone 3 session against the fastest Zone 4–5 session across the whole plan. It does not yet assert the finer ordering *within* a band, nor that heart-rate bands respect the same ladder as paces — the HR half of the incoherence above is currently unchecked.
+**Why only pace is checked, and why that is sufficient — corrected 2026-08-20.** An earlier draft of this section recorded "the HR ladder is not checked against the pace ladder" as a known gap. **That was wrong, and the correction is the interesting part.**
+
+Heart-rate bands are a pure function of the zone: `qualityHR` is the Z3 band and `intervalsHR` is Z4→max, both derived from the zone the session was assigned. **The HR ladder therefore cannot invert** — it is structurally consistent with the zone labels by construction. Pace is the only quantity that can disagree with its own zone, because it comes from a different derivation (the runner's VDOT, or their stated target) rather than from the zone.
+
+So the incoherence is not "two ladders disagree with each other" — it is **one ladder (pace) breaking rank with the zone that both it and heart rate are supposed to express.** Checking pace against zone catches the whole defect. A separate HR-vs-pace check would be a check that can never fire.
+
+**The residual gap, stated accurately.** The invariant compares the *fastest* Zone 3 session against the *fastest* Zone 4–5 session across the plan. It does not assert finer ordering *within* a band. That is a real limitation and a small one.
 
 **Config.** `GENERATION_CONFIG.INTENSITY_ORDERING_TOLERANCE_PCT` (0.5% — two independent derivations landing within a rounding width of each other is noise, not an inversion). Enforced by `INV-PLAN-INTENSITY-ORDERING` in `lib/plan/invariants.ts`. Surfaced via §44's difficulty band.
 

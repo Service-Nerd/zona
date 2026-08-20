@@ -43,13 +43,41 @@ export const GENERATION_CONFIG = {
   //
   // §7's 48-hour spacing remains independently binding: a plan can satisfy this
   // ceiling and still stack its hard days, which is a different defect (Willy).
+  //
+  // ── 100K: 12 → 15, Coaching Board CD-21 (2026-08-20) ──────────────────────
+  // The six values were authored under the MINUTES basis and carried across the
+  // basis change unchanged — the same class of error as the original misfiling:
+  // a number surviving a change to what it means.
+  //
+  // Seiler: under a TIME denominator ultra training genuinely looks far more
+  // skewed than 10K training, and a descending ladder 25 -> 12 is defensible.
+  // Under a SESSION denominator the two CONVERGE, because the ultra runner's
+  // easy sessions are long, not numerous. The descending ladder is an artifact
+  // of the old unit. He can ratify ~25% as a session share for road; nothing he
+  // published supports 12% for 100K on that basis.
+  //
+  // The failing evidence: a 24-week 6-day 100K build plan runs base 0% /
+  // build 12.5% / peak 33.3% / taper 15.8% = 12.2% plan-wide. Its peak is
+  // 2 quality/week — EXACTLY what QUALITY_SESSIONS_PER_WEEK_MAX grants an
+  // experienced runner. At 12% this table and §8 are arithmetically
+  // incompatible and the engine obeys §8. Resolved by widening §1, not by
+  // weakening §8: QUALITY_SESSIONS_PER_WEEK_MAX stays distance-blind.
+  //
+  // 15 clears every observed build-profile 100K plan (worst 14.7%) without
+  // clearing them so widely the check stops binding.
+  //
+  // 50K's 15% is UNCHANGED and Seiler's dissent is recorded against it: he
+  // holds it carries the same discredited basis. Hutchinson (chair) prevails —
+  // no 50K build-profile plan fails it, and moving numerics with no failing
+  // evidence is how this config drifted from the engine in the first place.
+  // A 50K build-profile breach would reopen it.
   INTENSITY_DISTRIBUTION: {
     '5K':       { max_quality_session_pct: 25 },
     '10K':      { max_quality_session_pct: 25 },
     'HM':       { max_quality_session_pct: 20 },
     'MARATHON': { max_quality_session_pct: 18 },
     '50K':      { max_quality_session_pct: 15 },
-    '100K':     { max_quality_session_pct: 12 },
+    '100K':     { max_quality_session_pct: 15 },
   },
 
   // ── 10% rule + recovery cadence (CoachingPrinciples §2, §3) ─────────────────
