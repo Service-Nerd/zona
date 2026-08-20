@@ -195,18 +195,35 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
   - Named `npm` scripts (`typecheck`, `verify:matrix`, `verify:sweep`, `verify:invariants`, and `verify` for the chain) so the gate is runnable locally in one command and CI has no bespoke logic of its own.
   - Whole chain ~8s for the sweep; `concurrency` cancels superseded runs.
   - **Verify shipped:** `npm run verify` → exit 0; `ls .github/workflows/verify.yml`.
-- 🔲 **[W1d]** **SWEEP-BASELINE-01 — real pre-existing violations, invisible until the sweep was repaired** — the moment it generated plans it surfaced **2,342 violating plans** across five codes. **None are regressions from W1d work**; all pre-date it and were hidden by SWEEP-VACUOUS-01. Baselined in the script (a debt register, not an amnesty — the run fails on anything new or worse, and reports improvements so the baseline can be lowered):
+- ✅ **[W1d]** **SWEEP-BASELINE-01 — TRIAGE COMPLETE 2026-08-20.** The 2,306 violations the repaired sweep exposed are now classified and routed. **The item's stated deliverable was triage, not mass-fixing** — that is done; the fixes are the four items below. The `BASELINE` map stays until they land.
 
-  | Code | Count | First read |
-  |---|---|---|
-  | `INV-PLAN-PEAK-IN-PEAK-PHASE` | 1116 | §23 — peak below an earlier phase; interacts with CD-10's documented "measured volume can dip" position |
-  | `INV-PLAN-LR-PROGRESSION-CAP` | 981 | §45 — long-run jumps over cap, concentrated at low `current_weekly_km` |
-  | `INV-PLAN-MIN-SESSION-SIZE` | 211 | §9 — sessions under the floor |
-  | `INV-PLAN-QUALITY-VARIETY-FULL-PLAN` | 87 | §53 — one label dominating; seen on ultra plans |
-  | `INV-PLAN-TAPER-VARIETY` | 54 | §36 |
+  | Code | Share | Verdict | Routed to |
+  |---|---|---|---|
+  | `INV-PLAN-PEAK-IN-PEAK-PHASE` | 1080 (47%) | **REAL — structural, the big one** | VOL-STRUCTURE-01 |
+  | `INV-PLAN-LR-PROGRESSION-CAP` | 981 (43%) | **REAL — at least partly a deload artifact** | DELOAD-INVERSION-01 |
+  | `INV-PLAN-MIN-SESSION-SIZE` | 211 (9%) | **Degenerate input** | INPUT-FLOOR-01 |
+  | `INV-PLAN-QUALITY-VARIETY-FULL-PLAN` | 87 (4%) | **REAL — catalogue thinness, 100K only** | CAT-ULTRA-THIN-01 |
+  | `INV-PLAN-TAPER-VARIETY` | 54 (2%) | Same shape as above | CAT-ULTRA-THIN-01 |
 
-  Some come from degenerate grid inputs (5 km/week training for a half marathon) and some are real — the ultra findings look genuine. **Next step is triage, not mass-fixing:** separate "the input is nonsense" from "the engine is wrong", then route the real ones. Sizeable enough to be its own wave.
-  - **Verify still open:** the `BASELINE` map in `scripts/property-validate-plans.ts` is non-empty.
+  - **The discriminator that made triage possible:** incidence *against volume*. `PEAK-IN-PEAK-PHASE` **rises** with weekly km (12 → 73 across 5→60 km/wk); `LR-PROGRESSION-CAP` **falls** (40 → 16); `MIN-SESSION-SIZE` appears **only** at ≤12 km/wk and only for 5K. Rising-with-volume is the opposite of a bad-input artifact, which is what separated the real defects from the noise.
+  - **Seiler's question, answered:** does the volume squeeze worsen the §1 intensity share? **No — 0% breach in both squeezed and normal plans.** And the reason matters: **§1 counts SESSIONS, so it is structurally blind to volume loss.** A week can shed 30% of its easy kilometres with an unchanged session count and §1 registers nothing. That is not a defect in §1 — CD-19/CD-21 ruled the session basis correct — but it means §1 can never be the check for this, and §23 catching it was not luck.
+
+- 🔲 **[W1d]** **VOL-STRUCTURE-01 — a third of plans peak below where the runner started** *(from SWEEP-BASELINE-01 triage; **Coaching Board ruled 2026-08-20**; the largest open engine defect)* — **27% of swept plans peak below their own base phase; 33% peak below the runner's current weekly volume.** The plan detrains them and says nothing.
+  - **Traced mechanism** (10K, 3 days, 60 km/wk): base weeks run long **19km at 119 of a 120-minute cap** plus two 15km easy runs = 49km. When a quality session arrives it **displaces a 15km easy run with a ~9km session**, and neither remaining slot can absorb the 6km — the long run is pinned at `LONG_RUN_CAP_MINUTES` and easy is capped at `long / 1.25` (§9).
+  - **Incidence scales with volume-per-available-day**, the tell that it is structural: ≤8 km/day **4%** · 9–12 **33%** · 13–16 **53%** · **17+ 73%**. Worst observed: a 50K runner, base 94km → peak 83km.
+  - **Board ruling: §23 stands; the engine is at fault.** The reading that this is a *deliberate* volume reduction for a short race was **rejected** — a defensible reduction and an accidental one produce the same number, and the engine gives no evidence of intent (Hutchinson). **The caps do not move** — `LONG_RUN_CAP_MINUTES` and §9 are both correct (Willy).
+  - **Route it through doctrine that already exists:** extend **§52's maintenance trigger** to fire when volume cannot be structured within the available days (it currently fires on day count — the same condition detected by proxy), and extend **§40c's shortfall note** to name this binding constraint as well as `max_weekday_mins`.
+  - **Verify still open:** the `BASELINE` map still carries `INV-PLAN-PEAK-IN-PEAK-PHASE`.
+
+- 🔲 **[W1d]** **DELOAD-INVERSION-01 — a recovery week that adds volume** *(from triage; **7% of plans**)* — a week badged `deload` carrying **more** than the week before it. Worst observed: W8 "deload" at 22km against W7's 17km, with a **17km long run against 9.5km**. A runner is told this is recovery and handed more running.
+  - **Cause is arithmetic, not intent:** `RECOVERY_WEEK_VOLUME_PCT` (70) is applied to the volume **curve**, and where the curve ramps steeply, 70% of the curve at week N still exceeds the *delivered* volume at week N−1. The deload is correctly computed and wrong in effect — the gap between a rule being honoured and a rule being right (**D-21**).
+  - **Strongly suspected to drive much of `INV-PLAN-LR-PROGRESSION-CAP` (981)**, whose violations read as huge long-run jumps out of these inverted deloads.
+  - **Declared and exercised now:** new **`INV-PLAN-DELOAD-IS-A-REDUCTION`** at **`warn`** — same footing CD-21 gave §1's ceiling and SC-10 gave the main-set ordering. Becomes `error` when the curve fix lands. **Fixing the curve is a prescription change → Coaching Board.**
+  - **Verify still open:** `grep -n "severity: 'warn'" -A 2 lib/plan/invariants.ts | grep -c DELOAD` → non-zero.
+
+- 🔲 **[W1d]** **CAT-ULTRA-THIN-01 — the ultra catalogue is too thin to vary** *(from triage; 141 violations across two codes, 100K/50K only)* — `INV-PLAN-QUALITY-VARIETY-FULL-PLAN` (87) and `INV-PLAN-TAPER-VARIETY` (54) fire **only** on ultra plans, because one label dominates: there are three `ultra_specific` rows total and 100K's `quality_categories_focus` is `['ultra_specific']` alone. §53's variety cap is arithmetically unsatisfiable on a 24-week plan with that few rows. **Not an engine defect — a content gap**, and the same shape SC-04/SC-05 fixed for 5K/10K. Needs a Coaching Board ruling on what ultra runners should actually be prescribed.
+
+- 🔲 **[W1d]** **INPUT-FLOOR-01 — degenerate inputs reach the engine** *(from triage; 211 violations)* — `INV-PLAN-MIN-SESSION-SIZE` fires **only** on 5K plans at ≤12 km/week: sessions fall under the floor because there is not enough volume to build one. **Training 5 km/week for a 5K is not a plan we should be generating** — and separately the sweep grid contains `current_weekly_km: 5` paired with `longest_recent_run_km: 22`, which is self-contradictory. **Two questions, both cheap:** does the wizard already floor this (if so the sweep grid is unrepresentative and should say so), and should `validateInputFields` reject the contradiction? Engineering, not coaching.
 
 
   - 🔬 **TRACE RE-RUN 2026-08-20 (board-mandated) — the board's hypothesis is DISPROVEN, and something better replaced it.** CD-16 closed with *"SC-01 materially changes CD-16: some of the 'nowhere to put VO2max' premise dissolves once it is fixed. Re-run the 10K trace afterwards."* Re-run via the new `scripts/trace-plan.ts`:

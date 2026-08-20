@@ -26,6 +26,7 @@ export type Severity = 'error' | 'warn'
 // enforced — adding a code here without enforcement (or vice versa) is a defect.
 // (CoachingPrinciples §34, R2/H-04)
 export const INVARIANT_CODES = [
+  'INV-PLAN-DELOAD-IS-A-REDUCTION',
   'INV-PLAN-VOLUME-SHORTFALL-DECLARED',
   'INV-PLAN-EFFORT-OR-PACE',
   'INV-PLAN-DERIVED-SET',
@@ -1180,6 +1181,47 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // survived: nothing computed the number, so nobody could see which quantity
   // it was. The value being wrong was downstream of it being unexercised.
   //
+  // INV-PLAN-DELOAD-IS-A-REDUCTION (CoachingPrinciples §3 — SWEEP-BASELINE-01)
+  //
+  // A week badged `deload` must carry LESS volume than the week before it.
+  //
+  // Found during the 2026-08-20 baseline triage: 7% of swept plans contain a
+  // deload week that is BIGGER than the week preceding it — worst observed a
+  // W8 "deload" at 22km against W7's 17km, with a 17km long run against 9.5km.
+  // A runner is told this is a recovery week and handed more running than they
+  // did the week before.
+  //
+  // The cause is arithmetic rather than intent: RECOVERY_WEEK_VOLUME_PCT (70)
+  // is applied to the volume CURVE, and where the curve ramps steeply enough,
+  // 70% of the curve at week N still exceeds the delivered volume at week N-1.
+  // The deload is correctly computed and wrong in effect — which is exactly the
+  // gap between a rule being honoured and a rule being right (D-21).
+  //
+  // `warn`, not `error`: it is a known-open defect at a measured 7%, declared
+  // AND exercised per §34, on the same footing CD-21 gave §1's ceiling and
+  // SC-10 gave the main-set ordering. It becomes `error` when the curve fix
+  // lands (DELOAD-INVERSION-01). Enforcing documented intent, not changing it —
+  // §3 already says a recovery week reduces volume.
+  for (let i = 1; i < plan.weeks.length; i++) {
+    const w = plan.weeks[i]
+    const prev = plan.weeks[i - 1]
+    const isDeload = w.type === 'deload' || w.badge === 'deload'
+    const prevIsDeload = prev.type === 'deload' || prev.badge === 'deload'
+    // Back-to-back deloads are a different shape and not what this catches.
+    if (!isDeload || prevIsDeload) continue
+    if (w.weekly_km > prev.weekly_km) {
+      violations.push({
+        code: 'INV-PLAN-DELOAD-IS-A-REDUCTION',
+        principle_ref: 'CoachingPrinciples §3',
+        severity: 'warn',
+        week: w.n,
+        message: `Week ${w.n} is badged deload but carries ${w.weekly_km}km against week ${prev.n}'s ${prev.weekly_km}km. A recovery week that adds volume is not a recovery week.`,
+        actual: `${w.weekly_km}km`,
+        expected: `<= ${prev.weekly_km}km (the preceding week)`,
+      })
+    }
+  }
+
   // INV-PLAN-VOLUME-SHORTFALL-DECLARED (CoachingPrinciples §40c — VOL-SHORTFALL-01)
   //
   // When a life-first constraint suppresses the peak week by
