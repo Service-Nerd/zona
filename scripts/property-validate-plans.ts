@@ -353,23 +353,14 @@ const BASELINE: Record<string, number> = {
   // grid stopped pairing impossible volumes. The last step traded 62 of these
   // back for 235 fewer undersized sessions — a deliberate, net-positive swap:
   // an over-long long run is visible to a runner, a sub-floor session is not.
-  'INV-PLAN-LR-PROGRESSION-CAP':        450,
+  'INV-PLAN-LR-PROGRESSION-CAP':        430,
 
-  // 211 -> 537 (2026-08-20). RAISED, and deliberately not hidden: making the
-  // injury cap actually compound holds volume down for injured runners — which
-  // is what §12 asks for — and at low starting volumes the sessions that result
-  // fall under MIN_SESSION_DISTANCE_KM.
-  //
-  // Confined entirely to a band the product should not be serving. Measured by
-  // starting weekly volume: 28% at 5 km/wk, 28% at 12, 6% at 25, and ZERO at 40
-  // and 60. On realistic inputs (long run a coherent share of the week, volume
-  // >= 25 km) the rate is 1%.
-  //
-  // The honest fix is a volume floor per race distance — you cannot build a
-  // marathon plan from 5 km a week — which is a coaching decision, filed as
-  // INPUT-FLOOR-01. Until it lands this number stays visible rather than being
-  // absorbed into a tolerance.
-  'INV-PLAN-MIN-SESSION-SIZE':          302,
+  // 211 -> 537 -> 0 (2026-08-20). Went UP before it went down: making the §12
+  // injury cap compound held volume lower, which exposed sessions that had
+  // always been under-sized. Cleared entirely by §52b (a training day must be
+  // able to carry a real session) plus honouring the `secondary_quality` floor
+  // the config already declared and the invariant had been ignoring.
+  'INV-PLAN-MIN-SESSION-SIZE':            0,
 
   'INV-PLAN-QUALITY-VARIETY-FULL-PLAN':  75,
   // 54 -> 98, same cause and same band as MIN-SESSION-SIZE above.

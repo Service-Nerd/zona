@@ -369,6 +369,30 @@ export const GENERATION_CONFIG = {
 
   // Floor distances per session type. Below these, the session is too short to
   // be coaching-meaningful. Engine clamps up.
+  // CoachingPrinciples §52b (INPUT-FLOOR-01) — a training day must be able to
+  // carry a real session.
+  //
+  // Where weekly volume divided by available days falls below this, the engine
+  // uses FEWER days rather than emitting sessions too small to be
+  // coaching-meaningful. 12km spread over seven days is seven jogs; the same
+  // 12km over three days is a training week.
+  //
+  // 5km = MIN_SESSION_DISTANCE_KM.quality, the LARGEST session floor — a
+  // training day must be able to carry the biggest thing that might land on it,
+  // not the smallest.
+  //
+  // Set to 4 first (the easy floor) on the reasoning that a day only needs to
+  // hold the least demanding session. Measurement disagreed: at 4 the quality
+  // session still landed under its own 5km floor, and moving to 5 cleared a
+  // further 114 sub-floor sessions and 20 long-run violations. The day has to
+  // be sized for its worst case.
+  //
+  // Measured: sub-floor sessions run at 13% below 2 km/day, 7% at 2-3, and
+  // ZERO at 3km/day and above. Held against weekly volume alone, or against race
+  // distance alone, the signal is flat zero — the defect exists only in the
+  // INTERACTION, which is why it was invisible to both axes for months.
+  MIN_KM_PER_TRAINING_DAY: 5,
+
   MIN_SESSION_DISTANCE_KM: {
     long:               5,
     easy:               4,

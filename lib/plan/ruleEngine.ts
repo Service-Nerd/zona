@@ -1546,10 +1546,26 @@ function buildWeekSessions(
   // CoachingPrinciples §64 — cap at six training days so every week keeps a rest
   // day. A runner selecting 7 available days is telling us their schedule, not
   // asking for seven runs. Enforced by INV-PLAN-WEEK-HAS-REST-DAY.
+  // §52b (INPUT-FLOOR-01) — a training day must be able to carry a real session.
+  //
+  // A runner on 12km a week who selects seven days gets seven ~1.7km jogs, and
+  // no session in the week does anything: the quality session falls under
+  // MIN_SESSION_DISTANCE_KM and the long run is barely longer than the rest.
+  // The same 12km over three days is a training week.
+  //
+  // Does NOT override life-first (§18) — the runner's availability is unchanged
+  // and honoured. This declines to SPREAD volume across days it cannot fill.
+  // Never below 3 days: at or under that, §52's low-day rule already owns the
+  // shape and downgrades the plan to maintenance with its own note.
+  const daysVolumeCanFill = weeklyKm > 0
+    ? Math.max(3, Math.floor(weeklyKm / GENERATION_CONFIG.MIN_KM_PER_TRAINING_DAY))
+    : input.days_available
+
   const daysAvailable = Math.min(
     input.days_available,
     7 - blocked.size,
     GENERATION_CONFIG.MAX_TRAINING_DAYS_PER_WEEK,
+    daysVolumeCanFill,
   )
   // distKey is hoisted above the race-week branch for §39 use.
 

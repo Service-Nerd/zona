@@ -648,7 +648,29 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       if (isRaceWeek && session.type === 'easy') continue
       if (isShakeout(session)) continue
       const isLong = isLongRun(session)
-      const expected = isLong ? minDist.long : session.type === 'quality' ? minDist.quality : minDist.easy
+      // SECONDARY QUALITY HAS ITS OWN FLOOR (fixed 2026-08-20). The config
+      // declares `secondary_quality: 4` alongside `quality: 5`, and the engine
+      // honours it — `Math.max(roundDist(qualKm * secondaryFraction),
+      // minDist.secondary_quality)`. This check ignored it and measured every
+      // quality session against the primary floor, so a correctly-sized 4.5km
+      // second session was reported as a defect.
+      //
+      // Identified STRUCTURALLY: in a week carrying more than one quality
+      // session, the largest is the primary and the rest are secondary. That is
+      // the same relationship the engine creates by construction
+      // (SECONDARY_QUALITY_PCT_OF_PRIMARY = 80), so the two cannot disagree.
+      const qualityKmsThisWeek = sessions
+        .map(([, sn]) => sn)
+        .filter((sn): sn is NonNullable<typeof sn> => !!sn && sn.type === 'quality')
+        .map(sn => sn.distance_km ?? 0)
+      const isSecondaryQuality = session.type === 'quality'
+        && qualityKmsThisWeek.length > 1
+        && (session.distance_km ?? 0) < Math.max(...qualityKmsThisWeek)
+
+      const expected = isLong ? minDist.long
+        : isSecondaryQuality ? minDist.secondary_quality
+        : session.type === 'quality' ? minDist.quality
+        : minDist.easy
       const dist = session.distance_km ?? 0
       if (session.distance_km != null && dist < expected) {
         violations.push({

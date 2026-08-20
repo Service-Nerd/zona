@@ -912,6 +912,38 @@ Measured by counterfactual (identical profile, cap vs no cap):
 
 ---
 
+## 52b. A training day must be able to carry a real session
+
+*Added 2026-08-20 — Coaching Board (INPUT-FLOOR-01), unanimous.*
+
+**Principle.** Where weekly volume divided by available days falls below `MIN_KM_PER_TRAINING_DAY`, the engine uses **fewer days**. It does not spread volume across days it cannot fill.
+
+**Why.** A runner on 12 km a week who selects seven days was given **seven ~1.7 km jogs**: the quality session fell under its own floor and the long run was barely longer than the rest. Nothing in the week did anything. The same 12 km over three days is a training week — something resembling a long run, and one session with enough length to have a purpose.
+
+McMillan: *"Nobody coaching a new runner says 'run every day.' They say 'run three times, properly.'"* Willy adds the load argument: seven exposures a week on an unconditioned tissue, with no session long enough to drive adaptation, is cost without benefit.
+
+**The question as filed was wrong, and that is the finding worth keeping.** This was raised as *"minimum weekly volume per race distance"*. Held against weekly volume alone, or against race distance alone, the signal is **flat zero at every value**. It exists only in the interaction:
+
+| km per training day | Sessions below the floor |
+|---|---|
+| < 2 | **13%** |
+| 2–3 | 7% |
+| 3+ | **0%** |
+
+A defect invisible to either axis on its own — the third time in one day that a mechanism was mis-identified by reasoning about one variable at a time.
+
+**The floor is the LARGEST session floor, not the smallest.** `MIN_KM_PER_TRAINING_DAY = 5 = MIN_SESSION_DISTANCE_KM.quality`. It was set to 4 (the *easy* floor) first, on the reasoning that a day need only hold the least demanding session; measurement disagreed — the quality session then landed under its own 5 km floor. **A day must be sized for the biggest thing that might land on it.**
+
+**Two boundaries.**
+1. **Never below 3 days** — at or under that, §52's low-day rule already owns the shape and downgrades to maintenance with its own note.
+2. **This does not override life-first (§18).** The runner's availability is unchanged and honoured; the engine declines to *spread* volume, not to accept the days. A well-fuelled runner keeps every day they asked for, up to §64's six-day cap.
+
+**Say it, don't just do it** (Sims): a beginner who committed to running seven days has made a behavioural decision that matters, and a silent reduction reads as a demotion. The change is stated in the §52/§40c idiom — what changed, why, and that the days they get will contain real sessions.
+
+**Config.** `GENERATION_CONFIG.MIN_KM_PER_TRAINING_DAY = 5`. Makes `INV-PLAN-MIN-SESSION-SIZE` satisfiable — it went from 188 sweep violations to **zero**.
+
+---
+
 ## 40b. Effort-governed sessions — when there is no pace to check
 
 *Added 2026-08-20 — Coaching Board CD-17a (SC-09), unanimous.*
