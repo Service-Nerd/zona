@@ -92,7 +92,7 @@ Phase 1 specifies the full schema for `main_set_structure` and freezes it before
 
 ---
 
-## V1 catalogue (19 sessions)
+## V1 catalogue (21 sessions)
 
 **These are the rows the engine actually ships**, generated from `lib/plan/sessionCatalogueData.ts` — the runtime source of truth (SC-00; the Supabase table is retired).
 
@@ -107,18 +107,20 @@ Phase 1 specifies the full schema for `main_set_structure` and freezes it before
 | 5 | `tempo_cruise` | Cruise intervals | threshold | build | all | intermediate | T3 | 3×10 min Z3 / 2 min jog |
 | 6 | `tempo_cruise_short` | Cruise intervals — short | threshold | build, peak | 5K, 10K | intermediate | T3 | 4×5 min Z3 / 90s jog |
 | 7 | `progressive_tempo` | Progressive tempo | threshold | build, peak, taper | all | intermediate | T3 | 30 min Z2→Z3 |
-| 8 | `intervals_classic` | Classic VO2max | vo2max | build, peak | 5K, 10K | intermediate | T4 | 5×3 min Z4_Z5 / 2 min jog |
-| 9 | `intervals_short` | Short VO2max | vo2max | build, peak | 5K | intermediate | T4 | 10×400m @ 3K pace / 90s jog |
-| 10 | `intervals_long` | Long VO2max | vo2max | build, peak | 5K, 10K | intermediate | T4 | 4×1000m @ 5K pace / 2 min jog |
-| 11 | `hill_reps` | Hill reps — {45s\|90s} | vo2max | build, peak | 5K, 10K | intermediate | T3 | **v2** · parameterised · run to hill base, then reps × (uphill @ RPE 8, *no pace* / standing rest / jogged descent capped at E) |
-| 12 | `goal_pace_sharpener` | Goal-pace sharpener | race_specific | taper | all | intermediate | T3 | 3×1000m @ goal pace / 90s jog |
-| 13 | `hm_pace_long_run` | Long run with HM-pace finish | race_specific | peak | HM | intermediate | T4 | long_run_with_segment |
-| 14 | `mp_long_run` | Marathon-pace long run | race_specific | peak | MARATHON | intermediate | T4 | long_run_with_segment |
-| 15 | `hm_pace_intervals` | HM-pace intervals | race_specific | peak | HM | intermediate | T4 | 4×2000m @ HM pace / 3 min jog |
-| 16 | `tenk_pace_intervals` | 10K-pace intervals | race_specific | peak, taper | 10K | intermediate | T4 | 4×1200m @ goal pace / 2 min jog |
-| 17 | `ultra_race_sim` | Ultra race simulation | ultra_specific | peak | 50K, 100K | intermediate | T4 | long_run_with_fuelling |
-| 18 | `back_to_back_long` | Back-to-back long | ultra_specific | build, peak | 50K, 100K | intermediate | T4 | back_to_back |
-| 19 | `time_on_feet` | Time on feet | ultra_specific | peak | 100K | intermediate | T5 | time_on_feet |
+| 8 | `threshold_ladder` | Threshold ladder | threshold | build, peak | 10K, HM, MARATHON, 50K, 100K | experienced | T3 | **v2** · 3-5-8-5-3 min at T, 90s jogged recovery between · `scaling: fixed` — the ladder's shape IS the session. Audit §E.5, unblocked by v2 case 1. |
+| 9 | `intervals_classic` | Classic VO2max | vo2max | build, peak | 5K, 10K | intermediate | T4 | 5×3 min Z4_Z5 / 2 min jog |
+| 10 | `intervals_short` | Short VO2max | vo2max | build, peak | 5K | intermediate | T4 | 10×400m @ 3K pace / 90s jog |
+| 11 | `intervals_long` | Long VO2max | vo2max | build, peak | 5K, 10K | intermediate | T4 | 4×1000m @ 5K pace / 2 min jog |
+| 12 | `hill_reps` | Hill reps — {45s\|90s} | vo2max | build, peak | 5K, 10K | intermediate | T3 | **v2** · parameterised · run to hill base, then reps × (uphill @ RPE 8, *no pace* / standing rest / jogged descent capped at E) |
+| 13 | `goal_pace_sharpener` | Goal-pace sharpener | race_specific | taper | all | intermediate | T3 | 3×1000m @ goal pace / 90s jog |
+| 14 | `hm_pace_long_run` | Long run with HM-pace finish | race_specific | peak | HM | intermediate | T4 | long_run_with_segment |
+| 15 | `mp_long_run` | Marathon-pace long run | race_specific | peak | MARATHON | intermediate | T4 | long_run_with_segment |
+| 16 | `hm_pace_intervals` | HM-pace intervals | race_specific | peak | HM | intermediate | T4 | 4×2000m @ HM pace / 3 min jog |
+| 17 | `tenk_pace_intervals` | 10K-pace intervals | race_specific | peak, taper | 10K | intermediate | T4 | 4×1200m @ goal pace / 2 min jog |
+| 18 | `vert_hike_repeats` | Climb repeats — {5 min\|10 min} | ultra_specific | build, peak | 50K, 100K | intermediate | T3 | **v2** · parameterised · run to climb base, then reps × (uphill **hike** @ RPE 6, *no pace* / walk back down) · PAID. The ultra-specific skill nothing in the catalogue taught. |
+| 19 | `ultra_race_sim` | Ultra race simulation | ultra_specific | peak | 50K, 100K | intermediate | T4 | long_run_with_fuelling |
+| 20 | `back_to_back_long` | Back-to-back long | ultra_specific | build, peak | 50K, 100K | intermediate | T4 | back_to_back |
+| 21 | `time_on_feet` | Time on feet | ultra_specific | peak | 100K | intermediate | T5 | time_on_feet |
 
 **Free vs paid:** the three `ultra_specific` rows (`ultra_race_sim`, `back_to_back_long`, `time_on_feet`) are `is_free_tier = false`. Referenced by id rather than row number — renumbering the table used to silently invalidate this line. Free users requesting an ultra plan are blocked at the API layer (Phase 6 feature gate); the engine never reaches a state where it would offer them an ultra session.
 

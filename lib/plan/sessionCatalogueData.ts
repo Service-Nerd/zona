@@ -158,6 +158,71 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     typical_duration_min: 25, typical_duration_max: 40, is_free_tier: true,
     coach_voice_notes: 'Hold back early. Finish honest.',
   },
+  // ── Threshold ladder — audit §E.5, unblocked by the v2 schema ──────────────
+  //
+  // The audit specced this and marked it BLOCKED ON v2 CASE 1 (rep length
+  // varying within a single set). v2 shipped today, so it can be expressed:
+  // 3-5-8-5-3 minutes at threshold, jogged recovery between. One block, one
+  // repeat, five different work steps — unsayable in v1, where a repeat set had
+  // exactly one work step and a count.
+  //
+  // Adopted for ultras as well as the audit's list, on CAT-ULTRA-THIN-01: a
+  // 100K build phase had three threshold rows to draw on across 24 weeks and
+  // reached `progressive_tempo` seven times in seventeen quality sessions.
+  //
+  // `scaling: 'fixed'` — the ladder's SHAPE is the session. It does not stretch
+  // with the runner's volume; a ladder with more rungs is a different workout.
+  //
+  // The audit asked for a volume guard (only eligible when the week supports
+  // ~24 min of threshold work, roughly 45 km/week). There is still no home for
+  // a per-row volume condition, so `fitness_level_min: 'experienced'` stands in
+  // for it — an imperfect proxy, recorded rather than hidden.
+  {
+    id: 'threshold_ladder',
+    name: 'Threshold ladder',
+    category: 'threshold',
+    purpose: 'Threshold work that changes shape as it goes. Rewards discipline early and honesty late.',
+    phase_eligibility: ['build', 'peak'],
+    distance_eligibility: ['10K', 'HM', 'MARATHON', '50K', '100K'],
+    fitness_level_min: 'experienced',
+    difficulty_tier: 3,
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'fixed' },
+      blocks: [
+        {
+          repeat: 1,
+          label: 'ladder',
+          steps: [
+            { role: 'work', modality: 'run', length: { kind: 'duration', secs: 180 },
+              target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto' },
+            { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
+              target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto' },
+            { role: 'work', modality: 'run', length: { kind: 'duration', secs: 300 },
+              target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto' },
+            { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
+              target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto' },
+            { role: 'work', modality: 'run', length: { kind: 'duration', secs: 480 },
+              target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto',
+              note: 'The long rung. If the pace is going, it goes here — hold the effort, let the pace be what it is.' },
+            { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
+              target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto' },
+            { role: 'work', modality: 'run', length: { kind: 'duration', secs: 300 },
+              target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto' },
+            { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
+              target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto' },
+            { role: 'work', modality: 'run', length: { kind: 'duration', secs: 180 },
+              target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto' },
+          ],
+        },
+      ],
+    },
+    intensity_zones: ['Z3'],
+    typical_duration_min: 45,
+    typical_duration_max: 60,
+    is_free_tier: true,
+    coach_voice_notes: 'Up and back down. The 8-minute rung is the honest one — everything before it should feel like restraint.',
+  },
   {
     id: 'intervals_classic', name: 'Classic VO2max', category: 'vo2max',
     purpose: 'Hard interval work targeting Z4–Z5. Builds peak capacity.',
@@ -241,6 +306,17 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     // highly for exactly those runners — but it needs their signature focus
     // changed, which alters marathon prescription well beyond CD-17a. Filed as
     // a separate ruling rather than smuggled in via an eligibility array.
+    // STILL 5K/10K ONLY, and the attempt to widen it is worth recording.
+    //
+    // CAT-ULTRA-THIN-01 (2026-08-20) ruled hill work should reach ultras, and
+    // extending this row was the obvious move. The reachability check rejected
+    // it: 50K and 100K focus on ['threshold', 'ultra_specific'], neither of
+    // which is `vo2max`, so the row would have been DEAD WEIGHT — declared
+    // eligible and never selectable. The same trap SC-05 named.
+    //
+    // The board's intent is served by `vert_hike_repeats` instead, which is
+    // `ultra_specific` (so reachable) and is the better ultra session anyway:
+    // power hiking, not VO2max reps, is what decides how a 100K finishes.
     distance_eligibility: ['5K', '10K'],
     fitness_level_min: 'intermediate',
     difficulty_tier: 3,
@@ -372,6 +448,94 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     intensity_zones: ['Z3', 'Z4'],
     typical_duration_min: 40, typical_duration_max: 55, is_free_tier: true,
     coach_voice_notes: 'Goal pace, not faster. If rep one feels easy, that is correct.',
+  },
+  // ── CAT-ULTRA-THIN-01 — power hiking. THE ULTRA-SPECIFIC SKILL NOTHING TAUGHT.
+  //
+  // Board-ruled 2026-08-20. Before this, a 100K build phase had exactly ONE
+  // selectable row matching its declared focus (`back_to_back_long`), so the
+  // engine fell back to threshold and reached `progressive_tempo` 7 times in 17
+  // quality sessions.
+  //
+  // McMillan: "Nobody finishes a 100K without walking the climbs." Power hiking
+  // is a trained skill — cadence, posture, when to switch — and the catalogue
+  // taught none of it. A runner who has never practised it will hike badly for
+  // fourteen hours.
+  //
+  // Sims: it is also the single best lever for managing effort over very long
+  // durations, because it is where fuelling becomes possible at all — you
+  // cannot eat properly at running effort for fourteen hours. Ultra fields skew
+  // older and carry a higher female share than road distances.
+  //
+  // Willy: hiking is LOWER impact than running at the same vertical gain, so
+  // this adds specificity while reducing load — an unusually good trade. The
+  // hill-restricting injury exclusions still apply: a sustained steep climb
+  // loads Achilles and calf hard even at hiking pace (isHillSession picks it up
+  // structurally via the uphill step terrain).
+  //
+  // Seiler: at hiking effort this sits in Z2 for most people, so it adds
+  // specificity without touching the intensity distribution.
+  //
+  // Effort-governed with NO pace (§40b) — a pace on a climb is meaningless, and
+  // doubly so when the prescription is to walk it.
+  {
+    id: 'vert_hike_repeats',
+    name: 'Climb repeats — hike',
+    category: 'ultra_specific',
+    purpose: 'Practise the climb. Power hiking is a skill, and it is the one that decides how an ultra finishes.',
+    phase_eligibility: ['build', 'peak'],
+    distance_eligibility: ['50K', '100K'],
+    fitness_level_min: 'intermediate',
+    difficulty_tier: 3,
+    parameterisation: {
+      name_template: 'Climb repeats — {param}',
+      variants: [
+        { label_suffix: '5 min', values: { climb_secs: 300, reps: 6 } },
+        { label_suffix: '10 min', values: { climb_secs: 600, reps: 4 } },
+      ],
+    },
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [
+        {
+          repeat: 1,
+          label: 'to the climb',
+          steps: [
+            {
+              role: 'transition', modality: 'run',
+              length: { kind: 'to_landmark', landmark: 'hill_base' },
+              target: { kind: 'pace', anchor: 'E', mode: 'ceiling' },
+              advance: 'auto',
+            },
+          ],
+        },
+        {
+          repeat: { kind: 'parameter', param: 'reps' },
+          label: 'climbs',
+          steps: [
+            {
+              role: 'work', modality: 'hike', terrain: 'uphill', grade_pct: [8, 20],
+              length: { kind: 'parameter', param: 'climb_secs' },
+              target: { kind: 'effort', rpe: 6 },
+              advance: 'auto',
+              note: 'Hands on quads, short steps, tall chest. Hiking, not trudging — you should be able to eat while you do it.',
+            },
+            {
+              role: 'recovery', modality: 'walk', terrain: 'downhill',
+              length: { kind: 'mirror', of: 'previous_work' },
+              target: { kind: 'none' },
+              advance: 'auto',
+              note: 'Walk back down. The descent is not the session.',
+            },
+          ],
+        },
+      ],
+    },
+    intensity_zones: ['Z2'],
+    typical_duration_min: 50,
+    typical_duration_max: 90,
+    is_free_tier: false,
+    coach_voice_notes: 'Everyone runs the flats. The race is decided by who is still moving well on the climbs at hour ten — and that is a skill you practise, not one you discover on the day.',
   },
   {
     id: 'ultra_race_sim', name: 'Ultra race simulation', category: 'ultra_specific',

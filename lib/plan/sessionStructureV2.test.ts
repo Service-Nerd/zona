@@ -218,7 +218,11 @@ describe('SC-08b — migration posture (D-03)', () => {
     // Kept as an ALLOWLIST rather than deleted: migrating a row changes what a
     // runner is told to do, so it must be a deliberate act with a ruling behind
     // it. A row migrated without one fails here.
-    const RULED_V2 = new Set(['hill_reps'])   // SC-09 / CD-17a
+    const RULED_V2 = new Set([
+      'hill_reps',           // SC-09 / CD-17a
+      'vert_hike_repeats',   // CAT-ULTRA-THIN-01 — power hiking for ultras
+      'threshold_ladder',    // audit §E.5, unblocked by v2 case 1
+    ])
     for (const row of V1_SESSION_CATALOGUE) {
       expect(
         isV2Structure(row.main_set_structure),

@@ -64,7 +64,12 @@ export const PLAN_SIGNATURES = {
   '100K': {
     min_weeks: 20, ideal_weeks: 22, max_weeks: 26,
     sessions_per_week_default:    5,
-    quality_categories_focus:     ['ultra_specific'],
+    // Widened 2026-08-20 (CAT-ULTRA-THIN-01). Declaring `['ultra_specific']`
+    // alone was dishonest: exactly ONE ultra_specific row was build-eligible, so
+    // the engine fell back to threshold anyway and reached progressive_tempo 7
+    // times in 17 quality sessions. Declaring one category and delivering
+    // another is the §17 failure SC-04 closed for 10K.
+    quality_categories_focus:     ['ultra_specific', 'threshold'],
     long_run_cap_minutes:         420,
     back_to_back_from_phase:      'build',
     back_to_back_frequency_weeks: 2,
