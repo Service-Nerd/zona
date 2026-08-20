@@ -1036,6 +1036,50 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     }
   }
 
+  // INV-PLAN-RACE-SPECIFIC-EXPOSURE, extended (§22, §5 — CD-18 / SC-05):
+  // "specific" must resolve to a REAL catalogue entry, not a rename.
+  //
+  // 10K had no race-specific session while HM had two. The gap was invisible
+  // because the engine papered over it — §33 sanctions renaming a borrowed row
+  // to "10K-pace progression" and correctly replaces the voice, so the plan
+  // LOOKED like it contained 10K-pace work. The board's finding was sharper
+  // than the audit's: §33 closed the review by fixing the symptom and left the
+  // cause in place. A principle can close a review without closing a gap.
+  //
+  // This checks AVAILABILITY rather than presence: a distance whose race pace
+  // is physiologically distinct must own a race-pace entry, so the all-distance
+  // `goal_pace_sharpener` can never again be the only thing standing in for it.
+  // Deliberately not plan-shape-dependent — it holds for every plan at these
+  // distances regardless of phase layout.
+  //
+  // 5K is EXCLUDED, and that is an engineering judgement flagged for the board
+  // (SC-05): at 5K, race pace and I-pace largely coincide, so the VO2max rows
+  // already deliver race-specific physiology. The board's CD-18 aside said 5K
+  // has "the identical gap"; the audit's own analysis says the mismatch is that
+  // for a 10K "race pace sits between threshold and VO2max" — which does not
+  // transfer to 5K. If the board disagrees, add a 5K row and this list.
+  {
+    const RACE_PACE_DISTINCT_FROM_IPACE = ['10K', 'HM', 'MARATHON']
+    if (isTimeTarget && RACE_PACE_DISTINCT_FROM_IPACE.includes(distKey)) {
+      const hasOwnRaceRow = V1_SESSION_CATALOGUE.some(r =>
+        r.category === 'race_specific'
+        && r.distance_eligibility.includes(distKey as never)
+        // The all-distance generic does not count as "its own" entry.
+        && r.distance_eligibility.length < 6)
+      if (!hasOwnRaceRow) {
+        violations.push({
+          code: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE',
+          principle_ref: 'CoachingPrinciples §22, §5',
+          severity: 'error',
+          week: 0,
+          message: `Time-targeted ${distKey} plan: no race-specific catalogue session exists for ${distKey} — race-pace work would resolve to a renamed borrowed row, which looks like race-pace work in the plan without being a catalogue entry`,
+          actual: `0 ${distKey}-specific race_specific sessions`,
+          expected: `≥1 ${distKey}-specific race_specific session`,
+        })
+      }
+    }
+  }
+
   // INV-PLAN-PHASE-FOCUS-REACHABLE — a signature may not declare a focus the
   // catalogue cannot supply (§17, CD-15 / SC-04).
   //

@@ -221,6 +221,29 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     coach_voice_notes: 'HM pace, not faster. Exit each rep wanting more.',
   },
   {
+    // SC-05 / CD-18 (2026-08-20) — 10K is one of two free-tier flagship
+    // distances and had NO race-specific session, while HM had two. That was
+    // not a decision anyone made; it is where the catalogue stopped.
+    //
+    // The gap was invisible in the product because the engine papered over it:
+    // §33 sanctions renaming a borrowed row to "10K-pace progression" and
+    // correctly replaces the voice, so the plan LOOKED like it contained
+    // 10K-pace work. The board's finding: §33 closed the review by fixing the
+    // symptom (borrowed voice) and left the cause (no 10K entry) in place.
+    //
+    // Mirrors hm_pace_intervals. v1-expressible as a fixed 4 × 1200 m, so it
+    // ships on today's schema with no SC-08 dependency.
+    id: 'tenk_pace_intervals', name: '10K-pace intervals', category: 'race_specific',
+    purpose: 'Race-specific intervals at 10K pace. The bridge between threshold and race day.',
+    phase_eligibility: ['peak', 'taper'],
+    distance_eligibility: ['10K'],
+    fitness_level_min: 'intermediate', difficulty_tier: 4,
+    main_set_structure: { type: 'repeats', reps: 4, work: { distance_m: 1200, pace_target: 'goal' }, recovery: { duration_mins: 2, type: 'jog' } },
+    intensity_zones: ['Z3', 'Z4'],
+    typical_duration_min: 40, typical_duration_max: 55, is_free_tier: true,
+    coach_voice_notes: 'Goal pace, not faster. If rep one feels easy, that is correct.',
+  },
+  {
     id: 'ultra_race_sim', name: 'Ultra race simulation', category: 'ultra_specific',
     purpose: 'Practice the race. Fuelling, pacing, kit — all rehearsed in the conditions you will run.',
     phase_eligibility: ['peak'],

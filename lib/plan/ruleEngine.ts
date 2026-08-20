@@ -1629,10 +1629,20 @@ function buildWeekSessions(
       // re-pick the threshold row (CoachingPrinciples §36).
       let cat1: SessionCatalogueRow | null
       if (taperForceSharpener) {
-        cat1 = catalogue.find(r => r.id === 'goal_pace_sharpener'
-          && r.distance_eligibility.includes(distKey)
-          && (tier !== 'free' || r.is_free_tier)
-        ) ?? selectCatalogueSession({
+        // SC-05 / CD-18 — MOST SPECIFIC ROW WINS. `goal_pace_sharpener` is the
+        // all-distance generic; where a distance actually has its own race-pace
+        // session eligible in taper (10K, via tenk_pace_intervals), that is the
+        // more specific prescription and should be preferred. Ranking by the
+        // size of `distance_eligibility` rather than by id keeps this true for
+        // any future distance-specific row without another special case.
+        const raceSpecificTaperRows = catalogue
+          .filter(r => r.category === 'race_specific'
+            && r.phase_eligibility.includes('taper')
+            && r.distance_eligibility.includes(distKey)
+            && (tier !== 'free' || r.is_free_tier))
+          .sort((a, b) => a.distance_eligibility.length - b.distance_eligibility.length)
+
+        cat1 = raceSpecificTaperRows[0] ?? selectCatalogueSession({
           catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
           excludeHillSessions,
         })
