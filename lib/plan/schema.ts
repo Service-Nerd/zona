@@ -214,6 +214,11 @@ export const PlanMetaSchema = z.object({
   source_race_outcome:         z.string().optional(),
   source_finish_time:          z.string().optional(),
   maintenance_transition_seen: z.boolean().optional(),
+  // VOL-SHORTFALL-01 / §40c — states the cost when a life-first constraint
+  // suppresses the peak week. Same family as volume_constraint_note (§52) and
+  // long_run_shortfall_note (§80).
+  volume_shortfall_note:       z.string().optional(),
+  volume_shortfall_pct:        z.number().optional(),
 })
 
 export const PrePlanGuidanceSchema = z.object({

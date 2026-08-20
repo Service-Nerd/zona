@@ -388,6 +388,23 @@ export interface PlanMeta {
   // scaled and why. Present only when the corresponding allowance fired.
   returning_runner_note?: string
 
+  /** VOL-SHORTFALL-01 / §40c — a life-first constraint (currently
+   *  `max_weekday_mins`) suppressed the peak week by at least
+   *  VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT below the volume curve's intent.
+   *
+   *  The constraint WINS — this states the cost, it does not change the plan.
+   *  Same pattern as volume_constraint_note (§52) and long_run_shortfall_note
+   *  (§80): a diagnosis plus the lever that would change it. Present only when
+   *  the shortfall clears the threshold. */
+  volume_shortfall_note?: string
+
+  /** Measured peak-week shortfall (%) attributable to the weekday cap, present
+   *  whenever that cap is materially binding — including BELOW the note
+   *  threshold. Diagnostic, not runner-facing: it is what makes §40c's honesty
+   *  obligation mechanically checkable, since an invariant cannot recompute a
+   *  counterfactual after generation. */
+  volume_shortfall_pct?: number
+
   // 2026-04-28 / L-03 — HR data fallback surface (CoachingPrinciples §50).
   // hr_zone_method names which of the four fallback levels was used; non-Karvonen
   // methods carry hr_assumption_note. Estimated max is surfaced when computed

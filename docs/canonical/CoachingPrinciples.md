@@ -316,11 +316,13 @@ experienced  → 2
 >
 > | Value | Result |
 > |---|---|
-> | 13–14% | Peak week falls **below** the build week before it (§23) — volume freed from quality has nowhere to go, because easy runs are already at their §9 ceiling (`easy ≤ long / LONG_RUN_MIN_RATIO_VS_EASY`), so it is **lost** from the week rather than reallocated |
+> | 13–14% | Peak week falls **below** the build week before it (§23) |
 > | 15% | Passes the canonical 10K case, then fails at scale: **187 ordering breaches, 220 sessions under the size floor, 37 peak inversions** across 18,056 plans |
 > | 17% | Ordering breaks outright |
 >
-> **The conclusion is about CD-14's premise, not its percentages.** Sizing quality as a *share of weekly volume* cannot express "VO2max is the least sustainable per minute", because share-of-volume makes every session scale with the week it sits in — and VO2max is scheduled in peak, the biggest weeks of all. **The main set needs sizing in absolute minutes, decoupled from weekly volume.** That is a change to the duration model, not a config edit: tracked as **SIZING-REALLOC-01**, paired with SC-08.
+> **The conclusion is about CD-14's premise, not its percentages.** Sizing quality as a *share of weekly volume* cannot express "VO2max is the least sustainable per minute", because share-of-volume makes every session scale with the week it sits in — and VO2max is scheduled in peak, the biggest weeks of all. **The main set needs sizing in absolute minutes, decoupled from weekly volume.** That is a change to the duration model, not a config edit.
+>
+> **⚠️ Correction, same day.** This section first explained the §23 peak inversions as *"volume freed from quality has nowhere to go because easy is at its §9 ceiling, so it is lost from the week"*. **Measured, that is false** — the §9 redistribution preserves total weekly volume, and moving the quality share 18% → 15% → 12% changed a week's delivered volume by 0 km. The claim was reasoned, not measured, which is the defect class this document exists to catch. The real shortfall mechanism is unrelated to quality sizing and is filed as **VOL-SHORTFALL-01**. **The decision to reject category sizing is unaffected** — it rests on 187 ordering breaches and 220 undersized sessions across 18,056 plans, independent of why any §23 check tripped.
 >
 > **Hutchinson's CD-14 amendment 3, discharged:** the audit's claim that its model "validates" the 18% constant recovered its own inputs and is **withdrawn**. 18 was never justified either. Neither number has external support, and this section no longer implies otherwise.
 >
@@ -827,6 +829,42 @@ When neither suggestion applies, the diagnosis is surfaced alone (no false guida
 **Why.** Round-2 review flagged Sarah's 84-min peak long run for a 5K finish goal as HM-shaped — too aerobic-development-focused for what she's actually training for. A returning runner targeting a finish-line photo doesn't need a 14-km long run; she needs to reach race day with healthy connective tissue and the confidence she can run 5 km. Sub-cap LRs (35–60 min) accomplish that with less injury risk.
 
 **Config.** `GENERATION_CONFIG.LONG_RUN_CAP_MINUTES_5K_FINISH = 70`. Applied in `applyLongRunCap()`. Standard `LONG_RUN_CAP_MINUTES['5K']` retained for time-targeted 5K plans (where 90 min remains coaching-appropriate as a ceiling).
+
+---
+
+## 40c. A suppressed target is stated, never absorbed
+
+*Added 2026-08-20 — Coaching Board (VOL-SHORTFALL-01), unanimous.*
+
+**Principle.** When a **life-first constraint** materially suppresses what the plan can deliver, the plan **says so, states the cost, and names the lever that would change it.** The constraint still wins. This governs what the plan *says*, never what it prescribes.
+
+**Why.** `max_weekday_mins` is the runner's own statement about their life — *"I can't run more than 45 minutes on a weekday"* — and honouring it is correct. But it is not free, and the plan was silent about the price.
+
+Measured by counterfactual (identical profile, cap vs no cap):
+
+| Shape | Peak week, capped | Uncapped | Lost |
+|---|---|---|---|
+| HM, 4 days, 45 min | 49 km | 66 km | **26%** |
+| 10K, 4 days, 45 min | 43 km | 57 km | **25%** |
+| 10K, 3 days, 60 min | 39 km | 49 km | 20% |
+| HM, 5 days, 60 min | 64 km | 65 km | 2% |
+
+**32 of 36 shapes affected; median loss 18%, worst 27%.** Across a wider grid, **52% of capped plans** had more than a quarter of their weekday easy runs pinned exactly at the cap — the worst had all of them.
+
+**The runner never knew.** They asked for a half-marathon time and a 45-minute weekday limit, received a plan built on a quarter less volume than the engine's own curve intended, and had no way to see the two asks were in tension. They would reasonably conclude that is simply what training for that time looks like.
+
+**This is not a new idea, which is the uncomfortable part.** §44 already refuses to pretend about preparation time. §80 already states a long-run shortfall rather than shipping it silently. §52 already explains a maintenance-grade plan. The pattern was written down three times and this case still went unnoticed — because nothing computed the counterfactual, so there was no quantity to be silent *about*.
+
+**Two boundaries, both binding.**
+
+1. **The volume is not clawed back.** The engine does not move suppressed volume onto the weekend. Doing so converts a manageable week into a two-hard-days week — the exact pattern this product exists to prevent (Seiler).
+2. **The note names the lever.** A note that only reports the loss is a disclaimer; naming the one thing that would change it is coaching (McMillan). The 5-day rows above are why the day count is the honest first lever — the same cap costs 2–11% there against 25% on four days.
+
+**Threshold: 10% of the intended peak week**, and the bounds are measured, not chosen. Below it is rounding and phase noise — an unconstrained plan tracks its own curve to within ~1 km/week. Firing at 5% would be noise, and **notes that fire on noise get ignored, which costs more than the note gains** (McMillan).
+
+**Voice.** State the fact; do not encourage. An early draft read *"a 44km week you run beats a 65km week you abandon"* — true, but that is motivation, and `brand.md` rules it out.
+
+**Config.** `GENERATION_CONFIG.VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT = 10`. Surfaced as `meta.volume_shortfall_note`; the measured percentage is stamped as `meta.volume_shortfall_pct` so the obligation is **mechanically checkable** — an invariant cannot recompute a counterfactual after generation. Enforced by `INV-PLAN-VOLUME-SHORTFALL-DECLARED`.
 
 ---
 

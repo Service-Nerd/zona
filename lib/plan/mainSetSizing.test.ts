@@ -27,11 +27,16 @@ import type { GeneratorInput, Plan } from '@/types/plan'
  * weekly volume, so the biggest sessions land in the biggest weeks whatever
  * their category — and VO2max is scheduled in peak, the biggest weeks of all.
  * A category percentage can only offset that by driving sessions under
- * MIN_SESSION_DISTANCE_KM. Swept 13-17%: 13-14% dropped peak weeks below the
- * build weeks before them (§23, because volume freed from quality is LOST — the
- * easy runs are already at their §9 ceiling), 15% passed the canonical case then
+ * MIN_SESSION_DISTANCE_KM. Swept 13-17%: 15% passed the canonical case then
  * failed at scale (187 ordering breaches, 220 undersized sessions, 37 peak
  * inversions), 17% broke the ordering outright.
+ *
+ * CORRECTED 2026-08-20: an earlier version of this note blamed the §23 peak
+ * inversions on volume freed from quality being LOST at the §9 easy ceiling.
+ * Measured, that is false — the redistribution preserves total weekly volume
+ * and shifting the quality share moved a week by 0 km. Real mechanism filed as
+ * VOL-SHORTFALL-01. The rejection of category sizing is unaffected: it rests on
+ * the ordering and size-floor breaches, not on §23.
  *
  * Conclusion, which is about CD-14's PREMISE rather than its percentages:
  * share-of-weekly-volume cannot express "VO2max is the least sustainable per

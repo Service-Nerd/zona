@@ -26,6 +26,7 @@ export type Severity = 'error' | 'warn'
 // enforced — adding a code here without enforcement (or vice versa) is a defect.
 // (CoachingPrinciples §34, R2/H-04)
 export const INVARIANT_CODES = [
+  'INV-PLAN-VOLUME-SHORTFALL-DECLARED',
   'INV-PLAN-EFFORT-OR-PACE',
   'INV-PLAN-DERIVED-SET',
   'INV-PLAN-CATALOGUE-LINK',
@@ -1179,6 +1180,57 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // survived: nothing computed the number, so nobody could see which quantity
   // it was. The value being wrong was downstream of it being unexercised.
   //
+  // INV-PLAN-VOLUME-SHORTFALL-DECLARED (CoachingPrinciples §40c — VOL-SHORTFALL-01)
+  //
+  // When a life-first constraint suppresses the peak week by
+  // VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT or more, the plan must SAY SO.
+  //
+  // The constraint itself is correct and stays — `max_weekday_mins` is the
+  // runner's own statement about their life. The defect this catches is
+  // SILENCE: measured by counterfactual, a 4-day HM runner with a 45-minute
+  // weekday cap peaks at 49km where the curve wanted 66km, and nothing in the
+  // plan indicates the two asks are in tension. They conclude that is simply
+  // what training for that time looks like.
+  //
+  // Same family as §44 (prep time) and §80 (long-run shortfall): the cap wins,
+  // and the runner is told what the plan cannot give them.
+  //
+  // Checks only that the declaration EXISTS when the shortfall is large. It
+  // cannot recompute the counterfactual — that needs the volume curve, which is
+  // generation-time state — so it verifies the honesty obligation, not the
+  // arithmetic behind it.
+  if (input.max_weekday_mins) {
+    const nonDeload = plan.weeks.filter(w => w.type !== 'deload' && w.type !== 'race' && w.badge !== 'deload')
+    let weekdayEasy = 0
+    let pinned = 0
+    for (const w of nonDeload) {
+      for (const [d, sn] of Object.entries(w.sessions)) {
+        if (!sn || sn.type !== 'easy' || d === 'sat' || d === 'sun') continue
+        weekdayEasy++
+        if ((sn.duration_mins ?? 0) >= input.max_weekday_mins - 1) pinned++
+      }
+    }
+    // TWO conditions, matching the engine exactly. Checking pinned-ness alone
+    // was wrong and the HM archetype proved it: 10 of 15 weekday runs pinned,
+    // but the week's volume still landed, so no note was due and the invariant
+    // fired anyway. Pinned-ness says the cap is ACTIVE; the stamped percentage
+    // says whether it COST anything.
+    const materiallyBinding = weekdayEasy > 0 && pinned / weekdayEasy >= 0.25
+    const costEnough = (plan.meta.volume_shortfall_pct ?? 0)
+      >= GENERATION_CONFIG.VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT
+    if (materiallyBinding && costEnough && !plan.meta.volume_shortfall_note) {
+      violations.push({
+        code: 'INV-PLAN-VOLUME-SHORTFALL-DECLARED',
+        principle_ref: 'CoachingPrinciples §40c',
+        severity: 'error',
+        week: 0,
+        message: `${pinned} of ${weekdayEasy} weekday easy runs are pinned at the ${input.max_weekday_mins}-minute limit, so the cap is materially shaping this plan — but no volume_shortfall_note was set. A suppressed target is stated, never absorbed silently.`,
+        actual: 'no volume_shortfall_note',
+        expected: 'a note stating the cost and naming the lever',
+      })
+    }
+  }
+
   // INV-PLAN-EFFORT-OR-PACE (CoachingPrinciples §19/§41 — SC-09 / CD-17a)
   //
   // Every quality session must tell the runner HOW HARD, by one route or the

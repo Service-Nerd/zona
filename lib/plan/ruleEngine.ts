@@ -3706,6 +3706,74 @@ export function generateRulePlan(
       }. Plan maintains current fitness rather than building it. To enable a build profile: increase days_available to ${Math.max(daysCheck.days_required_ok, 3)}.`
     : null
 
+  // VOL-SHORTFALL-01 / §40c — did a life-first constraint materially suppress
+  // the peak week?
+  //
+  // Measured as a COUNTERFACTUAL, which is the only honest way to answer it:
+  // the weekday cap binds through easy-run durations, so "how much did it cost"
+  // cannot be read off the finished plan. Compare the volume curve's intent
+  // against what was actually delivered.
+  //
+  // The cap WINS — this states the cost, it never changes the plan (Seiler:
+  // clawing the volume back onto the weekend converts a manageable week into a
+  // two-hard-days week, the pattern this product exists to prevent).
+  // Measured peak-week shortfall as a percentage, or null when the weekday cap
+  // is not materially binding. Stamped into meta so the honesty obligation is
+  // MECHANICALLY CHECKABLE: the invariant cannot recompute a counterfactual
+  // (the volume curve is generation-time state), so without this it could only
+  // check pinned-ness — which fires on plans whose volume landed fine, and
+  // caught exactly that mismatch on the HM archetype.
+  const volumeShortfallPct: number | null = (() => {
+    if (!input.max_weekday_mins) return null
+    const peakActual = Math.max(0, ...weeks
+      .filter(w => w.type !== 'deload' && w.type !== 'race' && w.badge !== 'deload')
+      .map(w => w.weekly_km))
+    const peakIntent = Math.max(0, ...volumes)
+    if (peakIntent <= 0 || peakActual <= 0) return null
+
+    let weekdayEasy = 0
+    let pinned = 0
+    for (const w of weeks) {
+      for (const [d, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+        if (!sn || sn.type !== 'easy' || d === 'sat' || d === 'sun') continue
+        weekdayEasy++
+        if ((sn.duration_mins ?? 0) >= input.max_weekday_mins - 1) pinned++
+      }
+    }
+    // Not materially binding → the cap is not what shaped this plan, and naming
+    // the wrong lever is worse than saying nothing.
+    if (weekdayEasy === 0 || pinned / weekdayEasy < 0.25) return null
+
+    return Math.max(0, ((peakIntent - peakActual) / peakIntent) * 100)
+  })()
+
+  const volumeShortfallNote: string | null = (() => {
+    if (!input.max_weekday_mins) return null
+
+    if (volumeShortfallPct == null) return null
+    if (volumeShortfallPct < GENERATION_CONFIG.VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT) return null
+
+    const lostPct = volumeShortfallPct
+    const peakActual = Math.max(0, ...weeks
+      .filter(w => w.type !== 'deload' && w.type !== 'race' && w.badge !== 'deload')
+      .map(w => w.weekly_km))
+    const peakIntent = Math.max(0, ...volumes)
+
+    // Name the lever (McMillan) — a note that only reports the loss is a
+    // disclaimer; a note that names the one thing that would change it is
+    // coaching. Five-day weeks lose 2-11% where three- and four-day weeks lose
+    // 25%, so the day count is the honest first lever.
+    const lever = input.days_available < 5
+      ? `running ${input.days_available + 1} days instead of ${input.days_available}`
+      : `raising the weekday limit to ${input.max_weekday_mins + 15} minutes`
+
+    // Voice per brand.md: honest, specific, never motivational. The earlier
+    // draft included "a 44km week you run beats a 65km week you abandon" —
+    // true, but it is encouragement, and the brand rule is that we state the
+    // fact and let the runner draw the conclusion.
+    return `Your ${input.max_weekday_mins}-minute weekday limit is shaping this plan — peak week reaches ${Math.round(peakActual)}km where it would otherwise have gone to ${Math.round(peakIntent)}km, about ${Math.round(lostPct)}% less. Only the volume moves; the sessions and their balance don't. If you want it back, ${lever} is the lever.`
+  })()
+
   // §80 — if LONG_RUN_CAP_MINUTES stopped the peak long run reaching the
   // finish-goal floor, say so rather than shipping a silent shortfall. The cap
   // still wins; the runner is told what the plan cannot give them.
@@ -3892,6 +3960,8 @@ export function generateRulePlan(
     ...(finalVolumeProfile ? { volume_profile: finalVolumeProfile } : {}),
     ...(finalVolumeNote    ? { volume_constraint_note: finalVolumeNote } : {}),
     ...(finishGoalLrShortfallNote ? { long_run_shortfall_note: finishGoalLrShortfallNote } : {}),
+    ...(volumeShortfallNote ? { volume_shortfall_note: volumeShortfallNote } : {}),
+    ...(volumeShortfallPct != null ? { volume_shortfall_pct: Math.round(volumeShortfallPct * 10) / 10 } : {}),
 
     // VDOT / zone model fields (CoachingPrinciples §10, §20).
     // `vdot` is raw (benchmark-derived) — what users compare against Daniels' tables.

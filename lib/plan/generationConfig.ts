@@ -91,6 +91,27 @@ export const GENERATION_CONFIG = {
   // almost certainly wrong. Source-independent by design.
   MAX_HR_PLAUSIBILITY_DEVIATION_PCT: 15,
 
+  // CoachingPrinciples §40c (VOL-SHORTFALL-01) — a life-first constraint that
+  // suppresses the peak week by at least this much is STATED, not absorbed.
+  //
+  // 10%, and the bounds are measured rather than chosen. Below it is rounding
+  // and phase noise: an unconstrained plan tracks its own volume curve to within
+  // ~1 km/week. Above it the runner is training a materially different plan from
+  // the one the engine intended — a counterfactual sweep (same profile, cap vs
+  // no cap) put the median loss at 18% and the worst at 27%, i.e. a 4-day HM
+  // runner with a 45-minute weekday cap peaking at 49 km where the curve wanted
+  // 66 km. 52% of capped plans had more than a quarter of their weekday easy
+  // runs pinned exactly at the cap; the worst had all of them.
+  //
+  // Deliberately not lower. McMillan: firing at 5% is noise, and notes that fire
+  // on noise get ignored — which costs more than the note gains.
+  //
+  // The constraint still WINS. This governs what the plan says, never what it
+  // prescribes; the engine does not claw the volume back onto the weekend
+  // (Seiler — that converts a manageable week into a two-hard-days week, the
+  // pattern this product exists to prevent).
+  VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT: 10,
+
   // CoachingPrinciples §78 — recalibration weeks prescribe a 5K time trial.
   // The session converts the deload week's midweek easy run (same distance, so
   // weekly volume is unchanged) into warm-up / 5K hard / cool-down. `min_slot_km`
@@ -223,26 +244,33 @@ export const GENERATION_CONFIG = {
   // off WEEKLY VOLUME, so the biggest sessions land in the biggest weeks whatever
   // their category — and VO2max is scheduled in peak, the biggest weeks of all.
   // A category percentage can only offset that by going low enough to drive
-  // sessions under MIN_SESSION_DISTANCE_KM. Swept 13-17% for vo2max:
+  // sessions under MIN_SESSION_DISTANCE_KM. Swept 13-17% for vo2max; 15% passed
+  // the canonical 10K archetype and then failed at scale across 18,056 plans:
+  // 187 ordering breaches, 220 sessions under the size floor, 37 peak inversions.
   //
-  //     13-14%  peak week falls BELOW the build week before it (§23) — volume
-  //             freed from quality has nowhere to go, because the easy runs are
-  //             already at their §9 ceiling (easy <= long / MIN_RATIO), so it is
-  //             LOST from the week rather than reallocated
-  //     15%     passes the canonical 10K case, then fails at scale: 187 ordering
-  //             breaches, 220 sessions under the size floor, 37 peak inversions
-  //     17%     ordering breaks outright
+  // ⚠️ CORRECTION (2026-08-20, same day). An earlier version of this comment
+  // explained the peak inversions as "volume freed by shrinking the quality
+  // session has nowhere to go, because the easy runs are already at their §9
+  // ceiling, so it is LOST from the week". THAT WAS WRONG, and it was written
+  // from reasoning rather than measurement.
   //
-  // THE CONCLUSION IS ABOUT CD-14'S PREMISE, NOT ITS PERCENTAGES: sizing quality
-  // as a share of weekly volume cannot express "VO2max is the least sustainable
-  // per minute", because share-of-volume makes every session scale with the week
-  // it sits in. The ordering needs the main set sized in ABSOLUTE minutes,
-  // decoupled from weekly volume. That is an architectural change to the
-  // duration model, not a config edit — recorded as SIZING-REALLOC-01, paired
-  // with SC-08 which reworks session structure anyway.
+  // Measured: the §9 redistribution below (`easyKm = (weeklyKm - totalQualVol) /
+  // (minRatio + easyCount)`) PRESERVES total weekly volume. Sweeping the quality
+  // share 18% -> 15% -> 12% on a 5-day profile moved the week's delivered volume
+  // by 0 km. Freed volume is not lost; it is redistributed, exactly as intended.
   //
-  // Per CD-21's precedent: a breach is a finding about the value, not a number
-  // to tune until the sweep goes quiet.
+  // The real shortfall mechanism is unrelated to quality sizing and is filed
+  // separately as VOL-SHORTFALL-01: on constrained profiles the week cannot
+  // reach its volume target at all, and `max_weekday_mins` is the usual binding
+  // constraint. Isolated: same plan at max_weekday_mins 60 -> 43 km peak week,
+  // at 90 or unset -> 46 km, the target. That is the runner's own life-first
+  // constraint being honoured correctly; the defect is that the plan never says
+  // so.
+  //
+  // WHAT SURVIVES THE CORRECTION: the decision to reject category sizing. It
+  // rests on the 187 ordering breaches and 220 undersized sessions, which are
+  // independent of why any §23 check tripped. The conclusion stands; the stated
+  // mechanism for one class of failure did not.
   //
   // Quality session distance as % of weekly volume (single source — was hardcoded
   // 0.18 in multiple places before). When two quality sessions in a peak week,
