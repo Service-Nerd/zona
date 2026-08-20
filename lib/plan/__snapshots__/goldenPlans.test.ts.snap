@@ -1625,17 +1625,9 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
     "resting_hr": 55,
     "rule_adjustments": [
       {
-        "resolution": "No swap — catalogue places VO2max only in peak phase for this race distance. Late placement accepted to preserve §22 race-specific exposure.",
-        "rule": "V2-vo2max-onset-timing",
-        "violation": "First VO2max session is in week 9; spec target was week ≤5 (≥5 adaptation weeks before taper).",
-        "weeks_affected": [
-          9,
-        ],
-      },
-      {
         "resolution": "Held weekly volume at 29 km (target 28) by trimming easy runs; long run + quality preserved.",
         "rule": "V1-volume-quality-split",
-        "violation": "Week 5 introduced the first quality session AND stepped volume up from 28 to 43 km (>5% bump).",
+        "violation": "Week 5 introduced the first quality session of the plan (VO2max) AND stepped volume up from 28 to 43 km (>5% bump).",
         "weeks_affected": [
           5,
         ],
@@ -2003,20 +1995,19 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         },
         "wed": {
           "coach_notes": [
-            "Rep three is the test. Not rep one.",
-            "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
+            "Heroic openers ruin it. Even splits.",
           ],
           "detail": null,
           "distance_km": 7,
-          "duration_mins": 34,
-          "hr_target": "146–159 bpm",
+          "duration_mins": 29,
+          "hr_target": "159–185 bpm",
           "id": "w5-wed",
-          "label": "Cruise intervals",
-          "pace_target": "4:41–4:55 /km",
+          "label": "Long VO2max",
+          "pace_target": "4:07–4:18 /km",
           "primary_metric": "distance",
           "rpe_target": 7,
           "type": "quality",
-          "zone": "Zone 3–4",
+          "zone": "Zone 4–5",
         },
       },
       "theme": "One quality session. Everything else stays easy.",

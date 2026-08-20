@@ -10,6 +10,7 @@
 // back to the original label heuristic — correct for those, and never reached
 // once a plan carries the stamp.
 import type { Session, SessionType } from '@/types/plan'
+import { GENERATION_CONFIG } from './generationConfig'
 
 // A session the engine models as `type: 'easy'`. Kept narrow so callers pass a
 // real classification signal, not a bare string.
@@ -41,4 +42,38 @@ export function isShakeout(s: ClassifiableSession): boolean {
 export function coachingSessionType(s: ClassifiableSession): string {
   if (isLongRun(s)) return 'long'
   return (s.type as string) ?? 'easy'
+}
+
+/**
+ * The STIMULUS a quality session delivers — the axis `STIMULUS_RANK` orders.
+ *
+ * Moved here from ruleEngine.ts (2026-08-20, SC-07). It was a private helper
+ * there while invariants.ts independently grew `label.includes('vo2max')` checks
+ * in half a dozen places. SC-07 needed the same answer in both files, and a
+ * third copy is precisely the drift D-17 warns about — so it lives with the
+ * other classifiers instead.
+ *
+ * KNOWN LIMITATION, recorded rather than hidden: this still reads the display
+ * label, which D-17 says never to couple logic to. It is mitigated by also
+ * reading `zone` for VO2max (the unambiguous case), but a label-driven stimulus
+ * classifier can be broken by the AI enricher rewriting a session name. The
+ * structural fix is a stamped `stimulus` field at construction, the same remedy
+ * `role` applied to the long run. Tracked as CLASSIFY-STIMULUS-01; not widened
+ * here because SC-07 must not silently become a schema change.
+ */
+export function classifyStimulus(
+  session: { label?: string | null; zone?: string | null },
+): keyof typeof GENERATION_CONFIG.STIMULUS_RANK | null {
+  const label = (session.label ?? '').toLowerCase()
+  const zone  = (session.zone  ?? '').toLowerCase()
+  // VO2max is unambiguous — drives off both label and zone.
+  if (label.includes('vo2') || zone.includes('zone 4–5') || zone.includes('zone 5')) return 'vo2max'
+  // Goal-pace and tempo both sit at rank 4 (race_pace / tempo). Distinguish for
+  // the audit log; rank is identical so escalation logic isn't affected.
+  if (label.includes('-pace') || label.includes('goal pace') || label.includes('sharpener')) return 'race_pace'
+  if (label.includes('tempo') || label.includes('cruise') || label.includes('threshold') || label.includes('progressive')) return 'tempo'
+  if (label.includes('hill'))  return 'hills'
+  if (label.includes('strid')) return 'strides'
+  if (label.includes('aerobic') || label.includes('steady')) return 'steady_aerobic'
+  return null
 }

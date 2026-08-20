@@ -67,12 +67,26 @@ describe('SC-04 — threshold work is reachable for short distances', () => {
 
     expect(buildQuality.length).toBeGreaterThan(0)
 
-    // At least one build session must come from a genuine threshold catalogue
-    // row. Before SC-04 every one of them was the aerobic fallback.
-    const thresholdNames = V1_SESSION_CATALOGUE
-      .filter(r => r.category === 'threshold').map(r => r.name)
-    const fromThresholdRow = buildQuality.filter(s => thresholdNames.includes(s!.label ?? ''))
-    expect(fromThresholdRow.length).toBeGreaterThan(0)
+    // The guarantee is that build quality is NOT the aerobic fallback. Before
+    // SC-04 every build session was `aerobic_steady` prescribed at threshold
+    // pace under an easy name (the §19 breach SC-02 closed).
+    //
+    // ASSERTED STRUCTURALLY, not by catalogue name — amended 2026-08-20 (SC-07).
+    // The original assertion matched session labels against threshold row names,
+    // which broke the moment SC-07 changed the build rotation: §22 legitimately
+    // RENAMES a threshold row to "10K-pace progression" for a time target, so a
+    // genuine `progressive_tempo` session stopped matching its own catalogue
+    // name. That is D-17 in a test — coupling logic to a display string another
+    // layer is allowed to rewrite. The substance held the whole time; only the
+    // name-matching failed.
+    const aerobicNames = V1_SESSION_CATALOGUE
+      .filter(r => r.category === 'aerobic').map(r => r.name)
+    const fromAerobicRow = buildQuality.filter(s => aerobicNames.includes(s!.label ?? ''))
+    expect(fromAerobicRow, 'build quality must not be the aerobic fallback').toHaveLength(0)
+
+    // ...and it must actually be prescribed above easy.
+    const aboveEasy = buildQuality.filter(s => !/zone 2/i.test(s!.zone ?? ''))
+    expect(aboveEasy.length).toBeGreaterThan(0)
   })
 
   it('the injured short-distance runner is no longer down to one session', () => {

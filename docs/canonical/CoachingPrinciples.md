@@ -213,6 +213,38 @@ Specific work is selected from the catalogue (`session_catalogue.category = 'rac
 
 ---
 
+### VO2max belongs in build, not only in peak — added 2026-08-20 (Coaching Board CD-16 / CD-22, SC-07)
+
+**Principle.** For 5K and 10K, the first VO2max session must land early enough to adapt to: at least `VO2MAX_ONSET_MIN_ADAPTATION_WEEKS` of build/peak must follow it before the taper begins. VO2max is therefore eligible in **build**, not peak alone.
+
+**Why — and the argument is this constitution's own.** SC-05 amended §22 so that for 5K/10K *"specific" resolves to race pace, not VO2max*. That reclassified VO2max as **general** work. §5's ladder puts build at **70% general** and peak at **40% general**. So after our own ruling, **build is where VO2max belongs, and peak-only was a leftover from the superseded assumption that VO2max was the specific work for a 10K.** The catalogue was never updated to follow the ruling.
+
+Seiler, recorded: two isolated exposures in the last weeks before a taper are *the worst available position* — the full injury and fatigue cost of the hardest work in the plan, and none of the adaptation. *"Either commit to it properly in the build, or do not do it. The middle position is the only indefensible one."*
+
+**The traced 12-week 10K before and after:**
+
+| | Before | After |
+|---|---|---|
+| VO2max weeks | W9, W10 (peak, consecutive) | **W5** (build), W9, W10 |
+| Gap to taper | 2 weeks | **6 weeks** |
+| Quality sessions | 6 | **6 — unchanged** |
+
+**Session-neutral, and that is binding (Seiler).** Build keeps **one** quality session per week; *what* it is rotates. **Build carries at most ONE VO2max exposure** — without that cap the rotation cycles back and a three-week build runs vo2max/threshold/vo2max, producing four VO2max sessions where the plan had two. *"Moving VO2max earlier must not become more VO2max."* Option B — a second build quality session — was **rejected unanimously**: it adds load to reach a stimulus, takes that volume from the easy running, and contradicts CD-20's arithmetic.
+
+**Three locks held it, and finding all three mattered.** Granting the catalogue rows build eligibility **provably changed nothing** — verified experimentally before the board ruled. (1) `phase_eligibility: ['peak']`; (2) `preferredQualityCategory` hardcoded `'threshold'` for build and **never read the signature's `quality_categories_focus`**, so the 10K signature's declared focus was decorative; (3) build carries one quality slot, and the second slot — which flips to the alternate category — exists only in peak.
+
+**Willy's gate, a condition of approval.** The week introducing VO2max **holds volume flat**. Intensity and volume do not progress in the same week (§2). Implemented by extending the existing volume/quality split rather than duplicating it. On a 12-week plan this is satisfied incidentally, because a deload precedes peak — *that coincidence is a property of one plan shape and is not the rule.*
+
+**The window is binding where reachable, recorded where not (CD-22).** Below ~12 weeks the deadline falls inside base phase, where no quality session exists, so the window is arithmetically unsatisfiable — and `5K.min_weeks` is 8, so those plans are **supported, not hypothetical**. The number is **not lowered** to make them pass (the adaptation window does not shrink because the runner chose a shorter plan — Seiler), and generation does **not** throw (refusing a plan over a window its own geometry cannot contain is a crash, not enforcement — Hutchinson). The plan records `V2-vo2max-onset-unreachable` and says what it can and cannot deliver. **Same shape, same treatment, third time:** CD-20 recorded the withheld second quality; CD-21 exempted maintenance plans from §1.
+
+**The old advisory is deleted, not amended.** The engine used to log *"No swap — catalogue places VO2max only in peak phase for this race distance"* and proceed. That sentence is now false, and a stale excuse in the record is worse than no record. A principle the engine logs a violation against and then proceeds past is not a principle (Hutchinson).
+
+**Blast radius — only 5K and 10K move, by construction.** HM/MARATHON focus on `['threshold', 'race_specific']` and 50K on `['threshold', 'ultra_specific']`, whose second entry filters out as long-run-slot work; 100K's `['ultra_specific']` filters to empty and falls back to threshold. Asserted in `vo2maxOnsetPlacement.test.ts`.
+
+**Config.** `GENERATION_CONFIG.VO2MAX_ONSET_MIN_ADAPTATION_WEEKS` (5); `PLAN_SIGNATURES[distance].quality_categories_focus` is now **load-bearing** in build. Enforced by `INV-PLAN-VO2MAX-ONSET`.
+
+---
+
 ## 6. Taper — maintain intensity, cut volume, never detrain
 
 **Principle.** Volume drops sharply in the taper. Intensity is kept — quality sessions stay on the schedule, just shorter. The race week is for shakeouts, not training.

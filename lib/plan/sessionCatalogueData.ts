@@ -146,7 +146,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
   {
     id: 'intervals_classic', name: 'Classic VO2max', category: 'vo2max',
     purpose: 'Hard interval work targeting Z4–Z5. Builds peak capacity.',
-    phase_eligibility: ['peak'],
+    phase_eligibility: ['build', 'peak'],
     distance_eligibility: ['5K', '10K'],
     fitness_level_min: 'intermediate', difficulty_tier: 4,
     main_set_structure: { type: 'repeats', reps: 5, work: { duration_mins: 3, zone: 'Z4_Z5' }, recovery: { duration_mins: 2, type: 'jog' } },
@@ -157,7 +157,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
   {
     id: 'intervals_short', name: 'Short VO2max', category: 'vo2max',
     purpose: 'Sharp speed work. Quick feet, controlled effort, even splits.',
-    phase_eligibility: ['peak'],
+    phase_eligibility: ['build', 'peak'],
     distance_eligibility: ['5K'],
     fitness_level_min: 'intermediate', difficulty_tier: 4,
     main_set_structure: { type: 'repeats', reps: 10, work: { distance_m: 400, pace_target: '3K' }, recovery: { duration_secs: 90, type: 'jog' } },
@@ -168,7 +168,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
   {
     id: 'intervals_long', name: 'Long VO2max', category: 'vo2max',
     purpose: 'Race-pace 1Ks. The point is even splits, not heroic openers.',
-    phase_eligibility: ['peak'],
+    phase_eligibility: ['build', 'peak'],
     distance_eligibility: ['5K', '10K'],
     fitness_level_min: 'intermediate', difficulty_tier: 4,
     main_set_structure: { type: 'repeats', reps: 4, work: { distance_m: 1000, pace_target: '5K' }, recovery: { duration_mins: 2, type: 'jog' } },

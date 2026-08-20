@@ -16,7 +16,8 @@ import {
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
 import { validatePlan, formatViolations } from './invariants'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
-import { isLongRun, isShakeout } from './sessionRole'
+import { isLongRun, isShakeout, classifyStimulus } from './sessionRole'
+import { PLAN_SIGNATURES } from './planSignatures'
 import {
   V1_SESSION_CATALOGUE, selectCatalogueSession,
   type SessionCatalogueRow, type CatalogueCategory,
@@ -1178,9 +1179,100 @@ function finishGoalPeakLongRunSession(
 // (back_to_back_long, ultra_race_sim) are awkward as midweek single-day quality
 // — quality stays threshold; ultra-specific work belongs in the long-run slot
 // when the catalogue is widened to support it.
-function preferredQualityCategory(phase: PhaseType, distKey: RaceDistanceKey, isTimeTarget: boolean): CatalogueCategory {
+// Categories that can sit in the MIDWEEK QUALITY SLOT, ordered by intensity.
+// `race_specific` and `ultra_specific` are deliberately absent: they are
+// long-run-slot work (see the note above), not a midweek single-day session.
+const MIDWEEK_QUALITY_LADDER: CatalogueCategory[] = ['aerobic', 'threshold', 'vo2max']
+
+// The build phase's rotation for a distance, taken from its SIGNATURE.
+//
+// SC-07 / CD-16 (2026-08-20). `quality_categories_focus` was decorative in
+// build: the 10K signature has declared `['vo2max', 'threshold']` since R23
+// while this function returned a hardcoded 'threshold' for every distance, so
+// half of every 10K build phase's declared focus was unreachable. Granting the
+// vo2max catalogue rows build eligibility changes NOTHING on its own — verified
+// experimentally before the board ruled. This is the lock that mattered.
+//
+// Sorted ASCENDING by intensity so the build phase OPENS on its least intense
+// category. The first quality session of a plan should not be its hardest kind
+// (§2 — and the reason applyVolumeStimulusSplit exists at all). For a 10K that
+// means threshold → vo2max → threshold across build, which is also McMillan's
+// "alternate, don't front-load" amendment.
+//
+// Every non-short distance is UNCHANGED by construction: HM/MARATHON focus on
+// ['threshold', 'race_specific'] and 50K on ['threshold', 'ultra_specific'],
+// whose second entry is filtered out as long-run-slot work, leaving threshold
+// alone; 100K's ['ultra_specific'] filters to empty and falls back to threshold.
+// Only 5K and 10K — the two distances CD-16 is about — see any change.
+function buildRotationCategories(distKey: RaceDistanceKey): CatalogueCategory[] {
+  const focus = PLAN_SIGNATURES[distKey].quality_categories_focus as readonly CatalogueCategory[]
+  const midweek = focus.filter(c => MIDWEEK_QUALITY_LADDER.includes(c))
+  if (midweek.length === 0) return ['threshold']
+  return [...midweek].sort(
+    (a, b) => MIDWEEK_QUALITY_LADDER.indexOf(a) - MIDWEEK_QUALITY_LADDER.indexOf(b))
+}
+
+function preferredQualityCategory(
+  phase: PhaseType,
+  distKey: RaceDistanceKey,
+  isTimeTarget: boolean,
+  // Index of this week within the build phase's NON-DELOAD weeks. Deload weeks
+  // carry no quality, so counting them would let the rotation skip a beat and
+  // drop vo2max out of a build phase entirely.
+  buildRotationIndex = 0,
+  // True when the VO2max adaptation deadline lands on the FIRST build quality
+  // week, so the rotation must open on vo2max rather than on the gentlest
+  // category. See the note below — this is why the rotation is deadline-aware
+  // rather than letting V2 swap afterwards.
+  vo2MustOpenBuild = false,
+): CatalogueCategory {
   if (phase === 'base')  return 'aerobic'
-  if (phase === 'build') return 'threshold'
+  if (phase === 'build') {
+    const cats = buildRotationCategories(distKey)
+    // DEADLINE-AWARE ORDERING, and the reason is a defect, not neatness.
+    //
+    // Left to the plain ascending rotation, a 12-week 10K opens build on
+    // threshold (W5) and reaches vo2max at W6 — one week past the adaptation
+    // deadline. V2 then SWAPS the two sessions to fix the timing, and that swap
+    // is where it goes wrong: `goalPaceWeek` (§22 — second-half build quality
+    // must be goal-pace work for a time target) is applied when the session is
+    // CONSTRUCTED, so the displaced threshold session arrives in W6 still
+    // wearing W5's treatment and immediately breaks INV-PLAN-RACE-SPECIFIC-
+    // EXPOSURE. Caught by the archetype matrix on 02-10k-intermediate.
+    //
+    // Patching the session after the swap would mean re-deriving naming, pace
+    // and notes outside the one place that owns them. Building the plan
+    // correctly the first time is the smaller and more honest change: when the
+    // deadline binds, the rotation simply opens on vo2max and no swap happens.
+    // V2 stays as the safety net for shapes this does not cover.
+    const ordered = vo2MustOpenBuild && cats.includes('vo2max')
+      ? ['vo2max', ...cats.filter(c => c !== 'vo2max')] as CatalogueCategory[]
+      : cats
+    const picked = ordered[buildRotationIndex % ordered.length]
+
+    // ONE VO2MAX EXPOSURE IN BUILD, AND NO MORE — Seiler's binding constraint
+    // on CD-16: "moving VO2max earlier must not become MORE VO2max. The value
+    // is in the exposures landing early enough to adapt to, not in adding a
+    // third hard session to a four-hour-a-week runner's week."
+    //
+    // Without this cap the modulo rotation cycles back: a three-week build runs
+    // vo2max / threshold / vo2max, which with peak's two gives FOUR VO2max
+    // sessions where the plan previously had two. That is the over-correction
+    // Seiler named, arriving through the front door with a physiological
+    // justification. The intended shape is one build exposure — early enough to
+    // open the adaptation window — plus peak's two: three spread exposures,
+    // replacing two crammed before the taper.
+    //
+    // Everything after that exposure falls back to the next category in the
+    // rotation, which is threshold for both 5K and 10K.
+    if (picked === 'vo2max') {
+      const vo2SlotIndex = vo2MustOpenBuild ? 0 : ordered.indexOf('vo2max')
+      if (buildRotationIndex !== vo2SlotIndex) {
+        return ordered.find(c => c !== 'vo2max') ?? 'threshold'
+      }
+    }
+    return picked
+  }
   if (phase === 'taper') return 'threshold'
   // peak:
   if (distKey === '5K' || distKey === '10K') return 'vo2max'
@@ -1210,6 +1302,15 @@ function buildWeekSessions(
   fitness: FitnessLevel,
   goalPace: string | null | undefined,
   totalWeeks: number,
+  // SC-07 / CD-16 — index of this week among the build phase's NON-DELOAD
+  // weeks, used to rotate the build quality category. Computed by the caller,
+  // which owns the deload cadence; deriving it here would duplicate that rule
+  // and let the two drift. Deload weeks carry no quality, so counting them
+  // would let the rotation skip a beat and drop vo2max out of a build phase.
+  buildRotationIndex: number,
+  // SC-07 / CD-16 — the adaptation deadline lands on the first build quality
+  // week, so the rotation must open on vo2max. Computed once by the caller.
+  vo2MustOpenBuild: boolean,
   // D2 — the level that governs INTENSITY. Equals `fitness` unless the VDOT and
   // volume signals disagreed, in which case `fitness` is the lower (structure:
   // volume, caps) and this is the higher (intensity allowance). See
@@ -1571,7 +1672,7 @@ function buildWeekSessions(
     // taper weeks vary their stimulus. Even idx → threshold (default), odd idx
     // → race_specific (sharpener). Race week itself has no quality (§26).
     const isTimeTarget = input.goal === 'time_target'
-    let preferredCategory = preferredQualityCategory(phase, distKey, isTimeTarget)
+    let preferredCategory = preferredQualityCategory(phase, distKey, isTimeTarget, buildRotationIndex, vo2MustOpenBuild)
     let taperForceSharpener = false
     // CD-2 / §36 — goal-pace sharpening in the taper is a time-target tool; a
     // finish-goal taper stays on threshold (§80). Without the goal-gate, a
@@ -1652,6 +1753,7 @@ function buildWeekSessions(
           excludeHillSessions,
         })
       }
+      if (process.env.DEBUG_ROT) console.error(`      cat1 -> ${cat1?.id}:${cat1?.category} (pref=${preferredCategory})`)
       sessions[qualDay] = makeQualitySession({
         weekN, day: qualDay, distKm: qualKm, metric, zones, pace,
         catalogueRow: cat1, phase, fitness, isDeload, goalPace,
@@ -2310,20 +2412,10 @@ function longRunOfWeek(week: Week): { day: Day; session: Session } | null {
 // V5 — map a quality-session label to a STIMULUS_RANK key. Substring match,
 // case-insensitive. Returns null when the label doesn't fit any known bucket
 // (should never happen for engine-generated labels — defensive).
-function classifyStimulus(session: Session): keyof typeof GENERATION_CONFIG.STIMULUS_RANK | null {
-  const label = (session.label ?? '').toLowerCase()
-  const zone  = (session.zone  ?? '').toLowerCase()
-  // VO2max is unambiguous — drives off both label and zone.
-  if (label.includes('vo2') || zone.includes('zone 4–5') || zone.includes('zone 5')) return 'vo2max'
-  // Goal-pace and tempo both sit at rank 4 (race_pace / tempo). Distinguish for
-  // the audit log; rank is identical so escalation logic isn't affected.
-  if (label.includes('-pace') || label.includes('goal pace') || label.includes('sharpener')) return 'race_pace'
-  if (label.includes('tempo') || label.includes('cruise') || label.includes('threshold') || label.includes('progressive')) return 'tempo'
-  if (label.includes('hill'))  return 'hills'
-  if (label.includes('strid')) return 'strides'
-  if (label.includes('aerobic') || label.includes('steady')) return 'steady_aerobic'
-  return null
-}
+// classifyStimulus now lives in ./sessionRole — the declared single owner of
+// session classification (INV-CLASS / D-17). It was here, private, while
+// invariants.ts grew its own label checks; SC-07 needed it in both, and a third
+// copy is exactly the drift D-17 warns about. Imported at the top of this file.
 
 // V1 — simultaneous volume step + first quality intro.
 // Coaching rationale: introducing a new stress (the first quality session) on
@@ -2350,16 +2442,62 @@ function applyV1VolumeQualityStimulusSplit(
   const minEasy   = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
   const minRatio  = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
 
-  // Locate the first week containing a quality session.
-  let firstQualityIdx = -1
-  for (let i = 0; i < weeks.length; i++) {
-    const hasQuality = Object.values(weeks[i].sessions).some(s => s?.type === 'quality')
-    if (hasQuality) { firstQualityIdx = i; break }
+  // TWO TRIGGER WEEKS, one rule.
+  //
+  //   1. The first week carrying ANY quality session (original V1, §2).
+  //   2. The first week carrying a VO2MAX session — Willy's gate, a binding
+  //      condition of CD-16's approval: "VO2max may enter build only under the
+  //      rule that already governs the first quality session of a plan: the week
+  //      that introduces it holds volume flat. Intensity and volume do not
+  //      progress in the same week."
+  //
+  // Extended rather than duplicated, on Willy's own instruction ("that machinery
+  // exists — extend it rather than inventing a parallel rule"). A second
+  // near-identical flattening routine is how two rules drift apart.
+  //
+  // On a 12-week 10K these collapse to the same week and the gate costs nothing,
+  // which is exactly why it must not be skipped: that coincidence is a property
+  // of one plan shape. On a longer plan VO2max lands mid-build, where the first
+  // trigger has long since passed and only this second one protects the runner.
+  const firstIdxWhere = (pred: (s: Session) => boolean): number => {
+    for (let i = 0; i < weeks.length; i++) {
+      if (Object.values(weeks[i].sessions).some(s => s != null && pred(s))) return i
+    }
+    return -1
   }
-  if (firstQualityIdx <= 0) return  // no quality, or it's in week 1 (no prior week to compare)
 
-  const curr = weeks[firstQualityIdx]
-  const prev = weeks[firstQualityIdx - 1]
+  const triggerIdxs = Array.from(new Set([
+    firstIdxWhere(s => s.type === 'quality'),
+    firstIdxWhere(s => s.type === 'quality' && classifyStimulus(s) === 'vo2max'),
+  ])).filter(i => i > 0).sort((a, b) => a - b)
+
+  for (const triggerIdx of triggerIdxs) {
+    flattenIntroducingWeek(weeks, triggerIdx, pace, adjustments, threshold, precision, minEasy, minRatio)
+  }
+}
+
+function flattenIntroducingWeek(
+  weeks: Week[],
+  triggerIdx: number,
+  pace: PaceGuide,
+  adjustments: RuleAdjustment[],
+  threshold: number,
+  precision: number,
+  minEasy: number,
+  minRatio: number,
+): void {
+  const curr = weeks[triggerIdx]
+  const prev = weeks[triggerIdx - 1]
+
+  // Name the stimulus this week actually introduced, so the record says which
+  // of the two triggers fired rather than always claiming "first quality".
+  const introducesVo2 = Object.values(curr.sessions)
+    .some(s => s != null && s.type === 'quality' && classifyStimulus(s) === 'vo2max')
+  const isFirstQualityWeek = !weeks.slice(0, triggerIdx)
+    .some(w => Object.values(w.sessions).some(s => s?.type === 'quality'))
+  const introduced = isFirstQualityWeek
+    ? (introducesVo2 ? 'the first quality session of the plan (VO2max)' : 'the first quality session')
+    : 'the first VO2max session'
   if (curr.type === 'race' || curr.type === 'deload') return
   if (curr.weekly_km <= prev.weekly_km * threshold) return  // bump is small enough
 
@@ -2436,7 +2574,7 @@ function applyV1VolumeQualityStimulusSplit(
 
   adjustments.push({
     rule:           'V1-volume-quality-split',
-    violation:      `Week ${curr.n} introduced the first quality session AND stepped volume up from ${prev.weekly_km} to ${preCorrectionWeeklyKm} km (>${GENERATION_CONFIG.V1_VOLUME_QUALITY_SPLIT_THRESHOLD_PCT}% bump).`,
+    violation:      `Week ${curr.n} introduced ${introduced} AND stepped volume up from ${prev.weekly_km} to ${preCorrectionWeeklyKm} km (>${GENERATION_CONFIG.V1_VOLUME_QUALITY_SPLIT_THRESHOLD_PCT}% bump).`,
     resolution:     `Held weekly volume at ${newWeekly} km (target ${prev.weekly_km}) by trimming easy runs; long run + quality preserved.`,
     weeks_affected: [curr.n],
   })
@@ -2481,18 +2619,42 @@ function applyV2Vo2MaxOnsetTiming(
   if (!firstVo2Pos) return  // catalogue produced no vo2max for this plan
   if (weeks[firstVo2Pos.weekIdx].n <= deadlineWeekN) return  // already compliant
 
-  // V2 must not break peak-phase race-specific exposure (§22). If the vo2max
-  // currently lives in peak phase, moving it earlier would force a non-peak-
-  // suitable session (e.g. an aerobic-category build session) into peak.
-  // For short races (5K/10K) the catalogue intentionally places vo2max only
-  // in peak phase — there is no build-phase quality of comparable rank to
-  // swap in. Accept the late vo2 placement and log it; do not break §22.
   const fromWeek = weeks[firstVo2Pos.weekIdx]
-  if (fromWeek.phase === 'peak') {
+
+  // SC-07 / CD-16 + CD-22 (2026-08-20) — THE OLD EARLY-RETURN IS DELETED.
+  //
+  // It read: if the first vo2max session is in peak, log "No swap — catalogue
+  // places VO2max only in peak phase for this race distance" and accept the
+  // late placement. That sentence was true when it was written and is now
+  // false: the three vo2max rows are build-eligible and the build rotation
+  // selects them (see buildRotationCategories). Leaving a stale excuse in the
+  // record is worse than no record — it explains the plan with a constraint
+  // that no longer exists, and it is why this sat unexamined for months.
+  //
+  // The swap below now has somewhere to swap FROM, so it runs.
+
+  // Can this plan's geometry contain the adaptation window at all? The deadline
+  // must fall at or after the first week that carries a quality session — i.e.
+  // build start. Below 12 weeks it does not: for an 11-week 10K the deadline is
+  // W4 while build begins W5, so the window lands in base phase, where there is
+  // no quality to move. 5K.min_weeks is 8 and 10K.min_weeks is 10, so these are
+  // SUPPORTED plan lengths, not edge cases.
+  //
+  // CD-22: the window is BINDING WHERE REACHABLE and EXPLICITLY RECORDED WHERE
+  // NOT. Not lowered to 4 to make short plans pass — the adaptation window is a
+  // physiological quantity and does not shrink because the runner chose a
+  // shorter plan (Seiler). Not thrown either: refusing to generate a plan a
+  // runner legitimately asked for, over a window that plan cannot geometrically
+  // contain, is a crash rather than enforcement (Hutchinson).
+  //
+  // Same shape, same treatment, third time: CD-20 recorded the withheld second
+  // quality session; CD-21 exempted maintenance plans from the §1 ceiling.
+  const buildStartWeekN = phases.find(p => p.name === 'build')?.start_week
+  if (buildStartWeekN != null && deadlineWeekN < buildStartWeekN) {
     adjustments.push({
-      rule:           'V2-vo2max-onset-timing',
-      violation:      `First VO2max session is in week ${fromWeek.n}; spec target was week ≤${deadlineWeekN} (≥${GENERATION_CONFIG.VO2MAX_ONSET_MIN_ADAPTATION_WEEKS} adaptation weeks before taper).`,
-      resolution:     `No swap — catalogue places VO2max only in peak phase for this race distance. Late placement accepted to preserve §22 race-specific exposure.`,
+      rule:           'V2-vo2max-onset-unreachable',
+      violation:      `First VO2max session is in week ${fromWeek.n}; the adaptation window needs it by week ${deadlineWeekN}.`,
+      resolution:     `Plan is ${weeks.length} weeks — too short to contain a ${GENERATION_CONFIG.VO2MAX_ONSET_MIN_ADAPTATION_WEEKS}-week VO2max adaptation window, because week ${deadlineWeekN} falls in the base phase (build starts week ${buildStartWeekN}) where no quality session exists. The VO2max sessions are kept for their other value; expect them to sharpen rather than to build a new ceiling. A ${weeks.length + (buildStartWeekN - deadlineWeekN)}-week plan would fit the full window.`,
       weeks_affected: [fromWeek.n],
     })
     return
@@ -3042,6 +3204,28 @@ export function generateRulePlan(
   // genuine threshold session across the whole plan (weeks build in order below).
   const cueCtx = { thresholdCuePlaced: false }
 
+  // SC-07 / CD-16 — counts NON-DELOAD build weeks as they are emitted, so the
+  // build quality rotation (threshold -> vo2max -> threshold for 5K/10K) is
+  // driven by quality-carrying weeks rather than calendar position.
+  let buildRotationIndex = 0
+
+  // Does the VO2max adaptation deadline land on the first build quality week?
+  // Mirrors applyV2Vo2MaxOnsetTiming's arithmetic deliberately — same inputs,
+  // same answer — so the plan is CONSTRUCTED compliant instead of being built
+  // late and swapped afterwards (which breaks §22; see preferredQualityCategory).
+  const vo2MustOpenBuild = (() => {
+    if (input.race_distance_km > 21) return false
+    const taperPhase = phases.find(p => p.name === 'taper')
+    const buildPhase = phases.find(p => p.name === 'build')
+    if (!taperPhase || !buildPhase) return false
+    const taperWeeks = (totalWeeks - taperPhase.start_week) + 1
+    const deadlineWeekN = totalWeeks - taperWeeks - GENERATION_CONFIG.VO2MAX_ONSET_MIN_ADAPTATION_WEEKS
+    // Unreachable deadlines (short plans, CD-22) are handled by V2's recorded
+    // adjustment — do not distort the rotation chasing a week that cannot work.
+    if (deadlineWeekN < buildPhase.start_week) return false
+    return deadlineWeekN <= buildPhase.start_week
+  })()
+
   for (let i = 0; i < totalWeeks; i++) {
     const weekN = i + 1
     const phase = getPhaseForWeek(weekN, phases)
@@ -3064,6 +3248,8 @@ export function generateRulePlan(
 
     const { adjustedKm } = applyInjuryAdjustments(weeklyKm, prevWeeklyKm, true, input, phase)
 
+    const isRotatingBuildWeek = phase === 'build' && !isDeload && !isRaceWeek
+
     const sessions = buildWeekSessions(
       weekN, phase, isDeload, isRaceWeek,
       adjustedKm, input, zones, pace, metric, phases,
@@ -3071,9 +3257,15 @@ export function generateRulePlan(
       fitness,
       goalPace,
       totalWeeks,
+      buildRotationIndex,
+      vo2MustOpenBuild,
       intensityFitness,
       cueCtx,
     )
+
+    // Advance the rotation only on weeks that actually carried a build quality
+    // slot — see isRotatingBuildWeek above.
+    if (isRotatingBuildWeek) buildRotationIndex++
 
     // §78 — the benchmark session is the proof. `isRecalibration` was the
     // intent; a placed `hard` session is the fact. If the slot was too short to

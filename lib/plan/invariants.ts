@@ -13,7 +13,7 @@ import type { Plan, GeneratorInput, Session } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
-import { isLongRun, isShakeout } from './sessionRole'
+import { isLongRun, isShakeout, classifyStimulus } from './sessionRole'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
 import { parseDateLocal, formatDate } from './length'
 
@@ -24,6 +24,7 @@ export type Severity = 'error' | 'warn'
 // enforced — adding a code here without enforcement (or vice versa) is a defect.
 // (CoachingPrinciples §34, R2/H-04)
 export const INVARIANT_CODES = [
+  'INV-PLAN-VO2MAX-ONSET',
   'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS',
   'INV-PLAN-COACH-NOTES-MATCH-INTENT',
   'INV-PLAN-LABEL-MATCHES-PACE',
@@ -1148,6 +1149,61 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // survived: nothing computed the number, so nobody could see which quantity
   // it was. The value being wrong was downstream of it being unexercised.
   //
+  // INV-PLAN-VO2MAX-ONSET (CoachingPrinciples §5/§17 — SC-07 / CD-16 + CD-22)
+  //
+  // The first VO2max session must leave at least
+  // VO2MAX_ONSET_MIN_ADAPTATION_WEEKS of build/peak before the taper. Two
+  // isolated exposures in the last weeks before a taper carry the full injury
+  // and fatigue cost of the hardest work in the plan and collect none of the
+  // adaptation — "the middle position is the only indefensible one" (Seiler).
+  //
+  // WHY THIS IS AN INVARIANT AND NOT A LOGGED ADJUSTMENT. It used to be the
+  // latter: the engine recorded `V2-vo2max-onset-timing` against its own
+  // principle and generated the plan anyway. A principle the engine logs a
+  // violation against and then proceeds past is not a principle (Hutchinson,
+  // CD-16 amendment 3). §34 again.
+  //
+  // BINDING WHERE REACHABLE, RECORDED WHERE NOT (CD-22). Below ~12 weeks the
+  // deadline falls inside base phase, where no quality session exists, so the
+  // window is arithmetically unsatisfiable — and 5K.min_weeks is 8, so those
+  // plans are supported, not hypothetical. The number is NOT lowered to 4 to
+  // make them pass (Seiler: the adaptation window does not shrink because the
+  // runner chose a shorter plan), and generation does NOT throw (Hutchinson:
+  // refusing a plan over a window its own geometry cannot contain is a crash,
+  // not enforcement). The engine records `V2-vo2max-onset-unreachable` instead
+  // — the same treatment CD-20 gave the withheld second quality and CD-21 gave
+  // maintenance plans.
+  {
+    const firstBuildWeek = plan.weeks.find(w => w.phase === 'build')?.n
+    const taperStartWeek = plan.weeks.find(w => w.phase === 'taper')?.n
+    if (firstBuildWeek != null && taperStartWeek != null && input.race_distance_km <= 21) {
+      const vo2Weeks = plan.weeks
+        .filter(w => Object.values(w.sessions).some(sn =>
+          sn && sn.type === 'quality' && classifyStimulus(sn) === 'vo2max'))
+        .map(w => w.n)
+
+      if (vo2Weeks.length > 0) {
+        const minWeeks = GENERATION_CONFIG.VO2MAX_ONSET_MIN_ADAPTATION_WEEKS
+        const taperWeeks = (plan.weeks.length - taperStartWeek) + 1
+        const deadlineWeekN = plan.weeks.length - taperWeeks - minWeeks
+        const reachable = deadlineWeekN >= firstBuildWeek
+        const gap = taperStartWeek - vo2Weeks[0]
+
+        if (reachable && gap < minWeeks) {
+          violations.push({
+            code: 'INV-PLAN-VO2MAX-ONSET',
+            principle_ref: 'CoachingPrinciples §5',
+            severity: 'error',
+            week: vo2Weeks[0],
+            message: `First VO2max session is in week ${vo2Weeks[0]}, leaving ${gap} week(s) before the taper (week ${taperStartWeek}); the adaptation window needs ${minWeeks}. This plan is long enough to satisfy it (deadline week ${deadlineWeekN}).`,
+            actual: gap,
+            expected: `>= ${minWeeks} weeks before taper`,
+          })
+        }
+      }
+    }
+  }
+
   // SESSIONS, PLAN-WIDE, CEILING. See the config comment for why each of those
   // three words is load-bearing.
   {

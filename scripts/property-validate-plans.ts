@@ -303,7 +303,9 @@ if (hardFailures > 0) {
 // A baseline is a debt register, not an amnesty. Tracked in backlog.md as
 // SWEEP-BASELINE-01.
 const BASELINE: Record<string, number> = {
-  'INV-PLAN-PEAK-IN-PEAK-PHASE':       1116,
+  // 1116 -> 1080 on 2026-08-20: SC-07's build rotation fixed 36 of these as a
+  // side effect. Lowered to lock the improvement in, per the note above.
+  'INV-PLAN-PEAK-IN-PEAK-PHASE':       1080,
   'INV-PLAN-LR-PROGRESSION-CAP':        981,
   'INV-PLAN-MIN-SESSION-SIZE':          211,
   'INV-PLAN-QUALITY-VARIETY-FULL-PLAN':  87,
