@@ -239,7 +239,19 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
   - **Verify shipped:** sweep `LR-PROGRESSION-CAP` baseline is 0.
 
 
-- 🔲 **[W1d]** **CAT-ULTRA-THIN-01 — the ultra catalogue is too thin to vary** *(from triage; 141 violations across two codes, 100K/50K only)* — `INV-PLAN-QUALITY-VARIETY-FULL-PLAN` (87) and `INV-PLAN-TAPER-VARIETY` (54) fire **only** on ultra plans, because one label dominates: there are three `ultra_specific` rows total and 100K's `quality_categories_focus` is `['ultra_specific']` alone. §53's variety cap is arithmetically unsatisfiable on a 24-week plan with that few rows. **Not an engine defect — a content gap**, and the same shape SC-04/SC-05 fixed for 5K/10K. Needs a Coaching Board ruling on what ultra runners should actually be prescribed.
+- 🔲 **[W1d]** **CAT-ULTRA-THIN-01 — RE-DIAGNOSED, half fixed. The catalogue IS thin; the variety check was hiding it.** *(needs a Coaching Board session on ultra content)*
+  - ✅ **`INV-PLAN-TAPER-VARIETY` 98 → 0 — SHIPPED.** A taper session is now identified by its **catalogue row**, not its display label. §22's goal-pace rename made two genuinely different taper sessions read as a repeat. The row check is also **stronger in the other direction**: the same row twice under two different names is a real repeat the label check missed.
+  - 🔲 **`INV-PLAN-QUALITY-VARIETY-FULL-PLAN` — the check is wrong AND the catalogue is thin, and they must be fixed together.** Measured 2026-08-20:
+    - **Counting labels → 75 violations. Counting catalogue rows → 2,227.** Same plans, same sessions.
+    - §22's rename **splits one row across several names**, so label-counting under-counts. `progressive_tempo` genuinely appears **5 times in 10 quality sessions** on a 50K plan and passes only because three of the five are renamed. **The repetition is real; the label check hides it.**
+    - **My original filing was right, but only visible once the check is honest.** The first diagnosis this session — "§22's rename collapses variety, so the check is too strict" — was *also* wrong: on a 100K time-target plan the rename collapses 8 sessions into one label, which is the opposite direction. Both effects are real and they cancel unevenly.
+    - **Root cause:** the eligible pool is thin. Peak and taper offer **two** threshold rows for a 20-week ultra, so the deterministic selector cycles through them repeatedly. That is a **catalogue content decision** (what should a 100K runner actually be prescribed?), not an invariant edit.
+    - **Deliberately not shipped as a check-only change:** flipping it would turn a 75-violation code into a 2,227-violation one without changing a single plan. Both halves ship together or neither does.
+    - **Verify still open:** `grep -c "STILL COUNTS LABELS" lib/plan/invariants.ts` → non-zero.
+
+- 🔲 **[W1d]** **LABEL-VARIETY-01 — eight sessions sharing one name** *(XS, UX; raised by McMillan alongside CAT-ULTRA-THIN-01)* — on a 100K time-target plan §22 renames **8 of 17** quality sessions to `"100K-pace intervals"`. The underlying training differs, so this is not a scheduling defect — but a runner opening their plan and seeing one name eight times experiences monotony regardless. **The remedy is better names, not a blocked plan.** The rename already varies by phase (`-pace progression` in build, `-pace intervals` in peak); it needs a third axis, or to preserve a distinguishing fragment of the row's own name.
+
+
 
 - ✅ **[W1d]** **INPUT-FLOOR-01 — SHIPPED 2026-08-20 as §52b. `INV-PLAN-MIN-SESSION-SIZE` 188 → 0.**
   - **⚠️ THE QUESTION AS FILED WAS WRONG, and that is the finding.** Filed as *"minimum weekly volume per race distance"*. Held against weekly volume alone, or race distance alone, the signal is **flat zero at every value**. It exists only in the **interaction**: sub-floor sessions run at **13% below 2 km per training day, 7% at 2–3, and zero at 3+**. A defect invisible to either axis on its own — the third time in one day a mechanism was mis-identified by reasoning about one variable at a time.

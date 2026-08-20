@@ -361,9 +361,18 @@ const BASELINE: Record<string, number> = {
   // the config already declared and the invariant had been ignoring.
   'INV-PLAN-MIN-SESSION-SIZE':            0,
 
-  'INV-PLAN-QUALITY-VARIETY-FULL-PLAN':  75,
-  // 54 -> 98, same cause and same band as MIN-SESSION-SIZE above.
-  'INV-PLAN-TAPER-VARIETY':              98,
+  // 87 -> 75. NOT the real number: this check counts LABELS, and §22's rename
+  // splits one row across several, so it under-counts. Counting catalogue rows
+  // — which is what §53 actually means — gives 2,227. See the note in
+  // invariants.ts and CAT-ULTRA-THIN-01: the fix is catalogue content, and both
+  // halves ship together or neither does.
+  'INV-PLAN-QUALITY-VARIETY-FULL-PLAN':   75,
+  // 54 -> 98 -> 0 (2026-08-20). Cleared by identifying a taper session by its
+  // catalogue ROW rather than its display label: §22's goal-pace rename made two
+  // genuinely different sessions read as a repeat. The row check is also
+  // stronger in the other direction — the same row twice under two names is a
+  // real repeat the label check missed.
+  'INV-PLAN-TAPER-VARIETY':                0,
   // Same band again: a lopsided week at very low volume. Pending INPUT-FLOOR-01.
   'INV-PLAN-LR-MAX-WEEKLY-PCT':          35,
 }

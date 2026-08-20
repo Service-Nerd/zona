@@ -299,6 +299,24 @@ export function validateInputFields(input: GeneratorInput): void {
     max_hr:     { min: 120, max: 220 },
   }
 
+  // VOLUME FIELDS ARE REQUIRED, and were never validated (added 2026-08-20).
+  //
+  // `current_weekly_km` and `longest_recent_run_km` are non-optional on
+  // GeneratorInput, but nothing checked them. A request missing
+  // `current_weekly_km` produced NaN weekly volumes, which propagated silently
+  // until validatePlan compared against NaN, found nothing, and died with
+  // "Cannot read properties of undefined" — so the API route returned a 500
+  // with no indication of which field was missing.
+  //
+  // Rejecting here turns an opaque crash into a named field error, which is the
+  // whole point of this function (D-04: failure is data).
+  for (const field of ['current_weekly_km', 'longest_recent_run_km'] as const) {
+    const value = input[field]
+    if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+      throw new InputFieldError(field, Number(value), { min: 1, max: 300 })
+    }
+  }
+
   // age is always required
   const age = input.age
   if (typeof age !== 'number' || !Number.isFinite(age)) {

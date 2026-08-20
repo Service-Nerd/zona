@@ -977,7 +977,13 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     for (const tw of taperWeeks) {
       const quality = Object.values(tw.sessions).find(s => s?.type === 'quality')
       if (!quality) { prev = null; continue }
-      const label = quality.label ?? ''
+      // Identify the session by its ROW, not its name (2026-08-20) — same
+      // correction as INV-PLAN-QUALITY-VARIETY-FULL-PLAN. §22's goal-pace rename
+      // collapses distinct rows into one string, so two genuinely different
+      // taper sessions could read as a repeat. The row check is also strictly
+      // STRONGER in the other direction: the same row appearing twice under two
+      // different labels is a real repeat that the label check missed.
+      const label = quality.catalogue_id ?? quality.label ?? ''
       const pace = quality.pace_target ?? ''
       if (prev && prev.label === label && prev.pace === pace) {
         violations.push({
@@ -985,7 +991,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           principle_ref: 'CoachingPrinciples §36',
           severity: 'error',
           week: tw.n,
-          message: `W${tw.n} repeats W${prev.weekN}'s taper quality (${label} @ ${pace}). Vary the stimulus.`,
+          message: `W${tw.n} repeats W${prev.weekN}'s taper quality ("${quality.label}" @ ${pace}). Vary the stimulus.`,
           actual: label,
           expected: 'distinct from prior taper week',
         })
@@ -1816,6 +1822,30 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       if (w.type === 'race') continue
       for (const s of Object.values(w.sessions)) {
         if (!s || s.type !== 'quality') continue
+        // ⚠️ STILL COUNTS LABELS, and that is a KNOWN DEFECT — see
+        // CAT-ULTRA-THIN-01 in the backlog.
+        //
+        // Variety is a property of the TRAINING, so this should count catalogue
+        // rows (D-17 — this is the last place in the engine coupling logic to a
+        // display string, and `catalogue_id` from ADR-018 makes the structural
+        // answer available). Switching it was measured on 2026-08-20 and NOT
+        // shipped, because it does not merely re-express the same result:
+        //
+        //   counting labels -> 75 violations
+        //   counting rows   -> 2,227
+        //
+        // §22's goal-pace rename SPLITS one row across several names, so label
+        // counting under-counts. `progressive_tempo` genuinely appears 5 times
+        // in 10 quality sessions on a 50K plan and passes only because three of
+        // those five are renamed. The repetition is real; the label check hides
+        // it.
+        //
+        // Flipping the check alone would convert a 75-violation code into a
+        // 2,227-violation one without changing a single plan. The engine
+        // over-uses rows because the eligible pool is thin — peak and taper
+        // offer two threshold rows for a 20-week ultra — and that is a
+        // CATALOGUE CONTENT decision for the Coaching Board, not an invariant
+        // edit. Both halves ship together or neither does.
         const label = (s.label ?? '').trim()
         if (!label) continue
         labelCounts.set(label, (labelCounts.get(label) ?? 0) + 1)
@@ -2098,7 +2128,13 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       // occurrence is not evidence of the ratchet this guards against.
       const peakPhaseReachesMax = peakPhase.some(w => w.weekly_km >= maxKm * plateauTolerance)
       if (!peakPhaseReachesMax) {
-        const highest = nonDeload.find(w => w.weekly_km === maxKm)!
+        // Defensive: `find` cannot fail when weekly_km values are finite, but a
+        // NaN anywhere makes every comparison false and this returned undefined,
+        // crashing validatePlan with an opaque TypeError — and validatePlan
+        // throws inside generateRulePlan, so the whole plan died. A missing
+        // `current_weekly_km` was enough to trigger it (now rejected up front by
+        // validateInputFields, but a crash here is never the right failure).
+        const highest = nonDeload.find(w => w.weekly_km === maxKm) ?? nonDeload[0]
         const peakPhaseMax = Math.max(...peakPhase.map(w => w.weekly_km))
         violations.push({
           code: 'INV-PLAN-PEAK-IN-PEAK-PHASE',
