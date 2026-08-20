@@ -1,0 +1,72 @@
+# CI-VERIFY-01 — the correctness gate.
+#
+# WHY THIS EXISTS. Until 2026-08-20 nothing in this repo ran the tests, the type
+# checker, the archetype matrix or the property sweep automatically. The only
+# workflows here were cron jobs, and .githooks/pre-commit checks style and
+# security (hardcoded hex, fonts, auth boundary) — not correctness. Every
+# "verified" claim rested on someone remembering to run the scripts locally.
+#
+# That is not a hypothetical risk. SWEEP-VACUOUS-01: the property sweep printed
+# "✓ All plans pass invariant validation" while generating ZERO plans, for
+# months, and was caught only because a human went looking. The 59 plan
+# invariants fail SOFT in production by design (log and return the plan), so CI
+# is the only place they bite before a runner sees the output.
+#
+# The sweep is ~8 seconds at the default SWEEP_N. This is cheap.
+
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same ref makes the older run irrelevant.
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # `npm ci` not `npm install` — installs exactly the lockfile, so a run can
+      # never pass against dependency versions that differ from the ones
+      # committed. tsx is a pinned devDependency for the same reason: the verify
+      # scripts must not depend on npx resolving an arbitrary version at runtime.
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test
+
+      # Asserts every invariant code is both registered and mechanically
+      # enforced — the §34 meta-check. A code declared without enforcement (or
+      # the reverse) is the defect class that let the intensity distribution sit
+      # unchecked for four months.
+      - name: Invariant coverage
+        run: npm run verify:invariants
+
+      - name: Archetype matrix
+        run: npm run verify:matrix
+
+      # Exits 1 on any NEW violation above the baseline in
+      # scripts/property-validate-plans.ts, and on generating too few plans —
+      # the guard against this script silently becoming a no-op again.
+      - name: Property sweep
+        run: npm run verify:sweep
+
+      - name: Build
+        run: npm run build

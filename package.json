@@ -9,6 +9,11 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "verify:matrix": "tsx scripts/r23-phase7-validation.ts",
+    "verify:sweep": "tsx scripts/property-validate-plans.ts",
+    "verify:invariants": "tsx scripts/r2-coverage-check.ts",
+    "verify": "npm run typecheck && npm run test && npm run verify:invariants && npm run verify:matrix && npm run verify:sweep",
     "sync:ios": "npx cap sync ios && node scripts/fix-cap-config.mjs && node scripts/verify-cap-config.mjs",
     "verify:ios-plugins": "node scripts/verify-cap-config.mjs"
   },
@@ -49,6 +54,7 @@
     "eslint-config-next": "^14.2.35",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.23.12",
     "typescript": "^5",
     "vitest": "^4.1.5"
   }
