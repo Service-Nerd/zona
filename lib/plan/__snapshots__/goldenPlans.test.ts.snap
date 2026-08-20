@@ -1635,7 +1635,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
       {
         "resolution": "Held weekly volume at 29 km (target 28) by trimming easy runs; long run + quality preserved.",
         "rule": "V1-volume-quality-split",
-        "violation": "Week 5 introduced the first quality session AND stepped volume up from 28 to 29 km (>5% bump).",
+        "violation": "Week 5 introduced the first quality session AND stepped volume up from 28 to 43 km (>5% bump).",
         "weeks_affected": [
           5,
         ],
@@ -5056,7 +5056,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
       {
         "resolution": "Held weekly volume at 21 km (target 20) by trimming easy runs; long run + quality preserved.",
         "rule": "V1-volume-quality-split",
-        "violation": "Week 7 introduced the first quality session AND stepped volume up from 20 to 21 km (>5% bump).",
+        "violation": "Week 7 introduced the first quality session AND stepped volume up from 20 to 26 km (>5% bump).",
         "weeks_affected": [
           7,
         ],

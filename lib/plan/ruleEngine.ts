@@ -2391,6 +2391,15 @@ function applyV1VolumeQualityStimulusSplit(
   const targetWeeklyKm = Math.max(prev.weekly_km, weeklyFloorFromLR)
   if (targetWeeklyKm >= curr.weekly_km) return  // would leave plan unchanged or grow it
 
+  // The volume this week had BEFORE V1 trimmed it. Captured here because
+  // `curr.weekly_km` is reassigned below, and the adjustment message needs the
+  // value that justified the intervention, not the value after it.
+  // Defect fixed 2026-08-20: the message read `curr.weekly_km` post-mutation and
+  // rendered as "stepped volume up from 32 to 32 km (>5% bump)" — a claim the
+  // numbers in the same sentence contradict. Claim/computation mismatch: the
+  // engine did the right thing and then described it wrongly.
+  const preCorrectionWeeklyKm = curr.weekly_km
+
   // Compute easy-target so total weekly = targetWeeklyKm.
   // weekly = quality + long + easy_total + recovery. Only easy_total moves.
   const fixedKm = (curr.weekly_km - easyKm)  // quality + long + recovery — held constant
@@ -2427,7 +2436,7 @@ function applyV1VolumeQualityStimulusSplit(
 
   adjustments.push({
     rule:           'V1-volume-quality-split',
-    violation:      `Week ${curr.n} introduced the first quality session AND stepped volume up from ${prev.weekly_km} to ${curr.weekly_km} km (>${GENERATION_CONFIG.V1_VOLUME_QUALITY_SPLIT_THRESHOLD_PCT}% bump).`,
+    violation:      `Week ${curr.n} introduced the first quality session AND stepped volume up from ${prev.weekly_km} to ${preCorrectionWeeklyKm} km (>${GENERATION_CONFIG.V1_VOLUME_QUALITY_SPLIT_THRESHOLD_PCT}% bump).`,
     resolution:     `Held weekly volume at ${newWeekly} km (target ${prev.weekly_km}) by trimming easy runs; long run + quality preserved.`,
     weeks_affected: [curr.n],
   })
