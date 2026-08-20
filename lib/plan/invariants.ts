@@ -56,6 +56,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-INTENSITY-ORDERING',
   'INV-PLAN-PHASE-FOCUS-REACHABLE',
   'INV-PLAN-SECOND-QUALITY-MIN-DAYS',
+  'INV-PLAN-INTENSITY-DISTRIBUTION',
   'INV-PLAN-LR-PROGRESSION-CAP',
   'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES',
   'INV-PLAN-PEAK-LR-ALTERNATION',
@@ -1115,6 +1116,63 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           actual: `0 eligible '${focus}' sessions for ${distKey}`,
           expected: `≥1 eligible '${focus}' session`,
         })
+      }
+    }
+  }
+
+  // INV-PLAN-INTENSITY-DISTRIBUTION — the declared distribution is now checked
+  // (§1, §34 — CD-19 / SC-03).
+  //
+  // This table sat in config for four months, read by an offline script and by
+  // NO engine code, with no invariant referencing it. That is exactly what §34
+  // exists to prevent — and it is why the basis error (sessions vs minutes)
+  // survived: nothing computed the number, so nobody could see which quantity
+  // it was. The value being wrong was downstream of it being unexercised.
+  //
+  // SESSIONS, PLAN-WIDE, CEILING. See the config comment for why each of those
+  // three words is load-bearing.
+  {
+    const dist = GENERATION_CONFIG.INTENSITY_DISTRIBUTION[
+      distKey as keyof typeof GENERATION_CONFIG.INTENSITY_DISTRIBUTION]
+    if (dist) {
+      // Denominator is RUNNING sessions — strength, cross-train and rest are not
+      // part of an intensity distribution.
+      //
+      // Numerator is QUALITY sessions, matching what §8 counts. Two exclusions,
+      // both taken from existing doctrine rather than chosen to make the numbers
+      // work:
+      //   • `hard` — the §78 recalibration time trial is typed `hard` PRECISELY
+      //     so that it does not count against QUALITY_SESSIONS_PER_WEEK_MAX, and
+      //     beginners get it too. Counting it here would contradict the rule that
+      //     gave it that type. (Found by the CD-19 verification pass: including
+      //     it put a 3-day HM plan at 24.4% against a 20% ceiling.)
+      //   • `race` — the goal, not training. One session, at the end, by
+      //     definition not part of the prescribed distribution.
+      // `intervals` / `tempo` are retained for legacy and gist-authored plans;
+      // the R23+ engine emits `quality`.
+      const HARD_TYPES = new Set(['quality', 'intervals', 'tempo'])
+      let running = 0
+      let hard = 0
+      for (const w of plan.weeks) {
+        for (const sn of Object.values(w.sessions)) {
+          if (!sn || sn.type === 'rest' || sn.type === 'strength' || sn.type === 'cross-train') continue
+          running++
+          if (HARD_TYPES.has(sn.type)) hard++
+        }
+      }
+      if (running > 0) {
+        const pct = (hard / running) * 100
+        if (pct > dist.max_quality_session_pct) {
+          violations.push({
+            code: 'INV-PLAN-INTENSITY-DISTRIBUTION',
+            principle_ref: 'CoachingPrinciples §1',
+            severity: 'error',
+            week: 0,
+            message: `Plan-wide quality share is ${pct.toFixed(1)}% of running sessions (${hard}/${running}), above the ${distKey} ceiling of ${dist.max_quality_session_pct}%`,
+            actual: `${pct.toFixed(1)}%`,
+            expected: `<= ${dist.max_quality_session_pct}%`,
+          })
+        }
       }
     }
   }

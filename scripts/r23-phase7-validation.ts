@@ -230,9 +230,10 @@ for (const tc of cases) {
   const expectedDist = GENERATION_CONFIG.INTENSITY_DISTRIBUTION[distKey]
 
   const intensity = intensityDistribution(plan)
-  // Engine consistently produces ~90% easy across all plans (spec targets 75–88%).
-  // The gap is an engine-tuning concern, not a regression. Surface as informational.
-  // Phase 7 doesn't pass/fail on this; future tuning can lift quality minutes.
+  // CD-19 (2026-08-20): the ~90%-easy-by-minutes figure is NOT a gap. §1's table
+  // is a share of SESSIONS, not minutes — the two differ by ~2x. The session-share
+  // ceiling is enforced by INV-PLAN-INTENSITY-DISTRIBUTION; this row stays purely
+  // informational and must not be read as under-delivery.
   const intensityPass: boolean | '—' = '—'
 
   // W-on-W check: measures the SUM of session distances, not the budget.
@@ -312,7 +313,7 @@ for (const tc of cases) {
     pass: allPass,
     metrics: {
       'Intensity dist (easy %)': {
-        value: `${fmt(intensity.easyPct)} (target ${expectedDist.easy_pct})`,
+        value: `${fmt(intensity.easyPct)} (by MINUTES — informational; the §1 ceiling is ${expectedDist.max_quality_session_pct}% of SESSIONS, checked by INV-PLAN-INTENSITY-DISTRIBUTION)`,
         pass: intensityPass,
       },
       'Max W-on-W jump (%)': {

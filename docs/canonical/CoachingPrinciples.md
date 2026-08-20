@@ -53,15 +53,35 @@ Before the board speaks it runs a **conflict scan** across every section here, n
 
 **Why.** Non-elites overtrain by spending too much time in moderate-effort grey zone — runs that feel productive but produce neither aerobic adaptation nor true stress response. The brand position ("Slow down. You've got a day job.") is a statement of this principle. The longer the race, the more skewed toward easy the distribution becomes — ultras are won in Z2.
 
-**Config.** `GENERATION_CONFIG.INTENSITY_DISTRIBUTION` — keyed by race distance. Measured in *minutes*, not kilometres, so time-based plans honour the same ratios.
+### The distribution is a share of SESSIONS, plan-wide, and it is a CEILING — corrected 2026-08-20 (Coaching Board CD-19)
+
+**Principle.** `INTENSITY_DISTRIBUTION` declares the **maximum share of a plan's running sessions** that may be quality work. Three words carry the meaning, and all three were previously wrong or unstated:
+
+| | Value | Why |
+|---|---|---|
+| **Sessions** | not minutes | The 80/20 finding is a *session-count* observation — about four in five **sessions** below the first ventilatory threshold. By time the ratio is far more skewed, typically 90/10 or beyond, because easy sessions are long and hard ones are short. Applying a session-count ratio to a time denominator **inflates the target by roughly a factor of two.** |
+| **Plan-wide** | not per-week | Base phase is deliberately all-easy (§4/§5) and peak weeks may carry two quality sessions (§8). A per-week ratio would forbid the second quality session at any week length we support (2 of 5 = 40%) and contradict §8. |
+| **Ceiling** | not a target | This is the coaching content, not the number. |
 
 ```
-5K / 10K     → 75% easy / 25% quality
-HM           → 80% easy / 20% quality
-MARATHON     → 82% easy / 18% quality
-50K          → 85% easy / 15% quality
-100K         → 88% easy / 12% quality
+5K / 10K     → max 25% of running sessions are quality
+HM           → max 20%
+MARATHON     → max 18%
+50K          → max 15%
+100K         → max 12%
 ```
+
+**Why a ceiling and not a target.** A target invites the engine to close the gap — and the only place a periodised plan has room to add quality is base phase, which §4/§5 make all-easy on purpose. Worse, the population this product serves already drifts upward into Z3 without any encouragement: a ninety-minute window is where every session drifts when you want to feel like you worked. **Writing 25% as something to reach would spend it, and spend it in the grey zone — the exact failure mode Zonna exists to prevent, introduced by the product's own config.** A ceiling is also robust to the underlying 80/20 work having been derived largely from male cohorts.
+
+**What the correction actually revealed — worth reading before trusting any other declared number.** The traced 12-week 10K plan delivered **9.6% quality by minutes** against a declared 25%, and that was read for four months as a fifteen-point under-delivery. It was nothing of the kind. Measured on the correct basis the same plan delivers **exactly 25% in every phase where quality is prescribed**, and 17.0% plan-wide once the all-easy base phase is included. **The engine was right; the config was wrong.**
+
+The reason the error survived is §34, not coaching judgement: **the table was read by an offline script and by no engine code, and no invariant referenced it.** Nothing computed the number, so nobody could see which quantity it was. The value being wrong was downstream of it never being exercised.
+
+**Counting rule.** The numerator is `quality` sessions. It excludes the §78 recalibration **time trial** — typed `hard` *precisely so that it does not count against* `QUALITY_SESSIONS_PER_WEEK_MAX` — and the **race** itself, which is the goal rather than training. Counting either would contradict the rules that gave them their types. The denominator is running sessions; strength and cross-train are not part of an intensity distribution.
+
+**§7 remains independently binding.** A plan can satisfy this ceiling and still stack its hard days. The ratio is not a substitute for the 48-hour spacing rule.
+
+**Config.** `GENERATION_CONFIG.INTENSITY_DISTRIBUTION` — keyed by race distance, field `max_quality_session_pct`. The field is named for its unit so a call site cannot mistake it again. Enforced by `INV-PLAN-INTENSITY-DISTRIBUTION`. Values verified against a 1,244,160-plan property sweep at the time of correction.
 
 ---
 

@@ -13,13 +13,43 @@ export const GENERATION_CONFIG = {
   // ── Polarised training (CoachingPrinciples §1) ──────────────────────────────
   // Non-elites need protection from grey zone. Measured in MINUTES, not km, so
   // time-based plans honour the same ratios.
+  // BASIS CORRECTED 2026-08-20 (Coaching Board CD-19). Read the three words
+  // before using this table: SESSIONS, PLAN-WIDE, CEILING.
+  //
+  // Was: a share of MINUTES. That was wrong, and wrong by roughly a factor of
+  // two. The 80/20 finding is a SESSION-COUNT observation — about four in five
+  // *sessions* below the first ventilatory threshold. Measured by time the
+  // ratio is far more skewed, typically 90/10 or beyond, because easy sessions
+  // are long and hard ones are short. Applying a session-count ratio to a time
+  // denominator inflates the target ~2x (Seiler, in his own territory).
+  //
+  // The consequence of the error: the traced 10K plan delivered 9.6% quality
+  // BY MINUTES against a declared 25%, and that was read for four months as a
+  // 15-point under-delivery. It was not. By sessions the same plan delivers
+  // exactly 25% in every phase where quality is prescribed, and 17.0% plan-wide
+  // once the deliberately all-easy base phase is included. **The engine was
+  // right and the config was wrong.**
+  //
+  // CEILING, not target — this is the coaching content, not the number. A
+  // target invites the engine to close a gap it can only close in base phase,
+  // which §4/§5 make all-easy on purpose; and amateurs already drift upward
+  // into Z3 without encouragement, which is the failure mode this product
+  // exists to prevent. A ceiling is also robust to the underlying 80/20 work
+  // having been derived largely from male cohorts (Sims).
+  //
+  // PLAN-WIDE, not per-week — a per-week ratio would forbid the second quality
+  // session at any supported week length (2 of 5 = 40%) and contradict
+  // QUALITY_SESSIONS_PER_WEEK_MAX above.
+  //
+  // §7's 48-hour spacing remains independently binding: a plan can satisfy this
+  // ceiling and still stack its hard days, which is a different defect (Willy).
   INTENSITY_DISTRIBUTION: {
-    '5K':       { easy_pct: 75, quality_pct: 25 },
-    '10K':      { easy_pct: 75, quality_pct: 25 },
-    'HM':       { easy_pct: 80, quality_pct: 20 },
-    'MARATHON': { easy_pct: 82, quality_pct: 18 },
-    '50K':      { easy_pct: 85, quality_pct: 15 },
-    '100K':     { easy_pct: 88, quality_pct: 12 },
+    '5K':       { max_quality_session_pct: 25 },
+    '10K':      { max_quality_session_pct: 25 },
+    'HM':       { max_quality_session_pct: 20 },
+    'MARATHON': { max_quality_session_pct: 18 },
+    '50K':      { max_quality_session_pct: 15 },
+    '100K':     { max_quality_session_pct: 12 },
   },
 
   // ── 10% rule + recovery cadence (CoachingPrinciples §2, §3) ─────────────────
