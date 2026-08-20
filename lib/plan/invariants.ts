@@ -1709,7 +1709,17 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         const preDeload = i >= 2 ? longRunForWeek(plan.weeks[i - 2]) : null
         if (preDeload != null && currLR <= preDeload * stepBackTol + 0.01) continue
       }
+      // ROUNDING HEADROOM (2026-08-20). Session distances round to
+      // DISTANCE_ROUNDING_PRECISION_KM, so the two values being differenced are
+      // each rounded while the cap is not. A long run landing 0.5km over is one
+      // rounding step, not a coaching failure — the traced case was a 20.5km
+      // run against a 20km allowance, from a 15km week before it.
+      //
+      // Same grounding as INV-PLAN-MAIN-SET-ORDERING's tolerance and §83's:
+      // an assertion made finer than the data's own precision is asserting
+      // noise. The cap itself (§45: +20% or +5km) does not move.
       const allowedJumpKm = Math.max(prevLR * capPct, capAbs)
+        + GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
       const actualJumpKm = currLR - prevLR
       if (actualJumpKm > allowedJumpKm + 0.01) {
         const pctJump = prevLR > 0 ? Math.round((actualJumpKm / prevLR) * 100) : 0

@@ -482,6 +482,19 @@ function buildVolumeSequence(
   distanceKm: number,
   recoveryFreq: number,
   returningRunner: boolean,
+  // §12 — the injury weekly-increase cap, applied INSIDE the curve.
+  //
+  // It used to be applied per-week in the session loop, downstream of the
+  // curve, against `volumes[i - 1]` — the raw curve value, not the previous
+  // week's adjusted result. Two defects followed: the cap never compounded (a
+  // capped week was followed by one measured against the higher curve value,
+  // producing a 35% sawtooth), and everything else that anchors on the curve —
+  // the taper depth, the deload step-down, the long-run share — was working
+  // from volumes the runner never actually saw.
+  //
+  // Applying it here makes the curve the single truth. Undefined for uninjured
+  // runners, who keep §2's standard allowance.
+  injuryCapPct: number | undefined,
 ): VolumeSequenceResult {
   const taperPhase = phases.find(p => p.name === 'taper')!
   const distKey = raceDistanceKey(distanceKm)
@@ -542,7 +555,12 @@ function buildVolumeSequence(
     if (isThisDeload) continue
     if (volumes[i] <= volumes[i - 1]) continue
 
-    const cap = 1 + allowanceForWeek(weekN) / 100
+    // §12 tightens §2's allowance for knee / shin-splint history. Same pass, so
+    // it compounds week on week exactly as the standard cap does.
+    const allowancePct = injuryCapPct != null
+      ? Math.min(allowanceForWeek(weekN), injuryCapPct)
+      : allowanceForWeek(weekN)
+    const cap = 1 + allowancePct / 100
     let maxAllowed = Math.round(volumes[i - 1] * cap)
 
     // CoachingPrinciples §2 (amended 2026-08-06 / D1) — the cap does NOT apply
@@ -1154,13 +1172,22 @@ function applyInjuryAdjustments(
   let km = weeklyKm
   let quality = allowQuality
 
-  // Knee + shin splints: weekly volume cap tightens to INJURY_WEEKLY_INCREASE_CAP_PCT (5%)
-  // from the standard MAX_WEEKLY_VOLUME_INCREASE_PCT (10%). CoachingPrinciples §12.
-  if (hasInjury(input, 'knee') || hasInjury(input, 'shin_splints')) {
-    const cap = 1 + GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT / 100
-    const maxIncrease = prevWeeklyKm * cap
-    km = Math.min(km, maxIncrease)
-  }
+  // §12's weekly volume cap MOVED INTO buildVolumeSequence (2026-08-20).
+  //
+  // It used to be applied here, per week, against `volumes[i - 1]` — the raw
+  // curve rather than the previous week's adjusted result. Two defects: the cap
+  // never compounded (a capped week was followed by one measured against the
+  // higher curve value, producing a 35% sawtooth that tripped §45), and
+  // everything anchored on the curve — taper depth, deload step-down, long-run
+  // share — worked from volumes the runner never saw.
+  //
+  // Applying it in the curve makes that one source of truth. It must NOT also
+  // be applied here: doing both double-caps, and the second pass measures
+  // against an already-capped previous week. That drove delivered volume ~20%
+  // below the curve on the very weeks the first fix was meant to smooth.
+  //
+  // `prevWeeklyKm` is retained in the signature for the non-volume rules below
+  // and for callers; it is deliberately unused by the volume path now.
   // Achilles: no quality work (any phase).
   if (hasInjury(input, 'achilles')) {
     quality = false
@@ -3256,6 +3283,9 @@ export function generateRulePlan(
   const { volumes, compressed: capCompressed } = buildVolumeSequence(
     totalWeeks, phases, startKm, peakKm, input.race_distance_km,
     recoveryFreq, returningRunner,
+    (hasInjury(input, 'knee') || hasInjury(input, 'shin_splints'))
+      ? GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT
+      : undefined,
   )
 
   // ── Build weeks ─────────────────────────────────────────────────────────────
@@ -3339,6 +3369,9 @@ export function generateRulePlan(
     // which is resolved after buildWeekSessions returns.
 
     const weeklyKm = volumes[i]
+    // §12's weekly cap now lives in buildVolumeSequence, so the curve already
+    // reflects it. This call still handles the non-volume injury rules
+    // (achilles/hip-flexor quality suppression).
     const prevWeeklyKm = i > 0 ? volumes[i - 1] : startKm
 
     const { adjustedKm } = applyInjuryAdjustments(weeklyKm, prevWeeklyKm, true, input, phase)

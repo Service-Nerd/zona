@@ -404,6 +404,17 @@ Implemented in `buildPaceFromVDOT(discountedVdot, rawVdot)` in `lib/plan/ruleEng
 
 **Config.** `GENERATION_CONFIG.EASY_RUN_ZONE_CAP = 'Z2_TOP'` — resolves at runtime to the top of `GENERATION_CONFIG.ZONES.Z2` for the user's active zone method.
 
+
+> **⚠️ The weekly cap lives in the VOLUME CURVE, not in the session loop — corrected 2026-08-20.**
+>
+> It used to be applied per-week downstream of the curve, measured against the curve's *unadjusted* previous value. **So it never compounded.** A week capped down was followed by a week measured against the higher curve value, which sailed through uncapped.
+>
+> **The injury-protection cap was producing the exact volume spike it exists to prevent, and only for injured runners.** Traced on an HM plan with knee history: W9 capped to 48.3km, W10 then jumping to 65km — a **35% rise** — dragging the long run from 11km to 19km and tripping §45. It accounted for **394 of the 981** long-run progression violations in the property sweep.
+>
+> Two further consequences, both fixed by the same move: everything anchored on the curve — **taper depth, deload step-down, long-run share** — was working from volumes the runner never actually saw (the archetype matrix caught a taper cutting 25% where it should cut 45%); and applying the cap in *both* places double-caps, measuring against an already-capped week, which drove delivered volume ~20% below the curve.
+>
+> **The curve is the single source of truth for volume.** `buildVolumeSequence` takes the injury cap and applies it alongside §2's standard allowance, in the same pass, so it compounds identically.
+
 ---
 
 ## 13. Fitness classification — VDOT first, volume fallback

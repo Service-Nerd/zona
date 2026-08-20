@@ -62,7 +62,22 @@ const distancesAndDates: any[] = [
   { race_distance_km: 100,  race_date: raceDate(26) },
 ]
 const cwks = [5, 12, 25, 40, 60]
-const lrrs = [3, 8, 15, 22]
+
+// Longest recent run, expressed as a FRACTION of weekly volume rather than as
+// an independent axis (2026-08-20).
+//
+// It used to be `[3, 8, 15, 22]` picked independently of `cwks`, which paired
+// 5 km/week with a 22 km long run — a runner who has never existed. A single
+// run cannot exceed the week that contains it, so a quarter of the grid was
+// testing impossible people, and the violations they produced were then read as
+// engine defects. That is how the deload-inversion finding got mis-filed: 9% on
+// contradictory inputs, 0% on realistic ones.
+//
+// The band spans undertrained-but-real (the long run is a fifth of the week) to
+// long-run-dominant (three quarters — a two- or three-day runner). Anything
+// above 1.0 is arithmetically impossible; the top of the band is deliberately
+// past §52's 60% lopsidedness cap so the sweep still exercises that guard.
+const lrrFractions = [0.2, 0.35, 0.5, 0.75]
 const dayOptions: any[] = [
   { days_available: 2, days_cannot_train: ['mon','tue','wed','thu','sat'] },
   { days_available: 3, days_cannot_train: ['mon','tue','thu','sat'] },
@@ -198,6 +213,7 @@ const CORNERS: any[] = [
 
 function randomInput(): any {
   const d = pick(distancesAndDates)
+  const cwk = pick(cwks)
   const days = pick(dayOptions)
   const hrSet = pick(hrSets)
   const g = pick(goalSets)
@@ -205,8 +221,8 @@ function randomInput(): any {
   const bm = pick(benchmarkSets)
   return {
     ...baseInput, ...d,
-    current_weekly_km: pick(cwks),
-    longest_recent_run_km: pick(lrrs),
+    current_weekly_km: cwk,
+    longest_recent_run_km: Math.max(3, Math.round(cwk * pick(lrrFractions))),
     ...days,
     fitness_level: pick(fitnessSets),
     hard_session_relationship: pick(hardSets),
@@ -329,10 +345,37 @@ const BASELINE: Record<string, number> = {
   // as a plateau. Kept as an explicit 0 rather than deleted, so a regression
   // reads as "NEW" against a stated expectation.
   'INV-PLAN-PEAK-IN-PEAK-PHASE':          0,
-  'INV-PLAN-LR-PROGRESSION-CAP':        981,
-  'INV-PLAN-MIN-SESSION-SIZE':          211,
-  'INV-PLAN-QUALITY-VARIETY-FULL-PLAN':  87,
-  'INV-PLAN-TAPER-VARIETY':              54,
+  // 981 -> 587 (2026-08-20): the §12 injury cap now compounds instead of
+  // resetting to the raw curve each week. See ruleEngine's prevAdjustedKm.
+  // 981 -> 450 across three changes on 2026-08-20: the §12 injury cap now
+  // compounds inside the volume curve, §45 gained one rounding step of headroom
+  // (it differences two ROUNDED distances against an unrounded cap), and the
+  // grid stopped pairing impossible volumes. The last step traded 62 of these
+  // back for 235 fewer undersized sessions — a deliberate, net-positive swap:
+  // an over-long long run is visible to a runner, a sub-floor session is not.
+  'INV-PLAN-LR-PROGRESSION-CAP':        450,
+
+  // 211 -> 537 (2026-08-20). RAISED, and deliberately not hidden: making the
+  // injury cap actually compound holds volume down for injured runners — which
+  // is what §12 asks for — and at low starting volumes the sessions that result
+  // fall under MIN_SESSION_DISTANCE_KM.
+  //
+  // Confined entirely to a band the product should not be serving. Measured by
+  // starting weekly volume: 28% at 5 km/wk, 28% at 12, 6% at 25, and ZERO at 40
+  // and 60. On realistic inputs (long run a coherent share of the week, volume
+  // >= 25 km) the rate is 1%.
+  //
+  // The honest fix is a volume floor per race distance — you cannot build a
+  // marathon plan from 5 km a week — which is a coaching decision, filed as
+  // INPUT-FLOOR-01. Until it lands this number stays visible rather than being
+  // absorbed into a tolerance.
+  'INV-PLAN-MIN-SESSION-SIZE':          302,
+
+  'INV-PLAN-QUALITY-VARIETY-FULL-PLAN':  75,
+  // 54 -> 98, same cause and same band as MIN-SESSION-SIZE above.
+  'INV-PLAN-TAPER-VARIETY':              98,
+  // Same band again: a lopsided week at very low volume. Pending INPUT-FLOOR-01.
+  'INV-PLAN-LR-MAX-WEEKLY-PCT':          36,
 }
 
 const regressions: string[] = []
@@ -352,6 +395,14 @@ if (improvements.length > 0) {
   console.log()
 }
 
+// EXPLAIN dump goes BEFORE the regression exit — it is most needed exactly when
+// the run is failing, and printing it afterwards meant it never printed at all.
+if (EXPLAIN) {
+  console.log(`\nExamples of ${EXPLAIN}:`)
+  explained.forEach(e => console.log(e))
+  console.log()
+}
+
 if (regressions.length > 0) {
   console.error('✗ NEW invariant violations above the known-open baseline:')
   regressions.forEach(l => console.error(l))
@@ -367,12 +418,6 @@ if (violationsByCode.size > 0) {
   for (const [code, n] of Array.from(violationsByCode.entries()).sort((a, b) => b[1] - a[1])) {
     console.log(`  ${code}: ${n}`)
   }
-  console.log()
-}
-
-if (EXPLAIN) {
-  console.log(`\nExamples of ${EXPLAIN}:`)
-  explained.forEach(e => console.log(e))
   console.log()
 }
 
