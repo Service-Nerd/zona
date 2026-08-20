@@ -25,48 +25,40 @@ import { INVARIANT_CODES } from './invariants'
 const DOC = join(process.cwd(), 'docs/canonical/plan-invariants.md')
 
 // Undocumented as of 2026-08-20. Shrink this list; never grow it.
-const UNDOCUMENTED_BASELINE = new Set([
-  'INV-PLAN-5K10K-LR-PACE-CAP',
-  'INV-PLAN-BUILD-LR-SEGMENT-CAP',
-  'INV-PLAN-COACH-NOTES-MATCH-INTENT',
-  'INV-PLAN-COVERS-RACE-DATE',
-  'INV-PLAN-FINISH-GOAL-LR-CAP',
-  'INV-PLAN-HR-ASSUMPTIONS-SURFACED',
-  'INV-PLAN-INJURY-NO-HILLS',
-  'INV-PLAN-LARGEST-SESSIONS-SPACED',
-  'INV-PLAN-LR-MAX-WEEKLY-PCT',
-  'INV-PLAN-NO-PLACEHOLDER-COPY',
-  'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS',
-  'INV-PLAN-PEAK-LR-ALTERNATION',
-  'INV-PLAN-PEAK-LR-RACE-RATIO',
-  'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES',
-  'INV-PLAN-QUALITY-VARIETY-FULL-PLAN',
-  'INV-PLAN-RACE-ON-RACE-DAY',
-  'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO',
-  'INV-PLAN-RACE-SPECIFIC-LONG-RUN',
-  'INV-PLAN-RACE-WEEK-SHARPENING',
-  'INV-PLAN-RECALIBRATION-HAS-SESSION',
-  'INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT',
-  'INV-PLAN-TAPER-COPY-MATCHES-DURATION',
-  'INV-PLAN-TAPER-DURATION-CAP',
-  'INV-PLAN-TAPER-VARIETY',
-  'INV-PLAN-ULTRA-NO-PACE-SEGMENTS',
-  'INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR',
-  'INV-PLAN-WEEK-HAS-REST-DAY',
-])
+// EMPTY — all 27 pre-existing gaps documented 2026-08-20. Every invariant now
+// has a row. If this list needs an entry again, something regressed.
+const UNDOCUMENTED_BASELINE = new Set<string>([])
 
 describe('invariant registry ↔ code', () => {
   const doc = readFileSync(DOC, 'utf8')
 
+  // Row ids as they appear in the table: `| \`INV-…\` |` at the start of a line.
+  // NOT a substring search of the whole document — see the test below.
+  const documentedRows = new Set(
+    Array.from(doc.matchAll(/^\| `(INV-[A-Z0-9-]+)`/gm)).map(m => m[1]),
+  )
+
   it('no NEW invariant ships undocumented', () => {
-    const undocumented = INVARIANT_CODES.filter(c => !doc.includes(c) && !UNDOCUMENTED_BASELINE.has(c))
+    const undocumented = INVARIANT_CODES.filter(c => !documentedRows.has(c) && !UNDOCUMENTED_BASELINE.has(c))
     expect(undocumented, `Add a row to plan-invariants.md for: ${undocumented.join(', ')}`).toEqual([])
+  })
+
+  it('a passing mention is NOT documentation', () => {
+    // The hole this closes, found 2026-08-20 hours after the guard shipped:
+    // the check was `doc.includes(code)`, and
+    // INV-PLAN-PREP-TIME-STATUS-ANNOTATED appeared ONLY inside another row's
+    // prose ("Mirrors `INV-PLAN-…`"). It had no row of its own and the guard
+    // passed anyway — 64 rows for 65 invariants, reported as zero undocumented.
+    //
+    // A check that accepts an incidental mention is the vacuous-test failure
+    // this repo keeps finding, this time in the guard written to prevent it.
+    expect(documentedRows.size).toBe(INVARIANT_CODES.length)
   })
 
   it('the baseline only shrinks', () => {
     // A code documented since the baseline was taken must be removed from the
     // list, or the list stops meaning anything.
-    const nowDocumented = Array.from(UNDOCUMENTED_BASELINE).filter(c => doc.includes(c))
+    const nowDocumented = Array.from(UNDOCUMENTED_BASELINE).filter(c => documentedRows.has(c))
     expect(nowDocumented, `Documented now — delete from UNDOCUMENTED_BASELINE: ${nowDocumented.join(', ')}`).toEqual([])
   })
 
