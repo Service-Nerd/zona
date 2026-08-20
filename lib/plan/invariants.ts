@@ -509,6 +509,34 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         })
       }
 
+      // SC-02 / CD-15 — the INVERSE direction, which was missing.
+      //
+      // Every check above asks "the label claims hard work, is the pace hard?"
+      // None asked "the label claims EASY work, is the pace easy?" So a quality
+      // session named "Steady aerobic" and prescribed at T-pace in Zone 3–4
+      // raised nothing — it contains none of the words vo2max/tempo/cruise/
+      // threshold. That shipped to every 5K and 10K runner in build phase.
+      // This is the CD-1 pathology inverted: not five names on one pace, but
+      // one honest name on the wrong pace.
+      //
+      // Label-based by necessity, not by choice: the plan session carries no
+      // catalogue category to key off (the seventh gap — SC-08). When SC-08
+      // lands, re-key this on the structural category per INV-CLASS.
+      const labelImpliesEasy = label.includes('easy') || label.includes('steady')
+        || label.includes('aerobic') || label.includes('recovery')
+      const zoneIsEasy = zone.includes('zone 1') || zone.includes('zone 2')
+      if (labelImpliesEasy && !zoneIsEasy) {
+        violations.push({
+          code: 'INV-PLAN-LABEL-MATCHES-PACE',
+          principle_ref: 'CoachingPrinciples §19',
+          severity: 'error',
+          week: w.n, day,
+          message: `Quality session labelled "${session.label}" implies easy/aerobic work but zone is "${session.zone}" — rename it or prescribe it easy (§19; §12 easy-run ceiling)`,
+          actual: session.zone ?? 'unknown',
+          expected: 'a label that does not imply easy work',
+        })
+      }
+
       // Numeric pace check — only when VDOT is on the plan and a pace target
       // is actually prescribed. Tolerance ±5% (VO2max) / ±3% (threshold) is
       // looser than the prescription's own ±2%, leaving headroom for display

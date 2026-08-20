@@ -768,6 +768,22 @@ function makeQualitySession(args: {
   const useGoalPace = (goalPaceWeek === true || catalogueRowGoalPace) && !isVo2max && !!goalPace
   const goalCenterMins = useGoalPace ? paceStrToMins(goalPace!) : null
 
+  // SC-02 / CD-15 (§19, §33) — an AEROBIC catalogue row selected into a quality
+  // slot is prescribed at threshold pace in Zone 3–4 by the final branch below.
+  // Keeping the row's own name ships a session whose label says easy and whose
+  // prescription says threshold: "Steady aerobic" at T-pace in the grey zone,
+  // which is what every 5K and 10K build week contained until this landed.
+  // (Cause: no threshold row is eligible for 5K/10K, so the selector falls back
+  // to aerobic — SC-04 fixes the eligibility; this fixes the honesty, and the
+  // board ruled it ships unconditionally without waiting.)
+  //
+  // §33 sanctions renaming a repurposed row and REQUIRES the borrowed voice be
+  // replaced — an aerobic row's "most of the work happens here" note is wrong
+  // on a threshold session. Keyed on the structural category, never the label
+  // (INV-CLASS), same as the §1/Q2 cue below.
+  const aerobicRepurposedAsQuality = !useGoalPace && !isVo2max
+    && catalogueRow?.category === 'aerobic'
+
   let label: string
   let minPerKm: number
   let paceTarget: string
@@ -805,7 +821,11 @@ function makeQualitySession(args: {
     zone = 'Zone 4–5'
     hrTarget = zones.intervalsHR
   } else {
-    label = catalogueRow?.name ?? fallbackLabel
+    // SC-02 — a repurposed aerobic row takes the engine's own threshold label
+    // ("Tempo run" / "Cruise intervals" / "Tempo run — short"), which is what
+    // this slot would have been called with no catalogue row at all. That is
+    // exactly what it is: a threshold slot with nothing threshold to put in it.
+    label = aerobicRepurposedAsQuality ? fallbackLabel : (catalogueRow?.name ?? fallbackLabel)
     minPerKm = pace.minPerKmQuality
     paceTarget = pace.qualityPaceStr
     zone = 'Zone 3–4'
@@ -826,6 +846,12 @@ function makeQualitySession(args: {
     // VO2max sessions keep their catalogue voice (the catalogue's vo2max
     // entries — Three minutes is long, Heroic openers ruin it — are correct).
     notes.push(catalogueRow.coach_voice_notes)
+  } else if (aerobicRepurposedAsQuality) {
+    // §33 — the borrowed aerobic voice ("Build the aerobic engine. Most of the
+    // work happens here.") describes a Zone 2 run and is false on a session
+    // prescribed at T-pace. Replace it rather than carry it through, and say
+    // what the session actually is.
+    notes.push('Threshold work — the pace you could hold for about an hour. Not a race.')
   } else if (catalogueRow?.coach_voice_notes) {
     notes.push(catalogueRow.coach_voice_notes)
     if (phase === 'peak' && goalPace && !catalogueRow.coach_voice_notes.toLowerCase().includes('pace')) {
@@ -838,8 +864,13 @@ function makeQualitySession(args: {
   // skipped for vo2max, goal-pace overrides and deload weeks, where the
   // "say a short sentence" test doesn't describe the prescribed effort. Pushed
   // before truncation so it respects the 3-note cap like any other note.
+  // SC-02 — a repurposed aerobic row is now labelled and prescribed as
+  // threshold work, so it is eligible for the cue. Without this, a 5K/10K plan
+  // — where EVERY build-phase quality session is a repurposed aerobic row —
+  // would never receive the §1/Q2 cue at all, which is the one note that names
+  // the grey zone the whole product exists to keep runners out of.
   if (cueCtx && !cueCtx.thresholdCuePlaced
-      && catalogueRow?.category === 'threshold'
+      && (catalogueRow?.category === 'threshold' || aerobicRepurposedAsQuality)
       && !isVo2max && !useGoalPace && !isDeload) {
     notes.push(CONTROLLED_THRESHOLD_CUE)
     cueCtx.thresholdCuePlaced = true

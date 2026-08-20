@@ -2003,14 +2003,15 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         },
         "wed": {
           "coach_notes": [
-            "Hills lie. Watch the effort, not the pace.",
+            "Threshold work — the pace you could hold for about an hour. Not a race.",
+            "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
           ],
           "detail": null,
           "distance_km": 7,
           "duration_mins": 34,
           "hr_target": "146–159 bpm",
           "id": "w5-wed",
-          "label": "Aerobic with hills",
+          "label": "Tempo run",
           "pace_target": "4:41–4:55 /km",
           "primary_metric": "distance",
           "rpe_target": 7,
