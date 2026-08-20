@@ -55,6 +55,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE',
   'INV-PLAN-INTENSITY-ORDERING',
   'INV-PLAN-PHASE-FOCUS-REACHABLE',
+  'INV-PLAN-SECOND-QUALITY-MIN-DAYS',
   'INV-PLAN-LR-PROGRESSION-CAP',
   'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES',
   'INV-PLAN-PEAK-LR-ALTERNATION',
@@ -1114,6 +1115,43 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           actual: `0 eligible '${focus}' sessions for ${distKey}`,
           expected: `≥1 eligible '${focus}' session`,
         })
+      }
+    }
+  }
+
+  // INV-PLAN-SECOND-QUALITY-MIN-DAYS — a week too short to carry two quality
+  // sessions must not be given two (§8, CD-20 / SC-01).
+  //
+  // At fewer than MIN_TRAINING_DAYS_FOR_SECOND_QUALITY days, quality consumes
+  // 32.4% of weekly volume and the single remaining easy slot is capped at
+  // 0.8 x the long run (§9), so the week structurally under-delivers ~8% of its
+  // own volume — taken entirely out of the easy running that makes the hard
+  // work survivable. It is also 3 of 4 sessions hard, against §1's ceiling.
+  //
+  // The old hardcoded candidate-day list blocked this by accident. This is the
+  // rule that was missing underneath it, so the placement defect could be fixed
+  // without converting a hidden bug into an explicit overload.
+  {
+    const minDays = GENERATION_CONFIG.MIN_TRAINING_DAYS_FOR_SECOND_QUALITY
+    const trainingDays = Math.min(
+      input.days_available ?? 7,
+      GENERATION_CONFIG.MAX_TRAINING_DAYS_PER_WEEK,
+    )
+    if (trainingDays < minDays) {
+      for (const w of plan.weeks) {
+        const qualityCount = Object.values(w.sessions)
+          .filter(sn => sn?.type === 'quality').length
+        if (qualityCount > 1) {
+          violations.push({
+            code: 'INV-PLAN-SECOND-QUALITY-MIN-DAYS',
+            principle_ref: 'CoachingPrinciples §8, §9',
+            severity: 'error',
+            week: w.n,
+            message: `Week ${w.n} places ${qualityCount} quality sessions on a ${trainingDays}-day week; a second quality session needs at least ${minDays} training days`,
+            actual: `${qualityCount} quality sessions, ${trainingDays} training days`,
+            expected: `1 quality session below ${minDays} training days`,
+          })
+        }
       }
     }
   }

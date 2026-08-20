@@ -150,6 +150,32 @@ export const GENERATION_CONFIG = {
   QUALITY_SESSION_PCT_OF_WEEKLY:    18,
   SECONDARY_QUALITY_PCT_OF_PRIMARY: 80,
 
+  // CoachingPrinciples §8 (CD-20 / SC-01, 2026-08-20) — a second quality session
+  // requires at least this many training days in the week.
+  //
+  // DERIVED, not chosen. With the two constants above, quality consumes
+  // 18% + (18% × 80%) = 32.4% of weekly volume. The remainder, 67.6%, must fit
+  // into the long run plus the easy slots, and easy is capped at
+  // longKm / LONG_RUN_MIN_RATIO_VS_EASY = 0.8 × long (§9 — the long run stays
+  // the longest run of the week):
+  //
+  //   4 days → long + 1 easy  ≤ 1.8 × long. At a typical long run of ~0.32W
+  //            that reaches ~0.58W against the 0.676W needed — a STRUCTURAL
+  //            shortfall of ~8%, taken entirely out of the easy run. Observed:
+  //            peak fell 57 → 53 km, below the build peak, tripping §23.
+  //   5 days → long + 2 easy  ≤ 2.6 × long. Comfortable. Observed: 57 → 58 km.
+  //
+  // So on four days the week cannot carry two quality sessions without either
+  // breaking §9 or under-delivering ~8% of its own volume — and the volume it
+  // loses is the easy aerobic work that makes the hard work survivable (Willy),
+  // and which carries a disproportionate share of the bone-loading stimulus for
+  // peri/post-menopausal runners (Sims).
+  //
+  // It is also 3 of 4 sessions hard — 50% by session count, against a 25%
+  // plan-wide ceiling (§1). The old hardcoded candidate-day list was blocking
+  // this by accident; this is the rule that was missing underneath it.
+  MIN_TRAINING_DAYS_FOR_SECOND_QUALITY: 5,
+
   // CoachingPrinciples §8 (CD-3) — quality PROGRESSES across the build. Intensity
   // is held (pace/HR/zone unchanged — §1 polarised); the session grows by
   // DURATION as the block advances. The multiplier is centred on 1.0 across

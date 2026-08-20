@@ -203,6 +203,27 @@ experienced  → 2
 - `GENERATION_CONFIG.QUALITY_SESSION_PCT_OF_WEEKLY = 18` — primary quality session distance as % of weekly volume.
 - `GENERATION_CONFIG.SECONDARY_QUALITY_PCT_OF_PRIMARY = 80` — when two quality sessions are scheduled (peak experienced), the second is 80% of the first. Different stressor profile, slightly less volume.
 
+### A second quality session needs a week long enough to hold it — added 2026-08-20 (CD-20 / SC-01)
+
+**Principle.** The fitness ceiling above caps how many quality sessions a runner may be *given*. This is the second constraint: the **week** must be able to carry it. Below `GENERATION_CONFIG.MIN_TRAINING_DAYS_FOR_SECOND_QUALITY` (**5**) training days, the engine places one quality session regardless of fitness — and **records the decision** rather than leaving a silent absence.
+
+**Why — this is arithmetic, not preference.** Quality consumes `18% + (18% × 80%) = 32.4%` of weekly volume. The remaining 67.6% must fit into the long run plus the easy slots, and easy is capped at `long / 1.25` by §9 (the long run stays the longest run of the week):
+
+| Training days | Capacity | Against 67.6% needed |
+|---|---|---|
+| **4** — long + 1 easy | ≤ 1.8 × long ≈ **58%** of the week | **~8% structural shortfall** |
+| **5** — long + 2 easy | ≤ 2.6 × long ≈ **83%** of the week | comfortable |
+
+On four days the week cannot carry two quality sessions without either breaking §9 or under-delivering ~8% of its own volume. Observed in generation: peak fell 57 → 53 km, below the build peak, tripping §23. On five days volume held (57 → 58 km).
+
+**And the shortfall comes out of the wrong thing.** The only slot left to absorb it is the easy run — the aerobic work that builds the tissue tolerance the hard sessions depend on (Willy), and which carries a disproportionate share of the bone-loading stimulus for peri- and post-menopausal runners (Sims). *Intensity up, easy volume down, same week* is the combination §2 exists to prevent.
+
+It is also **3 of 4 sessions hard — 50% by session count**, against §1's 25% plan-wide ceiling.
+
+**The history matters, because it nearly went the other way.** The engine had no such rule. It was blocking the second session on four-day weeks *by accident*, through a hardcoded candidate-day list that also never considered Friday — so it was simultaneously protecting four-day runners for the wrong reason and denying five-day runners a session they should have had. Fixing the placement defect without adding this rule would have converted a hidden bug into an explicit overload. **A defect that produces the right outcome is still a defect; the fix is to write the rule down, not to keep the bug.**
+
+**Config.** `GENERATION_CONFIG.MIN_TRAINING_DAYS_FOR_SECOND_QUALITY = 5`. Enforced by `INV-PLAN-SECOND-QUALITY-MIN-DAYS`. The withheld decision is recorded on the plan as `rule_adjustments` entry `V8-second-quality-min-days`. §7's 48-hour spacing remains independently binding — this rule never licenses stacked hard days.
+
 ---
 
 ## 9. Long-run rules — fraction of weekly, capped by distance

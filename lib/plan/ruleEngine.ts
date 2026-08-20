@@ -1659,12 +1659,40 @@ function buildWeekSessions(
       })
       used.push(qualDay)
 
-      // Second quality (peak experienced or per TAPER_QUALITY_PER_WEEK if >1)
-      if (qualityCountInPeak > 1 && used.length < daysAvailable) {
-        const qual2Day = firstAvailableDay(['tue', 'thu', 'mon'], blocked, used)
-        if (qual2Day
-          && dayGap(qual2Day, longDay) >= minDaysBetweenQualLong
-          && dayGap(qual2Day, qualDay) >= minDaysBetweenQualities) {
+      // Second quality (peak experienced or per TAPER_QUALITY_PER_WEEK if >1).
+      //
+      // §8 / CD-20 — the week must be long enough to carry it. Below
+      // MIN_TRAINING_DAYS_FOR_SECOND_QUALITY the week cannot hold two quality
+      // sessions without breaking §9's long-vs-easy ratio or losing ~8% of its
+      // own volume out of the easy run. See the config comment for the
+      // arithmetic. This is the rule the hardcoded candidate-day list below was
+      // enforcing by accident.
+      const weekCanCarrySecondQuality =
+        daysAvailable >= GENERATION_CONFIG.MIN_TRAINING_DAYS_FOR_SECOND_QUALITY
+
+      if (qualityCountInPeak > 1 && weekCanCarrySecondQuality && used.length < daysAvailable) {
+        // SC-01 — two defects fixed here; the 48-hour spacing doctrine was fine.
+        //
+        // (1) 'fri' was never a candidate, though the FIRST quality session's
+        //     fallback above considers all five weekdays. For the common shape
+        //     — long run Sunday, first quality Wednesday — Friday is the ONLY
+        //     day satisfying both gaps, so the session was dropped for a
+        //     constraint that did not exist.
+        // (2) The old code took the first FREE day and THEN tested spacing, so
+        //     a failing candidate ended the search instead of advancing. Even
+        //     within ['tue','thu','mon'] only the first free day was ever really
+        //     considered.
+        //
+        // Spacing now filters the candidates and the first survivor wins;
+        // preference order is otherwise unchanged.
+        const qual2Day = firstAvailableDay(
+          (['tue', 'thu', 'mon', 'fri', 'wed'] as Day[]).filter(d =>
+            dayGap(d, longDay) >= minDaysBetweenQualLong
+            && dayGap(d, qualDay) >= minDaysBetweenQualities
+          ),
+          blocked, used,
+        )
+        if (qual2Day) {
           // Second slot prefers a different category for variety: vo2max if first was threshold and vice versa.
           const altCategory: CatalogueCategory = preferredCategory === 'threshold' ? 'vo2max'
             : preferredCategory === 'vo2max' ? 'threshold'
@@ -3129,6 +3157,37 @@ export function generateRulePlan(
   applyV5StimulusProgression(weeks, input.race_distance_km, pace, zones, ruleAdjustments)
   applyV1VolumeQualityStimulusSplit(weeks, pace, ruleAdjustments)
   applyV4LongRunRepeatCeiling(weeks, input, pace, ruleAdjustments)
+
+  // V8 / CD-20 (SC-01) — record the withheld second quality session.
+  //
+  // McMillan's binding amendment: when the engine DECLINES the second quality
+  // session it must be a recorded decision, not a silent absence. Half the W1d
+  // wave exists because things failed quietly — and a four-day runner who asks
+  // why they only get one quality session deserves an answer from the plan
+  // rather than from the source code.
+  {
+    const minDays = GENERATION_CONFIG.MIN_TRAINING_DAYS_FOR_SECOND_QUALITY
+    const trainingDays = Math.min(
+      input.days_available,
+      7 - blockedDays(input).size,
+      GENERATION_CONFIG.MAX_TRAINING_DAYS_PER_WEEK,
+    )
+    if (trainingDays < minDays) {
+      // Only report weeks that would otherwise have carried two — i.e. peak
+      // weeks for an experienced runner. Reporting every week would be noise.
+      const affected = weeks
+        .filter(w => w.phase === 'peak' && w.badge !== 'deload' && intensityFitness === 'experienced')
+        .map(w => w.n)
+      if (affected.length > 0) {
+        ruleAdjustments.push({
+          rule: 'V8-second-quality-min-days',
+          violation: `Peak weeks intend two quality sessions for an experienced runner, but the week has ${trainingDays} training days.`,
+          resolution: `Second quality session withheld (needs ${minDays}). At ${trainingDays} days, a long run plus two quality sessions leaves too little room for easy running — the week would lose volume from the easy run, which is the part that makes the hard work survivable (CoachingPrinciples §8, §9).`,
+          weeks_affected: affected,
+        })
+      }
+    }
+  }
   applyV3HrEstimationNotePropagation(weeks, hrFallback.method, recalibrationWeeks)
   applyV7TaperRationale(weeks, input.race_distance_km)
 
