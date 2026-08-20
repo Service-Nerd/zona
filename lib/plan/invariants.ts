@@ -11,6 +11,8 @@
 
 import type { Plan, GeneratorInput, Session } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
+import { PLAN_SIGNATURES } from './planSignatures'
+import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { isLongRun, isShakeout } from './sessionRole'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
 import { parseDateLocal, formatDate } from './length'
@@ -52,6 +54,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-DIFFICULTY-ANNOTATED',
   'INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE',
   'INV-PLAN-INTENSITY-ORDERING',
+  'INV-PLAN-PHASE-FOCUS-REACHABLE',
   'INV-PLAN-LR-PROGRESSION-CAP',
   'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES',
   'INV-PLAN-PEAK-LR-ALTERNATION',
@@ -1030,6 +1033,41 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         actual: 'comfortable',
         expected: "'demanding' | 'very_demanding'",
       })
+    }
+  }
+
+  // INV-PLAN-PHASE-FOCUS-REACHABLE — a signature may not declare a focus the
+  // catalogue cannot supply (§17, CD-15 / SC-04).
+  //
+  // `PLAN_SIGNATURES['10K'].quality_categories_focus` said ['vo2max',
+  // 'threshold'] while NO threshold row was eligible for 10K. Half the declared
+  // shape of the plan was unreachable, and the engine papered over it by
+  // silently falling back to an aerobic row for the entire build phase. Nothing
+  // compared the declaration against the catalogue, so the signature read as a
+  // statement of intent that no code was obliged to honour.
+  //
+  // This is a catalogue-level property checked per plan, which is the point:
+  // it fires on the FIRST plan generated for a distance whose focus has gone
+  // unreachable, rather than waiting for someone to audit the catalogue.
+  {
+    const sig: { quality_categories_focus?: readonly string[] } | undefined =
+      PLAN_SIGNATURES[distKey as keyof typeof PLAN_SIGNATURES]
+    for (const focus of sig?.quality_categories_focus ?? []) {
+      const reachable = V1_SESSION_CATALOGUE.some(r =>
+        r.category === focus
+        && r.distance_eligibility.includes(distKey as never)
+        && r.phase_eligibility.some(p => p !== 'base'))
+      if (!reachable) {
+        violations.push({
+          code: 'INV-PLAN-PHASE-FOCUS-REACHABLE',
+          principle_ref: 'CoachingPrinciples §17',
+          severity: 'error',
+          week: 0,
+          message: `${distKey} signature declares quality focus '${focus}' but no catalogue session of that category is eligible for ${distKey} outside base phase — the declared plan shape is unreachable`,
+          actual: `0 eligible '${focus}' sessions for ${distKey}`,
+          expected: `≥1 eligible '${focus}' session`,
+        })
+      }
     }
   }
 

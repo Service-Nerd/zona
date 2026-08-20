@@ -344,9 +344,13 @@ enrichment layer (gated via `ai_coach_notes_new`), not the act of regenerating.
 
 **Principle.** Each race distance has a signature: minimum/ideal/maximum weeks, default sessions per week, taper final session, and the catalogue categories that apply.
 
+**A declared focus MUST be reachable (amended 2026-08-20, CD-15 / SC-04).** `quality_categories_focus` is a promise about the plan's shape, not a label. For every distance, each declared focus category MUST have at least one catalogue session eligible for that distance outside base phase. A signature that names a category the catalogue cannot supply is a defect in one of the two, never an acceptable state.
+
 **Why.** A 5K plan and a 100K plan share almost no structure beyond the four-phase shape. The signature captures the differences without forcing them into the engine's branching logic.
 
-**Config.** `lib/plan/planSignatures.ts` — `PLAN_SIGNATURES` keyed by distance.
+**Why reachability had to become a rule.** The 10K signature declared `['vo2max', 'threshold']` while **no threshold session was eligible for 10K at all**. Half the declared shape was unreachable, and the engine did not fail — it silently fell back to an aerobic row for the entire build phase and prescribed it at threshold pace (§19). The signature had become a statement of intent that no code was obliged to honour, and nothing compared the declaration against the catalogue. This is the §34 failure mode applied to plan shape: declared, never exercised.
+
+**Config.** `lib/plan/planSignatures.ts` — `PLAN_SIGNATURES` keyed by distance. Enforced by `INV-PLAN-PHASE-FOCUS-REACHABLE`, which checks the declaration against `V1_SESSION_CATALOGUE` on every generated plan — so an unreachable focus surfaces on the first plan for that distance rather than waiting for an audit.
 
 ---
 
@@ -441,6 +445,8 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. The race-distan
 ## 24b. Long-run structure — 5K/10K peak phase (time-targeted)
 
 **Principle.** For time-targeted 5K and 10K plans, the final two peak weeks embed two pace segments in the long run. The middle 20% of the run is at marathon pace (≈79% VDOT); the final 30% is at HM pace (≈84% VDOT). Both segments must be faster than the aerobic body of the run but substantially slower than race pace — the intent is to teach sustained effort under fatigue, not to simulate 5K race speed. Outside the final two peak weeks, the long run remains purely aerobic.
+
+> **⚠️ Premise correction, 2026-08-20 (CD-15 / SC-04).** The "Why" below was written on the explicit premise that 5K/10K runners *already receive* threshold work — *"all their quality sessions at VO2max or threshold"*. **That premise was never true.** No threshold session was eligible for 5K or 10K until SC-04; those runners were getting VO2max in peak and an aerobic row prescribed at threshold pace in build (§19, SC-02). The board's conflict scan found this, and considered it closer to correcting a false statement in the constitution than to making a new coaching decision. The reasoning below still stands — but it stands *now*, because SC-04 made the premise true, not because it was true when written. **The lesson generalises: a principle can be written describing behaviour that does not exist, and nothing checks it. §17's reachability rule and `INV-PLAN-PHASE-FOCUS-REACHABLE` exist because of this section.**
 
 **Why.** 5K and 10K runners often do all their long runs at Z2 and all their quality sessions at VO2max or threshold — the two extremes, nothing in between. The result is a runner who can grind long or go short-hard but has no ability to hold a sustained faster-than-easy pace at the end of a run when glycogen is depleted. Marathon pace is a physiological stimulus that specifically trains fat oxidation and glycogen economy without the muscle damage of full-race-pace intervals. HM pace at the finish, on tired legs, is the closest transferable simulation for the final 2K of a hard 10K. This is a specificity insertion, not a pace-work session.
 

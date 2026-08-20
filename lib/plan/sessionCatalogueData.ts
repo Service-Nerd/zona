@@ -88,7 +88,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     // cut volume). Previously the only taper variety came from goal_pace_sharpener,
     // which is a time-target-only tool now correctly gated out of finish tapers.
     phase_eligibility: ['build', 'peak', 'taper'],
-    distance_eligibility: ['HM', 'MARATHON', '50K', '100K'],
+    distance_eligibility: ['5K', '10K', 'HM', 'MARATHON', '50K', '100K'],
     fitness_level_min: 'intermediate', difficulty_tier: 3,
     main_set_structure: { type: 'continuous', duration_mins: 30, zone: 'Z3' },
     intensity_zones: ['Z3'],
@@ -99,7 +99,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     id: 'tempo_cruise', name: 'Cruise intervals', category: 'threshold',
     purpose: 'Threshold work in repeats. Same effort on rep 3 as rep 1 — that is the test.',
     phase_eligibility: ['build'],
-    distance_eligibility: ['HM', 'MARATHON', '50K', '100K'],
+    distance_eligibility: ['5K', '10K', 'HM', 'MARATHON', '50K', '100K'],
     fitness_level_min: 'intermediate', difficulty_tier: 3,
     main_set_structure: { type: 'repeats', reps: 3, work: { duration_mins: 10, zone: 'Z3' }, recovery: { duration_mins: 2, type: 'jog' } },
     intensity_zones: ['Z3'],
@@ -107,10 +107,36 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     coach_voice_notes: 'Rep three is the test. Not rep one.',
   },
   {
+    // SC-04 / CD-15 (2026-08-20) — threshold work sized for a runner racing 5K
+    // or 10K. `tempo_cruise` above is 10-minute reps, written marathon-first;
+    // five-minute reps suit the shorter-race runner and the four-day week.
+    //
+    // McMillan's binding amendment: band the rep at 4–12 minutes rather than
+    // fixing it at five, because variety across a block matters more than any
+    // single rep length. The v1 schema cannot express a band (that is SC-08),
+    // so the band is delivered ACROSS ROWS for now: this row's 5-minute reps
+    // and `tempo_cruise`'s 10-minute reps both sit inside 4–12, and the §53
+    // variety rule alternates them. Collapse to one parameterised row when the
+    // v2 structure lands.
+    //
+    // NAME MUST STAY DISTINCT from `tempo_cruise` ("Cruise intervals"). Two
+    // rows sharing a name would break the §53 variety count (it counts labels)
+    // and the display-time structure join (it matches on name — SC-08).
+    id: 'tempo_cruise_short', name: 'Cruise intervals — short', category: 'threshold',
+    purpose: 'Threshold work in repeats, sized for a 5K or 10K. The test is rep four, not rep one.',
+    phase_eligibility: ['build', 'peak'],
+    distance_eligibility: ['5K', '10K'],
+    fitness_level_min: 'intermediate', difficulty_tier: 3,
+    main_set_structure: { type: 'repeats', reps: 4, work: { duration_mins: 5, zone: 'Z3' }, recovery: { duration_secs: 90, type: 'jog' } },
+    intensity_zones: ['Z3'],
+    typical_duration_min: 25, typical_duration_max: 40, is_free_tier: true,
+    coach_voice_notes: 'Rep four is the test. Not rep one.',
+  },
+  {
     id: 'progressive_tempo', name: 'Progressive tempo', category: 'threshold',
     purpose: 'Gradual ramp from aerobic to threshold. Trains discipline at the start, honesty at the end.',
     phase_eligibility: ['build', 'peak', 'taper'],
-    distance_eligibility: ['HM', 'MARATHON', '50K', '100K'],
+    distance_eligibility: ['5K', '10K', 'HM', 'MARATHON', '50K', '100K'],
     fitness_level_min: 'intermediate', difficulty_tier: 3,
     main_set_structure: { type: 'progression', duration_mins: 30, zone_start: 'Z2', zone_end: 'Z3' },
     intensity_zones: ['Z2', 'Z3'],

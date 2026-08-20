@@ -1578,9 +1578,26 @@ function buildWeekSessions(
     // finish runner's odd taper weeks were named "Goal-pace sharpener" over
     // generic threshold pace (§19 violation).
     if (phase === 'taper' && isTimeTarget) {
-      const taperPhase = phases.find(p => p.name === 'taper')!
-      const taperIdx = weekN - taperPhase.start_week
-      if (taperIdx % 2 === 1) {
+      const taperPhase2 = phases.find(p => p.name === 'taper')!
+      const taperIdx2 = weekN - taperPhase2.start_week
+
+      // SC-04 (2026-08-20) — alternation needs at least two sessions to
+      // alternate between. A 5K/10K taper is ~10 days: two weeks, one of which
+      // is race week (no quality, §26). That leaves exactly ONE quality session,
+      // at index 0 — even — which the alternation gives to threshold. The plan
+      // then carries NO race-specific taper work at all, against §5's ladder
+      // (taper = 70% specific) and §22.
+      //
+      // It didn't show before SC-04 only because no threshold row was eligible
+      // for 5K/10K, so the selector's silent fallback handed the slot to the
+      // sharpener anyway. Making threshold reachable removed the accident and
+      // exposed the rule underneath. Restores documented intent — not a new
+      // coaching decision, and deliberately scoped so multi-week tapers keep
+      // their existing parity untouched.
+      const taperQualityWeeks = (totalWeeks - 1) - taperPhase2.start_week + 1
+      const soleTaperQualityWeek = taperQualityWeeks <= 1
+
+      if (soleTaperQualityWeek || taperIdx2 % 2 === 1) {
         preferredCategory = 'race_specific'
         taperForceSharpener = true
       }

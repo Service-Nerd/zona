@@ -2003,7 +2003,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         },
         "wed": {
           "coach_notes": [
-            "Threshold work — the pace you could hold for about an hour. Not a race.",
+            "Rep three is the test. Not rep one.",
             "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.",
           ],
           "detail": null,
@@ -2011,7 +2011,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "duration_mins": 34,
           "hr_target": "146–159 bpm",
           "id": "w5-wed",
-          "label": "Tempo run",
+          "label": "Cruise intervals",
           "pace_target": "4:41–4:55 /km",
           "primary_metric": "distance",
           "rpe_target": 7,
