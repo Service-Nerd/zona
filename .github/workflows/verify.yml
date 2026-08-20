@@ -68,5 +68,22 @@ jobs:
       - name: Property sweep
         run: npm run verify:sweep
 
+      # The build PRERENDERS /dashboard, /auth/login and /auth/reset, each of
+      # which constructs a Supabase client at module scope. Without the two
+      # NEXT_PUBLIC_ vars it throws "Your project's URL and Key are required to
+      # create a Supabase client!" and the step fails — which is exactly what
+      # happened on all 14 runs after CI-VERIFY-01 shipped: every correctness
+      # check passed and only Build was red.
+      #
+      # PLACEHOLDERS, not secrets, and deliberately so. Nothing is fetched at
+      # build time — the client only has to be CONSTRUCTIBLE. Real values would
+      # add a secrets dependency to a job that has no use for them, and a CI
+      # failure caused by a rotated key is a worse outcome than no CI.
+      #
+      # If a future build step genuinely needs to reach Supabase, it needs real
+      # secrets and this comment stops being true.
       - name: Build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key-build-only
         run: npm run build
