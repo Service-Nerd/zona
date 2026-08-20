@@ -112,6 +112,23 @@ export const GENERATION_CONFIG = {
   // pattern this product exists to prevent).
   VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT: 10,
 
+  // VOL-STRUCTURE-01 (§23/§52) — how far the peak phase may fall below the
+  // plan's maximum before the plan is declared unable to progress.
+  //
+  // Measured, not chosen. Inversion distribution across realistic inputs:
+  // min 1.3%, median 4.2%, p75 10.6%, max 15.6%. Below 10% is dominated by
+  // ROUNDING — session distances round to DISTANCE_ROUNDING_PRECISION_KM and a
+  // week holds 3-6 of them — and the invariant's own note already allows a
+  // plateau (holding volume from build through peak is legitimate).
+  //
+  // Above it the plan genuinely does not progress: the traced 10K case
+  // (49km base -> 43km peak) and the 50K case (94 -> 83) both sit at ~12%.
+  //
+  // Ungated, this flipped 45% of realistic plans to "maintenance" including a
+  // 45 km/week runner on four days. Maintenance is for runners who cannot be
+  // built, not for the engine's own rounding.
+  PEAK_INVERSION_MATERIAL_PCT: 10,
+
   // CoachingPrinciples §78 — recalibration weeks prescribe a 5K time trial.
   // The session converts the deload week's midweek easy run (same distance, so
   // weekly volume is unchanged) into warm-up / 5K hard / cool-down. `min_slot_km`

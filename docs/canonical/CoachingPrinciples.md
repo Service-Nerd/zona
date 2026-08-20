@@ -832,6 +832,39 @@ When neither suggestion applies, the diagnosis is surfaced alone (no false guida
 
 ---
 
+## 40d. A plan that cannot progress is labelled, not disguised
+
+*Added 2026-08-20 — Coaching Board (VOL-STRUCTURE-01).*
+
+**Principle.** When a runner's volume cannot be **structured** within their available days, the plan is declared **maintenance** and says why. Below a materiality line, a peak phase sitting slightly under the plan's maximum is a **plateau**, not a failure, and §23 tolerates it.
+
+**Why.** 33% of realistic plans peaked *below their own base phase* — they detrained the runner and said nothing.
+
+Traced (10K, 3 days, 60 km/wk): base weeks ran a 19 km long run at **119 of a 120-minute cap** plus two 15 km easy runs = 49 km. A quality session then **displaced a 15 km easy run with a ~9 km session**, and neither remaining slot could absorb the 6 km — the long run pinned at `LONG_RUN_CAP_MINUTES`, the easy runs capped at `long / LONG_RUN_MIN_RATIO_VS_EASY` (§9). **The volume fell out of the structure, not out of a coaching decision.**
+
+Incidence scales with volume per available day: **4%** at ≤8 km/day, **53%** at 13–16, **73%** at 17+.
+
+**The charitable reading was rejected.** A 60 km/week runner training for a 10K arguably *should* be cut. But a defensible reduction and an accidental one produce the same number, and the engine gave no evidence of intent — so §23 stands and the engine was at fault.
+
+**Two fixes were built and rejected, both on measurement. Recorded so they are not retried:**
+
+| Attempt | Result |
+|---|---|
+| Declare every inversion `maintenance` | Cleared all 1080 violations — and flipped **45% of realistic plans**, including a 45 km/week runner on four days. Relabelling at scale. |
+| Clamp the volume curve to what a week can hold | **Net negative:** +118 peak violations, +43 long-run-share, and **636 new §1 breaches** — cutting volume raises the quality *share*. |
+
+**What ships: one number, two mechanisms, no gap.** `PEAK_INVERSION_MATERIAL_PCT` (10) is simultaneously §23's plateau tolerance and §52's fourth maintenance trigger. Below it, tolerated; at or above it, declared. Nothing falls between them.
+
+**The line is measured, not chosen.** Inversion distribution across realistic inputs: min 1.3%, **median 4.2%**, p75 10.6%, max 15.6%. **86% of the violations were under 10%** — rounding across 3–6 sessions a week, and §23's own note already allows holding volume from build through peak. The genuinely alarming cases — the traced 49→43 and a 50K at 94→83 — both sit at ~12%.
+
+**Result:** maintenance now fires on **12%** of realistic plans rather than 45%, and correctly concentrated — 2% at ≤8 km per available day, 44% at 17+.
+
+**The note names the lever** (§40c's rule): days, not effort. **The caps do not move** — `LONG_RUN_CAP_MINUTES` and §9 are both correct.
+
+**Config.** `GENERATION_CONFIG.PEAK_INVERSION_MATERIAL_PCT = 10`. Enforced by `INV-PLAN-PEAK-IN-PEAK-PHASE` (tolerance) and §52's structural trigger (declaration).
+
+---
+
 ## 40c. A suppressed target is stated, never absorbed
 
 *Added 2026-08-20 — Coaching Board (VOL-SHORTFALL-01), unanimous.*

@@ -2030,11 +2030,27 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     const peakPhase = nonDeload.filter(w => w.phase === 'peak')
     if (nonDeload.length > 1 && peakPhase.length > 0) {
       const maxKm = Math.max(...nonDeload.map(w => w.weekly_km))
+      // PLATEAU TOLERANCE (VOL-STRUCTURE-01, 2026-08-20). The peak phase must
+      // reach the plan's maximum WITHIN PEAK_INVERSION_MATERIAL_PCT.
+      //
+      // This assertion was absolute, and 86% of the violations it produced were
+      // inversions of less than 10% — the measured distribution is min 1.3%,
+      // median 4.2%. That band is rounding and plateau, not a coaching failure:
+      // session distances round to DISTANCE_ROUNDING_PRECISION_KM across 3-6
+      // sessions a week, and this invariant's own note already allows holding
+      // volume from build through peak as legitimate.
+      //
+      // NOTHING IS LEFT UNGUARDED, which is the point. The same numeric is the
+      // §52 trigger: an inversion at or above it makes the plan `maintenance`
+      // with a note explaining that the runner's volume cannot be built on
+      // within their available days. Below it, tolerated here; at or above it,
+      // declared there. Two mechanisms, one number, no gap between them.
+      const plateauTolerance = 1 - GENERATION_CONFIG.PEAK_INVERSION_MATERIAL_PCT / 100
       // The assertion is that the peak phase REACHES the plan's maximum — not
       // that the maximum occurs there first. Hitting the ceiling in build and
       // holding it through peak is a legitimate plateau, and an earlier-first
       // occurrence is not evidence of the ratchet this guards against.
-      const peakPhaseReachesMax = peakPhase.some(w => w.weekly_km >= maxKm)
+      const peakPhaseReachesMax = peakPhase.some(w => w.weekly_km >= maxKm * plateauTolerance)
       if (!peakPhaseReachesMax) {
         const highest = nonDeload.find(w => w.weekly_km === maxKm)!
         const peakPhaseMax = Math.max(...peakPhase.map(w => w.weekly_km))

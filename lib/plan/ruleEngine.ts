@@ -3706,6 +3706,80 @@ export function generateRulePlan(
       }. Plan maintains current fitness rather than building it. To enable a build profile: increase days_available to ${Math.max(daysCheck.days_required_ok, 3)}.`
     : null
 
+  // VOL-STRUCTURE-01 / §52 (fourth trigger, 2026-08-20) — the runner's volume
+  // cannot be STRUCTURED within their available days.
+  //
+  // Detected by OUTCOME rather than by proxy: if the peak phase's biggest week
+  // is smaller than the base phase's biggest week, the plan does not progress —
+  // whatever the volume curve intended.
+  //
+  // Measured on realistic inputs (long run 20-60% of weekly volume, i.e. a
+  // runner whose numbers are internally consistent), this fired on 33% of
+  // plans, rising with volume-per-available-day: 4% at <=8 km/day, 53% at
+  // 13-16, 73% at 17+. Those runners were handed a plan that peaks BELOW where
+  // they started — it detrains them — and it said nothing.
+  //
+  // The mechanism, traced (10K, 3 days, 60 km/wk): base weeks run a 19km long
+  // run at 119 of a 120-minute cap plus two 15km easy runs = 49km. A quality
+  // session then DISPLACES a 15km easy run with a ~9km session, and neither
+  // remaining slot can absorb the 6km — the long run is pinned at
+  // LONG_RUN_CAP_MINUTES and easy is capped at long / LONG_RUN_MIN_RATIO_VS_EASY
+  // (§9). The volume falls out of the STRUCTURE, not out of a coaching decision.
+  //
+  // The board rejected the charitable reading — that this is a deliberate
+  // volume cut for a short race. A defensible reduction and an accidental one
+  // produce the same number, and the engine gives no evidence of intent
+  // (Hutchinson). The caps do not move; both are correct (Willy).
+  //
+  // Same treatment §52 already gives a 2-day week: maintenance profile plus an
+  // honest note. Same condition — volume that will not fit the days — detected
+  // by result instead of by day count.
+  const structuralPeakInversion = (() => {
+    // FILTER MUST MATCH INV-PLAN-PEAK-IN-PEAK-PHASE EXACTLY. A first version
+    // also excluded badge-deload weeks; the invariant excludes by `type` only,
+    // so a badge-deload week with high volume counted toward the invariant's
+    // maximum and not toward this detection — leaving 338 of 1080 violations
+    // standing. Two filters for one question is how they drift.
+    const nonDeload = weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
+    const maxOf = (phase: string) => {
+      const ws = nonDeload.filter(w => w.phase === phase)
+      return ws.length > 0 ? Math.max(...ws.map(w => w.weekly_km)) : 0
+    }
+    const peakMax = maxOf('peak')
+    if (peakMax <= 0) return null
+
+    // EXACTLY §23'S OWN COMPARISON: does the peak phase reach the plan's
+    // maximum? Not a re-derivation of it.
+    //
+    // Two narrower versions failed here and both failures were instructive.
+    // Comparing base-vs-peak left 828 of 1080 violations standing, because the
+    // commonest shape is a BUILD week on top. Adding build left 338, because
+    // the next commonest is a TAPER week on top — the delivered taper exceeding
+    // the delivered peak, since the taper's smaller targets are achievable
+    // where the peak's are not. Same root cause wearing three shapes.
+    //
+    // Deriving the condition twice is how a detection and its invariant drift.
+    // This asks the invariant's question verbatim.
+    const planMax = Math.max(0, ...nonDeload.map(w => w.weekly_km))
+    if (planMax <= 0 || peakMax >= planMax) return null
+
+    // MATERIALITY GATE. Measured across realistic inputs, the inversion
+    // distribution is min 1.3% / median 4.2% / p75 10.6% / max 15.6%. Most of it
+    // is ROUNDING — session distances round to 0.5km and a week holds 3-6
+    // sessions, so +/-1-2km of noise is structural, not a coaching failure.
+    //
+    // Without this gate a first implementation flipped 45% of realistic plans to
+    // "maintenance", including a 45 km/week runner on four days. That is
+    // relabelling at scale, not a fix: maintenance is for runners who genuinely
+    // cannot be built, not for the engine's own rounding.
+    //
+    // Above the gate the plan really does not progress — the traced 49->43 and
+    // the 50K 94->83 both sit at ~12%.
+    const inversionPct = ((planMax - peakMax) / planMax) * 100
+    if (inversionPct < GENERATION_CONFIG.PEAK_INVERSION_MATERIAL_PCT) return null
+    return { baseMax: planMax, peakMax, lostKm: planMax - peakMax }
+  })()
+
   // VOL-SHORTFALL-01 / §40c — did a life-first constraint materially suppress
   // the peak week?
   //
@@ -3799,12 +3873,26 @@ export function generateRulePlan(
   })()
 
   // Compose final values. §23's note wins (more specific) when both trigger.
+  // VOL-STRUCTURE-01 — the honest note for a plan that cannot progress.
+  //
+  // Names the LEVER, per §40c's rule: a note that only reports the loss is a
+  // disclaimer. More days is the honest first lever, because the defect scales
+  // with volume-per-available-day — 4% at <=8 km/day against 73% at 17+.
+  const structuralNote: string | null = structuralPeakInversion
+    ? `Plan generated as maintenance — ${input.current_weekly_km}km a week across ${input.days_available} day${input.days_available === 1 ? '' : 's'} cannot be built on. The long run is already at its time cap and the easy runs are capped against it, so adding a quality session takes volume out of the week rather than adding to it: this plan peaks at ${Math.round(structuralPeakInversion.peakMax)}km against ${Math.round(structuralPeakInversion.baseMax)}km earlier in the plan. It maintains your fitness rather than building it. The lever is days, not effort — ${input.days_available + 1} running days would let the same volume progress.`
+    : null
+
   const finalVolumeProfile: 'build' | 'maintenance' | undefined =
-    (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance)
+    (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance || structuralPeakInversion)
       ? 'maintenance'
       : peakOverloadResult?.volume_profile  // 'build' or undefined
+  // Order matters: the more specific diagnosis wins. A structural inversion
+  // explains WHY the volume will not fit, where the day-count note only says
+  // the day count is low — and a runner on 5 days with 80km hits the former
+  // without tripping the latter at all.
   const finalVolumeNote: string | undefined =
-    peakOverloadResult?.volume_constraint_note ?? (daysLowMaintenance ? daysLowNote ?? undefined : undefined)
+    structuralNote ?? peakOverloadResult?.volume_constraint_note
+      ?? (daysLowMaintenance ? daysLowNote ?? undefined : undefined)
 
   // CoachingPrinciples §31 — persona-aware compression classification. Computed
   // here (not inline in meta) so the difficulty band below reads the SAME value,

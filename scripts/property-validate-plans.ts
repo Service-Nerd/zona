@@ -229,6 +229,13 @@ let refused = 0
 let violatingPlans = 0
 let hardFailures = 0
 const violationsByCode = new Map<string, number>()
+
+// SWEEP_EXPLAIN=<CODE> — dump the first few real examples of one violation code,
+// with the input that produced them. Added while triaging the baseline: knowing
+// a code fires 338 times is useless without knowing WHICH SHAPE fires it, and
+// re-deriving a matching grid by hand is how the wrong mechanism gets blamed.
+const EXPLAIN = process.env.SWEEP_EXPLAIN
+const explained: string[] = []
 const samples: { input: any, violation: Violation }[] = []
 const hardFailureSamples: { input: any, message: string }[] = []
 
@@ -255,6 +262,18 @@ for (const input of inputs) {
   const errors = validatePlan(plan, input).filter(v => v.severity === 'error')
   if (errors.length > 0) {
     violatingPlans++
+    if (EXPLAIN && explained.length < 5) {
+      for (const v of errors.filter(e => e.code === EXPLAIN)) {
+        explained.push(
+          `  ${v.message}\n     input: ${JSON.stringify({
+            race_distance_km: input.race_distance_km, goal: input.goal,
+            days_available: input.days_available, current_weekly_km: input.current_weekly_km,
+            longest_recent_run_km: input.longest_recent_run_km, fitness_level: input.fitness_level,
+            max_weekday_mins: input.max_weekday_mins, injury_history: input.injury_history,
+          })}\n     volume_profile: ${plan.meta?.volume_profile ?? '-'}`)
+        break
+      }
+    }
     for (const v of errors) {
       violationsByCode.set(v.code, (violationsByCode.get(v.code) ?? 0) + 1)
       if (samples.length < 5) samples.push({ input, violation: v })
@@ -305,7 +324,11 @@ if (hardFailures > 0) {
 const BASELINE: Record<string, number> = {
   // 1116 -> 1080 on 2026-08-20: SC-07's build rotation fixed 36 of these as a
   // side effect. Lowered to lock the improvement in, per the note above.
-  'INV-PLAN-PEAK-IN-PEAK-PHASE':       1080,
+  // 1116 -> 1080 (SC-07) -> 0 (VOL-STRUCTURE-01, 2026-08-20). Removed entirely:
+  // material inversions now declare maintenance, sub-material ones are tolerated
+  // as a plateau. Kept as an explicit 0 rather than deleted, so a regression
+  // reads as "NEW" against a stated expectation.
+  'INV-PLAN-PEAK-IN-PEAK-PHASE':          0,
   'INV-PLAN-LR-PROGRESSION-CAP':        981,
   'INV-PLAN-MIN-SESSION-SIZE':          211,
   'INV-PLAN-QUALITY-VARIETY-FULL-PLAN':  87,
@@ -344,6 +367,12 @@ if (violationsByCode.size > 0) {
   for (const [code, n] of Array.from(violationsByCode.entries()).sort((a, b) => b[1] - a[1])) {
     console.log(`  ${code}: ${n}`)
   }
+  console.log()
+}
+
+if (EXPLAIN) {
+  console.log(`\nExamples of ${EXPLAIN}:`)
+  explained.forEach(e => console.log(e))
   console.log()
 }
 
