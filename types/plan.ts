@@ -1,3 +1,4 @@
+import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 // ─── Benchmark input ──────────────────────────────────────────────────────────
 // Used to derive VDOT and accurate training paces (Jack Daniels model).
 // 'race': any recent race result. 'tt_30min': distance covered in a 30-minute time trial.
@@ -128,6 +129,18 @@ export interface Session {
    *  them; consumers fall back to the name match via
    *  lib/plan/catalogueLink.ts. */
   catalogue_id?: string
+  /** SC-08b — the concrete set this runner does, resolved from a v2 catalogue
+   *  row at generation time.
+   *
+   *  `catalogue_id` says WHICH row; this says WHAT this runner actually does.
+   *  Both are needed: a row is shared across runners, so it cannot hold both
+   *  "4 × 1000 m" and one runner's numbers, and re-deriving in the client would
+   *  put generation logic on the display side.
+   *
+   *  Present only for sessions produced from a `version: 2` row. Absent for
+   *  every v1 row, which keeps v1 semantics forever (D-03). Shape:
+   *  lib/plan/resolveMainSet.ts → DerivedSet. */
+  derived_set?: DerivedSet
   label: string
   /** Legacy free-text display field. Kept for backward compat with hand-authored gists.
    *  Generator writes structured fields below instead. App prefers structured when present. */

@@ -18,6 +18,8 @@ import { validatePlan, formatViolations } from './invariants'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
 import { isLongRun, isShakeout, classifyStimulus } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
+import { isV2Structure, StructureV2Schema } from './sessionStructureV2'
+import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
 import {
   V1_SESSION_CATALOGUE, selectCatalogueSession,
   type SessionCatalogueRow, type CatalogueCategory,
@@ -749,6 +751,30 @@ function makeQualitySession(args: {
 }): Session {
   const { weekN, day, distKm, metric, zones, pace, catalogueRow, phase, fitness, isDeload, goalPace, goalPaceWeek, distLabel, cueCtx } = args
 
+  // SC-08b — resolve a v2 row's shape against this runner's paces.
+  //
+  // ANCHORS RESOLVE TO PACES HERE AND NOWHERE ELSE. A catalogue row never
+  // contains a number; the runner's own paces supply them. Anchors that do not
+  // apply to this runner are simply absent — a beginner has no marathon pace,
+  // and `goal` exists only for a time target — and resolveMainSet degrades the
+  // step to its zone or RPE rather than inventing a figure.
+  const derivedSet = (() => {
+    if (!catalogueRow || !isV2Structure(catalogueRow.main_set_structure)) return null
+    const parsed = StructureV2Schema.safeParse(catalogueRow.main_set_structure)
+    // A malformed v2 row is a data defect caught by INV-CAT-V2-WELL-FORMED at
+    // the catalogue level. Failing soft here keeps generation working (ADR-006's
+    // posture) rather than denying a runner a plan over a bad row.
+    if (!parsed.success) return null
+    const anchors: PaceAnchorMap = {
+      E: pace.easyPaceStr,
+      T: pace.qualityPaceStr,
+      I: pace.intervalPaceStr,
+      ...(pace.marathonPaceStr ? { M: pace.marathonPaceStr } : {}),
+      ...(goalPace ? { goal: goalPace } : {}),
+    }
+    return resolveMainSet(parsed.data, { anchors, easyPaceStr: pace.easyPaceStr })
+  })()
+
   // Fallback label if no catalogue row matched (e.g. 5K/10K taper week).
   const fallbackLabel = phase === 'taper' ? 'Tempo run — short'
     : phase === 'peak' && fitness !== 'experienced' ? 'Cruise intervals'
@@ -898,6 +924,10 @@ function makeQualitySession(args: {
     // showed the runner no rep structure, because the display re-joined by
     // LABEL and §22 renames race-pace sessions.
     ...(catalogueRow ? { catalogue_id: catalogueRow.id } : {}),
+    // SC-08b — for a v2 row, resolve the shape into THIS runner's concrete set.
+    // v1 rows produce nothing here and keep v1 semantics forever (D-03), so
+    // this is inert until a v2 row exists.
+    ...(derivedSet ? { derived_set: derivedSet } : {}),
   }
 }
 

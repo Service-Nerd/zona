@@ -24,6 +24,12 @@ export const SessionSchema = z.object({
   // SC-08a — identity of the catalogue row that produced this session, so the
   // rep structure survives renaming and enrichment. See types/plan.ts.
   catalogue_id:   z.string().optional(),
+  // SC-08b — the resolved set for THIS runner, from a v2 row. Structural, not
+  // display: the enricher cannot reach it (EnrichedWeekSchema exposes only
+  // label + coach_notes). Loosely typed here on purpose — DerivedSet is owned
+  // by lib/plan/resolveMainSet.ts and validated there; duplicating its shape in
+  // Zod would create a second owner to drift (D-08).
+  derived_set:    z.unknown().optional(),
   label:          z.string(),
   detail:         z.string().nullable(),
   distance_km:    z.number().nonnegative().optional(),

@@ -1,3 +1,5 @@
+import { describeDerivedSet, type DerivedSet } from './resolveMainSet'
+import { z } from 'zod'
 // FREE — infrastructure
 // Universal run format composer (CoachingPrinciples §16, ADR-009).
 //
@@ -181,7 +183,44 @@ function catalogueShapeFor(row: SessionCatalogueRow | null | undefined): Session
   return 'quality_continuous'
 }
 
+// The session stores `derived_set` as `unknown` (schema.ts keeps DerivedSet's
+// shape owned by resolveMainSet.ts rather than duplicating it in Zod — D-08).
+// This is the narrow runtime guard for reading it back at the display boundary.
+const DerivedSetSchema = z.object({
+  version: z.literal(2),
+  blocks: z.array(z.object({
+    repeat: z.number(),
+    label: z.string().optional(),
+    steps: z.array(z.object({
+      role: z.enum(['work', 'recovery', 'transition']),
+      modality: z.enum(['run', 'jog', 'walk', 'stand', 'hike']),
+      terrain: z.enum(['flat', 'uphill', 'downhill', 'rolling']).optional(),
+      length: z.string(),
+      pace: z.string().nullable(),
+      pace_mode: z.enum(['target', 'ceiling', 'floor']).optional(),
+      zone: z.string().optional(),
+      rpe: z.number().optional(),
+      advance: z.enum(['auto', 'manual']),
+      note: z.string().optional(),
+    })),
+  })),
+}) satisfies z.ZodType<unknown>
+
 function mainSetDescription(row: SessionCatalogueRow | null | undefined, session: Session): string {
+  // SC-08b — a v2 session carries the set RESOLVED FOR THIS RUNNER, so it takes
+  // precedence over anything derived from the shared row. The row's v1 text is
+  // generic by construction ("4 × 1000m @ 5K pace"); the derived set has this
+  // runner's actual paces in it.
+  //
+  // Everything below stays exactly as it was for v1 rows — D-03: old shapes are
+  // never silently reinterpreted.
+  if (session.derived_set) {
+    const parsed = DerivedSetSchema.safeParse(session.derived_set)
+    if (parsed.success) return `${describeDerivedSet(parsed.data)}.`
+    // Malformed derived set: fall through to the v1 path rather than render
+    // nothing. INV-PLAN-DERIVED-SET catches it at generation.
+  }
+
   if (!row) {
     // Fallback: use catalogue purpose if available, else zone-only generic.
     return session.label ?? 'Quality main set.'

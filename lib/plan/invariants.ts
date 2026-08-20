@@ -15,6 +15,7 @@ import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { isLongRun, isShakeout, classifyStimulus } from './sessionRole'
 import { mainSetMinutes } from './sessionFormat'
+import { isV2Structure } from './sessionStructureV2'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
 import { parseDateLocal, formatDate } from './length'
 
@@ -25,6 +26,7 @@ export type Severity = 'error' | 'warn'
 // enforced — adding a code here without enforcement (or vice versa) is a defect.
 // (CoachingPrinciples §34, R2/H-04)
 export const INVARIANT_CODES = [
+  'INV-PLAN-DERIVED-SET',
   'INV-PLAN-CATALOGUE-LINK',
   'INV-PLAN-MAIN-SET-ORDERING',
   'INV-PLAN-VO2MAX-ONSET',
@@ -1152,6 +1154,37 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // survived: nothing computed the number, so nobody could see which quantity
   // it was. The value being wrong was downstream of it being unexercised.
   //
+  // INV-PLAN-DERIVED-SET (SC-08b) — a session from a v2 row carries its
+  // resolved set.
+  //
+  // A catalogue row is shared across runners, so it holds the SHAPE
+  // ("reps of this length at this anchor") and never the numbers. The session
+  // holds what THIS runner does. If the row is v2 and the session carries no
+  // derived set, the structure never reached the plan — which is the seventh
+  // gap the 2026-08-19 audit called blocking, and the precise failure ADR-018
+  // and ADR-019 exist to close.
+  //
+  // Inert until a v2 row exists: v1 rows keep v1 semantics forever (D-03).
+  for (const w of plan.weeks) {
+    for (const [day, sn] of Object.entries(w.sessions)) {
+      if (!sn?.catalogue_id) continue
+      const row = V1_SESSION_CATALOGUE.find(r => r.id === sn.catalogue_id)
+      if (!row || !isV2Structure(row.main_set_structure)) continue
+      const derived = sn.derived_set as { blocks?: unknown[] } | undefined
+      if (!derived || !Array.isArray(derived.blocks) || derived.blocks.length === 0) {
+        violations.push({
+          code: 'INV-PLAN-DERIVED-SET',
+          principle_ref: 'ADR-019',
+          severity: 'error',
+          week: w.n, day,
+          message: `Session "${sn.label}" comes from v2 row "${row.id}" but carries no derived_set. The row holds the shape; the session must hold this runner's resolved numbers, or the structure never reaches the runner.`,
+          actual: 'no derived_set',
+          expected: 'resolved DerivedSet with >= 1 block',
+        })
+      }
+    }
+  }
+
   // INV-PLAN-CATALOGUE-LINK (SC-08a) — a session produced from a catalogue row
   // must CARRY that row's identity, not be re-joined to it by name later.
   //
