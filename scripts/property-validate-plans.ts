@@ -32,6 +32,15 @@ const dayOptions: any[] = [
   { days_available: 4, blocked_days: ['tue','thu'] },
   { days_available: 5, blocked_days: ['tue'] },
   { days_available: 7, blocked_days: [] },
+  // SC-01 coverage gap (2026-08-20): every 4- and 5-day row above BLOCKS days,
+  // which narrows day placement and hides defects that only appear when the
+  // scheduler has a free choice. The plainest real shape — "I can run four
+  // days, no constraints" — was absent, so the sweep reported 414,720 clean
+  // plans while a reproducible INV-PLAN-PEAK-IN-PEAK-PHASE violation sat in it.
+  // A grid that only tests constrained weeks is not a property sweep.
+  { days_available: 4, blocked_days: [] },
+  { days_available: 5, blocked_days: [] },
+  { days_available: 6, blocked_days: [] },
 ]
 const fitnessSets = ['beginner', 'intermediate', 'experienced']
 const hardSets = ['love', 'avoid', 'neutral']
@@ -50,6 +59,16 @@ const hrSets: any[] = [
   { label: 'max-only',      hr: { max_hr: TANAKA_AT_35 } },
 ]
 
+// SC-01 coverage gap (2026-08-20): `goal` was never set, so every one of the
+// 414,720 plans ran the `finish` path. `time_target` is what switches on goal
+// pace, the §22 race-specific rename, and the goal-vs-interval pace ladder —
+// i.e. most of what the 2026-08-19 audit found defects in. The sweep's clean
+// bill of health covered none of it.
+const goalSets: any[] = [
+  { label: 'finish',      goal: undefined },
+  { label: 'time_target', goal: 'time_target' },
+]
+
 let totalPlans = 0
 let violatingPlans = 0
 const violationsByCode = new Map<string, number>()
@@ -57,10 +76,12 @@ const samples: { input: any, violation: Violation }[] = []
 
 for (const d of distancesAndDates) for (const cwk of cwks) for (const lrr of lrrs)
 for (const days of dayOptions) for (const f of fitnessSets) for (const hs of hardSets)
-for (const injuries of injurySets) for (const mw of maxWeekdays) for (const hrSet of hrSets) {
+for (const injuries of injurySets) for (const mw of maxWeekdays) for (const hrSet of hrSets)
+for (const g of goalSets) {
   const input: any = { ...baseInput, ...d, current_weekly_km: cwk, longest_recent_run_km: lrr,
     ...days, fitness_level: f, hard_session_relationship: hs,
     injury_history: injuries, max_weekday_mins: mw, ...hrSet.hr,
+    ...(g.goal ? { goal: g.goal } : {}),
   }
   totalPlans++
   let plan
