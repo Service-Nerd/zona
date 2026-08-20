@@ -2,7 +2,7 @@
 
 **Authority**: This document defines the catalogue of concrete training sessions the rule engine may schedule. **The runtime source of truth is `lib/plan/sessionCatalogueData.ts` (`V1_SESSION_CATALOGUE`)** — this document describes the schema, the contents, and the selection rules.
 
-> **⚠️ Corrected 2026-08-20 (SC-00).** This line previously named the Supabase `session_catalogue` table as the runtime source of truth. **That was never true.** No code path has ever read the table; every plan ever generated came from the in-repo constant. The table was seeded once (14 rows) and diverged — the constant holds 16. The table is now **retired**. Do not re-point the engine at it: as it stands that would empty the 5K and 10K taper. Ruling: `docs/decisions/coaching-board-2026-08-19-session-catalogue.md`; evidence: `docs/coaching-review/2026-08-19/session-catalogue-audit.md` § A.0.
+> **⚠️ Corrected 2026-08-20 (SC-00).** This line previously named the Supabase `session_catalogue` table as the runtime source of truth. **That was never true.** No code path has ever read the table; every plan ever generated came from the in-repo constant. The table was seeded once (14 rows) and diverged — the constant now holds 18. The table is now **retired**. Do not re-point the engine at it: as it stands that would empty the 5K and 10K taper. Ruling: `docs/decisions/coaching-board-2026-08-19-session-catalogue.md`; evidence: `docs/coaching-review/2026-08-19/session-catalogue-audit.md` § A.0.
 
 **Related**:
 - `docs/architecture/ADR-010-session-catalogue.md` — why the catalogue exists (amended 2026-08-20)
@@ -18,7 +18,7 @@ The system uses two orthogonal session classifications. Both must remain distinc
 | | Owns | Drives | Lives in |
 |---|---|---|---|
 | **`SessionType`** | The slot kind on the calendar | Card colour, label, the user's at-a-glance read | `types/plan.ts` (TypeScript union) |
-| **Catalogue `category`** | The coaching content of a quality session | Which session goes where, by phase and distance | `session_catalogue.category` (database enum) |
+| **Catalogue `category`** | The coaching content of a quality session | Which session goes where, by phase and distance | `CatalogueCategory` in `lib/plan/sessionCatalogueData.ts` |
 
 A scheduled session in the plan JSON carries a `SessionType` (e.g. `quality`, `intervals`, `long`).
 
@@ -46,6 +46,8 @@ ultra_specific  — long-duration aerobic work for 50K and 100K
 ---
 
 ## Schema
+
+> **Historical (SC-00).** The `CREATE TABLE` below is the retired 2026-04-25 seed, kept as the row-shape reference. The live shape is the `SessionCatalogueRow` TypeScript interface in `lib/plan/sessionCatalogueData.ts`, which mirrors it field for field.
 
 ```sql
 CREATE TABLE session_catalogue (
@@ -90,26 +92,32 @@ Phase 1 specifies the full schema for `main_set_structure` and freezes it before
 
 ---
 
-## V1 catalogue (14 sessions)
+## V1 catalogue (18 sessions)
 
-Phase 1 seeds these 14 rows. `coach_voice_notes` for each is drafted in Phase 1 and shown for explicit user approval before the seed migration is written.
+**These are the rows the engine actually ships**, generated from `lib/plan/sessionCatalogueData.ts` — the runtime source of truth (SC-00; the Supabase table is retired).
+
+> **⚠️ Regenerated 2026-08-20 (SC-00 completion).** This table previously listed the **14-row 2026-04-25 DB seed** and had drifted from what the engine ships in three ways: `goal_pace_sharpener` and `hm_pace_long_run` were never added (generator-only from the start); `tempo_continuous`'s taper eligibility (CD-2) never reached it; and the threshold rows' 5K/10K widening (CD-15/SC-04) plus the two new rows (SC-04, SC-05) landed in code first. **SC-00 corrected this document's authority line but not its contents — which is the same defect one layer down.** Regenerate this table from the constant whenever a row changes; do not hand-edit it.
 
 | # | id | Name | Category | Phases | Distances | Fitness ≥ | Tier | Duration |
 |---|---|---|---|---|---|---|---|---|
-| 1 | `aerobic_steady` | Steady aerobic | aerobic | base, build | all | beginner | T1 | 30–50 min |
-| 2 | `aerobic_hills` | Aerobic with hills | aerobic | base, build | all | intermediate | T2 | 40–60 min |
-| 3 | `fartlek_unstructured` | Unstructured fartlek | aerobic | base | all | intermediate | T2 | 40 min |
-| 4 | `tempo_continuous` | Continuous tempo | threshold | build, peak | HM, MARATHON, 50K, 100K | intermediate | T3 | 20–40 min Z3 block |
-| 5 | `tempo_cruise` | Cruise intervals | threshold | build | HM, MARATHON, 50K, 100K | intermediate | T3 | 3×10 min Z3 / 2 min jog |
-| 6 | `progressive_tempo` | Progressive tempo | threshold | build, peak, taper | HM, MARATHON, 50K, 100K | intermediate | T3 | 30 min Z2→Z3 |
-| 7 | `intervals_classic` | Classic VO2max | vo2max | peak | 5K, 10K | intermediate | T4 | 5×3 min Z4–Z5 / 2 min jog |
-| 8 | `intervals_short` | Short VO2max | vo2max | peak | 5K | intermediate | T4 | 8–12×400m @ 3K pace |
-| 9 | `intervals_long` | Long VO2max | vo2max | peak | 5K, 10K | intermediate | T4 | 4×1000m @ 5K pace / 2 min jog |
-| 10 | `mp_long_run` | Marathon-pace long run | race_specific | peak | MARATHON | intermediate | T4 | long run with final 30–50% at MP |
-| 11 | `hm_pace_intervals` | HM-pace intervals | race_specific | peak | HM | intermediate | T4 | 4×2km @ HM pace / 3 min jog |
-| 12 | `ultra_race_sim` | Ultra race simulation | ultra_specific | peak | 50K, 100K | intermediate | T4 | 2–3hr at slightly above goal ultra pace, fuelling every 25 min |
-| 13 | `back_to_back_long` | Back-to-back long | ultra_specific | build, peak | 50K, 100K | intermediate | T4 | Sat 90 min Z2 + Sun 2–3hr Z2 |
-| 14 | `time_on_feet` | Time on feet | ultra_specific | peak | 100K | intermediate | T5 | 4–6hr easy hike/run mix on race-like terrain |
+| 1 | `aerobic_steady` | Steady aerobic | aerobic | base, build | all | beginner | T1 | Z2 block |
+| 2 | `aerobic_hills` | Aerobic with hills | aerobic | base, build | all | intermediate | T2 | Z2 (hills) block |
+| 3 | `fartlek_unstructured` | Unstructured fartlek | aerobic | base | all | intermediate | T2 | fartlek |
+| 4 | `tempo_continuous` | Continuous tempo | threshold | build, peak, taper | all | intermediate | T3 | 30 min Z3 block |
+| 5 | `tempo_cruise` | Cruise intervals | threshold | build | all | intermediate | T3 | 3×10 min Z3 / 2 min jog |
+| 6 | `tempo_cruise_short` | Cruise intervals — short | threshold | build, peak | 5K, 10K | intermediate | T3 | 4×5 min Z3 / 90s jog |
+| 7 | `progressive_tempo` | Progressive tempo | threshold | build, peak, taper | all | intermediate | T3 | 30 min Z2→Z3 |
+| 8 | `intervals_classic` | Classic VO2max | vo2max | peak | 5K, 10K | intermediate | T4 | 5×3 min Z4_Z5 / 2 min jog |
+| 9 | `intervals_short` | Short VO2max | vo2max | peak | 5K | intermediate | T4 | 10×400m @ 3K pace / 90s jog |
+| 10 | `intervals_long` | Long VO2max | vo2max | peak | 5K, 10K | intermediate | T4 | 4×1000m @ 5K pace / 2 min jog |
+| 11 | `goal_pace_sharpener` | Goal-pace sharpener | race_specific | taper | all | intermediate | T3 | 3×1000m @ goal pace / 90s jog |
+| 12 | `hm_pace_long_run` | Long run with HM-pace finish | race_specific | peak | HM | intermediate | T4 | long_run_with_segment |
+| 13 | `mp_long_run` | Marathon-pace long run | race_specific | peak | MARATHON | intermediate | T4 | long_run_with_segment |
+| 14 | `hm_pace_intervals` | HM-pace intervals | race_specific | peak | HM | intermediate | T4 | 4×2000m @ HM pace / 3 min jog |
+| 15 | `tenk_pace_intervals` | 10K-pace intervals | race_specific | peak, taper | 10K | intermediate | T4 | 4×1200m @ goal pace / 2 min jog |
+| 16 | `ultra_race_sim` | Ultra race simulation | ultra_specific | peak | 50K, 100K | intermediate | T4 | long_run_with_fuelling |
+| 17 | `back_to_back_long` | Back-to-back long | ultra_specific | build, peak | 50K, 100K | intermediate | T4 | back_to_back |
+| 18 | `time_on_feet` | Time on feet | ultra_specific | peak | 100K | intermediate | T5 | time_on_feet |
 
 **Free vs paid:** rows 12, 13, 14 (ultra-specific) are `is_free_tier = false`. Free users requesting an ultra plan are blocked at the API layer (Phase 6 feature gate); the engine never reaches a state where it would offer them an ultra session.
 

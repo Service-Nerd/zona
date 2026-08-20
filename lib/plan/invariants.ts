@@ -1059,13 +1059,16 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // for a 10K "race pace sits between threshold and VO2max" — which does not
   // transfer to 5K. If the board disagrees, add a 5K row and this list.
   {
-    const RACE_PACE_DISTINCT_FROM_IPACE = ['10K', 'HM', 'MARATHON']
-    if (isTimeTarget && RACE_PACE_DISTINCT_FROM_IPACE.includes(distKey)) {
+    const distinct: readonly string[] = GENERATION_CONFIG.RACE_PACE_DISTINCT_FROM_INTERVAL_PACE
+    if (isTimeTarget && distinct.includes(distKey)) {
+      // "Its own entry" = a row that does NOT cover every distance the config
+      // knows about. Derived from the config's own distance list rather than a
+      // literal 6, so adding a race distance can never silently invalidate this.
+      const allDistances = Object.keys(GENERATION_CONFIG.INTENSITY_DISTRIBUTION).length
       const hasOwnRaceRow = V1_SESSION_CATALOGUE.some(r =>
         r.category === 'race_specific'
-        && r.distance_eligibility.includes(distKey as never)
-        // The all-distance generic does not count as "its own" entry.
-        && r.distance_eligibility.length < 6)
+        && (r.distance_eligibility as readonly string[]).includes(distKey)
+        && r.distance_eligibility.length < allDistances)
       if (!hasOwnRaceRow) {
         violations.push({
           code: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE',
@@ -1099,7 +1102,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     for (const focus of sig?.quality_categories_focus ?? []) {
       const reachable = V1_SESSION_CATALOGUE.some(r =>
         r.category === focus
-        && r.distance_eligibility.includes(distKey as never)
+        && (r.distance_eligibility as readonly string[]).includes(distKey)
         && r.phase_eligibility.some(p => p !== 'base'))
       if (!reachable) {
         violations.push({

@@ -151,7 +151,36 @@ export interface PlanMeta {
   // ADR-006); 'pending' on a SAVED plan means the client persisted before
   // final_plan arrived (N8 save race). Absent = generated before this shipped.
   enrichment?: 'applied' | 'failed' | 'skipped' | 'pending'
+
+  // §44 — ordinal demand label on every generated plan. FREE. A *pre-generation
+  // feasibility* read of the runner's chosen timeline and constraints — NOT a
+  // quality judgement on the produced plan (that is the PAID confidence score;
+  // SLT boundary 2026-08-18). `difficulty_note` present only for the two
+  // demanding tiers. Enforced by INV-PLAN-DIFFICULTY-ANNOTATED and
+  // INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE.
+  difficulty_band?: 'comfortable' | 'demanding' | 'very_demanding'
+  difficulty_note?: string
+
+  // §83 / CD-16 (SC-06, 2026-08-20) — the runner's stated target pace is faster
+  // than the interval pace their benchmark supports, so the sessions labelled
+  // VO2max are prescribed SLOWER than those labelled race pace. The plan cannot
+  // be executed as written by both pace and heart rate. Derived from inputs
+  // (target vs benchmark) before any session exists, so it stays on the
+  // feasibility side of the §44 boundary above. Enforced by
+  // INV-PLAN-INTENSITY-ORDERING, which requires a plan containing the inversion
+  // to declare it rather than ship silently.
+  goal_beyond_measured_fitness?: boolean
 }
+
+> **Doc-drift note (2026-08-20).** `difficulty_band` / `difficulty_note` shipped
+> 2026-08-18 and were never added here; `goal_beyond_measured_fitness` is added
+> in the same commit that introduces it (M-011). Other `meta` fields set by the
+> generator but not yet documented in this interface — `volume_profile`,
+> `volume_constraint_note`, `prep_time_status`, `prep_time_warning`,
+> `prep_time_alternatives`, `compression_classification`, `vdot`,
+> `vdot_training_anchor`, `goal_pace_per_km`, `rule_adjustments` — are a known
+> gap in this contract, recorded rather than silently carried. `types/plan.ts`
+> is the live shape; this document is behind it.
 
 export interface Phase {
   name: 'base' | 'build' | 'peak' | 'taper'

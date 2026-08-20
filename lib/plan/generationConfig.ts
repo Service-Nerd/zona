@@ -525,6 +525,22 @@ export const GENERATION_CONFIG = {
   // inversion (goal 4:30 vs interval 4:33), so it is caught with margin to spare.
   INTENSITY_ORDERING_TOLERANCE_PCT: 0.5,
 
+  // ── Race-specific ownership (CoachingPrinciples §22, CD-18/SC-05) ───────────
+  // Distances whose race pace is physiologically DISTINCT from interval pace,
+  // and which must therefore own a `race_specific` catalogue session rather than
+  // borrowing the all-distance sharpener or a renamed row.
+  //
+  // 5K is absent on purpose: at 5K, race pace and I-pace largely coincide, so
+  // the VO2max rows already deliver race-specific physiology. CD-18's "who this
+  // affects" aside said 5K has "the identical gap"; the audit grounds the
+  // mismatch in race pace sitting BETWEEN threshold and VO2max for a 10K, which
+  // does not transfer. Flagged to the board in §22 — if they disagree, add '5K'
+  // here and a 5K catalogue row in the same commit.
+  //
+  // 50K/100K are absent because their signature focus is `ultra_specific`, not
+  // `race_specific` (see PLAN_SIGNATURES).
+  RACE_PACE_DISTINCT_FROM_INTERVAL_PACE: ['10K', 'HM', 'MARATHON'] as const,
+
   // Fitness classification config lives in FITNESS_VDOT_THRESHOLDS +
   // FITNESS_VOLUME_THRESHOLDS above (dual-signal, CoachingPrinciples §79). The
   // former single FITNESS_THRESHOLDS key was superseded by GEN-FIX-07/D2 and
