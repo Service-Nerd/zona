@@ -1042,9 +1042,19 @@ function makeQualitySession(args: {
     : [notes[0], notes[1], notes[2]] as [string, string, string]
 
   const rounded = roundDistance(distKm)
+  // CLASSIFY-STIMULUS-01 — stamp the stimulus from the trusted generator label
+  // now, while it is canonical, so the AI enricher rewriting the name later can
+  // never reclassify this session. `label`/`zone` here already reflect every
+  // prescription decision above (the §22 goal-pace rename → "…-pace …", the
+  // effort-governed hill, the aerobic-repurposed threshold), so the label read is
+  // correct at this instant — it is only UNtrustworthy post-enrich, which is
+  // exactly what the stamp defends against. classifyStimulus with no stamp on the
+  // input runs its label heuristic; we freeze that answer onto the session.
+  const stimulus = classifyStimulus({ label, zone })
   return {
     id: `w${weekN}-${day}`,
     type: 'quality', label, detail: null,
+    ...(stimulus ? { stimulus } : {}),
     ...(metric === 'distance' ? { distance_km: rounded } : {}),
     duration_mins: dur(rounded, minPerKm),
     primary_metric: metric,

@@ -141,6 +141,20 @@ export interface Session {
    *  every v1 row, which keeps v1 semantics forever (D-03). Shape:
    *  lib/plan/resolveMainSet.ts → DerivedSet. */
   derived_set?: DerivedSet
+  /** CLASSIFY-STIMULUS-01 — the STIMULUS this quality session delivers, the axis
+   *  `STIMULUS_RANK` orders (progression, VO2max onset, V5 regression escalation).
+   *
+   *  `classifyStimulus` (lib/plan/sessionRole.ts) is the single owner of this
+   *  signal, and it read the display `label` — the D-17 anti-pattern. A §22
+   *  goal-pace rename or an AI-enricher edit could silently reclassify a session
+   *  and, via post-enrich re-validation, misfire the coaching logic. Stamped from
+   *  the TRUSTED generator label at construction and frozen here — NOT derived
+   *  from `catalogue_id` → row.category, which would mis-map a threshold row
+   *  re-prescribed at goal pace as `tempo` instead of `race_pace`. Same remedy as
+   *  `role`/`catalogue_id`; the enricher cannot set it (EnrichedWeekSchema exposes
+   *  only label + coach_notes). Absent on legacy plans → consumers fall back to
+   *  the label heuristic. */
+  stimulus?: 'strides' | 'easy' | 'steady_aerobic' | 'hills' | 'tempo' | 'race_pace' | 'vo2max'
   label: string
   /** Legacy free-text display field. Kept for backward compat with hand-authored gists.
    *  Generator writes structured fields below instead. App prefers structured when present. */

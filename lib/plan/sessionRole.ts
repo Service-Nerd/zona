@@ -53,17 +53,19 @@ export function coachingSessionType(s: ClassifiableSession): string {
  * third copy is precisely the drift D-17 warns about — so it lives with the
  * other classifiers instead.
  *
- * KNOWN LIMITATION, recorded rather than hidden: this still reads the display
- * label, which D-17 says never to couple logic to. It is mitigated by also
- * reading `zone` for VO2max (the unambiguous case), but a label-driven stimulus
- * classifier can be broken by the AI enricher rewriting a session name. The
- * structural fix is a stamped `stimulus` field at construction, the same remedy
- * `role` applied to the long run. Tracked as CLASSIFY-STIMULUS-01; not widened
- * here because SC-07 must not silently become a schema change.
+ * CLASSIFY-STIMULUS-01 (2026-08-21) — the generator now stamps `Session.stimulus`
+ * at construction and this reads it first, the same remedy `role` applied to the
+ * long run. The label heuristic below is the LEGACY FALLBACK: plans generated
+ * before the stamp, and the case D-17 warns about — an AI enricher rewriting a
+ * session name can no longer reclassify a stamped session. The stamp is taken
+ * from the trusted generator label (never `catalogue_id` → row.category, which
+ * would mis-map a threshold row re-prescribed at goal pace as `tempo` rather than
+ * `race_pace` — §22 makes those two things different on purpose).
  */
 export function classifyStimulus(
-  session: { label?: string | null; zone?: string | null },
+  session: { label?: string | null; zone?: string | null; stimulus?: keyof typeof GENERATION_CONFIG.STIMULUS_RANK },
 ): keyof typeof GENERATION_CONFIG.STIMULUS_RANK | null {
+  if (session.stimulus) return session.stimulus
   const label = (session.label ?? '').toLowerCase()
   const zone  = (session.zone  ?? '').toLowerCase()
   // VO2max is unambiguous — drives off both label and zone.

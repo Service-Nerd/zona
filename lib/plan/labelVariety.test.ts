@@ -92,7 +92,7 @@ describe('LABEL-VARIETY-01 — peak goal-pace labels are distinguished by row sh
     // Build overrides all read "…-pace progression"; taper all "…-pace sharpener".
     // Anything else would mean a shape word leaked outside peak and could collide
     // with the other phase's word (the §53 cross-phase merge this fix avoids).
-    for (const w of wordsIn('build')) expect(w).toBe('progression')
-    for (const w of wordsIn('taper')) expect(w).toBe('sharpener')
+    for (const w of Array.from(wordsIn('build'))) expect(w).toBe('progression')
+    for (const w of Array.from(wordsIn('taper'))) expect(w).toBe('sharpener')
   })
 })
