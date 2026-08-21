@@ -295,6 +295,18 @@ export const GENERATION_CONFIG = {
   QUALITY_SESSION_PCT_OF_WEEKLY:    18,
   SECONDARY_QUALITY_PCT_OF_PRIMARY: 80,
 
+  // VO2max main-set ceiling, in minutes (CoachingPrinciples §8, SC-10 / CD-14,
+  // Coaching Board 2026-08-21). VO2max is the least sustainable work per minute,
+  // so its main set is capped ABSOLUTELY — decoupled from weekly volume, which is
+  // what let the flat 18% share inflate it to a p50 of 25 min and grow it into
+  // peak (the worst place for accumulated fatigue). 20 min is ~6×3 or 5×4 at true
+  // I-pace: a real dose, deliberately below elite tolerance because the user is
+  // not an elite (Hutchinson), and set to protect the slowest-recovering runner
+  // since the ceiling cannot yet be sex- or fitness-aware (Seiler/Sims). A ceiling
+  // caps only the excess; a naturally-short VO2max session is untouched. Applies
+  // to paced flat intervals, NOT effort-governed hills (lower impact, SC-09).
+  VO2MAX_MAIN_SET_MAX_MINS:         20,
+
   // Tolerance on the vo2max < race_specific <= threshold main-set ordering
   // (INV-PLAN-MAIN-SET-ORDERING, §8). GROUNDED IN THE SYSTEM'S OWN GRANULARITY,
   // not chosen to make a plan pass: session distances round to

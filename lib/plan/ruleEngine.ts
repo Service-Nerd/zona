@@ -19,6 +19,7 @@ import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTi
 import { isLongRun, isShakeout, classifyStimulus } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema } from './sessionStructureV2'
+import { durationForMainSet } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
 import {
   V1_SESSION_CATALOGUE, selectCatalogueSession,
@@ -1709,7 +1710,34 @@ function buildWeekSessions(
     }
   }
   const qualKmPerSession = weeklyKm * (qualPct / 100) * qualProgression
-  const totalQualVol     = includeQualityCount * qualKmPerSession
+
+  // SC-10 / CD-14 — VO2max main-set ceiling. Sizing quality as a share of weekly
+  // volume makes the hardest session GROW into peak (§8, measured p50 25 min).
+  // VO2max is the least sustainable per minute, so its main set is capped in
+  // ABSOLUTE minutes, converted to a distance here via I-pace (the pace the flat
+  // vo2max session is priced at — see makeQualitySession). Only the PRIMARY slot
+  // is ever vo2max in practice (peak 5K/10K and the build rotation put vo2max
+  // primary; a second slot is the softer category). The freed distance returns
+  // to the week through the §9 easy redistribution below — VOL-SHORTFALL-01 proved
+  // that preserves total weekly volume, which is why a ceiling succeeds where the
+  // percentage attempt (which was reasoned to lose volume) failed. Effort-governed
+  // hills are priced at easy pace, so this leaves them longer — deliberately, they
+  // are lower impact (SC-09) and not the work this ceiling exists to bound.
+  const primaryCat = preferredQualityCategory(
+    phase, distKey, input.goal === 'time_target', buildRotationIndex, vo2MustOpenBuild)
+  const vo2maxCapKm = durationForMainSet(GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS) / pace.minPerKmInterval
+  const qualKmPrimary = primaryCat === 'vo2max'
+    ? Math.min(qualKmPerSession, vo2maxCapKm)
+    : qualKmPerSession
+  const secondaryFrac    = GENERATION_CONFIG.SECONDARY_QUALITY_PCT_OF_PRIMARY / 100
+  // Per-slot, and ZERO when the week carries no quality (beginners in base, §8) —
+  // the old `count × qualKmPerSession` handled that by multiplying by 0; the
+  // per-slot sum must reproduce it or a phantom quality volume is stolen from the
+  // easy runs (which silently shrank beginner base weeks and flipped a plan's
+  // volume_profile).
+  const totalQualVol     = includeQualityCount === 0
+    ? 0
+    : qualKmPrimary + (includeQualityCount > 1 ? qualKmPerSession * secondaryFrac : 0)
   const easyCount        = Math.max(0, daysAvailable - 1 - includeQualityCount - adjStrength)
 
   let longKm = weeklyKm * (longRunPct / 100)
@@ -1882,7 +1910,7 @@ function buildWeekSessions(
   const minDaysBetweenQualities = Math.ceil(GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY / 24)
 
   if (includeQuality && used.length < daysAvailable) {
-    const qualKm = Math.max(roundDist(qualKmPerSession), minDist.quality)
+    const qualKm = Math.max(roundDist(qualKmPrimary), minDist.quality)
     // CoachingPrinciples §36 — alternate taper category by index so consecutive
     // taper weeks vary their stimulus. Even idx → threshold (default), odd idx
     // → race_specific (sharpener). Race week itself has no quality (§26).
@@ -2023,9 +2051,12 @@ function buildWeekSessions(
             weeklyKm, excludeHillSessions, rowUsage, rowLast,
           })
           const secondaryFraction = GENERATION_CONFIG.SECONDARY_QUALITY_PCT_OF_PRIMARY / 100
+          // SC-10 — size the second (softer) slot off the UNCAPPED base, never the
+          // vo2max-capped primary, so a capped primary doesn't shrink a threshold
+          // second session.
           sessions[qual2Day] = makeQualitySession({
             weekN, day: qual2Day,
-            distKm: Math.max(roundDist(qualKm * secondaryFraction), minDist.secondary_quality),
+            distKm: Math.max(roundDist(qualKmPerSession * secondaryFraction), minDist.secondary_quality),
             metric, zones, pace,
             catalogueRow: cat2, phase, fitness, isDeload, goalPace,
             goalPaceWeek, distLabel: distKey, cueCtx,

@@ -68,3 +68,25 @@ export function mainSetMinutes(durationMins: number): number {
   const cooldown = durationMins * u.cooldown_pct / 100
   return Math.max(0, durationMins - warmup - cooldown)
 }
+
+/**
+ * The inverse of `mainSetMinutes` — the total session duration that yields a given
+ * main set. SC-10 needs it to turn the VO2max main-set ceiling into a distance cap
+ * at sizing time. Lives here so the carve-out and its inverse cannot drift.
+ *
+ * Two branches, matching `mainSetMinutes`. The warm-up FLOOR
+ * (`quality_warmup_min_mins`) binds until the session is long enough that 10% of it
+ * exceeds the floor (~150 min — every real session), so the floored branch is the
+ * operative one:
+ *   main = total − quality_warmup_min_mins − total·cooldown_pct/100
+ */
+export function durationForMainSet(mainSetMins: number): number {
+  const u = SESSION_FORMAT.UNIVERSAL
+  const flooredTotal = (mainSetMins + u.quality_warmup_min_mins) / (1 - u.cooldown_pct / 100)
+  // If the percentage warm-up would exceed the floor, the floor doesn't bind and
+  // the split is purely proportional.
+  if (flooredTotal * u.warmup_pct / 100 > u.quality_warmup_min_mins) {
+    return mainSetMins / (1 - (u.warmup_pct + u.cooldown_pct) / 100)
+  }
+  return flooredTotal
+}

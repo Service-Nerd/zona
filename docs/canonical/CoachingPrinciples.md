@@ -300,27 +300,15 @@ experienced  → 2
 **Quality session sizing:**
 - `GENERATION_CONFIG.QUALITY_SESSION_PCT_OF_WEEKLY = 18` — primary quality session distance as % of weekly volume.
 - `GENERATION_CONFIG.SECONDARY_QUALITY_PCT_OF_PRIMARY = 80` — when two quality sessions are scheduled (peak experienced), the second is 80% of the first. Different stressor profile, slightly less volume.
+- `GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS = 20` — **the VO2max main set is capped in absolute minutes, decoupled from weekly volume** (SC-10 / CD-14, Coaching Board 2026-08-21).
 
-> **⚠️ The flat share inverts the main-set ordering. Known-open defect, measured but not fixed — SC-10 / CD-14, 2026-08-20.**
+> **VO2max main-set ceiling — the CD-14 fix, shipped 2026-08-21.**
 >
-> Every quality session is sized identically, whatever kind it is. That is the CD-1 error one layer down, and it is **not neutral**. Delivered **main set** (session minus the warm-up floor and cool-down — the coaching-meaningful quantity) on the traced 12-week 10K:
+> Sizing every quality session at a flat share of weekly volume is the CD-1 error one layer down, and it is **not neutral**. *Twenty-five minutes of threshold work is a normal session; twenty-five minutes of VO2max work is a race.* Because a share of volume makes every session scale with the week it sits in — and VO2max is scheduled in peak, the biggest weeks — the flat 18% made the hardest session **grow into peak** (measured p50 25 min, p90 35), anti-correlated with the capacity to absorb it (Seiler) and worst for the slower-recovering runner (Sims).
 >
-> | Stimulus | Main set |
-> |---|---|
-> | **vo2max** | W9 **30 min**, W10 **32 min** |
-> | race pace | W6 22 min, W7 26 min |
+> **Why percentages could not fix it, and a ceiling can.** Tuning the VO2max *percentage* (13–17%) was built and rejected at scale — a share of volume cannot express "least sustainable per minute" because it still scales with the week. The fix is an **absolute** ceiling: `VO2MAX_MAIN_SET_MAX_MINS = 20` (~6×3 or 5×4 at true I-pace), applied only to the excess. 20 is deliberately below elite tolerance because the user is not an elite (Hutchinson), and set to protect the slowest-recovering runner since the ceiling cannot yet be sex- or fitness-aware (Seiler/Sims). Freed distance returns to the week as easy running via the §9 redistribution (VOL-SHORTFALL-01 proved that preserves total volume — the mis-diagnosis that had killed the percentage attempt). Applies to **paced flat intervals only**; effort-governed hills/ultra-hikes are lower impact (SC-09) and, for ultras, deliberately long.
 >
-> The coaching truth is the reverse: *twenty-five minutes of threshold work is a normal session; twenty-five minutes of VO2max work is a race.* 32 minutes of continuous Zone 4–5 for a 43-year-old on 57 km/week is roughly a 10K race. And because sizing keys off weekly volume, **the VO2max session grows as volume peaks** — anti-correlated with the capacity to absorb it (Seiler), and worst for peri- and post-menopausal runners whose between-bout recovery is slower (Sims).
->
-> **Why the fix was built and did not ship, and it is not a calibration problem.** Category percentages were implemented and swept across 13–17% for `vo2max`:
->
-> | Value | Result |
-> |---|---|
-> | 13–14% | Peak week falls **below** the build week before it (§23) |
-> | 15% | Passes the canonical 10K case, then fails at scale: **187 ordering breaches, 220 sessions under the size floor, 37 peak inversions** across 18,056 plans |
-> | 17% | Ordering breaks outright |
->
-> **The conclusion is about CD-14's premise, not its percentages.** Sizing quality as a *share of weekly volume* cannot express "VO2max is the least sustainable per minute", because share-of-volume makes every session scale with the week it sits in — and VO2max is scheduled in peak, the biggest weeks of all. **The main set needs sizing in absolute minutes, decoupled from weekly volume.** That is a change to the duration model, not a config edit.
+> Enforced hard by **`INV-PLAN-VO2MAX-MAIN-SET-CAP`** (error). The relative ordering **`INV-PLAN-MAIN-SET-ORDERING`** stays `warn`: after the ceiling, the only residual inversions are low-volume plans where a modest ≤20-min VO2max exceeds a smaller race_pace session in a lighter week — not the "VO2max is a race" defect, which the absolute cap now carries.
 >
 > **⚠️ Correction, same day.** This section first explained the §23 peak inversions as *"volume freed from quality has nowhere to go because easy is at its §9 ceiling, so it is lost from the week"*. **Measured, that is false** — the §9 redistribution preserves total weekly volume, and moving the quality share 18% → 15% → 12% changed a week's delivered volume by 0 km. The claim was reasoned, not measured, which is the defect class this document exists to catch. The real shortfall mechanism is unrelated to quality sizing and is filed as **VOL-SHORTFALL-01**. **The decision to reject category sizing is unaffected** — it rests on 187 ordering breaches and 220 undersized sessions across 18,056 plans, independent of why any §23 check tripped.
 >

@@ -32,6 +32,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-DERIVED-SET',
   'INV-PLAN-CATALOGUE-LINK',
   'INV-PLAN-MAIN-SET-ORDERING',
+  'INV-PLAN-VO2MAX-MAIN-SET-CAP',
   'INV-PLAN-VO2MAX-ONSET',
   'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS',
   'INV-PLAN-COACH-NOTES-MATCH-INTENT',
@@ -1436,6 +1437,12 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         if (!sn || !(sn.type === 'quality' || sn.type === 'intervals' || sn.type === 'tempo')) continue
         const stim = classifyStimulus(sn)
         if (!stim) continue
+        // SC-10 — EFFORT-GOVERNED work (hill reps, ultra hikes: no pace_target) is
+        // stamped vo2max by zone but is NOT the flat I-pace work this ordering
+        // bounds. It is lower impact (SC-09) and, for ultras, deliberately long
+        // (time on feet). Exclude it from the vo2max comparison; the ceiling and
+        // this ordering both target PACED VO2max only.
+        if (stim === 'vo2max' && !sn.pace_target) continue
         const mins = mainSetMinutes(sn.duration_mins ?? 0)
         if (!maxMain[stim] || mins > maxMain[stim].mins) {
           maxMain[stim] = { mins, week: w.n, label: sn.label ?? '' }
@@ -1452,18 +1459,50 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         violations.push({
           code: 'INV-PLAN-MAIN-SET-ORDERING',
           principle_ref: 'CoachingPrinciples §8',
-          // `warn`, because the ordering is CURRENTLY VIOLATED BY DESIGN — the
-          // flat QUALITY_SESSION_PCT_OF_WEEKLY inverts it, and the fix did not
-          // ship (see the config comment: share-of-weekly-volume cannot express
-          // this ordering at all). Declared AND exercised, with the value open —
-          // the §34 position, and the same one CD-21 took on §1's ceiling.
-          // Returns to `error` when SIZING-REALLOC-01 lands.
+          // STAYS `warn` after SC-10 (2026-08-21), deliberately. The board's
+          // flip to error was CONTINGENT on the absolute ceiling driving this to
+          // zero; it did not, and the reason is a finding: the ceiling
+          // (VO2MAX_MAIN_SET_MAX_MINS, enforced hard by INV-PLAN-VO2MAX-MAIN-SET-CAP)
+          // carries the coaching concern — "VO2max is a race" is about the ABSOLUTE
+          // duration of the hardest work, now capped. The residual relative
+          // inversions are all LOW-VOLUME plans where a modest ≤20-min VO2max
+          // exceeds a smaller race_pace session that simply sits in a lighter week;
+          // a 17-min VO2max is not a race. Enforcing the relative ordering there
+          // would demand shrinking a fine session, so it stays a signal, not a gate.
           severity: 'warn',
           week: vo2.week,
           message: `Largest VO2max main set is ${vo2.mins.toFixed(0)} min ("${vo2.label}", week ${vo2.week}), exceeding the largest ${softer} main set of ${other.mins.toFixed(0)} min ("${other.label}", week ${other.week}). VO2max work is the least sustainable per minute and must not be the plan's longest quality session.`,
           actual: `${vo2.mins.toFixed(0)} min`,
           expected: `<= ${(other.mins + GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS).toFixed(0)} min (${softer} + ${GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS} min rounding tolerance)`,
         })
+      }
+    }
+  }
+
+  // INV-PLAN-VO2MAX-MAIN-SET-CAP (CoachingPrinciples §8 — SC-10 / CD-14) — the
+  // mechanical check for VO2MAX_MAIN_SET_MAX_MINS. A paced (flat, I-pace) VO2max
+  // session's main set must not exceed the ceiling. Effort-governed hills/hikes
+  // (no pace_target) are excluded for the same reason as the ordering above — a
+  // long ultra hike is time on feet, not the least-sustainable work the ceiling
+  // bounds. Tolerance is the same rounding width the ordering uses.
+  {
+    const cap = GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS + GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
+    for (const w of plan.weeks) {
+      for (const [day, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+        if (!sn || !(sn.type === 'quality' || sn.type === 'intervals' || sn.type === 'tempo')) continue
+        if (classifyStimulus(sn) !== 'vo2max' || !sn.pace_target) continue
+        const mins = mainSetMinutes(sn.duration_mins ?? 0)
+        if (mins > cap) {
+          violations.push({
+            code: 'INV-PLAN-VO2MAX-MAIN-SET-CAP',
+            principle_ref: 'CoachingPrinciples §8',
+            severity: 'error',
+            week: w.n, day,
+            message: `VO2max main set "${sn.label}" is ${mins.toFixed(0)} min, over the ${GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS}-min ceiling (VO2max is the least sustainable work per minute).`,
+            actual: `${mins.toFixed(0)} min`,
+            expected: `<= ${GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS} min (+ ${GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS} rounding)`,
+          })
+        }
       }
     }
   }
