@@ -1513,6 +1513,12 @@ function buildWeekSessions(
   // generateRulePlan so "first in the plan" persists across weeks. Optional so
   // legacy/test callers keep working (cue simply never places).
   cueCtx?: { thresholdCuePlaced: boolean },
+  // §53 (CAT-ULTRA-THIN-01) — plan-level per-row selection tally for least-used
+  // rotation. Threaded from generateRulePlan so pool exhaustion persists across
+  // weeks; optional so legacy/test callers keep the stateless index.
+  rowUsage?: Map<string, number>,
+  // §36/§53 anti-repeat tie-break state, threaded with rowUsage.
+  rowLast?: Map<string, string>,
 ): Partial<Record<Day, Session>> {
   const blocked = blockedDays(input)
   const distKey = raceDistanceKey(input.race_distance_km)
@@ -1917,11 +1923,15 @@ function buildWeekSessions(
       ?? firstAvailableDay(['wed', 'thu', 'tue', 'mon', 'fri'], blocked, used)
 
     // CoachingPrinciples §21 — knee/ITB/Achilles/shin/calf/plantar history
-    // excludes hill sessions in base + build phases. Peak may reintroduce.
-    const excludeHillSessions = (phase === 'base' || phase === 'build')
-      && (input.injury_history ?? []).some(i =>
-        GENERATION_CONFIG.HILL_RESTRICTING_INJURIES.some(k => i.toLowerCase().includes(k))
-      )
+    // excludes hill sessions. §21's peak reintroduction is gated on "a successful
+    // symptom-free build" that is NOT YET WIRED, so until it is, the exclusion
+    // holds in EVERY phase — not just base/build. The old phase scope left peak
+    // ungated; it stayed safe only because the stateless selector never happened
+    // to pick hill_reps in peak, which the least-used rotation (CAT-ULTRA-THIN-01)
+    // no longer guarantees. Restores documented §21 intent.
+    const excludeHillSessions = (input.injury_history ?? []).some(i =>
+      GENERATION_CONFIG.HILL_RESTRICTING_INJURIES.some(k => i.toLowerCase().includes(k))
+    )
 
     // CoachingPrinciples §22 — race-specific exposure for time-targeted goals.
     // From the half-week onwards (inclusive — R2/H-02), prescribe quality at
@@ -1954,12 +1964,12 @@ function buildWeekSessions(
 
         cat1 = raceSpecificTaperRows[0] ?? selectCatalogueSession({
           catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
-          excludeHillSessions,
+          weeklyKm, excludeHillSessions, rowUsage, rowLast,
         })
       } else {
         cat1 = selectCatalogueSession({
           catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
-          excludeHillSessions,
+          weeklyKm, excludeHillSessions, rowUsage, rowLast,
         })
       }
       if (process.env.DEBUG_ROT) console.error(`      cat1 -> ${cat1?.id}:${cat1?.category} (pref=${preferredCategory})`)
@@ -2010,7 +2020,7 @@ function buildWeekSessions(
             : preferredCategory
           const cat2 = selectCatalogueSession({
             catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 1, preferredCategory: altCategory,
-            excludeHillSessions,
+            weeklyKm, excludeHillSessions, rowUsage, rowLast,
           })
           const secondaryFraction = GENERATION_CONFIG.SECONDARY_QUALITY_PCT_OF_PRIMARY / 100
           sessions[qual2Day] = makeQualitySession({
@@ -3432,6 +3442,13 @@ export function generateRulePlan(
   // genuine threshold session across the whole plan (weeks build in order below).
   const cueCtx = { thresholdCuePlaced: false }
 
+  // §53 (CAT-ULTRA-THIN-01) — plan-level per-row selection tally driving the
+  // least-used-first rotation in selectCatalogueSession, so the eligible pool is
+  // exhausted before any row repeats (a thin marathon/50k threshold pool used to
+  // land one row five times while another went unpicked).
+  const rowUsage = new Map<string, number>()
+  const rowLast = new Map<string, string>()
+
   // SC-07 / CD-16 — counts NON-DELOAD build weeks as they are emitted, so the
   // build quality rotation (threshold -> vo2max -> threshold for 5K/10K) is
   // driven by quality-carrying weeks rather than calendar position.
@@ -3492,6 +3509,8 @@ export function generateRulePlan(
       vo2MustOpenBuild,
       intensityFitness,
       cueCtx,
+      rowUsage,
+      rowLast,
     )
 
     // Advance the rotation only on weeks that actually carried a build quality

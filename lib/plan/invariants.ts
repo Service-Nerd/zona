@@ -487,9 +487,10 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     }
 
     // INV-PLAN-INJURY-NO-HILLS — runners with hill-restricting injury history
-    // (knee, ITB, Achilles, shin, calf, plantar) get no hill sessions in
-    // base/build phases. (CoachingPrinciples §21)
-    if (w.phase === 'base' || w.phase === 'build') {
+    // (knee, ITB, Achilles, shin, calf, plantar) get no hill sessions in ANY
+    // phase. §21's peak reintroduction is gated on a symptom-free build that is
+    // not yet wired, so peak is NOT exempt until it is. (CoachingPrinciples §21)
+    {
       const hasRestricting = (input.injury_history ?? []).some(i => {
         const lower = i.toLowerCase()
         return GENERATION_CONFIG.HILL_RESTRICTING_INJURIES.some(k => lower.includes(k))
@@ -1825,47 +1826,41 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       if (w.type === 'race') continue
       for (const s of Object.values(w.sessions)) {
         if (!s || s.type !== 'quality') continue
-        // ⚠️ STILL COUNTS LABELS, and that is a KNOWN DEFECT — see
-        // CAT-ULTRA-THIN-01 in the backlog.
+        // COUNTS THE CATALOGUE ROW, not the label (CAT-ULTRA-THIN-01, Coaching
+        // Board 2026-08-21 — CORRECT, consistent with its sibling §36 /
+        // INV-PLAN-TAPER-VARIETY, which already keys on `catalogue_id`). Variety
+        // is a property of the TRAINING, which is the row; §22's goal-pace rename
+        // deliberately makes label ≠ row, so label-counting both under-counts
+        // (one row split across names) and mis-counts (two rows sharing a name).
+        // `catalogue_id` (ADR-018) is the structural answer.
         //
-        // Variety is a property of the TRAINING, so this should count catalogue
-        // rows (D-17 — this is the last place in the engine coupling logic to a
-        // display string, and `catalogue_id` from ADR-018 makes the structural
-        // answer available). Switching it was measured on 2026-08-20 and NOT
-        // shipped, because it does not merely re-express the same result:
+        // The board ruled the residue this exposes is an ENGINE defect, not a
+        // reason to loosen the cap: the stateless selector over-picked one row
+        // while an eligible sibling sat unused. Fixed by the least-used-first
+        // rotation in selectCatalogueSession, which drops the row-count residue
+        // to baseline. A row that still exceeds the cap after rotation means the
+        // eligible pool is genuinely exhausted — a catalogue CONTENT gap, tracked
+        // as CAT-ULTRA-THIN-01, not a per-plan error the runner caused.
         //
-        //   counting labels -> 75 violations
-        //   counting rows   -> 2,227
-        //
-        // §22's goal-pace rename SPLITS one row across several names, so label
-        // counting under-counts. `progressive_tempo` genuinely appears 5 times
-        // in 10 quality sessions on a 50K plan and passes only because three of
-        // those five are renamed. The repetition is real; the label check hides
-        // it.
-        //
-        // Flipping the check alone would convert a 75-violation code into a
-        // 2,227-violation one without changing a single plan. The engine
-        // over-uses rows because the eligible pool is thin — peak and taper
-        // offer two threshold rows for a 20-week ultra — and that is a
-        // CATALOGUE CONTENT decision for the Coaching Board, not an invariant
-        // edit. Both halves ship together or neither does.
-        const label = (s.label ?? '').trim()
-        if (!label) continue
-        labelCounts.set(label, (labelCounts.get(label) ?? 0) + 1)
+        // Inline sessions with no row fall back to the label so they are still
+        // counted (a plan of unnamed repeats is still monotonous).
+        const key = (s.catalogue_id ?? s.label ?? '').trim()
+        if (!key) continue
+        labelCounts.set(key, (labelCounts.get(key) ?? 0) + 1)
         totalQuality++
       }
     }
     if (totalQuality > 0) {
       const cap = Math.floor(totalQuality / GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR)
         + GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE
-      for (const [label, count] of Array.from(labelCounts)) {
+      for (const [row, count] of Array.from(labelCounts)) {
         if (count > cap) {
           violations.push({
             code: 'INV-PLAN-QUALITY-VARIETY-FULL-PLAN',
             principle_ref: 'CoachingPrinciples §53',
             severity: 'error',
             week: 0,
-            message: `Quality session label "${label}" appears ${count} times across ${totalQuality} quality sessions; cap is floor(${totalQuality}/${GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR})+${GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE} = ${cap}.`,
+            message: `Quality session row "${row}" appears ${count} times across ${totalQuality} quality sessions; cap is floor(${totalQuality}/${GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR})+${GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE} = ${cap}.`,
             actual: count,
             expected: `≤ ${cap}`,
           })

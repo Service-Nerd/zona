@@ -50,7 +50,9 @@ const cases: TestCase[] = [
       days_available: 4, age: 38, fitness_level: 'intermediate',
       resting_hr: 52, max_hr: 182,
     },
-    expect: { catalogue_label_in_peak_quality: 'HM-pace intervals' },
+    // LABEL-VARIETY-01 (2026-08-21) — the peak goal-pace override now carries the
+    // row's shape word; hm_pace_intervals (a repeats row) reads "HM-pace reps".
+    expect: { catalogue_label_in_peak_quality: 'HM-pace reps' },
   },
   {
     name: 'Marathon experienced — 16 weeks, 5 days/wk, target time',

@@ -503,6 +503,16 @@ export const GENERATION_CONFIG = {
   QUALITY_VARIETY_DENOMINATOR: 3,
   QUALITY_VARIETY_ALLOWANCE:   1,
 
+  // Minimum weekly volume (km) for a threshold_ladder to be prescribed
+  // (CoachingPrinciples §53, CAT-ULTRA-THIN-01, Coaching Board 2026-08-21). The
+  // ladder is ~24 min of accumulated threshold work; dropping it on a genuinely
+  // low-volume week is a spike (Willy), so it is gated on volume rather than a
+  // fitness label — which lets an intermediate marathon/ultra runner at real
+  // volume reach it (McMillan) and widens their thin threshold pool. A relative,
+  // per-runner floor (T-work minutes as a share of weekly minutes — Sims) is the
+  // tracked refinement; this absolute km floor is Willy's binding version.
+  THRESHOLD_LADDER_MIN_WEEKLY_KM: 45,
+
   // ── Long run as fraction of weekly volume (CoachingPrinciples §52) ─────────
   // No single run may exceed this fraction of the week's total volume. Above
   // this threshold the week is structurally lopsided — the long run becomes

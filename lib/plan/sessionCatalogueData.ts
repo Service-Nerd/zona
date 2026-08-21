@@ -24,6 +24,8 @@
 //   network dependency on a path that must never fail (ADR-006, ADR-009).
 // The cost, accepted: catalogue changes require a deploy.
 
+import { GENERATION_CONFIG } from './generationConfig'
+
 export type CatalogueCategory =
   | 'aerobic' | 'threshold' | 'vo2max' | 'race_specific' | 'ultra_specific'
 
@@ -37,6 +39,10 @@ export interface SessionCatalogueRow {
   phase_eligibility:    Array<'base' | 'build' | 'peak' | 'taper'>
   distance_eligibility: Array<'5K' | '10K' | 'HM' | 'MARATHON' | '50K' | '100K'>
   fitness_level_min:    CatalogueFitness
+  // §53 (CAT-ULTRA-THIN-01) — optional per-row weekly-volume floor. A row is
+  // ineligible in a week carrying less than this many km. Used by threshold_ladder
+  // to gate its ~24 min of threshold work on volume rather than a fitness label.
+  min_weekly_km?:       number
   difficulty_tier:      number
   main_set_structure:   Record<string, unknown>
   /**
@@ -174,9 +180,9 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
   // with the runner's volume; a ladder with more rungs is a different workout.
   //
   // The audit asked for a volume guard (only eligible when the week supports
-  // ~24 min of threshold work, roughly 45 km/week). There is still no home for
-  // a per-row volume condition, so `fitness_level_min: 'experienced'` stands in
-  // for it — an imperfect proxy, recorded rather than hidden.
+  // ~24 min of threshold work, roughly 45 km/week). That guard now EXISTS —
+  // `min_weekly_km` below — so `fitness_level_min` is back to the true minimum
+  // ('intermediate') and the proxy is retired (CAT-ULTRA-THIN-01, 2026-08-21).
   {
     id: 'threshold_ladder',
     name: 'Threshold ladder',
@@ -184,7 +190,13 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     purpose: 'Threshold work that changes shape as it goes. Rewards discipline early and honesty late.',
     phase_eligibility: ['build', 'peak'],
     distance_eligibility: ['10K', 'HM', 'MARATHON', '50K', '100K'],
-    fitness_level_min: 'experienced',
+    // §53 (CAT-ULTRA-THIN-01, Coaching Board 2026-08-21) — was `experienced`,
+    // which the row's own comment admitted was a stand-in for a volume floor. The
+    // gate is now the floor itself (`min_weekly_km`), so an intermediate marathon/
+    // ultra runner at real volume reaches the ladder — widening a threshold pool
+    // that was only two rows in peak/taper and forced one row past §53's cap.
+    fitness_level_min: 'intermediate',
+    min_weekly_km: GENERATION_CONFIG.THRESHOLD_LADDER_MIN_WEEKLY_KM,
     difficulty_tier: 3,
     main_set_structure: {
       version: 2,
@@ -585,9 +597,24 @@ export interface CatalogueSelectorArgs {
   tier:              'free' | 'trial' | 'paid'
   weekN:             number
   slotIndex?:        number  // 0 or 1 for second quality session in a peak week
+  // §53 (CAT-ULTRA-THIN-01) — this week's volume, so rows carrying a
+  // `min_weekly_km` floor (threshold_ladder) are only eligible when the week
+  // actually supports the session's load.
+  weeklyKm?:         number
   preferredCategory?: CatalogueCategory
   // CoachingPrinciples §21 — exclude hill sessions during base/build when set.
   excludeHillSessions?: boolean
+  // CoachingPrinciples §53 (CAT-ULTRA-THIN-01) — plan-level tally of how many
+  // times each catalogue row has been selected so far, threaded by the caller so
+  // selection can exhaust the eligible pool before repeating a row (least-used
+  // first). Absent → falls back to the stateless deterministic index. Mutated in
+  // place on each pick; the call sequence is deterministic, so regeneration is
+  // stable.
+  rowUsage?: Map<string, number>
+  // §36/§53 anti-repeat tie-break — the last row picked for each category, so a
+  // usage tie breaks against repeating the previous week's session. Mutated in
+  // place on each pick.
+  rowLast?: Map<string, string>
 }
 
 // Hill rows are tagged via main_set_structure.terrain === 'hills' OR id includes 'hill'.
@@ -634,7 +661,7 @@ function isLongRunSession(row: SessionCatalogueRow): boolean {
  * regenerated produces same selection.
  */
 export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCatalogueRow | null {
-  const { catalogue, phase, distanceKey, fitness, tier, weekN, slotIndex = 0, preferredCategory, excludeHillSessions } = args
+  const { catalogue, phase, distanceKey, fitness, tier, weekN, slotIndex = 0, weeklyKm, preferredCategory, excludeHillSessions, rowUsage, rowLast } = args
 
   const userRank = FITNESS_RANK[fitness]
   const tierFilter = (row: SessionCatalogueRow) => tier === 'free' ? row.is_free_tier : true
@@ -643,6 +670,10 @@ export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCata
     row.phase_eligibility.includes(phase) &&
     row.distance_eligibility.includes(distanceKey) &&
     FITNESS_RANK[row.fitness_level_min] <= userRank &&
+    // §53 (CAT-ULTRA-THIN-01) — a volume-gated row (threshold_ladder) is eligible
+    // only in a week that supports its load. Unknown weekly volume excludes it,
+    // so the gate never fails open.
+    (row.min_weekly_km == null || (weeklyKm != null && weeklyKm >= row.min_weekly_km)) &&
     tierFilter(row) &&
     !isLongRunSession(row) &&  // long-run-with-segment rows are picked by the long-run path, not as quality
     (!excludeHillSessions || !isHillSession(row))
@@ -658,7 +689,37 @@ export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCata
       })()
     : baseEligible
 
-  // Deterministic pick: weekN + slotIndex modulo candidates length.
-  const idx = (weekN + slotIndex * 7) % candidates.length
-  return candidates[idx]
+  // Deterministic tie-break index (the historical selection rule).
+  const tieIdx = (weekN + slotIndex * 7) % candidates.length
+
+  // CoachingPrinciples §53 (CAT-ULTRA-THIN-01) — least-used-first rotation with
+  // an anti-repeat tie-break. The stateless `weekN % length` above is a HASH, not
+  // a rotation: with a candidate set that changes size across phases (marathon
+  // build has 3 threshold rows, peak/taper 2), week-number parity collides once
+  // deloads and sharpeners remove weeks, landing one row (tempo_continuous) five
+  // times while progressive_tempo went unpicked. Exhausting the pool before
+  // repeating spreads the catalogue evenly (§53); breaking usage ties AGAINST the
+  // previous pick of this category keeps consecutive weeks distinct (§36, taper).
+  // Walk from the deterministic tie-break index so an even pool reproduces the
+  // old alternation and regeneration stays stable.
+  if (rowUsage) {
+    const catKey = preferredCategory ?? 'any'
+    const lastId = rowLast?.get(catKey)
+    let best = candidates[tieIdx]
+    let bestUse = rowUsage.get(best.id) ?? 0
+    let bestIsLast = best.id === lastId
+    for (let k = 1; k < candidates.length; k++) {
+      const c = candidates[(tieIdx + k) % candidates.length]
+      const u = rowUsage.get(c.id) ?? 0
+      const isLast = c.id === lastId
+      if (u < bestUse || (u === bestUse && bestIsLast && !isLast)) {
+        best = c; bestUse = u; bestIsLast = isLast
+      }
+    }
+    rowUsage.set(best.id, bestUse + 1)
+    rowLast?.set(catKey, best.id)
+    return best
+  }
+
+  return candidates[tieIdx]
 }

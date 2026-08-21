@@ -1267,12 +1267,18 @@ Enforced by `INV-PLAN-LR-MAX-WEEKLY-PCT`. When violated, the engine downgrades t
 
 ## 53. Quality session variety across the full plan
 
-**Principle.** No single quality-session label may appear more than `floor(total_quality_sessions / 3) + 1` times across the full plan. Extends §36 (taper variety) to the base / build / peak phases as well.
+**Principle.** No single quality-session **catalogue row** may appear more than `floor(total_quality_sessions / 3) + 1` times across the full plan. Extends §36 (taper variety) to the base / build / peak phases as well.
 
 **Why.** Case 04 (2026-04-28 review): three "Progressive tempo" sessions in 11 weeks (W5, W8, W10) with identical pace targets. Round-2 M-02 caught back-to-back taper repetition; this caught nothing because the repetition straddled build / peak / taper. Variety at the catalogue level is what keeps a plan coachable for the runner who actually has to do it — three identical tempos in the same plan is the engine declining to use the catalogue, not a coaching choice.
 
+**Counts the ROW, not the label (Coaching Board 2026-08-21, CAT-ULTRA-THIN-01).** Variety is a property of the training, which is the catalogue row (`catalogue_id`), not the display string — and §22's goal-pace rename deliberately makes label ≠ row, so a label count both under-counts (one row split across names) and mis-counts (two rows sharing a name). This aligns §53 with its own sibling §36, which already keys on the row.
+
+**A violation means the engine declined AVAILABLE variety — not that the catalogue is thin.** The board ruled the cap stays `floor(N/3)+1`; the fix for over-use is the engine, not a looser rule:
+- **Rotation.** `selectCatalogueSession` picks the least-used eligible row and breaks ties against the previous pick of that category, so the eligible pool is exhausted before any row repeats (this also serves §36). The old stateless `weekN % pool` was a hash, not a rotation, and landed one row five times while an eligible sibling sat unused.
+- **Pool width where it was genuinely too thin.** An intermediate marathon/ultra runner had only two eligible threshold rows in peak/taper. `threshold_ladder` is now gated on **weekly volume** (`THRESHOLD_LADDER_MIN_WEEKLY_KM`, Willy's load floor) rather than an `experienced` label that was only ever a proxy for volume — giving that runner a third row on its own coaching merit. A relative, per-runner floor (T-work as a share of weekly minutes — Sims) is the tracked refinement.
+
 The `floor(N / 3) + 1` shape:
-- 3 quality sessions: max 2 of any label.
+- 3 quality sessions: max 2 of any row.
 - 6 quality sessions: max 3.
 - 9 quality sessions: max 4.
 - 12 quality sessions: max 5.
@@ -1282,6 +1288,7 @@ The +1 allowance prevents tripping plans where the catalogue genuinely has only 
 **Config.**
 - `GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR = 3`
 - `GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE = 1`
+- `GENERATION_CONFIG.THRESHOLD_LADDER_MIN_WEEKLY_KM = 45` (the ladder's volume gate)
 
 Enforced by `INV-PLAN-QUALITY-VARIETY-FULL-PLAN`. Race-week sharpening reps (sub-band repeats with no catalogue-named label) are exempt — they're structurally distinct from the broader catalogue.
 
