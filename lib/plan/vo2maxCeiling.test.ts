@@ -25,7 +25,7 @@ function quality(plan: ReturnType<typeof generateRulePlan>): { week: number; pha
   return plan.weeks.flatMap(w =>
     Object.values(w.sessions)
       .filter((s): s is Session => !!s && s.type === 'quality')
-      .map(s => ({ week: w.n, phase: w.phase, s })))
+      .map(s => ({ week: w.n, phase: String(w.phase ?? ''), s })))
 }
 
 // 10K time-target on high volume → real flat VO2max in peak, previously oversized.
