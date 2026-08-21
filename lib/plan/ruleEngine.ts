@@ -794,6 +794,49 @@ function goalPaceShapeWord(row: SessionCatalogueRow | null | undefined): string 
   }
 }
 
+// SC-08 vo2max — per-rep minutes of a v2 step, resolved against this runner's
+// I-pace for distance reps, read directly for duration reps.
+function v2StepMinutes(step: { length: { kind: string; secs?: number; m?: number } }, pace: PaceGuide): number {
+  const len = step.length
+  if (len.kind === 'duration' && typeof len.secs === 'number') return len.secs / 60
+  if (len.kind === 'distance' && typeof len.m === 'number') return (len.m / 1000) * pace.minPerKmInterval
+  return 0
+}
+
+// SC-08 vo2max (Coaching Board 2026-08-21) — the rep COUNT for a v2 VO2max row.
+// The dose is a fixed band by fitness × phase (NOT weekly volume — the SC-10
+// error the board refused to re-import), bounded [VO2MAX_WORK_MIN_MINS,
+// VO2MAX_WORK_MAX_MINS] of WORK. Rep length is the stimulus identity and stays
+// fixed; the count is the dose. Returns null for anything that is not a PACED
+// vo2max rep block (effort-governed hills, non-vo2max, v1) — those keep their
+// existing sizing. `mainMins` is the structure's own main-set length (work +
+// recovery), used to make the session STRUCTURE-DRIVEN.
+function vo2maxRepPlan(
+  row: SessionCatalogueRow | null,
+  fitness: FitnessLevel,
+  phase: PhaseType,
+  pace: PaceGuide,
+): { reps: number; mainMins: number } | null {
+  if (!row || row.category !== 'vo2max' || !isV2Structure(row.main_set_structure)) return null
+  const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+  if (!parsed.success) return null
+  const block = parsed.data.blocks.find(b => typeof b.repeat === 'object' && b.repeat.param === 'reps')
+  if (!block) return null
+  const workStep = block.steps.find(s => s.role === 'work')
+  if (!workStep || workStep.target.kind !== 'pace') return null  // effort-governed → not this path
+  const workMins = v2StepMinutes(workStep, pace)
+  if (workMins <= 0) return null
+  const recoveryMins = block.steps
+    .filter(s => s.role === 'recovery')
+    .reduce((sum, s) => sum + v2StepMinutes(s, pace), 0)
+  const cfg = GENERATION_CONFIG
+  const target = cfg.VO2MAX_WORK_TARGET_MINS[fitness]?.[phase] ?? cfg.VO2MAX_WORK_MIN_MINS
+  const floorReps = Math.max(1, Math.ceil(cfg.VO2MAX_WORK_MIN_MINS / workMins))
+  const ceilReps  = Math.max(floorReps, Math.floor(cfg.VO2MAX_WORK_MAX_MINS / workMins))
+  const reps = Math.max(floorReps, Math.min(ceilReps, Math.round(target / workMins)))
+  return { reps, mainMins: reps * (workMins + recoveryMins) }
+}
+
 function makeQualitySession(args: {
   weekN: number; day: Day; distKm: number; metric: 'distance' | 'duration'
   zones: ZoneTargets; pace: PaceGuide
@@ -821,6 +864,11 @@ function makeQualitySession(args: {
     if (!p || p.variants.length === 0) return null
     return p.variants[weekN % p.variants.length]
   })()
+
+  // SC-08 vo2max — the scaled rep count for a v2 VO2max row (null otherwise).
+  // Feeds the derived set's `reps` parameter AND makes the session
+  // structure-driven (its size is the rep structure, not weekly × 18%).
+  const vo2maxScaled = vo2maxRepPlan(catalogueRow, fitness, phase, pace)
 
   // Is this session governed by EFFORT rather than pace? True when the row's v2
   // work steps carry an effort target and no pace.
@@ -869,7 +917,8 @@ function makeQualitySession(args: {
       ...(pace.marathonPaceStr ? { M: pace.marathonPaceStr } : {}),
       ...(goalPace ? { goal: goalPace } : {}),
     }
-    return resolveMainSet(parsed.data, { anchors, easyPaceStr: pace.easyPaceStr, params: variant?.values })
+    const params = { ...(variant?.values ?? {}), ...(vo2maxScaled ? { reps: vo2maxScaled.reps } : {}) }
+    return resolveMainSet(parsed.data, { anchors, easyPaceStr: pace.easyPaceStr, params })
   })()
 
   // Fallback label if no catalogue row matched (e.g. 5K/10K taper week).
@@ -1042,7 +1091,16 @@ function makeQualitySession(args: {
     : notes.length === 2 ? [notes[0], notes[1]] as [string, string]
     : [notes[0], notes[1], notes[2]] as [string, string, string]
 
-  const rounded = roundDistance(distKm)
+  // SC-08 vo2max — a scaled VO2max session is STRUCTURE-DRIVEN: its size is the
+  // rep structure's own length (work + recovery), converted to distance via
+  // I-pace — NOT weekly × 18%. The freed/added volume vs the sizing estimate is
+  // reconciled by the § 4 easy re-derivation in buildWeekSessions (which reads
+  // actual placed volume). This is what decouples the VO2max dose from weekly
+  // volume at both ends; the SC-10 km-cap becomes a harmless estimate bound.
+  const effectiveDistKm = vo2maxScaled
+    ? durationForMainSet(vo2maxScaled.mainMins) / pace.minPerKmInterval
+    : distKm
+  const rounded = roundDistance(effectiveDistKm)
   // CLASSIFY-STIMULUS-01 — stamp the stimulus from the trusted generator label
   // now, while it is canonical, so the AI enricher rewriting the name later can
   // never reclassify this session. `label`/`zone` here already reflect every

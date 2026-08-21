@@ -3,7 +3,27 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { mainSetMinutes } from './sessionFormat'
 import { GENERATION_CONFIG } from './generationConfig'
+import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import type { GeneratorInput, Session } from '@/types/plan'
+
+// WORK minutes (Z4-5 time) of a v2 VO2max session: resolved reps × the work
+// step's length, distance reps via the session's I-pace band. Mirrors the
+// invariant helper so the test asserts the real quantity, not a proxy.
+function workMinutes(s: Session): number {
+  const reps = (s.derived_set as { blocks?: { repeat?: number }[] } | undefined)?.blocks?.[0]?.repeat ?? 0
+  const row = V1_SESSION_CATALOGUE.find(r => r.id === s.catalogue_id)
+  const len = (row?.main_set_structure as { blocks?: { steps?: { role?: string; length?: { kind?: string; secs?: number; m?: number } }[] }[] } | undefined)
+    ?.blocks?.[0]?.steps?.find(st => st.role === 'work')?.length
+  if (!len) return 0
+  if (len.kind === 'duration' && len.secs) return reps * (len.secs / 60)
+  if (len.kind === 'distance' && len.m) {
+    const m = (s.pace_target ?? '').match(/(\d+):(\d+)\D+(\d+):(\d+)/)
+    if (!m) return 0
+    const mid = ((+m[1] + +m[2] / 60) + (+m[3] + +m[4] / 60)) / 2
+    return reps * (len.m / 1000) * mid
+  }
+  return 0
+}
 
 /**
  * SC-10 / CD-14 — VO2max main-set absolute ceiling (Coaching Board 2026-08-21).
@@ -36,22 +56,27 @@ const TENK_HIGH: GeneratorInput = {
 }
 
 describe('SC-10 — VO2max main-set ceiling', () => {
-  it('no paced VO2max session exceeds the ceiling (+ rounding), even on high volume', () => {
+  // SC-08 reworked the SC-10 ceiling from main-set minutes to WORK minutes (time
+  // at Z4-5), because full recovery lives inside the v2 main set. These two tests
+  // now assert the work-minute band.
+  it('every paced VO2max session sits inside the WORK dose band, even on high volume', () => {
     const plan = generateRulePlan(TENK_HIGH, 'paid', PLAN_START)
     const paced = quality(plan).filter(q => q.s.stimulus === 'vo2max' && q.s.pace_target)
     expect(paced.length).toBeGreaterThan(0)
-    const cap = GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS + GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
+    const tol = GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
     for (const q of paced) {
-      expect(mainSetMinutes(q.s.duration_mins ?? 0), `W${q.week} "${q.s.label}"`).toBeLessThanOrEqual(cap)
+      const work = workMinutes(q.s)
+      expect(work, `W${q.week} "${q.s.label}"`).toBeGreaterThanOrEqual(GENERATION_CONFIG.VO2MAX_WORK_MIN_MINS - tol)
+      expect(work, `W${q.week} "${q.s.label}"`).toBeLessThanOrEqual(GENERATION_CONFIG.VO2MAX_WORK_MAX_MINS + tol)
     }
   })
 
-  it('the ceiling binds in PEAK — the biggest weeks (Willy)', () => {
+  it('the dose does not exceed the WORK ceiling in PEAK — the biggest weeks (Willy)', () => {
     const plan = generateRulePlan(TENK_HIGH, 'paid', PLAN_START)
     const peakVo2 = quality(plan).filter(q => q.phase === 'peak' && q.s.stimulus === 'vo2max' && q.s.pace_target)
     expect(peakVo2.length).toBeGreaterThan(0)
     for (const q of peakVo2) {
-      expect(mainSetMinutes(q.s.duration_mins ?? 0)).toBeLessThanOrEqual(GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS + 1)
+      expect(workMinutes(q.s)).toBeLessThanOrEqual(GENERATION_CONFIG.VO2MAX_WORK_MAX_MINS + 1)
     }
   })
 

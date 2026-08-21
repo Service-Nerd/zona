@@ -307,6 +307,23 @@ export const GENERATION_CONFIG = {
   // to paced flat intervals, NOT effort-governed hills (lower impact, SC-09).
   VO2MAX_MAIN_SET_MAX_MINS:         20,
 
+  // VO2max WORK-minute band (SC-08 vo2max, Coaching Board 2026-08-21). Once the
+  // flat VO2max rows are v2, the dose is time AT Z4-5 (work), not the main set
+  // including recovery — full recovery is never shortened to fit reps (Willy/
+  // Sims), so a main-set budget leaves no room for a rep progression. The rep
+  // COUNT fills a target inside this band; below the floor it is not a VO2max
+  // stimulus (Hutchinson/Sims, RED-S-adjacent), above the ceiling it steals from
+  // tomorrow's easy volume (Seiler). Bounded at BOTH ends.
+  VO2MAX_WORK_MIN_MINS:             12,
+  VO2MAX_WORK_MAX_MINS:             18,
+  // Target work minutes by fitness × phase — the count PROGRESSES by readiness
+  // and block position, NOT by weekly volume (the SC-10 error the board refused
+  // to re-import). Beginners get no VO2max (§8), so only intermediate/experienced.
+  VO2MAX_WORK_TARGET_MINS: {
+    intermediate: { build: 12, peak: 15 },
+    experienced:  { build: 15, peak: 18 },
+  } as Record<string, Record<string, number>>,
+
   // Tolerance on the vo2max < race_specific <= threshold main-set ordering
   // (INV-PLAN-MAIN-SET-ORDERING, §8). GROUNDED IN THE SYSTEM'S OWN GRANULARITY,
   // not chosen to make a plan pass: session distances round to

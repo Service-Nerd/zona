@@ -217,6 +217,29 @@ function parsePaceMidpoint(s: string): number | null {
   return (fast + slow) / 2
 }
 
+// SC-08 vo2max — the WORK minutes (time at Z4-5) of a v2 VO2max session: the
+// resolved rep count × the work step's own length. Distance reps convert via the
+// session's own I-pace band. Returns null for a v1 row, a missing derived set, or
+// a distance rep with no pace — the caller falls back to the main-set ceiling.
+function vo2maxWorkMinutes(session: Session): number | null {
+  const ds = session.derived_set as { blocks?: { repeat?: number; steps?: { role?: string }[] }[] } | undefined
+  const reps = ds?.blocks?.[0]?.repeat
+  if (typeof reps !== 'number') return null
+  const row = session.catalogue_id ? V1_SESSION_CATALOGUE.find(r => r.id === session.catalogue_id) : undefined
+  if (!row) return null
+  const ms = row.main_set_structure as {
+    blocks?: { steps?: { role?: string; length?: { kind?: string; secs?: number; m?: number } }[] }[]
+  }
+  const len = ms.blocks?.[0]?.steps?.find(s => s.role === 'work')?.length
+  if (!len) return null
+  if (len.kind === 'duration' && typeof len.secs === 'number') return reps * (len.secs / 60)
+  if (len.kind === 'distance' && typeof len.m === 'number') {
+    const mid = parsePaceMidpoint(session.pace_target ?? '')
+    return mid == null ? null : reps * (len.m / 1000) * mid
+  }
+  return null
+}
+
 // Pace at a given VDOT fraction. Mirror of paceAtFraction in ruleEngine.ts —
 // kept local to avoid an import cycle.
 function paceFromVdot(vdot: number, fraction: number): number {
@@ -1443,7 +1466,13 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         // (time on feet). Exclude it from the vo2max comparison; the ceiling and
         // this ordering both target PACED VO2max only.
         if (stim === 'vo2max' && !sn.pace_target) continue
-        const mins = mainSetMinutes(sn.duration_mins ?? 0)
+        // SC-08 vo2max — compare VO2max on its WORK minutes (Z4-5 time), not the
+        // main set: v2 VO2max carries full recovery jogs inside the main set, so a
+        // main-set comparison would penalise it for resting. Tempo/race are
+        // continuous, so their main set already ≈ their work. Like-for-like.
+        const mins = stim === 'vo2max'
+          ? (vo2maxWorkMinutes(sn) ?? mainSetMinutes(sn.duration_mins ?? 0))
+          : mainSetMinutes(sn.duration_mins ?? 0)
         if (!maxMain[stim] || mins > maxMain[stim].mins) {
           maxMain[stim] = { mins, week: w.n, label: sn.label ?? '' }
         }
@@ -1479,28 +1508,45 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     }
   }
 
-  // INV-PLAN-VO2MAX-MAIN-SET-CAP (CoachingPrinciples §8 — SC-10 / CD-14) — the
-  // mechanical check for VO2MAX_MAIN_SET_MAX_MINS. A paced (flat, I-pace) VO2max
-  // session's main set must not exceed the ceiling. Effort-governed hills/hikes
-  // (no pace_target) are excluded for the same reason as the ordering above — a
-  // long ultra hike is time on feet, not the least-sustainable work the ceiling
-  // bounds. Tolerance is the same rounding width the ordering uses.
+  // INV-PLAN-VO2MAX-MAIN-SET-CAP (CoachingPrinciples §8 — SC-08 vo2max) — the
+  // mechanical check for the VO2max WORK-minute band. Since the flat vo2max rows
+  // are v2, the dose is time AT Z4-5 (work), bounded [VO2MAX_WORK_MIN_MINS,
+  // VO2MAX_WORK_MAX_MINS]: below the floor it is not a VO2max stimulus, above the
+  // ceiling it steals from tomorrow's easy volume. Effort-governed hills/hikes
+  // (no pace_target) are excluded — a long ultra hike is time on feet, not this
+  // work. A session with no resolvable work minutes (legacy v1, no derived set)
+  // falls back to the pre-SC-08 main-set ceiling. Tolerance = the rounding width.
   {
-    const cap = GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS + GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
+    const tol = GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
+    const floor = GENERATION_CONFIG.VO2MAX_WORK_MIN_MINS
+    const ceil = GENERATION_CONFIG.VO2MAX_WORK_MAX_MINS
     for (const w of plan.weeks) {
       for (const [day, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
         if (!sn || !(sn.type === 'quality' || sn.type === 'intervals' || sn.type === 'tempo')) continue
         if (classifyStimulus(sn) !== 'vo2max' || !sn.pace_target) continue
-        const mins = mainSetMinutes(sn.duration_mins ?? 0)
-        if (mins > cap) {
+        const work = vo2maxWorkMinutes(sn)
+        if (work == null) {
+          const mins = mainSetMinutes(sn.duration_mins ?? 0)
+          if (mins > GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS + tol) {
+            violations.push({
+              code: 'INV-PLAN-VO2MAX-MAIN-SET-CAP',
+              principle_ref: 'CoachingPrinciples §8',
+              severity: 'error', week: w.n, day,
+              message: `VO2max main set "${sn.label}" is ${mins.toFixed(0)} min, over the ${GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS}-min legacy ceiling.`,
+              actual: `${mins.toFixed(0)} min`,
+              expected: `<= ${GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS} min`,
+            })
+          }
+          continue
+        }
+        if (work < floor - tol || work > ceil + tol) {
           violations.push({
             code: 'INV-PLAN-VO2MAX-MAIN-SET-CAP',
             principle_ref: 'CoachingPrinciples §8',
-            severity: 'error',
-            week: w.n, day,
-            message: `VO2max main set "${sn.label}" is ${mins.toFixed(0)} min, over the ${GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS}-min ceiling (VO2max is the least sustainable work per minute).`,
-            actual: `${mins.toFixed(0)} min`,
-            expected: `<= ${GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS} min (+ ${GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS} rounding)`,
+            severity: 'error', week: w.n, day,
+            message: `VO2max work "${sn.label}" is ${work.toFixed(0)} min at Z4–5, outside the ${floor}–${ceil} min dose band (least sustainable work per minute; bounded at both ends).`,
+            actual: `${work.toFixed(0)} min work`,
+            expected: `${floor}–${ceil} min (± ${tol} rounding)`,
           })
         }
       }

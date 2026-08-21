@@ -222,6 +222,9 @@ describe('SC-08b — migration posture (D-03)', () => {
       'hill_reps',           // SC-09 / CD-17a
       'vert_hike_repeats',   // CAT-ULTRA-THIN-01 — power hiking for ultras
       'threshold_ladder',    // audit §E.5, unblocked by v2 case 1
+      'intervals_classic',   // SC-08 vo2max (Coaching Board 2026-08-21)
+      'intervals_short',     // SC-08 vo2max
+      'intervals_long',      // SC-08 vo2max
     ])
     for (const row of V1_SESSION_CATALOGUE) {
       expect(
@@ -272,13 +275,15 @@ describe('SC-08b — the derived set reaches the runner', () => {
 
   it('a v1 session is unaffected — the old path still renders', async () => {
     const { composeSession } = await import('./sessionComposer')
+    // tempo_cruise is still v1 (the vo2max rows migrated in SC-08); its v1 repeats
+    // structure renders through the old path with no derived set.
     const structure = composeSession({
       session: {
-        type: 'quality', label: 'Long VO2max', detail: null,
-        duration_mins: 50, zone: 'Zone 4–5', catalogue_id: 'intervals_long',
+        type: 'quality', label: 'Cruise intervals', detail: null,
+        duration_mins: 45, zone: 'Zone 3–4', catalogue_id: 'tempo_cruise',
       } as never,
-      catalogueRow: V1_SESSION_CATALOGUE.find(r => r.id === 'intervals_long'),
+      catalogueRow: V1_SESSION_CATALOGUE.find(r => r.id === 'tempo_cruise'),
     })
-    expect(structure!.main.description).toContain('1000m')
+    expect(structure!.main.description).toContain('10 min')
   })
 })

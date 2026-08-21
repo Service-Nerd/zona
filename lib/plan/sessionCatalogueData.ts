@@ -241,7 +241,27 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     phase_eligibility: ['build', 'peak'],
     distance_eligibility: ['5K', '10K'],
     fitness_level_min: 'intermediate', difficulty_tier: 4,
-    main_set_structure: { type: 'repeats', reps: 5, work: { duration_mins: 3, zone: 'Z4_Z5' }, recovery: { duration_mins: 2, type: 'jog' } },
+    // SC-08 vo2max (Coaching Board 2026-08-21) — v2 with scaling: 'reps'. Rep
+    // LENGTH is the stimulus identity (3 min = classic VO2max); rep COUNT is the
+    // dose, supplied by the engine from the fitness×phase work band (never a
+    // variant, never weekly volume). Work at the I anchor resolves to this
+    // runner's pace, replacing the "Z4_Z5" label the runner used to see.
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'reps',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'duration', secs: 180 },
+            target: { kind: 'pace', anchor: 'I', mode: 'target' }, advance: 'auto',
+            note: 'Three minutes at VO2max effort. Even splits — don\'t blow rep one.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 120 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Full jog recovery. Let it come back before the next one.' },
+        ],
+      }],
+    },
     intensity_zones: ['Z4', 'Z5'],
     typical_duration_min: 35, typical_duration_max: 50, is_free_tier: true,
     coach_voice_notes: 'Three minutes is long. Don\'t blow rep one.',
@@ -252,7 +272,24 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     phase_eligibility: ['build', 'peak'],
     distance_eligibility: ['5K'],
     fitness_level_min: 'intermediate', difficulty_tier: 4,
-    main_set_structure: { type: 'repeats', reps: 10, work: { distance_m: 400, pace_target: '3K' }, recovery: { duration_secs: 90, type: 'jog' } },
+    // SC-08 vo2max — v2, scaling: 'reps'. 400 m reps at the I anchor (was the
+    // generic "3K pace" label). Count from the engine's work band.
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'reps',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'distance', m: 400 },
+            target: { kind: 'pace', anchor: 'I', mode: 'target' }, advance: 'auto',
+            note: 'Quick feet, controlled. Even, not desperate.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Ninety seconds jog. Shake it out.' },
+        ],
+      }],
+    },
     intensity_zones: ['Z4', 'Z5'],
     typical_duration_min: 35, typical_duration_max: 50, is_free_tier: true,
     coach_voice_notes: 'Don\'t race your splits. Even, not desperate.',
@@ -263,7 +300,24 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     phase_eligibility: ['build', 'peak'],
     distance_eligibility: ['5K', '10K'],
     fitness_level_min: 'intermediate', difficulty_tier: 4,
-    main_set_structure: { type: 'repeats', reps: 4, work: { distance_m: 1000, pace_target: '5K' }, recovery: { duration_mins: 2, type: 'jog' } },
+    // SC-08 vo2max — v2, scaling: 'reps'. 1000 m reps at the I anchor (was the
+    // generic "5K pace" label). Count from the engine's work band.
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'reps',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'distance', m: 1000 },
+            target: { kind: 'pace', anchor: 'I', mode: 'target' }, advance: 'auto',
+            note: 'Even splits. Heroic openers ruin it.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 120 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Full jog recovery between the kilometres.' },
+        ],
+      }],
+    },
     intensity_zones: ['Z4', 'Z5'],
     typical_duration_min: 40, typical_duration_max: 55, is_free_tier: true,
     coach_voice_notes: 'Heroic openers ruin it. Even splits.',

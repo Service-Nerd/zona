@@ -2362,9 +2362,38 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "coach_notes": [
             "Three minutes is long. Don't blow rep one.",
           ],
+          "derived_set": {
+            "blocks": [
+              {
+                "label": "reps",
+                "repeat": 5,
+                "steps": [
+                  {
+                    "advance": "auto",
+                    "length": "3 min",
+                    "modality": "run",
+                    "note": "Three minutes at VO2max effort. Even splits — don't blow rep one.",
+                    "pace": "4:07–4:18 /km",
+                    "pace_mode": "target",
+                    "role": "work",
+                  },
+                  {
+                    "advance": "auto",
+                    "length": "2 min",
+                    "modality": "jog",
+                    "note": "Full jog recovery. Let it come back before the next one.",
+                    "pace": "5:23–6:27 /km",
+                    "pace_mode": "ceiling",
+                    "role": "recovery",
+                  },
+                ],
+              },
+            ],
+            "version": 2,
+          },
           "detail": null,
-          "distance_km": 9,
-          "duration_mins": 38,
+          "distance_km": 10.5,
+          "duration_mins": 44,
           "hr_target": "159–185 bpm",
           "id": "w9-wed",
           "label": "Classic VO2max",
@@ -2378,7 +2407,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
       },
       "theme": "Consistency. The work is the volume.",
       "type": "normal",
-      "weekly_km": 39,
+      "weekly_km": 40,
     },
     {
       "date": "2026-11-02",
@@ -2389,8 +2418,8 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
       "sessions": {
         "fri": {
           "detail": null,
-          "distance_km": 11.5,
-          "duration_mins": 68,
+          "distance_km": 10.5,
+          "duration_mins": 62,
           "hr_target": "< 146 bpm",
           "id": "w10-fri",
           "label": "Easy run — Zone 2",
@@ -2405,8 +2434,8 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
             "4×20s strides at 5K effort, full recovery between.",
           ],
           "detail": null,
-          "distance_km": 11.5,
-          "duration_mins": 68,
+          "distance_km": 10.5,
+          "duration_mins": 62,
           "hr_target": "< 146 bpm",
           "id": "w10-mon",
           "label": "Easy run — Zone 2",
@@ -2441,9 +2470,38 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "coach_notes": [
             "Heroic openers ruin it. Even splits.",
           ],
+          "derived_set": {
+            "blocks": [
+              {
+                "label": "reps",
+                "repeat": 4,
+                "steps": [
+                  {
+                    "advance": "auto",
+                    "length": "1 km",
+                    "modality": "run",
+                    "note": "Even splits. Heroic openers ruin it.",
+                    "pace": "4:07–4:18 /km",
+                    "pace_mode": "target",
+                    "role": "work",
+                  },
+                  {
+                    "advance": "auto",
+                    "length": "2 min",
+                    "modality": "jog",
+                    "note": "Full jog recovery between the kilometres.",
+                    "pace": "5:23–6:27 /km",
+                    "pace_mode": "ceiling",
+                    "role": "recovery",
+                  },
+                ],
+              },
+            ],
+            "version": 2,
+          },
           "detail": null,
-          "distance_km": 9,
-          "duration_mins": 38,
+          "distance_km": 10.5,
+          "duration_mins": 44,
           "hr_target": "159–185 bpm",
           "id": "w10-wed",
           "label": "Long VO2max",
@@ -2457,7 +2515,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
       },
       "theme": "Consistency. The work is the volume.",
       "type": "normal",
-      "weekly_km": 47,
+      "weekly_km": 46,
     },
     {
       "date": "2026-11-09",
