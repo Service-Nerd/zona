@@ -461,7 +461,10 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       const label = (session.label ?? '').toLowerCase()
       const notes = (session.coach_notes ?? []).join(' ').toLowerCase()
       const isVo2 = label.includes('vo2max') || label.includes('vo2 max')
-      const isGoalPace = label.includes('-pace intervals') || label.includes('hm-pace') || label.includes('mp ') || label.includes('mp.')
+      // LABEL-VARIETY-01 — the goal-pace override now carries the row's shape as
+      // its trailing word ("10K-pace ladder", "…-pace tempo"), not a fixed
+      // "intervals", so key on the stable "-pace " fragment rather than one form.
+      const isGoalPace = label.includes('-pace ') || label.includes('mp ') || label.includes('mp.')
 
       const banned: { label: string; phrase: string }[] = []
       if (isVo2 || isGoalPace) {

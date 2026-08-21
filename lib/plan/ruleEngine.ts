@@ -753,6 +753,46 @@ function qualitySession(
 // of the plan only (taught once, then trusted — repetition turns it to wallpaper).
 const CONTROLLED_THRESHOLD_CUE = 'Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.'
 
+// LABEL-VARIETY-01 — the display word for a goal-pace-overridden session, taken
+// from the underlying row's structure so distinct rows read distinctly and the
+// same row reads the same everywhere. Returns null when the shape can't be
+// resolved (no row, or an unmapped structure type), letting the caller fall back
+// to the phase-flavoured default. `main_set_structure` is `Record<string,
+// unknown>` on the row, so it is narrowed here rather than typed at the source.
+function goalPaceShapeWord(row: SessionCatalogueRow | null | undefined): string | null {
+  const ms = row?.main_set_structure as
+    | { version?: number; type?: string; blocks?: { label?: string }[] }
+    | undefined
+  if (!ms) return null
+  // v2 rows (SC-08b) describe the set as blocks; the first block's label is the
+  // shape (e.g. threshold_ladder → "ladder"). Fall back to "intervals" for a v2
+  // set with no block label rather than leaking the phase default.
+  if (ms.version === 2) {
+    // v2 shape word is the first block's label (threshold_ladder → "ladder").
+    // Effort-governed rows (hikes, phrase labels like "to the climb") are gated
+    // out at the call site, so what reaches here is a real shape noun.
+    const blockLabel = ms.blocks?.[0]?.label?.trim()
+    return blockLabel ? blockLabel : null
+  }
+  // Words are chosen to be BOTH §19-safe and distinct from race-specific row
+  // names. §19 (INV-PLAN-LABEL-MATCHES-PACE) reads "tempo"/"cruise"/"threshold"
+  // as a THRESHOLD claim and demands T-pace — fatal on a goal-pace session — so
+  // "sustained", not "tempo". And "reps", not "intervals", because the 10K/HM
+  // race-specific rows are literally named "…-pace intervals".
+  //
+  // 'progression' is intentionally NOT mapped: its natural word collides with
+  // the build-phase word "progression", and this word is only consumed in PEAK
+  // (see the override site). Letting it fall back to the peak generic keeps a
+  // build progression and a peak progression on different labels, so no label
+  // merges across phases — which would surface repetition that §53 counts by
+  // label, the still-open CAT-ULTRA-THIN-01.
+  switch (ms.type) {
+    case 'continuous':  return 'sustained'
+    case 'repeats':     return 'reps'
+    default:            return null
+  }
+}
+
 function makeQualitySession(args: {
   weekN: number; day: Day; distKm: number; metric: 'distance' | 'duration'
   zones: ZoneTargets; pace: PaceGuide
@@ -878,18 +918,39 @@ function makeQualitySession(args: {
     // When the catalogue row already names itself goal-pace work (e.g.
     // "Goal-pace sharpener"), preserve the catalogue name.
     //
-    // CoachingPrinciples §53 — vary the override label by phase so a single
-    // race-pace label doesn't dominate the plan. Build phase override gets
-    // a tempo flavour; peak retains the interval-flavoured override (matching
-    // the catalogue's hm_pace_intervals naming, which keeps build/peak
-    // distinguishable for HM/marathon plans).
-    const overrideLabel = !distLabel
-      ? 'Goal-pace cruise intervals'
-      : phase === 'build'
-        ? `${distLabel}-pace progression`
+    // CoachingPrinciples §53 / LABEL-VARIETY-01 — the trailing word is the
+    // session's SHAPE, not its phase. A peak block draws several distinct rows
+    // (a ladder, a continuous tempo, a progressive tempo); naming them all
+    // "{dist}-pace intervals" collapsed up to eight sessions to one name, which
+    // reads as monotony and tripped §53's label cap. Deriving the word from the
+    // row's own structure keeps "{dist}-pace" — the fragment every §22/§19 check
+    // keys on — as the stable lead, while restoring the honest distinction: a
+    // goal-pace session run as a ladder IS a ladder. Same row → same word, so
+    // real repetition still reads as repetition (this does not paper over
+    // CAT-ULTRA-THIN-01). Taper keeps its "sharpener" flavour (§6 — sharpen,
+    // don't build); build/peak with no resolvable shape fall back to the old
+    // phase-flavoured word so behaviour is unchanged where a row is absent.
+    // LABEL-VARIETY-01 — only PEAK takes the row's shape word. Build and taper
+    // keep their single phase word ("progression"/"sharpener") unchanged, so no
+    // override label can merge across phases — that cross-phase merge is what
+    // surfaces repetition §53 counts by label (CAT-ULTRA-THIN-01, still open).
+    // Refining peak's one generic "intervals" into per-row shapes is a strict
+    // refinement: it can only lower a label's count, never raise it. Peak is
+    // also where the 8×-identical monotony McMillan flagged actually lived.
+    //
+    // An effort-governed row (a hike, target kind 'effort') has no pace-able
+    // shape word — its v2 block label is a coaching phrase ("to the climb"), not
+    // a form — and its being goal-paced at all is a separate §22/§40b tension
+    // (board territory); fall back to the peak generic rather than leak it.
+    const overrideShape =
+      phase === 'build'
+        ? 'progression'
         : phase === 'taper'
-          ? `${distLabel}-pace sharpener`
-          : `${distLabel}-pace intervals`
+          ? 'sharpener'
+          : ((isEffortGoverned ? null : goalPaceShapeWord(catalogueRow)) ?? 'intervals')
+    const overrideLabel = distLabel
+      ? `${distLabel}-pace ${overrideShape}`
+      : 'Goal-pace cruise intervals'
     label = catalogueRowGoalPace
       ? (catalogueRow?.name ?? fallbackLabel)
       : overrideLabel
@@ -3586,11 +3647,13 @@ export function generateRulePlan(
 
     // Find under-represented labels in the same physiology bucket. We bucket by
     // the session's zone tag — Zone 3 / Zone 3–4 = threshold; Zone 4–5 = vo2max.
-    // Goal-pace overrides (X-pace progression / X-pace intervals / X-pace
-    // sharpener) are skipped — they're a coordinated specificity move per
-    // §22, not catalogue rotation.
-    const isOverride = (label: string): boolean =>
-      /^(\w+)-pace (progression|intervals|sharpener)$/.test(label)
+    // Goal-pace overrides are skipped — they're a coordinated specificity move
+    // per §22, not catalogue rotation. Rotating one into a bare threshold name
+    // ("Cruise intervals") strips its race-pace signal and trips §22/§19.
+    // Keyed on the stable "-pace " fragment every goal-pace label carries
+    // (LABEL-VARIETY-01 gave the override a per-row trailing word — "…-pace
+    // reps", "…-pace ladder" — so the old enumerated regex no longer covers it).
+    const isOverride = (label: string): boolean => label.includes('-pace ')
 
     const physBucket = (s: Session): 'threshold' | 'vo2max' | 'other' => {
       const zone = (s.zone ?? '').toLowerCase()

@@ -361,12 +361,18 @@ const BASELINE: Record<string, number> = {
   // the config already declared and the invariant had been ignoring.
   'INV-PLAN-MIN-SESSION-SIZE':            0,
 
-  // 87 -> 75. NOT the real number: this check counts LABELS, and §22's rename
-  // splits one row across several, so it under-counts. Counting catalogue rows
-  // — which is what §53 actually means — gives 2,227. See the note in
-  // invariants.ts and CAT-ULTRA-THIN-01: the fix is catalogue content, and both
-  // halves ship together or neither does.
-  'INV-PLAN-QUALITY-VARIETY-FULL-PLAN':   75,
+  // 87 -> 75 -> 0 (LABEL-VARIETY-01, 2026-08-21). The LABEL count is now zero:
+  // the peak goal-pace override takes the row's shape word ("…-pace ladder",
+  // "…-pace sustained", "…-pace reps") instead of one generic "…-pace intervals"
+  // for every row, so no display label repeats past the cap. Locked to 0 so a
+  // reintroduced label collapse reads as NEW.
+  //
+  // ⚠️ This does NOT close CAT-ULTRA-THIN-01. That check counts catalogue ROWS,
+  // not labels — a different measurement (~2,227), untouched here and if anything
+  // made honester-but-quieter, because distinct labels no longer hint at the
+  // row repetition underneath. The row-count flip is still gated on the Coaching
+  // Board's §53 cap ruling; both halves ship together or neither does.
+  'INV-PLAN-QUALITY-VARIETY-FULL-PLAN':    0,
   // 54 -> 98 -> 0 (2026-08-20). Cleared by identifying a taper session by its
   // catalogue ROW rather than its display label: §22's goal-pace rename made two
   // genuinely different sessions read as a repeat. The row check is also
