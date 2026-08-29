@@ -5,7 +5,41 @@
 **Test account:** `Cyprus.test@test.com` (`auth.users.id = 1809c05e-1bce-407a-96a0-150ac1a9800d`)
 **Scope:** Signup → onboarding → 10K plan generation. No code changes, no edits, no migrations, no deploys. All Supabase queries were read-only.
 
-> **Status of every fix below: PROPOSED, not applied.** Coaching-logic items are recommendations only and need sign-off (separate section at the end).
+> **Original status (investigation phase): PROPOSED, not applied.** The sections below are the as-investigated record. **Resolution status is tracked in §R immediately below** — the per-defect prose is preserved as the diagnosis, not the current state.
+
+---
+
+## R. Resolution status (updated 2026-08-29)
+
+All engineering defects shipped to `main`; the 10-user leak was backfilled; the one coaching item was ratified by the Coaching Board.
+
+| # | Item | Status | Commit / ref |
+|---|---|---|---|
+| D1 | Signup hang | ✅ Shipped | `ec398ce` |
+| D2 | `has_onboarded` leak (Problem A) | ✅ Shipped | `e2fa9e5` |
+| D3 | Zone cards "—" | ✅ Shipped | `e2fa9e5` |
+| D4 | Foundation long-run day | ✅ Shipped (+test) | `60e7111` |
+| D5 | Connect CTA label | ✅ Shipped | `e2fa9e5` |
+| D5 | Connect skip now always visible | ✅ Shipped | `83d3ce8` |
+| D6 | "Adjust inputs" → first step | ✅ Shipped | `03ece26` |
+| D7 | Sticky CTA overlap | ✅ Shipped | `03ece26` |
+| D8 | Ceremony day-chip sort | ✅ Shipped | `eae8989` |
+| D9 | "Long ea…" title clip | ✅ Shipped | `16551eb` |
+| A1 | Enrichment silently discarded | ✅ Shipped (+test, RCA confirmed) | `113c7ea` |
+| Backfill | 10 leaked users → `has_onboarded=true` | ✅ Done (leak = 0) | SQL run 2026-08-29 |
+| Coaching-1 | Foundation long-run cap 50→35% | ✅ Ratified + shipped (CD-20) | `f9d609f` |
+| Coaching-2 | "Highest volume" Peak copy | ✅ Shipped (copy fix) | `26815bc` |
+
+**Board ruling for Coaching-1:** `docs/decisions/coaching-board-2026-08-29-foundation-long-run.md` (CD-20). **Incident record:** `docs/incidents/2026-08-29-onboarding-leak.md`.
+
+**Still open (blocked on product/brand/screenshot):**
+- **D5 "Kit" persona** — the CTA and skip are fixed; renaming/introducing the "Kit" persona (a locked `BRAND` string, colliding with Health**Kit**) is a brand decision.
+- **D10 whitespace above phase cards** — investigation could not localise a static source; every candidate returns `null` cleanly. Needs a screenshot of the tester's exact preview state.
+- **Coaching-3 phase labels (W3 vs Weeks 1–4)** — ruled a non-bug: two surfaces, each internally consistent.
+
+**Engineering follow-ups (surfaced during Coaching-1, tracked in §7 below):**
+- `INV-PLAN-FOUNDATION-BLOCK` volume arm is stricter than §57 (rejects `> current_weekly_km`; §57 permits `baseline × 1.10`).
+- Foundation weeks are prepended client-side and never re-run through `validatePlan` → `INV-PLAN-FOUNDATION-BLOCK` is dormant in the live path.
 
 ---
 
