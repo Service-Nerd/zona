@@ -9,6 +9,7 @@ import GeneratingCeremony from '@/components/GeneratingCeremony'
 import { BRAND } from '@/lib/brand'
 import { createClient } from '@/lib/supabase/client'
 import { classifyGap, gapDays, generateFoundationBlock } from '@/lib/plan/foundationBlock'
+import { validatePlan } from '@/lib/plan/invariants'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import { DurationPicker } from '@/components/shared/DurationPicker'
@@ -380,6 +381,25 @@ function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
   )
 }
 
+// Foundation weeks are assembled client-side (after the API returns), so they
+// never pass through the server's validatePlan run inside generateRulePlan — the
+// foundation invariant was dormant in the live path. Re-run it here on the
+// assembled plan so a bad foundation block is visible in the console instead of
+// silently shipping. Never throws or blocks: the plan still renders (ADR-006
+// fallback philosophy). This is the only validation foundation weeks get live.
+function validateFoundationBlock(assembled: Plan, genInput: GeneratorInput): void {
+  try {
+    const violations = validatePlan(assembled, genInput)
+      .filter(v => v.code === 'INV-PLAN-FOUNDATION-BLOCK')
+    if (violations.length) {
+      console.error('[foundation] INV-PLAN-FOUNDATION-BLOCK violations:',
+        violations.map(v => v.message))
+    }
+  } catch (err) {
+    console.warn('[foundation] validation error:', err)
+  }
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function GeneratePlanScreen({
@@ -729,7 +749,9 @@ export default function GeneratePlanScreen({
             planStartDate: incoming.meta.plan_start,
             today,
           })
-          return { ...incoming, weeks: [...foundationWeeks, ...incoming.weeks] }
+          const assembled = { ...incoming, weeks: [...foundationWeeks, ...incoming.weeks] }
+          validateFoundationBlock(assembled, input)
+          return assembled
         }
         if (gapClass === 'choice') {
           lastInputRef.current = input
@@ -799,7 +821,9 @@ export default function GeneratePlanScreen({
       planStartDate: plan.meta.plan_start,
       today,
     })
-    setPlan({ ...plan, weeks: [...foundationWeeks, ...plan.weeks] })
+    const assembled = { ...plan, weeks: [...foundationWeeks, ...plan.weeks] }
+    validateFoundationBlock(assembled, lastInputRef.current)
+    setPlan(assembled)
     setFoundationModalOpen(false)
   }
 

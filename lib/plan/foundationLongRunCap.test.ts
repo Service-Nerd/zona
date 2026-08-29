@@ -68,6 +68,19 @@ describe('foundation long-run cap (Coaching-1)', () => {
     expect(errs, errs.map(v => v.message).join('\n')).toHaveLength(0)
   })
 
+  it('the volume arm accepts growth to baseline × 1.10 and rejects above it', () => {
+    // Real foundation weeks grow to ~baseline × 1.10 (44km for a 40km baseline).
+    // §57 permits this; the arm must NOT flag it (it used to, at the flat baseline).
+    const { plan } = planWithFoundation()
+    const volErr = (p: Plan) => validatePlan(p, INPUT)
+      .filter(v => v.code === 'INV-PLAN-FOUNDATION-BLOCK' && /baseline ceiling/i.test(v.message))
+    expect(volErr(plan), volErr(plan).map(v => v.message).join('\n')).toHaveLength(0)
+    // Above the ceiling → flag.
+    const fw = plan.weeks.find(w => w.phase === 'foundation')!
+    fw.weekly_km = (INPUT.current_weekly_km ?? 40) * 1.5
+    expect(volErr(plan).length).toBeGreaterThan(0)
+  })
+
   it('the invariant catches a foundation long run inflated back to 50%', () => {
     const { plan } = planWithFoundation()
     // Inflate the longest run of the first ≥3-run foundation week to 50% of the week.

@@ -2441,19 +2441,24 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             })
           }
         }
-        // Volume cap: no foundation week may exceed stated current_weekly_km.
-        // (The effective baseline ≤ stated_km, so this is a safe upper bound
-        // without requiring the input object here.)
+        // Volume cap: §57 permits the block to grow to effective baseline × 1.10
+        // (+10%/week, capped at the final week). Effective baseline ≤
+        // current_weekly_km, so current_weekly_km × 1.10 is a safe upper bound that
+        // honours the growth allowance. The old bound was current_weekly_km flat,
+        // which false-flagged a legitimate multi-week block for a non-fresh-return
+        // runner (baseline == current_weekly_km, so week 2 at +10% tripped it).
+        // The within-block +10%/week arm below enforces the tighter per-step limit.
         const statedKm = input.current_weekly_km ?? 0
-        if (statedKm > 0 && fw.weekly_km > statedKm * 1.001) {
+        const volumeCeiling = statedKm * (1 + GENERATION_CONFIG.FOUNDATION_WEEKLY_INCREASE_PCT / 100)
+        if (statedKm > 0 && fw.weekly_km > volumeCeiling + 0.01) {
           violations.push({
             code: 'INV-PLAN-FOUNDATION-BLOCK',
             principle_ref: 'CoachingPrinciples §57',
             severity: 'error',
             week: fw.n,
-            message: `Foundation week W${fw.n} volume ${fw.weekly_km}km exceeds stated current_weekly_km ${statedKm}km`,
+            message: `Foundation week W${fw.n} volume ${fw.weekly_km}km exceeds effective-baseline ceiling ${volumeCeiling.toFixed(1)}km (current_weekly_km ${statedKm}km × 1.10)`,
             actual: `${fw.weekly_km}km`,
-            expected: `≤ ${statedKm}km`,
+            expected: `≤ ${volumeCeiling.toFixed(1)}km`,
           })
         }
         // Long-run fraction cap (§57 / §9): the longest session in a foundation
