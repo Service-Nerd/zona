@@ -76,3 +76,47 @@ Unusually few — the board was near-unanimous on every item. The only genuine t
 
 - **UX-WIZARD-01** — *iff* per-day time budgets change what the engine prescribes (session placement/sizing). UI is free to proceed.
 - **UX-PROGRESS-01** — *iff* ever revisited: any trajectory visualisation needs a correctness ruling before build (expected outcome: reject a fabricated curve; permit at most a 3-point baseline→current→target).
+
+---
+
+## Session 2 (2026-08-29) — the full Planzy wizard (22 screens) + whole picture
+
+Founder walked Planzy's entire onboarding→plan flow and asked for both boards' view on **each piece and the whole picture**. Coaching Board ruled first (`docs/decisions/coaching-board-2026-08-29-competitive-ux.md`, CD-21); this section is the SLT layer, incorporating those rulings. Item detail + evidence: `competitive-ux-scope-2026-08-29.md` § Incoming (CI-1…CI-7) + `planzy-wiz-*.png`.
+
+### The through-line (the "whole picture")
+Planzy is **maximalist** — more data, more stats, difficulty tiers, a projection curve, paywall-before-plan. Zonna's wedge is the opposite: **restraint is the product.** So the strategy: **borrow Planzy's clarity (one question per screen, tactile inputs, teach-as-you-go), reject its maximalism (extra body data, difficulty tiers, dashboards).** Every verdict sorts on that line.
+
+### Board (condensed)
+- **Sutherland:** steal the *form*, not the greed. The easy-day education screen is our thesis being taught for us — own it harder. The "challenging" tier flatters the ego we're trying to disarm.
+- **Fried:** the wizard shape / primitives / teaching are *better forms* — build them. Extra data + tiers are surface area, not value. Connect-first is the one genuine structural win.
+- **Hutchinson:** carries CD-21 up — weight/height veto, gender only-if-honest, challenging-tier veto, keep deriving pace. Actively *pursue* CI-7 (teaching easy-day discipline is coaching, done free).
+- **Wood:** the wizard shape is context design (habit-positive). Weight/height = illusion-of-progress data → kill. Tiers recruit the over-motivated Type-A's willpower → harm. CI-7 is the rare motivational content that *reduces* effort ("you're allowed to go slow").
+- **Traynor:** wizard = activation funnel; CI-1/2/4 lift completion, all FREE. CI-7 is a positioning/retention asset. Gender only if the female-physiology roadmap is real. Don't drift toward Planzy's paywall-before-plan — the reverse trial is deliberately more generous.
+
+### Whole-picture decision table
+
+| Item | Coaching Board | SLT | Tier | Verdict |
+|---|---|---|---|---|
+| **CI-1** wizard shape (1-Q/screen + teach) | n/a | Build | FREE | ✅ Yes — the umbrella; frames UX-WIZARD-01 |
+| **CI-2** tactile input primitives | n/a | Build | FREE (infra) | ✅ Yes — = the forms-primitives initiative |
+| **CI-7** teach-as-you-go (easy-day lesson) | pursue | Build | FREE | ✅ Yes — most on-brand |
+| **CI-4** connect-first + auto-benchmark | n/a | Build | FREE | ✅ Yes — real structural win (HealthKit-first) |
+| **UX-WIZARD-01** per-day sliders | gate (0/A/B) | Build | FREE | ✅ Yes — board gates the engine slice (B) |
+| **CI-6** easy pace | keep deriving (CD-21d) | — | FREE | ◐ Derive; ask only as no-benchmark fallback |
+| **CI-3** gender | conditional (CD-21b) | roadmap call | FREE | ◐ Only if female-physiology roadmap committed |
+| **CI-3** weight/height | INCORRECT (CD-21a) | don't | — | ❌ No — data without a use |
+| **CI-5** 3-tier plan | VETO (CD-21c) | reframe-only | — | ❌ No as-is; maybe honest sustainable/compressed pair |
+| **UX-PROGRESS-01** projection graph | (prior) | don't | — | ❌ No — over-claims; already ships PAID |
+| **UX-WIZARD-CHATBOT** (Runzy) | — | rejected | — | ❌ No |
+| **UX-ZONES-01 / UX-SESSION-GLYPH-01** | none | build light | FREE | ✅ Low-priority polish (W6) |
+
+**Build bundle (coherent):** a redesigned wizard — one question per screen, tactile inputs (forms primitives), connect-first with auto-filled benchmark, per-day time budget, woven-in easy-day teaching. **Reject bundle (coherent):** extra body data, difficulty tiers, projection dashboards, chatbot, paywall-before-plan — Planzy's maximalism, against the wedge.
+
+### One open question that is the founder's, not the board's
+**Is the female-physiology roadmap committed?** That single call resolves CI-3 gender. Everything else is decided.
+
+### MUST/NEVER
+Warm Slate (translate, don't copy dark/yellow) · no dashboards (holds CI-5/PROGRESS) · five-zone model intact · ADR-011 (HealthKit-first; the weight/height veto is data-doctrine-consistent) · reverse-trial preserved (no paywall-before-plan drift) · no gamification. ✅
+
+### Integration mandate
+The five build items are **facets of one wizard redesign, not five independent features** — see the "Integration & non-regression" section in `competitive-ux-scope-2026-08-29.md`. Build them as **one initiative (WIZARD-REDESIGN)** to avoid five separate rebuilds of the just-stabilised wizard and to protect the D6/D7/D10 fixes, the `GeneratorInput`/`ruleEngine`/`foundationBlock` contract (incl. the D4 + Coaching-1 fixes), the property sweep, and the ConnectRuns/D5 work.

@@ -156,3 +156,40 @@ Planzy's easy-pace education (screens 21–22): *"90% of runners go too fast on 
 
 ### Still pending
 - **Runzy chatbot wizard** (no screenshots yet) — already SLT-rejected in principle (UX-WIZARD-CHATBOT); revisit if the founder brings the actual flow.
+
+---
+
+## Integration & non-regression — how this all fits together without breaking what's built
+
+Both boards approved this as **one initiative, not many.** The five green-lit items are **facets of a single wizard redesign**, and the rejected items need no integration. This section is the contract any implementer follows so the pieces compose and nothing already shipped regresses.
+
+### 1. The build items are ONE thing — build them together
+CI-1 (shape), CI-2 (primitives), CI-4 (connect-first + auto-benchmark), UX-WIZARD-01 (per-day sliders), CI-7 (teaching) all live in the **same surface** (`GeneratePlanScreen` + onboarding order). Building them as five separate backlog items would rebuild the wizard five times and re-risk the just-stabilised D6/D7/D10 each time. → They are consolidated into **one epic: `WIZARD-REDESIGN`** (see backlog). Internally coherent, no cross-item conflict:
+- the per-day **slider grid IS one of the primitives** (CI-2 ⊇ UX-WIZARD-01's control);
+- **auto-benchmark (CI-4) feeds VDOT → derived easy pace (CI-6)** — synergy, not conflict;
+- **teaching interstitials (CI-7)** interleave between question screens under the CI-1 shape.
+
+### 2. What already-built things this touches — and the guard for each
+| Built thing (recently shipped) | Risk | Non-regression guard |
+|---|---|---|
+| **Wizard fixes D6 / D7 / D10** | A redesign re-touches the exact code | Re-verify: "Adjust inputs" → first step (D6); sticky CTA clears Peak/Taper (D7); ceremony has no dead gap (D10) |
+| **`GeneratorInput` → `ruleEngine` → `foundationBlock` → property sweep → `validatePlan`** | UX-WIZARD-01 **option B** changes the input shape | Keep the **D4** long-run-day fix + **Coaching-1** 35% foundation cap intact; run `property-validate-plans.ts` (0 new violations) + full vitest suite; the byte-exact `generator_input` replay field changes shape → handle old-plan compat |
+| **ConnectRuns / D5** (CTA label, always-visible skip, Apple 5.1.1) + onboarding gate order (Orientation → Connect → Push) | CI-4 moves connect **pre-wizard** | Preserve the D5 skip + "Connect Apple Health" label + 5.1.1 compliance; keep `connect_runs_seen` / `healthkit_connected_at` / `orientation_seen` semantics; don't create a dead end |
+| **Benchmark input (FREE) vs `/api/race-times` + `RaceTimesCard` (PAID)** | CI-4 auto-estimates a benchmark | The wizard's auto-estimate must be a **FREE** estimation and must **not** expose the PAID `RaceTimesCard` surface/gate — keep the tier line exactly where it is |
+| **D3 HR hydration** (HR from `plan.meta`) | Wizard collects HR | Preserve the plan.meta → state hydration + `user_settings` persist |
+| **`zona_wizard_draft`** | State shape changes | Write/read/deps + `validSubSteps` stay in lockstep; legacy drafts degrade gracefully (restore guards already no-op on missing keys) |
+| **Shared form components** (`TextField`, `Select`, `Chip`, `DurationPicker`) used by login / profile / benchmark-update | CI-2 introduces new primitives | Migrate incrementally; every consuming screen re-checked; **iOS input-zoom trap** — any text input stays ≥16px |
+| **Warm Slate + pre-commit hex/font guard** | New UI | Light-theme only; no hardcoded hex/fonts (hook blocks it); translate Planzy's dark/yellow, never copy it |
+
+### 3. Sequence that de-risks (each step ships green before the next)
+1. **Primitives the wizard needs** (CI-2 subset: wheel, ruler, slider-grid, card-select) — as shared components, behind the existing forms-primitives plan. *(Full migration of other forms is a separate, later pass.)*
+2. **Wizard UI redesign** (CI-1 + those primitives + **UX-WIZARD-01 option A**, UI-only, existing `GeneratorInput`) — **no engine change yet**, so no property-sweep risk. Re-verify D6/D7/D10.
+3. **UX-WIZARD-01 option B** (per-day time budget → engine) — **only** behind the Coaching Board ruling, with the new invariant + property sweep. Skippable if the per-day time value isn't judged worth the engine cost.
+4. **CI-4 connect-first + auto-benchmark** — reorder onboarding; preserve D5 + gate order + tier line.
+5. **CI-7 teaching interstitials** — additive, last, lowest risk.
+
+### 4. Tier coherence
+Every build item is **FREE** (wizard/activation/brand). Nothing crosses into PAID, and the one PAID adjacency (RaceTimesCard estimates) must stay untouched. No gate conflict.
+
+### 5. The pre-ship gate (any WIZARD-REDESIGN slice)
+`tsc` clean · full vitest green · property sweep 0-new (if engine touched) · D6/D7/D10 re-verified · D4 + Coaching-1 + D5 + D3 intact · draft round-trips · no hex/font violations · iOS ≥16px · `frontend-design` pass · Coaching Board sign-off **iff** option B or the reframed plan-choice.
