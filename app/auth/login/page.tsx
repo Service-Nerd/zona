@@ -173,19 +173,36 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true); setError(null); setMessage(null)
 
-    if (mode === 'signin') {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) { setError(error.message); setLoading(false); return }
-      // Hard navigation ensures auth cookies are fully committed before
-      // the next request — router.push (soft nav) can race the cookie write
-      window.location.href = '/dashboard'
-    } else {
-      const { error } = await supabase.auth.signUp({
+    try {
+      if (mode === 'signin') {
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) { setError(error.message); setLoading(false); return }
+        // Hard navigation ensures auth cookies are fully committed before
+        // the next request — router.push (soft nav) can race the cookie write.
+        // Loading stays true: we are navigating away.
+        window.location.href = '/dashboard'
+        return
+      }
+
+      const { data, error } = await supabase.auth.signUp({
         email, password,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       })
       if (error) { setError(error.message); setLoading(false); return }
+      // Auto-confirm (email confirmation disabled): signUp returns a live session
+      // and the browser client has already persisted it — sign the user straight in
+      // rather than stranding them on the login screen. Loading stays true: navigating away.
+      if (data.session) {
+        window.location.href = '/dashboard'
+        return
+      }
+      // Email confirmation required: no session yet — tell the user to check their inbox.
       setMessage('Account created. Check your email.')
+      setLoading(false)
+    } catch (err) {
+      // signUp/signIn can reject or hang (network, native webview cookie stall).
+      // Without this the "Creating account…" state would persist forever.
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
       setLoading(false)
     }
   }
