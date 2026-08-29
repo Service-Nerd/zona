@@ -220,7 +220,7 @@ const PHASE_DESCRIPTION: Record<string, string> = {
   foundation: 'Pre-plan easy running. Easy sessions only — no quality, no strides.',
   base:       'Aerobic foundation. Easy runs, nothing fancy.',
   build:      'One quality session a week. Everything else stays easy.',
-  peak:       'Highest volume. Race-specific sharpening.',
+  peak:       'Race-specific sharpening. Volume holds; the work gets specific.',
   taper:      'Volume drops. Race week is shakeouts only.',
 }
 
