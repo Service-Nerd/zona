@@ -1404,6 +1404,37 @@ export default function DashboardClient() {
       // Archiving the previous plan now lives in savePlanForUser (single owner —
       // fires for every mutation path, race-change-guarded, error-surfaced).
       await savePlanForUser(user.id, savedPlan, supabase)
+
+      // D3: the wizard writes HR into plan.meta only — never into this component's
+      // restingHR/maxHR state (populated from user_settings at mount) nor into
+      // user_settings itself. For a brand-new user both were null, so the
+      // orientation screen's zone cards all rendered '—'. Hydrate state from the
+      // just-generated plan (truth at save time) so the cards show real ranges,
+      // and persist HR below so downstream zone surfaces survive a reload.
+      const metaRhr = (savedPlan.meta as { resting_hr?: number })?.resting_hr
+      const metaMhr = (savedPlan.meta as { max_hr?: number })?.max_hr
+      if (typeof metaRhr === 'number') setRestingHR(metaRhr)
+      if (typeof metaMhr === 'number') setMaxHR(metaMhr)
+
+      // ONBOARDING-FIX (Problem A): flip has_onboarded on the live finalise path.
+      // This previously lived ONLY in dismissWelcome, whose trigger — the retired
+      // Welcome screen — was commented out, so the flag never flipped for anyone
+      // (9/14 users had a saved plan but has_onboarded=false). The same browser
+      // client just persisted the plan above, so this write shares its auth context
+      // and succeeds identically on web and native. Idempotent on re-generation.
+      // authedFetch pattern not used: this is the live browser session (not a
+      // bearer route), proven to write by the savePlanForUser call directly above.
+      const onboardPatch: {
+        id: string; has_onboarded: boolean; updated_at: string
+        resting_hr?: number; max_hr?: number
+      } = { id: user.id, has_onboarded: true, updated_at: new Date().toISOString() }
+      if (typeof metaRhr === 'number') onboardPatch.resting_hr = metaRhr
+      if (typeof metaMhr === 'number') onboardPatch.max_hr = metaMhr
+      const { error: onboardErr } = await supabase.from('user_settings').upsert(onboardPatch)
+      // Non-fatal: the plan is already saved. Surface the failure rather than
+      // swallowing it (the original silent-failure class). No client-side
+      // recordOpsEvent — that helper is server-only (service-role key).
+      if (onboardErr) console.error('Failed to persist onboarding state:', onboardErr.message)
       setPlan(savedPlan)
       setScreen('today')
       // Only show orientation on first-ever plan generation (B-002)
@@ -2762,7 +2793,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
           }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--card)' }} />
           </span>
-          {busy ? 'Connecting…' : 'Continue'}
+          {busy ? 'Connecting…' : 'Connect Apple Health'}
         </button>
 
         {error && (
