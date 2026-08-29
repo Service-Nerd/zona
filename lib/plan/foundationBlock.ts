@@ -75,13 +75,21 @@ function buildFoundationSessions(
   longRunKm: number,
   daysAvailable: number,
   blockedDays: string[],
+  preferredLongRunDay: 'sat' | 'sun' | undefined,
 ): Week['sessions'] {
   const blocked = new Set(blockedDays)
-  const trainingDays = DEFAULT_DAYS.filter(d => !blocked.has(d)).slice(0, daysAvailable)
+  const available = DEFAULT_DAYS.filter(d => !blocked.has(d))
   const sessions: Week['sessions'] = {}
 
-  // Place long run on the last training day
-  const longDay = trainingDays[trainingDays.length - 1]
+  // Long-run day: honour the user's chosen day. Mirrors the long-run placement in
+  // ruleEngine.ts (`longDayPref`) — Sun by default, user may choose Sat, falling
+  // back through the list, then to the last available day. Previously this was
+  // hardcoded to the last of the first-N Mon-first days, ignoring the preference
+  // entirely, so the Foundation long run always landed on the wrong day (D4).
+  const longDayPref: Array<(typeof DEFAULT_DAYS)[number]> =
+    preferredLongRunDay === 'sat' ? ['sat', 'sun', 'fri'] : ['sun', 'sat', 'fri']
+  const longDay = longDayPref.find(d => !blocked.has(d)) ?? available[available.length - 1]
+
   if (longDay) {
     sessions[longDay] = {
       type: 'easy',
@@ -93,8 +101,9 @@ function buildFoundationSessions(
     }
   }
 
-  // Distribute remaining km across other training days
-  const otherDays = trainingDays.slice(0, -1)
+  // Distribute remaining km across the other available training days (Mon-first),
+  // up to the day budget (long run consumes one). Same run count as before.
+  const otherDays = available.filter(d => d !== longDay).slice(0, Math.max(0, daysAvailable - 1))
   const remainingKm = Math.max(0, weeklyKm - longRunKm)
   const eachKm = otherDays.length > 0 ? Math.max(3, remainingKm / otherDays.length) : 0
 
@@ -172,6 +181,7 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
       longRunKm,
       input.days_available ?? 4,
       input.days_cannot_train ?? [],
+      input.preferred_long_run_day,
     )
 
     weeks.push({
