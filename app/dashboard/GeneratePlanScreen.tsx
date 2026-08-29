@@ -563,7 +563,16 @@ export default function GeneratePlanScreen({
 
   function goBack() {
     if (appStep === 'error') { onBack(); return }
-    if (appStep === 'preview') { navigateTo(getLastWizardStep(), 'back'); return }
+    // D6: "Adjust inputs" from the preview returns to the FIRST wizard step, not
+    // the last. Landing on the last step forced the user to page backwards to
+    // reach earlier fields. All field values are independent state and preserved,
+    // so this is a quick walk-through, not a re-entry. (The error-screen retry
+    // still jumps to the last step via its own handler — unchanged.)
+    if (appStep === 'preview') {
+      const sequence = getStepSequence(!!hasPaidAccess, goal)
+      navigateTo(sequence[0], 'back')
+      return
+    }
     if (appStep === 'generating') { onBack(); return }
     const sequence = getStepSequence(!!hasPaidAccess, goal)
     const idx      = sequence.indexOf(appStep as WizardSubStep)
@@ -874,7 +883,12 @@ export default function GeneratePlanScreen({
           </div>
         </div>
 
-        <div style={{ flex: 1, padding: '0 20px', overflowY: 'auto' }}>
+        {/* D7: bottom padding clears the sticky "Use this plan" CTA below. The
+            wrapper's minHeight:100% is unbounded so this content scrolls under the
+            sticky bar; without this pad the last phase cards (Peak/Taper) rendered
+            beneath it. Sized to the CTA height incl. the optional "replaces" line
+            and the iOS safe-area inset. */}
+        <div style={{ flex: 1, padding: '0 20px calc(104px + env(safe-area-inset-bottom))', overflowY: 'auto' }}>
           {/* FREE demand band — feasibility read, above the PAID confidence score */}
           <DifficultyCard band={meta.difficulty_band} note={meta.difficulty_note} alternatives={meta.prep_time_alternatives} />
           {meta.confidence_score != null && (
