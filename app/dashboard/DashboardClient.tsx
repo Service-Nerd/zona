@@ -2669,9 +2669,6 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
 }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // Tracks whether the iOS permission dialog has already been presented.
-  // Apple 5.1.1(iv): no skip path before the request — only after.
-  const [permissionAsked, setPermissionAsked] = useState(false)
   const supabase = createClient()
 
   async function connectHealthKit() {
@@ -2680,7 +2677,6 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
     setError(null)
     try {
       const { requestHealthKitAuth, syncOnAppOpen, fetchAppleHealthHRSnapshot } = await import('@/lib/health/clientSync')
-      setPermissionAsked(true)
       const granted = await requestHealthKitAuth()
       if (!granted) {
         // Denial / unavailable / framework not linked — Capacitor doesn't
@@ -2802,27 +2798,28 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
           </div>
         )}
 
-        {/* Skip only shown AFTER the iOS permission dialog has fired (Apple
-            5.1.1(iv): no exit path before the request). permissionAsked flips
-            true the moment requestHealthKitAuth() is called. */}
-        {permissionAsked && (
-          <button
-            onClick={skip}
-            disabled={busy}
-            style={{
-              width: '100%',
-              background: 'none', border: 'none',
-              padding: '14px 0',
-              marginTop: '8px',
-              minHeight: '44px',
-              fontFamily: 'var(--font-ui)', fontSize: '13px',
-              color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: '3px',
-              cursor: busy ? 'default' : 'pointer',
-            }}
-          >
-            Connect later
-          </button>
-        )}
+        {/* D5: always-visible exit. Design system requires a visible "no thanks"
+            path (a CTA without one is a dark pattern) and ux-principles bars dead
+            ends. This is also the Apple-5.1.1 compliant direction — the guideline
+            requires that the user CAN proceed without granting, not that the skip
+            be hidden. Previously gated behind permissionAsked, so the first frame
+            looked exit-less until the user had already tapped Connect. */}
+        <button
+          onClick={skip}
+          disabled={busy}
+          style={{
+            width: '100%',
+            background: 'none', border: 'none',
+            padding: '14px 0',
+            marginTop: '8px',
+            minHeight: '44px',
+            fontFamily: 'var(--font-ui)', fontSize: '13px',
+            color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: '3px',
+            cursor: busy ? 'default' : 'pointer',
+          }}
+        >
+          Connect later
+        </button>
       </div>
     </div>
   )
