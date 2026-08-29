@@ -391,13 +391,22 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     if (isTimeTarget && w.n >= halfWeek && (w.phase === 'build' || w.phase === 'peak') && w.type !== 'deload') {
       for (const { day, session } of placedRunning) {
         if (session.type !== 'quality') continue
-        const label = (session.label ?? '').toLowerCase()
         // SC-09 — STRUCTURAL, not by name. The label test held while every
         // VO2max session was called "… VO2max"; `hill_reps` is vo2max work
         // labelled "Hill reps — 45s", and the exemption silently stopped
         // applying to it (D-17).
         if (isVo2maxSession(session, V1_SESSION_CATALOGUE)) continue
-        if (!label.includes('pace')) {
+        // A1 / D-17 — detect goal-pace work STRUCTURALLY via the stamped
+        // `stimulus` (classifyStimulus reads session.stimulus first), NOT the
+        // label substring. The generator stamps `stimulus: 'race_pace'` at
+        // construction (ruleEngine §CLASSIFY-STIMULUS-01); the enricher may
+        // rewrite the label ("10K-pace intervals" → "Speed intervals") but can
+        // NEVER set stimulus (EnrichedWeekSchema picks only label + coach_notes).
+        // The old `label.includes('pace')` test tripped on those rewrites and
+        // silently discarded the whole enriched plan (post_enrich_invalid),
+        // costing trial/paid users their AI voice. Legacy pre-stamp plans fall
+        // back to the same label heuristic inside classifyStimulus — no regression.
+        if (classifyStimulus(session) !== 'race_pace') {
           violations.push({
             code: 'INV-PLAN-RACE-SPECIFIC-EXPOSURE',
             principle_ref: 'CoachingPrinciples §22',
