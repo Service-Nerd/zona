@@ -773,7 +773,13 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
                   fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 600,
                   textTransform: 'uppercase', letterSpacing: '0.07em',
                   color: accent, background: `color-mix(in srgb, ${accent} 18%, transparent)`,
-                  borderRadius: '4px', padding: '2px 6px', whiteSpace: 'nowrap', flexShrink: 0,
+                  borderRadius: '4px', padding: '2px 6px', whiteSpace: 'nowrap',
+                  // D9: the session label is primary — let this secondary type chip
+                  // yield first when the row is tight (the label is flex:1/basis-0,
+                  // so a shrinkable chip absorbs the squeeze and the label stays
+                  // readable instead of clipping to "Long ea…"). No effect when the
+                  // row has room. flexShrink was 0, which forced the label to clip.
+                  flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>
                   {SESSION_LABELS[session.type]}
                 </span>
