@@ -396,7 +396,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 - 🔲 **[W5]** **CI-7 — teach-as-you-go interstitials (easy-day discipline)** *(part of WIZARD-REDESIGN)* — woven teaching moments, esp. the easy-day lesson (Planzy's easy-pace education is almost verbatim our thesis — do it better). On-brand; voice owned by `brand.md`; no dead ends. **Tier: FREE.**
 - ◐ **CI-6 — easy pace: KEEP DERIVING (Coaching Board CD-21d)** — do not replace VDOT derivation with a self-report ask; permissible only as a no-benchmark fallback ("we'll fine-tune"). Borrow Planzy's explainer copy (brand).
 - ❌ **CI-3 weight + height — NOT COLLECTING (CD-21a)** — no engine use; data without a use; against restraint + ADR-011.
-- ◐ **CI-3 gender — CONDITIONAL (CD-21b)** — collect **only** as an honest foundation for future female-physiology work, and **only if** that roadmap is committed (founder call). No implication it changes today's plan. Deferred pending the roadmap decision.
+- ❌ **CI-3 gender — DEFERRED (CD-21b; founder call 2026-08-29)** — the female-physiology roadmap is **not committed**, so gender is **not collected** (CD-21b's condition isn't met — collecting with no use would be decoration). Revisit only if/when that roadmap is committed; CD-21b already clears it to collect *honestly* at that point.
 - ❌ **CI-5 — 3-tier EASY/OPTIMAL/CHALLENGING plan — VETOED (CD-21c)** — a "push harder" tier sells the runner the error the product exists to fix (injury + grey-zone-drift vector). **Permissible reframe (SLT may build):** an honest "sustainable vs time-crunched/compressed" choice, all options obeying §2/§9/load caps — never a difficulty upsell.
 
 ### R23 engine polish (browser-in-loop work)

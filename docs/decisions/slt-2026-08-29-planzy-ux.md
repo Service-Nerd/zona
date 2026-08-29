@@ -112,8 +112,8 @@ Planzy is **maximalist** — more data, more stats, difficulty tiers, a projecti
 
 **Build bundle (coherent):** a redesigned wizard — one question per screen, tactile inputs (forms primitives), connect-first with auto-filled benchmark, per-day time budget, woven-in easy-day teaching. **Reject bundle (coherent):** extra body data, difficulty tiers, projection dashboards, chatbot, paywall-before-plan — Planzy's maximalism, against the wedge.
 
-### One open question that is the founder's, not the board's
-**Is the female-physiology roadmap committed?** That single call resolves CI-3 gender. Everything else is decided.
+### The founder's call — RESOLVED 2026-08-29
+**Is the female-physiology roadmap committed? → No.** So **CI-3 gender is deferred (not collected)** — CD-21b's condition isn't met. Revisit only if/when that roadmap is committed. Everything in this review is now decided.
 
 ### MUST/NEVER
 Warm Slate (translate, don't copy dark/yellow) · no dashboards (holds CI-5/PROGRESS) · five-zone model intact · ADR-011 (HealthKit-first; the weight/height veto is data-doctrine-consistent) · reverse-trial preserved (no paywall-before-plan drift) · no gamification. ✅
