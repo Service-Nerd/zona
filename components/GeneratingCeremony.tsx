@@ -80,7 +80,13 @@ function RevealCard({ week, phaseLabel, phaseColour, visible }: {
   phaseColour?: string
   visible: boolean
 }) {
-  const sessionDays = Object.entries(week.sessions ?? {}).filter(([, s]) => s && s.type !== 'rest')
+  // D8: sort chips Mon→Sun. Object.entries follows insertion order — the rule
+  // engine inserts the long run (often Sunday) first, so unsorted chips read
+  // Sun/Thu/Tue/… The real Plan screen already iterates a fixed day order; match it.
+  const DOW_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+  const sessionDays = Object.entries(week.sessions ?? {})
+    .filter(([, s]) => s && s.type !== 'rest')
+    .sort(([a], [b]) => DOW_ORDER.indexOf(a) - DOW_ORDER.indexOf(b))
 
   return (
     <div style={{
