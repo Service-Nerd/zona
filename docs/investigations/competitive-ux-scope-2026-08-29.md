@@ -105,6 +105,54 @@ Session rows render in the shared **`DayRow`** (`PlanCalendar.tsx:695`, used by 
 
 ---
 
-## § Incoming — additional competitor analysis (placeholder)
+## § Incoming — Planzy full plan-generation wizard (22 screens, 2026-08-29)
 
-*To be filled as the founder supplies more screenshots (Runzy chat flow + others). Each new idea gets scoped in the same shape above — current state, gap, decision, scope, risks, tier, board routing — so the boards always rule against a complete picture. Nothing here is built until it has both an SLT tier/build ruling and (if it changes prescription) a Coaching Board correctness ruling.*
+Founder walked the entire Planzy onboarding→plan flow. Evidence: `docs/investigations/planzy-wiz-01…22-*.png` (named in flow order). Liked: the **simplicity**, one-question-per-screen, informative-as-you-go, and the **tactile input types**. This section is the complete board brief for that flow. Nothing is built until it has an SLT build/tier ruling and (if it changes prescription) a Coaching Board correctness ruling.
+
+### The full Planzy flow (reference)
+Welcome → **connect runs (Strava/Garmin/Apple Health) FIRST** → name → DOB (wheel) → gender (cards) → weight (arc dial) → height (ruler) → experience-with-structured-plans (Yes/First-time + explainer) → "adaptive" explainer → **auto-estimated benchmark** ("if you raced 10K today: 55:52" confirm/edit) → easy pace (**asks**, wheel + explainer) → weekly distance (ruler) → race distance (cards) → race date (wheel) → **time availability (per-day slider grid** = the earlier `planzy-allocate-time`) → building (loading %) → **plan ready: EASY / OPTIMAL / CHALLENGING** (3 tiers + preview card + projection chart) → "no one follows a plan perfectly" → **paywall** (Planzy Pro) → post-paywall **easy-pace education + coach's note**.
+
+### What the founder likes (the pattern to capture)
+**One question per screen · bold header · one-line "why we ask" · a distinctive tactile control · educate-as-you-go.** That's the wizard's *shape* — it extends UX-WIZARD-01 from "just the time sliders" into a fuller wizard-redesign.
+
+---
+
+### The decisions this batch surfaces
+
+Each is *what Planzy does → Zonna today → the decision → tier → board routing*.
+
+**CI-1 — Wizard shape: one-question-per-screen + educate-as-you-go.**
+Planzy: single question per screen, each with a "why", plus teaching interstitials. Zonna: multi-field steps, terser. → **Decision:** adopt the shape as the frame for UX-WIZARD-01. **Tier:** FREE. **Board:** SLT (product/UX) + `frontend-design`. Low coaching risk (it's presentation + copy). *This is the umbrella the founder actually likes; the items below are its contents.*
+
+**CI-2 — Tactile input primitives (wheel / arc dial / ruler / card-select / segmented / unit-toggle).**
+Planzy uses a distinct control per quantity (DOB & pace & date = wheel; weight = dial; height & distance = ruler; gender & race = cards). Zonna has `TextField`, `Select`, `Chip`, `DurationPicker`. → **Decision:** this *is* the **forms-primitives initiative already scoped** ("end input drift" — 6 shared primitives, full scope, not yet in the backlog). Fold Planzy's controls in as the design reference and finally land that initiative. **Tier:** FREE (infra). **Board:** SLT + `frontend-design`. **Backlog:** open the forms-primitives item (currently only a memory).
+
+**CI-3 — New personal data: gender, weight, height.** ⚠️ **Coaching Board question — "what's the coaching use?"**
+Zonna collects none of these. The engine is VDOT + HR + volume based:
+- **Gender** — Zonna's max-HR is Tanaka (`208 − 0.7×age`, **not** sex-specific) and VDOT (Daniels) isn't sex-specific, so there is **no current engine use**. BUT it is the prerequisite for *any* female-physiology work (Sims' seat), is cheap and respectful to collect, and its absence is itself a gap. Cycle data stays blocked (ADR-011) regardless. **Decision for the board:** collect-now-for-future-and-respect vs the "don't ask for data you don't use" restraint principle.
+- **Weight + height** — **no defensible engine use** for a VDOT/HR/volume plan (no power/GPS for running-economy; Zonna does no calorie/BMI load). Collecting them is **data-without-a-use** — friction against "restraint is the feature." **Recommendation to pre-empt the board:** don't collect unless a concrete coaching use is named first.
+- **Routing:** Coaching Board rules whether each has a defensible use *before* SLT rules on collecting it. Default expectation: gender = maybe (future/respect), weight/height = no.
+
+**CI-4 — Connect-runs-FIRST + auto-estimated benchmark.**
+Planzy connects data sources at step 2, then *auto-estimates* your race time from recent runs and asks you to confirm/edit (screen 10). Zonna: `ConnectRuns` is **post-plan**, and the benchmark is **manual** (wizard step 2, optional race/TT). Zonna already has the estimation engine (`/api/race-times`, 5-state confidence). → **Decision:** reorder onboarding so connect precedes the wizard, letting Zonna pre-fill the benchmark from real runs (pairs with the D3/HR-hydration work). **Tier:** FREE. **Board:** SLT (onboarding order / activation). Note the iOS ADR-011 reality: HealthKit-first, no Garmin, Strava pending — so "connect" = HealthKit for now.
+
+**CI-5 — 3-tier plan preview: EASY / OPTIMAL / CHALLENGING.** ⚠️ **Strong brand tension.**
+Planzy generates three difficulty tiers and lets the runner pick their "commitment level." Zonna generates **one** plan and honestly classifies it (`maintenance` vs build). → **The tension:** a "CHALLENGING — push harder" option is close to the exact behaviour Zonna exists to counter ("You're trying hard. That's the problem."). Offering a harder tier to an overtrained day-job runner invites the grey-zone overreach the product is built to remove. **Board:** Coaching Board (Willy on load; is a "challenging" ramp defensible?) **and** SLT (does it undermine the positioning?). **Expected outcome:** reject or heavily reframe — at most an *honest* pair (e.g. "sustainable" vs "time-crunched"), never a "try harder" upsell. Do **not** adopt as-is.
+
+**CI-6 — Ask-vs-derive easy pace.**
+Planzy **asks** the runner their easy pace (with a "not sure? we'll fine-tune" escape). Zonna **derives** it from VDOT/benchmark. → **Decision:** deriving is more accurate *when a benchmark exists*; asking gives agency and works with no benchmark. Hutchinson's call. Likely: keep deriving, but the *explainer copy* Planzy pairs with it is worth borrowing. **Board:** Coaching Board (light — it's about which signal drives the pace). **Tier:** FREE.
+
+**CI-7 — Educate-as-you-go interstitials — including the easy-pace lesson.** ✅ **Most on-brand thing here.**
+Planzy's easy-pace education (screens 21–22): *"90% of runners go too fast on easy days"*, *"even elites spend ~80% here"*, *"slow down… without burning out."* That is **almost verbatim Zonna's thesis** ("You can't outrun your easy days" / "Hold the zone"). → **Decision:** Zonna should do this *better* than Planzy — it's the brand. Add teaching moments (esp. the easy-day discipline lesson) into the wizard/first-run. **Tier:** FREE. **Board:** brand (`brand.md` voice) + SLT; low coaching risk. **Trigger `frontend-design`.**
+
+### Reconfirmed against the first batch
+- **UX-WIZARD-01** (per-day time sliders) = screen 15 — confirmed; the 0/A/B engine decision above still stands.
+- **UX-PROGRESS-01** (projection graph) reappears on screens 18 & 22 — **still don't-build** (over-claims; "no dashboards"; the honest version already ships PAID). It's baked deep into Planzy; Zonna's restraint is the deliberate divergence.
+- **Paywall model differs** — Planzy paywalls *before* revealing the plan; Zonna's reverse-trial gives 14 days full access. Not a change to make — recorded so the boards don't read Planzy's gate as a template.
+
+### Suggested routing when the boards convene
+- **Coaching Board first** on the two that touch prescription/data doctrine: **CI-3** (gender/weight/height — what's the use?) and **CI-5** (challenging tier — is it safe/on-thesis?). Expected: gender = maybe, weight/height = no, challenging-tier = reject/reframe.
+- **SLT** on the rest as a bundle: **CI-1** wizard shape, **CI-2** forms primitives, **CI-4** connect-first + auto-benchmark, **CI-6** ask-vs-derive, **CI-7** teaching moments — most are FREE activation/brand wins with low coaching risk.
+
+### Still pending
+- **Runzy chatbot wizard** (no screenshots yet) — already SLT-rejected in principle (UX-WIZARD-CHATBOT); revisit if the founder brings the actual flow.
