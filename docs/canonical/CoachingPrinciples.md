@@ -1323,8 +1323,10 @@ The Foundation Block is a pre-plan preparation phase generated when the gap betw
 - Week 1 of the Foundation Block starts at effective baseline (never above it).
 - Subsequent foundation weeks may increase by a maximum of **+10% per week** (hard cap).
 - The final foundation week must not exceed effective baseline × 1.10 regardless of block length.
-- Long run cap per foundation week: the lesser of `longest_recent_run_km` and 50% of that week's weekly volume.
+- Long run cap per foundation week: the lesser of `longest_recent_run_km` and **35%** of that week's weekly volume (`GENERATION_CONFIG.FOUNDATION_LONG_RUN_MAX_PCT`).
 - These caps are enforced by `INV-PLAN-FOUNDATION-BLOCK`.
+
+**Why the long run is capped at 35%, not 50% (Coaching Board, Coaching-1).** The foundation block previously permitted a long run up to 50% of the week's volume — but §9 states that a long run exceeding **35% of weekly volume is a binge**, fatigue accumulating faster than aerobic gain. Foundation is *pre-base*; it should be no more aggressive on long-run fraction than base phase (28%), not nearly double it. The concern is sharpest for this block's primary population — fresh-return and novice runners, whose musculoskeletal and bone readiness lags their cardiovascular readiness (Willy, Sims). A long run at half of a deliberately reduced (0.70×) fresh-return week is a within-week load spike into exactly that gap. Consecutive easy days at controlled low volume were reviewed and ruled **correct** — no session-spacing rule is added (a distribution rule over an all-easy, low-volume block is a rule the runner must understand for no demonstrated benefit; §5's low-session-count logic applies). The absolute `longest_recent_run_km` guard remains, so the long run stays bounded by recent experience; the 35% cap only stops it dominating the week.
 
 ### Session content
 

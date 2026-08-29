@@ -2456,6 +2456,34 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             expected: `≤ ${statedKm}km`,
           })
         }
+        // Long-run fraction cap (§57 / §9): the longest session in a foundation
+        // week must not exceed FOUNDATION_LONG_RUN_MAX_PCT of that week's volume.
+        // A long run that dominates a reduced fresh-return week is a within-week
+        // binge (§9's stated threshold) — the injury vector the Coaching Board
+        // flagged for the returning population (Coaching-1). Foundation sessions
+        // are all typed 'easy', so the long run is identified structurally as the
+        // longest-distance session, not by label.
+        //
+        // Scoped to ≥3 running sessions: at 1–2 runs a week a long run is not a
+        // distinct session (§5 — fraction is undefined at low session counts), and
+        // the cap would otherwise mechanically force the single easy run above 35%
+        // and false-flag a week that carries no binge.
+        const runKms = Object.values(fw.sessions)
+          .filter(s => s && s.type !== 'rest' && s.type !== 'cross-train')
+          .map(s => s?.distance_km ?? 0)
+        const longestKm = Math.max(0, ...runKms)
+        const lrCapKm = fw.weekly_km * (GENERATION_CONFIG.FOUNDATION_LONG_RUN_MAX_PCT / 100)
+        if (runKms.length >= 3 && fw.weekly_km > 0 && longestKm > lrCapKm + 0.01) {
+          violations.push({
+            code: 'INV-PLAN-FOUNDATION-BLOCK',
+            principle_ref: 'CoachingPrinciples §57',
+            severity: 'error',
+            week: fw.n,
+            message: `Foundation week W${fw.n} long run ${longestKm.toFixed(1)}km exceeds ${GENERATION_CONFIG.FOUNDATION_LONG_RUN_MAX_PCT}% of weekly ${fw.weekly_km}km`,
+            actual: `${longestKm.toFixed(1)}km`,
+            expected: `≤ ${lrCapKm.toFixed(1)}km`,
+          })
+        }
       }
       // +10%/week cap within the foundation block
       for (let i = 1; i < foundationWeeks.length; i++) {

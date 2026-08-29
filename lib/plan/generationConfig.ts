@@ -839,7 +839,7 @@ export const GENERATION_CONFIG = {
   // > 28: offer three-option choice (see foundationBlock.ts)
   FOUNDATION_MAX_WEEKS:         3,   // max foundation block length (weeks)
   FOUNDATION_WEEKLY_INCREASE_PCT: 10, // max +% per week within the block
-  FOUNDATION_LONG_RUN_MAX_PCT:   50, // long run cap as % of that week's weekly_km
+  FOUNDATION_LONG_RUN_MAX_PCT:   35, // long run cap as % of that week's weekly_km — aligned with §9's binge threshold (Coaching Board, Coaching-1). Was 50, which let the long run dominate a reduced fresh-return week.
   FRESH_RETURN_EFFECTIVE_BASELINE_FRACTION: 0.70, // mirrors FRESH_RETURN_START_FRACTION
 
   // ── Stimulus rank — quality session escalation order (V5) ──────────────────
