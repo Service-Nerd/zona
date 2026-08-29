@@ -272,7 +272,12 @@ export default function GeneratingCeremony({
               </p>
             </>
           )}
-          {phase === 'revealing' && (
+          {(phase === 'revealing' || phase === 'done') && (
+            // D10: keep the reveal line through 'done' too. The ceremony stays
+            // mounted at 'done' until the enricher's stream finishes (several
+            // seconds for paid/trial); without this the copy vanished but its
+            // reserved slot (minHeight 64 + margin 36) plus the container's 48px
+            // top padding left a large dead gap above the phase cards.
             <p style={{
               fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 500,
               color: 'var(--teal)', lineHeight: 1.45, margin: 0,
