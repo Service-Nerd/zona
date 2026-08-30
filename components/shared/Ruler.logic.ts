@@ -33,6 +33,17 @@ export function thumbPercent(v: number, min: number, max: number): number {
 }
 
 /**
+ * Map a 0–1 track fraction (from a pointer's x within the track) to a snapped,
+ * in-range value. `frac` is clamped, so a drag past either end pins to min/max.
+ * This is the touch/mouse drag path — a native range input's thumb is unreliable
+ * on iOS (zero-size thumb, no tap-to-jump), so the Ruler drives the value itself.
+ */
+export function valueFromFraction(frac: number, min: number, max: number, step: number): number {
+  const f = clampToRange(frac, 0, 1)
+  return snapToStep(min + f * (max - min), min, max, step)
+}
+
+/**
  * Decorative tick heights across the track. `count` evenly-spaced ticks; every
  * `majorEvery`-th is tall (h3), the mid-point between majors is medium (h2),
  * the rest short (h1) — the mockup's h3,h1,h2,h1 rhythm. Purely visual: the

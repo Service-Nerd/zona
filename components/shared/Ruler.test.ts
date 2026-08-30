@@ -1,5 +1,23 @@
 import { describe, it, expect } from 'vitest'
-import { clampToRange, snapToStep, thumbPercent, makeTicks, scaleLabels } from './Ruler.logic'
+import { clampToRange, snapToStep, thumbPercent, makeTicks, scaleLabels, valueFromFraction } from './Ruler.logic'
+
+describe('Ruler · valueFromFraction (drag path)', () => {
+  it('maps 0 → min, 1 → max, 0.5 → snapped midpoint', () => {
+    expect(valueFromFraction(0, 0, 160, 5)).toBe(0)
+    expect(valueFromFraction(1, 0, 160, 5)).toBe(160)
+    expect(valueFromFraction(0.5, 0, 160, 5)).toBe(80)
+  })
+  it('snaps to the step grid', () => {
+    // 0.51 * 160 = 81.6 → nearest 5 = 80
+    expect(valueFromFraction(0.51, 0, 160, 5)).toBe(80)
+    // 0.53 * 160 = 84.8 → nearest 5 = 85
+    expect(valueFromFraction(0.53, 0, 160, 5)).toBe(85)
+  })
+  it('clamps a drag past either end', () => {
+    expect(valueFromFraction(-0.3, 0, 160, 5)).toBe(0)
+    expect(valueFromFraction(1.4, 0, 160, 5)).toBe(160)
+  })
+})
 
 describe('Ruler · clampToRange', () => {
   it('clamps below min and above max, passes through in-range', () => {

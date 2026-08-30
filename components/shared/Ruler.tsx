@@ -11,17 +11,23 @@
 // CoachingPrinciples §18; GENERATION_CONFIG.WIZARD_VOLUME_RULER; guarded by
 // INV-INPUT-LONGEST-LE-WEEKLY.
 //
-// Interaction: a transparent native <input type="range"> is the real control —
-// it carries touch-drag, keyboard, and screen-reader support natively; we only
-// paint the ticks, thumb, and readout over it. `value` is nullable so the field
-// can distinguish "not yet set" (muted readout, thumb resting at restAnchor)
-// from a real self-report — the honest-input stance §18 depends on.
+// Interaction: pointer-drag on the track (tap or drag, anywhere) drives the
+// value — this works identically for touch and mouse. A native <input
+// type="range"> is kept screen-reader/keyboard-only (visually hidden), NOT as
+// the pointer target: on iOS a transparent range input has a zero-size,
+// ungrabbable thumb and no tap-to-jump, so it can't commit a value by touch
+// (the "greyed-out ruler" bug). `touch-action: none` stops the drag from
+// scrolling the page. `value` is nullable so the field can distinguish "not yet
+// set" (muted readout, thumb resting at restAnchor) from a real self-report —
+// the honest-input stance §18 depends on.
 //
 // Pure math in ./Ruler.logic (node-testable).
 //
 // ui-patterns.md § Form Fields & Pickers → Ruler.
 
-import { snapToStep, thumbPercent, makeTicks, scaleLabels } from './Ruler.logic'
+import type React from 'react'
+import { useRef } from 'react'
+import { snapToStep, thumbPercent, makeTicks, scaleLabels, valueFromFraction } from './Ruler.logic'
 
 export function Ruler({
   value,
@@ -54,6 +60,29 @@ export function Ruler({
   const ticks = makeTicks(21, 4)
   const labels = scaleLabels(min, max, 5)
 
+  const trackRef = useRef<HTMLDivElement>(null)
+  const dragging = useRef(false)
+
+  function setFromClientX(clientX: number) {
+    const el = trackRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const frac = rect.width > 0 ? (clientX - rect.left) / rect.width : 0
+    onChange(valueFromFraction(frac, min, max, step))
+  }
+  function handleDown(e: React.PointerEvent<HTMLDivElement>) {
+    dragging.current = true
+    e.currentTarget.setPointerCapture(e.pointerId)
+    setFromClientX(e.clientX)
+  }
+  function handleMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (dragging.current) setFromClientX(e.clientX)
+  }
+  function endDrag(e: React.PointerEvent<HTMLDivElement>) {
+    dragging.current = false
+    try { e.currentTarget.releasePointerCapture(e.pointerId) } catch { /* capture may already be gone */ }
+  }
+
   return (
     <div>
       {/* Readout — metric-pair. Muted until the user commits a value. */}
@@ -73,11 +102,19 @@ export function Ruler({
         )}
       </div>
 
-      {/* Track: ticks + drawn thumb + transparent native range control. */}
-      <div style={{
-        position: 'relative', background: 'var(--card)', border: '1px solid var(--line)',
-        borderRadius: '18px', padding: '22px 0 18px', overflow: 'hidden',
-      }}>
+      {/* Track: ticks + drawn thumb. Pointer-drag anywhere sets the value. */}
+      <div
+        ref={trackRef}
+        onPointerDown={handleDown}
+        onPointerMove={handleMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        style={{
+          position: 'relative', background: 'var(--card)', border: '1px solid var(--line)',
+          borderRadius: '18px', padding: '22px 0 18px', overflow: 'hidden',
+          cursor: 'pointer', touchAction: 'none', userSelect: 'none',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: '44px', padding: '0 18px' }}>
           {ticks.map((t, i) => (
             <div key={i} style={{
@@ -103,7 +140,9 @@ export function Ruler({
           }} />
         </div>
 
-        {/* The real control — invisible, full-bleed, natively accessible. */}
+        {/* Screen-reader / keyboard control only (visually hidden). Pointer
+            interaction is handled on the track above — a native range input is
+            unreliable as a touch target on iOS. */}
         <input
           type="range"
           aria-label={ariaLabel}
@@ -113,9 +152,8 @@ export function Ruler({
           value={shown}
           onChange={e => onChange(snapToStep(Number(e.target.value), min, max, step))}
           style={{
-            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-            margin: 0, opacity: 0, cursor: 'pointer',
-            WebkitAppearance: 'none', appearance: 'none', background: 'transparent',
+            position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px',
+            overflow: 'hidden', clip: 'rect(0 0 0 0)', border: 0, opacity: 0,
           }}
         />
 
