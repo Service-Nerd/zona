@@ -14,7 +14,7 @@ import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import { TextField } from '@/components/shared/TextField'
-import { Select } from '@/components/shared/Select'
+import { WheelPicker } from '@/components/shared/WheelPicker'
 import { Chip } from '@/components/shared/Chip'
 import { type DayKey } from '@/components/shared/DayGridSelector'
 import { Ruler } from '@/components/shared/Ruler'
@@ -1253,23 +1253,19 @@ export default function GeneratePlanScreen({
 
       case 'birth-year': {
         const currentYear = new Date().getFullYear()
-        // 14–90 maps to the allowable runner age range. Newest year first so the
-        // picker opens near most users' birth year without scrolling.
-        const yearOptions = Array.from({ length: 90 - 14 + 1 }, (_, i) => {
-          const y = currentYear - 14 - i
-          return { value: String(y), label: String(y) }
-        })
+        // Descending years (newest first) so the wheel opens near most birth
+        // years. 14–90 = the allowable runner age range.
+        const years = Array.from({ length: 90 - 14 + 1 }, (_, i) => currentYear - 14 - i)
+        const anchor = currentYear - 35   // ~age 35 resting position when unset
         return (
-          <Select
-            value={birthYear !== null ? String(birthYear) : ''}
-            onChange={v => {
-              const n = Number(v)
-              setBirthYear(Number.isFinite(n) ? n : null)
-            }}
-            options={yearOptions}
-            placeholder="Select year"
-            ariaLabel="Year of birth"
-          />
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <WheelPicker
+              values={years}
+              value={birthYear ?? anchor}
+              onChange={setBirthYear}
+              ariaLabel="Year of birth"
+            />
+          </div>
         )
       }
 
