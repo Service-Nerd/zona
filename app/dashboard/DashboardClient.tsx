@@ -1661,6 +1661,26 @@ export default function DashboardClient() {
   //     true means already connected). undefined = still hydrating.
   //   • we're on a native platform (HealthKit is iOS-only — web users keep
   //     the NULL flag and see the screen if they ever open the native app).
+  // CONNECT-FIRST (CI-4) — for a brand-new native user (no plan yet), show the
+  // connect-runs screen BEFORE the wizard, so the benchmark can pre-fill from
+  // real runs and the ConnectRunsScreen's onHRFound seeds resting/max HR (the
+  // restingHR/maxHR state passed into GeneratePlanScreen). Fires only pre-plan
+  // with connect_runs_seen === null on native; once the user connects or skips,
+  // the flag is decided and CONNECT-01 below won't re-fire. Web + returning
+  // users (who already have a plan) fall through to the CONNECT-01 path.
+  useEffect(() => {
+    if (plan && plan !== EMPTY_PLAN) return          // has a plan → CONNECT-01 path
+    if (connectRunsSeen !== null) return              // decided, or still hydrating (undefined)
+    if (showConnectRuns || showOrientation || showPushOnboarding) return
+    void (async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (!Capacitor.isNativePlatform()) return
+        setShowConnectRuns(true)
+      } catch { /* web — skip */ }
+    })()
+  }, [plan, connectRunsSeen, showConnectRuns, showOrientation, showPushOnboarding])
+
   useEffect(() => {
     if (!plan || plan === EMPTY_PLAN) return
     if (!orientationSeen) return

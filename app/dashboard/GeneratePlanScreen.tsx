@@ -15,6 +15,7 @@ import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import { TextField } from '@/components/shared/TextField'
 import { WheelPicker } from '@/components/shared/WheelPicker'
+import type { BenchmarkEstimate } from '@/lib/plan/aerobicEstimate'
 import { Chip } from '@/components/shared/Chip'
 import { type DayKey } from '@/components/shared/DayGridSelector'
 import { Ruler } from '@/components/shared/Ruler'
@@ -469,6 +470,12 @@ export default function GeneratePlanScreen({
   const [benchmarkDate,    setBenchmarkDate]    = useState('')
   const [benchmarkTTDist,  setBenchmarkTTDist]  = useState('')
 
+  // CI-4 — auto-estimated benchmark from recent runs. `benchMode` flips to
+  // 'manual' when the user taps "Let me adjust" (or when no estimate is available).
+  const [benchEstimate,       setBenchEstimate]       = useState<BenchmarkEstimate | null>(null)
+  const [benchEstimateStatus, setBenchEstimateStatus] = useState<'idle' | 'loading' | 'done'>('idle')
+  const [benchMode,           setBenchMode]           = useState<'confirm' | 'manual'>('manual')
+
   // ── Your week — the keystone grid (Option A). One WeekPlan owns which days
   //    are Rest/Run/Long; days_available, days_cannot_train and
   //    preferred_long_run_day are DERIVED from it (weekPlanToInputs), never
@@ -555,6 +562,54 @@ export default function GeneratePlanScreen({
   // (The old "clear out-of-range days-per-week when distance gets stricter"
   //  effect is gone: the your-week grid derives the day count live and the
   //  threshold verdict blocks Continue directly — nothing stale to clear.)
+
+  // CI-4 — auto-estimate the benchmark when the benchmark step opens. Native
+  // only (web has no HealthKit → manual). HR is read client-side (the only place
+  // that works on device); the FREE route reads the runs + does the math. Any
+  // failure or no-data resolves to the manual ask — never a dead end.
+  useEffect(() => {
+    if (appStep !== 'benchmark' || benchEstimateStatus !== 'idle' || distanceKm == null) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (!Capacitor.isNativePlatform()) { if (!cancelled) setBenchEstimateStatus('done'); return }
+        let rhr: number | null = initialRHR ?? (restingHR ? Number(restingHR) : null)
+        let mhr: number | null = initialMHR ?? null
+        if (rhr == null || mhr == null) {
+          try {
+            const { fetchAppleHealthHRSnapshot } = await import('@/lib/health/clientSync')
+            const snap = await fetchAppleHealthHRSnapshot()
+            rhr = rhr ?? snap?.restingHR ?? null
+            mhr = mhr ?? snap?.maxHR ?? null
+          } catch { /* HR unavailable → route answers no_hr → manual */ }
+        }
+        if (!cancelled) setBenchEstimateStatus('loading')
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const qs = new URLSearchParams({ raceDistanceKm: String(distanceKm) })
+        if (rhr != null) qs.set('rhr', String(rhr))
+        if (mhr != null) qs.set('mhr', String(mhr))
+        const res = await fetch(`/api/wizard-benchmark-estimate?${qs.toString()}`, {
+          headers: { ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+        })
+        const data: BenchmarkEstimate = res.ok ? await res.json() : { available: false, reason: 'no_runs' }
+        if (cancelled) return
+        setBenchEstimate(data)
+        if (data.available) {
+          // Pre-fill so "That's about right" (the sticky CTA) proceeds, and so a
+          // later "Let me adjust" shows the estimate in the editable controls.
+          setBenchmarkType('race')
+          setBenchmarkDistKm(data.distanceKm)
+          setBenchHours(Math.floor(data.timeSeconds / 3600))
+          setBenchMins(Math.floor((data.timeSeconds % 3600) / 60))
+          setBenchMode('confirm')
+        }
+      } catch { /* swallow — manual is the fallback */ }
+      if (!cancelled) setBenchEstimateStatus('done')
+    })()
+    return () => { cancelled = true }
+  }, [appStep, benchEstimateStatus, distanceKm])
 
   // ── Navigation helpers ────────────────────────────────────────────────────
 
@@ -1055,7 +1110,13 @@ export default function GeneratePlanScreen({
   const currentIdx     = sequence.indexOf(currentSubStep)
   const isLastStep     = currentIdx === sequence.length - 1
   const stepMeta       = STEP_META[currentSubStep] ?? STEP_META['distance']
-  const ctaLabel       = stepMeta.cta ?? (isLastStep ? 'Generate my plan →' : 'Continue')
+  // CI-4 9a: on the auto-estimate confirm card, the estimate IS the frame title
+  // and the sticky CTA reads "That's about right" (an explicit confirm, not a
+  // generic Continue).
+  const benchConfirm   = currentSubStep === 'benchmark' && benchMode === 'confirm' && !!benchEstimate?.available
+  const ctaLabel       = benchConfirm
+    ? "That's about right →"
+    : (stepMeta.cta ?? (isLastStep ? 'Generate my plan →' : 'Continue'))
 
   // Progress counts real questions only — the teaching interstitials don't
   // advance the line (CI-7: they're a moment, not a step to tick off).
@@ -1066,8 +1127,15 @@ export default function GeneratePlanScreen({
     ? { title: 'Start with the finish line.', subtitle: 'Work backwards from there.' }
     : null
 
-  const title    = welcomeOverride?.title    ?? stepMeta.title
-  const subtitle = welcomeOverride?.subtitle ?? stepMeta.subtitle
+  const benchmarkOverride = benchConfirm && benchEstimate && benchEstimate.available
+    ? {
+        title: `Looks like a ${DISTANCES.find(d => d.value === benchEstimate.distanceKm)?.label ?? `${benchEstimate.distanceKm}K`} in about ${benchEstimate.formattedTime}.`,
+        subtitle: `${benchEstimate.label}. Close?`,
+      }
+    : null
+
+  const title    = welcomeOverride?.title    ?? benchmarkOverride?.title    ?? stepMeta.title
+  const subtitle = welcomeOverride?.subtitle ?? benchmarkOverride?.subtitle ?? stepMeta.subtitle
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
@@ -1309,6 +1377,28 @@ export default function GeneratePlanScreen({
 
       // ── Benchmark ──────────────────────────────────────────────────────────
       case 'benchmark':
+        if (benchEstimateStatus === 'loading') {
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[85, 100, 60].map((w, i) => (
+                <div key={i} style={{ height: '18px', width: `${w}%`, borderRadius: '6px', background: 'var(--bg-soft)' }} />
+              ))}
+            </div>
+          )
+        }
+        if (benchMode === 'confirm' && benchEstimate?.available) {
+          // 9a — the estimate is the frame title/subtitle; the only control here
+          // is the escape to manual. "That's about right" is the sticky CTA.
+          return (
+            <button
+              type="button"
+              onClick={() => setBenchMode('manual')}
+              style={{ background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--moss)', textAlign: 'left' }}
+            >
+              Let me adjust →
+            </button>
+          )
+        }
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', gap: '10px' }}>
