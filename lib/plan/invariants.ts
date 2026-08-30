@@ -51,6 +51,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-LONG-IS-LONGEST',
   'INV-PLAN-LONG-CAP-MINS',
   'INV-PLAN-WEEK-1-2-LONG-CAP',
+  'INV-INPUT-LONGEST-LE-WEEKLY',
   'INV-PLAN-QUALITY-PER-WEEK',
   'INV-PLAN-QUALITY-LONG-SPACING',
   'INV-PLAN-QUALITY-EXPECTED',
@@ -292,6 +293,30 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   const totalWeeks = plan.weeks.length
   const halfWeek = Math.ceil(totalWeeks / 2)
   const isTimeTarget = input.goal === 'time_target'
+
+  // INV-INPUT-LONGEST-LE-WEEKLY — a self-reported longest run cannot exceed the
+  // whole week's volume (one run can't be more than everything you ran that
+  // week). The Ruler's continuous input made this nonsense combination easy to
+  // enter; unguarded it feeds a garbage Week-1–2 long-run cap
+  // (longest_recent_run_km × WEEK_1_2_LONG_RUN_CAP_MULTIPLIER). Guarded on
+  // weekly > 0 so the meta-empty validation path (both fields 0) self-skips,
+  // matching the other input-dependent invariants. (CoachingPrinciples §18,
+  // Coaching Board 2026-08-30.)
+  {
+    const statedWeekly  = input.current_weekly_km ?? 0
+    const statedLongest = input.longest_recent_run_km ?? 0
+    if (statedWeekly > 0 && statedLongest > statedWeekly) {
+      violations.push({
+        code: 'INV-INPUT-LONGEST-LE-WEEKLY',
+        principle_ref: 'CoachingPrinciples §18',
+        severity: 'error',
+        week: 0,  // input-level, plan-wide — no specific week (convention)
+        message: `Self-reported longest run ${statedLongest}km exceeds stated weekly volume ${statedWeekly}km — a single run cannot exceed the week's total`,
+        actual: `longest ${statedLongest}km > weekly ${statedWeekly}km`,
+        expected: 'longest_recent_run_km ≤ current_weekly_km',
+      })
+    }
+  }
 
   for (const w of plan.weeks) {
     // Maintenance weeks are produced by generateMaintenanceBlock (not generateRulePlan)

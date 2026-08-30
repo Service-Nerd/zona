@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Zonna · Wizard Redesign · frontend-design pass</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --bg:          #F3F0EB;
+    --bg-soft:     #EDE9E1;
+    --card:        #FFFFFF;
+    --ink:         #1A1A1A;
+    --ink-2:       #3D3A36;
+    --mute:        #8A857D;
+    --mute-2:      #B5B0A7;
+    --line:        rgba(26,26,26,0.08);
+    --line-strong: rgba(26,26,26,0.15);
+    --moss:        #6B8E6B;
+    --moss-soft:   rgba(107,142,107,0.10);
+    --moss-mid:    rgba(107,142,107,0.25);
+    --warn:        #B8853A;
+    --warn-bg:     #F5EBD4;
+    --danger:      #B84545;
+    --danger-bg:   rgba(184,69,69,0.10);
+    --coach-ink:   #3D2600;
+    --s-easy:      #3D6FB0;
+    --s-long:      #5E4FB0;
+    --s-quality:   #B8853A;
+    --s-race:      #C86A2A;
+    --font-ui:     'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-ui);
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  .page { max-width: 1360px; margin: 0 auto; padding: 56px 32px 120px; }
+
+  /* ───── Page header ───── */
+  .page-head { margin-bottom: 48px; }
+  .page-eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.16em;
+    color: var(--moss); text-transform: uppercase; margin-bottom: 12px;
+  }
+  h1 {
+    font-size: 42px; font-weight: 800; line-height: 1.05;
+    letter-spacing: -0.02em; margin: 0 0 16px;
+  }
+  .lede { font-size: 17px; line-height: 1.55; color: var(--ink-2); max-width: 760px; margin: 0; }
+
+  /* ───── Section ───── */
+  section { margin-bottom: 56px; }
+  h2 {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.18em;
+    color: var(--mute); text-transform: uppercase;
+    border-top: 1px solid var(--line);
+    padding-top: 18px; margin: 0 0 8px;
+  }
+  .section-note { font-size: 14px; line-height: 1.6; color: var(--ink-2); max-width: 760px; margin: 0 0 32px; }
+
+  /* ───── Phone grid ───── */
+  .grid {
+    display: flex; flex-wrap: wrap; gap: 40px 36px; align-items: flex-start;
+  }
+  .frame-wrap { width: 390px; }
+  .caption {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.10em;
+    color: var(--mute); text-transform: uppercase; margin-bottom: 14px;
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .caption .num {
+    color: var(--moss); font-weight: 800;
+  }
+  .caption .paid {
+    margin-left: auto; font-size: 9px; letter-spacing: 0.08em;
+    color: var(--warn); background: var(--warn-bg);
+    padding: 2px 7px; border-radius: 999px; text-transform: uppercase;
+  }
+  .caption .teach {
+    margin-left: auto; font-size: 9px; letter-spacing: 0.08em;
+    color: var(--moss); background: var(--moss-soft);
+    padding: 2px 7px; border-radius: 999px; text-transform: uppercase;
+  }
+
+  /* ───── Phone frame ───── */
+  .phone {
+    width: 390px; height: 844px;
+    background: var(--bg);
+    border-radius: 44px;
+    border: 1px solid var(--line-strong);
+    padding: 12px;
+    box-shadow: 0 24px 64px -28px rgba(26,26,26,0.22);
+  }
+  .screen {
+    position: relative;
+    width: 100%; height: 100%;
+    background: var(--bg);
+    border-radius: 34px;
+    padding: 20px 16px 16px;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ───── Shared chrome ───── */
+  .backrow {
+    display: flex; align-items: center; margin-bottom: 14px; height: 30px; flex-shrink: 0;
+  }
+  .back {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--ink-2); font-size: 18px; font-weight: 600;
+  }
+  .progress {
+    height: 3px; border-radius: 2px; background: var(--line);
+    margin: 0 4px 22px; overflow: hidden; flex-shrink: 0;
+  }
+  .progress > span { display: block; height: 100%; background: var(--moss); border-radius: 2px; }
+
+  .q-eyebrow {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.10em;
+    color: var(--mute); text-transform: uppercase; margin: 0 4px 10px;
+  }
+  .q-eyebrow.moss { color: var(--moss); }
+  .q-eyebrow.warn { color: var(--warn); }
+  .q-eyebrow.long { color: var(--s-long); }
+  .q-title {
+    font-size: 26px; font-weight: 800; line-height: 1.12;
+    letter-spacing: -0.02em; margin: 0 4px 8px; color: var(--ink);
+  }
+  .q-why {
+    font-size: 14px; font-weight: 400; line-height: 1.4;
+    color: var(--mute); margin: 0 4px 26px;
+  }
+
+  .body-scroll { flex: 1; min-height: 0; }
+
+  /* ───── Sticky CTA ───── */
+  .cta {
+    flex-shrink: 0; margin-top: 14px;
+    height: 52px; border-radius: 26px;
+    background: var(--moss); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; letter-spacing: -0.01em;
+  }
+  .cta.ghost {
+    background: transparent; color: var(--moss); height: auto;
+    margin-top: 12px; font-size: 14px; font-weight: 600;
+  }
+  .skiplink {
+    text-align: center; margin-top: 14px; flex-shrink: 0;
+    font-size: 13px; font-weight: 600; color: var(--mute);
+  }
+
+  /* ───── Card-select ───── */
+  .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .card-grid.one { grid-template-columns: 1fr; }
+  .sel-card {
+    position: relative;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 16px; padding: 18px 16px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .sel-card.selected {
+    border-color: var(--moss); box-shadow: inset 0 0 0 1px var(--moss);
+    background: var(--moss-soft);
+  }
+  .sel-card .sc-title { font-size: 17px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+  .sel-card .sc-sub { font-size: 12px; font-weight: 400; color: var(--mute); line-height: 1.35; }
+  .sel-card .tag-paid {
+    position: absolute; top: 12px; right: 12px;
+    font-size: 8px; font-weight: 800; letter-spacing: 0.08em;
+    color: var(--warn); background: var(--warn-bg);
+    padding: 3px 6px; border-radius: 999px; text-transform: uppercase;
+  }
+  .sel-card .check {
+    position: absolute; top: 14px; right: 14px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--moss); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800;
+  }
+  .paid-teaser {
+    font-size: 12px; line-height: 1.5; color: var(--mute);
+    margin: 16px 4px 0;
+  }
+  .paid-teaser a { color: var(--moss); font-weight: 600; text-decoration: none; }
+
+  /* ───── Chips ───── */
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip {
+    padding: 11px 16px; border-radius: 999px;
+    background: var(--card); border: 1px solid var(--line);
+    font-size: 14px; font-weight: 600; color: var(--ink-2);
+  }
+  .chip.selected { background: var(--moss); border-color: var(--moss); color: #fff; }
+  .chip.multi.selected { background: var(--moss); border-color: var(--moss); color: #fff; }
+
+  /* ───── Wheel picker ───── */
+  .wheel {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 18px; padding: 8px 6px;
+    display: flex; position: relative; overflow: hidden;
+  }
+  .wheel .col { flex: 1; text-align: center; position: relative; z-index: 2; }
+  .wheel .col-narrow { flex: 0.7; }
+  .wheel .row {
+    height: 40px; line-height: 40px;
+    font-size: 20px; font-weight: 600; color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .wheel .row.o1 { opacity: 0.12; font-size: 16px; }
+  .wheel .row.o2 { opacity: 0.28; font-size: 18px; }
+  .wheel .row.o3 { opacity: 0.55; }
+  .wheel .row.center {
+    opacity: 1; font-weight: 800; font-size: 22px; color: var(--ink);
+  }
+  /* center selection band */
+  .wheel .band {
+    position: absolute; left: 8px; right: 8px; top: 50%;
+    transform: translateY(-50%);
+    height: 44px; border-radius: 12px;
+    background: var(--moss-soft);
+    box-shadow: inset 0 0 0 1px var(--moss-mid);
+    z-index: 1;
+  }
+  /* fade masks (opacity, not colour gradients) */
+  .wheel::before, .wheel::after {
+    content: ''; position: absolute; left: 0; right: 0; height: 56px; z-index: 3; pointer-events: none;
+  }
+
+  .wheel-single { justify-content: center; }
+  .wheel-single .col { flex: 0 0 140px; }
+
+  .name-field {
+    margin-top: 16px;
+    background: var(--bg-soft); border: 1px solid var(--line);
+    border-radius: 14px; padding: 14px 16px;
+    font-size: 16px; color: var(--mute-2);
+  }
+  .name-field .lbl { font-size: 11px; font-weight: 600; color: var(--mute); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+
+  /* ───── Duration picker ───── */
+  .duration {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 18px; padding: 24px 16px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .dp-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .dp-step {
+    width: 40px; height: 32px; border-radius: 10px;
+    background: var(--bg-soft); color: var(--ink-2);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700;
+  }
+  .dp-val {
+    font-size: 44px; font-weight: 800; color: var(--ink);
+    font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1;
+  }
+  .dp-unit { font-size: 10px; font-weight: 700; letter-spacing: 0.10em; color: var(--mute); text-transform: uppercase; }
+  .dp-colon { font-size: 40px; font-weight: 700; color: var(--mute-2); padding-bottom: 24px; }
+
+  /* ───── Ruler ───── */
+  .ruler-readout { text-align: center; margin-bottom: 24px; }
+  .ruler-value {
+    font-size: 52px; font-weight: 800; color: var(--ink);
+    letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .ruler-value .unit { font-size: 20px; font-weight: 600; color: var(--mute); letter-spacing: 0; }
+  .ruler-caption { font-size: 12px; font-weight: 500; color: var(--mute); margin-top: 6px; }
+  .ruler {
+    position: relative;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 18px; padding: 22px 0 18px;
+    overflow: hidden;
+  }
+  .ticks { display: flex; align-items: flex-end; justify-content: space-between; height: 44px; padding: 0 18px; }
+  .tick { width: 1.5px; background: var(--line-strong); border-radius: 1px; }
+  .tick.h1 { height: 14px; opacity: 0.35; }
+  .tick.h2 { height: 22px; opacity: 0.55; }
+  .tick.h3 { height: 34px; opacity: 0.85; }
+  .ruler-thumb {
+    position: absolute; top: 10px; bottom: 10px; width: 3px;
+    background: var(--moss); border-radius: 3px;
+  }
+  .ruler-thumb::after {
+    content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--moss); box-shadow: 0 2px 6px -1px rgba(107,142,107,0.5);
+    border: 3px solid var(--card);
+  }
+  .ruler-scale { display: flex; justify-content: space-between; padding: 8px 16px 0; }
+  .ruler-scale span { font-size: 10px; font-weight: 600; color: var(--mute-2); font-variant-numeric: tabular-nums; }
+
+  /* ───── Confirm card (benchmark) ───── */
+  .confirm-card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 18px; padding: 22px 20px;
+  }
+  .confirm-est { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); line-height: 1.1; }
+  .confirm-sub { font-size: 13px; color: var(--mute); margin-top: 8px; line-height: 1.45; }
+  .confirm-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
+  .btn-secondary {
+    height: 46px; border-radius: 24px; border: 1px solid var(--line-strong);
+    background: transparent; color: var(--ink-2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 600;
+  }
+  .prov-line {
+    font-size: 11px; color: var(--mute-2); margin-top: 16px; text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+
+  /* ───── Teaching interstitial ───── */
+  .screen.teach { padding: 24px 22px 22px; justify-content: space-between; }
+  .teach-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 20px; }
+  .teach-eyebrow {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.14em;
+    color: var(--moss); text-transform: uppercase;
+  }
+  .teach-eyebrow.warn { color: var(--warn); }
+  .teach-headline {
+    font-size: 32px; font-weight: 800; line-height: 1.12;
+    letter-spacing: -0.025em; color: var(--ink); margin: 0;
+  }
+  .teach-text { font-size: 16px; line-height: 1.6; color: var(--ink-2); margin: 0; }
+  .teach-payoff {
+    font-size: 22px; font-weight: 800; color: var(--moss);
+    letter-spacing: -0.02em; margin: 6px 0 0;
+  }
+  .teach-progress {
+    height: 3px; border-radius: 2px; background: var(--line);
+    margin: 0 0 8px; overflow: hidden;
+  }
+  .teach-progress > span { display: block; height: 100%; background: var(--moss); opacity: 0.4; }
+
+  /* ───── Day grid ───── */
+  .daygrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+  .day {
+    aspect-ratio: 1 / 1.35;
+    border-radius: 14px;
+    background: var(--bg-soft); border: 1px solid var(--line);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; position: relative;
+  }
+  .day .dl { font-size: 11px; font-weight: 700; color: var(--mute); letter-spacing: 0.02em; }
+  .day.run { background: var(--card); border-color: var(--moss); box-shadow: inset 0 0 0 1px var(--moss); }
+  .day.run .dl { color: var(--moss); }
+  .day.run .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--moss); }
+  .day.long {
+    background: var(--moss); border-color: var(--moss);
+  }
+  .day.long .dl { color: rgba(255,255,255,0.8); }
+  .day.long .lglyph {
+    font-size: 16px; font-weight: 800; color: #fff;
+    border-bottom: 2px solid var(--s-long); padding-bottom: 1px; line-height: 1;
+  }
+  .day.long::after {
+    content: ''; position: absolute; top: 6px; right: 6px;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--s-long);
+  }
+  .grid-legend { display: flex; gap: 16px; margin-top: 18px; }
+  .lg-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--mute); }
+  .lg-swatch { width: 14px; height: 14px; border-radius: 5px; }
+  .lg-swatch.rest { background: var(--bg-soft); border: 1px solid var(--line); }
+  .lg-swatch.run { background: var(--card); border: 1px solid var(--moss); box-shadow: inset 0 0 0 1px var(--moss); }
+  .lg-swatch.long { background: var(--moss); }
+  .grid-why {
+    font-size: 12px; line-height: 1.5; color: var(--mute); margin-top: 18px;
+    background: var(--bg-soft); border-radius: 12px; padding: 12px 14px;
+  }
+  .grid-why b { color: var(--ink-2); font-weight: 700; }
+
+  /* ───── Connect screen ───── */
+  .connect-hero {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; gap: 20px;
+  }
+  .hk-glyph {
+    width: 72px; height: 72px; border-radius: 22px;
+    background: var(--moss-soft); border: 1px solid var(--moss-mid);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .connect-title { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); margin: 0; }
+  .connect-why { font-size: 15px; line-height: 1.5; color: var(--mute); margin: 0; max-width: 280px; }
+
+  /* utility */
+  .footnote { font-size: 12px; line-height: 1.6; color: var(--mute); max-width: 760px; margin: 40px 0 0; }
+  .footnote b { color: var(--ink-2); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="page-head">
+    <div class="page-eyebrow">Zonna — Wizard Redesign · frontend-design pass · 2026-08-30</div>
+    <h1>One question per screen. A thin moss line for progress. Two teaching moments at the seams.</h1>
+    <p class="lede">
+      Every screen shares one anatomy — back arrow, progress line, question, a dry one-line "why", one
+      tactile control, and a sticky Continue. The new CI-2 primitives (wheel, ruler, day-grid) carry the
+      screens that matter. This is the Zonna reading of Planzy's shape: calmer, no gamification, no counting.
+      Warm Slate throughout, Option A (day selection, no engine change). Copy is draft-final from the spec.
+    </p>
+  </header>
+
+  <!-- ═══════════ SEQUENCE ═══════════ -->
+  <section>
+    <h2>The sequence · screens 0–14</h2>
+    <p class="section-note">
+      FREE = screens 0–11. PAID appends 12–14. The two teaching interstitials (ⓘA, ⓘB) sit at the seams —
+      ⓘA reframes expectations right after the goal is stated; ⓘB lands the easy-day lesson once we know the
+      runner's pace, right before they commit their week.
+    </p>
+
+    <div class="grid">
+
+      <!-- 0 · CONNECT RUNS -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">0</span> Connect runs · CI-4</div>
+        <div class="phone"><div class="screen">
+          <div class="backrow"><span class="back">←</span></div>
+          <div class="connect-hero">
+            <div class="hk-glyph">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+                <path d="M12 20s-7-4.5-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7-2.5C19 10.5 12 20 12 20Z" fill="var(--moss)"/>
+              </svg>
+            </div>
+            <h2 class="connect-title" style="border:0;padding:0;letter-spacing:-0.02em;color:var(--ink);text-transform:none;font-size:28px;margin:0;">Start from real runs.</h2>
+            <p class="connect-why">So the plan begins where you actually are — not a guess.</p>
+          </div>
+          <div class="cta">Connect Apple Health</div>
+          <div class="skiplink">I'll start fresh →</div>
+        </div></div>
+      </div>
+
+      <!-- 1 · RACE DISTANCE -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">1</span> Race distance</div>
+        <div class="phone"><div class="screen">
+          <div class="backrow"><span class="back">←</span></div>
+          <div class="progress"><span style="width:12%"></span></div>
+          <div class="q-title">How far?</div>
+          <div class="q-why">Start with the finish line. Work back from there.</div>
+          <div class="body-scroll">
+            <div class="card-grid">
+              <div class="sel-card selected"><span class="check">✓</span><span class="sc-title">5K</span><span class="sc-sub">The sharp end</span></div>
+              <div class="sel-card"><span class="sc-title">10K</span><span class="sc-sub">Where most start</span></div>
+              <div class="sel-card"><span class="sc-title">Half</span><span class="sc-sub">21.1 km</span></div>
+              <div class="sel-card"><span class="tag-paid">Paid</span><span class="sc-title">Marathon</span><span class="sc-sub">42.2 km</span></div>
+              <div class="sel-card"><span class="tag-paid">Paid</span><span class="sc-title">50K</span><span class="sc-sub">First ultra</span></div>
+              <div class="sel-card"><span class="tag-paid">Paid</span><span class="sc-title">100K</span><span class="sc-sub">The long way</span></div>
+            </div>
+            <p class="paid-teaser">Marathon and longer need a paid plan. <a>Start free trial →</a></p>
+          </div>
+          <div class="cta">Continue</div>
+        </div></div>
+      </div>
+
+      <!-- 2 · RACE DATE (WHEEL) -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">2</span> Race date + name · wheel</div>
+        <div class="phone"><div class="screen">
+          <div class="backrow"><span class="back">←</span></div>
+          <div class="progress"><span style="width:20%"></span></div>
+          <div class="q-title">When's the race?</div>
+          <div class="q-why">The date sets the plan length. Everything works back from it.</div>
+          <div class="body-scroll">
+            <div class="wheel">
+              <div class="band"></div>
+              <div class="col col-narrow">
+                <div class="row o1">12</div>
+                <div class="row o2">13</div>
+                <div class="row o3">14</div>
+                <div class="row center">15</div>
+                <div class="row o3">16</div>
+                <div class="row o2">17</div>
+                <div class="row o1">18</div>
+              </div>
+              <div class="col">
+                <div class="row o1">Aug</div>
+                <div class="row o2">Sep</div>
+                <div class="row o3">Oct</div>
+                <div class="row center">Nov</div>
+                <div class="row o3">Dec</div>
+                <div class="row o2">Jan</div>
+                <div class="row o1">Feb</div>
+              </div>
+              <div class="col">
+                <div class="row o1">2023</div>
+                <div class="row o2">2024</div>
+                <div class="row o3">2025</div>
+                <div class="row center">2026</div>
+                <div class="row o3">2027</div>
+                <div class="row o2">2028</div>
+                <div class="row o1">2029</div>
+              </div>
+            </div>
+            <div class="name-field">
+              <div class="lbl">Name it? (optional)</div>
+              Berlin Marathon
+            </div>
+          </div>
+          <div class="cta">Continue</div>
+        </div></div>
+      </div>
+
+      <!-- 3 · GOAL -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">3</span> Goal</div>
+        <div class="phone"><div class="screen">
+          <div class="backrow"><span class="back">←</span></div>
+          <div class="progress"><span style="width:28%"></span></div>
+          <div class="q-title">What matters most?</div>
+          <div class="q-why">Crossing the line, or hitting a number. Both are valid.</div>
+          <div class="body-scroll">
+            <div class="card-grid one">
+              <div class="sel-card"><span class="sc-title">Just finish.</span><span class="sc-sub">Get to the line in one piece. That's the job.</span></div>
+              <div class="sel-card selected"><span class="check">✓</span><span class="sc-title">Hit a time.</span><span class="sc-sub">A number on the clock. You'll earn it.</span></div>
+            </div>
+          </div>
+          <div class="cta">Continue</div>
+        </div></div>
+      </div>
+
+      <!-- 4 · TARGET TIME -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">4</span> Target time · duration</div>
+        <div class="phone"><div class="screen">
+          <div class="backrow"><span class="back">←</span></div>
+          <div class="progress"><span style="width:34%"></span></div>
+          <div class="q-title">What's the target?</div>
+          <div class="q-why">Be honest. Optimistic goals make bad plans.</div>
+          <div class="body-scroll">
+            <div class="duration">
+              <div class="dp-col">
+                <div class="dp-step">▲</div>
+                <div class="dp-val">3</div>
+                <div class="dp-step">▼</div>
+                <div class="dp-unit">Hrs</div>
+              </div>
+              <div class="dp-colon">:</div>
+              <div class="dp-col">
+                <div class="dp-step">▲</div>
+                <div class="dp-val">45</div>
+                <div class="dp-step">▼</div>
+                <div class="dp-unit">Min</div>
+              </div>
+            </div>
+          </div>
+          <div class="cta">Continue</div>
+        </div></div>
+      </div>
+
+      <!-- ⓘ A · TEACHING -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">ⓘ A</span> Teaching <span class="teach">Interstitial</span></div>
+        <div class="phone"><div class="screen teach">
+          <div class="teach-progress"><span style="width:36%"></span></div>
+          <div class="teach-body">
+            <div class="teach-eyebrow">Hold the zone</div>
+            <h2 class="teach-headline" style="border:0;padding:0;text-transform:none;color:var(--ink);">This plan will feel too easy at first.</h2>
+            <p class="teach-text">That's on purpose. Most runners live in a grey middle — too hard to recover, too easy to improve. We're going to pull those apart.</p>
+          </div>
+          <div class="cta">Got it →</div>
+        </div></div>
+      </div>
+
+      <!-- 5 · WEEKLY VOLUME (RULER) -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">5</span> Weekly volume · ruler</div>
+        <div class="phone"><div class="screen">
+          <div class="backrow"><span class="back">←</span></div>
+          <div class="progress"><span style="width:44%"></span></div>
+          <div class="q-title">How much are you running now?</div>
+          <div class="q-why">Last four weeks, roughly. Real numbers only.</div>
+          <div class="body-scroll">
+            <div class="ruler-readout">
+              <div class="ruler-value">38<span class="unit"> km/week</span></div>
+              <div class="ruler-caption">Measured from your recent runs</div>
+            </div>
+            <div class="ruler">
+              <div class="ticks">
+                <div class="tick h3"></div><div class="tick h1"></div><div class="tick h2"></div><div class="tick h1"></div>
+                <div class="tick h3"></div><div class="tick h1"></div><div class="tick h2"></div><div class="tick h1"></div>
+                <div class="tick h3"></div><div class="tick h1"></div><div class="tick h2"></div><div class="tick h1"></div>
+                <div class="tick h3"></div><div class="tick h1"></div><div class="tick h2"></div><div class="tick h1"></div>
+                <div class="tick h3"></div>
+              </div>
+              <div class="ruler-thumb" style="left:52%"></div>
+              <div class="ruler-scale"><span>0</span><span>20</span><span>40</span><span>60</span><span>80</span></div>
+            </div>
+          </div>
+          <div class="cta">Continue</div>
+        </div></div>
+      </div>
+
+      <!-- 6 · LONGEST RUN (RULER) -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">6</span> Longest run · ruler</div>
+        <div class="phone"><div class="screen">
+          <div class="backrow"><span class="back">←</span></div>
+          <div class="progress"><span style="width:50%"></span></div>
+          <div class="q-title">Longest run in the last six weeks?</div>
+          <div class="q-why">Tells us how much you can already hold.</div>
+          <div class="body-scroll">
+            <div class="ruler-readout">
+              <div class="ruler-value">16<span class="unit"> km</span></div>
+              <div class="ruler-caption">Your longest recent effort</div>
+            </div>
+            <div class="ruler">
+              <div class="ticks">
+                <div class="tick h3"></div><div class="tick h1"></div><div class="tick h2"></div><div class="tick h1"></div>
+                <div class="tick h3"></div><div class="tick h1"></div><div class="tick h2"></div><div class="tick h1"></div>
+                <div class="tick h3"></div><div class="tick h1"></div><div class="tick h2"></div><div class="tick h1"></div>
+                <div class="tick h3"></div><div class="tick h1"></div><div class="tick h2"></div><div class="tick h1"></div>
+                <div class="tick h3"></div>
+              </div>
+              <div class="ruler-thumb" style="left:40%"></div>
+              <div class="ruler-scale"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span></div>
+            </div>
+          </div>
+          <div class="cta">Continue</div>
+        </div></div>
+      </div>
+
+      <!-- 7 · TRAINING AGE -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">7</span> Training age · chips</div>
+        <div class="phone"><div class="screen">
+          <div class="backrow"><span class="back">←</span></div>
+          <div class="progress"><span style="width:58%"></span></div>
+          <div class="q-title">How long have you been at this?</div>
+          <div class="q-why">Consistent months, not total years.</div>
+          <div class="body-scroll">
+            <div class="chips">
+              <span class="chip">&lt; 6 months</span>
+              <span class="chip selected">6–18 months</span>
+              <span class="chip">2–5 years</span>
+              <span class="chip">5+ years</span>
+            </div>
+          </div>
+          <div class="skiplink">Skip →</div>
+          <div class="cta">Continue</div>
+        </div></div>
+      </div>
+
+      <!-- 8 · YEAR OF BIRTH (WHEEL) -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">8</span> Year of birth · wheel</div>
+        <div class="phone"><div class="screen">
+          <div class="backrow"><span class="back">←</span></div>
+          <div class="progress"><span style="width:64%"></span></div>
+          <div class="q-title">What year were you born?</div>
+          <div class="q-why">Only to estimate your max heart rate, if you haven't set one. Kept private.</div>
+          <div class="body-scroll">
+            <div class="wheel wheel-single">
+              <div class="band"></div>
+              <div class="col">
+                <div class="row o1">1985</div>
+                <div class="row o2">1986</div>
+                <div class="row o3">1987</div>
+                <div class="row center">1988</div>
+                <div class="row o3">1989</div>
+                <div class="row o2">1990</div>
+                <div class="row o1">1991</div>
+              </div>
+            </div>
+          </div>
+          <div class="skiplink">Skip — I'll set heart rate later →</div>
+          <div class="cta">Continue</div>
+        </div></div>
+      </div>
+
+      <!-- 9a · BENCHMARK AUTO -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">9a</span> Benchmark · auto-estimated</div>
+        <div class="phone"><div class="screen">
+          <div class="backrow"><span class="back">←</span></div>
+          <div class="progress"><span style="width:72%"></span></div>
+          <div class="q-title">Looks like a 10K in about 55:52.</div>
+          <div class="q-why">Estimated from your recent runs. Close?</div>
+          <div class="body-scroll">
+            <div class="confirm-card">
+              <div class="confirm-est">10K · 55:52</div>
+              <div class="confirm-sub">≈ 5:35 /km. We'll set your paces from this — you can adjust anytime.</div>
+              <div class="confirm-actions">
+                <div class="cta" style="margin-top:0;">That's about right</div>
+                <div class="btn-secondary">Let me adjust</div>
+              </div>
+            </div>
+            <div class="prov-line">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 12h16M12 4v16" stroke="var(--mute-2)" stroke-width="2" stroke-linecap="round"/></svg>
+              Rule-estimated from your run history — not a guess we made up.
+            </div>
+          </div>
+          <div class="cta">Continue</div>
+        </div></div>
+      </div>
+
+      <!-- ⓘ B · TEACHING KEYSTONE -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">ⓘ B</span> The easy-day lesson <span class="teach">Keystone</span></div>
+        <div class="phone"><div class="screen teach">
+          <div class="teach-progress"><span style="width:74%"></span></div>
+          <div class="teach-body">
+            <div class="teach-eyebrow">The easy day</div>
+            <h2 class="teach-headline" style="border:0;padding:0;text-transform:none;color:var(--ink);">Easy should feel easy.</h2>
+            <p class="teach-text">Most runners push their easy days and coast their hard ones — so every run lands in the same tiring middle. Even elites spend about 80% of their time truly easy. Your easy runs build the engine. Let them.</p>
+            <p class="teach-payoff">Hold the zone.</p>
+          </div>
+          <div class="cta">Continue →</div>
+        </div></div>
+      </div>
+
+      <!-- 10 · YOUR WEEK (DAY GRID) -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">10</span> Your week · day-grid</div>
+        <div class="phone"><div class="screen">
+          <div class="backrow"><span class="back">←</span></div>
+          <div class="progress"><span style="width:82%"></span></div>
+          <div class="q-title">Which days do you run?</div>
+          <div class="q-why">Tap the days you'll train. Long-press one to make it your long run.</div>
+          <div class="body-scroll">
+            <div class="daygrid">
+              <div class="day run"><span class="dl">Mon</span><span class="dot"></span></div>
+              <div class="day"><span class="dl">Tue</span></div>
+              <div class="day run"><span class="dl">Wed</span><span class="dot"></span></div>
+              <div class="day"><span class="dl">Thu</span></div>
+              <div class="day run"><span class="dl">Fri</span><span class="dot"></span></div>
+              <div class="day long"><span class="dl">Sat</span><span class="lglyph">L</span></div>
+              <div class="day"><span class="dl">Sun</span></div>
+            </div>
+            <div class="grid-legend">
+              <div class="lg-item"><span class="lg-swatch rest"></span>Rest</div>
+              <div class="lg-item"><span class="lg-swatch run"></span>Run</div>
+              <div class="lg-item"><span class="lg-swatch long"></span>Long</div>
+            </div>
+            <div class="grid-why"><b>4 days, one long run.</b> Long-press a day to make it your long run — Saturday's set. Enough for a half.</div>
+          </div>
+          <div class="cta">Continue</div>
+        </div></div>
+      </div>
+
+      <!-- 11 · WEEKDAY CEILING -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">11</span> Weekday ceiling · chips</div>
+        <div class="phone"><div class="screen">
+          <div class="backrow"><span class="back">←</span></div>
+          <div class="progress"><span style="width:90%"></span></div>
+          <div class="q-title">How long on a weekday?</div>
+          <div class="q-why">Your cap Monday–Friday. Weekends stay open.</div>
+          <div class="body-scroll">
+            <div class="chips">
+              <span class="chip">30 min</span>
+              <span class="chip">45 min</span>
+              <span class="chip selected">60 min</span>
+              <span class="chip">90 min</span>
+              <span class="chip">2 hrs</span>
+              <span class="chip">3 hrs</span>
+              <span class="chip">No limit</span>
+            </div>
+            <p class="paid-teaser">Add terrain, injuries, and hard-session preferences with a paid plan → </p>
+          </div>
+          <div class="cta">Continue</div>
+        </div></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════ PAID ═══════════ -->
+  <section>
+    <h2>Paid tail · screens 12–14</h2>
+    <p class="section-note">
+      Appended only for trial / paid users. Same chrome, same controls — re-housed one question per screen.
+    </p>
+
+    <div class="grid">
+
+      <!-- 12 · HARD SESSIONS -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">12</span> Hard sessions <span class="paid">Paid</span></div>
+        <div class="phone"><div class="screen">
+          <div class="backrow"><span class="back">←</span></div>
+          <div class="progress"><span style="width:92%"></span></div>
+          <div class="q-title">You and hard sessions.</div>
+          <div class="q-why">So we pitch intensity where you'll actually hold it.</div>
+          <div class="body-scroll">
+            <div class="card-grid">
+              <div class="sel-card"><span class="sc-title">Avoid</span><span class="sc-sub">I dread them</span></div>
+              <div class="sel-card selected"><span class="check">✓</span><span class="sc-title">Fine either way</span><span class="sc-sub">No strong feeling</span></div>
+              <div class="sel-card"><span class="sc-title">Bring it on</span><span class="sc-sub">The good bit</span></div>
+              <div class="sel-card"><span class="sc-title">I overdo it</span><span class="sc-sub">Can't hold back</span></div>
+            </div>
+          </div>
+          <div class="cta">Continue</div>
+        </div></div>
+      </div>
+
+      <!-- 13 · TERRAIN -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">13</span> Terrain <span class="paid">Paid</span></div>
+        <div class="phone"><div class="screen">
+          <div class="backrow"><span class="back">←</span></div>
+          <div class="progress"><span style="width:96%"></span></div>
+          <div class="q-title">Where do you run?</div>
+          <div class="q-why">Trail time changes pace targets — effort, not the clock.</div>
+          <div class="body-scroll">
+            <div class="card-grid one">
+              <div class="sel-card"><span class="sc-title">Road</span><span class="sc-sub">Pavement and track</span></div>
+              <div class="sel-card"><span class="sc-title">Trail</span><span class="sc-sub">Off-road, climbs</span></div>
+              <div class="sel-card selected"><span class="check">✓</span><span class="sc-title">Mixed</span><span class="sc-sub">A bit of both</span></div>
+            </div>
+          </div>
+          <div class="cta">Continue</div>
+        </div></div>
+      </div>
+
+      <!-- 14 · INJURIES -->
+      <div class="frame-wrap">
+        <div class="caption"><span class="num">14</span> Injuries · multi <span class="paid">Paid</span></div>
+        <div class="phone"><div class="screen">
+          <div class="backrow"><span class="back">←</span></div>
+          <div class="progress"><span style="width:100%"></span></div>
+          <div class="q-title">Anything to flag?</div>
+          <div class="q-why">We'll cap load around it. Nothing you list here is shared.</div>
+          <div class="body-scroll">
+            <div class="chips">
+              <span class="chip multi selected">Achilles</span>
+              <span class="chip multi">Knee</span>
+              <span class="chip multi">Back</span>
+              <span class="chip multi selected">Hip</span>
+              <span class="chip multi">Shin splints</span>
+              <span class="chip multi">Plantar fasciitis</span>
+            </div>
+          </div>
+          <div class="skiplink">Skip — I'm clean →</div>
+          <div class="cta">Continue</div>
+        </div></div>
+      </div>
+
+    </div>
+  </section>
+
+  <p class="footnote">
+    <b>Notes for review.</b> Progress is a moss line only — never a "step N of M". No auto-advance: selecting
+    highlights, Continue commits (the principled divergence from Planzy). The wheel fades non-centre rows by
+    opacity (no colour gradients — banned). The ruler reads as a real ruler via varying tick heights + a big
+    metric-pair readout above the thumb. The day-grid folds today's two scheduling steps into one tactile
+    control (Rest / Run / Long, with the Long marker constrained to Sat/Sun for first ship). All strings are
+    the spec's draft-final Warm Slate voice; every colour comes from the <code>:root</code> tokens.
+  </p>
+
+</div>
+</body>
+</html>
