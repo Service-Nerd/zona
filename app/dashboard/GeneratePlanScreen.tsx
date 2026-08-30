@@ -18,6 +18,7 @@ import { Select } from '@/components/shared/Select'
 import { Chip } from '@/components/shared/Chip'
 import { DayGridSelector, type DayKey } from '@/components/shared/DayGridSelector'
 import { Ruler } from '@/components/shared/Ruler'
+import { CardSelect } from '@/components/shared/CardSelect'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -185,39 +186,8 @@ function FieldLabel({ children, optional }: { children: React.ReactNode; optiona
 }
 
 // Large card-style option (used for goal, hard-sessions, terrain)
-function OptionCard({ label, sub, active, onClick, locked, lockLabel }: {
-  label: string; sub?: string; active: boolean; onClick: () => void
-  locked?: boolean; lockLabel?: string
-}) {
-  return (
-    <button
-      onClick={locked ? undefined : onClick}
-      style={{
-        width: '100%', textAlign: 'left',
-        padding: '18px 20px',
-        borderRadius: 'var(--radius-lg)',
-        border: `1.5px solid ${active ? 'var(--moss)' : 'var(--line)'}`,
-        background: active ? 'var(--moss-soft)' : 'var(--card)',
-        cursor: locked ? 'default' : 'pointer',
-        transition: 'all 0.15s',
-        opacity: locked ? 0.5 : 1,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-      }}
-    >
-      <div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: active ? 700 : 500, color: active ? 'var(--moss)' : 'var(--ink)', marginBottom: sub ? '4px' : 0 }}>
-          {label}
-        </div>
-        {sub && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.45 }}>
-            {sub}
-          </div>
-        )}
-      </div>
-      {lockLabel && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700, color: 'var(--moss)', letterSpacing: '0.08em', marginTop: '2px', flexShrink: 0 }}>{lockLabel}</span>}
-    </button>
-  )
-}
+// OptionCard was extracted to the shared CardSelect primitive (row layout) —
+// see components/shared/CardSelect.tsx and ui-patterns.md § Form Fields & Pickers.
 
 // ─── Preview components ──────────────────────────────────────────────────────
 // Plan-overview strip + per-phase summary cards. No horizontal scroll. No
@@ -1149,30 +1119,18 @@ export default function GeneratePlanScreen({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             {DISTANCES.map(d => {
               const locked = d.paid && !hasPaidAccess
-              const active = distanceKm === d.value
               return (
-                <button
+                <CardSelect
                   key={d.value}
-                  onClick={() => locked ? onUpgrade?.() : setDistanceKm(d.value)}
-                  style={{
-                    padding: '18px 16px', borderRadius: 'var(--radius-lg)',
-                    border: `1.5px solid ${active ? 'var(--moss)' : 'var(--line)'}`,
-                    background: active ? 'var(--moss-soft)' : 'var(--card)',
-                    cursor: locked ? 'default' : 'pointer',
-                    textAlign: 'left', transition: 'all 0.15s',
-                    opacity: locked ? 0.55 : 1,
-                    display: 'flex', flexDirection: 'column', gap: '4px',
-                    minHeight: '72px', position: 'relative',
-                  }}
-                >
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: active ? 700 : 500, color: active ? 'var(--moss)' : 'var(--ink)' }}>{d.label}</span>
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>{d.sub}</span>
-                  {locked && (
-                    <span style={{ position: 'absolute', top: '8px', right: '10px', fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700, color: 'var(--moss)', letterSpacing: '0.08em' }}>
-                      PAID
-                    </span>
-                  )}
-                </button>
+                  layout="tile"
+                  label={d.label}
+                  sub={d.sub}
+                  active={distanceKm === d.value}
+                  locked={locked}
+                  lockLabel="PAID"
+                  ariaLabel={d.label}
+                  onClick={() => (locked ? onUpgrade?.() : setDistanceKm(d.value))}
+                />
               )
             })}
             {!hasPaidAccess && (
@@ -1206,13 +1164,13 @@ export default function GeneratePlanScreen({
       case 'goal':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <OptionCard
+            <CardSelect
               label="Just finish."
               sub="Get to the line in one piece. That's the job."
               active={goal === 'finish'}
               onClick={() => setGoal('finish')}
             />
-            <OptionCard
+            <CardSelect
               label="Hit a time."
               sub="A number on the clock. You'll need to earn it."
               active={goal === 'time_target'}
@@ -1492,7 +1450,7 @@ export default function GeneratePlanScreen({
               { value: 'love',    label: 'Bring it on.',   sub: 'More quality, more structure. I like working hard.' },
               { value: 'overdo',  label: 'I overdo it.',   sub: 'Reign me in. I know I\'ll push too hard if I can.' },
             ] as const).map(o => (
-              <OptionCard key={o.value} label={o.label} sub={o.sub} active={hardSessions === o.value} onClick={() => setHardSessions(o.value)} />
+              <CardSelect key={o.value} label={o.label} sub={o.sub} active={hardSessions === o.value} onClick={() => setHardSessions(o.value)} />
             ))}
           </div>
         )
@@ -1501,9 +1459,9 @@ export default function GeneratePlanScreen({
       case 'terrain':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <OptionCard label="Road." sub="Pavement, tracks, flat surfaces. Speed-focused." active={terrain === 'road'} onClick={() => setTerrain('road')} />
-            <OptionCard label="Trail." sub="Off-road, elevation, technical terrain. Effort-focused." active={terrain === 'trail'} onClick={() => setTerrain('trail')} />
-            <OptionCard label="Mixed." sub="Both. Adapt pace targets to the surface." active={terrain === 'mixed'} onClick={() => setTerrain('mixed')} />
+            <CardSelect label="Road." sub="Pavement, tracks, flat surfaces. Speed-focused." active={terrain === 'road'} onClick={() => setTerrain('road')} />
+            <CardSelect label="Trail." sub="Off-road, elevation, technical terrain. Effort-focused." active={terrain === 'trail'} onClick={() => setTerrain('trail')} />
+            <CardSelect label="Mixed." sub="Both. Adapt pace targets to the surface." active={terrain === 'mixed'} onClick={() => setTerrain('mixed')} />
           </div>
         )
 

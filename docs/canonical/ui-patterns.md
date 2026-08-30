@@ -1526,7 +1526,8 @@ The canonical user-input controls. **Never build a one-off input, toggle, chip, 
 | A time — finish time, target time, duration | Objective, precise, ranged | **DurationPicker** (stepper) |
 | Effort / RPE | Subjective, low-precision | **RPEScale** (Pattern 13) |
 | One of 2–4 mutually-exclusive modes (km/mi, sign-in/up, distance/duration) | Toggle | **SegmentedControl** |
-| One (or several) of a larger set — race distances, injuries, training-age bands | Select | **Chip** |
+| One (or several) of a larger set — injuries, training-age bands, benchmark type | Compact select | **Chip** |
+| One of a few rich options, each earning a sentence (goal, terrain, race distance) | Single-select radio cards | **CardSelect** |
 | Days of the week — which days you can't train, which day is the long run | Fixed 7-item multi/single select | **DayGridSelector** |
 
 ### TextField (`components/shared/TextField.tsx`)
@@ -1566,6 +1567,24 @@ Contained-track toggle for 2–4 mutually-exclusive options. One idiom for login
 ### Chip (`components/shared/Chip.tsx`)
 
 Stateless select-chip for choosing from a set. Single-select (caller tracks one active value) or multi-select (caller tracks a Set). `--moss` border + `--moss-soft` fill when active. Used for race distances, injuries, benchmark type, training-age bands.
+
+### CardSelect (`components/shared/CardSelect.tsx`)
+
+The canonical single-choice radio card — a large tappable card with a label, optional sub-line, and a moss active state. Two layouts:
+
+- **`row`** (default) — full-width, sub stacked under the label. For a handful of options that each earn a sentence: goal, terrain, hard-session relationship. (This is the extracted wizard-local `OptionCard`.)
+- **`tile`** — grid cell, vertical, optional lock badge top-right. For a 2-column picker: race distance.
+
+Rules:
+- Stateless; the caller owns selection and wraps the options in its own grid/stack container, then maps (same idiom as `<Chip>`).
+- `locked` is **visual only** (dim + `lockLabel` badge). The caller decides what a tap does when locked — e.g. the distance picker routes a locked tap to upgrade. The primitive never swallows the handler.
+- **Not for a control that carries validation state** (blocked / warn, like days-per-week) — keep those bespoke. CardSelect is a plain radio card by design.
+- For a compact select from a larger set (injuries) use `<Chip>`.
+
+```tsx
+<CardSelect label="Just finish." sub="Get to the line in one piece." active={goal === 'finish'} onClick={() => setGoal('finish')} />
+<CardSelect layout="tile" label="Marathon" sub="42.2 km" active={dist === 42.2} locked={!paid} lockLabel="PAID" onClick={...} />
+```
 
 ### Ruler (`components/shared/Ruler.tsx`)
 
