@@ -24,7 +24,8 @@ import { CardSelect } from '@/components/shared/CardSelect'
 
 type WizardSubStep =
   | 'distance' | 'race-details' | 'goal' | 'target-time'
-  | 'fitness' | 'benchmark' | 'schedule' | 'constraints'
+  | 'weekly-volume' | 'longest-run' | 'training-age' | 'birth-year'
+  | 'benchmark' | 'schedule' | 'constraints'
   | 'hard-sessions' | 'terrain' | 'injuries'
 
 type AppStep = WizardSubStep | 'generating' | 'preview' | 'error'
@@ -109,7 +110,10 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
   'race-details':    { title: 'Tell me about the race.', subtitle: 'Race name is optional. The date is not.' },
   'goal':            { title: 'What matters most?',    subtitle: 'Crossing the line, or hitting a number. Both are valid.' },
   'target-time':     { title: "What's the target?",    subtitle: "Be honest. Optimistic goals make bad training plans." },
-  'fitness':         { title: 'Be honest.',             subtitle: "The plan only works if these numbers are real. Flattering yourself here just means a harder race." },
+  'weekly-volume':   { title: 'How much are you running now?', subtitle: 'Last four weeks, roughly. Real numbers only.' },
+  'longest-run':     { title: 'Longest run in the last six weeks?', subtitle: 'Tells us how much you can already hold.' },
+  'training-age':    { title: 'How long have you been at this?', subtitle: 'Consistent months, not total years.', optional: true },
+  'birth-year':      { title: 'What year were you born?', subtitle: "Only to estimate your max heart rate, if you haven't set one. Kept private.", optional: true },
   'benchmark':       { title: 'Recent race result?',   subtitle: 'Gives us precise pace targets for every session. Skip if you haven\'t raced lately.', optional: true },
   'schedule':        { title: 'Your schedule.',         subtitle: "Training has to fit your life. Not the other way around." },
   'constraints':     { title: 'Any hard limits?',       subtitle: 'Days you can never train, or a max time on weekdays. Skip if you\'re flexible.', optional: true },
@@ -123,7 +127,7 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
 function getStepSequence(hasPaidAccess: boolean, goal: 'finish' | 'time_target' | null): WizardSubStep[] {
   const steps: WizardSubStep[] = ['distance', 'race-details', 'goal']
   if (goal === 'time_target') steps.push('target-time')
-  steps.push('fitness', 'benchmark', 'schedule', 'constraints')
+  steps.push('weekly-volume', 'longest-run', 'training-age', 'birth-year', 'benchmark', 'schedule', 'constraints')
   if (hasPaidAccess) steps.push('hard-sessions', 'terrain', 'injuries')
   return steps
 }
@@ -508,7 +512,7 @@ export default function GeneratePlanScreen({
       if (s.terrain)         setTerrain(s.terrain)
       if (Array.isArray(s.injuries)) setInjuries(s.injuries)
       // Restore sub-step if it's a valid wizard step name
-      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','fitness','benchmark','schedule','constraints','hard-sessions','terrain','injuries']
+      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','weekly-volume','longest-run','training-age','birth-year','benchmark','schedule','constraints','hard-sessions','terrain','injuries']
       if (validSubSteps.includes(s.appStep)) setAppStep(s.appStep)
     } catch {}
   }, [])
@@ -601,12 +605,12 @@ export default function GeneratePlanScreen({
       case 'race-details':   return raceDate !== ''
       case 'goal':           return goal !== null
       case 'target-time':    return targetHours > 0 || targetMins > 0
-      case 'fitness': {
-        // Year of birth is optional — App Store 5.1.1 ("should be optional").
-        // Engine falls back to age 30 when null; only weeklyKm + longestRun
-        // are required to derive a sensible plan.
-        return weeklyKm !== null && longestRun !== null
-      }
+      case 'weekly-volume':  return weeklyKm !== null
+      case 'longest-run':    return longestRun !== null
+      // training-age + birth-year are optional (App Store 5.1.1 — year of birth
+      // "should be optional"; the engine falls back to age 30 / no training-age).
+      case 'training-age':   return true
+      case 'birth-year':     return true
       case 'benchmark':
         if (benchmarkType === 'race')     return !!(benchmarkDistKm && (benchHours > 0 || benchMins > 0))
         if (benchmarkType === 'tt_30min') return benchmarkTTDist !== ''
@@ -1192,73 +1196,68 @@ export default function GeneratePlanScreen({
         )
 
       // ── Fitness ────────────────────────────────────────────────────────────
-      case 'fitness': {
+      // ── Fitness — split one-question-per-screen (CI-1) ───────────────────────
+      case 'weekly-volume':
+        return (
+          <Ruler
+            ariaLabel="Average weekly kilometres, last 4 weeks"
+            value={weeklyKm}
+            onChange={setWeeklyKm}
+            min={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_MIN}
+            max={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_MAX}
+            step={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_STEP}
+            restAnchor={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_ANCHOR}
+            unit="km/week"
+          />
+        )
+
+      case 'longest-run':
+        return (
+          <Ruler
+            ariaLabel="Longest run in the last 6 weeks"
+            value={longestRun}
+            onChange={setLongestRun}
+            min={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_MIN}
+            max={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_MAX}
+            step={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_STEP}
+            restAnchor={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_ANCHOR}
+            unit="km"
+          />
+        )
+
+      case 'training-age':
+        return (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {TRAINING_AGE_CHIPS.map(c => (
+              <Chip
+                key={c.value}
+                label={c.label}
+                active={trainingAge === c.value}
+                onClick={() => setTrainingAge(trainingAge === c.value ? null : c.value)}
+              />
+            ))}
+          </div>
+        )
+
+      case 'birth-year': {
         const currentYear = new Date().getFullYear()
-        // 14–90 maps to allowable runner age range. Newest year first so the
+        // 14–90 maps to the allowable runner age range. Newest year first so the
         // picker opens near most users' birth year without scrolling.
         const yearOptions = Array.from({ length: 90 - 14 + 1 }, (_, i) => {
           const y = currentYear - 14 - i
           return { value: String(y), label: String(y) }
         })
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div>
-              <FieldLabel optional>Year of birth</FieldLabel>
-              <Select
-                value={birthYear !== null ? String(birthYear) : ''}
-                onChange={v => {
-                  const n = Number(v)
-                  setBirthYear(Number.isFinite(n) ? n : null)
-                }}
-                options={yearOptions}
-                placeholder="Select year"
-                ariaLabel="Year of birth"
-              />
-              <FieldNote>Optional. Helps estimate your max heart rate if you haven't entered your own. Kept private.</FieldNote>
-            </div>
-            <div>
-              <FieldLabel>Average weekly distance — last 4 weeks</FieldLabel>
-              <Ruler
-                ariaLabel="Average weekly kilometres, last 4 weeks"
-                value={weeklyKm}
-                onChange={setWeeklyKm}
-                min={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_MIN}
-                max={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_MAX}
-                step={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_STEP}
-                restAnchor={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_ANCHOR}
-                unit="km/week"
-                caption="Last four weeks, roughly. Real numbers only."
-              />
-            </div>
-            <div>
-              <FieldLabel>Longest run in the last 6 weeks</FieldLabel>
-              <Ruler
-                ariaLabel="Longest run in the last 6 weeks"
-                value={longestRun}
-                onChange={setLongestRun}
-                min={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_MIN}
-                max={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_MAX}
-                step={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_STEP}
-                restAnchor={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_ANCHOR}
-                unit="km"
-                caption="Tells us how much you can already hold."
-              />
-            </div>
-            <div>
-              <FieldLabel optional>How long have you been running consistently?</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {TRAINING_AGE_CHIPS.map(c => (
-                  <Chip
-                    key={c.value}
-                    label={c.label}
-                    active={trainingAge === c.value}
-                    onClick={() => setTrainingAge(trainingAge === c.value ? null : c.value)}
-                  />
-                ))}
-              </div>
-              <FieldNote>Helps us judge how much volume you can handle.</FieldNote>
-            </div>
-          </div>
+          <Select
+            value={birthYear !== null ? String(birthYear) : ''}
+            onChange={v => {
+              const n = Number(v)
+              setBirthYear(Number.isFinite(n) ? n : null)
+            }}
+            options={yearOptions}
+            placeholder="Select year"
+            ariaLabel="Year of birth"
+          />
         )
       }
 
