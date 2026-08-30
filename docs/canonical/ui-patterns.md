@@ -1526,6 +1526,7 @@ The canonical user-input controls. **Never build a one-off input, toggle, chip, 
 | Effort / RPE | Subjective, low-precision | **RPEScale** (Pattern 13) |
 | One of 2–4 mutually-exclusive modes (km/mi, sign-in/up, distance/duration) | Toggle | **SegmentedControl** |
 | One (or several) of a larger set — race distances, injuries, training-age bands | Select | **Chip** |
+| Days of the week — which days you can't train, which day is the long run | Fixed 7-item multi/single select | **DayGridSelector** |
 
 ### TextField (`components/shared/TextField.tsx`)
 
@@ -1564,6 +1565,18 @@ Contained-track toggle for 2–4 mutually-exclusive options. One idiom for login
 ### Chip (`components/shared/Chip.tsx`)
 
 Stateless select-chip for choosing from a set. Single-select (caller tracks one active value) or multi-select (caller tracks a Set). `--moss` border + `--moss-soft` fill when active. Used for race distances, injuries, benchmark type, training-age bands.
+
+### DayGridSelector (`components/shared/DayGridSelector.tsx`)
+
+The canonical Mon–Sun day-of-week selector — one row of seven 44×44 circular targets. Multi-select (which days you can't train) by default; `multiple={false}` for a single-day choice (tap-again clears). Stateless; the caller owns `value`.
+
+- Speaks the canonical 3-letter `DayKey` (`'mon'…'sun'`, matching `lib/plan/effectiveSessions`). A caller that persists a different wire format maps at its own boundary — the wizard's `days_cannot_train` stays full-word (`'monday'`), so `GeneratePlanScreen` translates `DayKey` ⇄ full word at the call site. The primitive never emits full words.
+- Owns the Mon–Sun label + order (`DAY_GRID`). Result is always returned in canonical order regardless of tap order.
+- For a **2-option** day choice (Sat/Sun long-run day) use `<Chip>` — a seven-day grid is the wrong weight for two options.
+
+```tsx
+<DayGridSelector value={blockedDays} onChange={setBlockedDays} ariaLabel="Days you can never train" />
+```
 
 ### RPEScale (`components/shared/RPEScale.tsx`)
 

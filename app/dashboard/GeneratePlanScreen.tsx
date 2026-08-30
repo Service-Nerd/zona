@@ -16,6 +16,7 @@ import { DurationPicker } from '@/components/shared/DurationPicker'
 import { TextField } from '@/components/shared/TextField'
 import { Select } from '@/components/shared/Select'
 import { Chip } from '@/components/shared/Chip'
+import { DayGridSelector, type DayKey } from '@/components/shared/DayGridSelector'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,8 +48,18 @@ const BENCHMARK_DISTANCES = [
   { label: 'Full', value: 42.2 },
 ]
 
-const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const DAY_KEYS   = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+// Boundary maps between the wizard's persisted `days_cannot_train` wire format
+// (full words — the form the engine's parsers document as accepted, see §18 and
+// blockedDays()/parseBlockedDays()) and DayGridSelector's canonical DayKey.
+// The primitive owns the Mon–Sun labels + order now; these only translate keys.
+const FULL_BY_SHORT: Record<DayKey, string> = {
+  mon: 'monday', tue: 'tuesday', wed: 'wednesday', thu: 'thursday',
+  fri: 'friday', sat: 'saturday', sun: 'sunday',
+}
+const SHORT_BY_FULL: Record<string, DayKey> = {
+  monday: 'mon', tuesday: 'tue', wednesday: 'wed', thursday: 'thu',
+  friday: 'fri', saturday: 'sat', sunday: 'sun',
+}
 const INJURIES   = ['Achilles', 'Knee', 'Back', 'Hip', 'Shin splints', 'Plantar fasciitis']
 
 const WEEKLY_KM_CHIPS = [
@@ -1435,28 +1446,11 @@ export default function GeneratePlanScreen({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div>
               <FieldLabel optional>Days you can never train</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {DAYS_SHORT.map((d, i) => {
-                  const key    = DAY_KEYS[i]
-                  const active = daysOff.includes(key)
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setDaysOff(prev => active ? prev.filter(x => x !== key) : [...prev, key])}
-                      style={{
-                        width: '44px', height: '44px', borderRadius: '50%',
-                        border: `1px solid ${active ? 'var(--moss)' : 'var(--line)'}`,
-                        background: active ? 'var(--moss-soft)' : 'var(--card)',
-                        color: active ? 'var(--moss)' : 'var(--ink-2)',
-                        fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: active ? 600 : 400,
-                        cursor: 'pointer', transition: 'all 0.15s',
-                      }}
-                    >
-                      {d}
-                    </button>
-                  )
-                })}
-              </div>
+              <DayGridSelector
+                ariaLabel="Days you can never train"
+                value={daysOff.map(f => SHORT_BY_FULL[f]).filter(Boolean) as DayKey[]}
+                onChange={keys => setDaysOff(keys.map(k => FULL_BY_SHORT[k]))}
+              />
             </div>
             <div>
               <FieldLabel optional>Max weekday session</FieldLabel>
