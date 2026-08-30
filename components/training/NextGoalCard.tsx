@@ -8,6 +8,13 @@
 // so this card carries NO AIMark and NO CoachByline (provenance honesty,
 // ui-patterns.md § AIMark). The accent rail is --s-race (the race session
 // colour), deliberately distinct from the moss AI rail.
+//
+// Deliberately NOT the shared CardSelect primitive: these are an action/nav
+// ladder, not a single-select radio — tapping navigates into the wizard, there
+// is no persistent selected state, and each row is race-themed (--s-race rail +
+// inline --s-race target time + trailing → arrow), the opposite of CardSelect's
+// moss "selected" language. Folding it in would need a nav-arrow + coloured-value
+// slot used by no other consumer. See ui-patterns.md § Form Fields & Pickers.
 
 'use client'
 

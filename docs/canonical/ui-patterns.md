@@ -1594,6 +1594,10 @@ Rules:
 <CardSelect layout="tile" label="Marathon" sub="42.2 km" active={dist === 42.2} locked={!paid} lockLabel="PAID" onClick={...} />
 ```
 
+**Consumers** (single-select label+sub radio cards — use CardSelect, don't rebuild): the wizard goal / terrain / hard-session pickers (`GeneratePlanScreen`), and the post-race sheet's **outcome** (pb / on_target / off_target / dnf) and **maintenance-intent** (rest / tick_over / stay_sharp) pickers (`RaceResultSheet`). The sheet pickers previously carried a bespoke leading radio-dot; that was dropped in favour of CardSelect's canonical moss active state (border + `--moss-soft` fill + moss label) — the dot was redundant chrome and a source of the drift these primitives exist to kill. **The moss active state is the only "selected" affordance; do not re-add a radio dot.**
+
+**Deliberate non-consumer — `NextGoalCard`** (`components/training/NextGoalCard.tsx`): the post-race "what's next" goal ladder looks card-shaped but is **not** a CardSelect. It's an action/nav ladder — tapping a row navigates into the wizard, there is no persistent selected state — and it's race-themed (`--s-race` rail + inline `--s-race` target time + trailing → arrow), the opposite of CardSelect's moss radio language. Folding it in would need a nav-arrow + coloured-inline-value slot used by no other consumer, which is exactly the one-off bloat CardSelect avoids. It stays bespoke.
+
 ### Ruler (`components/shared/Ruler.tsx`)
 
 The canonical bounded/stepped numeric input — a horizontal draggable ruler with a large value readout above (metric-pair), tick marks, and a min→max scale. For a self-reported quantity the runner *estimates* rather than knows exactly: weekly volume, longest recent run.

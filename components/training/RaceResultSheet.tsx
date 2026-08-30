@@ -16,6 +16,7 @@ import type { RaceResult, Plan } from '@/types/plan'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import RPEScale from '@/components/shared/RPEScale'
+import { CardSelect } from '@/components/shared/CardSelect'
 
 // Parse a finish/target time string into h/m/s. 3 parts → H:MM:SS;
 // 2 parts → MM:SS (short-race convention, e.g. "21:48" = 21m 48s).
@@ -219,39 +220,15 @@ export default function RaceResultSheet({
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)', letterSpacing: '0.02em', marginBottom: '10px' }}>
               How would you call it?
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {OUTCOMES.map(o => (
-                <button
+                <CardSelect
                   key={o.value}
+                  label={o.label}
+                  sub={o.sub}
+                  active={outcome === o.value}
                   onClick={() => setOutcome(o.value)}
-                  style={{
-                    display: 'flex', alignItems: 'center',
-                    padding: '11px 14px',
-                    background: outcome === o.value ? 'var(--bg-soft)' : 'transparent',
-                    border: `1.5px solid ${outcome === o.value ? 'var(--moss)' : 'var(--line)'}`,
-                    borderRadius: '12px',
-                    cursor: 'pointer', textAlign: 'left',
-                    gap: '10px',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '16px', height: '16px', borderRadius: '50%',
-                      border: `2px solid ${outcome === o.value ? 'var(--moss)' : 'var(--line)'}`,
-                      background: outcome === o.value ? 'var(--moss)' : 'transparent',
-                      flexShrink: 0,
-                      transition: 'all 0.12s',
-                    }}
-                  />
-                  <div>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2 }}>
-                      {o.label}
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.3, marginTop: '1px' }}>
-                      {o.sub}
-                    </div>
-                  </div>
-                </button>
+                />
               ))}
             </div>
           </div>
@@ -296,37 +273,15 @@ export default function RaceResultSheet({
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: '10px' }}>
               Sets how much we keep you running while there’s nothing to chase.
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {INTENTS.map(o => (
-                <button
+                <CardSelect
                   key={o.value}
+                  label={o.label}
+                  sub={o.sub}
+                  active={intent === o.value}
                   onClick={() => setIntent(o.value)}
-                  style={{
-                    display: 'flex', alignItems: 'center',
-                    padding: '11px 14px',
-                    background: intent === o.value ? 'var(--bg-soft)' : 'transparent',
-                    border: `1.5px solid ${intent === o.value ? 'var(--moss)' : 'var(--line)'}`,
-                    borderRadius: '12px',
-                    cursor: 'pointer', textAlign: 'left', gap: '10px',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '16px', height: '16px', borderRadius: '50%',
-                      border: `2px solid ${intent === o.value ? 'var(--moss)' : 'var(--line)'}`,
-                      background: intent === o.value ? 'var(--moss)' : 'transparent',
-                      flexShrink: 0, transition: 'all 0.12s',
-                    }}
-                  />
-                  <div>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2 }}>
-                      {o.label}
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.3, marginTop: '1px' }}>
-                      {o.sub}
-                    </div>
-                  </div>
-                </button>
+                />
               ))}
             </div>
           </div>
