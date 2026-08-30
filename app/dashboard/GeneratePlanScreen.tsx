@@ -128,21 +128,19 @@ function getStepSequence(hasPaidAccess: boolean, goal: 'finish' | 'time_target' 
   return steps
 }
 
-// ─── Progress dots ────────────────────────────────────────────────────────────
+// ─── Progress line ────────────────────────────────────────────────────────────
+// A thin moss fill on a --line track — never a number. Per the wizard-redesign
+// frontend-design pass (CI-1): "Step 7 of 12" turns setup into a chore and
+// invites drop-off; the line reassures without counting.
 
-function ProgressDots({ total, current }: { total: number; current: number }) {
+function ProgressLine({ total, current }: { total: number; current: number }) {
+  const pct = total > 0 ? Math.round(((current + 1) / total) * 100) : 0
   return (
-    <div style={{ display: 'flex', gap: '5px', alignItems: 'center', marginBottom: '24px' }}>
-      {Array.from({ length: total }, (_, i) => (
-        <div key={i} style={{
-          height: '5px',
-          borderRadius: '3px',
-          width: i === current ? '20px' : '5px',
-          background: i <= current ? 'var(--moss)' : 'var(--line-strong)',
-          transition: 'all 0.25s ease',
-          flexShrink: 0,
-        }} />
-      ))}
+    <div style={{ height: '3px', borderRadius: '3px', background: 'var(--line)', margin: '0 0 24px', overflow: 'hidden' }}>
+      <div style={{
+        height: '100%', width: `${pct}%`, background: 'var(--moss)',
+        borderRadius: '3px', transition: 'width 0.25s ease',
+      }} />
     </div>
   )
 }
@@ -1050,7 +1048,7 @@ export default function GeneratePlanScreen({
       {/* Header — back button + progress */}
       <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
         {!(isOnboarding && currentIdx === 0) && <BackBtn onClick={goBack} />}
-        <ProgressDots total={sequence.length} current={currentIdx} />
+        <ProgressLine total={sequence.length} current={currentIdx} />
         <div style={{ marginBottom: '28px' }}>
           <h1 style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: '8px', margin: '0 0 8px' }}>
             {title}
