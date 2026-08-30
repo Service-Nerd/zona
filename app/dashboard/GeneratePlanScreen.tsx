@@ -631,7 +631,14 @@ export default function GeneratePlanScreen({
     })()
 
     return () => { cancelled = true; clearTimeout(capId) }
-  }, [appStep, benchEstimateStatus, distanceKm])
+    // benchEstimateStatus is set INSIDE this effect (→ 'loading' → 'done').
+    // Including it as a dep tore the effect down the instant we set 'loading',
+    // which flipped `cancelled` true and cancelled the 'done' that clears the
+    // skeleton — the effect stranded itself on the grey loading state (only on
+    // native, where the code actually reaches 'loading'). Gate on it via the
+    // closure read above, never as a dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appStep, distanceKm])
 
   // ── Navigation helpers ────────────────────────────────────────────────────
 
