@@ -30,6 +30,9 @@ See `docs/canonical/monetisation-strategy.md` for the Option A tier categories.
 
 | Feature | Tier | Release | Notes |
 |---|---|---|---|
+| Wizard input primitives (CI-2) | FREE | 2026-08-30 | Shared `components/shared/` controls: DayGridSelector, **Ruler** (stepped self-reported volume — replaced coarse bands; Coaching Board §18 + `GENERATION_CONFIG.WIZARD_VOLUME_RULER` + `INV-INPUT-LONGEST-LE-WEEKLY`), CardSelect (row+tile), **WheelPicker** (DurationPicker rebuilt as scroll wheels app-wide), **WeekGrid**. Pure logic node-tested; see `ui-patterns.md` § Form Fields & Pickers. |
+| Wizard one-question-per-screen (CI-1) | FREE | 2026-08-30 | Moss progress line (no number); `fitness` split into 4 screens; **Option A `your-week` keystone** (WeekGrid → derives `days_available` / `days_cannot_train` / `preferred_long_run_day`, Sat/Sun long first ship); year-of-birth wheel. Engine untouched (client-side mapping). |
+| Wizard teaching interstitials (CI-7) | FREE | 2026-08-30 | Two woven teaching moments — "This plan will feel too easy" after the goal, "Easy should feel easy" (→ `BRAND.voiceAnchor`) before committing the week. |
 | Core app shell (3 screens, nav) | FREE | R0–R15b | Today, Plan, Me screens. Coach tab built but disabled for v1 launch — admin-only until post-launch. |
 | Screen guide popups | FREE | R15b | First-load onboarding |
 | Progress bar | PAID | R17 | Session completion % |
