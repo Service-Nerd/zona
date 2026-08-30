@@ -176,6 +176,10 @@ html, body {
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 2px; }
 
+/* WheelPicker — hide the scroll track; the centre band is the only affordance. */
+.wheel-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+.wheel-scroll::-webkit-scrollbar { display: none; }
+
 /* ── Focus ring ──────────────────────────────────────────────────────── */
 
 :focus-visible {

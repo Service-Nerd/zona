@@ -14,14 +14,23 @@ import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import { TextField } from '@/components/shared/TextField'
-import { Select } from '@/components/shared/Select'
+import { WheelPicker } from '@/components/shared/WheelPicker'
 import { Chip } from '@/components/shared/Chip'
+import { type DayKey } from '@/components/shared/DayGridSelector'
+import { Ruler } from '@/components/shared/Ruler'
+import { CardSelect } from '@/components/shared/CardSelect'
+import { WeekGrid } from '@/components/shared/WeekGrid'
+import {
+  defaultWeek, weekPlanToInputs, weekPlanFromLegacy, dayCountVerdict, type WeekPlan,
+} from '@/components/shared/WeekGrid.logic'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type WizardSubStep =
   | 'distance' | 'race-details' | 'goal' | 'target-time'
-  | 'fitness' | 'benchmark' | 'schedule' | 'constraints'
+  | 'teach-easy'
+  | 'weekly-volume' | 'longest-run' | 'training-age' | 'birth-year'
+  | 'benchmark' | 'teach-easy-day' | 'your-week' | 'weekday-ceiling'
   | 'hard-sessions' | 'terrain' | 'injuries'
 
 type AppStep = WizardSubStep | 'generating' | 'preview' | 'error'
@@ -47,10 +56,25 @@ const BENCHMARK_DISTANCES = [
   { label: 'Full', value: 42.2 },
 ]
 
-const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const DAY_KEYS   = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+// Boundary maps between the wizard's persisted `days_cannot_train` wire format
+// (full words — the form the engine's parsers document as accepted, see §18 and
+// blockedDays()/parseBlockedDays()) and DayGridSelector's canonical DayKey.
+// The primitive owns the Mon–Sun labels + order now; these only translate keys.
+const FULL_BY_SHORT: Record<DayKey, string> = {
+  mon: 'monday', tue: 'tuesday', wed: 'wednesday', thu: 'thursday',
+  fri: 'friday', sat: 'saturday', sun: 'sunday',
+}
+const SHORT_BY_FULL: Record<string, DayKey> = {
+  monday: 'mon', tuesday: 'tue', wednesday: 'wed', thursday: 'thu',
+  friday: 'fri', saturday: 'sat', sunday: 'sun',
+}
 const INJURIES   = ['Achilles', 'Knee', 'Back', 'Hip', 'Shin splints', 'Plantar fasciitis']
 
+// LEGACY — the weekly-volume + longest-run inputs are now the Ruler primitive
+// (Coaching Board 2026-08-30; see GENERATION_CONFIG.WIZARD_VOLUME_RULER). These
+// band tables are retained SOLELY to migrate a pre-Ruler `zona_wizard_draft`
+// (label → km) on restore, so an in-flight draft doesn't lose its value across
+// the deploy. Not rendered. Safe to delete once no legacy drafts remain.
 const WEEKLY_KM_CHIPS = [
   { label: 'Under 20', value: 15  },
   { label: '20–40',    value: 30  },
@@ -86,15 +110,20 @@ const TRAINING_AGE_CHIPS: { label: string; value: TrainingAge }[] = [
   { label: '5+ years',     value: '5yr+'   },
 ]
 
-const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; optional?: boolean }> = {
+const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; optional?: boolean; eyebrow?: string; interstitial?: boolean; cta?: string }> = {
   'distance':        { title: 'How far?',              subtitle: 'Start with the finish line. Work backwards from there.' },
   'race-details':    { title: 'Tell me about the race.', subtitle: 'Race name is optional. The date is not.' },
   'goal':            { title: 'What matters most?',    subtitle: 'Crossing the line, or hitting a number. Both are valid.' },
   'target-time':     { title: "What's the target?",    subtitle: "Be honest. Optimistic goals make bad training plans." },
-  'fitness':         { title: 'Be honest.',             subtitle: "The plan only works if these numbers are real. Flattering yourself here just means a harder race." },
+  'teach-easy':      { title: 'This plan will feel too easy at first.', subtitle: '', eyebrow: 'Hold the zone', interstitial: true, cta: 'Got it →' },
+  'weekly-volume':   { title: 'How much are you running now?', subtitle: 'Last four weeks, roughly. Real numbers only.' },
+  'longest-run':     { title: 'Longest run in the last six weeks?', subtitle: 'Tells us how much you can already hold.' },
+  'training-age':    { title: 'How long have you been at this?', subtitle: 'Consistent months, not total years.', optional: true },
+  'birth-year':      { title: 'What year were you born?', subtitle: "Only to estimate your max heart rate, if you haven't set one. Kept private.", optional: true },
   'benchmark':       { title: 'Recent race result?',   subtitle: 'Gives us precise pace targets for every session. Skip if you haven\'t raced lately.', optional: true },
-  'schedule':        { title: 'Your schedule.',         subtitle: "Training has to fit your life. Not the other way around." },
-  'constraints':     { title: 'Any hard limits?',       subtitle: 'Days you can never train, or a max time on weekdays. Skip if you\'re flexible.', optional: true },
+  'teach-easy-day':  { title: 'Easy should feel easy.', subtitle: '', eyebrow: 'The easy day', interstitial: true, cta: 'Continue →' },
+  'your-week':       { title: 'Which days do you run?',  subtitle: 'Tap the days you train. Tap a weekend day again to make it your long run.' },
+  'weekday-ceiling': { title: 'How long on a weekday?',  subtitle: 'Your cap Monday–Friday. Weekends stay open. Skip if you\'re flexible.', optional: true },
   'hard-sessions':   { title: 'You and hard sessions.', subtitle: 'Intervals, tempo, threshold. Where do you land?' },
   'terrain':         { title: 'Where do you run?',      subtitle: 'Road, trail, or a bit of both. Affects pace targets.' },
   'injuries':        { title: 'Anything to flag?',      subtitle: 'Old injuries that still show up. Skip if you\'re clean.', optional: true },
@@ -105,26 +134,26 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
 function getStepSequence(hasPaidAccess: boolean, goal: 'finish' | 'time_target' | null): WizardSubStep[] {
   const steps: WizardSubStep[] = ['distance', 'race-details', 'goal']
   if (goal === 'time_target') steps.push('target-time')
-  steps.push('fitness', 'benchmark', 'schedule', 'constraints')
+  // ⓘ teaching seams (CI-7): ⓘA right after the goal is stated (ambition peaks);
+  // ⓘB after benchmark, just before they commit their week (pace is known).
+  steps.push('teach-easy', 'weekly-volume', 'longest-run', 'training-age', 'birth-year', 'benchmark', 'teach-easy-day', 'your-week', 'weekday-ceiling')
   if (hasPaidAccess) steps.push('hard-sessions', 'terrain', 'injuries')
   return steps
 }
 
-// ─── Progress dots ────────────────────────────────────────────────────────────
+// ─── Progress line ────────────────────────────────────────────────────────────
+// A thin moss fill on a --line track — never a number. Per the wizard-redesign
+// frontend-design pass (CI-1): "Step 7 of 12" turns setup into a chore and
+// invites drop-off; the line reassures without counting.
 
-function ProgressDots({ total, current }: { total: number; current: number }) {
+function ProgressLine({ total, current }: { total: number; current: number }) {
+  const pct = total > 0 ? Math.round(((current + 1) / total) * 100) : 0
   return (
-    <div style={{ display: 'flex', gap: '5px', alignItems: 'center', marginBottom: '24px' }}>
-      {Array.from({ length: total }, (_, i) => (
-        <div key={i} style={{
-          height: '5px',
-          borderRadius: '3px',
-          width: i === current ? '20px' : '5px',
-          background: i <= current ? 'var(--moss)' : 'var(--line-strong)',
-          transition: 'all 0.25s ease',
-          flexShrink: 0,
-        }} />
-      ))}
+    <div style={{ height: '3px', borderRadius: '3px', background: 'var(--line)', margin: '0 0 24px', overflow: 'hidden' }}>
+      <div style={{
+        height: '100%', width: `${pct}%`, background: 'var(--moss)',
+        borderRadius: '3px', transition: 'width 0.25s ease',
+      }} />
     </div>
   )
 }
@@ -168,39 +197,8 @@ function FieldLabel({ children, optional }: { children: React.ReactNode; optiona
 }
 
 // Large card-style option (used for goal, hard-sessions, terrain)
-function OptionCard({ label, sub, active, onClick, locked, lockLabel }: {
-  label: string; sub?: string; active: boolean; onClick: () => void
-  locked?: boolean; lockLabel?: string
-}) {
-  return (
-    <button
-      onClick={locked ? undefined : onClick}
-      style={{
-        width: '100%', textAlign: 'left',
-        padding: '18px 20px',
-        borderRadius: 'var(--radius-lg)',
-        border: `1.5px solid ${active ? 'var(--moss)' : 'var(--line)'}`,
-        background: active ? 'var(--moss-soft)' : 'var(--card)',
-        cursor: locked ? 'default' : 'pointer',
-        transition: 'all 0.15s',
-        opacity: locked ? 0.5 : 1,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-      }}
-    >
-      <div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: active ? 700 : 500, color: active ? 'var(--moss)' : 'var(--ink)', marginBottom: sub ? '4px' : 0 }}>
-          {label}
-        </div>
-        {sub && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.45 }}>
-            {sub}
-          </div>
-        )}
-      </div>
-      {lockLabel && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700, color: 'var(--moss)', letterSpacing: '0.08em', marginTop: '2px', flexShrink: 0 }}>{lockLabel}</span>}
-    </button>
-  )
-}
+// OptionCard was extracted to the shared CardSelect primitive (row layout) —
+// see components/shared/CardSelect.tsx and ui-patterns.md § Form Fields & Pickers.
 
 // ─── Preview components ──────────────────────────────────────────────────────
 // Plan-overview strip + per-phase summary cards. No horizontal scroll. No
@@ -458,8 +456,8 @@ export default function GeneratePlanScreen({
   // Year of birth (not full DOB) — App Store Guideline 5.1.1 data minimisation.
   // Only used for Tanaka max-HR fallback (208 − 0.7 × age) and masters threshold.
   const [birthYear, setBirthYear] = useState<number | null>(initialBirthYear ?? null)
-  const [weeklyKmChip,   setWeeklyKmChip]   = useState<string | null>(null)
-  const [longestRunChip, setLongestRunChip] = useState<string | null>(null)
+  const [weeklyKm,   setWeeklyKm]   = useState<number | null>(null)
+  const [longestRun, setLongestRun] = useState<number | null>(null)
   const [restingHR,      setRestingHR]      = useState(initialRHR ? String(initialRHR) : '')
   const [trainingAge,    setTrainingAge]    = useState<TrainingAge | null>(null)
 
@@ -471,12 +469,11 @@ export default function GeneratePlanScreen({
   const [benchmarkDate,    setBenchmarkDate]    = useState('')
   const [benchmarkTTDist,  setBenchmarkTTDist]  = useState('')
 
-  // ── Step 7 — Schedule ────────────────────────────────────────────────────
-  const [daysAvailable,         setDaysAvailable]         = useState<number | null>(null)
-  const [preferredLongRunDay,   setPreferredLongRunDay]   = useState<'sat' | 'sun'>('sun')
-
-  // ── Step 8 — Constraints ─────────────────────────────────────────────────
-  const [daysOff,        setDaysOff]        = useState<string[]>([])
+  // ── Your week — the keystone grid (Option A). One WeekPlan owns which days
+  //    are Rest/Run/Long; days_available, days_cannot_train and
+  //    preferred_long_run_day are DERIVED from it (weekPlanToInputs), never
+  //    stored separately. Replaces the old days-per-week + days-off steps.
+  const [weekPlan,       setWeekPlan]       = useState<WeekPlan>(defaultWeek())
   const [maxWeekdayChip, setMaxWeekdayChip] = useState<string | null>(null)
 
   // ── Step 9 — Hard sessions (paid) ────────────────────────────────────────
@@ -501,8 +498,12 @@ export default function GeneratePlanScreen({
       if (typeof s.targetHours === 'number') setTargetHours(s.targetHours)
       if (typeof s.targetMins  === 'number') setTargetMins(s.targetMins)
       if (typeof s.birthYear === 'number') setBirthYear(s.birthYear)
-      if (s.weeklyKmChip)    setWeeklyKmChip(s.weeklyKmChip)
-      if (s.longestRunChip)  setLongestRunChip(s.longestRunChip)
+      // New numeric form (Ruler); fall back to the pre-Ruler label bucket so a
+      // draft saved mid-wizard before this shipped still restores its value.
+      if (typeof s.weeklyKm === 'number')   setWeeklyKm(s.weeklyKm)
+      else if (s.weeklyKmChip)   setWeeklyKm(WEEKLY_KM_CHIPS.find(c => c.label === s.weeklyKmChip)?.value ?? null)
+      if (typeof s.longestRun === 'number') setLongestRun(s.longestRun)
+      else if (s.longestRunChip) setLongestRun(LONGEST_RUN_CHIPS.find(c => c.label === s.longestRunChip)?.value ?? null)
       if (s.restingHR)       setRestingHR(s.restingHR)
       if (s.trainingAge)     setTrainingAge(s.trainingAge)
       if (s.benchmarkType)   setBenchmarkType(s.benchmarkType)
@@ -511,15 +512,22 @@ export default function GeneratePlanScreen({
       if (typeof s.benchMins  === 'number') setBenchMins(s.benchMins)
       if (s.benchmarkTTDist) setBenchmarkTTDist(s.benchmarkTTDist)
       if (s.benchmarkDate)   setBenchmarkDate(s.benchmarkDate)
-      if (s.daysAvailable)   setDaysAvailable(s.daysAvailable)
-      if (s.preferredLongRunDay === 'sat' || s.preferredLongRunDay === 'sun') setPreferredLongRunDay(s.preferredLongRunDay)
-      if (Array.isArray(s.daysOff)) setDaysOff(s.daysOff)
+      // New: single weekPlan. Back-compat: rebuild it from the pre-grid separate
+      // fields (days-off + long-run day) so a legacy draft doesn't lose the week.
+      if (s.weekPlan && typeof s.weekPlan === 'object') setWeekPlan(s.weekPlan as WeekPlan)
+      else if (Array.isArray(s.daysOff) || s.preferredLongRunDay) {
+        const restShort = (Array.isArray(s.daysOff) ? s.daysOff : [])
+          .map((f: string) => SHORT_BY_FULL[f]).filter(Boolean) as DayKey[]
+        const longDay = s.preferredLongRunDay === 'sat' || s.preferredLongRunDay === 'sun'
+          ? s.preferredLongRunDay : null
+        setWeekPlan(weekPlanFromLegacy(restShort, longDay))
+      }
       if (s.maxWeekdayChip)  setMaxWeekdayChip(s.maxWeekdayChip)
       if (s.hardSessions)    setHardSessions(s.hardSessions)
       if (s.terrain)         setTerrain(s.terrain)
       if (Array.isArray(s.injuries)) setInjuries(s.injuries)
       // Restore sub-step if it's a valid wizard step name
-      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','fitness','benchmark','schedule','constraints','hard-sessions','terrain','injuries']
+      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','teach-easy','weekly-volume','longest-run','training-age','birth-year','benchmark','teach-easy-day','your-week','weekday-ceiling','hard-sessions','terrain','injuries']
       if (validSubSteps.includes(s.appStep)) setAppStep(s.appStep)
     } catch {}
   }, [])
@@ -531,29 +539,22 @@ export default function GeneratePlanScreen({
       sessionStorage.setItem(WIZARD_KEY, JSON.stringify({
         appStep, distanceKm, raceName, raceDate, goal,
         targetHours, targetMins,
-        birthYear, weeklyKmChip, longestRunChip, restingHR, trainingAge,
+        birthYear, weeklyKm, longestRun, restingHR, trainingAge,
         benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
-        daysAvailable, preferredLongRunDay, daysOff, maxWeekdayChip,
+        weekPlan, maxWeekdayChip,
         hardSessions, terrain, injuries,
       }))
     } catch {}
   }, [appStep, distanceKm, raceName, raceDate, goal,
       targetHours, targetMins,
-      birthYear, weeklyKmChip, longestRunChip, restingHR, trainingAge,
+      birthYear, weeklyKm, longestRun, restingHR, trainingAge,
       benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
-      daysAvailable, preferredLongRunDay, daysOff, maxWeekdayChip,
+      weekPlan, maxWeekdayChip,
       hardSessions, terrain, injuries])
 
-  // Clear an out-of-range daysAvailable when distance changes to a stricter
-  // tier (e.g. user picks 2 days for 10K, then goes back and switches to
-  // marathon — block threshold is 3, so the prior selection is invalid).
-  // Without this the disabled-button stays styled-selected.
-  useEffect(() => {
-    if (daysAvailable == null || distanceKm == null) return
-    const distKey = raceDistanceKey(distanceKm)
-    const blockAt = GENERATION_CONFIG.DAYS_AVAILABILITY_THRESHOLDS[distKey].block
-    if (daysAvailable < blockAt) setDaysAvailable(null)
-  }, [distanceKm, daysAvailable])
+  // (The old "clear out-of-range days-per-week when distance gets stricter"
+  //  effect is gone: the your-week grid derives the day count live and the
+  //  threshold verdict blocks Continue directly — nothing stale to clear.)
 
   // ── Navigation helpers ────────────────────────────────────────────────────
 
@@ -612,18 +613,25 @@ export default function GeneratePlanScreen({
       case 'race-details':   return raceDate !== ''
       case 'goal':           return goal !== null
       case 'target-time':    return targetHours > 0 || targetMins > 0
-      case 'fitness': {
-        // Year of birth is optional — App Store 5.1.1 ("should be optional").
-        // Engine falls back to age 30 when null; only weeklyKm + longestRun
-        // are required to derive a sensible plan.
-        return weeklyKmChip !== null && longestRunChip !== null
-      }
+      case 'weekly-volume':  return weeklyKm !== null
+      case 'longest-run':    return longestRun !== null
+      // training-age + birth-year are optional (App Store 5.1.1 — year of birth
+      // "should be optional"; the engine falls back to age 30 / no training-age).
+      case 'training-age':   return true
+      case 'birth-year':     return true
       case 'benchmark':
         if (benchmarkType === 'race')     return !!(benchmarkDistKm && (benchHours > 0 || benchMins > 0))
         if (benchmarkType === 'tt_30min') return benchmarkTTDist !== ''
         return true
-      case 'schedule':       return daysAvailable !== null
-      case 'constraints':    return true
+      case 'your-week': {
+        // Enough training days for the distance. warn (time goal, below the
+        // recommended count) still proceeds — only a hard block stops.
+        const wi = weekPlanToInputs(weekPlan)
+        const distKey = distanceKm ? raceDistanceKey(distanceKm) : null
+        const thr = distKey ? GENERATION_CONFIG.DAYS_AVAILABILITY_THRESHOLDS[distKey] : null
+        return dayCountVerdict(wi.daysAvailable, thr ?? null, distKey, goal === 'time_target').state !== 'blocked'
+      }
+      case 'weekday-ceiling': return true
       case 'hard-sessions':  return true
       case 'terrain':        return true
       case 'injuries':       return true
@@ -641,14 +649,16 @@ export default function GeneratePlanScreen({
     setPlan(null)
 
     const ageYears      = birthYear !== null ? new Date().getFullYear() - birthYear : 30
-    const weeklyKmVal   = WEEKLY_KM_CHIPS.find(c => c.label === weeklyKmChip)?.value ?? 30
-    const longestRunVal = LONGEST_RUN_CHIPS.find(c => c.label === longestRunChip)?.value ?? 12
+    const weeklyKmVal   = weeklyKm   ?? GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_ANCHOR
+    const longestRunVal = longestRun ?? GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_ANCHOR
     const targetTimeStr = goal === 'time_target' && (targetHours > 0 || targetMins > 0)
       ? `${targetHours}:${String(targetMins).padStart(2, '0')}:00` : undefined
     const benchTimeStr  = benchHours > 0 || benchMins > 0
       ? `${benchHours}:${String(benchMins).padStart(2, '0')}:00` : undefined
     const maxWeekdayVal = maxWeekdayChip
       ? MAX_WEEKDAY_CHIPS.find(c => c.label === maxWeekdayChip)?.value : undefined
+    // The one engine touch: derive the schedule fields from the week grid.
+    const week = weekPlanToInputs(weekPlan)
 
     const benchmark = (() => {
       const dateField = benchmarkDate ? { benchmark_date: benchmarkDate } : {}
@@ -697,14 +707,14 @@ export default function GeneratePlanScreen({
       age:                   ageYears,
       current_weekly_km:     weeklyKmVal,
       longest_recent_run_km: longestRunVal,
-      days_available:        daysAvailable!,
+      days_available:        week.daysAvailable,
       resting_hr:            hkRHR ?? undefined,
       max_hr:                hkMHR ?? undefined,
       max_hr_source:         mhrSource,
       training_age:          trainingAge ?? undefined,
-      preferred_long_run_day: preferredLongRunDay,
+      preferred_long_run_day: week.longDay ?? 'sun',
       benchmark,
-      days_cannot_train:     daysOff.length ? daysOff : undefined,
+      days_cannot_train:     week.restShort.length ? week.restShort.map(k => FULL_BY_SHORT[k]) : undefined,
       max_weekday_mins:      maxWeekdayVal,
       hard_session_relationship: hasPaidAccess ? (hardSessions ?? undefined) : undefined,
       injury_history:            hasPaidAccess && injuries.length ? injuries.map(i => i.toLowerCase()) : undefined,
@@ -1045,7 +1055,12 @@ export default function GeneratePlanScreen({
   const currentIdx     = sequence.indexOf(currentSubStep)
   const isLastStep     = currentIdx === sequence.length - 1
   const stepMeta       = STEP_META[currentSubStep] ?? STEP_META['distance']
-  const ctaLabel       = isLastStep ? 'Generate my plan →' : 'Continue'
+  const ctaLabel       = stepMeta.cta ?? (isLastStep ? 'Generate my plan →' : 'Continue')
+
+  // Progress counts real questions only — the teaching interstitials don't
+  // advance the line (CI-7: they're a moment, not a step to tick off).
+  const realSteps = sequence.filter(s => !STEP_META[s]?.interstitial)
+  const realDone  = sequence.slice(0, currentIdx + 1).filter(s => !STEP_META[s]?.interstitial).length
 
   const welcomeOverride = isOnboarding && currentSubStep === 'distance'
     ? { title: 'Start with the finish line.', subtitle: 'Work backwards from there.' }
@@ -1059,14 +1074,21 @@ export default function GeneratePlanScreen({
       {/* Header — back button + progress */}
       <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
         {!(isOnboarding && currentIdx === 0) && <BackBtn onClick={goBack} />}
-        <ProgressDots total={sequence.length} current={currentIdx} />
-        <div style={{ marginBottom: '28px' }}>
+        <ProgressLine total={realSteps.length} current={Math.max(0, realDone - 1)} />
+        <div style={{ marginBottom: stepMeta.interstitial ? '20px' : '28px', marginTop: stepMeta.interstitial ? '28px' : 0 }}>
+          {stepMeta.eyebrow && (
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+              {stepMeta.eyebrow}
+            </div>
+          )}
           <h1 style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: '8px', margin: '0 0 8px' }}>
             {title}
           </h1>
-          <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)', lineHeight: 1.55, margin: 0 }}>
-            {subtitle}
-          </p>
+          {subtitle && (
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)', lineHeight: 1.55, margin: 0 }}>
+              {subtitle}
+            </p>
+          )}
         </div>
       </div>
 
@@ -1122,36 +1144,45 @@ export default function GeneratePlanScreen({
   function renderStep(): React.ReactNode {
     switch (currentSubStep) {
 
+      // ── Teaching interstitials (CI-7) — headline is the frame title; the body
+      //    lives here. No control; Continue commits like any screen. ─────────────
+      case 'teach-easy':
+        return (
+          <p style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', color: 'var(--ink-2)', lineHeight: 1.7, margin: 0, maxWidth: '30ch' }}>
+            That&apos;s on purpose. Most runners live in a grey middle — too hard to recover, too easy to improve. We&apos;re going to pull those apart.
+          </p>
+        )
+
+      case 'teach-easy-day':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', color: 'var(--ink-2)', lineHeight: 1.7, margin: 0 }}>
+              Most runners push their easy days and coast their hard ones — so every run lands in the same tiring middle. Even elites spend about 80% of their time truly easy. Your easy runs build the engine. Let them.
+            </p>
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700, color: 'var(--moss)', margin: 0 }}>
+              {BRAND.voiceAnchor}
+            </p>
+          </div>
+        )
+
       // ── Distance ───────────────────────────────────────────────────────────
       case 'distance':
         return (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             {DISTANCES.map(d => {
               const locked = d.paid && !hasPaidAccess
-              const active = distanceKm === d.value
               return (
-                <button
+                <CardSelect
                   key={d.value}
-                  onClick={() => locked ? onUpgrade?.() : setDistanceKm(d.value)}
-                  style={{
-                    padding: '18px 16px', borderRadius: 'var(--radius-lg)',
-                    border: `1.5px solid ${active ? 'var(--moss)' : 'var(--line)'}`,
-                    background: active ? 'var(--moss-soft)' : 'var(--card)',
-                    cursor: locked ? 'default' : 'pointer',
-                    textAlign: 'left', transition: 'all 0.15s',
-                    opacity: locked ? 0.55 : 1,
-                    display: 'flex', flexDirection: 'column', gap: '4px',
-                    minHeight: '72px', position: 'relative',
-                  }}
-                >
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: active ? 700 : 500, color: active ? 'var(--moss)' : 'var(--ink)' }}>{d.label}</span>
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>{d.sub}</span>
-                  {locked && (
-                    <span style={{ position: 'absolute', top: '8px', right: '10px', fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700, color: 'var(--moss)', letterSpacing: '0.08em' }}>
-                      PAID
-                    </span>
-                  )}
-                </button>
+                  layout="tile"
+                  label={d.label}
+                  sub={d.sub}
+                  active={distanceKm === d.value}
+                  locked={locked}
+                  lockLabel="PAID"
+                  ariaLabel={d.label}
+                  onClick={() => (locked ? onUpgrade?.() : setDistanceKm(d.value))}
+                />
               )
             })}
             {!hasPaidAccess && (
@@ -1185,13 +1216,13 @@ export default function GeneratePlanScreen({
       case 'goal':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <OptionCard
+            <CardSelect
               label="Just finish."
               sub="Get to the line in one piece. That's the job."
               active={goal === 'finish'}
               onClick={() => setGoal('finish')}
             />
-            <OptionCard
+            <CardSelect
               label="Hit a time."
               sub="A number on the clock. You'll need to earn it."
               active={goal === 'time_target'}
@@ -1215,70 +1246,63 @@ export default function GeneratePlanScreen({
         )
 
       // ── Fitness ────────────────────────────────────────────────────────────
-      case 'fitness': {
-        const currentYear = new Date().getFullYear()
-        // 14–90 maps to allowable runner age range. Newest year first so the
-        // picker opens near most users' birth year without scrolling.
-        const yearOptions = Array.from({ length: 90 - 14 + 1 }, (_, i) => {
-          const y = currentYear - 14 - i
-          return { value: String(y), label: String(y) }
-        })
+      // ── Fitness — split one-question-per-screen (CI-1) ───────────────────────
+      case 'weekly-volume':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div>
-              <FieldLabel optional>Year of birth</FieldLabel>
-              <Select
-                value={birthYear !== null ? String(birthYear) : ''}
-                onChange={v => {
-                  const n = Number(v)
-                  setBirthYear(Number.isFinite(n) ? n : null)
-                }}
-                options={yearOptions}
-                placeholder="Select year"
-                ariaLabel="Year of birth"
+          <Ruler
+            ariaLabel="Average weekly kilometres, last 4 weeks"
+            value={weeklyKm}
+            onChange={setWeeklyKm}
+            min={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_MIN}
+            max={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_MAX}
+            step={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_STEP}
+            restAnchor={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_ANCHOR}
+            unit="km/week"
+          />
+        )
+
+      case 'longest-run':
+        return (
+          <Ruler
+            ariaLabel="Longest run in the last 6 weeks"
+            value={longestRun}
+            onChange={setLongestRun}
+            min={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_MIN}
+            max={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_MAX}
+            step={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_STEP}
+            restAnchor={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_ANCHOR}
+            unit="km"
+          />
+        )
+
+      case 'training-age':
+        return (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {TRAINING_AGE_CHIPS.map(c => (
+              <Chip
+                key={c.value}
+                label={c.label}
+                active={trainingAge === c.value}
+                onClick={() => setTrainingAge(trainingAge === c.value ? null : c.value)}
               />
-              <FieldNote>Optional. Helps estimate your max heart rate if you haven't entered your own. Kept private.</FieldNote>
-            </div>
-            <div>
-              <FieldLabel>Average weekly km — last 4 weeks</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {WEEKLY_KM_CHIPS.map(c => (
-                  <Chip
-                    key={c.label}
-                    label={c.label}
-                    active={weeklyKmChip === c.label}
-                    onClick={() => setWeeklyKmChip(weeklyKmChip === c.label ? null : c.label)}
-                  />
-                ))}
-              </div>
-            </div>
-            <div>
-              <FieldLabel>Longest run in last 6 weeks</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {LONGEST_RUN_CHIPS.map(c => (
-                  <Chip
-                    key={c.label}
-                    label={c.label}
-                    active={longestRunChip === c.label}
-                    onClick={() => setLongestRunChip(longestRunChip === c.label ? null : c.label)}
-                  />
-                ))}
-              </div>
-            </div>
-            <div>
-              <FieldLabel optional>How long have you been running consistently?</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {TRAINING_AGE_CHIPS.map(c => (
-                  <Chip
-                    key={c.value}
-                    label={c.label}
-                    active={trainingAge === c.value}
-                    onClick={() => setTrainingAge(trainingAge === c.value ? null : c.value)}
-                  />
-                ))}
-              </div>
-              <FieldNote>Helps us judge how much volume you can handle.</FieldNote>
-            </div>
+            ))}
+          </div>
+        )
+
+      case 'birth-year': {
+        const currentYear = new Date().getFullYear()
+        // Descending years (newest first) so the wheel opens near most birth
+        // years. 14–90 = the allowable runner age range.
+        const years = Array.from({ length: 90 - 14 + 1 }, (_, i) => currentYear - 14 - i)
+        const anchor = currentYear - 35   // ~age 35 resting position when unset
+        return (
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <WheelPicker
+              values={years}
+              value={birthYear ?? anchor}
+              onChange={setBirthYear}
+              ariaLabel="Year of birth"
+            />
           </div>
         )
       }
@@ -1352,114 +1376,35 @@ export default function GeneratePlanScreen({
           </div>
         )
 
-      // ── Schedule ───────────────────────────────────────────────────────────
-      case 'schedule': {
-        // Per-distance days/wk thresholds — surface block/warn at click-time
-        // rather than letting a 422 reach the user. Mirrors the validator in
-        // lib/plan/inputs.ts (validateDaysAvailable). For finish-goal, the
-        // warn zone is treated as ok.
-        const dDistKey = distanceKm ? raceDistanceKey(distanceKm) : null
-        const dThresh  = dDistKey ? GENERATION_CONFIG.DAYS_AVAILABILITY_THRESHOLDS[dDistKey] : null
-        const dayState = (n: number): { state: 'blocked' | 'warn' | 'ok'; hint: string | null } => {
-          if (!dThresh) return { state: 'ok', hint: null }
-          if (n < dThresh.block) {
-            return { state: 'blocked', hint: `Not enough for a ${dDistKey}. Needs ${dThresh.block}+ days/wk.` }
-          }
-          if (n < dThresh.ok && goal === 'time_target') {
-            return { state: 'warn', hint: `Will train for completion, not time. Recommended: ${dThresh.ok} days/wk.` }
-          }
-          return { state: 'ok', hint: null }
-        }
+      // ── Your week — the keystone grid (Option A) ─────────────────────────────
+      case 'your-week': {
+        // Threshold verdict is re-keyed from the old days-per-week count to the
+        // grid's derived day count (mirrors lib/plan/inputs.ts validateDaysAvailable).
+        const distKey = distanceKm ? raceDistanceKey(distanceKm) : null
+        const thr = distKey ? GENERATION_CONFIG.DAYS_AVAILABILITY_THRESHOLDS[distKey] : null
+        const wi = weekPlanToInputs(weekPlan)
+        const verdict = dayCountVerdict(wi.daysAvailable, thr ?? null, distKey, goal === 'time_target')
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <FieldLabel>Days per week</FieldLabel>
-              {[2,3,4,5,6].map(n => {
-                const ds = dayState(n)
-                const blocked = ds.state === 'blocked'
-                const warn    = ds.state === 'warn'
-                const selected = daysAvailable === n
-                return (
-                  <button
-                    key={n}
-                    onClick={() => { if (!blocked) setDaysAvailable(n) }}
-                    disabled={blocked}
-                    aria-disabled={blocked}
-                    style={{
-                      width: '100%', padding: '18px 20px', borderRadius: 'var(--radius-lg)',
-                      border: `1.5px solid ${
-                        selected ? 'var(--moss)'
-                        : warn   ? 'var(--warn)'
-                        : 'var(--line)'
-                      }`,
-                      background: selected ? 'var(--moss-soft)' : 'var(--card)',
-                      textAlign: 'left', cursor: blocked ? 'not-allowed' : 'pointer',
-                      opacity: blocked ? 0.4 : 1,
-                      transition: 'all 0.15s',
-                      display: 'flex', flexDirection: 'column', gap: '4px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: selected ? 700 : 500, color: selected ? 'var(--moss)' : 'var(--ink)' }}>
-                        {n} days
-                      </span>
-                      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>
-                        {n === 2 ? 'Selective.' : n === 3 ? 'Enough.' : n === 4 ? 'Building.' : n === 5 ? 'Race-ready.' : 'All in.'}
-                      </span>
-                    </div>
-                    {ds.hint && (
-                      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: blocked ? 'var(--danger)' : 'var(--warn)' }}>
-                        {ds.hint}
-                      </span>
-                    )}
-                  </button>
-                )
-              })}
-              <FieldNote>Six is the cap, on purpose — a rest day does more than a seventh run would.</FieldNote>
-            </div>
-            <div>
-              <FieldLabel>Long-run day</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <Chip label="Saturday" active={preferredLongRunDay === 'sat'} onClick={() => setPreferredLongRunDay('sat')} />
-                <Chip label="Sunday" active={preferredLongRunDay === 'sun'} onClick={() => setPreferredLongRunDay('sun')} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <WeekGrid value={weekPlan} onChange={setWeekPlan} ariaLabel="Your training week" />
+            {verdict.hint && (
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '13px', lineHeight: 1.5,
+                color: verdict.state === 'blocked' ? 'var(--danger)' : 'var(--warn)',
+              }}>
+                {verdict.hint}
               </div>
-              <FieldNote>Pick the one your week protects.</FieldNote>
-            </div>
+            )}
+            <FieldNote>Six is the cap, on purpose — a rest day does more than a seventh run would.</FieldNote>
           </div>
         )
       }
 
-      // ── Constraints ────────────────────────────────────────────────────────
-      case 'constraints':
+      // ── Weekday ceiling ──────────────────────────────────────────────────────
+      case 'weekday-ceiling':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div>
-              <FieldLabel optional>Days you can never train</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {DAYS_SHORT.map((d, i) => {
-                  const key    = DAY_KEYS[i]
-                  const active = daysOff.includes(key)
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setDaysOff(prev => active ? prev.filter(x => x !== key) : [...prev, key])}
-                      style={{
-                        width: '44px', height: '44px', borderRadius: '50%',
-                        border: `1px solid ${active ? 'var(--moss)' : 'var(--line)'}`,
-                        background: active ? 'var(--moss-soft)' : 'var(--card)',
-                        color: active ? 'var(--moss)' : 'var(--ink-2)',
-                        fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: active ? 600 : 400,
-                        cursor: 'pointer', transition: 'all 0.15s',
-                      }}
-                    >
-                      {d}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-            <div>
-              <FieldLabel optional>Max weekday session</FieldLabel>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {MAX_WEEKDAY_CHIPS.map(c => (
                   <Chip
@@ -1486,7 +1431,7 @@ export default function GeneratePlanScreen({
               { value: 'love',    label: 'Bring it on.',   sub: 'More quality, more structure. I like working hard.' },
               { value: 'overdo',  label: 'I overdo it.',   sub: 'Reign me in. I know I\'ll push too hard if I can.' },
             ] as const).map(o => (
-              <OptionCard key={o.value} label={o.label} sub={o.sub} active={hardSessions === o.value} onClick={() => setHardSessions(o.value)} />
+              <CardSelect key={o.value} label={o.label} sub={o.sub} active={hardSessions === o.value} onClick={() => setHardSessions(o.value)} />
             ))}
           </div>
         )
@@ -1495,9 +1440,9 @@ export default function GeneratePlanScreen({
       case 'terrain':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <OptionCard label="Road." sub="Pavement, tracks, flat surfaces. Speed-focused." active={terrain === 'road'} onClick={() => setTerrain('road')} />
-            <OptionCard label="Trail." sub="Off-road, elevation, technical terrain. Effort-focused." active={terrain === 'trail'} onClick={() => setTerrain('trail')} />
-            <OptionCard label="Mixed." sub="Both. Adapt pace targets to the surface." active={terrain === 'mixed'} onClick={() => setTerrain('mixed')} />
+            <CardSelect label="Road." sub="Pavement, tracks, flat surfaces. Speed-focused." active={terrain === 'road'} onClick={() => setTerrain('road')} />
+            <CardSelect label="Trail." sub="Off-road, elevation, technical terrain. Effort-focused." active={terrain === 'trail'} onClick={() => setTerrain('trail')} />
+            <CardSelect label="Mixed." sub="Both. Adapt pace targets to the surface." active={terrain === 'mixed'} onClick={() => setTerrain('mixed')} />
           </div>
         )
 

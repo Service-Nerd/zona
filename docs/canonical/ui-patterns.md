@@ -1521,11 +1521,15 @@ The canonical user-input controls. **Never build a one-off input, toggle, chip, 
 
 | Quantity | Nature | Control |
 |---|---|---|
-| Free text, email, password, name, a precise number (HR, distance) | Objective, typed | **TextField** |
-| A time — finish time, target time, duration | Objective, precise, ranged | **DurationPicker** (stepper) |
+| Free text, email, password, name, a precise number typed exactly (HR, TT distance) | Objective, typed | **TextField** |
+| A bounded number the runner *estimates* (weekly volume, longest run) | Continuous but stepped | **Ruler** |
+| A time — finish time, target time, duration | Objective, precise, ranged | **DurationPicker** (wheels) |
 | Effort / RPE | Subjective, low-precision | **RPEScale** (Pattern 13) |
 | One of 2–4 mutually-exclusive modes (km/mi, sign-in/up, distance/duration) | Toggle | **SegmentedControl** |
-| One (or several) of a larger set — race distances, injuries, training-age bands | Select | **Chip** |
+| One (or several) of a larger set — injuries, training-age bands, benchmark type | Compact select | **Chip** |
+| One of a few rich options, each earning a sentence (goal, terrain, race distance) | Single-select radio cards | **CardSelect** |
+| Days of the week — a plain multi/single day pick | Fixed 7-item select | **DayGridSelector** |
+| A whole training week — which days run, which is the long run | Per-day Rest/Run/Long grid | **WeekGrid** |
 
 ### TextField (`components/shared/TextField.tsx`)
 
@@ -1545,13 +1549,20 @@ There is no separate "NumberStepper" — a numeric value is a `TextField type="n
 
 ### DurationPicker (`components/shared/DurationPicker.tsx`)
 
-The canonical time entry — hour/minute steppers, no keyboard, no format-guessing, no zoom. `showSeconds` adds a third column (default off): use it for **race finish times**, where a short race is minutes:seconds and the seconds decide a PB. Target/benchmark times stay HH:MM.
+The canonical time entry — scroll **wheels** (hrs : min : sec), no keyboard, no format-guessing, no zoom. `showSeconds` adds a third wheel (default off): use it for **race finish times**, where a short race is minutes:seconds and the seconds decide a PB. Target/benchmark times stay HH:MM. Composes three `WheelPicker` columns internally; its public API (`hours`/`mins`/`secs` + `on*Change`, `maxHours`, `showSeconds`) is unchanged from the pre-wheel stepper, so callers didn't move.
 
-- Anchor it: pre-fill from a known value (e.g. the plan's goal time) so most users *nudge* rather than enter from zero — the power of defaults applied to the highest-emotion input.
+- Anchor it: pre-fill from a known value (e.g. the plan's goal time) so most users *nudge* rather than spin from zero — the power of defaults applied to the highest-emotion input.
 
 ```tsx
 <DurationPicker hours={h} mins={m} secs={s} onHoursChange={setH} onMinsChange={setM} onSecsChange={setS} showSeconds />
 ```
+
+### WheelPicker (`components/shared/WheelPicker.tsx`)
+
+The atom behind DurationPicker — one scroll-snap wheel column over a list of numbers. iOS-style: drag the strip, the value under the centre band is selected. Controlled (`values`, `value`, `onChange`, optional `format`, `rowHeight`, `visibleRows`). Scroll↔index math is pure in `WheelPicker.logic.ts` (node-tested); the loop between "scroll settles → onChange" and "value changes → scroll to it" is broken by suppressing the settle during a programmatic scroll and only re-scrolling when the strip isn't already there.
+
+- **Reach for `DurationPicker` for time**, not this directly. Use `WheelPicker` alone only for a genuinely one-off single-wheel numeric where a Ruler (drag) or Chip (discrete set) is the wrong feel.
+- The centre band is the only affordance; the scroll track is hidden via `.wheel-scroll` in `globals.css`.
 
 ### SegmentedControl (`components/shared/SegmentedControl.tsx`)
 
@@ -1564,6 +1575,61 @@ Contained-track toggle for 2–4 mutually-exclusive options. One idiom for login
 ### Chip (`components/shared/Chip.tsx`)
 
 Stateless select-chip for choosing from a set. Single-select (caller tracks one active value) or multi-select (caller tracks a Set). `--moss` border + `--moss-soft` fill when active. Used for race distances, injuries, benchmark type, training-age bands.
+
+### CardSelect (`components/shared/CardSelect.tsx`)
+
+The canonical single-choice radio card — a large tappable card with a label, optional sub-line, and a moss active state. Two layouts:
+
+- **`row`** (default) — full-width, sub stacked under the label. For a handful of options that each earn a sentence: goal, terrain, hard-session relationship. (This is the extracted wizard-local `OptionCard`.)
+- **`tile`** — grid cell, vertical, optional lock badge top-right. For a 2-column picker: race distance.
+
+Rules:
+- Stateless; the caller owns selection and wraps the options in its own grid/stack container, then maps (same idiom as `<Chip>`).
+- `locked` is **visual only** (dim + `lockLabel` badge). The caller decides what a tap does when locked — e.g. the distance picker routes a locked tap to upgrade. The primitive never swallows the handler.
+- **Not for a control that carries validation state** (blocked / warn, like days-per-week) — keep those bespoke. CardSelect is a plain radio card by design.
+- For a compact select from a larger set (injuries) use `<Chip>`.
+
+```tsx
+<CardSelect label="Just finish." sub="Get to the line in one piece." active={goal === 'finish'} onClick={() => setGoal('finish')} />
+<CardSelect layout="tile" label="Marathon" sub="42.2 km" active={dist === 42.2} locked={!paid} lockLabel="PAID" onClick={...} />
+```
+
+### Ruler (`components/shared/Ruler.tsx`)
+
+The canonical bounded/stepped numeric input — a horizontal draggable ruler with a large value readout above (metric-pair), tick marks, and a min→max scale. For a self-reported quantity the runner *estimates* rather than knows exactly: weekly volume, longest recent run.
+
+- **Stepped, not per-unit** (Coaching Board 2026-08-30): the value snaps to a sensible increment (weekly 5 km, longest run 1 km) so the input reads as an honest "about 35", never a false-precision 37. Bounds + step come from `GENERATION_CONFIG.WIZARD_VOLUME_RULER` — never hardcode them. Replaced the old coarse `Chip` bands, whose forced midpoints were *worse* estimates (a 25 km runner bucketed to 30). See `CoachingPrinciples §18`.
+- **`value` is nullable.** Untouched → muted `–` readout, thumb resting at `restAnchor`; the runner must engage before the field counts as set. This preserves the honest-input stance — a default they blew past is not a self-report.
+- **Interaction:** a transparent native `<input type="range">` is the real control (touch-drag, keyboard, screen-reader for free); the ticks/thumb/readout are painted over it. Pure math (`clamp`/`snap`/`thumbPercent`/`ticks`/`scaleLabels`) lives in `Ruler.logic.ts`, node-tested.
+- **Not for a precise typed number** (HR, a TT distance you know exactly) — that's `TextField`. The Ruler is for a bounded estimate.
+- Units: `unit` is a display suffix only; the Ruler operates in the wire unit (km). Per-user mi display is deferred to the ADR-015 format layer.
+
+```tsx
+<Ruler value={weeklyKm} onChange={setWeeklyKm}
+  min={CFG.WEEKLY_KM_MIN} max={CFG.WEEKLY_KM_MAX} step={CFG.WEEKLY_KM_STEP}
+  restAnchor={CFG.WEEKLY_KM_ANCHOR} unit="km/week" caption="Last four weeks, roughly." />
+```
+
+### DayGridSelector (`components/shared/DayGridSelector.tsx`)
+
+The canonical Mon–Sun day-of-week selector — one row of seven 44×44 circular targets. Multi-select (which days you can't train) by default; `multiple={false}` for a single-day choice (tap-again clears). Stateless; the caller owns `value`.
+
+- Speaks the canonical 3-letter `DayKey` (`'mon'…'sun'`, matching `lib/plan/effectiveSessions`). A caller that persists a different wire format maps at its own boundary — the wizard's `days_cannot_train` stays full-word (`'monday'`), so `GeneratePlanScreen` translates `DayKey` ⇄ full word at the call site. The primitive never emits full words.
+- Owns the Mon–Sun label + order (`DAY_GRID`). Result is always returned in canonical order regardless of tap order.
+- For a **2-option** day choice (Sat/Sun long-run day) use `<Chip>` — a seven-day grid is the wrong weight for two options.
+- For a whole **training week** (run days + the long run in one control) use `<WeekGrid>` — the wizard's "days you can't train" was absorbed there. DayGridSelector remains the canonical control for a plain binary day pick.
+
+```tsx
+<DayGridSelector value={blockedDays} onChange={setBlockedDays} ariaLabel="Days you can never train" />
+```
+
+### WeekGrid (`components/shared/WeekGrid.tsx`)
+
+The keystone "your week" control — a row of seven day cells, each tapped to cycle **Rest → Run → Long** (Long weekend-only on first ship; one long across the week). Absorbs the old two scheduling steps (days-per-week + days-you-can't-train) into one tactile grid: *which* days, honestly, not *how many*, aspirationally.
+
+- Stateless; the caller owns a `WeekPlan` (`Record<DayKey, 'rest'|'run'|'long'>`). The grid → `GeneratorInput` mapping (`days_available` = run+long count, `days_cannot_train` = rest days, `preferred_long_run_day` = the long day) is pure and node-tested in `WeekGrid.logic → weekPlanToInputs`. **This is the wizard's one engine touch** — a client-side mapping onto the existing input contract, no engine code changed.
+- The long cell carries the `--s-long` accent (ties to the long-run session colour).
+- First ship constrains Long to Sat/Sun (matches the current engine); weekday-long-run is a fast-follow behind the `preferred_long_run_day` widening.
 
 ### RPEScale (`components/shared/RPEScale.tsx`)
 
