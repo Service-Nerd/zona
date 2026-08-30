@@ -1523,7 +1523,7 @@ The canonical user-input controls. **Never build a one-off input, toggle, chip, 
 |---|---|---|
 | Free text, email, password, name, a precise number typed exactly (HR, TT distance) | Objective, typed | **TextField** |
 | A bounded number the runner *estimates* (weekly volume, longest run) | Continuous but stepped | **Ruler** |
-| A time — finish time, target time, duration | Objective, precise, ranged | **DurationPicker** (stepper) |
+| A time — finish time, target time, duration | Objective, precise, ranged | **DurationPicker** (wheels) |
 | Effort / RPE | Subjective, low-precision | **RPEScale** (Pattern 13) |
 | One of 2–4 mutually-exclusive modes (km/mi, sign-in/up, distance/duration) | Toggle | **SegmentedControl** |
 | One (or several) of a larger set — injuries, training-age bands, benchmark type | Compact select | **Chip** |
@@ -1548,13 +1548,20 @@ There is no separate "NumberStepper" — a numeric value is a `TextField type="n
 
 ### DurationPicker (`components/shared/DurationPicker.tsx`)
 
-The canonical time entry — hour/minute steppers, no keyboard, no format-guessing, no zoom. `showSeconds` adds a third column (default off): use it for **race finish times**, where a short race is minutes:seconds and the seconds decide a PB. Target/benchmark times stay HH:MM.
+The canonical time entry — scroll **wheels** (hrs : min : sec), no keyboard, no format-guessing, no zoom. `showSeconds` adds a third wheel (default off): use it for **race finish times**, where a short race is minutes:seconds and the seconds decide a PB. Target/benchmark times stay HH:MM. Composes three `WheelPicker` columns internally; its public API (`hours`/`mins`/`secs` + `on*Change`, `maxHours`, `showSeconds`) is unchanged from the pre-wheel stepper, so callers didn't move.
 
-- Anchor it: pre-fill from a known value (e.g. the plan's goal time) so most users *nudge* rather than enter from zero — the power of defaults applied to the highest-emotion input.
+- Anchor it: pre-fill from a known value (e.g. the plan's goal time) so most users *nudge* rather than spin from zero — the power of defaults applied to the highest-emotion input.
 
 ```tsx
 <DurationPicker hours={h} mins={m} secs={s} onHoursChange={setH} onMinsChange={setM} onSecsChange={setS} showSeconds />
 ```
+
+### WheelPicker (`components/shared/WheelPicker.tsx`)
+
+The atom behind DurationPicker — one scroll-snap wheel column over a list of numbers. iOS-style: drag the strip, the value under the centre band is selected. Controlled (`values`, `value`, `onChange`, optional `format`, `rowHeight`, `visibleRows`). Scroll↔index math is pure in `WheelPicker.logic.ts` (node-tested); the loop between "scroll settles → onChange" and "value changes → scroll to it" is broken by suppressing the settle during a programmatic scroll and only re-scrolling when the strip isn't already there.
+
+- **Reach for `DurationPicker` for time**, not this directly. Use `WheelPicker` alone only for a genuinely one-off single-wheel numeric where a Ruler (drag) or Chip (discrete set) is the wrong feel.
+- The centre band is the only affordance; the scroll track is hidden via `.wheel-scroll` in `globals.css`.
 
 ### SegmentedControl (`components/shared/SegmentedControl.tsx`)
 
