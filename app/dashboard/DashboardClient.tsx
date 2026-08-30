@@ -2840,6 +2840,27 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
         >
           Connect later
         </button>
+
+        {/* Sign-out escape. Onboarding sits in front of the Me screen (where
+            sign-out lives), so an authenticated user with no plan — e.g. wanting
+            to switch accounts — would otherwise be trapped here with no exit.
+            Subtle by design: secondary to "Connect later", not part of the
+            primary flow. */}
+        <button
+          onClick={async () => {
+            if (busy) return
+            try { await supabase.auth.signOut() } finally { window.location.href = '/auth/login' }
+          }}
+          disabled={busy}
+          style={{
+            width: '100%', background: 'none', border: 'none',
+            padding: '10px 0', minHeight: '40px',
+            fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
+            cursor: busy ? 'default' : 'pointer',
+          }}
+        >
+          Not you? Sign out
+        </button>
       </div>
     </div>
   )
