@@ -15,6 +15,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { velocityAtFraction, applyVdotDiscount, parseBenchmarkTime, calcVDOT } from '@/lib/plan/ruleEngine'
+import { vdotFromAerobicSpeedMs } from '@/lib/plan/aerobicEstimate'
 import type { Plan, BenchmarkInput } from '@/types/plan'
 
 // Jack Daniels race VDOT utilisation fractions
@@ -145,13 +146,8 @@ function bracketVdot(fitnessLevel: string | undefined, trainingAge: string | und
   return midpoint * 0.95
 }
 
-// Derive VDOT from an average aerobic (Z2) speed in m/s
-// Z2 ≈ 65% VO2max (Karvonen Z2 band): vo2 = -4.60 + 0.182258*v + 0.000104*v²; VDOT = vo2 / 0.65
-function vdotFromAerobicSpeedMs(avgSpeedMs: number): number {
-  const v   = avgSpeedMs * 60  // m/s → m/min
-  const vo2 = -4.60 + 0.182258 * v + 0.000104 * v * v
-  return vo2 / 0.65
-}
+// vdotFromAerobicSpeedMs now lives in lib/plan/aerobicEstimate (single owner,
+// shared with the FREE wizard benchmark estimate) — imported above.
 
 const VO2_DIVERGENCE_FLAG_PCT = 10
 
