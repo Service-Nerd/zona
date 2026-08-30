@@ -1534,7 +1534,6 @@ export default function GeneratePlanScreen({
                   />
                 ))}
               </div>
-              <FieldNote>Applies Monday–Friday only. Ultra runners: 3 hrs or No limit.</FieldNote>
             </div>
             {!hasPaidAccess && onUpgrade && <TeaserCard onUpgrade={onUpgrade} />}
           </div>
