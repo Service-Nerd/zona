@@ -570,6 +570,18 @@ export default function GeneratePlanScreen({
   useEffect(() => {
     if (appStep !== 'benchmark' || benchEstimateStatus !== 'idle' || distanceKm == null) return
     let cancelled = false
+
+    // Hard cap: the estimate is a nicety, never a gate. Whatever happens — a
+    // hung HealthKit read, a stalled getSession, a slow network — the skeleton
+    // clears and the manual benchmark ask appears. (Bug: on device any of those
+    // three awaits could hang with no timeout, stranding the user on a grey
+    // skeleton forever.) `withTimeout` bounds each step; this bounds the whole.
+    const capMs = 6000
+    const capId = setTimeout(() => { if (!cancelled) setBenchEstimateStatus('done') }, capMs)
+
+    const withTimeout = <T,>(p: Promise<T>, ms: number, fallback: T): Promise<T> =>
+      Promise.race([p, new Promise<T>(r => setTimeout(() => r(fallback), ms))])
+
     ;(async () => {
       try {
         const { Capacitor } = await import('@capacitor/core')
@@ -579,21 +591,30 @@ export default function GeneratePlanScreen({
         if (rhr == null || mhr == null) {
           try {
             const { fetchAppleHealthHRSnapshot } = await import('@/lib/health/clientSync')
-            const snap = await fetchAppleHealthHRSnapshot()
+            const snap = await withTimeout(fetchAppleHealthHRSnapshot(), 3500, null)
             rhr = rhr ?? snap?.restingHR ?? null
             mhr = mhr ?? snap?.maxHR ?? null
           } catch { /* HR unavailable → route answers no_hr → manual */ }
         }
         if (!cancelled) setBenchEstimateStatus('loading')
         const supabase = createClient()
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session } } = await withTimeout(
+          supabase.auth.getSession(), 3500, { data: { session: null } } as any,
+        )
         const qs = new URLSearchParams({ raceDistanceKm: String(distanceKm) })
         if (rhr != null) qs.set('rhr', String(rhr))
         if (mhr != null) qs.set('mhr', String(mhr))
-        const res = await fetch(`/api/wizard-benchmark-estimate?${qs.toString()}`, {
-          headers: { ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-        })
-        const data: BenchmarkEstimate = res.ok ? await res.json() : { available: false, reason: 'no_runs' }
+        const ctrl = new AbortController()
+        const fetchTimer = setTimeout(() => ctrl.abort(), 4000)
+        let data: BenchmarkEstimate = { available: false, reason: 'no_runs' }
+        try {
+          const res = await fetch(`/api/wizard-benchmark-estimate?${qs.toString()}`, {
+            signal: ctrl.signal,
+            headers: { ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+          })
+          if (res.ok) data = await res.json()
+        } catch { /* aborted / network — manual is the fallback */ }
+        clearTimeout(fetchTimer)
         if (cancelled) return
         setBenchEstimate(data)
         if (data.available) {
@@ -608,7 +629,8 @@ export default function GeneratePlanScreen({
       } catch { /* swallow — manual is the fallback */ }
       if (!cancelled) setBenchEstimateStatus('done')
     })()
-    return () => { cancelled = true }
+
+    return () => { cancelled = true; clearTimeout(capId) }
   }, [appStep, benchEstimateStatus, distanceKm])
 
   // ── Navigation helpers ────────────────────────────────────────────────────
