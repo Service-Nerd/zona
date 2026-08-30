@@ -28,8 +28,9 @@ import {
 
 type WizardSubStep =
   | 'distance' | 'race-details' | 'goal' | 'target-time'
+  | 'teach-easy'
   | 'weekly-volume' | 'longest-run' | 'training-age' | 'birth-year'
-  | 'benchmark' | 'your-week' | 'weekday-ceiling'
+  | 'benchmark' | 'teach-easy-day' | 'your-week' | 'weekday-ceiling'
   | 'hard-sessions' | 'terrain' | 'injuries'
 
 type AppStep = WizardSubStep | 'generating' | 'preview' | 'error'
@@ -109,16 +110,18 @@ const TRAINING_AGE_CHIPS: { label: string; value: TrainingAge }[] = [
   { label: '5+ years',     value: '5yr+'   },
 ]
 
-const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; optional?: boolean }> = {
+const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; optional?: boolean; eyebrow?: string; interstitial?: boolean; cta?: string }> = {
   'distance':        { title: 'How far?',              subtitle: 'Start with the finish line. Work backwards from there.' },
   'race-details':    { title: 'Tell me about the race.', subtitle: 'Race name is optional. The date is not.' },
   'goal':            { title: 'What matters most?',    subtitle: 'Crossing the line, or hitting a number. Both are valid.' },
   'target-time':     { title: "What's the target?",    subtitle: "Be honest. Optimistic goals make bad training plans." },
+  'teach-easy':      { title: 'This plan will feel too easy at first.', subtitle: '', eyebrow: 'Hold the zone', interstitial: true, cta: 'Got it →' },
   'weekly-volume':   { title: 'How much are you running now?', subtitle: 'Last four weeks, roughly. Real numbers only.' },
   'longest-run':     { title: 'Longest run in the last six weeks?', subtitle: 'Tells us how much you can already hold.' },
   'training-age':    { title: 'How long have you been at this?', subtitle: 'Consistent months, not total years.', optional: true },
   'birth-year':      { title: 'What year were you born?', subtitle: "Only to estimate your max heart rate, if you haven't set one. Kept private.", optional: true },
   'benchmark':       { title: 'Recent race result?',   subtitle: 'Gives us precise pace targets for every session. Skip if you haven\'t raced lately.', optional: true },
+  'teach-easy-day':  { title: 'Easy should feel easy.', subtitle: '', eyebrow: 'The easy day', interstitial: true, cta: 'Continue →' },
   'your-week':       { title: 'Which days do you run?',  subtitle: 'Tap the days you train. Tap a weekend day again to make it your long run.' },
   'weekday-ceiling': { title: 'How long on a weekday?',  subtitle: 'Your cap Monday–Friday. Weekends stay open. Skip if you\'re flexible.', optional: true },
   'hard-sessions':   { title: 'You and hard sessions.', subtitle: 'Intervals, tempo, threshold. Where do you land?' },
@@ -131,7 +134,9 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
 function getStepSequence(hasPaidAccess: boolean, goal: 'finish' | 'time_target' | null): WizardSubStep[] {
   const steps: WizardSubStep[] = ['distance', 'race-details', 'goal']
   if (goal === 'time_target') steps.push('target-time')
-  steps.push('weekly-volume', 'longest-run', 'training-age', 'birth-year', 'benchmark', 'your-week', 'weekday-ceiling')
+  // ⓘ teaching seams (CI-7): ⓘA right after the goal is stated (ambition peaks);
+  // ⓘB after benchmark, just before they commit their week (pace is known).
+  steps.push('teach-easy', 'weekly-volume', 'longest-run', 'training-age', 'birth-year', 'benchmark', 'teach-easy-day', 'your-week', 'weekday-ceiling')
   if (hasPaidAccess) steps.push('hard-sessions', 'terrain', 'injuries')
   return steps
 }
@@ -522,7 +527,7 @@ export default function GeneratePlanScreen({
       if (s.terrain)         setTerrain(s.terrain)
       if (Array.isArray(s.injuries)) setInjuries(s.injuries)
       // Restore sub-step if it's a valid wizard step name
-      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','weekly-volume','longest-run','training-age','birth-year','benchmark','your-week','weekday-ceiling','hard-sessions','terrain','injuries']
+      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','teach-easy','weekly-volume','longest-run','training-age','birth-year','benchmark','teach-easy-day','your-week','weekday-ceiling','hard-sessions','terrain','injuries']
       if (validSubSteps.includes(s.appStep)) setAppStep(s.appStep)
     } catch {}
   }, [])
@@ -1050,7 +1055,12 @@ export default function GeneratePlanScreen({
   const currentIdx     = sequence.indexOf(currentSubStep)
   const isLastStep     = currentIdx === sequence.length - 1
   const stepMeta       = STEP_META[currentSubStep] ?? STEP_META['distance']
-  const ctaLabel       = isLastStep ? 'Generate my plan →' : 'Continue'
+  const ctaLabel       = stepMeta.cta ?? (isLastStep ? 'Generate my plan →' : 'Continue')
+
+  // Progress counts real questions only — the teaching interstitials don't
+  // advance the line (CI-7: they're a moment, not a step to tick off).
+  const realSteps = sequence.filter(s => !STEP_META[s]?.interstitial)
+  const realDone  = sequence.slice(0, currentIdx + 1).filter(s => !STEP_META[s]?.interstitial).length
 
   const welcomeOverride = isOnboarding && currentSubStep === 'distance'
     ? { title: 'Start with the finish line.', subtitle: 'Work backwards from there.' }
@@ -1064,14 +1074,21 @@ export default function GeneratePlanScreen({
       {/* Header — back button + progress */}
       <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
         {!(isOnboarding && currentIdx === 0) && <BackBtn onClick={goBack} />}
-        <ProgressLine total={sequence.length} current={currentIdx} />
-        <div style={{ marginBottom: '28px' }}>
+        <ProgressLine total={realSteps.length} current={Math.max(0, realDone - 1)} />
+        <div style={{ marginBottom: stepMeta.interstitial ? '20px' : '28px', marginTop: stepMeta.interstitial ? '28px' : 0 }}>
+          {stepMeta.eyebrow && (
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+              {stepMeta.eyebrow}
+            </div>
+          )}
           <h1 style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: '8px', margin: '0 0 8px' }}>
             {title}
           </h1>
-          <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)', lineHeight: 1.55, margin: 0 }}>
-            {subtitle}
-          </p>
+          {subtitle && (
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)', lineHeight: 1.55, margin: 0 }}>
+              {subtitle}
+            </p>
+          )}
         </div>
       </div>
 
@@ -1126,6 +1143,27 @@ export default function GeneratePlanScreen({
 
   function renderStep(): React.ReactNode {
     switch (currentSubStep) {
+
+      // ── Teaching interstitials (CI-7) — headline is the frame title; the body
+      //    lives here. No control; Continue commits like any screen. ─────────────
+      case 'teach-easy':
+        return (
+          <p style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', color: 'var(--ink-2)', lineHeight: 1.7, margin: 0, maxWidth: '30ch' }}>
+            That&apos;s on purpose. Most runners live in a grey middle — too hard to recover, too easy to improve. We&apos;re going to pull those apart.
+          </p>
+        )
+
+      case 'teach-easy-day':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', color: 'var(--ink-2)', lineHeight: 1.7, margin: 0 }}>
+              Most runners push their easy days and coast their hard ones — so every run lands in the same tiring middle. Even elites spend about 80% of their time truly easy. Your easy runs build the engine. Let them.
+            </p>
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700, color: 'var(--moss)', margin: 0 }}>
+              {BRAND.voiceAnchor}
+            </p>
+          </div>
+        )
 
       // ── Distance ───────────────────────────────────────────────────────────
       case 'distance':
