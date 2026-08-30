@@ -16,16 +16,20 @@ import { DurationPicker } from '@/components/shared/DurationPicker'
 import { TextField } from '@/components/shared/TextField'
 import { Select } from '@/components/shared/Select'
 import { Chip } from '@/components/shared/Chip'
-import { DayGridSelector, type DayKey } from '@/components/shared/DayGridSelector'
+import { type DayKey } from '@/components/shared/DayGridSelector'
 import { Ruler } from '@/components/shared/Ruler'
 import { CardSelect } from '@/components/shared/CardSelect'
+import { WeekGrid } from '@/components/shared/WeekGrid'
+import {
+  defaultWeek, weekPlanToInputs, weekPlanFromLegacy, dayCountVerdict, type WeekPlan,
+} from '@/components/shared/WeekGrid.logic'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type WizardSubStep =
   | 'distance' | 'race-details' | 'goal' | 'target-time'
   | 'weekly-volume' | 'longest-run' | 'training-age' | 'birth-year'
-  | 'benchmark' | 'schedule' | 'constraints'
+  | 'benchmark' | 'your-week' | 'weekday-ceiling'
   | 'hard-sessions' | 'terrain' | 'injuries'
 
 type AppStep = WizardSubStep | 'generating' | 'preview' | 'error'
@@ -115,8 +119,8 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
   'training-age':    { title: 'How long have you been at this?', subtitle: 'Consistent months, not total years.', optional: true },
   'birth-year':      { title: 'What year were you born?', subtitle: "Only to estimate your max heart rate, if you haven't set one. Kept private.", optional: true },
   'benchmark':       { title: 'Recent race result?',   subtitle: 'Gives us precise pace targets for every session. Skip if you haven\'t raced lately.', optional: true },
-  'schedule':        { title: 'Your schedule.',         subtitle: "Training has to fit your life. Not the other way around." },
-  'constraints':     { title: 'Any hard limits?',       subtitle: 'Days you can never train, or a max time on weekdays. Skip if you\'re flexible.', optional: true },
+  'your-week':       { title: 'Which days do you run?',  subtitle: 'Tap the days you train. Tap a weekend day again to make it your long run.' },
+  'weekday-ceiling': { title: 'How long on a weekday?',  subtitle: 'Your cap Monday–Friday. Weekends stay open. Skip if you\'re flexible.', optional: true },
   'hard-sessions':   { title: 'You and hard sessions.', subtitle: 'Intervals, tempo, threshold. Where do you land?' },
   'terrain':         { title: 'Where do you run?',      subtitle: 'Road, trail, or a bit of both. Affects pace targets.' },
   'injuries':        { title: 'Anything to flag?',      subtitle: 'Old injuries that still show up. Skip if you\'re clean.', optional: true },
@@ -127,7 +131,7 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
 function getStepSequence(hasPaidAccess: boolean, goal: 'finish' | 'time_target' | null): WizardSubStep[] {
   const steps: WizardSubStep[] = ['distance', 'race-details', 'goal']
   if (goal === 'time_target') steps.push('target-time')
-  steps.push('weekly-volume', 'longest-run', 'training-age', 'birth-year', 'benchmark', 'schedule', 'constraints')
+  steps.push('weekly-volume', 'longest-run', 'training-age', 'birth-year', 'benchmark', 'your-week', 'weekday-ceiling')
   if (hasPaidAccess) steps.push('hard-sessions', 'terrain', 'injuries')
   return steps
 }
@@ -460,12 +464,11 @@ export default function GeneratePlanScreen({
   const [benchmarkDate,    setBenchmarkDate]    = useState('')
   const [benchmarkTTDist,  setBenchmarkTTDist]  = useState('')
 
-  // ── Step 7 — Schedule ────────────────────────────────────────────────────
-  const [daysAvailable,         setDaysAvailable]         = useState<number | null>(null)
-  const [preferredLongRunDay,   setPreferredLongRunDay]   = useState<'sat' | 'sun'>('sun')
-
-  // ── Step 8 — Constraints ─────────────────────────────────────────────────
-  const [daysOff,        setDaysOff]        = useState<string[]>([])
+  // ── Your week — the keystone grid (Option A). One WeekPlan owns which days
+  //    are Rest/Run/Long; days_available, days_cannot_train and
+  //    preferred_long_run_day are DERIVED from it (weekPlanToInputs), never
+  //    stored separately. Replaces the old days-per-week + days-off steps.
+  const [weekPlan,       setWeekPlan]       = useState<WeekPlan>(defaultWeek())
   const [maxWeekdayChip, setMaxWeekdayChip] = useState<string | null>(null)
 
   // ── Step 9 — Hard sessions (paid) ────────────────────────────────────────
@@ -504,15 +507,22 @@ export default function GeneratePlanScreen({
       if (typeof s.benchMins  === 'number') setBenchMins(s.benchMins)
       if (s.benchmarkTTDist) setBenchmarkTTDist(s.benchmarkTTDist)
       if (s.benchmarkDate)   setBenchmarkDate(s.benchmarkDate)
-      if (s.daysAvailable)   setDaysAvailable(s.daysAvailable)
-      if (s.preferredLongRunDay === 'sat' || s.preferredLongRunDay === 'sun') setPreferredLongRunDay(s.preferredLongRunDay)
-      if (Array.isArray(s.daysOff)) setDaysOff(s.daysOff)
+      // New: single weekPlan. Back-compat: rebuild it from the pre-grid separate
+      // fields (days-off + long-run day) so a legacy draft doesn't lose the week.
+      if (s.weekPlan && typeof s.weekPlan === 'object') setWeekPlan(s.weekPlan as WeekPlan)
+      else if (Array.isArray(s.daysOff) || s.preferredLongRunDay) {
+        const restShort = (Array.isArray(s.daysOff) ? s.daysOff : [])
+          .map((f: string) => SHORT_BY_FULL[f]).filter(Boolean) as DayKey[]
+        const longDay = s.preferredLongRunDay === 'sat' || s.preferredLongRunDay === 'sun'
+          ? s.preferredLongRunDay : null
+        setWeekPlan(weekPlanFromLegacy(restShort, longDay))
+      }
       if (s.maxWeekdayChip)  setMaxWeekdayChip(s.maxWeekdayChip)
       if (s.hardSessions)    setHardSessions(s.hardSessions)
       if (s.terrain)         setTerrain(s.terrain)
       if (Array.isArray(s.injuries)) setInjuries(s.injuries)
       // Restore sub-step if it's a valid wizard step name
-      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','weekly-volume','longest-run','training-age','birth-year','benchmark','schedule','constraints','hard-sessions','terrain','injuries']
+      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','weekly-volume','longest-run','training-age','birth-year','benchmark','your-week','weekday-ceiling','hard-sessions','terrain','injuries']
       if (validSubSteps.includes(s.appStep)) setAppStep(s.appStep)
     } catch {}
   }, [])
@@ -526,7 +536,7 @@ export default function GeneratePlanScreen({
         targetHours, targetMins,
         birthYear, weeklyKm, longestRun, restingHR, trainingAge,
         benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
-        daysAvailable, preferredLongRunDay, daysOff, maxWeekdayChip,
+        weekPlan, maxWeekdayChip,
         hardSessions, terrain, injuries,
       }))
     } catch {}
@@ -534,19 +544,12 @@ export default function GeneratePlanScreen({
       targetHours, targetMins,
       birthYear, weeklyKm, longestRun, restingHR, trainingAge,
       benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
-      daysAvailable, preferredLongRunDay, daysOff, maxWeekdayChip,
+      weekPlan, maxWeekdayChip,
       hardSessions, terrain, injuries])
 
-  // Clear an out-of-range daysAvailable when distance changes to a stricter
-  // tier (e.g. user picks 2 days for 10K, then goes back and switches to
-  // marathon — block threshold is 3, so the prior selection is invalid).
-  // Without this the disabled-button stays styled-selected.
-  useEffect(() => {
-    if (daysAvailable == null || distanceKm == null) return
-    const distKey = raceDistanceKey(distanceKm)
-    const blockAt = GENERATION_CONFIG.DAYS_AVAILABILITY_THRESHOLDS[distKey].block
-    if (daysAvailable < blockAt) setDaysAvailable(null)
-  }, [distanceKm, daysAvailable])
+  // (The old "clear out-of-range days-per-week when distance gets stricter"
+  //  effect is gone: the your-week grid derives the day count live and the
+  //  threshold verdict blocks Continue directly — nothing stale to clear.)
 
   // ── Navigation helpers ────────────────────────────────────────────────────
 
@@ -615,8 +618,15 @@ export default function GeneratePlanScreen({
         if (benchmarkType === 'race')     return !!(benchmarkDistKm && (benchHours > 0 || benchMins > 0))
         if (benchmarkType === 'tt_30min') return benchmarkTTDist !== ''
         return true
-      case 'schedule':       return daysAvailable !== null
-      case 'constraints':    return true
+      case 'your-week': {
+        // Enough training days for the distance. warn (time goal, below the
+        // recommended count) still proceeds — only a hard block stops.
+        const wi = weekPlanToInputs(weekPlan)
+        const distKey = distanceKm ? raceDistanceKey(distanceKm) : null
+        const thr = distKey ? GENERATION_CONFIG.DAYS_AVAILABILITY_THRESHOLDS[distKey] : null
+        return dayCountVerdict(wi.daysAvailable, thr ?? null, distKey, goal === 'time_target').state !== 'blocked'
+      }
+      case 'weekday-ceiling': return true
       case 'hard-sessions':  return true
       case 'terrain':        return true
       case 'injuries':       return true
@@ -642,6 +652,8 @@ export default function GeneratePlanScreen({
       ? `${benchHours}:${String(benchMins).padStart(2, '0')}:00` : undefined
     const maxWeekdayVal = maxWeekdayChip
       ? MAX_WEEKDAY_CHIPS.find(c => c.label === maxWeekdayChip)?.value : undefined
+    // The one engine touch: derive the schedule fields from the week grid.
+    const week = weekPlanToInputs(weekPlan)
 
     const benchmark = (() => {
       const dateField = benchmarkDate ? { benchmark_date: benchmarkDate } : {}
@@ -690,14 +702,14 @@ export default function GeneratePlanScreen({
       age:                   ageYears,
       current_weekly_km:     weeklyKmVal,
       longest_recent_run_km: longestRunVal,
-      days_available:        daysAvailable!,
+      days_available:        week.daysAvailable,
       resting_hr:            hkRHR ?? undefined,
       max_hr:                hkMHR ?? undefined,
       max_hr_source:         mhrSource,
       training_age:          trainingAge ?? undefined,
-      preferred_long_run_day: preferredLongRunDay,
+      preferred_long_run_day: week.longDay ?? 'sun',
       benchmark,
-      days_cannot_train:     daysOff.length ? daysOff : undefined,
+      days_cannot_train:     week.restShort.length ? week.restShort.map(k => FULL_BY_SHORT[k]) : undefined,
       max_weekday_mins:      maxWeekdayVal,
       hard_session_relationship: hasPaidAccess ? (hardSessions ?? undefined) : undefined,
       injury_history:            hasPaidAccess && injuries.length ? injuries.map(i => i.toLowerCase()) : undefined,
@@ -1330,97 +1342,35 @@ export default function GeneratePlanScreen({
           </div>
         )
 
-      // ── Schedule ───────────────────────────────────────────────────────────
-      case 'schedule': {
-        // Per-distance days/wk thresholds — surface block/warn at click-time
-        // rather than letting a 422 reach the user. Mirrors the validator in
-        // lib/plan/inputs.ts (validateDaysAvailable). For finish-goal, the
-        // warn zone is treated as ok.
-        const dDistKey = distanceKm ? raceDistanceKey(distanceKm) : null
-        const dThresh  = dDistKey ? GENERATION_CONFIG.DAYS_AVAILABILITY_THRESHOLDS[dDistKey] : null
-        const dayState = (n: number): { state: 'blocked' | 'warn' | 'ok'; hint: string | null } => {
-          if (!dThresh) return { state: 'ok', hint: null }
-          if (n < dThresh.block) {
-            return { state: 'blocked', hint: `Not enough for a ${dDistKey}. Needs ${dThresh.block}+ days/wk.` }
-          }
-          if (n < dThresh.ok && goal === 'time_target') {
-            return { state: 'warn', hint: `Will train for completion, not time. Recommended: ${dThresh.ok} days/wk.` }
-          }
-          return { state: 'ok', hint: null }
-        }
+      // ── Your week — the keystone grid (Option A) ─────────────────────────────
+      case 'your-week': {
+        // Threshold verdict is re-keyed from the old days-per-week count to the
+        // grid's derived day count (mirrors lib/plan/inputs.ts validateDaysAvailable).
+        const distKey = distanceKm ? raceDistanceKey(distanceKm) : null
+        const thr = distKey ? GENERATION_CONFIG.DAYS_AVAILABILITY_THRESHOLDS[distKey] : null
+        const wi = weekPlanToInputs(weekPlan)
+        const verdict = dayCountVerdict(wi.daysAvailable, thr ?? null, distKey, goal === 'time_target')
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <FieldLabel>Days per week</FieldLabel>
-              {[2,3,4,5,6].map(n => {
-                const ds = dayState(n)
-                const blocked = ds.state === 'blocked'
-                const warn    = ds.state === 'warn'
-                const selected = daysAvailable === n
-                return (
-                  <button
-                    key={n}
-                    onClick={() => { if (!blocked) setDaysAvailable(n) }}
-                    disabled={blocked}
-                    aria-disabled={blocked}
-                    style={{
-                      width: '100%', padding: '18px 20px', borderRadius: 'var(--radius-lg)',
-                      border: `1.5px solid ${
-                        selected ? 'var(--moss)'
-                        : warn   ? 'var(--warn)'
-                        : 'var(--line)'
-                      }`,
-                      background: selected ? 'var(--moss-soft)' : 'var(--card)',
-                      textAlign: 'left', cursor: blocked ? 'not-allowed' : 'pointer',
-                      opacity: blocked ? 0.4 : 1,
-                      transition: 'all 0.15s',
-                      display: 'flex', flexDirection: 'column', gap: '4px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: selected ? 700 : 500, color: selected ? 'var(--moss)' : 'var(--ink)' }}>
-                        {n} days
-                      </span>
-                      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>
-                        {n === 2 ? 'Selective.' : n === 3 ? 'Enough.' : n === 4 ? 'Building.' : n === 5 ? 'Race-ready.' : 'All in.'}
-                      </span>
-                    </div>
-                    {ds.hint && (
-                      <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: blocked ? 'var(--danger)' : 'var(--warn)' }}>
-                        {ds.hint}
-                      </span>
-                    )}
-                  </button>
-                )
-              })}
-              <FieldNote>Six is the cap, on purpose — a rest day does more than a seventh run would.</FieldNote>
-            </div>
-            <div>
-              <FieldLabel>Long-run day</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <Chip label="Saturday" active={preferredLongRunDay === 'sat'} onClick={() => setPreferredLongRunDay('sat')} />
-                <Chip label="Sunday" active={preferredLongRunDay === 'sun'} onClick={() => setPreferredLongRunDay('sun')} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <WeekGrid value={weekPlan} onChange={setWeekPlan} ariaLabel="Your training week" />
+            {verdict.hint && (
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '13px', lineHeight: 1.5,
+                color: verdict.state === 'blocked' ? 'var(--danger)' : 'var(--warn)',
+              }}>
+                {verdict.hint}
               </div>
-              <FieldNote>Pick the one your week protects.</FieldNote>
-            </div>
+            )}
+            <FieldNote>Six is the cap, on purpose — a rest day does more than a seventh run would.</FieldNote>
           </div>
         )
       }
 
-      // ── Constraints ────────────────────────────────────────────────────────
-      case 'constraints':
+      // ── Weekday ceiling ──────────────────────────────────────────────────────
+      case 'weekday-ceiling':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div>
-              <FieldLabel optional>Days you can never train</FieldLabel>
-              <DayGridSelector
-                ariaLabel="Days you can never train"
-                value={daysOff.map(f => SHORT_BY_FULL[f]).filter(Boolean) as DayKey[]}
-                onChange={keys => setDaysOff(keys.map(k => FULL_BY_SHORT[k]))}
-              />
-            </div>
-            <div>
-              <FieldLabel optional>Max weekday session</FieldLabel>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {MAX_WEEKDAY_CHIPS.map(c => (
                   <Chip

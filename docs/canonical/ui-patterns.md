@@ -1528,7 +1528,8 @@ The canonical user-input controls. **Never build a one-off input, toggle, chip, 
 | One of 2–4 mutually-exclusive modes (km/mi, sign-in/up, distance/duration) | Toggle | **SegmentedControl** |
 | One (or several) of a larger set — injuries, training-age bands, benchmark type | Compact select | **Chip** |
 | One of a few rich options, each earning a sentence (goal, terrain, race distance) | Single-select radio cards | **CardSelect** |
-| Days of the week — which days you can't train, which day is the long run | Fixed 7-item multi/single select | **DayGridSelector** |
+| Days of the week — a plain multi/single day pick | Fixed 7-item select | **DayGridSelector** |
+| A whole training week — which days run, which is the long run | Per-day Rest/Run/Long grid | **WeekGrid** |
 
 ### TextField (`components/shared/TextField.tsx`)
 
@@ -1616,10 +1617,19 @@ The canonical Mon–Sun day-of-week selector — one row of seven 44×44 circula
 - Speaks the canonical 3-letter `DayKey` (`'mon'…'sun'`, matching `lib/plan/effectiveSessions`). A caller that persists a different wire format maps at its own boundary — the wizard's `days_cannot_train` stays full-word (`'monday'`), so `GeneratePlanScreen` translates `DayKey` ⇄ full word at the call site. The primitive never emits full words.
 - Owns the Mon–Sun label + order (`DAY_GRID`). Result is always returned in canonical order regardless of tap order.
 - For a **2-option** day choice (Sat/Sun long-run day) use `<Chip>` — a seven-day grid is the wrong weight for two options.
+- For a whole **training week** (run days + the long run in one control) use `<WeekGrid>` — the wizard's "days you can't train" was absorbed there. DayGridSelector remains the canonical control for a plain binary day pick.
 
 ```tsx
 <DayGridSelector value={blockedDays} onChange={setBlockedDays} ariaLabel="Days you can never train" />
 ```
+
+### WeekGrid (`components/shared/WeekGrid.tsx`)
+
+The keystone "your week" control — a row of seven day cells, each tapped to cycle **Rest → Run → Long** (Long weekend-only on first ship; one long across the week). Absorbs the old two scheduling steps (days-per-week + days-you-can't-train) into one tactile grid: *which* days, honestly, not *how many*, aspirationally.
+
+- Stateless; the caller owns a `WeekPlan` (`Record<DayKey, 'rest'|'run'|'long'>`). The grid → `GeneratorInput` mapping (`days_available` = run+long count, `days_cannot_train` = rest days, `preferred_long_run_day` = the long day) is pure and node-tested in `WeekGrid.logic → weekPlanToInputs`. **This is the wizard's one engine touch** — a client-side mapping onto the existing input contract, no engine code changed.
+- The long cell carries the `--s-long` accent (ties to the long-run session colour).
+- First ship constrains Long to Sat/Sun (matches the current engine); weekday-long-run is a fast-follow behind the `preferred_long_run_day` widening.
 
 ### RPEScale (`components/shared/RPEScale.tsx`)
 
