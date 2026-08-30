@@ -17,6 +17,7 @@ import { TextField } from '@/components/shared/TextField'
 import { Select } from '@/components/shared/Select'
 import { Chip } from '@/components/shared/Chip'
 import { DayGridSelector, type DayKey } from '@/components/shared/DayGridSelector'
+import { Ruler } from '@/components/shared/Ruler'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -62,6 +63,11 @@ const SHORT_BY_FULL: Record<string, DayKey> = {
 }
 const INJURIES   = ['Achilles', 'Knee', 'Back', 'Hip', 'Shin splints', 'Plantar fasciitis']
 
+// LEGACY — the weekly-volume + longest-run inputs are now the Ruler primitive
+// (Coaching Board 2026-08-30; see GENERATION_CONFIG.WIZARD_VOLUME_RULER). These
+// band tables are retained SOLELY to migrate a pre-Ruler `zona_wizard_draft`
+// (label → km) on restore, so an in-flight draft doesn't lose its value across
+// the deploy. Not rendered. Safe to delete once no legacy drafts remain.
 const WEEKLY_KM_CHIPS = [
   { label: 'Under 20', value: 15  },
   { label: '20–40',    value: 30  },
@@ -469,8 +475,8 @@ export default function GeneratePlanScreen({
   // Year of birth (not full DOB) — App Store Guideline 5.1.1 data minimisation.
   // Only used for Tanaka max-HR fallback (208 − 0.7 × age) and masters threshold.
   const [birthYear, setBirthYear] = useState<number | null>(initialBirthYear ?? null)
-  const [weeklyKmChip,   setWeeklyKmChip]   = useState<string | null>(null)
-  const [longestRunChip, setLongestRunChip] = useState<string | null>(null)
+  const [weeklyKm,   setWeeklyKm]   = useState<number | null>(null)
+  const [longestRun, setLongestRun] = useState<number | null>(null)
   const [restingHR,      setRestingHR]      = useState(initialRHR ? String(initialRHR) : '')
   const [trainingAge,    setTrainingAge]    = useState<TrainingAge | null>(null)
 
@@ -512,8 +518,12 @@ export default function GeneratePlanScreen({
       if (typeof s.targetHours === 'number') setTargetHours(s.targetHours)
       if (typeof s.targetMins  === 'number') setTargetMins(s.targetMins)
       if (typeof s.birthYear === 'number') setBirthYear(s.birthYear)
-      if (s.weeklyKmChip)    setWeeklyKmChip(s.weeklyKmChip)
-      if (s.longestRunChip)  setLongestRunChip(s.longestRunChip)
+      // New numeric form (Ruler); fall back to the pre-Ruler label bucket so a
+      // draft saved mid-wizard before this shipped still restores its value.
+      if (typeof s.weeklyKm === 'number')   setWeeklyKm(s.weeklyKm)
+      else if (s.weeklyKmChip)   setWeeklyKm(WEEKLY_KM_CHIPS.find(c => c.label === s.weeklyKmChip)?.value ?? null)
+      if (typeof s.longestRun === 'number') setLongestRun(s.longestRun)
+      else if (s.longestRunChip) setLongestRun(LONGEST_RUN_CHIPS.find(c => c.label === s.longestRunChip)?.value ?? null)
       if (s.restingHR)       setRestingHR(s.restingHR)
       if (s.trainingAge)     setTrainingAge(s.trainingAge)
       if (s.benchmarkType)   setBenchmarkType(s.benchmarkType)
@@ -542,7 +552,7 @@ export default function GeneratePlanScreen({
       sessionStorage.setItem(WIZARD_KEY, JSON.stringify({
         appStep, distanceKm, raceName, raceDate, goal,
         targetHours, targetMins,
-        birthYear, weeklyKmChip, longestRunChip, restingHR, trainingAge,
+        birthYear, weeklyKm, longestRun, restingHR, trainingAge,
         benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
         daysAvailable, preferredLongRunDay, daysOff, maxWeekdayChip,
         hardSessions, terrain, injuries,
@@ -550,7 +560,7 @@ export default function GeneratePlanScreen({
     } catch {}
   }, [appStep, distanceKm, raceName, raceDate, goal,
       targetHours, targetMins,
-      birthYear, weeklyKmChip, longestRunChip, restingHR, trainingAge,
+      birthYear, weeklyKm, longestRun, restingHR, trainingAge,
       benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
       daysAvailable, preferredLongRunDay, daysOff, maxWeekdayChip,
       hardSessions, terrain, injuries])
@@ -627,7 +637,7 @@ export default function GeneratePlanScreen({
         // Year of birth is optional — App Store 5.1.1 ("should be optional").
         // Engine falls back to age 30 when null; only weeklyKm + longestRun
         // are required to derive a sensible plan.
-        return weeklyKmChip !== null && longestRunChip !== null
+        return weeklyKm !== null && longestRun !== null
       }
       case 'benchmark':
         if (benchmarkType === 'race')     return !!(benchmarkDistKm && (benchHours > 0 || benchMins > 0))
@@ -652,8 +662,8 @@ export default function GeneratePlanScreen({
     setPlan(null)
 
     const ageYears      = birthYear !== null ? new Date().getFullYear() - birthYear : 30
-    const weeklyKmVal   = WEEKLY_KM_CHIPS.find(c => c.label === weeklyKmChip)?.value ?? 30
-    const longestRunVal = LONGEST_RUN_CHIPS.find(c => c.label === longestRunChip)?.value ?? 12
+    const weeklyKmVal   = weeklyKm   ?? GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_ANCHOR
+    const longestRunVal = longestRun ?? GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_ANCHOR
     const targetTimeStr = goal === 'time_target' && (targetHours > 0 || targetMins > 0)
       ? `${targetHours}:${String(targetMins).padStart(2, '0')}:00` : undefined
     const benchTimeStr  = benchHours > 0 || benchMins > 0
@@ -1251,30 +1261,32 @@ export default function GeneratePlanScreen({
               <FieldNote>Optional. Helps estimate your max heart rate if you haven't entered your own. Kept private.</FieldNote>
             </div>
             <div>
-              <FieldLabel>Average weekly km — last 4 weeks</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {WEEKLY_KM_CHIPS.map(c => (
-                  <Chip
-                    key={c.label}
-                    label={c.label}
-                    active={weeklyKmChip === c.label}
-                    onClick={() => setWeeklyKmChip(weeklyKmChip === c.label ? null : c.label)}
-                  />
-                ))}
-              </div>
+              <FieldLabel>Average weekly distance — last 4 weeks</FieldLabel>
+              <Ruler
+                ariaLabel="Average weekly kilometres, last 4 weeks"
+                value={weeklyKm}
+                onChange={setWeeklyKm}
+                min={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_MIN}
+                max={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_MAX}
+                step={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_STEP}
+                restAnchor={GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_ANCHOR}
+                unit="km/week"
+                caption="Last four weeks, roughly. Real numbers only."
+              />
             </div>
             <div>
-              <FieldLabel>Longest run in last 6 weeks</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {LONGEST_RUN_CHIPS.map(c => (
-                  <Chip
-                    key={c.label}
-                    label={c.label}
-                    active={longestRunChip === c.label}
-                    onClick={() => setLongestRunChip(longestRunChip === c.label ? null : c.label)}
-                  />
-                ))}
-              </div>
+              <FieldLabel>Longest run in the last 6 weeks</FieldLabel>
+              <Ruler
+                ariaLabel="Longest run in the last 6 weeks"
+                value={longestRun}
+                onChange={setLongestRun}
+                min={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_MIN}
+                max={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_MAX}
+                step={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_STEP}
+                restAnchor={GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_ANCHOR}
+                unit="km"
+                caption="Tells us how much you can already hold."
+              />
             </div>
             <div>
               <FieldLabel optional>How long have you been running consistently?</FieldLabel>

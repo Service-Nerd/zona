@@ -1521,7 +1521,8 @@ The canonical user-input controls. **Never build a one-off input, toggle, chip, 
 
 | Quantity | Nature | Control |
 |---|---|---|
-| Free text, email, password, name, a precise number (HR, distance) | Objective, typed | **TextField** |
+| Free text, email, password, name, a precise number typed exactly (HR, TT distance) | Objective, typed | **TextField** |
+| A bounded number the runner *estimates* (weekly volume, longest run) | Continuous but stepped | **Ruler** |
 | A time — finish time, target time, duration | Objective, precise, ranged | **DurationPicker** (stepper) |
 | Effort / RPE | Subjective, low-precision | **RPEScale** (Pattern 13) |
 | One of 2–4 mutually-exclusive modes (km/mi, sign-in/up, distance/duration) | Toggle | **SegmentedControl** |
@@ -1565,6 +1566,22 @@ Contained-track toggle for 2–4 mutually-exclusive options. One idiom for login
 ### Chip (`components/shared/Chip.tsx`)
 
 Stateless select-chip for choosing from a set. Single-select (caller tracks one active value) or multi-select (caller tracks a Set). `--moss` border + `--moss-soft` fill when active. Used for race distances, injuries, benchmark type, training-age bands.
+
+### Ruler (`components/shared/Ruler.tsx`)
+
+The canonical bounded/stepped numeric input — a horizontal draggable ruler with a large value readout above (metric-pair), tick marks, and a min→max scale. For a self-reported quantity the runner *estimates* rather than knows exactly: weekly volume, longest recent run.
+
+- **Stepped, not per-unit** (Coaching Board 2026-08-30): the value snaps to a sensible increment (weekly 5 km, longest run 1 km) so the input reads as an honest "about 35", never a false-precision 37. Bounds + step come from `GENERATION_CONFIG.WIZARD_VOLUME_RULER` — never hardcode them. Replaced the old coarse `Chip` bands, whose forced midpoints were *worse* estimates (a 25 km runner bucketed to 30). See `CoachingPrinciples §18`.
+- **`value` is nullable.** Untouched → muted `–` readout, thumb resting at `restAnchor`; the runner must engage before the field counts as set. This preserves the honest-input stance — a default they blew past is not a self-report.
+- **Interaction:** a transparent native `<input type="range">` is the real control (touch-drag, keyboard, screen-reader for free); the ticks/thumb/readout are painted over it. Pure math (`clamp`/`snap`/`thumbPercent`/`ticks`/`scaleLabels`) lives in `Ruler.logic.ts`, node-tested.
+- **Not for a precise typed number** (HR, a TT distance you know exactly) — that's `TextField`. The Ruler is for a bounded estimate.
+- Units: `unit` is a display suffix only; the Ruler operates in the wire unit (km). Per-user mi display is deferred to the ADR-015 format layer.
+
+```tsx
+<Ruler value={weeklyKm} onChange={setWeeklyKm}
+  min={CFG.WEEKLY_KM_MIN} max={CFG.WEEKLY_KM_MAX} step={CFG.WEEKLY_KM_STEP}
+  restAnchor={CFG.WEEKLY_KM_ANCHOR} unit="km/week" caption="Last four weeks, roughly." />
+```
 
 ### DayGridSelector (`components/shared/DayGridSelector.tsx`)
 

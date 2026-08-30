@@ -391,6 +391,26 @@ export const GENERATION_CONFIG = {
   // device-only half — see backlog PV2-E.
   BEGINNER_WEEK1_VOLUME_CAP_KM: 30,
 
+  // ── Wizard self-reported volume input (CoachingPrinciples §18) ──────────────
+  // Bounds + step for the Ruler that collects current_weekly_km and
+  // longest_recent_run_km. Coaching Board 2026-08-30 (CORRECT WITH AMENDMENT):
+  // a continuous-but-STEPPED estimate replaces the old coarse bands, which were
+  // introducing false midpoints (a 25km runner forced to a 30km bucket → an
+  // over-stated starting load). STEP keeps the input honest (a self-report, not
+  // false per-km precision). MAX is a sane ceiling for the day-job demographic;
+  // the engine's caps (§2 +10%, §29 fresh-return, §18 beginner belt) still bind
+  // whatever is entered. Not a target the engine fills — an input it tempers.
+  WIZARD_VOLUME_RULER: {
+    WEEKLY_KM_MIN:       0,
+    WEEKLY_KM_MAX:       160,
+    WEEKLY_KM_STEP:      5,
+    WEEKLY_KM_ANCHOR:    30,   // resting thumb before the user sets a value
+    LONGEST_RUN_KM_MIN:  0,
+    LONGEST_RUN_KM_MAX:  60,
+    LONGEST_RUN_KM_STEP: 1,
+    LONGEST_RUN_KM_ANCHOR: 12,
+  },
+
   // ── Distance display + minimum session distances ────────────────────────────
   // All session distances round to this precision before display.
   // 0.5 km = whole-number-ish (12.0, 14.5, 9.0) — clean, not nitpicky.
