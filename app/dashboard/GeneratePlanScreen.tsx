@@ -423,12 +423,21 @@ export default function GeneratePlanScreen({
   const [plan, setPlan]         = useState<Plan | null>(null)
   const [error, setError]       = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
-  // N8 — the ceremony's reveal is time-based, so it can finish before the
-  // enricher does. If the user reached the preview and tapped "Use this plan"
-  // in that window, the RULE plan was persisted and the enriched one discarded,
-  // silently. Both signals must land before the preview is reachable.
+  // N8b — the preview is reachable as soon as the RULE plan is ready + the reveal
+  // has played (fast). Waiting for the full enricher stream stranded the user on
+  // "There it is." for 20–30s while Sonnet ran — the ceremony is the payoff, not
+  // the wait (ui-patterns §15). The enricher keeps streaming in the background and
+  // `setPlan` swaps in the enriched plan live. handleUsePlan then waits (bounded)
+  // for the stream so the ENRICHED plan is what's saved, not the bare rule plan —
+  // preserving the correctness the old both-signals gate cared about, without the
+  // 30s stare. Rule plan is a valid fallback (hybrid pattern, ADR-006).
   const [streamComplete, setStreamComplete] = useState(false)
   const [revealComplete, setRevealComplete] = useState(false)
+  const [rulePlanReady, setRulePlanReady] = useState(false)
+  // Mirrors for handleUsePlan, which may fire mid-stream and must read the LATEST
+  // (enriched) plan + stream status, not a stale render closure.
+  const planRef = useRef<Plan | null>(null)
+  const streamCompleteRef = useRef(false)
 
   // ── Foundation Block modal (Phase 4 — gap > 28 days) ─────────────────────
   const [foundationModalOpen, setFoundationModalOpen] = useState(false)
@@ -728,6 +737,7 @@ export default function GeneratePlanScreen({
   async function handleGenerate() {
     setStreamComplete(false)
     setRevealComplete(false)
+    setRulePlanReady(false)
     setAppStep('generating')
     setError(null)
     setPlan(null)
@@ -860,6 +870,7 @@ export default function GeneratePlanScreen({
       if (!contentType.includes('ndjson')) {
         const data = await res.json()
         setPlan(applyFoundationIfNeeded(data.plan as Plan))
+        setRulePlanReady(true)
         setStreamComplete(true)
         return
       }
@@ -884,6 +895,7 @@ export default function GeneratePlanScreen({
           const msg = JSON.parse(line) as { type: 'rule_plan' | 'final_plan'; plan: Plan }
           if (msg.type === 'rule_plan') {
             setPlan(applyFoundationIfNeeded(msg.plan))
+            setRulePlanReady(true)   // preview reachable now; enricher streams on
           } else if (msg.type === 'final_plan') {
             // Foundation weeks (n <= 0) are added client-side and never
             // present in the enricher's payload. Preserve whatever is on
@@ -932,20 +944,33 @@ export default function GeneratePlanScreen({
   }
 
   async function handleUsePlan() {
-    if (!plan || !onPlanSaved) return
+    if (!planRef.current || !onPlanSaved) return
     setIsSaving(true)
     try {
+      // The preview is reachable on the rule plan (N8b), so the enricher may
+      // still be streaming. Wait — bounded — so the ENRICHED plan is saved, not
+      // the bare rule plan. Usually zero wait (the user browsed the preview while
+      // it finished); the rule plan is a valid fallback if it times out.
+      const deadline = Date.now() + 15000
+      while (!streamCompleteRef.current && Date.now() < deadline) {
+        await new Promise(r => setTimeout(r, 150))
+      }
       if (birthYear !== null && onBirthYearSave) await onBirthYearSave(birthYear).catch(() => {})
-      await onPlanSaved(plan)
+      await onPlanSaved(planRef.current)
       sessionStorage.removeItem(WIZARD_KEY)
     } catch { setIsSaving(false) }
   }
 
-  // N8 — advance to preview only when the stream has finished AND the reveal
-  // animation has played out. Whichever lands second triggers the transition.
+  // N8b — advance to preview once the RULE plan is ready AND the reveal has
+  // played (fast). The enricher keeps streaming in the background; handleUsePlan
+  // waits for it before saving so the enriched plan wins.
   useEffect(() => {
-    if (appStep === 'generating' && streamComplete && revealComplete) setAppStep('preview')
-  }, [appStep, streamComplete, revealComplete])
+    if (appStep === 'generating' && rulePlanReady && revealComplete) setAppStep('preview')
+  }, [appStep, rulePlanReady, revealComplete])
+
+  // Keep refs in step for handleUsePlan (reads latest plan + stream status).
+  useEffect(() => { planRef.current = plan }, [plan])
+  useEffect(() => { streamCompleteRef.current = streamComplete }, [streamComplete])
 
   // ── Special screens (ceremony / preview / error) ──────────────────────────
 
@@ -988,7 +1013,7 @@ export default function GeneratePlanScreen({
   if (appStep === 'preview' && plan) {
     const { meta, weeks } = plan
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)', paddingBottom: '40px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
         <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
           <BackBtn onClick={goBack} label="Adjust inputs" />
           <div style={{ marginTop: '16px' }}>
@@ -1001,12 +1026,12 @@ export default function GeneratePlanScreen({
           </div>
         </div>
 
-        {/* D7: bottom padding clears the sticky "Use this plan" CTA below. The
-            wrapper's minHeight:100% is unbounded so this content scrolls under the
-            sticky bar; without this pad the last phase cards (Peak/Taper) rendered
-            beneath it. Sized to the CTA height incl. the optional "replaces" line
-            and the iOS safe-area inset. */}
-        <div style={{ flex: 1, padding: '0 20px calc(104px + env(safe-area-inset-bottom))', overflowY: 'auto' }}>
+        {/* Content scrolls internally (flex:1 + overflow); the CTA below is a
+            flexShrink:0 footer, so it sits beneath this — no overlap, no sticky
+            float. (Was position:sticky over an unbounded minHeight:100% wrapper,
+            which floated the CTA over the plan on native — D7 padding was papering
+            over a broken scroll model. Now matches the wizard footer.) */}
+        <div style={{ flex: 1, padding: '0 20px 24px', overflowY: 'auto' }}>
           {/* FREE demand band — feasibility read, above the PAID confidence score */}
           <DifficultyCard band={meta.difficulty_band} note={meta.difficulty_note} alternatives={meta.prep_time_alternatives} />
           {meta.confidence_score != null && (
@@ -1047,7 +1072,7 @@ export default function GeneratePlanScreen({
           </div>
         </div>
 
-        <div style={{ position: 'sticky', bottom: 0, background: 'var(--bg)', borderTop: '1px solid var(--line)', padding: '12px 20px calc(12px + env(safe-area-inset-bottom))' }}>
+        <div style={{ flexShrink: 0, background: 'var(--bg)', borderTop: '1px solid var(--line)', padding: '12px 20px calc(12px + env(safe-area-inset-bottom))' }}>
           {hasExistingPlan && !isSaving && (
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', textAlign: 'center', marginBottom: '8px' }}>
               This replaces your current plan.
