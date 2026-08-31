@@ -15,6 +15,7 @@ import {
 } from './length'
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
 import { resolveMaxHr, tanakaMaxHR } from './maxHrGuard'
+import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, type FitnessLevel } from './fitnessAssessment'
 import { validatePlan, formatViolations } from './invariants'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
 import { isLongRun, isShakeout, classifyStimulus } from './sessionRole'
@@ -31,7 +32,9 @@ import {
 
 type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 type PhaseType = 'base' | 'build' | 'peak' | 'taper'
-type FitnessLevel = 'beginner' | 'intermediate' | 'experienced'
+// FitnessLevel + the classification helpers (assessFitness, fitnessFrom*,
+// FITNESS_RANK) now live in ./fitnessAssessment (single owner shared with the
+// wizard's level recommendation) and are imported at the top of this file.
 
 interface ZoneTargets {
   zone2Ceiling: number
@@ -178,107 +181,8 @@ export function applyVdotDiscount(rawVdot: number, b: BenchmarkInput, today: Dat
 // display) and is imported at the top of this file.
 
 // ─── Fitness level derivation ─────────────────────────────────────────────────
-// Uses VDOT when available (more accurate). Falls back to volume-based proxy.
-
-const FITNESS_RANK: Record<FitnessLevel, number> = { beginner: 0, intermediate: 1, experienced: 2 }
-
-function fitnessFromVdot(vdot: number): FitnessLevel {
-  const t = GENERATION_CONFIG.FITNESS_VDOT_THRESHOLDS
-  if (vdot < t.intermediate_min) return 'beginner'
-  if (vdot <= t.experienced_min) return 'intermediate'
-  return 'experienced'
-}
-
-function fitnessFromVolume(weeklyKm: number, longestKm: number): FitnessLevel {
-  const t = GENERATION_CONFIG.FITNESS_VOLUME_THRESHOLDS
-  if (weeklyKm < t.beginner_max_weekly_km || longestKm < t.beginner_max_long_km) return 'beginner'
-  if (weeklyKm >= t.experienced_min_weekly_km && longestKm >= t.experienced_min_long_km) return 'experienced'
-  return 'intermediate'
-}
-
-/**
- * CoachingPrinciples §79 (D2, 2026-08-06) — VDOT and volume answer different
- * questions and must both be consulted.
- *
- * VDOT measures what a runner can currently RACE. Volume measures what they can
- * currently ABSORB. The first organic user ran a 29:00 5K (VDOT 30.8 →
- * "beginner") while running 30 km/week with a 12 km long run (volume →
- * "intermediate"). Classifying from VDOT alone made them a beginner, and
- * `QUALITY_SESSIONS_PER_WEEK_MAX.beginner = 0` then removed every quality
- * session from a 14-week half-marathon plan. One threshold, cascading into the
- * whole plan shape.
- *
- * On disagreement, take the LOWER level for structure (volume, long-run caps —
- * the things that hurt people when overestimated) and the HIGHER level for the
- * intensity allowance (the thing that under-trains them when underestimated).
- */
-interface FitnessAssessment {
-  /** Drives volume, peak km, long-run caps. Conservative on disagreement. */
-  structural: FitnessLevel
-  /** Drives QUALITY_SESSIONS_PER_WEEK_MAX only. Generous on disagreement. */
-  intensity: FitnessLevel
-  /** True when the two signals disagreed — surfaced in meta for honesty. */
-  signalsDisagree: boolean
-  /**
-   * CoachingPrinciples §79 (returning-runner intensity, 2026-08-31). True when a
-   * deep training age rescued a beginner-by-volume intensity — i.e. an experienced
-   * runner returning from a layoff. The plan lifts their INTENSITY allowance (they
-   * have the skill and the aerobic base returns fast) but must gate the highest
-   * tissue-stress work through a progressive re-entry — tissue tolerance lags.
-   */
-  intensityLiftedForReturn: boolean
-}
-
-/**
- * @param trainingAgeExperienced  CoachingPrinciples §79 — when a runner with a deep
- *   training age (2-5yr / 5yr+) reads beginner on CURRENT volume, they are a
- *   returning runner, not a beginner. Volume measures what they can absorb *now*;
- *   training age measures the skill and aerobic base a layoff has not erased. Their
- *   intensity allowance is lifted off the beginner floor so a returning ultra
- *   runner is not handed a true-beginner's zero-quality plan — while structure
- *   (volume, caps) stays bound to current volume, and §79's re-entry gate withholds
- *   VO2max/hills until tissue rebuilds.
- */
-function assessFitness(
-  weeklyKm: number,
-  longestKm: number,
-  vdot?: number,
-  trainingAgeExperienced = false,
-): FitnessAssessment {
-  const byVolume = fitnessFromVolume(weeklyKm, longestKm)
-
-  // Base structural/intensity from the two-signal model (§79).
-  let structural: FitnessLevel
-  let intensity:  FitnessLevel
-  let signalsDisagree: boolean
-  if (vdot === undefined || !Number.isFinite(vdot)) {
-    structural = intensity = byVolume
-    signalsDisagree = false
-  } else {
-    const byVdot = fitnessFromVdot(vdot)
-    if (byVdot === byVolume) {
-      structural = intensity = byVdot
-      signalsDisagree = false
-    } else {
-      structural = FITNESS_RANK[byVdot] < FITNESS_RANK[byVolume] ? byVdot : byVolume
-      intensity  = FITNESS_RANK[byVdot] > FITNESS_RANK[byVolume] ? byVdot : byVolume
-      signalsDisagree = true
-    }
-  }
-
-  // §79 training-age lift — an experienced runner reading beginner on intensity is
-  // returning, not new. Lift intensity one step (to intermediate); structure is
-  // untouched, so tonnage stays conservative. A truly experienced returner can
-  // raise it further via the wizard (user override, Phase 2).
-  let intensityLiftedForReturn = false
-  if (trainingAgeExperienced && intensity === 'beginner') {
-    intensity = 'intermediate'
-    signalsDisagree = true
-    intensityLiftedForReturn = true
-  }
-
-  return { structural, intensity, signalsDisagree, intensityLiftedForReturn }
-}
+// FITNESS_RANK, fitnessFromVdot, fitnessFromVolume, assessFitness moved to
+// ./fitnessAssessment (single owner, client-safe, shared with the wizard). §79.
 
 // ─── Zone computation ─────────────────────────────────────────────────────────
 // Dual-anchor: pace is primary; HR is the governor on hills, heat, and fatigue.
@@ -3480,6 +3384,16 @@ export function generateRulePlan(
   // returning runner whose current volume alone would misclassify them.
   const trainingAgeIsExperienced = input.training_age === '2-5yr' || input.training_age === '5yr+'
   const assessed = assessFitness(input.current_weekly_km, input.longest_recent_run_km, vdot, trainingAgeIsExperienced)
+  // §79 (2026-08-31, Coaching Board) — a user-selected `fitness_level` is honoured.
+  // Tissue safety on the VOLUME side does NOT depend on this value: the start
+  // volume (§29/§371 caps), the +10%/wk ramp (§2) and the long-run caps are all
+  // computed from current volume and training age, independent of fitness_level,
+  // so they stay bound however the user self-declares. On the INTENSITY side, the
+  // Phase-1 progressive re-entry gate (§79) withholds VO2max/hills for a returning
+  // runner's opening weeks. So "agency raises intensity, never *unsafe* tonnage"
+  // is delivered by those caps, not by refusing the declared level for peak km —
+  // binding peak km to assessed volume instead over-labels ordinary declared-higher
+  // runners as `maintenance` (a §75-threshold interaction; board follow-up).
   const fitness: FitnessLevel = input.fitness_level ?? assessed.structural
   const intensityFitness: FitnessLevel = input.fitness_level ?? assessed.intensity
 

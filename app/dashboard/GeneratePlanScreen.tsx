@@ -20,6 +20,7 @@ import { Chip } from '@/components/shared/Chip'
 import { type DayKey } from '@/components/shared/DayGridSelector'
 import { Ruler } from '@/components/shared/Ruler'
 import { CardSelect } from '@/components/shared/CardSelect'
+import { recommendFitnessLevel, FITNESS_RANK, type FitnessLevel } from '@/lib/plan/fitnessAssessment'
 import { WeekGrid } from '@/components/shared/WeekGrid'
 import {
   defaultWeek, weekPlanToInputs, weekPlanFromLegacy, dayCountVerdict, type WeekPlan,
@@ -30,7 +31,7 @@ import {
 type WizardSubStep =
   | 'distance' | 'race-details' | 'goal' | 'target-time'
   | 'teach-easy'
-  | 'weekly-volume' | 'longest-run' | 'training-age' | 'birth-year'
+  | 'weekly-volume' | 'longest-run' | 'training-age' | 'your-level' | 'birth-year'
   | 'benchmark' | 'teach-easy-day' | 'your-week' | 'weekday-ceiling'
   | 'hard-sessions' | 'terrain' | 'injuries'
 
@@ -120,6 +121,7 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
   'weekly-volume':   { title: 'How much are you running now?', subtitle: 'Last four weeks, roughly. Real numbers only.' },
   'longest-run':     { title: 'Longest run in the last six weeks?', subtitle: 'Tells us how much you can already hold.' },
   'training-age':    { title: 'How long have you been at this?', subtitle: 'Consistent months, not total years.', optional: true },
+  'your-level':      { title: 'Where are you right now?', subtitle: "Based on what you told us. Overrule it if we've got it wrong." },
   'birth-year':      { title: 'What year were you born?', subtitle: "Only to estimate your max heart rate, if you haven't set one. Kept private.", optional: true },
   'benchmark':       { title: 'Recent race result?',   subtitle: 'Gives us precise pace targets for every session. Skip if you haven\'t raced lately.', optional: true },
   'teach-easy-day':  { title: 'Easy should feel easy.', subtitle: '', eyebrow: 'The easy day', interstitial: true, cta: 'Continue →' },
@@ -137,7 +139,7 @@ function getStepSequence(hasPaidAccess: boolean, goal: 'finish' | 'time_target' 
   if (goal === 'time_target') steps.push('target-time')
   // ⓘ teaching seams (CI-7): ⓘA right after the goal is stated (ambition peaks);
   // ⓘB after benchmark, just before they commit their week (pace is known).
-  steps.push('teach-easy', 'weekly-volume', 'longest-run', 'training-age', 'birth-year', 'benchmark', 'teach-easy-day', 'your-week', 'weekday-ceiling')
+  steps.push('teach-easy', 'weekly-volume', 'longest-run', 'training-age', 'your-level', 'birth-year', 'benchmark', 'teach-easy-day', 'your-week', 'weekday-ceiling')
   if (hasPaidAccess) steps.push('hard-sessions', 'terrain', 'injuries')
   return steps
 }
@@ -474,6 +476,10 @@ export default function GeneratePlanScreen({
   const [longestRun, setLongestRun] = useState<number | null>(null)
   const [restingHR,      setRestingHR]      = useState(initialRHR ? String(initialRHR) : '')
   const [trainingAge,    setTrainingAge]    = useState<TrainingAge | null>(null)
+  // §79 — the runner's self-selected level. null = accept the engine's
+  // recommendation (which keeps the Phase-1 structural/intensity split); a value
+  // is a deliberate override that sets input.fitness_level.
+  const [fitnessLevel,   setFitnessLevel]   = useState<FitnessLevel | null>(null)
 
   // ── Step 6 — Benchmark ───────────────────────────────────────────────────
   const [benchmarkType,    setBenchmarkType]    = useState<'race' | 'tt_30min' | null>(null)
@@ -526,6 +532,7 @@ export default function GeneratePlanScreen({
       else if (s.longestRunChip) setLongestRun(LONGEST_RUN_CHIPS.find(c => c.label === s.longestRunChip)?.value ?? null)
       if (s.restingHR)       setRestingHR(s.restingHR)
       if (s.trainingAge)     setTrainingAge(s.trainingAge)
+      if (s.fitnessLevel)    setFitnessLevel(s.fitnessLevel)
       if (s.benchmarkType)   setBenchmarkType(s.benchmarkType)
       if (s.benchmarkDistKm) setBenchmarkDistKm(s.benchmarkDistKm)
       if (typeof s.benchHours === 'number') setBenchHours(s.benchHours)
@@ -547,7 +554,7 @@ export default function GeneratePlanScreen({
       if (s.terrain)         setTerrain(s.terrain)
       if (Array.isArray(s.injuries)) setInjuries(s.injuries)
       // Restore sub-step if it's a valid wizard step name
-      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','teach-easy','weekly-volume','longest-run','training-age','birth-year','benchmark','teach-easy-day','your-week','weekday-ceiling','hard-sessions','terrain','injuries']
+      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','teach-easy','weekly-volume','longest-run','training-age','your-level','birth-year','benchmark','teach-easy-day','your-week','weekday-ceiling','hard-sessions','terrain','injuries']
       if (validSubSteps.includes(s.appStep)) setAppStep(s.appStep)
     } catch {}
   }, [])
@@ -559,7 +566,7 @@ export default function GeneratePlanScreen({
       sessionStorage.setItem(WIZARD_KEY, JSON.stringify({
         appStep, distanceKm, raceName, raceDate, goal,
         targetHours, targetMins,
-        birthYear, weeklyKm, longestRun, restingHR, trainingAge,
+        birthYear, weeklyKm, longestRun, restingHR, trainingAge, fitnessLevel,
         benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
         weekPlan, maxWeekdayChip,
         hardSessions, terrain, injuries,
@@ -715,6 +722,7 @@ export default function GeneratePlanScreen({
       // training-age + birth-year are optional (App Store 5.1.1 — year of birth
       // "should be optional"; the engine falls back to age 30 / no training-age).
       case 'training-age':   return true
+      case 'your-level':     return true  // pre-selected to the recommendation
       case 'birth-year':     return true
       case 'benchmark':
         if (benchmarkType === 'race')     return !!(benchmarkDistKm && (benchHours > 0 || benchMins > 0))
@@ -798,6 +806,19 @@ export default function GeneratePlanScreen({
       } catch {}
     }
 
+    // §79 — pass fitness_level ONLY when the runner overrode the recommendation.
+    // Accepting it (fitnessLevel null, or equal to the recommendation) passes
+    // undefined so the engine's assessment stands — which keeps the returning
+    // runner's conservative volume + lifted intensity split (Phase 1). A genuine
+    // override sets input.fitness_level (raises intensity; volume caps still bind).
+    const levelRec = recommendFitnessLevel(
+      weeklyKmVal, longestRunVal,
+      trainingAge === '2-5yr' || trainingAge === '5yr+',
+    )
+    const fitnessLevelOverride = fitnessLevel && fitnessLevel !== levelRec.level
+      ? fitnessLevel
+      : undefined
+
     const input: GeneratorInput = {
       race_date:             raceDate,
       race_distance_km:      distanceKm!,
@@ -812,6 +833,7 @@ export default function GeneratePlanScreen({
       max_hr:                hkMHR ?? undefined,
       max_hr_source:         mhrSource,
       training_age:          trainingAge ?? undefined,
+      fitness_level:         fitnessLevelOverride,
       preferred_long_run_day: week.longDay ?? 'sun',
       benchmark,
       days_cannot_train:     week.restShort.length ? week.restShort.map(k => FULL_BY_SHORT[k]) : undefined,
@@ -1416,6 +1438,60 @@ export default function GeneratePlanScreen({
             ))}
           </div>
         )
+
+      case 'your-level': {
+        // §79 — recommendation from volume + longest run + training age (no VDOT
+        // yet; benchmark comes later). Same owner the engine uses (no drift).
+        const rec = recommendFitnessLevel(
+          weeklyKm ?? 0, longestRun ?? 0,
+          trainingAge === '2-5yr' || trainingAge === '5yr+',
+        )
+        const effective = fitnessLevel ?? rec.level
+        const overrodeUp   = FITNESS_RANK[effective] > FITNESS_RANK[rec.level]
+        const overrodeDown = FITNESS_RANK[effective] < FITNESS_RANK[rec.level]
+
+        const LEVELS: { value: FitnessLevel; label: string; sub: string }[] = [
+          { value: 'beginner',     label: 'Building the base.',   sub: 'Newer to it, or rebuilding. Easy running, no hard sessions yet.' },
+          { value: 'intermediate', label: 'Got a base.',          sub: 'Used to some hard running. Tempo and threshold in the mix.' },
+          { value: 'experienced',  label: 'The full toolkit.',    sub: 'Consistent miles, comfortable with intervals, threshold, hills.' },
+        ]
+
+        const whyLine = rec.isReturning
+          ? "You've got the miles in your legs — just not this month. That's not beginner, that's coming back."
+          : 'Based on your volume and history. Change it if we’ve read you wrong.'
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.5, marginBottom: '4px' }}>
+              {whyLine}
+            </div>
+            {LEVELS.map(l => (
+              <CardSelect
+                key={l.value}
+                label={l.label}
+                sub={l.value === rec.level ? `${l.sub}  ·  Recommended` : l.sub}
+                active={effective === l.value}
+                onClick={() => setFitnessLevel(l.value)}
+              />
+            ))}
+            {overrodeUp && (
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', lineHeight: 1.5, marginTop: '4px' }}>
+                Harder than your recent numbers suggest. You&rsquo;ll get the sessions — we still build your mileage up gently so you don&rsquo;t get hurt getting fit.
+              </div>
+            )}
+            {overrodeDown && (
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '4px' }}>
+                More cautious than we&rsquo;d pick. Fine — nudge it up whenever you&rsquo;re ready.
+              </div>
+            )}
+            {!overrodeUp && !overrodeDown && rec.isReturning && (
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '4px' }}>
+                We&rsquo;ll ease the hard sessions in over the first few weeks while your body remembers.
+              </div>
+            )}
+          </div>
+        )
+      }
 
       case 'birth-year': {
         const currentYear = new Date().getFullYear()
