@@ -1915,6 +1915,16 @@ function buildWeekSessions(
       sessions[longDay]!,
       'Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.',
     )
+    // §80 (HR-MAX-01 part 3) — this session's prescription IS time on feet, so it
+    // stays duration-anchored whatever the runner's metric preference. A distance
+    // headline would misrepresent what's limiting (time-on-feet, not aerobic) and
+    // make a walk break look like a failed target. Distance is carried as a
+    // secondary value; duration is primary. INV-PLAN-DURATION-ANCHORED-KEEPS-MINUTES.
+    const lr = sessions[longDay]!
+    lr.duration_anchored = true
+    lr.primary_metric = 'duration'
+    if (lr.duration_mins == null) lr.duration_mins = dur(roundDistance(longKm), pace.minPerKmEasy)
+    if (lr.distance_km == null) lr.distance_km = roundDistance(longKm)  // secondary value
   }
 
   used.push(longDay)

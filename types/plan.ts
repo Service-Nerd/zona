@@ -167,6 +167,11 @@ export interface Session {
   distance_km?: number                    // e.g. 8.5
   duration_mins?: number                  // e.g. 45
   primary_metric?: PrimaryMetric          // session-level override of plan default
+  // §80 (HR-MAX-01 part 3) — a session whose prescription IS time on feet, not
+  // distance (the finish-goal peak long run). Displayed as duration regardless of
+  // the runner's metric preference; distance is only ever a secondary/estimated
+  // value on these. Asserted by INV-PLAN-DURATION-ANCHORED-KEEPS-MINUTES.
+  duration_anchored?: boolean
   zone?: string                           // e.g. "Zone 2" | "Zone 3–4"
   hr_target?: string                      // e.g. "< 145 bpm" | "155–165 bpm"
   pace_target?: string                    // e.g. "6:30–7:00 /km"

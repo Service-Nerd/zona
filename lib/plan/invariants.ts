@@ -39,6 +39,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-LABEL-MATCHES-PACE',
   'INV-PLAN-INJURY-NO-HILLS',
   'INV-PLAN-RETURNING-INTENSITY-REENTRY',
+  'INV-PLAN-DURATION-ANCHORED-KEEPS-MINUTES',
   'INV-PLAN-RACE-WEEK-SHARPENING',
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE',
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO',
@@ -617,6 +618,26 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             expected: `no vo2max/hill sessions in weeks 1–${plan.meta.intensity_reentry_weeks}`,
           })
         }
+      }
+    }
+
+    // INV-PLAN-DURATION-ANCHORED-KEEPS-MINUTES — a session whose prescription is
+    // time on feet (§80 finish-goal peak long run, duration_anchored) must carry a
+    // real duration_mins and stay duration-primary; a distance number must never
+    // become its headline. "Two and a half hours of moving" is a different object
+    // from "18 kilometres" and only one survives a walk break. (CoachingPrinciples §80)
+    for (const { day, session } of placedRunning) {
+      if (!session.duration_anchored) continue
+      if (!(typeof session.duration_mins === 'number' && session.duration_mins > 0) || session.primary_metric !== 'duration') {
+        violations.push({
+          code: 'INV-PLAN-DURATION-ANCHORED-KEEPS-MINUTES',
+          principle_ref: 'CoachingPrinciples §80',
+          severity: 'error',
+          week: w.n, day,
+          message: `Duration-anchored session "${session.label}" must keep duration_mins and stay duration-primary (time on feet), got primary_metric="${session.primary_metric}", duration_mins=${session.duration_mins}`,
+          actual: `primary_metric=${session.primary_metric}, duration_mins=${session.duration_mins}`,
+          expected: 'primary_metric=duration with duration_mins > 0',
+        })
       }
     }
 

@@ -3934,7 +3934,17 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   // Per-session metric values — session may come from TodayScreen (formatted) or raw plan object (unformatted)
   const rawDuration = session.duration ?? (session.duration_mins != null ? fmtDurationMins(Number(session.duration_mins)) : null)
   const estimatedDuration = rawDuration ?? (session.distance ?? session.distance_km ? `~${fmtDurationMins(Math.round(Number(session.distance ?? session.distance_km) * 6.5))}` : null)
-  const estimatedDistance = session.distance ?? session.distance_km ?? null
+  // §79/ADR-015 (HR-MAX-01 part 3) — the distance/duration toggle must work both
+  // ways. A duration-primary session (beginner / returning / §80 time-on-feet)
+  // carries duration_mins but no distance_km; deriving distance from duration lets
+  // the runner switch to distance instead of seeing "—". Derived distance is an
+  // ESTIMATE (shown with ~), never an exact prescribed target — the Coaching Board
+  // amendment: a converted distance must not masquerade as a prescription.
+  const exactDistanceKm = session.distance ?? session.distance_km ?? null
+  const durationMinsNum = session.duration_mins != null ? Number(session.duration_mins) : null
+  const estimatedDistance = exactDistanceKm
+    ?? (durationMinsNum != null ? Math.round((durationMinsNum / 6.5) * 10) / 10 : null)
+  const distanceIsEstimated = exactDistanceKm == null && estimatedDistance != null
 
   // Fire the staged link-activity call (if any) when the reflect screen closes.
   // By this point saveRPEFatigue has already run, so RPE/fatigue are in the DB.
@@ -4374,7 +4384,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 500, color: config.color, lineHeight: 1, marginBottom: '6px' }}>
                 {effectiveMetric === 'distance'
-                  ? <>{formatDistance(estimatedDistance, preferredUnits, { noSuffix: true, exact: session.type === 'race' }) ?? '—'}<span style={{ fontSize: '11px', fontWeight: 400, color: config.color, opacity: 0.7 }}> {preferredUnits}</span></>
+                  ? <>{distanceIsEstimated ? '~' : ''}{formatDistance(estimatedDistance, preferredUnits, { noSuffix: true, exact: session.type === 'race' }) ?? '—'}<span style={{ fontSize: '11px', fontWeight: 400, color: config.color, opacity: 0.7 }}> {preferredUnits}</span></>
                   : <span style={{ fontSize: '18px' }}>{estimatedDuration ?? '—'}</span>
                 }
               </div>
@@ -4458,7 +4468,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                       {(estimatedDistance || estimatedDuration) && (
                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)' }}>
-                          {effectiveMetric === 'distance' ? (formatDistance(estimatedDistance, preferredUnits, { exact: session.type === 'race' }) ?? '—') : (estimatedDuration ?? '—')}
+                          {effectiveMetric === 'distance' ? `${distanceIsEstimated ? '~' : ''}${formatDistance(estimatedDistance, preferredUnits, { exact: session.type === 'race' }) ?? '—'}` : (estimatedDuration ?? '—')}
                         </span>
                       )}
                       {(() => {

@@ -1992,6 +1992,18 @@ The asymmetry in the resolution is deliberate: **volume is where injuries come f
 
 **Config.** `GENERATION_CONFIG.FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION = 0.70`. Shortfall surfaced as `meta.long_run_shortfall_note`.
 
+### Duration-anchored display — amended 2026-08-31 (Coaching Board, CORRECT WITH AMENDMENT — HR-MAX-01 part 3)
+
+**§79 keyed the metric recommendation to experience, so a finish-goal HM/marathon runner with an intermediate-or-higher intensity now sees distance by default. §80 must survive that.**
+
+**Principle.** The metric a runner sees is a **recommendation they can override** (per session or globally, ADR-015) — with one exception: a session whose *prescription is time on feet* stays **duration-anchored**. The finish-goal peak long run carries `duration_anchored: true` and `primary_metric: 'duration'` regardless of the runner's metric preference; its distance is only ever a **secondary** value. A user metric override cannot strip the time framing from it.
+
+**Why.** "Duration, not distance, and the distinction is not cosmetic" (above) — a first-timer is time-on-feet limited, not aerobically limited, and the binding cap is in minutes. If the global metric flip (or a user toggle) let this session read as "18 km", it would misrepresent what's limiting and set a target that a walk break appears to fail. And a converted/derived distance is shown with a `~` estimate marker (ADR-015), never as an exact prescribed target.
+
+**Config.** Governed by the existing §80 constants (`FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION`, `LR_FINISH_GOAL_LATE_PEAK_SEGMENT_PCT`) — no new numeric; the anchoring is a display-authority rule on the session those constants already build.
+
+**Invariant.** `INV-PLAN-DURATION-ANCHORED-KEEPS-MINUTES` — a `duration_anchored` session must keep `duration_mins > 0` and `primary_metric: 'duration'`.
+
 ---
 
 ## 81. `compressed` means two different things, so it is two fields
