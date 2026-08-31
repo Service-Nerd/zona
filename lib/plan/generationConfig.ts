@@ -84,12 +84,21 @@ export const GENERATION_CONFIG = {
   MAX_WEEKLY_VOLUME_INCREASE_PCT: 10,
   RETURNING_RUNNER_ALLOWANCE_PCT: 15,
   RETURNING_RUNNER_GRACE_WEEKS:    3,
-  // CoachingPrinciples §50 (plausibility, amended 2026-08-06) — a supplied
-  // max_hr deviating from the Tanaka age estimate by more than this is not
-  // trusted; the engine falls back to the estimate and says so. §55 rejects the
+  // CoachingPrinciples §50 (plausibility, amended 2026-08-06; asymmetry added
+  // 2026-08-31) — the UPPER tolerance. A supplied max_hr more than this ABOVE
+  // the Tanaka age estimate is treated as a sensor artifact and rejected; the
+  // engine falls back to the estimate and says so. §55 rejects the
   // physiologically impossible; this rejects the physiologically possible but
-  // almost certainly wrong. Source-independent by design.
+  // almost certainly a stray reading.
   MAX_HR_PLAUSIBILITY_DEVIATION_PCT: 15,
+  // CoachingPrinciples §50 (asymmetry, 2026-08-31, HR-MAX-01) — the LOWER
+  // tolerance for a device-observed or unattributed max. A recorded max is a
+  // *lower bound* on the true max: below the age estimate it is a floor (the
+  // highest the device happened to catch), and says nothing about the ceiling.
+  // So the low-side tolerance is 0 — any device/unattributed max below the
+  // estimate is rejected in favour of Tanaka. Only an explicitly user-confirmed
+  // max (max_hr_source: 'user_confirmed') is trusted below the estimate.
+  MAX_HR_BELOW_ESTIMATE_TOLERANCE_PCT: 0,
 
   // CoachingPrinciples §40c (VOL-SHORTFALL-01) — a life-first constraint that
   // suppresses the peak week by at least this much is STATED, not absorbed.

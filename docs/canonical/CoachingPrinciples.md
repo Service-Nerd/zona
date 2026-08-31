@@ -1203,14 +1203,33 @@ This composes with §55 (input validation): nonsense values (`resting_hr: 0`, `m
 | Supplied `max_hr` outside tolerance | `age_estimate_implausible_input` | **Use Tanaka.** Note names the supplied value, the estimate, and how to override |
 | `max_hr` known to be device-observed (`max_hr_source: 'observed'`) and within tolerance | `observed_max` | Use it, but **always** note that it is derived from recorded activity, not a measured maximum |
 
-**Provenance is best-effort.** `max_hr_source` is set when the wizard reads HealthKit directly. A value arriving via `user_settings` has no recorded provenance, so it degrades to the unmarked path — the plausibility gate still protects it, because that gate is source-independent by design. Adding provenance to `user_settings.max_hr` is tracked separately.
+### Asymmetry — amended 2026-08-31 (HR-MAX-01, Coaching Board CORRECT WITH AMENDMENT)
+
+**The 2026-08-06 guard was symmetric. That was the residual bug it half-fixed.**
+
+**Principle.** A recorded heart rate is, by construction, a **lower bound** on the true maximum: the heart demonstrably reached that rate, so the max is *at least* that. A recorded value tells you nothing about the ceiling. The plausibility guard is therefore **asymmetric**:
+
+- **Below the estimate** — a device-observed or unattributed max is a **floor** and is rejected outright (low-side tolerance = 0). Only an explicitly **user-confirmed** max (`max_hr_source: 'user_confirmed'`) is trusted below the estimate, because genuine low-max athletes exist and a value the runner typed carries their confirmation.
+- **Above the estimate** — the rate must have physically occurred, so it is trusted up to `MAX_HR_PLAUSIBILITY_DEVIATION_PCT` above the estimate; beyond that it is a sensor artifact (double-counted beats, a stray spike) and is rejected.
+
+**Why.** Founder case (2026-08-30): age 44, Apple-observed max **159**, Tanaka estimate **177**, true max **188**. 159 is only ~10% below 177, so the *symmetric* 15% guard accepted it and every HR target ran ~15% low — connecting Apple Health made the plan **worse**, the opposite of what new data should do. The symmetric band treated a lower bound as a two-sided estimate, which is a category error. The value arrived via `user_settings` with no provenance, so the fix must reject unattributed sub-estimate maxes too — the dominant source of them is exactly this device-floor laundering.
+
+| Condition | Method | Behaviour |
+|---|---|---|
+| Supplied max **below** estimate, `observed` or unattributed | `age_estimate_max_floor` | **Use Tanaka.** Note explains a recorded max below the estimate is a floor; names the override path |
+| Supplied max **below** estimate, `user_confirmed` | `karvonen` / `percent_of_max` | **Trust it.** The runner confirmed it |
+| Supplied max **above** estimate by more than tolerance | `age_estimate_implausible_input` | **Use Tanaka.** Likely a sensor artifact |
+
+**Provenance is best-effort but now has three states.** `max_hr_source` is `'observed'` when read from device history, `'user_confirmed'` when the runner typed it in Profile and saved, and absent when the value arrived via `user_settings` with no recorded provenance. Unattributed degrades to the *device* path (rejected below the estimate) — not the trusted path — because we cannot distinguish a laundered device floor from a hand-typed value, and the asymmetry errs toward the estimate. A legacy hand-typed sub-estimate value self-heals: it falls back to Tanaka with a note, and re-saving in Profile re-tags it `user_confirmed`.
 
 **This composes with §78.** The recalibration time trial is what replaces an estimate with a measurement. Tanaka is a stopgap that gets corrected every four weeks, not a permanent answer.
 
-**Config.** `GENERATION_CONFIG.MAX_HR_PLAUSIBILITY_DEVIATION_PCT = 15`.
+**Config.** `GENERATION_CONFIG.MAX_HR_PLAUSIBILITY_DEVIATION_PCT = 15` (upper tolerance); `GENERATION_CONFIG.MAX_HR_BELOW_ESTIMATE_TOLERANCE_PCT = 0` (lower tolerance for device/unattributed maxes).
+
+**Invariant.** `INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR` — no plan may rest on a device-observed or unattributed max HR below its own age-estimated max (`hr_derived_max ≥ hr_estimated_max`, unless `hr_max_source = user_confirmed`).
 
 Plan meta MUST include:
-- `hr_zone_method` — which method was used (`karvonen` / `karvonen_estimated_max` / `percent_of_max` / `percent_of_estimated_max` / `observed_max` / `age_estimate_implausible_input`).
+- `hr_zone_method` — which method was used (`karvonen` / `karvonen_estimated_max` / `percent_of_max` / `percent_of_estimated_max` / `observed_max` / `age_estimate_implausible_input` / `age_estimate_max_floor`).
 - `hr_assumption_note` — user-facing explanation. Present whenever the zones rest on an assumption: any method other than `karvonen`, **and** `karvonen` where the max was device-observed or the supplied value was rejected.
 - `hr_estimated_max` — the Tanaka-estimated max HR. Present when max was estimated.
 

@@ -403,6 +403,7 @@ function validateFoundationBlock(assembled: Plan, genInput: GeneratorInput): voi
 
 export default function GeneratePlanScreen({
   onBack, firstName: _firstName, lastName: _lastName, restingHR: initialRHR, maxHR: initialMHR,
+  maxHrSource: initialMhrSource,
   birthYear: initialBirthYear, onBirthYearSave, onPlanSaved, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade,
 }: {
   onBack: () => void
@@ -410,6 +411,9 @@ export default function GeneratePlanScreen({
   lastName?: string
   restingHR?: number | null
   maxHR?: number | null
+  /** §50 (HR-MAX-01) — provenance of the stored max, so a user_confirmed value
+   *  survives regeneration instead of being floored as unattributed. */
+  maxHrSource?: 'observed' | 'user_confirmed' | null
   birthYear?: number | null
   onBirthYearSave?: (year: number) => Promise<void>
   onPlanSaved?: (plan: Plan) => Promise<void>
@@ -769,12 +773,14 @@ export default function GeneratePlanScreen({
     // The generating ceremony covers this extra async step's wall-clock time.
     let hkRHR: number | null = initialRHR ?? (restingHR ? Number(restingHR) : null)
     let hkMHR: number | null = initialMHR ?? null
-    // CoachingPrinciples §50 — track whether max HR came from device history.
+    // CoachingPrinciples §50 (HR-MAX-01) — track where max HR came from.
     // fetchAppleHealthHRSnapshot returns the highest heart rate on record, which
     // is a floor rather than a maximum for anyone who has never run flat out
-    // wearing a sensor. Only set when WE read it here; a value inherited from
-    // user_settings has no recorded provenance and stays unmarked.
-    let mhrSource: 'observed' | undefined
+    // wearing a sensor. A value inherited from user_settings carries its stored
+    // provenance ('user_confirmed' when the runner typed it in Profile); a fresh
+    // device read here is tagged 'observed'.
+    let mhrSource: 'observed' | 'user_confirmed' | undefined =
+      initialMHR != null ? (initialMhrSource ?? undefined) : undefined
     if (!hkRHR || !hkMHR) {
       try {
         const { Capacitor } = await import('@capacitor/core')

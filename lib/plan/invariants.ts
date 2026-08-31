@@ -76,6 +76,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-QUALITY-VARIETY-FULL-PLAN',
   'INV-PLAN-LR-MAX-WEEKLY-PCT',
   'INV-PLAN-HR-ASSUMPTIONS-SURFACED',
+  'INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR',
   'INV-PLAN-FOUNDATION-BLOCK',
   'INV-PLAN-5K10K-LR-PACE-CAP',
   'INV-PLAN-BUILD-LR-SEGMENT-CAP',
@@ -2332,6 +2333,33 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         message: `hr_zone_method is "${method}" but no hr_assumption_note surfaced — non-Karvonen methods MUST include the assumption note`,
         actual: method,
         expected: 'method + hr_assumption_note',
+      })
+    }
+  }
+
+  // INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR — no plan may rest on a device-observed
+  // or unattributed max HR below its own age-estimated max. A recorded max below the
+  // estimate is a floor (§50 asymmetry, HR-MAX-01); the engine must have fallen back
+  // to Tanaka. Only an explicitly user-confirmed max may sit below the estimate.
+  // (CoachingPrinciples §50)
+  {
+    const derived = plan.meta.hr_derived_max
+    const estimated = plan.meta.hr_estimated_max
+    const source = plan.meta.hr_max_source
+    if (
+      typeof derived === 'number' &&
+      typeof estimated === 'number' &&
+      derived < estimated &&
+      source !== 'user_confirmed'
+    ) {
+      violations.push({
+        code: 'INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR',
+        principle_ref: 'CoachingPrinciples §50',
+        severity: 'error',
+        week: 0,
+        message: `Plan rests on max HR ${derived} bpm, below the age estimate ${estimated} bpm, without user confirmation (source: ${source ?? 'unattributed'}) — a device/unattributed max below the estimate is a floor and must fall back to Tanaka`,
+        actual: `derived_max ${derived} < estimated_max ${estimated}, source ${source ?? 'unattributed'}`,
+        expected: 'derived_max ≥ estimated_max, or hr_max_source = user_confirmed',
       })
     }
   }

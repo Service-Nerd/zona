@@ -30,14 +30,17 @@ export interface GeneratorInput {
   resting_hr?: number           // optional — improves zone accuracy via Karvonen
   max_hr?: number               // optional — derived from age (Tanaka: 208 − 0.7 × age)
   /**
-   * CoachingPrinciples §50 — where max_hr came from. 'observed' means it was read
-   * from device history (the highest heart rate on record), which is a floor, not
-   * a maximum, for anyone who has never run flat out wearing a sensor. Best-effort:
-   * set when the wizard reads HealthKit directly; a value arriving via
-   * user_settings has no recorded provenance and is left unmarked. The
-   * plausibility gate protects both cases — it is source-independent by design.
+   * CoachingPrinciples §50 — where max_hr came from.
+   * - 'observed'       — read from device history (the highest heart rate on
+   *                      record), a floor rather than a maximum for anyone who
+   *                      has never run flat out wearing a sensor.
+   * - 'user_confirmed' — typed by the runner in Profile and saved; trusted even
+   *                      below the age estimate (genuine low-max athletes exist).
+   * An unmarked value (arrived via user_settings without recorded provenance) is
+   * treated like 'observed' on the low side by the §50 asymmetry — the dominant
+   * source of unattributed sub-estimate maxes is device-floor laundering.
    */
-  max_hr_source?: 'observed'
+  max_hr_source?: 'observed' | 'user_confirmed'
 
   // R23 rebuild — drives returning-runner allowance + reshape decisions
   training_age?: TrainingAge
@@ -444,9 +447,15 @@ export interface PlanMeta {
   fitness_signal_note?: string
 
   hr_zone_method?: 'karvonen' | 'karvonen_estimated_max' | 'percent_of_max' | 'percent_of_estimated_max'
-                 | 'observed_max' | 'age_estimate_implausible_input'
+                 | 'observed_max' | 'age_estimate_implausible_input' | 'age_estimate_max_floor'
   hr_assumption_note?: string
   hr_estimated_max?: number
+  // §50 asymmetry (HR-MAX-01) — the max HR the zones were actually built on, and
+  // the provenance of the supplied max ('observed' | 'user_confirmed'; absent when
+  // no max was supplied or the value was unattributed). The invariant asserts a
+  // plan never rests on a device/unattributed max below hr_estimated_max.
+  hr_derived_max?: number
+  hr_max_source?: 'observed' | 'user_confirmed'
 
   // 2026-04-28 / H-01 — prep-time validation surface (CoachingPrinciples §44).
   // 'ok' on adequately-resourced plans, 'warned' on plans generated under an

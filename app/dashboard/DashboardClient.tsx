@@ -16,6 +16,7 @@ import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, 
 import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
 import { easyPaceAsCeiling } from '@/lib/plan/easyPaceCeiling'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
+import { resolveMaxHr } from '@/lib/plan/maxHrGuard'
 import { isLongRun, coachingSessionType } from '@/lib/plan/sessionRole'
 import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
@@ -264,6 +265,9 @@ export default function DashboardClient() {
   const [sessionMetricOverrides, setSessionMetricOverrides] = useState<Record<string, 'distance' | 'duration'>>({})
   const [restingHR, setRestingHR] = useState<number | null>(null)
   const [maxHR, setMaxHR] = useState<number | null>(null)
+  // CoachingPrinciples §50 (HR-MAX-01) — provenance of the stored max HR.
+  // 'observed' = device history (a floor), 'user_confirmed' = typed in Profile.
+  const [maxHRSource, setMaxHRSource] = useState<'observed' | 'user_confirmed' | null>(null)
   // X-FIRSTRUN: detect Apple Health connection state so we can render an
   // honest pre-data view ("Connect a source" vs "Set your HR" vs "Run one").
   const [healthkitConnectedAt, setHealthkitConnectedAt] = useState<string | null>(null)
@@ -833,7 +837,7 @@ export default function DashboardClient() {
 
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes, subRes, guidanceRes, pendingReshapeRes] = await Promise.all([
-          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, birth_year, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at, push_permission_seen, healthkit_connected_at').eq('id', user.id).single(),
+          supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, max_hr_source, birth_year, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at, push_permission_seen, healthkit_connected_at').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
@@ -958,6 +962,7 @@ export default function DashboardClient() {
         // HR data
         if (data?.resting_hr) setRestingHR(data.resting_hr)
         if (data?.max_hr) setMaxHR(data.max_hr)
+        if (data?.max_hr_source === 'observed' || data?.max_hr_source === 'user_confirmed') setMaxHRSource(data.max_hr_source)
         if (data?.healthkit_connected_at) setHealthkitConnectedAt(data.healthkit_connected_at)
         // Prefer birth_year (post-migration source of truth). Fall back to the
         // year of legacy date_of_birth for rows where the backfill migration
@@ -1718,15 +1723,32 @@ export default function DashboardClient() {
     })()
   }, [plan, orientationSeen, connectRunsSeen, pushPermissionSeen, showPushOnboarding])
 
+  // CoachingPrinciples §50 asymmetry (HR-MAX-01) — the GUARDED max HR every
+  // client zone computation must use. A stored max below the age estimate is a
+  // device floor; resolveMaxHr (the same single owner the engine uses) rejects
+  // it in favour of the Tanaka estimate unless the runner confirmed it. Without
+  // this, session HR targets and the "your zones" page recompute from the raw
+  // floor and run ~15% low, contradicting the plan's own guarded targets.
+  const effectiveMaxHR = useMemo<number | null>(() => {
+    if (maxHR == null) return null
+    const age = birthYear ? new Date().getFullYear() - birthYear : null
+    if (age != null && age >= 10 && age <= 100) {
+      return resolveMaxHr(maxHR, age, maxHRSource ?? undefined).effectiveMax
+    }
+    // No age to guard against — trust the plan's already-guarded max, else raw.
+    return plan?.meta?.hr_derived_max ?? maxHR
+  }, [maxHR, maxHRSource, birthYear, plan])
+
   // Personalised zone ceiling: Karvonen 70% HRR, falls back to plan meta.
   // Returns null only when no HR data exists AND no plan is present — which
   // is impossible for any user past onboarding. Never returns a hardcoded
   // bpm value: all HR data must derive from user_settings (Apple Health or
   // Tanaka) or plan.meta (set at generation time from the same source).
+  // Uses the §50-guarded max, never the raw floor.
   const effectiveZone2Ceiling = useMemo<number | null>(() => {
-    if (restingHR && maxHR) return Math.round(restingHR + 0.70 * (maxHR - restingHR))
+    if (restingHR && effectiveMaxHR) return Math.round(restingHR + 0.70 * (effectiveMaxHR - restingHR))
     return plan?.meta?.zone2_ceiling ?? null
-  }, [restingHR, maxHR, plan])
+  }, [restingHR, effectiveMaxHR, plan])
 
   // Aerobic pace derived from Strava runs in user's Z2 HR band
   // Aerobic pace is derived from Strava runs in the user's Z2 band — a
@@ -1735,8 +1757,8 @@ export default function DashboardClient() {
   // last computed value in localStorage so subsequent paints have an
   // immediate, stable value while fresh data is fetched.
   const liveAerobicPace = useMemo(() =>
-    computeAerobicPace(stravaRuns, restingHR, maxHR, preferredUnits),
-  [stravaRuns, restingHR, maxHR, preferredUnits])
+    computeAerobicPace(stravaRuns, restingHR, effectiveMaxHR, preferredUnits),
+  [stravaRuns, restingHR, effectiveMaxHR, preferredUnits])
 
   // POST-RUN-01 / AUTO-MATCH-02: best Strava match for the active session,
   // computed client-side so "Mark complete" can skip the picker. The webhook's
@@ -1893,7 +1915,7 @@ export default function DashboardClient() {
         firstName={firstName}
         zone2Ceiling={effectiveZone2Ceiling}
         restingHR={restingHR}
-        maxHR={maxHR}
+        maxHR={effectiveMaxHR}
         onDismiss={async () => {
           setShowOrientation(false)
           setOrientationSeen(true)
@@ -1923,8 +1945,15 @@ export default function DashboardClient() {
           // (and any re-generation) uses the real Karvonen values instead.
           const newRhr = restingHR != null ? restingHR : rhr
           const newMhr = maxHR     != null ? maxHR     : mhr
+          // CoachingPrinciples §50 (HR-MAX-01) — the device max is the highest
+          // *recorded* HR, a floor not a maximum. Tag it 'observed' so the §50
+          // asymmetry rejects it when it lands below the age estimate. Only tag
+          // when we're actually writing a fresh device value, and never clobber a
+          // user_confirmed value the runner already set.
+          const writingDeviceMax = maxHR == null && mhr != null && maxHRSource !== 'user_confirmed'
           if (newRhr != null) setRestingHR(newRhr)
           if (newMhr != null) setMaxHR(newMhr)
+          if (writingDeviceMax) setMaxHRSource('observed')
           if (newRhr != null || newMhr != null) {
             try {
               const { data: { user } } = await supabase.auth.getUser()
@@ -1933,6 +1962,7 @@ export default function DashboardClient() {
                   id:         user.id,
                   resting_hr: newRhr ?? undefined,
                   max_hr:     newMhr ?? undefined,
+                  ...(writingDeviceMax ? { max_hr_source: 'observed' } : {}),
                   updated_at: new Date().toISOString(),
                 })
               }
@@ -2027,7 +2057,7 @@ export default function DashboardClient() {
         paddingBottom={(bottomNavH ?? 88) + 16}
         disabled={!pullToRefreshEnabled}
       >
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); setScreen(hasPaidAccess ? 'recalibration' : 'upgrade') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); setScreen(hasPaidAccess ? 'recalibration' : 'upgrade') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
                   // historical pending rows from repeated test runs (the POST route
@@ -2198,7 +2228,7 @@ export default function DashboardClient() {
                   disciplineLedger={disciplineLedger}
                   onConnect={() => setScreen('me')}
                   restingHR={restingHR}
-                  maxHR={maxHR}
+                  maxHR={effectiveMaxHR}
                   healthkitConnectedAt={healthkitConnectedAt}
                 />
               )
@@ -2208,20 +2238,50 @@ export default function DashboardClient() {
         {/* Strava screen: defense-in-depth gate on isAdmin at the render boundary.
             No UI path opens it for non-admins, but the render gate prevents a future commit
             from accidentally exposing admin UI via state mutation or a new entry point. */}
-        {screen === 'strava'   && isAdmin && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR ?? undefined} maxHR={maxHR ?? undefined} />}
-        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} birthYear={birthYear} onHRChange={async (rhr: number, mhr: number) => {
+        {screen === 'strava'   && isAdmin && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR ?? undefined} maxHR={effectiveMaxHR ?? undefined} />}
+        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onDeviceHRFound={async (rhr: number | null, mhr: number | null) => {
+  // §50 (HR-MAX-01) — device reconnect from Settings. Fill only missing values;
+  // tag a fresh device max 'observed' (a floor) so the guard rejects it below the
+  // age estimate. Never clobber a user_confirmed value. Display refreshes via
+  // effectiveMaxHR from the state set here.
+  const newRhr = restingHR != null ? restingHR : rhr
+  const newMhr = maxHR     != null ? maxHR     : mhr
+  const writingDeviceMax = maxHR == null && mhr != null && maxHRSource !== 'user_confirmed'
+  if (newRhr != null) setRestingHR(newRhr)
+  if (newMhr != null) setMaxHR(newMhr)
+  if (writingDeviceMax) setMaxHRSource('observed')
+  if (newRhr != null || newMhr != null) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) await supabase.from('user_settings').upsert({
+        id: user.id,
+        resting_hr: newRhr ?? undefined,
+        max_hr: newMhr ?? undefined,
+        ...(writingDeviceMax ? { max_hr_source: 'observed' } : {}),
+        updated_at: new Date().toISOString(),
+      })
+    } catch {}
+  }
+}} onHRChange={async (rhr: number, mhr: number) => {
   setRestingHR(rhr); setMaxHR(mhr)
+  // CoachingPrinciples §50 (HR-MAX-01) — a value the runner typed in Profile and
+  // saved IS a confirmation. Tag it 'user_confirmed' so the §50 asymmetry trusts
+  // it even below the age estimate (genuine low-max athletes) instead of treating
+  // it as a device floor.
+  setMaxHRSource('user_confirmed')
   const newZ2 = Math.round(rhr + 0.70 * (mhr - rhr))
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     // 1. user_settings is the single source of truth for live HR values
-    await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, updated_at: new Date().toISOString() })
+    await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, max_hr_source: 'user_confirmed', updated_at: new Date().toISOString() })
     // 2. P1 — sync plan.meta so the zone2_ceiling fallback path never drifts
     //    from user_settings. Uses savePlanForUser (not savePlanForUser archives
     //    the plan — that's only done in the generate flow). Plain upsert here.
+    //    §50: stamp the confirmed max + provenance so INV-PLAN-MAX-HR-NOT-BELOW-
+    //    ESTIMATE-FLOOR reads a coherent state and the stale floor note clears.
     if (plan && plan !== EMPTY_PLAN) {
-      const updatedPlan = { ...plan, meta: { ...plan.meta, resting_hr: rhr, max_hr: mhr, zone2_ceiling: newZ2 } }
+      const updatedPlan = { ...plan, meta: { ...plan.meta, resting_hr: rhr, max_hr: mhr, zone2_ceiling: newZ2, hr_derived_max: mhr, hr_max_source: 'user_confirmed', hr_zone_method: 'karvonen', hr_assumption_note: undefined } }
       setPlan(updatedPlan as any)
       // RESHAPE-FIX-WAVE1: savePlanForUser now throws on persistence failure.
       // This call is deliberately fire-and-forget (the resting-HR save above
@@ -2240,7 +2300,7 @@ export default function DashboardClient() {
   } catch {}
 }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={maxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onDone={() => {
           // POST-RUN-02: terminus. Route to SessionScreen for this session
           // with the freshest completion merged in, so the verdict (which
@@ -2259,7 +2319,7 @@ export default function DashboardClient() {
           if (wN == null) return
           setRunAnalysisMap(prev => ({ ...prev, [wN]: { ...(prev[wN] ?? {}), [sessionDay]: row } }))
         }} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={(activePostRunData.weekN != null ? runAnalysisMap[activePostRunData.weekN]?.[activePostRunData.session?.key ?? ''] : null) ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
-        {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await supabase.from('user_settings').update({ birth_year: y, date_of_birth: null }).eq('id', userId) }} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
+        {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await supabase.from('user_settings').update({ birth_year: y, date_of_birth: null }).eq('id', userId) }} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} onBack={() => {
           // Legacy key name — preserved to avoid wiping active user state. Future: migrate via key translation layer.
           const hasWizardDraft = typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('zona_wizard_draft')
@@ -10664,9 +10724,12 @@ function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number | nul
   )
 }
 
-function HRZonesSection({ restingHR, maxHR, birthYear, onSave, hrZoneMethod, hrAssumptionNote }: {
+function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZoneMethod, hrAssumptionNote }: {
   restingHR: number | null
   maxHR: number | null
+  /** §50 (HR-MAX-01) — provenance of the stored max, used to decide whether an
+   *  unedited sub-estimate value is a device floor (guard) or user-confirmed. */
+  maxHrSource?: 'observed' | 'user_confirmed' | null
   birthYear?: number | null
   onSave: (rhr: number, mhr: number) => void
   /** From plan.meta.hr_zone_method — which fallback level was used when the plan was generated. */
@@ -10700,7 +10763,22 @@ function HRZonesSection({ restingHR, maxHR, birthYear, onSave, hrZoneMethod, hrA
   const rhrNum = parseInt(rhr)
   const mhrNum = parseInt(mhr)
   const valid = rhrNum > 0 && mhrNum > 0 && mhrNum > rhrNum
-  const zones = valid ? calculateZones(rhrNum, mhrNum) : []
+
+  // §50 asymmetry (HR-MAX-01) — the zones shown here must not contradict the
+  // plan's guarded targets. A value the user has typed over the stored one is a
+  // confirmation (trust it); an unedited stored value keeps its provenance, so a
+  // device floor (observed / unattributed, below the age estimate) displays the
+  // guarded estimate zones instead. resolveMaxHr is the same single owner the
+  // engine and DashboardClient use.
+  const age = birthYear ? new Date().getFullYear() - birthYear : null
+  const editedMax = maxHR == null || mhrNum !== maxHR
+  const displaySource: 'observed' | 'user_confirmed' | undefined =
+    editedMax ? 'user_confirmed' : (maxHrSource ?? undefined)
+  const guardedMax = (valid && age != null && age >= 10 && age <= 100)
+    ? resolveMaxHr(mhrNum, age, displaySource).effectiveMax
+    : mhrNum
+  const maxIsFloored = valid && guardedMax !== mhrNum
+  const zones = valid ? calculateZones(rhrNum, guardedMax) : []
 
   function handleSave() {
     if (!valid) return
@@ -10744,6 +10822,11 @@ function HRZonesSection({ restingHR, maxHR, birthYear, onSave, hrZoneMethod, hrA
         {showEstHint && (
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '12px' }}>
             Max HR estimated from your age. Edit it if you&rsquo;ve tested your true max.
+          </div>
+        )}
+        {maxIsFloored && !showEstHint && (
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', lineHeight: 1.5, marginBottom: '12px' }}>
+            {mhrNum} bpm is below the age estimate ({guardedMax} bpm) — usually the highest your device happened to record, not your true max. Zones use {guardedMax}. If {mhrNum} really is your max, tap Save to confirm it.
           </div>
         )}
         <button onClick={handleSave} disabled={!valid}
@@ -11279,13 +11362,16 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
   )
 }
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, birthYear, onHRChange, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onHRChange, onDeviceHRFound, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void
   preferredUnits: 'km' | 'mi'; onUnitsChange: (u: 'km' | 'mi') => void
   preferredMetric: 'distance' | 'duration'; onMetricChange: (m: 'distance' | 'duration') => void
-  restingHR: number | null; maxHR: number | null; birthYear?: number | null; onHRChange: (rhr: number, mhr: number) => void
+  restingHR: number | null; maxHR: number | null; maxHrSource?: 'observed' | 'user_confirmed' | null; birthYear?: number | null; onHRChange: (rhr: number, mhr: number) => void
+  /** §50 (HR-MAX-01) — device-sourced HR from a Settings reconnect. Tags 'observed'
+   *  provenance (a floor), distinct from onHRChange's user_confirmed manual save. */
+  onDeviceHRFound?: (rhr: number | null, mhr: number | null) => void
   firstName: string; lastName: string; profileEmail: string
   onProfileChange: (fn: string, ln: string, em: string) => void
   onOpenGenerate?: () => void
@@ -11589,6 +11675,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         <HRZonesSection
           restingHR={restingHR}
           maxHR={maxHR}
+          maxHrSource={maxHrSource}
           birthYear={birthYear}
           onSave={onHRChange}
           hrZoneMethod={(plan?.meta as any)?.hr_zone_method ?? null}
@@ -11677,23 +11764,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         <SectionLabel>Connections</SectionLabel>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <AppleHealthConnectionRow
-            onHRFound={async (rhr, mhr) => {
-              const newRhr = restingHR != null ? restingHR : rhr
-              const newMhr = maxHR     != null ? maxHR     : mhr
-              if (newRhr != null || newMhr != null) {
-                if (newRhr != null) onHRChange(newRhr, newMhr ?? maxHR ?? 0)
-                try {
-                  const supabase = createClient()
-                  const { data: { user } } = await supabase.auth.getUser()
-                  if (user) await supabase.from('user_settings').upsert({
-                    id:         user.id,
-                    resting_hr: newRhr ?? undefined,
-                    max_hr:     newMhr ?? undefined,
-                    updated_at: new Date().toISOString(),
-                  })
-                } catch {}
-              }
-            }}
+            onHRFound={(rhr, mhr) => onDeviceHRFound?.(rhr, mhr)}
           />
           <StravaConnectionRow />
         </div>

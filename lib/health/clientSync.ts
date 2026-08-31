@@ -34,6 +34,10 @@ const ACTIVE_SLEEP_STATES   = new Set(['asleep', 'rem', 'deep', 'light'])
  *  Plugin paginates internally; we cap at 10000 to be safe and clipped down to a 1Hz-equivalent
  *  set. The zone-bucketing kernel weights samples equally so 10k is plenty resolution. */
 const HR_SAMPLES_PER_WORKOUT_LIMIT = 10000
+/** HR-MAX-01: cap the workout-peak scan in fetchAppleHealthHRSnapshot. 2 pages ×
+ *  50 = 100 running workouts covers an amateur's 90-day window many times over;
+ *  the bound stops a heavy user's history from stalling the connect/wizard read. */
+const WORKOUT_PEAK_MAX_PAGES = 2
 
 // ─── Plugin-agnostic transport helpers ─────────────────────────────────────
 
@@ -132,6 +136,14 @@ export async function fetchAppleHealthHRSnapshot(): Promise<AppleHealthHRSnapsho
   const ninetyDaysAgo = isoDaysAgo(90)
   const now           = new Date().toISOString()
 
+  // HR-MAX-01 part 3 — the observed max is a *max over the window*, but
+  // `readSamples(heartRate, limit: N, ascending: false)` returns the N most
+  // recent samples, which on a watch logging HR continuously can span a day or
+  // two, not 90 — systematically understating the peak. The genuine peaks live
+  // in workouts, which `queryWorkouts` paginates across the full window. So the
+  // observed max is the greater of (a) a cheap recent raw-sample max and (b) the
+  // peak HR across running workouts in the window. §50 still treats whatever
+  // this returns as a floor, not a maximum.
   const [rhrRes, hrRes] = await Promise.all([
     Health.readSamples({ dataType: 'restingHeartRate', startDate: ninetyDaysAgo, endDate: now, limit: 30, ascending: false }),
     Health.readSamples({ dataType: 'heartRate',        startDate: ninetyDaysAgo, endDate: now, limit: 5000, ascending: false }),
@@ -140,8 +152,43 @@ export async function fetchAppleHealthHRSnapshot(): Promise<AppleHealthHRSnapsho
   const rhrLatest = rhrRes.samples[0]?.value
   const restingHR = rhrLatest && rhrLatest > 0 ? Math.round(rhrLatest) : null
 
-  const maxHRRaw = hrRes.samples.reduce((m, s) => Math.max(m, s.value || 0), 0)
-  const maxHR    = maxHRRaw > 0 ? Math.round(maxHRRaw) : null
+  let maxHRRaw = hrRes.samples.reduce((m, s) => Math.max(m, s.value || 0), 0)
+
+  // Scan workout HR peaks across the window so an older hard effort isn't missed.
+  // Bounded pagination keeps this cheap — an amateur's 90 days is well under one
+  // page — and failures degrade to the recent-sample max above.
+  try {
+    let anchor: string | undefined
+    for (let page = 0; page < WORKOUT_PEAK_MAX_PAGES; page++) {
+      const res = await Health.queryWorkouts({
+        workoutType: 'running',
+        startDate:   ninetyDaysAgo,
+        endDate:     now,
+        limit:       50,
+        ascending:   false,
+        anchor,
+      })
+      if (!res.workouts.length) break
+      for (const workout of res.workouts) {
+        try {
+          const hrSamplesRes = await Health.readSamples({
+            dataType:  'heartRate',
+            startDate: workout.startDate,
+            endDate:   workout.endDate,
+            limit:     HR_SAMPLES_PER_WORKOUT_LIMIT,
+            ascending: false,
+          })
+          for (const s of hrSamplesRes.samples) {
+            if ((s.value || 0) > maxHRRaw) maxHRRaw = s.value
+          }
+        } catch { /* one workout's HR read failed — skip it */ }
+      }
+      anchor = (res as { anchor?: string }).anchor
+      if (!anchor) break
+    }
+  } catch { /* workout scan unavailable — keep the recent-sample max */ }
+
+  const maxHR = maxHRRaw > 0 ? Math.round(maxHRRaw) : null
 
   // Return null only when we have nothing at all. Partial data is useful — a
   // user with passive RHR from their watch but no recent workouts shouldn't
