@@ -658,6 +658,12 @@ export interface CatalogueSelectorArgs {
   preferredCategory?: CatalogueCategory
   // CoachingPrinciples §21 — exclude hill sessions during base/build when set.
   excludeHillSessions?: boolean
+  // CoachingPrinciples §79 (2026-08-31) — returning-runner intensity re-entry.
+  // Excludes the highest tissue-stress quality (category 'vo2max' — VO2max
+  // intervals AND hill reps) so a returning/elevated runner's opening weeks lead
+  // with tempo/threshold while tissue tolerance rebuilds. Aerobic engine returns
+  // faster than musculoskeletal readiness; this closes the gap.
+  excludeHighTissueStress?: boolean
   // CoachingPrinciples §53 (CAT-ULTRA-THIN-01) — plan-level tally of how many
   // times each catalogue row has been selected so far, threaded by the caller so
   // selection can exhaust the eligible pool before repeating a row (least-used
@@ -715,7 +721,7 @@ function isLongRunSession(row: SessionCatalogueRow): boolean {
  * regenerated produces same selection.
  */
 export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCatalogueRow | null {
-  const { catalogue, phase, distanceKey, fitness, tier, weekN, slotIndex = 0, weeklyKm, preferredCategory, excludeHillSessions, rowUsage, rowLast } = args
+  const { catalogue, phase, distanceKey, fitness, tier, weekN, slotIndex = 0, weeklyKm, preferredCategory, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast } = args
 
   const userRank = FITNESS_RANK[fitness]
   const tierFilter = (row: SessionCatalogueRow) => tier === 'free' ? row.is_free_tier : true
@@ -730,7 +736,10 @@ export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCata
     (row.min_weekly_km == null || (weeklyKm != null && weeklyKm >= row.min_weekly_km)) &&
     tierFilter(row) &&
     !isLongRunSession(row) &&  // long-run-with-segment rows are picked by the long-run path, not as quality
-    (!excludeHillSessions || !isHillSession(row))
+    (!excludeHillSessions || !isHillSession(row)) &&
+    // §79 — returning-runner re-entry withholds VO2max-category work (intervals
+    // AND hill reps, which are categorised vo2max) until tissue tolerance rebuilds.
+    (!excludeHighTissueStress || row.category !== 'vo2max')
   )
 
   if (baseEligible.length === 0) return null

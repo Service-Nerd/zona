@@ -84,6 +84,15 @@ export const GENERATION_CONFIG = {
   MAX_WEEKLY_VOLUME_INCREASE_PCT: 10,
   RETURNING_RUNNER_ALLOWANCE_PCT: 15,
   RETURNING_RUNNER_GRACE_WEEKS:    3,
+  // CoachingPrinciples §79 (returning-runner intensity re-entry, 2026-08-31,
+  // Coaching Board / Willy). A returning experienced runner's aerobic engine and
+  // skill return weeks ahead of their musculoskeletal readiness — they FEEL ready
+  // for intervals and hills before the tissue is. So when the engine lifts (or the
+  // user raises) intensity for a returning/low-volume runner, the highest
+  // tissue-stress quality (VO2max intervals and hill reps — both category
+  // 'vo2max') is withheld for this many opening weeks; tempo/threshold carry the
+  // quality load first, mirroring §21's staged reintroduction.
+  RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS: 4,
   // CoachingPrinciples §50 (plausibility, amended 2026-08-06; asymmetry added
   // 2026-08-31) — the UPPER tolerance. A supplied max_hr more than this ABOVE
   // the Tanaka age estimate is treated as a sensor artifact and rejected; the

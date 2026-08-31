@@ -1956,6 +1956,26 @@ The asymmetry in the resolution is deliberate: **volume is where injuries come f
 
 **Meta.** When the signals disagree, `fitness_intensity_level` carries the higher level and `fitness_signal_note` explains the split in plain English — otherwise a consumer reads `fitness_level: 'beginner'` next to a quality session and sees a contradiction with no explanation.
 
+### Returning runners & user-selectable level — amended 2026-08-31 (Coaching Board, CORRECT WITH AMENDMENT)
+
+**Two signals were not enough for the runner in a dip. Training age is the third.**
+
+**Principle.** A deep **training age** (`2-5yr` / `5yr+`) is a third fitness signal, consulted for **intensity only**. When such a runner reads `beginner` on current volume, they are **returning, not new** — a layoff erases volume, not the skill or the aerobic base that comes back fast. Their intensity allowance is therefore lifted off the beginner floor (to at least intermediate) so they are not handed a true-beginner's zero-quality plan. **Structure is untouched** — volume, peak km, ramp and long-run caps stay bound to current volume (§2, §29, §371), because tonnage is where injuries come from. This is §79's existing asymmetry, extended: training age answers "what can they *do*", volume answers "what can they *absorb now*".
+
+**Why.** Founder case (2026-08-30): an experienced ultra runner, volume down after a 100K, generated a 10K plan classified `beginner` — no benchmark, so both original signals read the low current volume. The result was a true-beginner plan: **zero quality** (`QUALITY_SESSIONS_PER_WEEK_MAX.beginner = 0` removed all tempo/threshold/intervals/hills) and **duration-primary** sessions (§ metric). Neither fit a lifelong runner. The engine had the signal to know better — `training_age` — and ignored it for intensity.
+
+**The metric recommendation follows experience, not raw volume.** Duration-primary is the *beginner* and *ultra* default (time on feet, §80). It is now keyed to `intensity` (which incorporates the training-age lift), not `structural` (raw current volume) — so a returning or experienced runner sees **distance** even when their current volume reads low, while a true beginner (every signal agreeing) still gets duration. (User-overridable per session or globally — display preference, ADR-015.)
+
+**Progressive intensity re-entry (Willy, mandatory).** Cardiovascular readiness returns weeks ahead of musculoskeletal readiness — a returning runner *feels* ready for intervals and hills before the tissue is. So when intensity is lifted (or user-raised) for a returning/fresh-return runner, the **highest tissue-stress quality — VO2max intervals and hill reps (both catalogue category `vo2max`) — is withheld for the opening `RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS`**; tempo and threshold carry the quality load first, mirroring §21's staged reintroduction. `intensity_reentry_active` / `intensity_reentry_weeks` surface this in meta.
+
+**User-selectable level (wizard).** The engine's assessment is a **recommendation the runner can override** (the wizard shows the recommended level and lets them change it). A user override raises the **intensity** allowance only; the structural volume/ramp/long-run caps stay bound to the conservative assessment (agency raises intensity, never tonnage — §10), and the same progressive re-entry applies. *(Wizard wiring lands in a follow-up; the engine already reads `input.fitness_level`.)*
+
+**Distribution still governs.** A user-elevated intensity on low volume cannot blow the §1 quality-share ceiling — `INV-PLAN-INTENSITY-DISTRIBUTION` remains binding at the elevated level.
+
+**Config.** `GENERATION_CONFIG.RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS = 4`.
+
+**Invariant.** `INV-PLAN-RETURNING-INTENSITY-REENTRY` — no VO2max-category session in weeks 1–`intensity_reentry_weeks` of a re-entry-active plan.
+
 ---
 
 ## 80. Finish-goal long run — time on feet, not distance

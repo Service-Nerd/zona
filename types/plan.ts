@@ -445,6 +445,12 @@ export interface PlanMeta {
 
   fitness_intensity_level?: 'beginner' | 'intermediate' | 'experienced'
   fitness_signal_note?: string
+  // §79 (HR-MAX/returning-runner, 2026-08-31) — progressive intensity re-entry.
+  // When active, VO2max intervals + hill reps are withheld for the opening
+  // `intensity_reentry_weeks` while tissue tolerance rebuilds. Asserted by
+  // INV-PLAN-RETURNING-INTENSITY-REENTRY.
+  intensity_reentry_active?: boolean
+  intensity_reentry_weeks?: number
 
   hr_zone_method?: 'karvonen' | 'karvonen_estimated_max' | 'percent_of_max' | 'percent_of_estimated_max'
                  | 'observed_max' | 'age_estimate_implausible_input' | 'age_estimate_max_floor'

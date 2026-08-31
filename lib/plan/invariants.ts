@@ -38,6 +38,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-COACH-NOTES-MATCH-INTENT',
   'INV-PLAN-LABEL-MATCHES-PACE',
   'INV-PLAN-INJURY-NO-HILLS',
+  'INV-PLAN-RETURNING-INTENSITY-REENTRY',
   'INV-PLAN-RACE-WEEK-SHARPENING',
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE',
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO',
@@ -589,6 +590,32 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
               expected: 'no hill session',
             })
           }
+        }
+      }
+    }
+
+    // INV-PLAN-RETURNING-INTENSITY-REENTRY — a returning runner's aerobic engine
+    // returns ahead of their tissue tolerance, so when the engine lifts (or the
+    // user raises) their intensity, the highest tissue-stress quality (VO2max
+    // intervals + hill reps, both catalogue category 'vo2max') is withheld for the
+    // opening `intensity_reentry_weeks`. Detected structurally via catalogue_id →
+    // category (ADR-018), not the label (which the enricher rewrites).
+    // (CoachingPrinciples §79)
+    if (plan.meta.intensity_reentry_active && w.n <= (plan.meta.intensity_reentry_weeks ?? 0)) {
+      for (const { day, session } of placedRunning) {
+        const row = session.catalogue_id
+          ? V1_SESSION_CATALOGUE.find(r => r.id === session.catalogue_id)
+          : undefined
+        if (row?.category === 'vo2max') {
+          violations.push({
+            code: 'INV-PLAN-RETURNING-INTENSITY-REENTRY',
+            principle_ref: 'CoachingPrinciples §79',
+            severity: 'error',
+            week: w.n, day,
+            message: `VO2max/hill session "${session.label}" prescribed in week ${w.n}, inside the ${plan.meta.intensity_reentry_weeks}-week returning-runner intensity re-entry — tempo/threshold only until tissue rebuilds`,
+            actual: `${row.id} (vo2max) in re-entry week ${w.n}`,
+            expected: `no vo2max/hill sessions in weeks 1–${plan.meta.intensity_reentry_weeks}`,
+          })
         }
       }
     }

@@ -219,20 +219,65 @@ interface FitnessAssessment {
   intensity: FitnessLevel
   /** True when the two signals disagreed — surfaced in meta for honesty. */
   signalsDisagree: boolean
+  /**
+   * CoachingPrinciples §79 (returning-runner intensity, 2026-08-31). True when a
+   * deep training age rescued a beginner-by-volume intensity — i.e. an experienced
+   * runner returning from a layoff. The plan lifts their INTENSITY allowance (they
+   * have the skill and the aerobic base returns fast) but must gate the highest
+   * tissue-stress work through a progressive re-entry — tissue tolerance lags.
+   */
+  intensityLiftedForReturn: boolean
 }
 
-function assessFitness(weeklyKm: number, longestKm: number, vdot?: number): FitnessAssessment {
+/**
+ * @param trainingAgeExperienced  CoachingPrinciples §79 — when a runner with a deep
+ *   training age (2-5yr / 5yr+) reads beginner on CURRENT volume, they are a
+ *   returning runner, not a beginner. Volume measures what they can absorb *now*;
+ *   training age measures the skill and aerobic base a layoff has not erased. Their
+ *   intensity allowance is lifted off the beginner floor so a returning ultra
+ *   runner is not handed a true-beginner's zero-quality plan — while structure
+ *   (volume, caps) stays bound to current volume, and §79's re-entry gate withholds
+ *   VO2max/hills until tissue rebuilds.
+ */
+function assessFitness(
+  weeklyKm: number,
+  longestKm: number,
+  vdot?: number,
+  trainingAgeExperienced = false,
+): FitnessAssessment {
   const byVolume = fitnessFromVolume(weeklyKm, longestKm)
+
+  // Base structural/intensity from the two-signal model (§79).
+  let structural: FitnessLevel
+  let intensity:  FitnessLevel
+  let signalsDisagree: boolean
   if (vdot === undefined || !Number.isFinite(vdot)) {
-    return { structural: byVolume, intensity: byVolume, signalsDisagree: false }
+    structural = intensity = byVolume
+    signalsDisagree = false
+  } else {
+    const byVdot = fitnessFromVdot(vdot)
+    if (byVdot === byVolume) {
+      structural = intensity = byVdot
+      signalsDisagree = false
+    } else {
+      structural = FITNESS_RANK[byVdot] < FITNESS_RANK[byVolume] ? byVdot : byVolume
+      intensity  = FITNESS_RANK[byVdot] > FITNESS_RANK[byVolume] ? byVdot : byVolume
+      signalsDisagree = true
+    }
   }
-  const byVdot = fitnessFromVdot(vdot)
-  if (byVdot === byVolume) {
-    return { structural: byVdot, intensity: byVdot, signalsDisagree: false }
+
+  // §79 training-age lift — an experienced runner reading beginner on intensity is
+  // returning, not new. Lift intensity one step (to intermediate); structure is
+  // untouched, so tonnage stays conservative. A truly experienced returner can
+  // raise it further via the wizard (user override, Phase 2).
+  let intensityLiftedForReturn = false
+  if (trainingAgeExperienced && intensity === 'beginner') {
+    intensity = 'intermediate'
+    signalsDisagree = true
+    intensityLiftedForReturn = true
   }
-  const lower  = FITNESS_RANK[byVdot] < FITNESS_RANK[byVolume] ? byVdot : byVolume
-  const higher = FITNESS_RANK[byVdot] > FITNESS_RANK[byVolume] ? byVdot : byVolume
-  return { structural: lower, intensity: higher, signalsDisagree: true }
+
+  return { structural, intensity, signalsDisagree, intensityLiftedForReturn }
 }
 
 // ─── Zone computation ─────────────────────────────────────────────────────────
@@ -1583,6 +1628,11 @@ function buildWeekSessions(
   rowUsage?: Map<string, number>,
   // §36/§53 anti-repeat tie-break state, threaded with rowUsage.
   rowLast?: Map<string, string>,
+  // §79 (2026-08-31) — returning-runner intensity re-entry. When true, the highest
+  // tissue-stress quality (VO2max intervals + hill reps, both category 'vo2max')
+  // is withheld this week; tempo/threshold carry the load. Set by the caller for a
+  // returning/elevated runner's opening weeks. Default false = no restriction.
+  excludeHighTissueStress = false,
 ): Partial<Record<Day, Session>> {
   const blocked = blockedDays(input)
   const distKey = raceDistanceKey(input.race_distance_km)
@@ -2055,12 +2105,12 @@ function buildWeekSessions(
 
         cat1 = raceSpecificTaperRows[0] ?? selectCatalogueSession({
           catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
-          weeklyKm, excludeHillSessions, rowUsage, rowLast,
+          weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast,
         })
       } else {
         cat1 = selectCatalogueSession({
           catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
-          weeklyKm, excludeHillSessions, rowUsage, rowLast,
+          weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast,
         })
       }
       if (process.env.DEBUG_ROT) console.error(`      cat1 -> ${cat1?.id}:${cat1?.category} (pref=${preferredCategory})`)
@@ -2111,7 +2161,7 @@ function buildWeekSessions(
             : preferredCategory
           const cat2 = selectCatalogueSession({
             catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 1, preferredCategory: altCategory,
-            weeklyKm, excludeHillSessions, rowUsage, rowLast,
+            weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast,
           })
           const secondaryFraction = GENERATION_CONFIG.SECONDARY_QUALITY_PCT_OF_PRIMARY / 100
           // SC-10 — size the second (softer) slot off the UNCAPPED base, never the
@@ -3425,8 +3475,11 @@ export function generateRulePlan(
     return discounted
   })()
 
-  // D2 — VDOT and volume answer different questions; consult both.
-  const assessed = assessFitness(input.current_weekly_km, input.longest_recent_run_km, vdot)
+  // D2 — VDOT and volume answer different questions; consult both. §79 (2026-08-31)
+  // — a deep training age lifts the INTENSITY read off the beginner floor for a
+  // returning runner whose current volume alone would misclassify them.
+  const trainingAgeIsExperienced = input.training_age === '2-5yr' || input.training_age === '5yr+'
+  const assessed = assessFitness(input.current_weekly_km, input.longest_recent_run_km, vdot, trainingAgeIsExperienced)
   const fitness: FitnessLevel = input.fitness_level ?? assessed.structural
   const intensityFitness: FitnessLevel = input.fitness_level ?? assessed.intensity
 
@@ -3450,8 +3503,14 @@ export function generateRulePlan(
   const anchoredStartDate = parseDateLocal(anchoredStartIso)
   const phases = computePhases(totalWeeks, input.race_distance_km)
 
+  // §79 (2026-08-31) — the metric recommendation follows EXPERIENCE (intensity),
+  // not raw current volume (structural). Duration is the beginner / ultra default
+  // (time on feet, §80); a returning or experienced runner sees distance even when
+  // their current volume reads low. intensityFitness is 'beginner' only when every
+  // signal agrees the runner is a true beginner, so this narrows duration to
+  // exactly that cohort. (User-overridable per session/globally — Phase 3.)
   const metric: 'distance' | 'duration' =
-    fitness === 'beginner' || input.race_distance_km >= 50 ? 'duration' : 'distance'
+    intensityFitness === 'beginner' || input.race_distance_km >= 50 ? 'duration' : 'distance'
 
   const peakKm = config.peakKmByLevel[fitness]
 
@@ -3464,7 +3523,7 @@ export function generateRulePlan(
   //     the user thought to mention it.
   const explicitFreshReturn = input.weeks_at_current_volume !== undefined
     && input.weeks_at_current_volume < GENERATION_CONFIG.FRESH_RETURN_WEEKS_THRESHOLD
-  const trainingAgeIsExperienced = input.training_age === '2-5yr' || input.training_age === '5yr+'
+  // trainingAgeIsExperienced declared above (fed to assessFitness for the §79 lift).
   const heuristicFreshReturn = trainingAgeIsExperienced
     && input.current_weekly_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_WEEKLY_KM
     && input.longest_recent_run_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_LONG_RUN_KM
@@ -3487,6 +3546,17 @@ export function generateRulePlan(
   // Fresh-return runners get the standard 10% ramp (no allowance) — their
   // structural base is gone and the cap exists to protect them.
   const returningRunner = !isFreshReturn && isReturningRunner(input, peakKm)
+
+  // §79 (2026-08-31) — progressive intensity re-entry. A returning runner whose
+  // intensity was lifted (or who is otherwise detected as returning/fresh) has an
+  // aerobic engine ahead of their tissue tolerance. Withhold VO2max/hills for the
+  // opening RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS so quality leads with
+  // tempo/threshold. Surfaced in meta for honesty + the invariant.
+  const intensityReentryActive =
+    assessed.intensityLiftedForReturn || returningRunner || isFreshReturn
+  const intensityReentryWeeks = intensityReentryActive
+    ? GENERATION_CONFIG.RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS
+    : 0
   const { volumes, compressed: capCompressed } = buildVolumeSequence(
     totalWeeks, phases, startKm, peakKm, input.race_distance_km,
     recoveryFreq, returningRunner,
@@ -3605,6 +3675,8 @@ export function generateRulePlan(
       cueCtx,
       rowUsage,
       rowLast,
+      // §79 — withhold VO2max/hills during the returning runner's opening weeks.
+      intensityReentryActive && weekN <= intensityReentryWeeks,
     )
 
     // Advance the rotation only on weeks that actually carried a build quality
@@ -4247,7 +4319,17 @@ export function generateRulePlan(
     // apparent contradiction with no explanation.
     ...(assessed.signalsDisagree ? {
       fitness_intensity_level: intensityFitness,
-      fitness_signal_note: `Your race benchmark and your training volume point to different levels (${fitnessFromVdot(vdot ?? 0)} on benchmark, ${fitnessFromVolume(input.current_weekly_km, input.longest_recent_run_km)} on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.`,
+      // §79 — the note depends on WHY the signals split. A training-age lift
+      // (returning runner, no benchmark) must not claim a benchmark disagreement.
+      fitness_signal_note: assessed.intensityLiftedForReturn
+        ? `Your current volume reads like a beginner's, but your training history says you're not one — you're a runner coming back, not starting out. So the plan keeps the mileage cautious while it rebuilds, but gives you real quality work rather than a true beginner's easy-only plan. Hard sessions ease in over the first few weeks (your fitness returns faster than your tendons and bones do), and recovery and fuelling matter more coming back than they did at your peak.`
+        : `Your race benchmark and your training volume point to different levels (${fitnessFromVdot(vdot ?? 0)} on benchmark, ${fitnessFromVolume(input.current_weekly_km, input.longest_recent_run_km)} on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.`,
+    } : {}),
+    // §79 (2026-08-31) — progressive intensity re-entry surfaced for honesty + the
+    // INV-PLAN-RETURNING-INTENSITY-REENTRY invariant.
+    ...(intensityReentryActive ? {
+      intensity_reentry_active: true,
+      intensity_reentry_weeks: intensityReentryWeeks,
     } : {}),
     goal:                      input.goal,
     target_time:               input.target_time,
