@@ -3394,18 +3394,46 @@ export function generateRulePlan(
   // returning runner whose current volume alone would misclassify them.
   const trainingAgeIsExperienced = input.training_age === '2-5yr' || input.training_age === '5yr+'
   const assessed = assessFitness(input.current_weekly_km, input.longest_recent_run_km, vdot, trainingAgeIsExperienced)
-  // §79 (2026-08-31, Coaching Board) — a user-selected `fitness_level` is honoured.
-  // Tissue safety on the VOLUME side does NOT depend on this value: the start
-  // volume (§29/§371 caps), the +10%/wk ramp (§2) and the long-run caps are all
-  // computed from current volume and training age, independent of fitness_level,
-  // so they stay bound however the user self-declares. On the INTENSITY side, the
-  // Phase-1 progressive re-entry gate (§79) withholds VO2max/hills for a returning
-  // runner's opening weeks. So "agency raises intensity, never *unsafe* tonnage"
-  // is delivered by those caps, not by refusing the declared level for peak km —
-  // binding peak km to assessed volume instead over-labels ordinary declared-higher
-  // runners as `maintenance` (a §75-threshold interaction; board follow-up).
-  const fitness: FitnessLevel = input.fitness_level ?? assessed.structural
-  const intensityFitness: FitnessLevel = input.fitness_level ?? assessed.intensity
+  // §79 (2026-09-02, Coaching Board) — TWO axes, TWO inputs. Do not merge them.
+  //
+  //   `input.fitness_level`       — the API-level STRUCTURAL declaration. When
+  //                                 supplied it stands in for the volume-derived
+  //                                 assessment (long-standing contract; the
+  //                                 archetype matrix and property sweep rely on
+  //                                 it). Unchanged by this amendment.
+  //   `input.user_declared_level` — what the RUNNER picked in the wizard.
+  //
+  // The runner's declaration binds asymmetrically:
+  //   UPWARD   → intensity allowance only. Peak km, the week-1 volume floor, the
+  //              ramp and the long-run caps stay on the assessment.
+  //   DOWNWARD → both. A runner volunteering caution is credible about caution.
+  //
+  // The previous revision let a declaration set `fitness`, and `fitness` sets
+  // `peakKm`, and `peakKm` sets the week-1 floor at BUILD_VOL_INIT_FLOOR_VS_PEAK
+  // (`Math.max(startKm, initFloor)`) — so a dropdown raised starting tonnage
+  // above the runner's actual current volume. The comment that used to sit here
+  // claimed the start volume was independent of the level; line 477 disagreed.
+  // Measured before the fix: 10K 15km/wk declaring `experienced` went wk1 13→20,
+  // peak 18→35; a `<6mo` novice's marathon peak went 42→55.
+  const assessedStructural: FitnessLevel = input.fitness_level ?? assessed.structural
+  const assessedIntensity:  FitnessLevel = input.fitness_level ?? assessed.intensity
+
+  const declaredLevel = input.user_declared_level
+  const declaredIsDownward =
+    declaredLevel !== undefined
+    && FITNESS_RANK[declaredLevel] < FITNESS_RANK[assessedStructural]
+
+  // Structure moves for a declaration ONLY downward (the config flag names the
+  // rule; flipping it to false would restore symmetric binding).
+  const fitness: FitnessLevel =
+    (GENERATION_CONFIG.USER_DECLARED_LEVEL_BINDS_STRUCTURE_DOWNWARD_ONLY
+      ? (declaredIsDownward ? declaredLevel! : assessedStructural)
+      : (declaredLevel ?? assessedStructural))
+
+  // Intensity always follows the declaration when there is one — that is the
+  // agency the wizard offers. §1's distribution ceiling and the §79 re-entry
+  // gate remain binding at the elevated level.
+  const intensityFitness: FitnessLevel = declaredLevel ?? assessedIntensity
 
   const rhr = input.resting_hr && input.resting_hr > 0 ? input.resting_hr : undefined
   const pace: PaceGuide = (vdot !== undefined && vdotRaw !== undefined)
@@ -4236,13 +4264,28 @@ export function generateRulePlan(
     primary_metric: metric,
 
     fitness_level:             fitness,
+    // §79 (2026-09-02) — what the RUNNER selected, recorded verbatim. Distinct
+    // from `fitness_level` (what the engine built volume from). Absent when the
+    // wizard passed nothing. `INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE` compares
+    // the two without re-running the assessment.
+    ...(declaredLevel ? { fitness_level_declared: declaredLevel } : {}),
+    // §79 (2026-09-02) — stamp the intensity level whenever it DIFFERS from the
+    // structural one, not only when the VDOT/volume signals disagreed. A user
+    // declaration now elevates intensity on its own, and the reshape validator
+    // reconstructs its input from this meta (`validateReshapedPlan` →
+    // `validatePlan`, which keys the quality-per-week ceiling off the intensity
+    // level). If the elevated level is missing here, a legitimate quality
+    // session is validated against the structural ceiling and the plan fails
+    // its own invariant on the next reshape — throwing in dev/test and logging
+    // a false `reshape_invalid` in prod. Stamping unconditionally-on-difference
+    // is what keeps meta self-consistent.
+    ...(intensityFitness !== fitness ? { fitness_intensity_level: intensityFitness } : {}),
     // D2 — when VDOT and volume disagree, `fitness_level` is the conservative
     // (structural) answer and intensity is allowed at the higher level. Surface
-    // both, plus a plain-English note, so a consumer reading
-    // `fitness_level: 'beginner'` next to a quality session isn't looking at an
-    // apparent contradiction with no explanation.
+    // a plain-English note, so a consumer reading `fitness_level: 'beginner'`
+    // next to a quality session isn't looking at an apparent contradiction with
+    // no explanation.
     ...(assessed.signalsDisagree ? {
-      fitness_intensity_level: intensityFitness,
       // §79 — the note depends on WHY the signals split. A training-age lift
       // (returning runner, no benchmark) must not claim a benchmark disagreement.
       fitness_signal_note: assessed.intensityLiftedForReturn

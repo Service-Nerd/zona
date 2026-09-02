@@ -142,6 +142,9 @@ export const PlanMetaSchema = z.object({
   primary_metric: z.enum(['distance', 'duration']).optional(),
 
   fitness_level:             z.enum(['beginner', 'intermediate', 'experienced']).optional(),
+  // §79 — the level the runner selected in the wizard, distinct from the
+  // structural `fitness_level` the engine built volume from.
+  fitness_level_declared:    z.enum(['beginner', 'intermediate', 'experienced']).optional(),
   goal:                      z.enum(['finish', 'time_target']).optional(),
   target_time:               z.string().optional(),
   days_available:            z.number().int().optional(),

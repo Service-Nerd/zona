@@ -806,18 +806,22 @@ export default function GeneratePlanScreen({
       } catch {}
     }
 
-    // §79 — pass fitness_level ONLY when the runner overrode the recommendation.
-    // Accepting it (fitnessLevel null, or equal to the recommendation) passes
-    // undefined so the engine's assessment stands — which keeps the returning
-    // runner's conservative volume + lifted intensity split (Phase 1). A genuine
-    // override sets input.fitness_level (raises intensity; volume caps still bind).
+    // §79 (2026-09-02) — send the runner's level on `user_declared_level`,
+    // WHETHER ACCEPTED OR OVERRIDDEN, and never on `fitness_level` (which is the
+    // API's structural declaration and would set peak km).
+    //
+    // The earlier revision passed the level only on a genuine override, and
+    // passed `undefined` on accept, because `fitness_level` bound peak km and
+    // threading an accepted level through pushed ordinary runners into a
+    // `maintenance` label. That workaround left an honesty seam: the level the
+    // runner saw and accepted was not the value the engine received. Now that a
+    // declaration cannot touch structure upward, the seam closes — the engine
+    // receives exactly what the runner chose.
     const levelRec = recommendFitnessLevel(
       weeklyKmVal, longestRunVal,
       trainingAge === '2-5yr' || trainingAge === '5yr+',
     )
-    const fitnessLevelOverride = fitnessLevel && fitnessLevel !== levelRec.level
-      ? fitnessLevel
-      : undefined
+    const declaredLevel = fitnessLevel ?? levelRec.level
 
     const input: GeneratorInput = {
       race_date:             raceDate,
@@ -833,7 +837,7 @@ export default function GeneratePlanScreen({
       max_hr:                hkMHR ?? undefined,
       max_hr_source:         mhrSource,
       training_age:          trainingAge ?? undefined,
-      fitness_level:         fitnessLevelOverride,
+      user_declared_level:   declaredLevel,
       preferred_long_run_day: week.longDay ?? 'sun',
       benchmark,
       days_cannot_train:     week.restShort.length ? week.restShort.map(k => FULL_BY_SHORT[k]) : undefined,

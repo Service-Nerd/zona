@@ -25,8 +25,34 @@ export interface GeneratorInput {
   days_available: number
   age: number                   // used for Tanaka max HR derivation
 
-  // Derived server-side (optional — computed from age + data if absent)
+  // Derived server-side (optional — computed from age + data if absent).
+  // API-level STRUCTURAL declaration: when supplied it stands in for the
+  // volume-derived assessment and drives peak km / volume caps. This is the
+  // long-standing contract (docs/contracts/api/generate-plan.md) — do NOT
+  // repurpose it for the wizard's user selection; that is `user_declared_level`.
   fitness_level?: 'beginner' | 'intermediate' | 'experienced'
+  /**
+   * CoachingPrinciples §79 — the level the RUNNER selected in the wizard
+   * (accepted recommendation or override). Deliberately separate from
+   * `fitness_level` because the two carry different authority:
+   *
+   *   - UPWARD of the assessment  → raises the INTENSITY allowance only.
+   *     Peak km, week-1 volume, ramp and long-run caps stay on the assessment.
+   *     A self-declaration is not evidence of tissue tolerance (§10, Willy).
+   *   - DOWNWARD of the assessment → binds BOTH intensity and structure.
+   *     A runner volunteering caution is credible about themselves.
+   *
+   * The asymmetry mirrors §50's max-HR guard: evidence in one direction is
+   * informative, in the other it is not.
+   */
+  user_declared_level?: 'beginner' | 'intermediate' | 'experienced'
+  /**
+   * CoachingPrinciples §79 — the intensity allowance the plan was built with.
+   * Not a wizard input: the engine derives it, and `validateReshapedPlan` feeds
+   * it back in from plan meta so the quality-per-week ceiling is checked against
+   * the level the plan was actually built at rather than the structural one.
+   */
+  fitness_intensity_level?: 'beginner' | 'intermediate' | 'experienced'
   resting_hr?: number           // optional — improves zone accuracy via Karvonen
   max_hr?: number               // optional — derived from age (Tanaka: 208 − 0.7 × age)
   /**
@@ -449,6 +475,15 @@ export interface PlanMeta {
   long_run_shortfall_note?: string
 
   fitness_intensity_level?: 'beginner' | 'intermediate' | 'experienced'
+  /**
+   * CoachingPrinciples §79 — the level the runner selected in the wizard, as
+   * distinct from `fitness_level` (the STRUCTURAL level the engine actually
+   * built volume from) and `fitness_intensity_level` (the allowance used for
+   * quality). Stamped so `INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE` can compare
+   * declaration against structure without re-running the assessment, and so a
+   * plan records what the runner was told they were getting.
+   */
+  fitness_level_declared?: 'beginner' | 'intermediate' | 'experienced'
   fitness_signal_note?: string
   // §79 (HR-MAX/returning-runner, 2026-08-31) — progressive intensity re-entry.
   // When active, VO2max intervals + hill reps are withheld for the opening

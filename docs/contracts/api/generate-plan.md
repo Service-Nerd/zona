@@ -40,7 +40,22 @@ Body: GeneratorInput
 ```typescript
 {
   // Fitness — all derived server-side; supply to override derivation
+  //
+  // TWO fields, TWO authorities (CoachingPrinciples §79, 2026-09-02). Do not
+  // conflate them — collapsing them into one enum is what produced the defect
+  // where a wizard dropdown raised prescribed tonnage.
+  //
+  //   fitness_level        — the STRUCTURAL declaration. A caller asserting what
+  //                          the runner is. Drives peak km + volume caps, exactly
+  //                          as it always has. The archetype matrix and property
+  //                          sweep depend on this behaviour.
+  //   user_declared_level  — what the RUNNER picked in the wizard. Binds
+  //                          ASYMMETRICALLY: upward of the engine's assessment it
+  //                          raises the INTENSITY allowance only (structure stays
+  //                          on the assessment); downward it binds both. A
+  //                          self-declaration is not evidence of tissue tolerance.
   fitness_level?: 'beginner' | 'intermediate' | 'experienced'  // derived from data if absent
+  user_declared_level?: 'beginner' | 'intermediate' | 'experienced'  // wizard selection; intensity-only upward
   resting_hr?: number             // improves Karvonen zone accuracy; falls back to HRmax%
   max_hr?: number                 // derived from age via Tanaka if absent
   training_age?: '<6mo' | '6-18mo' | '2-5yr' | '5yr+'  // R23 rebuild — drives returning-runner allowance

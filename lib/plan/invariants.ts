@@ -17,7 +17,8 @@ import { isLongRun, isShakeout, classifyStimulus, isVo2maxSession } from './sess
 import { mainSetMinutes } from './sessionFormat'
 import { isV2Structure } from './sessionStructureV2'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
-import { parseDateLocal, formatDate } from './length'
+import { parseDateLocal, formatDate, getDistanceConfig } from './length'
+import { FITNESS_RANK } from './fitnessAssessment'
 
 export type Severity = 'error' | 'warn'
 
@@ -79,6 +80,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-LR-MAX-WEEKLY-PCT',
   'INV-PLAN-HR-ASSUMPTIONS-SURFACED',
   'INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR',
+  'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE',
   'INV-PLAN-FOUNDATION-BLOCK',
   'INV-PLAN-5K10K-LR-PACE-CAP',
   'INV-PLAN-BUILD-LR-SEGMENT-CAP',
@@ -288,7 +290,20 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   const minRatio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
   const distKey = raceDistanceKey(input.race_distance_km)
   const longCapMins = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
-  const fitness = input.fitness_level
+  // §79 (2026-09-02) — the quality-per-week ceiling is an INTENSITY rule, so it
+  // must key off the intensity level. Two reasons this is not the structural one:
+  //
+  //  1. A user declaration (or the returning-runner lift) raises intensity above
+  //     structure. Validating an elevated-intensity plan against the structural
+  //     ceiling fails a legitimately-built plan — the failure mode that bites on
+  //     the reshape path, where `validateReshapedPlan` reconstructs this input
+  //     from plan meta.
+  //  2. `input.fitness_level` is undefined for every runner who accepted the
+  //     wizard's recommendation, so this check previously self-skipped on the
+  //     entire accept path — i.e. the ceiling was unenforced for most real users.
+  //     `fitness_intensity_level` is stamped whenever it differs, so preferring
+  //     it closes that hole too.
+  const fitness = input.fitness_intensity_level ?? input.fitness_level
   const qualityMaxPerWeek = fitness ? GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX[fitness] : undefined
   const minHoursQualLong = GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG
   const minDaysQualLong = Math.ceil(minHoursQualLong / 24)
@@ -911,7 +926,12 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     // beyond base aerobic capacity. Skipping it across an entire build/peak
     // phase is a coaching defect, not a tuning choice.)
     if (!isRaceWeek && w.phase && w.phase !== 'base' && w.phase !== 'foundation' && w.type !== 'deload') {
-      const planFitness = plan.meta.fitness_level
+      // §79 (2026-09-02) — "should this week have quality?" is an intensity
+      // question, so read the intensity level where one is stamped. A returning
+      // runner is structurally `beginner` but is deliberately given real quality;
+      // reading the structural level would stop expecting it and silently retire
+      // this check for exactly the cohort Phase 1 was built for.
+      const planFitness = plan.meta.fitness_intensity_level ?? plan.meta.fitness_level
       const hsr = input.hard_session_relationship
       const hasAchilles = (input.injury_history ?? []).some(i => i.toLowerCase().includes('achilles'))
       const expectQuality = (planFitness === 'intermediate' || planFitness === 'experienced')
@@ -2385,6 +2405,46 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     }
   }
 
+  // INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE — a runner who declares a level ABOVE
+  // the engine's assessment gets the intensity allowance, never the tonnage. A
+  // self-declaration is not evidence of tissue tolerance (§10, §79). So a plan
+  // whose declared level outranks its structural level must not peak above the
+  // STRUCTURAL band's ceiling.
+  //
+  // Why peak weekly volume is the right thing to measure: `fitness_level` sets
+  // `peakKm`, and `peakKm` sets both the ceiling and — via
+  // BUILD_VOL_INIT_FLOOR_VS_PEAK — the week-1 floor. Checking the delivered peak
+  // catches both without re-running the generator.
+  //
+  // Downward declarations are exempt by design: they legitimately bind structure
+  // (a runner volunteering caution is heard on tonnage), so their peak SHOULD
+  // reflect the declared level. (CoachingPrinciples §79)
+  {
+    const declared = plan.meta.fitness_level_declared
+    const structural = plan.meta.fitness_level
+    if (declared && structural && FITNESS_RANK[declared] > FITNESS_RANK[structural]) {
+      const band = getDistanceConfig(plan.meta.race_distance_km ?? 0).peakKmByLevel
+      const structuralCeiling = band[structural]
+      const declaredCeiling = band[declared]
+      const actualPeak = Math.max(0, ...plan.weeks.map(w => w.weekly_km ?? 0))
+      // Tolerance: the ceiling is a target the ramp approaches, and rounding plus
+      // the long-run share can land a km or two over. Only flag a peak that has
+      // clearly been built to the DECLARED band instead of the structural one.
+      const tolerance = 1 + GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT / 100
+      if (actualPeak > structuralCeiling * tolerance) {
+        violations.push({
+          code: 'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE',
+          principle_ref: 'CoachingPrinciples §79',
+          severity: 'error',
+          week: 0,
+          message: `Runner declared "${declared}" against an assessed "${structural}", and the plan peaks at ${actualPeak}km — above the ${structural} ceiling of ${structuralCeiling}km (the ${declared} band is ${declaredCeiling}km). An upward declaration raises the intensity allowance, never tonnage: peak km must stay on the assessment.`,
+          actual: `peak ${actualPeak}km, declared ${declared}, structural ${structural}`,
+          expected: `peak ≤ ${Math.round(structuralCeiling * tolerance)}km (${structural} band)`,
+        })
+      }
+    }
+  }
+
   // INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR — no plan may rest on a device-observed
   // or unattributed max HR below its own age-estimated max. A recorded max below the
   // estimate is a floor (§50 asymmetry, HR-MAX-01); the engine must have fallen back
@@ -2764,6 +2824,12 @@ export function validateReshapedPlan(plan: Plan, reshapedWeekN?: number): Violat
     days_available:        m.days_available ?? 7,
     age:                   m.age ?? 40,
     fitness_level:         m.fitness_level,
+    // §79 (2026-09-02) — carry the intensity level across the meta→input
+    // round-trip. Without it the quality-per-week ceiling above re-derives from
+    // the structural level and a legitimately elevated-intensity plan fails
+    // validation on every reshape.
+    fitness_intensity_level: m.fitness_intensity_level,
+    user_declared_level:   m.fitness_level_declared,
     training_age:          m.training_age,
     injury_history:        m.injury_history,
     hard_session_relationship: m.hard_session_relationship,

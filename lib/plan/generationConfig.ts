@@ -409,6 +409,24 @@ export const GENERATION_CONFIG = {
   // device-only half — see backlog PV2-E.
   BEGINNER_WEEK1_VOLUME_CAP_KM: 30,
 
+  // CoachingPrinciples §79 — a user-selected fitness level binds STRUCTURE
+  // (peak km, week-1 volume floor, ramp, long-run caps) only when it is LOWER
+  // than the engine's assessment. Upward it raises the intensity allowance
+  // alone.
+  //
+  // The asymmetry is evidential, and it mirrors §50's max-HR guard exactly: a
+  // runner declaring *less* than the data says is credible about their own
+  // caution; a runner declaring *more* is claiming a tissue tolerance nothing
+  // has demonstrated, and the plan would pay for it in tonnage. Before this
+  // guard, a declared level set `peakKm`, which sets the week-1 floor at
+  // BUILD_VOL_INIT_FLOOR_VS_PEAK — so a dropdown moved a 10K peak from 18 to
+  // 35 km, and moved a `<6mo` novice's marathon peak from 42 to 55 km straight
+  // through the BEGINNER_WEEK1_VOLUME_CAP_KM protection above.
+  //
+  // A flag rather than an inline condition so the rule is greppable and its
+  // principle is one lookup away (INV-CFG-001).
+  USER_DECLARED_LEVEL_BINDS_STRUCTURE_DOWNWARD_ONLY: true,
+
   // ── Wizard self-reported volume input (CoachingPrinciples §18) ──────────────
   // Bounds + step for the Ruler that collects current_weekly_km and
   // longest_recent_run_km. Coaching Board 2026-08-30 (CORRECT WITH AMENDMENT):

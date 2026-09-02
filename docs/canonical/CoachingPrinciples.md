@@ -1968,13 +1968,28 @@ The asymmetry in the resolution is deliberate: **volume is where injuries come f
 
 **Progressive intensity re-entry (Willy, mandatory).** Cardiovascular readiness returns weeks ahead of musculoskeletal readiness — a returning runner *feels* ready for intervals and hills before the tissue is. So when intensity is lifted (or user-raised) for a returning/fresh-return runner, the **highest tissue-stress quality — VO2max intervals and hill reps (both catalogue category `vo2max`) — is withheld for the opening `RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS`**; tempo and threshold carry the quality load first, mirroring §21's staged reintroduction. `intensity_reentry_active` / `intensity_reentry_weeks` surface this in meta.
 
-**User-selectable level (wizard).** The engine's assessment is a **recommendation the runner can override** (the wizard shows the recommended level and lets them change it). A user override raises the **intensity** allowance only; the structural volume/ramp/long-run caps stay bound to the conservative assessment (agency raises intensity, never tonnage — §10), and the same progressive re-entry applies. *(Wizard wiring lands in a follow-up; the engine already reads `input.fitness_level`.)*
+**User-selectable level (wizard) — asymmetric, amended 2026-09-02 (Coaching Board).** The engine's assessment is a **recommendation the runner can override** (the wizard shows the recommended level and lets them change it). The runner's selection arrives on its own input, `user_declared_level`, and binds **asymmetrically**:
+
+| Direction | Binds |
+|---|---|
+| **Upward** of the assessment (declaring *more* than the data says) | **Intensity allowance only.** Peak km, the week-1 volume floor, the ramp and the long-run caps stay on the assessment. |
+| **Downward** of the assessment (declaring *less*) | **Both** intensity and structure. |
+
+**Why the asymmetry.** It is evidential, and it is the same shape as §50's max-HR guard. A runner declaring *less* than the data says is credible about their own caution — there is no risk in believing them, and refusing to would make the control decorative. A runner declaring *more* is claiming a tissue tolerance that nothing has demonstrated; cardiovascular confidence runs weeks ahead of musculoskeletal readiness (Willy), and the plan, not the runner, would pay for the difference. Agency raises intensity, never tonnage (§10).
+
+**Why this needed stating twice.** The rule above was already written here, and the engine did the opposite for the first two days of its life: a declared level set `fitness`, which set `peakKm`, which sets the week-1 volume floor via `BUILD_VOL_INIT_FLOOR_VS_PEAK` — so the dropdown raised *starting* tonnage above the runner's actual current volume. Measured: a 10K runner on 15 km/week declaring `experienced` went from week-1 13 km / peak 18 km to week-1 20 km / peak 35 km; a `<6mo` novice on 8 km/week took a marathon peak from 42 to 55 km, straight through the `BEGINNER_WEEK1_VOLUME_CAP_KM` protection (which caps the declared start, not the peak-derived floor). A principle is not enforced by being written down — hence the invariant below.
+
+**Two inputs, two axes — do not merge them.** `fitness_level` is the **API-level structural declaration** (a caller stating what the runner is; drives peak km and volume caps — the long-standing contract used by the archetype matrix and property sweep). `user_declared_level` is **what the runner picked**. Collapsing them is what produced the defect: one enum was carrying two different authorities.
+
+**Accepting is passed through too.** The wizard sends the level whether the runner accepted the recommendation or changed it. An earlier revision sent `undefined` on accept — a workaround for the peak-km binding, which left the runner accepting a level the engine never received. With structure protected, that seam is closed.
 
 **Distribution still governs.** A user-elevated intensity on low volume cannot blow the §1 quality-share ceiling — `INV-PLAN-INTENSITY-DISTRIBUTION` remains binding at the elevated level.
 
-**Config.** `GENERATION_CONFIG.RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS = 4`.
+**Config.** `GENERATION_CONFIG.RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS = 4`; `GENERATION_CONFIG.USER_DECLARED_LEVEL_BINDS_STRUCTURE_DOWNWARD_ONLY = true`.
 
-**Invariant.** `INV-PLAN-RETURNING-INTENSITY-REENTRY` — no VO2max-category session in weeks 1–`intensity_reentry_weeks` of a re-entry-active plan.
+**Invariants.** `INV-PLAN-RETURNING-INTENSITY-REENTRY` — no VO2max-category session in weeks 1–`intensity_reentry_weeks` of a re-entry-active plan. `INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE` — where `meta.fitness_level_declared` outranks `meta.fitness_level`, peak weekly volume must stay within the structural band's ceiling.
+
+**Meta.** `fitness_level` (structural — what volume was built from), `fitness_intensity_level` (the allowance quality was built at; stamped whenever it differs from structural), `fitness_level_declared` (what the runner picked). All three are needed: `validateReshapedPlan` reconstructs its input from meta, and the quality-per-week ceiling is an *intensity* rule — checking it against the structural level fails a legitimately-built returning-runner plan on every reshape.
 
 ---
 
