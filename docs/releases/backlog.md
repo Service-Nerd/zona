@@ -146,12 +146,12 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 *Parent work shipped 2026-08-31 → feature-registry (three rows: §79 Phase 1, §79 Phase 2, §80 Phase 3), all verified on device 2026-09-02. **§79-PEAKKM and §79-INTENSITY-ROUTING both closed 2026-09-02** — board ruled on each, engine fixed, → feature-registry. No open remainder.*
 
 
-### §52 / sweep-coverage follow-ups (opened 2026-09-02)
+### §52 follow-up (opened 2026-09-02)
+
+*SWEEP-COVERAGE-02 closed the same day — the archetype matrix now covers the assessed path (3 new archetypes, falsification-tested). → feature-registry.*
 
 - 🔲 **[W1d]** **§52-WEEK-VOLUME-HOLD — a week's volume is the SUM of its sessions, not its curve target** *(Coaching Board; root-caused 2026-09-02)* — `buildVolumeSequence` computes a target weekly volume, but the delivered `weekly_km` is whatever the independently-sized sessions happen to add up to. So **changing a week's composition silently changes its total volume.** Concrete mechanism: on a 3-day plan there are exactly 3 slots, so §79's intensity allowance converts an easy run into a *shorter* quality session — the week shrinks and the long run's share tips over §52's 60% cap (measured: 14.5 km of 24 km = 60.4%). **Fix direction:** hold the week to its curve target when composition changes — redistribute the difference into the remaining easy volume rather than letting the week shrink. **Expected to reduce the pre-existing baseline of 35 as well, not just the 16 consequential ones.** Board needed: it changes prescribed volumes. **Tier: FREE.** Effort: M (core allocation — treat with care; this is exactly the kind of change that needs the widened sweep below to verify).
   - **Verify still open:** `grep -n "'INV-PLAN-LR-MAX-WEEKLY-PCT'" scripts/property-validate-plans.ts` → baseline still 59 = still open. Full attribution in the comment there.
-- 🔲 **[W1d]** **SWEEP-COVERAGE-02 — the archetype matrix has the same blind spot the sweep had** *(P1, ~1 hr)* — the property sweep was widened 2026-09-02 after it was found to set `fitness_level` on every one of its plans and never set `training_age`, making the engine's own assessment path (and the whole structural-vs-intensity split) **unreachable** — so it reported "byte-identical, no new violations" on changes it structurally could not see. **All 11 archetypes in `scripts/r23-phase7-validation.ts` still pass `fitness_level` explicitly**, so the matrix retains that blind spot. Add at least two archetypes with `fitness_level` absent — one plain, one with a deep `training_age` (returning-runner lift) — plus one with an upward `user_declared_level`. **This is the class of gap that lets a green check mean nothing.**
-  - **Verify still open:** `grep -c "fitness_level" scripts/r23-phase7-validation.ts` → every archetype still setting it = still open.
 
 ### Instrumentation (Wave 0)
 

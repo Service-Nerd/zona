@@ -4,6 +4,7 @@
 import { generateRulePlan, type Tier } from '../lib/plan/ruleEngine'
 import type { GeneratorInput, Session } from '../types/plan'
 import { GENERATION_CONFIG, raceDistanceKey } from '../lib/plan/generationConfig'
+import { getDistanceConfig } from '../lib/plan/length'
 
 interface TestCase {
   name: string
@@ -15,6 +16,18 @@ interface TestCase {
     masters_cadence?:                  boolean
     returning_runner_active?:          boolean
     knee_5pct_cap?:                    boolean
+    // SWEEP-COVERAGE-02 (2026-09-02) — every archetype used to supply
+    // `fitness_level`, so the engine's own ASSESSMENT path (assessFitness, the
+    // §79 training-age lift, and the structural-vs-intensity split) was never
+    // exercised by this matrix. The sweep had the identical blind spot and
+    // reported "no new violations" on two defects it structurally could not see.
+    // These assert what the engine DERIVED, so an archetype that merely generates
+    // cannot pass by accident.
+    derived_structural?: 'beginner' | 'intermediate' | 'experienced'
+    derived_intensity?:  'beginner' | 'intermediate' | 'experienced'
+    // §79-PEAKKM — an upward user declaration must leave peak km on the
+    // STRUCTURAL band. Asserts meta.peak_km_target === peakKmByLevel[structural].
+    peak_target_is_structural?: boolean
   }
 }
 
@@ -144,6 +157,60 @@ const cases: TestCase[] = [
       injury_history: ['hip_flexor'],
     },
   },
+
+  // ── SWEEP-COVERAGE-02 (2026-09-02) — the ASSESSED path ─────────────────────
+  // Every archetype above supplies `fitness_level`, which stands in for the
+  // engine's own assessment. So `assessFitness`, the §79 training-age lift and
+  // the whole structural-vs-intensity split were unreachable by this matrix —
+  // the same blind spot that let two defects ship behind a green sweep. The
+  // three below leave `fitness_level` ABSENT so the engine must derive it.
+
+  {
+    // Plain assessed path: volume and VDOT agree, so structural === intensity.
+    // Guards the ordinary case — if the derivation breaks, this fails first.
+    name: 'ASSESSED — no fitness_level, signals agree (10K, 30km/wk)',
+    tier: 'paid',
+    input: {
+      race_date: '2026-07-20', race_distance_km: 10, goal: 'finish',
+      current_weekly_km: 30, longest_recent_run_km: 12,
+      days_available: 4, age: 35,
+      resting_hr: 55, max_hr: 185,
+    },
+    expect: { derived_structural: 'intermediate', derived_intensity: 'intermediate' },
+  },
+  {
+    // §79 Phase 1 — deep training age + volume down = RETURNING, not beginner.
+    // Structure stays bound to current volume (beginner); intensity lifts to
+    // intermediate so they get real quality rather than an easy-only plan.
+    // This is the exact founder case that opened §79.
+    name: 'ASSESSED — returning runner lift (5yr+, 15km/wk, no benchmark)',
+    tier: 'paid',
+    input: {
+      race_date: '2026-08-03', race_distance_km: 10, goal: 'finish',
+      current_weekly_km: 15, longest_recent_run_km: 6,
+      days_available: 4, age: 40, training_age: '5yr+',
+    },
+    expect: { derived_structural: 'beginner', derived_intensity: 'intermediate' },
+  },
+  {
+    // §79-PEAKKM — an UPWARD declaration raises the intensity allowance only.
+    // Peak km must stay on the structural band: a self-declaration is not
+    // evidence of tissue tolerance. Before the fix this set peakKm, which sets
+    // the week-1 volume floor, so a dropdown raised starting tonnage.
+    name: 'ASSESSED — upward declaration buys intensity, not tonnage',
+    tier: 'paid',
+    input: {
+      race_date: '2026-08-03', race_distance_km: 10, goal: 'finish',
+      current_weekly_km: 15, longest_recent_run_km: 6,
+      days_available: 4, age: 40, training_age: '6-18mo',
+      user_declared_level: 'experienced',
+    },
+    expect: {
+      derived_structural: 'beginner',
+      derived_intensity: 'experienced',
+      peak_target_is_structural: true,
+    },
+  },
 ]
 
 // ─── Metric helpers ────────────────────────────────────────────────────────────
@@ -191,7 +258,20 @@ function maxWeekOnWeekJumpPct(plan: ReturnType<typeof generateRulePlan>): { max:
 
 function taperVolumeReductionPct(plan: ReturnType<typeof generateRulePlan>): { actualPct: number; targetPct: number } {
   const distKey = raceDistanceKey(plan.meta.race_distance_km)
-  const targetPct = GENERATION_CONFIG.TAPER_BY_DISTANCE[distKey].volume_reduction_pct
+  // PV2 — the taper is DEPTH-SCALED for low-volume runners: below
+  // LOW_VOLUME_TAPER_THRESHOLD_KM the cut is LOW_VOLUME_TAPER_REDUCTION_FACTOR_PCT
+  // of standard, because cutting 35% of an already-small week leaves too little
+  // running to hold fitness. This harness compared every plan against the
+  // UNSCALED target, so any low-volume archetype reported a false failure
+  // (a 32 km-peak plan tapering 21% was measured against 35% and failed by 14pp
+  // against a 12pp tolerance — while the engine was behaving exactly as
+  // specified). Surfaced by the SWEEP-COVERAGE-02 archetypes, which are the first
+  // low-volume cases in this matrix.
+  const rawTargetPct = GENERATION_CONFIG.TAPER_BY_DISTANCE[distKey].volume_reduction_pct
+  const peakTarget = plan.meta.peak_km_target
+  const targetPct = (peakTarget !== undefined && peakTarget < GENERATION_CONFIG.LOW_VOLUME_TAPER_THRESHOLD_KM)
+    ? rawTargetPct * (GENERATION_CONFIG.LOW_VOLUME_TAPER_REDUCTION_FACTOR_PCT / 100)
+    : rawTargetPct
   const taperPhase = plan.phases?.find(p => p.name === 'taper')
   if (!taperPhase) return { actualPct: 0, targetPct }
   const lastFullTaperWeek = taperPhase.end_week - 1  // exclude race week
@@ -304,9 +384,33 @@ for (const tc of cases) {
   const expectKnee = tc.expect?.knee_5pct_cap
   const kneePass: boolean | '—' = expectKnee === undefined ? '—' : '—'
 
+  // SWEEP-COVERAGE-02 — assert what the engine DERIVED, so an archetype on the
+  // assessed path cannot pass merely by generating a plan.
+  const expStructural = tc.expect?.derived_structural
+  const structuralPass: boolean | '—' = expStructural === undefined
+    ? '—' : plan.meta.fitness_level === expStructural
+
+  // `fitness_intensity_level` is stamped only when it DIFFERS from structural
+  // (see ruleEngine), so an expectation of "same as structural" reads through it.
+  const expIntensity = tc.expect?.derived_intensity
+  const actualIntensity = plan.meta.fitness_intensity_level ?? plan.meta.fitness_level
+  const intensityLevelPass: boolean | '—' = expIntensity === undefined
+    ? '—' : actualIntensity === expIntensity
+
+  // §79-PEAKKM — peak km stayed on the STRUCTURAL band despite a higher declared
+  // level. Compares against the band directly rather than against delivered
+  // weekly volume, which legitimately exceeds the band (see the invariant).
+  const expPeakStructural = tc.expect?.peak_target_is_structural
+  const structuralBand = plan.meta.fitness_level
+    ? getDistanceConfig(tc.input.race_distance_km).peakKmByLevel[plan.meta.fitness_level]
+    : undefined
+  const peakTargetPass: boolean | '—' = expPeakStructural === undefined
+    ? '—' : (structuralBand !== undefined && plan.meta.peak_km_target === structuralBand)
+
   const checksWithBoolean = [
     intensityPass, wowPass, taperPass, taperQualityPass, cataloguePass,
     peakLongMatch, peakQualMatch, mastersPass, returningPass, kneePass,
+    structuralPass, intensityLevelPass, peakTargetPass,
   ].filter((b): b is boolean => typeof b === 'boolean')
   const allPass = checksWithBoolean.every(b => b === true)
 
@@ -314,6 +418,19 @@ for (const tc of cases) {
     name: tc.name,
     pass: allPass,
     metrics: {
+      'Derived structural level': {
+        value: expStructural === undefined ? '—' : `${plan.meta.fitness_level} (expected ${expStructural})`,
+        pass: structuralPass,
+      },
+      'Derived intensity level': {
+        value: expIntensity === undefined ? '—' : `${actualIntensity} (expected ${expIntensity})`,
+        pass: intensityLevelPass,
+      },
+      'Peak km target on structural band (§79)': {
+        value: expPeakStructural === undefined ? '—'
+          : `peak_km_target=${plan.meta.peak_km_target} vs ${plan.meta.fitness_level} band ${structuralBand}`,
+        pass: peakTargetPass,
+      },
       'Intensity dist (easy %)': {
         value: `${fmt(intensity.easyPct)} (by MINUTES — informational; the §1 ceiling is ${expectedDist.max_quality_session_pct}% of SESSIONS, checked by INV-PLAN-INTENSITY-DISTRIBUTION)`,
         pass: intensityPass,
