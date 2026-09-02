@@ -102,21 +102,57 @@ describe('§79 — an UPWARD declaration must not buy tonnage', () => {
     expect(codes).not.toContain('INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE')
   })
 
-  it('the invariant FIRES on a plan whose peak was built to the declared band', () => {
+  it('the plan records the STRUCTURAL peak target, not the declared one', () => {
+    const plan = generateRulePlan({ ...TEN_K_LOW_VOLUME, user_declared_level: 'experienced' }, 'paid', PLAN_START)
+    const band = getDistanceConfig(10).peakKmByLevel
+    expect(plan.meta.peak_km_target).toBe(band.beginner)
+    expect(plan.meta.peak_km_target).not.toBe(band.experienced)
+  })
+
+  it('the invariant FIRES on a plan whose curve was built to the declared band', () => {
     // Hand-forge the pre-fix state: structural `beginner`, declared `experienced`,
-    // peak built to the experienced ceiling. The invariant must catch it — this is
-    // the regression guard, so it has to fail on the old behaviour.
+    // volume curve built from the experienced peak target. The invariant must
+    // catch it — this is the regression guard, so it has to fail on the old
+    // behaviour.
+    //
+    // Forges `peak_km_target`, NOT delivered weekly_km. An earlier version of
+    // this test forged weekly_km, which is why it passed while the invariant was
+    // simultaneously raising 115 false violations elsewhere: delivered volume
+    // legitimately exceeds the band, so a weekly_km-based check tests nothing
+    // reliable in either direction.
     const input = { ...TEN_K_LOW_VOLUME, user_declared_level: 'experienced' as const }
     const plan = generateRulePlan(input, 'paid', PLAN_START)
     const band = getDistanceConfig(10).peakKmByLevel
     const forged: Plan = {
       ...plan,
-      meta: { ...plan.meta, fitness_level: 'beginner', fitness_level_declared: 'experienced' },
-      weeks: plan.weeks.map((w, i) =>
-        i === 2 ? { ...w, weekly_km: band.experienced } : w),
+      meta: {
+        ...plan.meta,
+        fitness_level: 'beginner',
+        fitness_level_declared: 'experienced',
+        peak_km_target: band.experienced,
+      },
     }
     const codes = validatePlan(forged, input).map(v => v.code)
     expect(codes).toContain('INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE')
+  })
+
+  it('does NOT fire merely because delivered volume exceeds the band', () => {
+    // The false-positive class: ultra plans deliver a peak well above their band
+    // (100km plan, 72km structural band, 108km delivered) with zero contribution
+    // from any declaration. The invariant must be silent here.
+    const ultra: GeneratorInput = {
+      race_date: '2027-06-13', race_distance_km: 100, goal: 'finish',
+      days_available: 4, age: 35,
+      current_weekly_km: 40, longest_recent_run_km: 20,
+      preferred_long_run_day: 'sun', fitness_level: 'beginner',
+      user_declared_level: 'experienced',
+    }
+    const plan = generateRulePlan(ultra, 'paid', PLAN_START)
+    const deliveredPeak = Math.max(...plan.weeks.map(w => w.weekly_km ?? 0))
+    const band = getDistanceConfig(100).peakKmByLevel
+    expect(deliveredPeak).toBeGreaterThan(band.beginner)   // the trap
+    const codes = validatePlan(plan, ultra).map(v => v.code)
+    expect(codes).not.toContain('INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE')
   })
 })
 

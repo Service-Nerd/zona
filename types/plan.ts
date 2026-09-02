@@ -484,6 +484,36 @@ export interface PlanMeta {
    * plan records what the runner was told they were getting.
    */
   fitness_level_declared?: 'beginner' | 'intermediate' | 'experienced'
+  /**
+   * CoachingPrinciples §79 — the `peakKm` the engine actually built the volume
+   * curve from (`peakKmByLevel[structural]`). Stamped so
+   * `INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE` can check the real guarantee exactly
+   * instead of inferring it from delivered weekly volume.
+   *
+   * Delivered `weekly_km` is NOT a proxy for this: the curve cap applies to the
+   * volume sequence, while actual session sums run above it (a 100 km plan on a
+   * 72 km structural band delivers a 108 km peak — long-run-dominated ultra
+   * weeks, nothing to do with any declaration). Measuring the proxy produced 115
+   * false violations before this field existed.
+   */
+  peak_km_target?: number
+  /**
+   * CoachingPrinciples §53 — one entry per quality-session pick: how many
+   * catalogue rows were ELIGIBLE for it (engine-measured, at selection time).
+   *
+   * `INV-PLAN-QUALITY-VARIETY-FULL-PLAN` uses it to keep its cap satisfiable:
+   * with `k` picks drawn from a pool of `p` rows, some row must appear at least
+   * `ceil(k/p)` times, and D-21 holds that an unsatisfiable principle is a defect
+   * in the principle rather than in the plan.
+   *
+   * Per-pick rather than a plan-level pool size, because the pool varies by phase
+   * and the union hides the binding constraint — a finish-goal marathon has 3
+   * threshold rows in build but only 2 in peak/taper.
+   *
+   * Never inferred from the rows the plan actually used: that would let a lazy
+   * rotation excuse its own repetition.
+   */
+  quality_pool_sizes?: number[]
   fitness_signal_note?: string
   // §79 (HR-MAX/returning-runner, 2026-08-31) — progressive intensity re-entry.
   // When active, VO2max intervals + hill reps are withheld for the opening

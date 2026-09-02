@@ -303,7 +303,15 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   //     entire accept path — i.e. the ceiling was unenforced for most real users.
   //     `fitness_intensity_level` is stamped whenever it differs, so preferring
   //     it closes that hole too.
-  const fitness = input.fitness_intensity_level ?? input.fitness_level
+  // Read the PLAN's own stamped intensity level first. `plan.meta` is
+  // authoritative and present on both paths; `input` is not — at generation time
+  // `generateRulePlan` passes the raw caller input, which carries no
+  // `fitness_intensity_level`, so an input-only lookup silently falls back to the
+  // structural level and validates an elevated-intensity plan against the
+  // beginner ceiling. That is exactly what the extended property sweep caught
+  // (1,664 hard failures on `fitness_level: 'beginner'` + an upward
+  // `user_declared_level`). Meta first, input second, structural last.
+  const fitness = plan.meta.fitness_intensity_level ?? input.fitness_intensity_level ?? input.fitness_level
   const qualityMaxPerWeek = fitness ? GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX[fitness] : undefined
   const minHoursQualLong = GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG
   const minDaysQualLong = Math.ceil(minHoursQualLong / 24)
@@ -2039,8 +2047,38 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       }
     }
     if (totalQuality > 0) {
-      const cap = Math.floor(totalQuality / GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR)
+      const fractionCap = Math.floor(totalQuality / GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR)
         + GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE
+      // §53 (2026-09-02, Coaching Board) — the cap must be SATISFIABLE. D-21:
+      // a principle no plan can satisfy is a defect in the principle.
+      //
+      // With `k` picks drawn from pools of size `s`, some row must appear at
+      // least ceil(k/s) times. The pool VARIES BY PHASE, so the bound is taken
+      // over every pool size present: for each size s, count the picks whose pool
+      // was that small or smaller — those picks can only be served by s rows — and
+      // require ceil(count/s). The largest such requirement is the floor.
+      //
+      // Real case: a finish-goal marathon at 12 km/week is threshold-only. Of the
+      // five threshold rows, `tempo_cruise_short` is 5K/10K-only and
+      // `threshold_ladder` needs min_weekly_km 45, leaving 3 in build and 2 in
+      // peak/taper (`tempo_cruise` is build-only). Ten of eleven picks land in the
+      // 2-row pool → floor 5, while the fraction cap says 4. A plan-level union
+      // would have said 3 → 4 and still demanded the impossible.
+      //
+      // The fraction cap stays the FLOOR, so wherever the catalogue does offer
+      // variety this is exactly as binding as before: a lazy rotation over a rich
+      // pool still fires. Absent (legacy plans) → fraction cap alone, i.e. the
+      // previous behaviour.
+      const poolSizes = plan.meta.quality_pool_sizes
+      let pigeonhole = 0
+      if (poolSizes && poolSizes.length > 0) {
+        for (const s of Array.from(new Set(poolSizes))) {
+          if (s <= 0) continue
+          const constrained = poolSizes.filter(x => x <= s).length
+          pigeonhole = Math.max(pigeonhole, Math.ceil(constrained / s))
+        }
+      }
+      const cap = Math.max(fractionCap, pigeonhole)
       for (const [row, count] of Array.from(labelCounts)) {
         if (count > cap) {
           violations.push({
@@ -2048,7 +2086,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             principle_ref: 'CoachingPrinciples §53',
             severity: 'error',
             week: 0,
-            message: `Quality session row "${row}" appears ${count} times across ${totalQuality} quality sessions; cap is floor(${totalQuality}/${GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR})+${GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE} = ${cap}.`,
+            message: `Quality session row "${row}" appears ${count} times across ${totalQuality} quality sessions; cap is ${cap} (fraction floor(${totalQuality}/${GENERATION_CONFIG.QUALITY_VARIETY_DENOMINATOR})+${GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE}=${fractionCap}${pigeonhole ? `, pool floor ${pigeonhole}` : ', pool sizes unknown'}). The eligible pool had room to spread further.`,
             actual: count,
             expected: `≤ ${cap}`,
           })
@@ -2407,39 +2445,36 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
 
   // INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE — a runner who declares a level ABOVE
   // the engine's assessment gets the intensity allowance, never the tonnage. A
-  // self-declaration is not evidence of tissue tolerance (§10, §79). So a plan
-  // whose declared level outranks its structural level must not peak above the
-  // STRUCTURAL band's ceiling.
+  // self-declaration is not evidence of tissue tolerance (§10, §79).
   //
-  // Why peak weekly volume is the right thing to measure: `fitness_level` sets
-  // `peakKm`, and `peakKm` sets both the ceiling and — via
-  // BUILD_VOL_INIT_FLOOR_VS_PEAK — the week-1 floor. Checking the delivered peak
-  // catches both without re-running the generator.
+  // Checks the guarantee DIRECTLY: the `peakKm` the volume curve was built from
+  // must be the STRUCTURAL band's value. Delivered `weekly_km` is deliberately
+  // not used — the curve cap bounds the volume sequence while actual session sums
+  // run above it (a 100 km plan on a 72 km structural band delivers a 108 km peak,
+  // long-run-dominated ultra weeks, identical with and without a declaration).
+  // An earlier revision of this invariant compared delivered peak against the band
+  // with a tolerance and produced 115 false violations across the property grid
+  // while the engine was behaving correctly. Measure the property, not a proxy.
   //
-  // Downward declarations are exempt by design: they legitimately bind structure
-  // (a runner volunteering caution is heard on tonnage), so their peak SHOULD
-  // reflect the declared level. (CoachingPrinciples §79)
+  // Downward declarations are exempt by design: they legitimately bind structure,
+  // so their peak SHOULD reflect the declared level. (CoachingPrinciples §79)
   {
     const declared = plan.meta.fitness_level_declared
     const structural = plan.meta.fitness_level
-    if (declared && structural && FITNESS_RANK[declared] > FITNESS_RANK[structural]) {
+    const target = plan.meta.peak_km_target
+    if (declared && structural && typeof target === 'number'
+        && FITNESS_RANK[declared] > FITNESS_RANK[structural]) {
       const band = getDistanceConfig(plan.meta.race_distance_km ?? 0).peakKmByLevel
-      const structuralCeiling = band[structural]
-      const declaredCeiling = band[declared]
-      const actualPeak = Math.max(0, ...plan.weeks.map(w => w.weekly_km ?? 0))
-      // Tolerance: the ceiling is a target the ramp approaches, and rounding plus
-      // the long-run share can land a km or two over. Only flag a peak that has
-      // clearly been built to the DECLARED band instead of the structural one.
-      const tolerance = 1 + GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT / 100
-      if (actualPeak > structuralCeiling * tolerance) {
+      const structuralTarget = band[structural]
+      if (target > structuralTarget) {
         violations.push({
           code: 'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE',
           principle_ref: 'CoachingPrinciples §79',
           severity: 'error',
           week: 0,
-          message: `Runner declared "${declared}" against an assessed "${structural}", and the plan peaks at ${actualPeak}km — above the ${structural} ceiling of ${structuralCeiling}km (the ${declared} band is ${declaredCeiling}km). An upward declaration raises the intensity allowance, never tonnage: peak km must stay on the assessment.`,
-          actual: `peak ${actualPeak}km, declared ${declared}, structural ${structural}`,
-          expected: `peak ≤ ${Math.round(structuralCeiling * tolerance)}km (${structural} band)`,
+          message: `Runner declared "${declared}" against an assessed "${structural}", and the volume curve was built from a ${target}km peak target — the ${structural} band is ${structuralTarget}km (${declared} is ${band[declared]}km). An upward declaration raises the intensity allowance, never tonnage.`,
+          actual: `peak_km_target ${target}, declared ${declared}, structural ${structural}`,
+          expected: `peak_km_target = ${structuralTarget} (${structural} band)`,
         })
       }
     }

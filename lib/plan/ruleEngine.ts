@@ -1537,6 +1537,11 @@ function buildWeekSessions(
   // is withheld this week; tempo/threshold carry the load. Set by the caller for a
   // returning/elevated runner's opening weeks. Default false = no restriction.
   excludeHighTissueStress = false,
+  // CoachingPrinciples §53 (2026-09-02) — one entry per quality pick: how many
+  // rows were eligible for it. `INV-PLAN-QUALITY-VARIETY-FULL-PLAN` needs it to
+  // know whether its cap is satisfiable at all (D-21). Per-pick because the pool
+  // varies by phase and a plan-level union hides the binding constraint.
+  poolSink?: number[],
 ): Partial<Record<Day, Session>> {
   const blocked = blockedDays(input)
   const distKey = raceDistanceKey(input.race_distance_km)
@@ -1674,7 +1679,19 @@ function buildWeekSessions(
     const arr = GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey]
     plannedQuality = arr[Math.min(taperIdx, arr.length - 1)] ?? 0
   } else if (phase === 'peak' && !isDeload) {
-    plannedQuality = intensityFitness === 'experienced' ? 2 : 1
+    // §79 (2026-09-02) — the COUNT of quality sessions is a LOAD decision, so it
+    // keys off the STRUCTURAL level, not the intensity allowance. A second hard
+    // session in a week is tonnage, and §79 is explicit that agency raises
+    // intensity, never tonnage. The intensity level still governs how hard each
+    // session is (`fitnessCeiling` above, and catalogue selection) — it just
+    // cannot add one.
+    //
+    // Before this, a runner on 12 km/week declaring `experienced` got 2 peak
+    // quality sessions on a beginner structure. That took plan-wide quality from
+    // 9 to 11 against a threshold pool of 3 rows in build and 2 in peak/taper,
+    // which no arrangement can spread inside §53's variety cap — 109 violations
+    // across the property grid.
+    plannedQuality = fitness === 'experienced' ? 2 : 1
   } else if (phase === 'build' && !isDeload) {
     plannedQuality = 1
   }
@@ -2019,12 +2036,12 @@ function buildWeekSessions(
 
         cat1 = raceSpecificTaperRows[0] ?? selectCatalogueSession({
           catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
-          weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast,
+          weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes: poolSink,
         })
       } else {
         cat1 = selectCatalogueSession({
           catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
-          weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast,
+          weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes: poolSink,
         })
       }
       if (process.env.DEBUG_ROT) console.error(`      cat1 -> ${cat1?.id}:${cat1?.category} (pref=${preferredCategory})`)
@@ -2084,7 +2101,7 @@ function buildWeekSessions(
           // catalogue filter disagreed; the allowance is right.
           const cat2 = selectCatalogueSession({
             catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 1, preferredCategory: altCategory,
-            weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast,
+            weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes: poolSink,
           })
           const secondaryFraction = GENERATION_CONFIG.SECONDARY_QUALITY_PCT_OF_PRIMARY / 100
           // SC-10 — size the second (softer) slot off the UNCAPPED base, never the
@@ -3573,6 +3590,10 @@ export function generateRulePlan(
   // land one row five times while another went unpicked).
   const rowUsage = new Map<string, number>()
   const rowLast = new Map<string, string>()
+  // §53 (2026-09-02) — per-pick eligible-pool sizes across the whole plan,
+  // stamped as `meta.quality_pool_sizes` so the variety invariant can tell
+  // 'the engine repeated lazily' from 'the catalogue had nothing else to offer'.
+  const qualityPool: number[] = []
 
   // SC-07 / CD-16 — counts NON-DELOAD build weeks as they are emitted, so the
   // build quality rotation (threshold -> vo2max -> threshold for 5K/10K) is
@@ -3638,6 +3659,7 @@ export function generateRulePlan(
       rowLast,
       // §79 — withhold VO2max/hills during the returning runner's opening weeks.
       intensityReentryActive && weekN <= intensityReentryWeeks,
+      qualityPool,
     )
 
     // Advance the rotation only on weeks that actually carried a build quality
@@ -4278,6 +4300,11 @@ export function generateRulePlan(
     // wizard passed nothing. `INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE` compares
     // the two without re-running the assessment.
     ...(declaredLevel ? { fitness_level_declared: declaredLevel } : {}),
+    // §79 — the peak the volume curve was actually built from. See the field doc:
+    // delivered weekly_km is not a usable proxy for this.
+    peak_km_target: peakKm,
+    // §53 — see qualityPool above. Omitted when the plan has no quality picks.
+    ...(qualityPool.length > 0 ? { quality_pool_sizes: qualityPool } : {}),
     // §79 (2026-09-02) — stamp the intensity level whenever it DIFFERS from the
     // structural one, not only when the VDOT/volume signals disagreed. A user
     // declaration now elevates intensity on its own, and the reshape validator

@@ -671,6 +671,19 @@ export interface CatalogueSelectorArgs {
   // place on each pick; the call sequence is deterministic, so regeneration is
   // stable.
   rowUsage?: Map<string, number>
+  // CoachingPrinciples §53 (2026-09-02) — the caller pushes ONE ENTRY PER PICK:
+  // how many rows were eligible for that pick, after all gates and before the
+  // rotation chose. `INV-PLAN-QUALITY-VARIETY-FULL-PLAN` needs this to know
+  // whether its cap is satisfiable at all (D-21).
+  //
+  // Per-pick, not a plan-level union, because the pool VARIES BY PHASE and the
+  // union hides the binding constraint: a finish-goal marathon has 3 threshold
+  // rows in build but 2 in peak/taper (`tempo_cruise` is build-only), so 10
+  // sessions land in a 2-row pool. The union says 3 (floor 4); the truth is 5.
+  //
+  // Measured from the ENGINE's eligibility, never inferred from the rows the plan
+  // used — that would let a lazy rotation excuse its own repetition.
+  poolSizes?:        number[]
   // §36/§53 anti-repeat tie-break — the last row picked for each category, so a
   // usage tie breaks against repeating the previous week's session. Mutated in
   // place on each pick.
@@ -721,7 +734,7 @@ function isLongRunSession(row: SessionCatalogueRow): boolean {
  * regenerated produces same selection.
  */
 export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCatalogueRow | null {
-  const { catalogue, phase, distanceKey, fitness, tier, weekN, slotIndex = 0, weeklyKm, preferredCategory, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast } = args
+  const { catalogue, phase, distanceKey, fitness, tier, weekN, slotIndex = 0, weeklyKm, preferredCategory, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes } = args
 
   const userRank = FITNESS_RANK[fitness]
   const tierFilter = (row: SessionCatalogueRow) => tier === 'free' ? row.is_free_tier : true
@@ -751,6 +764,9 @@ export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCata
         return filtered.length > 0 ? filtered : baseEligible
       })()
     : baseEligible
+
+  // §53 — record how many rows this pick could choose between.
+  poolSizes?.push(candidates.length)
 
   // Deterministic tie-break index (the historical selection rule).
   const tieIdx = (weekN + slotIndex * 7) % candidates.length

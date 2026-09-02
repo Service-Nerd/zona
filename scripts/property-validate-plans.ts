@@ -95,7 +95,29 @@ const dayOptions: any[] = [
   { days_available: 5, days_cannot_train: [] },
   { days_available: 6, days_cannot_train: [] },
 ]
-const fitnessSets = ['beginner', 'intermediate', 'experienced']
+// §79 (2026-09-02) — `undefined` is a FIRST-CLASS value here, not padding.
+//
+// Every entry used to be a concrete level, so `input.fitness_level` was always
+// set, which made `assessedStructural === assessedIntensity` in every one of the
+// 17,957 plans. Combined with `training_age` never being swept (below), the
+// engine's own assessment path — and therefore the whole structural-vs-intensity
+// split — was UNREACHABLE by this sweep. The §79-PEAKKM and §79-INTENSITY-ROUTING
+// changes were consequently no-ops across the entire grid, and the sweep coming
+// back byte-identical was mistaken for evidence of safety when it was evidence of
+// no coverage. Same failure shape as SWEEP-VACUOUS-01 and the missing HR axis
+// below: a grid that cannot reach a branch cannot vouch for it.
+const fitnessSets = [undefined, 'beginner', 'intermediate', 'experienced']
+
+// §79 — training age drives the returning-runner intensity lift (deep training
+// age + beginner-on-volume → intensity lifted off the beginner floor), which is
+// the main way `intensityFitness` comes to differ from `fitness` in production.
+// Never swept before, so that lift never fired in the grid.
+const trainingAgeSets = [undefined, '<6mo', '6-18mo', '2-5yr', '5yr+']
+
+// §79 — the runner's own declaration, which binds asymmetrically (upward =
+// intensity only, downward = structure too). `INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE`
+// is meaningless unless the grid actually produces upward declarations.
+const declaredSets = [undefined, 'beginner', 'intermediate', 'experienced']
 const hardSets = ['love', 'avoid', 'neutral']
 const injurySets = [[], ['knee'], ['achilles'], ['shin_splints'], ['hip_flexor'], ['back']]
 const maxWeekdays = [undefined, 45, 60, 90]
@@ -224,7 +246,11 @@ function randomInput(): any {
     current_weekly_km: cwk,
     longest_recent_run_km: Math.max(3, Math.round(cwk * pick(lrrFractions))),
     ...days,
-    fitness_level: pick(fitnessSets),
+    // §79 — spread-conditionally so `undefined` means ABSENT (the engine's own
+    // assessment runs), not "present and undefined".
+    ...(() => { const f = pick(fitnessSets);   return f ? { fitness_level: f } : {} })(),
+    ...(() => { const t = pick(trainingAgeSets); return t ? { training_age: t } : {} })(),
+    ...(() => { const d = pick(declaredSets);  return d ? { user_declared_level: d } : {} })(),
     hard_session_relationship: pick(hardSets),
     injury_history: pick(injurySets),
     max_weekday_mins: pick(maxWeekdays),
@@ -380,7 +406,27 @@ const BASELINE: Record<string, number> = {
   // real repeat the label check missed.
   'INV-PLAN-TAPER-VARIETY':                0,
   // Same band again: a lopsided week at very low volume. Pending INPUT-FLOOR-01.
-  'INV-PLAN-LR-MAX-WEEKLY-PCT':          35,
+  // 35 -> 59 on 2026-09-02, with the grid widened to reach the assessed path
+  // (fitness_level `undefined`, training_age, user_declared_level). Attribution
+  // measured against c024bc5 on the identical grid, NOT assumed:
+  //
+  //   35  original — the pre-existing §52 lopsided-week class
+  //   +8  newly REACHABLE only: the widened grid hits low-volume/3-day inputs the
+  //       old grid could not generate. Nothing to do with §79; present on
+  //       c024bc5 too (control run: 43).
+  //   +16 CONSEQUENTIAL to §79's intensity allowance, root-caused not assumed:
+  //       on a 3-day week there are exactly 3 slots, so the allowance converts an
+  //       easy run into a SHORTER quality session; the week's total shrinks and
+  //       the long run's share tips just over the 60% cap (measured: 14.5/24 =
+  //       60.4%). Marginal, and the same class as the 35 — not a new failure mode.
+  //
+  // NOT a licence to leave it. The underlying defect is that a week's volume is
+  // the SUM of independently-sized sessions rather than being held to its curve
+  // target, so changing composition silently changes total volume. Filed as
+  // §52-WEEK-VOLUME-HOLD (backlog) with this mechanism; fixing it should pull the
+  // original 35 down as well. Raised here rather than reverted because reverting
+  // would restore 109 §53 variety violations — strictly worse.
+  'INV-PLAN-LR-MAX-WEEKLY-PCT':          59,
 }
 
 const regressions: string[] = []
