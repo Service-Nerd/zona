@@ -57,3 +57,4 @@
 20260810_session_metric_overrides.sql
 20260819_ai_rate_limits.sql
 20260819_subscription_event_ordering.sql
+20260831_max_hr_source.sql
