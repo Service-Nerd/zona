@@ -1273,11 +1273,21 @@ The 60% threshold is intentionally below the natural §9 long-run fraction (peak
 
 Enforced by `INV-PLAN-LR-MAX-WEEKLY-PCT`. When violated, the engine downgrades to maintenance (composes with §38) and surfaces the cause in `volume_constraint_note`.
 
+**Wired 2026-09-02 (defect fix — this paragraph was already the documented intent; the engine was not doing it).** The engine built the lopsided week anyway and let the invariant fire, which reported the *runner's* plan as defective for a constraint the *engine* had chosen. It now detects a lopsided non-deload week at generation and takes remedy (c). **When it fires:** the long run is race-anchored (§45/§47 floors) while the week is runner-anchored (§2 ramp off current volume); at low volume the two diverge until the week is lopsided by construction — a 5 km/week runner building to a half marathon reaches a 14.5 km long run on a 24 km week (60.4%). Remedy (a) is unavailable there because reducing the long run collides with §45/§47's floors, so (c) is the remedy that needs no new ruling. Carries its own runner-facing note: the race sets the long run, your current volume sets everything else — the lever is weekly volume, not a longer long run. Measured cost: maintenance classification +1.9pp (6 of 315 plans). Sweep baseline for this invariant went 59 → **0**, clearing 35 violations that pre-dated the fix.
+
 ---
 
 ## 53. Quality session variety across the full plan
 
-**Principle.** No single quality-session **catalogue row** may appear more than `floor(total_quality_sessions / 3) + 1` times across the full plan. Extends §36 (taper variety) to the base / build / peak phases as well.
+**Principle.** No single quality-session **catalogue row** may appear more than the variety cap across the full plan. Extends §36 (taper variety) to the base / build / peak phases as well.
+
+**The cap is `max(fraction, pigeonhole)` — amended 2026-09-02 (Coaching Board, CORRECT).**
+- *fraction* = `floor(total_quality_sessions / 3) + 1` — the original rule, and still the FLOOR, so wherever the catalogue offers variety this is exactly as binding as it always was.
+- *pigeonhole* = the smallest max-count any arrangement could achieve given the pool the engine actually had. With `k` picks drawn from a pool of `p` eligible rows, some row must appear at least `ceil(k/p)` times.
+
+**Why the amendment.** The fraction alone was arithmetically unsatisfiable on a thin pool, and **D-21 holds that a principle no plan can satisfy is a defect in the principle, not in the plan.** Worked case: a finish-goal marathon at 12 km/week is threshold-only, and of the five threshold rows `tempo_cruise_short` is 5K/10K-only while `threshold_ladder` requires `min_weekly_km` 45 — leaving 3 rows in build and 2 in peak/taper (`tempo_cruise` is build-only). Eleven quality sessions against that pool cannot be spread below 5, while the fraction demanded 4. The engine was doing the best available and being reported as defective for it.
+
+**Pool size is measured from the ENGINE's eligibility, never from the rows the plan used** (`meta.quality_pool_sizes`, one entry per pick) — inferring it from what was used would let a lazy rotation excuse its own repetition. Per-pick rather than a plan-level union, because the pool varies by phase and a union hides the binding constraint.
 
 **Why.** Case 04 (2026-04-28 review): three "Progressive tempo" sessions in 11 weeks (W5, W8, W10) with identical pace targets. Round-2 M-02 caught back-to-back taper repetition; this caught nothing because the repetition straddled build / peak / taper. Variety at the catalogue level is what keeps a plan coachable for the runner who actually has to do it — three identical tempos in the same plan is the engine declining to use the catalogue, not a coaching choice.
 
@@ -1300,7 +1310,7 @@ The +1 allowance prevents tripping plans where the catalogue genuinely has only 
 - `GENERATION_CONFIG.QUALITY_VARIETY_ALLOWANCE = 1`
 - `GENERATION_CONFIG.THRESHOLD_LADDER_MIN_WEEKLY_KM = 45` (the ladder's volume gate)
 
-Enforced by `INV-PLAN-QUALITY-VARIETY-FULL-PLAN`. Race-week sharpening reps (sub-band repeats with no catalogue-named label) are exempt — they're structurally distinct from the broader catalogue.
+Enforced by `INV-PLAN-QUALITY-VARIETY-FULL-PLAN` (cap = `max(fraction, pigeonhole)`, see above). Race-week sharpening reps (sub-band repeats with no catalogue-named label) are exempt — they're structurally distinct from the broader catalogue.
 
 ---
 
