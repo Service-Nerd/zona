@@ -406,27 +406,16 @@ const BASELINE: Record<string, number> = {
   // real repeat the label check missed.
   'INV-PLAN-TAPER-VARIETY':                0,
   // Same band again: a lopsided week at very low volume. Pending INPUT-FLOOR-01.
-  // 35 -> 59 on 2026-09-02, with the grid widened to reach the assessed path
-  // (fitness_level `undefined`, training_age, user_declared_level). Attribution
-  // measured against c024bc5 on the identical grid, NOT assumed:
-  //
-  //   35  original — the pre-existing §52 lopsided-week class
-  //   +8  newly REACHABLE only: the widened grid hits low-volume/3-day inputs the
-  //       old grid could not generate. Nothing to do with §79; present on
-  //       c024bc5 too (control run: 43).
-  //   +16 CONSEQUENTIAL to §79's intensity allowance, root-caused not assumed:
-  //       on a 3-day week there are exactly 3 slots, so the allowance converts an
-  //       easy run into a SHORTER quality session; the week's total shrinks and
-  //       the long run's share tips just over the 60% cap (measured: 14.5/24 =
-  //       60.4%). Marginal, and the same class as the 35 — not a new failure mode.
-  //
-  // NOT a licence to leave it. The underlying defect is that a week's volume is
-  // the SUM of independently-sized sessions rather than being held to its curve
-  // target, so changing composition silently changes total volume. Filed as
-  // §52-WEEK-VOLUME-HOLD (backlog) with this mechanism; fixing it should pull the
-  // original 35 down as well. Raised here rather than reverted because reverting
-  // would restore 109 §53 variety violations — strictly worse.
-  'INV-PLAN-LR-MAX-WEEKLY-PCT':          59,
+  // 35 -> 59 -> 0 on 2026-09-02. FULLY FIXED, including the 35 that pre-dated
+  // this session. §52 itself names three remedies for a week whose long run
+  // exceeds the cap — "reduce the long run, raise weekly volume, or downgrade to
+  // maintenance" — and the engine did none of them: it built the lopsided week
+  // and let the invariant report the runner's plan as defective for a constraint
+  // the engine had chosen. It now takes the third remedy (maintenance is already
+  // exempt from this cap and already carries an honest runner-facing note).
+  // Cost measured against the same grid: maintenance classification 131 -> 137 of
+  // 315 (+1.9pp, 6 plans). Kept as an explicit 0 so a regression reads as NEW.
+  'INV-PLAN-LR-MAX-WEEKLY-PCT':          0,
 }
 
 const regressions: string[] = []

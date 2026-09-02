@@ -4194,8 +4194,42 @@ export function generateRulePlan(
     ? `Plan generated as maintenance — ${input.current_weekly_km}km a week across ${input.days_available} day${input.days_available === 1 ? '' : 's'} cannot be built on. The long run is already at its time cap and the easy runs are capped against it, so adding a quality session takes volume out of the week rather than adding to it: this plan peaks at ${Math.round(structuralPeakInversion.peakMax)}km against ${Math.round(structuralPeakInversion.baseMax)}km earlier in the plan. It maintains your fitness rather than building it. The lever is days, not effort — ${input.days_available + 1} running days would let the same volume progress.`
     : null
 
+  // §52 (2026-09-02) — LOPSIDED-WEEK maintenance trigger. §52 itself names the
+  // three remedies for a week whose long run exceeds LONG_RUN_MAX_PCT_OF_WEEKLY:
+  // "reduce the long run, raise weekly volume, or downgrade to maintenance". The
+  // engine did none of them — it built the lopsided week and let the invariant
+  // fire, which reports the runner's plan as defective for a constraint the
+  // engine chose.
+  //
+  // It happens when the long run is race-anchored (§45/§47 floors) while the week
+  // is runner-anchored (§2 ramp off current volume). At very low volume those two
+  // anchors diverge until the week is lopsided BY CONSTRUCTION: a 5 km/week runner
+  // building to a half marathon reaches a 14.5 km long run against a 24 km week —
+  // 60.4%. Nothing is drifting; the plan is simply more race than the runner's
+  // base can carry, which is exactly what `maintenance` exists to say.
+  //
+  // Reducing the long run instead would collide with §45/§47's floors, so of §52's
+  // three remedies this is the one that does not need a new doctrine ruling — and
+  // maintenance is already exempt from this cap, so the plan stops being reported
+  // as defective and starts being described honestly.
+  const lrCapPct = GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100
+  const lopsidedWeek = weeks.find(w => {
+    if (w.type === 'race' || w.type === 'deload' || w.badge === 'deload') return false
+    if (!w.weekly_km || w.weekly_km <= 0) return false
+    let longest = 0
+    for (const sn of Object.values(w.sessions)) {
+      if (!sn || sn.type === 'strength' || sn.type === 'rest') continue
+      const km = sn.distance_km ?? ((sn.duration_mins ?? 0) / pace.minPerKmEasy)
+      if (km > longest) longest = km
+    }
+    return longest / w.weekly_km > lrCapPct
+  })
+  const lopsidedNote: string | null = lopsidedWeek
+    ? `Plan generated as maintenance — the long run this race needs is larger than your current weekly volume can carry around it. By week ${lopsidedWeek.n} the long run is ${Math.round(GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY)}%+ of the whole week, which is a lopsided week however it is arranged: the race sets the long run, your current ${input.current_weekly_km}km a week sets everything else. It maintains your fitness and gets you round rather than building you up. The lever is weekly volume — more running on the other days, not a longer long run.`
+    : null
+
   const finalVolumeProfile: 'build' | 'maintenance' | undefined =
-    (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance || structuralPeakInversion)
+    (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance || structuralPeakInversion || lopsidedWeek)
       ? 'maintenance'
       : peakOverloadResult?.volume_profile  // 'build' or undefined
   // Order matters: the more specific diagnosis wins. A structural inversion
@@ -4205,6 +4239,7 @@ export function generateRulePlan(
   const finalVolumeNote: string | undefined =
     structuralNote ?? peakOverloadResult?.volume_constraint_note
       ?? (daysLowMaintenance ? daysLowNote ?? undefined : undefined)
+      ?? lopsidedNote ?? undefined
 
   // CoachingPrinciples §31 — persona-aware compression classification. Computed
   // here (not inline in meta) so the difficulty band below reads the SAME value,
