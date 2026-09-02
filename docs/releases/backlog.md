@@ -143,10 +143,8 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 ### §79 / §80 follow-ups (from the 2026-08-31 returning-runner wave)
 
-*Parent work shipped 2026-08-31 → feature-registry (three rows: §79 Phase 1, §79 Phase 2, §80 Phase 3), all verified on device 2026-09-02. **§79-PEAKKM closed 2026-09-02** — board ruled, engine fixed, → feature-registry. One remainder, descoped from that fix by the board rather than overlooked.*
+*Parent work shipped 2026-08-31 → feature-registry (three rows: §79 Phase 1, §79 Phase 2, §80 Phase 3), all verified on device 2026-09-02. **§79-PEAKKM and §79-INTENSITY-ROUTING both closed 2026-09-02** — board ruled on each, engine fixed, → feature-registry. No open remainder.*
 
-- 🔲 **[W5]** **§79-INTENSITY-ROUTING — route VO2max dose + secondary-quality selection off the INTENSITY level** *(Coaching Board item, descoped from §79-PEAKKM 2026-09-02)* — tracing §79-PEAKKM found that the "structural" level drives three decisions that are really **intensity** decisions: `vo2maxRepPlan(row, fitness, …)` sizes the VO2max dose (`ruleEngine.ts:825`), the **secondary** quality slot selects its catalogue row off it (`:2077`) while the **primary** correctly uses `intensityFitness` (`:2021`), and peak-phase session count reads it (`:1701`). **Consequence today:** a returning runner is structurally `beginner`, and the secondary slot filters rows by `FITNESS_RANK[row.fitness_level_min] <= structural` — but almost every quality row in `sessionCatalogueData.ts` is `fitness_level_min: 'intermediate'`, so their second quality slot can select nearly nothing. **§79 Phase 1 is therefore incomplete**: the runner gets a lifted intensity allowance they cannot spend on slot 2. **Not bundled into the §79-PEAKKM fix on Willy's explicit condition** — it changes prescription for runners who never touched the wizard control, so it gets measured on its own. **Board must rule** before build. **Tier: FREE.** Effort: S–M. Full trace: `docs/investigations/79-peakkm-impact-2026-09-02.md` § 2 Blocker 2 + § 3.
-  - **Verify still open:** `grep -n "vo2maxRepPlan(catalogueRow, fitness" lib/plan/ruleEngine.ts` → non-empty = still open.
 
 ### Instrumentation (Wave 0)
 

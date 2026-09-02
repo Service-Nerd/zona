@@ -2030,7 +2030,7 @@ function buildWeekSessions(
       if (process.env.DEBUG_ROT) console.error(`      cat1 -> ${cat1?.id}:${cat1?.category} (pref=${preferredCategory})`)
       sessions[qualDay] = makeQualitySession({
         weekN, day: qualDay, distKm: qualKm, metric, zones, pace,
-        catalogueRow: cat1, phase, fitness, isDeload, goalPace,
+        catalogueRow: cat1, phase, fitness: intensityFitness, isDeload, goalPace,
         goalPaceWeek, distLabel: distKey, cueCtx,
       })
       used.push(qualDay)
@@ -2073,8 +2073,17 @@ function buildWeekSessions(
           const altCategory: CatalogueCategory = preferredCategory === 'threshold' ? 'vo2max'
             : preferredCategory === 'vo2max' ? 'threshold'
             : preferredCategory
+          // §79 (2026-09-02, Coaching Board) — select on the INTENSITY level, as
+          // the primary slot above already does. This slot read the STRUCTURAL
+          // level, and the catalogue filters rows by
+          // `FITNESS_RANK[row.fitness_level_min] <= userRank`: 0 of 14 quality
+          // rows are eligible at `beginner`, so a returning runner (structural
+          // beginner, intensity intermediate) could never fill their second
+          // quality slot — measured at 0 of 6 build/peak weeks — despite
+          // QUALITY_SESSIONS_PER_WEEK_MAX allowing 2. The allowance and the
+          // catalogue filter disagreed; the allowance is right.
           const cat2 = selectCatalogueSession({
-            catalogue, phase, distanceKey: distKey, fitness, tier, weekN, slotIndex: 1, preferredCategory: altCategory,
+            catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 1, preferredCategory: altCategory,
             weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast,
           })
           const secondaryFraction = GENERATION_CONFIG.SECONDARY_QUALITY_PCT_OF_PRIMARY / 100
@@ -2085,7 +2094,7 @@ function buildWeekSessions(
             weekN, day: qual2Day,
             distKm: Math.max(roundDist(qualKmPerSession * secondaryFraction), minDist.secondary_quality),
             metric, zones, pace,
-            catalogueRow: cat2, phase, fitness, isDeload, goalPace,
+            catalogueRow: cat2, phase, fitness: intensityFitness, isDeload, goalPace,
             goalPaceWeek, distLabel: distKey, cueCtx,
           })
           used.push(qual2Day)

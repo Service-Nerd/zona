@@ -337,6 +337,15 @@ export const GENERATION_CONFIG = {
   // Target work minutes by fitness × phase — the count PROGRESSES by readiness
   // and block position, NOT by weekly volume (the SC-10 error the board refused
   // to re-import). Beginners get no VO2max (§8), so only intermediate/experienced.
+  // NO `beginner` band, deliberately (§79, Coaching Board 2026-09-02). A true
+  // beginner has QUALITY_SESSIONS_PER_WEEK_MAX = 0 and no eligible VO2max row,
+  // so they never reach this table. A structurally-beginner runner arrives here
+  // only via a LIFTED intensity (returning runner), at which point `intermediate`
+  // is the correct band — an invented beginner band would be a number with no
+  // principle behind it (INV-CFG). The `?? VO2MAX_WORK_MIN_MINS` fallback at the
+  // read site is a genuine backstop, not the routine path: this table is indexed
+  // by the INTENSITY level, never the structural one. Indexing it structurally is
+  // what made a session selected at `intermediate` get sized at the floor.
   VO2MAX_WORK_TARGET_MINS: {
     intermediate: { build: 12, peak: 15 },
     experienced:  { build: 15, peak: 18 },

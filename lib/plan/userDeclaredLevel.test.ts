@@ -145,6 +145,46 @@ describe('§79 — a DOWNWARD declaration is heard, on both axes', () => {
   })
 })
 
+describe('§79-INTENSITY-ROUTING — quality selection + sizing follow the intensity level', () => {
+  // A runner whose INTENSITY exceeds their STRUCTURAL level — the state the
+  // asymmetric declaration above creates. The secondary quality slot used to
+  // select at the structural level, where 0 of 14 quality rows are eligible
+  // (`FITNESS_RANK[row.fitness_level_min] <= userRank`, and every quality row is
+  // `fitness_level_min: 'intermediate'` or above). It therefore fell through to an
+  // UNCATALOGUED session — ADR-018's no-rep-structure defect, where the runner is
+  // shown a name and no reps.
+  //
+  // NOTE this does not add a session. `QUALITY_SESSIONS_PER_WEEK_MAX` is a
+  // ceiling; the count comes from `plannedQuality`, which is 1 for every
+  // non-`experienced` runner by design. Only the linkage and dose change.
+  const LIFTED: GeneratorInput = {
+    race_date: '2026-12-14', race_distance_km: 10, goal: 'time_target',
+    target_time: '0:48:00', days_available: 5, age: 40,
+    current_weekly_km: 15, longest_recent_run_km: 6,
+    training_age: '6-18mo', preferred_long_run_day: 'sun',
+    user_declared_level: 'experienced',
+  }
+
+  it('every placed quality session carries a catalogue_id (ADR-018)', () => {
+    const plan = generateRulePlan(LIFTED, 'paid', PLAN_START)
+    const uncatalogued: string[] = []
+    for (const w of plan.weeks) {
+      for (const s of Object.values(w.sessions)) {
+        if (!s) continue
+        if (!['quality', 'hard', 'intervals', 'tempo'].includes(s.type)) continue
+        if (!s.catalogue_id) uncatalogued.push(`wk${w.n} ${s.label}`)
+      }
+    }
+    expect(uncatalogued).toEqual([])
+  })
+
+  it('the structural level is beginner, so this is genuinely the lifted case', () => {
+    const plan = generateRulePlan(LIFTED, 'paid', PLAN_START)
+    expect(plan.meta.fitness_level).toBe('beginner')
+    expect(plan.meta.fitness_intensity_level).toBe('experienced')
+  })
+})
+
 describe('§79 — fitness_level (the API contract) is unchanged', () => {
   it('an explicit fitness_level still drives structure, as the matrix relies on', () => {
     const asBeginner = generateRulePlan({ ...TEN_K_LOW_VOLUME, fitness_level: 'beginner' }, 'paid', PLAN_START)
