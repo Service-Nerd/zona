@@ -11,7 +11,7 @@
 // only touches that file. Page-structural marketing prose lives inline here
 // (same precedent as the thesis / pillar cards). Tagline placement:
 //   • Hero kicker         → BRAND.tagline           (voice leads — names the user)
-//   • Hero headline (h1)  → inline copy (SEO-01)     (functional, discovery/SEO)
+//   • Hero headline (h1)  → BRAND.marketingH1        (functional, discovery/SEO)
 //   • Closing voice line  → BRAND.brandStatement    (personality moment)
 //
 // ─── Brand-rule note (revisit if challenged) ───────────────────────────────
@@ -154,12 +154,10 @@ export default async function Home() {
           color: 'var(--ink)',
           margin: '0 0 24px',
         }}>
-          {/* SEO-01 — inline, NOT BRAND.appStoreSubtitle. The App Store subtitle is a
-              locked string used verbatim by App Store Connect and by og:/twitter:
-              titles; the H1 needs the "running" keyword that the subtitle omits. Page-
-              structural marketing prose lives inline here by the precedent at the top
-              of this file. */}
-          Running plans to stop you overtraining
+          {/* SEO-01 — its OWN constant, deliberately not BRAND.appStoreSubtitle:
+              that one is capped at 30 chars by Apple (currently 30/30) and still
+              drives og:/twitter: titles. See lib/brand.ts. */}
+          {BRAND.marketingH1}
         </h1>
 
         <p style={{

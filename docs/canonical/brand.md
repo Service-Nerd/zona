@@ -24,7 +24,7 @@ If this doc and `lib/brand.ts` ever disagree on a string, `lib/brand.ts` wins �
 
 | Line | Job | `BRAND` constant | Where it appears |
 |---|---|---|---|
-| "Training plans that stop you overtraining." | **What the app does** — functional, discovery-facing | `BRAND.appStoreSubtitle` — note: the *field value* is trimmed to Apple's 30-char limit (currently `'Plans to stop you overtraining'`); the line above is the full locked concept it stands for | App Store subtitle, landing hero, paid ads |
+| "Training plans that stop you overtraining." *(stored as the 30-char `"Plans to stop you overtraining"` — Apple caps the App Store subtitle at 30; the marketing H1 is the separate `BRAND.marketingH1`)* | **What the app does** — functional, discovery-facing | `BRAND.appStoreSubtitle` — note: the *field value* is trimmed to Apple's 30-char limit (currently `'Plans to stop you overtraining'`); the line above is the full locked concept it stands for | App Store subtitle, landing hero, paid ads |
 | "Slow down. You've got a day job." | **Who it's for** — the demographic hook | `BRAND.tagline` | Login, loading, OG image, meta description |
 | "You can't outrun your easy days." | **How the brand sounds** — voice moment | `BRAND.brandStatement` | Privacy footer, App Store description (not login — tagline owns that space) |
 

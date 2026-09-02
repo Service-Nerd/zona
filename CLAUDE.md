@@ -22,7 +22,7 @@ Zone discipline is the product idea: commit to the zone you're in. Run easy when
 
 | Line | Job | `BRAND` constant | Where it appears |
 |---|---|---|---|
-| **"Training plans that stop you overtraining."** | What the app does. Functional, discovery-facing. | `BRAND.appStoreSubtitle` | App Store subtitle, landing page hero, paid ads |
+| **"Training plans that stop you overtraining."** | What the app does. Functional, discovery-facing. | `BRAND.appStoreSubtitle` — stored value is the 30-char `"Plans to stop you overtraining"` (Apple caps the subtitle at 30). Marketing H1 is `BRAND.marketingH1`. | App Store subtitle, landing page hero, paid ads |
 | **"Slow down. You've got a day job."** | Who the app is for. The demographic hook. | `BRAND.tagline` | Login screen, loading screen, OG image, meta description |
 | **"You can't outrun your easy days."** | How the brand sounds. Voice/personality moment. | `BRAND.brandStatement` | Privacy footer, App Store description (not login — tagline owns that space) |
 

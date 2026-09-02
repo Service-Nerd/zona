@@ -28,6 +28,21 @@ export const BRAND = {
    */
   appStoreSubtitle: 'Plans to stop you overtraining',
 
+  /**
+   * Marketing-site H1 (SEO-01, 2026-09-02). Web only — no length limit.
+   *
+   * SEPARATE FROM `appStoreSubtitle` ON PURPOSE, and they must not be merged.
+   * The subtitle is capped at 30 characters by Apple and is currently 30/30; this
+   * string is 38 and would be rejected by App Store Connect. They are also
+   * different jobs: the subtitle is constrained by a third party and mirrors the
+   * live listing, this one is search copy we control and carries the "running"
+   * keyword the subtitle has no room for.
+   *
+   * `appStoreSubtitle` still drives og:title / twitter:title, where brand-first
+   * is correct for social sharing. Changing this string does not touch those.
+   */
+  marketingH1: 'Running plans to stop you overtraining',
+
   /** Primary tagline. Use on login, loading, OG image, in-app footer moments. Names the user. */
   tagline: "Slow down. You've got a day job.",
 

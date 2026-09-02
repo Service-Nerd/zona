@@ -39,7 +39,7 @@ Sign in via Google OAuth (the dominant production path on web). Apple Sign in vi
 
 **Assertions:**
 - Page returns HTTP 200.
-- If marketing on: hero contains text `"Plans to stop you overtraining"` (the `BRAND.appStoreSubtitle` value).
+- If marketing on: hero H1 contains text `"Running plans to stop you overtraining"` (the `BRAND.marketingH1` value). *(Was `BRAND.appStoreSubtitle` until SEO-01, 2026-09-02 — the H1 was decoupled from the App Store subtitle, which is capped at 30 chars. The old assertion would now fail on the capital "P".)*
 - If marketing off: URL ends `/dashboard` and the login screen renders.
 
 ---

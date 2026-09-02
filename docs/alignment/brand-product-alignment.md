@@ -116,7 +116,7 @@ Every product decision, every piece of copy, every visual choice should reinforc
 
 ### Subtitle (30 chars max)
 **Training plans that stop you overtraining.**
-*(Locked as `BRAND.appStoreSubtitle`.)*
+*(Locked as `BRAND.appStoreSubtitle`, stored as the 30-char `"Plans to stop you overtraining"` — Apple caps the App Store subtitle at 30 chars, so the 42-char line above is the voice of this slot rather than the literal value. The marketing-site H1 is a separate constant, `BRAND.marketingH1`, added by SEO-01 2026-09-02.)*
 
 ### Description opening (first 170 chars — what shows before "read more")
 > Most runners train too hard on their easy days. Zonna is the app that tells you to slow down. Built for runners with a day job, a life, and a race on the horizon.
