@@ -11,14 +11,14 @@
 // only touches that file. Page-structural marketing prose lives inline here
 // (same precedent as the thesis / pillar cards). Tagline placement:
 //   • Hero kicker         → BRAND.tagline           (voice leads — names the user)
-//   • Hero headline (h1)  → BRAND.appStoreSubtitle  (functional, discovery/SEO)
+//   • Hero headline (h1)  → inline copy (SEO-01)     (functional, discovery/SEO)
 //   • Closing voice line  → BRAND.brandStatement    (personality moment)
 //
 // ─── Brand-rule note (revisit if challenged) ───────────────────────────────
 // CLAUDE.md locks "never mix two taglines on the same surface" and maps the
 // landing-page hero to appStoreSubtitle. On a *destination marketing* surface
 // (not the App Store), voice should lead — so the tagline is elevated to the
-// hero kicker while appStoreSubtitle stays the functional <h1> / SEO anchor.
+// hero kicker while the <h1> carries the functional, keyword-bearing headline.
 // This is the deliberate, documented exception for this surface only.
 // Separately: BRAND.voiceAnchor ("Hold the zone.") is product-internal and
 // explicitly NOT for marketing copy — it has been removed from this hero.
@@ -44,8 +44,12 @@ export const dynamic = 'force-dynamic'  // auth check must run per-request
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zonna.run'
 
 export const metadata: Metadata = {
-  title: `${BRAND.name} — ${BRAND.appStoreSubtitle}`,
-  description: `Training plans for runners who go medium-hard on everything. ${BRAND.name} prescribes the zone for each session and holds you to it. Built for the day-job runner. ${PRICING.trialDays} days free.`,
+  // SEO-01 — keyword-first, brand last. Deliberately NOT `${BRAND.appStoreSubtitle}`:
+  // the App Store subtitle is brand-first by design and still drives og:/twitter:
+  // below, which are social-share copy where brand-first is correct.
+  title: `Running Plans to Stop You Overtraining | ${BRAND.name}`,
+  // SEO-01 — 149 chars, inside Google's ~155 snippet budget.
+  description: `Training plans for runners who go medium-hard on everything. ${BRAND.name} sets the zone for each session and holds you to it. Built for the day-job runner.`,
   alternates: {
     canonical: APP_URL,
   },
@@ -79,8 +83,43 @@ export default async function Home() {
   const { data: { user } } = await supabase.auth.getUser()
   if (user) redirect('/dashboard')
 
+  // ── SEO-01 — SoftwareApplication structured data ──────────────────────────
+  // Rendered here rather than in app/layout.tsx: that layout is the ROOT layout
+  // and also serves /dashboard and /auth, where this markup would be wrong. There
+  // is no marketing-specific layout.
+  //
+  // NO aggregateRating. There are no ratings yet, and inventing one is a Google
+  // manual-action risk (structured-data spam) as well as being untrue.
+  //
+  // `description` is the same string as the meta description above, deliberately.
+  // Price comes from PRICING, never a literal, so a price change cannot leave the
+  // rich result stale (CLAUDE.md: pricing is parameterised in lib/brand.ts).
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: BRAND.name,
+    description: `Training plans for runners who go medium-hard on everything. ${BRAND.name} sets the zone for each session and holds you to it. Built for the day-job runner.`,
+    applicationCategory: 'HealthApplication',
+    operatingSystem: 'iOS 16.6 or later',
+    url: APP_URL,
+    installUrl: BRAND.appStore.url,
+    author: { '@type': 'Person', name: 'Russell Shear' },
+    offers: {
+      '@type': 'Offer',
+      price: String(PRICING.monthly.amount),
+      priceCurrency: PRICING.currency,
+    },
+  }
+
   return (
     <main style={{ background: 'var(--bg)', color: 'var(--ink)', minHeight: '100vh', fontFamily: 'var(--font-ui)' }}>
+
+      {/* SEO-01 — structured data. Next.js recommends this exact pattern for
+          JSON-LD in the App Router. Not user-visible. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       {/* ── Top nav — wordmark only (sign-in removed) ────────────────────── */}
       <nav style={{
@@ -115,7 +154,12 @@ export default async function Home() {
           color: 'var(--ink)',
           margin: '0 0 24px',
         }}>
-          {BRAND.appStoreSubtitle}
+          {/* SEO-01 — inline, NOT BRAND.appStoreSubtitle. The App Store subtitle is a
+              locked string used verbatim by App Store Connect and by og:/twitter:
+              titles; the H1 needs the "running" keyword that the subtitle omits. Page-
+              structural marketing prose lives inline here by the precedent at the top
+              of this file. */}
+          Running plans to stop you overtraining
         </h1>
 
         <p style={{
@@ -163,7 +207,7 @@ export default async function Home() {
       }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <Eyebrow>The problem</Eyebrow>
-          <SectionTitle>Every run ends up in the same grey middle.</SectionTitle>
+          <SectionTitle>Every run ends up in the same grey zone.</SectionTitle>
 
           <div style={{
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',

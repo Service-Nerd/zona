@@ -24,3 +24,6 @@ yarn-error.log*
 # aggregated findings in the incident analysis are fine; the raw record is not.
 docs/incidents/**/user-*.json
 docs/incidents/**/*-export.json
+
+# Ad-hoc operational SQL (contains production user ids) — keep out of the repo
+scripts/sql/
