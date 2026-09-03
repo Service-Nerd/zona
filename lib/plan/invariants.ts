@@ -14,8 +14,8 @@ import { GENERATION_CONFIG } from './generationConfig'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { isLongRun, isShakeout, classifyStimulus, isVo2maxSession, isStructuredSession } from './sessionRole'
-import { mainSetMinutes } from './sessionFormat'
-import { isV2Structure } from './sessionStructureV2'
+import { mainSetMinutes, durationForMainSet } from './sessionFormat'
+import { isV2Structure, StructureV2Schema } from './sessionStructureV2'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
 import { parseDateLocal, formatDate, getDistanceConfig } from './length'
 import { FITNESS_RANK } from './fitnessAssessment'
@@ -35,6 +35,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-CATALOGUE-LINK',
   'INV-PLAN-MAIN-SET-ORDERING',
   'INV-PLAN-VO2MAX-MAIN-SET-CAP',
+  'INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT',
   'INV-PLAN-VO2MAX-ONSET',
   'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS',
   'INV-PLAN-COACH-NOTES-MATCH-INTENT',
@@ -245,6 +246,58 @@ function vo2maxWorkMinutes(session: Session): number | null {
     return mid == null ? null : reps * (len.m / 1000) * mid
   }
   return null
+}
+
+// Coaching Board 2026-09-03 — generalises the reader above to any v2
+// structured session, REGARDLESS of shape: a reps block (one work + one
+// recovery step, repeated N times — tempo_cruise_short, tenk_pace_intervals,
+// the vo2max rows) or a ladder (several DISTINCT steps in sequence, each a
+// different length — threshold_ladder's 3-5-8-5-3, repeat 1). Sums every
+// step's minutes across every block × that block's own repeat count, rather
+// than assuming "one work step found, multiply by reps" — that assumption
+// is correct for a reps shape and silently wrong for a ladder (it read only
+// the ladder's first, shortest rung and ignored the other four). Read from
+// the catalogue ROW's raw structure, never the session's own derived_set,
+// whose steps carry already-formatted display text ("5 min", "1:30",
+// "1200 m") that is fragile to re-parse when the row's typed length field
+// says the same thing without needing to.
+function pacedRepMainMinutes(session: Session): number | null {
+  const row = session.catalogue_id ? V1_SESSION_CATALOGUE.find(r => r.id === session.catalogue_id) : undefined
+  if (!row || !isV2Structure(row.main_set_structure)) return null
+  const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+  // Only a reps-scaled shape was given structure-driven sizing (pacedRepPlan,
+  // Coaching Board 2026-09-03) — a fixed ladder's duration_mins still comes
+  // from the older generic quality-session formula and was never asserted to
+  // match its own step total. Same narrowing as thresholdReachable.test.ts.
+  if (!parsed.success || parsed.data.sizing.scaling !== 'reps') return null
+  const mid = parsePaceMidpoint(session.pace_target ?? '')
+  let total = 0
+  for (const block of parsed.data.blocks) {
+    // A block's repeat may itself be a resolved parameter (reps shapes) —
+    // read it back off the session's own derived_set, which is where the
+    // engine stamped the runner-specific count; a ladder's fixed numeric
+    // repeat needs no lookup.
+    const repeat = typeof block.repeat === 'number'
+      ? block.repeat
+      : (session.derived_set as { blocks?: { repeat?: number }[] } | undefined)?.blocks?.[0]?.repeat
+    if (typeof repeat !== 'number') return null
+    let blockMins = 0
+    for (const step of block.steps) {
+      if (step.length.kind === 'duration') { blockMins += step.length.secs / 60; continue }
+      if (step.length.kind === 'distance') {
+        if (mid == null) return null   // distance step with no resolvable pace — can't check
+        blockMins += (step.length.m / 1000) * mid
+        continue
+      }
+      // to_landmark / mirror / open / parameter: no fixed minute value this
+      // check can price (a hill's landmark-bounded length, an effort-governed
+      // open interval). Not this invariant's job — skip the session entirely
+      // rather than guess.
+      return null
+    }
+    total += repeat * blockMins
+  }
+  return total
 }
 
 // Pace at a given VDOT fraction. Mirror of paceAtFraction in ruleEngine.ts —
@@ -1736,6 +1789,45 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             message: `VO2max work "${sn.label}" is ${work.toFixed(0)} min at Z4–5, outside the ${floor}–${ceil} min dose band (least sustainable work per minute; bounded at both ends).`,
             actual: `${work.toFixed(0)} min work`,
             expected: `${floor}–${ceil} min (± ${tol} rounding)`,
+          })
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT (CoachingPrinciples §8 —
+  // Coaching Board 2026-09-03) — a structured session's OWN STATED DURATION
+  // must fit its OWN PRESCRIBED STRUCTURE. Surfaced by a real generated plan:
+  // tenk_pace_intervals sized at 25 min while its 4×1200m @ goal pace / 2min
+  // jog structure needs ~27.6 min — the session's length didn't fit its own
+  // rep count. Recomputes the structure's work+recovery minutes from the
+  // catalogue row (pacedRepMainMinutes) and checks the session's duration_mins
+  // against durationForMainSet of that total — the SAME floor-aware
+  // warm-up/cool-down inverse the engine itself sizes against (sessionFormat.ts),
+  // so the invariant and the generator can never silently disagree about what
+  // "fits" means. Only engages for `scaling: 'reps'` rows — the ones this
+  // ruling's pacedRepPlan actually sizes (tempo_cruise_short,
+  // tenk_pace_intervals, the vo2max rows). threshold_ladder and any other
+  // `scaling: 'fixed'` shape are excluded: their duration_mins comes from
+  // the older generic quality-session formula this ruling never touched, so
+  // asserting coherence there would flag a mismatch nothing ever promised
+  // not to have. v1 sessions have no rep structure to be incoherent with.
+  {
+    const tol = GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
+    for (const w of plan.weeks) {
+      for (const [day, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+        if (!sn || !sn.derived_set || sn.duration_mins == null) continue
+        const mainMins = pacedRepMainMinutes(sn)
+        if (mainMins == null) continue
+        const expectedTotal = durationForMainSet(mainMins)
+        if (Math.abs(sn.duration_mins - expectedTotal) > tol) {
+          violations.push({
+            code: 'INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT',
+            principle_ref: 'CoachingPrinciples §8',
+            severity: 'error', week: w.n, day,
+            message: `"${sn.label}"'s stated duration does not fit its own prescribed structure (${mainMins.toFixed(1)} min of work+recovery needs ~${expectedTotal.toFixed(0)} min total with warm-up/cool-down).`,
+            actual: `${sn.duration_mins} min`,
+            expected: `~${expectedTotal.toFixed(0)} min (± ${tol} rounding)`,
           })
         }
       }
