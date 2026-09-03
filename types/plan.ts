@@ -198,6 +198,13 @@ export interface Session {
   // the runner's metric preference; distance is only ever a secondary/estimated
   // value on these. Asserted by INV-PLAN-DURATION-ANCHORED-KEEPS-MINUTES.
   duration_anchored?: boolean
+  /** §82 (Coaching Board, 2026-09-03) — the weekday cap (§18) would have scaled
+   *  this easy run below MIN_SESSION_DISTANCE_KM.easy, so the engine held it at
+   *  the floor instead; duration follows the floor distance and exceeds the
+   *  runner's stated max_weekday_mins by a few minutes. Set by
+   *  applyWeekdayMinsCap; read by the plan-level maintenance trigger and
+   *  INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED. Generator-internal — not shown in UI. */
+  floor_protected?: boolean
   zone?: string                           // e.g. "Zone 2" | "Zone 3–4"
   hr_target?: string                      // e.g. "< 145 bpm" | "155–165 bpm"
   pace_target?: string                    // e.g. "6:30–7:00 /km"

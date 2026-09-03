@@ -2241,6 +2241,70 @@ check (ADR-020).
 
 ---
 
+## 82. Easy runs are floor-protected against the weekday cap
+
+**Coaching Board, 2026-09-03. Unanimous.**
+
+`max_weekday_mins` (§18) binds an easy run's distance normally — §81 draws that
+line explicitly, because unlike a long run or a structured session an easy run
+has no `derived_set` or longest-run role to preserve, so the cap applies
+"normally": scaled. But **the cap never scales an easy run below
+`MIN_SESSION_DISTANCE_KM.easy`.** Where the ratio would cross that floor, the
+engine holds the session at the floor instead — the runner's stated weekday
+ceiling is exceeded by a few minutes, not honoured by a session that trains
+nothing.
+
+**Why.** SWEEP-VISIBLE-01 baselined 924 `INV-PLAN-MIN-SESSION-SIZE` violations as
+"low-volume main weeks, unrelated to the weekday cap" — that diagnosis was
+wrong, the same class of error SC-05 already recorded once this session
+(confirm the satisfying case, never infer from the failure). Every sampled
+violation read "got 3.5, expected 4" and carried `max_weekday_mins: 30`: the cap
+scaling an easy run's distance below its own 4km floor, not a construction-time
+volume problem. §9 already named the reason — below the floor, "the session is
+too short to be coaching-meaningful" — and a 3.5km jog that satisfies a cap
+number trains nothing while looking compliant.
+
+**This is not a new exemption.** §81 is unchanged: easy runs stay capped in the
+general case. §82 only stops the cap from crossing a named floor — the narrowest
+fix available, not a re-opening of the same-day ruling that easy runs are
+"capped normally" (McMillan / Hutchinson).
+
+**Sequencing with §52b.** §52b (INPUT-FLOOR-01) already prohibits spreading
+volume across more days than it can fill, and picks the day count at
+construction time. §82 is the fallback for once that day count is already
+minimal for the runner's volume and the weekday cap *still* bites a specific
+session — not a substitute for §52b's remedy. Floor protection engaging on one
+week is arithmetic; recurring across
+`GENERATION_CONFIG.EASY_RUN_FLOOR_PROTECTION_MAINTENANCE_WEEKS` (2) weeks means
+the day count and the stated time budget are structurally incompatible at this
+volume — the same diagnosis as §52b, surfacing late because the cap runs after
+§52b already chose the shape (Willy: persistence across weeks is the signal,
+not a percentage overrun — a floor breach is binary per session, unlike §81's
+graduated long-run overrun).
+
+**The obligation that comes with floor protection** (mirrors §81/§40c — same
+voice, same trade, do not introduce new copy for what is mechanically the same
+constraint, per Sims). Past the threshold above, the plan must:
+
+1. **Say so** — `volume_constraint_note`, naming day count as the lever.
+2. **Classify `maintenance`** — §52's third remedy.
+
+**No load objection (Willy).** 3.5km vs 4.0km easy is inside noise for tissue
+tolerance — this is a coaching-meaningfulness question, not a load-progression
+one.
+
+**Config.** `GENERATION_CONFIG.EASY_RUN_FLOOR_PROTECTION_MAINTENANCE_WEEKS = 2`.
+`MIN_SESSION_DISTANCE_KM.easy` (already 4, §9) is the floor being protected — no
+new distance constant.
+
+**Enforcement.** `applyWeekdayMinsCap` (`lib/plan/ruleEngine.ts`) stamps
+`Session.floor_protected` when it holds a session at the floor. Enforced by
+`INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED` (the disclosure obligation, recomputed
+directly from the finished plan) — `INV-PLAN-MIN-SESSION-SIZE` needs no change,
+since a floor-protected session sits *at* the floor, not below it.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

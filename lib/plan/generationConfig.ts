@@ -946,6 +946,20 @@ export const GENERATION_CONFIG = {
   // ~78% are told plainly that these constraints support maintenance.
   LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT: 50,
 
+  // §82 (Coaching Board, 2026-09-03) — EASY-RUN FLOOR PROTECTION.
+  //
+  // applyWeekdayMinsCap can scale an easy run's distance below
+  // MIN_SESSION_DISTANCE_KM.easy — §9's floor for "too short to be
+  // coaching-meaningful". The engine now holds the session at the floor
+  // instead, so its duration exceeds max_weekday_mins by a few minutes rather
+  // than delivering a session that trains nothing. One occurrence is
+  // arithmetic (a cap value that happens to land under the floor for this
+  // runner's pace); recurrence across this many weeks means the runner's day
+  // count doesn't fit their stated time budget at their current volume — the
+  // same diagnosis §52b makes at construction, surfacing late. At or past this
+  // count the plan must say so and classify maintenance (§52's third remedy).
+  EASY_RUN_FLOOR_PROTECTION_MAINTENANCE_WEEKS: 2,
+
   // ── Stimulus rank — quality session escalation order (V5) ──────────────────
   // Numeric stimulus rank used to validate progressive escalation of quality
   // sessions through the build phase. A later quality session must NOT regress

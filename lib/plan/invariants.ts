@@ -29,6 +29,7 @@ export type Severity = 'error' | 'warn'
 export const INVARIANT_CODES = [
   'INV-PLAN-DELOAD-IS-A-REDUCTION',
   'INV-PLAN-VOLUME-SHORTFALL-DECLARED',
+  'INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED',
   'INV-PLAN-EFFORT-OR-PACE',
   'INV-PLAN-DERIVED-SET',
   'INV-PLAN-CATALOGUE-LINK',
@@ -1486,6 +1487,34 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         actual: 'no volume_shortfall_note',
         expected: 'a note stating the cost and naming the lever',
       })
+    }
+  }
+
+  // INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED (CoachingPrinciples §82)
+  //
+  // applyWeekdayMinsCap holds an easy run at MIN_SESSION_DISTANCE_KM.easy
+  // rather than scaling it below that floor, stamping `floor_protected` on the
+  // session. Recomputed directly from the finished plan (unlike the
+  // volume-shortfall check, this needs no counterfactual): count the weeks
+  // carrying at least one floor-protected session, and if that meets
+  // EASY_RUN_FLOOR_PROTECTION_MAINTENANCE_WEEKS, the plan must classify
+  // maintenance and carry the note — never absorb the overrun silently.
+  {
+    const floorProtectedWeeks = plan.weeks.filter(w =>
+      Object.values(w.sessions ?? {}).some(sn => sn?.floor_protected),
+    ).length
+    if (floorProtectedWeeks >= GENERATION_CONFIG.EASY_RUN_FLOOR_PROTECTION_MAINTENANCE_WEEKS) {
+      if (plan.meta.volume_profile !== 'maintenance' || !plan.meta.volume_constraint_note) {
+        violations.push({
+          code: 'INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED',
+          principle_ref: 'CoachingPrinciples §82',
+          severity: 'error',
+          week: 0,
+          message: `Easy-run floor protection fired in ${floorProtectedWeeks} weeks, but the plan does not declare it. A suppressed target is stated, never absorbed silently.`,
+          actual: `volume_profile=${plan.meta.volume_profile ?? 'undefined'}, volume_constraint_note=${plan.meta.volume_constraint_note ? 'present' : 'absent'}`,
+          expected: 'volume_profile=maintenance and a volume_constraint_note naming the day-count lever',
+        })
+      }
     }
   }
 

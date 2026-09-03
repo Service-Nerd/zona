@@ -478,9 +478,20 @@ const BASELINE: Record<string, number> = {
   // extended to STRUCTURED sessions. The cap scaled distance/duration but not
   // `derived_set`, so a "Short VO2max" went 9km/43min -> 6.5km/30min while still
   // prescribing 7 x 400m — identical work, a duration that no longer described
-  // it. The remainder are low-volume main weeks whose easy runs fall under the
-  // floor (§52b territory), unrelated to the cap.
-  'INV-PLAN-MIN-SESSION-SIZE':             924,
+  // it.
+  // 924 -> 0 (CoachingPrinciples §82, Coaching Board 2026-09-03, unanimous).
+  // The "low-volume main weeks, unrelated to the cap" attribution above was
+  // WRONG — the same class of error as SC-05 earlier that day (confirm the
+  // satisfying case, never infer from the failure). Every sampled violation
+  // read "got 3.5, expected 4" at max_weekday_mins:30: `applyWeekdayMinsCap`
+  // scaling an easy run's distance below MIN_SESSION_DISTANCE_KM.easy with no
+  // floor check. The engine now holds the session at the floor instead —
+  // duration exceeds the stated cap by a few minutes rather than shipping a
+  // session too short to be coaching-meaningful — and declares maintenance
+  // when it recurs across 2+ weeks (INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED).
+  // Kept as an explicit 0 so a regression reads as NEW against a stated
+  // expectation. SWEEP-VISIBLE-01 closed.
+  'INV-PLAN-MIN-SESSION-SIZE':             0,
 
   // 87 -> 75 -> 0 (LABEL-VARIETY-01, 2026-08-21). The LABEL count is now zero:
   // the peak goal-pace override takes the row's shape word ("…-pace ladder",

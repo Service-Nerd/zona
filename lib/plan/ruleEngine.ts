@@ -1637,7 +1637,7 @@ function buildWeekSessions(
     // shakeout, so shortening it further to honour the runner's stated limit
     // costs the session nothing; the stride note is set on the object and rides
     // along unchanged. The race itself is exempt inside the helper.
-    applyWeekdayMinsCap(sessions, input)
+    applyWeekdayMinsCap(sessions, input, /* isRaceWeek */ true)
 
     return sessions
   }
@@ -2266,6 +2266,7 @@ function buildWeekSessions(
 function applyWeekdayMinsCap(
   sessions: Partial<Record<Day, Session>>,
   input: GeneratorInput,
+  isRaceWeek = false,
 ): void {
   if (!input.max_weekday_mins) return
   const weekdays: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri']
@@ -2293,10 +2294,41 @@ function applyWeekdayMinsCap(
     // `derived_set`, so the work is unchanged and only the stated duration
     // moves. See isStructuredSession for the measured case.
     if (isLongRun(s) || isStructuredSession(s)) continue
-    const ratio = cap / s.duration_mins
-    s.duration_mins = cap
-    if (s.distance_km != null) {
-      s.distance_km = roundDistance(s.distance_km * ratio)
+    const originalDurationMins = s.duration_mins
+    const ratio = cap / originalDurationMins
+    const cappedDistance = s.distance_km != null ? roundDistance(s.distance_km * ratio) : undefined
+
+    // §82 (Coaching Board, 2026-09-03) — EASY RUNS ARE FLOOR-PROTECTED.
+    //
+    // §81 draws the line: an easy run's prescription IS its distance and
+    // duration, so (unlike the long run or a structured session) the cap
+    // applies to it "normally" — scaled. But the ratio can scale it below
+    // MIN_SESSION_DISTANCE_KM.easy, §9's own floor for "too short to be
+    // coaching-meaningful" (measured: at max_weekday_mins=30 this lands at
+    // 3.5km against a 4km floor, ~5% of the widened sweep). Where the ratio
+    // would cross the floor, hold the session at the floor instead and let
+    // its duration follow at the runner's own easy pace — the stated weekday
+    // cap is exceeded by a few minutes, not honoured by a session that trains
+    // nothing. §52b's day-count remedy already ran before this session was
+    // placed, so this is the fallback once the day count is already minimal
+    // for the runner's volume, not a substitute for it.
+    //
+    // Race week is exempt from floor protection, mirroring
+    // INV-PLAN-MIN-SESSION-SIZE's own `isRaceWeek && type === 'easy'`
+    // exemption (§30) — a shakeout or race-week easy run is DELIBERATELY
+    // short (taper intent), never "too short to be coaching-meaningful".
+    // Without this, the shakeout cap (RACE_WEEK_SHAKEOUT_MAX_MINS, 35) got
+    // overridden by the floor and a 30-minute-capped runner got a 56-minute
+    // "shortened" shakeout — the opposite of §30's intent.
+    const floorKm = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+    if (!isRaceWeek && s.type === 'easy' && cappedDistance != null && cappedDistance < floorKm && s.distance_km) {
+      const paceMinPerKm = originalDurationMins / s.distance_km
+      s.distance_km = floorKm
+      s.duration_mins = Math.round(floorKm * paceMinPerKm)
+      s.floor_protected = true
+    } else {
+      s.duration_mins = cap
+      if (cappedDistance != null) s.distance_km = cappedDistance
     }
   }
 }
@@ -4297,8 +4329,22 @@ export function generateRulePlan(
     ? `Plan generated as maintenance — your long run does not fit the time you have. You've kept both weekend days clear of training and capped weekdays at ${longRunOverrun.cap} minutes, but by week ${longRunOverrun.n} the long run this race needs is about ${Math.round(longRunOverrun.mins)} minutes. It stays in the plan at full length, because a long run cut to ${longRunOverrun.cap} minutes stops being a long run. What it can't do is build toward the race on those terms. The lever is one longer session a week — a weekend morning, or a single weekday you can give more time to.`
     : null
 
+  // §82 — easy-run floor protection recurring across weeks. One week is
+  // arithmetic (a cap value that happens to land under MIN_SESSION_DISTANCE_KM.easy
+  // for this runner's pace); recurrence means the day count doesn't fit the
+  // stated weekday budget at this volume — same diagnosis as §52b, surfacing
+  // late because the cap runs after §52b already chose the day count.
+  const floorProtectedWeekCount = weeks.reduce((count, w) => {
+    const hasFloorProtected = Object.values(w.sessions ?? {}).some(sn => sn?.floor_protected)
+    return hasFloorProtected ? count + 1 : count
+  }, 0)
+  const easyFloorProtectionOverrun = floorProtectedWeekCount >= GENERATION_CONFIG.EASY_RUN_FLOOR_PROTECTION_MAINTENANCE_WEEKS
+  const easyFloorProtectionNote: string | null = easyFloorProtectionOverrun
+    ? `Plan generated as maintenance — your easy runs don't fit the time you have on ${floorProtectedWeekCount} of this plan's weeks. You've capped weekdays at ${input.max_weekday_mins} minutes, and at that limit some easy runs would shrink to a distance too short to train anything, so they stay a few minutes over your cap instead. The lever is day count — fewer, fuller sessions fit your time better than more, thinner ones.`
+    : null
+
   const finalVolumeProfile: 'build' | 'maintenance' | undefined =
-    (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance || structuralPeakInversion || lopsidedWeek || longRunOverrun)
+    (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance || structuralPeakInversion || lopsidedWeek || longRunOverrun || easyFloorProtectionOverrun)
       ? 'maintenance'
       : peakOverloadResult?.volume_profile  // 'build' or undefined
   // Order matters: the more specific diagnosis wins. A structural inversion
@@ -4309,10 +4355,11 @@ export function generateRulePlan(
     structuralNote ?? peakOverloadResult?.volume_constraint_note
       ?? (daysLowMaintenance ? daysLowNote ?? undefined : undefined)
       ?? lopsidedNote
-      // §81 last: it names a specific runner constraint, but any diagnosis above
-      // explains the same plan more completely. Appending keeps existing
-      // precedence untouched.
-      ?? longRunOverrunNote ?? undefined
+      // §81 before §82: both name a specific runner constraint, but the long
+      // run overrun is the more severe shape (the plan's pivotal session
+      // doesn't fit at all, vs. easy runs running a few minutes long).
+      // Appending keeps existing precedence untouched.
+      ?? longRunOverrunNote ?? easyFloorProtectionNote ?? undefined
 
   // CoachingPrinciples §31 — persona-aware compression classification. Computed
   // here (not inline in meta) so the difficulty band below reads the SAME value,
@@ -4592,7 +4639,7 @@ export function generateRulePlan(
   //      303 violations without this pass, 0 with it.
   // The lesson is not "always add a final pass" — it is that the answer changed
   // when the conditions did, and only re-measuring caught it.
-  for (const w of weeks) if (w.sessions) applyWeekdayMinsCap(w.sessions, input)
+  for (const w of weeks) if (w.sessions) applyWeekdayMinsCap(w.sessions, input, w.type === 'race')
 
   const plan: Plan = {
     meta,
