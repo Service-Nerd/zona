@@ -34,7 +34,42 @@ recordOpsEvent(kind: OpsEventKind, detail?: Record<string, unknown>, userId?: st
 | `plan_integrity_mismatch` | the probe | An `auto_applied` adjustment never landed in `plan_json`. `detail`: `{ adjustment_id, week_n, adjustment_at, plan_updated_at }`. |
 | `reshape_invalid` | `/api/adjust-plan` | A reshaped plan failed a constitutional invariant (production soft-degrade). |
 | `plan_enrich_failed` | `/api/generate-plan` stream | **GEN-FIX-02.** AI enrichment fell back silently and the user holds rule-engine output. `detail`: `{ reason, detail, tier, race_distance_km }` where `reason` ∈ `no_api_key` \| `api_error` \| `fetch_failed` \| `parse_error` \| `schema_invalid` \| `post_enrich_invalid`. The `post_enrich_invalid` row also carries `codes` (the violations charged to the enricher) and `pre_existing` (the rule plan's own, which are **not**). Written for trial **and** paid — a paid user receiving an unenriched plan is a paid feature not delivered. |
-| `plan_rule_invalid` | `/api/generate-plan` stream | **ENRICH-ATTRIB-01 (2026-09-03).** A *generated rule plan* violated its own constitution. `generateRulePlan` throws on this in dev/test but only `console.error`s in production, and a console line on a Vercel function is not a record — so a live constitutional violation had no durable signal at all until it took enrichment down with it. `detail`: `{ codes, tier, race_distance_km }`. Recorded by the route rather than the engine because `lib/plan/*` must stay free of the service-role client (it is imported by `DashboardClient`). **More serious than `plan_enrich_failed`:** the runner holds a plan that breaches a coaching principle, not merely an unenriched one. |
+| `plan_rule_invalid` | `/api/generate-plan` stream **and** `/api/ops/plan-audit` (daily) | **ENRICH-ATTRIB-01 (2026-09-03).** A *generated rule plan* violated its own constitution. `generateRulePlan` throws on this in dev/test but only `console.error`s in production, and a console line on a Vercel function is not a record — so a live constitutional violation had no durable signal at all until it took enrichment down with it. `detail`: `{ codes, tier, race_distance_km }`. Recorded by the route rather than the engine because `lib/plan/*` must stay free of the service-role client (it is imported by `DashboardClient`). **More serious than `plan_enrich_failed`:** the runner holds a plan that breaches a coaching principle, not merely an unenriched one. |
+
+## Probe — `GET|POST /api/ops/plan-audit`
+
+**PLAN-AUDIT-01 (2026-09-03).** Runs `validateReshapedPlan` over every stored plan and records
+the ones breaching their own constitution.
+
+**Auth:** `CRON_SECRET` via `Authorization: Bearer` or `x-cron-secret` (403 otherwise).
+**Schedule:** daily 07:45 UTC via GitHub Actions (`.github/workflows/ops-cron-plan-audit.yml`) —
+15 min after the reshape probe.
+
+**Why:** `generateRulePlan` validates at generation but only `console.error`s in production, and a
+plan can become invalid *after* generation (reshape, maintenance append, the client-side foundation
+block). On 2026-09-03 three `INV-PLAN-MAX-WEEKDAY-MINS` defects surfaced in one day, each having
+shipped behind a green suite, because the sweep's hand-authored grid could not reach the inputs real
+users chose. **This probe does not depend on anyone imagining the right input** — it reads what
+runners hold, and would have caught all three within 24 hours.
+
+**It is the only server-side validation foundation weeks receive** — they are built client-side and
+prepended after the plan leaves the server (ADR-020 Option A, outstanding).
+
+**Alerts on a TRANSITION, not on state.** A first run found **15 of 15** stored plans invalid —
+mostly legitimate historical debt (plans predating a principle, plus the 2026-09-03 defects which
+per the live-plan policy are deliberately not backfilled). A probe alerting on "is this invalid?"
+would fire on every row every day and train us to ignore it — the same trap OPS-01 avoided by
+choosing a timestamp relationship over a content deep-equal. So it compares each user's violation-code
+set against the last set it recorded: a first sighting alerts once then goes quiet, a **new** code
+alerts immediately (the regression case), and a **resolved** plan alerts once so improvement is
+visible too. Self-baselining — no snapshot to maintain, no cutoff to go stale.
+
+Uses `validateReshapedPlan` rather than a second implementation (D-08): that function is the single
+owner of "validate a stored plan", preferring `meta.generator_input` and falling back for pre-PV2-A
+plans. Deduped per user within 20h. `detail` carries `codes`, `foundation_week_violations`, a
+5-violation `sample`, and `plan_updated_at`.
+
+**Response 200:** `{ checked, invalid, unchanged, changed, skipped, flagged }` — watch `changed`, not `invalid`.
 
 ## Probe — `GET|POST /api/ops/reshape-integrity`
 

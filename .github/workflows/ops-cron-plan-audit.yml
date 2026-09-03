@@ -1,0 +1,62 @@
+# PLAN-AUDIT-01 — daily constitutional audit of every stored plan.
+#
+# Runs validatePlan over the plans real runners actually hold and records any
+# that breach their own constitution to ops_events (kind: plan_rule_invalid).
+#
+# Why this exists: on 2026-09-03 three separate INV-PLAN-MAX-WEEKDAY-MINS
+# defects surfaced in one day, each having shipped behind a fully green suite
+# (792 tests, 18,060 swept plans), because the sweep's hand-authored grid could
+# not reach the inputs real users chose. This probe does not depend on anyone
+# having imagined the right input — it reads what runners actually hold, so it
+# would have caught all three within 24 hours.
+#
+# It is also the ONLY server-side validation foundation weeks get: they are
+# built client-side and prepended after the plan leaves the server
+# (ADR-020 Option A, outstanding).
+#
+# Why GitHub Actions instead of vercel.json: Vercel Hobby caps at 2 crons, both
+# already used. Same rationale as ops-cron-integrity.yml.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   CRON_SECRET — same value as the Vercel env var.
+#   VERCEL_URL  — production URL, no trailing slash (e.g. https://www.zonna.run).
+
+name: ops-cron-plan-audit
+
+on:
+  schedule:
+    # 07:45 UTC daily — 15 min after the reshape-integrity probe so the two
+    # never contend, and clear of the push (:15/:30) and email (08:00) crons.
+    - cron: '45 7 * * *'
+  workflow_dispatch:
+
+jobs:
+  fire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST /api/ops/plan-audit
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VERCEL_URL:  ${{ secrets.VERCEL_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ] || [ -z "$VERCEL_URL" ]; then
+            echo "::error::CRON_SECRET and VERCEL_URL secrets must be set."
+            exit 1
+          fi
+          RESPONSE=$(curl -fsS --max-time 120 -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$VERCEL_URL/api/ops/plan-audit")
+          echo "$RESPONSE"
+          # Surface the finding in the Actions summary so a bad day is visible
+          # without opening Supabase. Non-fatal: an invalid plan is a finding to
+          # triage, not a broken workflow.
+          # Warn on CHANGED, not on `invalid`. Most stored plans carry known
+          # historical debt that is deliberately never backfilled (live-plan
+          # policy), so `invalid` is high and static; a warning on it would fire
+          # every day and be ignored. A CHANGE is the actionable signal.
+          CHANGED=$(echo "$RESPONSE" | grep -o '"changed":[0-9]*' | cut -d: -f2 || echo 0)
+          if [ "${CHANGED:-0}" -gt 0 ]; then
+            echo "::warning::plan-audit: $CHANGED plan(s) changed constitutional status — see ops_events (kind=plan_rule_invalid, detail.source=plan-audit)."
+          fi

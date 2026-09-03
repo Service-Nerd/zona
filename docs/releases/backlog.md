@@ -277,6 +277,8 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 
 ## Tech Debt
 
+- ✅ **PLAN-AUDIT-01 + REAL-CORPUS-01 — shipped 2026-09-03.** Two of the five test-coverage proposals. Daily probe (`/api/ops/plan-audit`, 07:45 UTC) validates every stored plan and alerts on a *change* in violation set; real-input corpus (`lib/plan/__fixtures__/real-inputs.json`) replays every plan a real runner has generated. Both would have caught the 2026-09-03 defects independently. **Remaining three proposals (validate-at-exit-boundary, fail-build-on-untested-input, invariant liveness) are still open** — see the founder memo.
+
 - 🔲 **SWEEP-VISIBLE-01 — three pre-existing defect classes the widened sweep can now see** *(ADR-020, 2026-09-03)*. Not regressions: the same widened grid scores them identically (or far worse) against the pre-wave engine. Baselined in `scripts/property-validate-plans.ts` with full attribution. **Verify still open:** `npm run verify:sweep` and read the "Known-open violations" block.
   - **`INV-PLAN-MIN-SESSION-SIZE` (2,061)** — main-week QUALITY sessions shrunk below `MIN_SESSION_DISTANCE_KM.quality` (5 km) by `applyWeekdayMinsCap` at a tight cap. 0 on foundation weeks. Same family as MWM-02/§81 — the cap deforming a session whose prescription *is* its structure (rep count, distance). **Needs a Coaching Board ruling**: does the §81 long-run exemption extend to quality sessions? The board ruled only on the long run. Likely the cause of most of this count.
   - **`INV-PLAN-MAX-WEEKDAY-MINS` (238)** — the same cause seen from the other side, at `max_weekday_mins: 30`. Byte-identical pre- and post-wave, so unrelated to §81. Resolves with the ruling above.

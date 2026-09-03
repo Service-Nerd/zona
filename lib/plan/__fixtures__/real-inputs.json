@@ -1,0 +1,141 @@
+{
+  "_readme": [
+    "REAL generator inputs from production plans. Refresh with: npx tsx scripts/sync-plan-corpus.ts",
+    "Every real runner permanently improves the regression suite. Committed so `npm run verify` stays offline and deterministic.",
+    "Redacted at source: athlete_name, race_name. Everything retained is a structural input the engine actually consumes.",
+    "WHY THIS EXISTS: the property sweep's grid is hand-authored and was repeatedly wrong about what real people enter — it tested max_weekday_mins 45/60/90 while BOTH real users chose 30, and had no foundation blocks at all. Three defects shipped behind a green sweep. Invented inputs test invented users."
+  ],
+  "captured_at": "2026-09-03",
+  "source": "plans.plan_json->meta->generator_input (persisted since PV2-A, fff1ab3)",
+  "cases": [
+    {
+      "id": "8333720c",
+      "captured": "2026-08-01",
+      "plan_start": "2026-08-17",
+      "tier": "trial",
+      "note": "SHORT-FORM day names ('tue','sun') — the only real plan using them. Real-world cover for lib/plan/days.ts normalisation, which FOUNDATION-DAYS-01 was caused by getting wrong.",
+      "input": {
+        "age": 43,
+        "goal": "finish",
+        "max_hr": 178,
+        "terrain": "mixed",
+        "benchmark": {
+          "time": "0:29:00",
+          "type": "race",
+          "distance_km": 5,
+          "benchmark_date": "2026-06-30"
+        },
+        "race_date": "2026-11-18",
+        "resting_hr": 72,
+        "training_age": "<6mo",
+        "days_available": 3,
+        "race_distance_km": 21.1,
+        "current_weekly_km": 30,
+        "days_cannot_train": [
+          "tue",
+          "sun"
+        ],
+        "longest_recent_run_km": 12,
+        "preferred_long_run_day": "sat",
+        "hard_session_relationship": "love"
+      }
+    },
+    {
+      "id": "731f2878",
+      "captured": "2026-09-02",
+      "plan_start": "2027-04-19",
+      "tier": "trial",
+      "note": "One of the two plans whose enrichment was discarded (ENRICH-ATTRIB-01). max_weekday_mins 30 — the value the sweep grid never tested.",
+      "input": {
+        "age": 52,
+        "goal": "finish",
+        "terrain": "mixed",
+        "benchmark": {
+          "time": "30:00",
+          "type": "tt_30min",
+          "distance_km": 3,
+          "benchmark_date": "2026-08-29"
+        },
+        "race_date": "2027-07-11",
+        "training_age": "<6mo",
+        "days_available": 4,
+        "injury_history": [
+          "shin splints"
+        ],
+        "max_weekday_mins": 30,
+        "race_distance_km": 5,
+        "current_weekly_km": 30,
+        "days_cannot_train": [
+          "tuesday",
+          "thursday",
+          "saturday"
+        ],
+        "user_declared_level": "beginner",
+        "longest_recent_run_km": 5,
+        "preferred_long_run_day": "sun",
+        "hard_session_relationship": "neutral"
+      }
+    },
+    {
+      "id": "c29db5d6",
+      "captured": "2026-09-02",
+      "plan_start": "2026-10-12",
+      "tier": "trial",
+      "note": "The second discarded-enrichment plan. Low volume (10 km/wk) + a 30-minute weekday cap.",
+      "input": {
+        "age": 50,
+        "goal": "finish",
+        "terrain": "mixed",
+        "race_date": "2027-01-01",
+        "training_age": "<6mo",
+        "days_available": 4,
+        "injury_history": [
+          "knee"
+        ],
+        "max_weekday_mins": 30,
+        "race_distance_km": 5,
+        "current_weekly_km": 10,
+        "days_cannot_train": [
+          "tuesday",
+          "thursday",
+          "saturday"
+        ],
+        "user_declared_level": "beginner",
+        "longest_recent_run_km": 5,
+        "preferred_long_run_day": "sun",
+        "hard_session_relationship": "avoid"
+      }
+    },
+    {
+      "id": "e876c470",
+      "captured": "2026-09-03",
+      "plan_start": "2026-09-21",
+      "tier": "trial",
+      "note": "The plan that exposed FOUNDATION-DAYS-01 — foundation weeks placed sessions on Mon/Wed while the runner had blocked Mon/Wed/Thu.",
+      "input": {
+        "age": 44,
+        "goal": "time_target",
+        "max_hr": 185,
+        "terrain": "road",
+        "race_date": "2026-12-12",
+        "resting_hr": 52,
+        "target_time": "0:45:00",
+        "training_age": "2-5yr",
+        "max_hr_source": "observed",
+        "days_available": 4,
+        "max_weekday_mins": 60,
+        "race_distance_km": 10,
+        "current_weekly_km": 30,
+        "days_cannot_train": [
+          "monday",
+          "wednesday",
+          "thursday"
+        ],
+        "user_declared_level": "experienced",
+        "longest_recent_run_km": 10,
+        "preferred_long_run_day": "sun",
+        "hard_session_relationship": "love"
+      }
+    }
+  ]
+}
