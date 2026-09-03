@@ -148,7 +148,29 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     phase_eligibility: ['build', 'peak'],
     distance_eligibility: ['5K', '10K'],
     fitness_level_min: 'intermediate', difficulty_tier: 3,
-    main_set_structure: { type: 'repeats', reps: 4, work: { duration_mins: 5, zone: 'Z3' }, recovery: { duration_secs: 90, type: 'jog' } },
+    // Coaching Board 2026-09-03 — v2, scaling: 'reps', generalising SC-08's
+    // VO2max pattern to threshold. Rep length (5 min at T-pace) is the
+    // stimulus identity, already fully specified in this row's v1
+    // description; rep COUNT is now the dose, supplied by the engine from
+    // THRESHOLD_WORK_TARGET_MINS — not the flat 18%-of-weekly path, which
+    // could size this session incoherently with its own structure (see
+    // tenk_pace_intervals below for the measured case).
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'reps',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'duration', secs: 300 },
+            target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto',
+            note: 'Threshold effort — comfortably hard, not a race pace.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Ninety seconds jog. Shake it out.' },
+        ],
+      }],
+    },
     intensity_zones: ['Z3'],
     typical_duration_min: 25, typical_duration_max: 40, is_free_tier: true,
     coach_voice_notes: 'Rep four is the test. Not rep one.',
@@ -503,14 +525,33 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     // 10K-pace work. The board's finding: §33 closed the review by fixing the
     // symptom (borrowed voice) and left the cause (no 10K entry) in place.
     //
-    // Mirrors hm_pace_intervals. v1-expressible as a fixed 4 × 1200 m, so it
-    // ships on today's schema with no SC-08 dependency.
+    // Mirrors hm_pace_intervals. Migrated to v2 (Coaching Board 2026-09-03) —
+    // a real generated plan measured this row's v1 sizing (flat 18%-of-weekly)
+    // giving it duration_mins:25 while its own 4×1200m @ goal pace / 2min jog
+    // structure needs ~27.6 min, MORE than the session's own stated length.
+    // Same sizing-incoherence class CD-14 already fixed for VO2max (SC-08),
+    // generalised here rather than left row-specific.
     id: 'tenk_pace_intervals', name: '10K-pace intervals', category: 'race_specific',
     purpose: 'Race-specific intervals at 10K pace. The bridge between threshold and race day.',
     phase_eligibility: ['peak', 'taper'],
     distance_eligibility: ['10K'],
     fitness_level_min: 'intermediate', difficulty_tier: 4,
-    main_set_structure: { type: 'repeats', reps: 4, work: { distance_m: 1200, pace_target: 'goal' }, recovery: { duration_mins: 2, type: 'jog' } },
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'reps',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'distance', m: 1200 },
+            target: { kind: 'pace', anchor: 'goal', mode: 'target' }, advance: 'auto',
+            note: 'Goal pace, not faster. If rep one feels easy, that is correct.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 120 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Full jog recovery. Two minutes.' },
+        ],
+      }],
+    },
     intensity_zones: ['Z3', 'Z4'],
     typical_duration_min: 40, typical_duration_max: 55, is_free_tier: true,
     coach_voice_notes: 'Goal pace, not faster. If rep one feels easy, that is correct.',

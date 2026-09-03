@@ -351,6 +351,36 @@ export const GENERATION_CONFIG = {
     experienced:  { build: 15, peak: 18 },
   } as Record<string, Record<string, number>>,
 
+  // Threshold/race-pace WORK-minute band (Coaching Board 2026-09-03) — the
+  // SC-08 vo2max pattern above, generalised to `category: 'threshold'` and
+  // `'race_specific'` paced-rep rows. Found because `tenk_pace_intervals`
+  // (4×1200m @ goal pace / 2min jog) was sized at the flat 18%-of-weekly
+  // path — 25 min for content needing ~27.6 min, the same sizing-incoherence
+  // class CD-14 already fixed for VO2max, just never extended past it.
+  //
+  // Threshold pace is sustainable far longer per minute than VO2max — Seiler's
+  // correction during the board sitting — so this band sits meaningfully
+  // higher than VO2MAX_WORK_*, matching classic 20-30 minute tempo/threshold
+  // prescriptions rather than reusing VO2max's 12-18 minute band.
+  THRESHOLD_WORK_MIN_MINS:          15,
+  THRESHOLD_WORK_MAX_MINS:          30,
+  THRESHOLD_WORK_TARGET_MINS: {
+    intermediate: { build: 18, peak: 22 },
+    experienced:  { build: 22, peak: 26 },
+  } as Record<string, Record<string, number>>,
+
+  // Progressive tempo (continuous shape, not reps) — Coaching Board
+  // 2026-09-03. `progressive_tempo`'s v1 description ("30 min Z2→Z3") has no
+  // rep count to scale, so it doesn't use the WORK_MIN/MAX/TARGET band
+  // pattern above — the board ruled its v2 structure is a fixed-length
+  // continuous progression, sized by fitness × phase directly, same shape
+  // as `VO2MAX_WORK_TARGET_MINS`/`THRESHOLD_WORK_TARGET_MINS` minus the
+  // reps-count derivation those two need.
+  PROGRESSIVE_TEMPO_MAIN_MINS: {
+    intermediate: { build: 24, peak: 28, taper: 20 },
+    experienced:  { build: 28, peak: 32, taper: 24 },
+  } as Record<string, Record<string, number>>,
+
   // Tolerance on the vo2max < race_specific <= threshold main-set ordering
   // (INV-PLAN-MAIN-SET-ORDERING, §8). GROUNDED IN THE SYSTEM'S OWN GRANULARITY,
   // not chosen to make a plan pass: session distances round to

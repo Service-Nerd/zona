@@ -3,6 +3,7 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { PLAN_SIGNATURES } from './planSignatures'
+import { isV2Structure, StructureV2Schema } from './sessionStructureV2'
 import type { GeneratorInput } from '@/types/plan'
 
 /**
@@ -103,13 +104,30 @@ describe('SC-04 — threshold work is reachable for short distances', () => {
 
   it('the short-distance threshold rep sits inside McMillan’s 4–12 minute band', () => {
     // Amendment adopted: band the rep rather than fixing it at five, because
-    // variety across a block matters more than any single rep length. v1 cannot
-    // express a band (SC-08), so it is delivered across rows — assert every
-    // short-distance-eligible threshold rep lands inside it.
-    const shortThresholdReps = V1_SESSION_CATALOGUE
+    // variety across a block matters more than any single rep length. v1
+    // cannot express a band on its own (SC-08), so a v1 row's variety came
+    // from OTHER v1 rows at different fixed lengths. `tempo_cruise_short`
+    // migrated to v2 (Coaching Board 2026-09-03, generalising SC-08's VO2max
+    // work-band pattern to threshold) — its own row now expresses the band
+    // directly via engine-scaled rep count, rather than needing a sibling row
+    // to supply a second fixed value. Reads BOTH shapes so a row's rep length
+    // stays checked regardless of which side of the migration it's on.
+    const rows = V1_SESSION_CATALOGUE
       .filter(r => r.category === 'threshold' && r.distance_eligibility.includes('10K'))
-      .map(r => (r.main_set_structure as { work?: { duration_mins?: number } }).work?.duration_mins)
-      .filter((d): d is number => typeof d === 'number')
+    const shortThresholdReps = rows.map(r => {
+      if (isV2Structure(r.main_set_structure)) {
+        const parsed = StructureV2Schema.safeParse(r.main_set_structure)
+        // Only a single-repeated-length shape has ONE "the rep length" to
+        // check — threshold_ladder's scaling is 'fixed' (3-5-8-5-3 min, a
+        // deliberately varied ladder) and has no single rep length this
+        // assertion means anything for; excluded, same as it was pre-migration
+        // (a v1-shape read on a v2 row also returned undefined).
+        if (!parsed.success || parsed.data.sizing.scaling !== 'reps') return undefined
+        const work = parsed.data.blocks.flatMap(b => b.steps).find(s => s.role === 'work')
+        return work?.length.kind === 'duration' ? work.length.secs / 60 : undefined
+      }
+      return (r.main_set_structure as { work?: { duration_mins?: number } }).work?.duration_mins
+    }).filter((d): d is number => typeof d === 'number')
 
     expect(shortThresholdReps.length).toBeGreaterThan(1)   // variety exists at all
     for (const mins of shortThresholdReps) {

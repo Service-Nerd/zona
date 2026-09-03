@@ -21,7 +21,7 @@ import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTi
 import { normaliseDays } from './days'
 import { isLongRun, isShakeout, classifyStimulus, isStructuredSession } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
-import { isV2Structure, StructureV2Schema } from './sessionStructureV2'
+import { isV2Structure, StructureV2Schema, type PaceAnchor } from './sessionStructureV2'
 import { durationForMainSet } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
 import {
@@ -739,47 +739,103 @@ function goalPaceShapeWord(row: SessionCatalogueRow | null | undefined): string 
   }
 }
 
-// SC-08 vo2max — per-rep minutes of a v2 step, resolved against this runner's
-// I-pace for distance reps, read directly for duration reps.
-function v2StepMinutes(step: { length: { kind: string; secs?: number; m?: number } }, pace: PaceGuide): number {
+// Coaching Board 2026-09-03 — resolve a v2 pace anchor to a numeric min/km for
+// SIZING purposes (distinct from resolveMainSet's anchor→STRING resolution
+// for display, lib/plan/resolveMainSet.ts, which this does not replace).
+// `goalPaceMinPerKm` is null whenever the runner has no goal pace (a finish
+// plan, or no target_time) — the anchor is then unresolvable, same "absent
+// anchors are legitimate" posture as resolveMainSet's own docstring.
+function resolveAnchorPace(anchor: PaceAnchor, pace: PaceGuide, goalPaceMinPerKm: number | null): number | null {
+  switch (anchor) {
+    case 'E':    return pace.minPerKmEasy
+    case 'T':    return pace.minPerKmQuality
+    case 'I':    return pace.minPerKmInterval
+    case 'goal': return goalPaceMinPerKm
+    default:     return null   // M/R/race_5K/race_3K: no numeric pace resolved here today
+  }
+}
+
+// SC-08 vo2max, generalised 2026-09-03 — per-rep minutes of a v2 step,
+// resolved against this runner's pace for distance reps (via the step's own
+// anchor, not always I-pace), read directly for duration reps.
+function v2StepMinutes(
+  step: { length: { kind: string; secs?: number; m?: number }; target: { kind: string; anchor?: string } },
+  pace: PaceGuide,
+  goalPaceMinPerKm: number | null,
+  // Coaching Board 2026-09-03 — resolve against THIS anchor instead of the
+  // step's own, when set. Lets a caller size a T-anchored work step at goal
+  // pace for a goal-paced session (useGoalPace) without mutating the row's
+  // authored step, which stays 'T' for every OTHER week that draws it.
+  anchorOverride?: PaceAnchor,
+): number {
   const len = step.length
   if (len.kind === 'duration' && typeof len.secs === 'number') return len.secs / 60
-  if (len.kind === 'distance' && typeof len.m === 'number') return (len.m / 1000) * pace.minPerKmInterval
+  if (len.kind === 'distance' && typeof len.m === 'number') {
+    const anchor = anchorOverride ?? (step.target.kind === 'pace' ? (step.target.anchor as PaceAnchor) : undefined)
+    const minPerKm = anchor ? resolveAnchorPace(anchor, pace, goalPaceMinPerKm) : null
+    return minPerKm != null ? (len.m / 1000) * minPerKm : 0
+  }
   return 0
 }
 
-// SC-08 vo2max (Coaching Board 2026-08-21) — the rep COUNT for a v2 VO2max row.
-// The dose is a fixed band by fitness × phase (NOT weekly volume — the SC-10
-// error the board refused to re-import), bounded [VO2MAX_WORK_MIN_MINS,
-// VO2MAX_WORK_MAX_MINS] of WORK. Rep length is the stimulus identity and stays
+// SC-08 vo2max (Coaching Board 2026-08-21), generalised to threshold/race-pace
+// rows (Coaching Board 2026-09-03) — the rep COUNT for a v2 paced-rep row. The
+// dose is a fixed band by fitness × phase (NOT weekly volume — the SC-10 error
+// the board refused to re-import), bounded per-category [*_WORK_MIN_MINS,
+// *_WORK_MAX_MINS] of WORK. Rep length is the stimulus identity and stays
 // fixed; the count is the dose. Returns null for anything that is not a PACED
-// vo2max rep block (effort-governed hills, non-vo2max, v1) — those keep their
-// existing sizing. `mainMins` is the structure's own main-set length (work +
-// recovery), used to make the session STRUCTURE-DRIVEN.
-function vo2maxRepPlan(
+// rep block in an eligible category (effort-governed hills, continuous shapes
+// like progressive_tempo, v1 rows) — those keep their existing sizing.
+// `mainMins` is the structure's own main-set length (work + recovery), used to
+// make the session STRUCTURE-DRIVEN. `workPaceMinPerKm` is exposed so the
+// caller's distance estimate uses the SAME pace this function sized against,
+// rather than hardcoding I-pace for every category (the bug this generalises
+// away — a threshold session's estimated distance was inflated by using
+// VO2max pace to convert its minutes).
+function pacedRepPlan(
   row: SessionCatalogueRow | null,
   fitness: FitnessLevel,
   phase: PhaseType,
   pace: PaceGuide,
-): { reps: number; mainMins: number } | null {
-  if (!row || row.category !== 'vo2max' || !isV2Structure(row.main_set_structure)) return null
+  goalPaceMinPerKm: number | null,
+  // Coaching Board 2026-09-03 — true when this SESSION (not the row
+  // intrinsically) is being prescribed at goal pace, per §22's existing
+  // goal-pace-week override (see useGoalPace at the call site). A threshold
+  // row's work step is authored at the 'T' anchor because that is what the
+  // row means on an ordinary week; sizing it at T-pace while the runner is
+  // being told "goal pace" on the label produces a session whose own rep
+  // structure disagrees with its headline. race_specific rows (already
+  // anchored 'goal' intrinsically) don't need this — callers should pass
+  // false for them.
+  substituteThresholdWithGoal = false,
+): { reps: number; mainMins: number; workPaceMinPerKm: number } | null {
+  if (!row || !isV2Structure(row.main_set_structure)) return null
+  const cfg = GENERATION_CONFIG
+  const band = row.category === 'vo2max'
+    ? { min: cfg.VO2MAX_WORK_MIN_MINS, max: cfg.VO2MAX_WORK_MAX_MINS, target: cfg.VO2MAX_WORK_TARGET_MINS }
+    : (row.category === 'threshold' || row.category === 'race_specific')
+      ? { min: cfg.THRESHOLD_WORK_MIN_MINS, max: cfg.THRESHOLD_WORK_MAX_MINS, target: cfg.THRESHOLD_WORK_TARGET_MINS }
+      : null
+  if (!band) return null
   const parsed = StructureV2Schema.safeParse(row.main_set_structure)
-  if (!parsed.success) return null
+  if (!parsed.success || parsed.data.sizing.scaling !== 'reps') return null
   const block = parsed.data.blocks.find(b => typeof b.repeat === 'object' && b.repeat.param === 'reps')
   if (!block) return null
   const workStep = block.steps.find(s => s.role === 'work')
   if (!workStep || workStep.target.kind !== 'pace') return null  // effort-governed → not this path
-  const workMins = v2StepMinutes(workStep, pace)
-  if (workMins <= 0) return null
+  const workAnchor: PaceAnchor = substituteThresholdWithGoal && workStep.target.anchor === 'T'
+    ? 'goal' : (workStep.target.anchor as PaceAnchor)
+  const workPaceMinPerKm = resolveAnchorPace(workAnchor, pace, goalPaceMinPerKm)
+  const workMins = v2StepMinutes(workStep, pace, goalPaceMinPerKm, workAnchor)
+  if (workMins <= 0 || workPaceMinPerKm == null) return null
   const recoveryMins = block.steps
     .filter(s => s.role === 'recovery')
-    .reduce((sum, s) => sum + v2StepMinutes(s, pace), 0)
-  const cfg = GENERATION_CONFIG
-  const target = cfg.VO2MAX_WORK_TARGET_MINS[fitness]?.[phase] ?? cfg.VO2MAX_WORK_MIN_MINS
-  const floorReps = Math.max(1, Math.ceil(cfg.VO2MAX_WORK_MIN_MINS / workMins))
-  const ceilReps  = Math.max(floorReps, Math.floor(cfg.VO2MAX_WORK_MAX_MINS / workMins))
+    .reduce((sum, s) => sum + v2StepMinutes(s, pace, goalPaceMinPerKm), 0)
+  const target = band.target[fitness]?.[phase] ?? band.min
+  const floorReps = Math.max(1, Math.ceil(band.min / workMins))
+  const ceilReps  = Math.max(floorReps, Math.floor(band.max / workMins))
   const reps = Math.max(floorReps, Math.min(ceilReps, Math.round(target / workMins)))
-  return { reps, mainMins: reps * (workMins + recoveryMins) }
+  return { reps, mainMins: reps * (workMins + recoveryMins), workPaceMinPerKm }
 }
 
 function makeQualitySession(args: {
@@ -810,10 +866,59 @@ function makeQualitySession(args: {
     return p.variants[weekN % p.variants.length]
   })()
 
-  // SC-08 vo2max — the scaled rep count for a v2 VO2max row (null otherwise).
-  // Feeds the derived set's `reps` parameter AND makes the session
-  // structure-driven (its size is the rep structure, not weekly × 18%).
-  const vo2maxScaled = vo2maxRepPlan(catalogueRow, fitness, phase, pace)
+  // Moved ahead of repPlan/derivedSet (Coaching Board 2026-09-03) — both need
+  // to know whether THIS session is goal-paced before they resolve the row's
+  // pace anchor, not after. isVo2max/catalogueRowGoalPace/useGoalPace govern
+  // the session's overall label/pace_target below exactly as before; the
+  // NEW dependency is that a threshold-category v2 row's T-anchored work
+  // step must ALSO resolve to goal pace when useGoalPace is true, or its
+  // derived_set silently disagrees with the label sitting next to it (found
+  // via a real generated plan: tempo_cruise_short's label correctly read
+  // "10K-pace progression" at goal pace while its derived_set showed true
+  // threshold pace underneath — the exact class of bug §19 exists to catch,
+  // just not one §19 itself could see since it checks label against
+  // pace_target, not against derived_set).
+  const isVo2max = catalogueRow?.category === 'vo2max'
+  // Catalogue rows can request goal-pace prescription intrinsically (not
+  // conditional on goalPaceWeek) — v1 rows via `work.pace_target: 'goal'`
+  // (goal_pace_sharpener), v2 rows via a work step anchored `'goal'`
+  // (tenk_pace_intervals, migrated 2026-09-03). Checked structurally, not by
+  // row id (INV-CLASS) — reads whichever shape the row is actually in rather
+  // than assuming v1, which silently stopped matching tenk_pace_intervals
+  // the moment it migrated and desynced its top-level pace_target from its
+  // own (correctly goal-paced) derived_set.
+  const catalogueRowGoalPace = catalogueRow?.category === 'race_specific' && (() => {
+    const ms = catalogueRow.main_set_structure
+    if (isV2Structure(ms)) {
+      const parsed = StructureV2Schema.safeParse(ms)
+      if (!parsed.success) return false
+      return parsed.data.blocks.flatMap(b => b.steps)
+        .some(s => s.role === 'work' && s.target.kind === 'pace' && s.target.anchor === 'goal')
+    }
+    return (ms as { work?: { pace_target?: string } }).work?.pace_target === 'goal'
+  })()
+  const useGoalPace = (goalPaceWeek === true || catalogueRowGoalPace) && !isVo2max && !!goalPace
+  const goalCenterMins = useGoalPace ? paceStrToMins(goalPace!) : null
+  // A threshold row's work step is authored at 'T' because that's what it
+  // means on an ordinary week; race_specific rows are already intrinsically
+  // 'goal'-anchored (catalogueRowGoalPace already found this) so need no
+  // substitution. Shared by repPlan's sizing and derivedSet's display below —
+  // both must agree, or the rep structure silently disagrees with its label.
+  const substituteThresholdWithGoal = useGoalPace && catalogueRow?.category !== 'race_specific'
+
+  // SC-08 vo2max, generalised to threshold/race-pace rows (Coaching Board
+  // 2026-09-03) — the scaled rep count for a v2 paced-rep row (null
+  // otherwise). Feeds the derived set's `reps` parameter AND makes the
+  // session structure-driven (its size is the rep structure, not weekly ×
+  // 18%). `goalPaceMinPerKmForSizing` doubles as the sizing pace for a
+  // threshold row's T-anchored work step when useGoalPace is true (see
+  // resolveAnchorPace's caller below) — a goal-paced threshold session sizes
+  // itself at the pace it will actually be run at, not at generic T-pace.
+  const goalPaceMinPerKmForSizing = goalPace ? paceStrToMins(goalPace) : null
+  const repPlan = pacedRepPlan(
+    catalogueRow, fitness, phase, pace, goalPaceMinPerKmForSizing,
+    substituteThresholdWithGoal,
+  )
 
   // Is this session governed by EFFORT rather than pace? True when the row's v2
   // work steps carry an effort target and no pace.
@@ -857,12 +962,16 @@ function makeQualitySession(args: {
     if (!parsed.success) return null
     const anchors: PaceAnchorMap = {
       E: pace.easyPaceStr,
-      T: pace.qualityPaceStr,
+      // Band, not the bare goalPace point — matches paceTarget's own
+      // paceBandStr(goalCenterMins, 2) below exactly, so the derived_set's
+      // displayed pace and the session's headline pace_target read as the
+      // same prescription formatted the same way, not just the same number.
+      T: substituteThresholdWithGoal && goalCenterMins != null ? paceBandStr(goalCenterMins, 2) : pace.qualityPaceStr,
       I: pace.intervalPaceStr,
       ...(pace.marathonPaceStr ? { M: pace.marathonPaceStr } : {}),
       ...(goalPace ? { goal: goalPace } : {}),
     }
-    const params = { ...(variant?.values ?? {}), ...(vo2maxScaled ? { reps: vo2maxScaled.reps } : {}) }
+    const params = { ...(variant?.values ?? {}), ...(repPlan ? { reps: repPlan.reps } : {}) }
     return resolveMainSet(parsed.data, { anchors, easyPaceStr: pace.easyPaceStr, params })
   })()
 
@@ -878,13 +987,6 @@ function makeQualitySession(args: {
   // CoachingPrinciples §22 — second-half quality of time-targeted plans is
   // race-specific. When goalPaceWeek is set and the session is not vo2max,
   // override prescription to goal pace and rename label.
-  const isVo2max = catalogueRow?.category === 'vo2max'
-  // Catalogue rows can request goal-pace prescription via pace_target: 'goal'
-  // in main_set_structure.work — used by goal_pace_sharpener (taper).
-  const catalogueRowGoalPace = catalogueRow?.category === 'race_specific'
-    && ((catalogueRow.main_set_structure as { work?: { pace_target?: string } }).work?.pace_target === 'goal')
-  const useGoalPace = (goalPaceWeek === true || catalogueRowGoalPace) && !isVo2max && !!goalPace
-  const goalCenterMins = useGoalPace ? paceStrToMins(goalPace!) : null
 
   // SC-02 / CD-15 (§19, §33) — an AEROBIC catalogue row selected into a quality
   // slot is prescribed at threshold pace in Zone 3–4 by the final branch below.
@@ -1036,14 +1138,18 @@ function makeQualitySession(args: {
     : notes.length === 2 ? [notes[0], notes[1]] as [string, string]
     : [notes[0], notes[1], notes[2]] as [string, string, string]
 
-  // SC-08 vo2max — a scaled VO2max session is STRUCTURE-DRIVEN: its size is the
-  // rep structure's own length (work + recovery), converted to distance via
-  // I-pace — NOT weekly × 18%. The freed/added volume vs the sizing estimate is
-  // reconciled by the § 4 easy re-derivation in buildWeekSessions (which reads
-  // actual placed volume). This is what decouples the VO2max dose from weekly
-  // volume at both ends; the SC-10 km-cap becomes a harmless estimate bound.
-  const effectiveDistKm = vo2maxScaled
-    ? durationForMainSet(vo2maxScaled.mainMins) / pace.minPerKmInterval
+  // SC-08 vo2max, generalised 2026-09-03 — a scaled paced-rep session is
+  // STRUCTURE-DRIVEN: its size is the rep structure's own length (work +
+  // recovery), converted to distance via the WORK STEP'S OWN pace — NOT
+  // always I-pace (that was the bug this generalisation fixes: a threshold
+  // session's estimated distance was inflated by converting through VO2max
+  // pace), and NOT weekly × 18%. The freed/added volume vs the sizing
+  // estimate is reconciled by the § 4 easy re-derivation in
+  // buildWeekSessions (which reads actual placed volume). This is what
+  // decouples the dose from weekly volume at both ends; the legacy km-cap
+  // becomes a harmless estimate bound.
+  const effectiveDistKm = repPlan
+    ? durationForMainSet(repPlan.mainMins) / repPlan.workPaceMinPerKm
     : distKm
   const rounded = roundDistance(effectiveDistKm)
   // CLASSIFY-STIMULUS-01 — stamp the stimulus from the trusted generator label
