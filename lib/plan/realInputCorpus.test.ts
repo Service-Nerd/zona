@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
-import { generateFoundationBlock, gapDays, classifyGap } from './foundationBlock'
+import { composePlanWithFoundation } from './foundationCompose'
 import { validatePlan } from './invariants'
 import corpus from './__fixtures__/real-inputs.json'
 import type { GeneratorInput, Plan } from '@/types/plan'
@@ -58,18 +58,18 @@ describe('REAL-CORPUS-01 — real generator inputs', () => {
         plan = generateRulePlan(input, (c.tier ?? 'trial') as 'free' | 'trial' | 'paid', c.plan_start)
       } catch { return }
 
-      // Mirror GeneratePlanScreen: the runner's plan includes foundation weeks
-      // whenever the gap warrants one. Validating only the engine's output is
-      // exactly the blind spot ADR-020 exists to close.
-      const captured = c.captured
-      const gap = gapDays(captured, c.plan_start)
-      if (classifyGap(gap) === 'none') return
+      // ADR-020 Option A — composePlanWithFoundation is the single owner of
+      // plan.weeks mutation post-generation, the same function
+      // /api/generate-plan calls. Mirrors what the runner actually gets: the
+      // plan includes foundation weeks whenever the gap warrants one.
+      // Validating only the engine's output is exactly the blind spot
+      // ADR-020 exists to close. `c.captured` is real captured wall-clock
+      // time, not an invented literal, so this reproduces the real
+      // classification for this corpus entry.
+      const { plan: assembled, violations } = composePlanWithFoundation(plan, input, c.captured, 'add')
+      if (!assembled.weeks.some(w => w.n <= 0)) return   // no block warranted for this gap
 
-      const fb = generateFoundationBlock({ input, planStartDate: c.plan_start, today: captured })
-      if (!fb.weeks.length) return
-
-      const assembled: Plan = { ...plan, weeks: [...fb.weeks, ...plan.weeks] }
-      const errors = validatePlan(assembled, input).filter(v => v.severity === 'error')
+      const errors = violations.filter(v => v.severity === 'error')
       expect(errors.map(v => `${v.code} w${v.week}${v.day ? ' ' + v.day : ''}`)).toEqual([])
     },
   )

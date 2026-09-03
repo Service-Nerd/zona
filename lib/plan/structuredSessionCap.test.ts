@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
-import { generateFoundationBlock } from './foundationBlock'
+import { composePlanWithFoundation } from './foundationCompose'
 import { validatePlan } from './invariants'
 import { isLongRun, isStructuredSession } from './sessionRole'
 import type { GeneratorInput, Plan, Session } from '@/types/plan'
@@ -98,12 +98,18 @@ describe('§22 — the goal-pace ratio binds at 5K; halfWeek ignores foundation 
       max_hr: 184, goal: 'time_target', preferred_long_run_day: 'sun',
     } as unknown as GeneratorInput
 
+    // ADR-020 Option A — composePlanWithFoundation is the single owner of
+    // plan.weeks mutation post-generation; "today" is an offset from the
+    // ENGINE'S OWN plan.meta.plan_start (not the '2026-04-27' passed to
+    // generateRulePlan, which is only a minimum bound — §44 prep-time can
+    // push the actual plan_start later).
     const plan = generateRulePlan(inp, 'free', '2026-04-27')
-    const fb = generateFoundationBlock({ input: inp, planStartDate: '2026-04-27', today: '2026-04-17' })
-    expect(fb.weeks.length).toBeGreaterThan(0)
-    const assembled: Plan = { ...plan, weeks: [...fb.weeks, ...plan.weeks] }
+    const today = new Date(new Date(plan.meta.plan_start).getTime() - 10 * 86_400_000)
+      .toISOString().slice(0, 10)
+    const { plan: assembled, violations } = composePlanWithFoundation(plan, inp, today, 'add')
+    expect(assembled.weeks.some(w => w.n <= 0)).toBe(true)
 
-    const errs = validatePlan(assembled, inp)
+    const errs = violations
       .filter(v => v.code === 'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO')
     expect(errs.map(v => v.message)).toEqual([])
   })
@@ -117,12 +123,15 @@ describe('§22 — the goal-pace ratio binds at 5K; halfWeek ignores foundation 
       goal: 'time_target', preferred_long_run_day: 'sun',
     } as unknown as GeneratorInput
 
+    // ADR-020 Option A — same composer, same today-as-offset reasoning as above.
     const plan = generateRulePlan(inp, 'trial', '2026-04-27')
-    const fb = generateFoundationBlock({ input: inp, planStartDate: '2026-04-27', today: '2026-04-07' })
-    const assembled: Plan = { ...plan, weeks: [...fb.weeks, ...plan.weeks] }
+    const today = new Date(new Date(plan.meta.plan_start).getTime() - 20 * 86_400_000)
+      .toISOString().slice(0, 10)
+    const { plan: assembled, violations } = composePlanWithFoundation(plan, inp, today, 'add')
+    expect(assembled.weeks.some(w => w.n <= 0)).toBe(true)
 
     const bare = validatePlan(plan, inp).filter(v => v.severity === 'error').map(v => v.code).sort()
-    const withFb = validatePlan(assembled, inp).filter(v => v.severity === 'error')
+    const withFb = violations.filter(v => v.severity === 'error')
       .filter(v => (v.week ?? 1) > 0).map(v => v.code).sort()
     // Main-week verdicts must be identical with and without the block attached.
     expect(withFb).toEqual(bare)
