@@ -16,7 +16,7 @@ import {
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
 import { resolveMaxHr, tanakaMaxHR } from './maxHrGuard'
 import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, type FitnessLevel } from './fitnessAssessment'
-import { validatePlan, formatViolations } from './invariants'
+import { validatePlan, enforceViolations } from './invariants'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
 import { normaliseDays } from './days'
 import { isLongRun, isShakeout, classifyStimulus, isStructuredSession } from './sessionRole'
@@ -4651,17 +4651,7 @@ export function generateRulePlan(
   // Constitutional review — verify the plan honours its own coaching principles.
   // In dev, throw on errors so the matrix / property tests fail loudly.
   // In prod, log + return the plan (don't break the user). See lib/plan/invariants.ts.
-  const violations = validatePlan(plan, input)
-  if (violations.length > 0) {
-    const errors = violations.filter(v => v.severity === 'error')
-    if (errors.length > 0) {
-      const msg = `Plan invariant violations:\n${formatViolations(errors)}`
-      if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
-        throw new Error(msg)
-      }
-      console.error(msg)
-    }
-  }
+  enforceViolations(validatePlan(plan, input))
 
   return plan
 }

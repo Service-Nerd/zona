@@ -81,7 +81,10 @@ export const RaceResultSchema = z.object({
 })
 
 export const WeekSchema = z.object({
-  n:                    z.number().int().positive(),
+  // ADR-020 Option A / CB-2 item 4 — foundation weeks (phase: 'foundation')
+  // carry n <= 0 (n=0, -1, -2, ...); `.positive()` declared every foundation
+  // week impossible, unenforced only because PlanSchema is parsed nowhere.
+  n:                    z.number().int(),
   date:                 z.string(),
   label:                z.string(),
   theme:                z.string(),
@@ -205,6 +208,11 @@ export const PlanMetaSchema = z.object({
                   'failed_unparseable', 'failed_invalid_copy',
                   'failed',
                 ]).optional(),
+
+  // ADR-020 Option A — gap classification from composePlanWithFoundation.
+  // 'choice' with no follow-up decision means the plan was returned WITHOUT a
+  // foundation block; the client shows the modal. See types/plan.ts PlanMeta.
+  foundation_gap_class: z.enum(['none', 'auto', 'choice']).optional(),
 
   // R24 — VDOT / zone model fields (these were missing from the schema; added here for completeness)
   age:                z.number().int().positive().optional(),

@@ -85,6 +85,16 @@ Body: GeneratorInput
   athlete_name?: string
 
   // Removed in R23 rebuild — `motivation_type`, `training_style`. Server ignores these fields if sent.
+
+  // ADR-020 Option A (2026-09-03) — the runner's choice on the Foundation
+  // Block modal, shown only when meta.foundation_gap_class === 'choice' on a
+  // PRIOR response (>28-day gap between today and plan_start). Absent on the
+  // initial call — the decision doesn't exist yet. Send it on a follow-up
+  // POST /api/generate-plan/foundation call once the runner has chosen; see
+  // docs/contracts/api/generate-plan-foundation.md. A gap inside the 'auto'
+  // band (7-28 days) never needs this — the server adds the block without
+  // asking.
+  foundation_decision?: 'add' | 'skip' | 'start_now'
 }
 ```
 
@@ -112,6 +122,9 @@ with the paid `coach_intro`; subsequent free plans (a `plans` row exists) omit i
 **R23 rebuild additions to `meta`:**
 - `vdot_discount_applied_pct: number` — total VDOT discount applied (3% default + 5% if benchmark stale > 6 months). Surfaced for transparency.
 - `catalogue_session_ids: string[]` — IDs of `session_catalogue` rows referenced by this plan's quality sessions. Useful for recalibration and audit.
+
+**ADR-020 Option A addition to `meta`:**
+- `foundation_gap_class: 'none' | 'auto' | 'choice'` — always present. `'none'` (<7-day gap): no foundation weeks, none needed. `'auto'` (7-28 days): the block is already in `plan.weeks` (`phase: 'foundation'`, `n ≤ 0`) — nothing further to do. `'choice'` (>28 days): the block is **not** in `plan.weeks` yet — show the Foundation Block modal and, if the runner picks "Add", call `POST /api/generate-plan/foundation` (see `docs/contracts/api/generate-plan-foundation.md`).
 
 ### 401 — Unauthenticated
 
@@ -319,12 +332,20 @@ Determined by rule engine:
 | `lib/plan/freeIntro.ts` | CA-01 — one-line free first-plan `meta.plan_intro` (Haiku, silent fallback) |
 | `lib/plan/generate.ts` | Orchestrator — calls rule engine then enricher |
 | `lib/trial.ts` | Auth boundary — `getUserTier()` |
-| `lib/plan/foundationBlock.ts` | Foundation Block generator — pre-plan prep weeks (client-side, not this route) |
+| `lib/plan/foundationBlock.ts` | Foundation Block generator — pre-plan prep weeks. Pure; called by `foundationCompose.ts`, never directly by this route |
+| `lib/plan/foundationCompose.ts` | ADR-020 Option A — the single owner of `plan.weeks` mutation post-generation. `composePlanWithFoundation()` classifies the gap, calls `foundationBlock.ts` when appropriate, and re-validates unfiltered. Called by this route AND `POST /api/generate-plan/foundation` |
 
 ---
 
 ## Plan schema — foundation weeks
 
-The `Plan.weeks` array may include foundation-phase weeks with `phase: 'foundation'` and `n ≤ 0`. These are **not produced by this route** — they are prepended client-side by `GeneratePlanScreen` based on the gap between today and `meta.plan_start`. When a plan with foundation weeks is saved via `savePlanForUser`, they persist in the DB as part of `plan_json`.
+**ADR-020 Option A (2026-09-03) — construction moved server-side.** The `Plan.weeks` array may include foundation-phase weeks with `phase: 'foundation'` and `n ≤ 0`. These are now **constructed and validated by this route** (via `composePlanWithFoundation`, `lib/plan/foundationCompose.ts`) before the plan ever reaches the client — not prepended client-side after the fact, as they were before this date. `validatePlan()` sees every week, including foundation ones, in the live path.
 
-Foundation week invariants: `INV-PLAN-FOUNDATION-BLOCK` (see `docs/canonical/plan-invariants.md`).
+- **`'auto'` gap band (7-28 days):** the server adds the block itself; `plan.weeks` already contains it on the initial response.
+- **`'choice'` gap band (>28 days):** the server does **not** add a block on the initial response — `meta.foundation_gap_class` is `'choice'` and `plan.weeks` has none. The decision belongs to the runner: the client shows the modal, and on "Add Foundation Block" calls `POST /api/generate-plan/foundation` (`docs/contracts/api/generate-plan-foundation.md`), which composes onto the *existing* plan without re-running the rule engine or AI enrichment.
+
+When a plan with foundation weeks is saved via `savePlanForUser`, they persist in the DB as part of `plan_json`, exactly as before.
+
+Foundation week invariants: `INV-PLAN-FOUNDATION-BLOCK` (see `docs/canonical/plan-invariants.md`). `INV-PLAN-SINGLE-CONSTRUCTION` (architectural, not a per-plan check) names `composePlanWithFoundation` as the sole permitted mutator of `plan.weeks` after generation.
+
+`lib/plan/schema.ts`'s `WeekSchema.n` was relaxed from `.positive()` to a plain integer (CB-2 item 4) — the old constraint declared every foundation week schema-invalid, unenforced only because `PlanSchema` is parsed nowhere in the codebase (still true; only `EnrichedPlanSchema` is ever `.parse`d). `PlanMetaSchema` gained `foundation_gap_class` for the same reason: internal correctness, not new runtime enforcement.

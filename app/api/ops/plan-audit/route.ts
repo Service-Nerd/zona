@@ -14,8 +14,7 @@ import type { Plan } from '@/types/plan'
 // `generateRulePlan` validates at generation time, but in production it only
 // console.errors and returns the plan (never break the runner) — and a console
 // line on a Vercel function is not a record. Worse, a plan can become invalid
-// AFTER generation: a reshape, a maintenance-block append, or the client-side
-// foundation block prepended once the plan has left the server.
+// AFTER generation: a reshape or a maintenance-block append.
 //
 // On 2026-09-03 three separate INV-PLAN-MAX-WEEKDAY-MINS defects were found in a
 // single day, each having shipped behind a green suite (792 tests, 18,060 swept
@@ -24,10 +23,13 @@ import type { Plan } from '@/types/plan'
 // depend on anyone having imagined the right input — it reads what real runners
 // actually hold.
 //
-// THIS IS THE ONLY PLACE FOUNDATION WEEKS ARE VALIDATED SERVER-SIDE. They are
-// built client-side and prepended after the plan leaves the server (ADR-020
-// Option A, still outstanding), so the stored plan is the first server-side
-// sight of them.
+// FOUNDATION WEEKS — since ADR-020 Option A (2026-09-03), construction is
+// server-side (composePlanWithFoundation, lib/plan/foundationCompose.ts) and
+// validatePlan() sees them at generation time too, in the live path. This
+// probe is no longer their only server-side check, but it stays valuable
+// exactly the same way it is for main weeks: it catches a plan that became
+// invalid AFTER generation (a stored plan predating this change, or a future
+// reshape/maintenance-block path that touches a foundation week).
 //
 // Auth: CRON_SECRET via Authorization: Bearer or x-cron-secret header.
 

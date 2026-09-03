@@ -5,11 +5,22 @@ import { generateRulePlan, type Tier } from '../lib/plan/ruleEngine'
 import type { GeneratorInput, Session } from '../types/plan'
 import { GENERATION_CONFIG, raceDistanceKey } from '../lib/plan/generationConfig'
 import { getDistanceConfig } from '../lib/plan/length'
+import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
 
 interface TestCase {
   name: string
   input: GeneratorInput
   tier: Tier
+  // ADR-020 Option A — how many days before the ENGINE'S OWN computed
+  // plan.meta.plan_start "today" should sit, for composePlanWithFoundation's
+  // gap classification. NOT a literal date: the '2026-04-27' passed to
+  // generateRulePlan is only a minimum bound — §44 prep-time pushes the
+  // actual plan_start later per-case (a 10K vs a marathon need different
+  // lead time), so a hardcoded date silently landed in the wrong gap band for
+  // different cases. Undefined = gap 0 ('none', a no-op) — every pre-existing
+  // archetype is byte-unaffected. 14 lands in the 'auto' band (7-28 days), 35
+  // lands in 'choice' (>28).
+  foundationGapDaysOverride?: number
   expect?: {
     catalogue_label_in_peak_quality?: string  // exact match, e.g. "HM-pace intervals"
     catalogue_label_in_peak_long?:    string
@@ -28,6 +39,13 @@ interface TestCase {
     // §79-PEAKKM — an upward user declaration must leave peak km on the
     // STRUCTURAL band. Asserts meta.peak_km_target === peakKmByLevel[structural].
     peak_target_is_structural?: boolean
+    // ADR-020 Option A — asserts composePlanWithFoundation actually added
+    // foundation weeks (or didn't). Implicitly also requires ZERO
+    // error-severity violations on the composed plan — a case with blocked
+    // days that regresses FOUNDATION-DAYS-01 (buildFoundationSessions ignoring
+    // days_cannot_train) fails THIS assertion via a surfaced
+    // INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS violation, not a separate field.
+    foundation_weeks_added?: boolean
   }
 }
 
@@ -211,6 +229,51 @@ const cases: TestCase[] = [
       peak_target_is_structural: true,
     },
   },
+  // ADR-020 Option A — foundation-block composition now server-side
+  // (composePlanWithFoundation), exercised here for the first time in this
+  // matrix (previously 0 of 14 cases carried a foundation block).
+  {
+    name: 'Foundation — auto-added block (14-day gap, 7-28 day band)',
+    tier: 'trial',
+    foundationGapDaysOverride: 14,
+    input: {
+      race_date: '2026-08-03', race_distance_km: 10, goal: 'finish',
+      current_weekly_km: 20, longest_recent_run_km: 8,
+      days_available: 5, age: 35,
+    },
+    expect: { foundation_weeks_added: true },
+  },
+  {
+    name: 'Foundation — user-forced block (35-day gap, choice band, decision=add)',
+    tier: 'trial',
+    foundationGapDaysOverride: 35,
+    input: {
+      race_date: '2026-08-03', race_distance_km: 21.1, goal: 'finish',
+      current_weekly_km: 20, longest_recent_run_km: 8,
+      days_available: 5, age: 35,
+    },
+    expect: { foundation_weeks_added: true },
+  },
+  {
+    // FOUNDATION-DAYS-01 regression (33392ca) — buildFoundationSessions once
+    // compared short-form day keys ('mon') against raw wizard input
+    // ('monday'), so nothing ever matched and blocked days were silently
+    // ignored on every foundation week ever generated. foundation_weeks_added
+    // implicitly requires zero error-severity violations on the composed
+    // plan, so a regression here surfaces as
+    // INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS on a foundation week, not a
+    // separate assertion.
+    name: 'Foundation — blocked days honoured (FOUNDATION-DAYS-01 regression)',
+    tier: 'trial',
+    foundationGapDaysOverride: 14,
+    input: {
+      race_date: '2026-08-03', race_distance_km: 10, goal: 'finish',
+      current_weekly_km: 20, longest_recent_run_km: 8,
+      days_available: 4, age: 35,
+      days_cannot_train: ['monday', 'wednesday', 'thursday'],
+    },
+    expect: { foundation_weeks_added: true },
+  },
 ]
 
 // ─── Metric helpers ────────────────────────────────────────────────────────────
@@ -308,6 +371,25 @@ const results: Result[] = []
 
 for (const tc of cases) {
   const plan = generateRulePlan(tc.input, tc.tier, '2026-04-27')
+
+  // ADR-020 Option A — same composePlanWithFoundation the route and the
+  // sweep call. Offset from the ENGINE'S OWN plan.meta.plan_start (not a
+  // hardcoded literal — §44 prep-time pushes plan_start later per-case, so a
+  // fixed date landed in the wrong gap band for different race distances).
+  // Undefined offset = gap 0 ('none', a no-op) — every case above this one in
+  // the file is byte-unaffected; forces decision 'add' so an offset in the
+  // 'choice' band still composes.
+  const foundationToday = tc.foundationGapDaysOverride != null
+    ? new Date(new Date(plan.meta.plan_start).getTime() - tc.foundationGapDaysOverride * 86_400_000)
+        .toISOString().slice(0, 10)
+    : plan.meta.plan_start
+  const composed = composePlanWithFoundation(plan, tc.input, foundationToday, 'add')
+  const foundationErrors = composed.violations.filter(v => v.severity === 'error')
+  const foundationWeeksPresent = composed.plan.weeks.some(w => w.n <= 0)
+  const expectFoundation = tc.expect?.foundation_weeks_added
+  const foundationPass: boolean | '—' = expectFoundation === undefined
+    ? '—' : (foundationWeeksPresent === expectFoundation && foundationErrors.length === 0)
+
   const distKey = raceDistanceKey(tc.input.race_distance_km)
   const expectedDist = GENERATION_CONFIG.INTENSITY_DISTRIBUTION[distKey]
 
@@ -410,7 +492,7 @@ for (const tc of cases) {
   const checksWithBoolean = [
     intensityPass, wowPass, taperPass, taperQualityPass, cataloguePass,
     peakLongMatch, peakQualMatch, mastersPass, returningPass, kneePass,
-    structuralPass, intensityLevelPass, peakTargetPass,
+    structuralPass, intensityLevelPass, peakTargetPass, foundationPass,
   ].filter((b): b is boolean => typeof b === 'boolean')
   const allPass = checksWithBoolean.every(b => b === true)
 
@@ -430,6 +512,11 @@ for (const tc of cases) {
         value: expPeakStructural === undefined ? '—'
           : `peak_km_target=${plan.meta.peak_km_target} vs ${plan.meta.fitness_level} band ${structuralBand}`,
         pass: peakTargetPass,
+      },
+      'Foundation block added (ADR-020)': {
+        value: expectFoundation === undefined ? '—'
+          : `weeks_present=${foundationWeeksPresent} (expected ${expectFoundation}), errors=${foundationErrors.length}, gapClass=${composed.gapClass}`,
+        pass: foundationPass,
       },
       'Intensity dist (easy %)': {
         value: `${fmt(intensity.easyPct)} (by MINUTES — informational; the §1 ceiling is ${expectedDist.max_quality_session_pct}% of SESSIONS, checked by INV-PLAN-INTENSITY-DISTRIBUTION)`,

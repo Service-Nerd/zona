@@ -8,7 +8,7 @@
 
 import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { validatePlan, type Violation } from '../lib/plan/invariants'
-import { generateFoundationBlock } from '../lib/plan/foundationBlock'
+import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
 
 // ⚠️ THE SWEEP MUST BE TIME-INDEPENDENT.
 //
@@ -320,26 +320,32 @@ for (const input of inputs) {
   }
   generated++
 
-  // ADR-020 — validate the plan the RUNNER gets. Foundation weeks are assembled
-  // client-side and prepended after the API returns, so a sweep that validates
-  // only the engine's output is blind to every week with n <= 0. Mirrors
-  // GeneratePlanScreen's assembly exactly.
-  const gapDaysForPlan = (input as Record<string, unknown>).__foundationGapDays as number
-  if (gapDaysForPlan > 0) {
-    try {
-      const planStart = plan.weeks.find(w => w.n === 1)?.date ?? PLAN_START
-      const today = new Date(new Date(planStart).getTime() - gapDaysForPlan * 86_400_000)
-        .toISOString().slice(0, 10)
-      const fb = generateFoundationBlock({ input, planStartDate: planStart, today })
-      if (fb.weeks.length) {
-        plan = { ...plan, weeks: [...fb.weeks, ...plan.weeks] }
-        foundationPlans++
-        foundationWeeks += fb.weeks.length
-      }
-    } catch { /* block generation is best-effort; the main plan still validates */ }
+  // ADR-020 Option A — the sweep now exercises the exact server code path:
+  // composePlanWithFoundation is the single owner of plan.weeks mutation
+  // post-generation, the same function /api/generate-plan calls. Forces
+  // decision 'add' so coverage continues exercising the 'choice' band the way
+  // it always intended (a runner who picked "Add Foundation Block"), not just
+  // the 'auto' band — and validates the plan the RUNNER gets, not just the
+  // engine's foundation-free output.
+  //
+  // NOTE: __foundationGapDays values are [0, 10, 24, 40] — none land in the
+  // 1-6 day 'none' band by coincidence. If a future corner value did, coverage
+  // would silently narrow here with no signal. CORNERS (unlike randomInput())
+  // never set this field at all — default to 0 (gapClass 'none', a no-op),
+  // not undefined (which produced NaN dates and crashed the sweep).
+  const gapDaysForPlan = ((input as Record<string, unknown>).__foundationGapDays as number) ?? 0
+  const planStart = plan.weeks.find(w => w.n === 1)?.date ?? PLAN_START
+  const today = new Date(new Date(planStart).getTime() - gapDaysForPlan * 86_400_000)
+    .toISOString().slice(0, 10)
+  const composed = composePlanWithFoundation(plan, input, today, 'add')
+  plan = composed.plan
+  const fbWeekCount = plan.weeks.filter(w => w.n <= 0).length
+  if (fbWeekCount) {
+    foundationPlans++
+    foundationWeeks += fbWeekCount
   }
 
-  const errors = validatePlan(plan, input).filter(v => v.severity === 'error')
+  const errors = composed.violations.filter(v => v.severity === 'error')
   if (errors.length > 0) {
     violatingPlans++
     if (EXPLAIN && explained.length < 5) {

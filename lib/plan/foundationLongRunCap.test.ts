@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
-import { generateFoundationBlock } from './foundationBlock'
+import { composePlanWithFoundation } from './foundationCompose'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { GeneratorInput, Plan } from '@/types/plan'
@@ -25,10 +25,13 @@ const INPUT: GeneratorInput = {
 beforeAll(() => { vi.useFakeTimers(); vi.setSystemTime(FROZEN_NOW) })
 afterAll(() => { vi.useRealTimers() })
 
+// ADR-020 Option A — composePlanWithFoundation is the single owner of
+// plan.weeks mutation post-generation; this is the same function
+// /api/generate-plan calls, not a hand-splice that only this test builds.
 function planWithFoundation(): { plan: Plan; foundationWeeks: Plan['weeks'] } {
   const main = generateRulePlan(INPUT, 'paid', PLAN_START)
-  const fb = generateFoundationBlock({ input: INPUT, planStartDate: PLAN_START, today: '2026-08-01' })
-  return { plan: { ...main, weeks: [...fb.weeks, ...main.weeks] }, foundationWeeks: fb.weeks }
+  const { plan } = composePlanWithFoundation(main, INPUT, '2026-08-01', 'add')
+  return { plan, foundationWeeks: plan.weeks.filter(w => w.phase === 'foundation') }
 }
 
 function runKmsOf(w: Plan['weeks'][number]): number[] {

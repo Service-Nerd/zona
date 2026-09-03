@@ -46,14 +46,17 @@ the ones breaching their own constitution.
 15 min after the reshape probe.
 
 **Why:** `generateRulePlan` validates at generation but only `console.error`s in production, and a
-plan can become invalid *after* generation (reshape, maintenance append, the client-side foundation
-block). On 2026-09-03 three `INV-PLAN-MAX-WEEKDAY-MINS` defects surfaced in one day, each having
-shipped behind a green suite, because the sweep's hand-authored grid could not reach the inputs real
-users chose. **This probe does not depend on anyone imagining the right input** — it reads what
-runners hold, and would have caught all three within 24 hours.
+plan can become invalid *after* generation (reshape, maintenance append). On 2026-09-03 three
+`INV-PLAN-MAX-WEEKDAY-MINS` defects surfaced in one day, each having shipped behind a green suite,
+because the sweep's hand-authored grid could not reach the inputs real users chose. **This probe does
+not depend on anyone imagining the right input** — it reads what runners hold, and would have caught
+all three within 24 hours.
 
-**It is the only server-side validation foundation weeks receive** — they are built client-side and
-prepended after the plan leaves the server (ADR-020 Option A, outstanding).
+**Foundation weeks:** since ADR-020 Option A (2026-09-03) construction is server-side
+(`composePlanWithFoundation`, `lib/plan/foundationCompose.ts`) and `validatePlan()` sees them at
+generation time, in the live path — this probe is no longer their only server-side check. It still
+catches a plan that became invalid *after* generation (a stored plan predating this change, or a
+future reshape/maintenance-block path touching a foundation week).
 
 **Alerts on a TRANSITION, not on state.** A first run found **15 of 15** stored plans invalid —
 mostly legitimate historical debt (plans predating a principle, plus the 2026-09-03 defects which

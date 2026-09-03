@@ -4,7 +4,8 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { getUserTier } from '@/lib/trial'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
-import { validatePlan } from '@/lib/plan/invariants'
+import { validatePlan, enforceViolations } from '@/lib/plan/invariants'
+import { composePlanWithFoundation } from '@/lib/plan/foundationCompose'
 import { enrich, type EnrichOutcome } from '@/lib/plan/enrich'
 import { errorBaseline, violationsIntroducedBy, statusForReason } from '@/lib/plan/enrichAttribution'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
@@ -104,6 +105,16 @@ export async function POST(req: NextRequest) {
       throw err
     }
 
+    // ADR-020 Option A — server owns foundation-block construction.
+    // composePlanWithFoundation is the single owner of plan.weeks mutation
+    // post-generation; it re-validates unfiltered, so both tiers' checks below
+    // now see foundation weeks for the first time in the live path.
+    const today = formatDate(new Date())
+    const { plan: composedRule, gapClass, violations: composeViolations } =
+      composePlanWithFoundation(rulePlan, input, today, input.foundation_decision)
+    enforceViolations(composeViolations)
+    composedRule.meta.foundation_gap_class = gapClass
+
     // Free tier: no enrichment. CA-01 — on the user's FIRST plan only, add a
     // single short "why this plan" intro line (the one AI surface a free user
     // gets — the wedge moment). Silent fallback: any failure leaves the rule
@@ -133,8 +144,10 @@ export async function POST(req: NextRequest) {
       // GEN-FIX-02 — free plans are never enriched by design (ADR-006 tier split).
       // Stamping 'skipped' rather than leaving the field absent means an absent
       // value is unambiguously "generated before this shipped", not "free tier".
+      // composedRule.meta IS rulePlan.meta (composePlanWithFoundation spreads
+      // the plan, not its meta object) so this stamp lands on both either way.
       rulePlan.meta.enrichment = 'skipped'
-      return NextResponse.json({ plan: rulePlan })
+      return NextResponse.json({ plan: composedRule })
     }
 
     // Trial/paid: stream NDJSON. Send the rule plan immediately so the
@@ -148,7 +161,7 @@ export async function POST(req: NextRequest) {
         // the client-side save race (N8) a fingerprint: a *saved* plan reading
         // 'pending' means the user tapped through before final_plan landed.
         rulePlan.meta.enrichment = 'pending'
-        controller.enqueue(encoder.encode(JSON.stringify({ type: 'rule_plan', plan: rulePlan }) + '\n'))
+        controller.enqueue(encoder.encode(JSON.stringify({ type: 'rule_plan', plan: composedRule }) + '\n'))
 
         // ENRICH-ATTRIB-01 (2026-09-03) — baseline the rule plan's OWN violations
         // BEFORE enrichment runs. generateRulePlan validates itself, but in
@@ -156,7 +169,13 @@ export async function POST(req: NextRequest) {
         // — never break the user). So the rule plan reaching this point may
         // already carry error-severity violations, and the post-enrich check
         // below must not attribute them to the AI. See the incident note there.
-        const baseline = errorBaseline(validatePlan(rulePlan, input))
+        //
+        // ADR-020 Option A — baselined on composedRule (with foundation weeks),
+        // not the foundation-free rulePlan, and reuses composeViolations rather
+        // than calling validatePlan a second time on the same plan. The
+        // post-enrich comparison below re-attaches foundation weeks onto
+        // finalPlan before diffing, so both sides of the diff are apples-to-apples.
+        const baseline = errorBaseline(composeViolations)
 
         // A rule plan that violates its own constitution is a separate, more
         // serious defect than a failed enrichment, and it had no durable signal
@@ -171,11 +190,22 @@ export async function POST(req: NextRequest) {
           )
         }
 
-        let finalPlan: Plan = rulePlan
+        let finalPlan: Plan = composedRule
         let outcome: EnrichOutcome
         try {
+          // enrich() takes the foundation-free rulePlan, never composedRule —
+          // the AI must never see or touch foundation-week copy (§57;
+          // ADR-020's own blast-radius table confirms this is correct by
+          // design, not an oversight).
           const result = await enrich(rulePlan, input, tier)
-          finalPlan = result.plan
+          // Re-attach foundation weeks the enricher never saw. Mirrors,
+          // almost verbatim, what GeneratePlanScreen used to do client-side
+          // at the final_plan merge point — now server-side, ahead of the
+          // post-enrich validatePlan check below so it sees the full plan.
+          const foundationWeeks = composedRule.weeks.filter(w => w.n <= 0)
+          finalPlan = foundationWeeks.length
+            ? { ...result.plan, weeks: [...foundationWeeks, ...result.plan.weeks] }
+            : result.plan
           outcome = result.outcome
         } catch (e) {
           // enrich() is written not to throw; this is the backstop.
@@ -219,7 +249,11 @@ export async function POST(req: NextRequest) {
               },
               user.id,
             )
-            finalPlan = rulePlan
+            // ADR-020 Option A — composedRule, not rulePlan: the latter has no
+            // foundation weeks. A revert here used to silently drop a runner's
+            // foundation block every time enrichment introduced a violation —
+            // found by validation before it could ship, not observed in prod.
+            finalPlan = composedRule
             finalPlan.meta.enrichment = 'failed_invalid_copy'
           }
         }
@@ -233,6 +267,12 @@ export async function POST(req: NextRequest) {
             user.id,
           )
         }
+
+        // Belt-and-braces: composedRule.meta already carries this (shared meta
+        // reference with rulePlan, stamped before enrich() ran), but finalPlan
+        // may be a fresh object from enrich()'s own meta-spread — stamp
+        // explicitly rather than depend on that being complete.
+        finalPlan.meta.foundation_gap_class = gapClass
 
         controller.enqueue(encoder.encode(JSON.stringify({ type: 'final_plan', plan: finalPlan }) + '\n'))
         controller.close()

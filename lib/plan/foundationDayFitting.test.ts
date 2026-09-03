@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
 import { generateFoundationBlock } from './foundationBlock'
+import { composePlanWithFoundation } from './foundationCompose'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
 import { isLongRun } from './sessionRole'
-import type { GeneratorInput, Plan, Session } from '@/types/plan'
+import type { GeneratorInput, Session } from '@/types/plan'
 
 /**
  * CB-1 (Coaching Board, 2026-09-03) — foundation weeks obey §9.
@@ -108,15 +109,17 @@ describe('CB-1 — foundation day-fitting', () => {
   })
 
   it('assembled plans carry zero error violations on foundation weeks', () => {
+    // ADR-020 Option A — composePlanWithFoundation is the single owner of
+    // plan.weeks mutation post-generation; this is the same function
+    // /api/generate-plan calls, not a hand-splice that only this test builds.
     for (const vol of [8, 15, 30, 50]) {
       for (const days of [3, 4, 5]) {
         for (const lr of [3, 5, 10, 20]) {
           if (lr > vol) continue
           const inp = input({ current_weekly_km: vol, days_available: days, longest_recent_run_km: lr })
           const main = generateRulePlan(inp, 'trial', PLAN_START)
-          const fb = generateFoundationBlock({ input: inp, planStartDate: PLAN_START, today: TODAY })
-          const assembled: Plan = { ...main, weeks: [...fb.weeks, ...main.weeks] }
-          const errs = validatePlan(assembled, inp)
+          const { violations } = composePlanWithFoundation(main, inp, TODAY, 'add')
+          const errs = violations
             .filter(v => v.severity === 'error' && (v.week ?? 1) <= 0)
           expect(errs.map(v => `${v.code} w${v.week}`)).toEqual([])
         }

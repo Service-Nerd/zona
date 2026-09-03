@@ -1,6 +1,6 @@
 # ADR-020 — The plan construction boundary: every week is built and validated in one place
 
-**Status**: ACCEPTED (2026-09-03). CB-1 and MWM-02 ruled; CB-2 shipped `be5e538`; CB-1 + MWM-02 shipped in one wave. Option A (server-side construction) remains OUTSTANDING — see § Outstanding.
+**Status**: SHIPPED (2026-09-03). CB-1 and MWM-02 ruled; CB-2 shipped `be5e538`; CB-1 + MWM-02 shipped in one wave; Option A (server-side construction) shipped — see § Option A shipped.
 **Date**: 2026-09-03
 **Supersedes**: nothing. **Amends**: ADR-009 (config-driven generation), the three-layer model in CLAUDE.md.
 **Related**: ADR-006 (hybrid generation), ADR-016 (date-aware resolution), ADR-017 (Coaching Board), §57 (foundation block)
@@ -325,19 +325,65 @@ code before it shipped.
    of the 2,061 remainder — but the board ruled only on the long run, and this is
    a new coaching decision, not an implementation detail.
 
-## Outstanding
+## Option A shipped (2026-09-03)
 
-**Option A — move foundation construction server-side — has NOT shipped.** This
-wave fixed what foundation weeks *contain* and made the gates able to see them;
-it did not move *where they are built*. They are still assembled in the browser
-and prepended after the plan leaves the server, so:
+Foundation-block construction moved server-side. **`lib/plan/foundationCompose.ts`
+→ `composePlanWithFoundation()`** is the single owner of `plan.weeks` mutation
+post-generation — the literal answer to this ADR's proposed
+`INV-PLAN-SINGLE-CONSTRUCTION` pattern (§ below).
 
-- `validatePlan()` still does not run on them in the live path (the client-side
-  check in `GeneratePlanScreen` is now unfiltered and correct, but console-only —
-  no durable signal, D-04).
-- `PlanSchema.WeekSchema.n` still declares `n` positive, and `PlanSchema` is still
-  parsed nowhere.
+**What changed:**
 
-The risk is materially lower — the sweep now covers this code on every commit —
-but the D-08 duplicate-ownership violation stands. Sequence it behind the
-observability work the founder parked (daily prod audit, real-input replay).
+- **`/api/generate-plan/route.ts`** composes foundation weeks onto `rulePlan`
+  immediately after `generateRulePlan` returns, before either tier's response
+  path. `validatePlan()` — via `composePlanWithFoundation`'s internal call —
+  now sees foundation weeks in the live path for the first time. The route's
+  existing enrichment-attribution baseline/diff (ENRICH-ATTRIB-01) is
+  computed on the composed (with-foundation) plan on both sides, so it stays
+  apples-to-apples.
+- **The AI enricher still never sees foundation weeks** — deliberately
+  unchanged. `enrich()` is called with the foundation-free `rulePlan`; the
+  route re-attaches the already-composed foundation weeks onto the
+  enricher's output before the post-enrich validation and before sending
+  `final_plan`. Two enrich-adjacent code paths needed the same fix (found
+  during design validation, not shipped-then-caught): the `finalPlan`
+  initializer AND the enrichment-revert branch both previously read
+  `rulePlan` (foundation-free) — either would have silently dropped a
+  runner's foundation block. Both now read the composed plan.
+- **New endpoint, `POST /api/generate-plan/foundation`** (contract:
+  `docs/contracts/api/generate-plan-foundation.md`) completes the deferred
+  `'choice'` band (>28-day gap) decision — composes onto the client's
+  existing plan without re-running the rule engine or re-paying for AI
+  enrichment.
+- **`GeneratePlanScreen.tsx`**: all client-side construction
+  (`generateFoundationBlock`) and the best-effort console-only check
+  (`validateFoundationBlock`) are removed. One piece of client-side logic
+  intentionally *stays*: the `final_plan` NDJSON merge still splices
+  foundation weeks from local `planRef` state, because the "Add Foundation
+  Block" decision can arrive via the separate endpoint *while the
+  enrichment stream is still open* (28–35s) — a timing race the server
+  generating that stream has no way to observe. Found during design
+  validation before it shipped, not in production.
+- **`lib/plan/foundationValidation.ts`** (the client-side
+  `foundationWeekViolations`/`isFoundationWeek` helpers) is deleted — dead
+  code once construction and validation are both server-side; its only
+  caller was the removed client logic (D-18 hard cut).
+- **`WeekSchema.n`** relaxed from `.positive()` to a plain integer (CB-2 item
+  4). `PlanSchema` is still parsed nowhere in the codebase — this fixes the
+  schema's own internal correctness, not new runtime enforcement (a
+  separate item, as the original CB-2 note flagged).
+- **Sweep and matrix** now call `composePlanWithFoundation` directly instead
+  of hand-splicing `generateFoundationBlock`'s output — the exact "green
+  tests, guarded nothing" gap this ADR names by file (§1 of the evidence
+  above) no longer exists: the gates exercise the same composition function
+  production calls, not a parallel construction the gates alone build.
+
+**`INV-PLAN-SINGLE-CONSTRUCTION`** — see `docs/canonical/plan-invariants.md`.
+Enforced structurally (one module, one function, both live call sites route
+through it) rather than as a mechanical JSON-shape check — there is no way to
+prove from a finished plan alone *how* it was assembled.
+
+**D-08 duplicate-ownership violation: closed.** One owner
+(`composePlanWithFoundation`), governed by the same validator as the main
+plan, reachable from every construction path (initial generation, deferred
+user decision, sweep, matrix, tests).

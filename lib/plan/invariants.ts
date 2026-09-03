@@ -3195,3 +3195,21 @@ export function formatViolations(violations: Violation[]): string {
     `: ${v.message}. Got ${v.actual}, expected ${v.expected}.`
   ).join('\n')
 }
+
+/**
+ * The single policy for what happens after validatePlan() runs: throw in
+ * dev/test (so the matrix/property tests fail loudly), log in prod (never
+ * break a runner's plan over a defect, per ADR-006). Extracted from
+ * generateRulePlan's tail (ADR-020 Option A) so every caller that composes or
+ * mutates a plan post-generation — the route, the foundation-block endpoint —
+ * reacts to violations the same way, not a hand-copied variant.
+ */
+export function enforceViolations(violations: Violation[]): void {
+  const errors = violations.filter(v => v.severity === 'error')
+  if (errors.length === 0) return
+  const msg = `Plan invariant violations:\n${formatViolations(errors)}`
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+    throw new Error(msg)
+  }
+  console.error(msg)
+}

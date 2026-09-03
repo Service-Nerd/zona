@@ -8,9 +8,7 @@ import type { Plan, GeneratorInput, TrainingAge } from '@/types/plan'
 import GeneratingCeremony from '@/components/GeneratingCeremony'
 import { BRAND } from '@/lib/brand'
 import { createClient } from '@/lib/supabase/client'
-import { classifyGap, gapDays, generateFoundationBlock } from '@/lib/plan/foundationBlock'
 import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
-import { foundationWeekViolations } from '@/lib/plan/foundationValidation'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import { DurationPicker } from '@/components/shared/DurationPicker'
@@ -383,30 +381,12 @@ function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
   )
 }
 
-// Foundation weeks are assembled client-side (after the API returns), so they
-// never pass through the server's validatePlan run inside generateRulePlan — the
-// foundation invariants are dormant in the live path. Re-run here on the
-// assembled plan so a bad foundation block is visible instead of silently
-// shipping. Never throws or blocks: the plan still renders (ADR-006).
-// This is the only validation foundation weeks get live, until ADR-020 Option A
-// moves construction server-side.
-//
-// CB-2 (2026-09-03): this used to filter by invariant CODE
-// (`v.code === 'INV-PLAN-FOUNDATION-BLOCK'`), which answered the wrong question
-// — "did the foundation-specific invariant fire?" rather than "is anything wrong
-// with these weeks?". It computed and then DISCARDED the four
-// INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS violations that were FOUNDATION-DAYS-01.
-// Filtering by WEEK is the correct axis; logic now lives in
-// lib/plan/foundationValidation.ts so it is unit-testable.
-function validateFoundationBlock(assembled: Plan, genInput: GeneratorInput): void {
-  const violations = foundationWeekViolations(assembled, genInput)
-  if (violations.length) {
-    console.error(
-      `[foundation] ${violations.length} invariant violation(s) on foundation weeks:`,
-      violations.map(v => `${v.code} w${v.week}${v.day ? ' ' + v.day : ''}: ${v.message}`),
-    )
-  }
-}
+// ADR-020 Option A — foundation-block construction moved server-side.
+// /api/generate-plan now composes and validates foundation weeks before the
+// plan ever reaches the client (composePlanWithFoundation, unfiltered
+// validatePlan — see lib/plan/foundationCompose.ts). The client-side
+// construction + best-effort console-only check that used to live here is
+// gone; there is nothing left to validate on this side.
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -480,6 +460,12 @@ export default function GeneratePlanScreen({
 
   // ── Foundation Block modal (Phase 4 — gap > 28 days) ─────────────────────
   const [foundationModalOpen, setFoundationModalOpen] = useState(false)
+  // ADR-020 Option A — "Add Foundation Block" is now a real network call
+  // (POST /api/generate-plan/foundation), not a synchronous local
+  // computation, so it needs first-class loading/error UI state (INV-UI-004)
+  // — this codebase has no shared toast component; per-feature local state is
+  // the existing convention (see setAiNote/setRecalStatus in DashboardClient).
+  const [foundationAddStatus, setFoundationAddStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   // Preserve the last generator input so the foundation block can use it
   const lastInputRef = useRef<GeneratorInput | null>(null)
 
@@ -901,27 +887,15 @@ export default function GeneratePlanScreen({
         return
       }
 
-      // Foundation-block decisions depend on plan_start, which the rule engine
-      // sets and the enricher never touches — safe to compute once on the
-      // first plan we receive (rule_plan or final JSON for free tier).
-      let foundationApplied = false
+      // ADR-020 Option A — the server already composed foundation weeks into
+      // `incoming` for the 'auto' gap band (7-28 days) and stamped
+      // meta.foundation_gap_class. The only remaining client job is the
+      // 'choice' band (>28 days): the server deliberately did NOT add a
+      // block — it's the runner's call — so show the modal and stash the
+      // input for the follow-up POST /api/generate-plan/foundation call if
+      // they choose "Add".
       const applyFoundationIfNeeded = (incoming: Plan): Plan => {
-        if (foundationApplied) return incoming
-        foundationApplied = true
-        const today = new Date().toISOString().split('T')[0]
-        const gap = gapDays(today, incoming.meta.plan_start)
-        const gapClass = classifyGap(gap)
-        if (gapClass === 'auto') {
-          const { weeks: foundationWeeks } = generateFoundationBlock({
-            input,
-            planStartDate: incoming.meta.plan_start,
-            today,
-          })
-          const assembled = { ...incoming, weeks: [...foundationWeeks, ...incoming.weeks] }
-          validateFoundationBlock(assembled, input)
-          return assembled
-        }
-        if (gapClass === 'choice') {
+        if (incoming.meta.foundation_gap_class === 'choice') {
           lastInputRef.current = input
           setFoundationModalOpen(true)
         }
@@ -960,10 +934,17 @@ export default function GeneratePlanScreen({
             setPlan(applyFoundationIfNeeded(msg.plan))
             setRulePlanReady(true)   // preview reachable now; enricher streams on
           } else if (msg.type === 'final_plan') {
-            // Foundation weeks (n <= 0) are added client-side and never
-            // present in the enricher's payload. Preserve whatever is on
-            // the current plan state — it accounts for both auto-added and
-            // user-added foundation blocks.
+            // ADR-020 Option A — the server already re-attaches foundation
+            // weeks onto final_plan for the 'auto' band and any decision
+            // already known when /api/generate-plan ran. This client-side
+            // splice still exists for one specific race: the "Add Foundation
+            // Block" modal (gapClass 'choice') can be answered via the
+            // separate POST /api/generate-plan/foundation call WHILE this
+            // stream is still open (enrichment takes 28-35s) — a decision the
+            // server generating THIS stream has no way to know about. Only
+            // planRef (kept in sync with plan state) can see it, so re-derive
+            // from there rather than trusting the stream's own foundation
+            // weeks to be complete.
             //
             // Merged from planRef, not via a setPlan updater, because this can
             // run after the screen has unmounted (the runner already saved and
@@ -995,27 +976,39 @@ export default function GeneratePlanScreen({
 
   // ── Foundation Block modal handlers ──────────────────────────────────────
 
-  function handleFoundationAddBlock() {
+  // ADR-020 Option A — construction moved server-side. This used to be a
+  // synchronous local splice; now it's a real POST that can fail, so it needs
+  // loading/error handling it never needed before (INV-UI-004). On failure,
+  // the runner keeps whatever plan they already have (ADR-006) — the modal
+  // stays open with a retry affordance rather than silently closing.
+  async function handleFoundationAddBlock() {
     if (!plan || !lastInputRef.current) { setFoundationModalOpen(false); return }
-    const today = new Date().toISOString().split('T')[0]
-    const { weeks: foundationWeeks } = generateFoundationBlock({
-      input: lastInputRef.current,
-      planStartDate: plan.meta.plan_start,
-      today,
-    })
-    const assembled = { ...plan, weeks: [...foundationWeeks, ...plan.weeks] }
-    validateFoundationBlock(assembled, lastInputRef.current)
-    setPlan(assembled)
-    setFoundationModalOpen(false)
+    setFoundationAddStatus('loading')
+    try {
+      const res = await fetch('/api/generate-plan/foundation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: lastInputRef.current, plan }),
+      })
+      if (!res.ok) throw new Error(`foundation add failed: ${res.status}`)
+      const data = await res.json() as { plan: Plan }
+      setPlan(data.plan)
+      setFoundationAddStatus('idle')
+      setFoundationModalOpen(false)
+    } catch {
+      setFoundationAddStatus('error')
+    }
   }
 
   function handleFoundationSkip() {
+    setFoundationAddStatus('idle')
     setFoundationModalOpen(false)
   }
 
   function handleFoundationStartNow() {
     // No structural change — the plan starts at plan_start as generated.
     // "Start now" communicates user intent to begin immediately without a block.
+    setFoundationAddStatus('idle')
     setFoundationModalOpen(false)
   }
 
@@ -1197,16 +1190,23 @@ export default function GeneratePlanScreen({
                 Your plan doesn't start for a while. A Foundation Block can ease you in — easy runs only, no pressure.
               </div>
 
+              {foundationAddStatus === 'error' && (
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--warn)', marginBottom: '10px' }}>
+                  Couldn't add that. Try again.
+                </div>
+              )}
               <button
                 onClick={handleFoundationAddBlock}
+                disabled={foundationAddStatus === 'loading'}
                 style={{
                   width: '100%', padding: '15px', marginBottom: '10px',
                   borderRadius: 'var(--radius-md)', background: 'var(--moss)',
-                  border: 'none', cursor: 'pointer',
+                  border: 'none', cursor: foundationAddStatus === 'loading' ? 'default' : 'pointer',
+                  opacity: foundationAddStatus === 'loading' ? 0.7 : 1,
                   fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--card)',
                 }}
               >
-                Add Foundation Block
+                {foundationAddStatus === 'loading' ? 'Adding…' : 'Add Foundation Block'}
               </button>
               <button
                 onClick={handleFoundationStartNow}

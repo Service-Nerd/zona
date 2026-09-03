@@ -102,6 +102,16 @@ export interface GeneratorInput {
   injury_history?: string[]
   terrain?: 'road' | 'trail' | 'mixed'
   athlete_name?: string
+  /**
+   * ADR-020 Option A — the runner's choice on the "Foundation Block" modal,
+   * shown only when the gap between today and `plan_start` exceeds
+   * `FOUNDATION_GAP_AUTO_DAYS` (classifyGap returns 'choice'). Absent on the
+   * initial /api/generate-plan call (the decision doesn't exist yet); sent on
+   * the follow-up POST /api/generate-plan/foundation call once the runner has
+   * chosen. A gap inside the 'auto' band never needs this — the server adds
+   * the block without asking. See lib/plan/foundationCompose.ts.
+   */
+  foundation_decision?: 'add' | 'skip' | 'start_now'
 }
 
 export type WeekType =
@@ -415,6 +425,18 @@ export interface PlanMeta {
   // pre-GEN-FIX-02. Bare 'failed' is legacy (pre-2026-09-03) and never written by
   // current code — see lib/plan/schema.ts for what each failure state means.
   enrichment?: EnrichmentStatus
+
+  /**
+   * ADR-020 Option A — the gap classification `composePlanWithFoundation`
+   * computed at generation time (`classifyGap` in lib/plan/foundationBlock.ts):
+   * 'none' (<7 days, no block), 'auto' (7-28 days, block added automatically —
+   * already reflected in `weeks`), 'choice' (>28 days, block NOT added yet —
+   * the client shows the "Add Foundation Block" modal and, on 'add', calls
+   * POST /api/generate-plan/foundation). Inline union rather than an imported
+   * GapClass to avoid a circular import (foundationBlock.ts imports
+   * GeneratorInput/Week FROM this file).
+   */
+  foundation_gap_class?: 'none' | 'auto' | 'choice'
 
   // R24 — VDOT / zone model fields
   age?: number                            // athlete age at time of generation
