@@ -283,7 +283,13 @@ function PhaseSummaryCard({ phase, weeks }: { phase: string; weeks: Plan['weeks'
   const peakKm = Math.max(...weeks.map(w => w.weekly_km ?? 0))
   const colour = PHASE_COLOUR[phase] ?? 'var(--mute)'
   const description = PHASE_DESCRIPTION[phase] ?? ''
-  const weekRange  = startW === endW ? `Week ${startW}` : `Weeks ${startW}–${endW}`
+  // §57 — foundation weeks count DOWN to 0 (n <= 0); that's an internal
+  // construction index, never a number to show a runner. Mirrors
+  // PreviewPhaseStrip's own "N weeks before your plan" phrasing above
+  // rather than a week-number range, which only ever makes sense from n=1.
+  const weekRange = phase === 'foundation'
+    ? `${weeks.length} ${weeks.length === 1 ? 'week' : 'weeks'}`
+    : startW === endW ? `Week ${startW}` : `Weeks ${startW}–${endW}`
   return (
     <div style={{
       display: 'flex', gap: '14px',

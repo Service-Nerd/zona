@@ -3686,6 +3686,11 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
   const pendingLinkRef = useRef<number | null>(null)
   const [sessionMetric, setSessionMetric] = useState<'distance' | 'duration' | null>(savedMetricOverride)
   const supabase = createClient()
+  // Mirrors resolveSessionMetric's priority chain (lib/format.ts, ADR-015)
+  // minus the override step — the override lives as `sessionMetric` local
+  // state here (seeded from the parent's DB-backed map below), layered on
+  // top via `effectiveMetric`, rather than a second `overrides[key]` lookup.
+  // Same rule, one deliberate layering difference — not drift.
   const sessionDefault = session.primary_metric ?? preferredMetric ?? 'distance'
   const effectiveMetric = sessionMetric ?? sessionDefault
   const isMetricCustom = sessionMetric !== null && sessionMetric !== sessionDefault
@@ -6700,6 +6705,15 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   }, [weekIndex, overridesReady, sessions])
 
   const selectedSession = sessions.find(s => s.displayKey === selectedKey) ?? null
+  // ADR-015 / INV-FMT-001 — single-owner metric resolution. The Today-screen
+  // hero used to decide distance-vs-duration by field presence alone
+  // (`selectedSession.distance != null ? ... : selectedSession.duration ...`),
+  // never reading `primary_metric` — the exact drift ADR-015 exists to
+  // prevent. Resolved once here via the same resolver the session-detail card
+  // already calls (line ~7738), consumed by the hero below.
+  const heroMetric = selectedSession
+    ? resolveSessionMetric(weekNum, selectedSession.key, selectedSession.primary_metric, sessionMetricOverrides, preferredMetric)
+    : 'distance'
   const selectedEntry = selectedSession ? effectiveWs[selectedSession.displayKey] : null
   // Completion lookups must use the session's originalDay (stable id), not the
   // calendar day — completions are keyed by originalDay so they survive moves.
@@ -7051,7 +7065,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               })()}
             </div>
             <div style={{ lineHeight: 1, marginBottom: '16px' }}>
-              {selectedSession.distance != null ? (
+              {(heroMetric === 'distance' ? selectedSession.distance != null : selectedSession.duration == null) && selectedSession.distance != null ? (
                 <>
                   <span style={{
                     fontFamily: 'var(--font-ui)',
