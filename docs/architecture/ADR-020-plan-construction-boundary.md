@@ -1,6 +1,6 @@
 # ADR-020 — The plan construction boundary: every week is built and validated in one place
 
-**Status**: PROPOSED — blocked on Coaching Board ruling **CB-1** (§ Decisions Required)
+**Status**: ACCEPTED (2026-09-03). CB-1 and MWM-02 ruled; CB-2 shipped `be5e538`; CB-1 + MWM-02 shipped in one wave. Option A (server-side construction) remains OUTSTANDING — see § Outstanding.
 **Date**: 2026-09-03
 **Supersedes**: nothing. **Amends**: ADR-009 (config-driven generation), the three-layer model in CLAUDE.md.
 **Related**: ADR-006 (hybrid generation), ADR-016 (date-aware resolution), ADR-017 (Coaching Board), §57 (foundation block)
@@ -273,3 +273,71 @@ live plans** — expected, and the reason CB-1 is blocking rather than advisory;
 
 **Sequencing**: CB-1 → CB-2 defect fixes → Option A move → sweep/matrix extension → docs. Ship as
 separate commits; the Board ruling lands its three artifacts in one commit per INV-COACH-002.
+
+
+---
+
+## Outcome (2026-09-03)
+
+**Shipped.** CB-2's three defect fixes (`be5e538`), then CB-1 + MWM-02 together.
+
+### What the rulings changed
+
+| | Ruling |
+|---|---|
+| **CB-1** | Foundation weeks BIND §18, §9, §64 and their own invariant; CARVED OUT of §1 and the four §57 already named. Amendment: §52b day-fitting, coordinated sizing, and the inline `3` promoted to config. |
+| **MWM-02** | Naive "cap the long run too" **vetoed**. Long run exempt from the weekday cap; where it cannot fit the stated availability the plan says so and classifies `maintenance` (§81). |
+
+### Measured result — same widened grid, two engines
+
+| Violation class | Pre-wave | After |
+|---|---|---|
+| `INV-PLAN-LONG-IS-LONGEST` | 49,336 | **0** |
+| `INV-PLAN-MIN-SESSION-SIZE` | 66,075 | 2,061 |
+| `INV-PLAN-FOUNDATION-BLOCK` | 9,230 | **0** |
+| `INV-PLAN-WEEK-HAS-REST-DAY` | 3,962 | **0** |
+| `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` | 155 | 155 *(untouched)* |
+| `INV-PLAN-MAX-WEEKDAY-MINS` | 238 | 238 *(untouched)* |
+
+Plans with violations **11,237 → 669**. The two unchanged classes plus the
+2,061 remainder are pre-existing defects the widened grid can now see, baselined
+with attribution and filed as **SWEEP-VISIBLE-01**.
+
+### Test strategy — delivered
+
+The sweep now assembles foundation blocks (**13,528 plans / 31,610 foundation
+weeks**, from zero) and varies `max_weekday_mins: 30`, the value both real users
+chose and the grid had never tested. That change alone surfaced four classes the
+old grid could not reach, and caught a §64 rest-day breach in this wave's own new
+code before it shipped.
+
+### Two things deliberately NOT done
+
+1. **A final weekday-cap pass.** The ordering diagnosis was right, but every
+   re-expanded session proved to be the long run, which §81 exempts. With the
+   exemption: 0 of 153,728 non-long weekday sessions exceed the cap, and an A/B
+   was byte-identical. Written, measured, removed — a pass that provably changes
+   nothing reads as a safeguard while guarding nothing, which is the same false
+   confidence as an invariant that never fires. `validatePlan` on the finished
+   plan remains the exit-boundary check.
+2. **Extending the cap exemption to quality sessions.** Same family (the cap
+   deforming a session whose prescription is its structure) and the likely cause
+   of the 2,061 remainder — but the board ruled only on the long run, and this is
+   a new coaching decision, not an implementation detail.
+
+## Outstanding
+
+**Option A — move foundation construction server-side — has NOT shipped.** This
+wave fixed what foundation weeks *contain* and made the gates able to see them;
+it did not move *where they are built*. They are still assembled in the browser
+and prepended after the plan leaves the server, so:
+
+- `validatePlan()` still does not run on them in the live path (the client-side
+  check in `GeneratePlanScreen` is now unfiltered and correct, but console-only —
+  no durable signal, D-04).
+- `PlanSchema.WeekSchema.n` still declares `n` positive, and `PlanSchema` is still
+  parsed nowhere.
+
+The risk is materially lower — the sweep now covers this code on every commit —
+but the D-08 duplicate-ownership violation stands. Sequence it behind the
+observability work the founder parked (daily prod audit, real-input replay).

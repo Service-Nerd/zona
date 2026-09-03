@@ -277,6 +277,15 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 
 ## Tech Debt
 
+- 🔲 **SWEEP-VISIBLE-01 — three pre-existing defect classes the widened sweep can now see** *(ADR-020, 2026-09-03)*. Not regressions: the same widened grid scores them identically (or far worse) against the pre-wave engine. Baselined in `scripts/property-validate-plans.ts` with full attribution. **Verify still open:** `npm run verify:sweep` and read the "Known-open violations" block.
+  - **`INV-PLAN-MIN-SESSION-SIZE` (2,061)** — main-week QUALITY sessions shrunk below `MIN_SESSION_DISTANCE_KM.quality` (5 km) by `applyWeekdayMinsCap` at a tight cap. 0 on foundation weeks. Same family as MWM-02/§81 — the cap deforming a session whose prescription *is* its structure (rep count, distance). **Needs a Coaching Board ruling**: does the §81 long-run exemption extend to quality sessions? The board ruled only on the long run. Likely the cause of most of this count.
+  - **`INV-PLAN-MAX-WEEKDAY-MINS` (238)** — the same cause seen from the other side, at `max_weekday_mins: 30`. Byte-identical pre- and post-wave, so unrelated to §81. Resolves with the ruling above.
+  - **`INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` (155)** — `days_available: 2`: a two-day plan cannot reach a ≥50% goal-pace ratio in second-half build/peak. A §22-vs-§52 tension (does §22 bind a plan §52 would call maintenance?) — **board question, not an engine bug.**
+
+- 🔲 **ADR-020 Option A — move foundation construction server-side** *(the remainder of ADR-020)*. This wave fixed what foundation weeks *contain* and made both commit gates able to see them; it did not move *where they are built*. They are still assembled in the browser and prepended after the plan leaves the server, so `validatePlan()` does not run on them in the live path (the client-side check is now correct but console-only — no durable signal, D-04), and `PlanSchema.WeekSchema.n` still declares `n` positive while `PlanSchema` is parsed nowhere. Risk is materially lower now the sweep covers the code, but the D-08 duplicate-ownership violation stands. **Sequence behind the observability work** (daily prod audit + real-input replay). **Verify still open:** `grep -n "generateFoundationBlock" app/dashboard/GeneratePlanScreen.tsx`.
+
+
+
 ### Rebrand follow-ups (Vetra → Zonna, May 2026)
 
 The Vetra → Zonna rename (commits `fda3ff6` + `ba469df`) is complete in code, native shell, icons, OG image, and current-truth docs. The items below are non-blocking hygiene and decisions that can land any time post-launch.

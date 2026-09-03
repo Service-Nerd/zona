@@ -2274,6 +2274,20 @@ function applyWeekdayMinsCap(
     const s = sessions[day]
     if (!s || !s.duration_mins || s.duration_mins <= cap) continue
     if (s.type === 'strength' || s.type === 'rest' || s.type === 'race') continue
+    // MWM-02 (Coaching Board, 2026-09-03) — THE LONG RUN IS EXEMPT.
+    //
+    // Squeezing it to the weekday cap does not honour §18, it deforms the week:
+    // a long run cut to 30 minutes alongside two 30-minute easy runs is not a
+    // long run, and the label then lies to the runner. Measured: capping it
+    // traded 1,615 §18 breaches for 979 §9 breaches (+511 LONG-IS-LONGEST,
+    // +468 MIN-SESSION-SIZE). The board VETOED that trade — "don't shrink to
+    // fit" (Hutchinson, McMillan, Willy, independently).
+    //
+    // The remedy is honesty, not deformation: where the long run cannot fit the
+    // runner's stated availability the plan SAYS SO and classifies maintenance
+    // (§52's third remedy, §40c's "a suppressed target is stated, never absorbed
+    // silently"). See CoachingPrinciples §81.
+    if (isLongRun(s)) continue
     const ratio = cap / s.duration_mins
     s.duration_mins = cap
     if (s.distance_km != null) {
@@ -2281,6 +2295,28 @@ function applyWeekdayMinsCap(
     }
   }
 }
+
+// MWM-02 postscript — why there is NO final cap pass here.
+//
+// The diagnosis was that `applyWeekdayMinsCap` runs mid-pipeline while eight
+// later post-passes re-size sessions, so a capped session could be silently
+// re-expanded (a 30-minute cap shipping a 39-minute session). That diagnosis is
+// correct about the ORDERING, but measurement showed every re-expanded session
+// was the LONG RUN — which §81 now exempts. With the exemption in place:
+//
+//   non-long weekday sessions checked  153,728
+//   over the runner's cap                    0
+//
+// and an A/B with a final pass added produced byte-identical violation counts.
+// A pass that provably changes nothing is dead code that reads like a
+// safeguard — the same false confidence as INV-PLAN-FOUNDATION-BLOCK, which sat
+// unfired for months while appearing to guard foundation weeks. It was written,
+// measured, and removed rather than shipped.
+//
+// The ordering guarantee is not abandoned: INV-PLAN-MAX-WEEKDAY-MINS runs in
+// validatePlan on the FINISHED plan, so a future post-pass that re-expands a
+// weekday session is caught at the exit boundary — which is ADR-020's thesis.
+
 
 // ─── Week metadata ────────────────────────────────────────────────────────────
 
@@ -4249,8 +4285,32 @@ export function generateRulePlan(
     ? `Plan generated as maintenance — the long run this race needs is larger than your current weekly volume can carry around it. By week ${lopsidedWeek.n} the long run is ${Math.round(GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY)}%+ of the whole week, which is a lopsided week however it is arranged: the race sets the long run, your current ${input.current_weekly_km}km a week sets everything else. It maintains your fitness and gets you round rather than building you up. The lever is weekly volume — more running on the other days, not a longer long run.`
     : null
 
+  // §81 (MWM-02) — the long run does not fit the runner's stated weekday ceiling.
+  // Only reachable when the long run has been forced onto a weekday (both
+  // weekend days blocked); it is exempt from the cap, so without this the
+  // overrun would ship silently. Same shape as lopsidedWeek above.
+  const longRunOverrun: { n: number; mins: number; cap: number } | null = (() => {
+    const cap = input.max_weekday_mins
+    if (!cap) return null
+    const limit = cap * (1 + GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT / 100)
+    let worst: { n: number; mins: number; cap: number } | null = null
+    for (const w of weeks) {
+      if (w.type === 'race') continue
+      for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as Day[]) {
+        const sn = w.sessions?.[d]
+        if (!sn || !isLongRun(sn)) continue
+        const mins = sn.duration_mins ?? 0
+        if (mins > limit && (!worst || mins > worst.mins)) worst = { n: w.n, mins, cap }
+      }
+    }
+    return worst
+  })()
+  const longRunOverrunNote: string | null = longRunOverrun
+    ? `Plan generated as maintenance — your long run does not fit the time you have. You've kept both weekend days clear of training and capped weekdays at ${longRunOverrun.cap} minutes, but by week ${longRunOverrun.n} the long run this race needs is about ${Math.round(longRunOverrun.mins)} minutes. It stays in the plan at full length, because a long run cut to ${longRunOverrun.cap} minutes stops being a long run. What it can't do is build toward the race on those terms. The lever is one longer session a week — a weekend morning, or a single weekday you can give more time to.`
+    : null
+
   const finalVolumeProfile: 'build' | 'maintenance' | undefined =
-    (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance || structuralPeakInversion || lopsidedWeek)
+    (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance || structuralPeakInversion || lopsidedWeek || longRunOverrun)
       ? 'maintenance'
       : peakOverloadResult?.volume_profile  // 'build' or undefined
   // Order matters: the more specific diagnosis wins. A structural inversion
@@ -4260,7 +4320,11 @@ export function generateRulePlan(
   const finalVolumeNote: string | undefined =
     structuralNote ?? peakOverloadResult?.volume_constraint_note
       ?? (daysLowMaintenance ? daysLowNote ?? undefined : undefined)
-      ?? lopsidedNote ?? undefined
+      ?? lopsidedNote
+      // §81 last: it names a specific runner constraint, but any diagnosis above
+      // explains the same plan more completely. Appending keeps existing
+      // precedence untouched.
+      ?? longRunOverrunNote ?? undefined
 
   // CoachingPrinciples §31 — persona-aware compression classification. Computed
   // here (not inline in meta) so the difficulty band below reads the SAME value,

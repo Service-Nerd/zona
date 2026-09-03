@@ -71,6 +71,25 @@ const DEFAULT_DAYS: Array<'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'>
   'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun',
 ]
 
+/**
+ * Floor to one decimal place, tolerant of binary floating-point representation.
+ *
+ * Plain `Math.floor(x * 10) / 10` is WRONG for values already at 1dp: `16.1 * 10`
+ * is `160.99999999999997`, so the naive form floors it to 16.0 and silently
+ * takes 100 m off the runner's week. Caught by `foundationDayFitting.test.ts`
+ * within minutes of the naive version being written.
+ *
+ * The epsilon absorbs representation error (~1e-13) without touching genuine
+ * values, which sit orders of magnitude further from the boundary. Flooring
+ * rather than rounding is deliberate: `toFixed`/`Math.round` round half UP and
+ * can carry a value PAST a cap the generator itself computed — the cause of
+ * 1,728 INV-PLAN-FOUNDATION-BLOCK and 3,573 growth-ceiling violations before
+ * this change ("got 6.2km, expected <= 6.2km").
+ */
+function floor1dp(km: number): number {
+  return Math.floor(km * 10 + 1e-9) / 10
+}
+
 function buildFoundationSessions(
   weeklyKm: number,
   longRunKm: number,
@@ -86,39 +105,97 @@ function buildFoundationSessions(
   const blocked = normaliseDays(blockedDays)
   const available = DEFAULT_DAYS.filter(d => !blocked.has(d))
   const sessions: Week['sessions'] = {}
+  if (!available.length || weeklyKm <= 0) return sessions
 
-  // Long-run day: honour the user's chosen day. Mirrors the long-run placement in
-  // ruleEngine.ts (`longDayPref`) — Sun by default, user may choose Sat, falling
-  // back through the list, then to the last available day. Previously this was
-  // hardcoded to the last of the first-N Mon-first days, ignoring the preference
-  // entirely, so the Foundation long run always landed on the wrong day (D4).
+  const minEasyKm = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+  const minLongKm = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long
+  const minRatio  = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
+  // §64 — six training days is the upper limit for a non-elite runner; every
+  // week keeps a rest day (INV-PLAN-WEEK-HAS-REST-DAY). Foundation weeks are no
+  // exception, and a runner offering 7 days is telling us their schedule, not
+  // asking for seven runs. Caught by the widened sweep (ADR-020): 448 foundation
+  // weeks with no rest day, all of them days_available = 7.
+  const maxDays   = Math.min(
+    daysAvailable,
+    available.length,
+    GENERATION_CONFIG.MAX_TRAINING_DAYS_PER_WEEK,
+  )
+
+  // ── CB-1 §52b day-fitting — reduce DAYS, never shrink sessions ─────────────
+  //
+  // The old sizing floored each easy run at a hardcoded 3 km
+  // (`Math.max(3, remaining / days)`) with no relationship to the long-run cap.
+  // At low volume the two collided: an 8 km week gave 3.0 km easy runs and a
+  // 2.8 km "Long easy" — the long run was the SHORTEST run of the week, and the
+  // sessions sat under §9's floor. Measured before this shipped: 49,974
+  // INV-PLAN-LONG-IS-LONGEST and 36,585 INV-PLAN-MIN-SESSION-SIZE violations
+  // across 24,219 foundation weeks.
+  //
+  // Coaching Board CB-1 (2026-09-03): "when a runner's volume can't fill the
+  // days they've offered, the coaching answer has never been smaller sessions —
+  // it's fewer days" (McMillan); "consolidate, don't fragment" (Willy). Same
+  // remedy §52b/INPUT-FLOOR-01 already applies to main weeks.
+  //
+  // A week carries a DISTINCT long run only when every §9 constraint can hold at
+  // once. Searching from the most days downward: more days means smaller easy
+  // runs, which improves the long-vs-easy ratio but pushes toward the size
+  // floor. The largest day-count clearing the floor therefore also gives the
+  // best ratio — if it fails there, no smaller count can succeed.
+  let plan: { longKm: number; easyCount: number; eachKm: number } | null = null
+  for (let n = maxDays; n >= GENERATION_CONFIG.FOUNDATION_MIN_SESSIONS_FOR_LONG_RUN; n--) {
+    if (longRunKm < minLongKm) break            // no admissible long run at all
+    const each = (weeklyKm - longRunKm) / (n - 1)
+    if (each < minEasyKm) continue              // too many days for this volume
+    if (longRunKm < minRatio * each) break      // inverted, and worse at fewer days
+    plan = { longKm: longRunKm, easyCount: n - 1, eachKm: each }
+    break
+  }
+
+  // No admissible long run — the honest object is equal easy runs. Below
+  // FOUNDATION_MIN_SESSIONS_FOR_LONG_RUN, or when history caps the long run
+  // below the easy runs, a week has no long run and must not label one.
+  if (!plan) {
+    const n = Math.max(1, Math.min(maxDays, Math.floor(weeklyKm / minEasyKm)))
+    plan = { longKm: 0, easyCount: n, eachKm: weeklyKm / n }
+  }
+
+  const canCarryLongRun = plan.longKm > 0
+
+  // Long-run day: honour the user's chosen day. Mirrors ruleEngine's
+  // `longDayPref` — Sun by default, Sat if chosen, then Fri, then the last
+  // available day. §18: never a blocked day.
   const longDayPref: Array<(typeof DEFAULT_DAYS)[number]> =
     preferredLongRunDay === 'sat' ? ['sat', 'sun', 'fri'] : ['sun', 'sat', 'fri']
-  const longDay = longDayPref.find(d => !blocked.has(d)) ?? available[available.length - 1]
+  const longDay = canCarryLongRun
+    ? (longDayPref.find(d => !blocked.has(d)) ?? available[available.length - 1])
+    : undefined
+
+  const longRunFinalKm = plan.longKm
+  const eachKm = plan.eachKm
+
+  const easyDays = available.filter(d => d !== longDay).slice(0, plan.easyCount)
 
   if (longDay) {
     sessions[longDay] = {
       type: 'easy',
+      // INV-CLASS-002 — structural classification is STAMPED, never inferred
+      // from the label. This session was previously identified only by the word
+      // "Long" in its label, the exact D-17 coupling INV-CLASS-001 forbids.
+      role: 'long_run',
       label: 'Long easy',
-      detail: `${longRunKm.toFixed(1)}km easy — Zone 2 throughout. No exceptions.`,
-      distance_km: longRunKm,
+      detail: `${longRunFinalKm.toFixed(1)}km easy — Zone 2 throughout. No exceptions.`,
+      distance_km: floor1dp(longRunFinalKm),
       zone: 'Zone 2',
       coach_notes: ['This is your longest run of the week. Keep it slow.'],
     }
   }
 
-  // Distribute remaining km across the other available training days (Mon-first),
-  // up to the day budget (long run consumes one). Same run count as before.
-  const otherDays = available.filter(d => d !== longDay).slice(0, Math.max(0, daysAvailable - 1))
-  const remainingKm = Math.max(0, weeklyKm - longRunKm)
-  const eachKm = otherDays.length > 0 ? Math.max(3, remainingKm / otherDays.length) : 0
-
-  for (const day of otherDays) {
+  for (const day of easyDays) {
     sessions[day] = {
       type: 'easy',
       label: 'Easy run',
       detail: `${eachKm.toFixed(1)}km easy — Zone 2. Conversational pace.`,
-      distance_km: parseFloat(eachKm.toFixed(1)),
+      distance_km: floor1dp(eachKm),
       zone: 'Zone 2',
       coach_notes: ['Zone 2 only. If you can\'t hold a conversation, slow down.'],
     }
@@ -163,17 +240,24 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
     // Volume: W1 = effective baseline, each subsequent week may grow by ≤ +10%.
     // Hard ceiling: effective_baseline × 1.10 (applied to every week, not just final).
     const maxCeiling = baseline * (1 + GENERATION_CONFIG.FOUNDATION_WEEKLY_INCREASE_PCT / 100)
-    const weeklyKm = parseFloat(
+    // FLOOR to 1dp, never round. `toFixed` rounds half-up, so a week landing on
+    // 6.16 km became 6.2 — above its own +10% ceiling — and
+    // INV-PLAN-FOUNDATION-BLOCK correctly flagged the generator for exceeding a
+    // bound the generator itself had computed ("got 6.2km, expected <= 6.2km",
+    // 3,573 occurrences). Rounding must never carry a value past a cap.
+    const weeklyKm = floor1dp(
       Math.min(
         baseline * Math.pow(1 + GENERATION_CONFIG.FOUNDATION_WEEKLY_INCREASE_PCT / 100, i),
         maxCeiling,
-      ).toFixed(1),
+      ),
     )
 
     const longRunCap = weeklyKm * (GENERATION_CONFIG.FOUNDATION_LONG_RUN_MAX_PCT / 100)
-    const longRunKm = parseFloat(
-      Math.min(maxLongRunByHistory, longRunCap).toFixed(1),
-    )
+    // FLOOR, never round — same reason as weeklyKm above. A 23.1 km week caps
+    // the long run at 8.085 km; `toFixed(1)` rounded that to 8.1, carrying it
+    // past its own cap and tripping INV-PLAN-FOUNDATION-BLOCK ("got 8.1km,
+    // expected <= 8.1km", 1,728 occurrences). Rounding must never cross a bound.
+    const longRunKm = floor1dp(Math.min(maxLongRunByHistory, longRunCap))
 
     // Week index: count down from -(weekCount-1) to 0
     const weekN = i - weekCount  // e.g. for 3 weeks: -3, -2, -1 → but spec says ≤ 0

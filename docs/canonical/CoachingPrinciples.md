@@ -1379,10 +1379,77 @@ Foundation weeks use `n` values ≤ 0 (e.g., −2, −1, 0 for a 3-week block). 
 - Example week themes: "Shake the rust off.", "Building the base.", "Last week before the plan proper. Keep it easy."
 - Never promise fitness gains. Never use motivational language.
 
+### What a foundation block is FOR (Coaching Board CB-1, 2026-09-03)
+
+A foundation block's job is **habit and routine, not adaptation** (Sims). At the
+volumes it runs at — a fresh-return runner on 8 km/week gets an effective baseline
+of 5.6 km — it is not producing meaningful aerobic adaptation or bone loading, and
+it must never be described as if it were. This is recorded so no future reader
+mistakes it for a training stimulus and starts "optimising" it upward.
+
+### Sizing: reduce DAYS, never shrink sessions (CB-1)
+
+When the week's volume cannot fill the days the runner offered, the answer is
+**fewer days**, not smaller sessions. Two days of 4 km is a training week; three
+days of 2.7 km is fidgeting (McMillan). Consolidation also matters on load:
+sub-3 km jogs deliver essentially no mechanical stimulus while still costing three
+sessions of adherence (Willy). This mirrors §52b/INPUT-FLOOR-01, which already
+applies the same rule to main weeks.
+
+Every foundation session is therefore at or above `MIN_SESSION_DISTANCE_KM.easy`,
+and the day count is `min(days_available, floor(weekly_km / that floor))`.
+
+### A foundation week below four sessions has NO long run (CB-1)
+
+**Derived, not chosen.** With the long run capped at `FOUNDATION_LONG_RUN_MAX_PCT`
+(35%) and §9 requiring long ≥ `LONG_RUN_MIN_RATIO_VS_EASY` (1.25) × easy, the
+remaining (n−1) easy runs share 65% of the week:
+
+| sessions | long | each easy | ratio | §9 satisfied? |
+|---|---|---|---|---|
+| 2 | 35% | 65.0% | 0.54 | ✗ |
+| 3 | 35% | 32.5% | 1.08 | ✗ |
+| **4** | 35% | 21.7% | **1.62** | ✓ |
+
+Below four sessions an inverted week is **arithmetically forced** by two numbers
+this board itself set — the shortest run of the week ends up labelled "Long easy".
+Measured before the fix: 49,974 `INV-PLAN-LONG-IS-LONGEST` violations across
+24,219 foundation weeks, alongside 36,585 `INV-PLAN-MIN-SESSION-SIZE` and 13,428
+`INV-PLAN-FOUNDATION-BLOCK`.
+
+The board's ruling — *the inverted week is a defect at any volume* — leaves one
+honest object: **equal easy runs, and no session claiming to be a long run.** The
+threshold is `GENERATION_CONFIG.FOUNDATION_MIN_SESSIONS_FOR_LONG_RUN`. The same
+applies when `longest_recent_run_km` caps the long run below the easy runs.
+
+The long run, when there is one, is stamped `role: 'long_run'` at construction
+(INV-CLASS-002). It was previously identified only by the word "Long" in its
+label — the exact display-coupling INV-CLASS-001 forbids.
+
 ### Invariants
 
-- `INV-PLAN-FOUNDATION-BLOCK` — validates that foundation weeks contain no forbidden session types, volume does not exceed effective baseline, and the +10%/week cap is respected.
-- Existing invariants `INV-PLAN-PEAK-OVER-BASE`, `INV-PLAN-LR-PROGRESSION-CAP`, `INV-PLAN-QUALITY-EXPECTED`, and `INV-PLAN-COPY-MATCHES-SESSIONS` all skip foundation-phase weeks.
+Foundation weeks are validated like any other week. The complete ruling
+(Coaching Board CB-1, 2026-09-03):
+
+| Invariant | Foundation weeks | Basis |
+|---|---|---|
+| `INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS` | **BINDS** | §18 life-first has no phase exemption |
+| `INV-PLAN-MAX-WEEKDAY-MINS` | **BINDS** | §18 (long run exempt per §81) |
+| `INV-PLAN-WEEK-HAS-REST-DAY` | **BINDS** | §64 |
+| `INV-PLAN-MIN-SESSION-SIZE` | **BINDS** | §9 — conditional on the day-fitting rule above |
+| `INV-PLAN-LONG-IS-LONGEST` | **BINDS** | §9 |
+| `INV-PLAN-FOUNDATION-BLOCK` | **BINDS** | It is the foundation invariant |
+| `INV-PLAN-LR-MAX-WEEKLY-PCT` | **BINDS above 2 runs** | §5 — a fraction of the week is undefined at 1–2 sessions; a week that fits one run has a largest session at 100% by construction, which is SMALL, not lopsided. Same threshold the `INV-PLAN-FOUNDATION-BLOCK` long-run arm already used |
+| `INV-PLAN-INTENSITY-DISTRIBUTION` | **CARVED OUT** | §1 is undefined over an all-easy block — no intensity to distribute. Same reasoning as CD-21's maintenance carve-out (Seiler) |
+| `INV-PLAN-QUALITY-EXPECTED` | **CARVED OUT** | §57 — foundation is easy-only by definition |
+| `INV-PLAN-PEAK-OVER-BASE` | **CARVED OUT** | Foundation is not in the periodisation arc |
+| `INV-PLAN-LR-PROGRESSION-CAP` | **CARVED OUT** | Same |
+| `INV-PLAN-COPY-MATCHES-SESSIONS` | **CARVED OUT** | Same |
+
+**Why this ruling was needed at all:** foundation weeks were generated
+client-side and prepended after the plan left the server, so `validatePlan()`
+never saw them and `INV-PLAN-FOUNDATION-BLOCK` — ratified by this board in
+Coaching-1 — had never once run in production. See ADR-020.
 
 ---
 
@@ -2084,6 +2151,62 @@ So the incoherence is not "two ladders disagree with each other" — it is **one
 **The residual gap, stated accurately.** The invariant compares the *fastest* Zone 3 session against the *fastest* Zone 4–5 session across the plan. It does not assert finer ordering *within* a band. That is a real limitation and a small one.
 
 **Config.** `GENERATION_CONFIG.INTENSITY_ORDERING_TOLERANCE_PCT` (0.5% — two independent derivations landing within a rounding width of each other is noise, not an inversion). Enforced by `INV-PLAN-INTENSITY-ORDERING` in `lib/plan/invariants.ts`. Surfaced via §44's difficulty band.
+
+---
+
+## 81. The long run is exempt from the weekday cap — and the plan says when it doesn't fit
+
+**Coaching Board MWM-02, 2026-09-03.**
+
+`max_weekday_mins` is the runner's own statement about their life and binds every
+weekday session (§18) — **except the long run.**
+
+**Why the exception.** A long run squeezed into a 30-minute weekday ceiling is not
+a compromise, it is a different session: it stops being the longest run of the
+week, and the label then lies to the runner. Measured across 2,688 plans, capping
+it traded **1,615 §18 violations for 979 §9 violations** (+511
+`INV-PLAN-LONG-IS-LONGEST`, +468 `INV-PLAN-MIN-SESSION-SIZE`). That is not a
+resolution, it is relocation. The board vetoed it — Hutchinson, McMillan and
+Willy arrived independently at *don't shrink to fit*.
+
+Willy's load reading: a capped weekday long run is the worst of both. You lose the
+progressive time-on-feet that builds tissue tolerance, and keep three same-sized
+sessions that give no variation in loading — monotonous loading being its own
+injury pattern.
+
+**When does this even arise?** Only when the long run has been forced onto a
+weekday, i.e. the runner blocked both weekend days. Among those runners, 823 of
+896 plans put the long run over their weekday cap, median overrun **127%** — more
+than double the time they said they had.
+
+**The obligation that comes with the exemption.** An exemption is not a licence to
+ignore the runner. Past
+`GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT` (50%) the session is
+not a stretch, it is a different time budget, and the plan must:
+
+1. **Say so** — §40c's rule, *a suppressed target is stated, never absorbed
+   silently*, via `volume_constraint_note`.
+2. **Classify `maintenance`** — §52's third remedy. The runner keeps a plan; the
+   plan stops claiming to build a long run it cannot build.
+
+**Framing (Sims).** This constraint profile — no weekend availability — skews
+heavily toward people with caregiving loads, disproportionately women. A bare
+refusal reads as *you don't fit our app*. The note names the trade and the lever
+("one longer session a week — a weekend morning, or a single weekday you can give
+more time to") and the runner still gets a plan.
+
+**Enforcement.** The exemption lives in `applyWeekdayMinsCap` and in
+`INV-PLAN-MAX-WEEKDAY-MINS`, which must agree — an engine exemption the validator
+does not share is a plan that fails its own constitution.
+
+There is deliberately **no** final re-cap pass in the engine. The original
+diagnosis (the cap ran mid-pipeline while later passes re-sized sessions) was
+correct about ordering, but every re-expanded session proved to be the long run,
+which this section exempts. With the exemption, 0 of 153,728 non-long weekday
+sessions exceed the cap, and an A/B with the extra pass was byte-identical. It was
+written, measured, and removed rather than shipped as a safeguard that provably
+guards nothing. `validatePlan` on the finished plan remains the exit-boundary
+check (ADR-020).
 
 ---
 

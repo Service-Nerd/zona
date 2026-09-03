@@ -8,6 +8,7 @@
 
 import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { validatePlan, type Violation } from '../lib/plan/invariants'
+import { generateFoundationBlock } from '../lib/plan/foundationBlock'
 
 // ⚠️ THE SWEEP MUST BE TIME-INDEPENDENT.
 //
@@ -120,7 +121,19 @@ const trainingAgeSets = [undefined, '<6mo', '6-18mo', '2-5yr', '5yr+']
 const declaredSets = [undefined, 'beginner', 'intermediate', 'experienced']
 const hardSets = ['love', 'avoid', 'neutral']
 const injurySets = [[], ['knee'], ['achilles'], ['shin_splints'], ['hip_flexor'], ['back']]
-const maxWeekdays = [undefined, 45, 60, 90]
+// ADR-020 (2026-09-03) — 30 ADDED. The grid tested 45/60/90 while BOTH real
+// users had chosen 30, and three separate INV-PLAN-MAX-WEEKDAY-MINS defects
+// shipped behind a green sweep because the tightest realistic cap was never
+// exercised. Same class as SWEEP-VACUOUS-01 and the fitness_level gap: an input
+// the grid never varies tests nothing.
+const maxWeekdays = [undefined, 30, 45, 60, 90]
+
+// ADR-020 — FOUNDATION COVERAGE. The sweep generated 18,060 plans and ZERO of
+// them carried a foundation block, so `generateFoundationBlock` and
+// INV-PLAN-FOUNDATION-BLOCK were unreachable by the gate that runs on every
+// commit. Values straddle each §57 gap boundary: no block, auto-generated
+// (7-28 days), and the user-chosen case (> 28).
+const foundationGapDays = [0, 10, 24, 40]
 
 // GEN-FIX-08 — HR dimension. The sweep had no HR axis at all, which is why F1
 // (a HealthKit-observed max HR 22% below the age estimate, producing a Zone 2
@@ -254,6 +267,7 @@ function randomInput(): any {
     hard_session_relationship: pick(hardSets),
     injury_history: pick(injurySets),
     max_weekday_mins: pick(maxWeekdays),
+    __foundationGapDays: pick(foundationGapDays),
     ...hrSet.hr,
     ...(g.goal ? { goal: g.goal } : {}),
     ...(lrd.preferred_long_run_day ? { preferred_long_run_day: lrd.preferred_long_run_day } : {}),
@@ -267,6 +281,8 @@ const REFUSAL = /is not enough preparation|days\/week is (not enough|below)/
 
 let attempted = 0
 let generated = 0
+let foundationPlans = 0
+let foundationWeeks = 0
 let refused = 0
 let violatingPlans = 0
 let hardFailures = 0
@@ -301,6 +317,26 @@ for (const input of inputs) {
     continue
   }
   generated++
+
+  // ADR-020 — validate the plan the RUNNER gets. Foundation weeks are assembled
+  // client-side and prepended after the API returns, so a sweep that validates
+  // only the engine's output is blind to every week with n <= 0. Mirrors
+  // GeneratePlanScreen's assembly exactly.
+  const gapDaysForPlan = (input as Record<string, unknown>).__foundationGapDays as number
+  if (gapDaysForPlan > 0) {
+    try {
+      const planStart = plan.weeks.find(w => w.n === 1)?.date ?? PLAN_START
+      const today = new Date(new Date(planStart).getTime() - gapDaysForPlan * 86_400_000)
+        .toISOString().slice(0, 10)
+      const fb = generateFoundationBlock({ input, planStartDate: planStart, today })
+      if (fb.weeks.length) {
+        plan = { ...plan, weeks: [...fb.weeks, ...plan.weeks] }
+        foundationPlans++
+        foundationWeeks += fb.weeks.length
+      }
+    } catch { /* block generation is best-effort; the main plan still validates */ }
+  }
+
   const errors = validatePlan(plan, input).filter(v => v.severity === 'error')
   if (errors.length > 0) {
     violatingPlans++
@@ -364,6 +400,33 @@ if (hardFailures > 0) {
 // A baseline is a debt register, not an amnesty. Tracked in backlog.md as
 // SWEEP-BASELINE-01.
 const BASELINE: Record<string, number> = {
+  // ── ADR-020 (2026-09-03): three classes made visible by WIDENING THE GRID ──
+  //
+  // Not regressions. The grid gained `max_weekday_mins: 30` (both real users had
+  // chosen it; the grid tested only 45/60/90) and foundation-block assembly
+  // (0 of 18,060 plans had ever carried one). Attribution measured by running
+  // the SAME widened grid against the pre-wave engine (HEAD be5e538):
+  //
+  //   code                              pre-wave    after this wave
+  //   INV-PLAN-LONG-IS-LONGEST            49,336          0
+  //   INV-PLAN-MIN-SESSION-SIZE           66,075      2,061
+  //   INV-PLAN-FOUNDATION-BLOCK            9,230          0
+  //   INV-PLAN-WEEK-HAS-REST-DAY           3,962          0
+  //   INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO  155        155   <- unchanged
+  //   INV-PLAN-MAX-WEEKDAY-MINS              238        238   <- unchanged
+  //
+  // Plans with violations: 11,237 -> 669. The three below are pre-existing
+  // defects this grid can now see; they are a debt register, not an amnesty.
+  // Filed in backlog.md as SWEEP-VISIBLE-01.
+
+  // Same cause, opposite face: a quality session at a 30-minute cap. Byte-identical
+  // pre- and post-wave, so unrelated to §81's long-run exemption.
+  'INV-PLAN-MAX-WEEKDAY-MINS':             238,
+  // days_available = 2: a 2-day plan cannot reach a >=50% goal-pace ratio in the
+  // second-half build/peak. Reachable only now the grid pairs low day counts with
+  // 5km. Pre-dates this wave; likely a §22-vs-§52 tension for the board.
+  'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO':  155,
+
   // 1116 -> 1080 on 2026-08-20: SC-07's build rotation fixed 36 of these as a
   // side effect. Lowered to lock the improvement in, per the note above.
   // 1116 -> 1080 (SC-07) -> 0 (VOL-STRUCTURE-01, 2026-08-20). Removed entirely:
@@ -385,7 +448,17 @@ const BASELINE: Record<string, number> = {
   // always been under-sized. Cleared entirely by §52b (a training day must be
   // able to carry a real session) plus honouring the `secondary_quality` floor
   // the config already declared and the invariant had been ignoring.
-  'INV-PLAN-MIN-SESSION-SIZE':            0,
+  //
+  // 0 -> 2061 (ADR-020, 2026-09-03) — NOT a regression. The grid gained
+  // `max_weekday_mins: 30` and foundation blocks; the same widened grid scores
+  // 66,075 against the PRE-WAVE engine and 2,061 after, so this wave removed
+  // ~97% of them. The remainder are main-week QUALITY sessions shrunk below
+  // MIN_SESSION_DISTANCE_KM.quality (5km) by applyWeekdayMinsCap at a tight cap
+  // — 0 land on foundation weeks. Same family as MWM-02/§81 (the cap deforming a
+  // session whose prescription IS its structure), but the board ruled only on
+  // the long run; extending the exemption to quality sessions is a new coaching
+  // decision and is not taken here. Filed as SWEEP-VISIBLE-01.
+  'INV-PLAN-MIN-SESSION-SIZE':            2061,
 
   // 87 -> 75 -> 0 (LABEL-VARIETY-01, 2026-08-21). The LABEL count is now zero:
   // the peak goal-pace override takes the row's shape word ("…-pace ladder",
@@ -461,4 +534,4 @@ if (violationsByCode.size > 0) {
   console.log()
 }
 
-console.log(`✓ ${generated} plans generated and validated. No NEW violations above baseline.`)
+console.log(`✓ ${generated} plans generated and validated (${foundationPlans} carried a foundation block, ${foundationWeeks} foundation weeks). No NEW violations above baseline.`)

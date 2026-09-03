@@ -978,6 +978,14 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       for (const d of weekdays) {
         const s = w.sessions[d]
         if (!s?.duration_mins) continue
+        // §81 (Coaching Board, MWM-02, 2026-09-03) — the long run is EXEMPT from
+        // the weekday cap. Capping it produces a "long run" that is not the
+        // longest run of the week, trading §18 breaches for §9 breaches
+        // (measured: 1,615 -> 979). Where the long run cannot fit the runner's
+        // stated availability the engine states it and classifies maintenance,
+        // rather than deforming the week — enforced by
+        // INV-PLAN-LONG-RUN-FIT-STATED (below), not by this cap.
+        if (isLongRun(s)) continue
         if (s.duration_mins > input.max_weekday_mins) {
           violations.push({
             code: 'INV-PLAN-MAX-WEEKDAY-MINS',
@@ -2105,6 +2113,24 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     for (const w of plan.weeks) {
       if (w.type === 'race' || w.type === 'deload') continue
       if (w.weekly_km <= 0) continue
+      // CB-1 (2026-09-03) — §5 low-session-count. A "fraction of the week" is
+      // only meaningful once the week has runs to distribute across. A
+      // foundation week that fits one or two sessions (§52b day-fitting: a 5.6km
+      // fresh-return baseline supports exactly one 5.6km run) has a largest
+      // session at 100% of the week by construction — that is a SMALL week, not
+      // a LOPSIDED one, and §52's remedies (reduce the long run, raise volume,
+      // downgrade to maintenance) are all inapplicable to it.
+      //
+      // Same reasoning and threshold as the INV-PLAN-FOUNDATION-BLOCK long-run
+      // arm, which already carries `runKms.length >= 3` for this exact case.
+      // Deliberately scoped to foundation weeks: main-week behaviour is owned by
+      // §52's maintenance classification (closed to zero 2026-09-02, f1f8423)
+      // and must not be relaxed here.
+      if (w.phase === 'foundation') {
+        const runCount = Object.values(w.sessions ?? {})
+          .filter(x => x && x.type !== 'rest' && x.type !== 'cross-train').length
+        if (runCount < 3) continue
+      }
       for (const [day, s] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
         if (!s) continue
         if (s.type === 'strength' || s.type === 'rest') continue

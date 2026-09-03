@@ -907,6 +907,45 @@ export const GENERATION_CONFIG = {
   FOUNDATION_LONG_RUN_MAX_PCT:   35, // long run cap as % of that week's weekly_km — aligned with §9's binge threshold (Coaching Board, Coaching-1). Was 50, which let the long run dominate a reduced fresh-return week.
   FRESH_RETURN_EFFECTIVE_BASELINE_FRACTION: 0.70, // mirrors FRESH_RETURN_START_FRACTION
 
+  // CB-1 (Coaching Board, 2026-09-03) — the minimum number of sessions a
+  // foundation week needs before it can carry a DISTINCT long run.
+  //
+  // DERIVED, not chosen. With the long run capped at FOUNDATION_LONG_RUN_MAX_PCT
+  // (35%) and §9 requiring long >= LONG_RUN_MIN_RATIO_VS_EASY (1.25) x easy, the
+  // (n-1) easy runs share the remaining 65%:
+  //
+  //     n = 2 -> easy 65.0%  ratio 0.54  x
+  //     n = 3 -> easy 32.5%  ratio 1.08  x
+  //     n = 4 -> easy 21.7%  ratio 1.62  ok
+  //
+  // Below 4 sessions an inverted week is arithmetically FORCED by two numbers
+  // the board itself set — the shortest run of the week ends up labelled "Long
+  // easy". Measured before this shipped: 49,974 INV-PLAN-LONG-IS-LONGEST
+  // violations across 24,219 foundation weeks.
+  //
+  // The board's ruling was "reduce days, never inflate sessions" and "the
+  // inverted week is a defect at any volume". The honest consequence is that a
+  // foundation week below this many sessions has NO long run — it is equal easy
+  // runs, which is what it actually is. See CoachingPrinciples §57.
+  FOUNDATION_MIN_SESSIONS_FOR_LONG_RUN: 4,
+
+  // §81 (Coaching Board, MWM-02, 2026-09-03) — how far the long run may exceed
+  // the runner's stated weekday ceiling before the plan stops calling itself a
+  // race plan.
+  //
+  // The long run is EXEMPT from `max_weekday_mins` (capping it produces a "long
+  // run" shorter than the easy runs — the board vetoed that trade). But an
+  // exemption is not a licence to ignore the runner: past this margin the
+  // session is not a stretch, it is a different time budget, and the plan must
+  // say so and classify maintenance (§52's third remedy, §40c's "a suppressed
+  // target is stated, never absorbed silently").
+  //
+  // Measured on runners who blocked BOTH weekend days — the population this
+  // affects — 823 of 896 plans put the long run over the weekday cap, median
+  // overrun 127%, p90 347%. At 50% the honest split is ~22% keep a race plan,
+  // ~78% are told plainly that these constraints support maintenance.
+  LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT: 50,
+
   // ── Stimulus rank — quality session escalation order (V5) ──────────────────
   // Numeric stimulus rank used to validate progressive escalation of quality
   // sessions through the build phase. A later quality session must NOT regress
