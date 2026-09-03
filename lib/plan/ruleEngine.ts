@@ -18,6 +18,7 @@ import { resolveMaxHr, tanakaMaxHR } from './maxHrGuard'
 import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, type FitnessLevel } from './fitnessAssessment'
 import { validatePlan, formatViolations } from './invariants'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
+import { normaliseDays } from './days'
 import { isLongRun, isShakeout, classifyStimulus } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema } from './sessionStructureV2'
@@ -591,11 +592,6 @@ function buildVolumeSequence(
 
 // ─── Day utilities ────────────────────────────────────────────────────────────
 
-const FULL_TO_SHORT: Record<string, Day> = {
-  monday: 'mon', tuesday: 'tue', wednesday: 'wed', thursday: 'thu',
-  friday: 'fri', saturday: 'sat', sunday: 'sun',
-}
-
 const DAY_ORDER: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 const DAY_INDEX: Record<Day, number> = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 }
 
@@ -607,17 +603,12 @@ function dayGap(a: Day, b: Day): number {
 // CoachingPrinciples §18 — accept both short ('mon') and full ('monday') forms.
 // Wizard sends full names; API/test inputs may send short. The parser is the
 // boundary; downstream code treats blocked as Set<Day>.
-const SHORT_DAY_SET: Set<Day> = new Set(DAY_ORDER)
-
+// Day normalisation lives in ./days so the foundation block (built client-side,
+// outside validatePlan's reach) shares one implementation with the engine. Two
+// correct-looking copies is how foundation weeks came to ignore blocked days
+// entirely — see the note in days.ts.
 function blockedDays(input: GeneratorInput): Set<Day> {
-  const s = new Set<Day>()
-  for (const d of input.days_cannot_train ?? []) {
-    const lower = String(d).toLowerCase()
-    if (SHORT_DAY_SET.has(lower as Day)) { s.add(lower as Day); continue }
-    const short = FULL_TO_SHORT[lower]
-    if (short) s.add(short)
-  }
-  return s
+  return normaliseDays(input.days_cannot_train)
 }
 
 function firstAvailableDay(preferred: Day[], blocked: Set<Day>, also: Day[] = []): Day | null {

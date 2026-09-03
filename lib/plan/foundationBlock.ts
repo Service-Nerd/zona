@@ -7,6 +7,7 @@
 // (e.g. -2, -1, 0 for a 3-week block). Week 1 of the main plan is always n=1.
 
 import { GENERATION_CONFIG } from './generationConfig'
+import { normaliseDays } from './days'
 import type { GeneratorInput } from '@/types/plan'
 import type { Week } from '@/types/plan'
 
@@ -77,7 +78,12 @@ function buildFoundationSessions(
   blockedDays: string[],
   preferredLongRunDay: 'sat' | 'sun' | undefined,
 ): Week['sessions'] {
-  const blocked = new Set(blockedDays)
+  // Normalise before comparing. The wizard sends full day names ('monday') and
+  // DEFAULT_DAYS is short form ('mon'), so a raw `new Set(blockedDays)` matched
+  // nothing and every foundation week ignored the runner's blocked days
+  // (life-first, §18). Shared with the rule engine via lib/plan/days.ts so the
+  // two placement paths cannot drift apart again.
+  const blocked = normaliseDays(blockedDays)
   const available = DEFAULT_DAYS.filter(d => !blocked.has(d))
   const sessions: Week['sessions'] = {}
 
