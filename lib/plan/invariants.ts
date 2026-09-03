@@ -2850,12 +2850,44 @@ const RESHAPE_SKIP_INVARIANTS = new Set<string>([
 
 export function validateReshapedPlan(plan: Plan, reshapedWeekN?: number): Violation[] {
   const m = plan.meta
-  const input: GeneratorInput = {
+
+  // ADR-020 / CB-2 (2026-09-03) — prefer the PERSISTED generator input.
+  //
+  // This function used to hand-rebuild the input from scattered meta fields and
+  // zero out three of them, with comments reading "not on meta". Those comments
+  // were stale: PV2-A (fff1ab3) persists the complete input at
+  // `meta.generator_input`, and ruleEngine.ts names these very fields as the
+  // reason it does — "current_weekly_km, longest_recent_run_km,
+  // days_cannot_train and preferred_long_run_day are consumed by the engine and
+  // were otherwise discarded".
+  //
+  // The cost of the stale version was three invariant families sitting INERT on
+  // every reshape — the same failure class as SWEEP-VACUOUS-01: an input the
+  // checker never reads tests nothing. Measured on 2,688 generated plans,
+  // switching to the real input surfaces 1,380 INV-PLAN-MAX-WEEKDAY-MINS
+  // violations that were previously invisible (all genuine — see MWM-02).
+  //
+  // MERGE, not replacement: the raw runner constraints come from the persisted
+  // input, but `fitness_level` / `fitness_intensity_level` must still come from
+  // meta. Those are what the engine DERIVED and built the plan with; the input's
+  // own `fitness_level` is frequently absent (the assessed path) and would
+  // re-derive the quality ceiling from the wrong level (§79).
+  const persisted = m.generator_input
+  const input: GeneratorInput = persisted
+    ? {
+        ...persisted,
+        fitness_level:           m.fitness_level ?? persisted.fitness_level,
+        fitness_intensity_level: m.fitness_intensity_level ?? persisted.fitness_intensity_level,
+        user_declared_level:     m.fitness_level_declared ?? persisted.user_declared_level,
+      }
+    : {
+    // Legacy plans generated before PV2-A carry no persisted input. Reconstruct
+    // as before; the three zeroed fields self-skip their dependent invariants.
     race_date:             m.race_date,
     race_distance_km:      m.race_distance_km,
     goal:                  m.goal ?? 'finish',
-    current_weekly_km:     0,   // not on meta — dependent invariants self-skip on 0
-    longest_recent_run_km: 0,   // not on meta — dependent invariants self-skip on 0
+    current_weekly_km:     0,   // absent on legacy meta — dependent invariants self-skip on 0
+    longest_recent_run_km: 0,   // absent on legacy meta — dependent invariants self-skip on 0
     days_available:        m.days_available ?? 7,
     age:                   m.age ?? 40,
     fitness_level:         m.fitness_level,
@@ -2869,7 +2901,7 @@ export function validateReshapedPlan(plan: Plan, reshapedWeekN?: number): Violat
     injury_history:        m.injury_history,
     hard_session_relationship: m.hard_session_relationship,
     benchmark:             m.benchmark,
-    days_cannot_train:     [], // not on meta — blocked-days invariant skipped (see doc)
+    days_cannot_train:     [], // absent on legacy meta — blocked-days invariant skipped
   }
   return validatePlan(plan, input).filter(v => {
     if (RESHAPE_SKIP_INVARIANTS.has(v.code)) return false

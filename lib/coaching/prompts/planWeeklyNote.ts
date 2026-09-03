@@ -94,8 +94,18 @@ export function buildPlanWeeklyNotePrompt(input: PlanWeeklyNotePromptInput): str
         : `${weeksToRace} weeks to race${raceName ? ` (${raceName})` : ''}.`
     : 'No race date set.'
 
+  // §57 — foundation weeks carry n <= 0 (they sit BEFORE Week 1). Rendering the
+  // raw number gives the model "Week -2", which it will faithfully echo to the
+  // runner. Express the position the way the runner experiences it instead.
+  // |n| is the number of weeks before Week 1: n = -1 is the week immediately
+  // before the plan starts.
+  const weeksBeforeStart = Math.max(1, Math.abs(weekN))
+  const weekHeading = weekN <= 0
+    ? `Foundation week — ${weeksBeforeStart} week${weeksBeforeStart === 1 ? '' : 's'} before Week 1 of the plan`
+    : `Week ${weekN}`
+
   const dataBlock = [
-    `Week ${weekN}${phaseLabel ? ` — ${phaseLabel} phase` : ''}`,
+    `${weekHeading}${phaseLabel ? ` — ${phaseLabel} phase` : ''}`,
     `Week classification: ${isRestHeavyWeek ? 'rest-heavy / deload' : 'normal training week'}`,
     raceLine,
     raceDistance ? `Race distance: ${raceDistance}` : null,

@@ -10,7 +10,7 @@ import { BRAND } from '@/lib/brand'
 import { createClient } from '@/lib/supabase/client'
 import { classifyGap, gapDays, generateFoundationBlock } from '@/lib/plan/foundationBlock'
 import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
-import { validatePlan } from '@/lib/plan/invariants'
+import { foundationWeekViolations } from '@/lib/plan/foundationValidation'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import { DurationPicker } from '@/components/shared/DurationPicker'
@@ -385,20 +385,26 @@ function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
 
 // Foundation weeks are assembled client-side (after the API returns), so they
 // never pass through the server's validatePlan run inside generateRulePlan — the
-// foundation invariant was dormant in the live path. Re-run it here on the
-// assembled plan so a bad foundation block is visible in the console instead of
-// silently shipping. Never throws or blocks: the plan still renders (ADR-006
-// fallback philosophy). This is the only validation foundation weeks get live.
+// foundation invariants are dormant in the live path. Re-run here on the
+// assembled plan so a bad foundation block is visible instead of silently
+// shipping. Never throws or blocks: the plan still renders (ADR-006).
+// This is the only validation foundation weeks get live, until ADR-020 Option A
+// moves construction server-side.
+//
+// CB-2 (2026-09-03): this used to filter by invariant CODE
+// (`v.code === 'INV-PLAN-FOUNDATION-BLOCK'`), which answered the wrong question
+// — "did the foundation-specific invariant fire?" rather than "is anything wrong
+// with these weeks?". It computed and then DISCARDED the four
+// INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS violations that were FOUNDATION-DAYS-01.
+// Filtering by WEEK is the correct axis; logic now lives in
+// lib/plan/foundationValidation.ts so it is unit-testable.
 function validateFoundationBlock(assembled: Plan, genInput: GeneratorInput): void {
-  try {
-    const violations = validatePlan(assembled, genInput)
-      .filter(v => v.code === 'INV-PLAN-FOUNDATION-BLOCK')
-    if (violations.length) {
-      console.error('[foundation] INV-PLAN-FOUNDATION-BLOCK violations:',
-        violations.map(v => v.message))
-    }
-  } catch (err) {
-    console.warn('[foundation] validation error:', err)
+  const violations = foundationWeekViolations(assembled, genInput)
+  if (violations.length) {
+    console.error(
+      `[foundation] ${violations.length} invariant violation(s) on foundation weeks:`,
+      violations.map(v => `${v.code} w${v.week}${v.day ? ' ' + v.day : ''}: ${v.message}`),
+    )
   }
 }
 

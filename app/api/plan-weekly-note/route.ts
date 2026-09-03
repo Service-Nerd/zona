@@ -21,7 +21,8 @@ import { getUserDisplayPrefs } from '@/lib/userPrefs'
 // any plan save (see savePlanForUser in lib/plan.ts).
 //
 // Auth: bearer token. PAID/TRIAL — activity_intelligence gate.
-// Body: { week_n: number } (1-indexed week number)
+// Body: { week_n: number } — the canonical `week.n` (ADR-013), NOT an array
+//        index. Foundation weeks are n <= 0 (§57) and are accepted.
 //
 // Pattern: mirrors app/api/phase-summary/route.ts (PLAN-VOICE-AI).
 
@@ -54,8 +55,15 @@ export async function POST(req: NextRequest) {
   if (!guard.ok) return guard.response
   const body = guard.body
   const week_n = Number((body as { week_n?: number }).week_n)
-  if (!Number.isInteger(week_n) || week_n < 1) {
-    return NextResponse.json({ error: 'week_n (positive integer) required' }, { status: 422 })
+  // ADR-020 / CB-2 — foundation weeks carry n <= 0 (§57), so a positive-only
+  // guard 422'd every one of them. A paid runner in a foundation block (up to 3
+  // weeks) got a hard "failed" card for the whole block, while this same route
+  // has carried an explicit `phase === 'foundation'` branch below since it was
+  // written — unreachable code guarding against a case the guard rejected first.
+  // Week lookup is `findWeekByN` (ADR-013), which resolves negatives correctly,
+  // and no table constrains week_n, so nonsense values 404 rather than 422.
+  if (!Number.isInteger(week_n)) {
+    return NextResponse.json({ error: 'week_n (integer) required' }, { status: 422 })
   }
 
   const serviceSupabase = createServiceClient(
