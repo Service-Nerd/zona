@@ -12,6 +12,7 @@ export type OpsEventKind =
   | 'plan_integrity_mismatch'   // an auto_applied adjustment never landed in plan_json (probe)
   | 'reshape_invalid'           // a reshaped plan failed a constitutional invariant (prod soft-degrade)
   | 'plan_enrich_failed'        // AI enrichment silently fell back to rule-engine output (GEN-FIX-02)
+  | 'plan_rule_invalid'         // a GENERATED rule plan violated its own constitution (ENRICH-ATTRIB-01)
 
 /**
  * Record an internal ops event. Fire-and-forget by nature but awaitable, so a

@@ -6,6 +6,7 @@ import { getUserTier } from '@/lib/trial'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { validatePlan } from '@/lib/plan/invariants'
 import { enrich, type EnrichOutcome } from '@/lib/plan/enrich'
+import { errorBaseline, violationsIntroducedBy, statusForReason } from '@/lib/plan/enrichAttribution'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { generateFreeIntro } from '@/lib/plan/freeIntro'
 import { nextMonday, formatDate } from '@/lib/plan/length'
@@ -149,6 +150,27 @@ export async function POST(req: NextRequest) {
         rulePlan.meta.enrichment = 'pending'
         controller.enqueue(encoder.encode(JSON.stringify({ type: 'rule_plan', plan: rulePlan }) + '\n'))
 
+        // ENRICH-ATTRIB-01 (2026-09-03) — baseline the rule plan's OWN violations
+        // BEFORE enrichment runs. generateRulePlan validates itself, but in
+        // production it only console.errors and returns the plan (ruleEngine.ts
+        // — never break the user). So the rule plan reaching this point may
+        // already carry error-severity violations, and the post-enrich check
+        // below must not attribute them to the AI. See the incident note there.
+        const baseline = errorBaseline(validatePlan(rulePlan, input))
+
+        // A rule plan that violates its own constitution is a separate, more
+        // serious defect than a failed enrichment, and it had no durable signal
+        // at all — console.error on a Vercel function is not a record. Recorded
+        // here rather than in the engine because lib/plan/* must stay free of
+        // the service-role client (it is imported by DashboardClient).
+        if (baseline.size > 0) {
+          await recordOpsEvent(
+            'plan_rule_invalid',
+            { codes: Array.from(baseline), tier, race_distance_km: input.race_distance_km },
+            user.id,
+          )
+        }
+
         let finalPlan: Plan = rulePlan
         let outcome: EnrichOutcome
         try {
@@ -165,7 +187,8 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        finalPlan.meta.enrichment = outcome.status === 'applied' ? 'applied' : 'failed'
+        finalPlan.meta.enrichment =
+          outcome.status === 'applied' ? 'applied' : statusForReason(outcome.reason)
 
         // PV2-A — re-validate AFTER enrichment. The copy invariants
         // (INV-PLAN-COPY-MATCHES-SESSIONS, -THEME-MATCHES-PRESCRIPTION,
@@ -175,17 +198,29 @@ export async function POST(req: NextRequest) {
         // through unchecked. The rule plan is already valid; enriched voice is a
         // paid nicety, and a correct plan is not negotiable. If enrichment
         // introduced an error-severity violation, fall back to rule copy.
+        //
+        // ENRICH-ATTRIB-01: "introduced" means NEW relative to `baseline`. The
+        // original code compared against zero, so one pre-existing engine
+        // violation discarded every enriched plan — and the enricher cannot
+        // produce most violation classes at all (EnrichedWeekSchema exposes only
+        // label, theme and coach_notes; it cannot touch a single numeric).
         if (outcome.status === 'applied') {
-          const postEnrichErrors = validatePlan(finalPlan, input).filter(v => v.severity === 'error')
-          if (postEnrichErrors.length > 0) {
-            console.error('[generate-plan] enrichment introduced invariant violations, reverting to rule copy', postEnrichErrors.map(v => v.code))
+          const introduced = violationsIntroducedBy(baseline, validatePlan(finalPlan, input))
+          if (introduced.length > 0) {
+            console.error('[generate-plan] enrichment introduced invariant violations, reverting to rule copy', introduced.map(v => v.code))
             await recordOpsEvent(
               'plan_enrich_failed',
-              { reason: 'post_enrich_invalid', codes: postEnrichErrors.map(v => v.code), tier, race_distance_km: input.race_distance_km },
+              {
+                reason: 'post_enrich_invalid',
+                codes: introduced.map(v => v.code),
+                pre_existing: Array.from(baseline),
+                tier,
+                race_distance_km: input.race_distance_km,
+              },
               user.id,
             )
             finalPlan = rulePlan
-            finalPlan.meta.enrichment = 'failed'
+            finalPlan.meta.enrichment = 'failed_invalid_copy'
           }
         }
 

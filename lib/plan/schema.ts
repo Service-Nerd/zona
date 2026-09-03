@@ -171,14 +171,32 @@ export const PlanMetaSchema = z.object({
 
   // GEN-FIX-02: did the AI enrichment layer actually land on this plan?
   //   'applied'  — enricher ran and its output was merged
-  //   'failed'   — enricher fell back silently; this is rule-engine output (ADR-006)
   //   'skipped'  — free tier, never enriched by design
   //   'pending'  — stamped on the streamed rule_plan before enrichment resolves.
   //                A *saved* plan reading 'pending' means the client persisted
   //                before final_plan arrived (the N8 save race) — a real defect
   //                signal, not a normal terminal state.
+  //
+  // Failure is silent to the user (ADR-006) but never silent to us. A bare
+  // 'failed' proved useless in the 2026-09-02 incident: two trial plans read
+  // 'failed' and the string could not distinguish "the API was unreachable"
+  // from "the model wrote something we could not parse" from "we threw the
+  // enrichment away ourselves". The four terminal failure states below are
+  // mutually exclusive and each names a different owner:
+  //   'failed_no_api_key'   — ANTHROPIC_API_KEY absent from the environment (ops)
+  //   'failed_api_error'    — Anthropic returned non-2xx, or transport threw (upstream)
+  //   'failed_unparseable'  — response was not JSON, or failed EnrichedPlanSchema (model)
+  //   'failed_invalid_copy' — enrichment introduced NEW invariant violations and
+  //                           was reverted to rule copy (our prompt/our engine)
+  //   'failed'              — LEGACY. Written before 2026-09-03; never written
+  //                           by current code. Retained so historical rows parse.
   // Absent = generated before this shipped. Set in the route, like plan_intro.
-  enrichment:   z.enum(['applied', 'failed', 'skipped', 'pending']).optional(),
+  enrichment:   z.enum([
+                  'applied', 'skipped', 'pending',
+                  'failed_no_api_key', 'failed_api_error',
+                  'failed_unparseable', 'failed_invalid_copy',
+                  'failed',
+                ]).optional(),
 
   // R24 — VDOT / zone model fields (these were missing from the schema; added here for completeness)
   age:                z.number().int().positive().optional(),

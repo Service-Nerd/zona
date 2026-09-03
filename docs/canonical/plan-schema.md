@@ -147,10 +147,22 @@ export interface PlanMeta {
   recalibration_weeks?: number[]
 
   // GEN-FIX-02 (2026-08-06) — enrichment provenance. Set in the route, not the
-  // enricher. 'failed' means the user holds rule-engine output (silent fallback,
-  // ADR-006); 'pending' on a SAVED plan means the client persisted before
-  // final_plan arrived (N8 save race). Absent = generated before this shipped.
-  enrichment?: 'applied' | 'failed' | 'skipped' | 'pending'
+  // enricher. Any `failed_*` means the user holds rule-engine output (silent
+  // fallback, ADR-006); the suffix names who must fix it. 'pending' on a SAVED
+  // plan means the client persisted before final_plan arrived (N8 save race).
+  // Absent = generated before this shipped.
+  //
+  // Widened 2026-09-03 (ENRICH-ATTRIB-01): the bare 'failed' proved
+  // undiagnosable — two trial plans carried it and it could not distinguish an
+  // unreachable API from unparseable model output from a plan the route
+  // discarded itself. It was the third. Bare 'failed' is retained for historical
+  // rows only and is never written by current code.
+  enrichment?: 'applied' | 'skipped' | 'pending'
+              | 'failed_no_api_key'    // ANTHROPIC_API_KEY absent — deploy config
+              | 'failed_api_error'     // non-2xx from Anthropic, or transport threw
+              | 'failed_unparseable'   // not JSON, or failed EnrichedPlanSchema
+              | 'failed_invalid_copy'  // enrichment introduced NEW violations; reverted
+              | 'failed'               // LEGACY (pre-2026-09-03) — never written now
 
   // §44 — ordinal demand label on every generated plan. FREE. A *pre-generation
   // feasibility* read of the runner's chosen timeline and constraints — NOT a

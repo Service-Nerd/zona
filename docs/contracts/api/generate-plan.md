@@ -189,15 +189,59 @@ silent fallback is unchanged.
   | Value | Meaning |
   |---|---|
   | `applied` | Enricher ran and its output was merged |
-  | `failed` | Silent fallback — this is rule-engine output |
   | `skipped` | Free tier; never enriched by design |
   | `pending` | Stamped on the streamed `rule_plan` before enrichment resolves. **A saved plan reading `pending` means the client persisted before `final_plan` arrived** (the N8 save race) — a defect signal, not a normal terminal state |
+  | `failed_no_api_key` | `ANTHROPIC_API_KEY` absent from the environment — deploy config |
+  | `failed_api_error` | Anthropic returned a non-2xx, or transport threw — upstream |
+  | `failed_unparseable` | Response was not JSON, or failed `EnrichedPlanSchema` — the model |
+  | `failed_invalid_copy` | Enrichment introduced **new** invariant violations and was reverted to rule copy — our prompt |
+  | `failed` | **LEGACY.** Written before 2026-09-03; never written by current code. Retained so historical rows parse |
   | *absent* | Plan generated before GEN-FIX-02 shipped |
+
+  Every `failed_*` value means the same thing to the **user** (they hold rule-engine output, silently
+  — ADR-006 unchanged); they differ only in who has to fix it. The bare `failed` was widened on
+  2026-09-03 after it proved undiagnosable: two trial plans read `failed` and the string could not
+  distinguish an unreachable API from unparseable model output from a plan we discarded ourselves.
+  It was the third of those. See **Enrichment attribution** below.
 
   This does not breach ADR-006: the field is metadata, is never rendered, and carries no error
   state to the user. It exists so "did the paid layer actually run?" is a query rather than
   forensics — the question that took five days to answer for the first organic user
   (`docs/incidents/2026-08-06-plan-defects/analysis.md`, N1).
+
+### Enrichment attribution (ENRICH-ATTRIB-01, 2026-09-03)
+
+The post-enrichment re-validation (PV2-A) reverts the enricher's output when it introduces an
+error-severity invariant violation. **"Introduces" is measured against a baseline, not against zero.**
+
+```
+baseline  = error-severity violations of the RULE plan, before enrich() runs
+introduced = error-severity violations of the ENRICHED plan  minus  baseline
+```
+
+A violation is keyed by **code + week + day**, not code alone — the same invariant firing on a
+different week is genuinely new and must still revert. Logic lives in `lib/plan/enrichAttribution.ts`
+so it is unit-testable without a stream handler (`enrichAttribution.test.ts`).
+
+**Why the baseline is required.** `generateRulePlan` validates its own output, but in production it
+only `console.error`s and returns the plan (never break the user); it throws only in dev/test. So the
+rule plan reaching the enricher **may already be invalid**, and comparing against zero charges the
+engine's violations to the AI. That is not a theoretical risk — it was a 100% failure rate:
+
+> **2026-09-02.** Two trial plans, both stamped `enrichment: "failed"`. Enrichment had in fact
+> succeeded — the call returned, parsed, and passed `EnrichedPlanSchema`. The engine's race-week
+> branch skipped the `max_weekday_mins` life-first cap, producing a 35-minute weekday shakeout
+> against a stated 30-minute limit. The zero-baseline check read that as the enricher's doing and
+> discarded the enriched plan. Every trial user who set a weekday time limit was silently downgraded
+> to a free-tier plan. Fixed in the same change (`lib/plan/ruleEngine.ts` → `applyWeekdayMinsCap`).
+
+**The structural asymmetry that makes this a bug rather than a judgement call:** `EnrichedWeekSchema`
+exposes `label`, `theme` and `coach_notes` and nothing else. No numeric on any session is reachable
+from AI output, so a duration or volume violation on an enriched plan is *never* the enricher's doing.
+If a future schema change gives the enricher reach over numerics, revisit this.
+
+A rule plan that arrives already invalid now writes its own `plan_rule_invalid` ops row — a separate
+and more serious signal than a failed enrichment.
 
 ### Plan start
 The route computes the **next Monday** from the current date (local-time arithmetic, avoiding UTC

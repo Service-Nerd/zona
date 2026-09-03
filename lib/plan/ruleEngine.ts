@@ -1639,6 +1639,15 @@ function buildWeekSessions(
       }
     }
 
+    // Life-first (INV-PLAN-MAX-WEEKDAY-MINS). This branch returns early and so
+    // never reached the shared cap pass at the end of the function — a runner
+    // with a 30-minute weekday limit got a 35-minute weekday shakeout
+    // (RACE_WEEK_SHAKEOUT_MAX_MINS). §30's intent is a short, sharp, low-fatigue
+    // shakeout, so shortening it further to honour the runner's stated limit
+    // costs the session nothing; the stride note is set on the object and rides
+    // along unchanged. The race itself is exempt inside the helper.
+    applyWeekdayMinsCap(sessions, input)
+
     return sessions
   }
 
@@ -2235,30 +2244,51 @@ function buildWeekSessions(
   }
 
   // ── 5. Honour max_weekday_mins constraint ────────────────────────────────
-  // CoachingPrinciples — "Life-first, plan-second". User's stated weekday time
-  // limit is a hard cap. If a session placed on a weekday exceeds it, reduce
-  // duration to the cap and proportionally reduce distance (pace stays
-  // constant). Accepts a slightly lower total weekly volume in exchange for
-  // honouring the user's schedule reality. Long runs are typically on weekends
-  // so are usually unaffected; if a user picks a weekday long run and the cap
-  // would force it below the long-vs-easy invariant, the cap still wins —
-  // life > coaching ratio.
-  if (input.max_weekday_mins) {
-    const weekdays: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri']
-    const cap = input.max_weekday_mins
-    for (const day of weekdays) {
-      const s = sessions[day]
-      if (!s || !s.duration_mins || s.duration_mins <= cap) continue
-      if (s.type === 'strength' || s.type === 'rest' || s.type === 'race') continue
-      const ratio = cap / s.duration_mins
-      s.duration_mins = cap
-      if (s.distance_km != null) {
-        s.distance_km = roundDistance(s.distance_km * ratio)
-      }
-    }
-  }
+  applyWeekdayMinsCap(sessions, input)
 
   return sessions
+}
+
+/**
+ * CoachingPrinciples — "Life-first, plan-second". The user's stated weekday time
+ * limit is a hard cap. If a session placed on a weekday exceeds it, reduce
+ * duration to the cap and proportionally reduce distance (pace stays constant).
+ * Accepts a slightly lower total weekly volume in exchange for honouring the
+ * user's schedule reality. Long runs are typically on weekends so are usually
+ * unaffected; if a user picks a weekday long run and the cap would force it
+ * below the long-vs-easy invariant, the cap still wins — life > coaching ratio.
+ *
+ * Enforced by INV-PLAN-MAX-WEEKDAY-MINS.
+ *
+ * Extracted to a named helper (2026-09-03) because the race-week branch of
+ * `buildWeekSessions` returns early and so never reached the inline version.
+ * Race-week shakeouts are bounded only by RACE_WEEK_SHAKEOUT_MAX_MINS (35), so
+ * a runner with a 30-minute weekday limit shipped a 35-minute weekday shakeout
+ * — a live constitutional violation, soft-degraded to console.error in prod.
+ * It also broke enrichment: the post-enrich re-validation in
+ * app/api/generate-plan/route.ts read the engine's own violation as one the AI
+ * had introduced and discarded every enriched plan. Both callers must run this.
+ *
+ * The race itself is exempt (`type === 'race'`) — a race is an external fixed
+ * event, not a training session the runner scheduled around their weekday.
+ */
+function applyWeekdayMinsCap(
+  sessions: Partial<Record<Day, Session>>,
+  input: GeneratorInput,
+): void {
+  if (!input.max_weekday_mins) return
+  const weekdays: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri']
+  const cap = input.max_weekday_mins
+  for (const day of weekdays) {
+    const s = sessions[day]
+    if (!s || !s.duration_mins || s.duration_mins <= cap) continue
+    if (s.type === 'strength' || s.type === 'rest' || s.type === 'race') continue
+    const ratio = cap / s.duration_mins
+    s.duration_mins = cap
+    if (s.distance_km != null) {
+      s.distance_km = roundDistance(s.distance_km * ratio)
+    }
+  }
 }
 
 // ─── Week metadata ────────────────────────────────────────────────────────────

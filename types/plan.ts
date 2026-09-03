@@ -330,6 +330,28 @@ export interface RaceResult {
   what_broke?: string
 }
 
+/**
+ * GEN-FIX-02 — enrichment provenance, widened 2026-09-03.
+ *
+ * Terminal success: 'applied'. Terminal by-design: 'skipped' (free tier).
+ * In-flight: 'pending' (a SAVED plan reading this is the N8 save race).
+ *
+ * The four `failed_*` states are mutually exclusive and each names a different
+ * owner, so a failure can be triaged from the row alone rather than by reading
+ * logs. Bare 'failed' is legacy — written before 2026-09-03, never written by
+ * current code, retained only so historical rows still parse.
+ * See lib/plan/schema.ts for the per-state definitions.
+ */
+export type EnrichmentStatus =
+  | 'applied'
+  | 'skipped'
+  | 'pending'
+  | 'failed_no_api_key'
+  | 'failed_api_error'
+  | 'failed_unparseable'
+  | 'failed_invalid_copy'
+  | 'failed'
+
 export interface PlanMeta {
   // Core identity
   athlete: string
@@ -380,10 +402,12 @@ export interface PlanMeta {
   coach_intro?: string                    // PAID only — enricher-generated intro paragraph (2–3 sentences + confidence)
   plan_intro?: string                     // FREE first-plan only — CA-01 one-line "why this plan" taste of Kit's voice (Haiku, ~1–2 sentences). Distinct from coach_intro; never co-exists with it.
 
-  // GEN-FIX-02 — enrichment provenance. 'failed' means the user holds rule-engine
-  // output (silent fallback, ADR-006); 'pending' on a SAVED plan means the client
-  // persisted before final_plan arrived (N8 save race). Absent = pre-GEN-FIX-02.
-  enrichment?: 'applied' | 'failed' | 'skipped' | 'pending'
+  // GEN-FIX-02 — enrichment provenance. Any `failed_*` value means the user holds
+  // rule-engine output (silent fallback, ADR-006); 'pending' on a SAVED plan means
+  // the client persisted before final_plan arrived (N8 save race). Absent =
+  // pre-GEN-FIX-02. Bare 'failed' is legacy (pre-2026-09-03) and never written by
+  // current code — see lib/plan/schema.ts for what each failure state means.
+  enrichment?: EnrichmentStatus
 
   // R24 — VDOT / zone model fields
   age?: number                            // athlete age at time of generation

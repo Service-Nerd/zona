@@ -33,7 +33,8 @@ recordOpsEvent(kind: OpsEventKind, detail?: Record<string, unknown>, userId?: st
 | `plan_save_failed` | `/api/adjust-plan` catch around `savePlanForUser` | A server reshape write threw. `detail`: `{ route, week_n, message }`. |
 | `plan_integrity_mismatch` | the probe | An `auto_applied` adjustment never landed in `plan_json`. `detail`: `{ adjustment_id, week_n, adjustment_at, plan_updated_at }`. |
 | `reshape_invalid` | `/api/adjust-plan` | A reshaped plan failed a constitutional invariant (production soft-degrade). |
-| `plan_enrich_failed` | `/api/generate-plan` stream | **GEN-FIX-02.** AI enrichment fell back silently and the user holds rule-engine output. `detail`: `{ reason, detail, tier, race_distance_km }` where `reason` ∈ `no_api_key` \| `api_error` \| `fetch_failed` \| `parse_error` \| `schema_invalid`. Written for trial **and** paid — a paid user receiving an unenriched plan is a paid feature not delivered. |
+| `plan_enrich_failed` | `/api/generate-plan` stream | **GEN-FIX-02.** AI enrichment fell back silently and the user holds rule-engine output. `detail`: `{ reason, detail, tier, race_distance_km }` where `reason` ∈ `no_api_key` \| `api_error` \| `fetch_failed` \| `parse_error` \| `schema_invalid` \| `post_enrich_invalid`. The `post_enrich_invalid` row also carries `codes` (the violations charged to the enricher) and `pre_existing` (the rule plan's own, which are **not**). Written for trial **and** paid — a paid user receiving an unenriched plan is a paid feature not delivered. |
+| `plan_rule_invalid` | `/api/generate-plan` stream | **ENRICH-ATTRIB-01 (2026-09-03).** A *generated rule plan* violated its own constitution. `generateRulePlan` throws on this in dev/test but only `console.error`s in production, and a console line on a Vercel function is not a record — so a live constitutional violation had no durable signal at all until it took enrichment down with it. `detail`: `{ codes, tier, race_distance_km }`. Recorded by the route rather than the engine because `lib/plan/*` must stay free of the service-role client (it is imported by `DashboardClient`). **More serious than `plan_enrich_failed`:** the runner holds a plan that breaches a coaching principle, not merely an unenriched one. |
 
 ## Probe — `GET|POST /api/ops/reshape-integrity`
 
@@ -59,9 +60,14 @@ select * from ops_events where kind = 'plan_enrich_failed' order by created_at d
 select detail->>'reason' as reason, count(*)
   from ops_events where kind = 'plan_enrich_failed' group by 1 order by 2 desc;
 
+-- ENRICH-ATTRIB-01: rule plans that broke their own constitution (worse than
+-- an enrichment failure — the runner holds a plan that breaches a principle)
+select detail->>'codes' as codes, count(*), min(created_at), max(created_at)
+  from ops_events where kind = 'plan_rule_invalid' group by 1 order by 2 desc;
+
 -- The paired question, answered from the plan itself (no ops row needed):
---   'failed'  → user holds rule-engine output
---   'pending' → client saved before final_plan arrived (the N8 save race)
+--   'failed_*' → user holds rule-engine output; the suffix names who must fix it
+--   'pending'  → client saved before final_plan arrived (the N8 save race)
 select plan_json->'meta'->>'enrichment' as enrichment, count(*)
   from plans group by 1;
 ```

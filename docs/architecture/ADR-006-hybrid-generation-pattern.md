@@ -88,6 +88,18 @@ The API route (`app/api/generate-plan/route.ts`) is the auth boundary. It determ
 - The enricher must not mutate numeric values. Zod validation enforces this before any enriched plan is accepted.
 - All new plan generators (R20, R21, R24) must follow this pattern. New plan-generation code that calls AI without a deterministic fallback is a build blocker.
 - `lib/plan/*` modules must remain auth-free. Auth logic belongs in API routes.
+- **Silent to the user is not silent to us** (amended 2026-09-03). The fallback this ADR mandates
+  hides failure from the runner, which is correct — a paid nicety must never break a plan. It does
+  not license hiding failure from the operator. Every enrichment failure writes a `plan_enrich_failed`
+  ops row and stamps a *reason-bearing* status on `plan_json.meta.enrichment`; a bare "it failed" is
+  not a fallback, it is a lost incident.
+- **A silent fallback must not absorb a defect it did not cause** (added 2026-09-03). Post-enrichment
+  validation reverts the AI's output only for violations it actually *introduced*, measured against
+  the rule plan's own pre-enrichment violations. On 2026-09-02 this cost 100% of trial enrichment for
+  a week: the engine emitted an invalid rule plan, the post-enrich gate charged it to the enricher,
+  and both defects hid inside one word. Generalised: **when a layer degrades silently, it must
+  attribute the failure before it swallows it — otherwise the silence spreads to faults upstream of
+  it.** See `docs/contracts/api/generate-plan.md` § Enrichment attribution.
 
 ---
 
