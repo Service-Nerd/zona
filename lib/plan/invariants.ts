@@ -13,7 +13,7 @@ import type { Plan, GeneratorInput, Session } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
-import { isLongRun, isShakeout, classifyStimulus, isVo2maxSession } from './sessionRole'
+import { isLongRun, isShakeout, classifyStimulus, isVo2maxSession, isStructuredSession } from './sessionRole'
 import { mainSetMinutes } from './sessionFormat'
 import { isV2Structure } from './sessionStructureV2'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
@@ -316,7 +316,20 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   const minHoursQualLong = GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG
   const minDaysQualLong = Math.ceil(minHoursQualLong / 24)
   const blocked = parseBlockedDays(input)
-  const totalWeeks = plan.weeks.length
+  // ADR-020 (2026-09-03) — count the MAIN plan only. Foundation weeks carry
+  // n <= 0 and, per §57, "are never part of the main plan's periodisation arc".
+  // Including them inflated `totalWeeks`, which shifted `halfWeek`, which moved
+  // the boundary of every "second-half build/peak" check — so simply PREPENDING
+  // a foundation block could flip a clean plan into a violating one without any
+  // main week changing. Measured on a real swept case: identical engine output,
+  // clean alone, INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO once a single foundation
+  // week was attached.
+  //
+  // Third time the client-side foundation block has broken a server-side
+  // assumption (see ADR-020). Defect fix restoring documented intent — §57
+  // already said these weeks sit outside the arc.
+  const mainWeeks = plan.weeks.filter(w => w.n > 0)
+  const totalWeeks = mainWeeks.length || plan.weeks.length
   const halfWeek = Math.ceil(totalWeeks / 2)
   const isTimeTarget = input.goal === 'time_target'
 
@@ -985,7 +998,11 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         // stated availability the engine states it and classifies maintenance,
         // rather than deforming the week — enforced by
         // INV-PLAN-LONG-RUN-FIT-STATED (below), not by this cap.
-        if (isLongRun(s)) continue
+        // §81 — exempt the long run AND structured sessions. The engine
+        // exemption in applyWeekdayMinsCap and this check MUST agree; an
+        // engine exemption the validator does not share is a plan that fails
+        // its own constitution.
+        if (isLongRun(s) || isStructuredSession(s)) continue
         if (s.duration_mins > input.max_weekday_mins) {
           violations.push({
             code: 'INV-PLAN-MAX-WEEKDAY-MINS',
@@ -1078,6 +1095,30 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // weeks must prescribe pace within ±5% of goal pace.
   // (CoachingPrinciples §22, R2/H-02 — round-1 invariant only checked label
   // substring; this catches the looseness.)
+  //
+  // NO 5K CARVE-OUT HERE — and the reasoning is worth keeping, because one was
+  // nearly added on bad evidence (2026-09-03).
+  //
+  // 155 sweep violations all read "0% (0/1)" at 5K, which looked like proof the
+  // ratio was unsatisfiable there: goal pace ~ I-pace, so the goal-pace work
+  // should be the VO2max work this check filters out. The board ruled to
+  // exclude 5K on that basis.
+  //
+  // MEASURED AFTERWARDS, and it is false. Across 108 5K time-target plans, 168
+  // of 168 non-VO2max quality sessions in build/peak sit within +/-5% of goal
+  // pace — at 0% delta, because the engine prescribes "5K-pace progression",
+  // "5K-pace sustained" and "5K-pace intervals", none of which are labelled
+  // VO2max. The ratio is not merely satisfiable at 5K, it is satisfied
+  // perfectly.
+  //
+  // The real cause was `halfWeek` (above): foundation weeks inflated
+  // `totalWeeks`, moving the second-half boundary so the wrong weeks were
+  // counted. Fixing that cleared all 155 on its own — an A/B with and without a
+  // 5K skip returned identical sweep totals.
+  //
+  // Lesson: "0/N" in a violation message says the numerator was zero, NOT that
+  // it could never be non-zero. Confirm unsatisfiability by measuring the
+  // satisfying case, not by reading the failure.
   if (isTimeTarget && plan.meta.goal_pace_per_km) {
     const goalMid = parsePaceMidpoint(plan.meta.goal_pace_per_km)
     if (goalMid != null) {

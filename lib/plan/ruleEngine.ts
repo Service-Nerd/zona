@@ -19,7 +19,7 @@ import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, type F
 import { validatePlan, formatViolations } from './invariants'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
 import { normaliseDays } from './days'
-import { isLongRun, isShakeout, classifyStimulus } from './sessionRole'
+import { isLongRun, isShakeout, classifyStimulus, isStructuredSession } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema } from './sessionStructureV2'
 import { durationForMainSet } from './sessionFormat'
@@ -2287,7 +2287,12 @@ function applyWeekdayMinsCap(
     // runner's stated availability the plan SAYS SO and classifies maintenance
     // (§52's third remedy, §40c's "a suppressed target is stated, never absorbed
     // silently"). See CoachingPrinciples §81.
-    if (isLongRun(s)) continue
+    // §81 — the long run AND any structured session are exempt. For the long
+    // run, capping stops it being the longest run of the week. For a structured
+    // session the failure is worse: the cap scales distance/duration but NOT
+    // `derived_set`, so the work is unchanged and only the stated duration
+    // moves. See isStructuredSession for the measured case.
+    if (isLongRun(s) || isStructuredSession(s)) continue
     const ratio = cap / s.duration_mins
     s.duration_mins = cap
     if (s.distance_km != null) {
@@ -2296,27 +2301,10 @@ function applyWeekdayMinsCap(
   }
 }
 
-// MWM-02 postscript — why there is NO final cap pass here.
-//
-// The diagnosis was that `applyWeekdayMinsCap` runs mid-pipeline while eight
-// later post-passes re-size sessions, so a capped session could be silently
-// re-expanded (a 30-minute cap shipping a 39-minute session). That diagnosis is
-// correct about the ORDERING, but measurement showed every re-expanded session
-// was the LONG RUN — which §81 now exempts. With the exemption in place:
-//
-//   non-long weekday sessions checked  153,728
-//   over the runner's cap                    0
-//
-// and an A/B with a final pass added produced byte-identical violation counts.
-// A pass that provably changes nothing is dead code that reads like a
-// safeguard — the same false confidence as INV-PLAN-FOUNDATION-BLOCK, which sat
-// unfired for months while appearing to guard foundation weeks. It was written,
-// measured, and removed rather than shipped.
-//
-// The ordering guarantee is not abandoned: INV-PLAN-MAX-WEEKDAY-MINS runs in
-// validatePlan on the FINISHED plan, so a future post-pass that re-expands a
-// weekday session is caught at the exit boundary — which is ADR-020's thesis.
-
+// MWM-02 postscript — the final cap pass was removed and later restored.
+// Full history is at the call site in generateRulePlan: it was a measured no-op
+// while only the long run was exempt, and became load-bearing the moment §81
+// was extended to structured sessions.
 
 // ─── Week metadata ────────────────────────────────────────────────────────────
 
@@ -4583,6 +4571,28 @@ export function generateRulePlan(
   // V6 — pre-plan buffer guidance. Attached at plan top-level (sibling to
   // weeks/phases/meta) per spec. Informational only; no session data.
   const prePlan = buildV6PrePlanGuidance(prepTime, anchoredStartIso, today)
+
+  // §18/§81 — the weekday cap runs LAST, after every re-sizing post-pass.
+  //
+  // `applyWeekdayMinsCap` also runs inside buildWeekSessions, but at least eight
+  // later passes re-size sessions (long-run floors §45/§47, easy redistribution
+  // §9, volume scaling) and none re-applies it, so a capped session can be
+  // silently re-expanded.
+  //
+  // HISTORY — this pass was deleted once. Do not delete it again without
+  // repeating the measurement:
+  //   1. Added on the ordering argument above (MWM-02).
+  //   2. MEASURED A NO-OP and removed: every re-expanded session was the long
+  //      run, which §81 exempts. 0 of 153,728 non-long weekday sessions exceeded
+  //      the cap, and an A/B was byte-identical. A check that provably changes
+  //      nothing reads as a safeguard while guarding nothing.
+  //   3. RE-ADDED when §81 was extended to structured sessions: keeping a
+  //      quality session at full size changes what the redistribution passes
+  //      hand the easy runs, and those DO get pushed past the cap. Measured
+  //      303 violations without this pass, 0 with it.
+  // The lesson is not "always add a final pass" — it is that the answer changed
+  // when the conditions did, and only re-measuring caught it.
+  for (const w of weeks) if (w.sessions) applyWeekdayMinsCap(w.sessions, input)
 
   const plan: Plan = {
     meta,

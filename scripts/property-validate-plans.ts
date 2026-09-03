@@ -305,10 +305,12 @@ const inputs = [
 for (const input of inputs) {
   attempted++
   let plan
+  let planTier: 'free' | 'trial' | 'paid' = 'trial'
   try {
     // PLAN_START passed EXPLICITLY — see the note at the top of this file. This
     // argument is the difference between a sweep and a very fast no-op.
-    plan = generateRulePlan(input, pick(tiers), PLAN_START)
+    planTier = pick(tiers)
+    plan = generateRulePlan(input, planTier, PLAN_START)
   } catch (e) {
     const msg = e instanceof Error ? e.message.split('\n')[0] : String(e)
     if (REFUSAL.test(msg)) { refused++; continue }
@@ -342,13 +344,20 @@ for (const input of inputs) {
     violatingPlans++
     if (EXPLAIN && explained.length < 5) {
       for (const v of errors.filter(e => e.code === EXPLAIN)) {
+        // Dump the COMPLETE input, not a hand-picked subset.
+        //
+        // The subset version (race_distance_km, goal, days_available,
+        // current_weekly_km, longest_recent_run_km, fitness_level,
+        // max_weekday_mins, injury_history) silently omitted the HR set,
+        // benchmark, training_age, terrain, target_time, tier and PLAN_START —
+        // so a case copied out of this dump did NOT reproduce. On 2026-09-03
+        // that cost two rounds of guesswork chasing a violation that could not
+        // be recreated from its own report. A repro you cannot replay is not a
+        // repro; print everything needed to re-run it.
         explained.push(
-          `  ${v.message}\n     input: ${JSON.stringify({
-            race_distance_km: input.race_distance_km, goal: input.goal,
-            days_available: input.days_available, current_weekly_km: input.current_weekly_km,
-            longest_recent_run_km: input.longest_recent_run_km, fitness_level: input.fitness_level,
-            max_weekday_mins: input.max_weekday_mins, injury_history: input.injury_history,
-          })}\n     volume_profile: ${plan.meta?.volume_profile ?? '-'}`)
+          `  ${v.message}\n     week ${v.week}${v.day ? ' ' + v.day : ''} — got ${v.actual}, expected ${v.expected}` +
+          `\n     plan_start: ${PLAN_START}   tier: ${planTier}   volume_profile: ${plan.meta?.volume_profile ?? '-'}` +
+          `\n     input: ${JSON.stringify(input)}`)
         break
       }
     }
@@ -419,13 +428,20 @@ const BASELINE: Record<string, number> = {
   // defects this grid can now see; they are a debt register, not an amnesty.
   // Filed in backlog.md as SWEEP-VISIBLE-01.
 
-  // Same cause, opposite face: a quality session at a 30-minute cap. Byte-identical
-  // pre- and post-wave, so unrelated to §81's long-run exemption.
-  'INV-PLAN-MAX-WEEKDAY-MINS':             238,
-  // days_available = 2: a 2-day plan cannot reach a >=50% goal-pace ratio in the
-  // second-half build/peak. Reachable only now the grid pairs low day counts with
-  // 5km. Pre-dates this wave; likely a §22-vs-§52 tension for the board.
-  'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO':  155,
+  // 238 -> 0 (Coaching Board 2026-09-03, Q1). Cleared by the structured-session
+  // exemption PLUS restoring the final cap pass — the exemption alone took it to
+  // 303, because keeping quality sessions at full size changes what the
+  // redistribution passes hand the easy runs. Kept as an explicit 0 so a
+  // regression reads as NEW against a stated expectation.
+  'INV-PLAN-MAX-WEEKDAY-MINS':               0,
+  // 155 -> 0 (2026-09-03). NOT a 5K carve-out, and NOT the day-count issue first
+  // supposed. `halfWeek` counted foundation weeks (n <= 0) toward totalWeeks,
+  // shifting the second-half boundary so the wrong weeks were assessed —
+  // contrary to §57. A 5K exclusion was proposed on the reading that "0/1" meant
+  // unsatisfiable; measurement showed 168/168 5K sessions sit within +/-5% of
+  // goal pace, and an A/B with and without the skip gave identical totals, so it
+  // was NOT added. The ratio binds at every distance.
+  'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO':    0,
 
   // 1116 -> 1080 on 2026-08-20: SC-07's build rotation fixed 36 of these as a
   // side effect. Lowered to lock the improvement in, per the note above.
@@ -458,7 +474,13 @@ const BASELINE: Record<string, number> = {
   // session whose prescription IS its structure), but the board ruled only on
   // the long run; extending the exemption to quality sessions is a new coaching
   // decision and is not taken here. Filed as SWEEP-VISIBLE-01.
-  'INV-PLAN-MIN-SESSION-SIZE':            2061,
+  // 2061 -> 924 (Coaching Board 2026-09-03, Q1): §81's weekday-cap exemption
+  // extended to STRUCTURED sessions. The cap scaled distance/duration but not
+  // `derived_set`, so a "Short VO2max" went 9km/43min -> 6.5km/30min while still
+  // prescribing 7 x 400m — identical work, a duration that no longer described
+  // it. The remainder are low-volume main weeks whose easy runs fall under the
+  // floor (§52b territory), unrelated to the cap.
+  'INV-PLAN-MIN-SESSION-SIZE':             924,
 
   // 87 -> 75 -> 0 (LABEL-VARIETY-01, 2026-08-21). The LABEL count is now zero:
   // the peak goal-pace override takes the row's shape word ("…-pace ladder",

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
-import { isLongRun } from './sessionRole'
+import { isLongRun, isStructuredSession } from './sessionRole'
 import type { GeneratorInput, Plan, Session } from '@/types/plan'
 
 /**
@@ -35,14 +35,26 @@ const weekdaySessions = (p: Plan): Session[] =>
     .filter((s): s is Session => !!s))
 
 describe('MWM-02 — weekday cap as a final pass', () => {
-  it('caps NON-long weekday sessions even after later re-sizing passes', () => {
+  it('caps UNSTRUCTURED weekday sessions even after later re-sizing passes', () => {
+    // §81 was extended on 2026-09-03 from "the long run" to "the long run and
+    // any structured session" — capping a quality session scales its headline
+    // but not its `derived_set`, so it shortens the label rather than the work.
+    // This assertion originally excluded only the long run; that encoded the
+    // pre-extension contract and started failing the moment the exemption
+    // widened. Updated deliberately, not relaxed: easy runs are still capped.
     const inp = input({ max_weekday_mins: 30, days_cannot_train: ['saturday', 'sunday'], current_weekly_km: 30 })
     const plan = generateRulePlan(inp, 'trial', PLAN_START)
 
+    let checked = 0
     for (const s of weekdaySessions(plan)) {
-      if (isLongRun(s) || s.type === 'race' || s.type === 'strength') continue
+      if (isLongRun(s) || isStructuredSession(s)) continue
+      if (s.type === 'race' || s.type === 'strength' || s.type === 'rest') continue
+      checked++
       expect(s.duration_mins ?? 0).toBeLessThanOrEqual(30)
     }
+    // Guard against the assertion quietly becoming vacuous if the exemptions
+    // ever widen far enough to exclude everything.
+    expect(checked).toBeGreaterThan(0)
   })
 
   it('leaves the long run at full length — never shrink-to-fit (board veto)', () => {

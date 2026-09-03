@@ -104,3 +104,30 @@ export function isVo2maxSession(
   const label = (session.label ?? '').toLowerCase()
   return label.includes('vo2max') || label.includes('vo2 max')
 }
+
+/**
+ * §81 (Coaching Board, 2026-09-03) — is this session's prescription its STRUCTURE
+ * rather than its distance?
+ *
+ * A quality/tempo/interval session is defined by what you DO: "7 × 400 m at
+ * 4:30–5:00/km", carried on `derived_set` / `catalogue_id` (ADR-018/019). Its
+ * `distance_km` and `duration_mins` are consequences of that structure, not the
+ * prescription.
+ *
+ * This matters because `applyWeekdayMinsCap` scales distance and duration and
+ * does NOT scale `derived_set`. Measured before the exemption: a "Short VO2max"
+ * went from 9 km / 43 min to 6.5 km / 30 min while its derived_set still read
+ * 7 × 400 m — identical work, a duration that no longer described it. The cap
+ * shortened the LABEL, not the session, so the runner blocked out 30 minutes for
+ * a workout that needs 43. Every week.
+ *
+ * An easy run is the opposite case and is NOT structured: its prescription IS
+ * its distance/duration, so scaling it is coherent and the cap applies normally.
+ *
+ * Kept here because sessionRole.ts is the single owner of "what kind of session
+ * is this" (INV-CLASS-001) — a second predicate elsewhere would be free to drift.
+ */
+export function isStructuredSession(s: ClassifiableSession): boolean {
+  return s.type === 'quality' || s.type === 'tempo'
+      || s.type === 'intervals' || s.type === 'hard'
+}

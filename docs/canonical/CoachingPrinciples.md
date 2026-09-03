@@ -556,7 +556,15 @@ enrichment layer (gated via `ai_coach_notes_new`), not the act of regenerating.
 
 **"Specific" must resolve to a real catalogue entry, not a rename (amended 2026-08-20, CD-18 / SC-05).** A distance whose race pace is physiologically distinct from I-pace MUST own a `race_specific` catalogue session. The all-distance `goal_pace_sharpener` does not count as that distance's own entry. Where a distance-specific race session exists and is eligible, it is preferred over the generic — **most specific row wins**.
 
-Applies to **10K, HM and MARATHON**. **5K is excluded**: at 5K, race pace and I-pace largely coincide, so the VO2max rows already deliver race-specific physiology. *Recorded as an engineering judgement for the board (SC-05): CD-18's "who this affects" says 5K has "the identical gap", but the audit's own analysis grounds the mismatch in race pace sitting **between threshold and VO2max for a 10K**, which does not transfer to 5K. If the board disagrees, add a 5K row and extend the invariant's distance list.*
+Applies to **10K, HM and MARATHON**. **5K is excluded**: at 5K, race pace and I-pace largely coincide, so the VO2max rows already deliver race-specific physiology.
+
+**SC-05 CLOSED — Coaching Board, 2026-09-03.** This was recorded as an engineering judgement awaiting the board; the board has now ruled and **agrees with the exclusion as written**. Seiler: at 5K the distinction between "goal-pace work" and "VO2max work" is not physiologically real — you are at or near vVO2max either way — so requiring a *separate* race-specific catalogue row there demands a distinction the physiology does not make. The 10K case is genuinely different and still binds, because CD-18's analysis grounds the mismatch in race pace sitting **between threshold and VO2max**, which does not transfer to 5K.
+
+**Scope of the closure: the OWNERSHIP arm only.** In the same sitting the board was asked to extend the 5K exclusion to §22's goal-pace **ratio** arm, on evidence that the ratio was unsatisfiable at 5K (155 sweep violations, every one reading `0% (0/1)`). **That evidence was wrong and the extension was NOT made.** Measured afterwards: across 108 5K time-target plans, **168 of 168** non-VO2max quality sessions in build/peak sit within ±5% of goal pace — at 0% delta, because the engine prescribes "5K-pace progression", "5K-pace sustained" and "5K-pace intervals", none labelled VO2max. The ratio is satisfied perfectly at 5K.
+
+The 155 violations had a different cause entirely: `halfWeek` in `validatePlan` counted foundation weeks (n ≤ 0) toward `totalWeeks`, shifting the second-half boundary so the wrong weeks were assessed — contradicting this document's own statement that foundation weeks "are never part of the main plan's periodisation arc" (§57). Fixing that cleared all 155; an A/B with and without a 5K skip gave identical sweep totals. **The ratio arm binds at every distance, 5K included.**
+
+*Recorded because the error is instructive: `0/N` in a violation message says the numerator was zero, not that it could never be non-zero. Unsatisfiability must be confirmed by measuring the satisfying case, never inferred from the failure.*
 
 **Why this needed saying.** 10K — one of two free-tier flagship distances — had no race-specific session while HM had two. That was not a decision anyone made; it is where the catalogue stopped. The gap was **invisible in the product** because the engine renames a borrowed row to "10K-pace progression", so the plan *looked* like it contained 10K-pace work. **§33 explicitly sanctions that rename and requires the borrowed voice be replaced — which the engine does correctly.** The failure is subtler and worth generalising: **§33 closed the review by fixing the symptom (borrowed voice) and left the cause (no 10K entry) in place. A principle can close a review without closing a gap.** Worth remembering the next time a principle is written to describe existing behaviour rather than to correct it.
 
@@ -2154,12 +2162,35 @@ So the incoherence is not "two ladders disagree with each other" — it is **one
 
 ---
 
-## 81. The long run is exempt from the weekday cap — and the plan says when it doesn't fit
+## 81. Structured sessions are exempt from the weekday cap — and the plan says when they don't fit
 
 **Coaching Board MWM-02, 2026-09-03.**
 
 `max_weekday_mins` is the runner's own statement about their life and binds every
-weekday session (§18) — **except the long run.**
+weekday session (§18) — **except the long run and any structured session**
+(quality, tempo, intervals, hard; `isStructuredSession` in `lib/plan/sessionRole.ts`).
+
+**Extended to structured sessions 2026-09-03** on a stronger version of the same
+argument. Capping a quality session does not shorten it *at all*. The cap scales
+`distance_km` and `duration_mins`; it does **not** scale `derived_set`. Measured:
+
+| | Uncapped | Capped at 30 min |
+|---|---|---|
+| Headline | Short VO2max — 9 km / 43 min | Short VO2max — **6.5 km / 30 min** |
+| `derived_set` | 7 × 400 m @ 4:30–5:00/km | **7 × 400 m @ 4:30–5:00/km — unchanged** |
+
+The runner still runs seven 400s. Only the number printed beside them moved. The
+cap shortened the **label**, not the session — so the runner blocks out thirty
+minutes for work that needs forty-three, every week, and concludes they are slow
+or that running does not fit their life (McMillan). Willy: the mechanical load is
+unchanged while the time that made it safe is gone, which is how compressed
+recoveries turn a VO2max session into an injury.
+
+An **easy run is not structured** — its prescription *is* its distance and
+duration — so the cap applies to it normally.
+
+**Never scale a structured session's `distance_km`/`duration_mins` without
+scaling its `derived_set` to match.** Scaling only the headline is the defect.
 
 **Why the exception.** A long run squeezed into a 30-minute weekday ceiling is not
 a compromise, it is a different session: it stops being the longest run of the
@@ -2180,7 +2211,7 @@ weekday, i.e. the runner blocked both weekend days. Among those runners, 823 of
 than double the time they said they had.
 
 **The obligation that comes with the exemption.** An exemption is not a licence to
-ignore the runner. Past
+ignore the runner — it applies to the long run and to structured sessions alike. Past
 `GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT` (50%) the session is
 not a stretch, it is a different time budget, and the plan must:
 
