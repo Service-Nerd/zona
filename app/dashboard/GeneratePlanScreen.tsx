@@ -951,8 +951,19 @@ export default function GeneratePlanScreen({
             // navigated). setState is a no-op then, so the updater's `current`
             // would never be read and the enriched plan would be lost.
             const enriched = msg.plan
-            const foundationWeeks = planRef.current?.weeks.filter(w => w.n <= 0) ?? []
-            const merged: Plan = { ...enriched, weeks: [...foundationWeeks, ...enriched.weeks] }
+            // Only splice from planRef when `enriched` genuinely has none —
+            // for the 'auto' band (and any 'choice' decision already known
+            // when this stream's own /api/generate-plan call ran), the
+            // server's finalPlan ALREADY carries foundation weeks. Splicing
+            // unconditionally double-counted them (2 foundation weeks became
+            // 4 — confirmed 2026-09-03 against a real generated plan).
+            const alreadyHasFoundation = enriched.weeks.some(w => w.n <= 0)
+            const foundationWeeks = alreadyHasFoundation
+              ? []
+              : planRef.current?.weeks.filter(w => w.n <= 0) ?? []
+            const merged: Plan = foundationWeeks.length
+              ? { ...enriched, weeks: [...foundationWeeks, ...enriched.weeks] }
+              : enriched
             planRef.current = merged
             setPlan(merged)
 
