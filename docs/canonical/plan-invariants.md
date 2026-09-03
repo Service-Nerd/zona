@@ -154,6 +154,21 @@ where `longest_recent × 1.10` collides with `MIN_SESSION_DISTANCE_KM.long`).
 Output-level checking would produce false positives. The cap belongs at the
 volume-sequence layer where it's already enforced.
 
+**`threshold_ladder`'s second eligibility path** (`weeklyKm >= THRESHOLD_LADDER_MIN_WEEKLY_KM` OR a sustained recent
+threshold pattern + stable volume — `CoachingPrinciples §53`, Coaching Board
+2026-09-03). Enforced at the point of decision (`selectCatalogueSession`,
+`sessionCatalogueData.ts`, gated on `recentThresholdEligible` — computed from
+already-built prior weeks in `generateRulePlan`'s main loop), not as a
+`validatePlan()` check. A first attempt at the latter false-positived: the
+flat-floor decision runs against a week's PRE-CAP TARGET volume, but a
+finished plan's stored `weekly_km` is POST-CAP ACTUAL volume — a
+weekday-cap-heavy scenario (MWM-02) can legitimately target 48km/week
+(clearing the floor) and deliver only 32km once every other session is capped
+down around the (cap-exempt, §81) ladder session itself. Re-deriving against
+the wrong volume flagged an entirely correct plan as a violation. Covered
+instead by direct unit tests on the selector (`thresholdLadderAltPath.test.ts`),
+falsification-tested.
+
 ## Adding a new invariant
 
 0. **Has the Coaching Board ruled?** If this invariant encodes a *new or changed*

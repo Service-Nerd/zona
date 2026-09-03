@@ -1870,6 +1870,35 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     }
   }
 
+  // INV-PLAN-THRESHOLD-LADDER-ELIGIBLE — NOT mechanically checkable
+  // post-hoc, stated explicitly rather than silently skipped (Coaching
+  // Board 2026-09-03, §53's second eligibility path).
+  //
+  // A first attempt re-derived eligibility from the FINISHED plan's stored
+  // `weekly_km` and immediately false-positived: `selectCatalogueSession`'s
+  // flat-floor check runs against the PRE-CAP TARGET volume for that week
+  // (`adjustedKm`, computed before `buildWeekSessions`), but a week's FINAL
+  // stored `weekly_km` is the POST-CAP ACTUAL volume — and those two numbers
+  // are not the same plan property. A weekday-cap-heavy scenario
+  // (`max_weekday_mins` + a blocked weekend, MWM-02) can target 48 km/week
+  // (clearing the 45 km/week floor legitimately) and still deliver only
+  // 32 km/week once every other session is capped down — `threshold_ladder`
+  // itself is structure-exempt from the cap (§81), so it keeps its own
+  // dose; the WEEK around it shrinks. This is a pre-existing property of how
+  // target vs. delivered volume are threaded through the engine, unrelated
+  // to and predating this ruling — not something today's change should
+  // newly enforce against.
+  //
+  // The engine-side computation (`recentThresholdEligible` in
+  // `generateRulePlan`'s main loop) is correct and already covered: it
+  // computes `false` in exactly this case (only 1 of 2 required recent
+  // threshold weeks), so the session is placed via the pre-existing flat
+  // floor against the pre-cap target — not a bug in the alt path, and not
+  // something a post-hoc reader of the finished plan can distinguish from
+  // a genuine alt-path grant without the engine stamping which path fired.
+  // That stamp is a real option for a future pass; not added here to avoid
+  // widening this ruling's scope into the target-vs-actual volume gap.
+
   // INV-PLAN-VO2MAX-ONSET (CoachingPrinciples §5/§17 — SC-07 / CD-16 + CD-22)
   //
   // The first VO2max session must leave at least

@@ -107,7 +107,7 @@ Phase 1 specifies the full schema for `main_set_structure` and freezes it before
 | 5 | `tempo_cruise` | Cruise intervals | threshold | build | all | intermediate | T3 | 3×10 min Z3 / 2 min jog |
 | 6 | `tempo_cruise_short` | Cruise intervals — short | threshold | build, peak | 5K, 10K | intermediate | T3 | 4×5 min Z3 / 90s jog |
 | 7 | `progressive_tempo` | Progressive tempo | threshold | build, peak, taper | all | intermediate | T3 | 30 min Z2→Z3 |
-| 8 | `threshold_ladder` | Threshold ladder | threshold | build, peak | 10K, HM, MARATHON, 50K, 100K | experienced | T3 | **v2** · 3-5-8-5-3 min at T, 90s jogged recovery between · `scaling: fixed` — the ladder's shape IS the session. Audit §E.5, unblocked by v2 case 1. |
+| 8 | `threshold_ladder` | Threshold ladder | threshold | build, peak | 10K, HM, MARATHON, 50K, 100K | intermediate | T3 | **v2** · 3-5-8-5-3 min at T, 90s jogged recovery between · `scaling: fixed` — the ladder's shape IS the session. Audit §E.5, unblocked by v2 case 1. Eligible at `weeklyKm >= 45` OR a sustained recent threshold pattern (§53, Coaching Board 2026-09-03) — see `THRESHOLD_LADDER_MIN_WEEKLY_KM`/`THRESHOLD_LADDER_ALT_*`. "Fitness ≥" column corrected from `experienced` (stale — CAT-ULTRA-THIN-01, 2026-08-21, replaced the fitness-label gate with the volume floor itself; this table wasn't regenerated). |
 | 9 | `intervals_classic` | Classic VO2max | vo2max | build, peak | 5K, 10K | intermediate | T4 | 5×3 min Z4_Z5 / 2 min jog |
 | 10 | `intervals_short` | Short VO2max | vo2max | build, peak | 5K | intermediate | T4 | 10×400m @ 3K pace / 90s jog |
 | 11 | `intervals_long` | Long VO2max | vo2max | build, peak | 5K, 10K | intermediate | T4 | 4×1000m @ 5K pace / 2 min jog |

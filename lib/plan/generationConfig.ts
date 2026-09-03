@@ -637,6 +637,24 @@ export const GENERATION_CONFIG = {
   // tracked refinement; this absolute km floor is Willy's binding version.
   THRESHOLD_LADDER_MIN_WEEKLY_KM: 45,
 
+  // Second eligibility path — Coaching Board 2026-09-03. The flat km floor
+  // above denies 61.5% of genuinely threshold-committed low-volume weeks
+  // (measured: >=20% of the week's training minutes already threshold-
+  // category), and lowering the floor doesn't fix it — at 25km/week, 79.2%
+  // of newly-admitted weeks have NO threshold commitment at all. A runner
+  // who has ALREADY sustained threshold-category work across recent weeks
+  // has demonstrated tissue readiness through repetition (Willy's own
+  // standard), not claimed it through one week's arithmetic (Sims' fix) — so
+  // this is a second, additive path, never a replacement for the floor above.
+  // "2 of 3" is a defensible operational default, not literature-derived —
+  // stated honestly (Hutchinson) rather than dressed up as more rigorous
+  // than it is. The stability check is a COLLAPSE GUARD, not a floor
+  // (Sims) — it only rules out a runner whose volume is actively falling
+  // apart mid-window (Willy), never sets a minimum on how low it can be.
+  THRESHOLD_LADDER_ALT_LOOKBACK_WEEKS: 3,
+  THRESHOLD_LADDER_ALT_MIN_HITS: 2,
+  THRESHOLD_LADDER_ALT_STABILITY_PCT: 20,
+
   // ── Long run as fraction of weekly volume (CoachingPrinciples §52) ─────────
   // No single run may exceed this fraction of the week's total volume. Above
   // this threshold the week is structurally lopsided — the long run becomes

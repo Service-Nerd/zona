@@ -1719,6 +1719,12 @@ function buildWeekSessions(
   // know whether its cap is satisfiable at all (D-21). Per-pick because the pool
   // varies by phase and a plan-level union hides the binding constraint.
   poolSink?: number[],
+  // §53 (Coaching Board 2026-09-03) — second eligibility path for
+  // min_weekly_km-gated rows. Computed by the caller from ALREADY-BUILT
+  // prior weeks (never same-week circular) — see generateRulePlan's main
+  // loop. Default false so legacy/test callers keep the flat-floor-only
+  // behaviour.
+  recentThresholdEligible = false,
 ): Partial<Record<Day, Session>> {
   const blocked = blockedDays(input)
   const distKey = raceDistanceKey(input.race_distance_km)
@@ -2222,12 +2228,12 @@ function buildWeekSessions(
 
         cat1 = raceSpecificTaperRows[0] ?? selectCatalogueSession({
           catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
-          weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes: poolSink,
+          weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes: poolSink, recentThresholdEligible,
         })
       } else {
         cat1 = selectCatalogueSession({
           catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
-          weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes: poolSink,
+          weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes: poolSink, recentThresholdEligible,
         })
       }
       if (process.env.DEBUG_ROT) console.error(`      cat1 -> ${cat1?.id}:${cat1?.category} (pref=${preferredCategory})`)
@@ -2287,7 +2293,7 @@ function buildWeekSessions(
           // catalogue filter disagreed; the allowance is right.
           const cat2 = selectCatalogueSession({
             catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 1, preferredCategory: altCategory,
-            weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes: poolSink,
+            weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes: poolSink, recentThresholdEligible,
           })
           const secondaryFraction = GENERATION_CONFIG.SECONDARY_QUALITY_PCT_OF_PRIMARY / 100
           // SC-10 — size the second (softer) slot off the UNCAPPED base, never the
@@ -3907,6 +3913,33 @@ export function generateRulePlan(
 
     const isRotatingBuildWeek = phase === 'build' && !isDeload && !isRaceWeek
 
+    // §53 (Coaching Board 2026-09-03) — threshold_ladder's second eligibility
+    // path. Read from ALREADY-BUILT prior weeks (weeks.push happens at the
+    // end of each iteration below, so `weeks` here holds only weeks 1..i) —
+    // never same-week circular. Categorised structurally (row.category), not
+    // a hardcoded row-id list (INV-CLASS). Requires a FULL lookback window —
+    // a plan's first weeks fall back to the flat floor only, matching "a
+    // first-time-ever threshold session still requires the volume floor."
+    const thresholdAltLookback = GENERATION_CONFIG.THRESHOLD_LADDER_ALT_LOOKBACK_WEEKS
+    const recentWeeksForThresholdGate = weeks.slice(-thresholdAltLookback)
+    const recentThresholdEligible = recentWeeksForThresholdGate.length === thresholdAltLookback && (() => {
+      const hits = recentWeeksForThresholdGate.filter(w =>
+        Object.values(w.sessions).some(s => {
+          if (!s?.catalogue_id) return false
+          const row = catalogue.find(r => r.id === s.catalogue_id)
+          return row?.category === 'threshold' || row?.category === 'race_specific'
+        })
+      ).length
+      if (hits < GENERATION_CONFIG.THRESHOLD_LADDER_ALT_MIN_HITS) return false
+      // Collapse guard (Willy) — this week's volume must not have dropped
+      // more than THRESHOLD_LADDER_ALT_STABILITY_PCT below the window's peak.
+      // Not a floor (Sims) — says nothing about how low volume can be, only
+      // that it can't be actively falling apart mid-window.
+      const recentPeakKm = Math.max(...recentWeeksForThresholdGate.map(w => w.weekly_km))
+      if (recentPeakKm <= 0) return false
+      return adjustedKm >= recentPeakKm * (1 - GENERATION_CONFIG.THRESHOLD_LADDER_ALT_STABILITY_PCT / 100)
+    })()
+
     const sessions = buildWeekSessions(
       weekN, phase, isDeload, isRaceWeek,
       adjustedKm, input, zones, pace, metric, phases,
@@ -3923,6 +3956,7 @@ export function generateRulePlan(
       // §79 — withhold VO2max/hills during the returning runner's opening weeks.
       intensityReentryActive && weekN <= intensityReentryWeeks,
       qualityPool,
+      recentThresholdEligible,
     )
 
     // Advance the rotation only on weeks that actually carried a build quality

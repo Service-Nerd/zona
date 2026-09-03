@@ -826,6 +826,14 @@ export interface CatalogueSelectorArgs {
   // usage tie breaks against repeating the previous week's session. Mutated in
   // place on each pick.
   rowLast?: Map<string, string>
+  // §53 (Coaching Board 2026-09-03) — second eligibility path for a
+  // `min_weekly_km`-gated row: true when the runner has sustained
+  // threshold-category work across recent weeks (computed by the caller from
+  // ALREADY-BUILT prior weeks — never same-week circular) AND this week's
+  // volume hasn't collapsed relative to that window. A row still needs
+  // EITHER this OR its own `min_weekly_km` floor — this never lowers the
+  // floor, it adds a second way to clear it.
+  recentThresholdEligible?: boolean
 }
 
 // Hill rows are tagged via main_set_structure.terrain === 'hills' OR id includes 'hill'.
@@ -872,7 +880,7 @@ function isLongRunSession(row: SessionCatalogueRow): boolean {
  * regenerated produces same selection.
  */
 export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCatalogueRow | null {
-  const { catalogue, phase, distanceKey, fitness, tier, weekN, slotIndex = 0, weeklyKm, preferredCategory, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes } = args
+  const { catalogue, phase, distanceKey, fitness, tier, weekN, slotIndex = 0, weeklyKm, preferredCategory, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes, recentThresholdEligible } = args
 
   const userRank = FITNESS_RANK[fitness]
   const tierFilter = (row: SessionCatalogueRow) => tier === 'free' ? row.is_free_tier : true
@@ -882,9 +890,12 @@ export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCata
     row.distance_eligibility.includes(distanceKey) &&
     FITNESS_RANK[row.fitness_level_min] <= userRank &&
     // §53 (CAT-ULTRA-THIN-01) — a volume-gated row (threshold_ladder) is eligible
-    // only in a week that supports its load. Unknown weekly volume excludes it,
+    // when the week's own volume supports its load, OR (Coaching Board
+    // 2026-09-03) the runner has sustained threshold-category work across
+    // recent weeks — demonstrated readiness through repetition, not just this
+    // week's arithmetic. Unknown weekly volume excludes it via the first arm,
     // so the gate never fails open.
-    (row.min_weekly_km == null || (weeklyKm != null && weeklyKm >= row.min_weekly_km)) &&
+    (row.min_weekly_km == null || (weeklyKm != null && weeklyKm >= row.min_weekly_km) || recentThresholdEligible === true) &&
     tierFilter(row) &&
     !isLongRunSession(row) &&  // long-run-with-segment rows are picked by the long-run path, not as quality
     (!excludeHillSessions || !isHillSession(row)) &&
