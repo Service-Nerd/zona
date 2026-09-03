@@ -9,6 +9,7 @@ import GeneratingCeremony from '@/components/GeneratingCeremony'
 import { BRAND } from '@/lib/brand'
 import { createClient } from '@/lib/supabase/client'
 import { classifyGap, gapDays, generateFoundationBlock } from '@/lib/plan/foundationBlock'
+import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
 import { validatePlan } from '@/lib/plan/invariants'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
@@ -406,7 +407,7 @@ function validateFoundationBlock(assembled: Plan, genInput: GeneratorInput): voi
 export default function GeneratePlanScreen({
   onBack, firstName: _firstName, lastName: _lastName, restingHR: initialRHR, maxHR: initialMHR,
   maxHrSource: initialMhrSource,
-  birthYear: initialBirthYear, onBirthYearSave, onPlanSaved, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade,
+  birthYear: initialBirthYear, onBirthYearSave, onPlanSaved, onPlanEnriched, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade,
 }: {
   onBack: () => void
   firstName?: string
@@ -419,6 +420,9 @@ export default function GeneratePlanScreen({
   birthYear?: number | null
   onBirthYearSave?: (year: number) => Promise<void>
   onPlanSaved?: (plan: Plan) => Promise<void>
+  /** ENRICH-SAVE-01 — persist the AI-enriched copy that lands ~30s AFTER the
+   *  runner has already committed to the plan. Never blocks them. */
+  onPlanEnriched?: (plan: Plan) => Promise<void>
   isOnboarding?: boolean
   hasExistingPlan?: boolean
   hasPaidAccess?: boolean
@@ -431,19 +435,42 @@ export default function GeneratePlanScreen({
   const [isSaving, setIsSaving] = useState(false)
   // N8b — the preview is reachable as soon as the RULE plan is ready + the reveal
   // has played (fast). Waiting for the full enricher stream stranded the user on
-  // "There it is." for 20–30s while Sonnet ran — the ceremony is the payoff, not
-  // the wait (ui-patterns §15). The enricher keeps streaming in the background and
-  // `setPlan` swaps in the enriched plan live. handleUsePlan then waits (bounded)
-  // for the stream so the ENRICHED plan is what's saved, not the bare rule plan —
-  // preserving the correctness the old both-signals gate cared about, without the
-  // 30s stare. Rule plan is a valid fallback (hybrid pattern, ADR-006).
-  const [streamComplete, setStreamComplete] = useState(false)
+  // "There it is." for 20–30s while the enricher ran — the ceremony is the
+  // payoff, not the wait (ui-patterns §15). The enricher keeps streaming in the
+  // background and `setPlan` swaps in the enriched plan live.
+  //
+  // ENRICH-SAVE-01 amends the second half of N8b: handleUsePlan no longer waits
+  // for the stream either. It used to block up to 15s so the ENRICHED plan was
+  // the one saved — but the enricher takes 28–35s, so the deadline expired and
+  // it saved the bare rule plan anyway, silently. The enriched copy is now
+  // written as a follow-up instead. Rule plan remains a valid standalone
+  // fallback throughout (hybrid pattern, ADR-006).
   const [revealComplete, setRevealComplete] = useState(false)
   const [rulePlanReady, setRulePlanReady] = useState(false)
   // Mirrors for handleUsePlan, which may fire mid-stream and must read the LATEST
   // (enriched) plan + stream status, not a stale render closure.
   const planRef = useRef<Plan | null>(null)
-  const streamCompleteRef = useRef(false)
+
+  // ENRICH-SAVE-01 (2026-09-03) — save immediately, enrich in the background.
+  //
+  // The rule plan is ready in ~10ms; the enricher takes 28–35s (measured). The
+  // previous flow blocked "Use this plan" for up to 15s waiting for it, which
+  // was both a dead wait AND too short: when the deadline expired it saved the
+  // bare rule plan, so a trial runner silently received an unenriched plan. That
+  // was harmless while enrichment always failed (the fallback was the same
+  // object); fixing enrichment in 2030f98 turned it into real data loss.
+  //
+  // ADR-006 already says the rule plan is complete and correct on its own and
+  // the AI voice is a layer on top — so there is no reason to hold the runner
+  // hostage to the topping. Save the plan they are looking at, let them go, and
+  // write the enriched copy over it when it lands.
+  //
+  // The generation stream has no AbortController, so it survives this screen
+  // unmounting on navigation and the patch still lands.
+  // Ordering logic lives in lib/plan/enrichSaveCoordinator.ts so it is unit
+  // testable — this repo has no component test harness, and an untested save
+  // race is what shipped last time (N8).
+  const coordRef = useRef(createEnrichSaveCoordinator<Plan>())
 
   // ── Foundation Block modal (Phase 4 — gap > 28 days) ─────────────────────
   const [foundationModalOpen, setFoundationModalOpen] = useState(false)
@@ -747,7 +774,6 @@ export default function GeneratePlanScreen({
   // ── Plan generation ───────────────────────────────────────────────────────
 
   async function handleGenerate() {
-    setStreamComplete(false)
     setRevealComplete(false)
     setRulePlanReady(false)
     setAppStep('generating')
@@ -903,7 +929,6 @@ export default function GeneratePlanScreen({
         const data = await res.json()
         setPlan(applyFoundationIfNeeded(data.plan as Plan))
         setRulePlanReady(true)
-        setStreamComplete(true)
         return
       }
 
@@ -933,16 +958,29 @@ export default function GeneratePlanScreen({
             // present in the enricher's payload. Preserve whatever is on
             // the current plan state — it accounts for both auto-added and
             // user-added foundation blocks.
+            //
+            // Merged from planRef, not via a setPlan updater, because this can
+            // run after the screen has unmounted (the runner already saved and
+            // navigated). setState is a no-op then, so the updater's `current`
+            // would never be read and the enriched plan would be lost.
             const enriched = msg.plan
-            setPlan(current => {
-              if (!current) return enriched
-              const foundationWeeks = current.weeks.filter(w => w.n <= 0)
-              return { ...enriched, weeks: [...foundationWeeks, ...enriched.weeks] }
-            })
+            const foundationWeeks = planRef.current?.weeks.filter(w => w.n <= 0) ?? []
+            const merged: Plan = { ...enriched, weeks: [...foundationWeeks, ...enriched.weeks] }
+            planRef.current = merged
+            setPlan(merged)
+
+            // ENRICH-SAVE-01 — the runner may already have committed. Persist
+            // the enriched copy over what they saved. Fire-and-forget: they
+            // hold a valid plan either way (ADR-006), so this must never
+            // surface an error or block anything.
+            // 'queue'/'ignore' need no action here — the coordinator holds a
+            // mid-save arrival, and a pre-save arrival is already on planRef.
+            if (coordRef.current.enrichmentArrived(merged) === 'patch') {
+              void onPlanEnriched?.(merged)
+            }
           }
         }
       }
-      setStreamComplete(true)
     } catch {
       setError('Could not reach the server. Check your connection.')
       setAppStep('error')
@@ -978,19 +1016,23 @@ export default function GeneratePlanScreen({
   async function handleUsePlan() {
     if (!planRef.current || !onPlanSaved) return
     setIsSaving(true)
+    coordRef.current.beginSave()
     try {
-      // The preview is reachable on the rule plan (N8b), so the enricher may
-      // still be streaming. Wait — bounded — so the ENRICHED plan is saved, not
-      // the bare rule plan. Usually zero wait (the user browsed the preview while
-      // it finished); the rule plan is a valid fallback if it times out.
-      const deadline = Date.now() + 15000
-      while (!streamCompleteRef.current && Date.now() < deadline) {
-        await new Promise(r => setTimeout(r, 150))
-      }
+      // ENRICH-SAVE-01 — no wait. Save the plan the runner is looking at and let
+      // them go; the enricher (28–35s) keeps streaming and patches its copy in
+      // when it lands. If it has already arrived, planRef holds the enriched
+      // plan and it is saved here directly.
       if (birthYear !== null && onBirthYearSave) await onBirthYearSave(birthYear).catch(() => {})
       await onPlanSaved(planRef.current)
       sessionStorage.removeItem(WIZARD_KEY)
-    } catch { setIsSaving(false) }
+
+      // Enrichment that landed mid-save is safe to write now the save has.
+      const queued = coordRef.current.saveCompleted()
+      if (queued) void onPlanEnriched?.(queued)
+    } catch {
+      coordRef.current.saveFailed()
+      setIsSaving(false)
+    }
   }
 
   // N8b — advance to preview once the RULE plan is ready AND the reveal has
@@ -1002,7 +1044,6 @@ export default function GeneratePlanScreen({
 
   // Keep refs in step for handleUsePlan (reads latest plan + stream status).
   useEffect(() => { planRef.current = plan }, [plan])
-  useEffect(() => { streamCompleteRef.current = streamComplete }, [streamComplete])
 
   // ── Special screens (ceremony / preview / error) ──────────────────────────
 

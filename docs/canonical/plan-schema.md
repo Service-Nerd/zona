@@ -148,9 +148,15 @@ export interface PlanMeta {
 
   // GEN-FIX-02 (2026-08-06) — enrichment provenance. Set in the route, not the
   // enricher. Any `failed_*` means the user holds rule-engine output (silent
-  // fallback, ADR-006); the suffix names who must fix it. 'pending' on a SAVED
-  // plan means the client persisted before final_plan arrived (N8 save race).
-  // Absent = generated before this shipped.
+  // fallback, ADR-006); the suffix names who must fix it. Absent = generated
+  // before this shipped.
+  //
+  // 'pending' — ENRICH-SAVE-01 (2026-09-03) changed its meaning. It used to mark
+  // the N8 save race and was always a defect. The runner now saves DELIBERATELY
+  // before enrichment resolves (28–35s; they are not made to wait), so 'pending'
+  // is expected for ~30s after saving. It is a defect only if it PERSISTS —
+  // then the follow-up write never landed (usually the app was closed), which
+  // costs the voice layer, never the plan.
   //
   // Widened 2026-09-03 (ENRICH-ATTRIB-01): the bare 'failed' proved
   // undiagnosable — two trial plans carried it and it could not distinguish an

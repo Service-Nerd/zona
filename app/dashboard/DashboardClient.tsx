@@ -1450,6 +1450,59 @@ export default function DashboardClient() {
     }
   }
 
+  /**
+   * ENRICH-SAVE-01 — write the AI-enriched copy over the plan the runner has
+   * already saved and is already looking at.
+   *
+   * The enricher takes 28–35s; the plan itself takes ~10ms. Rather than making
+   * the runner wait (the old flow blocked 15s, then silently saved the bare rule
+   * plan when that ran out), they commit immediately and the voice lands after.
+   *
+   * Deliberately NOT handlePlanSaved: this must not re-run the onboarding side
+   * effects — has_onboarded, the HR hydration, the orientation overlay, the
+   * navigation. It is the same plan with better copy, not a new plan.
+   *
+   * `savePlanForUser` archives only on a race-identity change, and this carries
+   * the same race, so no duplicate plan_archive row is created.
+   *
+   * Non-fatal by design (ADR-006): the runner already holds a valid, complete
+   * plan. A failure here costs them the voice layer, never the plan, so it is
+   * logged and swallowed rather than surfaced.
+   */
+  async function handlePlanEnriched(enrichedPlan: Plan) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Identity guard. This write is fired by a stream that outlives the wizard
+      // screen, so it can in principle land after the runner has generated and
+      // saved a DIFFERENT plan — patching the old plan's voice over the new
+      // plan. Requires saving plan A, re-running the wizard and saving plan B
+      // inside the ~30s enricher window, so it is unlikely rather than
+      // impossible; a stale overwrite of the runner's live plan is exactly the
+      // kind of silent loss this codebase keeps paying for, so it is cheap
+      // insurance. Read from the DB, not component state — the closure that
+      // fires this captured an earlier render and its `plan` is stale.
+      const { data: currentRow } = await supabase
+        .from('plans')
+        .select('plan_json')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      const current = currentRow?.plan_json as Plan | undefined
+      const identity = (p?: Plan) =>
+        `${p?.meta?.race_name ?? ''}|${p?.meta?.race_date ?? ''}|${p?.meta?.plan_start ?? ''}`
+      if (!current || identity(current) !== identity(enrichedPlan)) {
+        console.warn('[enrich] skipped — saved plan is no longer the one this enrichment belongs to')
+        return
+      }
+
+      await savePlanForUser(user.id, enrichedPlan, supabase)
+      setPlan(enrichedPlan)
+    } catch (err) {
+      console.error('Failed to persist AI enrichment (plan itself is safe):', err)
+    }
+  }
+
   const currentWeekIndex = plan ? getCurrentWeekIndex(plan.weeks) : 0
   const [viewWeekIndex, setViewWeekIndex] = useState(0)
 
@@ -2319,7 +2372,7 @@ export default function DashboardClient() {
           if (wN == null) return
           setRunAnalysisMap(prev => ({ ...prev, [wN]: { ...(prev[wN] ?? {}), [sessionDay]: row } }))
         }} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={(activePostRunData.weekN != null ? runAnalysisMap[activePostRunData.weekN]?.[activePostRunData.session?.key ?? ''] : null) ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
-        {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await supabase.from('user_settings').update({ birth_year: y, date_of_birth: null }).eq('id', userId) }} onPlanSaved={handlePlanSaved} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
+        {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await supabase.from('user_settings').update({ birth_year: y, date_of_birth: null }).eq('id', userId) }} onPlanSaved={handlePlanSaved} onPlanEnriched={handlePlanEnriched} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
         {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} onBack={() => {
           // Legacy key name — preserved to avoid wiping active user state. Future: migrate via key translation layer.
           const hasWizardDraft = typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('zona_wizard_draft')

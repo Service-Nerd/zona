@@ -173,9 +173,17 @@ export const PlanMetaSchema = z.object({
   //   'applied'  — enricher ran and its output was merged
   //   'skipped'  — free tier, never enriched by design
   //   'pending'  — stamped on the streamed rule_plan before enrichment resolves.
-  //                A *saved* plan reading 'pending' means the client persisted
-  //                before final_plan arrived (the N8 save race) — a real defect
-  //                signal, not a normal terminal state.
+  //                ENRICH-SAVE-01 (2026-09-03) CHANGED WHAT THIS MEANS. It used
+  //                to indicate the N8 save race — the client persisting before
+  //                final_plan arrived — i.e. always a defect. The runner now
+  //                saves DELIBERATELY before enrichment finishes (it takes
+  //                28–35s and they should not wait), so 'pending' is the
+  //                expected state for the ~30s between saving and the enriched
+  //                copy being written over it.
+  //                It is a defect signal only if it PERSISTS: a plan still
+  //                reading 'pending' minutes later means the follow-up write
+  //                never landed — usually the app was closed mid-enrichment,
+  //                which costs the voice layer but never the plan (ADR-006).
   //
   // Failure is silent to the user (ADR-006) but never silent to us. A bare
   // 'failed' proved useless in the 2026-09-02 incident: two trial plans read

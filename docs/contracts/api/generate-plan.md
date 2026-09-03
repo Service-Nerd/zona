@@ -190,7 +190,7 @@ silent fallback is unchanged.
   |---|---|
   | `applied` | Enricher ran and its output was merged |
   | `skipped` | Free tier; never enriched by design |
-  | `pending` | Stamped on the streamed `rule_plan` before enrichment resolves. **A saved plan reading `pending` means the client persisted before `final_plan` arrived** (the N8 save race) — a defect signal, not a normal terminal state |
+  | `pending` | Stamped on the streamed `rule_plan` before enrichment resolves. **Expected transiently** since ENRICH-SAVE-01: the runner saves deliberately before the ~30 s enricher finishes and the enriched copy is written over it after. A defect only if it **persists** — see *Save-then-enrich* below |
   | `failed_no_api_key` | `ANTHROPIC_API_KEY` absent from the environment — deploy config |
   | `failed_api_error` | Anthropic returned a non-2xx, or transport threw — upstream |
   | `failed_unparseable` | Response was not JSON, or failed `EnrichedPlanSchema` — the model |
@@ -208,6 +208,37 @@ silent fallback is unchanged.
   state to the user. It exists so "did the paid layer actually run?" is a query rather than
   forensics — the question that took five days to answer for the first organic user
   (`docs/incidents/2026-08-06-plan-defects/analysis.md`, N1).
+
+### Save-then-enrich (ENRICH-SAVE-01, 2026-09-03)
+
+The rule plan is ready in ~10 ms. The enricher takes **28–35 s** (measured, Haiku,
+12-week plan). The client therefore does **not** wait for it:
+
+1. `rule_plan` arrives → preview is reachable immediately.
+2. Runner taps **Use this plan** → the plan is saved as-is and they move on. No wait.
+3. `final_plan` arrives ~30 s later → written over the saved plan as a follow-up.
+
+Ordering is owned by `lib/plan/enrichSaveCoordinator.ts`. The case that matters is
+enrichment landing **during** the first save: it must be held until that save
+completes, or the save lands second and overwrites it.
+
+**What this replaced.** `handleUsePlan` used to block up to **15 s** waiting for the
+stream so the enriched plan was the one saved. Against a 28–35 s job that deadline
+expired routinely, and the code then saved the bare rule plan — so a trial runner
+who tapped promptly silently received an unenriched plan. Harmless while enrichment
+always failed (the fallback was the same object); ENRICH-ATTRIB-01 made enrichment
+work and turned it into real data loss. Never re-introduce a blocking wait here:
+ADR-006 already guarantees the rule plan is complete on its own.
+
+**Consequence for `meta.enrichment`.** A saved plan reads `pending` for ~30 s by
+design. Persistent `pending` means the follow-up write never landed:
+
+```sql
+select id, created_at, plan_json->'meta'->>'enrichment' as enrichment
+from plans
+where plan_json->'meta'->>'enrichment' = 'pending'
+  and created_at < now() - interval '10 minutes';
+```
 
 ### Enrichment attribution (ENRICH-ATTRIB-01, 2026-09-03)
 
