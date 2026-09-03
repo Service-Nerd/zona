@@ -36,6 +36,15 @@ export interface Session {
   coach_notes?: [string, string?, string?] // max 3 bullet points — plain coaching language (INV-PLAN-008)
   lr_segment_pace?: string                 // long-run embedded pace segment, e.g. "5:45–6:05 /km" (§24b/§24d)
 
+  // SC-08a/b (ADR-018/019, 2026-08-21) — stamped at construction, single-owner
+  // joined by catalogueRowFor() / mainSetDescription() (lib/plan/catalogueLink.ts,
+  // sessionComposer.ts). Any component that passes a Session on to the detail
+  // screen MUST preserve both — omitting them silently falls back to a generic
+  // "Quality main set." placeholder with no rep structure (D-08 bug, fixed
+  // 2026-09-03 in PlanCalendar.tsx / DashboardClient.tsx).
+  catalogue_id?: string                    // which V1_SESSION_CATALOGUE row produced this session
+  derived_set?: DerivedSet                 // this runner's resolved main set — lib/plan/resolveMainSet.ts
+
   // AI-DEPTH-07 (2026-05-12) — schema-only additive fields. Engine does not
   // populate these yet; reserved for AI-DEPTH-08 (post-race reshape) and
   // related depth work. All optional; consumers must tolerate undefined.

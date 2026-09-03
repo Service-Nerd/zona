@@ -31,6 +31,23 @@ interface Props {
   completion: Completion | undefined
   isPast: boolean
   isFuture: boolean
+  // Structured session fields — always pass through so SessionScreen renders
+  // identically regardless of whether it was opened from Today or Plan.
+  // catalogue_id/derived_set/label are what catalogueRowFor()/mainSetDescription()
+  // need to resolve real main-set instructions — without them the detail screen
+  // falls back to a generic "Quality main set." placeholder (D-08 bug, fixed
+  // 2026-09-03; see lib/plan/sessionDetailPayload.test.ts for the regression test).
+  label?: string
+  catalogue_id?: string
+  derived_set?: DerivedSet   // from lib/plan/resolveMainSet.ts
+  zone?: string
+  distance_km?: number
+  duration_mins?: number
+  primary_metric?: 'distance' | 'duration'
+  hr_target?: string
+  pace_target?: string
+  rpe_target?: number
+  coach_notes?: [string, string?, string?]
 }
 ```
 
