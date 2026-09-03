@@ -45,3 +45,48 @@ describe('sessionComposer — quality branch agrees with sessionFormat (Phase 3,
     }
   })
 })
+
+describe('sessionComposer — distance-aware parts (Coaching Board + SLT 2026-09-03)', () => {
+  // Founder-reported: the top-level card correctly showed distance while the
+  // "Session structure" breakdown was hardcoded to duration only — SessionPart
+  // had no distance field at all. This tests the fix: every part now carries
+  // a distance estimate derived from the session's own overall pace.
+
+  it('every part carries a distance_km when the session has one', () => {
+    const session: Session = { ...qualitySession(45), distance_km: 9 }
+    const structure = composeSession({ session })
+    expect(structure).not.toBeNull()
+    expect(structure!.warmup.distance_km).toBeDefined()
+    expect(structure!.main.distance_km).toBeDefined()
+    expect(structure!.cooldown.distance_km).toBeDefined()
+  })
+
+  it('parts sum to the session total distance exactly (same pace used throughout, by design)', () => {
+    for (const [duration, distance] of [[45, 9], [25, 5.5], [90, 18]] as const) {
+      const session: Session = { ...qualitySession(duration), distance_km: distance }
+      const structure = composeSession({ session })
+      expect(structure).not.toBeNull()
+      const sum = structure!.warmup.distance_km! + structure!.main.distance_km! + structure!.cooldown.distance_km!
+      expect(sum).toBeCloseTo(distance, 1)
+    }
+  })
+
+  it('a duration-only session (no distance_km) leaves every part\'s distance undefined, not a fabricated number', () => {
+    const structure = composeSession({ session: qualitySession(45) })
+    expect(structure).not.toBeNull()
+    expect(structure!.warmup.distance_km).toBeUndefined()
+    expect(structure!.main.distance_km).toBeUndefined()
+    expect(structure!.cooldown.distance_km).toBeUndefined()
+  })
+
+  it('easy/long, shakeout, and MP-long-run shapes also get part distances', () => {
+    const easy: Session = { type: 'easy', label: 'Easy run', detail: null, duration_mins: 40, distance_km: 6, zone: 'Zone 2' }
+    const easyStructure = composeSession({ session: easy })
+    expect(easyStructure!.main.distance_km).toBeDefined()
+
+    const shakeout: Session = { type: 'easy', label: 'Shakeout', detail: null, duration_mins: 20, distance_km: 3, zone: 'Zone 1' }
+    const shakeoutStructure = composeSession({ session: shakeout })
+    expect(shakeoutStructure!.shape).toBe('shakeout')
+    expect(shakeoutStructure!.main.distance_km).toBeDefined()
+  })
+})

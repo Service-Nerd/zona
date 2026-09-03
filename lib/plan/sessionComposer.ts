@@ -20,6 +20,17 @@ export interface SessionPart {
   duration_mins:  number
   zone:           string
   description:    string
+  /** Estimated distance for this part, in km. Derived from the SESSION's own
+   *  overall pace (distance_km / duration_mins) — the same one-representative
+   *  -pace convention the top-level session total already uses (a quality
+   *  session's own `distance_km` is itself computed via main-set pace applied
+   *  across the whole duration, Coaching Board 2026-09-03), so this doesn't
+   *  invent a new precision claim — it reflects the one already baked into
+   *  the total the runner already sees. Parts sum to the session total
+   *  exactly (up to rounding), by construction. Absent when the session has
+   *  no `distance_km` to derive a ratio from (a pure-duration session). The
+   *  UI marks it as an estimate (`~`), same convention as the top-level card. */
+  distance_km?: number
 }
 
 export interface StridesBlock {
@@ -83,6 +94,14 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
   }
   if (total <= 0) return null
 
+  // Coaching Board 2026-09-03 (cleared, ADR-015 display work) / SLT 2026-09-03
+  // — the session's own overall pace, used to stamp a distance estimate onto
+  // every part via `withDistances`. Null when there's no distance_km to derive
+  // a ratio from (a pure-duration session) — parts then stay duration-only.
+  const kmPerMin = typeof session.distance_km === 'number' && session.distance_km > 0 && total > 0
+    ? session.distance_km / total
+    : null
+
   const isQuality = session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals' || session.type === 'hard'
   const isLong    = isLongRun(session)
   // marathon-pace is a display sub-shape of the long run, not a correctness
@@ -92,13 +111,13 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
 
   // Shakeout: short Z1 with brief warm-up only.
   if (isShake) {
-    return {
+    return withDistances({
       warmup:   part(2, 'Z1', 'Walk-jog opener.'),
       main:     part(Math.max(total - 4, 1), 'Z1', 'Easy through. Loose, not committed.'),
       cooldown: part(2, 'Z1', 'Easy walk-jog finish.'),
       total_duration_mins: total,
       shape: 'shakeout',
-    }
+    }, kmPerMin)
   }
 
   // ── Easy / long runs ────────────────────────────────────────────────────────
@@ -110,7 +129,7 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
     if (isMpLong && goalPace) {
       // Long run with MP segment (CoachingPrinciples §5).
       const mpPct = SESSION_FORMAT.LONG_RUN_PEAK.race_pace_segment_pct
-      return {
+      return withDistances({
         warmup:   part(SESSION_FORMAT.LONG_RUN_PEAK.warmup_mins, 'Z1→Z2', 'Easy through warm-up. Build to Z2 over the first third.'),
         main:     part(Math.round(mainMins * (1 - mpPct / 100)), 'Z2', 'Easy aerobic. Stay calm.'),
         race_pace_segment: {
@@ -121,16 +140,16 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
         cooldown: part(cooldownMins, 'Z1', 'Easy walk-jog finish.'),
         total_duration_mins: total,
         shape: 'long_run_with_mp',
-      }
+      }, kmPerMin)
     }
 
-    return {
+    return withDistances({
       warmup:   part(warmupMins, 'Z1→Z2', 'Easy through warm-up. Build to Z2 over the first third.'),
       main:     part(mainMins, session.zone ?? 'Z2', 'Steady aerobic.' ),
       cooldown: part(cooldownMins, 'Z1', SESSION_FORMAT.COOLDOWN.include_walk_for_long_runs && isLong ? 'Easy walk-jog finish.' : 'Easy finish.'),
       total_duration_mins: total,
       shape: isLong ? 'long_run' : 'easy_run',
-    }
+    }, kmPerMin)
   }
 
   // ── Quality session ─────────────────────────────────────────────────────────
@@ -155,20 +174,38 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
   const mainShape = catalogueShapeFor(catalogueRow)
   const mainDesc  = mainSetDescription(catalogueRow, session)
 
-  return {
+  return withDistances({
     warmup:   part(warmupMins, 'Z1→Z2', 'Easy build through warm-up. Final third in Z2.'),
     strides,
     main:     part(mainMins, session.zone ?? 'Z3', mainDesc),
     cooldown: part(cooldownMins, 'Z1', 'Easy walk-jog finish.'),
     total_duration_mins: total,
     shape: mainShape,
-  }
+  }, kmPerMin)
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function part(duration_mins: number, zone: string, description: string): SessionPart {
   return { duration_mins, zone, description }
+}
+
+// Coaching Board 2026-09-03 (cleared without a ruling — pure display, ADR-015
+// territory) / SLT 2026-09-03 (build now, build completely, FREE tier) —
+// stamps a distance estimate onto every part of a composed structure, using
+// the SESSION's own overall pace (distance_km / duration_mins) so parts
+// always sum to the session total exactly. Applied once, centrally, rather
+// than threading a ratio through every `part(...)` call site.
+function withDistances(structure: SessionStructure, kmPerMin: number | null): SessionStructure {
+  if (kmPerMin == null) return structure
+  const stamp = (p: SessionPart): SessionPart =>
+    p.duration_mins > 0 ? { ...p, distance_km: +(p.duration_mins * kmPerMin).toFixed(2) } : p
+  return {
+    ...structure,
+    warmup: stamp(structure.warmup),
+    main: stamp(structure.main),
+    cooldown: stamp(structure.cooldown),
+  }
 }
 
 function zeroStructure(shape: SessionStructure['shape'], total = 0): SessionStructure {

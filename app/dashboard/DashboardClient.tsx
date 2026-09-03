@@ -4645,7 +4645,24 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             const skipShapes = ['rest', 'race', 'strength']
             if (skipShapes.includes(structure.shape)) return null
 
-            const partRow = (label: string, mins: number | string, zone: string, body: string, accentColor: string, isMain = false) => (
+            // Coaching Board 2026-09-03 (cleared, ADR-015 display work) / SLT
+            // 2026-09-03 (build now, build completely, FREE) — each part now
+            // honours the same resolved metric the top-level card already
+            // does (`effectiveMetric`), instead of always rendering
+            // duration. `~` marks it as an estimate, same convention as
+            // `distanceIsEstimated` above — `sessionComposer.ts` derives
+            // every part's distance from the SESSION's own overall pace, not
+            // a per-part pace, so it's honest about being one representative
+            // number, not a GPS-matched split.
+            const partMetricStr = (p: typeof structure.warmup): string => {
+              const distStr = p.distance_km != null
+                ? `~${formatDistance(p.distance_km, preferredUnits) ?? ''}`
+                : null
+              const durStr = fmtDurationMins(p.duration_mins)
+              return effectiveMetric === 'distance' ? (distStr ?? durStr) : (durStr ?? distStr ?? '')
+            }
+
+            const partRow = (label: string, p: typeof structure.warmup, body: string, accentColor: string, isMain = false) => (
               <div style={{ display: 'flex', gap: '12px', marginBottom: '10px' }}>
                 <div style={{
                   width: isMain ? '4px' : '3px',
@@ -4667,7 +4684,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                       color: isMain ? 'var(--ink-2)' : 'var(--mute)',
                       fontVariantNumeric: 'tabular-nums',
                     }}>
-                      {mins} · {zone}
+                      {partMetricStr(p)} · {p.zone}
                     </div>
                   </div>
                   <div style={{
@@ -4683,7 +4700,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             return (
               <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)' }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Session structure</div>
-                {partRow('Warm-up', fmtDurationMins(structure.warmup.duration_mins), structure.warmup.zone, structure.warmup.description, 'var(--mute-2)')}
+                {partRow('Warm-up', structure.warmup, structure.warmup.description, 'var(--mute-2)')}
                 {structure.strides && (
                   <div style={{ marginLeft: '15px', marginBottom: '10px', paddingLeft: '12px', borderLeft: '1px dashed var(--line)' }}>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss)' }}>
@@ -4692,7 +4709,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.5 }}>{structure.strides.description}</div>
                   </div>
                 )}
-                {partRow('Main set', fmtDurationMins(structure.main.duration_mins), structure.main.zone, structure.main.description, getSessionColor(session.type ?? 'easy'), true)}
+                {partRow('Main set', structure.main, structure.main.description, getSessionColor(session.type ?? 'easy'), true)}
                 {structure.race_pace_segment && (
                   <div style={{ marginLeft: '15px', marginBottom: '10px', paddingLeft: '12px', borderLeft: '1px dashed var(--line)' }}>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)' }}>
@@ -4701,7 +4718,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.5 }}>{structure.race_pace_segment.description}</div>
                   </div>
                 )}
-                {partRow('Cool-down', fmtDurationMins(structure.cooldown.duration_mins), structure.cooldown.zone, structure.cooldown.description, 'var(--mute-2)')}
+                {partRow('Cool-down', structure.cooldown, structure.cooldown.description, 'var(--mute-2)')}
               </div>
             )
           })()}
