@@ -834,7 +834,21 @@ function pacedRepPlan(
   const target = band.target[fitness]?.[phase] ?? band.min
   const floorReps = Math.max(1, Math.ceil(band.min / workMins))
   const ceilReps  = Math.max(floorReps, Math.floor(band.max / workMins))
-  const reps = Math.max(floorReps, Math.min(ceilReps, Math.round(target / workMins)))
+  let reps = Math.max(floorReps, Math.min(ceilReps, Math.round(target / workMins)))
+  // §52b/INPUT-FLOOR-01 floor protection — found migrating goal_pace_sharpener
+  // (Coaching Board 2026-09-03): a very slow runner's MINIMUM rep count can
+  // still convert to a session under MIN_SESSION_DISTANCE_KM.quality (5km) —
+  // 2 x 1km reps at a 9:00/km goal pace produced 4.5km, even though the
+  // WORK-MINUTE dose (the time-band this function protects) was satisfied.
+  // The distance floor is the harder constraint (§52b's own reasoning: "the
+  // day has to be sized for its worst case") — grow reps past the dose
+  // ceiling rather than ship an under-floor session. D-21: a floor a valid
+  // input can't satisfy is a defect in the code enforcing it, not an
+  // acceptable session. Capped defensively — should never bind in practice.
+  const minKm = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.quality
+  while (durationForMainSet(reps * (workMins + recoveryMins)) / workPaceMinPerKm < minKm && reps < floorReps + 20) {
+    reps++
+  }
   return { reps, mainMins: reps * (workMins + recoveryMins), workPaceMinPerKm }
 }
 
@@ -858,6 +872,23 @@ function progressiveTempoPlan(
   if (mainMins == null) return null
   const thirdSecs = Math.round((mainMins * 60) / 3)
   return { mainMins, thirdSecs }
+}
+
+// Coaching Board 2026-09-03 — sizing for `tempo_continuous`'s v2 single-block
+// continuous shape. Not reps (nothing repeats) and not a progression (single
+// sustained pace throughout) — but the dose IS the same threshold-work band
+// already ruled correct for the reps-scaled rows, so this reads
+// THRESHOLD_WORK_TARGET_MINS directly rather than a new constant. Falls back
+// to THRESHOLD_WORK_MIN_MINS for taper (no taper entry in the target table —
+// same fallback pacedRepPlan already applies for goal_pace_sharpener, a
+// taper-only row drawing from the same table).
+function continuousThresholdPlan(
+  row: SessionCatalogueRow | null, fitness: FitnessLevel, phase: PhaseType,
+): { mainMins: number; workSecs: number } | null {
+  if (!row || row.id !== 'tempo_continuous' || !isV2Structure(row.main_set_structure)) return null
+  const cfg = GENERATION_CONFIG
+  const mainMins = cfg.THRESHOLD_WORK_TARGET_MINS[fitness]?.[phase] ?? cfg.THRESHOLD_WORK_MIN_MINS
+  return { mainMins, workSecs: Math.round(mainMins * 60) }
 }
 
 function makeQualitySession(args: {
@@ -948,6 +979,10 @@ function makeQualitySession(args: {
   // feeds the row's three `{ kind: 'parameter', param: 'third_secs' }` steps.
   const progTempoPlan = progressiveTempoPlan(catalogueRow, fitness, phase)
 
+  // Coaching Board 2026-09-03 — tempo_continuous's single-block continuous
+  // sizing (see continuousThresholdPlan). Null for every other row.
+  const contTempoPlan = continuousThresholdPlan(catalogueRow, fitness, phase)
+
   // Is this session governed by EFFORT rather than pace? True when the row's v2
   // work steps carry an effort target and no pace.
   //
@@ -1003,6 +1038,7 @@ function makeQualitySession(args: {
       ...(variant?.values ?? {}),
       ...(repPlan ? { reps: repPlan.reps } : {}),
       ...(progTempoPlan ? { third_secs: progTempoPlan.thirdSecs } : {}),
+      ...(contTempoPlan ? { work_secs: contTempoPlan.workSecs } : {}),
     }
     return resolveMainSet(parsed.data, { anchors, easyPaceStr: pace.easyPaceStr, params })
   })()
@@ -1189,7 +1225,12 @@ function makeQualitySession(args: {
     ? durationForMainSet(repPlan.mainMins) / repPlan.workPaceMinPerKm
     : progTempoPlan
       ? durationForMainSet(progTempoPlan.mainMins) / minPerKm
-      : distKm
+      : contTempoPlan
+        // tempo_continuous is a single T-anchored pace throughout, and
+        // `minPerKm` here is already T-pace (quality pace) in this branch —
+        // exact, not an approximation like progTempoPlan's multi-pace case.
+        ? durationForMainSet(contTempoPlan.mainMins) / minPerKm
+        : distKm
   const rounded = roundDistance(effectiveDistKm)
   // CLASSIFY-STIMULUS-01 — stamp the stimulus from the trusted generator label
   // now, while it is canonical, so the AI enricher rewriting the name later can

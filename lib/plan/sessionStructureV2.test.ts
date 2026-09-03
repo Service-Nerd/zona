@@ -228,6 +228,9 @@ describe('SC-08b — migration posture (D-03)', () => {
       'tempo_cruise_short',  // Coaching Board 2026-09-03 — SC-08 generalised to threshold
       'tenk_pace_intervals', // Coaching Board 2026-09-03 — SC-08 generalised to race_specific
       'progressive_tempo',   // Coaching Board 2026-09-03 — Phase 2, continuous shape
+      'tempo_continuous',    // Coaching Board 2026-09-03 — continuous, single-pace shape
+      'tempo_cruise',        // Coaching Board 2026-09-03 — same mechanism as tempo_cruise_short
+      'goal_pace_sharpener', // Coaching Board 2026-09-03 — same mechanism as tenk_pace_intervals
     ])
     for (const row of V1_SESSION_CATALOGUE) {
       expect(
@@ -282,11 +285,11 @@ describe('SC-08b — the derived set reaches the runner', () => {
     // structure renders through the old path with no derived set.
     const structure = composeSession({
       session: {
-        type: 'quality', label: 'Cruise intervals', detail: null,
-        duration_mins: 45, zone: 'Zone 3–4', catalogue_id: 'tempo_cruise',
+        type: 'quality', label: 'HM-pace intervals', detail: null,
+        duration_mins: 55, zone: 'Zone 3–4', catalogue_id: 'hm_pace_intervals',
       } as never,
-      catalogueRow: V1_SESSION_CATALOGUE.find(r => r.id === 'tempo_cruise'),
+      catalogueRow: V1_SESSION_CATALOGUE.find(r => r.id === 'hm_pace_intervals'),
     })
-    expect(structure!.main.description).toContain('10 min')
+    expect(structure!.main.description).toContain('2000m')
   })
 })

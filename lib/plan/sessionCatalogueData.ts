@@ -111,7 +111,33 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     phase_eligibility: ['build', 'peak', 'taper'],
     distance_eligibility: ['5K', '10K', 'HM', 'MARATHON', '50K', '100K'],
     fitness_level_min: 'intermediate', difficulty_tier: 3,
-    main_set_structure: { type: 'continuous', duration_mins: 30, zone: 'Z3' },
+    // Coaching Board 2026-09-03 — v2, scaling: 'fixed'. Genuinely new shape (one
+    // continuous block, single sustained pace — not reps, not a progression),
+    // but the DOSE is the same threshold work band already ruled correct for
+    // the reps-scaled rows: 20-30 continuous minutes at T-pace is a completely
+    // standard threshold prescription, so this reuses
+    // GENERATION_CONFIG.THRESHOLD_WORK_TARGET_MINS rather than a new constant.
+    // Content unchanged (still "same pace at the end as at the start"); only
+    // the sizing mechanism moves off the flat volume-share formula.
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'fixed' },
+      blocks: [{
+        repeat: 1,
+        // Block label doubles as the §22 goal-pace shape word
+        // (goalPaceShapeWord reads blocks[0].label) — 'sustained' matches the
+        // v1 word this row carried before migrating, so "MARATHON-pace
+        // sustained" stays "MARATHON-pace sustained" rather than falling back
+        // to the generic 'intervals', which is wrong for a continuous,
+        // non-reps effort (found via golden-snapshot review before shipping).
+        label: 'sustained',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'parameter', param: 'work_secs' },
+            target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto',
+            note: 'Sustainable. Same pace at the end as at the start.' },
+        ],
+      }],
+    },
     intensity_zones: ['Z3'],
     typical_duration_min: 20, typical_duration_max: 40, is_free_tier: true,
     coach_voice_notes: 'Sustainable. Same pace at the end as at the start.',
@@ -122,7 +148,27 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     phase_eligibility: ['build'],
     distance_eligibility: ['5K', '10K', 'HM', 'MARATHON', '50K', '100K'],
     fitness_level_min: 'intermediate', difficulty_tier: 3,
-    main_set_structure: { type: 'repeats', reps: 3, work: { duration_mins: 10, zone: 'Z3' }, recovery: { duration_mins: 2, type: 'jog' } },
+    // Coaching Board 2026-09-03 — v2, scaling: 'reps'. Same mechanism already
+    // shipped for tempo_cruise_short (identical shape, longer rep — 10 min vs
+    // 5 min, the stimulus identity per the row's own purpose text). Sized via
+    // the existing THRESHOLD_WORK_MIN/MAX/TARGET_MINS band (pacedRepPlan) —
+    // no new config.
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'reps',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'duration', secs: 600 },
+            target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto',
+            note: 'Threshold effort — comfortably hard, not a race pace.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 120 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Two minutes jog. Full recovery before the next rep.' },
+        ],
+      }],
+    },
     intensity_zones: ['Z3'],
     typical_duration_min: 30, typical_duration_max: 45, is_free_tier: true,
     coach_voice_notes: 'Rep three is the test. Not rep one.',
@@ -507,7 +553,27 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     phase_eligibility: ['taper'],
     distance_eligibility: ['5K', '10K', 'HM', 'MARATHON', '50K', '100K'],
     fitness_level_min: 'intermediate', difficulty_tier: 3,
-    main_set_structure: { type: 'repeats', reps: 3, work: { distance_m: 1000, pace_target: 'goal' }, recovery: { duration_secs: 90, type: 'jog' } },
+    // Coaching Board 2026-09-03 — v2, scaling: 'reps'. Same mechanism already
+    // shipped for tenk_pace_intervals (identical shape: goal-anchored distance
+    // work, jog recovery). Sized via THRESHOLD_WORK_MIN/MAX/TARGET_MINS
+    // (pacedRepPlan already dispatches race_specific to this band) — no new
+    // config.
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'reps',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'distance', m: 1000 },
+            target: { kind: 'pace', anchor: 'goal', mode: 'target' }, advance: 'auto',
+            note: 'Crisp at goal pace. Even splits.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Ninety seconds jog. Full recovery.' },
+        ],
+      }],
+    },
     intensity_zones: ['Z3', 'Z4'],
     typical_duration_min: 25, typical_duration_max: 40, is_free_tier: true,
     coach_voice_notes: 'Crisp at goal pace. Even splits. Exit each rep wanting more.',

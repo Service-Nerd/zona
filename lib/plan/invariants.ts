@@ -315,6 +315,17 @@ function progressiveTempoExpectedMainMins(catalogueId: string | undefined, fitne
   return byFitness?.[phase] ?? byFitness?.build ?? null
 }
 
+// Coaching Board 2026-09-03 — tempo_continuous's continuous shape has the same
+// no-literal-length problem as progressive_tempo (its one step is `{ kind:
+// 'parameter', param: 'work_secs' }`). Mirrors continuousThresholdPlan
+// (ruleEngine.ts) exactly, including its taper fallback to
+// THRESHOLD_WORK_MIN_MINS (no taper entry in the target table).
+function continuousThresholdExpectedMainMins(catalogueId: string | undefined, fitness: string | undefined, phase: string | undefined): number | null {
+  if (catalogueId !== 'tempo_continuous' || !fitness || !phase) return null
+  const byFitness = (GENERATION_CONFIG.THRESHOLD_WORK_TARGET_MINS as Record<string, Record<string, number>>)[fitness]
+  return byFitness?.[phase] ?? GENERATION_CONFIG.THRESHOLD_WORK_MIN_MINS
+}
+
 // Pace at a given VDOT fraction. Mirror of paceAtFraction in ruleEngine.ts —
 // kept local to avoid an import cycle.
 function paceFromVdot(vdot: number, fraction: number): number {
@@ -1826,15 +1837,16 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // warm-up/cool-down inverse the engine itself sizes against (sessionFormat.ts),
   // so the invariant and the generator can never silently disagree about what
   // "fits" means. Engages for `scaling: 'reps'` rows — the ones pacedRepPlan
-  // sizes (tempo_cruise_short, tenk_pace_intervals, the vo2max rows) — plus
-  // `progressive_tempo` specifically, whose continuous shape is sized by
-  // progressiveTempoPlan (Phase 2, same ruling) and re-derived here via
-  // progressiveTempoExpectedMainMins since its row has no literal length to
-  // sum from. threshold_ladder and any other `scaling: 'fixed'` shape stay
-  // excluded: their duration_mins comes from the older generic quality-session
-  // formula this ruling never touched, so asserting coherence there would
-  // flag a mismatch nothing ever promised not to have. v1 sessions have no
-  // rep structure to be incoherent with.
+  // sizes (tempo_cruise_short, tempo_cruise, tenk_pace_intervals,
+  // goal_pace_sharpener, the vo2max rows) — plus `progressive_tempo` and
+  // `tempo_continuous` specifically, whose continuous shapes are sized by
+  // progressiveTempoPlan/continuousThresholdPlan (same ruling) and re-derived
+  // here since their rows have no literal length to sum from. threshold_ladder
+  // and any other `scaling: 'fixed'` shape stay excluded: their duration_mins
+  // comes from the older generic quality-session formula this ruling never
+  // touched, so asserting coherence there would flag a mismatch nothing ever
+  // promised not to have. v1 sessions have no rep structure to be incoherent
+  // with.
   {
     const tol = GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
     const planFitness = plan.meta.fitness_intensity_level ?? plan.meta.fitness_level
@@ -1843,6 +1855,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         if (!sn || !sn.derived_set || sn.duration_mins == null) continue
         const mainMins = pacedRepMainMinutes(sn)
           ?? progressiveTempoExpectedMainMins(sn.catalogue_id, planFitness, w.phase)
+          ?? continuousThresholdExpectedMainMins(sn.catalogue_id, planFitness, w.phase)
         if (mainMins == null) continue
         const expectedTotal = durationForMainSet(mainMins)
         if (Math.abs(sn.duration_mins - expectedTotal) > tol) {
