@@ -1745,16 +1745,21 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         violations.push({
           code: 'INV-PLAN-MAIN-SET-ORDERING',
           principle_ref: 'CoachingPrinciples §8',
-          // STAYS `warn` after SC-10 (2026-08-21), deliberately. The board's
-          // flip to error was CONTINGENT on the absolute ceiling driving this to
-          // zero; it did not, and the reason is a finding: the ceiling
-          // (VO2MAX_MAIN_SET_MAX_MINS, enforced hard by INV-PLAN-VO2MAX-MAIN-SET-CAP)
-          // carries the coaching concern — "VO2max is a race" is about the ABSOLUTE
-          // duration of the hardest work, now capped. The residual relative
-          // inversions are all LOW-VOLUME plans where a modest ≤20-min VO2max
-          // exceeds a smaller race_pace session that simply sits in a lighter week;
-          // a 17-min VO2max is not a race. Enforcing the relative ordering there
-          // would demand shrinking a fine session, so it stays a signal, not a gate.
+          // STAYS `warn` — promotion attempted, Coaching Board 2026-09-03
+          // (SIZING-REALLOC-01), REVERTED same sitting. The board's CORRECT,
+          // contingent ruling required the real test suite to stay clean before
+          // shipping error severity; it did not. Existing unit test
+          // trainingDayFloor.test.ts (`experienced` fitness at 12km/week, 7
+          // days) failed immediately: VO2max main set 18 min vs tempo_cruise's
+          // 8 min. Root cause confirmed — `tempo_cruise` (and `tempo_continuous`,
+          // `goal_pace_sharpener`) are still v1, still sized by the flat
+          // QUALITY_SESSION_PCT_OF_WEEKLY formula, which shrinks at very low
+          // ABSOLUTE volume even for `experienced` fitness (which unlocks a
+          // comparatively high VO2max target). The 2026-09-03 Q1 sizing
+          // generalisation only reached tempo_cruise_short/tenk_pace_intervals/
+          // progressive_tempo — this gap lives in the THREE rows it didn't
+          // reach. Closing SIZING-REALLOC-01 for real needs those three
+          // migrated to structure-driven sizing too; tracked, not solved here.
           severity: 'warn',
           week: vo2.week,
           message: `Largest VO2max main set is ${vo2.mins.toFixed(0)} min ("${vo2.label}", week ${vo2.week}), exceeding the largest ${softer} main set of ${other.mins.toFixed(0)} min ("${other.label}", week ${other.week}). VO2max work is the least sustainable per minute and must not be the plan's longest quality session.`,
