@@ -49,24 +49,40 @@ export const SESSION_FORMAT = {
 } as const
 
 /**
+ * The full warm-up / main / cool-down split of a QUALITY session, in minutes —
+ * the single formula behind `mainSetMinutes` and (Phase 3, Coaching Board
+ * 2026-09-03) `sessionComposer.ts`'s quality branch. Before this, the two
+ * disagreed: `sessionComposer.ts` independently re-derived warm-up/cool-down
+ * and added its own extra 5-minute cool-down floor this formula never had —
+ * for a 25-minute session, `mainSetMinutes(25)` gave 7.5 min main while
+ * `sessionComposer.ts` gave 5. Neither floor was named in a principle
+ * (INV-CFG-002), so the drift was undocumented duplication, not two
+ * deliberate designs — a defect (D-08/INV-CFG-001), not a coaching question.
+ *
+ * The warm-up floor (`quality_warmup_min_mins`) means the carve-out is NOT a
+ * fixed fraction: on a short taper session the floor consumes most of the
+ * session, which is how a 29-minute session came to hold 11 minutes of work.
+ */
+export function sessionSplit(durationMins: number): { warmup: number; main: number; cooldown: number } {
+  const u = SESSION_FORMAT.UNIVERSAL
+  const warmup = Math.max(u.quality_warmup_min_mins, durationMins * u.warmup_pct / 100)
+  const cooldown = durationMins * u.cooldown_pct / 100
+  return { warmup, cooldown, main: Math.max(0, durationMins - warmup - cooldown) }
+}
+
+/**
  * The MAIN SET of a quality session, in minutes — the coaching-meaningful
  * quantity, and the one nothing in the engine governed directly until SC-10.
- *
- * A stored session carries only its total duration. Warm-up and cool-down are
- * carved out of it by the UNIVERSAL split, and the warm-up floor
- * (`quality_warmup_min_mins`) means the carve-out is NOT a fixed fraction: on a
- * short taper session the floor consumes most of the session, which is how a
- * 29-minute session came to hold 11 minutes of work.
+ * A thin wrapper over `sessionSplit`; kept as its own export because most
+ * callers (the invariant layer, the sizing inverse below) only need this one
+ * number, not the full breakdown.
  *
  * Exported so the invariant layer and any analysis derive it from ONE place.
  * SC-10 needed this number in three (config reasoning, invariant, tracer), and
  * three copies of a formula is how they stop agreeing.
  */
 export function mainSetMinutes(durationMins: number): number {
-  const u = SESSION_FORMAT.UNIVERSAL
-  const warmup = Math.max(u.quality_warmup_min_mins, durationMins * u.warmup_pct / 100)
-  const cooldown = durationMins * u.cooldown_pct / 100
-  return Math.max(0, durationMins - warmup - cooldown)
+  return sessionSplit(durationMins).main
 }
 
 /**

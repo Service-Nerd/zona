@@ -11,7 +11,7 @@ import { z } from 'zod'
 // Backward compat (4.3): handles legacy sessions without structured fields by
 // falling back to whatever data is available; never throws.
 
-import { SESSION_FORMAT } from './sessionFormat'
+import { SESSION_FORMAT, sessionSplit } from './sessionFormat'
 import { isLongRun, isShakeout } from './sessionRole'
 import type { Session } from '@/types/plan'
 import type { SessionCatalogueRow } from './sessionCatalogueData'
@@ -134,9 +134,15 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
   }
 
   // ── Quality session ─────────────────────────────────────────────────────────
-  const warmupMins = Math.max(SESSION_FORMAT.UNIVERSAL.quality_warmup_min_mins, Math.round(total * SESSION_FORMAT.UNIVERSAL.warmup_pct / 100))
-  const cooldownMins = Math.max(SESSION_FORMAT.COOLDOWN.min_duration_mins, Math.round(total * SESSION_FORMAT.UNIVERSAL.cooldown_pct / 100))
-  const mainMins   = Math.max(1, total - warmupMins - cooldownMins)
+  // Phase 3, Coaching Board 2026-09-03 (D-08/INV-CFG-001 defect fix) — single
+  // owner is `sessionFormat.sessionSplit`, not a local re-derivation. This used
+  // to add its own 5-minute cool-down floor that `mainSetMinutes` never had —
+  // for a 25-minute session this disagreed with the invariant layer's own
+  // number (5 min main here vs 7.5 min via mainSetMinutes).
+  const split = sessionSplit(total)
+  const warmupMins = Math.round(split.warmup)
+  const cooldownMins = Math.round(split.cooldown)
+  const mainMins = Math.max(1, total - warmupMins - cooldownMins)
 
   const strides: StridesBlock | undefined = SESSION_FORMAT.WARMUP.strides_required_for_quality
     ? {
