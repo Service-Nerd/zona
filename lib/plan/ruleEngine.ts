@@ -838,6 +838,28 @@ function pacedRepPlan(
   return { reps, mainMins: reps * (workMins + recoveryMins), workPaceMinPerKm }
 }
 
+// Coaching Board 2026-09-03 — sizing for `progressive_tempo`'s v2 continuous
+// shape. Not a reps structure (pacedRepPlan doesn't apply — nothing repeats),
+// so this reads GENERATION_CONFIG.PROGRESSIVE_TEMPO_MAIN_MINS directly by
+// fitness × phase and splits it into three equal sequential thirds (easy →
+// transition → threshold). Gated on row id, not category or structural shape
+// — `threshold_ladder` is the identical shape (one block, repeat 1, several
+// sequential work steps, scaling: 'fixed') and nothing in the v2 schema marks
+// "this is a progression, not a ladder"; row id is the only honest signal
+// available today. `thirdSecs` feeds the row's `{ kind: 'parameter',
+// param: 'third_secs' }` length references — without it resolveMainSet
+// throws (a missing parameter is a catalogue defect, not a soft failure).
+function progressiveTempoPlan(
+  row: SessionCatalogueRow | null, fitness: FitnessLevel, phase: PhaseType,
+): { mainMins: number; thirdSecs: number } | null {
+  if (!row || row.id !== 'progressive_tempo' || !isV2Structure(row.main_set_structure)) return null
+  const cfg = GENERATION_CONFIG
+  const mainMins = cfg.PROGRESSIVE_TEMPO_MAIN_MINS[fitness]?.[phase] ?? cfg.PROGRESSIVE_TEMPO_MAIN_MINS[fitness]?.build
+  if (mainMins == null) return null
+  const thirdSecs = Math.round((mainMins * 60) / 3)
+  return { mainMins, thirdSecs }
+}
+
 function makeQualitySession(args: {
   weekN: number; day: Day; distKm: number; metric: 'distance' | 'duration'
   zones: ZoneTargets; pace: PaceGuide
@@ -920,6 +942,12 @@ function makeQualitySession(args: {
     substituteThresholdWithGoal,
   )
 
+  // Coaching Board 2026-09-03 — progressive_tempo's continuous-shape sizing
+  // (see progressiveTempoPlan). Null for every other row; mainMins feeds
+  // effectiveDistKm below the same way repPlan.mainMins does, and thirdSecs
+  // feeds the row's three `{ kind: 'parameter', param: 'third_secs' }` steps.
+  const progTempoPlan = progressiveTempoPlan(catalogueRow, fitness, phase)
+
   // Is this session governed by EFFORT rather than pace? True when the row's v2
   // work steps carry an effort target and no pace.
   //
@@ -971,7 +999,11 @@ function makeQualitySession(args: {
       ...(pace.marathonPaceStr ? { M: pace.marathonPaceStr } : {}),
       ...(goalPace ? { goal: goalPace } : {}),
     }
-    const params = { ...(variant?.values ?? {}), ...(repPlan ? { reps: repPlan.reps } : {}) }
+    const params = {
+      ...(variant?.values ?? {}),
+      ...(repPlan ? { reps: repPlan.reps } : {}),
+      ...(progTempoPlan ? { third_secs: progTempoPlan.thirdSecs } : {}),
+    }
     return resolveMainSet(parsed.data, { anchors, easyPaceStr: pace.easyPaceStr, params })
   })()
 
@@ -1148,9 +1180,16 @@ function makeQualitySession(args: {
   // buildWeekSessions (which reads actual placed volume). This is what
   // decouples the dose from weekly volume at both ends; the legacy km-cap
   // becomes a harmless estimate bound.
+  // progressive_tempo has no single work pace to size against (its three
+  // steps span E → Z2-Z3 → T) — `minPerKm` above is already this session's
+  // own headline prescription pace (quality pace, the same number paceTarget
+  // shows), so reusing it here keeps the distance estimate honest against
+  // what the runner is actually told to run.
   const effectiveDistKm = repPlan
     ? durationForMainSet(repPlan.mainMins) / repPlan.workPaceMinPerKm
-    : distKm
+    : progTempoPlan
+      ? durationForMainSet(progTempoPlan.mainMins) / minPerKm
+      : distKm
   const rounded = roundDistance(effectiveDistKm)
   // CLASSIFY-STIMULUS-01 — stamp the stimulus from the trusted generator label
   // now, while it is canonical, so the AI enricher rewriting the name later can

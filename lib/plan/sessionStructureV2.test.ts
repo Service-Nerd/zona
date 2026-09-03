@@ -227,6 +227,7 @@ describe('SC-08b — migration posture (D-03)', () => {
       'intervals_long',      // SC-08 vo2max
       'tempo_cruise_short',  // Coaching Board 2026-09-03 — SC-08 generalised to threshold
       'tenk_pace_intervals', // Coaching Board 2026-09-03 — SC-08 generalised to race_specific
+      'progressive_tempo',   // Coaching Board 2026-09-03 — Phase 2, continuous shape
     ])
     for (const row of V1_SESSION_CATALOGUE) {
       expect(

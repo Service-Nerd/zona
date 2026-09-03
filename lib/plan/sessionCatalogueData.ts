@@ -181,7 +181,38 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     phase_eligibility: ['build', 'peak', 'taper'],
     distance_eligibility: ['5K', '10K', 'HM', 'MARATHON', '50K', '100K'],
     fitness_level_min: 'intermediate', difficulty_tier: 3,
-    main_set_structure: { type: 'progression', duration_mins: 30, zone_start: 'Z2', zone_end: 'Z3' },
+    // Coaching Board 2026-09-03 — v2, scaling: 'fixed'. Not a reps shape (there
+    // is nothing to repeat — one continuous effort that changes character as it
+    // goes), so it does not use pacedRepPlan's WORK_MIN/MAX/TARGET band pattern.
+    // Sized directly by GENERATION_CONFIG.PROGRESSIVE_TEMPO_MAIN_MINS (fitness ×
+    // phase), split into three equal-length sequential steps — first third
+    // easy (Z2, hold back), middle third the honest transition (no single pace
+    // anchor describes a moving target, so its target is the zone band 'Z2-Z3'
+    // rather than a false-precision pace), final third at threshold (T-anchor).
+    // Distinguishes itself from threshold_ladder — structurally identical shape
+    // (one block, repeat 1, several sequential work steps, scaling: 'fixed') but
+    // NOT part of this ruling's sizing — only by row id at the call site
+    // (pacedRepPlan's category+scaling dispatch can't tell them apart; nothing
+    // in the v2 schema marks "this is a progression, not a ladder").
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'fixed' },
+      blocks: [{
+        repeat: 1,
+        label: 'progression',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'parameter', param: 'third_secs' },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Hold back. This is the part that makes the last third honest.' },
+          { role: 'work', modality: 'run', length: { kind: 'parameter', param: 'third_secs' },
+            target: { kind: 'zone', zone: 'Z2-Z3' }, advance: 'auto',
+            note: 'Let it rise. Don’t chase it.' },
+          { role: 'work', modality: 'run', length: { kind: 'parameter', param: 'third_secs' },
+            target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto',
+            note: 'Threshold now. Same effort as rep three of a cruise set.' },
+        ],
+      }],
+    },
     intensity_zones: ['Z2', 'Z3'],
     typical_duration_min: 25, typical_duration_max: 40, is_free_tier: true,
     coach_voice_notes: 'Hold back early. Finish honest.',
