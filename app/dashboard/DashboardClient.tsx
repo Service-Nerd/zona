@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Plan, Week } from '@/types/plan'
+import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import PlanChart from '@/components/training/PlanChart'
 import PlanCalendar from '@/components/training/PlanCalendar'
 import ReflectionInput from '@/components/training/ReflectionInput'
@@ -5152,7 +5153,12 @@ interface SessionEntry {
   // Canonical fields preserved so SessionPopupInner / composer can read them
   // when the session is opened from TodayScreen. Without these, the structured
   // session block doesn't render (composer needs distance_km/duration_mins/label).
+  // catalogue_id/derived_set are what catalogueRowFor()/mainSetDescription() need to
+  // resolve real main-set instructions — without them the fallback is a generic
+  // "Quality main set." placeholder (D-08 bug, fixed 2026-09-03).
   label?: string
+  catalogue_id?: string
+  derived_set?: DerivedSet
   distance_km?: number
   duration_mins?: number
   primary_metric?: 'distance' | 'duration'
@@ -6688,6 +6694,8 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       duration: s?.duration_mins != null ? fmtDurationMins(s.duration_mins) : parsed.duration,
       // Canonical fields preserved for SessionPopupInner / composer
       label: s?.label ?? undefined,
+      catalogue_id: s?.catalogue_id ?? undefined,
+      derived_set: s?.derived_set ?? undefined,
       distance_km: s?.distance_km ?? undefined,
       duration_mins: s?.duration_mins ?? undefined,
       primary_metric: s?.primary_metric ?? undefined,

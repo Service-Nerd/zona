@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import type { Week, Session } from '@/types/plan'
+import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import { createClient } from '@/lib/supabase/client'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { SESSION_COLORS, SESSION_LABELS } from '@/lib/session-types'
@@ -33,6 +34,13 @@ export interface SessionTapPayload {
   isFuture: boolean
   // Structured session fields — always pass through so SessionScreen renders identically
   // regardless of whether it was opened from Today or Plan.
+  // catalogue_id/derived_set/label are what catalogueRowFor()/mainSetDescription() need to
+  // resolve real main-set instructions — without them the detail screen falls back to a
+  // generic "Quality main set." placeholder (D-08 bug, fixed 2026-09-03).
+  label?: string
+  catalogue_id?: string
+  derived_set?: DerivedSet
+  zone?: string
   distance_km?: number
   duration_mins?: number
   primary_metric?: 'distance' | 'duration'
@@ -602,6 +610,10 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
                 completion,
                 isPast: isPast && !isToday,
                 isFuture,
+                label:          s.label,
+                catalogue_id:   s.catalogue_id,
+                derived_set:    s.derived_set,
+                zone:           s.zone,
                 distance_km:    s.distance_km,
                 duration_mins:  s.duration_mins,
                 primary_metric: s.primary_metric,
