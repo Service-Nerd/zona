@@ -55,7 +55,7 @@ The audit's spec puts `budget_basis` + `budget_pct_of_weekly` on the row. **This
 
 SC-10 built exactly that model — category-specific shares of weekly volume — swept it across 18,056 plans and **rejected it**: share-of-weekly-volume cannot express what it was meant to, because every session scales with the week it sits in, and a percentage low enough to correct the ordering drives sessions under `MIN_SESSION_DISTANCE_KM`. Encoding that basis into the row schema would spread a rejected model across the whole catalogue and make it far more expensive to remove later.
 
-`sizing.scaling` is retained — *which dimension stretches* is a real property of a session shape, independent of how a budget is computed. The budget waits for **SIZING-REALLOC-01**.
+`sizing.scaling` is retained — *which dimension stretches* is a real property of a session shape, independent of how a budget is computed. **SIZING-REALLOC-01 closed 2026-09-03** — not via a schema-level budget field (still correctly omitted; that approach stays rejected), but via named `GENERATION_CONFIG` bands (`THRESHOLD_WORK_MIN/MAX/TARGET_MINS`, `PROGRESSIVE_TEMPO_MAIN_MINS`) read by `pacedRepPlan`/`progressiveTempoPlan`/`continuousThresholdPlan` (`ruleEngine.ts`) — the absolute, structure-driven pattern this ADR already recommended over a volume-share budget, now applied to every threshold/race-pace row in the catalogue. `INV-PLAN-MAIN-SET-ORDERING` is `error`. See `CoachingPrinciples.md` §8.
 
 ## Consequences
 

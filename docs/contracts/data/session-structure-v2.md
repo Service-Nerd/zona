@@ -89,7 +89,7 @@ The audit's v2 spec puts a sizing **budget** on the row: `budget_basis` + `budge
 
 SC-10 built exactly that (category-specific shares of weekly volume), swept it across 18,056 plans and **rejected it**: share-of-weekly-volume cannot express what it was meant to, because every session scales with the week it sits in. Encoding that basis into the row schema would spread a rejected model across the catalogue.
 
-`sizing.scaling` is retained — *which dimension stretches* is a genuine property of a session shape and is independent of how the budget is computed. The budget itself waits for **SIZING-REALLOC-01**.
+`sizing.scaling` is retained — *which dimension stretches* is a genuine property of a session shape and is independent of how the budget is computed. **SIZING-REALLOC-01 closed 2026-09-03** — via named `GENERATION_CONFIG` bands (`THRESHOLD_WORK_MIN/MAX/TARGET_MINS`, `PROGRESSIVE_TEMPO_MAIN_MINS`) read at generation time, not a schema-level budget field (that approach stays rejected, above). See `CoachingPrinciples.md` §8 and ADR-019.
 
 ## Invariants
 
