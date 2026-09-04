@@ -10,6 +10,7 @@ import { enrich, type EnrichOutcome } from '@/lib/plan/enrich'
 import { errorBaseline, violationsIntroducedBy, statusForReason } from '@/lib/plan/enrichAttribution'
 import { attributableWeeks, revertWeeksToRuleCopy } from '@/lib/plan/enrichPartialRevert'
 import { shouldServerPersist } from '@/lib/plan/enrichServerSave'
+import { waitUntil } from '@vercel/functions'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { generateFreeIntro } from '@/lib/plan/freeIntro'
 import { nextMonday, formatDate } from '@/lib/plan/length'
@@ -156,14 +157,32 @@ export async function POST(req: NextRequest) {
     // ceremony can begin reveal while the enricher is still running. Send
     // the enriched plan when ready (silent fallback to rule plan on failure).
     const encoder = new TextEncoder()
-    const stream = new ReadableStream({
-      async start(controller) {
-        // GEN-FIX-02 — the rule plan goes out before enrichment has run, so its
-        // status is genuinely unknown at this point. Stamping 'pending' gives
-        // the client-side save race (N8) a fingerprint: a *saved* plan reading
-        // 'pending' means the user tapped through before final_plan landed.
-        rulePlan.meta.enrichment = 'pending'
-        controller.enqueue(encoder.encode(JSON.stringify({ type: 'rule_plan', plan: composedRule }) + '\n'))
+    // GEN-FIX-02 — the rule plan goes out before enrichment has run, so its
+    // status is genuinely unknown at this point. Stamping 'pending' gives
+    // the client-side save race (N8) a fingerprint: a *saved* plan reading
+    // 'pending' means the user tapped through before final_plan landed.
+    rulePlan.meta.enrichment = 'pending'
+
+    // ENRICH-SERVER-SAVE-01 — the enrich→persist chain runs OUTSIDE the stream
+    // body, registered with `waitUntil`.
+    //
+    // It used to live inside `ReadableStream.start()`, after a 28-35s await. That
+    // is the one place it must not be: the runner locking their phone is exactly
+    // the case this backstop exists for, and a disconnected client can take the
+    // stream — and the function — down with it before the write lands. The fix
+    // would then have failed precisely where it was needed, silently.
+    //
+    // `waitUntil` is the platform's answer to "this must outlive the response",
+    // and this repo already uses it for the same reason in
+    // app/api/health/ingest/route.ts. Started here, in request scope, rather than
+    // inside `start()` — one promise, two consumers: the platform holds the
+    // function open for it, and the stream awaits the same promise to serve a
+    // client that is still listening.
+    //
+    // The chain NEVER rejects (every await inside is guarded), so `waitUntil`
+    // never receives a rejected promise.
+    const enrichWork: Promise<Plan> = (async () => {
+      try {
 
         // ENRICH-ATTRIB-01 (2026-09-03) — baseline the rule plan's OWN violations
         // BEFORE enrichment runs. generateRulePlan validates itself, but in
@@ -379,7 +398,50 @@ export async function POST(req: NextRequest) {
             user.id)
         }
 
-        controller.enqueue(encoder.encode(JSON.stringify({ type: 'final_plan', plan: finalPlan }) + '\n'))
+        return finalPlan
+      } catch (e) {
+        // Makes the "never rejects" contract above TRUE rather than merely
+        // intended. Every `await` in the chain is already guarded or documented
+        // not to throw, but `validatePlan` and the revert helpers are synchronous
+        // and are not — and a rejected promise handed to `waitUntil` is an
+        // unhandled rejection in the platform's hands, on the very path whose job
+        // is to be reliable when nobody is watching.
+        //
+        // The runner already holds a complete plan from `rule_plan` (ADR-006), so
+        // the honest fallback is the un-enriched one.
+        console.error('[generate-plan] enrich chain threw', e)
+        await recordOpsEvent('plan_enrich_server_save_failed',
+          { detail: `chain threw: ${e instanceof Error ? e.message : String(e)}`,
+            tier, race_distance_km: input.race_distance_km },
+          user.id)
+        composedRule.meta.enrichment = statusForReason('fetch_failed')
+        return composedRule
+      }
+    })()
+
+    // Guarded because this is THE critical path. `waitUntil` needs a platform
+    // request context; outside one (local dev, a test harness, a future runtime
+    // change) an unguarded call would throw and 500 the whole generation —
+    // strictly worse than the bug it exists to fix. The chain runs either way;
+    // without the platform hold it is simply back to surviving only as long as
+    // the stream does, which is today's behaviour.
+    try {
+      waitUntil(enrichWork)
+    } catch (e) {
+      console.error('[generate-plan] waitUntil unavailable — enrichment persists only while the stream lives', e)
+    }
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        controller.enqueue(encoder.encode(JSON.stringify({ type: 'rule_plan', plan: composedRule }) + '\n'))
+        try {
+          const finalPlan = await enrichWork
+          controller.enqueue(encoder.encode(JSON.stringify({ type: 'final_plan', plan: finalPlan }) + '\n'))
+        } catch {
+          // The chain is written not to reject, and the runner already holds a
+          // complete plan from `rule_plan` (ADR-006). Close cleanly rather than
+          // error the stream; `waitUntil` still owns finishing the write.
+        }
         controller.close()
       },
     })

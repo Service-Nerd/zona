@@ -243,7 +243,18 @@ didn't: tap **Use this plan**, lock the phone, and `meta.enrichment` stays `pend
 for ever. Observed on a real trial plan — saved 5 s after generation, never written
 again. Nothing on the server persisted anything; the route only ever READ the table.
 
-The route now writes the enriched plan itself before closing the stream, guarded by
+The enrich→persist chain runs **outside the stream body**, registered with
+`waitUntil` (`@vercel/functions`) so it outlives the response. It was first built
+*inside* `ReadableStream.start()`, after the 28–35 s await — the one place it must
+not be, since a runner locking their phone is exactly the case the backstop exists
+for, and a disconnected client can take the stream down before the write lands.
+The same pattern is used in `app/api/health/ingest/route.ts`. One promise, two
+consumers: the platform holds the function open for it, and the stream awaits the
+same promise to serve a client still listening. The chain cannot reject (wrapped),
+and the `waitUntil` call itself is guarded — outside a platform request context it
+degrades to the old stream-lifetime behaviour rather than failing generation.
+
+The write is guarded by
 `shouldServerPersist` (`lib/plan/enrichServerSave.ts`) so it can only ever overwrite
 the plan it just produced:
 
