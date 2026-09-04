@@ -432,6 +432,42 @@ export const GENERATION_CONFIG = {
     },
   } as Record<string, { min: number; max: number; target: Record<string, Record<string, number>> }>,
 
+  // Deload placement policy (CoachingPrinciples §87) — Coaching Board
+  // CB-DELOAD-01, 2026-09-04.
+  //
+  // §3 sets the CADENCE (every 4th week, masters every 3rd). This sets where
+  // those weeks are allowed to LAND. The cadence was computed from absolute
+  // week number and knew nothing about phase boundaries, so a deload fell on
+  // the FIRST WEEK OF BUILD in 25% of measured plans — dropping volume 30-41%
+  // at the moment the plan says the hard work begins, and pushing the first
+  // quality session back a week.
+  //
+  // Not one of those placements was chosen; they were decided by where week 1
+  // happened to fall relative to the phase split.
+  DELOAD_PLACEMENT: {
+    // A deload may not open a phase. Enforced by shifting the cadence EARLIER
+    // and re-anchoring from there — never by deleting a recovery week.
+    allow_on_phase_first_week: false,
+    // The runner arrives fresh INTO a new block rather than being deloaded on
+    // its opening week — the placement every seat called good practice.
+    prefer_week_before_boundary: true,
+    // Sims's amendment. A shift must not lengthen a loading block beyond what
+    // the cadence already promised (recoveryFreq - 1 loading weeks). This is
+    // why a naive +/-1 shift is unimplementable: moving a deload one week in
+    // EITHER direction lengthens the block on the other side, so both are
+    // rejected and nothing moves. Re-anchoring is what satisfies it.
+    max_loading_weeks_over_cadence: 0,
+    // Willy's amendment, REVISED at ratification. Originally "count preserved
+    // exactly" — written to stop recovery being traded away for earlier
+    // intensity. Measured, re-anchoring never removes a deload and in ~10% of
+    // plan shapes ADDS one, because the raw cadence was under-delivering what
+    // §3 promises: an 8-week masters plan produced a single recovery week
+    // ({3}) since week 6 fell in peak and week 9 did not exist. {2,5} is the
+    // 3:1 cadence actually being honoured. So the rule is a DIRECTION, not an
+    // equality — recovery may rise, never fall.
+    recovery_weeks_may_decrease: false,
+  },
+
   // Progressive tempo (continuous shape, not reps) — Coaching Board
   // 2026-09-03. `progressive_tempo`'s v1 description ("30 min Z2→Z3") has no
   // rep count to scale, so it doesn't use the WORK_MIN/MAX/TARGET band

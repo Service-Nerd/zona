@@ -48,6 +48,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK',
   'INV-PLAN-LABEL-MATCHES-PACE',
   'INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD',
+  'INV-PLAN-DELOAD-PLACEMENT',
   'INV-PLAN-INJURY-NO-HILLS',
   'INV-PLAN-RETURNING-INTENSITY-REENTRY',
   'INV-PLAN-DURATION-ANCHORED-KEEPS-MINUTES',
@@ -1228,6 +1229,81 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             }
           }
         }
+      }
+    }
+
+    // INV-PLAN-DELOAD-PLACEMENT — CoachingPrinciples §87 (CB-DELOAD-01).
+    //
+    // Two assertions, and the second one is a DIRECTION rather than an equality
+    // — which is the amendment the board revised at ratification.
+    //
+    //   1. No deload opens a phase. A deload on the first week of build drops
+    //      volume 30-41% at the moment the plan says the hard work begins, and
+    //      pushes the first quality session back a week. Measured at 25% of
+    //      plans before this ruling; none of those placements was chosen, they
+    //      were decided by where week 1 fell relative to the phase split.
+    //
+    //   2. Recovery may RISE, never FALL, against the raw cadence. Willy's
+    //      condition was written as "shift, never skip" to stop recovery being
+    //      traded away for earlier intensity. Written as strict equality it
+    //      would ALSO forbid correcting a cadence that was under-delivering:
+    //      an 8-week masters plan produced one recovery week because week 6 fell
+    //      in peak and week 9 did not exist, and re-anchoring restores the 3:1
+    //      §3 actually promises. So the check is one-sided on purpose.
+    {
+      const recoveryFreq = input.age >= GENERATION_CONFIG.MASTERS_AGE_THRESHOLD
+        ? GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_MASTERS
+        : GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_STANDARD
+      // Phase read off the PRODUCED plan, not recomputed from the distribution
+      // config: the invariant must be able to disagree with the generator, and
+      // re-deriving phases the same way the generator did removes that ability.
+      const phaseOfWeek = new Map<number, string>()
+      for (const w of plan.weeks) if (w.phase) phaseOfWeek.set(w.n, w.phase)
+      // ONLY the phases the generator places deloads into. An exclusion list
+      // (`!== 'peak' && !== 'taper'`) was wrong and the real-input corpus caught
+      // it: `Week.phase` also carries `foundation` and the `maintenance_*`
+      // values, which are composed onto a plan AFTER generation (ADR-020) and
+      // can hold week numbers <= 0. Those weeks were counted into the raw
+      // cadence the generator was then held to, so two real stored plans failed
+      // a rule about weeks the generator never owned. Allowlist, not denylist —
+      // the same foundation-week blind spot that has now produced three defects.
+      const inScope = (n: number) => {
+        const p = phaseOfWeek.get(n)
+        return n >= 1 && (p === 'base' || p === 'build')
+      }
+
+      let rawCount = 0
+      for (const w of plan.weeks) {
+        if (inScope(w.n) && w.n % recoveryFreq === 0) rawCount++
+      }
+      const actual = plan.weeks.filter(w => w.type === 'deload')
+      for (const w of actual) {
+        const prev = phaseOfWeek.get(w.n - 1)
+        const here = phaseOfWeek.get(w.n)
+        // Week 1 opening the plan is not a phase-boundary violation of interest
+        // — there is no preceding block to arrive fresh into.
+        if (w.n > 1 && inScope(w.n) && here != null && prev != null && here !== prev) {
+          violations.push({
+            code: 'INV-PLAN-DELOAD-PLACEMENT',
+            principle_ref: 'CoachingPrinciples §87',
+            severity: 'error',
+            week: w.n,
+            message: `Week ${w.n} is a deload AND the first week of the ${here} phase — a recovery week must not open a phase (§87). Shift the cadence earlier and re-anchor; never delete the deload.`,
+            actual: `deload on first week of ${here}`,
+            expected: 'deload placed before the phase boundary',
+          })
+        }
+      }
+      if (actual.length < rawCount) {
+        violations.push({
+          code: 'INV-PLAN-DELOAD-PLACEMENT',
+          principle_ref: 'CoachingPrinciples §87',
+          severity: 'error',
+          week: 0,
+          message: `Plan has ${actual.length} recovery weeks but the §3 cadence calls for at least ${rawCount}. Placement may SHIFT a deload, never remove one (§87; recovery_weeks_may_decrease: false).`,
+          actual: `${actual.length} deloads`,
+          expected: `>= ${rawCount}`,
+        })
       }
     }
 

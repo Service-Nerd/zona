@@ -75,9 +75,15 @@ describe('DELOAD-OWNER-01 — single ownership is mechanical, not remembered', (
     // catch a copy that renames the variable — stated rather than pretended
     // away — but it does catch the overwhelmingly likely case: someone reaching
     // for the same idiom in the same file where it used to live.
+    // `invariants.ts` is allowed to recompute the cadence, and MUST be. A
+    // checker that imports the producer's own predicate cannot catch the
+    // producer being wrong about it — the same reason `rowHasMixedWorkAnchors`
+    // is deliberately duplicated there. The rule is one owner among PRODUCERS,
+    // not one expression in the repo.
+    const CHECKER = 'invariants.ts'
     const offenders: string[] = []
     for (const file of tsFiles(LIB)) {
-      if (file.endsWith(OWNER)) continue
+      if (file.endsWith(OWNER) || file.endsWith(CHECKER)) continue
       const src = readFileSync(file, 'utf8')
       if (/%\s*recoveryFreq/.test(src)) offenders.push(file.replace(process.cwd() + '/', ''))
     }
@@ -102,8 +108,14 @@ describe('DELOAD-OWNER-01 — single ownership is mechanical, not remembered', (
   it('every call site in the engine goes through the owner', () => {
     // The engine held all five copies. Pin the count so a sixth call site is a
     // deliberate act rather than a silent addition.
+    // Updated by CB-DELOAD-01: the engine no longer calls the raw predicate at
+    // all. Placement is computed ONCE by `computeDeloadWeeks` and every site
+    // reads that set — which is a stronger form of the same ownership, since
+    // even the predicate cannot now be applied inconsistently per site.
     const engine = readFileSync(join(LIB, 'plan', 'ruleEngine.ts'), 'utf8')
-    const calls = engine.match(/isDeloadWeek\(/g) ?? []
-    expect(calls.length, 'ruleEngine should route every cadence decision through isDeloadWeek').toBe(5)
+    const setReads = engine.match(/deloadWeeks\.has\(/g) ?? []
+    expect(setReads.length, 'every cadence decision should read the one computed set').toBe(5)
+    const computes = engine.match(/computeDeloadWeeks\(/g) ?? []
+    expect(computes.length, 'placement must be computed exactly once per plan').toBe(1)
   })
 })

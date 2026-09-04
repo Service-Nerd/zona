@@ -24,7 +24,7 @@ import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord, type PaceAnchor } from './sessionStructureV2'
 import { durationForMainSet } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
-import { isDeloadWeek } from './deloadCadence'
+import { isDeloadWeek, computeDeloadWeeks } from './deloadCadence'
 import type { GeneratorPhase } from '@/types/plan'
 import {
   V1_SESSION_CATALOGUE, selectCatalogueSession,
@@ -507,6 +507,11 @@ function buildVolumeSequence(
   // Applying it here makes the curve the single truth. Undefined for uninjured
   // runners, who keep §2's standard allowance.
   injuryCapPct: number | undefined,
+  /** §87 (CB-DELOAD-01) — the plan's deload weeks, already phase-corrected.
+   *  Passed in rather than recomputed so the volume curve and the week badge
+   *  cannot disagree about placement, which is the fault DELOAD-OWNER-01
+   *  removed one layer down. */
+  deloadWeeks: ReadonlySet<number>,
 ): VolumeSequenceResult {
   const taperPhase = phases.find(p => p.name === 'taper')!
   const distKey = raceDistanceKey(distanceKm)
@@ -542,9 +547,7 @@ function buildVolumeSequence(
     const phase = getPhaseForWeek(weekN, phases)
     if (phase === 'taper') continue
 
-    // Taper is already skipped by the `continue` above; the owner tests it
-    // anyway so this site does not depend on that control flow staying put.
-    const isDeload = isDeloadWeek(weekN, phase, recoveryFreq)
+    const isDeload = deloadWeeks.has(weekN)
     if (isDeload) {
       volumes[i] = Math.round(lastBuildVol * recoveryPct)
       buildVol = lastBuildVol
@@ -565,7 +568,7 @@ function buildVolumeSequence(
     const weekN = i + 1
     const phase = getPhaseForWeek(weekN, phases)
     if (phase === 'taper') continue
-    const isThisDeload = isDeloadWeek(weekN, phase, recoveryFreq)
+    const isThisDeload = deloadWeeks.has(weekN)
     if (isThisDeload) continue
     if (volumes[i] <= volumes[i - 1]) continue
 
@@ -590,7 +593,7 @@ function buildVolumeSequence(
     // further: growth resumes from there next week.
     const prevWeekN = weekN - 1
     const prevPhase = getPhaseForWeek(prevWeekN, phases)
-    const prevWasDeload = isDeloadWeek(prevWeekN, prevPhase, recoveryFreq)
+    const prevWasDeload = deloadWeeks.has(prevWeekN)
     if (prevWasDeload) {
       const preDeload = volumes[i - 2] ?? volumes[i - 1]
       maxAllowed = Math.max(maxAllowed, preDeload)
@@ -4305,12 +4308,19 @@ export function generateRulePlan(
   const intensityReentryWeeks = intensityReentryActive
     ? GENERATION_CONFIG.RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS
     : 0
+  // §87 (CB-DELOAD-01) — WHERE the deloads fall, decided once for the whole
+  // plan and passed to every consumer. Computing it twice from the same inputs
+  // is what DELOAD-OWNER-01 removed; re-deriving it inside buildVolumeSequence
+  // AND at the week-badge site would have reintroduced that fault one layer up.
+  const deloadWeeks = computeDeloadWeeks(totalWeeks, recoveryFreq, wn => getPhaseForWeek(wn, phases))
+
   const { volumes, compressed: capCompressed } = buildVolumeSequence(
     totalWeeks, phases, startKm, peakKm, input.race_distance_km,
     recoveryFreq, returningRunner,
     (hasInjury(input, 'knee') || hasInjury(input, 'shin_splints'))
       ? GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT
       : undefined,
+    deloadWeeks,
   )
 
   // ── Build weeks ─────────────────────────────────────────────────────────────
@@ -4346,7 +4356,7 @@ export function generateRulePlan(
       for (let wn = buildPhase.end_week; wn >= buildPhase.start_week; wn--) {
         // Was a BARE modulo with no phase test. Equivalent only because this
         // loop scans build weeks exclusively — an equivalence nothing stated.
-        const wnIsDeload = isDeloadWeek(wn, getPhaseForWeek(wn, phases), recoveryFreq)
+        const wnIsDeload = deloadWeeks.has(wn)
         if (!wnIsDeload) { tuneUpWeekN = wn; break }
       }
     }
@@ -4398,7 +4408,7 @@ export function generateRulePlan(
     const isRaceWeek = weekN === totalWeeks
     // Deload cadence is masters-aware (CoachingPrinciples §3) — set once at top
     // of generateRulePlan so volumes and week badges stay aligned.
-    const isDeload = !isRaceWeek && isDeloadWeek(weekN, phase, recoveryFreq)
+    const isDeload = !isRaceWeek && deloadWeeks.has(weekN)
     // Recalibration on deload weeks in base/build — fresher legs, good time to benchmark
     const isRecalibration = isDeload && (phase === 'base' || phase === 'build')
     // NOTE: recalibrationWeeks is NOT populated here. CoachingPrinciples §78 —

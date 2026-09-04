@@ -2634,6 +2634,75 @@ requires a v2 row to stamp one. **The blocker is that eligibility cannot express
 
 ---
 
+## 87. A recovery week must not open a phase
+
+**Principle.** §3 sets the recovery CADENCE. This sets where those weeks are
+allowed to LAND: a deload may not fall on the first week of a phase. Where the
+cadence would put one there, the cadence is shifted EARLIER and re-anchored from
+that point — so the runner arrives fresh INTO the new block rather than being
+deloaded on its opening week.
+
+**Why.** The cadence was computed from absolute week number and knew nothing
+about phase boundaries. Measured across 24 plans (6 distances x 2 day-counts x 2
+ages), a deload landed on the **first week of build in 25% of them**, dropping
+volume **30-41%** at the moment the plan says the hard work begins — and pushing
+the first quality session back a week (HM W6→W7, 50K W8→W9, 100K W9→W10). 71%
+entered build with no volume step-up at all.
+
+**The argument that nearly saved the old behaviour, and why it fails.** A deload
+immediately before a hard block is good coaching — arriving fresh into build is
+a real argument, and Hutchinson made it. But the data showed the cadence landing
+there *by arithmetic accident*: sometimes the week before build, sometimes its
+first week, sometimes neither, decided entirely by where week 1 fell relative to
+the phase split. **A defensible outcome reached at random is a coincidence, not
+a decision** — and a coincidence lands wrong as often as right.
+
+**What the runner experienced (McMillan).** They finish base, see "build" on the
+card, and the week is easier than the one before it. Then no quality session
+either. Two weeks where the plan visibly says *progressing* and the training says
+*nothing is happening*.
+
+**Why a +/-1 shift is unimplementable, and the mechanism that works.** Moving a
+deload one week in either direction steals a week from one loading block and
+gives it to the other, so Sims's amendment (never lengthen a loading block past
+what the cadence promised) rejects BOTH directions whenever the cadence divides
+evenly. On the HM masters case the raw cadence is `{3,6,9}` with a worst loading
+run of 2; `6→5` yields a run of 3 and `6→7` also yields 3. **Measured, nothing
+moved at all — while the code read perfectly plausibly.** Walking the plan
+forward and RE-ANCHORING the cadence from each placed deload satisfies both
+rules: the same case yields `{3,5,8}`, worst run still 2, count still 3.
+
+**Recovery may RISE, never FALL (Willy, revised at ratification).** The condition
+was first written as "shift, never skip — count preserved exactly", to stop
+recovery being traded away for earlier intensity. As strict equality it would
+also have forbidden *correcting* a cadence that was under-delivering: an 8-week
+masters plan produced a single recovery week (`{3}`) because week 6 fell in peak
+and week 9 did not exist. `{2,5}` is the 3:1 cadence §3 actually promises. So the
+rule is a **direction, not an equality** — measured across 504 plan shapes,
+placement never removed a deload and added one in 50, every one of those a case
+where the raw cadence was short.
+
+**Explicitly NOT ratified: starting quality earlier by removing recovery.** That
+is the trade the original request implied and the board declined it. The ultras
+are where deloads matter most — a 50K runner dropping 79 km to 47 km is not a
+defect, that is recovery working (Willy).
+
+**Config.** `GENERATION_CONFIG.DELOAD_PLACEMENT`.
+
+**Mechanical check.** `INV-PLAN-DELOAD-PLACEMENT` — no deload opens a phase, and
+the recovery count never falls below the raw cadence. Scoped to `base`/`build`
+only: an exclusion list caught `foundation` and `maintenance_*` weeks, which are
+composed after generation (ADR-020) and can carry week numbers <= 0, and two
+real stored plans failed a rule about weeks the generator never owned.
+
+**Ownership.** `lib/plan/deloadCadence.ts → computeDeloadWeeks()` is the single
+owner, computed once per plan and read by all five consumers (DELOAD-OWNER-01).
+
+**Board:** CB-DELOAD-01, 2026-09-04 — CORRECT WITH AMENDMENT, ratified after
+re-measurement. Hutchinson chairing.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
