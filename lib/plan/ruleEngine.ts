@@ -824,7 +824,14 @@ function pacedRepPlan(
   // input can't satisfy is a defect in the code enforcing it, not an
   // acceptable session. Capped defensively — should never bind in practice.
   const minKm = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.quality
-  while (durationForMainSet(reps * (workMins + recoveryMins)) / workPaceMinPerKm < minKm && reps < floorReps + 20) {
+  // §8 Amendment (2026-09-04) — the floor check must price the session the SAME
+  // way the session is priced. It divided total duration by WORK pace while the
+  // caller now prices warm-up and cool-down at EASY pace, so it certified a
+  // session as clearing 5 km that the caller then produced at 4.5 —
+  // INV-PLAN-MIN-SESSION-SIZE, caught by `userDeclaredLevel.test.ts`. A floor
+  // measured in different units from the thing it guards is not a floor.
+  while (segmentPricedDistance(reps * (workMins + recoveryMins), workPaceMinPerKm, pace.minPerKmEasy) < minKm
+         && reps < floorReps + 20) {
     reps++
   }
   return { reps, mainMins: reps * (workMins + recoveryMins), workPaceMinPerKm }
@@ -937,11 +944,38 @@ function progressiveTempoPlan(
 // taper-only row drawing from the same table).
 function continuousThresholdPlan(
   row: SessionCatalogueRow | null, fitness: FitnessLevel, phase: PhaseType,
+  // §8 Amendment (2026-09-04) — floor protection, as `pacedRepPlan` has had since
+  // goal_pace_sharpener. Optional so the invariant layer can call this for the
+  // expected main-set minutes without needing paces.
+  floor?: { minKm: number; easyPace: number; workPace: number },
 ): { mainMins: number; workSecs: number } | null {
   if (!row || row.id !== 'tempo_continuous' || !isV2Structure(row.main_set_structure)) return null
   const cfg = GENERATION_CONFIG
-  const mainMins = cfg.THRESHOLD_WORK_TARGET_MINS[fitness]?.[phase] ?? cfg.THRESHOLD_WORK_MIN_MINS
+  let mainMins = cfg.THRESHOLD_WORK_TARGET_MINS[fitness]?.[phase] ?? cfg.THRESHOLD_WORK_MIN_MINS
+  // D-21 / §52b — a floor a valid input cannot satisfy is a defect in the code
+  // enforcing it, not an acceptable session. Segment pricing shrank the delivered
+  // distance, and this shape had NO floor protection (pacedRepPlan did), so a
+  // low-volume 10K taper produced a 4.5 km quality session against a 5 km floor.
+  // Grown HERE rather than at the call site because `workSecs` must scale with
+  // `mainMins` — the row's step length is a parameter, and growing one without
+  // the other makes the session's own structure disagree with its duration.
+  if (floor) {
+    let guard = 0
+    while (segmentPricedDistance(mainMins, floor.workPace, floor.easyPace) < floor.minKm && guard++ < 60) {
+      mainMins += 1
+    }
+  }
   return { mainMins, workSecs: Math.round(mainMins * 60) }
+}
+
+/** Distance of a structured session priced SEGMENT BY SEGMENT — warm-up and
+ *  cool-down at easy pace, the main set at its own work pace (§8 Amendment,
+ *  Coaching Board 2026-09-04). Shared by the sizing functions and their callers
+ *  so a floor check can never be measured in different units from the session it
+ *  guards — which is exactly how a 4.5 km session passed a 5 km floor. */
+function segmentPricedDistance(mainMins: number, workPaceMinPerKm: number, easyPaceMinPerKm: number): number {
+  const total = durationForMainSet(mainMins)
+  return (total - mainMins) / easyPaceMinPerKm + mainMins / workPaceMinPerKm
 }
 
 function makeQualitySession(args: {
@@ -1082,7 +1116,11 @@ function makeQualitySession(args: {
 
   // Coaching Board 2026-09-03 — tempo_continuous's single-block continuous
   // sizing (see continuousThresholdPlan). Null for every other row.
-  const contTempoPlan = continuousThresholdPlan(catalogueRow, fitness, phase)
+  const contTempoPlan = continuousThresholdPlan(catalogueRow, fitness, phase, {
+    minKm: GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.quality,
+    easyPace: pace.minPerKmEasy,
+    workPace: pace.minPerKmQuality,
+  })
 
   // `isEffortGoverned` is defined above, hoisted ahead of `useGoalPace` by the
   // §40b veto (Coaching Board 2026-09-04) — it must be known before §22's
@@ -1350,15 +1388,47 @@ function makeQualitySession(args: {
   // implying one another here, and they should: a hill session covers less ground per
   // minute than easy running, and eight standing recoveries cover none at all. Nothing
   // surfaces a pace for this session (§40b), so no contradiction reaches the runner.
+  // §8 Amendment (Coaching Board 2026-09-04) — SEGMENT-PRICED distance.
+  //
+  // These three branches used to divide the WHOLE session duration by the WORK
+  // pace, so a 15-minute warm-up and a 4.5-minute cool-down were priced at
+  // threshold or VO2max pace. Measured overstatement: 5K 25.7%, 10K 23.5%,
+  // HM 11.4%, MAR 19.1%; worst single sessions "stated 10km vs ~6.9km" and
+  // "stated 16.5km vs ~9.3km". A card read 10 km while its own displayed steps
+  // summed to 8.4.
+  //
+  // Same reasoning as §40b Amendment 2 earlier the same day: a runner plans
+  // against the number, and `weekly_km` sums these — so the inflation landed
+  // specifically on the hard component, which is the one every ratio is
+  // measured against (Willy). McMillan: "the plan said 45 km, they ran 38."
+  //
+  // The freed distance is NOT lost and is NOT returned to quality (board
+  // amendment, unanimous across McMillan/Willy/Sims). It flows to easy runs via
+  // the §9 re-derivation in `buildWeekSessions` — which sums the ACTUAL placed
+  // distances, so a smaller quality session automatically enlarges the easy
+  // ones. VOL-SHORTFALL-01 proved that path preserves total weekly volume.
+  //
+  // `durationForMainSet(mainMins) - mainMins` IS the warm-up plus cool-down —
+  // taken by subtraction rather than re-splitting, so the two cannot round apart.
+  // The main-set minutes of whichever structure-driven shape this session is —
+  // null for a session with no resolved structure, which keeps the legacy
+  // distance/pace derivation. Named once so the distance and the duration below
+  // cannot disagree about which shape they are describing.
+  const structuredMainMins: number | null =
+    repPlan?.mainMins ?? progTempoPlan?.mainMins ?? contTempoPlan?.mainMins
+    ?? effortPlan?.mainMins ?? null
+
+  const segmentPricedKm = (mainMins: number, workPaceMinPerKm: number): number =>
+    segmentPricedDistance(mainMins, workPaceMinPerKm, pace.minPerKmEasy)
   const effectiveDistKm = repPlan
-    ? durationForMainSet(repPlan.mainMins) / repPlan.workPaceMinPerKm
+    ? segmentPricedKm(repPlan.mainMins, repPlan.workPaceMinPerKm)
     : progTempoPlan
-      ? durationForMainSet(progTempoPlan.mainMins) / minPerKm
+      ? segmentPricedKm(progTempoPlan.mainMins, minPerKm)
       : contTempoPlan
         // tempo_continuous is a single T-anchored pace throughout, and
         // `minPerKm` here is already T-pace (quality pace) in this branch —
         // exact, not an approximation like progTempoPlan's multi-pace case.
-        ? durationForMainSet(contTempoPlan.mainMins) / minPerKm
+        ? segmentPricedKm(contTempoPlan.mainMins, minPerKm)
         : distKm
   const rounded = roundDistance(effectiveDistKm)
   // CLASSIFY-STIMULUS-01 — stamp the stimulus from the trusted generator label
@@ -1381,8 +1451,19 @@ function makeQualitySession(args: {
     // distance-derived duration can never contain it. Every other branch keeps the
     // distance-derived value, where distance and duration are two views of one
     // number and `rounded` is the honest source.
-    duration_mins: effortPlan
-      ? Math.round(durationForMainSet(effortPlan.mainMins))
+    // §8 Amendment (2026-09-04) — a structured session's DURATION comes from its
+    // own structure, never from distance / pace.
+    //
+    // Distance and duration used to be two views of one number: total duration
+    // divided by work pace. That made them consistent and both wrong. Segment-
+    // pricing the distance (above) then dragged the duration down with it — a
+    // 4 x 5 min session reading 41 minutes instead of 46 — which is precisely the
+    // defect §40b Amendment 2 fixed for effort-governed rows earlier the same day.
+    //
+    // The two are now derived independently and correctly: duration from the rep
+    // structure, distance from each segment priced at the pace it is run.
+    duration_mins: structuredMainMins != null
+      ? Math.round(durationForMainSet(structuredMainMins))
       : dur(rounded, minPerKm),
     primary_metric: metric,
     zone, hr_target: hrTarget,

@@ -419,10 +419,36 @@ function progressiveTempoExpectedMainMins(catalogueId: string | undefined, fitne
 // 'parameter', param: 'work_secs' }`). Mirrors continuousThresholdPlan
 // (ruleEngine.ts) exactly, including its taper fallback to
 // THRESHOLD_WORK_MIN_MINS (no taper entry in the target table).
-function continuousThresholdExpectedMainMins(catalogueId: string | undefined, fitness: string | undefined, phase: string | undefined): number | null {
-  if (catalogueId !== 'tempo_continuous' || !fitness || !phase) return null
-  const byFitness = (GENERATION_CONFIG.THRESHOLD_WORK_TARGET_MINS as Record<string, Record<string, number>>)[fitness]
-  return byFitness?.[phase] ?? GENERATION_CONFIG.THRESHOLD_WORK_MIN_MINS
+/** Expected main-set minutes for `tempo_continuous`.
+ *
+ *  Reads the SESSION's resolved `derived_set`, not the config table. It used to
+ *  recompute `THRESHOLD_WORK_TARGET_MINS[fitness][phase]`, which was right while
+ *  that value was the whole story — but §8's Amendment (2026-09-04) gave this
+ *  shape floor protection, and how far the main set GROWS to clear
+ *  `MIN_SESSION_DISTANCE_KM.quality` depends on the runner's own paces. A config
+ *  lookup can no longer predict it, and the invariant fired on a correctly-sized
+ *  session (a low-volume 10K taper, grown 15 -> 20 min to clear the 5 km floor).
+ *
+ *  Reading the session is the right check here rather than a session vouching for
+ *  itself: the question this invariant asks is whether the stated `duration_mins`
+ *  fits the structure THE RUNNER IS SHOWN, and `derived_set` is that structure.
+ *  The row cannot answer it — its lengths are `{ kind: 'parameter' }` by design
+ *  (ADR-019), which is why this function existed separately in the first place. */
+function continuousThresholdExpectedMainMins(session: Session): number | null {
+  if (session.catalogue_id !== 'tempo_continuous') return null
+  const ds = session.derived_set as { blocks?: { repeat?: number; steps?: { length?: string }[] }[] } | undefined
+  if (!ds?.blocks?.length) return null
+  let total = 0
+  for (const block of ds.blocks) {
+    const repeat = typeof block.repeat === 'number' ? block.repeat : 1
+    for (const step of block.steps ?? []) {
+      if (typeof step.length !== 'string') return null
+      const m = /^(\d+(?:\.\d+)?)\s*min$/i.exec(step.length.trim())
+      if (!m) return null
+      total += repeat * parseFloat(m[1])
+    }
+  }
+  return total > 0 ? total : null
 }
 
 // Pace at a given VDOT fraction. Mirror of paceAtFraction in ruleEngine.ts —
@@ -2284,7 +2310,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         if (!sn || !sn.derived_set || sn.duration_mins == null) continue
         const mainMins = pacedRepMainMinutes(sn)
           ?? progressiveTempoExpectedMainMins(sn.catalogue_id, planFitness, w.phase)
-          ?? continuousThresholdExpectedMainMins(sn.catalogue_id, planFitness, w.phase)
+          ?? continuousThresholdExpectedMainMins(sn)
         if (mainMins == null) continue
         const expectedTotal = durationForMainSet(mainMins)
         if (Math.abs(sn.duration_mins - expectedTotal) > tol) {

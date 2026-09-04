@@ -357,6 +357,27 @@ experienced  → 2
 
 **Config.** No numeric — the band and the target table are unchanged, and deliberately so. **Not mechanically checkable** (ADR-017 §4): a preference that was rejected has no violation state, and "the target is unreachable for this row at this runner's pace" is a property of the arithmetic rather than a defect a plan can carry. `INV-PLAN-VO2MAX-MAIN-SET-CAP` continues to enforce the band itself, which is the safety-relevant guarantee. Recorded as a known limitation rather than left silent.
 
+### A quality session's distance is priced segment by segment — added 2026-09-04 (Coaching Board)
+
+**Principle.** A structured session's **distance** prices each segment at the pace it is actually run — warm-up and cool-down at easy pace, the main set at its own work pace. Its **duration** comes from the structure. The two are derived independently; they are not two views of one number.
+
+**Why.** `effectiveDistKm` divided the WHOLE session duration by the WORK pace, so a 15-minute warm-up and a 4.5-minute cool-down were priced at threshold or VO2max pace. A live card read **10 km** while its own displayed steps summed to **8.4**. Measured overstatement of quality distance: 5K **25.7%**, 10K **23.5%**, HM **11.4%**, MAR **19.1%**; worst single sessions "stated 10 km vs ~6.9" and "stated 16.5 km vs ~9.3".
+
+Same reasoning as §40b Amendment 2 the same day — the runner plans against the number. McMillan: *"The plan said 45 km. They ran 38. Then they think they are under-performing their own plan, which is the precise anxiety this product is supposed to remove."* Willy adds the accounting point: `weekly_km` sums these, so the inflation landed **specifically on the hard component**, which is the one §2's progression cap and the long-run ratios are measured against. Sims: the third stated number in one day that a runner would plan and fuel against and that was not true.
+
+**Freed distance goes to easy, or nowhere — never back into quality** (McMillan, Willy and Sims, independently). Nothing needed building: §9's re-derivation in `buildWeekSessions` sums the **actual placed** distances, so a smaller quality session automatically enlarges the easy runs. Measured on the golden plans: mean weekly change **+0.10%**, total 779 → 786 km. VOL-SHORTFALL-01's finding holds.
+
+**Two things this got wrong first, both caught by tests rather than reasoning, and both worth keeping:**
+
+1. **Duration followed distance down.** They were two views of one number, so segment-pricing the distance dragged the duration with it — a 4 × 5 min session reading 41 minutes instead of 46. That is the exact defect §40b Amendment 2 had fixed for hill reps hours earlier, reintroduced one field over. They are now derived independently.
+2. **The floor checks used the old pricing.** `pacedRepPlan`'s floor loop still divided total duration by work pace, and `tempo_continuous` had **no floor protection at all** — so a low-volume 10K taper produced a 4.5 km quality session against a 5 km floor. **A floor measured in different units from the thing it guards is not a floor.** `segmentPricedDistance()` is now the single owner of that arithmetic, shared by the sizing functions and their callers.
+
+**A consequence for the enforcement layer.** `continuousThresholdExpectedMainMins` recomputed the expected main set from `THRESHOLD_WORK_TARGET_MINS`, which was sufficient while that value was the whole story. Floor growth is runner-specific, so a config lookup can no longer predict it and the invariant fired on a correctly-sized session. It now reads the session's own `derived_set` — the right source for a *coherence* check, since the question is whether the stated duration fits **the structure the runner is shown**, and the row cannot answer it (its lengths are `{ kind: 'parameter' }` by design, ADR-019).
+
+**This amends the 2026-09-03 ruling, it does not overturn it.** Structure-driven *sizing* stays; only the pace used to convert duration to distance changes.
+
+**Config.** No new numeric. `segmentPricedDistance()` in `ruleEngine.ts`. Enforced by the existing `INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT` (duration ↔ structure) and `INV-PLAN-MIN-SESSION-SIZE` (the floor, now measured in the same units the engine prices in). Regression: `segmentPricedDistance.test.ts`.
+
 ### A second quality session needs a week long enough to hold it — added 2026-08-20 (CD-20 / SC-01)
 
 **Principle.** The fitness ceiling above caps how many quality sessions a runner may be *given*. This is the second constraint: the **week** must be able to carry it. Below `GENERATION_CONFIG.MIN_TRAINING_DAYS_FOR_SECOND_QUALITY` (**5**) training days, the engine places one quality session regardless of fitness — and **records the decision** rather than leaving a silent absence.
