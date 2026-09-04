@@ -60,7 +60,7 @@ CONFIDENCE SCORE (1–10, include only when requested):
 ${BRAND.name.toUpperCase()} VOICE:
 - Direct and honest. Not motivational-poster language. Never urgent. Never red flags.
 - Respects the athlete's intelligence. Practical. Acknowledges difficulty without catastrophising.
-- Week labels: descriptive, lowercase after dash. e.g. "Base — Zone 2 discipline", "Build — first quality session", "Taper — trust the work"
+- Week labels: descriptive, lowercase after dash. e.g. "Base — Zone 2 discipline", "Build — extending the work", "Taper — trust the work"
 - Week themes: one honest sentence. e.g. "HR discipline this week. Slower than feels right. That is correct."
 - Coach notes: plain and specific. Max 3 per session. e.g. "Keep HR below your zone 2 ceiling — walk if needed.", "This is the session that builds the engine, not the race."
 - coach_intro (when requested): 2–3 sentences from coach to athlete. Honest assessment of the plan, what the athlete should focus on, and one thing that will make the difference. ${BRAND.name} tone — no cringe.
@@ -92,6 +92,29 @@ BAD:  "Keep HR below {{zone_2_ceiling}} bpm."           (wrong token name — un
 BAD:  "Stay below {{Z2_ceiling}} bpm."                  (wrong token name — capitalisation)
 
 Use placeholders ONLY for coach_notes. Week labels and themes do NOT contain numerics — never put placeholders in them. If a coach note doesn't reference a numeric value, no placeholder is needed.
+
+WEEK COPY MUST MATCH WHAT THE WEEK CONTAINS — the single most common reason
+enrichment is REJECTED and the whole plan reverts to plain copy:
+
+Every week you are given carries "has_intensity". When it is FALSE, that week has
+no quality session and no benchmark — it is entirely easy running, which is
+deliberate (base phase is all-easy by design, and race week is a taper plus the
+race). For those weeks, the label AND the theme must NOT contain any of:
+
+    quality · threshold · tempo · interval · intervals · VO2 · VO2max
+    "feels hard" · "feel hard" · sharpen · "raising the ceiling"
+    "intensity stays" · benchmark · "time trial"
+
+Nor may they claim overload — "highest volume", "fitness is built" — unless the
+week's "weekly_km" genuinely exceeds the previous non-deload week's.
+
+This is not a style preference. A runner told "this week will feel hard" before
+five easy runs either pushes too hard to satisfy the framing — the exact failure
+this product exists to prevent — or stops trusting the plan. ONE breach on ONE
+week discards the enrichment for EVERY week, so the athlete gets no voice at all.
+
+For an all-easy week, describe the aerobic work honestly: "Base — Zone 2
+discipline", "Base — building consistency", "Race week — the work is done".
 
 BANNED LANGUAGE — never use these in any field:
 - Do NOT use "Light", "Heavy", "Moderate", "Easy" or similar volume-based qualifiers to describe a week or schedule. 3 days is not "light" — it is what fits someone's life.
@@ -221,6 +244,14 @@ function buildUserMessage(plan: Plan, input: GeneratorInput, wantPaidFields: boo
     type: w.type,
     phase: w.phase,
     weekly_km: w.weekly_km,
+    // Stated, not inferred. The model was already sent each session's `type` and
+    // could in principle work this out, but it was never told it needed to — and
+    // `INV-PLAN-COPY-MATCHES-SESSIONS` (§27) hard-rejects the whole enrichment
+    // when it gets it wrong. Computed with the SAME predicate the invariant uses
+    // (a `quality`/`intervals`/`tempo` session, or the §78 `hard` benchmark), so
+    // the prompt and the check cannot disagree about which weeks are safe.
+    has_intensity: Object.values(w.sessions ?? {}).some(
+      s => s?.type === 'quality' || s?.type === 'intervals' || s?.type === 'tempo' || s?.type === 'hard'),
     sessions: Object.fromEntries(
       Object.entries(w.sessions ?? {}).map(([day, s]) => [day, {
         type: s?.type,

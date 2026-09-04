@@ -8,6 +8,7 @@ import { validatePlan, enforceViolations } from '@/lib/plan/invariants'
 import { composePlanWithFoundation } from '@/lib/plan/foundationCompose'
 import { enrich, type EnrichOutcome } from '@/lib/plan/enrich'
 import { errorBaseline, violationsIntroducedBy, statusForReason } from '@/lib/plan/enrichAttribution'
+import { attributableWeeks, revertWeeksToRuleCopy } from '@/lib/plan/enrichPartialRevert'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { generateFreeIntro } from '@/lib/plan/freeIntro'
 import { nextMonday, formatDate } from '@/lib/plan/length'
@@ -237,24 +238,73 @@ export async function POST(req: NextRequest) {
         if (outcome.status === 'applied') {
           const introduced = violationsIntroducedBy(baseline, validatePlan(finalPlan, input))
           if (introduced.length > 0) {
-            console.error('[generate-plan] enrichment introduced invariant violations, reverting to rule copy', introduced.map(v => v.code))
+            // ENRICH-PARTIAL-01 (2026-09-04) — revert the OFFENDING WEEKS, not
+            // the whole plan.
+            //
+            // The old behaviour discarded every week's copy for one bad word on
+            // one week. Observed on a real trial plan: two §27 violations, on two
+            // of the five weeks that carry no intensity, cost the runner enriched
+            // copy across all fourteen. Base phase is all-easy BY DESIGN (§4/§5),
+            // so the runners with the most exposure are beginners and finish-goal
+            // plans — the ones least likely to know the app should sound
+            // different, and most likely to be on trial.
+            //
+            // A partial revert leaves the plan correct everywhere and enriched
+            // almost everywhere, which strictly dominates correct-everywhere and
+            // enriched-nowhere. The full revert remains the fallback for anything
+            // that cannot be attributed to a week (plan-level and meta checks),
+            // and for the case where reverting the named weeks does not actually
+            // clear the violations — re-validated rather than assumed.
+            const { weeks: badWeeks, allAttributable } =
+              attributableWeeks(introduced, finalPlan)
+            let repaired: Plan | null = null
+            if (allAttributable && badWeeks.size > 0) {
+              // ADR-020 Option A — composedRule, not rulePlan: the latter has no
+              // foundation weeks, so rule copy for a foundation week is only
+              // found on the composed plan.
+              const candidate = revertWeeksToRuleCopy(finalPlan, composedRule, badWeeks)
+              const remaining = violationsIntroducedBy(baseline, validatePlan(candidate, input))
+              if (remaining.length === 0) repaired = candidate
+            }
+
+            if (repaired) {
+              finalPlan = repaired
+              finalPlan.meta.enrichment = 'applied_partial'
+            } else {
+              // ADR-020 Option A — composedRule, not rulePlan: the latter has no
+              // foundation weeks. A revert here used to silently drop a runner's
+              // foundation block every time enrichment introduced a violation —
+              // found by validation before it could ship, not observed in prod.
+              finalPlan = composedRule
+              finalPlan.meta.enrichment = 'failed_invalid_copy'
+            }
+
+            // Recorded AFTER the decision so the event says what actually
+            // happened. Reporting it before meant every partial repair still
+            // logged as a flat failure, which is how a fixed problem keeps
+            // looking broken in the data.
+            console.error(
+              `[generate-plan] enrichment introduced invariant violations (${repaired ? 'reverted ' + badWeeks.size + ' week(s)' : 'full revert'})`,
+              introduced.map(v => `${v.code}@W${v.week}`))
             await recordOpsEvent(
               'plan_enrich_failed',
               {
                 reason: 'post_enrich_invalid',
+                outcome: repaired ? 'partial_revert' : 'full_revert',
+                reverted_weeks: repaired ? Array.from(badWeeks) : 'all',
                 codes: introduced.map(v => v.code),
+                // ENRICH-PARTIAL-01 — `weeks` and `messages` added 2026-09-04.
+                // The event recorded codes and nothing else, so diagnosing the
+                // real failure meant reconstructing by hand which weeks could
+                // even trip §27. One field would have made it a two-minute job.
+                weeks: introduced.map(v => v.week),
+                messages: introduced.slice(0, 3).map(v => v.message),
                 pre_existing: Array.from(baseline),
                 tier,
                 race_distance_km: input.race_distance_km,
               },
               user.id,
             )
-            // ADR-020 Option A — composedRule, not rulePlan: the latter has no
-            // foundation weeks. A revert here used to silently drop a runner's
-            // foundation block every time enrichment introduced a violation —
-            // found by validation before it could ship, not observed in prod.
-            finalPlan = composedRule
-            finalPlan.meta.enrichment = 'failed_invalid_copy'
           }
         }
 

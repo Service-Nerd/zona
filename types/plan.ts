@@ -372,6 +372,12 @@ export interface RaceResult {
  */
 export type EnrichmentStatus =
   | 'applied'
+  // ENRICH-PARTIAL-01 (2026-09-04) — enrichment applied, then one or more WEEKS
+  // were reverted to rule copy because their copy introduced a violation. The
+  // athlete has voice on every other week. Distinct from 'applied' so the
+  // partial is visible, and from 'failed_invalid_copy' so a partial revert is
+  // not read as a total loss of voice.
+  | 'applied_partial'
   | 'skipped'
   | 'pending'
   | 'failed_no_api_key'

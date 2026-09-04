@@ -197,6 +197,9 @@ export const PlanMetaSchema = z.object({
   //   'failed_no_api_key'   — ANTHROPIC_API_KEY absent from the environment (ops)
   //   'failed_api_error'    — Anthropic returned non-2xx, or transport threw (upstream)
   //   'failed_unparseable'  — response was not JSON, or failed EnrichedPlanSchema (model)
+  //   'applied_partial'    — enrichment applied, then specific WEEKS were reverted
+  //                          to rule copy because their copy introduced a
+  //                          violation (ENRICH-PARTIAL-01). Voice everywhere else.
   //   'failed_invalid_copy' — enrichment introduced NEW invariant violations and
   //                           was reverted to rule copy (our prompt/our engine)
   //   'failed'              — LEGACY. Written before 2026-09-03; never written
@@ -205,7 +208,7 @@ export const PlanMetaSchema = z.object({
   enrichment:   z.enum([
                   'applied', 'skipped', 'pending',
                   'failed_no_api_key', 'failed_api_error',
-                  'failed_unparseable', 'failed_invalid_copy',
+                  'failed_unparseable', 'failed_invalid_copy', 'applied_partial',
                   'failed',
                 ]).optional(),
 

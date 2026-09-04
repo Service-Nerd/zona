@@ -207,7 +207,8 @@ silent fallback is unchanged.
   | `failed_no_api_key` | `ANTHROPIC_API_KEY` absent from the environment — deploy config |
   | `failed_api_error` | Anthropic returned a non-2xx, or transport threw — upstream |
   | `failed_unparseable` | Response was not JSON, or failed `EnrichedPlanSchema` — the model |
-  | `failed_invalid_copy` | Enrichment introduced **new** invariant violations and was reverted to rule copy — our prompt |
+  | `applied_partial` | **ENRICH-PARTIAL-01 (2026-09-04).** Enrichment applied, then specific WEEKS were reverted to rule copy because their copy introduced a violation. The athlete has AI voice on every other week. `ops_events.detail.reverted_weeks` names which |
+  | `failed_invalid_copy` | Enrichment introduced **new** invariant violations that could NOT be repaired by reverting individual weeks — a plan-level or meta violation, or one that survived the per-week revert. The whole plan falls back to rule copy — our prompt |
   | `failed` | **LEGACY.** Written before 2026-09-03; never written by current code. Retained so historical rows parse |
   | *absent* | Plan generated before GEN-FIX-02 shipped |
 
