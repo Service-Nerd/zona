@@ -9,6 +9,11 @@
 import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { validatePlan, type Violation } from '../lib/plan/invariants'
 import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
+import {
+  generatorInputFields, assertParsedShape, inputCoverage,
+} from '../lib/plan/sweepInputCoverage'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 // ⚠️ THE SWEEP MUST BE TIME-INDEPENDENT.
 //
@@ -156,6 +161,20 @@ const maxWeekdays = [undefined, 30, 45, 60, 90]
 // (7-28 days), and the user-chosen case (> 28).
 const foundationGapDays = [0, 10, 24, 40]
 
+// COVERAGE GATE (2026-09-04) — both of these were flagged by the gate on its
+// first run as declared-but-never-set, and both are REAL engine paths.
+//
+// §29 / M-02 fresh-from-layoff: `weeks_at_current_volume` below
+// FRESH_RETURN_WEEKS_THRESHOLD (8) makes the engine treat `current_weekly_km`
+// as ASPIRATIONAL and start at a fraction of it (ruleEngine.ts, explicitFreshReturn).
+// Straddles the threshold: absent, well under, just under, at, well over.
+const weeksAtVolume = [undefined, 2, 7, 8, 20]
+
+// ADR-020 / §57: the runner's answer to the >28-day-gap question. The sweep
+// HARDCODED 'add' at the compose call, so `skip` and `start_now` — the whole
+// deferred-decision path ADR-020 Option A exists for — were unswept.
+const foundationDecisions: any[] = [undefined, 'add', 'skip', 'start_now']
+
 // GEN-FIX-08 — HR dimension. The sweep had no HR axis at all, which is why F1
 // (a HealthKit-observed max HR 22% below the age estimate, producing a Zone 2
 // ceiling 28 bpm low) was invisible to 103,680 generated plans. baseInput.age is
@@ -298,6 +317,8 @@ function randomInput(): any {
     hard_session_relationship: pick(hardSets),
     injury_history: pick(injurySets),
     max_weekday_mins: pick(maxWeekdays),
+    ...(() => { const w = pick(weeksAtVolume); return w === undefined ? {} : { weeks_at_current_volume: w } })(),
+    ...(() => { const d = pick(foundationDecisions); return d ? { foundation_decision: d } : {} })(),
     __foundationGapDays: pick(foundationGapDays),
     ...hrSet.hr,
     ...(g.goal ? { goal: g.goal } : {}),
@@ -308,7 +329,18 @@ function randomInput(): any {
 
 // A refusal is the engine working: §44 prep-time blocks and the days-per-week
 // minimums are DESIGNED to throw. Anything else that throws is a real failure.
-const REFUSAL = /is not enough preparation|days\/week is (not enough|below)/
+//
+// The WARN-band arm ("is below the recommended N-week minimum") was missing until
+// 2026-09-04, and its absence was invisible because nothing in the grid reached
+// that band: §44 uses STRICTER prep-time thresholds for a returning runner, and
+// `weeks_at_current_volume` — the field that flips `isReturningForPrepTime` — was
+// never set by the sweep. Adding that axis (via the input-coverage gate) turned 13
+// by-design refusals into "unexpected generation failures" overnight.
+//
+// A warn-band throw is still the engine working: §44 refuses without
+// `acknowledged_prep_warning`, which the sweep deliberately never sets (see
+// COVERAGE_EXEMPTIONS) because setting it would admit shapes the product refuses.
+const REFUSAL = /is not enough preparation|days\/week is (not enough|below)|is below the recommended \d+-week minimum/
 
 let attempted = 0
 let generated = 0
@@ -332,6 +364,74 @@ const inputs = [
   ...CORNERS,
   ...Array.from({ length: SWEEP_N }, () => randomInput()),
 ]
+
+// ── INPUT COVERAGE GATE (proposal #4, 2026-09-04) ───────────────────────────
+//
+// Runs BEFORE a single plan is generated, because it asserts the SHAPE OF THE
+// GRID rather than the plans that come out of it. "18,059 plans, 0 violations"
+// is only safety for the inputs actually varied; four times a field has been
+// held constant across every swept plan, making a branch unreachable while the
+// run stayed green. See lib/plan/sweepInputCoverage.ts for the four.
+//
+// Every exemption carries its reason. An exemption is a claim that varying the
+// field would test nothing — not a way to quiet the gate.
+const COVERAGE_EXEMPTIONS: Record<string, string> = {
+  athlete_name: 'Display only — never read by the engine. Redacted from the real-input corpus for the same reason.',
+  race_name:    'Display only — never read by the engine. Redacted from the real-input corpus for the same reason.',
+  // `fitness_intensity_level` is an ENGINE OUTPUT fed back in by
+  // validateReshapedPlan, not a wizard input; generation derives it. Varying it
+  // here would test a value the generate path never receives.
+  fitness_intensity_level: 'Engine-derived (§79) and only ever supplied on the RESHAPE path, never to generateRulePlan.',
+  // Deliberately excluded, and this one is load-bearing: `validatePrepTime`
+  // REFUSES generation in the warn window unless acknowledged. Setting it true
+  // would let refused shapes through and silently change what the sweep covers.
+  acknowledged_prep_warning: 'Setting it would admit prep-time-refused shapes (§44) and change what the grid means. Refusals are covered by the REFUSAL count instead.',
+
+  // ── Declared on the input but NOT read by the rule engine ──────────────────
+  // Each of these is copied to `plan.meta` (or consumed only by the AI enricher,
+  // which this sweep does not run) and never influences what is prescribed.
+  // Varying them would generate byte-identical plans — the definition of a
+  // vacuous axis. Verified by tracing each to its only reader, 2026-09-04.
+  terrain:         'Copied to plan.meta only (ruleEngine.ts). No prescription path reads it.',
+  motivation_type: 'Copied to plan.meta only. No prescription path reads it.',
+  training_style:  'Read ONLY by the AI enricher prompt (enrich.ts) and copied to meta. This sweep runs the rule engine, which never reads it.',
+  zone2_ceiling:   'An OUTPUT the engine computes into plan.meta; the input field is never read back by generation. (Worth revisiting whether it belongs on GeneratorInput at all.)',
+
+  // ⚠️ FINDING, not a clean exemption: `max_weekend_mins` has ZERO readers
+  // anywhere in lib/ or app/ — it is declared on the public input contract and
+  // does nothing. Exempted so the gate is not blocked by it, and recorded here
+  // rather than silently skipped, because the honest fix is to implement it or
+  // remove it from the contract. Tracked as an open question, not as noise.
+  max_weekend_mins: 'DECLARED BUT UNIMPLEMENTED — no reader exists in lib/ or app/. Varying it cannot change any plan. Implement it or drop it from GeneratorInput.',
+}
+
+{
+  const src = readFileSync(join(process.cwd(), 'types/plan.ts'), 'utf8')
+  const fields = generatorInputFields(src)
+  assertParsedShape(fields)
+  const cov = inputCoverage(inputs as Record<string, unknown>[], fields, COVERAGE_EXEMPTIONS)
+
+  if (cov.staleExemptions.length > 0) {
+    console.error(`\n✗ Coverage exemptions name fields that no longer exist on GeneratorInput:`)
+    for (const f of cov.staleExemptions) console.error(`    ${f}`)
+    console.error(`  Remove them — a rotting exemption list hides real gaps.\n`)
+    process.exit(1)
+  }
+
+  if (cov.uncovered.length > 0) {
+    console.error(`\n✗ SWEEP INPUT COVERAGE — ${cov.uncovered.length} GeneratorInput field(s) never varied:\n`)
+    for (const u of cov.uncovered) console.error(`    ${u.field.padEnd(28)} ${u.sample}`)
+    console.error(`
+  A field the grid holds constant makes its branch UNREACHABLE, and the sweep
+  still reports "0 violations" — that is no coverage, not safety. It has cost
+  four separate defect classes (see lib/plan/sweepInputCoverage.ts).
+
+  Vary it in randomInput(), or add it to COVERAGE_EXEMPTIONS in this file WITH
+  a reason explaining why varying it would test nothing.\n`)
+    process.exit(1)
+  }
+  console.log(`Input coverage:    ${cov.covered.length} fields varied, ${cov.exempt.length} exempt (${fields.length} declared)`)
+}
 
 for (const input of inputs) {
   attempted++
@@ -368,7 +468,10 @@ for (const input of inputs) {
   const planStart = plan.weeks.find(w => w.n === 1)?.date ?? PLAN_START
   const today = new Date(new Date(planStart).getTime() - gapDaysForPlan * 86_400_000)
     .toISOString().slice(0, 10)
-  const composed = composePlanWithFoundation(plan, input, today, 'add')
+  // Honour the swept decision rather than hardcoding 'add' — that hardcode is
+  // what made `skip`/`start_now` unreachable (found by the coverage gate).
+  // CORNERS never set it, so they keep the historical 'add' behaviour.
+  const composed = composePlanWithFoundation(plan, input, today, input.foundation_decision ?? 'add')
   plan = composed.plan
   const fbWeekCount = plan.weeks.filter(w => w.n <= 0).length
   if (fbWeekCount) {
@@ -528,7 +631,27 @@ const BASELINE: Record<string, number> = {
   // when it recurs across 2+ weeks (INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED).
   // Kept as an explicit 0 so a regression reads as NEW against a stated
   // expectation. SWEEP-VISIBLE-01 closed.
-  'INV-PLAN-MIN-SESSION-SIZE':             0,
+  // 0 -> 1426 (2026-09-04) — NOT a regression, and not caused by any engine
+  // change. The INPUT-COVERAGE GATE added `weeks_at_current_volume` to the grid,
+  // a field declared on GeneratorInput since M-02 and never once set by this
+  // sweep. Below FRESH_RETURN_WEEKS_THRESHOLD (8) it flips §29's fresh-from-
+  // layoff path, which treats `current_weekly_km` as ASPIRATIONAL and starts the
+  // plan at a fraction of it. At 5 km/week that fraction produces a FOUNDATION
+  // week whose easy run is 3.5 km against MIN_SESSION_DISTANCE_KM.easy of 4.
+  //
+  // Attribution measured, not assumed: the same input with the field REMOVED
+  // scores 0, and all three `foundation_decision` values score identically, so
+  // the fresh-return axis is the whole cause and the foundation decision is not
+  // implicated. 660 of 16,141 plans (~4.1%).
+  //
+  // Same family as §52b (a training day must be able to carry a real session)
+  // and the `goal_pace_sharpener` floor protection: a floor a valid input cannot
+  // satisfy is a defect in the code enforcing it, not an acceptable session
+  // (D-21). Fixing it is a coaching decision about what a fresh-return week at
+  // 5 km/week should contain — filed as FRESH-FLOOR-01, not taken here.
+  //
+  // This entry is the input-coverage gate paying for itself on its first run.
+  'INV-PLAN-MIN-SESSION-SIZE':             1426,
 
   // 87 -> 75 -> 0 (LABEL-VARIETY-01, 2026-08-21). The LABEL count is now zero:
   // the peak goal-pace override takes the row's shape word ("…-pace ladder",
