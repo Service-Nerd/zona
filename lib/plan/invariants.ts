@@ -15,7 +15,7 @@ import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { isLongRun, isShakeout, classifyStimulus, isVo2maxSession, isStructuredSession } from './sessionRole'
 import { mainSetMinutes, durationForMainSet } from './sessionFormat'
-import { isV2Structure, StructureV2Schema } from './sessionStructureV2'
+import { isV2Structure, StructureV2Schema, goalPaceShapeWord } from './sessionStructureV2'
 import { zonesFromZoneString } from '@/lib/coaching/zoneRules'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
 import { parseDateLocal, formatDate, getDistanceConfig } from './length'
@@ -32,6 +32,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-VOLUME-SHORTFALL-DECLARED',
   'INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED',
   'INV-PLAN-EFFORT-OR-PACE',
+  'INV-PLAN-LABEL-MATCHES-STRUCTURE',
   'INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED',
   'INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND',
   'INV-PLAN-DERIVED-SET',
@@ -265,6 +266,13 @@ function vo2maxWorkMinutes(session: Session): number | null {
 // whose steps carry already-formatted display text ("5 min", "1:30",
 // "1200 m") that is fragile to re-parse when the row's typed length field
 // says the same thing without needing to.
+/** Every shape noun the engine can actually put in a label. A trailing word
+ *  outside this set is someone else's wording — most likely the AI enricher's —
+ *  and is skipped rather than flagged. */
+const KNOWN_SHAPE_WORDS = new Set(
+  V1_SESSION_CATALOGUE.map(r => goalPaceShapeWord(r)).filter((x): x is string => !!x),
+)
+
 /** Is this catalogue row effort-governed — every v2 work step carrying an effort
  *  target and no pace? Read from the ROW and structurally, never by id, so it is
  *  the SAME test `makeQualitySession` applies (INV-CLASS). If the two ever
@@ -1821,6 +1829,75 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           actual: 'neither pace_target nor rpe_target',
           expected: 'a pace target, or an effort (RPE) target',
         })
+      }
+    }
+  }
+
+  // INV-PLAN-LABEL-MATCHES-STRUCTURE (CoachingPrinciples §19, §53 —
+  // Coaching Board 2026-09-04, LBL-01)
+  //
+  // A goal-paced label's trailing SHAPE word must match the shape the session
+  // actually has. §19 already requires a label to match its prescribed
+  // physiology, but its check compares the label to `pace_target` and never to
+  // `derived_set` — so "10K-pace progression" on a set of 4 × 5 min cruise
+  // intervals passed it cleanly. Measured across 5,392 plans: 12.5-19.1% of
+  // plans at every distance except 5K carried two build sessions under one name,
+  // with up to four structurally different rows sharing a label at marathon and
+  // above.
+  //
+  // This also closes §19's OWN stated limitation. §19 says its easy-direction
+  // check stays label-based "until SC-08 puts the row's identity on the
+  // session"; ADR-018 shipped `catalogue_id` on 2026-08-20 and nothing re-keyed
+  // it. This is that re-key, for the shape axis.
+  //
+  // The engine PRODUCES the shape word and this READS it back, both through the
+  // single owner `goalPaceShapeWord` in sessionStructureV2.ts. The first cut of
+  // this invariant carried its own copy — a parallel classifier, and exactly the
+  // drift INV-CLASS forbids. It lives in the schema module because invariants
+  // cannot import ruleEngine (the engine imports the invariants).
+  //
+  // DELIBERATELY CONSERVATIVE — it fires ONLY when the trailing word is a known
+  // shape noun AND the row resolves to a different one. Three exemptions, each
+  // load-bearing:
+  //   • A label equal to the row's own NAME is not an override at all
+  //     (`tenk_pace_intervals` is literally named "10K-pace intervals").
+  //   • PURPOSE words ("sharpener", §6's taper flavour) make no shape claim, so
+  //     there is nothing for them to be wrong about. Taper measured 0%
+  //     collisions at every distance and is intentionally untouched.
+  //   • An unrecognised trailing word is SKIPPED, never flagged. The enricher
+  //     may rewrite labels (EnrichedWeekSchema exposes `label`), and a check
+  //     that fires on unfamiliar wording would discard whole enriched plans —
+  //     which is exactly what §22's old `label.includes('pace')` test did,
+  //     costing trial/paid users their AI voice (post_enrich_invalid).
+  {
+    // The generic fallback used when a row resolves to no shape at all; it makes
+    // no specific claim, so it can never be "wrong" against a row.
+    const GENERIC = 'intervals'
+    const PURPOSE_WORDS = new Set(['sharpener'])
+    for (const w of plan.weeks) {
+      for (const [day, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+        if (!sn?.catalogue_id) continue
+        const row = V1_SESSION_CATALOGUE.find(r => r.id === sn.catalogue_id)
+        if (!row || sn.label === row.name) continue
+        const m = /-pace ([a-z]+)$/i.exec((sn.label ?? '').trim())
+        if (!m) continue
+        const claimed = m[1].toLowerCase()
+        if (claimed === GENERIC || PURPOSE_WORDS.has(claimed)) continue
+        const actual = goalPaceShapeWord(row)
+        // No resolvable shape on the row, or the claim is not a word this
+        // codebase produces → not this invariant's business.
+        if (!actual || !KNOWN_SHAPE_WORDS.has(claimed)) continue
+        if (claimed !== actual) {
+          violations.push({
+            code: 'INV-PLAN-LABEL-MATCHES-STRUCTURE',
+            principle_ref: 'CoachingPrinciples §19, §53',
+            severity: 'error',
+            week: w.n, day,
+            message: `"${sn.label}" claims the shape "${claimed}" but row "${row.id}" is a "${actual}". A label naming a shape must name the shape the session actually has.`,
+            actual: claimed,
+            expected: actual,
+          })
+        }
       }
     }
   }

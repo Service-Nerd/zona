@@ -21,7 +21,7 @@ import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTi
 import { normaliseDays } from './days'
 import { isLongRun, isShakeout, classifyStimulus, isStructuredSession } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
-import { isV2Structure, StructureV2Schema, type PaceAnchor } from './sessionStructureV2'
+import { isV2Structure, StructureV2Schema, goalPaceShapeWord, type PaceAnchor } from './sessionStructureV2'
 import { durationForMainSet } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
 import {
@@ -699,45 +699,6 @@ function qualitySession(
 // of the plan only (taught once, then trusted — repetition turns it to wallpaper).
 const CONTROLLED_THRESHOLD_CUE = 'Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.'
 
-// LABEL-VARIETY-01 — the display word for a goal-pace-overridden session, taken
-// from the underlying row's structure so distinct rows read distinctly and the
-// same row reads the same everywhere. Returns null when the shape can't be
-// resolved (no row, or an unmapped structure type), letting the caller fall back
-// to the phase-flavoured default. `main_set_structure` is `Record<string,
-// unknown>` on the row, so it is narrowed here rather than typed at the source.
-function goalPaceShapeWord(row: SessionCatalogueRow | null | undefined): string | null {
-  const ms = row?.main_set_structure as
-    | { version?: number; type?: string; blocks?: { label?: string }[] }
-    | undefined
-  if (!ms) return null
-  // v2 rows (SC-08b) describe the set as blocks; the first block's label is the
-  // shape (e.g. threshold_ladder → "ladder"). Fall back to "intervals" for a v2
-  // set with no block label rather than leaking the phase default.
-  if (ms.version === 2) {
-    // v2 shape word is the first block's label (threshold_ladder → "ladder").
-    // Effort-governed rows (hikes, phrase labels like "to the climb") are gated
-    // out at the call site, so what reaches here is a real shape noun.
-    const blockLabel = ms.blocks?.[0]?.label?.trim()
-    return blockLabel ? blockLabel : null
-  }
-  // Words are chosen to be BOTH §19-safe and distinct from race-specific row
-  // names. §19 (INV-PLAN-LABEL-MATCHES-PACE) reads "tempo"/"cruise"/"threshold"
-  // as a THRESHOLD claim and demands T-pace — fatal on a goal-pace session — so
-  // "sustained", not "tempo". And "reps", not "intervals", because the 10K/HM
-  // race-specific rows are literally named "…-pace intervals".
-  //
-  // 'progression' is intentionally NOT mapped: its natural word collides with
-  // the build-phase word "progression", and this word is only consumed in PEAK
-  // (see the override site). Letting it fall back to the peak generic keeps a
-  // build progression and a peak progression on different labels, so no label
-  // merges across phases — which would surface repetition that §53 counts by
-  // label, the still-open CAT-ULTRA-THIN-01.
-  switch (ms.type) {
-    case 'continuous':  return 'sustained'
-    case 'repeats':     return 'reps'
-    default:            return null
-  }
-}
 
 // Coaching Board 2026-09-03 — resolve a v2 pace anchor to a numeric min/km for
 // SIZING purposes (distinct from resolveMainSet's anchor→STRING resolution
@@ -1126,13 +1087,38 @@ function makeQualitySession(args: {
     // CAT-ULTRA-THIN-01). Taper keeps its "sharpener" flavour (§6 — sharpen,
     // don't build); build/peak with no resolvable shape fall back to the old
     // phase-flavoured word so behaviour is unchanged where a row is absent.
-    // LABEL-VARIETY-01 — only PEAK takes the row's shape word. Build and taper
-    // keep their single phase word ("progression"/"sharpener") unchanged, so no
-    // override label can merge across phases — that cross-phase merge is what
-    // surfaces repetition §53 counts by label (CAT-ULTRA-THIN-01, still open).
-    // Refining peak's one generic "intervals" into per-row shapes is a strict
-    // refinement: it can only lower a label's count, never raise it. Peak is
-    // also where the 8×-identical monotony McMillan flagged actually lived.
+    // LBL-01 (Coaching Board 2026-09-04) — BUILD now takes the row's shape word
+    // too. This is a REVERT of LABEL-VARIETY-01's build/taper carve-out, not a
+    // new rule, and recording it as a revert is the point: that carve-out's
+    // stated reason was "§53 counts by label", and §53 stopped counting labels
+    // 62 minutes later the same morning (`a4db6aa` 08:17 → `1021013` 09:19,
+    // 2026-08-21, CAT-ULTRA-THIN-01 — "Counts the ROW, not the label"). Nobody
+    // removed the constraint once its reason was deleted. Written down so the
+    // next reviewer does not re-add it from the old comment.
+    //
+    // The cost was label honesty: every build goal-paced session said
+    // "progression" whatever the row was, so `tempo_cruise_short` (4 × 5 min
+    // cruise intervals — nothing progresses) and `progressive_tempo` shipped
+    // under ONE name in consecutive weeks. Measured across 5,392 plans:
+    // 12.5–19.1% of plans at every distance except 5K, with up to FOUR
+    // structurally different rows sharing a name at marathon and above.
+    //
+    // TAPER IS DELIBERATELY UNCHANGED, against the ruling's "every phase"
+    // wording, because the measurement did not support it: taper collisions are
+    // **0% at every distance**. And "sharpener" is a PURPOSE word (§6 — sharpen,
+    // don't build), not a shape claim. The defect is a shape word attached to
+    // the wrong shape; a purpose word makes no shape claim to be wrong about.
+    // Changing taper would have been an unforced change with no evidence.
+    //
+    // Build/peak with no resolvable shape still fall back to the generic
+    // "intervals" so behaviour is unchanged where a row is absent.
+    //
+    // KNOWN RESIDUAL, and it is honest: `tempo_cruise` and `tempo_cruise_short`
+    // both resolve to "reps", so they still share a label at 5K/10K (the only
+    // distances where both are eligible). They genuinely ARE the same shape,
+    // differing only in rep length — so the shared word is accurate, and §53
+    // still tells them apart because it counts the row. What this fix removes is
+    // the DISHONEST collision, not every collision.
     //
     // The §22/§40b tension this comment used to defer ("its being goal-paced at
     // all is board territory") was RESOLVED by the 2026-09-04 veto: an effort-
@@ -1142,11 +1128,9 @@ function makeQualitySession(args: {
     // degrades to the generic rather than claiming a shape a hike does not have.
     // `INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED` is the check that would catch it.
     const overrideShape =
-      phase === 'build'
-        ? 'progression'
-        : phase === 'taper'
-          ? 'sharpener'
-          : ((isEffortGoverned ? null : goalPaceShapeWord(catalogueRow)) ?? 'intervals')
+      phase === 'taper'
+        ? 'sharpener'
+        : ((isEffortGoverned ? null : goalPaceShapeWord(catalogueRow)) ?? 'intervals')
     const overrideLabel = distLabel
       ? `${distLabel}-pace ${overrideShape}`
       : 'Goal-pace cruise intervals'

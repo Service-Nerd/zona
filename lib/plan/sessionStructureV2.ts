@@ -164,3 +164,43 @@ export type Parameterisation = z.infer<typeof ParameterisationSchema>
 export function isV2Structure(s: unknown): s is StructureV2 {
   return !!s && typeof s === 'object' && (s as { version?: unknown }).version === 2
 }
+
+/**
+ * The SHAPE WORD a catalogue row resolves to — the noun a §22 goal-paced
+ * override label may claim about it ("…-pace ladder", "…-pace reps").
+ *
+ * THE SINGLE OWNER, and it lives here rather than in `ruleEngine.ts` for a
+ * specific reason (LBL-01, Coaching Board 2026-09-04). The engine PRODUCES the
+ * word and `INV-PLAN-LABEL-MATCHES-STRUCTURE` READS it back, but
+ * `lib/plan/invariants.ts` cannot import `ruleEngine.ts` — the engine imports the
+ * invariants, and the cycle is real. The first cut of that invariant therefore
+ * carried its own copy of this logic, which is a parallel classifier and exactly
+ * what INV-CLASS forbids: two definitions of the same concept that agree until
+ * one is edited. Both files already import this module, so it is the natural
+ * home and the duplication is removed rather than policed.
+ *
+ * Returns null when the row resolves to no shape — the caller then falls back to
+ * a generic word, and the invariant declines to assert anything.
+ *
+ * WORD CONSTRAINTS (why the v1 map is not the obvious one): the word must be
+ * §19-safe and distinct from race-specific row names. §19
+ * (`INV-PLAN-LABEL-MATCHES-PACE`) reads "tempo"/"cruise"/"threshold" as a
+ * THRESHOLD claim and demands T-pace — fatal on a goal-pace session — so
+ * "sustained", not "tempo". And "reps", not "intervals", because the 10K/HM
+ * race-specific rows are literally named "…-pace intervals".
+ */
+export function goalPaceShapeWord(row: { main_set_structure?: unknown } | null | undefined): string | null {
+  const ms = row?.main_set_structure as
+    | { version?: number; type?: string; blocks?: { label?: string }[] }
+    | undefined
+  if (!ms) return null
+  // v2 rows describe the set as blocks; the first block's label is the shape
+  // (threshold_ladder → "ladder"). A v2 set with no block label resolves to
+  // nothing rather than leaking a phase default.
+  if (ms.version === 2) return ms.blocks?.[0]?.label?.trim()?.toLowerCase() || null
+  switch (ms.type) {
+    case 'continuous': return 'sustained'
+    case 'repeats':    return 'reps'
+    default:           return null
+  }
+}

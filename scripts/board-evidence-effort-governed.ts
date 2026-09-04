@@ -98,6 +98,7 @@ function mulberry32(a: number) {
 const rand = mulberry32(SEED)
 const pick = <T,>(a: readonly T[]): T => a[Math.floor(rand() * a.length)]
 
+const PHASE = process.env.PHASE ?? 'build'
 const ONLY = process.env.ONLY_KM ? process.env.ONLY_KM.split(',').map(Number) : null
 const DISTS = ONLY ? distancesAndDates.filter(d => ONLY.includes(d.race_distance_km)) : distancesAndDates
 
@@ -186,7 +187,10 @@ for (let i = 0; i < SWEEP_N; i++) {
     for (const s of Object.values(w.sessions ?? {}) as any[]) {
       if (!s || s.type !== 'quality') continue
       if (!/-pace /.test(s.label ?? '')) continue
-      if (w.phase !== 'build') continue
+      // LBL-01 — per-PHASE, not build-only. Build was where the defect was
+      // reported; taper carries its own single phase word ("sharpener") and had
+      // never been measured, so scoping the fix to build would have been a guess.
+      if (w.phase !== PHASE) continue
       buildGoalPaced.push({ label: s.label, cid: s.catalogue_id ?? '(none)' })
       b1.sessions++
       if (!r1LabelToRows.has(s.label)) r1LabelToRows.set(s.label, new Set())
@@ -294,7 +298,7 @@ console.log(`\nSWEEP_N=${SWEEP_N} seed=${SEED} — generated ${generated}, refus
 
 const ORDER = ['5K', '10K', 'HM', 'MAR', '50K', '100K']
 
-console.log('═══ R1 — build-phase goal-paced label collisions (same label, different catalogue row) ═══')
+console.log(`═══ R1 — ${PHASE}-phase goal-paced label collisions (same label, different catalogue row) ═══`)
 console.log('dist   plans  goalPacedSessions  plansWithCollision  %')
 for (const d of ORDER) {
   const b = r1.get(d); if (!b) continue
