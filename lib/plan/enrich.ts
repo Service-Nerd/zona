@@ -97,13 +97,19 @@ Use placeholders ONLY for coach_notes. Week labels and themes do NOT contain num
 WEEK COPY MUST MATCH WHAT THE WEEK CONTAINS — the single most common reason
 enrichment is REJECTED and a week reverts to plain copy:
 
-Every week you are given carries TWO flags. They are not interchangeable.
+Every week you are given carries THREE flags. They are not interchangeable, and
+each answers a question you must not try to work out for yourself.
 
   "has_quality"   — the week contains a real intensity session (tempo, threshold,
                     intervals, VO2max, hill reps).
   "has_benchmark" — the week contains the 5K time trial. That is a MEASUREMENT,
                     not a training stimulus. You cannot sharpen on it and it does
                     not make a week a quality week.
+  "is_overload_week" — this week's volume genuinely exceeds the previous
+                    non-deload week's. Only then may the copy imply the week is
+                    building or peaking. TAPER AND RACE WEEKS ARE NEVER OVERLOAD
+                    WEEKS: volume falls by design, and saying otherwise
+                    contradicts the plan the runner is holding.
 
 Three groups of words, three different requirements:
 
@@ -119,8 +125,9 @@ Three groups of words, three different requirements:
   C. benchmark · "time trial"
      → allowed only when has_benchmark is true.
 
-And never claim overload — "highest volume", "fitness is built" — unless the
-week's "weekly_km" genuinely exceeds the previous non-deload week's.
+  D. "highest volume" · "fitness is built"
+     → allowed only when is_overload_week is true. Do NOT compare weekly_km
+       figures yourself — the flag is the answer.
 
 This is not a style preference. A runner told "this week will feel hard" before
 five easy runs either pushes too hard to satisfy the framing — the exact failure
@@ -130,6 +137,7 @@ week its coaching voice; the athlete gets plain engine copy for it.
 For an all-easy week, describe the aerobic work honestly: "Base — Zone 2
 discipline", "Base — building consistency", "Race week — the work is done".
 For a deload week carrying only the time trial: "Deload — measure and recover".
+For a taper or race week: "Taper — trust the work", "Race week — the work is done".
 
 BANNED LANGUAGE — never use these in any field:
 - Do NOT use "Light", "Heavy", "Moderate", "Easy" or similar volume-based qualifiers to describe a week or schedule. 3 days is not "light" — it is what fits someone's life.
@@ -267,7 +275,7 @@ function buildUserMessage(plan: Plan, input: GeneratorInput, wantPaidFields: boo
     // claim requires a QUALITY session specifically — a measurement is not
     // something you sharpen on. The prompt and the checker must derive these from
     // one place or they will disagree again.
-    ...weekIntensityFlags(w),
+    ...weekIntensityFlags(w, plan.weeks),
     sessions: Object.fromEntries(
       Object.entries(w.sessions ?? {}).map(([day, s]) => [day, {
         type: s?.type,

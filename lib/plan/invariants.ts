@@ -17,7 +17,7 @@ import { isLongRun, isShakeout, classifyStimulus, isVo2maxSession, isStructuredS
 import { mainSetMinutes, durationForMainSet } from './sessionFormat'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord } from './sessionStructureV2'
 import { hrBandForZoneString } from '@/lib/coaching/zoneRules'
-import { weekIntensityFlags } from './weekIntensityFlags'
+import { weekIntensityFlags, isOverloadWeek } from './weekIntensityFlags'
 import { zonesFromZoneString } from '@/lib/coaching/zoneRules'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
 import { parseDateLocal, formatDate, getDistanceConfig } from './length'
@@ -739,7 +739,8 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       // output — see lib/plan/weekIntensityFlags.ts.
       const { hasQuality: hasIntensity, hasBenchmark } = weekIntensityFlags({
         sessions: Object.fromEntries(placedRunning.map(({ day, session }) => [day, session])),
-      } as Pick<Week, 'sessions'>)
+        weekly_km: w.weekly_km,
+      } as Pick<Week, 'sessions' | 'weekly_km'>)
 
       // Each claim names what must be present for it to be honest.
       const CLAIMS: Array<{ test: RegExp; ok: boolean; needs: string }> = [
@@ -764,9 +765,13 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       }
 
       // Overload claims are about the plan, not just the week.
+      // Through the shared predicate, so the prompt's `is_overload_week` flag and
+      // this check can never disagree (2026-09-04 — the prompt stated it as a
+      // rule the model had to evaluate, and it claimed overload on two taper
+      // weeks). `prevNonDeload` is still read below for the message.
       if (/highest volume|fitness is built/.test(copy)
           && prevNonDeload
-          && w.weekly_km <= prevNonDeload.weekly_km) {
+          && !isOverloadWeek(w, plan.weeks)) {
         violations.push({
           code: 'INV-PLAN-COPY-MATCHES-SESSIONS',
           principle_ref: 'CoachingPrinciples §27',
