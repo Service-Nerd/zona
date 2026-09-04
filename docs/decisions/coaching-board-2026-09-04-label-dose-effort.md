@@ -1,4 +1,6 @@
-# Coaching Board — 2026-09-04
+# Coaching Board — 2026-09-04 (first sitting)
+
+> A **second sitting** the same day ruled on the displayed HR band and quality-session distance — see `coaching-board-2026-09-04-zone-and-distance.md`.
 
 **Session-label honesty · VO2max dose quantisation · effort-governed sizing**
 
