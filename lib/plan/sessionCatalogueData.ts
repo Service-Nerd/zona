@@ -58,6 +58,22 @@ export interface SessionCatalogueRow {
    */
   parameterisation?: {
     name_template: string
+    /**
+     * How the engine picks between variants (CB-CAT-02, 2026-09-04).
+     *
+     * `'rotation'` (default) — `weekN % variants.length`. Variants are a
+     * VARIETY dial: 45s and 90s hill reps are different sessions to run and
+     * alternating them is deliberate (McMillan), so rotation is preserved for
+     * every row that does not opt out.
+     *
+     * `'dose'` — pick the variant whose own work minutes land closest to this
+     * runner's fitness x phase target. For a fixed-shape row (a pyramid) the
+     * variant IS the dose, and rotation makes it the one thing in the plan that
+     * ignores the band. Opt-IN precisely so it cannot silently convert a
+     * variety dial into a load increase (Seiler: "if everyone converges on the
+     * longest variant you have raised the load and called it selection").
+     */
+    select_by?: 'rotation' | 'dose'
     variants: Array<{ label_suffix: string; values: Record<string, number> }>
   }
   intensity_zones:      string[]
@@ -432,6 +448,9 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     // would have counted two labels for one session while doing it.
     parameterisation: {
       name_template: 'Pyramid — {param}',
+      // CB-CAT-02 — the rungs ARE the dose here, so rotation would make this the
+      // one session in the plan that ignores the runner's band.
+      select_by: 'dose',
       variants: [
         // 1+2+3+4+3+2+1 = 16 min at threshold.
         { label_suffix: '1-2-3-4-3-2-1',

@@ -255,3 +255,85 @@ should genuinely be re-measured.
 **A masked defect is more dangerous than a visible one.** This is the second time
 in two days a green result meant "the check stopped reaching the thing", not
 "the thing is right".
+
+
+---
+
+# CB-CAT-02 — Phase 2, same day
+
+Origin: the founder's "do all of these" — implement `rep_length` scaling, do
+per-category main-set sizing, and validate a plan. **Two of the three were the
+wrong task, and measuring said so before any code was written.**
+
+## What the measurement changed
+
+| task as stated | what measurement found |
+|---|---|
+| "implement `scaling: 'rep_length'`" | **Blocked by doctrine, not effort.** SC-08 makes rep length the *stimulus identity*; EG-01 rejected re-specifying it. Rep COUNT is the dose. Third time proposed, first time written down (§86). |
+| "per-category main-set sizing" | **Already built, swept and rejected** (CD-14): 15% -> 187 ordering breaches + 220 undersized sessions; 17% broke ordering outright. Also: only **11.8%** of quality sessions still use the flat share, and it is two rows, not an architecture. |
+
+I had also filed SC-10 under "SIZING-REALLOC-01" in this morning's backlog entry.
+Wrong: SIZING-REALLOC-01 closed 2026-09-03; SC-10/CD-14 is the per-category
+sizing question, decided against. Corrected.
+
+## Shipped
+
+1. **Dose-aware variant selection**, opt-in via `parameterisation.select_by`.
+   `threshold_pyramid` opts in; everything else keeps rotation (Seiler's
+   condition — variants are normally a variety dial, and "always pick the
+   biggest" is a load increase wearing the name of selection).
+2. **`threshold_ladder` structure-driven sizing.** It stated **61 min** for a
+   3-5-8-5-3 ladder whose own structure needs **50**.
+3. **`INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT` extended** to the
+   fixed-shape sized rows — its documented blind spot was exactly where the
+   61-minute ladder lived.
+
+## Reverted in the same sitting — `hm_pace_intervals` v1 -> v2
+
+Correct in principle (`reps: 4` hardcoded for every runner at every fitness) and
+unshippable today:
+
+- anchored at `goal` -> threw on every **finish-goal** plan (no goal pace to size
+  reps against);
+- anchored at `HM`, its v1 pace -> threw for a **structurally-beginner** runner,
+  who has no HM pace (§24b) but can draw an `intermediate` row through an upward
+  declaration. **71 hard failures in the sweep, all `21.1km/beginner`** — a live
+  §79 two-axes boundary the row surfaced;
+- failing soft -> **1,439 `INV-PLAN-DERIVED-SET` violations**, because a v2 row
+  must stamp a derived set.
+
+The blocker is that row eligibility cannot express *"this row needs a pace this
+runner has"*. Filed rather than forced.
+
+## Measured outcome
+
+Sessions differing between `intermediate` and `experienced`, same runner:
+
+| | start of day | after CB-CAT-01 | after CB-CAT-02 |
+|---|---|---|---|
+| 12-week 10K | 1 of 6 | 2 of 6 | **3 of 6** |
+| 14-week HM | — | — | **3 of 7** |
+
+Falsified, not asserted: forcing variant selection back to rotation drops both to
+2. Removing the ladder from the sizer returns it to 11.5 km / 61 min.
+
+**Still not differentiating:** `HM-pace reps` gives 2 x 2 km to both levels — 3
+reps would be 30.6 min against a 30 min band ceiling. That is EG-01's documented
+property (a distance-anchored rep cannot fill a time-anchored band), not a new
+defect.
+
+## The invariant extension was silently dead on first write
+
+It parsed step lengths and required a unit suffix (`3 min`, `90s`) — but
+`lib/format` also renders `1:30`, with no unit. Every step-set containing a mm:ss
+recovery returned null and the session was skipped, so the check reported **green
+with the defect deliberately reintroduced**.
+
+Only falsification caught it. Third time in two days that green meant "the check
+did not reach the thing".
+
+## Verification
+
+`npm run verify`: **956 tests / 115 files, matrix 17/17, sweep 16,141 plans, 0
+violations, 0 hard failures.** Each of the three changes falsification-tested
+individually.

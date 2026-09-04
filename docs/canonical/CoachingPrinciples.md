@@ -2558,6 +2558,82 @@ Origin: CAT-DEPTH-01. See `docs/decisions/catalogue-additions-proposal-2026-09-0
 
 ---
 
+## 86. A fixed-shape session still owes the runner a dose and an honest length
+
+**Principle.** A session whose shape does not repeat — a ladder, a pyramid — must
+still (a) state a duration its own structure fits, and (b) respond to the
+runner's dose band where it has any means to. "Fixed shape" describes the
+STRUCTURE, not a licence to ignore the band.
+
+**Why (a).** `threshold_ladder` took its duration from the generic
+quality-session formula rather than its own steps, and told a marathon runner
+**61 minutes** for a 3-5-8-5-3 ladder whose structure needs **50**. Eleven
+minutes of fiction on a session the runner then has to fit into a Tuesday
+evening. McMillan: *"the runner finds out on the road."* Measured, two rows —
+`threshold_ladder` and `hm_pace_intervals` — were **36 of 306 quality sessions
+(11.8%)** still on the flat share after SIZING-REALLOC-01 closed for the other
+nine. Not an architectural gap; two rows that were missed.
+
+**Why (b), and the constraint on it.** A parameterised fixed-shape row selects
+between VARIANTS, and variant selection was `weekN % variants.length` — a
+rotation. For a pyramid the variant IS the dose (16 vs 23 minutes of threshold
+work), so rotation made it the one session in the plan that ignored the band
+entirely: an experienced runner could draw the 16 and an intermediate the 23.
+Dose-aware selection picks the variant whose work minutes land closest to
+`THRESHOLD_WORK_TARGET_MINS[fitness][phase]`.
+
+**It is OPT-IN per row (`parameterisation.select_by`), and that is Seiler's
+condition, not an implementation convenience.** Variants are normally a VARIETY
+dial — 45-second and 90-second hill reps are different sessions to run, and
+alternating them is deliberate. Converting every variant set to "pick the
+biggest that fits" would raise training load under the name of selection. Rotation
+stays the default; a row opts in only where the variant genuinely is the dose.
+
+**What this does NOT license — `rep_length` scaling (recorded so it stops being
+proposed).** The obvious way to make dose continuous is to scale rep LENGTH, and
+`scaling: 'rep_length'` is declared in the v2 schema and read by nothing. **It is
+blocked by doctrine, not by effort.** SC-08 makes rep length the *stimulus
+identity*; EG-01 rejected re-specifying `intervals_long`'s on exactly this
+ground — *"shorten it and the row becomes `intervals_classic` with extra
+steps"*. Rep COUNT is the dose; rep length is what the session IS. This is the
+third time the lever has been proposed and the first time the block has been
+written down.
+
+**Also not re-opened: per-category sizing percentages.** CD-14 built and swept
+them — 15% produced 187 ordering breaches and 220 undersized sessions, 17% broke
+the ordering outright. That measurement stands.
+
+**Config.** None new. Dose-aware selection reads the existing
+`THRESHOLD_WORK_TARGET_MINS` / `VO2MAX_WORK_TARGET_MINS` bands and
+`SESSION_WORK_OVERRIDE_MINS`; fixed-shape sizing reads the row's own steps and no
+config at all — a ladder's dose IS its rungs.
+
+**Mechanical check.** `INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT` extended
+from `scaling: 'reps'` rows to the fixed-shape SIZED rows. Its documented blind
+spot used to read *"threshold_ladder and any other `scaling: 'fixed'` shape stay
+excluded"* — and the 61-minute ladder sat inside it. **The extension was itself
+silently dead on first write**: it parsed step lengths and required a unit
+suffix, so every step-set containing a `1:30` recovery returned null and the
+session was skipped. It reported green with the defect deliberately reintroduced.
+Falsification found that; the assertion alone did not. See
+[[feedback-verification-must-reach-the-change]].
+
+**Board:** CB-CAT-02, 2026-09-04 — CORRECT WITH AMENDMENT. Hutchinson chairing.
+Amendments: Seiler (opt-in, no convergence on the longest variant), McMillan
+(fix the ladder's stated length; keep hill-rep rotation), Willy/Sims (a fixed rep
+count applied to everyone was set for someone and inherited by the rest).
+
+**Ruled and then REVERTED in the same sitting: `hm_pace_intervals` v1 → v2.** The
+migration was correct in principle — `reps: 4` hardcoded for every runner at every
+fitness — and could not ship. Anchored at `goal` it threw on every finish-goal
+plan; anchored at `HM` (its v1 pace) it threw for a **structurally-beginner**
+runner, who has no HM pace by §24b yet can draw the row through an upward
+declaration (§79's two axes). Failing soft breaks `INV-PLAN-DERIVED-SET`, which
+requires a v2 row to stamp one. **The blocker is that eligibility cannot express
+"this row needs a pace this runner has"** — filed, not forced.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

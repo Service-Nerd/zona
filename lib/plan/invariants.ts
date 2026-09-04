@@ -290,6 +290,46 @@ const KNOWN_SHAPE_WORDS = new Set(
  *  the producer being wrong about it. Easy-anchored work is excluded here for
  *  the same reason it is there: a progression's ramp is not a second work pace.
  */
+/** Main-set minutes of a FIXED-SHAPE sized row, summed from the SESSION's own
+ *  derived set (CB-CAT-02).
+ *
+ *  Reads `derived_set`, not the row, deliberately. The row's lengths are
+ *  `{ kind: 'parameter' }` for a parameterised shape like the pyramid, so a
+ *  row-only reader cannot resolve them without re-deriving the variant — and
+ *  re-deriving it here would mean the checker computing the answer the same way
+ *  the producer did, which is how a checker stops being able to disagree.
+ *  The derived set is what the runner is actually shown.
+ */
+function fixedShapeMainMinutes(session: Session): number | null {
+  const FIXED_SHAPE_SIZED = new Set(['threshold_pyramid', 'threshold_ladder'])
+  if (!session.catalogue_id || !FIXED_SHAPE_SIZED.has(session.catalogue_id)) return null
+  const blocks = session.derived_set?.blocks
+  if (!blocks?.length) return null
+  let mins = 0
+  for (const b of blocks) {
+    let per = 0
+    for (const st of b.steps) {
+      // Three renderings, all produced by lib/format for the same field:
+      //   "3 min"  "90s"  "1:30"
+      // The last carries NO unit, and a first pass required one — so every
+      // ladder and pyramid step-set containing a mm:ss recovery returned null
+      // and the whole session was skipped. The invariant read green while the
+      // defect it was written for sat in front of it. Falsification caught it;
+      // the assertion alone did not.
+      const len = (st.length ?? '').trim()
+      let stepMins: number | null = null
+      const mmss = /^(\d+):(\d{2})$/.exec(len)
+      const unit = /^(\d+(?:\.\d+)?)\s*(min|s)\b/.exec(len)
+      if (mmss) stepMins = +mmss[1] + +mmss[2] / 60
+      else if (unit) stepMins = unit[2] === 's' ? +unit[1] / 60 : +unit[1]
+      if (stepMins == null) return null   // a distance step — not summable here
+      per += stepMins
+    }
+    mins += per * (b.repeat || 1)
+  }
+  return mins > 0 ? mins : null
+}
+
 function rowHasMixedWorkAnchors(catalogueId: string): boolean {
   const row = V1_SESSION_CATALOGUE.find(r => r.id === catalogueId)
   if (!row || !isV2Structure(row.main_set_structure)) return false
@@ -2385,12 +2425,19 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // goal_pace_sharpener, the vo2max rows) — plus `progressive_tempo` and
   // `tempo_continuous` specifically, whose continuous shapes are sized by
   // progressiveTempoPlan/continuousThresholdPlan (same ruling) and re-derived
-  // here since their rows have no literal length to sum from. threshold_ladder
-  // and any other `scaling: 'fixed'` shape stay excluded: their duration_mins
-  // comes from the older generic quality-session formula this ruling never
-  // touched, so asserting coherence there would flag a mismatch nothing ever
-  // promised not to have. v1 sessions have no rep structure to be incoherent
-  // with.
+  // here since their rows have no literal length to sum from.
+  //
+  // EXTENDED 2026-09-04 (CB-CAT-02) to the fixed-shape SIZED rows —
+  // `threshold_pyramid` and `threshold_ladder`. The exclusion below used to read
+  // "threshold_ladder and any other `scaling: 'fixed'` shape stay excluded:
+  // their duration_mins comes from the older generic quality-session formula",
+  // which was true and is no longer: both now size off their own structure via
+  // `fixedShapePlan`. The ladder was stating 61 minutes for a 3-5-8-5-3 session
+  // whose own structure needs 50 — precisely the incoherence this invariant
+  // exists to catch, sitting inside its documented blind spot. Any REMAINING
+  // `scaling: 'fixed'` row with no sizer stays excluded, correctly: nothing ever
+  // promised its duration would fit. v1 sessions have no rep structure to be
+  // incoherent with.
   {
     const tol = GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
     const planFitness = plan.meta.fitness_intensity_level ?? plan.meta.fitness_level
@@ -2400,6 +2447,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         const mainMins = pacedRepMainMinutes(sn)
           ?? progressiveTempoExpectedMainMins(sn.catalogue_id, planFitness, w.phase)
           ?? continuousThresholdExpectedMainMins(sn)
+          ?? fixedShapeMainMinutes(sn)
         if (mainMins == null) continue
         const expectedTotal = durationForMainSet(mainMins)
         if (Math.abs(sn.duration_mins - expectedTotal) > tol) {

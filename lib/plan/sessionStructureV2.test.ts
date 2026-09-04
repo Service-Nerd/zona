@@ -285,16 +285,39 @@ describe('SC-08b — the derived set reaches the runner', () => {
     expect(structure!.main.description).not.toContain('@ 5K pace')
   })
 
-  it('a v1 session is unaffected — the old path still renders', async () => {
+  it('a v1 repeats session is unaffected — the old path still renders', async () => {
     const { composeSession } = await import('./sessionComposer')
-    // tempo_cruise is still v1 (the vo2max rows migrated in SC-08); its v1 repeats
-    // structure renders through the old path with no derived set.
+    // SYNTHETIC ROW, deliberately (CB-CAT-02, 2026-09-04). This pinned
+    // `hm_pace_intervals` as its live v1 example. That row was migrated to v2
+    // during this ruling and then REVERTED (see the decision doc: an HM-anchored
+    // reps row cannot be sized for a structurally-beginner runner, who has no HM
+    // pace, yet can still draw the row via an upward declaration) — so the row is
+    // v1 again and this test would pass either way today.
+    //
+    // Kept synthetic regardless, because the coupling was the real fault: the
+    // test died the moment a row it did not own changed shape, and it will die
+    // again the next time one does. The v1 rendering path stays reachable
+    // (`long_run_with_segment`, `fartlek`, `time_on_feet` and the ultra shapes),
+    // and a renderer nothing exercises is a renderer that breaks silently.
     const structure = composeSession({
       session: {
         type: 'quality', label: 'HM-pace intervals', detail: null,
-        duration_mins: 55, zone: 'Zone 3–4', catalogue_id: 'hm_pace_intervals',
+        duration_mins: 55, zone: 'Zone 3–4', catalogue_id: 'synthetic_v1_repeats',
       } as never,
-      catalogueRow: V1_SESSION_CATALOGUE.find(r => r.id === 'hm_pace_intervals'),
+      catalogueRow: {
+        id: 'synthetic_v1_repeats', name: 'HM-pace intervals', category: 'race_specific',
+        purpose: 'Fixture only — not in the catalogue.',
+        phase_eligibility: ['peak'], distance_eligibility: ['HM'],
+        fitness_level_min: 'intermediate', difficulty_tier: 4,
+        main_set_structure: {
+          type: 'repeats', reps: 4,
+          work: { distance_m: 2000, pace_target: 'HM' },
+          recovery: { duration_mins: 3, type: 'jog' },
+        },
+        intensity_zones: ['Z3', 'Z4'],
+        typical_duration_min: 50, typical_duration_max: 65, is_free_tier: true,
+        coach_voice_notes: null,
+      } as never,
     })
     expect(structure!.main.description).toContain('2000m')
   })

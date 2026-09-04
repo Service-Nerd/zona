@@ -402,12 +402,15 @@ function buildFallbackPace(fitness: FitnessLevel): PaceGuide {
   // Beginners: null — no pace segments prescribed. (CoachingPrinciples §24b)
   let marathonPaceStr: string | null = null
   let hmPaceStr:       string | null = null
+  let hmMins:          number | null = null  // centre of hmPaceStr; kept so the band and its centre cannot drift
   if (fitness === 'intermediate') {
     marathonPaceStr = paceBandStr(base.minPerKmQuality + 0.50,       3)  // +30s/km
-    hmPaceStr       = paceBandStr(base.minPerKmQuality + 0.25,       3)  // +15s/km
+    hmMins          = base.minPerKmQuality + 0.25
+    hmPaceStr       = paceBandStr(hmMins,                            3)  // +15s/km
   } else if (fitness === 'experienced') {
     marathonPaceStr = paceBandStr(base.minPerKmQuality + (25 / 60),  3)  // +25s/km
-    hmPaceStr       = paceBandStr(base.minPerKmQuality + (12 / 60),  3)  // +12s/km
+    hmMins          = base.minPerKmQuality + (12 / 60)
+    hmPaceStr       = paceBandStr(hmMins,                            3)  // +12s/km
   }
   return {
     ...base,
@@ -1051,7 +1054,7 @@ function progressiveTempoPlan(
 // same fallback pacedRepPlan already applies for goal_pace_sharpener, a
 // taper-only row drawing from the same table).
 /**
- * §85 (CB-CAT-01) — sizing for `threshold_pyramid`.
+ * §85 (CB-CAT-01) — sizing for fixed-shape rows: pyramid, and (CB-CAT-02) ladder.
  *
  * A third `scaling: 'fixed'` shape, and like the two before it (`tempo_continuous`,
  * `progressive_tempo`) it gets its own sizer gated on row id. Nothing in the v2
@@ -1067,7 +1070,39 @@ function progressiveTempoPlan(
  * runner is prescribed, which is a board matter and not this ruling's scope. It
  * keeps the flat quality-session formula it has always used.
  */
-function pyramidPlan(
+/**
+ * WORK minutes of a fixed-shape v2 row under a given variant (CB-CAT-02).
+ *
+ * Work steps only — recovery is not dose. Used by dose-aware variant selection
+ * to compare a variant against the runner's band. Returns null when any length
+ * cannot be resolved to minutes (a distance rep, a missing parameter), because
+ * a partial sum compared against a band is worse than no comparison: it would
+ * silently prefer whichever variant happened to be more parseable.
+ */
+function variantWorkMinutes(
+  row: SessionCatalogueRow,
+  variant: { values: Record<string, number> },
+): number | null {
+  if (!isV2Structure(row.main_set_structure)) return null
+  const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+  if (!parsed.success) return null
+  let secs = 0
+  for (const block of parsed.data.blocks) {
+    const repeat = typeof block.repeat === 'number' ? block.repeat : 1
+    for (const step of block.steps) {
+      if (step.role !== 'work') continue
+      const len = step.length
+      const v = len.kind === 'duration' ? len.secs
+        : len.kind === 'parameter' ? variant.values?.[len.param]
+        : undefined
+      if (typeof v !== 'number') return null
+      secs += v * repeat
+    }
+  }
+  return secs > 0 ? secs / 60 : null
+}
+
+function fixedShapePlan(
   row: SessionCatalogueRow | null | undefined,
   variant: { values: Record<string, number> } | null,
   pace: PaceGuide,
@@ -1077,7 +1112,17 @@ function pyramidPlan(
   // with its own steps, which is the §8 defect this sizer exists to prevent.
   goalPaceMinPerKm: number | null = null,
 ): { mainMins: number; workPaceMinPerKm: number } | null {
-  if (!row || row.id !== 'threshold_pyramid' || !isV2Structure(row.main_set_structure)) return null
+  // CB-CAT-02 — `threshold_ladder` joins `threshold_pyramid` here. Measured
+  // before extending: those two rows were 36 of 306 quality sessions (11.8%)
+  // still taking the flat QUALITY_SESSION_PCT_OF_WEEKLY share after
+  // SIZING-REALLOC-01 closed for the other nine, so a 3-5-8-5-3 ladder with 90s
+  // jogs — 30 minutes of work — could state a duration its own structure does
+  // not fit (McMillan: "the runner finds out on the road").
+  //
+  // Still an explicit ALLOWLIST rather than "every fixed row", because a row
+  // joining it changes the length the runner is told, which is a board matter.
+  const FIXED_SHAPE_SIZED = new Set(['threshold_pyramid', 'threshold_ladder'])
+  if (!row || !FIXED_SHAPE_SIZED.has(row.id) || !isV2Structure(row.main_set_structure)) return null
   const parsed = StructureV2Schema.safeParse(row.main_set_structure)
   if (!parsed.success) return null
   let totalSecs = 0
@@ -1176,6 +1221,43 @@ function makeQualitySession(args: {
   const variant = (() => {
     const p = catalogueRow?.parameterisation
     if (!p || p.variants.length === 0) return null
+    // CB-CAT-02 (2026-09-04) — dose-aware selection, OPT-IN per row.
+    //
+    // For a fixed-shape row the variant IS the dose: `threshold_pyramid`'s two
+    // rung sets are 16 and 23 minutes of threshold work, and rotating them by
+    // week number made it the one session in the plan that ignored the runner's
+    // band entirely — an experienced runner could draw the 16 and an
+    // intermediate the 23. Picking the variant whose own work minutes land
+    // closest to `THRESHOLD_WORK_TARGET_MINS[fitness][phase]` is what makes a
+    // declaration reach a fixed-shape session at all.
+    //
+    // Rotation stays the default and every other row keeps it: variants are
+    // normally a VARIETY dial (45s vs 90s hill reps are different sessions to
+    // run), and converting that to "always the biggest" would raise load under
+    // the name of selection — Seiler's condition on this ruling.
+    if (p.select_by === 'dose' && catalogueRow) {
+      const cfg = GENERATION_CONFIG
+      const band = cfg.SESSION_WORK_OVERRIDE_MINS[catalogueRow.id]?.target
+        ?? (catalogueRow.category === 'vo2max'
+          ? cfg.VO2MAX_WORK_TARGET_MINS
+          : cfg.THRESHOLD_WORK_TARGET_MINS)
+      const target = band[fitness]?.[phase]
+      // No target for this fitness x phase cell (a taper, say) — fall through to
+      // rotation rather than inventing one. Absence is not zero.
+      if (typeof target === 'number') {
+        let best = p.variants[0]
+        let bestGap = Infinity
+        for (const v of p.variants) {
+          const mins = variantWorkMinutes(catalogueRow, v)
+          if (mins == null) continue
+          const gap = Math.abs(mins - target)
+          // Strict `<` keeps the FIRST variant on a tie, so the smaller shape
+          // wins an exact draw and regeneration stays deterministic.
+          if (gap < bestGap) { best = v; bestGap = gap }
+        }
+        if (bestGap < Infinity) return best
+      }
+    }
     return p.variants[weekN % p.variants.length]
   })()
 
@@ -1290,9 +1372,9 @@ function makeQualitySession(args: {
   // rows `pacedRepPlan` declines. Null for every paced row.
   const effortPlan = effortGovernedPlan(catalogueRow, variant, pace)
 
-  // §85 (CB-CAT-01, 2026-09-04) — threshold_pyramid's rung-sum sizing.
+  // §85 / CB-CAT-02 — fixed-shape rows sized by summing their own steps.
   // Null for every other row.
-  const pyramid = pyramidPlan(
+  const fixedShape = fixedShapePlan(
     catalogueRow, variant, pace,
     substituteThresholdWithGoal ? goalPaceMinPerKmForSizing : null,
   )
@@ -1610,7 +1692,7 @@ function makeQualitySession(args: {
   // cannot disagree about which shape they are describing.
   const structuredMainMins: number | null =
     repPlan?.mainMins ?? progTempoPlan?.mainMins ?? contTempoPlan?.mainMins
-    ?? pyramid?.mainMins ?? effortPlan?.mainMins ?? null
+    ?? fixedShape?.mainMins ?? effortPlan?.mainMins ?? null
 
   const segmentPricedKm = (mainMins: number, workPaceMinPerKm: number): number =>
     segmentPricedDistance(mainMins, workPaceMinPerKm, pace.minPerKmEasy)
@@ -1623,10 +1705,10 @@ function makeQualitySession(args: {
         // `minPerKm` here is already T-pace (quality pace) in this branch —
         // exact, not an approximation like progTempoPlan's multi-pace case.
         ? segmentPricedKm(contTempoPlan.mainMins, minPerKm)
-        : pyramid
+        : fixedShape
           // Every rung is T-anchored (pyramidPlan asserts it), so one work pace
           // prices the whole main set exactly, as tempo_continuous does.
-          ? segmentPricedKm(pyramid.mainMins, pyramid.workPaceMinPerKm)
+          ? segmentPricedKm(fixedShape.mainMins, fixedShape.workPaceMinPerKm)
           : distKm
   const rounded = roundDistance(effectiveDistKm)
   // CLASSIFY-STIMULUS-01 — stamp the stimulus from the trusted generator label
