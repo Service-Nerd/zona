@@ -42,6 +42,10 @@ interface ZoneTargets {
   easyHR: string
   shakeoutHR: string
   qualityHR: string
+  /** §84 — the zone string that DESCRIBES `qualityHR`. Paired at construction. */
+  qualityZone: string
+  /** §84 — the zone string that DESCRIBES `intervalsHR`. Paired at construction. */
+  intervalsZone: string
   intervalsHR: string
 }
 
@@ -211,6 +215,16 @@ function computeZones(mhr: number, rhr?: number): ZoneTargets {
       shakeoutHR:   `< ${z1Top} bpm`,
       qualityHR:    `${z3Low}–${z3Top} bpm`,
       intervalsHR:  `${z4Low}–${mhr} bpm`,
+      // §84 Amendment (Coaching Board 2026-09-04) — the zone STRING is authored
+      // in the same expression as the HR string it describes, so the two cannot
+      // drift. They had: every threshold session read `zone: 'Zone 3–4'` beside
+      // `hr_target: qualityHR`, and qualityHR is z3Low–z3Top — Zone 3 ONLY. The
+      // display derives its band from the zone string and the coach note renders
+      // hr_target, so one card showed "145–172 bpm" above "Hold 145–158 bpm".
+      // §84's own Config paragraph asserted these were written "consistently";
+      // it was true for intervals and assumed for quality.
+      qualityZone:   'Zone 3',
+      intervalsZone: 'Zone 4–5',
     }
   }
   // %MaxHR — used when resting HR not provided
@@ -226,6 +240,9 @@ function computeZones(mhr: number, rhr?: number): ZoneTargets {
     shakeoutHR:   `< ${z1Top} bpm`,
     qualityHR:    `${z3Low}–${z3Top} bpm`,
     intervalsHR:  `${z4Low}–${mhr} bpm`,
+    // §84 Amendment — see the Karvonen branch above. Same pairing, same reason.
+    qualityZone:   'Zone 3',
+    intervalsZone: 'Zone 4–5',
   }
 }
 
@@ -685,7 +702,7 @@ function qualitySession(
     ...(metric === 'distance' ? { distance_km: Math.round(distKm * 10) / 10 } : {}),
     duration_mins: dur(distKm, pace.minPerKmQuality),
     primary_metric: metric,
-    zone: 'Zone 3–4', hr_target: zones.qualityHR,
+    zone: zones.qualityZone, hr_target: zones.qualityHR,
     pace_target: pace.qualityPaceStr, rpe_target: rpe,
     ...(notes ? { coach_notes: notes } : {}),
   }
@@ -1218,7 +1235,7 @@ function makeQualitySession(args: {
       : overrideLabel
     minPerKm = goalCenterMins
     paceTarget = paceBandStr(goalCenterMins, 2)
-    zone = 'Zone 3–4'
+    zone = zones.qualityZone
     hrTarget = zones.qualityHR
   } else if (isEffortGoverned) {
     // SC-09 / CD-17a — NO PACE, deliberately. Placed before the vo2max branch
@@ -1234,13 +1251,13 @@ function makeQualitySession(args: {
     // and recovery. It is NOT surfaced as a target — see paceTarget below.
     minPerKm = pace.minPerKmEasy
     paceTarget = ''
-    zone = 'Zone 4–5'
+    zone = zones.intervalsZone
     hrTarget = zones.intervalsHR
   } else if (isVo2max) {
     label = catalogueRow?.name ?? fallbackLabel
     minPerKm = pace.minPerKmInterval
     paceTarget = pace.intervalPaceStr
-    zone = 'Zone 4–5'
+    zone = zones.intervalsZone
     hrTarget = zones.intervalsHR
   } else {
     // SC-02 — a repurposed aerobic row takes the engine's own threshold label
@@ -1250,7 +1267,7 @@ function makeQualitySession(args: {
     label = aerobicRepurposedAsQuality ? fallbackLabel : (catalogueRow?.name ?? fallbackLabel)
     minPerKm = pace.minPerKmQuality
     paceTarget = pace.qualityPaceStr
-    zone = 'Zone 3–4'
+    zone = zones.qualityZone
     hrTarget = zones.qualityHR
   }
 

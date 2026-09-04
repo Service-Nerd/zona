@@ -16,6 +16,7 @@ import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { isLongRun, isShakeout, classifyStimulus, isVo2maxSession, isStructuredSession } from './sessionRole'
 import { mainSetMinutes, durationForMainSet } from './sessionFormat'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord } from './sessionStructureV2'
+import { hrBandForZoneString } from '@/lib/coaching/zoneRules'
 import { zonesFromZoneString } from '@/lib/coaching/zoneRules'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
 import { parseDateLocal, formatDate, getDistanceConfig } from './length'
@@ -858,6 +859,65 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           message: `Coach note on "${session.label}" states zone(s) that contradict session.zone ("${session.zone}") — the header and the note would disagree`,
           actual: `note zone(s) ${mentions.join(', ')}`,
           expected: `a mention matching session.zone (${zoneKey})`,
+        })
+      }
+    }
+
+    // §84 Amendment (Coaching Board 2026-09-04) — the zone STRING and the
+    // HR TARGET must describe the same band.
+    //
+    // §84 made the session-detail header derive its bpm from `session.zone`
+    // while the coach note renders `{{session_hr}}` from `hr_target`. Its Config
+    // paragraph justified that as safe because the engine "already writes
+    // session.zone and session.hr_target together and consistently in every
+    // makeQualitySession branch (threshold → Zone 3–4/qualityHR; VO2 + hills →
+    // Zone 4–5/intervalsHR)". True for the second pair, ASSUMED for the first:
+    // `qualityHR` is z3Low–z3Top, which is Zone 3 ONLY. One card therefore read
+    // "145–172 bpm" as its headline and "Hold 145–158 bpm" six lines below.
+    //
+    // Nothing could have caught it: the §84 check compares a coach note's zone
+    // WORD to session.zone and never compares session.zone to hr_target. This is
+    // that comparison. The engine now pairs the two at construction
+    // (`zones.qualityZone`/`intervalsZone`, ruleEngine.ts) so they cannot be
+    // authored apart; this is the backstop proving they never are.
+    //
+    // SCOPED TO RANGE targets ("145–158 bpm"), not ceilings ("< 145 bpm").
+    // A ceiling is a different claim — it caps the session rather than
+    // describing its span — and the display already renders `hi <= 2` zones as
+    // "< top", which agrees. The one case that does NOT agree is the `Zone 2–3`
+    // long run with a marathon/HM-pace finish (48 sessions measured): its
+    // hr_target is the AEROBIC ceiling while the zone string describes the whole
+    // session including the faster finish. The board scoped this sitting to
+    // quality sessions, so that case is left ALONE and recorded rather than
+    // silently swept in — see the backlog entry.
+    for (const { day, session } of placedRunning) {
+      const zoneStr = session.zone
+      const hr = session.hr_target
+      if (!zoneStr || typeof hr !== 'string') continue
+      const m = /^\s*(\d+)\s*[–-]\s*(\d+)\s*bpm\s*$/.exec(hr)
+      if (!m) continue                        // ceiling or unparseable — out of scope
+      // meta, NOT input: §50's max-HR guard (HR-MAX-01) can REJECT a
+      // sub-estimate observed max and substitute the age estimate, so the raw
+      // input is not what produced `hr_target`. Reading input here made the
+      // check compute "Zone 3 = 107–114 bpm" against a real target of 145–158
+      // and fire 11,556 times — a checker reading a different source from the
+      // producer, which is the failure this repo keeps re-learning.
+      const band = hrBandForZoneString(
+        zoneStr,
+        plan.meta.resting_hr ?? input.resting_hr ?? null,
+        plan.meta.max_hr ?? input.max_hr ?? null,
+      )
+      if (!band) continue                     // no HR data to derive from
+      const lo = Number(m[1]), hi = Number(m[2])
+      if (band.lo !== lo || band.hi !== hi) {
+        violations.push({
+          code: 'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK',
+          principle_ref: 'CoachingPrinciples §84',
+          severity: 'error',
+          week: w.n, day,
+          message: `"${session.label}" states zone "${zoneStr}" (${band.lo}–${band.hi} bpm) but prescribes hr_target "${hr}" — the session-detail header reads the zone and the coach note reads the target, so the runner sees both numbers on one card.`,
+          actual: `zone ${zoneStr} = ${band.lo}–${band.hi} bpm vs hr_target ${hr}`,
+          expected: 'the zone string and hr_target to describe the same band',
         })
       }
     }
