@@ -10,6 +10,7 @@ import { EnrichedPlanSchema } from './schema'
 import type { Tier } from './ruleEngine'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import { BRAND } from '@/lib/brand'
+import { weekIntensityFlags } from './weekIntensityFlags'
 
 // ─── System prompt (cached via prompt-caching-2024-07-31 beta) ───────────────
 // Brand name is interpolated from BRAND.name so a future rename doesn't bleed
@@ -94,27 +95,41 @@ BAD:  "Stay below {{Z2_ceiling}} bpm."                  (wrong token name — ca
 Use placeholders ONLY for coach_notes. Week labels and themes do NOT contain numerics — never put placeholders in them. If a coach note doesn't reference a numeric value, no placeholder is needed.
 
 WEEK COPY MUST MATCH WHAT THE WEEK CONTAINS — the single most common reason
-enrichment is REJECTED and the whole plan reverts to plain copy:
+enrichment is REJECTED and a week reverts to plain copy:
 
-Every week you are given carries "has_intensity". When it is FALSE, that week has
-no quality session and no benchmark — it is entirely easy running, which is
-deliberate (base phase is all-easy by design, and race week is a taper plus the
-race). For those weeks, the label AND the theme must NOT contain any of:
+Every week you are given carries TWO flags. They are not interchangeable.
 
-    quality · threshold · tempo · interval · intervals · VO2 · VO2max
-    "feels hard" · "feel hard" · sharpen · "raising the ceiling"
-    "intensity stays" · benchmark · "time trial"
+  "has_quality"   — the week contains a real intensity session (tempo, threshold,
+                    intervals, VO2max, hill reps).
+  "has_benchmark" — the week contains the 5K time trial. That is a MEASUREMENT,
+                    not a training stimulus. You cannot sharpen on it and it does
+                    not make a week a quality week.
 
-Nor may they claim overload — "highest volume", "fitness is built" — unless the
+Three groups of words, three different requirements:
+
+  A. quality · threshold · tempo · interval · intervals · VO2 · VO2max ·
+     "feels hard" / "feel hard"
+     → allowed only when has_quality OR has_benchmark is true.
+
+  B. sharpen · sharpening · "raising the ceiling" · "intensity stays"
+     → allowed only when has_quality is true. NOT enough that has_benchmark is —
+       a deload week whose only hard effort is the time trial is recovering and
+       measuring, not sharpening.
+
+  C. benchmark · "time trial"
+     → allowed only when has_benchmark is true.
+
+And never claim overload — "highest volume", "fitness is built" — unless the
 week's "weekly_km" genuinely exceeds the previous non-deload week's.
 
 This is not a style preference. A runner told "this week will feel hard" before
 five easy runs either pushes too hard to satisfy the framing — the exact failure
-this product exists to prevent — or stops trusting the plan. ONE breach on ONE
-week discards the enrichment for EVERY week, so the athlete gets no voice at all.
+this product exists to prevent — or stops trusting the plan. A breach costs that
+week its coaching voice; the athlete gets plain engine copy for it.
 
 For an all-easy week, describe the aerobic work honestly: "Base — Zone 2
 discipline", "Base — building consistency", "Race week — the work is done".
+For a deload week carrying only the time trial: "Deload — measure and recover".
 
 BANNED LANGUAGE — never use these in any field:
 - Do NOT use "Light", "Heavy", "Moderate", "Easy" or similar volume-based qualifiers to describe a week or schedule. 3 days is not "light" — it is what fits someone's life.
@@ -244,14 +259,15 @@ function buildUserMessage(plan: Plan, input: GeneratorInput, wantPaidFields: boo
     type: w.type,
     phase: w.phase,
     weekly_km: w.weekly_km,
-    // Stated, not inferred. The model was already sent each session's `type` and
-    // could in principle work this out, but it was never told it needed to — and
-    // `INV-PLAN-COPY-MATCHES-SESSIONS` (§27) hard-rejects the whole enrichment
-    // when it gets it wrong. Computed with the SAME predicate the invariant uses
-    // (a `quality`/`intervals`/`tempo` session, or the §78 `hard` benchmark), so
-    // the prompt and the check cannot disagree about which weeks are safe.
-    has_intensity: Object.values(w.sessions ?? {}).some(
-      s => s?.type === 'quality' || s?.type === 'intervals' || s?.type === 'tempo' || s?.type === 'hard'),
+    // BOTH flags, from the shared owner the invariant also uses
+    // (lib/plan/weekIntensityFlags.ts). A single conflated `has_intensity` that
+    // counted the §78 time trial as intensity shipped on 2026-09-04 and
+    // immediately cost a deload week its voice: the model was told the week "had
+    // intensity", wrote "Build — recovery and sharpening", and §27's `/sharpen/`
+    // claim requires a QUALITY session specifically — a measurement is not
+    // something you sharpen on. The prompt and the checker must derive these from
+    // one place or they will disagree again.
+    ...weekIntensityFlags(w),
     sessions: Object.fromEntries(
       Object.entries(w.sessions ?? {}).map(([day, s]) => [day, {
         type: s?.type,

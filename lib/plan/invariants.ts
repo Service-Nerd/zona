@@ -9,7 +9,7 @@
 // Wired into generateRulePlan: throws on `error` severity in development;
 // logs in production (does not break the user).
 
-import type { Plan, GeneratorInput, Session } from '@/types/plan'
+import type { Plan, GeneratorInput, Session, Week } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
@@ -17,6 +17,7 @@ import { isLongRun, isShakeout, classifyStimulus, isVo2maxSession, isStructuredS
 import { mainSetMinutes, durationForMainSet } from './sessionFormat'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord } from './sessionStructureV2'
 import { hrBandForZoneString } from '@/lib/coaching/zoneRules'
+import { weekIntensityFlags } from './weekIntensityFlags'
 import { zonesFromZoneString } from '@/lib/coaching/zoneRules'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
 import { parseDateLocal, formatDate, getDistanceConfig } from './length'
@@ -733,9 +734,12 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       // never checked at all before.
       const labelText = (w.label ?? '').toLowerCase()
       const copy = `${labelText} | ${themeText}`
-      const hasIntensity = placedRunning.some(({ session }) =>
-        session.type === 'quality' || session.type === 'intervals' || session.type === 'tempo')
-      const hasBenchmark = placedRunning.some(({ session }) => session.type === 'hard')
+      // Derived through the shared owner so the enrich prompt (which is told
+      // these same two flags) cannot disagree with the check that judges its
+      // output — see lib/plan/weekIntensityFlags.ts.
+      const { hasQuality: hasIntensity, hasBenchmark } = weekIntensityFlags({
+        sessions: Object.fromEntries(placedRunning.map(({ day, session }) => [day, session])),
+      } as Pick<Week, 'sessions'>)
 
       // Each claim names what must be present for it to be honest.
       const CLAIMS: Array<{ test: RegExp; ok: boolean; needs: string }> = [
