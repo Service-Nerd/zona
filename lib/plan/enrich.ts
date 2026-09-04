@@ -84,8 +84,10 @@ Allowed tokens (use exactly these spellings, double curly braces):
 GOOD: "Keep HR below {{zone2_ceiling}} bpm — walk if needed."
 GOOD: "Hold {{session_hr}} for the main set."
 GOOD: "Stay around {{session_pace}}."
+GOOD: "This one lives in {{session_zone}}."
 BAD:  "Keep HR below 154 bpm — walk if needed."         (literal — will go stale)
 BAD:  "Hold 141–154 bpm for the main set."              (literal — will go stale)
+BAD:  "Quality: Zone 4–5, 158–185 bpm."                 (literal zone AND bpm — use {{session_zone}} / {{session_hr}} so the note can NEVER contradict the header — CoachingPrinciples §84)
 BAD:  "Keep HR below {{zone_2_ceiling}} bpm."           (wrong token name — underscore placement)
 BAD:  "Stay below {{Z2_ceiling}} bpm."                  (wrong token name — capitalisation)
 

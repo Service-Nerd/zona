@@ -76,6 +76,58 @@ export function sessionHRBand(
   return { ...band, zone }
 }
 
+/**
+ * Parse a `session.zone` display string into its zone numbers.
+ *
+ * "Zone 3" → [3]; "Zone 3–4" → [3,4]; "Zone 4–5" → [4,5]; "Zone 2–3" → [2,3].
+ * Handles both the en-dash (–) the engine writes and a plain hyphen. Returns
+ * [] when unparseable, so callers can fall back to the type-derived zone.
+ *
+ * §84 — `session.zone` is the authoritative, prescription-derived zone (single
+ * or range). The session-detail header reads THIS, not `zoneNumberForType`,
+ * which collapses every quality session (all typed `quality`) to a flat Z3.
+ */
+export function zonesFromZoneString(zoneStr: string | undefined | null): number[] {
+  if (!zoneStr) return []
+  const nums = (zoneStr.match(/[1-5]/g) ?? []).map(Number)
+  if (nums.length === 0) return []
+  const lo = Math.min(...nums), hi = Math.max(...nums)
+  const out: number[] = []
+  for (let z = lo; z <= hi; z++) out.push(z)
+  return out
+}
+
+/**
+ * HR band spanning a `session.zone` string, from the canonical ZONE_TABLE and
+ * the user's resting/max HR. "Zone 4–5" → Z4 low bound → Z5 high bound.
+ * Karvonen when RHR is known, %MaxHR otherwise. Null when HR data or the zone
+ * string is missing — callers then fall back to the baked `hr_target`.
+ *
+ * This is what lets the header's live-recomputed bpm honour the *prescribed*
+ * zone rather than the coarse session type (§84).
+ */
+export function hrBandForZoneString(
+  zoneStr: string | undefined | null,
+  restingHR: number | null | undefined,
+  maxHR: number | null | undefined,
+): { lo: number; hi: number } | null {
+  const zones = zonesFromZoneString(zoneStr)
+  if (zones.length === 0 || !maxHR) return null
+  const loKey = `Z${Math.min(...zones)}` as keyof typeof ZONE_TABLE
+  const hiKey = `Z${Math.max(...zones)}` as keyof typeof ZONE_TABLE
+  if (restingHR) {
+    const hrr = maxHR - restingHR
+    return {
+      lo: Math.round(restingHR + (ZONE_TABLE[loKey].karvonen_pct[0] / 100) * hrr),
+      hi: Math.round(restingHR + (ZONE_TABLE[hiKey].karvonen_pct[1] / 100) * hrr),
+    }
+  }
+  return {
+    lo: Math.round((ZONE_TABLE[loKey].maxhr_pct[0] / 100) * maxHR),
+    hi: Math.round((ZONE_TABLE[hiKey].maxhr_pct[1] / 100) * maxHR),
+  }
+}
+
 /** Did the completed session land in its prescribed zone?
  *
  *  For easy/long/recovery (Z2): avg_hr must be ≤ Z2 ceiling. Drift above

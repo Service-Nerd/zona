@@ -16,6 +16,7 @@ import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { isLongRun, isShakeout, classifyStimulus, isVo2maxSession, isStructuredSession } from './sessionRole'
 import { mainSetMinutes, durationForMainSet } from './sessionFormat'
 import { isV2Structure, StructureV2Schema } from './sessionStructureV2'
+import { zonesFromZoneString } from '@/lib/coaching/zoneRules'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
 import { parseDateLocal, formatDate, getDistanceConfig } from './length'
 import { FITNESS_RANK } from './fitnessAssessment'
@@ -39,6 +40,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-VO2MAX-ONSET',
   'INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS',
   'INV-PLAN-COACH-NOTES-MATCH-INTENT',
+  'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK',
   'INV-PLAN-LABEL-MATCHES-PACE',
   'INV-PLAN-INJURY-NO-HILLS',
   'INV-PLAN-RETURNING-INTENSITY-REENTRY',
@@ -660,6 +662,53 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             expected: 'voice matching session intent',
           })
         }
+      }
+    }
+
+    // INV-PLAN-DISPLAY-ZONE-MATCHES-WORK — the zone a runner SEES derives from
+    // the prescribed work (session.zone), and no coach note may state a literal
+    // zone that contradicts it. Every quality session is typed `quality`, so a
+    // type→zone display map showed a flat "Zone 3" for tempo, VO2 and hills
+    // alike, contradicting the coach note (which reads session.zone) on the same
+    // card. (CoachingPrinciples §84)
+    for (const { day, session } of placedRunning) {
+      const zoneKey = zonesFromZoneString(session.zone).join('-')
+
+      // A quality session must carry the prescribed zone string the display
+      // reads. The engine always sets it (makeQualitySession); a missing one is
+      // a regression that would silently fall back to a coarse type-derived zone.
+      if (session.type === 'quality' && !zoneKey) {
+        violations.push({
+          code: 'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK',
+          principle_ref: 'CoachingPrinciples §84',
+          severity: 'error',
+          week: w.n, day,
+          message: `Quality session "${session.label}" has no session.zone — the header would fall back to a coarse type-derived zone (a flat "Zone 3")`,
+          actual: `session.zone = ${JSON.stringify(session.zone ?? null)}`,
+          expected: 'a prescribed zone string, e.g. "Zone 3–4" or "Zone 4–5"',
+        })
+        continue
+      }
+      if (!zoneKey) continue
+
+      // A coach note that discusses zones must reference the prescribed one. We
+      // flag only when the note mentions zone(s) yet NONE matches session.zone —
+      // a note may legitimately mention a recovery zone in passing, so we don't
+      // flag on the mere presence of some other zone number.
+      const notes = (session.coach_notes ?? []).join(' ')
+      const mentions = Array.from(notes.matchAll(/zone\s*[1-5](?:\s*[–-]\s*[1-5])?/gi))
+        .map(m => zonesFromZoneString(m[0]).join('-'))
+        .filter(Boolean)
+      if (mentions.length > 0 && !mentions.includes(zoneKey)) {
+        violations.push({
+          code: 'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK',
+          principle_ref: 'CoachingPrinciples §84',
+          severity: 'error',
+          week: w.n, day,
+          message: `Coach note on "${session.label}" states zone(s) that contradict session.zone ("${session.zone}") — the header and the note would disagree`,
+          actual: `note zone(s) ${mentions.join(', ')}`,
+          expected: `a mention matching session.zone (${zoneKey})`,
+        })
       }
     }
 

@@ -1,0 +1,491 @@
+<title>Session Structure Redesign</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+  /* ---- Warm Slate (ADR-007). Single light theme by design (ADR-008). ---- */
+  :root{
+    --bg:#F3F0EB; --bg-soft:#EDE9E1; --card:#FFFFFF;
+    --ink:#1A1A1A; --ink-2:#3D3A36; --mute:#8A857D; --mute-2:#A8A29A;
+    --moss:#6B8E6B; --moss-soft:#E4EBE1; --moss-mid:#8BAA88;
+    --warn:#B8853A; --warn-bg:#F5ECDD; --coach-ink:#3D2600;
+    --s-quality:#B8853A; --s-inter:#B84545; --s-recov:#4E8068; --s-easy:#3D6FB0; --s-strength:#5A6578;
+    --line:rgba(26,26,26,0.08); --line-strong:rgba(26,26,26,0.16);
+    --page:#E8E3DA; --panel:#FBF9F5; --ink-chrome:#2B2822; --mute-chrome:#7C766C;
+    --bad:#B84545;
+    --font:"Inter",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0; background:var(--page); color:var(--ink-chrome); font-family:var(--font); line-height:1.5; -webkit-font-smoothing:antialiased; padding:32px 20px 80px}
+  .wrap{max-width:940px; margin:0 auto}
+
+  .masthead{margin-bottom:28px}
+  .kicker{font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--warn); margin:0 0 8px}
+  .masthead h1{font-size:30px; font-weight:800; letter-spacing:-.02em; margin:0 0 10px; color:var(--ink-chrome); text-wrap:balance}
+  .masthead p{margin:0; max-width:66ch; font-size:15px; color:var(--mute-chrome)}
+  .legend{display:flex; flex-wrap:wrap; gap:8px 16px; margin-top:16px}
+  .legend span{display:inline-flex; align-items:center; gap:7px; font-size:12.5px; color:var(--mute-chrome)}
+  .dot{width:9px; height:9px; border-radius:50%; flex:none}
+  .metricnote{margin-top:14px; font-size:12.5px; color:var(--mute-chrome); background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 13px; max-width:74ch}
+  .metricnote b{color:var(--ink-chrome)}
+  .chip-km{display:inline-flex; border:1px solid var(--line-strong); border-radius:7px; overflow:hidden; vertical-align:middle; margin:0 2px}
+  .chip-km i{font-style:normal; font-size:11px; font-weight:700; padding:2px 7px}
+  .chip-km .on{background:var(--s-quality); color:#fff}
+  .chip-km .off{color:var(--mute)}
+
+  .session{margin-top:40px}
+  .sess-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--line-strong)}
+  .sess-n{font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#fff; background:var(--ink-chrome); padding:3px 8px; border-radius:5px}
+  .sess-t{font-size:17px; font-weight:700; color:var(--ink-chrome)}
+  .sess-sub{font-size:13px; color:var(--mute-chrome)}
+  .verdict{margin-left:auto; font-size:12px; font-weight:600; padding:4px 10px; border-radius:100px}
+  .v-bug{background:#F6E0DE; color:#9A3530}
+  .v-ok{background:var(--moss-soft); color:#3E5C3E}
+
+  .cols{display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start}
+  @media (max-width:760px){ .cols{grid-template-columns:1fr} }
+  .col-label{font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin:0 0 8px}
+  .col-label.now{color:var(--bad)}
+  .col-label.next{color:var(--moss)}
+
+  /* ---------- before ---------- */
+  .before{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px}
+  .before .struct-eyebrow{font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--mute); margin:0 0 12px}
+  .b-row{padding:9px 0; border-top:1px solid var(--line)}
+  .b-row:first-of-type{border-top:0}
+  .b-row .top{display:flex; justify-content:space-between; gap:10px; align-items:baseline}
+  .b-row .name{font-size:14px; font-weight:700; color:var(--ink)}
+  .b-row .meta{font-size:12px; color:var(--mute); white-space:nowrap}
+  .b-row .desc{font-size:13px; color:var(--ink-2); margin-top:3px}
+  .b-strides{margin:6px 0 6px 12px; padding-left:12px; border-left:1px dashed var(--line-strong)}
+  .b-strides .s1{font-size:13px; font-weight:600; color:var(--moss)}
+  .b-strides .s2{font-size:12.5px; color:var(--mute)}
+  .b-flag{margin-top:2px; font-size:11.5px; color:var(--bad); background:#F6E0DE; border-radius:6px; padding:5px 8px}
+  mark.g{background:#F6E0DE; color:#8A2F2A; border-radius:3px; padding:0 2px; font-weight:600}
+
+  /* ---------- phone / after ---------- */
+  .phone{background:var(--bg); border:1px solid var(--line-strong); border-radius:20px; padding:14px; display:flex; flex-direction:column; gap:10px}
+
+  .hz{background:var(--card); border:1px solid var(--line); border-left:4px solid var(--s-quality); border-radius:12px; padding:11px 13px}
+  .hz .eyebrow{display:flex; align-items:center; gap:6px; font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--moss); margin-bottom:5px}
+  .hz .eyebrow .d{width:6px; height:6px; border-radius:50%; background:var(--moss)}
+  .hz .zone{font-size:20px; font-weight:800; letter-spacing:-.01em; color:var(--s-quality); line-height:1.15}
+  .hz .zone b{color:var(--ink); font-weight:800}
+  .hz .bpm{font-size:13px; color:var(--mute); margin-top:2px}
+  .hz .fix{display:inline-block; margin-top:7px; font-size:11px; color:var(--moss); background:var(--moss-soft); border-radius:6px; padding:3px 7px; font-weight:600}
+  .hz .was{color:var(--mute); text-decoration:line-through; font-weight:500}
+
+  .kit{position:relative; background:var(--warn-bg); border-radius:12px; padding:12px 14px 12px 18px}
+  .kit .rail{position:absolute; left:8px; top:12px; bottom:12px; width:3px; border-radius:3px; background:var(--warn)}
+  .kit .byline{display:flex; align-items:center; gap:8px; margin-bottom:7px}
+  .kit .av{width:22px; height:22px; border-radius:50%; background:linear-gradient(135deg,var(--warn),#9A6F2A); color:#fff; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; flex:none}
+  .kit .who{font-size:13px; font-weight:700; color:var(--coach-ink); line-height:1.1}
+  .kit .role{font-size:9.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--warn)}
+  .kit .body{font-size:13px; color:var(--coach-ink); line-height:1.5}
+
+  /* toggle chip */
+  .toghead{display:flex; justify-content:space-between; align-items:center; padding:0 2px 2px}
+  .toghead .lbl{font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--mute-chrome)}
+  .toghead .tog{display:inline-flex; border:1px solid var(--line-strong); border-radius:6px; overflow:hidden; background:var(--card)}
+  .toghead .tog i{font-style:normal; font-size:9.5px; font-weight:700; padding:2px 8px; letter-spacing:.04em}
+  .toghead .tog .on{background:var(--ink); color:var(--bg)}
+  .toghead .tog .off{color:var(--mute)}
+
+  /* NEW — per-section cards (steal from Runna, restrained) */
+  .seccard{background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+  .sechead{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 13px}
+  .sechead .nm{display:flex; align-items:center; gap:7px; font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase}
+  .sechead .repico{font-size:12px; opacity:.8}
+  .sechead .tot{font-size:11px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .sechead .info{width:15px; height:15px; border-radius:50%; border:1.2px solid currentColor; font-size:9.5px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; opacity:.7}
+  .seccard.warm .sechead{background:rgba(107,142,107,.13)}   .seccard.warm .nm,.seccard.warm .tot{color:#3E5C3E}
+  .seccard.q .sechead{background:rgba(184,133,58,.15)}       .seccard.q .nm,.seccard.q .tot{color:var(--s-quality)}
+  .seccard.i .sechead{background:rgba(184,69,69,.13)}        .seccard.i .nm,.seccard.i .tot{color:var(--s-inter)}
+  .seccard.cool .sechead{background:rgba(90,101,120,.13)}    .seccard.cool .nm,.seccard.cool .tot{color:var(--s-strength)}
+
+  .steps{position:relative}
+  .steps::before{content:''; position:absolute; left:23px; top:16px; bottom:16px; width:1.5px; background:var(--line); z-index:0}
+  .srow{position:relative; z-index:1; display:flex; align-items:flex-start; gap:11px; padding:11px 13px; border-top:1px solid var(--line)}
+  .srow:first-child{border-top:0}
+  .snum{flex:none; width:20px; text-align:center; font-size:14px; font-weight:800; font-style:italic; color:var(--mute-2); font-variant-numeric:tabular-nums; background:var(--card); padding:1px 0}
+  .sbody{flex:1; min-width:0; display:flex; align-items:flex-start; justify-content:space-between; gap:12px}
+  .sleft{min-width:0}
+  .sleft .role{display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700; color:var(--ink)}
+  .sleft .sd{width:9px; height:9px; border-radius:50%; flex:none}
+  .sd.run{background:var(--s-quality)} .i .sd.run{background:var(--s-inter)}
+  .sd.rest{background:transparent; border:1.5px solid var(--mute-2)}
+  .sleft .qual{font-size:12px; color:var(--mute); margin-top:3px; line-height:1.4}
+  .sleft .qual b{color:var(--ink-2); font-weight:600}
+  .sright{text-align:right; flex:none}
+  .sright .amt{font-size:14px; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; line-height:1.1}
+  .srow.rest .sright .amt,.srow.rest .sleft .role{color:var(--ink-2)}
+  .srow.rest .sleft .role{font-weight:600}
+  .sright .det{font-size:11px; color:var(--mute); margin-top:3px; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .sright .det b{color:var(--ink-2); font-weight:700}
+  .tag{font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; padding:2px 6px; border-radius:4px}
+  .tag.run{color:#3E5C3E; background:var(--moss-soft)} .i .tag.run{color:var(--s-inter); background:rgba(184,69,69,.1)}
+  .tag.rest{color:var(--s-easy); background:rgba(61,111,176,.1)}
+
+  /* repeat sub-bar inside a section card */
+  .repbar{display:flex; align-items:center; gap:8px; padding:6px 13px 6px 44px; background:var(--bg-soft); font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-2); position:relative; z-index:1}
+  .repbar .rx{font-size:14px; font-weight:800; font-style:italic; font-variant-numeric:tabular-nums}
+  .seccard.q .repbar .rx{color:var(--s-quality)} .seccard.i .repbar .rx{color:var(--s-inter)}
+  .repbar .rtot{margin-left:auto; font-weight:600; text-transform:none; letter-spacing:0; color:var(--mute); font-variant-numeric:tabular-nums}
+
+  .caption{font-size:12px; color:var(--mute-chrome); margin:4px 2px 0; line-height:1.5}
+  .caption b{color:var(--ink-chrome)}
+
+  .notes{margin-top:56px; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:24px}
+  .notes h2{font-size:12px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--warn); margin:0 0 4px}
+  .notes .lead{font-size:14px; color:var(--mute-chrome); margin:0 0 20px}
+  .ncard{border-top:1px solid var(--line); padding:16px 0}
+  .ncard:last-child{padding-bottom:0}
+  .ncard .rt{display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap}
+  .ncard h3{font-size:15px; font-weight:700; color:var(--ink-chrome); margin:0}
+  .pill{font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:3px 9px; border-radius:100px}
+  .p-fix{background:#DEE9DC; color:#3E5C3E}
+  .p-design{background:#E3E7EF; color:#3D4F6B}
+  .p-board{background:var(--warn-bg); color:var(--warn)}
+  .ncard p{margin:0; font-size:13.5px; color:var(--ink-2); line-height:1.6; max-width:80ch}
+  .ncard code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; background:var(--bg-soft); padding:1px 5px; border-radius:4px; color:var(--ink)}
+  .steal{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:10px}
+  @media (max-width:640px){ .steal{grid-template-columns:1fr} }
+  .steal .box{border:1px solid var(--line); border-radius:12px; padding:14px 16px; background:var(--card)}
+  .steal h4{margin:0 0 8px; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase}
+  .steal.a h4{color:var(--moss)} .steal .no h4{color:var(--bad)}
+  .steal ul{margin:0; padding-left:18px}
+  .steal li{font-size:13px; color:var(--ink-2); line-height:1.5; margin-bottom:6px}
+  .foot{margin-top:24px; font-size:12px; color:var(--mute-chrome)}
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <p class="kicker">Zonna · Session detail · Design review · v3 · Runna-informed</p>
+    <h1>Making a quality session readable mid-run</h1>
+    <p>v3 folds in the best of Runna — per-section cards, numbered steps with a connector, and plain-language pace cues — while keeping what's ours: zone framing, block totals, and Warm Slate restraint (no loud colour floods). Left is live today; right is the proposal.</p>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--s-quality)"></span>Run — quality</span>
+      <span><span class="dot" style="background:var(--s-inter)"></span>Run — intervals</span>
+      <span><span class="dot" style="background:transparent;border:1.5px solid var(--mute-2)"></span>Rest / recovery</span>
+      <span><span class="dot" style="background:var(--moss)"></span>Strides / warm-up</span>
+    </div>
+    <p class="metricnote">Shown with the metric toggle on <span class="chip-km"><i class="on">km</i><i class="off">min</i></span> — the user's choice. <b>Distance leads everywhere</b>; time sits behind it as a cue, because interval work is run by the clock. Flip the toggle and the two swap.</p>
+  </header>
+
+  <!-- ============ SESSION 1 ============ -->
+  <section class="session">
+    <div class="sess-head">
+      <span class="sess-n">01</span><span class="sess-t">Tempo intervals</span>
+      <span class="sess-sub">Week 6 · 10 km · Zone 3–4</span>
+      <span class="verdict v-ok">Header ~agrees · main set dense</span>
+    </div>
+    <div class="cols">
+      <div>
+        <p class="col-label now">● Live today</p>
+        <div class="before">
+          <p class="struct-eyebrow">Session structure</p>
+          <div class="b-row"><div class="top"><span class="name">Warm-up</span><span class="meta">~3km · Z1→Z2</span></div><div class="desc">Easy build through warm-up. Final third in Z2.</div>
+            <div class="b-strides"><div class="s1">Strides — 4 × 20s</div><div class="s2">4×20s strides at end of warm-up.</div></div></div>
+          <div class="b-row"><div class="top"><span class="name">Main set</span><span class="meta">~6km · Zone 3-4</span></div>
+            <div class="desc">4 × (5 min at 4:25–4:35 /km + 1:30 at no faster than 5:53–7:02 /km jog).</div></div>
+          <div class="b-row"><div class="top"><span class="name">Cool-down</span><span class="meta">~1km · Z1</span></div><div class="desc">Easy walk-jog finish.</div></div>
+        </div>
+      </div>
+      <div>
+        <p class="col-label next">● Proposed</p>
+        <div class="phone">
+          <div class="toghead"><span class="lbl">Session structure</span><span class="tog"><i class="on">KM</i><i class="off">MIN</i></span></div>
+
+          <div class="seccard warm">
+            <div class="sechead"><span class="nm">Warm-up</span><span class="tot">~3 km · Z1→Z2</span></div>
+            <div class="steps">
+              <div class="srow"><span class="snum">1</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd run"></span>Easy run</span><span class="qual"><b>Conversational.</b> No faster than 5:53/km.</span></div>
+                <div class="sright"><div class="amt">~2.5 km</div><div class="det">Z1→Z2</div></div></div></div>
+              <div class="srow"><span class="snum">2</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd run"></span>Strides</span><span class="qual">4 × 20s — fast &amp; relaxed, full recovery.</span></div>
+                <div class="sright"><div class="amt">4 × 20s</div><div class="det">~0.5 km</div></div></div></div>
+            </div>
+          </div>
+
+          <div class="seccard q">
+            <div class="sechead"><span class="nm">Main set <span class="info">i</span></span><span class="tot">~6 km · Zone 3–4</span></div>
+            <div class="repbar"><span class="rx">4×</span><span>rounds of</span><span class="rtot">~5.4 km work</span></div>
+            <div class="steps">
+              <div class="srow"><span class="snum">3</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd run"></span>Hard</span><span class="qual">Controlled, comfortably hard.</span></div>
+                <div class="sright"><div class="amt">~1.1 km</div><div class="det">5 min · <b>4:25–4:35 /km</b></div></div></div></div>
+              <div class="srow rest"><span class="snum"></span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd rest"></span>Jog</span><span class="qual">Easy — let the HR drop.</span></div>
+                <div class="sright"><div class="amt">~0.25 km</div><div class="det">1:30 · ≤ 5:53–7:02 /km</div></div></div></div>
+            </div>
+          </div>
+
+          <div class="seccard cool">
+            <div class="sechead"><span class="nm">Cool-down</span><span class="tot">~1 km · Z1</span></div>
+            <div class="steps">
+              <div class="srow"><span class="snum">4</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd rest"></span>Easy jog / walk</span><span class="qual">Conversational or slower.</span></div>
+                <div class="sright"><div class="amt">~1 km</div><div class="det">Z1</div></div></div></div>
+            </div>
+          </div>
+          <p class="caption"><b>Runna's chunking, our restraint:</b> each phase is its own card with a tinted (not flooded) header, steps are numbered with a connector line, and every step gets a plain-language cue.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SESSION 2 ============ -->
+  <section class="session">
+    <div class="sess-head">
+      <span class="sess-n">02</span><span class="sess-t">VO₂ intervals</span>
+      <span class="sess-sub">11 km · genuinely Zone 4–5</span>
+      <span class="verdict v-bug">Header says Z3 · Kit says Z4–5</span>
+    </div>
+    <div class="cols">
+      <div>
+        <p class="col-label now">● Live today</p>
+        <div class="before">
+          <div class="kit" style="margin-bottom:12px"><span class="rail"></span>
+            <div class="byline"><span class="av">K</span><div><div class="who">Kit</div><div class="role">Your coach</div></div></div>
+            <div class="body">Quality: <b>Zone 4–5, 158–185 bpm</b>. 11 km. This is the work that closes the gap between you and 45:00. Stay composed.</div></div>
+          <div class="b-flag">Header for the same session reads <b>“Zone 3 · tempo, 145–158 bpm”</b>. The two contradict each other.</div>
+          <p class="struct-eyebrow" style="margin-top:14px">Session structure</p>
+          <div class="b-row"><div class="top"><span class="name">Main set</span><span class="meta">~7km · Zone 4-5</span></div>
+            <div class="desc">6 × (3 min at 4:30–4:42 /km + 2 min at no faster than 5:53–7:02 /km jog).</div></div>
+        </div>
+      </div>
+      <div>
+        <p class="col-label next">● Proposed</p>
+        <div class="phone">
+          <div class="hz">
+            <div class="eyebrow"><span class="d"></span>Hold the zone</div>
+            <div class="zone">Zone <b>4–5</b> · intervals</div><div class="bpm">158–185 bpm</div>
+            <span class="fix">now matches Kit · <span class="was">was Zone 3 · tempo</span></span>
+          </div>
+          <div class="toghead"><span class="lbl">Session structure</span><span class="tog"><i class="on">KM</i><i class="off">MIN</i></span></div>
+
+          <div class="seccard warm">
+            <div class="sechead"><span class="nm">Warm-up</span><span class="tot">~3 km · Z1→Z2</span></div>
+            <div class="steps">
+              <div class="srow"><span class="snum">1</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd run"></span>Easy run</span><span class="qual"><b>Conversational.</b> No faster than 5:53/km.</span></div>
+                <div class="sright"><div class="amt">~2.5 km</div><div class="det">Z1→Z2</div></div></div></div>
+              <div class="srow"><span class="snum">2</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd run"></span>Strides</span><span class="qual">4 × 20s — fast &amp; relaxed.</span></div>
+                <div class="sright"><div class="amt">4 × 20s</div><div class="det">~0.5 km</div></div></div></div>
+            </div>
+          </div>
+
+          <div class="seccard i">
+            <div class="sechead"><span class="nm">Main set <span class="info">i</span></span><span class="tot">~7 km · Zone 4–5</span></div>
+            <div class="repbar"><span class="rx">6×</span><span>rounds of</span><span class="rtot">~5.7 km work</span></div>
+            <div class="steps">
+              <div class="srow"><span class="snum">3</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd run"></span>Hard</span><span class="qual">Strong &amp; even — VO₂ effort.</span></div>
+                <div class="sright"><div class="amt">~0.65 km</div><div class="det">3 min · <b>4:30–4:42 /km</b></div></div></div></div>
+              <div class="srow rest"><span class="snum"></span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd rest"></span>Jog</span><span class="qual">Easy — full recovery.</span></div>
+                <div class="sright"><div class="amt">~0.3 km</div><div class="det">2 min · ≤ 5:53–7:02 /km</div></div></div></div>
+            </div>
+          </div>
+
+          <div class="seccard cool">
+            <div class="sechead"><span class="nm">Cool-down</span><span class="tot">~1 km · Z1</span></div>
+            <div class="steps">
+              <div class="srow"><span class="snum">4</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd rest"></span>Easy jog / walk</span><span class="qual">Conversational or slower.</span></div>
+                <div class="sright"><div class="amt">~1 km</div><div class="det">Z1</div></div></div></div>
+            </div>
+          </div>
+          <p class="caption"><b>Zone reconciled:</b> the header now reflects the real intensity of the work — the coaching-board question in the notes below.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SESSION 3 ============ -->
+  <section class="session">
+    <div class="sess-head">
+      <span class="sess-n">03</span><span class="sess-t">Hill reps</span>
+      <span class="sess-sub">6 km · Zone 4–5</span>
+      <span class="verdict v-bug">Main set text is broken</span>
+    </div>
+    <div class="cols">
+      <div>
+        <p class="col-label now">● Live today</p>
+        <div class="before">
+          <p class="struct-eyebrow">Session structure</p>
+          <div class="b-row"><div class="top"><span class="name">Warm-up</span><span class="meta">~2km · Z1→Z2</span></div><div class="desc">Easy build through warm-up. Final third in Z2.</div>
+            <div class="b-strides"><div class="s1">Strides — 4 × 20s</div><div class="s2">4×20s strides at end of warm-up.</div></div></div>
+          <div class="b-row"><div class="top"><span class="name">Main set</span><span class="meta">~3km · Zone 4-5</span></div>
+            <div class="desc">to the bottom of the hill at no faster than 5:53–7:02 /km, then 8 × (1:30 at RPE 8 + <mark class="g">until ready stand</mark> + <mark class="g">same as the 1:30</mark> at no faster than 5:53–7:02 /km jog).</div></div>
+          <div class="b-row"><div class="top"><span class="name">Cool-down</span><span class="meta">~1km · Z1</span></div><div class="desc">Easy walk-jog finish.</div></div>
+        </div>
+        <p class="caption">The serializer concatenates <code>length + pace + modality</code> with no grammar → "until ready stand", "same as the 1:30 … jog", downhill dropped.</p>
+      </div>
+      <div>
+        <p class="col-label next">● Proposed</p>
+        <div class="phone">
+          <div class="toghead"><span class="lbl">Session structure</span><span class="tog"><i class="on">KM</i><i class="off">MIN</i></span></div>
+
+          <div class="seccard warm">
+            <div class="sechead"><span class="nm">Warm-up</span><span class="tot">~2 km · Z1→Z2</span></div>
+            <div class="steps">
+              <div class="srow"><span class="snum">1</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd run"></span>Easy run</span><span class="qual"><b>Conversational.</b> No faster than 5:53/km.</span></div>
+                <div class="sright"><div class="amt">~1.5 km</div><div class="det">Z1→Z2</div></div></div></div>
+              <div class="srow"><span class="snum">2</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd run"></span>Strides</span><span class="qual">4 × 20s — fast &amp; relaxed.</span></div>
+                <div class="sright"><div class="amt">4 × 20s</div><div class="det">~0.5 km</div></div></div></div>
+            </div>
+          </div>
+
+          <div class="seccard i">
+            <div class="sechead"><span class="nm">Hills <span class="info">i</span></span><span class="tot">~3 km · Zone 4–5</span></div>
+            <div class="steps">
+              <div class="srow"><span class="snum">3</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd run"></span>Run to hill base</span><span class="qual">Easy jog to the bottom of the hill.</span></div>
+                <div class="sright"><div class="amt">~0.4 km</div><div class="det">≤ 5:53–7:02 /km</div></div></div></div>
+            </div>
+            <div class="repbar"><span class="rx">8×</span><span>hill reps</span><span class="rtot">effort-based</span></div>
+            <div class="steps">
+              <div class="srow"><span class="snum">4</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd run"></span>Uphill</span><span class="qual">Hard, driving effort.</span></div>
+                <div class="sright"><div class="amt">1:30</div><div class="det"><b>RPE 8</b></div></div></div></div>
+              <div class="srow rest"><span class="snum"></span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd rest"></span>Stand</span><span class="qual">Recover at the top — until ready.</span></div>
+                <div class="sright"><div class="amt">until ready</div><div class="det">rest</div></div></div></div>
+              <div class="srow rest"><span class="snum"></span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd rest"></span>Jog down</span><span class="qual">Easy back to the base.</span></div>
+                <div class="sright"><div class="amt">~0.25 km</div><div class="det">1:30 · ≤ 5:53–7:02 /km</div></div></div></div>
+            </div>
+          </div>
+
+          <div class="seccard cool">
+            <div class="sechead"><span class="nm">Cool-down</span><span class="tot">~1 km · Z1</span></div>
+            <div class="steps">
+              <div class="srow"><span class="snum">5</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd rest"></span>Easy jog / walk</span><span class="qual">Conversational or slower.</span></div>
+                <div class="sright"><div class="amt">~1 km</div><div class="det">Z1</div></div></div></div>
+            </div>
+          </div>
+          <p class="caption"><b>The broken string is gone.</b> "Stand · recover until ready", "Jog down · easy back to the base" — the hill lead-in is its own numbered step, and the uphill stays time + RPE (effort, not pace).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SESSION 4 ============ -->
+  <section class="session">
+    <div class="sess-head">
+      <span class="sess-n">04</span><span class="sess-t">Progression run</span>
+      <span class="sess-sub">11 km · Zone 3–4 · thirds</span>
+      <span class="verdict v-ok">Header ~agrees · set unclear</span>
+    </div>
+    <div class="cols">
+      <div>
+        <p class="col-label now">● Live today</p>
+        <div class="before">
+          <p class="struct-eyebrow">Session structure</p>
+          <div class="b-row"><div class="top"><span class="name">Main set</span><span class="meta">~6km · Zone 3-4</span></div>
+            <div class="desc">9:20 at no faster than 5:53–7:02 /km + 9:20 in Z2-Z3 + 9:20 at 4:25–4:35 /km.</div></div>
+        </div>
+        <p class="caption">Three thirds flattened into one line, with three ways of naming a target. Hard to tell it gets faster.</p>
+      </div>
+      <div>
+        <p class="col-label next">● Proposed</p>
+        <div class="phone">
+          <div class="toghead"><span class="lbl">Session structure</span><span class="tog"><i class="on">KM</i><i class="off">MIN</i></span></div>
+
+          <div class="seccard warm">
+            <div class="sechead"><span class="nm">Warm-up</span><span class="tot">~3 km · Z1→Z2</span></div>
+            <div class="steps">
+              <div class="srow"><span class="snum">1</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd run"></span>Easy run</span><span class="qual"><b>Conversational.</b> No faster than 5:53/km.</span></div>
+                <div class="sright"><div class="amt">~2.5 km</div><div class="det">Z1→Z2</div></div></div></div>
+              <div class="srow"><span class="snum">2</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd run"></span>Strides</span><span class="qual">4 × 20s — fast &amp; relaxed.</span></div>
+                <div class="sright"><div class="amt">4 × 20s</div><div class="det">~0.5 km</div></div></div></div>
+            </div>
+          </div>
+
+          <div class="seccard q">
+            <div class="sechead"><span class="nm">Progression <span class="info">i</span></span><span class="tot">~6 km · builds</span></div>
+            <div class="repbar"><span class="rx">3</span><span>thirds — each faster</span><span class="rtot">~28 min</span></div>
+            <div class="steps">
+              <div class="srow"><span class="snum">3</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd rest"></span>Easy</span><span class="qual">Settle in.</span></div>
+                <div class="sright"><div class="amt">~1.4 km</div><div class="det">9:20 · ≤ 5:53–7:02 /km</div></div></div></div>
+              <div class="srow"><span class="snum">4</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd run"></span>Steady</span><span class="qual">Lift to comfortably working.</span></div>
+                <div class="sright"><div class="amt">~1.7 km</div><div class="det">9:20 · Zone 2–3</div></div></div></div>
+              <div class="srow"><span class="snum">5</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd run"></span>Tempo</span><span class="qual">Finish strong at race effort.</span></div>
+                <div class="sright"><div class="amt">~2.1 km</div><div class="det">9:20 · <b>4:25–4:35 /km</b></div></div></div></div>
+            </div>
+          </div>
+
+          <div class="seccard cool">
+            <div class="sechead"><span class="nm">Cool-down</span><span class="tot">~1 km · Z1</span></div>
+            <div class="steps">
+              <div class="srow"><span class="snum">6</span><div class="sbody">
+                <div class="sleft"><span class="role"><span class="sd rest"></span>Easy jog / walk</span><span class="qual">Conversational or slower.</span></div>
+                <div class="sright"><div class="amt">~1 km</div><div class="det">Z1</div></div></div></div>
+            </div>
+          </div>
+          <p class="caption"><b>The build is now obvious</b> — three numbered thirds, each faster, each with its own distance, duration, and target.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ NOTES ============ -->
+  <section class="notes">
+    <h2>What we took from Runna — and what we didn't</h2>
+    <p class="lead">The reference is Runna's "800m into 400m" session view. Here's the calibrated read.</p>
+    <div class="steal a">
+      <div class="box">
+        <h4>✓ Stolen</h4>
+        <ul>
+          <li><b>Per-section cards</b> — each phase chunked, far more scannable than one card of dividers.</li>
+          <li><b>Numbered steps + connector line</b> — "step 3 of 6" mental model for following along mid-run.</li>
+          <li><b>Plain-language cues</b> — "Conversational. No faster than 5:53/km", "Easy — let the HR drop." Pure Zonna voice.</li>
+          <li><b>ⓘ on jargon</b> — tap the main-set info to open the existing zone-education sheet.</li>
+          <li><b>Standalone rest / lead-in as its own numbered step</b> (the hill approach run).</li>
+        </ul>
+      </div>
+      <div class="box no">
+        <h4>✕ Skipped (on purpose)</h4>
+        <ul>
+          <li><b>Solid colour section bars</b> — "flood, not accent" is banned by ADR-007. We tint the header instead.</li>
+          <li><b>Pace-only single targets</b> — Runna has no zone. Zones are our brand; we keep zone + pace band.</li>
+          <li><b>Figurative run/walk icons</b> — the dot + role + colour already carries work-vs-rest; icons fight our restraint.</li>
+          <li><b>RUN / REST action tags</b> — our richer role words (Hard / Jog / Stand / Uphill) already say it.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="margin-top:26px">
+      <div class="ncard">
+        <div class="rt"><h3>Broken main-set text (hill reps)</h3><span class="pill p-fix">Just fix</span></div>
+        <p><code>describeDerivedSet()</code> in <code>lib/plan/resolveMainSet.ts</code> is a naïve <code>length + pace + modality</code> concatenation → "until ready stand", "same as the 1:30 … jog", downhill dropped. The step-row layout replaces the string entirely — restores ADR-019's intent. No board.</p>
+      </div>
+      <div class="ncard">
+        <div class="rt"><h3>Metric follows the toggle · distance restored · plain-language cues</h3><span class="pill p-fix">Just fix</span><span class="pill p-design">Design</span></div>
+        <p>Distance leads (the toggle is on km); time stays as a cue on rep rows since interval work is clock-native. Reuses the per-session metric plumbing (commit 23e2331). The conversational qualifiers are copy — Zonna voice, no board.</p>
+      </div>
+      <div class="ncard">
+        <div class="rt"><h3>Per-section cards + numbered steps</h3><span class="pill p-design">Design</span></div>
+        <p>New pattern for <code>ui-patterns.md</code> — "Session steps": per-phase card, tinted header (session colour, low opacity — never flooded), numbered steps with a connector, right-stacked metric, ⓘ → zone education. Warm-up / cool-down pace reuses the runner's easy band.</p>
+      </div>
+      <div class="ncard">
+        <div class="rt"><h3>Header zone vs Kit tile contradiction</h3><span class="pill p-board">Coaching board</span><span class="pill p-fix">then fix</span></div>
+        <p>Two writers. The header computes zone from <code>session.type</code>, and <code>zoneNumberForType()</code> collapses every quality session to Zone 3; the Kit tile is frozen AI prose that wrote "Zone 4–5, 158–185 bpm". On intervals / hills Kit is arguably more honest. One board question: <b>what zone does the header show for a mixed-intensity quality session?</b> Then one source feeds both surfaces.</p>
+      </div>
+    </div>
+    <p class="foot">Warm Slate + Inter, single light theme (ADR-008). Distances are indicative conversions of each traced session's own targets; the app computes them from pace. Verified no row clips at 347px phone width.</p>
+  </section>
+</div>

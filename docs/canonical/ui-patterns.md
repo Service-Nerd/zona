@@ -1120,19 +1120,62 @@ The canonical visual for "which zone is this session in." 5 segments in a row, o
 
 **Props:**
 ```tsx
-activeZone: 1 | 2 | 3 | 4 | 5
-height?: number       // default 4 (Today); 5 on Session Detail
-showLabels?: boolean  // default false; true on Session Detail
+activeZone?: 1 | 2 | 3 | 4 | 5     // single zone
+activeZones?: Zone[]               // a RANGE — every zone lights in its own colour
+height?: number                    // default 4 (Today); 5 on Session Detail
+showLabels?: boolean               // default false; true on Session Detail
 style?: React.CSSProperties
 ```
 
+**Range support (§84).** A mixed-intensity quality session is prescribed across a zone *range* ("Zone 4–5"), so `activeZones={[4,5]}` lights both segments, each in its own zone colour. This is what the session-detail header and the Today ZoneBar now pass, sourced from `session.zone` via `displayZonesForSession()` — never from `session.type`, which collapses every quality session to a flat Z3. `activeZones` wins over `activeZone`; a lone `activeZone` still works for single-zone callers.
+
 **Rules:**
-- Never render when session has no zone (rest / strength / cross-train) — caller checks `zoneNumberForType()` first
+- Never render when session has no zone (rest / strength / cross-train) — caller checks `displayZonesForSession()` (or `zoneNumberForType()`) first
 - Active label colour MUST match the segment colour — single token per zone
 - Don't add a 6th segment, a duration overlay, or any other decoration — the value is in the constraint
 - The bar is a *visual aid*, not a measurement. For HR ranges, use the prescription card's HR display line.
 
 Reference: `components/shared/ZoneBar.tsx`. Single source of truth.
+
+---
+
+### 21b. Session steps
+
+The session-detail structure block. Rebuilt 2026-09-04 (SESSION-STRUCTURE-REDESIGN) from a dense run-on sentence — *"4 × (5 min at 4:25–4:35 /km + 1:30 at no faster than 5:53–7:02 /km jog)"* — into scannable, per-phase cards you can read mid-run. Runna-informed (chunked cards, numbered steps, plain-language cues) but on Zonna terms: zones over pace-only targets, block totals, Warm Slate restraint.
+
+```
+SESSION STRUCTURE
+┌ WARM-UP ─────────────── ~3km · Z1→Z2 ┐   ← tinted header (moss), not flooded
+│ Conversational · 6:45/km              │
+│ 1 ● Easy run              ~3km        │   ← numbered step + connector line
+│                           Final third in Z2
+│ 2 ● Strides               4 × 20s     │
+└───────────────────────────────────────┘
+┌ MAIN SET ⓘ ──────────── ~7km · Zone 4–5 ┐  ← header zone = session.zone (§84)
+│   6× ROUNDS OF                        │   ← repeat bar, prominent multiplier
+│ 3 ● Hard        ~0.65km  3 min · 4:30–4:42 /km
+│   ○ Jog         ~0.3km   2 min · ≤ 5:53–7:02 /km
+└───────────────────────────────────────┘
+┌ COOL-DOWN ───────────── ~1km · Z1 ────┐
+│ 4 ○ Easy jog / walk       ~1km        │
+└───────────────────────────────────────┘
+```
+
+**Structure:**
+- **Per-phase card** — `--card`, `1px --line`, `12px` radius. One card per phase (warm-up / main set / cool-down). Chunking is the readability win.
+- **Tinted header** — `color-mix(in srgb, <accent> N%, var(--card))` background, accent-coloured label. **Never a solid colour bar** (ADR-007 "type accent, not flood"). Accent: warm-up `--moss`; main set `--s-inter` when peak zone ≥ 5 else `--s-quality`; cool-down `--s-strength`. Header right shows `~total · zone`.
+- **Numbered steps + connector** — an italic step number in a 20px gutter with a `1.5px --line` connector running behind it. The first row of a repeat block carries the number; later rows in that block are blank (they are one step). Gives the runner a "step N of M" sequence.
+- **Step row** — a work/recovery dot (work = the main accent, recovery = hollow `--mute-2` ring), a plain-language **role** (Hard / Jog / Uphill / Stand / Jog down / Run to base), then a right-stacked metric: primary **amount** (bold, the chosen metric) over a secondary **detail** (`duration · pace`, `RPE 8`, or `≤ band`).
+- **Repeat bar** — `--bg-soft`, a bold italic `N×` in the accent + the label (`ROUNDS OF` / `HILL REPS`).
+- **Per-section pace** — warm-up / cool-down show `Conversational · <easy band>` when a Strava-derived easy pace exists; omitted otherwise (never invent a pace — zone-rules.md).
+
+**Metric follows the toggle (§ ADR-015).** Distance leads when the user's toggle is on km; a duration-native rep (an interval) shows an estimated distance derived from its pace with the duration kept in the detail. A rep with no pace (a hill rep at RPE) keeps *time* as its primary — there is no honest distance to show. Flip the toggle and primary/secondary swap.
+
+**Data:** the main set renders from `session.derived_set` (ADR-019) via `buildStepGroups()` in `lib/plan/sessionSteps.ts` (pure, tested). Falls back to the composed one-line `structure.main.description` when a session has no derived set (v1 rows, easy runs). The ⓘ on the main-set header opens the zone-education sheet.
+
+**Provenance:** all rule-engine output — **no `<AIMark />`** (Pattern 16). Zones and pace are computed, not model-authored.
+
+Reference: `components/shared/SessionSteps.tsx` (render) + `lib/plan/sessionSteps.ts` (display model). Integration: `DashboardClient.tsx → SessionPopupInner`.
 
 ---
 

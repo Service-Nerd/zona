@@ -2337,6 +2337,20 @@ since a floor-protected session sits *at* the floor, not below it.
 
 ---
 
+## 84. Displayed zone and HR derive from prescribed work — one source
+
+**Principle.** The zone a runner SEES on a session — the session-detail "Hold the zone" header, the Today eyebrow, the ZoneBar — and the zone/HR a coach note states MUST both derive from the session's **prescribed work**, carried on `session.zone` as a single zone or a range ("Zone 3–4", "Zone 4–5"). They MUST NOT derive from the coarse `session.type` slot. Where the work spans zones, the header shows the **range** (floor-to-peak of the main-set work); where it sits in one zone, it shows the single zone. Warm-up, cool-down, and recovery steps do not widen the header range. A coach note MUST NOT state a literal zone or bpm that contradicts `session.zone` / `session.hr_target`.
+
+**Why.** Every quality session — tempo, VO2 intervals, hill reps — is typed `quality`. A `session.type → zone` map (the old `zoneNumberForType`) therefore collapsed all of them to a flat "Zone 3 · tempo", while the engine had already written the honest zone to `session.zone` ("Zone 4–5" for hills and VO2) and the AI coach note read *that*. The runner saw two different zones for the same session on the same card — "Zone 3 · tempo, 145–158 bpm" in the header, "Zone 4–5, 158–185 bpm" from Kit. This is the §19/§27/§33 failure mode (name/theme/note must match the prescription) applied to the zone surface: a hill session at RPE 8 shown as "Zone 3" is a false claim a trained runner spots instantly, and disguising genuinely hard work as moderate is exactly how a runner is marched into overreaching without a warning sign (Sims). The fix is a single source — `session.zone` — feeding every display surface, so header and note can never disagree.
+
+**Board.** Coaching Board 2026-09-04, CORRECT WITH AMENDMENT (unanimous). Amendment: range drawn from **main-set work steps only** (Seiler — never blur into the recovery jogs); **collapse to a single zone** when the work sits in one (McMillan — a pure tempo is "Zone 3", not a range on everything). No SLT escalation — pure correctness, no tier or data-collection change.
+
+**Config.** `GENERATION_CONFIG.DISPLAY_ZONE_SOURCE = 'session.zone'`. The engine already writes `session.zone` and `session.hr_target` together and consistently in every `makeQualitySession` branch (threshold → "Zone 3–4"/qualityHR; VO2 + hills → "Zone 4–5"/intervalsHR), so this principle changes only what the *display* reads, not what the engine prescribes. `displayZonesForSession()` (`app/dashboard/DashboardClient.tsx`) and `zonesFromZoneString` / `hrBandForZoneString` (`lib/coaching/zoneRules.ts`) are the single owners of parsing that string into the displayed zone(s) and live HR band.
+
+**Enforcement.** `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK` in `lib/plan/invariants.ts`: every zone-bearing session carries a non-empty `session.zone`, and no `coach_note` states a literal `Zone N`/`Zone N–M` that contradicts it. Older plans with no stored `session.zone` fall back to the type-derived single zone at display time (graceful degradation, not a violation).
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

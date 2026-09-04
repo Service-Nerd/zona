@@ -81,6 +81,10 @@ A catalogue row is shared across runners, so it cannot hold both *"4 × 1000 m"*
 - The generator stamps the result on `Session.derived_set`.
 - The display renders `derived_set` when present and falls back to the v1 composer otherwise.
 
+**Two display consumers of `derived_set`, one owner each:**
+- `describeDerivedSet(set)` (`resolveMainSet.ts`) — the **one-line string** used in notifications, the plan calendar, and as the session-card fallback. Per-step grammar: a non-run recovery action leads with its verb ("stand until ready", "jog back down"), work steps weave terrain ("1:30 uphill at RPE 8"), and `open`/`mirror` lengths get real phrasing. **Never** the old flat `length + pace + modality` concatenation, which shipped "until ready stand" and "same as the 1:30 … jog" and dropped the descent's direction (SESSION-STRUCTURE-REDESIGN, 2026-09-04).
+- `buildStepGroups(set, opts)` (`sessionSteps.ts`) — the **structured display model** for the "Session steps" UI (ui-patterns.md §21b): one row per step with a role, a metric-aware amount, and a pace/RPE detail. Both are pure and independently tested.
+
 Without this the schema is invisible to a runner — the seventh gap the audit called blocking. `catalogue_id` (ADR-018) supplies the identity half; `derived_set` supplies the numbers half.
 
 ## Deliberate omission — `budget_pct_of_weekly`

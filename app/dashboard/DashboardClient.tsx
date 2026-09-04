@@ -41,7 +41,8 @@ import { getCompletionCopy } from '@/lib/coaching/completionCopy'
 import { classifyHrPending } from '@/lib/coaching/hrPending'
 import { useWidgetSync } from '@/lib/widget/useWidgetSync'
 import { clearWidgetState } from '@/lib/native/sharedStore'
-import ZoneBar, { zoneNumberForType, zoneShortName } from '@/components/shared/ZoneBar'
+import ZoneBar, { zoneNumberForType, zoneShortName, type Zone } from '@/components/shared/ZoneBar'
+import SessionSteps from '@/components/shared/SessionSteps'
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import AIMark from '@/components/shared/AIMark'
 import CoachByline from '@/components/shared/CoachByline'
@@ -59,7 +60,7 @@ import { nextGoalOptions, achievementLine, parseTimeToSeconds, type FinishedRace
 import { composeSession } from '@/lib/plan/sessionComposer'
 import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric } from '@/lib/format'
 import { backfillAndLoadSessionMetricOverrides, setSessionMetricOverride, clearSessionMetricOverride } from '@/lib/sessionMetricOverrides'
-import { didSessionHitZone, sessionHRBand, zoneForSessionType } from '@/lib/coaching/zoneRules'
+import { didSessionHitZone, sessionHRBand, zoneForSessionType, zonesFromZoneString, hrBandForZoneString } from '@/lib/coaching/zoneRules'
 import { getSessionVoiceLine } from '@/lib/coaching/voiceLines'
 import { renderGuidance, guidanceContextFromSession } from '@/lib/plan/renderGuidance'
 import { catalogueRowFor } from '@/lib/plan/catalogueLink'
@@ -4341,15 +4342,25 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             to hang off the now-removed HR tile). ⓘ in the eyebrow row
             signals drill-down. Renders only for zone-bearing sessions. */}
         {(() => {
-          const zone = zoneNumberForType(session.type)
-          if (!zone) return null
-          const hrDisplay = getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling ?? undefined)
+          // §84 — display the PRESCRIBED zone (session.zone), not the coarse
+          // session.type slot. Every quality session is typed 'quality', so the
+          // old zoneNumberForType(type) showed "Zone 3 · tempo" for tempo, VO2
+          // intervals and hill reps alike — contradicting the coach note, which
+          // reads session.zone. One source now feeds both.
+          const dz = displayZonesForSession(session)
+          if (!dz) return null
+          const { zones, hi, rangeLabel, peakName } = dz
+          // Live band from the prescribed zone string; fall back to baked hr_target.
+          const band = hrBandForZoneString(session.zone, restingHR ?? null, maxHR ?? null)
+          const hrDisplay = band
+            ? (hi <= 2 ? `< ${band.hi}` : `${band.lo}–${band.hi}`)
+            : getSessionHRDisplay(session.type, session.hr_target, restingHR ?? null, maxHR ?? null, zone2Ceiling ?? undefined)
           const isInteractive = !!zoneForSessionType(session.type)
           return (
             <button
               type="button"
               onClick={() => { if (isInteractive) setZoneSheetOpen(true) }}
-              aria-label={isInteractive ? `Zone ${zone} — tap to learn` : `Zone ${zone}`}
+              aria-label={isInteractive ? `${rangeLabel} — tap to learn` : rangeLabel}
               style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 marginBottom: '14px',
@@ -4393,7 +4404,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 color: config.color, letterSpacing: '-0.015em', lineHeight: 1.1,
                 marginBottom: '4px',
               }}>
-                Zone {zone} · {zoneShortName(zone)}
+                {rangeLabel} · {peakName}
               </div>
               {/* HR range as supporting detail */}
               {hrDisplay && (
@@ -4405,8 +4416,8 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                   {hrDisplay} bpm
                 </div>
               )}
-              {/* Labelled zone bar */}
-              <ZoneBar activeZone={zone} height={5} showLabels />
+              {/* Labelled zone bar — every prescribed zone lights (range-aware) */}
+              <ZoneBar activeZones={zones} height={5} showLabels />
             </button>
           )
         })()}
@@ -4646,81 +4657,23 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
             const skipShapes = ['rest', 'race', 'strength']
             if (skipShapes.includes(structure.shape)) return null
 
-            // Coaching Board 2026-09-03 (cleared, ADR-015 display work) / SLT
-            // 2026-09-03 (build now, build completely, FREE) — each part now
-            // honours the same resolved metric the top-level card already
-            // does (`effectiveMetric`), instead of always rendering
-            // duration. `~` marks it as an estimate, same convention as
-            // `distanceIsEstimated` above — `sessionComposer.ts` derives
-            // every part's distance from the SESSION's own overall pace, not
-            // a per-part pace, so it's honest about being one representative
-            // number, not a GPS-matched split.
-            const partMetricStr = (p: typeof structure.warmup): string => {
-              const distStr = p.distance_km != null
-                ? `~${formatDistance(p.distance_km, preferredUnits) ?? ''}`
-                : null
-              const durStr = fmtDurationMins(p.duration_mins)
-              return effectiveMetric === 'distance' ? (distStr ?? durStr) : (durStr ?? distStr ?? '')
-            }
-
-            const partRow = (label: string, p: typeof structure.warmup, body: string, accentColor: string, isMain = false) => (
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '10px' }}>
-                <div style={{
-                  width: isMain ? '4px' : '3px',
-                  borderRadius: '2px',
-                  background: accentColor,
-                  flexShrink: 0,
-                }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: isMain ? '3px' : '2px' }}>
-                    <div style={{
-                      fontFamily: 'var(--font-ui)',
-                      fontSize: isMain ? '14px' : '13px',
-                      fontWeight: isMain ? 700 : 600,
-                      color: 'var(--ink)',
-                    }}>{label}</div>
-                    <div style={{
-                      fontFamily: 'var(--font-ui)',
-                      fontSize: isMain ? '13px' : '12px',
-                      color: isMain ? 'var(--ink-2)' : 'var(--mute)',
-                      fontVariantNumeric: 'tabular-nums',
-                    }}>
-                      {partMetricStr(p)} · {p.zone}
-                    </div>
-                  </div>
-                  <div style={{
-                    fontFamily: 'var(--font-ui)',
-                    fontSize: isMain ? '13px' : '12px',
-                    color: isMain ? 'var(--ink-2)' : 'var(--mute)',
-                    lineHeight: 1.5,
-                  }}>{body}</div>
-                </div>
-              </div>
-            )
-
+            // SESSION-STRUCTURE-REDESIGN (2026-09-04) — per-section cards with
+            // numbered steps, rendering the main set from the resolved
+            // derived_set (ADR-019) when present. §84 — the main-set zone shown
+            // is the prescription (session.zone), not the coarse type slot.
+            const dz = displayZonesForSession(session)
             return (
-              <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Session structure</div>
-                {partRow('Warm-up', structure.warmup, structure.warmup.description, 'var(--mute-2)')}
-                {structure.strides && (
-                  <div style={{ marginLeft: '15px', marginBottom: '10px', paddingLeft: '12px', borderLeft: '1px dashed var(--line)' }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss)' }}>
-                      Strides — {structure.strides.count} × {structure.strides.duration_secs}s
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.5 }}>{structure.strides.description}</div>
-                  </div>
-                )}
-                {partRow('Main set', structure.main, structure.main.description, getSessionColor(session.type ?? 'easy'), true)}
-                {structure.race_pace_segment && (
-                  <div style={{ marginLeft: '15px', marginBottom: '10px', paddingLeft: '12px', borderLeft: '1px dashed var(--line)' }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)' }}>
-                      Race-pace — {structure.race_pace_segment.duration_pct}% @ {structure.race_pace_segment.pace_target}
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.5 }}>{structure.race_pace_segment.description}</div>
-                  </div>
-                )}
-                {partRow('Cool-down', structure.cooldown, structure.cooldown.description, 'var(--mute-2)')}
-              </div>
+              <SessionSteps
+                structure={structure}
+                derivedSet={(session.derived_set as DerivedSet | undefined) ?? null}
+                sessionType={session.type}
+                displayZones={dz?.zones ?? []}
+                zoneRangeLabel={dz?.rangeLabel ?? structure.main.zone}
+                metric={effectiveMetric}
+                preferredUnits={preferredUnits}
+                easyPaceStr={aerobicPace ?? null}
+                onInfo={() => setZoneSheetOpen(true)}
+              />
             )
           })()}
 
@@ -5839,6 +5792,27 @@ function karvonenZone(
   return {
     lo: Math.round(restingHR + (loPct / 100) * hrr),
     hi: Math.round(restingHR + (hiPct / 100) * hrr),
+  }
+}
+
+/** §84 — the zones to DISPLAY for a session. Reads the prescription
+ *  (`session.zone`: "Zone 3", "Zone 3–4", "Zone 4–5") rather than the coarse
+ *  `session.type` slot, which collapses every quality session (all typed
+ *  `quality`) to a flat Z3. Falls back to the type-derived single zone for
+ *  older plans that predate a stored `session.zone` string. Single owner of
+ *  the header/eyebrow/ZoneBar zone so those surfaces can never disagree. */
+function displayZonesForSession(
+  session: { zone?: string; type?: string },
+): { zones: Zone[]; lo: Zone; hi: Zone; rangeLabel: string; peakName: string } | null {
+  const prescribed = zonesFromZoneString(session.zone) as Zone[]
+  const fallback = zoneNumberForType(session.type)
+  const zones = (prescribed.length ? prescribed : (fallback ? [fallback] : [])) as Zone[]
+  if (zones.length === 0) return null
+  const lo = zones[0], hi = zones[zones.length - 1]
+  return {
+    zones, lo, hi,
+    rangeLabel: lo === hi ? `Zone ${lo}` : `Zone ${lo}–${hi}`,
+    peakName: zoneShortName(hi),
   }
 }
 
@@ -7580,8 +7554,8 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           strength / cross-train). Names the zone explicitly without
           hijacking the hero's poetic slot. */}
       {showSessionHero && selectedSession && (() => {
-        const zone = zoneNumberForType(selectedSession.type)
-        if (!zone) return null
+        const dz = displayZonesForSession(selectedSession)
+        if (!dz) return null
         return (
           <div style={{
             padding: '0 16px',
@@ -7599,7 +7573,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               color: 'var(--moss)',
               letterSpacing: '0.12em', textTransform: 'uppercase',
             }}>
-              Hold the zone · Zone {zone} today
+              Hold the zone · {dz.rangeLabel} today
             </span>
           </div>
         )
@@ -7831,9 +7805,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
                 glance-only); Session Detail's prescription card carries the
                 labelled version. Renders only for zone-bearing sessions. */}
             {(() => {
-              const zone = zoneNumberForType(selectedSession.type)
-              if (!zone) return null
-              return <ZoneBar activeZone={zone} style={{ marginTop: '10px' }} />
+              const dz = displayZonesForSession(selectedSession)
+              if (!dz) return null
+              return <ZoneBar activeZones={dz.zones} style={{ marginTop: '10px' }} />
             })()}
 
             {/* Primary CTA — only on today's session if not yet done */}

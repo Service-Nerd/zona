@@ -74,6 +74,8 @@ The Tanaka formula choice is documented in `docs/canonical/CoachingPrinciples.md
 | `race` | — | Race pace | Derived from target time, not from HR — HR is the governor on hot/hilly days |
 | `strength`, `cross-train`, `rest` | — | — | No HR target |
 
+> **This table is the engine's ASSIGNMENT source, not the DISPLAY source (§84).** The type slot is coarse: every quality session is typed `quality`, so a `type → zone` map at display time collapses tempo, VO2 intervals and hill reps all to a flat "Zone 3". The engine writes the honest per-session zone to `session.zone` ("Zone 3–4" for threshold, "Zone 4–5" for VO2/hills) — a single zone or a range. **Every display surface (the session-detail "Hold the zone" header, the Today eyebrow, the ZoneBar) and every coach note read `session.zone`, never `session.type`.** `zonesFromZoneString` / `hrBandForZoneString` in `lib/coaching/zoneRules.ts` parse that string into the displayed zone(s) and the live HR band; `displayZonesForSession()` in `DashboardClient.tsx` is the single display owner. See `CoachingPrinciples.md §84` and `GENERATION_CONFIG.DISPLAY_ZONE_SOURCE`.
+
 ---
 
 ## HR target string format

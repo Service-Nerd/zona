@@ -931,6 +931,16 @@ export const GENERATION_CONFIG = {
     Z5: { karvonen_pct: [90, 100], maxhr_pct: [93, 100] },
   },
 
+  // ── Displayed zone source (CoachingPrinciples §84 — Coaching Board 2026-09-04) ─
+  // The zone a runner SEES (session-detail header, Today's "Hold the zone"
+  // eyebrow, the ZoneBar) and the zone/bpm a coach note states MUST derive from
+  // the session's PRESCRIBED work — carried on `session.zone` as a single zone
+  // or a range ("Zone 4–5") — never from the coarse `session.type` slot. Every
+  // quality session is typed `quality`, so a type→zone map collapsed tempo, VO2
+  // and hill reps all to a flat "Zone 3", contradicting the coach note (which
+  // reads session.zone) on the same card. One source, no contradiction.
+  DISPLAY_ZONE_SOURCE: 'session.zone' as const,
+
   // ── Long run segment sizing (CoachingPrinciples §24b, §24c, §24d) ──────────
   // Segment = the final fraction of long run distance prescribed at a faster pace.
   // "mid peak"   = all peak weeks except final 2 before taper
