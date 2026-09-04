@@ -33,10 +33,31 @@ function raceDate(weeksOut: number): string {
 
 const baseInput = {
   athlete_name: 'Athlete', age: 35,
-  race_name: 'Test', target_time: '0:45:00',
+  race_name: 'Test',
   primary_metric: 'distance' as const,
   injury_history: [],
   plan_start: PLAN_START,
+}
+
+// ⚠️ TARGET TIME MUST BE PER-DISTANCE. It was a single `target_time: '0:45:00'`
+// on baseInput, applied to EVERY distance in the grid — which handed a 100K
+// runner a goal pace of 27 SECONDS per kilometre.
+//
+// Everything downstream of `goal_pace_per_km` was therefore nonsense on the four
+// distances above 10K: §22's race-specific override, the goal-pace label rename,
+// goal-anchored derived_set steps, and every session sized against goal pace. The
+// sweep still reported those plans as clean, because no invariant asserts that a
+// goal pace is physically possible — so "0 violations" meant "no coverage" for
+// the entire goal-paced path on HM, marathon, 50K and 100K.
+//
+// Same class as SWEEP-VACUOUS-01 (a time-dependent grid that silently stopped
+// generating) and the `fitness_level`-always-set gap (§79): an input the grid
+// gets WRONG tests a runner who does not exist, and reads as safety.
+//
+// Found 2026-09-04 while measuring cross-distance blast radius for the Coaching
+// Board — the ultra measurements had to be discarded and re-taken.
+const TARGET_TIME_BY_DISTANCE: Record<number, string> = {
+  5: '0:22:00', 10: '0:45:00', 21.1: '1:45:00', 42.2: '3:45:00', 50: '6:00:00', 100: '14:00:00',
 }
 
 // Plan LENGTH is a swept dimension (added 2026-08-20). Previously each distance
@@ -246,6 +267,15 @@ const CORNERS: any[] = [
   },
 ]
 
+// A distance added to the grid without a target time would silently sweep with
+// `target_time: undefined` — no goal pace, no §22 path, and the goal-paced half
+// of that distance untested while the run still reports clean. Fail loudly.
+for (const d of distancesAndDates) {
+  if (!TARGET_TIME_BY_DISTANCE[d.race_distance_km]) {
+    throw new Error(`No TARGET_TIME_BY_DISTANCE entry for ${d.race_distance_km} km — add one or the goal-paced path for that distance is unswept.`)
+  }
+}
+
 function randomInput(): any {
   const d = pick(distancesAndDates)
   const cwk = pick(cwks)
@@ -256,6 +286,7 @@ function randomInput(): any {
   const bm = pick(benchmarkSets)
   return {
     ...baseInput, ...d,
+    target_time: TARGET_TIME_BY_DISTANCE[d.race_distance_km],
     current_weekly_km: cwk,
     longest_recent_run_km: Math.max(3, Math.round(cwk * pick(lrrFractions))),
     ...days,

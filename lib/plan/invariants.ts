@@ -32,6 +32,8 @@ export const INVARIANT_CODES = [
   'INV-PLAN-VOLUME-SHORTFALL-DECLARED',
   'INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED',
   'INV-PLAN-EFFORT-OR-PACE',
+  'INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED',
+  'INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND',
   'INV-PLAN-DERIVED-SET',
   'INV-PLAN-CATALOGUE-LINK',
   'INV-PLAN-MAIN-SET-ORDERING',
@@ -263,6 +265,92 @@ function vo2maxWorkMinutes(session: Session): number | null {
 // whose steps carry already-formatted display text ("5 min", "1:30",
 // "1200 m") that is fragile to re-parse when the row's typed length field
 // says the same thing without needing to.
+/** Is this catalogue row effort-governed — every v2 work step carrying an effort
+ *  target and no pace? Read from the ROW and structurally, never by id, so it is
+ *  the SAME test `makeQualitySession` applies (INV-CLASS). If the two ever
+ *  disagreed about what "effort-governed" means, §40b would be enforced against a
+ *  different population than the one the engine exempts.
+ *  Coaching Board 2026-09-04. */
+function rowIsEffortGoverned(catalogueId: string): boolean {
+  const row = V1_SESSION_CATALOGUE.find(r => r.id === catalogueId)
+  if (!row || !isV2Structure(row.main_set_structure)) return false
+  const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+  if (!parsed.success) return false
+  const work = parsed.data.blocks.flatMap(b => b.steps).filter(st => st.role === 'work')
+  return work.length > 0 && work.every(st => st.target.kind === 'effort')
+}
+
+/** Minutes of an effort-governed session's derived set whose length is actually
+ *  KNOWN — a LOWER BOUND, never the true total.
+ *
+ *  Reads the SESSION's `derived_set`, not the row, because that is where the
+ *  parameters are resolved: the row says `{ kind: 'parameter', param: 'rep_secs' }`
+ *  and only the session knows this runner got the 90-second variant. That is the
+ *  opposite choice from `pacedRepMainMinutes` below, which reads the row precisely
+ *  so a mis-stamped session cannot vouch for itself — the difference is deliberate.
+ *  An effort-governed row has NO literal length to read (every one is a parameter,
+ *  a mirror, a landmark or open), so a row-only reader returns null for all of
+ *  them, which is exactly how these sessions escaped every existing check.
+ *
+ *  Steps with no measurable length contribute ZERO rather than voiding the whole
+ *  session. "Until ready" and "to the bottom of the hill" are real minutes; not
+ *  pricing them is what makes this a bound rather than an equality, and the bound
+ *  can therefore only ever UNDER-report. Coaching Board 2026-09-04. */
+function effortGovernedClosedMinutes(session: Session): number | null {
+  const ds = session.derived_set as
+    | { blocks?: { repeat?: number; steps?: { length?: string; pace?: string | null }[] }[] }
+    | undefined
+  if (!ds?.blocks?.length) return null
+  // Steps priced by distance need a pace; an effort-governed session has no
+  // session-level pace_target by §40b, so take it from a step that carries one
+  // (the jog-down recovery is E-anchored). Absent that, distance steps are simply
+  // not priced — consistent with the bound-not-equality contract above.
+  const stepPace = ds.blocks.flatMap(b => b.steps ?? []).find(s => s.pace)?.pace ?? null
+  const mid = parsePaceMidpoint(stepPace ?? '')
+  let total = 0
+  for (const block of ds.blocks) {
+    const repeat = typeof block.repeat === 'number' ? block.repeat : 1
+    let blockMins = 0
+    for (const step of block.steps ?? []) {
+      if (typeof step.length !== 'string') continue
+      const mins = closedLengthMinutes(step.length, mid, block.steps ?? [])
+      if (mins != null) blockMins += mins
+    }
+    total += repeat * blockMins
+  }
+  return total
+}
+
+/** Parse a resolved `derived_set` step length to minutes, or null when it is
+ *  deliberately open ("until ready") or landmark-bounded ("to the bottom of the
+ *  hill"). A mirror ("same as the 1:30") resolves to what it mirrors.
+ *
+ *  Deliberately NOT shared with `lib/plan/sessionSteps.ts → parseLength`: that one
+ *  is a display formatter that falls back to rendering unrecognised text verbatim,
+ *  which is right for a UI and wrong for an assertion — a length this function
+ *  cannot price must read as "unknown", never as a number. */
+function closedLengthMinutes(
+  raw: string, paceMidMinPerKm: number | null,
+  siblings: { length?: string }[],
+): number | null {
+  const s = raw.trim()
+  const mirror = s.match(/^same as the (.+)$/i)
+  if (mirror) {
+    // Resolve against the sibling step it names when one matches, so a future
+    // mirror phrasing that is not itself a parseable length still resolves.
+    const named = siblings.find(x => typeof x.length === 'string' && x.length !== s && x.length.includes(mirror[1]))
+    return closedLengthMinutes(named?.length ?? mirror[1], paceMidMinPerKm, [])
+  }
+  let m = s.match(/^(\d+(?:\.\d+)?)\s*min$/i); if (m) return parseFloat(m[1])
+  m = s.match(/^(\d+):(\d{2})$/); if (m) return parseInt(m[1], 10) + parseInt(m[2], 10) / 60
+  m = s.match(/^(\d+)\s*s$/i); if (m) return parseInt(m[1], 10) / 60
+  m = s.match(/^(\d+(?:\.\d+)?)\s*m$/i)
+  if (m) return paceMidMinPerKm == null ? null : (parseFloat(m[1]) / 1000) * paceMidMinPerKm
+  m = s.match(/^(\d+(?:\.\d+)?)\s*km$/i)
+  if (m) return paceMidMinPerKm == null ? null : parseFloat(m[1]) * paceMidMinPerKm
+  return null   // open / landmark / anything unrecognised — priced at zero by the caller
+}
+
 function pacedRepMainMinutes(session: Session): number | null {
   const row = session.catalogue_id ? V1_SESSION_CATALOGUE.find(r => r.id === session.catalogue_id) : undefined
   if (!row || !isV2Structure(row.main_set_structure)) return null
@@ -542,6 +630,26 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         // labelled "Hill reps — 45s", and the exemption silently stopped
         // applying to it (D-17).
         if (isVo2maxSession(session, V1_SESSION_CATALOGUE)) continue
+        // §40b veto (Coaching Board 2026-09-04) — effort-governed sessions are
+        // exempt for the SAME reason VO2max is, and the exemption is the
+        // mechanical half of that ruling rather than a new decision.
+        //
+        // `vert_hike_repeats` was only ever passing this check by being ILLEGALLY
+        // goal-paced: §22's override renamed a power-hike to "100K-pace intervals"
+        // and stamped `stimulus: 'race_pace'`, so the session satisfied the check
+        // by carrying exactly the invented pace §40b forbids. Remove the override
+        // and the session is correct and this check fails it — which is the check
+        // being wrong, not the session.
+        //
+        // Power hiking is the skill that decides how a 100K finishes (the row's
+        // own `purpose`); it cannot be run at goal pace and must not be excluded
+        // from peak to satisfy a naming rule. §22 is NOT weakened: the plan-level
+        // `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` still holds the plan to a
+        // race-pace share, so exempting a session from the per-week catch cannot
+        // let a plan avoid race-specific work overall.
+        //
+        // Structural, never by id — same lesson as the SC-09/D-17 line above.
+        if (session.catalogue_id && rowIsEffortGoverned(session.catalogue_id)) continue
         // A1 / D-17 — detect goal-pace work STRUCTURALLY via the stamped
         // `stimulus` (classifyStimulus reads session.stimulus first), NOT the
         // label substring. The generator stamps `stimulus: 'race_pace'` at
@@ -1679,6 +1787,101 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           actual: 'neither pace_target nor rpe_target',
           expected: 'a pace target, or an effort (RPE) target',
         })
+      }
+    }
+  }
+
+  // INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED (CoachingPrinciples §40b —
+  // Coaching Board 2026-09-04, unanimous veto)
+  //
+  // An effort-governed row is EXCLUDED from §22's goal-pace override. §40b:
+  // an effort-governed session "does not invent a number the runner cannot act
+  // on… What is absent is the pace, and only the pace." §22's override invented
+  // one: a time-targeted 100K drew `vert_hike_repeats` — hike uphill at RPE 6,
+  // walk back down — and shipped it as "100K-pace intervals" at 8:14–8:34 /km.
+  //
+  // Read from the ROW, not the session, and structurally rather than by id
+  // (INV-CLASS): "does every work step on this row carry an effort target and
+  // no pace?" is the same test `makeQualitySession` uses, so the invariant and
+  // the generator cannot drift about what "effort-governed" means.
+  //
+  // Checks BOTH surfaces, because they fail independently: a `pace_target` is
+  // the invented number itself, and a `{dist}-pace` label is the claim about it.
+  // The 2026-09-04 defect produced both together; a partial future regression
+  // could produce either alone.
+  for (const w of plan.weeks) {
+    for (const [day, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+      if (!sn?.catalogue_id) continue
+      if (!rowIsEffortGoverned(sn.catalogue_id)) continue
+      const hasPace = typeof sn.pace_target === 'string' && sn.pace_target.trim().length > 0
+      const hasGoalPaceLabel = /-pace /.test(sn.label ?? '')
+      if (hasPace || hasGoalPaceLabel) {
+        violations.push({
+          code: 'INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED',
+          principle_ref: 'CoachingPrinciples §40b',
+          severity: 'error',
+          week: w.n, day,
+          message: `"${sn.label}" comes from effort-governed row "${sn.catalogue_id}" but ${hasPace ? `carries pace target "${sn.pace_target}"` : 'is named as goal-pace work'}. The terrain sets the intensity — a pace here is a number the runner cannot act on (§40b).`,
+          actual: hasPace ? String(sn.pace_target) : String(sn.label),
+          expected: 'no pace target, and a label that does not claim a pace',
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND (CoachingPrinciples §16/§40b —
+  // Coaching Board 2026-09-04)
+  //
+  // An effort-governed session is still SIZED against its own structure. The
+  // stated `duration_mins` must at minimum hold the steps whose length is
+  // actually known.
+  //
+  // WHY THIS ROW WAS UNGOVERNED. Three guards each decline effort-governed rows,
+  // every one correctly on its own terms, and nothing measured the union:
+  //   1. `pacedRepPlan` (ruleEngine) — returns null when the work step has no
+  //      pace, so the row never gets structure-driven sizing and falls back to
+  //      the generic distance-over-easy-pace estimate.
+  //   2. `pacedRepMainMinutes` (below) — returns null on `to_landmark` / `open` /
+  //      `mirror` / `parameter` lengths, so INV-PLAN-STRUCTURED-SESSION-DURATION-
+  //      COHERENT skips the session entirely.
+  //   3. `INV-PLAN-VO2MAX-MAIN-SET-CAP` — skips sessions with no `pace_target`.
+  // Measured 2026-09-04: `hill_reps` incoherent in 258 of 428 placements (60.3%).
+  // Worst case stated 31 min against a main set holding >= 24 min of reps — a
+  // 186% overrun before the open recoveries are counted at all.
+  //
+  // A LOWER BOUND, not an equality. Open and landmark steps ("until ready", "to
+  // the bottom of the hill") contribute ZERO here — they are real minutes the
+  // runner will spend, and pricing them is phase 2 of this ruling (gated on
+  // Seiler's condition: quantify the §1 intensity-distribution shift first).
+  // So this check is deliberately weaker than the truth and can only
+  // under-report. A session it flags is definitively too short.
+  //
+  // SEVERITY `warn`, DELIBERATELY, and this is the point of shipping it now.
+  // Promoting to `error` would throw in dev/test for 60% of hill placements and
+  // break the plans that carry the defect — the exact failure that reverted
+  // INV-PLAN-MAIN-SET-ORDERING's first promotion attempt on 2026-09-03. At
+  // `warn` it MEASURES the population that phase 2 has to fix, which is what the
+  // board asked for. Promote to `error` in the same commit that lands the sizing.
+  {
+    const tol = GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
+    for (const w of plan.weeks) {
+      for (const [day, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+        if (!sn?.catalogue_id || sn.duration_mins == null) continue
+        if (!rowIsEffortGoverned(sn.catalogue_id)) continue
+        const closed = effortGovernedClosedMinutes(sn)
+        if (closed == null || closed <= 0) continue
+        const minTotal = durationForMainSet(closed)
+        if (sn.duration_mins < minTotal - tol) {
+          violations.push({
+            code: 'INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND',
+            principle_ref: 'CoachingPrinciples §16, §40b',
+            severity: 'warn',
+            week: w.n, day,
+            message: `"${sn.label}"'s stated duration cannot hold its own prescribed structure: ${closed.toFixed(1)} min of measurable steps needs >= ~${minTotal.toFixed(0)} min once the warm-up and cool-down floors are applied, and the open recoveries are not counted at all.`,
+            actual: `${sn.duration_mins} min`,
+            expected: `>= ~${minTotal.toFixed(0)} min (${tol} min rounding tolerance)`,
+          })
+        }
       }
     }
   }

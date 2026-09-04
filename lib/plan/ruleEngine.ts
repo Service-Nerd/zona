@@ -932,6 +932,29 @@ function makeQualitySession(args: {
   // just not one §19 itself could see since it checks label against
   // pace_target, not against derived_set).
   const isVo2max = catalogueRow?.category === 'vo2max'
+
+  // Is this session governed by EFFORT rather than pace? True when the row's v2
+  // work steps carry an effort target and no pace.
+  //
+  // This is the first session type where effort is the primary prescription
+  // rather than a supporting note (§41). A hill rep has no pace and cannot have
+  // one — the gradient decides it — so prescribing `intervalPaceStr` here
+  // because the row is categorised `vo2max` would ship a number the runner
+  // cannot act on and that §19 would then "verify" against a label. The
+  // absence of a pace is the prescription.
+  //
+  // HOISTED ABOVE `useGoalPace` (Coaching Board 2026-09-04, §40b veto) — it used
+  // to be computed ~40 lines below, which meant §22's goal-pace override could
+  // not see it and claimed effort-governed rows for itself. See the veto note on
+  // `useGoalPace` immediately below.
+  const isEffortGoverned = (() => {
+    if (!catalogueRow || !isV2Structure(catalogueRow.main_set_structure)) return false
+    const parsed = StructureV2Schema.safeParse(catalogueRow.main_set_structure)
+    if (!parsed.success) return false
+    const work = parsed.data.blocks.flatMap(b => b.steps).filter(st => st.role === 'work')
+    return work.length > 0 && work.every(st => st.target.kind === 'effort')
+  })()
+
   // Catalogue rows can request goal-pace prescription intrinsically (not
   // conditional on goalPaceWeek) — v1 rows via `work.pace_target: 'goal'`
   // (goal_pace_sharpener), v2 rows via a work step anchored `'goal'`
@@ -950,7 +973,28 @@ function makeQualitySession(args: {
     }
     return (ms as { work?: { pace_target?: string } }).work?.pace_target === 'goal'
   })()
-  const useGoalPace = (goalPaceWeek === true || catalogueRowGoalPace) && !isVo2max && !!goalPace
+  // §40b VETO — Coaching Board 2026-09-04, unanimous. An effort-governed row is
+  // EXCLUDED from §22's goal-pace override entirely: label, pace_target and
+  // derived_set.
+  //
+  // Before this, a time-targeted 100K could draw `vert_hike_repeats` — a power-
+  // hiking climb session whose own steps read "hands on quads, short steps" and
+  // "walk back down", prescribed at `target: { kind: 'effort', rpe: 6 }` — and
+  // ship it to the runner as "100K-pace intervals" with a pace target of
+  // 8:14–8:34 /km. §40b is explicit that an effort-governed session "does not
+  // invent a number the runner cannot act on"; §22's override invented exactly
+  // that number. The tension was named in a comment further down this function
+  // and deferred to this board rather than resolved; measured at 4 occurrences
+  // in 5,392 swept plans, 100K-only in that sample but distance-agnostic in
+  // mechanism — any future effort-governed row on a time-target plan inherits it.
+  //
+  // `isVo2max` alone did not cover it: `vert_hike_repeats` is `ultra_specific`,
+  // and keying on category would only ever chase the categories that exist today.
+  // The test is STRUCTURAL (does the row's work step carry a pace at all?) —
+  // INV-CLASS, same reason the goal-pace checks above read the row's shape rather
+  // than its id.
+  const useGoalPace = (goalPaceWeek === true || catalogueRowGoalPace)
+    && !isVo2max && !isEffortGoverned && !!goalPace
   const goalCenterMins = useGoalPace ? paceStrToMins(goalPace!) : null
   // A threshold row's work step is authored at 'T' because that's what it
   // means on an ordinary week; race_specific rows are already intrinsically
@@ -983,22 +1027,9 @@ function makeQualitySession(args: {
   // sizing (see continuousThresholdPlan). Null for every other row.
   const contTempoPlan = continuousThresholdPlan(catalogueRow, fitness, phase)
 
-  // Is this session governed by EFFORT rather than pace? True when the row's v2
-  // work steps carry an effort target and no pace.
-  //
-  // This is the first session type where effort is the primary prescription
-  // rather than a supporting note (§41). A hill rep has no pace and cannot have
-  // one — the gradient decides it — so prescribing `intervalPaceStr` here
-  // because the row is categorised `vo2max` would ship a number the runner
-  // cannot act on and that §19 would then "verify" against a label. The
-  // absence of a pace is the prescription.
-  const isEffortGoverned = (() => {
-    if (!catalogueRow || !isV2Structure(catalogueRow.main_set_structure)) return false
-    const parsed = StructureV2Schema.safeParse(catalogueRow.main_set_structure)
-    if (!parsed.success) return false
-    const work = parsed.data.blocks.flatMap(b => b.steps).filter(st => st.role === 'work')
-    return work.length > 0 && work.every(st => st.target.kind === 'effort')
-  })()
+  // `isEffortGoverned` is defined above, hoisted ahead of `useGoalPace` by the
+  // §40b veto (Coaching Board 2026-09-04) — it must be known before §22's
+  // goal-pace override decides whether it owns this session.
 
   const effortRpe = (() => {
     if (!isEffortGoverned || !catalogueRow) return null
@@ -1103,10 +1134,13 @@ function makeQualitySession(args: {
     // refinement: it can only lower a label's count, never raise it. Peak is
     // also where the 8×-identical monotony McMillan flagged actually lived.
     //
-    // An effort-governed row (a hike, target kind 'effort') has no pace-able
-    // shape word — its v2 block label is a coaching phrase ("to the climb"), not
-    // a form — and its being goal-paced at all is a separate §22/§40b tension
-    // (board territory); fall back to the peak generic rather than leak it.
+    // The §22/§40b tension this comment used to defer ("its being goal-paced at
+    // all is board territory") was RESOLVED by the 2026-09-04 veto: an effort-
+    // governed row never reaches this branch at all — `useGoalPace` excludes it.
+    // The `isEffortGoverned` guard below is now unreachable-by-construction and
+    // is kept as a defensive belt: if a future change reopens the path, the label
+    // degrades to the generic rather than claiming a shape a hike does not have.
+    // `INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED` is the check that would catch it.
     const overrideShape =
       phase === 'build'
         ? 'progression'

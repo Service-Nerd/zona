@@ -979,6 +979,34 @@ A defect invisible to either axis on its own — the third time in one day that 
 
 **Config.** No numeric of its own — the effort target lives on the catalogue row's step (`target: { kind: 'effort', rpe }`, ADR-019). Enforced by `INV-PLAN-EFFORT-OR-PACE`.
 
+### Amendment 1 — an effort-governed row is excluded from §22's goal-pace override — added 2026-09-04 (Coaching Board, unanimous VETO)
+
+**Principle.** §22's race-specific override (rename the session after the race distance, prescribe at goal pace) **must not be applied to an effort-governed row**. The exclusion covers all three surfaces together: the label, the `pace_target`, and the `derived_set`.
+
+**Why.** §40b above says an effort-governed session "does not invent a number the runner cannot act on". §22's override invented exactly that number, and the two principles had never been reconciled — the tension was noted in a `ruleEngine.ts` comment and deferred rather than resolved. A time-targeted 100K drew `vert_hike_repeats` — a power-hiking climb session prescribed at `rpe: 6`, whose own steps read *"hands on quads, short steps, tall chest"* and *"walk back down"* — and shipped it to the runner as **"100K-pace intervals" at 8:14–8:34 /km**. Measured at 4 occurrences in 5,392 swept plans (100K-only in that sample; the mechanism is distance-agnostic and any future effort-governed row on a time-target plan inherits it).
+
+**Why it was invisible.** Two reasons, and the second is the more useful one. First, the `property-validate-plans.ts` grid applied `target_time: '0:45:00'` to *every* distance, which gave a 100K runner a 27 sec/km goal pace — so every goal-paced measurement above 10K was meaningless, and "0 violations" meant *no coverage*. Second, `isVo2max` was doing the excluding, and `vert_hike_repeats` is `ultra_specific`: **a category test only ever guards the categories that exist today.** The exclusion is now structural — *does this row's work step carry a pace at all?* — per INV-CLASS.
+
+**The consequence for §22, stated rather than absorbed.** `INV-PLAN-RACE-SPECIFIC-EXPOSURE` requires second-half build/peak quality on a time-targeted plan to be goal-pace work, and already exempts VO2max *"because their physiology is too valuable to lose"*. Effort-governed sessions are exempt on the **identical** reasoning: power hiking is the skill that decides how a 100K finishes, it cannot be run at goal pace, and it must not be pushed out of peak to satisfy a naming rule. Note what the old behaviour actually was — the hike passed §22 *only by carrying the invented pace §40b forbids*. §22 is not weakened: the plan-level `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` still holds the plan to a race-pace share, so exempting a session from the per-week catch cannot let a plan avoid race-specific work overall.
+
+**Config.** No numeric — structural rule. Enforced by `INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED`, which checks the label and the pace target independently because they can regress apart.
+
+### Amendment 2 — an effort-governed session is still sized against its own structure — added 2026-09-04 (Coaching Board)
+
+**Principle.** A session's stated `duration_mins` must at minimum be able to hold the steps whose length is known. Effort-governance removes the pace; it does not remove the arithmetic.
+
+**Why.** `hill_reps` was sized by the generic *distance ÷ easy pace* estimate, producing a stated 39 minutes for a session whose own prescription is 8 × (1:30 uphill + 1:30 jog down) = **24 minutes of reps inside a 20.1-minute main-set allocation**, before the eight open-ended standing recoveries and the run to the hill are counted at all. Measured 2026-09-04: incoherent in **258 of 428 placements (60.3%)**; worst observed 31 stated minutes against ≥24 minutes of reps, a 186% overrun.
+
+**Why it was ungoverned — the generalisable part.** Three guards each decline effort-governed rows, and **every one of them is individually correct**: `pacedRepPlan` returns null when the work step has no pace; `pacedRepMainMinutes` returns null on landmark/open/mirror/parameter lengths ("skip rather than guess"); `INV-PLAN-VO2MAX-MAIN-SET-CAP` skips sessions with no `pace_target`. No guard is wrong, the union leaves the case with zero coverage, and **nothing in the system measures per-guard coverage** — so the hole is invisible by construction. Worth naming as a failure class in its own right: *orphaned by unioned exclusions*.
+
+**Why the runner cares, from three seats.** McMillan: the day-job runner plans their evening around the duration, and a session that says 39 and takes 55 destroys the number they trust most. Willy: hill reps at 5–8% grade with eccentric descent loading are among the highest tissue-stress work in the catalogue, and every downstream load calculation — weekly minutes, hard/easy spacing, §2's progression cap — is computed against a session a third smaller than reality. Sims: a systematically understated duration is a systematically understated energy demand, and the runner who pays first is the one already under-fuelling.
+
+**Shipped as a LOWER BOUND at `warn`, deliberately.** Open and landmark steps ("until ready", "to the bottom of the hill") price at **zero** — they are real minutes, and estimating them is phase 2. So the check is weaker than the truth and can only under-report; a session it flags is definitively too short. Severity is `warn` because `error` would throw in dev/test for 60% of hill placements — the failure that reverted `INV-PLAN-MAIN-SET-ORDERING`'s first promotion on 2026-09-03. **At `warn` it measures the population phase 2 must fix, which is what the board asked for.**
+
+**Phase 2 is gated, not merely pending.** Real sizing (a config'd standing-recovery estimate and a landmark transition allowance, promoting this invariant to `error` in the same commit) requires **Seiler's condition** first: §1 measures intensity distribution in *minutes*, and 60% of hill sessions carry ~30% unmeasured minutes, so restating them honestly moves a number §1 has a ceiling on. Quantify that shift before changing any duration. If it pushes plans through §1's ceiling, that is a second ruling, not a silent side effect.
+
+**Config.** Phase 1: no numeric. Phase 2 will add `EFFORT_GOVERNED_RECOVERY_SECS` and `EFFORT_GOVERNED_TRANSITION_MINS`. Enforced by `INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND`.
+
 ---
 
 ## 41. Effort copy matches the work prescribed
