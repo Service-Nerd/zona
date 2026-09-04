@@ -123,8 +123,19 @@ describe('SC-04 — threshold work is reachable for short distances', () => {
         // assertion means anything for; excluded, same as it was pre-migration
         // (a v1-shape read on a v2 row also returned undefined).
         if (!parsed.success || parsed.data.sizing.scaling !== 'reps') return undefined
-        const work = parsed.data.blocks.flatMap(b => b.steps).find(s => s.role === 'work')
-        return work?.length.kind === 'duration' ? work.length.secs / 60 : undefined
+        // §85 (CB-CAT-01) — SUM the rep's work steps, don't read the first.
+        //
+        // Every reps-scaled row until over-unders had exactly one work step, so
+        // "the first work step" and "the rep" were the same number and the
+        // distinction never mattered. An over-under's rep is 3 min at CV then
+        // 3 min at T with NO recovery between them: the runner holds work
+        // continuously for six minutes. Reading the first step alone reports
+        // three and fails this band — measuring a proxy that has stopped
+        // coinciding with the thing the principle is about. `pacedRepPlan` was
+        // corrected the same way in the same commit; both now measure the rep.
+        const work = parsed.data.blocks.flatMap(b => b.steps).filter(s => s.role === 'work')
+        if (work.length === 0 || work.some(s => s.length.kind !== 'duration')) return undefined
+        return work.reduce((sum, s) => sum + (s.length as { secs: number }).secs, 0) / 60
       }
       return (r.main_set_structure as { work?: { duration_mins?: number } }).work?.duration_mins
     }).filter((d): d is number => typeof d === 'number')

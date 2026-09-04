@@ -334,6 +334,153 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     is_free_tier: true,
     coach_voice_notes: 'Up and back down. The 8-minute rung is the honest one — everything before it should feel like restraint.',
   },
+  // ── CB-CAT-01 (2026-09-04) — the intensive threshold end ─────────────────
+  //
+  // Every threshold row above this comment is T-pace with easy recovery,
+  // differing only in rep shape. They are honestly all tier 3, because they are
+  // one session written five ways — which is why a declared-experienced runner's
+  // plan differed from an intermediate's by ONE rep in ONE week (CAT-DEPTH-01).
+  // The dose bands scale ~20% with the declaration; rep lengths of 5-10 minutes
+  // swallowed it. These rows are the tier-4 inventory that was missing.
+  {
+    id: 'tempo_over_under', name: 'Over-unders', category: 'threshold',
+    purpose: 'Alternate just over and just under threshold. Trains lactate clearance while still running, not while resting.',
+    phase_eligibility: ['build', 'peak'],
+    distance_eligibility: ['5K', '10K', 'HM', 'MARATHON', '50K', '100K'],
+    fitness_level_min: 'intermediate', difficulty_tier: 4,
+    // Willy's condition (CB-CAT-01): tier 4 is not reachable on a dropdown
+    // alone. §79 lets a declaration lift intensity, and this is the mechanical
+    // floor that stops a 25 km/week runner ticking "experienced" into it.
+    min_weekly_km: 35,
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'reps',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'duration', secs: 180 },
+            target: { kind: 'pace', anchor: 'CV', mode: 'target' }, advance: 'auto',
+            note: 'The over — just past threshold. A gear change, not a surge.' },
+          { role: 'work', modality: 'run', length: { kind: 'duration', secs: 180 },
+            target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto',
+            note: 'The under — back to threshold without stopping. This half is the session.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 120 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Two minutes easy before the next block.' },
+        ],
+      }],
+    },
+    intensity_zones: ['Z3', 'Z4'],
+    typical_duration_min: 35, typical_duration_max: 55, is_free_tier: true,
+    coach_voice_notes: 'The under is not the rest. That is the whole point of it.',
+  },
+  {
+    id: 'threshold_mile_repeats', name: 'Mile repeats', category: 'threshold',
+    purpose: 'Long threshold reps. The session that tells you honestly whether the block has worked.',
+    phase_eligibility: ['build', 'peak'],
+    // Not 5K: a 1600 m rep is most of a 5K runner's race. They have
+    // tempo_cruise_short for the same stimulus at a length that fits.
+    distance_eligibility: ['10K', 'HM', 'MARATHON', '50K', '100K'],
+    fitness_level_min: 'intermediate', difficulty_tier: 4,
+    min_weekly_km: 40,
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'reps',
+        steps: [
+          // 1600 m, not 1609. The rounding is 9 m — under three seconds at
+          // threshold — and every runner and track in the product's markets
+          // calls this distance a mile. ADR-015 owns how it DISPLAYS.
+          { role: 'work', modality: 'run', length: { kind: 'distance', m: 1600 },
+            target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto',
+            note: 'Threshold, held. Rep three should look like rep one.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: '90 seconds. Deliberately short — clearance, not recovery.' },
+        ],
+      }],
+    },
+    intensity_zones: ['Z3'],
+    typical_duration_min: 40, typical_duration_max: 60, is_free_tier: true,
+    coach_voice_notes: 'No hiding in this one. Same pace on the last rep or the block has not worked.',
+  },
+  {
+    id: 'threshold_pyramid', name: 'Pyramid', category: 'threshold',
+    purpose: 'Rungs up and back down. Every rep feels different and all of them are threshold.',
+    phase_eligibility: ['build', 'peak'],
+    distance_eligibility: ['10K', 'HM', 'MARATHON', '50K', '100K'],
+    fitness_level_min: 'intermediate',
+    // TIER 3, NOT 4 — deliberately. A pyramid is variety, not difficulty: its
+    // work minutes and its pace are the ladder's. Tiering it 4 to pad the
+    // tier-4 pool is exactly the dishonesty CB-CAT-01 found in the tier field
+    // to begin with. Over-unders and mile repeats are the tier-4 additions.
+    difficulty_tier: 3,
+    min_weekly_km: 30,
+    // McMillan's condition (CB-CAT-01): whole minutes only. Two REAL variants
+    // rather than continuous scaling — `scaling: 'rep_length'` is declared in
+    // the v2 schema and read by NOTHING (dead, as four of the eight pace
+    // anchors were), and scaling this shape continuously produces 1:07 / 2:14
+    // / 3:21 rungs no runner can hold in their head.
+    //
+    // The rungs are PARAMETERS, not literals: a first pass authored both
+    // variants over one hardcoded 1-2-3-4-3-2-1 structure, so the second
+    // variant's label promised 2-3-4-5-4-3-2 and delivered the first. A
+    // variant that does not change the session is a lie in the data, and §53
+    // would have counted two labels for one session while doing it.
+    parameterisation: {
+      name_template: 'Pyramid — {param}',
+      variants: [
+        // 1+2+3+4+3+2+1 = 16 min at threshold.
+        { label_suffix: '1-2-3-4-3-2-1',
+          values: { r1: 60,  r2: 120, r3: 180, r4: 240, h1: 30, h2: 60, h3: 90,  h4: 120 } },
+        // 2+3+4+5+4+3+2 = 23 min. Recoveries stay half the rung they follow.
+        { label_suffix: '2-3-4-5-4-3-2',
+          values: { r1: 120, r2: 180, r3: 240, r4: 300, h1: 60, h2: 90, h3: 120, h4: 150 } },
+      ],
+    },
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'fixed' },
+      blocks: [{
+        repeat: 1,
+        label: 'pyramid',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'parameter', param: 'r1' },
+            target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto', note: 'Rung one. Settle in — this is the pace you finish on.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'parameter', param: 'h1' },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto', note: 'Half the rung. Every time.' },
+          { role: 'work', modality: 'run', length: { kind: 'parameter', param: 'r2' },
+            target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto', note: 'Up one.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'parameter', param: 'h2' },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto', note: 'Jog.' },
+          { role: 'work', modality: 'run', length: { kind: 'parameter', param: 'r3' },
+            target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto', note: 'Up again.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'parameter', param: 'h3' },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto', note: 'Jog.' },
+          { role: 'work', modality: 'run', length: { kind: 'parameter', param: 'r4' },
+            target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto', note: 'The top. Same pace as the first rung, not faster.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'parameter', param: 'h4' },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto', note: 'Longest recovery of the session. Take all of it.' },
+          { role: 'work', modality: 'run', length: { kind: 'parameter', param: 'r3' },
+            target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto', note: 'Coming down. This is the honest one.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'parameter', param: 'h3' },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto', note: 'Jog.' },
+          { role: 'work', modality: 'run', length: { kind: 'parameter', param: 'r2' },
+            target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto', note: 'Down again.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'parameter', param: 'h2' },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto', note: 'Last jog.' },
+          { role: 'work', modality: 'run', length: { kind: 'parameter', param: 'r1' },
+            target: { kind: 'pace', anchor: 'T', mode: 'target' }, advance: 'auto', note: 'One to finish. Do not race it.' },
+        ],
+      }],
+    },
+    intensity_zones: ['Z3'],
+    typical_duration_min: 40, typical_duration_max: 55, is_free_tier: true,
+    coach_voice_notes: 'The top rung is not the hard one. The one on the way back down is.',
+  },
   {
     id: 'intervals_classic', name: 'Classic VO2max', category: 'vo2max',
     purpose: 'Hard interval work targeting Z4–Z5. Builds peak capacity.',

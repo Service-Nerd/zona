@@ -231,6 +231,12 @@ describe('SC-08b — migration posture (D-03)', () => {
       'tempo_continuous',    // Coaching Board 2026-09-03 — continuous, single-pace shape
       'tempo_cruise',        // Coaching Board 2026-09-03 — same mechanism as tempo_cruise_short
       'goal_pace_sharpener', // Coaching Board 2026-09-03 — same mechanism as tenk_pace_intervals
+      // CB-CAT-01 (2026-09-04) — NEW rows, not migrations. ADR-019's
+      // "additive: no row is migrated" posture is untouched: nothing existing
+      // changed shape, three rows were authored v2 from birth.
+      'tempo_over_under',        // §85 — first CV-anchored row, first two-work-step rep
+      'threshold_mile_repeats',  // §85 — tier-4 threshold inventory
+      'threshold_pyramid',       // §85 — tier 3; variety, not difficulty
     ])
     for (const row of V1_SESSION_CATALOGUE) {
       expect(

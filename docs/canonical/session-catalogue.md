@@ -92,7 +92,7 @@ Phase 1 specifies the full schema for `main_set_structure` and freezes it before
 
 ---
 
-## V1 catalogue (21 sessions)
+## V1 catalogue (24 sessions)
 
 **These are the rows the engine actually ships**, generated from `lib/plan/sessionCatalogueData.ts` — the runtime source of truth (SC-00; the Supabase table is retired).
 
@@ -121,6 +121,9 @@ Phase 1 specifies the full schema for `main_set_structure` and freezes it before
 | 19 | `ultra_race_sim` | Ultra race simulation | ultra_specific | peak | 50K, 100K | intermediate | T4 | long_run_with_fuelling |
 | 20 | `back_to_back_long` | Back-to-back long | ultra_specific | build, peak | 50K, 100K | intermediate | T4 | back_to_back |
 | 21 | `time_on_feet` | Time on feet | ultra_specific | peak | 100K | intermediate | T5 | time_on_feet |
+| 22 | `tempo_over_under` | Over-unders | threshold | build, peak | all | intermediate | **T4** | **v2** · reps × (3 min at **CV** / 3 min at T / 2 min jog) · `scaling: 'reps'`. CB-CAT-01, 2026-09-04. The first row to use the **CV anchor** (0.88–0.92 vVO2max) and the first with TWO work steps in one rep — `pacedRepPlan` sums them, so the rep is 6 min of continuous work, not 3. Prices itself via `SESSION_WORK_OVERRIDE_MINS` (~80% of the steady-threshold band) because half its work sits above T (§85, Sims). Volume-gated at `min_weekly_km: 35` (Willy). Checked by `INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD`, keyed on `catalogue_id` because §19's numeric arm fires on the label and "Over-unders" contains none of the words it watches. |
+| 23 | `threshold_mile_repeats` | Mile repeats | threshold | build, peak | 10K, HM, MARATHON, 50K, 100K | intermediate | **T4** | **v2** · reps × (1600 m at T / 90s jog) · `scaling: 'reps'` — rep count scales by fitness×phase (`THRESHOLD_WORK_TARGET_MINS`). CB-CAT-01, 2026-09-04. 1600 m not 1609 — a 9 m rounding, under three seconds at threshold, and every runner in the product's markets calls it a mile; ADR-015 owns how it displays. Not 5K-eligible: a 1600 m rep is most of a 5K runner's race, and `tempo_cruise_short` gives them the same stimulus at a length that fits. Volume-gated at `min_weekly_km: 40`. |
+| 24 | `threshold_pyramid` | Pyramid — {1-2-3-4-3-2-1\|2-3-4-5-4-3-2} | threshold | build, peak | 10K, HM, MARATHON, 50K, 100K | intermediate | T3 | **v2** · parameterised · rungs up and back down at T, recovery half the rung it follows · `scaling: 'fixed'` (16 min / 23 min of threshold work). CB-CAT-01, 2026-09-04. **T3, not T4, deliberately** — its work minutes and pace are the ladder's, so it is variety not difficulty; inflating the tier to populate the tier-4 pool is the dishonesty §85 exists to forbid. Rungs are PARAMETERS, not literals: a first pass gave both variants one hardcoded structure, so the second promised 2-3-4-5-4-3-2 and delivered the first. Whole minutes only (McMillan) — `scaling: 'rep_length'` is declared in the v2 schema and read by nothing. |
 
 **Free vs paid:** the three `ultra_specific` rows (`ultra_race_sim`, `back_to_back_long`, `time_on_feet`) are `is_free_tier = false`. Referenced by id rather than row number — renumbering the table used to silently invalidate this line. Free users requesting an ultra plan are blocked at the API layer (Phase 6 feature gate); the engine never reaches a state where it would offer them an ultra session.
 

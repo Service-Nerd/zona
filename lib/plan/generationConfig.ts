@@ -402,6 +402,36 @@ export const GENERATION_CONFIG = {
     experienced:  { build: 22, peak: 26 },
   } as Record<string, Record<string, number>>,
 
+  // Per-row work-dose override (CoachingPrinciples §85) — Coaching Board
+  // CB-CAT-01, 2026-09-04.
+  //
+  // A row keyed here uses its OWN work-minute band instead of its category's.
+  // Exists because Sims's amendment is correct and unavoidable: 22 minutes of
+  // over-unders is not 22 minutes of steady threshold. Half an over-under's
+  // work sits ABOVE threshold, so pricing it against `THRESHOLD_WORK_TARGET_MINS`
+  // would prescribe the same minutes at a materially higher load and call that
+  // equivalence a coaching decision when it is really an accounting accident.
+  //
+  // Keyed by row id, matching the existing precedent for `progressive_tempo`
+  // (there is no structural signal in the v2 schema that says "this shape costs
+  // more per minute", and inventing one to avoid naming a row would be a worse
+  // lie than naming it). A row absent from this map uses its category band —
+  // the default stays the rule, this is the exception list.
+  // Roughly 80% of the steady-threshold band at every cell. Not a tuned number:
+  // it is the ratio that keeps TOTAL physiological cost near a steady threshold
+  // session once half the work moves above T, which is the equivalence the band
+  // is supposed to express.
+  SESSION_WORK_OVERRIDE_MINS: {
+    tempo_over_under: {
+      min: 12,
+      max: 24,
+      target: {
+        intermediate: { build: 15, peak: 18 },
+        experienced:  { build: 18, peak: 21 },
+      },
+    },
+  } as Record<string, { min: number; max: number; target: Record<string, Record<string, number>> }>,
+
   // Progressive tempo (continuous shape, not reps) — Coaching Board
   // 2026-09-03. `progressive_tempo`'s v1 description ("30 min Z2→Z3") has no
   // rep count to scale, so it doesn't use the WORK_MIN/MAX/TARGET band

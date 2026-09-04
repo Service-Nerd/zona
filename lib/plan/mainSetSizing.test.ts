@@ -109,14 +109,38 @@ describe('SC-10 — the ordering is measured, and currently violated by design',
     for (const v of vs) expect(v.severity).toBe('warn')
   })
 
-  it('the inversion is REAL — pinning it so the fix cannot be lost', () => {
-    // If this ever fails because the ordering came right, SIZING-REALLOC-01 has
-    // effectively landed: flip the invariant to `error` and delete this test.
-    const m = maxMainSetByStimulus(generateRulePlan(TENK, 'paid', PLAN_START))
+  it('the inversion is MASKED, not fixed — SIZING-REALLOC-01 is still open', () => {
+    // RETIRED AS A SYMPTOM PIN, 2026-09-04 (CB-CAT-01). This asserted VO2max was
+    // the longest main set, with a note saying that if it ever came right the
+    // defect had landed and the test should be deleted. It came right. The
+    // defect did NOT land.
+    //
+    // What actually happened: §85's three threshold rows include structures
+    // long enough that, once §22 renames them on a goal-pace week and stamps
+    // `race_pace`, the race-pace maximum overtakes the VO2max one. Measured
+    // across 16 plans (5K/10K/HM/MAR x 4-5 days x intermediate/experienced),
+    // the inversion now appears in ZERO — where before it was reliable.
+    //
+    // Nothing about the SIZING MODEL changed. `QUALITY_SESSION_PCT_OF_WEEKLY`
+    // is still a flat 18% with no per-category term, which IS the defect; the
+    // ordering is emergent from session structures and remains uncontrolled.
+    // Deleting this test on the old note's invitation would have recorded a fix
+    // that never happened, and left the next reader treating a green suite as
+    // evidence the ordering is governed. A masked defect is more dangerous than
+    // a visible one, so the pin now guards the CAUSE instead of the symptom.
+    //
+    // Delete this only when per-category main-set sizing actually exists.
     expect(
-      m['vo2max'],
-      'if VO2max is no longer the longest, the sizing defect is fixed — see SIZING-REALLOC-01',
-    ).toBeGreaterThan(m['race_pace'] + GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS)
+      GENERATION_CONFIG.QUALITY_SESSION_PCT_OF_WEEKLY,
+      'per-category sizing appeared — SIZING-REALLOC-01 may genuinely be fixed; re-measure the ordering and revisit this test',
+    ).toBe(18)
+
+    // And the ordering really is uncontrolled rather than newly correct: the two
+    // maxima now sit inside the rounding tolerance of each other, which is the
+    // definition of "not ordered by anything".
+    const m = maxMainSetByStimulus(generateRulePlan(TENK, 'paid', PLAN_START))
+    expect(m['vo2max'], 'traced plan lost its VO2max work').toBeGreaterThan(0)
+    expect(m['race_pace'], 'traced plan lost its race-pace work').toBeGreaterThan(0)
   })
 
   it('sizing is still the flat share the defect describes', () => {

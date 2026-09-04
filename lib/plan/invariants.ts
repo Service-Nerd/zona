@@ -47,6 +47,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-COACH-NOTES-MATCH-INTENT',
   'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK',
   'INV-PLAN-LABEL-MATCHES-PACE',
+  'INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD',
   'INV-PLAN-INJURY-NO-HILLS',
   'INV-PLAN-RETURNING-INTENSITY-REENTRY',
   'INV-PLAN-DURATION-ANCHORED-KEEPS-MINUTES',
@@ -281,6 +282,28 @@ const KNOWN_SHAPE_WORDS = new Set(
  *  disagreed about what "effort-governed" means, §40b would be enforced against a
  *  different population than the one the engine exempts.
  *  Coaching Board 2026-09-04. */
+/** §85 — the row's rep runs at more than one WORKING pace (over-unders).
+ *
+ *  Mirrors `hasMixedWorkAnchors` in ruleEngine.ts. Duplicated rather than
+ *  exported because the invariant layer must be able to disagree with the
+ *  engine — a checker that imports the producer's own predicate cannot catch
+ *  the producer being wrong about it. Easy-anchored work is excluded here for
+ *  the same reason it is there: a progression's ramp is not a second work pace.
+ */
+function rowHasMixedWorkAnchors(catalogueId: string): boolean {
+  const row = V1_SESSION_CATALOGUE.find(r => r.id === catalogueId)
+  if (!row || !isV2Structure(row.main_set_structure)) return false
+  const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+  if (!parsed.success) return false
+  const anchors = new Set(
+    parsed.data.blocks.flatMap(b => b.steps)
+      .filter(st => st.role === 'work' && st.target.kind === 'pace')
+      .map(st => (st.target as { anchor: string }).anchor)
+      .filter(a => a !== 'E'),
+  )
+  return anchors.size > 1
+}
+
 function rowIsEffortGoverned(catalogueId: string): boolean {
   const row = V1_SESSION_CATALOGUE.find(r => r.id === catalogueId)
   if (!row || !isV2Structure(row.main_set_structure)) return false
@@ -686,6 +709,19 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         //
         // Structural, never by id — same lesson as the SC-09/D-17 line above.
         if (session.catalogue_id && rowIsEffortGoverned(session.catalogue_id)) continue
+        // §85 — a MIXED-PACE row is exempt for the same reason, one step further
+        // along. An over-under is defined by the relationship between its two
+        // paces; §22's override rewrites the T-anchored half to goal pace and
+        // leaves the CV half alone, which can put the "over" SLOWER than the
+        // "under". So the engine excludes it from the override (see
+        // `hasMixedWorkAnchors`), and this per-week check must not then punish
+        // the session for lacking the goal pace it was correctly denied.
+        //
+        // §22 is NOT weakened, by the same argument the effort-governed
+        // exemption above makes: `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` still
+        // holds the PLAN to a race-pace share, and §53's rotation means an
+        // over-under occupies at most a minority of second-half build slots.
+        if (session.catalogue_id && rowHasMixedWorkAnchors(session.catalogue_id)) continue
         // A1 / D-17 — detect goal-pace work STRUCTURALLY via the stamped
         // `stimulus` (classifyStimulus reads session.stimulus first), NOT the
         // label substring. The generator stamps `stimulus: 'race_pace'` at
@@ -1152,6 +1188,50 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             }
           }
         }
+      }
+    }
+
+    // INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD — CoachingPrinciples §85.
+    //
+    // CB-CAT-01 ruled over-unders correct on an arithmetic premise: with CV at
+    // 0.90 and T at 0.855, a 50/50 alternation's TIME-WEIGHTED MEAN pace sits
+    // 2.56% faster than T — inside INV-PLAN-LABEL-MATCHES-PACE's ±3% threshold
+    // tolerance, so §19 holds without amendment.
+    //
+    // That premise is NOT self-enforcing, for two independent reasons, and this
+    // check exists because both were discovered after the ruling rather than
+    // before it:
+    //   1. §19's numeric arm fires on the LABEL — 'threshold' / 'tempo' /
+    //      'cruise'. "Over-unders" contains none of them, so the row escapes the
+    //      very check the ruling leaned on. That is SC-08's documented
+    //      label-evasion hole, and this row walks straight through it.
+    //   2. Widening the CV band, or moving its midpoint faster, breaks the
+    //      margin silently — Hutchinson's "pin it" is a comment, and a comment
+    //      is not a constraint.
+    //
+    // Keyed on `catalogue_id`, never the label (INV-CLASS): §22 renames this row
+    // to "10K-pace ..." on a goal-pace week and the AI enricher may rewrite it
+    // again. Both rewrite the display string; neither can rewrite the row identity.
+    for (const { day, session } of placedRunning) {
+      if (session.catalogue_id !== 'tempo_over_under') continue
+      if (!plan.meta.vdot || !session.pace_target) continue
+      const mid = parsePaceMidpoint(session.pace_target)
+      if (mid == null) continue
+      const anchorVdot = plan.meta.vdot_training_anchor ?? plan.meta.vdot
+      const tPace = paceFromVdot(anchorVdot, 0.855)
+      const deltaPct = ((tPace - mid) / tPace) * 100
+      // Signed, not absolute: an over-under whose mean is SLOWER than threshold
+      // is not an over-under, it is a tempo run with a name.
+      if (deltaPct < 0 || deltaPct > 3) {
+        violations.push({
+          code: 'INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD',
+          principle_ref: 'CoachingPrinciples §85',
+          severity: 'error',
+          week: w.n, day,
+          message: `Over-under mean pace ${mid.toFixed(2)}/km is ${deltaPct.toFixed(1)}% faster than T-pace ${tPace.toFixed(2)}/km — must be inside 0–3% (§85; the margin §19 was held to rely on)`,
+          actual: `${deltaPct.toFixed(1)}%`,
+          expected: '0–3% faster than T-pace',
+        })
       }
     }
 

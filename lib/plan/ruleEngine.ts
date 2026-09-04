@@ -52,9 +52,11 @@ interface ZoneTargets {
 interface PaceGuide {
   easyPaceStr:      string   // e.g. "6:00–7:15 /km"
   qualityPaceStr:   string   // T-pace (threshold) — Z3 cruise intervals, tempo
+  cvPaceStr:        string   // CV-pace (~90% vVO2max) — the "over" of an over-under (§85)
   intervalPaceStr:  string   // I-pace (VO2max)   — Z4–Z5 hard repeats
   minPerKmEasy:     number
   minPerKmQuality:  number
+  minPerKmCV:       number
   minPerKmInterval: number
   // Long run segment paces (CoachingPrinciples §24b, §24c, §24d)
   marathonPaceStr:  string | null  // ~79% VDOT; null for beginners
@@ -136,6 +138,14 @@ function buildPaceFromVDOT(discountedVdot: number, rawVdot: number): PaceGuide {
   const eSlow = paceAtFraction(discountedVdot, 0.59)
   const tFast = paceAtFraction(discountedVdot, 0.88)
   const tSlow = paceAtFraction(discountedVdot, 0.83)
+  // CV band (§85). Deliberately narrow and deliberately adjacent to T's top:
+  // an over-under's "over" is *just* over threshold, not a third gear. Its
+  // midpoint (0.90) sits 2.6% faster than T's (0.855) in pace terms, which is
+  // what keeps a 50/50 over-under inside INV-PLAN-LABEL-MATCHES-PACE's ±3%
+  // threshold tolerance without amending §19. Discounted VDOT, like T — same
+  // conservatism doctrine (§10, §42); only I-pace uses raw.
+  const cvFast = paceAtFraction(discountedVdot, 0.92)
+  const cvSlow = paceAtFraction(discountedVdot, 0.88)
   const iFast = paceAtFraction(rawVdot, 1.00)  // top of interval band, raw VDOT
   const iSlow = paceAtFraction(rawVdot, 0.95)  // sustainable interval pace, raw VDOT
   // Marathon (~79% VDOT) and HM (~84% VDOT) segment paces. Both use discounted
@@ -144,13 +154,16 @@ function buildPaceFromVDOT(discountedVdot: number, rawVdot: number): PaceGuide {
   const hmMins = paceAtFraction(discountedVdot, 0.84)
   const eMid  = (eFast + eSlow) / 2
   const tMid  = (tFast + tSlow) / 2
+  const cvMid = (cvFast + cvSlow) / 2
   const iMid  = (iFast + iSlow) / 2
   return {
     easyPaceStr:      `${formatPace(eFast)}–${formatPace(eSlow)} /km`,
     qualityPaceStr:   `${formatPace(tFast)}–${formatPace(tSlow)} /km`,
+    cvPaceStr:        `${formatPace(cvFast)}–${formatPace(cvSlow)} /km`,
     intervalPaceStr:  `${formatPace(iFast)}–${formatPace(iSlow)} /km`,
     minPerKmEasy:     eMid,
     minPerKmQuality:  tMid,
+    minPerKmCV:       cvMid,
     minPerKmInterval: iMid,
     marathonPaceStr:  paceBandStr(mpMins, 3),
     hmPaceStr:        paceBandStr(hmMins, 3),
@@ -363,14 +376,28 @@ function buildHRZonesWithFallback(input: GeneratorInput): HRZoneFallbackResult {
 
 // ─── Pace guides by fitness level (fallback when no benchmark) ─────────────────
 
-const PACE_GUIDE: Record<FitnessLevel, Omit<PaceGuide, 'source' | 'marathonPaceStr' | 'hmPaceStr'>> = {
+// CV is deliberately absent here and derived in buildFallbackPace — see CV_PACE_RATIO_OF_T.
+const PACE_GUIDE: Record<FitnessLevel, Omit<PaceGuide, 'source' | 'marathonPaceStr' | 'hmPaceStr' | 'cvPaceStr' | 'minPerKmCV'>> = {
   beginner:     { easyPaceStr: '7:30–9:00 /km', qualityPaceStr: '6:30–7:30 /km', intervalPaceStr: '5:30–6:30 /km', minPerKmEasy: 8.0,  minPerKmQuality: 7.0,  minPerKmInterval: 6.0 },
   intermediate: { easyPaceStr: '6:30–7:30 /km', qualityPaceStr: '5:30–6:00 /km', intervalPaceStr: '4:30–5:00 /km', minPerKmEasy: 7.0,  minPerKmQuality: 5.75, minPerKmInterval: 4.75 },
   experienced:  { easyPaceStr: '5:45–6:45 /km', qualityPaceStr: '4:45–5:20 /km', intervalPaceStr: '3:50–4:20 /km', minPerKmEasy: 6.25, minPerKmQuality: 5.0,  minPerKmInterval: 4.05 },
 }
 
+/**
+ * CV pace as a ratio of T pace (§85).
+ *
+ * DERIVED, never a fourth column in PACE_GUIDE. Pace is inversely proportional
+ * to velocity, so CV pace = T pace x (T fraction / CV fraction) = 0.855/0.90.
+ * Deriving it means the fallback table can never drift into the one ordering
+ * that would be incoherent — CV slower than T, or faster than I — which a
+ * hand-maintained fourth column eventually would. Same reason the VDOT path
+ * computes all four bands from one VDOT rather than storing them.
+ */
+const CV_PACE_RATIO_OF_T = 0.855 / 0.90
+
 function buildFallbackPace(fitness: FitnessLevel): PaceGuide {
   const base = PACE_GUIDE[fitness]
+  const cvMins = base.minPerKmQuality * CV_PACE_RATIO_OF_T
   // Marathon and HM segment paces derived from quality pace midpoint + offset.
   // Beginners: null — no pace segments prescribed. (CoachingPrinciples §24b)
   let marathonPaceStr: string | null = null
@@ -382,7 +409,12 @@ function buildFallbackPace(fitness: FitnessLevel): PaceGuide {
     marathonPaceStr = paceBandStr(base.minPerKmQuality + (25 / 60),  3)  // +25s/km
     hmPaceStr       = paceBandStr(base.minPerKmQuality + (12 / 60),  3)  // +12s/km
   }
-  return { ...base, marathonPaceStr, hmPaceStr, source: 'fitness_level' }
+  return {
+    ...base,
+    cvPaceStr:  paceBandStr(cvMins, 2),
+    minPerKmCV: cvMins,
+    marathonPaceStr, hmPaceStr, source: 'fitness_level',
+  }
 }
 
 // ─── Phase distribution ───────────────────────────────────────────────────────
@@ -727,6 +759,7 @@ function resolveAnchorPace(anchor: PaceAnchor, pace: PaceGuide, goalPaceMinPerKm
   switch (anchor) {
     case 'E':    return pace.minPerKmEasy
     case 'T':    return pace.minPerKmQuality
+    case 'CV':   return pace.minPerKmCV
     case 'I':    return pace.minPerKmInterval
     case 'goal': return goalPaceMinPerKm
     default:     return null   // M/R/race_5K/race_3K: no numeric pace resolved here today
@@ -770,6 +803,44 @@ function v2StepMinutes(
 // rather than hardcoding I-pace for every category (the bug this generalises
 // away — a threshold session's estimated distance was inflated by using
 // VO2max pace to convert its minutes).
+/**
+ * §85 — does this row's rep run at MORE THAN ONE work pace?
+ *
+ * True only for over-unders today. Two consequences follow, and both are the
+ * difference between a coherent session and a broken one:
+ *
+ *  1. The displayed pace band must be the rep's time-weighted MEAN, not the
+ *     category's single band. A header reading plain T on a session half of
+ *     whose work is above T understates it, and `INV-PLAN-OVER-UNDER-MEAN-NEAR-
+ *     THRESHOLD` fails it — which is how this gap was found, after the ruling
+ *     had already assumed the mean was displayed.
+ *  2. It must be EXCLUDED from §22's goal-pace-week override. That override
+ *     rewrites T-anchored work to goal pace; applied here it rewrites one half
+ *     of an alternation and leaves the other, so the "over" can land SLOWER
+ *     than the "under". The session is defined by the RELATIONSHIP between its
+ *     two paces — substituting one is not a re-pacing, it is a different
+ *     session wearing the name. Same reasoning that excluded effort-governed
+ *     rows from `useGoalPace` (§40b veto, earlier the same day).
+ */
+function hasMixedWorkAnchors(row: SessionCatalogueRow | null | undefined): boolean {
+  if (!row || !isV2Structure(row.main_set_structure)) return false
+  const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+  if (!parsed.success) return false
+  const anchors = new Set(
+    parsed.data.blocks.flatMap(b => b.steps)
+      .filter(st => st.role === 'work' && st.target.kind === 'pace')
+      .map(st => (st.target as { anchor: string }).anchor)
+      // EASY-ANCHORED WORK IS A RAMP, NOT A SECOND WORK PACE. Without this,
+      // `progressive_tempo` counts as mixed — its first third is authored
+      // `work @ E` — and a first pass duly excluded it from §22's goal-pace
+      // override, breaking INV-PLAN-RACE-SPECIFIC-EXPOSURE across 74 tests.
+      // The property that matters is two distinct WORKING intensities, which
+      // is what an alternation has and a progression does not.
+      .filter(a => a !== 'E'),
+  )
+  return anchors.size > 1
+}
+
 function pacedRepPlan(
   row: SessionCatalogueRow | null,
   fitness: FitnessLevel,
@@ -789,22 +860,59 @@ function pacedRepPlan(
 ): { reps: number; mainMins: number; workPaceMinPerKm: number } | null {
   if (!row || !isV2Structure(row.main_set_structure)) return null
   const cfg = GENERATION_CONFIG
-  const band = row.category === 'vo2max'
-    ? { min: cfg.VO2MAX_WORK_MIN_MINS, max: cfg.VO2MAX_WORK_MAX_MINS, target: cfg.VO2MAX_WORK_TARGET_MINS }
-    : (row.category === 'threshold' || row.category === 'race_specific')
-      ? { min: cfg.THRESHOLD_WORK_MIN_MINS, max: cfg.THRESHOLD_WORK_MAX_MINS, target: cfg.THRESHOLD_WORK_TARGET_MINS }
-      : null
+  // §85 — a row may price its own work band (Sims's amendment, CB-CAT-01). The
+  // override is consulted FIRST and by row id; absence falls through to the
+  // category band, so the default remains the rule.
+  const override = cfg.SESSION_WORK_OVERRIDE_MINS[row.id]
+  const band = override
+    ? { min: override.min, max: override.max, target: override.target }
+    : row.category === 'vo2max'
+      ? { min: cfg.VO2MAX_WORK_MIN_MINS, max: cfg.VO2MAX_WORK_MAX_MINS, target: cfg.VO2MAX_WORK_TARGET_MINS }
+      : (row.category === 'threshold' || row.category === 'race_specific')
+        ? { min: cfg.THRESHOLD_WORK_MIN_MINS, max: cfg.THRESHOLD_WORK_MAX_MINS, target: cfg.THRESHOLD_WORK_TARGET_MINS }
+        : null
   if (!band) return null
   const parsed = StructureV2Schema.safeParse(row.main_set_structure)
   if (!parsed.success || parsed.data.sizing.scaling !== 'reps') return null
   const block = parsed.data.blocks.find(b => typeof b.repeat === 'object' && b.repeat.param === 'reps')
   if (!block) return null
-  const workStep = block.steps.find(s => s.role === 'work')
-  if (!workStep || workStep.target.kind !== 'pace') return null  // effort-governed → not this path
-  const workAnchor: PaceAnchor = substituteThresholdWithGoal && workStep.target.anchor === 'T'
-    ? 'goal' : (workStep.target.anchor as PaceAnchor)
-  const workPaceMinPerKm = resolveAnchorPace(workAnchor, pace, goalPaceMinPerKm)
-  const workMins = v2StepMinutes(workStep, pace, goalPaceMinPerKm, workAnchor)
+  // §85 (CB-CAT-01, 2026-09-04) — ALL work steps in the block, not just the first.
+  //
+  // Every reps-scaled row before over-unders had exactly one work step, so
+  // `.find()` and "sum them" were the same number and the distinction never
+  // surfaced. An over-under's rep is two work steps (over, then under) and no
+  // recovery: reading only the first would size the session off half its own
+  // rep — 3 minutes instead of 6 — and prescribe roughly double the reps.
+  // Verified before changing: no existing reps-scaled row has more than one
+  // work step, so this is a generalisation with zero behavioural delta for them.
+  const workSteps = block.steps.filter(s => s.role === 'work')
+  // Narrowed here rather than by a `.some()` guard above: the guard would not
+  // carry the discriminant into the map, and casting past it would defeat the
+  // exact check that keeps effort-governed rows out of this function (§40b).
+  const pacedWork = workSteps.filter(
+    (s): s is typeof s & { target: { kind: 'pace'; anchor: PaceAnchor } } => s.target.kind === 'pace',
+  )
+  if (workSteps.length === 0 || pacedWork.length !== workSteps.length) {
+    return null  // effort-governed → not this path
+  }
+  const priced = pacedWork.map(s => {
+    const anchor: PaceAnchor = substituteThresholdWithGoal && s.target.anchor === 'T'
+      ? 'goal' : s.target.anchor
+    return {
+      mins: v2StepMinutes(s, pace, goalPaceMinPerKm, anchor),
+      paceMinPerKm: resolveAnchorPace(anchor, pace, goalPaceMinPerKm),
+    }
+  })
+  if (priced.some(p => p.paceMinPerKm == null || p.mins <= 0)) return null
+  const workMins = priced.reduce((sum, p) => sum + p.mins, 0)
+  // TIME-WEIGHTED MEAN pace, not the arithmetic mean of the bands. Total time
+  // over total distance — the pace the runner actually averages across the rep.
+  // For a single-work-step block this is exactly that step's pace, so nothing
+  // moves for the rows that existed before. For an over-under it is what makes
+  // the displayed band honest AND keeps a threshold-labelled session inside
+  // INV-PLAN-LABEL-MATCHES-PACE's ±3% of T (§19) without amending the principle.
+  const workDistanceKm = priced.reduce((sum, p) => sum + p.mins / p.paceMinPerKm!, 0)
+  const workPaceMinPerKm = workDistanceKm > 0 ? workMins / workDistanceKm : null
   if (workMins <= 0 || workPaceMinPerKm == null) return null
   const recoveryMins = block.steps
     .filter(s => s.role === 'recovery')
@@ -942,6 +1050,71 @@ function progressiveTempoPlan(
 // to THRESHOLD_WORK_MIN_MINS for taper (no taper entry in the target table —
 // same fallback pacedRepPlan already applies for goal_pace_sharpener, a
 // taper-only row drawing from the same table).
+/**
+ * §85 (CB-CAT-01) — sizing for `threshold_pyramid`.
+ *
+ * A third `scaling: 'fixed'` shape, and like the two before it (`tempo_continuous`,
+ * `progressive_tempo`) it gets its own sizer gated on row id. Nothing in the v2
+ * schema distinguishes a pyramid from a ladder — both are one block, repeat 1,
+ * several sequential work steps — so row id remains the only honest signal, as
+ * `continuousThresholdPlan`'s own comment records.
+ *
+ * Unlike those two it reads NO config: a pyramid's dose IS its rungs, and the
+ * variant supplies them. Summing the row's own steps is the whole calculation.
+ *
+ * DELIBERATELY NOT GENERALISED to every fixed row. `threshold_ladder` is the
+ * identical shape and would be swept up by a generic version — changing what a
+ * runner is prescribed, which is a board matter and not this ruling's scope. It
+ * keeps the flat quality-session formula it has always used.
+ */
+function pyramidPlan(
+  row: SessionCatalogueRow | null | undefined,
+  variant: { values: Record<string, number> } | null,
+  pace: PaceGuide,
+  // §22's goal-pace-week override, as `pacedRepPlan` already takes it. WITHOUT
+  // this the rungs render at goal pace (the row is renamed "10K-pace pyramid")
+  // while the distance is priced at T — the session's stated distance disagrees
+  // with its own steps, which is the §8 defect this sizer exists to prevent.
+  goalPaceMinPerKm: number | null = null,
+): { mainMins: number; workPaceMinPerKm: number } | null {
+  if (!row || row.id !== 'threshold_pyramid' || !isV2Structure(row.main_set_structure)) return null
+  const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+  if (!parsed.success) return null
+  let totalSecs = 0
+  for (const block of parsed.data.blocks) {
+    const repeat = typeof block.repeat === 'number' ? block.repeat : 1
+    for (const step of block.steps) {
+      const len = step.length
+      const secs = len.kind === 'duration'
+        ? len.secs
+        : len.kind === 'parameter'
+          ? variant?.values?.[len.param]
+          : undefined
+      // A missing parameter is a catalogue defect, not a runtime condition —
+      // same posture as resolveMainSet, which throws on one. Here it means the
+      // session cannot be sized from its structure, so fall back rather than
+      // report a confidently wrong duration built from a partial sum.
+      if (typeof secs !== 'number') return null
+      totalSecs += secs * repeat
+    }
+  }
+  if (totalSecs <= 0) return null
+  // Every work step is T-anchored, so the work pace is threshold. Asserted
+  // rather than assumed: if a future variant introduces a second anchor this
+  // returns null and the session falls back instead of being priced at a pace
+  // half its work is not run at.
+  const anchors = new Set(
+    parsed.data.blocks.flatMap(b => b.steps)
+      .filter(s => s.role === 'work')
+      .map(s => (s.target.kind === 'pace' ? s.target.anchor : null)),
+  )
+  if (anchors.size !== 1 || !anchors.has('T')) return null
+  return {
+    mainMins: totalSecs / 60,
+    workPaceMinPerKm: goalPaceMinPerKm ?? pace.minPerKmQuality,
+  }
+}
+
 function continuousThresholdPlan(
   row: SessionCatalogueRow | null, fitness: FitnessLevel, phase: PhaseType,
   // §8 Amendment (2026-09-04) — floor protection, as `pacedRepPlan` has had since
@@ -1080,8 +1253,11 @@ function makeQualitySession(args: {
   // The test is STRUCTURAL (does the row's work step carry a pace at all?) —
   // INV-CLASS, same reason the goal-pace checks above read the row's shape rather
   // than its id.
+  // §85 — a mixed-pace row is excluded here for the same reason effort-governed
+  // rows are: see hasMixedWorkAnchors.
+  const isMixedPaceRow = hasMixedWorkAnchors(catalogueRow)
   const useGoalPace = (goalPaceWeek === true || catalogueRowGoalPace)
-    && !isVo2max && !isEffortGoverned && !!goalPace
+    && !isVo2max && !isEffortGoverned && !isMixedPaceRow && !!goalPace
   const goalCenterMins = useGoalPace ? paceStrToMins(goalPace!) : null
   // A threshold row's work step is authored at 'T' because that's what it
   // means on an ordinary week; race_specific rows are already intrinsically
@@ -1113,6 +1289,13 @@ function makeQualitySession(args: {
   // §40b Amendment 2 (Coaching Board 2026-09-04) — structure-driven sizing for the
   // rows `pacedRepPlan` declines. Null for every paced row.
   const effortPlan = effortGovernedPlan(catalogueRow, variant, pace)
+
+  // §85 (CB-CAT-01, 2026-09-04) — threshold_pyramid's rung-sum sizing.
+  // Null for every other row.
+  const pyramid = pyramidPlan(
+    catalogueRow, variant, pace,
+    substituteThresholdWithGoal ? goalPaceMinPerKmForSizing : null,
+  )
 
   // Coaching Board 2026-09-03 — tempo_continuous's single-block continuous
   // sizing (see continuousThresholdPlan). Null for every other row.
@@ -1156,6 +1339,10 @@ function makeQualitySession(args: {
       // displayed pace and the session's headline pace_target read as the
       // same prescription formatted the same way, not just the same number.
       T: substituteThresholdWithGoal && goalCenterMins != null ? paceBandStr(goalCenterMins, 2) : pace.qualityPaceStr,
+      // §85 — never substituted by §22's goal-pace override. The "over" of an
+      // over-under is defined relative to the runner's THRESHOLD, not to their
+      // race goal; a goal-paced week must not silently redefine what "over" means.
+      CV: pace.cvPaceStr,
       I: pace.intervalPaceStr,
       ...(pace.marathonPaceStr ? { M: pace.marathonPaceStr } : {}),
       ...(goalPace ? { goal: goalPace } : {}),
@@ -1303,8 +1490,15 @@ function makeQualitySession(args: {
     // this slot would have been called with no catalogue row at all. That is
     // exactly what it is: a threshold slot with nothing threshold to put in it.
     label = aerobicRepurposedAsQuality ? fallbackLabel : (catalogueRow?.name ?? fallbackLabel)
-    minPerKm = pace.minPerKmQuality
-    paceTarget = pace.qualityPaceStr
+    // §85 — a mixed-pace rep displays its TIME-WEIGHTED MEAN, not the category
+    // band. `pacedRepPlan` already computes it (total work time over total work
+    // distance); reading it here is what keeps the header honest about a session
+    // whose steps run either side of threshold, and what makes the ±3% margin
+    // §19 was held to rely on something actually measured rather than assumed.
+    minPerKm = isMixedPaceRow && repPlan ? repPlan.workPaceMinPerKm : pace.minPerKmQuality
+    paceTarget = isMixedPaceRow && repPlan
+      ? paceBandStr(repPlan.workPaceMinPerKm, 2)
+      : pace.qualityPaceStr
     zone = zones.qualityZone
     hrTarget = zones.qualityHR
   }
@@ -1416,7 +1610,7 @@ function makeQualitySession(args: {
   // cannot disagree about which shape they are describing.
   const structuredMainMins: number | null =
     repPlan?.mainMins ?? progTempoPlan?.mainMins ?? contTempoPlan?.mainMins
-    ?? effortPlan?.mainMins ?? null
+    ?? pyramid?.mainMins ?? effortPlan?.mainMins ?? null
 
   const segmentPricedKm = (mainMins: number, workPaceMinPerKm: number): number =>
     segmentPricedDistance(mainMins, workPaceMinPerKm, pace.minPerKmEasy)
@@ -1429,7 +1623,11 @@ function makeQualitySession(args: {
         // `minPerKm` here is already T-pace (quality pace) in this branch —
         // exact, not an approximation like progTempoPlan's multi-pace case.
         ? segmentPricedKm(contTempoPlan.mainMins, minPerKm)
-        : distKm
+        : pyramid
+          // Every rung is T-anchored (pyramidPlan asserts it), so one work pace
+          // prices the whole main set exactly, as tempo_continuous does.
+          ? segmentPricedKm(pyramid.mainMins, pyramid.workPaceMinPerKm)
+          : distKm
   const rounded = roundDistance(effectiveDistKm)
   // CLASSIFY-STIMULUS-01 — stamp the stimulus from the trusted generator label
   // now, while it is canonical, so the AI enricher rewriting the name later can

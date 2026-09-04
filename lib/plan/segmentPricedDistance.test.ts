@@ -3,6 +3,8 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { sessionSplit } from './sessionFormat'
 import { GENERATION_CONFIG } from './generationConfig'
+import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
+import { isV2Structure, StructureV2Schema } from './sessionStructureV2'
 import type { GeneratorInput, Plan, Session } from '@/types/plan'
 
 /**
@@ -82,10 +84,52 @@ describe('§8 — a quality session states the distance it actually covers', () 
     // Regression on the bug this fix introduced and then corrected. A 4 x 5 min
     // session with 90s jogs is 26 min of main set, which needs ~46 min total —
     // it must not read 41 because its distance shrank.
+    // Re-anchored 2026-09-04 (CB-CAT-01). This pinned `tempo_cruise_short` by id,
+    // and the three new threshold rows widened the 10K eligible pool from 3-5 to
+    // 8 — so the plan stopped containing that specific row and the test asserted
+    // nothing while still passing its first expectation. Anchor on the PROPERTY
+    // the regression is about (a reps-scaled session's duration follows its own
+    // structure) rather than on one row that happened to demonstrate it.
     const plan = generateRulePlan(TENK, 'paid', PLAN_START)
-    const cruise = sessionsOf(plan).find(s => s.catalogue_id === 'tempo_cruise_short')
-    expect(cruise, 'no cruise session to check').toBeTruthy()
-    expect(cruise!.duration_mins!).toBeGreaterThanOrEqual(45)
+    const repsSessions = sessionsOf(plan).filter(s => {
+      const row = V1_SESSION_CATALOGUE.find(r => r.id === s.catalogue_id)
+      if (!row || !isV2Structure(row.main_set_structure)) return false
+      const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+      return parsed.success && parsed.data.sizing.scaling === 'reps' && row.category === 'threshold'
+    })
+    expect(repsSessions.length, 'no reps-scaled threshold session to check').toBeGreaterThan(0)
+    let checked = 0
+    for (const s of repsSessions) {
+      const blocks = s.derived_set?.blocks ?? []
+      const work = paceMid(s.pace_target)
+      if (work == null) continue
+      // Distance reps ("1600 m") are CONVERTED at the session's own work pace,
+      // not skipped. A first pass skipped them and emptied the test — every
+      // reps-scaled threshold session in this fixture is distance-based since
+      // the pool widened, so the guard below reported "asserts nothing", which
+      // is the outcome this file exists to prevent. A second pass parsed them
+      // loosely and read "1600 m" as 1600 MINUTES, demanding a 4805-minute
+      // session. Both are the same mistake: treating a display string as data.
+      const mainMins = blocks.reduce((total, b) => total + b.repeat * b.steps.reduce((sum, step) => {
+        const len = step.length ?? ''
+        const dist = /^(\d+)\s*m$/.exec(len)
+        if (dist) return sum + (+dist[1] / 1000) * work
+        const dur = /^(\d+)(?::(\d{2}))?\s*(min|s)\b/.exec(len)
+        if (!dur) return sum
+        if (dur[3] === 's') return sum + +dur[1] / 60
+        return sum + +dur[1] + (dur[2] ? +dur[2] / 60 : 0)
+      }, 0), 0)
+      if (mainMins <= 0) continue
+      checked++
+      // Duration must cover the main set — the bug was a session reading 41 min
+      // for a 26 min main set because its DISTANCE shrank under segment pricing
+      // and the duration followed it down.
+      expect(s.duration_mins!, `${s.label} duration is below its own main set`)
+        .toBeGreaterThanOrEqual(Math.round(mainMins))
+    }
+    // A suite that checks nothing and reports green is the exact failure this
+    // file's own history is about — assert the loop above actually ran.
+    expect(checked, 'every candidate session was skipped — test asserts nothing').toBeGreaterThan(0)
   })
 
   it('no quality session falls under the distance floor — including continuous shapes', () => {

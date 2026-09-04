@@ -22,7 +22,13 @@ import { z } from 'zod'
 // A catalogue row is shared by every runner, so a pace written into a row is
 // wrong for all but one of them. The runner's own paces resolve the anchor at
 // generation time. Enforced by INV-CAT-V2-NO-LITERAL-PACE.
-export const PACE_ANCHORS = ['E', 'T', 'I', 'R', 'M', 'goal', 'race_5K', 'race_3K'] as const
+// CV (critical velocity, ~90% vVO2max) added 2026-09-04 by Coaching Board ruling
+// CB-CAT-01. It is the pace an over-under's "over" segment is run at: genuinely
+// above threshold (T sits at 0.855) but well below interval pace (0.975), which
+// is what makes the excursion repeatable rather than a VO2max rep in disguise.
+// Zonna had NO anchor between T and I, which is why no over-under row could
+// exist. See CoachingPrinciples §85.
+export const PACE_ANCHORS = ['E', 'T', 'CV', 'I', 'R', 'M', 'goal', 'race_5K', 'race_3K'] as const
 export type PaceAnchor = typeof PACE_ANCHORS[number]
 
 const PaceAnchorSchema = z.enum(PACE_ANCHORS)

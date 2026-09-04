@@ -2477,6 +2477,87 @@ The data inconsistency long predated §84; the **contradiction on screen was hou
 
 ---
 
+## 85. Intensity has an inventory, or the runner's answer means nothing
+
+**Principle.** A runner who declares upward MUST be able to receive work an
+intermediate runner does not. That requires the catalogue to CONTAIN harder
+sessions — a selection rule cannot pick what does not exist. Where "harder" is
+needed at threshold, it is expressed as DENSITY and CONTROLLED EXCURSION, never
+as more minutes at the same intensity.
+
+**Why this had to become a principle.** `THRESHOLD_WORK_TARGET_MINS` and
+`VO2MAX_WORK_TARGET_MINS` already scale ~20% with the declaration, and had done
+for months. Measured on a 12-week 10K plan, declaring `experienced` instead of
+`intermediate` changed **one session out of six** — 5x3 min became 6x3 min, and
+nothing else moved a byte. The dose responded exactly as designed; rep lengths of
+5-10 minutes and 1 km simply swallowed it, because a 20% increase rarely crosses
+an integer rep boundary (the same quantisation that closed EG-01).
+
+Four separate selection levers were built and measured against this before the
+cause was found — base-phase compression, deload cadence, a `difficulty_tier`
+selection bias, and a shortened base. **All four failed for one reason**: every
+threshold row in the catalogue was T-pace with easy recovery, differing only in
+rep shape. Five rows, all tier 3, because they were one session written five ways.
+There was nothing harder to select. **Do not re-attempt a selection lever before
+checking the inventory it selects from** — that is the lesson this section exists
+to carry.
+
+**The distribution constraint that shapes the answer (Seiler).** The fix must not
+be "more minutes at threshold". For a runner whose threshold is already developed,
+more time in the same band is grey-zone accumulation — the thing the product
+exists to prevent — arriving under a harder-sounding name. Harder must therefore
+mean a different *stimulus*, not a longer *dose*.
+
+**CV — the anchor that was missing.** `PACE_ANCHORS` declared eight anchors;
+`resolveAnchorPace` resolved four. There was no anchor between T (0.855 vVO2max)
+and I (0.975), which is precisely where an over-under's "over" segment lives, so
+no over-under row could exist. **CV is 0.88-0.92, midpoint 0.90**, from discounted
+VDOT (§10, §42 — only I-pace uses raw).
+
+**The 0.90 midpoint is load-bearing and pinned.** Pace is inversely proportional
+to velocity, so a 50/50 alternation between CV and T has a time-weighted mean
+pace 2.56% faster than T. `INV-PLAN-LABEL-MATCHES-PACE` allows ±3% for a
+threshold-labelled session. **The over-under is legal under §19 by 0.44 of a
+percentage point.** Anchoring the "over" at 5K pace instead would breach it.
+Widening the CV band or moving its midpoint faster breaks §19 silently.
+
+**Dose is not transferable between stimuli (Sims).** 22 minutes of over-unders is
+not 22 minutes of steady threshold — half the work sits above T. A row whose cost
+per minute differs from its category's prices itself via
+`SESSION_WORK_OVERRIDE_MINS`, keyed by row id. Absence from that map means the
+category band applies; the default stays the rule.
+
+**Tier is a description, not a lever (the honesty clause).** A row's
+`difficulty_tier` states what the session IS. It must never be inflated to
+populate a tier the selector wants to reach. `threshold_pyramid` is tier 3 despite
+shipping in the same commit as two tier-4 rows, because its work minutes and its
+pace are the ladder's — it is variety, not difficulty. The five pre-existing
+threshold rows were correctly tiered all-3; the tier field was telling the truth
+and the catalogue was the thing at fault.
+
+**Upward declaration still buys intensity only, never tonnage (§79).** These rows
+are gated on `min_weekly_km` as well as `fitness_level_min`, so a runner doing
+25 km/week who selects "experienced" cannot reach them (Willy). The dropdown
+opens a door; demonstrated volume decides whether it leads anywhere.
+
+**Config.** `SESSION_WORK_OVERRIDE_MINS` (per-row work-minute band).
+CV band fractions live inline in `buildPaceFromVDOT` alongside E/T/I, per
+CLAUDE.md's standing exemption for that function's Daniels coefficients, and are
+derived for the no-benchmark path via `CV_PACE_RATIO_OF_T`.
+
+**Mechanical check.** `INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD` — the §19 margin
+above is NOT self-enforcing, because §19's numeric arm fires on the label and
+"Over-unders" contains none of the words it watches (SC-08's label-evasion hole).
+The invariant is keyed on `catalogue_id`, never the label, since §22 renames the
+row on a goal-pace week and the enricher may rename it again.
+
+**Board:** CB-CAT-01, 2026-09-04 — CORRECT WITH AMENDMENT. Hutchinson chairing;
+amendments from Sims (own dose band), Willy (volume gate), McMillan (whole-minute
+rungs), Seiler (no selection preference — over-unders stay one row among many).
+Origin: CAT-DEPTH-01. See `docs/decisions/catalogue-additions-proposal-2026-09-04.md`.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
