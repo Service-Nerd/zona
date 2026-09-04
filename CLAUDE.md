@@ -319,7 +319,7 @@ See `docs/architecture/ADR-006-hybrid-generation-pattern.md`.
 
 **Authority:** Architectural-principles skill (`INV-CFG-001…005`, `M-013`, `N-013`). ADR-009 establishes the pattern for plan generation; INV-CFG elevates it repo-wide.
 
-**Backstop:** Every entry in `GENERATION_CONFIG` has a corresponding section in `docs/canonical/CoachingPrinciples.md` explaining the principle behind the value. A numeric without a principle is a defect.
+**Backstop (mechanical since 2026-09-04):** Every entry in `GENERATION_CONFIG` has a corresponding section in `docs/canonical/CoachingPrinciples.md` explaining the principle behind the value. A numeric without a principle is a defect — and `lib/plan/configPrincipleSync.test.ts` now **fails the build** when a new key ships without one. 27 pre-existing keys are baselined as a debt register (a stale entry, i.e. one that has since gained a principle, also fails). This was doctrine with no check for months, which is how it drifted: **a rule that holds only while someone remembers is not a rule.**
 
 **Exempt:** Algorithm-formula constants (Daniels VDOT coefficients in `buildPaceFromVDOT`, Tanaka MaxHR `208 − 0.7 × age`) and structural constants (`7` for days/week, JS array indices) stay inline — they are not coaching choices.
 
@@ -339,7 +339,7 @@ When all three agree, the engine is provably honouring its constitution.
 
 **Tooling:**
 - `scripts/r23-phase7-validation.ts` — archetype matrix; runs under `NODE_ENV=test` so violations break the suite.
-- `scripts/property-validate-plans.ts` — property sweep across a wide input grid (race × fitness × days × volume × injuries × ...). Catches edge cases the archetype matrix misses. Exit 1 on any violation.
+- `scripts/property-validate-plans.ts` — property sweep across a wide input grid (race × fitness × days × volume × injuries × ...). Catches edge cases the archetype matrix misses. Exit 1 on any violation. **Also gates INPUT COVERAGE (2026-09-04):** it fails if any `GeneratorInput` field is never varied by the grid, because "18,059 plans, 0 violations" is only safety for the inputs actually swept — that class had shipped four separate defect families behind a green run. Field names are parsed from the type declaration, never listed. Violations are baselined as a debt register in the script (`SWEEP-BASELINE-01`), so anything NEW fails while known debt is tracked rather than hidden.
 
 **When changing engine behaviour or adding a coaching principle:** add the invariant to `validatePlan()` in the same commit. See `docs/canonical/plan-invariants.md` for the full registry and the procedure.
 
