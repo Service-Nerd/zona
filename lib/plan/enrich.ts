@@ -282,6 +282,31 @@ function mergePlan(
     for (const [day, es] of Object.entries(ew.sessions)) {
       const session = week.sessions?.[day as keyof typeof week.sessions]
       if (!session || !es) continue
+      // §78 — the recalibration time trial keeps the engine's own copy.
+      //
+      // The enricher rewrites VOICE. This session's notes are INSTRUCTION, and
+      // the two are not interchangeable. The engine writes "This is a
+      // measurement, not a session. Log the result in your profile and your
+      // paces update for the next block." — the sentence the whole
+      // recalibration path (ADR-014) depends on, because nothing recalibrates
+      // unless the runner logs a result.
+      //
+      // Observed in a live plan (bcdec27a, 2026-09-03): the AI replaced it with
+      // "Hard session: {{session_zone}}, {{session_distance}} km. This is pace
+      // work, not endurance." — fluent, on-voice, states the OPPOSITE of §78,
+      // and silently deletes the only instruction that makes the feature work.
+      // `meta.recalibration_weeks` still claimed the week recalibrated.
+      //
+      // Keyed on `type === 'hard'`, which is structural and exact:
+      // `applyRecalibrationTimeTrial` (ruleEngine.ts) is the ONLY producer of
+      // that type anywhere in the codebase. Not keyed on the label, which the
+      // enricher is free to rewrite (D-17), nor on `meta.recalibration_weeks`,
+      // which would make this depend on two fields staying in step.
+      //
+      // The LABEL is protected with the notes, deliberately: "5K time trial"
+      // tells the runner what the session is for, and a renamed measurement is
+      // the same defect one field over.
+      if (session.type === 'hard') continue
       if (es.label) session.label = es.label
       if (es.coach_notes) session.coach_notes = es.coach_notes
     }

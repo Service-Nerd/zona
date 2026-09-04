@@ -2080,6 +2080,24 @@ Three further consequences, all deliberate:
 
 **Enforced by** `INV-PLAN-RECALIBRATION-HAS-SESSION` (error severity).
 
+### Amendment 1 — the trial's copy is instruction, and the enricher may not replace it — added 2026-09-04 (defect fix, restores documented intent)
+
+**Principle.** The recalibration time trial's coach notes are **instruction, not voice**. They must state that the session is a measurement rather than a training session, and must tell the runner to log the result. The AI enricher rewrites voice; it must not touch these, and the session's label is protected with them.
+
+**Why.** Live plan `bcdec27a` (2026-09-03, `enrichment: "applied"`, `recalibration_weeks: [8]`) shipped this to the runner:
+
+> "Hard session: {{session_zone}}, {{session_distance}} km. **This is pace work, not endurance.**"
+
+in place of the engine's own:
+
+> "This is a measurement, not a session. **Log the result in your profile and your paces update for the next block.**"
+
+Fluent, on-voice, and **states the opposite of this principle** — while deleting the only instruction the feature depends on. **Nothing recalibrates unless the runner logs a result** (ADR-014), so the plan went on claiming week 8 was a recalibration week while the runner had been told it was pace work.
+
+**How it escaped — the transferable part.** `validatePlan` *does* run post-enrichment (PV2-A), so the architecture was right. But the only copy invariant that could have caught it opened with `if (session.type !== 'quality') continue`, and this session is typed `hard`. **The `hard` typing chosen above so the trial would not count against `QUALITY_SESSIONS_PER_WEEK_MAX` also exempted it from every quality-scoped copy check** — a type chosen to opt out of one rule silently opted it out of an unrelated one. Worth remembering whenever a type is picked to dodge a specific rule: check what else keys on it. Compounding this, the invariant was a **two-phrase denylist**, and the harm here is what went *missing* — no banned-phrase check can ever catch that.
+
+**Config.** No numeric — structural. Enforced at the single owner (`applyEnrichment` in `lib/plan/enrich.ts`, keyed on `type === 'hard'`, which `applyRecalibrationTimeTrial` is the only producer of anywhere in the codebase) and backstopped by a **positive** arm of `INV-PLAN-COACH-NOTES-MATCH-INTENT` that requires the instruction to be present. The check requires the *instruction*, not a specific sentence — a legitimate rewording that still says it passes, so this does not freeze the copy.
+
 ---
 
 ## 79. Fitness level — VDOT and volume answer different questions

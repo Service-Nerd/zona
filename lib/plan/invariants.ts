@@ -743,6 +743,40 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     // INV-PLAN-COACH-NOTES-MATCH-INTENT — coach notes must match session
     // label/intent, not leak from the underlying catalogue row.
     // (CoachingPrinciples §33)
+    // §78 — the recalibration time trial's notes must still SAY what the session
+    // is for. A positive requirement, not a denylist, and the difference is the
+    // whole point: the shipped defect (live plan bcdec27a, 2026-09-03) replaced
+    // the engine's copy with "Hard session… This is pace work, not endurance" —
+    // fluent, on-voice, contradicting §78, and silently dropping "Log the result
+    // in your profile and your paces update for the next block". A banned-phrase
+    // check can never catch that, because the harm is what went MISSING.
+    //
+    // Nothing recalibrates unless the runner logs a result (ADR-014), so this is
+    // the sentence the whole feature hangs on. `meta.recalibration_weeks` went on
+    // claiming the week recalibrated while the instruction was gone.
+    //
+    // Structural: `type === 'hard'` is produced ONLY by
+    // applyRecalibrationTimeTrial. Runs OUTSIDE the `quality`-scoped loop below,
+    // which is the second half of the root cause — the `hard` typing chosen in
+    // §78 so the trial would not count against QUALITY_SESSIONS_PER_WEEK_MAX also
+    // exempted it from every quality-scoped copy check. A type chosen to opt out
+    // of one rule opted it out of an unrelated one.
+    for (const { day, session } of placedRunning) {
+      if (session.type !== 'hard') continue
+      const notes = (session.coach_notes ?? []).join(' ').toLowerCase()
+      if (!/measurement|log the result/.test(notes)) {
+        violations.push({
+          code: 'INV-PLAN-COACH-NOTES-MATCH-INTENT',
+          principle_ref: 'CoachingPrinciples §78, §33',
+          severity: 'error',
+          week: w.n, day,
+          message: `Recalibration time trial "${session.label}" has lost its instruction copy — the notes no longer say it is a measurement or tell the runner to log the result, so nothing recalibrates.`,
+          actual: (session.coach_notes ?? []).join(' | ') || '(no notes)',
+          expected: 'notes stating this is a measurement and to log the result',
+        })
+      }
+    }
+
     for (const { day, session } of placedRunning) {
       if (session.type !== 'quality') continue
       const label = (session.label ?? '').toLowerCase()
