@@ -178,6 +178,25 @@ export const GENERATION_CONFIG = {
 
   // Phase distribution as % of total plan weeks. Taper is the remainder, set by
   // TAPER_BY_DISTANCE.days converted to weeks.
+  // §5 — base 35%. CB-PHASE-01 ruled 35 -> 30 on 2026-09-04 and the change was
+  // BUILT, MEASURED AND REVERTED before shipping. It is not a bad idea; it is
+  // blocked behind RAMP-BOUNCEBACK-01.
+  //
+  // What the measurement found, on the §12 knee-injury archetype:
+  //   base 35:  45 45 48 38* 48 49 53 46* 50 56 59   worst jump W5 +26%
+  //   base 30:  45 45 48 38* 39 51 50 46* 53 56 60   worst jump W6 +31%
+  //
+  // The +26% at 35% is already far above §12's 17% injury cap. It passes only
+  // because it is the week AFTER a deload, and §2 exempts a post-deload
+  // bounceback from the cap (correctly — returning to a volume held two weeks
+  // ago is not a spike). Shortening base moves the phase boundary, which
+  // suppresses that bounceback and pushes the recovery into the FOLLOWING week,
+  // where the same rise is no longer a bounceback and is no longer exempt.
+  //
+  // So the shorter base did not create the spike. It UN-MASKED one that the
+  // exemption was already hiding — which means whether a 30% jump is legal
+  // currently depends on where the phase boundary happens to fall. Fix that
+  // first (RAMP-BOUNCEBACK-01), then re-take this ruling.
   PHASE_DISTRIBUTION: {
     base_pct:  35,
     build_pct: 35,
