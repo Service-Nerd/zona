@@ -9,6 +9,7 @@ import { composePlanWithFoundation } from '@/lib/plan/foundationCompose'
 import { enrich, type EnrichOutcome } from '@/lib/plan/enrich'
 import { errorBaseline, violationsIntroducedBy, statusForReason } from '@/lib/plan/enrichAttribution'
 import { attributableWeeks, revertWeeksToRuleCopy } from '@/lib/plan/enrichPartialRevert'
+import { shouldServerPersist } from '@/lib/plan/enrichServerSave'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { generateFreeIntro } from '@/lib/plan/freeIntro'
 import { nextMonday, formatDate } from '@/lib/plan/length'
@@ -323,6 +324,60 @@ export async function POST(req: NextRequest) {
         // may be a fresh object from enrich()'s own meta-spread — stamp
         // explicitly rather than depend on that being complete.
         finalPlan.meta.foundation_gap_class = gapClass
+
+        // ENRICH-SERVER-SAVE-01 (2026-09-04) — persist the enriched plan
+        // SERVER-SIDE before the stream closes.
+        //
+        // ENRICH-SAVE-01 made the runner save immediately and receive the
+        // enriched copy "as a follow-up". That follow-up was owned entirely by
+        // the client, so the design told the runner not to wait and then
+        // silently cost them the voice layer when they didn't: tap "Use this
+        // plan", lock the phone, and `meta.enrichment` stays 'pending' forever.
+        // Observed on a real trial plan — saved 5s after generation, never
+        // written again.
+        //
+        // `shouldServerPersist` keeps this narrow: the row must already exist
+        // (generation alone never creates one) and its `meta.generated_at` must
+        // match THIS generation, so it can only ever overwrite the plan it just
+        // produced — never one the runner deliberately kept. The client's own
+        // follow-up write stays as the fast path; this is the backstop.
+        //
+        // Failure here must never break generation (ADR-006): the runner already
+        // has a complete plan, and the enriched copy is a nicety. Recorded, not
+        // thrown.
+        try {
+          // Own client: the one above is scoped to the free-tier intro branch,
+          // which this path never enters.
+          const { createClient } = await import('@supabase/supabase-js')
+          const svc = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          )
+          const { data: storedRow } = await svc
+            .from('plans')
+            .select('plan_json')
+            .eq('user_id', user.id)
+            .maybeSingle()
+
+          if (shouldServerPersist(storedRow, finalPlan)) {
+            const { error: writeErr } = await svc
+              .from('plans')
+              .update({ plan_json: finalPlan, updated_at: new Date().toISOString() })
+              .eq('user_id', user.id)
+            if (writeErr) {
+              await recordOpsEvent('plan_enrich_server_save_failed',
+                { detail: writeErr.message, tier, race_distance_km: input.race_distance_km }, user.id)
+            } else {
+              await recordOpsEvent('plan_enrich_server_saved',
+                { enrichment: finalPlan.meta.enrichment, tier, race_distance_km: input.race_distance_km }, user.id)
+            }
+          }
+        } catch (e) {
+          // Never let the backstop break the thing it is backing up.
+          await recordOpsEvent('plan_enrich_server_save_failed',
+            { detail: e instanceof Error ? e.message : String(e), tier, race_distance_km: input.race_distance_km },
+            user.id)
+        }
 
         controller.enqueue(encoder.encode(JSON.stringify({ type: 'final_plan', plan: finalPlan }) + '\n'))
         controller.close()

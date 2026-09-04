@@ -13,6 +13,12 @@ export type OpsEventKind =
   | 'reshape_invalid'           // a reshaped plan failed a constitutional invariant (prod soft-degrade)
   | 'plan_enrich_failed'        // AI enrichment silently fell back to rule-engine output (GEN-FIX-02)
   | 'plan_rule_invalid'         // a GENERATED rule plan violated its own constitution (ENRICH-ATTRIB-01)
+  // ENRICH-SERVER-SAVE-01 (2026-09-04) — the server's own persist of the enriched
+  // plan. `_saved` is the SUCCESS case and is recorded deliberately: it is the
+  // only evidence that the backstop caught a runner who closed the app, and a
+  // backstop nobody can see firing is one nobody trusts.
+  | 'plan_enrich_server_saved'
+  | 'plan_enrich_server_save_failed'
 
 /**
  * Record an internal ops event. Fire-and-forget by nature but awaitable, so a

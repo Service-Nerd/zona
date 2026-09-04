@@ -236,6 +236,36 @@ Ordering is owned by `lib/plan/enrichSaveCoordinator.ts`. The case that matters 
 enrichment landing **during** the first save: it must be held until that save
 completes, or the save lands second and overwrites it.
 
+**Step 3 is no longer the client's alone — ENRICH-SERVER-SAVE-01 (2026-09-04).**
+The follow-up write used to be owned entirely by the client, which meant the design
+told the runner *not to wait* and then silently cost them the voice layer when they
+didn't: tap **Use this plan**, lock the phone, and `meta.enrichment` stays `pending`
+for ever. Observed on a real trial plan — saved 5 s after generation, never written
+again. Nothing on the server persisted anything; the route only ever READ the table.
+
+The route now writes the enriched plan itself before closing the stream, guarded by
+`shouldServerPersist` (`lib/plan/enrichServerSave.ts`) so it can only ever overwrite
+the plan it just produced:
+
+| Condition | Behaviour |
+|---|---|
+| No row for this user | **skip** — generation alone never creates one, so a runner who never tapped "Use this plan" is untouched |
+| Row's `meta.generated_at` ≠ this generation's | **skip** — the runner kept an older plan, or generated twice and saved the first |
+| Either timestamp missing or not a string | **skip** — an unstamped row is a legacy plan; guessing is the harm this guard exists to prevent |
+| Row already has a resolved `enrichment` | **skip** — the client's follow-up write got there first |
+| Otherwise | **write**, and record `plan_enrich_server_saved` |
+
+The client keeps its own follow-up write as the fast path, so nothing about the UX
+changes. The race degrades correctly in both directions: tap *before* enrichment
+resolves and the server write lands; tap *after* and there is no row at write time,
+so the server skips and the client — still open — writes it.
+
+A failure here never breaks generation (ADR-006): the runner already holds a
+complete plan and the enriched copy is a nicety. Recorded as
+`plan_enrich_server_save_failed`, never thrown. The SUCCESS event is recorded too,
+deliberately — it is the only evidence the backstop caught someone who closed the
+app, and a backstop nobody can see firing is one nobody trusts.
+
 **What this replaced.** `handleUsePlan` used to block up to **15 s** waiting for the
 stream so the enriched plan was the one saved. Against a 28–35 s job that deadline
 expired routinely, and the code then saved the bare rule plan — so a trial runner
