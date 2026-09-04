@@ -156,7 +156,29 @@ function buildFoundationSessions(
   // below the easy runs, a week has no long run and must not label one.
   if (!plan) {
     const n = Math.max(1, Math.min(maxDays, Math.floor(weeklyKm / minEasyKm)))
-    plan = { longKm: 0, easyCount: n, eachKm: weeklyKm / n }
+    // FRESH-FLOOR-01 (2026-09-04) — hold the session at the floor when the WEEK
+    // itself is smaller than one session.
+    //
+    // `Math.max(1, ...)` above guarantees a foundation week is never empty, and
+    // that is right. But when `weeklyKm < minEasyKm` the single session it forces
+    // is BELOW §9's floor by construction, and §52b has nothing left to give — it
+    // reduces days, and one day is the minimum. Worked case: a returning runner on
+    // 5 km/week hits §29's fresh-return path, which starts at
+    // FRESH_RETURN_START_FRACTION (0.7) x 5 = a 3.5 km week; day-fitting correctly
+    // lands on one run; that run IS the week, and 3.5 < 4.
+    //
+    // D-21: a floor a valid input cannot satisfy is a defect in the code enforcing
+    // it, not an acceptable session. The remedy is the one §82 already ruled for
+    // the weekday cap, one field over — hold at the floor and exceed the stated
+    // number slightly, rather than ship a session that looks compliant and trains
+    // nothing (§9: "too short to be coaching-meaningful"). The overshoot is at most
+    // `minEasyKm` and lands on a single foundation run before the plan begins.
+    //
+    // Found by the input-coverage gate: `weeks_at_current_volume` had been on
+    // GeneratorInput since M-02 and was never once set by the property sweep, so
+    // §29's whole fresh-return path was unreachable. 1,426 violations across 660 of
+    // 16,141 plans, invisible until the field was swept.
+    plan = { longKm: 0, easyCount: n, eachKm: Math.max(minEasyKm, weeklyKm / n) }
   }
 
   const canCarryLongRun = plan.longKm > 0
@@ -283,7 +305,24 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
       phase: 'foundation',
       sessions,
       long_run_hrs: longRunKm > 0 ? parseFloat((longRunKm / (input.current_weekly_km > 0 ? 8 : 6)).toFixed(2)) : null,
-      weekly_km: weeklyKm,
+      // FRESH-FLOOR-01 — when the floor-hold binds, the stated volume must move
+      // with it, or `weekly_km` disagrees with the week's own sessions.
+      //
+      // NARROWLY SCOPED, and the first attempt was not. Deriving `weekly_km` by
+      // summing the sessions looked more principled and was wrong: session
+      // distances are ROUNDED, so the sum differs from the budget by a little on
+      // EVERY foundation week, which shifted the long-run-percentage and +10%
+      // arms everywhere and broke a real user's stored plan (`e876c470`) in the
+      // corpus test. The budget stays authoritative; only the one case that
+      // provably cannot hold a floor-sized session moves.
+      //
+      // The condition mirrors the sizing branch exactly: `Math.max` there binds
+      // if and only if `weeklyKm < minEasyKm`, because for any larger week the
+      // day-fitting picks n such that weeklyKm/n >= minEasyKm by construction.
+      weekly_km: Object.keys(sessions).length > 0
+        && weeklyKm < GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+        ? GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+        : weeklyKm,
     })
   }
 

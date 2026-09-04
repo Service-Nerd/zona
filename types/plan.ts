@@ -95,7 +95,18 @@ export interface GeneratorInput {
   zone2_ceiling?: number
   days_cannot_train?: string[]
   max_weekday_mins?: number
-  max_weekend_mins?: number
+  // MAX-WEEKEND-MINS-01 (2026-09-04) — `max_weekend_mins` REMOVED. It sat here
+  // with zero readers in lib/ or app/, no sender (the wizard captures only the
+  // weekday cap), no entry in docs/contracts/api/generate-plan.md, and no real
+  // user had ever supplied it — while coaching-rules.md claimed the engine
+  // "respects" it. A field that silently does nothing is worse than an absent
+  // one, because a caller can reasonably believe it works.
+  //
+  // If a weekend cap is wanted, §81 already fixes how it must behave: the long
+  // run is NOT deformed to fit a stated limit (capping it produces a "long run"
+  // shorter than the week's easy runs — measured, and the board vetoed it), so a
+  // weekend cap resolves to stating the conflict and classifying `maintenance`.
+  // That is a specifiable feature and a Coaching Board question, not a field.
   training_style?: 'predictable' | 'variety' | 'minimalist' | 'structured'
   hard_session_relationship?: 'avoid' | 'neutral' | 'love' | 'overdo'
   motivation_type?: 'identity' | 'achievement' | 'health' | 'social'

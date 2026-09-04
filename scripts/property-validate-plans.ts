@@ -397,12 +397,11 @@ const COVERAGE_EXEMPTIONS: Record<string, string> = {
   training_style:  'Read ONLY by the AI enricher prompt (enrich.ts) and copied to meta. This sweep runs the rule engine, which never reads it.',
   zone2_ceiling:   'An OUTPUT the engine computes into plan.meta; the input field is never read back by generation. (Worth revisiting whether it belongs on GeneratorInput at all.)',
 
-  // ⚠️ FINDING, not a clean exemption: `max_weekend_mins` has ZERO readers
-  // anywhere in lib/ or app/ — it is declared on the public input contract and
-  // does nothing. Exempted so the gate is not blocked by it, and recorded here
-  // rather than silently skipped, because the honest fix is to implement it or
-  // remove it from the contract. Tracked as an open question, not as noise.
-  max_weekend_mins: 'DECLARED BUT UNIMPLEMENTED — no reader exists in lib/ or app/. Varying it cannot change any plan. Implement it or drop it from GeneratorInput.',
+  // `max_weekend_mins` was exempted here on 2026-09-04 as DECLARED BUT
+  // UNIMPLEMENTED, and removed from GeneratorInput the same day
+  // (MAX-WEEKEND-MINS-01). The stale-exemption arm of this gate is what flagged
+  // that the exemption had gone dead — worth recording, since an exemption list
+  // nobody prunes is how a real gap eventually hides behind a stale entry.
 }
 
 {
@@ -650,8 +649,18 @@ const BASELINE: Record<string, number> = {
   // (D-21). Fixing it is a coaching decision about what a fresh-return week at
   // 5 km/week should contain — filed as FRESH-FLOOR-01, not taken here.
   //
-  // This entry is the input-coverage gate paying for itself on its first run.
-  'INV-PLAN-MIN-SESSION-SIZE':             1426,
+  // 1426 -> 0 (FRESH-FLOOR-01, same day). `foundationBlock`'s no-long-run branch
+  // forced at least one session (correctly — a foundation week is never empty)
+  // and then sized it as the whole week, so a week SMALLER than one session's
+  // floor shipped a session under it. §52b had nothing left to give: it reduces
+  // days, and one day is the minimum. Now held at MIN_SESSION_DISTANCE_KM.easy,
+  // the remedy §82 already ruled for the weekday cap — exceed the budget by a
+  // little rather than ship a session that trains nothing (§9).
+  //
+  // The entry is kept rather than deleted: it records that the input-coverage
+  // gate paid for itself on its first run, surfacing 1,426 real violations that
+  // had been unreachable since M-02 declared `weeks_at_current_volume`.
+  'INV-PLAN-MIN-SESSION-SIZE':             0,
 
   // 87 -> 75 -> 0 (LABEL-VARIETY-01, 2026-08-21). The LABEL count is now zero:
   // the peak goal-pace override takes the row's shape word ("…-pace ladder",

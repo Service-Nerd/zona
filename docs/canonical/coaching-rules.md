@@ -306,7 +306,13 @@ The engine places sessions in this priority:
 ### Hard constraints
 
 - Never schedule on `days_cannot_train`.
-- Respect `max_weekday_mins` and `max_weekend_mins`.
+- Respect `max_weekday_mins` — see §81 for what "respect" means when the long run
+  cannot fit it (the long run and any structured session are exempt; the plan
+  states the conflict and classifies `maintenance` rather than deforming the week).
+  There is **no weekend cap**: `max_weekend_mins` was removed 2026-09-04
+  (MAX-WEEKEND-MINS-01) after the input-coverage gate found it had never had a
+  reader, a sender, or a contract entry. This line claimed the engine respected it
+  and was wrong for as long as the field existed.
 - Respect travel/holiday blocks (R22, paid only).
 
 ### Spacing
