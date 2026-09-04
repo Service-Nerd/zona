@@ -152,18 +152,56 @@ export function resolveMainSet(structure: StructureV2, ctx: ResolveContext): Der
   }
 }
 
-/** One-line rendering, e.g. "5 × (3 min at 4:28–4:39 /km + 2 min jog)". */
+/**
+ * Render one step as a natural-language instruction.
+ *
+ * The previous implementation was `${length}${pace}${modality}` — a flat
+ * concatenation with no grammar. It read acceptably for a duration recovery
+ * ("2 min jog") but broke on the two length kinds that are not a duration/
+ * distance noun phrase: `open` ("until ready") produced "until ready stand",
+ * and `mirror` ("same as the 1:30") stranded the modality at the very end and
+ * silently dropped the `downhill` terrain, so the descent lost its direction.
+ *
+ * The fix is to lead a non-run action (jog / walk / stand / hike) — and a run
+ * that is only getting the runner *to* a landmark — with the verb, weave the
+ * terrain into work steps, and give `open` / `mirror` lengths their own phrasing.
+ */
+function describeStep(s: DerivedStep): string {
+  const paceStr = s.pace
+    ? `${s.pace_mode === 'ceiling' ? 'no faster than ' : s.pace_mode === 'floor' ? 'no slower than ' : ''}${s.pace}`
+    : null
+  const target = paceStr ? `at ${paceStr}`
+    : s.rpe != null ? `at RPE ${s.rpe}`
+    : s.zone ? `in ${s.zone}`
+    : ''
+
+  const isWork = s.role === 'work'
+  const toLandmark = s.length.startsWith('to the') || s.length.startsWith('back to')
+  const isMirror = s.length.startsWith('same as the ')
+
+  // Lead with the action verb for non-run modalities, and for a run that is
+  // only closing distance to a landmark ("run to the bottom of the hill").
+  const verb = s.modality !== 'run' ? s.modality : (!isWork && toLandmark ? 'run' : '')
+
+  // A mirror step repeats the preceding work length; name the direction when we
+  // have it (a downhill mirror is the descent) rather than echoing "same as the…".
+  const lengthPhrase = isMirror
+    ? (s.terrain === 'downhill' ? 'back down' : 'for the same time')
+    : s.length
+
+  // Terrain belongs on the work step it shapes ("1:30 uphill at RPE 8").
+  const terrainWord = isWork && s.terrain === 'uphill' ? ' uphill'
+    : isWork && s.terrain === 'downhill' ? ' downhill'
+    : ''
+
+  return [verb, lengthPhrase + terrainWord, target]
+    .filter(Boolean).join(' ').replace(/\s+/g, ' ').trim()
+}
+
+/** One-line rendering, e.g. "5 × (3 min at 4:28–4:39 /km + jog 2 min at no faster than 6:10 /km)". */
 export function describeDerivedSet(set: DerivedSet): string {
   return set.blocks.map(b => {
-    const inner = b.steps.map(s => {
-      const at = s.pace
-        ? ` at ${s.pace_mode === 'ceiling' ? 'no faster than ' : s.pace_mode === 'floor' ? 'no slower than ' : ''}${s.pace}`
-        : s.rpe ? ` at RPE ${s.rpe}`
-        : s.zone ? ` in ${s.zone}`
-        : ''
-      const how = s.role === 'recovery' && s.modality !== 'run' ? ` ${s.modality}` : ''
-      return `${s.length}${at}${how}`
-    }).join(' + ')
+    const inner = b.steps.map(describeStep).join(' + ')
     return b.repeat > 1 ? `${b.repeat} × (${inner})` : inner
   }).join(', then ')
 }
