@@ -28,6 +28,7 @@
 import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { GENERATION_CONFIG } from '../lib/plan/generationConfig'
 import { V1_SESSION_CATALOGUE } from '../lib/plan/sessionCatalogueData'
+import { durationForMainSet } from '../lib/plan/sessionFormat'
 
 const PLAN_START = '2026-04-27'
 function raceDate(w: number) {
@@ -138,6 +139,19 @@ const r3Rows = new Map<string, { n: number; incoherent: number; worstGapMins: nu
 let r3CapBreaches = 0
 const r3Tiny: any[] = []
 const r4: string[] = []
+// R5 — EG-02 GATE. What actually moves if effort-governed durations are restated
+// honestly? Candidate phase-2 constants, for MEASUREMENT ONLY (they are coaching
+// numerics and would need board ratification before shipping). Sensitivity is
+// swept via EG2_RECOVERY_SECS.
+const EG2_RECOVERY_SECS = Number(process.env.EG2_RECOVERY_SECS ?? 75)
+const EG2_TRANSITION_MINS = Number(process.env.EG2_TRANSITION_MINS ?? 5)
+const r5 = {
+  sessions: 0, plansTouched: 0,
+  statedMins: 0, honestMins: 0, worstDelta: 0,
+  capExemptStructured: 0, capBreachesIfNotExempt: 0,
+  qualitySessions: 0, runningSessions: 0,   // §1 numerator/denominator — session counts
+  weekMinsBefore: 0, weekMinsAfter: 0,
+}
 
 const bump = (m: Map<string, Bucket>, k: string) => { if (!m.has(k)) m.set(k, mk()); return m.get(k)! }
 
@@ -242,6 +256,17 @@ for (let i = 0; i < SWEEP_N; i++) {
     }
   }
 
+  // §1 counting basis — SESSIONS, plan-wide (CD-19, 2026-08-20). Captured so the
+  // claim "a duration change cannot move §1" is measured, not asserted.
+  for (const w of plan.weeks) {
+    for (const sn of Object.values(w.sessions ?? {}) as any[]) {
+      if (!sn || ['rest','strength','cross-train'].includes(sn.type)) continue
+      r5.runningSessions++
+      if (['quality','intervals','tempo'].includes(sn.type)) r5.qualitySessions++
+    }
+    r5.weekMinsBefore += Object.values(w.sessions ?? {}).reduce((a: number, x: any) => a + (x?.duration_mins ?? 0), 0)
+  }
+
   // ── R3 ────────────────────────────────────────────────────────────────────
   const b3 = bump(r3, dk); b3.plans++
   for (const w of plan.weeks) {
@@ -267,6 +292,28 @@ for (let i = 0; i < SWEEP_N; i++) {
         if (mins != null) lower += st._rep * mins
       }
       const avail = sessionSplit(s.duration_mins).main
+      // ── R5 (EG-02 gate) ────────────────────────────────────────────────
+      // Honest duration = closed steps + a priced standing recovery per rep +
+      // a landmark transition, run through the SAME floor-aware inverse the
+      // engine sizes against.
+      {
+        const repBlock = (s.derived_set.blocks ?? []).find((b: any) => typeof b.repeat === 'number' && b.repeat > 1)
+        const reps = repBlock?.repeat ?? 0
+        const openPerRep = (repBlock?.steps ?? []).filter((st: any) => /until ready|^open$/i.test(st.length ?? '')).length
+        const honestMain = lower + reps * openPerRep * (EG2_RECOVERY_SECS / 60) + EG2_TRANSITION_MINS
+        const honestTotal = durationForMainSet(honestMain)
+        r5.sessions++
+        r5.statedMins += s.duration_mins
+        r5.honestMins += honestTotal
+        const delta = honestTotal - s.duration_mins
+        if (delta > r5.worstDelta) r5.worstDelta = delta
+        const cap = input.max_weekday_mins
+        // §81 — structured sessions (quality/tempo/intervals/hard) are EXEMPT
+        // from the weekday cap. Count both, so the exemption is visible rather
+        // than assumed.
+        if (cap && ['quality','tempo','intervals','hard'].includes(s.type)) r5.capExemptStructured++
+        else if (cap && honestTotal > cap) r5.capBreachesIfNotExempt++
+      }
       if (lower > avail + 2) {
         rr.incoherent++; b3.hits++
         const gap = lower - avail
@@ -334,6 +381,14 @@ for (const d of ORDER) {
 }
 console.log('\n  tiny stated durations (<40 min) with incoherent structure:')
 for (const t of r3Tiny) console.log('   ' + JSON.stringify(t))
+console.log(`\n═══ R5 — EG-02 GATE: what a corrected effort-governed duration actually moves ═══`)
+console.log(`  candidate constants: recovery ${EG2_RECOVERY_SECS}s/rep, transition ${EG2_TRANSITION_MINS} min`)
+console.log(`  effort-governed sessions repriced: ${r5.sessions}`)
+console.log(`  stated total ${r5.statedMins.toFixed(0)} min -> honest ${r5.honestMins.toFixed(0)} min  (+${(r5.honestMins - r5.statedMins).toFixed(0)} min, ${((r5.honestMins/r5.statedMins - 1)*100).toFixed(1)}%)`)
+console.log(`  worst single-session delta: +${r5.worstDelta.toFixed(1)} min`)
+console.log(`  §1 basis is SESSIONS (CD-19): quality ${r5.qualitySessions} / running ${r5.runningSessions} = ${(r5.qualitySessions/r5.runningSessions*100).toFixed(1)}% — INVARIANT under any duration change`)
+console.log(`  plan-wide minutes before: ${r5.weekMinsBefore.toFixed(0)}; effort sessions are ${(r5.statedMins/r5.weekMinsBefore*100).toFixed(2)}% of them, rising to ${(r5.honestMins/(r5.weekMinsBefore - r5.statedMins + r5.honestMins)*100).toFixed(2)}%`)
+console.log(`  §81 weekday-cap EXEMPT (structured): ${r5.capExemptStructured}; would-breach if not exempt: ${r5.capBreachesIfNotExempt}`)
 console.log(`\n═══ R4 — effort-governed rows relabelled goal-paced (§22/§40b tension) : ${r4.length} ═══`)
 for (const x of Array.from(new Set(r4)).slice(0, 8)) console.log('   ' + x)
 console.log()

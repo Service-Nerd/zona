@@ -12,7 +12,7 @@ Convened after tracing a live 10K plan (`bcdec27a`, generated 2026-09-03) and fi
 
 ## 1. Evidence taken before any seat spoke
 
-5,392 plans generated across the property sweep's own grid (6 distances × 9 day-shapes × 5 volumes × 4 fitness × 5 training-age × 4 declared level × 6 injury sets × 5 weekday caps × 4 HR sets × 2 goal types × 2 benchmark states × 2 tiers). Harness: `scripts/.board-evidence-2026-09-04.ts` (untracked, retained for re-verification until phase 2 lands).
+5,392 plans generated across the property sweep's own grid (6 distances × 9 day-shapes × 5 volumes × 4 fitness × 5 training-age × 4 declared level × 6 injury sets × 5 weekday caps × 4 HR sets × 2 goal types × 2 benchmark states × 2 tiers). Harness: `scripts/board-evidence-effort-governed.ts` (committed — three rulings still depend on the numbers it produces, and R4 is a regression tripwire that must stay at 0).
 
 ### 1a. A measurement was discarded before it reached the board
 
@@ -82,9 +82,9 @@ Timestamps: `a4db6aa` (LABEL-VARIETY-01) landed **08:17**; `1021013` (row-counti
 
 ## 3. Rulings
 
-### ① Build-phase goal-paced labels — CORRECT WITH AMENDMENT — *not yet implemented*
+### ① Build-phase goal-paced labels — CORRECT WITH AMENDMENT — **shipped 2026-09-04 (`9f5745b`)**
 
-Every phase takes the row's own shape word. **Amendment:** record this as a *revert of a constraint whose justification expired*, not as a new principle, or the next reviewer re-adds it. §53's row-counting is untouched.
+Every phase takes the row's own shape word. **Implemented for BUILD only.** Taper was left unchanged on measurement — 0% collisions at every distance, and "sharpener" is a §6 *purpose* word rather than a shape claim, so there is nothing for it to be wrong about. A deliberate deviation from this ruling's own wording, recorded in the code, the test and the registry rather than quietly taken. **Amendment:** record this as a *revert of a constraint whose justification expired*, not as a new principle, or the next reviewer re-adds it. §53's row-counting is untouched.
 
 McMillan: *"'Progression' means it gets harder as you go. If I tell an athlete they have a progression and they open the app to four times five minutes with ninety seconds jog, I have taught them the word means nothing. Do that twice in consecutive weeks with two genuinely different sessions and you have taught them the plan means nothing."*
 
@@ -122,6 +122,12 @@ Unanimous. An effort-governed row is excluded from §22's goal-pace override ent
 
 **Seiler's blocking condition on ③.** Quantify the intensity-distribution impact before phase 2 ships. No seat objected. **Treated as a required pre-condition, not a preference.**
 
+> **MEASURED AND DISCHARGED, same day — the premise was wrong.** The condition assumed §1 measures intensity distribution in *minutes*. §1 has counted **SESSIONS**, plan-wide, since CD-19 (2026-08-20), and `INV-PLAN-INTENSITY-DISTRIBUTION` counts `running++`/`hard++` with no reference to `duration_mins` — a duration change cannot move it. Measured across 4,000 plans: 5.1% (10,790 / 211,975), invariant. On a minutes basis anyway: effort-governed sessions are **0.12%** of planned minutes, rising to 0.17–0.18%. §81 already exempts structured sessions from the weekday cap — 242 of 309 exempt, **0** would-breaches in the remainder.
+>
+> **The lesson is the useful part.** The condition was accepted from a board member's stated lens without checking it against the codebase, and it was four months stale. **A gate whose premise no longer exists blocks work indefinitely while looking like rigour.** Check the premise before accepting the gate — including when the premise comes from a seat's own description of what it cares about.
+>
+> **What remains is narrower and genuinely board territory:** the two constants. 60/75/90s of standing recovery per rep grows effort sessions 43.3%/48.7%/54.1% (worst single session +26.8/+29.0/+31.2 min) — a hill session reading 39 min today would read roughly 55–70.
+
 ---
 
 ## 5. Artifacts
@@ -141,10 +147,10 @@ Regression suite: `lib/plan/effortGovernedSessions.test.ts` (10 cases). Both new
 
 | Ruling | Status |
 |---|---|
-| ① label shape word, all phases | CORRECT WITH AMENDMENT — needs `INV-PLAN-LABEL-MATCHES-STRUCTURE`, which also closes §19's own "Known limitation (SC-08)" |
+| ① label shape word | **SHIPPED 2026-09-04** (`9f5745b`) → feature-registry. Build only; taper left unchanged on measurement (0% collisions, and "sharpener" is a purpose word, not a shape claim) — a deliberate deviation from the ruling's "every phase" wording. |
 | ② rep selection nearest-to-target | CORRECT WITH AMENDMENT — ceiling untouched; does not fix `intervals_long` alone |
 | ② `intervals_long` row granularity | **Follow-up ruling required** — the row is under-specified, not the band |
-| ③ phase 2 sizing + `error` promotion | Gated on Seiler's condition (quantify the §1 minute-share shift) |
+| ③ phase 2 sizing + `error` promotion | **Gate discharged 2026-09-04** (§1 counts sessions, not minutes — see the recorded disagreement above). Remaining: a focused board sitting on `EFFORT_GOVERNED_RECOVERY_SECS` / `EFFORT_GOVERNED_TRANSITION_MINS`, which are coaching numerics and cannot be invented (INV-CFG). |
 
 **SLT escalation: none.** All four are correctness. No tier movement — every affected row is FREE-tier. No data Zonna cannot collect.
 
