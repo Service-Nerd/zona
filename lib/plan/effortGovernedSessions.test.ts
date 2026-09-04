@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
+import { GENERATION_CONFIG } from './generationConfig'
 import type { GeneratorInput, Plan, Session } from '@/types/plan'
 
 /**
@@ -16,12 +17,18 @@ import type { GeneratorInput, Plan, Session } from '@/types/plan'
  *   intervals" at 8:14–8:34 /km. §40b: an effort-governed session "does not
  *   invent a number the runner cannot act on".
  *
- *   §16/§40b LOWER BOUND — an effort-governed session's stated duration must at
- *   minimum hold the steps whose length is known. `hill_reps` was incoherent in
- *   258 of 428 placements (60.3%); worst case stated 31 min against >= 24 min of
- *   reps. Shipped at `warn` deliberately: promoting to `error` would throw for
- *   60% of hill placements, which is the failure that reverted
- *   INV-PLAN-MAIN-SET-ORDERING's first promotion on 2026-09-03.
+ *   §16/§40b SIZING — an effort-governed session's stated duration must hold its
+ *   own structure. `hill_reps` was incoherent in 258 of 428 placements (60.3%);
+ *   worst case stated 31 min against >= 24 min of reps.
+ *
+ *   Shipped in two phases the same day, and the sequencing was the point. PHASE 1
+ *   added the lower-bound invariant at `warn` — promoting ahead of the sizing fix
+ *   would have thrown for 60% of hill placements, the failure that reverted
+ *   INV-PLAN-MAIN-SET-ORDERING's first promotion on 2026-09-03. PHASE 2
+ *   (§40b Amendment 2) added `effortGovernedPlan`, pricing the open recoveries
+ *   (`EFFORT_GOVERNED_RECOVERY_SECS`) and the landmark approach
+ *   (`EFFORT_GOVERNED_TRANSITION_MINS`), and promoted the invariant to `error`.
+ *   A 10K hill session went 39 min -> 54.
  *
  * WHY THESE TESTS EXIST AS THEY ARE. Both defects were SILENT — the plans
  * validated clean, and the only way either surfaced was a human reading a
@@ -153,7 +160,7 @@ describe('§16/§40b — an effort-governed session is sized against its own str
     effortSessions(broken)[0].duration_mins = 20
     const v = validatePlan(broken, TENK).filter(x => x.code === 'INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND')
     expect(v.length).toBeGreaterThan(0)
-    expect(v[0].severity).toBe('warn')
+    expect(v[0].severity).toBe('error')
   })
 
   it('goes quiet once the duration genuinely fits — it is a bound, not a constant complaint', () => {
@@ -164,15 +171,52 @@ describe('§16/§40b — an effort-governed session is sized against its own str
     expect(v).toHaveLength(0)
   })
 
-  it('stays `warn` — promoting it to `error` is phase 2, with the sizing fix', () => {
-    // Pins the board's sequencing. At `error` this throws in dev/test for ~60%
-    // of hill placements; the ruling was explicit that severity moves in the
-    // same commit as the fix, not before it.
+  it('a real generated hill session now holds its own structure', () => {
+    // Phase 2 (§40b Amendment 2). Generation itself would throw now the invariant
+    // is `error`, so a clean return is half the assertion; the explicit check is
+    // the other half.
     const plan = generateRulePlan(TENK, 'paid', PLAN_START)
-    const broken: Plan = JSON.parse(JSON.stringify(plan))
-    effortSessions(broken)[0].duration_mins = 20
-    const v = validatePlan(broken, TENK).find(x => x.code === 'INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND')
-    expect(v?.severity).toBe('warn')
+    const hills = effortSessions(plan)
+    expect(hills.length).toBeGreaterThan(0)
+    expect(validatePlan(plan, TENK).map(v => v.code))
+      .not.toContain('INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND')
+
+    // EXACT structural values, not a loose floor. The first version of this test
+    // asserted `> 45` and did NOT discriminate: this profile's volume-derived
+    // duration was already 48, so removing the sizing fix left the test green.
+    // A falsification that stays green is the whole failure mode this repo keeps
+    // re-learning — the threshold has to be tight enough to reach the change.
+    //   90s variant: 8 x (1:30 up + 60s stand + 1:30 down) + 2 approach = 34 main -> 54
+    //   45s variant: 10 x (0:45 + 60s + 0:45)            + 2 approach = 27 main -> 47
+    for (const s of hills) expect([54, 47]).toContain(s.duration_mins)
+  })
+
+  it('duration is driven by STRUCTURE, not weekly volume — the discriminating property', () => {
+    // The sharpest statement of what phase 2 changed. Before it, an effort-governed
+    // session was sized as distance / easy pace, so its duration scaled with the
+    // week it sat in — a runner on 60 km/week got a "longer" hill session than one
+    // on 25 km/week while doing the IDENTICAL eight reps. The reps are the session;
+    // the week it lands in is not.
+    const lo = generateRulePlan({ ...TENK, current_weekly_km: 25, longest_recent_run_km: 12 }, 'paid', PLAN_START)
+    const hi = generateRulePlan({ ...TENK, current_weekly_km: 60, longest_recent_run_km: 26 }, 'paid', PLAN_START)
+    const durOf = (p: Plan) => effortSessions(p).map(s => s.duration_mins)
+    expect(durOf(lo).length, 'no hill session at 25 km/week').toBeGreaterThan(0)
+    expect(durOf(hi).length, 'no hill session at 60 km/week').toBeGreaterThan(0)
+    // Same variant -> same duration, whatever the volume.
+    expect(new Set([...durOf(lo), ...durOf(hi)]).size).toBeLessThanOrEqual(2)
+    expect(durOf(lo)[0]).toBe(durOf(hi)[0])
+  })
+
+  it('DISTANCE is deliberately untouched — the ruling was about duration', () => {
+    // Deriving distance from the corrected duration was scope creep with a defect
+    // in it: a slow runner's 45s-variant session came out at 4.5 km, under
+    // MIN_SESSION_DISTANCE_KM.quality (5 km, §52b). Unlike pacedRepPlan this shape
+    // cannot grow out of it — the rep count IS the variant. Pinned so the tempting
+    // "make distance and duration agree" change cannot land silently.
+    const plan = generateRulePlan(TENK, 'paid', PLAN_START)
+    for (const s of effortSessions(plan)) {
+      expect(s.distance_km!).toBeGreaterThanOrEqual(GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.quality)
+    }
   })
 
   it('never fires on a paced row — the check is scoped to effort-governed rows only', () => {

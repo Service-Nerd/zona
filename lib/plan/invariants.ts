@@ -1967,12 +1967,20 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // So this check is deliberately weaker than the truth and can only
   // under-report. A session it flags is definitively too short.
   //
-  // SEVERITY `warn`, DELIBERATELY, and this is the point of shipping it now.
-  // Promoting to `error` would throw in dev/test for 60% of hill placements and
-  // break the plans that carry the defect — the exact failure that reverted
-  // INV-PLAN-MAIN-SET-ORDERING's first promotion attempt on 2026-09-03. At
-  // `warn` it MEASURES the population that phase 2 has to fix, which is what the
-  // board asked for. Promote to `error` in the same commit that lands the sizing.
+  // SEVERITY: `warn` on 2026-09-04 (phase 1), PROMOTED TO `error` the same day
+  // once `effortGovernedPlan` landed — the board's own sequencing, which exists
+  // because promoting ahead of the sizing would throw in dev/test for 60% of hill
+  // placements (the failure that reverted INV-PLAN-MAIN-SET-ORDERING's first
+  // promotion on 2026-09-03). The `warn` phase did its job: it measured the
+  // population the fix had to cover before the fix existed.
+  //
+  // Still a LOWER BOUND, deliberately, even at `error`. The engine now prices the
+  // open recoveries and the landmark transition, so a coherent session clears this
+  // by a wide margin; the check stays weaker than the truth so it can never
+  // false-positive, and it does NOT re-derive the engine's formula (which would be
+  // the parallel classifier INV-CLASS forbids). What it guarantees is the floor: a
+  // session can never again state a duration too short to hold its own measurable
+  // steps.
   {
     const tol = GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS
     for (const w of plan.weeks) {
@@ -1986,7 +1994,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           violations.push({
             code: 'INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND',
             principle_ref: 'CoachingPrinciples §16, §40b',
-            severity: 'warn',
+            severity: 'error',
             week: w.n, day,
             message: `"${sn.label}"'s stated duration cannot hold its own prescribed structure: ${closed.toFixed(1)} min of measurable steps needs >= ~${minTotal.toFixed(0)} min once the warm-up and cool-down floors are applied, and the open recoveries are not counted at all.`,
             actual: `${sn.duration_mins} min`,

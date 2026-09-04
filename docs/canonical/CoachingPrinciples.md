@@ -333,6 +333,30 @@ experienced  → 2
 >
 > Enforced by `INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT` — a structured session's `duration_mins` must be internally consistent with its own `derived_set` (work + recovery + the §16 warm-up/cool-down floors), within `MAIN_SET_ORDERING_TOLERANCE_MINS` rounding tolerance. Mechanically prevents the exact incoherence (a session's own stated length not fitting its own prescribed structure) that surfaced this ruling. **Scoped to `scaling: 'reps'` rows** — the ones `pacedRepPlan` sizes (`tempo_cruise_short`, `tenk_pace_intervals`, the vo2max rows) — **plus `progressive_tempo` specifically**, whose expected main minutes are re-derived from `PROGRESSIVE_TEMPO_MAIN_MINS` directly (its row has no literal length on it to sum — `{ kind: 'parameter' }` lengths, ADR-019's whole point — so the row-only reader that works for reps/ladder shapes cannot recompute it). `threshold_ladder` carries `scaling: 'fixed'` and was never given structure-driven sizing by this or any prior ruling — its `duration_mins` still comes from the older generic quality-session formula, so this invariant does not check it; the goal-pace/`derived_set` fix in the paragraph above still applies to it, sizing does not.
 
+### A time-anchored dose band cannot be filled by a distance-anchored rep — added 2026-09-04 (Coaching Board, EG-01)
+
+**Principle.** `VO2MAX_WORK_TARGET_MINS` is a **target for rows whose rep length divides the band, and a direction of travel for those that don't.** Where rep length is anchored to a distance, the achievable doses are `reps × (rep distance ÷ this runner's I-pace)` — a set of integers, not a continuum — and the target may sit between two of them. That is a property of the prescription, not a defect in it.
+
+**Why this needed saying.** Measured across 4,000 plans, target attainment by row:
+
+| row | rep length | reaches target |
+|---|---|---|
+| `intervals_classic` | 3 min | **647 / 647 (100%)** |
+| `intervals_short` | 400 m | 123 / 207 (59%) |
+| `intervals_long` | 1000 m | **304 / 782 (39%)** |
+
+`intervals_long`'s median work is 13.7 minutes against a target of 15–18. At a median I-pace of 4.56 min/km a kilometre rep is 4.56 minutes, so three reps give 13.7 and four give 18.2 — **over the hard ceiling of 18**. Only two counts are admissible and they are 33% apart.
+
+**This is the ceiling working, not failing.** For a 6:00/km runner four kilometre-repeats is 24 minutes at Z4–Z5; for a 4:00/km runner it is 16. The ceiling is the mechanism that stops a distance-anchored rep silently costing a slower runner half again as much time in the hardest zone. Capping that runner at three reps is the correct answer (Seiler). Note too that the shortfall is worst in the **middle** of the pace range — a 6:00/km runner gets 18.0 exactly on three reps — so it is a quantisation artifact, not a bias against slow runners or fast ones (Hutchinson).
+
+**And 13.7 minutes is a real session.** It is inside `[VO2MAX_WORK_MIN_MINS, VO2MAX_WORK_MAX_MINS]`, and the floor is the safety-relevant bound — below it the stimulus is not VO2max. Three by one kilometre is about as canonical a workout as the sport has (McMillan). What is genuinely lost is the **progression**: an experienced runner in peak should receive more work than the same runner in build, and on this row they receive 13.7 in both. That is a defect in a progression, not a deficiency in a session.
+
+**Explicitly rejected: re-specifying `intervals_long`'s rep length.** SC-08 above makes rep length the **stimulus identity** — "3 min / 400 m / 1000 m, fixed". A 1000 m rep at I-pace *is* the long VO2max interval; shorten it and the row becomes `intervals_classic` with extra steps. Changing it would not tune a session, it would delete one.
+
+**Also rejected, on measurement: preferring a target-reachable row at selection.** The board's ruling proposed that the selector favour a row that can reach its target where the pool allows, as a preference never a filter. Measured, this is unimplementable without harm. `selectCatalogueSession` uses least-used-first rotation (CAT-ULTRA-THIN-01), and a plan draws **exactly 3 VO2max sessions, currently one of each eligible row** — a perfectly even spread. At 10K only two VO2max rows are eligible, so §53's cap is 2; preferring `intervals_classic` produces 3/0 and **violates §53**, leaving `intervals_long` unpicked. That is precisely the failure CAT-ULTRA-THIN-01 was written to fix. Any preference strong enough to change the outcome is strong enough to break the rotation; any preference weak enough to be safe changes nothing. **The rotation already owns row selection and is already doing the right thing.**
+
+**Config.** No numeric — the band and the target table are unchanged, and deliberately so. **Not mechanically checkable** (ADR-017 §4): a preference that was rejected has no violation state, and "the target is unreachable for this row at this runner's pace" is a property of the arithmetic rather than a defect a plan can carry. `INV-PLAN-VO2MAX-MAIN-SET-CAP` continues to enforce the band itself, which is the safety-relevant guarantee. Recorded as a known limitation rather than left silent.
+
 ### A second quality session needs a week long enough to hold it — added 2026-08-20 (CD-20 / SC-01)
 
 **Principle.** The fitness ceiling above caps how many quality sessions a runner may be *given*. This is the second constraint: the **week** must be able to carry it. Below `GENERATION_CONFIG.MIN_TRAINING_DAYS_FOR_SECOND_QUALITY` (**5**) training days, the engine places one quality session regardless of fitness — and **records the decision** rather than leaving a silent absence.
@@ -1001,17 +1025,30 @@ A defect invisible to either axis on its own — the third time in one day that 
 
 **Why the runner cares, from three seats.** McMillan: the day-job runner plans their evening around the duration, and a session that says 39 and takes 55 destroys the number they trust most. Willy: hill reps at 5–8% grade with eccentric descent loading are among the highest tissue-stress work in the catalogue, and every downstream load calculation — weekly minutes, hard/easy spacing, §2's progression cap — is computed against a session a third smaller than reality. Sims: a systematically understated duration is a systematically understated energy demand, and the runner who pays first is the one already under-fuelling.
 
-**Shipped as a LOWER BOUND at `warn`, deliberately.** Open and landmark steps ("until ready", "to the bottom of the hill") price at **zero** — they are real minutes, and estimating them is phase 2. So the check is weaker than the truth and can only under-report; a session it flags is definitively too short. Severity is `warn` because `error` would throw in dev/test for 60% of hill placements — the failure that reverted `INV-PLAN-MAIN-SET-ORDERING`'s first promotion on 2026-09-03. **At `warn` it measures the population phase 2 must fix, which is what the board asked for.**
+**Shipped in two phases the same day, and the sequencing was the point.**
 
-**Phase 2's gate was measured on 2026-09-04, and CLEARED — the premise behind it was wrong.** The board made phase 2 conditional on Seiler's concern that §1 measures intensity distribution in *minutes*, so restating hill durations honestly would move a number §1 caps. **§1 has not been measured in minutes since CD-19 (2026-08-20)** — the section above is explicit that the distribution is a share of **SESSIONS**, plan-wide, and `INV-PLAN-INTENSITY-DISTRIBUTION` counts `running++`/`hard++` with no reference to `duration_mins`. A duration change cannot move §1 at all. Measured across 4,000 swept plans: 10,790 quality of 211,975 running sessions = 5.1%, **invariant under any duration change**.
+**Phase 1 — the lower bound at `warn`.** Open and landmark steps price at **zero**, so the check is weaker than the truth and can only under-report; a session it flags is definitively too short. `warn` rather than `error` because promoting ahead of the sizing fix throws in dev/test for 60% of hill placements — the failure that reverted `INV-PLAN-MAIN-SET-ORDERING`'s first promotion on 2026-09-03. At `warn` it measured the population the fix had to cover, before the fix existed.
 
-Measured anyway on a minutes basis, for completeness: effort-governed sessions are **0.12% of all planned minutes**, rising to 0.17–0.18% when repriced. And §81 already exempts structured sessions from the weekday cap (242 of 309 exempt; **0** of the remainder would breach), so that consequence is moot twice over.
+**Phase 2 — the constants, and the promotion to `error`.** `effortGovernedPlan` now prices every step of the row's own structure, including the two it could not price before, and the session's `duration_mins` comes from that structure. A 10K hill session went **39 minutes → 54**.
 
-**Worth recording as a governance lesson, not just a correction.** The blocking condition was accepted from a board member's stated lens without checking it against the codebase, and it was four months stale. A condition that cannot be satisfied because it describes something that no longer exists blocks work indefinitely and looks like rigour while doing it. **Check a gate's premise before accepting the gate.**
+| Constant | Value | Basis |
+|---|---|---|
+| `EFFORT_GOVERNED_RECOVERY_SECS` | **60** | The pause at the top before trusting the legs downhill. The descent is already priced (a `mirror` step), so this is only the standing recovery. |
+| `EFFORT_GOVERNED_TRANSITION_MINS` | **2** | The gap between finishing the strides and starting rep one. |
 
-**What actually remains for phase 2** is narrower and is a genuine board question: the two constants. Repricing at 60/75/90s of standing recovery per rep grows the effort-governed sessions by 43.3% / 48.7% / 54.1% (worst single session +26.8 / +29.0 / +31.2 min), so a hill session that today says 39 minutes would say roughly 55–70. That is the truth, and it is also a large change to what a runner reads on the card — the value has to be defensible, not merely plausible.
+**The recovery value was chosen on error asymmetry, not physiology, and that is worth stating plainly.** Willy argued the longer pause on eccentric-control grounds — a runner who starts down still gasping runs the descent sloppy, and sloppy downhill running across eight reps is where patellofemoral and calf-tendon problems come from. Sims argued the decisive point: being 15 seconds per rep **long** costs the runner nothing, being 15 seconds **short** costs them the number they planned their evening around, and a systematically understated duration is a systematically understated energy demand — with a sex-linked tail through under-fuelling, in a population already inclined to treat the plan's number as a ceiling. McMillan dissented at 45 seconds as the truer coaching number and accepted 60 on the asymmetry argument. **Recorded rather than synthesised.**
 
-**Config.** Phase 1: no numeric. Phase 2 will add `EFFORT_GOVERNED_RECOVERY_SECS` and `EFFORT_GOVERNED_TRANSITION_MINS`. Enforced by `INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND`.
+**The transition was argued down from 5 to 2, unopposed.** For most runners the fifteen-minute warm-up *is* the run to the hill; a separate five-minute approach double-counts it (McMillan).
+
+**Neither value has literature behind it** (Sims). Four practitioners agreeing is better than one and is still not a measured number. Do not let a later citation get attached to these.
+
+**The estimate is never the prescription.** "Until ready" stays on the card. Self-regulation against the gradient is the whole reason the session works on a day when the legs are flat, and a stopwatch number in its place builds a different, worse session (McMillan). This follows the pattern already in `makeQualitySession`, which estimates hill duration against easy pace and explicitly does not surface it. **If a future change puts these seconds in front of a runner, that is a new session and needs its own ruling.**
+
+**Do not trim to preserve the old total** (Willy). The session got longer because it always *was* longer; cutting a rep to keep the number familiar would reintroduce the defect one field over. The dose is the eight reps; the duration is the consequence.
+
+**DISTANCE is deliberately untouched.** The ruling was about duration. The first implementation also derived distance from the corrected duration and that was scope creep carrying a real defect: a slow runner's 45s-variant session came out at 4.5 km, under `MIN_SESSION_DISTANCE_KM.quality` (§52b/INPUT-FLOOR-01) — and unlike `pacedRepPlan` this shape cannot grow out of it, because the rep count **is** the variant. Leaving distance alone is also the more honest model: duration and distance stop implying one another, which is correct for a session where eight standing recoveries cover no ground and nothing surfaces a pace anyway.
+
+**Config.** `GENERATION_CONFIG.EFFORT_GOVERNED_RECOVERY_SECS` (60) and `EFFORT_GOVERNED_TRANSITION_MINS` (2). Sized by `effortGovernedPlan` in `ruleEngine.ts` — the sibling of `pacedRepPlan` for the rows it declines. Enforced by `INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND` (**error** as of phase 2).
 
 ---
 

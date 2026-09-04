@@ -325,6 +325,39 @@ export const GENERATION_CONFIG = {
   // to paced flat intervals, NOT effort-governed hills (lower impact, SC-09).
   VO2MAX_MAIN_SET_MAX_MINS:         20,
 
+  // ── Effort-governed session sizing (§40b Amendment 2, Coaching Board 2026-09-04) ──
+  //
+  // An effort-governed row (`hill_reps`, `vert_hike_repeats`) prescribes steps whose
+  // length is deliberately OPEN — "until ready" at the top of a climb, "to the bottom
+  // of the hill" at the start. Those are real minutes the runner spends, and until
+  // this ruling nothing priced them: the session was sized as distance ÷ easy pace,
+  // which produced a stated 39 minutes for a session whose own reps alone need 24
+  // inside a 20.1-minute main-set allocation. Incoherent in 258 of 428 `hill_reps`
+  // placements (60.3%).
+  //
+  // ⚠️ THESE SIZE THE SESSION. THEY ARE NEVER PRESCRIBED TO THE RUNNER.
+  // "Until ready" stays on the card — self-regulation against the gradient is the
+  // whole reason the session works on a day when the legs are flat (McMillan), and
+  // putting a stopwatch number in its place builds a different, worse session. This
+  // follows the pattern already in `makeQualitySession`, which estimates hill
+  // duration against easy pace and explicitly does not surface it as a target.
+  //
+  // NEITHER VALUE HAS LITERATURE BEHIND IT (Sims, recorded). Four practitioners
+  // agreeing is better than one and is still not a measured number.
+  //
+  // 60s, not 45: the descent is already priced (a `mirror` step), so this is only the
+  // pause at the top before trusting the legs downhill. The board chose the value on
+  // ERROR ASYMMETRY rather than physiology — being 15s/rep long costs the runner
+  // nothing, being 15s short costs them the number they planned their evening around,
+  // and the under-statement has a sex-linked tail through under-fuelling (Sims).
+  // Willy concurred on eccentric control; McMillan dissented at 45 and accepted the
+  // asymmetry argument. Recorded in CoachingPrinciples §40b.
+  EFFORT_GOVERNED_RECOVERY_SECS:    60,
+  // 2, not 5: for most runners the 15-minute warm-up IS the run to the hill, so a
+  // separate 5-minute approach double-counts it (McMillan, unopposed). This is the
+  // gap between finishing the strides and starting rep one.
+  EFFORT_GOVERNED_TRANSITION_MINS:  2,
+
   // VO2max WORK-minute band (SC-08 vo2max, Coaching Board 2026-08-21). Once the
   // flat VO2max rows are v2, the dose is time AT Z4-5 (work), not the main set
   // including recovery — full recovery is never shortened to fit reps (Willy/

@@ -824,6 +824,81 @@ function pacedRepPlan(
 // available today. `thirdSecs` feeds the row's `{ kind: 'parameter',
 // param: 'third_secs' }` length references — without it resolveMainSet
 // throws (a missing parameter is a catalogue defect, not a soft failure).
+/**
+ * §40b Amendment 2 (Coaching Board 2026-09-04) — sizing for an EFFORT-GOVERNED row.
+ *
+ * The sibling of `pacedRepPlan` for rows it deliberately declines. `pacedRepPlan`
+ * returns null the moment a work step has no pace, which is correct for it and left
+ * `hill_reps`/`vert_hike_repeats` with no structure-driven sizing at all — they fell
+ * back to distance ÷ easy pace, stating 39 minutes for a session whose own reps need
+ * 24 inside a 20.1-minute main set.
+ *
+ * Prices every step of the row's own structure, including the two kinds it could not
+ * price before:
+ *   • `open` ("until ready")        → EFFORT_GOVERNED_RECOVERY_SECS
+ *   • `to_landmark` ("to the hill") → EFFORT_GOVERNED_TRANSITION_MINS
+ * Both are SIZING estimates and are never prescribed — see the config comment.
+ *
+ * Returns `standingMins` separately because a `stand` step covers no ground: the
+ * distance estimate must exclude it or the session's distance inflates by the time
+ * the runner spends still. (Walking and hiking DO cover ground, just slower than easy
+ * pace — that residual over-estimate is pre-existing and untouched here.)
+ *
+ * Reads the ROW plus the resolved variant, not the session's `derived_set`, so it
+ * runs before the set is built and cannot be fed a value it just produced.
+ */
+function effortGovernedPlan(
+  row: SessionCatalogueRow | null | undefined,
+  variant: { values: Record<string, number> } | null,
+  pace: PaceGuide,
+): { mainMins: number; standingMins: number } | null {
+  if (!row || !isV2Structure(row.main_set_structure)) return null
+  const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+  if (!parsed.success) return null
+  const work = parsed.data.blocks.flatMap(b => b.steps).filter(s => s.role === 'work')
+  // Effort-governed is the same structural test the rest of this file uses.
+  if (work.length === 0 || !work.every(s => s.target.kind === 'effort')) return null
+
+  const cfg = GENERATION_CONFIG
+  const params = variant?.values ?? {}
+  let mainMins = 0
+  let standingMins = 0
+
+  for (const block of parsed.data.blocks) {
+    const repeat = typeof block.repeat === 'number'
+      ? block.repeat
+      : params[block.repeat.param]
+    if (typeof repeat !== 'number') return null
+    let blockMins = 0
+    let blockStanding = 0
+    let previousWorkMins = 0
+    for (const step of block.steps) {
+      let mins: number
+      switch (step.length.kind) {
+        case 'duration':   mins = step.length.secs / 60; break
+        case 'distance':   mins = (step.length.m / 1000) * pace.minPerKmEasy; break
+        case 'parameter': {
+          const secs = params[step.length.param]
+          if (typeof secs !== 'number') return null
+          mins = secs / 60
+          break
+        }
+        // "same as the previous work step" — the jog/walk back down.
+        case 'mirror':     mins = previousWorkMins; break
+        case 'to_landmark': mins = cfg.EFFORT_GOVERNED_TRANSITION_MINS; break
+        case 'open':       mins = cfg.EFFORT_GOVERNED_RECOVERY_SECS / 60; break
+        default:           return null
+      }
+      if (step.role === 'work') previousWorkMins = mins
+      if (step.modality === 'stand') blockStanding += mins
+      blockMins += mins
+    }
+    mainMins += repeat * blockMins
+    standingMins += repeat * blockStanding
+  }
+  return mainMins > 0 ? { mainMins, standingMins } : null
+}
+
 function progressiveTempoPlan(
   row: SessionCatalogueRow | null, fitness: FitnessLevel, phase: PhaseType,
 ): { mainMins: number; thirdSecs: number } | null {
@@ -983,6 +1058,10 @@ function makeQualitySession(args: {
   // effectiveDistKm below the same way repPlan.mainMins does, and thirdSecs
   // feeds the row's three `{ kind: 'parameter', param: 'third_secs' }` steps.
   const progTempoPlan = progressiveTempoPlan(catalogueRow, fitness, phase)
+
+  // §40b Amendment 2 (Coaching Board 2026-09-04) — structure-driven sizing for the
+  // rows `pacedRepPlan` declines. Null for every paced row.
+  const effortPlan = effortGovernedPlan(catalogueRow, variant, pace)
 
   // Coaching Board 2026-09-03 — tempo_continuous's single-block continuous
   // sizing (see continuousThresholdPlan). Null for every other row.
@@ -1239,6 +1318,21 @@ function makeQualitySession(args: {
   // own headline prescription pace (quality pace, the same number paceTarget
   // shows), so reusing it here keeps the distance estimate honest against
   // what the runner is actually told to run.
+  // §40b Amendment 2 deliberately does NOT touch an effort-governed session's
+  // DISTANCE — it keeps the existing volume-share path below, and the ruling was
+  // about duration only.
+  //
+  // The first cut did derive distance from the corrected duration (moving minutes ÷
+  // easy pace) and that was scope creep with a real defect in it: a slow runner's
+  // 45s-variant hill session came out at 4.5 km, under `MIN_SESSION_DISTANCE_KM.quality`
+  // (5 km, §52b/INPUT-FLOOR-01) — caught by `easyRunFloorProtection.test.ts`, not by
+  // reasoning. Unlike `pacedRepPlan`, this shape cannot grow its way out: the rep
+  // count IS the variant (the stimulus identity), so there is no dial to turn.
+  //
+  // Leaving distance alone is also the more honest model. Duration and distance stop
+  // implying one another here, and they should: a hill session covers less ground per
+  // minute than easy running, and eight standing recoveries cover none at all. Nothing
+  // surfaces a pace for this session (§40b), so no contradiction reaches the runner.
   const effectiveDistKm = repPlan
     ? durationForMainSet(repPlan.mainMins) / repPlan.workPaceMinPerKm
     : progTempoPlan
@@ -1264,7 +1358,15 @@ function makeQualitySession(args: {
     type: 'quality', label, detail: null,
     ...(stimulus ? { stimulus } : {}),
     ...(metric === 'distance' ? { distance_km: rounded } : {}),
-    duration_mins: dur(rounded, minPerKm),
+    // §40b Amendment 2 — an effort-governed session's duration comes from its own
+    // STRUCTURE, not from distance ÷ pace. The two disagree by construction here:
+    // the standing recovery is real time that covers no distance, so a
+    // distance-derived duration can never contain it. Every other branch keeps the
+    // distance-derived value, where distance and duration are two views of one
+    // number and `rounded` is the honest source.
+    duration_mins: effortPlan
+      ? Math.round(durationForMainSet(effortPlan.mainMins))
+      : dur(rounded, minPerKm),
     primary_metric: metric,
     zone, hr_target: hrTarget,
     // SC-09 — an effort-governed session carries NO pace target. The absence is

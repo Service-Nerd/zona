@@ -139,6 +139,11 @@ const r3Rows = new Map<string, { n: number; incoherent: number; worstGapMins: nu
 let r3CapBreaches = 0
 const r3Tiny: any[] = []
 const r4: string[] = []
+// R6 — EG-01 evidence. For each vo2max row, what work-minute doses are even
+// ACHIEVABLE across the real spread of runner I-paces? The band is [12,18] and
+// rep count is an integer, so a long rep quantises coarsely. This asks whether
+// the row can ever reach its target, not whether one plan did.
+const r6 = new Map<string, { paces: number[]; work: number[]; reachedTarget: number; n: number }>()
 // R5 — EG-02 GATE. What actually moves if effort-governed durations are restated
 // honestly? Candidate phase-2 constants, for MEASUREMENT ONLY (they are coaching
 // numerics and would need board ratification before shipping). Sensitivity is
@@ -243,6 +248,12 @@ for (let i = 0; i < SWEEP_N; i++) {
       }
       if (!ok || work <= 0) continue
       b2.sessions++
+      {
+        const rk2 = s.catalogue_id as string
+        if (!r6.has(rk2)) r6.set(rk2, { paces: [], work: [], reachedTarget: 0, n: 0 })
+        const e = r6.get(rk2)!
+        e.n++; e.work.push(work); if (mid != null) e.paces.push(mid)
+      }
       const target = (GENERATION_CONFIG.VO2MAX_WORK_TARGET_MINS as any)[fitness]?.[w.phase]
         ?? GENERATION_CONFIG.VO2MAX_WORK_MIN_MINS
       const shortPct = (target - work) / target * 100
@@ -251,6 +262,7 @@ for (let i = 0; i < SWEEP_N; i++) {
       const rr = r2ByRow.get(rk)!
       rr.n++; rr.workMins.push(work)
       if (shortPct > 10) { rr.short++; b2.hits++ }
+      if (work >= target - 0.5) r6.get(s.catalogue_id as string)!.reachedTarget++
       if (shortPct > rr.worstShort) rr.worstShort = shortPct
       if (shortPct > b2.worst) { b2.worst = shortPct; b2.examples = [`${rk} ${work.toFixed(1)}min vs target ${target} (${fitness}/${w.phase})`] }
     }
@@ -381,6 +393,17 @@ for (const d of ORDER) {
 }
 console.log('\n  tiny stated durations (<40 min) with incoherent structure:')
 for (const t of r3Tiny) console.log('   ' + JSON.stringify(t))
+console.log('\n═══ R6 — EG-01: is the target dose even REACHABLE for each vo2max row? ═══')
+console.log('  band [' + GENERATION_CONFIG.VO2MAX_WORK_MIN_MINS + ',' + GENERATION_CONFIG.VO2MAX_WORK_MAX_MINS + '] min of work; rep count is an integer, so rep LENGTH sets the granularity')
+console.log('row                     n     reached target   work min/median/max   I-pace min/median/max')
+for (const [rk, e] of Array.from(r6)) {
+  const med = (a: number[]) => { const b = [...a].sort((x, y) => x - y); return b[Math.floor(b.length / 2)] ?? 0 }
+  const wl = e.work, pl = e.paces
+  console.log(`${rk.padEnd(22)} ${String(e.n).padStart(5)}   ${String(e.reachedTarget).padStart(6)} (${(e.reachedTarget/e.n*100).toFixed(0)}%)   ` +
+    `${Math.min(...wl).toFixed(1)}/${med(wl).toFixed(1)}/${Math.max(...wl).toFixed(1)}          ` +
+    `${Math.min(...pl).toFixed(2)}/${med(pl).toFixed(2)}/${Math.max(...pl).toFixed(2)}`)
+}
+
 console.log(`\n═══ R5 — EG-02 GATE: what a corrected effort-governed duration actually moves ═══`)
 console.log(`  candidate constants: recovery ${EG2_RECOVERY_SECS}s/rep, transition ${EG2_TRANSITION_MINS} min`)
 console.log(`  effort-governed sessions repriced: ${r5.sessions}`)

@@ -153,8 +153,19 @@ He will challenge:
   His recreational-athlete work found they look nothing like the pros; they look like
   threshold athletes, because a 90-minute window is where every session drifts when
   you want to feel like you worked
-- Whether distribution is measured in the right unit (Zonna measures **minutes**, not
-  km — §1 — which he would endorse)
+- Whether distribution is measured in the right unit. **Zonna counts SESSIONS,
+  plan-wide** — `INV-PLAN-INTENSITY-DISTRIBUTION` counts running sessions and quality
+  sessions and never reads `duration_mins`. That is CD-19 (2026-08-20), and it is the
+  correction Seiler's own finding demands: 80/20 is a *session-count* observation, and
+  applying it to a time denominator inflates the target roughly twofold. **A change to
+  any session's duration cannot move §1.**
+  > ⚠️ This bullet used to read *"Zonna measures **minutes**, not km — §1"*. That was
+  > true before CD-19 and wrong for four months after. On 2026-09-04 the board accepted
+  > a blocking condition built on it ("quantify the §1 minute-share shift before
+  > restating hill durations") and spent a sitting discharging a gate whose premise no
+  > longer existed. **A stale lens description manufactures phantom blockers that look
+  > like rigour.** Check a seat's stated concern against the constitution before
+  > accepting it as a gate — this file is a prompt, not a source of truth.
 - Whether "polarised" is being used loosely where "pyramidal" is what's prescribed
 
 **Tone:** Precise, descriptive rather than evangelical. He measured what athletes
