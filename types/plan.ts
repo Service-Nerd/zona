@@ -10,6 +10,19 @@ export interface BenchmarkInput {
   benchmark_date?: string // ISO date — used to apply stale-benchmark VDOT discount (>6 mo)
 }
 
+/**
+ * The four phases the GENERATOR builds in. Deliberately narrower than
+ * `Week.phase`, which also carries `foundation` and the `maintenance_*` values
+ * — those are composed onto a plan after generation (ADR-020) and never reach
+ * the phase-distribution or deload-cadence logic.
+ *
+ * Promoted here 2026-09-04 (DELOAD-OWNER-01) because `lib/plan/deloadCadence.ts`
+ * needed it and `ruleEngine.ts` held it privately. Copying the union into a
+ * second file would have duplicated a definition inside the change that exists
+ * to remove a duplicated definition.
+ */
+export type GeneratorPhase = 'base' | 'build' | 'peak' | 'taper'
+
 export type TrainingAge = '<6mo' | '6-18mo' | '2-5yr' | '5yr+'
 
 // ─── Plan generator input ─────────────────────────────────────────────────────

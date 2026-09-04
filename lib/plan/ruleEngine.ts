@@ -24,6 +24,8 @@ import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord, type PaceAnchor } from './sessionStructureV2'
 import { durationForMainSet } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
+import { isDeloadWeek } from './deloadCadence'
+import type { GeneratorPhase } from '@/types/plan'
 import {
   V1_SESSION_CATALOGUE, selectCatalogueSession,
   type SessionCatalogueRow, type CatalogueCategory,
@@ -32,7 +34,9 @@ import {
 // ─── Internal types ───────────────────────────────────────────────────────────
 
 type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
-type PhaseType = 'base' | 'build' | 'peak' | 'taper'
+// Single definition, shared with lib/plan/deloadCadence.ts (DELOAD-OWNER-01).
+// Aliased to the long-standing local name so every existing usage stands.
+type PhaseType = GeneratorPhase
 // FitnessLevel + the classification helpers (assessFitness, fitnessFrom*,
 // FITNESS_RANK) now live in ./fitnessAssessment (single owner shared with the
 // wizard's level recommendation) and are imported at the top of this file.
@@ -538,7 +542,9 @@ function buildVolumeSequence(
     const phase = getPhaseForWeek(weekN, phases)
     if (phase === 'taper') continue
 
-    const isDeload = weekN % recoveryFreq === 0 && phase !== 'peak'
+    // Taper is already skipped by the `continue` above; the owner tests it
+    // anyway so this site does not depend on that control flow staying put.
+    const isDeload = isDeloadWeek(weekN, phase, recoveryFreq)
     if (isDeload) {
       volumes[i] = Math.round(lastBuildVol * recoveryPct)
       buildVol = lastBuildVol
@@ -559,7 +565,7 @@ function buildVolumeSequence(
     const weekN = i + 1
     const phase = getPhaseForWeek(weekN, phases)
     if (phase === 'taper') continue
-    const isThisDeload = weekN % recoveryFreq === 0 && phase !== 'peak'
+    const isThisDeload = isDeloadWeek(weekN, phase, recoveryFreq)
     if (isThisDeload) continue
     if (volumes[i] <= volumes[i - 1]) continue
 
@@ -584,10 +590,7 @@ function buildVolumeSequence(
     // further: growth resumes from there next week.
     const prevWeekN = weekN - 1
     const prevPhase = getPhaseForWeek(prevWeekN, phases)
-    const prevWasDeload = prevWeekN >= 1
-      && prevWeekN % recoveryFreq === 0
-      && prevPhase !== 'peak'
-      && prevPhase !== 'taper'
+    const prevWasDeload = isDeloadWeek(prevWeekN, prevPhase, recoveryFreq)
     if (prevWasDeload) {
       const preDeload = volumes[i - 2] ?? volumes[i - 1]
       maxAllowed = Math.max(maxAllowed, preDeload)
@@ -4341,7 +4344,9 @@ export function generateRulePlan(
     const buildPhase = phases.find(p => p.name === 'build')
     if (buildPhase) {
       for (let wn = buildPhase.end_week; wn >= buildPhase.start_week; wn--) {
-        const wnIsDeload = wn % recoveryFreq === 0
+        // Was a BARE modulo with no phase test. Equivalent only because this
+        // loop scans build weeks exclusively — an equivalence nothing stated.
+        const wnIsDeload = isDeloadWeek(wn, getPhaseForWeek(wn, phases), recoveryFreq)
         if (!wnIsDeload) { tuneUpWeekN = wn; break }
       }
     }
@@ -4393,7 +4398,7 @@ export function generateRulePlan(
     const isRaceWeek = weekN === totalWeeks
     // Deload cadence is masters-aware (CoachingPrinciples §3) — set once at top
     // of generateRulePlan so volumes and week badges stay aligned.
-    const isDeload = !isRaceWeek && weekN % recoveryFreq === 0 && phase !== 'peak' && phase !== 'taper'
+    const isDeload = !isRaceWeek && isDeloadWeek(weekN, phase, recoveryFreq)
     // Recalibration on deload weeks in base/build — fresher legs, good time to benchmark
     const isRecalibration = isDeload && (phase === 'base' || phase === 'build')
     // NOTE: recalibrationWeeks is NOT populated here. CoachingPrinciples §78 —
