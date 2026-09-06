@@ -121,13 +121,16 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* ── Top nav — wordmark only (sign-in removed) ────────────────────── */}
+      {/* ── Top nav — wordmark + free-plans link ─────────────────────────── */}
       <nav style={{
         maxWidth: '1100px', margin: '0 auto',
         padding: '20px 24px',
-        display: 'flex', alignItems: 'center',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <Wordmark size="sm" />
+        <Link href="/plans" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink-2)', textDecoration: 'none' }}>
+          Free plans
+        </Link>
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
@@ -396,6 +399,25 @@ export default async function Home() {
       </section>
 
       {/* ── Footer ───────────────────────────────────────────────────── */}
+      {/* ── Free-plans teaser — routes the not-ready-yet visitor to the SEO hub ── */}
+      <section style={{ maxWidth: '780px', margin: '0 auto', padding: '8px 24px 48px' }}>
+        <div style={{
+          background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '16px',
+          padding: '26px 22px',
+        }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 8px', letterSpacing: '-0.01em' }}>
+            Not ready for the app? Start with a free plan.
+          </h2>
+          <p style={{ fontSize: '15px', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 16px', maxWidth: '520px' }}>
+            5K to marathon, built the same way &mdash; mostly easy running, every run zoned. Read
+            any of them free. No signup, no wall.
+          </p>
+          <Link href="/plans" style={{ fontSize: '15px', fontWeight: 600, color: 'var(--moss)', textDecoration: 'none' }}>
+            See the free plans &rarr;
+          </Link>
+        </div>
+      </section>
+
       <footer style={{
         padding: '40px 24px',
         borderTop: '1px solid var(--line)',
@@ -417,6 +439,7 @@ export default async function Home() {
           }}>
             <div>© {new Date().getFullYear()} {BRAND.name}</div>
             <div style={{ display: 'flex', gap: '20px' }}>
+              <Link href="/plans" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Free plans</Link>
               <Link href="/support" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Support</Link>
               <Link href="/privacy" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Privacy</Link>
               <Link href="/terms" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Terms</Link>
