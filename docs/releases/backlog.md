@@ -275,6 +275,22 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
   - **Risks:** PK migration footprint (every `session_completions` upsert needs slot); autoMatch mis-routing (graceful fallback when a `WeightTraining` arrives at a day with no secondary slot — decision needed: create slot? skip? prompt?); visual creep on Today (must hold the "subordinate sub-row" rule); `plan_archive` JSON backwards-compat (easy if `secondary_session` stays optional); 3-layer invariant drift (`CoachingPrinciples.md` → `GENERATION_CONFIG` → `validatePlan` need same-PR updates); scope creep to AM/PM once slot exists — hold the line.
   - **Out of scope:** AM/PM run-doubling. Advanced-runner pattern, counter to *"Slow down. You've got a day job."* Stays deferred indefinitely; revisit only if the audience shifts.
 
+### Go-to-Market — acquisition
+
+- 🔲 **GTM-SEO-PLANS-01 — SEO plan pages as an acquisition asset (adaptive-plan trojan horse, NOT a static PDF)** *(FREE, marketing surface; SLT-reviewed 2026-09-06 → "build differently")* — attacks the measured constraint (empty top of funnel: 0 signups/24h, 5/7d). Publish one indexable web page per **(distance × standard length)** — 5K, 10K, HM, 12-week — that **renders the engine's existing FREE plan inline as crawlable HTML** (not a locked download). Near-zero content cost: `generateRulePlan` already produces these FREE, `validatePlan()`-clean.
+  - **SLC.** *Simple* — SEO landing pages that render a FREE engine plan + one CTA. *Lovable* — unmistakably Zonna (zone caps, capped easy days, "you can't outrun your easy days" on the page), not a Higdon clone; trigger `frontend-design`. *Complete* — page per distance, honest "flat template vs the app adapts it" framing, soft email CTA, SEO metadata, mobile, empty/edge states.
+  - **The board's binding calls (SLT 2026-09-06):**
+    - **Not a generic plan (Sutherland).** A standard 12-week plan is the most commoditised object online and erodes the anti-feature positioning. The page must lead with the brand diagnosis ("you're trying hard, that's the problem") and show the zone discipline *on the page*. Generic = don't ship.
+    - **Marketing, not product (Fried/Wood).** Judge it on email→trial→paid, NEVER on downloads or session completions. It will NOT move the zero-completions activation problem — that's a separate issue; do not sell it internally as an engagement play (Wood kill-mandate if it is).
+    - **Soft email, not a wall (Fried + doctrine).** The plan is freely readable; email/CTA unlocks "the version that adapts to your zones and moves when life happens" = the **existing trial**. A hard email-gate on the plan itself violates *"Free Users Are Never Abandoned — gate richness, never access"* and "credibility over cleverness". No fake urgency, no "enter email to reveal".
+    - **Honest adaptivity claim (Hutchinson).** Label the static plan as the flat template; the app is the part that adapts/recalibrates. Selling a static plan as smart undercuts the paid proposition.
+    - **Instrument the funnel (Traynor).** Track email→trial→paid, not volume — "free plan" queries skew to non-payers. Kill in ~90 days if trial rate is ~0.
+  - **Reuse, don't fork:** the FREE plan generator (read-only — render its output, don't change it), the live waitlist + Resend capture (GTM-09/10), and the SEO-01 metadata pattern (`BRAND.marketingH1`, canonical/OG, `SoftwareApplication` JSON-LD — no fabricated ratings).
+  - **Coaching Board:** NOT required *only if* the plans are unmodified engine output. Any hand-curation of a published plan → convene (it becomes a new prescription).
+  - **Build hygiene:** no hardcoded brand strings/pricing/colours — `BRAND.*` + tokens only (marketing pages are where this slips).
+  - **Risks:** audience-quality (free-plan traffic → non-payers; measure trial conversion); brand commoditization if the Zonna identity isn't loud on the page; touches `app/page.tsx` marketing surface + SEO-01 metadata; **no schema/engine changes** if rendering existing FREE output verbatim.
+  - *Verify still open:* no `/plans/<distance>` marketing route rendering a FREE engine plan exists yet.
+
 ### Sweep coverage & the debt it surfaced
 
 *Both items opened and closed 2026-09-04 → feature-registry. The input-coverage gate found both on its first run; nothing open here.*
