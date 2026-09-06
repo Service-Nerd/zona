@@ -129,6 +129,9 @@ with the paid `coach_intro`; subsequent free plans (a `plans` row exists) omit i
 - `vdot_discount_applied_pct: number` — total VDOT discount applied (3% default + 5% if benchmark stale > 6 months). Surfaced for transparency.
 - `catalogue_session_ids: string[]` — IDs of `session_catalogue` rows referenced by this plan's quality sessions. Useful for recalibration and audit.
 
+**§89 (2026-09-06) addition to `meta`:**
+- `early_quality_onset?: true` — present (and `true`) only when experience-gated quality onset fired: a demonstrably-ready runner (experienced intensity + intermediate+ structure + deep training age + `recent_quality_training: 'regular'` + not returning/fresh + no injury history) received a shorter still-all-easy base, so quality starts ~2 weeks sooner. Absent for every other runner. Diagnostic/honesty flag; enforced by `INV-PLAN-EARLY-ONSET-GATED`.
+
 **ADR-020 Option A addition to `meta`:**
 - `foundation_gap_class: 'none' | 'auto' | 'choice'` — always present. `'none'` (<7-day gap): no foundation weeks, none needed. `'auto'` (7-28 days): the block is already in `plan.weeks` (`phase: 'foundation'`, `n ≤ 0`) — nothing further to do. `'choice'` (>28 days): the block is **not** in `plan.weeks` yet — show the Foundation Block modal and, if the runner picks "Add", call `POST /api/generate-plan/foundation` (see `docs/contracts/api/generate-plan-foundation.md`).
 
