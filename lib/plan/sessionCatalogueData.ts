@@ -669,6 +669,49 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     typical_duration_min: 40, typical_duration_max: 55, is_free_tier: true,
     coach_voice_notes: 'The float is not the rest. If you stop, it is a different session.',
   },
+  // ── §88 Tier A (2026-09-06, CB Tier A ruling) — three more VO2/CV shapes ────
+  // These are rows A4, A1, A5 of the same six-row Tier A ruling that shipped
+  // intervals_30_30 + intervals_rolling. Same doctrine: enrich WHAT the single
+  // build/peak quality slot can contain (§79, §53), add no session to any week.
+  // Shipped 2026-09-06 alongside the first two (feature-registry / backlog
+  // CAT-VO2-TIERA).
+  {
+    // A5 — CV intervals. Cruise-interval work at CRITICAL VELOCITY (~90% vVO2max),
+    // a shade above threshold. Classified `threshold` on purpose (CB Tier A):
+    // it is threshold-FAMILY for slot accounting, so it does NOT consume the ≤1
+    // build VO2max slot (SC-07). Named "CV intervals", never "cruise/threshold" —
+    // the pace sits ~5% above bare T, so a threshold LABEL would (correctly) trip
+    // INV-PLAN-LABEL-MATCHES-PACE; the honest name is CV, and §85 shields the CV
+    // anchor from §22's goal-pace override so "CV" never silently becomes goal pace.
+    id: 'cv_intervals', name: 'CV intervals', category: 'threshold',
+    purpose: 'Repeats at critical velocity — the pace just above your threshold. Raises the ceiling your threshold sits under.',
+    phase_eligibility: ['build', 'peak'],
+    distance_eligibility: ['5K', '10K', 'HM', 'MARATHON'],
+    // Intermediate, like over-unders — a threshold-family session, not a VO2 one.
+    fitness_level_min: 'intermediate', difficulty_tier: 4,
+    min_weekly_km: 30,
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'reps',
+        steps: [
+          // 4-min reps: at the floor of SC-04's 4–12 min threshold-rep band
+          // (McMillan) and squarely in the standard CV/cruise-interval range.
+          { role: 'work', modality: 'run', length: { kind: 'duration', secs: 240 },
+            target: { kind: 'pace', anchor: 'CV', mode: 'target' }, advance: 'auto',
+            note: 'Four minutes at critical velocity — just past threshold, controlled. Not a VO2max rep.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Ninety seconds easy. Short — the point is to keep the ceiling pressure on.' },
+        ],
+      }],
+    },
+    intensity_zones: ['Z3', 'Z4'],
+    typical_duration_min: 35, typical_duration_max: 55, is_free_tier: true,
+    coach_voice_notes: 'Just above threshold, not a mile off it. If it turns into VO2max reps, you have changed the session.',
+  },
   // ── SC-09 / CD-17a — hill repeats. THE FIRST v2 ROW. ──────────────────────
   //
   // Ruled CORRECT, unanimous. The engine's own stimulus ladder already had a

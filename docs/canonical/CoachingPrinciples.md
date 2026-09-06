@@ -2796,12 +2796,33 @@ Coaching Board ruled the standalone speed sessions INSUFFICIENT EVIDENCE (the de
 injury data is uncollectable, ADR-011) and the SLT declined to build them — they serve
 the smallest, most self-sufficient segment and hand the "medium-hard on everything"
 runner one more hard session to abuse. §16 strides remain the universal neuromuscular
-vehicle. The `R` anchor is nonetheless resolved (it fixes a latent dead-anchor
-fallback) so the plumbing exists if that segment decision ever changes.
+vehicle. The `R` / `race_5K` / `race_3K` anchors stay **unresolved** — their only
+consumers were shelved, and resolving an anchor no row uses is dead code (B0 was
+attempted 2026-09-06 and reverted with the rows that needed it).
+
+**Amendment 1 (2026-09-06, Tier A) — the CV row lands; three others are deferred.**
+Of the six Tier A shapes the board ruled correct in principle, only **`cv_intervals`**
+(critical-velocity cruise intervals, `category: threshold`, 4-min reps at CV) ships
+alongside `intervals_30_30` and `intervals_rolling`. Implementation showed the other
+three each collide with an existing, deliberate mechanic — a **principle that was ruled
+correct at the concept level but cannot be delivered without amending the constitution
+it meets**:
+- **descending pyramid** (I→CV→T) and **10K-pace cutdown** (CV→5K→3K) are multi-system
+  sessions whose VO2-zone work is only 2–6 min — **below §8's 12–18 min VO2max dose
+  band**. §8 rejects them, correctly: a session that spends most of its minutes below
+  vVO2max is not a VO2max dose, and forcing one into that slot mislabels the stimulus.
+  Making them fit needs §8 to gain a *mixed-session* dose model — a board question.
+- **broken ladder** (a 4th I-anchored VO2 variant) is **undeliverable through §53's
+  rotation**: a 10K plan carries ~3 VO2 slots against a 7-deep VO2 pool, and the
+  least-used rotation cannot surface a redundant 7th shape (measured 0 / 216 plans).
+  Shipping it would be SC-05 dead weight.
+These are tracked in backlog **CAT-VO2-TIERA** for a dedicated board sitting; the
+concept ruling stands, the delivery does not.
 
 **Board:** this ruling, 2026-09-06 — CORRECT WITH AMENDMENT, Hutchinson chairing;
-Seiler's float condition and Willy's gate are conditions of approval. Part of a larger
-Tier A pool enrichment; the CV/mixed rows follow in their own section.
+Seiler's float condition and Willy's gate are conditions of approval. `cv_intervals` is
+threshold-domain (does not consume the ≤1 build VO2 slot, SC-07) and named to avoid a
+false threshold pace-label (§85 shields its CV anchor from §22).
 
 ---
 

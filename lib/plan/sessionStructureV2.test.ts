@@ -241,6 +241,7 @@ describe('SC-08b — migration posture (D-03)', () => {
       // v2 from birth; no migration.
       'intervals_30_30',         // §88 — 30s rep divides the VO2 band finely
       'intervals_rolling',       // §88 — first continuous VO2max fast-float
+      'cv_intervals',            // §88 Tier A — critical-velocity reps, threshold-domain (A5)
     ])
     for (const row of V1_SESSION_CATALOGUE) {
       expect(
