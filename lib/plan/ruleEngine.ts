@@ -429,14 +429,20 @@ function buildFallbackPace(fitness: FitnessLevel): PaceGuide {
 // (covers full taper weeks + race week). Base/build/peak fill the remaining
 // weeks proportionally to PHASE_DISTRIBUTION (35:35:15). See ADR-009.
 
-function computePhases(totalWeeks: number, distanceKm: number): Phase[] {
+function computePhases(totalWeeks: number, distanceKm: number, earlyOnset = false): Phase[] {
   const distKey = raceDistanceKey(distanceKm)
   const taperPhaseWeeks = GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey].length
   const remaining = Math.max(0, totalWeeks - taperPhaseWeeks)
 
   const dist = GENERATION_CONFIG.PHASE_DISTRIBUTION
-  const denom = dist.base_pct + dist.build_pct + dist.peak_pct  // = 85
-  let baseWeeks  = Math.max(2, Math.round(remaining * dist.base_pct  / denom))
+  // §89 — a demonstrably-ready runner gets a shorter base so build/quality starts
+  // sooner; the freed weeks flow to build+peak (more quality weeks). Base stays
+  // all-easy — this is a shorter base, NOT a base with quality in it (§88 veto
+  // preserved). The `Math.max(2, …)` below is the 2-week floor (Seiler's on-ramp).
+  const basePct = earlyOnset ? GENERATION_CONFIG.EARLY_ONSET_BASE_PCT : dist.base_pct
+  const denom = basePct + dist.build_pct + dist.peak_pct
+  const baseFloor = GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR
+  let baseWeeks  = Math.max(baseFloor, Math.round(remaining * basePct  / denom))
   let buildWeeks = Math.max(1, Math.round(remaining * dist.build_pct / denom))
   let peakWeeks  = Math.max(2, remaining - baseWeeks - buildWeeks)
 
@@ -448,8 +454,8 @@ function computePhases(totalWeeks: number, distanceKm: number): Phase[] {
     buildWeeks -= take
     overage -= take
   }
-  if (overage > 0 && baseWeeks > 2) {
-    const take = Math.min(overage, baseWeeks - 2)
+  if (overage > 0 && baseWeeks > baseFloor) {
+    const take = Math.min(overage, baseWeeks - baseFloor)
     baseWeeks -= take
   }
 
@@ -569,7 +575,19 @@ function buildVolumeSequence(
     const phase = getPhaseForWeek(weekN, phases)
     if (phase === 'taper') continue
     const isThisDeload = deloadWeeks.has(weekN)
-    if (isThisDeload) continue
+    if (isThisDeload) {
+      // DELOAD-INVERSION-01 part 1 (§3, Coaching Board 2026-09-06) — a recovery
+      // week drops to 70% of the prior BUILD week. Pass 1 set it to 70% of the
+      // pre-cap `lastBuildVol`, but pass 2 caps the prior week LOWER (injury/ramp),
+      // so 70%-of-uncapped could equal/exceed the delivered prior — a "recovery"
+      // week that reduces nothing (12.8% of plans, D-21). Re-anchor to 70% of the
+      // ACTUAL (post-cap) prior week — §3's literal intent. Here, not a later pass,
+      // so the bounceback below reads the reduced deload. A MIN — only reduces.
+      // volumes[i-1] is the pre-deload build week, capped this pass; §3/§87 never
+      // place back-to-back deloads. Taper deloads: pass 3.
+      volumes[i] = Math.min(volumes[i], Math.round(volumes[i - 1] * recoveryPct))
+      continue
+    }
     if (volumes[i] <= volumes[i - 1]) continue
 
     // §12 tightens §2's allowance for knee / shin-splint history. Same pass, so
@@ -592,11 +610,34 @@ function buildVolumeSequence(
     // has not moved. The bounceback may return to the pre-deload level, and no
     // further: growth resumes from there next week.
     const prevWeekN = weekN - 1
-    const prevPhase = getPhaseForWeek(prevWeekN, phases)
     const prevWasDeload = deloadWeeks.has(prevWeekN)
     if (prevWasDeload) {
       const preDeload = volumes[i - 2] ?? volumes[i - 1]
-      maxAllowed = Math.max(maxAllowed, preDeload)
+      // RAMP-BOUNCEBACK-01 (Coaching Board 2026-09-06, Willy-led). The bounceback
+      // splits by injury status, and MEASUREMENT (not intuition) drew the line:
+      //
+      // INJURY history — BOUNDED by the injury cap, no exemption. Injured tissue's
+      // binding constraint is the ACUTE weekly load; a "return" does not lessen it
+      // (cardiovascular readiness ≠ tissue readiness). This branch used to
+      // `Math.max`-override §12 entirely, shipping +26% weeks to knee-history
+      // runners — the live safety hole that blocked CB-PHASE-01. The bounceback now
+      // returns TOWARD pre-deload only as fast as the injury cap allows; the
+      // remainder completes next week (§2: "growth resumes from there").
+      //
+      // HEALTHY — keeps §2's exemption UNBOUNDED. The board provisionally proposed
+      // a 20% bound for healthy runners too, conditional on measurement. Measured
+      // across a 144-plan grid: a 20% bound flipped the difficulty note to
+      // "constrained by inputs" on +50pp of plans and raised the maintenance rate
+      // +7.6pp, for ZERO safety benefit — §2's evidence is that returning to a
+      // volume held two weeks ago is not a spike for healthy tissue, and no
+      // mainstream model caps a bounceback. The measurement resolved the board's
+      // recorded Willy/Hutchinson split toward Hutchinson for healthy runners.
+      if (injuryCapPct != null) {
+        const bounceMax = Math.round(volumes[i - 1] * (1 + injuryCapPct / 100))
+        maxAllowed = Math.max(maxAllowed, Math.min(preDeload, bounceMax))
+      } else {
+        maxAllowed = Math.max(maxAllowed, preDeload)
+      }
     }
 
     if (volumes[i] > maxAllowed) {
@@ -2232,6 +2273,12 @@ function buildWeekSessions(
 ): Partial<Record<Day, Session>> {
   const blocked = blockedDays(input)
   const distKey = raceDistanceKey(input.race_distance_km)
+  // DELOAD-INVERSION-01 (§12, Coaching Board 2026-09-06) — the same knee/shin
+  // predicate that sets the injury VOLUME cap in buildVolumeSequence. When set,
+  // the injury cap is a DELIVERED ceiling, not just a curve one: the peak quality
+  // count drops to one (part 2a) and the easy-run COUNT is trimmed to fit the
+  // ceiling (part 2b), never the race-anchored long run (§52).
+  const injuryVolumeCapped = hasInjury(input, 'knee') || hasInjury(input, 'shin_splints')
 
   if (isRaceWeek) {
     const sessions: Partial<Record<Day, Session>> = {}
@@ -2353,8 +2400,18 @@ function buildWeekSessions(
   // and honoured. This declines to SPREAD volume across days it cannot fill.
   // Never below 3 days: at or under that, §52's low-day rule already owns the
   // shape and downgrades the plan to maintenance with its own note.
+  // DELOAD-INVERSION-01 part 3 (§3/§1, Coaching Board 2026-09-06) — a deload is
+  // shorter runs on the SAME frequency, not fewer runs (a recovery week keeps the
+  // rhythm). Since DELOAD-INVERSION-01 correctly deepened the deload curve, the
+  // raw `weeklyKm/MIN_KM` would drop the deload's day count and strip easy runs —
+  // which shrinks §1's running-session denominator and inflates the quality share
+  // (measured on 50K low-volume plans). Gross the deload volume back up to the
+  // pre-deload level for the DAY-COUNT only (the sessions are still sized to the
+  // real, reduced `weeklyKm` downstream, so volume still drops). Recovery weeks
+  // thus keep the surrounding weeks' frequency.
+  const dayCountKm = isDeload ? weeklyKm / (GENERATION_CONFIG.RECOVERY_WEEK_VOLUME_PCT / 100) : weeklyKm
   const daysVolumeCanFill = weeklyKm > 0
-    ? Math.max(3, Math.floor(weeklyKm / GENERATION_CONFIG.MIN_KM_PER_TRAINING_DAY))
+    ? Math.max(3, Math.floor(dayCountKm / GENERATION_CONFIG.MIN_KM_PER_TRAINING_DAY))
     : input.days_available
 
   const daysAvailable = Math.min(
@@ -2387,7 +2444,13 @@ function buildWeekSessions(
     // 9 to 11 against a threshold pool of 3 rows in build and 2 in peak/taper,
     // which no arrangement can spread inside §53's variety cap — 109 violations
     // across the property grid.
-    plannedQuality = fitness === 'experienced' ? 2 : 1
+    // DELOAD-INVERSION-01 part 2a (Coaching Board 2026-09-06) — §8's second peak
+    // quality YIELDS to §12's injury cap. A knee/shin-history runner's peak week
+    // must fit the injury-capped curve at DELIVERY, and the least-harm lever is the
+    // quality COUNT (Willy: it sheds the sharpest — intensity — load; the race-
+    // anchored long run is protected by §52). One peak quality, never two, for an
+    // injury-capped runner; an experienced runner without that history keeps two.
+    plannedQuality = (fitness === 'experienced' && !injuryVolumeCapped) ? 2 : 1
   } else if (phase === 'build' && !isDeload) {
     plannedQuality = 1
   }
@@ -2846,6 +2909,10 @@ function buildWeekSessions(
   // The floors are self-consistent: minDist.long / minRatio = 5/1.25 = 4 =
   // minDist.easy, so the cap and floor never collide.
   const remainingSlots = daysAvailable - used.length
+  // DELOAD-INVERSION-01 part 2b — how many easy runs to actually place. Normally
+  // all remaining slots; for an INJURY-CAPPED week it is trimmed to what the
+  // ceiling supports (below), dropping the excess to rest days.
+  let easyToPlace = remainingSlots
   if (remainingSlots > 0) {
     // Mirror sumWeeklyKm: distance metric reads distance_km; duration metric
     // converts duration_mins back to km via easy pace. Strength has no volume.
@@ -2854,11 +2921,25 @@ function buildWeekSessions(
       return sum + (s.distance_km ?? (s.duration_mins ?? 0) / pace.minPerKmEasy)
     }, 0)
     const remainingVolume = Math.max(0, weeklyKm - placedKm)
+    // DELOAD-INVERSION-01 part 2b (§12, Coaching Board 2026-09-06) — on an
+    // injury-capped week the injury cap is a DELIVERED ceiling. The long run
+    // (§52-protected) and count-capped quality are already placed; flooring EVERY
+    // remaining easy slot at minDist.easy over-sums a low budget and breaks the
+    // cap at delivery (the +36% sawtooth). So cap the NUMBER of easy runs to what
+    // the ceiling budget supports at the floor, dropping the rest to rest days —
+    // a reduced-but-whole week (McMillan), never the long run (§52). At least one
+    // easy run is always kept so the week is not just long + quality. Healthy
+    // weeks are untouched (Hutchinson scope): they keep all slots and may run
+    // slightly over, which §52 already governs as lopsided → maintenance.
+    if (injuryVolumeCapped) {
+      const supported = Math.max(1, Math.floor(remainingVolume / minDist.easy))
+      easyToPlace = Math.min(remainingSlots, supported)
+    }
     // Cap rounded DOWN so post-round easyKm cannot exceed longKm/minRatio.
     // (roundDist uses round-nearest and could otherwise lift easy across the cap,
     // breaking the long-vs-easy invariant by 0.5 km on the boundary.)
     const easyCap = Math.floor((longKm / minRatio) / precision) * precision
-    const naturalRounded = roundDist(remainingVolume / remainingSlots)
+    const naturalRounded = roundDist(remainingVolume / Math.max(1, easyToPlace))
     easyKm = Math.max(Math.min(naturalRounded, easyCap), minDist.easy)
   }
 
@@ -2867,7 +2948,11 @@ function buildWeekSessions(
   // instead of stacking them. (Bug fix: prior version filled in fixed
   // easyPreferred order, producing back-to-back runs when blocked days
   // narrowed the candidate pool — e.g. tue+thu blocked → fri/sat/sun consecutive.)
-  while (used.length < daysAvailable) {
+  // Place `easyToPlace` easy runs (all remaining slots, unless an injury-capped
+  // week trimmed the count above). Unused days stay rest — a reduced-but-whole
+  // week on a capped week (§12/§52, DELOAD-INVERSION-01).
+  let easyPlaced = 0
+  while (easyPlaced < easyToPlace && used.length < daysAvailable) {
     const candidates = DAY_ORDER.filter(d => !blocked.has(d) && !used.includes(d))
     if (candidates.length === 0) break
     let best: Day = candidates[0]
@@ -2881,6 +2966,7 @@ function buildWeekSessions(
     }
     sessions[best] = easySession(weekN, best, easyKm, metric, zones, pace)
     used.push(best)
+    easyPlaced++
   }
 
   // ── 4a. Recalibration time trial (CoachingPrinciples §78) ─────────────────
@@ -4252,7 +4338,9 @@ export function generateRulePlan(
   const { totalWeeks, compressed } = planLength
   const anchoredStartIso  = planLength.planStartIso
   const anchoredStartDate = parseDateLocal(anchoredStartIso)
-  const phases = computePhases(totalWeeks, input.race_distance_km)
+  // §89 — `phases` is computed BELOW, after the readiness predicate, so a
+  // demonstrably-ready runner can be given a shorter base. Nothing between here
+  // and that call reads `phases`.
 
   // §79 (2026-08-31) — the metric recommendation follows EXPERIENCE (intensity),
   // not raw current volume (structural). Duration is the beginner / ultra default
@@ -4298,6 +4386,15 @@ export function generateRulePlan(
   // structural base is gone and the cap exists to protect them.
   const returningRunner = !isFreshReturn && isReturningRunner(input, peakKm)
 
+  // §89 (Coaching Board 2026-09-06) — EXPERIENCE-GATED QUALITY ONSET. The signal
+  // is DEMONSTRATED recent structured hard training (`recent_quality_training`),
+  // a tissue-readiness proxy, NOT self-image. An injury history is an absolute
+  // veto (Willy/Sims): a self-report cannot overrule a documented structure.
+  const injuryFree = (input.injury_history ?? []).length === 0
+  // Tissue conditioned by the exact stimulus §2196 protects — the premise-falsifier.
+  const tissueConditioned =
+    input.recent_quality_training === 'regular' && injuryFree && trainingAgeIsExperienced
+
   // §79 (2026-08-31) — progressive intensity re-entry. A returning runner whose
   // intensity was lifted (or who is otherwise detected as returning/fresh) has an
   // aerobic engine ahead of their tissue tolerance. Withhold VO2max/hills for the
@@ -4305,9 +4402,24 @@ export function generateRulePlan(
   // tempo/threshold. Surfaced in meta for honesty + the invariant.
   const intensityReentryActive =
     assessed.intensityLiftedForReturn || returningRunner || isFreshReturn
-  const intensityReentryWeeks = intensityReentryActive
-    ? GENERATION_CONFIG.RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS
-    : 0
+  // §89 Lever A — a conditioned returning runner has the INTENSITY re-entry
+  // SHORTENED (not zeroed — Willy: one week tempo-first is cheap insurance); the
+  // VOLUME ramp caution (returning allowance) is untouched (tonnage is structure's).
+  const intensityReentryWeeks = !intensityReentryActive ? 0
+    : tissueConditioned ? GENERATION_CONFIG.REENTRY_WEEKS_TISSUE_READY
+    : GENERATION_CONFIG.RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS
+
+  // §89 Lever B — earlier quality onset via a SHORTER (still all-easy) base. Only
+  // for a demonstrably-ready runner with a real CURRENT base: experienced
+  // intensity, intermediate+ structure (volume floor), deep training age,
+  // conditioned tissue, and NOT returning/fresh (they have a base, not a layoff).
+  // Adds zero tonnage (peakKm unchanged, §79). Beginners/returners/injured keep
+  // the full base. Stamped in meta and enforced by INV-PLAN-EARLY-ONSET-GATED.
+  const earlyQualityOnset = tissueConditioned
+    && intensityFitness === 'experienced'
+    && FITNESS_RANK[fitness] >= FITNESS_RANK['intermediate']
+    && !returningRunner && !isFreshReturn
+  const phases = computePhases(totalWeeks, input.race_distance_km, earlyQualityOnset)
   // §87 (CB-DELOAD-01) — WHERE the deloads fall, decided once for the whole
   // plan and passed to every consumer. Computing it twice from the same inputs
   // is what DELOAD-OWNER-01 removed; re-deriving it inside buildVolumeSequence
@@ -4587,11 +4699,24 @@ export function generateRulePlan(
       7 - blockedDays(input).size,
       GENERATION_CONFIG.MAX_TRAINING_DAYS_PER_WEEK,
     )
-    if (trainingDays < minDays) {
-      // Only report weeks that would otherwise have carried two — i.e. peak
-      // weeks for an experienced runner. Reporting every week would be noise.
+    // The note is only truthful when the engine ACTUALLY planned two and days
+    // cut it to one. That decision is `qualityCountInPeak > 1` in the per-week
+    // builder (min(plannedQuality, fitnessCeiling)): plannedQuality reaches 2
+    // only for STRUCTURAL `fitness === 'experienced'` (§79 — count is a load
+    // decision, keyed off structure, not the declared intensity), and the
+    // fitnessCeiling `QUALITY_SESSIONS_PER_WEEK_MAX[intensityFitness]` must
+    // allow 2 (i.e. intensity is not `beginner`). This reporter previously gated
+    // on `intensityFitness === 'experienced'` — a DIFFERENT predicate from the
+    // count it claims to explain — so a structural-intermediate/declared-
+    // experienced runner was told a second quality was "withheld for days" when
+    // the count was 1 regardless of days, advertising a 5th-day lever that does
+    // not exist. Gate reconstructs the count's own predicate so claim and
+    // computation cannot disagree (claim/computation-mismatch class).
+    const plannedTwoInPeak = fitness === 'experienced'
+      && GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX[intensityFitness] >= 2
+    if (trainingDays < minDays && plannedTwoInPeak) {
       const affected = weeks
-        .filter(w => w.phase === 'peak' && w.badge !== 'deload' && intensityFitness === 'experienced')
+        .filter(w => w.phase === 'peak' && w.badge !== 'deload')
         .map(w => w.n)
       if (affected.length > 0) {
         ruleAdjustments.push({
@@ -4732,6 +4857,24 @@ export function generateRulePlan(
           const isTimeTarget = input.goal === 'time_target'
           const distKey = raceDistanceKey(input.race_distance_km)
           const distKm = input.race_distance_km
+
+          // DELOAD-INVERSION-01 (§52/§12, Coaching Board 2026-09-06) — an INJURED
+          // runner (knee/shin) with BEGINNER structural volume building an ULTRA is
+          // maintenance-grade, not a build. You cannot safely build injured,
+          // low-volume tissue to a 50K/100K (Willy: injury = maintenance-grade).
+          // Classifying it maintenance is the honest §52 outcome AND exempts it
+          // from §1's session-share ceiling, which such a plan cannot satisfy: a
+          // benchmark can lift its INTENSITY (→ quality sessions) while its VOLUME
+          // (→ few sessions) stays low, so the quality SHARE runs high. Narrow by
+          // construction — injury + structural beginner + ultra (10 plans in the
+          // sweep grid), and each is genuinely one no coach would call a build.
+          if ((hasInjury(input, 'knee') || hasInjury(input, 'shin_splints'))
+              && fitness === 'beginner' && distKm > 43) {
+            return {
+              volume_profile: 'maintenance' as const,
+              volume_constraint_note: `An injury history plus a beginner's current volume can't safely build to a ${distKey} — the plan protects your current fitness rather than pushing volume into injured tissue. Aim to finish, not to a time; a healthy return to higher mileage comes first.`,
+            }
+          }
 
           // §46 floor for marathon and ultra (time-target only).
           let volumeFloor = 0
@@ -5222,6 +5365,9 @@ export function generateRulePlan(
       intensity_reentry_active: true,
       intensity_reentry_weeks: intensityReentryWeeks,
     } : {}),
+    // §89 — experience-gated quality onset surfaced for honesty + the
+    // INV-PLAN-EARLY-ONSET-GATED invariant. Stamped only when it actually fired.
+    ...(earlyQualityOnset ? { early_quality_onset: true } : {}),
     goal:                      input.goal,
     target_time:               input.target_time,
     days_available:            input.days_available,

@@ -1751,7 +1751,7 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
         },
         "sun": {
           "detail": null,
-          "duration_mins": 44,
+          "duration_mins": 40,
           "hr_target": "< 150 bpm",
           "id": "w8-sun",
           "label": "Long run — Zone 2",
@@ -1777,7 +1777,7 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
       },
       "theme": "Adaptation happens in recovery. This week counts.",
       "type": "deload",
-      "weekly_km": 14,
+      "weekly_km": 13,
     },
     {
       "date": "2026-10-26",
@@ -6512,9 +6512,9 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
     "resting_hr": 0,
     "rule_adjustments": [
       {
-        "resolution": "Held weekly volume at 21 km (target 18) by trimming easy runs; long run + quality preserved.",
+        "resolution": "Held weekly volume at 21 km (target 17) by trimming easy runs; long run + quality preserved.",
         "rule": "V1-volume-quality-split",
-        "violation": "Week 6 introduced the first quality session AND stepped volume up from 18 to 24 km (>5% bump).",
+        "violation": "Week 6 introduced the first quality session AND stepped volume up from 17 to 24 km (>5% bump).",
         "weeks_affected": [
           6,
         ],
@@ -6785,8 +6785,8 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
       "sessions": {
         "fri": {
           "detail": null,
-          "distance_km": 5.5,
-          "duration_mins": 39,
+          "distance_km": 5,
+          "duration_mins": 35,
           "hr_target": "< 138 bpm",
           "id": "w5-fri",
           "label": "Easy run — Zone 2",
@@ -6798,8 +6798,8 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         },
         "sun": {
           "detail": null,
-          "distance_km": 7,
-          "duration_mins": 49,
+          "distance_km": 6.5,
+          "duration_mins": 46,
           "hr_target": "< 138 bpm",
           "id": "w5-sun",
           "label": "Long run — Zone 2",
@@ -6812,8 +6812,8 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         },
         "wed": {
           "detail": null,
-          "distance_km": 5.5,
-          "duration_mins": 39,
+          "distance_km": 5,
+          "duration_mins": 35,
           "hr_target": "< 138 bpm",
           "id": "w5-wed",
           "label": "Easy run — Zone 2",
@@ -6826,7 +6826,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
       },
       "theme": "Adaptation happens in recovery. This week counts.",
       "type": "deload",
-      "weekly_km": 18,
+      "weekly_km": 17,
     },
     {
       "date": "2026-09-21",
@@ -7003,14 +7003,14 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
       "badge": "deload",
       "date": "2026-10-05",
       "label": "Build — recovery week",
-      "long_run_hrs": 1,
+      "long_run_hrs": 0.8,
       "n": 8,
       "phase": "build",
       "sessions": {
         "fri": {
           "detail": null,
-          "distance_km": 6.5,
-          "duration_mins": 46,
+          "distance_km": 5,
+          "duration_mins": 35,
           "hr_target": "< 138 bpm",
           "id": "w8-fri",
           "label": "Easy run — Zone 2",
@@ -7022,8 +7022,8 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         },
         "sun": {
           "detail": null,
-          "distance_km": 8.5,
-          "duration_mins": 60,
+          "distance_km": 6.5,
+          "duration_mins": 46,
           "hr_target": "< 138 bpm",
           "id": "w8-sun",
           "label": "Long run — Zone 2",
@@ -7036,8 +7036,8 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         },
         "wed": {
           "detail": null,
-          "distance_km": 6.5,
-          "duration_mins": 46,
+          "distance_km": 5,
+          "duration_mins": 35,
           "hr_target": "< 138 bpm",
           "id": "w8-wed",
           "label": "Easy run — Zone 2",
@@ -7050,7 +7050,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
       },
       "theme": "Adaptation happens in recovery. This week counts.",
       "type": "deload",
-      "weekly_km": 22,
+      "weekly_km": 17,
     },
     {
       "date": "2026-10-12",

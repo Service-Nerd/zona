@@ -587,6 +587,88 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     typical_duration_min: 40, typical_duration_max: 55, is_free_tier: true,
     coach_voice_notes: 'Heroic openers ruin it. Even splits.',
   },
+  // ── §88 (Coaching Board 2026-09-06) — VO2max dose granularity + a continuous
+  // shape. Both category vo2max → §22-exempt via isVo2max, sized on the existing
+  // VO2MAX_WORK band (SC-08), covered by INV-PLAN-VO2MAX-MAIN-SET-CAP and
+  // INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT. Gated experienced + volume
+  // (Willy) — the highest-turnover work in the catalogue.
+  {
+    id: 'intervals_30_30', name: 'Thirty-thirty', category: 'vo2max',
+    purpose: 'Short on, short off, no stopping. The dose you can hold when three-minute reps are too blunt.',
+    phase_eligibility: ['build', 'peak'],
+    // 10K ONLY, not 5K — narrowed on the property sweep (§88). At 5K, I-pace ≈
+    // race pace, so an I-anchored VO2 row is near-race-pace work the existing 5K
+    // rows already cover, and adding it DISPLACES the "5K-pace" sessions that
+    // carry §22's race-specific ratio → INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO
+    // fails (12 sweep plans). At 10K, I-pace is distinctly faster than 10K race
+    // pace (≈ CV), so this is genuinely additive top-end work — 0 violations.
+    // Same "what fits the race" scoping as intervals_short (5K-only) and
+    // threshold_mile_repeats (excludes 5K). 5K eligibility would need §22's ratio
+    // to credit 5K VO2max as race-specific — a separate board amendment.
+    distance_eligibility: ['10K'],
+    // Willy's gate (§88): fitness_level_min experienced + a volume floor, the
+    // tier-4 "not reachable on a dropdown" mechanism. Floor is 35 (= over-unders),
+    // NOT higher for the high rep count — rep COUNT is not the load. Its work-time
+    // is the same 12–18 min VO2 band as every VO2max row, and a 30s rep is LOWER
+    // peak stress than a 300/400/1000 m surge. A 40 floor conflated count with
+    // load and (because selection-time weekly km runs below the displayed week)
+    // starved the row to ~0% of plans — dead weight, which SC-05 forbids.
+    fitness_level_min: 'experienced', difficulty_tier: 4,
+    min_weekly_km: 35,
+    // 30s rep DIVIDES the VO2 band finely (§338) — 24–36 reps span 12–18 min of
+    // work in half-minute steps, so the fitness×phase target is reachable, not
+    // approached. Count from the engine's work band; jog recovery, E ceiling.
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'reps',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'duration', secs: 30 },
+            target: { kind: 'pace', anchor: 'I', mode: 'target' }, advance: 'auto',
+            note: 'Thirty seconds at VO2max effort. Quick, not a sprint — you do this many times.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 30 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Thirty seconds easy. Keep moving — the short float is the session.' },
+        ],
+      }],
+    },
+    intensity_zones: ['Z4', 'Z5'],
+    typical_duration_min: 40, typical_duration_max: 55, is_free_tier: true,
+    coach_voice_notes: 'It feels easy for the first ten. Then it does not. Hold the pace, not the pride.',
+  },
+  {
+    id: 'intervals_rolling', name: 'Rolling reps', category: 'vo2max',
+    purpose: 'Fast, then float — never stopping. Time at the top of the effort adds up across the whole set.',
+    phase_eligibility: ['build', 'peak'],
+    // 10K ONLY — same §22 race-specific-ratio reason as intervals_30_30 above.
+    distance_eligibility: ['10K'],
+    fitness_level_min: 'experienced', difficulty_tier: 4,
+    min_weekly_km: 35,
+    // The float is RUN, not jogged (E ceiling) — HR never fully drops, so
+    // time-at-vVO2max accumulates continuously. Seiler's condition (§88): the
+    // float is easy and it is meant, or the whole set is threshold in disguise.
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'reps',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'distance', m: 300 },
+            target: { kind: 'pace', anchor: 'I', mode: 'target' }, advance: 'auto',
+            note: 'Three hundred metres hard. Smooth and fast, not a lunge.' },
+          { role: 'recovery', modality: 'run', length: { kind: 'distance', m: 300 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Three hundred metres easy — but keep running. The float is not a rest.' },
+        ],
+      }],
+    },
+    intensity_zones: ['Z4', 'Z5'],
+    typical_duration_min: 40, typical_duration_max: 55, is_free_tier: true,
+    coach_voice_notes: 'The float is not the rest. If you stop, it is a different session.',
+  },
   // ── SC-09 / CD-17a — hill repeats. THE FIRST v2 ROW. ──────────────────────
   //
   // Ruled CORRECT, unanimous. The engine's own stimulus ladder already had a

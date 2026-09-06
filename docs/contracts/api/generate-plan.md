@@ -60,6 +60,12 @@ Body: GeneratorInput
   max_hr?: number                 // derived from age via Tanaka if absent
   training_age?: '<6mo' | '6-18mo' | '2-5yr' | '5yr+'  // R23 rebuild — drives returning-runner allowance
 
+  // §89 (2026-09-06) — recent structured hard training (intervals/hills/tempo,
+  // last ~6 weeks). Tissue-readiness signal. 'regular' can start quality ~2 weeks
+  // sooner (shorter all-easy base) for an experienced/based/uninjured runner;
+  // every other value keeps the full base. FREE. Absent = full base (safe default).
+  recent_quality_training?: 'none' | 'occasional' | 'regular'
+
   // Benchmark — enables VDOT-based pace targets (Jack Daniels model)
   benchmark?: {
     type: 'race' | 'tt_30min'

@@ -30,7 +30,7 @@ import {
 type WizardSubStep =
   | 'distance' | 'race-details' | 'goal' | 'target-time'
   | 'teach-easy'
-  | 'weekly-volume' | 'longest-run' | 'training-age' | 'your-level' | 'birth-year'
+  | 'weekly-volume' | 'longest-run' | 'training-age' | 'recent-quality' | 'your-level' | 'birth-year'
   | 'benchmark' | 'teach-easy-day' | 'your-week' | 'weekday-ceiling'
   | 'hard-sessions' | 'terrain' | 'injuries'
 
@@ -111,6 +111,18 @@ const TRAINING_AGE_CHIPS: { label: string; value: TrainingAge }[] = [
   { label: '5+ years',     value: '5yr+'   },
 ]
 
+// §89 — recent structured hard training. A tissue-readiness signal (what you've
+// been DOING, past-tense) — not self-image. 'regular' can start quality sooner
+// for an experienced, based, uninjured runner; every other answer keeps the full
+// base. Labels are neutral descriptions of past practice — recognition, never an
+// "unlock" (SLT framing guardrail).
+type RecentQuality = 'none' | 'occasional' | 'regular'
+const RECENT_QUALITY_CHIPS: { label: string; value: RecentQuality }[] = [
+  { label: 'Mostly easy',  value: 'none'       },
+  { label: 'Here and there', value: 'occasional' },
+  { label: 'Most weeks',   value: 'regular'    },
+]
+
 const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; optional?: boolean; eyebrow?: string; interstitial?: boolean; cta?: string }> = {
   'distance':        { title: 'How far?',              subtitle: 'Start with the finish line. Work backwards from there.' },
   'race-details':    { title: 'Tell me about the race.', subtitle: 'Race name is optional. The date is not.' },
@@ -120,6 +132,7 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
   'weekly-volume':   { title: 'How much are you running now?', subtitle: 'Last four weeks, roughly. Real numbers only.' },
   'longest-run':     { title: 'Longest run in the last six weeks?', subtitle: 'Tells us how much you can already hold.' },
   'training-age':    { title: 'How long have you been at this?', subtitle: 'Consistent months, not total years.', optional: true },
+  'recent-quality':  { title: 'Been doing the hard stuff?', subtitle: 'Intervals, hills, tempo. Most weeks, lately? Honest answer.', optional: true },
   'your-level':      { title: 'Where are you right now?', subtitle: "Based on what you told us. Overrule it if we've got it wrong." },
   'birth-year':      { title: 'What year were you born?', subtitle: "Only to estimate your max heart rate, if you haven't set one. Kept private.", optional: true },
   'benchmark':       { title: 'Recent race result?',   subtitle: 'Gives us precise pace targets for every session. Skip if you haven\'t raced lately.', optional: true },
@@ -138,7 +151,7 @@ function getStepSequence(hasPaidAccess: boolean, goal: 'finish' | 'time_target' 
   if (goal === 'time_target') steps.push('target-time')
   // ⓘ teaching seams (CI-7): ⓘA right after the goal is stated (ambition peaks);
   // ⓘB after benchmark, just before they commit their week (pace is known).
-  steps.push('teach-easy', 'weekly-volume', 'longest-run', 'training-age', 'your-level', 'birth-year', 'benchmark', 'teach-easy-day', 'your-week', 'weekday-ceiling')
+  steps.push('teach-easy', 'weekly-volume', 'longest-run', 'training-age', 'recent-quality', 'your-level', 'birth-year', 'benchmark', 'teach-easy-day', 'your-week', 'weekday-ceiling')
   if (hasPaidAccess) steps.push('hard-sessions', 'terrain', 'injuries')
   return steps
 }
@@ -501,6 +514,10 @@ export default function GeneratePlanScreen({
   const [longestRun, setLongestRun] = useState<number | null>(null)
   const [restingHR,      setRestingHR]      = useState(initialRHR ? String(initialRHR) : '')
   const [trainingAge,    setTrainingAge]    = useState<TrainingAge | null>(null)
+  // §89 — recent structured hard training. null = unanswered = full base (safe
+  // default). Only 'regular' can shorten the base, and only for an experienced,
+  // based, uninjured runner (the engine gates it).
+  const [recentQuality,  setRecentQuality]  = useState<RecentQuality | null>(null)
   // §79 — the runner's self-selected level. null = accept the engine's
   // recommendation (which keeps the Phase-1 structural/intensity split); a value
   // is a deliberate override that sets input.fitness_level.
@@ -557,6 +574,7 @@ export default function GeneratePlanScreen({
       else if (s.longestRunChip) setLongestRun(LONGEST_RUN_CHIPS.find(c => c.label === s.longestRunChip)?.value ?? null)
       if (s.restingHR)       setRestingHR(s.restingHR)
       if (s.trainingAge)     setTrainingAge(s.trainingAge)
+      if (s.recentQuality)   setRecentQuality(s.recentQuality)
       if (s.fitnessLevel)    setFitnessLevel(s.fitnessLevel)
       if (s.benchmarkType)   setBenchmarkType(s.benchmarkType)
       if (s.benchmarkDistKm) setBenchmarkDistKm(s.benchmarkDistKm)
@@ -579,7 +597,7 @@ export default function GeneratePlanScreen({
       if (s.terrain)         setTerrain(s.terrain)
       if (Array.isArray(s.injuries)) setInjuries(s.injuries)
       // Restore sub-step if it's a valid wizard step name
-      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','teach-easy','weekly-volume','longest-run','training-age','your-level','birth-year','benchmark','teach-easy-day','your-week','weekday-ceiling','hard-sessions','terrain','injuries']
+      const validSubSteps: WizardSubStep[] = ['distance','race-details','goal','target-time','teach-easy','weekly-volume','longest-run','training-age','recent-quality','your-level','birth-year','benchmark','teach-easy-day','your-week','weekday-ceiling','hard-sessions','terrain','injuries']
       if (validSubSteps.includes(s.appStep)) setAppStep(s.appStep)
     } catch {}
   }, [])
@@ -591,7 +609,7 @@ export default function GeneratePlanScreen({
       sessionStorage.setItem(WIZARD_KEY, JSON.stringify({
         appStep, distanceKm, raceName, raceDate, goal,
         targetHours, targetMins,
-        birthYear, weeklyKm, longestRun, restingHR, trainingAge, fitnessLevel,
+        birthYear, weeklyKm, longestRun, restingHR, trainingAge, recentQuality, fitnessLevel,
         benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
         weekPlan, maxWeekdayChip,
         hardSessions, terrain, injuries,
@@ -599,7 +617,7 @@ export default function GeneratePlanScreen({
     } catch {}
   }, [appStep, distanceKm, raceName, raceDate, goal,
       targetHours, targetMins,
-      birthYear, weeklyKm, longestRun, restingHR, trainingAge,
+      birthYear, weeklyKm, longestRun, restingHR, trainingAge, recentQuality,
       benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
       weekPlan, maxWeekdayChip,
       hardSessions, terrain, injuries])
@@ -747,6 +765,7 @@ export default function GeneratePlanScreen({
       // training-age + birth-year are optional (App Store 5.1.1 — year of birth
       // "should be optional"; the engine falls back to age 30 / no training-age).
       case 'training-age':   return true
+      case 'recent-quality': return true   // optional — unanswered = full base (safe default)
       case 'your-level':     return true  // pre-selected to the recommendation
       case 'birth-year':     return true
       case 'benchmark':
@@ -861,6 +880,7 @@ export default function GeneratePlanScreen({
       max_hr:                hkMHR ?? undefined,
       max_hr_source:         mhrSource,
       training_age:          trainingAge ?? undefined,
+      recent_quality_training: recentQuality ?? undefined,
       user_declared_level:   declaredLevel,
       preferred_long_run_day: week.longDay ?? 'sun',
       benchmark,
@@ -1502,6 +1522,20 @@ export default function GeneratePlanScreen({
                 label={c.label}
                 active={trainingAge === c.value}
                 onClick={() => setTrainingAge(trainingAge === c.value ? null : c.value)}
+              />
+            ))}
+          </div>
+        )
+
+      case 'recent-quality':
+        return (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {RECENT_QUALITY_CHIPS.map(c => (
+              <Chip
+                key={c.value}
+                label={c.label}
+                active={recentQuality === c.value}
+                onClick={() => setRecentQuality(recentQuality === c.value ? null : c.value)}
               />
             ))}
           </div>

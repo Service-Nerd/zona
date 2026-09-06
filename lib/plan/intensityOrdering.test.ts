@@ -59,8 +59,16 @@ describe('SC-06 — cross-session intensity ordering', () => {
     expect(plan.meta.goal_beyond_measured_fitness).toBe(true)
     expect(plan.meta.difficulty_band).not.toBe('comfortable')
     expect(plan.meta.difficulty_note).toBeTruthy()
-    // The note must explain the artefact the runner will actually notice.
-    expect(plan.meta.difficulty_note!.toLowerCase()).toContain('race-pace')
+    // The note must explain the artefact the runner will actually notice — and the
+    // note is priority-ordered. STRETCH carries a knee injury, so RAMP-BOUNCEBACK-01
+    // (2026-09-06) correctly caps its volume at the injury cap, which makes the
+    // VOLUME ceiling the leading constraint for this runner (constrained_by_inputs
+    // outranks goal-beyond-fitness). The race-pace artefact leads for the same
+    // ambitious target on a HEALTHY runner, whose volume is not capped — assert it
+    // there, where it is genuinely the first thing they notice.
+    const healthy = generateRulePlan({ ...STRETCH, injury_history: undefined }, 'paid', PLAN_START)
+    expect(healthy.meta.goal_beyond_measured_fitness).toBe(true)
+    expect(healthy.meta.difficulty_note!.toLowerCase()).toContain('race-pace')
   })
 
   it('a realistic target is not flagged (no false positive)', () => {

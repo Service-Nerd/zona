@@ -30,6 +30,9 @@ export type Severity = 'error' | 'warn'
 // enforced — adding a code here without enforcement (or vice versa) is a defect.
 // (CoachingPrinciples §34, R2/H-04)
 export const INVARIANT_CODES = [
+  'INV-PLAN-BOUNCEBACK-BOUNDED',
+  'INV-PLAN-INJURY-CAP-DELIVERED',
+  'INV-PLAN-EARLY-ONSET-GATED',
   'INV-PLAN-DELOAD-IS-A-REDUCTION',
   'INV-PLAN-VOLUME-SHORTFALL-DECLARED',
   'INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED',
@@ -434,23 +437,43 @@ function pacedRepMainMinutes(session: Session): number | null {
   // from the older generic quality-session formula and was never asserted to
   // match its own step total. Same narrowing as thresholdReachable.test.ts.
   if (!parsed.success || parsed.data.sizing.scaling !== 'reps') return null
-  const mid = parsePaceMidpoint(session.pace_target ?? '')
+  const headlineMid = parsePaceMidpoint(session.pace_target ?? '')
+  // A distance step must be priced at the pace THAT step is run, not the
+  // session's single headline pace. Every reps row before intervals_rolling had
+  // its only distance steps in the WORK role (recovery was always a duration
+  // jog), so headline pace and step pace coincided and the distinction never
+  // surfaced. intervals_rolling's recovery is a 300 m FLOAT at E — a distance
+  // step at a pace far slower than the headline — and pricing it at the headline
+  // (I) pace under-counts the recovery by ~10 min, disagreeing with the engine's
+  // own pacedRepPlan (which prices each step at its own anchor). The resolved
+  // per-step pace lives on the derived_set; read it, and fall back to the
+  // headline only when a step's own pace is absent. (Two-writer pricing drift —
+  // the class this file exists to catch; here it surfaced as a hard error.)
+  const derivedBlocks = (session.derived_set as
+    { blocks?: { steps?: { pace?: string | null }[] }[] } | undefined)?.blocks
   let total = 0
-  for (const block of parsed.data.blocks) {
+  for (let bi = 0; bi < parsed.data.blocks.length; bi++) {
+    const block = parsed.data.blocks[bi]
     // A block's repeat may itself be a resolved parameter (reps shapes) —
     // read it back off the session's own derived_set, which is where the
     // engine stamped the runner-specific count; a ladder's fixed numeric
     // repeat needs no lookup.
     const repeat = typeof block.repeat === 'number'
       ? block.repeat
-      : (session.derived_set as { blocks?: { repeat?: number }[] } | undefined)?.blocks?.[0]?.repeat
+      : derivedBlocks?.[bi]?.steps != null ? (session.derived_set as { blocks?: { repeat?: number }[] }).blocks?.[bi]?.repeat
+      : undefined
     if (typeof repeat !== 'number') return null
+    const derivedSteps = derivedBlocks?.[bi]?.steps
     let blockMins = 0
-    for (const step of block.steps) {
+    for (let si = 0; si < block.steps.length; si++) {
+      const step = block.steps[si]
       if (step.length.kind === 'duration') { blockMins += step.length.secs / 60; continue }
       if (step.length.kind === 'distance') {
-        if (mid == null) return null   // distance step with no resolvable pace — can't check
-        blockMins += (step.length.m / 1000) * mid
+        // Prefer this step's own resolved pace (derived_set); fall back to the
+        // session headline for a single-work-step row that predates a derived set.
+        const stepMid = parsePaceMidpoint(derivedSteps?.[si]?.pace ?? '') ?? headlineMid
+        if (stepMid == null) return null   // distance step with no resolvable pace — can't check
+        blockMins += (step.length.m / 1000) * stepMid
         continue
       }
       // to_landmark / mirror / open / parameter: no fixed minute value this
@@ -1999,11 +2022,194 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       violations.push({
         code: 'INV-PLAN-DELOAD-IS-A-REDUCTION',
         principle_ref: 'CoachingPrinciples §3',
+        // Stays `warn` (2026-09-06, DELOAD-INVERSION-01). The CURVE cause named
+        // above IS fixed — a deload is now `min(existing, 70% × POST-CAP prior)`,
+        // not 70% of the uncapped curve, and curve-level inversions measured
+        // 12.8% → 0%. But this invariant reads DELIVERED `weekly_km`
+        // (`sumWeeklyKm`), and the delivered residual is NOT closed: on ~3.5% of
+        // swept plans a deload week still overshoots its reduced target because
+        // session floors (MIN_SESSION_DISTANCE) + the race-anchored long run
+        // (§45/§47) size independently of the ceiling. The Coaching Board scoped
+        // the DELIVERED reconciliation to INJURY runners only (the §12 5% cap —
+        // INV-PLAN-INJURY-CAP-DELIVERED); it deliberately LEFT the healthy
+        // delivered divergence to §52 ("the race sets the long run, don't deform
+        // it") rather than mandate deload-week placement surgery for everyone.
+        // So promotion to `error` is blocked on a SEPARATE, future board ruling
+        // on healthy deload-week placement — not on this change. Known-open,
+        // declared AND exercised (§34), same footing as INV-PLAN-BOUNCEBACK-BOUNDED.
         severity: 'warn',
         week: w.n,
         message: `Week ${w.n} is badged deload but carries ${w.weekly_km}km against week ${prev.n}'s ${prev.weekly_km}km. A recovery week that adds volume is not a recovery week.`,
         actual: `${w.weekly_km}km`,
         expected: `<= ${prev.weekly_km}km (the preceding week)`,
+      })
+    }
+  }
+
+  // INV-PLAN-BOUNCEBACK-BOUNDED (CoachingPrinciples §2 — RAMP-BOUNCEBACK-01)
+  //
+  // For a knee/shin-history runner the post-deload bounceback is no longer §2-
+  // exempt: the injury cap (§12) bounds it, so the return to pre-deload volume
+  // happens GRADUALLY and the bounceback week stays BELOW pre-deload. RAMP-
+  // BOUNCEBACK-01 removed the `Math.max`-override that let the bounceback jump
+  // straight back — a +43% rise, +26% on the knee archetype, shipped to injured
+  // tissue whose binding constraint is the acute weekly load.
+  //
+  // ⚠️ `warn`, not `error`, and the reason is exactly INV-PLAN-DELOAD-IS-A-
+  // REDUCTION's (D-21): the injury cap governs the volume CURVE, but the DELIVERED
+  // `weekly_km` diverges from the curve by session placement — a race-anchored
+  // long run (§45/§47) sized on its own schedule can inflate a low-target
+  // bounceback week well above the curve. So while the curve fix caps the
+  // bounceback, the DELIVERED bounceback can still exceed pre-deload (measured at
+  // 6120 plans, worst on low-day/low-volume runners). That residual is the SAME
+  // class as the deload-inversion — delivered ≠ curve — and it clears only when
+  // DELOAD-INVERSION-01 makes placement track the curve. Until then this is a
+  // known-open measurement (declared AND exercised, §34), and it becomes `error`
+  // when DELOAD-INVERSION-01 lands. Healthy runners are NOT checked — their
+  // bounceback is unbounded by design (§2, confirmed on measurement).
+  //
+  // Predicate matches the engine's injury-cap gate exactly (ruleEngine.ts:
+  // `hasInjury('knee') || hasInjury('shin_splints')`).
+  const bouncebackInjuryCapped = (input.injury_history ?? []).some(i => {
+    const s = i.toLowerCase()
+    return s.includes('knee') || s.includes('shin_splints')
+  })
+  if (bouncebackInjuryCapped) {
+    for (let i = 2; i < plan.weeks.length; i++) {
+      const bounce = plan.weeks[i]
+      const deload = plan.weeks[i - 1]
+      const preDeload = plan.weeks[i - 2]
+      const deloadIs = deload.type === 'deload' || deload.badge === 'deload'
+      const bounceIs = bounce.type === 'deload' || bounce.badge === 'deload'
+      const preIs = preDeload.type === 'deload' || preDeload.badge === 'deload'
+      // Only a clean [pre-deload, deload, bounceback] triple in a building phase.
+      if (!deloadIs || bounceIs || preIs || bounce.phase === 'taper') continue
+      if (bounce.weekly_km >= preDeload.weekly_km) {
+        violations.push({
+          code: 'INV-PLAN-BOUNCEBACK-BOUNDED',
+          principle_ref: 'CoachingPrinciples §2',
+          severity: 'warn',
+          week: bounce.n,
+          message: `Week ${bounce.n} is a post-deload bounceback for an injury-history runner (${bounce.weekly_km}km) but the DELIVERED volume returns to or above pre-deload week ${preDeload.n} (${preDeload.weekly_km}km). The curve caps the bounceback; placement (long run) still inflates it — the delivered residual clears with DELOAD-INVERSION-01.`,
+          actual: `${bounce.weekly_km}km`,
+          expected: `< ${preDeload.weekly_km}km (gradual return; delivered pending DELOAD-INVERSION-01)`,
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-INJURY-CAP-DELIVERED (CoachingPrinciples §90 — DELOAD-INVERSION-01)
+  //
+  // For a knee/shin-history runner the §12 injury cap (5%/wk) is a DELIVERED
+  // promise — what the runner actually runs — not just a property of the volume
+  // CURVE. Before DELOAD-INVERSION-01 the cap was enforced only on the curve, so
+  // a green curve could still ship a +39% delivered week to injured tissue: a
+  // 2-quality peak (§8) plus easy floors plus the growing long run, none trimmed
+  // to the ceiling. The Coaching Board (2026-09-06, Willy-led) ruled the cap must
+  // hold at DELIVERY for injury runners, via levers IN ORDER: (a) the peak week
+  // yields its 2nd quality session to §12 (§8 defers — this is what makes the
+  // fix possible), then (b) easy runs are dropped/trimmed to fit. The ONE thing
+  // never trimmed is the race-anchored long run: §52 owns it ("the race sets the
+  // long run; do not deform it; if it ALONE breaks the cap, classify maintenance").
+  //
+  // So the enforceable delivered promise is on the TRIMABLE portion — the non-
+  // long-run volume must not rise faster than the injury cap. A week whose only
+  // over-cap driver is the long run growing on its own §45/§47 schedule is §52-
+  // exempt by construction, not a defect. This is the check that lever (b)
+  // actually reconciles the easy/quality volume, week on week, for injured tissue.
+  //
+  // `warn`, same footing as INV-PLAN-DELOAD-IS-A-REDUCTION / -BOUNCEBACK-BOUNDED
+  // (§34, declared AND exercised): the WHOLE-week delivered rise can still exceed
+  // the cap on a peak week because the §52-protected long run is counted in
+  // `weekly_km` (the residual the injuryCapCompounds test tolerances at cap+15).
+  // It becomes `error` when injury long-run placement is itself curve-reconciled
+  // — a separate future §52 ruling, not this change.
+  if (bouncebackInjuryCapped) {
+    const capPct = GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT
+    // Enforcement tolerance (inline, not a coaching numeric — it tunes what the
+    // CHECKER flags, not what the engine prescribes): absorbs session-distance
+    // rounding + MIN_SESSION_DISTANCE granularity on low-volume weeks, where a
+    // single dropped/added easy km is a large percentage.
+    const DELIVERED_ROUNDING_TOLERANCE_PCT = 10
+    const longKmOf = (w: Week) => {
+      const l = Object.values(w.sessions).find(s => s && isLongRun(s))
+      return l?.distance_km ?? 0
+    }
+    for (let i = 1; i < plan.weeks.length; i++) {
+      const w = plan.weeks[i]
+      const prev = plan.weeks[i - 1]
+      const isDeload = w.type === 'deload' || w.badge === 'deload'
+      const prevIsDeload = prev.type === 'deload' || prev.badge === 'deload'
+      // Deload weeks (DELOAD-IS-A-REDUCTION) and the post-deload bounceback
+      // (BOUNCEBACK-BOUNDED) have their own invariants; taper is a planned drop.
+      if (isDeload || prevIsDeload || w.phase === 'taper') continue
+      const nonLongNow = w.weekly_km - longKmOf(w)
+      const nonLongPrev = prev.weekly_km - longKmOf(prev)
+      if (nonLongPrev <= 0 || nonLongNow <= nonLongPrev) continue
+      const risePct = ((nonLongNow - nonLongPrev) / nonLongPrev) * 100
+      if (risePct > capPct + DELIVERED_ROUNDING_TOLERANCE_PCT) {
+        violations.push({
+          code: 'INV-PLAN-INJURY-CAP-DELIVERED',
+          principle_ref: 'CoachingPrinciples §90',
+          severity: 'warn',
+          week: w.n,
+          message: `Week ${w.n}: an injury-history runner's TRIMABLE (non-long-run) delivered volume rose ${risePct.toFixed(0)}% from week ${prev.n} (${nonLongPrev.toFixed(0)}→${nonLongNow.toFixed(0)}km), above the §12 injury cap of ${capPct}%. The long run is §52-exempt; the easy/quality volume is not — DELOAD-INVERSION-01 lever (b) should have trimmed it.`,
+          actual: `+${risePct.toFixed(0)}% non-long-run`,
+          expected: `<= ${capPct}% (§12 injury cap on the trimable portion)`,
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-EARLY-ONSET-GATED (CoachingPrinciples §89)
+  //
+  // Experience-gated quality onset (a shorter, still-all-easy base) may fire ONLY
+  // for a demonstrably-ready runner. This is the mechanical guarantee behind the
+  // user's explicit requirement: it must NOT create injuries for the less
+  // experienced. Checks the SAFETY-CRITICAL necessary conditions that are soundly
+  // recomputable from input+meta (the structural/returning arms are the engine's
+  // own predicate; the cycle-free checks here are the ones that matter for harm):
+  //   1. injury_history is an ABSOLUTE veto — early onset with any injury is a bug.
+  //   2. the demonstrated signal `recent_quality_training === 'regular'` is required.
+  //   3. deep training age is required.
+  //   4. the runner is NOT a true beginner (intensity level).
+  //   5. base never drops below MIN_BASE_WEEKS (2) — Seiler's on-ramp floor, which
+  //      also bounds how aggressive EARLY_ONSET_BASE_PCT can ever be in practice.
+  if (plan.meta.early_quality_onset) {
+    const injuries = input.injury_history ?? []
+    const intensity = plan.meta.fitness_intensity_level ?? input.user_declared_level ?? plan.meta.fitness_level
+    const deepAge = input.training_age === '2-5yr' || input.training_age === '5yr+'
+    const problems: string[] = []
+    if (injuries.length > 0) problems.push(`injury_history present (${injuries.join(', ')}) — injury is an absolute veto`)
+    if (input.recent_quality_training !== 'regular') problems.push(`recent_quality_training is "${input.recent_quality_training ?? 'unset'}", not "regular"`)
+    if (!deepAge) problems.push(`training_age "${input.training_age ?? 'unset'}" is not deep (2-5yr/5yr+)`)
+    if (intensity === 'beginner') problems.push('intensity level is beginner')
+    if (problems.length > 0) {
+      violations.push({
+        code: 'INV-PLAN-EARLY-ONSET-GATED',
+        principle_ref: 'CoachingPrinciples §89',
+        severity: 'error',
+        week: 0,  // input/plan-level — no specific week (convention)
+        message: `early_quality_onset fired but the gate is not satisfied: ${problems.join('; ')}. Early onset must NOT reach a runner who has not demonstrably earned it.`,
+        actual: 'early_quality_onset = true',
+        expected: 'experienced-intensity, non-beginner, deep training age, regular recent quality, NO injury history',
+      })
+    }
+  }
+  // The 2-week base floor holds for EVERY plan (early onset only makes it more
+  // load-bearing). A build/peak/taper-only geometry is legitimate on very short
+  // plans, so this only fires when a base phase exists at all.
+  {
+    const baseWeeks = plan.weeks.filter(w => w.n >= 1 && w.phase === 'base').length
+    if (baseWeeks === 1) {
+      violations.push({
+        code: 'INV-PLAN-EARLY-ONSET-GATED',
+        principle_ref: 'CoachingPrinciples §89',
+        severity: 'error',
+        week: 0,  // plan-level
+        message: `Base phase is ${baseWeeks} week — below the ${GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR}-week floor. A short polarised on-ramp must always remain (Seiler), even for a demonstrably-ready runner.`,
+        actual: `${baseWeeks} base week`,
+        expected: `>= ${GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR} base weeks`,
       })
     }
   }

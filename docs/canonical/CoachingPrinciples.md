@@ -153,6 +153,22 @@ Returning to a volume held comfortably two weeks earlier is not a spike. Chronic
 
 **Enforced by** `INV-PLAN-PEAK-IN-PEAK-PHASE` (warn) and the existing `INV-PLAN-PEAK-OVER-BASE`.
 
+### The bounceback is bounded for injury-history runners — amended 2026-09-06 (RAMP-BOUNCEBACK-01)
+
+**Principle.** The bounceback exemption above applies to **healthy** runners only. For a runner with a knee or shin-splint history (§12), the post-deload week is bounded by the **injury cap** (`INJURY_WEEKLY_INCREASE_CAP_PCT`, 5%) exactly like every other week — it does **not** get the exemption. The return to pre-deload volume still happens, but gradually, over the weeks that follow rather than in a single jump.
+
+**Why — the exemption was unbounded, and that was the hole.** The 2026-08-06 amendment let the bounceback return to pre-deload "without the cap applying" — and the engine implemented that as `Math.max(cappedValue, preDeloadVolume)`, which **silently overrode the injury cap**. A 70% deload returning fully to pre-deload is a **+43% single-week rise**, and it was exempt on exactly the same grounds as a 5% one. Measured on the §12 knee-injury archetype: a **+26%** week-on-week rise passed as a "bounceback". For injured tissue this is not low-risk. §2's own reasoning — "chronic load has not moved" — is an argument about the *acute:chronic* relationship, and it holds for **healthy** tissue; **injured tissue's binding constraint is the acute weekly load itself**, which a "return" does not lessen (cardiovascular readiness returns weeks ahead of musculoskeletal readiness — Willy). Whether a +26% jump was legal also depended on where the phase boundary happened to fall (a rise is exempt as a bounceback but capped as an ordinary week) — an arbitrariness no one chose, and the reason this blocked CB-PHASE-01 (base 35→30).
+
+**The healthy bounceback stays unbounded — decided on measurement, not intuition.** The board provisionally proposed a dedicated healthy-runner bounceback cap (~20%). Measured across a 144-plan grid, a 20% cap flipped the difficulty note to "constrained by inputs" on **+50 percentage points** of plans and raised the `maintenance` rate **+7.6pp**, for **zero** safety benefit — §2's evidence is that a healthy return to a fortnight-ago volume is not a spike, and no mainstream model caps a bounceback. So the healthy cap was **not** added; the measurement resolved the board's recorded Willy/Hutchinson split toward Hutchinson for healthy runners. The only change is that the injury cap now binds on the injury bounceback.
+
+**Consequence, and it is intended:** capping an injury runner's bounceback lowers their achievable peak, so more injury plans classify `volume_profile = 'maintenance'` (§52 surfaces it honestly). A runner rebuilding a knee *should* be on a maintenance-grade curve; forcing overload onto that tissue to satisfy a ratio is the injury (Willy). The curve still **rises** within each block — slow is right, stuck is not.
+
+**⚠️ This fix is at the CURVE; the DELIVERED bounceback is only partly protected.** The injury cap governs the volume curve, but the delivered `weekly_km` diverges from the curve by session placement — a race-anchored long run (§45/§47) sized on its own schedule can inflate a low-target bounceback week above the curve. Measured after the fix: **6120 injury plans still deliver a bounceback at or above pre-deload volume**, worst on low-day/low-volume runners where a single long run dominates the week. That residual is the **same class as the deload-inversion** (delivered ≠ curve, `INV-PLAN-DELOAD-IS-A-REDUCTION`), and it clears only when **DELOAD-INVERSION-01** makes placement track the curve. So this ruling caps the curve and unblocks that fix; it does **not** by itself guarantee the injured runner never sees a delivered spike, and it likely does **not** fully unblock CB-PHASE-01, whose blocker is also delivered. Honest scope, recorded rather than overclaimed.
+
+**Config.** No new numeric — injury bouncebacks reuse `INJURY_WEEKLY_INCREASE_CAP_PCT` (§12); healthy bouncebacks keep the pre-deload ceiling. **Enforced by** `INV-PLAN-BOUNCEBACK-BOUNDED` (`warn`, pending DELOAD-INVERSION-01 for the delivered arm).
+
+**Board:** RAMP-BOUNCEBACK-01, 2026-09-06 — CORRECT WITH AMENDMENT (Willy-led, Hutchinson chairing); the healthy/injury split was set by measurement.
+
 **Config.**
 - `GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT = 10`
 - `GENERATION_CONFIG.RETURNING_RUNNER_ALLOWANCE_PCT = 15`
@@ -2700,6 +2716,263 @@ owner, computed once per plan and read by all five consumers (DELOAD-OWNER-01).
 
 **Board:** CB-DELOAD-01, 2026-09-04 — CORRECT WITH AMENDMENT, ratified after
 re-measurement. Hutchinson chairing.
+
+---
+
+## 88. The VO2max pool owes dose granularity and a continuous shape
+
+**Principle.** The 5K/10K build+peak VO2max pool gains two rows whose job is not a
+new stimulus but a *reachable* one: **`intervals_30_30`** (30s @ I / 30s @ E,
+continuous) and **`intervals_rolling`** (300m @ I / 300m @ E float, continuous).
+Both are `category: vo2max`, sized on the existing `VO2MAX_WORK` band (12–18 min of
+work at the I anchor), gated `fitness_level_min: experienced` with a `min_weekly_km`
+floor. Neither adds a session to any week — they enrich *what* the single build /
+peak VO2max slot can contain (§79, §53).
+
+**Why — the pool was quantised and had a hole.** §338 already records that our VO2max
+dose is a set of integers, not a continuum: with 3-min / 400 m / 1000 m reps the only
+reachable doses are `reps × rep-length`, and the fitness×phase target routinely sits
+*between* two of them — "a direction of travel for rows whose rep length doesn't divide
+the band." A **30-second rep divides the band finely** (24–36 reps span 12–18 min in
+half-minute steps), so the target becomes reachable rather than approached. That is
+the whole of `intervals_30_30`'s value, and it is a fix to an acknowledged limitation,
+not a new toy. Separately, the pool had **no continuous VO2max shape at all** — every
+VO2max row was rep-and-jog-recovery. `intervals_rolling` is the fast-float: the float
+is run, not jogged, so the heart rate never fully drops and time-at-vVO2max accumulates
+across the whole set. Both are canonical amateur sessions (Billat 30-30; the "rolling"
+surge set) that the catalogue simply lacked.
+
+**Seiler's condition — the float is easy and it is meant.** A fast-float dies if the
+float drifts to the grey zone; then the whole set is threshold-in-disguise, the exact
+failure this product exists to prevent. The float step is anchored **E with
+`mode: ceiling`** — a bound, not a suggestion. `intervals_rolling` is only correct if
+the fast is truly fast and the float is truly easy.
+
+**Willy's gate — turnover volume is where tissue fails.** 24–36 hard surges (30-30) or
+a 30-minute continuous fast-float is high foot-speed and high turnover volume, and
+cardiovascular readiness outruns musculoskeletal readiness for exactly the returning
+runner. Both rows carry `fitness_level_min: experienced` **and** a `min_weekly_km`
+floor (the §53/CB-CAT-01 mechanism that stops a 25 km/week runner ticking a dropdown
+into tier-4 work), and both inherit §2196's re-entry withholding automatically by being
+`category: vo2max`. `min_weekly_km` is set at the over-under's floor for the rolling set
+and one step higher for 30-30, whose rep count is the highest in the catalogue.
+
+**Sims — the bone-loading upside is real and it is why these reach women too.** Short,
+fast, force-producing work is bone stimulus specifically hard to get elsewhere in a
+training week and specifically valuable perimenopause (§ hill_reps records the same).
+The `experienced` + volume gate is what keeps it from landing on an under-fuelled
+runner as one more hard session; the floor band (`VO2MAX_WORK_MIN_MINS`) keeps it from
+under-dosing.
+
+**10K only, not 5K — the property sweep corrected the scope.** Both rows are authored
+`distance_eligibility: ['10K']`. The board approved 5K + 10K on the premise that a
+`category: vo2max` row has no §22 interaction (`useGoalPace` reads `!isVo2max`, so the
+goal-pace *rename* never touches them). The sweep falsified that premise for 5K: §22's
+race-specific *ratio* arm (`INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO`) is enforced at 5K —
+§22 records that 5K's ratio holds because the engine prescribes "5K-pace" sessions — and
+adding VO2max inventory to the 5K pool DISPLACES those race-pace sessions in the
+least-used-first rotation, dropping the second-half goal-pace ratio below 50% (12 swept
+plans, all `5km/experienced`). The physiology agrees with the narrowing: **at 5K, I-pace
+≈ race pace**, so an I-anchored VO2 row is near-race-pace work the existing 5K rows
+already deliver; **at 10K, I-pace is distinctly faster than 10K race pace (≈ CV)**, so
+these are genuinely additive top-end work — 0 violations at 10K. Same "what fits the
+race" scoping as `intervals_short` (5K-only) and `threshold_mile_repeats` (excludes 5K).
+5K eligibility would require §22's ratio to *credit* a 5K VO2max session as
+race-specific — defensible by §22's own text but a separate board amendment, not smuggled
+in here. (The CV-anchored and mixed-anchor Tier A rows — cruise/CV intervals, the
+descending pyramid — touch §22's *rename* and §19, and land in a later section with the
+`hasUnconvertibleWorkAnchor` and multi-system-label amendments they require.)
+
+**Config.** No new work band — the rows reuse `VO2MAX_WORK_TARGET_MINS` /
+`[VO2MAX_WORK_MIN_MINS, VO2MAX_WORK_MAX_MINS]` (SC-08). The only new numerics are the
+per-row `fitness_level_min` and `min_weekly_km` on the catalogue rows themselves.
+Enforced by the existing **`INV-PLAN-VO2MAX-MAIN-SET-CAP`** (the work-minute band) and
+**`INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT`** (the session's stated length fits
+its own `derived_set`), both of which already scope to `scaling: 'reps'` VO2max rows —
+so this ruling's mechanical check is inherited, not newly authored.
+
+**Not built (SLT, 2026-09-06): standalone R-pace / neuromuscular speed sessions.** The
+Coaching Board ruled the standalone speed sessions INSUFFICIENT EVIDENCE (the deciding
+injury data is uncollectable, ADR-011) and the SLT declined to build them — they serve
+the smallest, most self-sufficient segment and hand the "medium-hard on everything"
+runner one more hard session to abuse. §16 strides remain the universal neuromuscular
+vehicle. The `R` anchor is nonetheless resolved (it fixes a latent dead-anchor
+fallback) so the plumbing exists if that segment decision ever changes.
+
+**Board:** this ruling, 2026-09-06 — CORRECT WITH AMENDMENT, Hutchinson chairing;
+Seiler's float condition and Willy's gate are conditions of approval. Part of a larger
+Tier A pool enrichment; the CV/mixed rows follow in their own section.
+
+---
+
+## 89. Experience-gated quality onset — a demonstrated base earns a shorter one
+
+**Principle.** A runner who is **demonstrably ready** starts quality sooner, via a
+**shorter (still all-easy) base** — not the fixed ~4-week base every runner gets today.
+"Demonstrably ready" (`earlyQualityOnset`) requires **all** of: experienced *intensity*
+(declared or assessed), structural fitness **≥ intermediate** (a real volume base),
+deep training age (`2-5yr`/`5yr+`), **not** returning and **not** fresh-from-layoff
+(they have a *current* base, not a memory of one), and — the signal that makes it
+honest — `recent_quality_training = 'regular'`: they have been doing structured hard
+sessions (intervals/hills/tempo) most weeks recently. **An injury history is an
+absolute veto.** For such a runner, base uses `EARLY_ONSET_BASE_PCT` (15 vs 35); the
+freed weeks flow to build and peak; the 2-week base floor (the existing `Math.max(2, …)`
+in `computePhases`) always holds. Everyone else is untouched.
+
+**Why.** The engine could not tell a beginner-with-a-base from an experienced runner
+mid-block — both got the identical 4-week all-easy base, so a runner doing 30 km/week
+with a 10 km long run who has been running intervals and hills for two months outside
+the plan got a beginner's onramp: first quality at week 5 of a 12-week plan, the first
+third of the plan indistinguishable from a novice's. They do not need four weeks to
+rebuild an aerobic engine they already have and are actively using. §5 says base is
+*general aerobic* work; for a conditioned runner that base is **maintenance, not
+building**, so shortening it is descriptively correct, not a shortcut.
+
+**This is NOT the base-primer §88's sibling vetoed.** §1's veto was of *adding quality
+to base* (spending the quality-session budget in base's grey zone for an overtraining
+population). This adds **no** quality to base — base stays 100% easy — it makes base
+**shorter**. The distinction is the whole ruling: `computePhases` moves a boundary; it
+never puts a hard session where an easy one belongs.
+
+**The tonnage CEILING is unchanged — the §79 hinge, stated precisely.** §79 rules that
+agency raises *intensity*, never *tonnage*. This extends §79: the intensity signal
+governs *when* hard work starts, not only how hard it is. The **structural peak target
+(`peakKm`) is untouched** — it is set by structural fitness, which this signal does not
+move — and the ramp cap (§2) is untouched. What *does* change is that a shorter base
+leaves more build/peak weeks, so the delivered curve ramps **more gradually** and
+reaches that same ceiling slightly more fully (measured **+~4%** delivered peak on the
+example, never above the structural target). Crucially the volume peak lands **later**
+than the intensity onset, so intensity is **not pulling volume forward** — the exact
+compounding Sims's condition guards against. A gentler ramp to an unchanged ceiling is
+not "more tonnage" in the injury sense; it is the runner completing the progression
+their structure already permits. Beginners (no experienced intensity) and returners (no
+current base) keep the full base by the gate, so no one gets load their tissue has not
+earned.
+
+**The signal is a tissue-readiness proxy, and that is Willy's condition.** §79's
+progressive re-entry (the "§2196" block above) exists because *cardiovascular readiness
+returns weeks ahead of musculoskeletal readiness* — a runner **feels** ready for
+intervals before the tissue is. `recent_quality_training = 'regular'` is the one thing
+that falsifies that premise for a specific runner: they have **already loaded the
+tissue with the exact stimulus** — recent, regular intervals and hills — so their
+tendons and bones have seen the eccentric and impact loads. It is a demonstrated
+*practice* question ("have you been doing it"), not a self-image one ("are you
+experienced"). The injury veto stands because a self-report is about fitness and an
+injury is about the tissue; the report cannot overrule a documented structure
+(Willy/Sims).
+
+**Lever A — the same signal relaxes re-entry, intensity-only.** A runner who **is**
+returning (re-entry active) but reports `'regular'` conditioned training has the §2196
+VO2max/hill withholding **shortened to `REENTRY_WEEKS_TISSUE_READY` (1 week), not
+zeroed** (Willy: one week of tempo-first is cheap insurance). The **volume** caution —
+the returning-runner ramp allowance — is **untouched**: tissue-stimulus readiness and
+chronic-volume readiness are different things, and the signal speaks only to the first.
+
+**Tier: FREE (SLT, 2026-09-06).** Plan *structure* — when quality starts — is the plan
+itself, not a richness layer, so it cannot sit behind the paywall without abandoning
+free experienced runners to a plan built wrong for them ("Free Users Are Never
+Abandoned — gate richness, never access"). The paid line (AI coaching voice, dynamic
+reshape) is untouched. The wizard question is framed as *recognition, not reward*
+("you've got a base; we won't make you re-prove it"), factual and past-tense, so it
+cannot be gamed into an "unlock harder training" incentive — the over-claiming risk the
+brand exists to prevent. The consequence of over-claiming is bounded anyway: one
+session slightly early, no added tonnage, easy-day discipline (§12) intact, injury veto
+absolute.
+
+**Config.** `EARLY_ONSET_BASE_PCT = 15` (the shorter base fraction),
+`MIN_BASE_WEEKS_FLOOR = 2` (the base-week floor, formerly a hardcoded `Math.max(2, …)`
+in `computePhases`, named per the Configuration Singularity so the phase builder and
+`INV-PLAN-EARLY-ONSET-GATED` agree), `REENTRY_WEEKS_TISSUE_READY = 1`. Input: `recent_quality_training` on `GeneratorInput`. Surfaced as
+`meta.early_quality_onset`. **Enforced by `INV-PLAN-EARLY-ONSET-GATED`.**
+
+**Amends §79** (intensity governs quality *timing*, not only hardness/count; zero added
+tonnage), **§5** (a demonstrated base earns a shorter maintenance base, floored), and
+the §79 progressive-re-entry block (Lever A relaxation, intensity-only).
+
+**Board:** §89, 2026-09-06 — Coaching Board CORRECT WITH AMENDMENT (injury veto, volume
+floor, 2-week base floor, no added tonnage, intensity-only re-entry relaxation, matrix+
+sweep clean); SLT FREE with recognition-not-reward framing. Hutchinson chairing both.
+
+---
+
+## 90. A recovery week reduces, and the injury cap holds at delivery — the curve is not the promise
+
+**Principle.** Two coaching promises are made to the runner about *what they will
+actually run*, and both were being enforced only on the internal volume **curve**,
+not on the **delivered** week the runner sees:
+
+1. **A deload week carries less than the week before it (§3).** A "recovery" week
+   badged as such must deliver less volume than the week preceding it. Full stop.
+2. **An injury-history runner's week-on-week rise stays within the §12 cap (5% for
+   knee/shin) at DELIVERY.** The cap is a promise about the load on healing tissue —
+   it means nothing if it binds the curve but the placed sessions exceed it.
+
+**The gap.** The engine computes a volume *curve* (`buildVolumeSequence → volumes[]`)
+and enforces §2, §3 and §12 on it. But the runner never sees the curve — they see
+`weekly_km = sumWeeklyKm(placed sessions)`, and session sizes are computed
+**independently** of the curve ceiling: the race-anchored long run (§45/§47/§80),
+peak quality (two sessions, §8), and easy runs (floored at `MIN_SESSION_DISTANCE`).
+Nothing trimmed them to fit. So a plan with a perfectly-shaped, green curve could
+still **deliver** a deload week bigger than the week before it, or a +39% week to an
+injured knee — the exact spike §12 exists to prevent, shipped past a green validator.
+Measured on the 2026-08-20 baseline: deload inversions **12.8%** of plans at the
+curve; injury bouncebacks delivering ≥ pre-deload **18.8%**.
+
+**What ships (DELOAD-INVERSION-01).** Three levers, in this order:
+
+- **Deload curve fix.** A deload is now `min(existing, RECOVERY_WEEK_VOLUME_PCT × the
+  POST-CAP prior week)`, not 70% of the uncapped `lastBuildVol`. The old form took 70%
+  of a curve value the prior week had then been capped *below* (injury/ramp) — so
+  "70% of uncapped" ≥ the delivered prior, and the deload reduced nothing. Re-anchoring
+  to the actual prior week is §3's literal intent. Curve-level deload inversions
+  **12.8% → 0%**. Deloads also keep their session *frequency* — the day-count grosses
+  the deload target back up before dividing by `MIN_KM_PER_TRAINING_DAY`, so a recovery
+  week is lower-volume, not fewer-days.
+- **§8 yields to §12 on injury peak weeks.** An injury-capped (knee/shin) runner's peak
+  week carries **one** quality session, not two. §8 grants the second to an experienced
+  runner; §12 takes it back when the tissue is the binding constraint. This is what
+  makes the delivered cap *achievable* — without it, two quality sessions plus the long
+  run already exceed the ceiling before a single easy km is placed.
+- **Easy runs trim/drop to the ceiling; the long run never does.** On an injury-capped
+  week, easy volume is reconciled down to fit the cap. The **race-anchored long run is
+  never trimmed** — §52 owns it ("the race sets the long run; do not deform it; if it
+  ALONE breaks the cap, classify `maintenance`"). So the enforceable delivered promise
+  is on the **trimable (non-long-run) portion**.
+
+**Scope — injury runners only, and this is deliberate (Hutchinson, firm).** The
+delivered *ceiling* reconciliation is applied only to knee/shin-history runners, whose
+binding promise is the 5% cap. A **healthy** runner's delivered divergence from the
+curve stays §52's accepted territory — the race sets their long run and the engine does
+not deform a whole week's structure to make a low-volume week's arithmetic tidy. One
+new maintenance trigger is added for the corner where even this cannot hold: an
+**injury history + a beginner's current volume + an ultra target** (`distKm > 43`)
+cannot safely build to the distance, so it classifies `volume_profile = 'maintenance'`
+with a note, rather than shipping an unsafe ramp.
+
+**Honesty about the residual.** The delivered promise is **not** fully closed, and that
+is stated rather than hidden. On low-volume, low-day injury plans the easy floor
+(`MIN_SESSION_DISTANCE`) dominates — you cannot place half an easy run — so the trimable
+portion can still rise above the cap (measured max on a 5 km/3-day/low-volume knee
+runner: an 8→16 km non-long jump). And the §52-protected long run still inflates the
+*whole-week* delivered rise on peak weeks (the residual `injuryCapCompounds.test.ts`
+tolerances at `cap + 15`). These residuals are the delivered≠curve class in its last
+mile; closing them means reconciling long-run placement itself, which is a separate §52
+question with its own ruling — not this change.
+
+**Config.** No new coaching numeric — the deload fix reuses `RECOVERY_WEEK_VOLUME_PCT`
+(§3) and the injury cap reuses `INJURY_WEEKLY_INCREASE_CAP_PCT` (§12); the injury
+peak-quality count is `1` by the §8/§12 precedence, not a new constant; the ultra
+maintenance trigger reuses the existing marathon/ultra distance boundary. **Enforced by**
+`INV-PLAN-DELOAD-IS-A-REDUCTION` (`warn` — curve fixed, delivered residual pending),
+`INV-PLAN-INJURY-CAP-DELIVERED` (`warn` — the trimable-portion cap, §52 long run
+excluded by construction), and `INV-PLAN-BOUNCEBACK-BOUNDED` (`warn`, §2). All three are
+`warn` for the same reason: the delivered arm has a measured, declared-and-exercised
+residual (§34) and becomes `error` when long-run placement is curve-reconciled.
+
+**Board:** DELOAD-INVERSION-01, 2026-09-06 — Coaching Board CORRECT WITH AMENDMENT
+(Willy-led: the 5% cap is a delivered promise for injured tissue; lever order
+quality→easy→never the long run; injury-only scope; healthy stays §52; ultra+beginner+
+injury → maintenance). Amends §3, §8, §12, §52 by reference; does not loosen any of them.
 
 ---
 

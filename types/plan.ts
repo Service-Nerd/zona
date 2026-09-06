@@ -84,6 +84,15 @@ export interface GeneratorInput {
   // R23 rebuild — drives returning-runner allowance + reshape decisions
   training_age?: TrainingAge
 
+  // §89 (Coaching Board 2026-09-06) — EXPERIENCE-GATED QUALITY ONSET. Demonstrated
+  // recent structured hard training (intervals/hills/tempo, last ~6 weeks). A
+  // TISSUE-READINESS signal, not self-image: a runner currently doing intervals/
+  // hills has conditioned the tissue §2196 protects. 'regular' (most weeks) is the
+  // only value that unlocks earlier quality onset — and only alongside experienced
+  // intensity + a real base + deep training age + NOT returning/fresh + NO injury
+  // history. Beginners/returners/injured are unaffected. See §89.
+  recent_quality_training?: 'none' | 'occasional' | 'regular'
+
   // M-02 — fresh-from-layoff detection. When < FRESH_RETURN_WEEKS_THRESHOLD,
   // engine treats current_weekly_km as aspirational and starts the plan at
   // FRESH_RETURN_START_FRACTION × current_weekly_km. (CoachingPrinciples §29)
@@ -604,6 +613,13 @@ export interface PlanMeta {
   // INV-PLAN-RETURNING-INTENSITY-REENTRY.
   intensity_reentry_active?: boolean
   intensity_reentry_weeks?: number
+
+  // §89 (2026-09-06) — experience-gated quality onset. True when the runner was
+  // demonstrably ready (experienced intensity + real base + deep training age +
+  // regular recent structured work + not returning/fresh/injured) and got a
+  // SHORTER (still all-easy) base so quality starts ~2 weeks sooner. Asserted by
+  // INV-PLAN-EARLY-ONSET-GATED.
+  early_quality_onset?: boolean
 
   hr_zone_method?: 'karvonen' | 'karvonen_estimated_max' | 'percent_of_max' | 'percent_of_estimated_max'
                  | 'observed_max' | 'age_estimate_implausible_input' | 'age_estimate_max_floor'

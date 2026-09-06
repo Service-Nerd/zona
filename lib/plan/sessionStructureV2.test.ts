@@ -237,6 +237,10 @@ describe('SC-08b — migration posture (D-03)', () => {
       'tempo_over_under',        // §85 — first CV-anchored row, first two-work-step rep
       'threshold_mile_repeats',  // §85 — tier-4 threshold inventory
       'threshold_pyramid',       // §85 — tier 3; variety, not difficulty
+      // §88 (2026-09-06) — VO2max dose granularity + continuous shape. Authored
+      // v2 from birth; no migration.
+      'intervals_30_30',         // §88 — 30s rep divides the VO2 band finely
+      'intervals_rolling',       // §88 — first continuous VO2max fast-float
     ])
     for (const row of V1_SESSION_CATALOGUE) {
       expect(

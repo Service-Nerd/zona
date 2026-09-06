@@ -127,3 +127,44 @@ describe('SC-01 — second quality session placement', () => {
     }
   })
 })
+
+describe('V8 note — claim must match the computation (§79)', () => {
+  // The peak quality COUNT keys off STRUCTURAL fitness (ruleEngine ~2390:
+  // `plannedQuality = fitness === 'experienced' ? 2 : 1`) — §79 makes the count
+  // a load decision, so an UPWARD intensity declaration cannot add a second
+  // quality session. The V8 note reporter used to gate on `intensityFitness`
+  // instead, so a structural-INTERMEDIATE runner who DECLARED `experienced` was
+  // told a second quality was "withheld for days" — when the count was 1
+  // regardless of days. The note advertised a 5th-day lever that does not exist.
+  //
+  // Structural-intermediate + declared-experienced: fitness stays 'intermediate'
+  // (declaration binds structure downward only, ruleEngine ~4227); intensity
+  // becomes 'experienced'. Count = 1 in peak, unconditionally.
+  const STRUCT_INTER_DECLARED_EXP: GeneratorInput = {
+    ...BASE, fitness_level: 'intermediate', user_declared_level: 'experienced',
+    days_available: 4,
+  }
+
+  it('does not fire for a structural-intermediate runner who declared experienced', () => {
+    const plan = generateRulePlan(STRUCT_INTER_DECLARED_EXP, 'paid', PLAN_START)
+
+    // The count really is 1 — so the note's absence is correct, not merely muted.
+    const withTwo = plan.weeks.filter(w => daysOfType(w, 'quality').length >= 2)
+    expect(withTwo, 'structural-intermediate never gets a second peak quality').toHaveLength(0)
+
+    const recorded = (plan.meta.rule_adjustments ?? [])
+      .find(r => r.rule === 'V8-second-quality-min-days')
+    expect(
+      recorded,
+      'must not claim a second quality was withheld for days when the count was 1 regardless of days',
+    ).toBeFalsy()
+  })
+
+  it('still fires for a genuinely structural-experienced four-day runner', () => {
+    // The true-positive direction: here days IS the binding constraint.
+    const plan = generateRulePlan(FOUR_DAY, 'paid', PLAN_START)
+    const recorded = (plan.meta.rule_adjustments ?? [])
+      .find(r => r.rule === 'V8-second-quality-min-days')
+    expect(recorded, 'structural-experienced + 4 days genuinely withholds for days').toBeTruthy()
+  })
+})

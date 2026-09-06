@@ -146,6 +146,10 @@ const trainingAgeSets = [undefined, '<6mo', '6-18mo', '2-5yr', '5yr+']
 // is meaningless unless the grid actually produces upward declarations.
 const declaredSets = [undefined, 'beginner', 'intermediate', 'experienced']
 const hardSets = ['love', 'avoid', 'neutral']
+// §89 — experience-gated quality onset. Must be swept so INV-PLAN-EARLY-ONSET-GATED
+// is exercised across the grid (including the 'regular' value that unlocks it and
+// the injury combinations that must veto it).
+const recentQualitySets = [undefined, 'none', 'occasional', 'regular']
 const injurySets = [[], ['knee'], ['achilles'], ['shin_splints'], ['hip_flexor'], ['back']]
 // ADR-020 (2026-09-03) — 30 ADDED. The grid tested 45/60/90 while BOTH real
 // users had chosen 30, and three separate INV-PLAN-MAX-WEEKDAY-MINS defects
@@ -316,6 +320,7 @@ function randomInput(): any {
     ...(() => { const d = pick(declaredSets);  return d ? { user_declared_level: d } : {} })(),
     hard_session_relationship: pick(hardSets),
     injury_history: pick(injurySets),
+    ...(() => { const r = pick(recentQualitySets); return r ? { recent_quality_training: r } : {} })(),
     max_weekday_mins: pick(maxWeekdays),
     ...(() => { const w = pick(weeksAtVolume); return w === undefined ? {} : { weeks_at_current_volume: w } })(),
     ...(() => { const d = pick(foundationDecisions); return d ? { foundation_decision: d } : {} })(),

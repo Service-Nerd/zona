@@ -84,6 +84,15 @@ export const GENERATION_CONFIG = {
   MAX_WEEKLY_VOLUME_INCREASE_PCT: 10,
   RETURNING_RUNNER_ALLOWANCE_PCT: 15,
   RETURNING_RUNNER_GRACE_WEEKS:    3,
+  // RAMP-BOUNCEBACK-01 (Coaching Board 2026-09-06, Willy-led) — the post-deload
+  // bounceback is BOUNDED for injury-history runners and left UNBOUNDED for
+  // healthy runners. No new numeric: injury bouncebacks are bounded by the
+  // existing INJURY_WEEKLY_INCREASE_CAP_PCT (§12); healthy bouncebacks keep §2's
+  // exemption (return to pre-deload). The board provisionally proposed a
+  // dedicated healthy bounceback cap (~20%), but measurement across a 144-plan
+  // grid found it flipped +50pp of plans to "constrained by inputs" and raised
+  // the maintenance rate +7.6pp for zero safety benefit — so the healthy cap was
+  // NOT added. See §2's amendment and the bounceback split in ruleEngine.ts.
   // CoachingPrinciples §79 (returning-runner intensity re-entry, 2026-08-31,
   // Coaching Board / Willy). A returning experienced runner's aerobic engine and
   // skill return weeks ahead of their musculoskeletal readiness — they FEEL ready
@@ -202,6 +211,29 @@ export const GENERATION_CONFIG = {
     build_pct: 35,
     peak_pct:  15,
   },
+
+  // §89 (Coaching Board 2026-09-06) — EXPERIENCE-GATED QUALITY ONSET. A
+  // demonstrably-ready runner (experienced intensity + real base + deep training
+  // age + NOT returning/fresh/injured + `recent_quality_training: 'regular'`) does
+  // not need the full base to rebuild an aerobic engine they already have. Their
+  // base uses this SHORTER fraction so build (and quality) starts ~2 weeks sooner.
+  // Base STAYS ALL-EASY — this is NOT the vetoed base-primer (§88), no quality is
+  // added to base, it is simply shorter. Adds ZERO tonnage (peakKm unchanged,
+  // §79). The 2-week floor is the existing `Math.max(2, …)` in computePhases
+  // (Seiler's condition: keep a short polarised on-ramp). Beginners/returners/
+  // injured runners keep base_pct=35, gated by `earlyQualityOnset`. Enforced by
+  // INV-PLAN-EARLY-ONSET-GATED.
+  EARLY_ONSET_BASE_PCT: 15,
+  // §89 — the base phase never drops below this many weeks, however ready the
+  // runner (Seiler's condition: keep a short polarised on-ramp). This was a
+  // hardcoded `Math.max(2, …)` in computePhases; named here because the invariant
+  // and the phase builder must agree on it (Configuration Singularity).
+  MIN_BASE_WEEKS_FLOOR: 2,
+  // §89 Lever A — a returning runner whose tissue is demonstrably conditioned
+  // (`recent_quality_training: 'regular'`, injury-free) has the §2196 re-entry
+  // withholding SHORTENED to this many weeks, not zeroed (Willy: one week of
+  // tempo-first is cheap insurance; the VOLUME ramp caution is untouched).
+  REENTRY_WEEKS_TISSUE_READY: 1,
 
   // ── Taper (CoachingPrinciples §6) ───────────────────────────────────────────
   // Maintain intensity, cut volume, never detrain.
