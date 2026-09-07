@@ -36,6 +36,8 @@ export const INVARIANT_CODES = [
   'INV-PLAN-EARLY-ONSET-GATED',
   'INV-PLAN-ONRAMP-FLOOR',
   'INV-PLAN-PEAK-SPECIFICITY',
+  'INV-PLAN-DELIVERED-RAMP',
+  'INV-PLAN-DELOAD-PHASE-POSITION',
   'INV-PLAN-DELOAD-IS-A-REDUCTION',
   'INV-PLAN-VOLUME-SHORTFALL-DECLARED',
   'INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED',
@@ -2222,6 +2224,165 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           actual: `+${risePct.toFixed(0)}% non-long-run`,
           expected: `<= ${capPct}% (§12 injury cap on the trimable portion)`,
         })
+      }
+    }
+  }
+
+  // INV-PLAN-DELOAD-PHASE-POSITION (CoachingPrinciples §95, extending §87)
+  //
+  // §87 ruled "a recovery week must not OPEN a phase". The neighbouring case was
+  // never ruled on: a deload on the phase's SECOND week, which gives the runner
+  // exactly one week of a new stimulus and then recovers them from it.
+  //
+  // Measured 2026-09-07 on the founder's live 10K: week 3 carried the plan's
+  // first-ever quality session and week 4 was a deload. It fired on BOTH
+  // early-onset 10K cases and on NEITHER the non-gated control nor HM — so §89's
+  // shorter base was the cause, sliding the phase boundary underneath a cadence
+  // anchored to absolute week number.
+  //
+  // §91 then moved the boundary again and the symptom stopped reproducing on
+  // every measured case. THAT IS EXACTLY WHY THIS CHECK EXISTS RATHER THAN A
+  // PLACEMENT FIX. `computeDeloadWeeks` still knows nothing about position 2;
+  // the defect is masked by the current phase arithmetic, not repaired, and
+  // SC-10 is the standing reminder in this codebase that a masked defect and a
+  // fixed one are indistinguishable until something moves. If a future ruling
+  // shifts a boundary back, this goes red instead of shipping quietly.
+  //
+  // `warn`: the placement is undesirable, not unsafe — it is more recovery, not
+  // less (the same reasoning §87 applied to its own backward-normalisation pass).
+  {
+    const firstWeekOfPhase = new Map<string, number>()
+    plan.weeks.forEach(w => {
+      const ph = w.phase ?? 'base'
+      if (w.n >= 1 && !firstWeekOfPhase.has(ph)) firstWeekOfPhase.set(ph, w.n)
+    })
+    for (const w of plan.weeks) {
+      if (w.n < 1) continue
+      if (!(w.type === 'deload' || w.badge === 'deload')) continue
+      const ph = w.phase ?? 'base'
+      // Base opening on a deload is impossible-by-construction and peak/taper
+      // never deload at all (deloadCadence.ts), so this is about build.
+      if (ph !== 'build') continue
+      const start = firstWeekOfPhase.get(ph)
+      if (start == null) continue
+      const positionInPhase = w.n - start + 1
+      if (positionInPhase === 2) {
+        violations.push({
+          code: 'INV-PLAN-DELOAD-PHASE-POSITION',
+          principle_ref: 'CoachingPrinciples §95 (§87)',
+          severity: 'warn',
+          week: w.n,
+          message: `Week ${w.n} is a deload at position 2 of the ${ph} phase — the runner gets one week of a new stimulus and then recovers from it. §87 forbids opening a phase on a deload; this is the same defect one week over.`,
+          actual: `deload at phase position ${positionInPhase}`,
+          expected: 'position 3 or later (§87/§95)',
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-DELIVERED-RAMP (CoachingPrinciples §94, enforcing §2 at delivery)
+  //
+  // §2's 10% rule is enforced on the volume CURVE by `buildVolumeSequence`. The
+  // runner runs the PLACED SESSIONS, and those diverge — ADR-022 established
+  // exactly this and scoped its remedy to injury-history runners, so a healthy
+  // runner has no delivered-volume check at all.
+  //
+  // The mechanism is not placement drift, it is a SAFETY RULE CREATING THE SPIKE.
+  // `V1-volume-quality-split` (Willy's gate on CD-16) holds a week flat when it
+  // introduces the first VO2max session — intensity and volume must not progress
+  // together. Correct. But the NEXT week steps up from the CURVE's value, not
+  // from the trimmed one, so the trim hands its whole deficit to the following
+  // week. Measured on the founder's live 10K: the curve read 33 -> 37 -> 40
+  // (+8%, legal); the trim held W2 at 33; the runner therefore ran 33, 33, 40 —
+  // a +23% delivered rise against a chronic load of 33. Before §91/§93 reshaped
+  // the plan the same mechanism produced +48%.
+  //
+  // EXCLUSIONS, each because another principle owns the question:
+  //   - the post-deload bounceback (§2, RAMP-BOUNCEBACK-01). A healthy return to
+  //     a fortnight-ago volume is not a spike, and the board MEASURED a 20%
+  //     healthy cap on 2026-09-06 and rejected it: +50pp of plans flipped to
+  //     "constrained by inputs" for zero safety benefit. Not reopened here.
+  //   - deload weeks themselves (INV-PLAN-DELOAD-IS-A-REDUCTION) and taper
+  //     (a planned drop).
+  //   - injury-history runners, who are already covered, more strictly, by
+  //     INV-PLAN-INJURY-CAP-DELIVERED (§90).
+  //   - foundation weeks, which have their own +10% rule (§57).
+  //
+  // `warn`, and honestly so (§34): the long run is §52-exempt and sized on its
+  // own race-anchored schedule, so part of any residual is placement the engine
+  // is not permitted to trim. Measured against the TRIMABLE (non-long-run)
+  // portion for that reason — the same basis §90 uses.
+  {
+    const healthy = (input.injury_history ?? []).length === 0
+    if (healthy) {
+      const capPct = GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT
+      // Absorbs session-distance rounding and MIN_SESSION_DISTANCE granularity
+      // on low-volume weeks, where one dropped easy km is a large percentage.
+      // Tunes the CHECKER, not what the engine prescribes — so it is inline, not
+      // a coaching numeric (CLAUDE.md's tunability test).
+      const DELIVERED_ROUNDING_TOLERANCE_PCT = 10
+      const longKmOf = (w: Week) => {
+        const l = Object.values(w.sessions).find(s => s && isLongRun(s))
+        return l?.distance_km ?? 0
+      }
+      const deliveredKm = (w: Week) =>
+        Object.values(w.sessions).reduce((a, s) => a + (s?.distance_km ?? 0), 0)
+
+      for (let i = 1; i < plan.weeks.length; i++) {
+        const w = plan.weeks[i]
+        const prev = plan.weeks[i - 1]
+        if (w.n < 1 || prev.n < 1) continue                      // foundation: §57
+        const isDeload = w.type === 'deload' || w.badge === 'deload'
+        const prevIsDeload = prev.type === 'deload' || prev.badge === 'deload'
+        if (isDeload || prevIsDeload) continue                   // §2 bounceback / -DELOAD-IS-A-REDUCTION
+        if (w.phase === 'taper' || w.type === 'race') continue   // planned drop
+
+        // §2 GUARDS LOAD THE BODY HAS NOT ADAPTED TO — not every rise.
+        //
+        // Written without this, the check fired on 44.4% of a 525-plan grid,
+        // worst rise 114%, and almost all of it was the engine ramping UP TOWARD
+        // the runner's own stated volume from a deliberately conservative start:
+        // a runner who reports 20 km/week gets 13.5 -> 16.5 -> 18, every week
+        // BELOW the load they are already carrying. Nothing there is a spike, and
+        // §1 records the standard this would have failed — Willy, on a check
+        // firing at 71%: "not a safety mechanism — it is noise, and noise gets
+        // suppressed, which is how a real violation gets missed later."
+        //
+        // So the cap binds only once the week exceeds the runner's established
+        // chronic load. Below it the plan is rebuilding to a baseline the tissue
+        // already holds.
+        if (deliveredKm(w) <= (input.current_weekly_km ?? 0)) continue
+
+        const nowTrimable = deliveredKm(w) - longKmOf(w)
+        const prevTrimable = deliveredKm(prev) - longKmOf(prev)
+        if (prevTrimable <= 0 || nowTrimable <= prevTrimable) continue
+        const risePct = ((nowTrimable - prevTrimable) / prevTrimable) * 100
+
+        // BOTH the whole week AND its trimable portion must breach.
+        //
+        // §2 speaks about WEEKLY volume, so the whole-week rise is the claim.
+        // The trimable portion is required as well because the long run is
+        // §52-exempt and race-anchored: it can legitimately jump, and when it
+        // does the trimable remainder swings violently for no change in load
+        // (a week going long 18/total 25 to long 11/total 26 reads +114%
+        // trimable while the runner ran one extra kilometre). Requiring both
+        // means every case this reports is a genuine rise in the work the
+        // engine was free to place, inside a week that genuinely got bigger.
+        const totalRisePct = ((deliveredKm(w) - deliveredKm(prev)) / deliveredKm(prev)) * 100
+        const bothBreach =
+          risePct > capPct + DELIVERED_ROUNDING_TOLERANCE_PCT &&
+          totalRisePct > capPct + DELIVERED_ROUNDING_TOLERANCE_PCT
+        if (bothBreach) {
+          violations.push({
+            code: 'INV-PLAN-DELIVERED-RAMP',
+            principle_ref: 'CoachingPrinciples §94 (§2)',
+            severity: 'warn',
+            week: w.n,
+            message: `Week ${w.n}: DELIVERED volume rose ${totalRisePct.toFixed(0)}% from week ${prev.n} (${deliveredKm(prev).toFixed(0)}→${deliveredKm(w).toFixed(0)}km; trimable ${prevTrimable.toFixed(0)}→${nowTrimable.toFixed(0)}km, +${risePct.toFixed(0)}%), above §2's ${capPct}% cap. The curve may be compliant while the placed sessions are not — typically because a volume/quality-split trim held the previous week flat and handed its deficit forward.`,
+            actual: `+${totalRisePct.toFixed(0)}% week, +${risePct.toFixed(0)}% non-long-run`,
+            expected: `<= ${capPct}% (§2, measured at delivery)`,
+          })
+        }
       }
     }
   }

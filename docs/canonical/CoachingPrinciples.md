@@ -3214,6 +3214,134 @@ completes CD-16.
 
 ---
 
+## 94. §2 is measured at delivery for every runner, not only the injured
+
+**Principle.** The week-on-week volume cap is checked against the **placed
+sessions**, for healthy runners as well as injured ones — but only once the week
+exceeds the runner's established chronic load, and only when the whole week *and*
+its trimable (non-long-run) portion both breach. `INV-PLAN-DELIVERED-RAMP`
+(`warn`).
+
+**Why.** §2's 10% rule is enforced on the volume CURVE by `buildVolumeSequence`.
+The runner runs the placed sessions, and the two diverge — ADR-022 established
+exactly this and scoped its remedy (`INV-PLAN-INJURY-CAP-DELIVERED`, §90) to
+injury-history runners. So a healthy runner had **no delivered-volume check at
+all**, and the divergence was invisible rather than absent.
+
+**The mechanism is a safety rule creating the spike, which is why it survived.**
+`V1-volume-quality-split` — Willy's own gate on CD-16 — holds a week flat when it
+introduces the first VO2max session, because intensity and volume must not
+progress together. Correct, and it fires as designed. But the NEXT week steps up
+from the **curve's** value rather than the trimmed one, so the trim hands its
+entire deficit forward. Measured on the founder's live 10K: the curve read
+33 → 37 → 40 (+8%, legal); the trim held week 2 at 33; the runner therefore ran
+**33, 33, 40** — a +23% delivered rise against a chronic load of 33. On the plan
+shape that shipped before §91/§93 the same mechanism produced **+48%**.
+
+**Measured, on a 525-plan grid, before and after §91/§93:**
+
+| | plans flagged | worst week-on-week rise |
+|---|---|---|
+| before §91/§93 | 128 (24.4%) | **76%** |
+| after | 89 (17.0%) | **63%** |
+
+So the defect is **pre-existing and §91/§93 reduced it**. It is not a regression
+introduced by those rulings, and the residual is recorded here rather than
+implied.
+
+**Two scoping decisions, both forced by measurement rather than taste.** The first
+draft of this check fired on **44.4%** of the grid with a worst reading of 114%,
+and almost all of it was noise:
+
+- **§2 guards load the body has not adapted to, not every rise.** A runner
+  reporting 20 km/week is given 13.5 → 16.5 → 18 — every week *below* the load
+  they already carry. Nothing there is a spike. The cap now binds only above
+  `current_weekly_km`.
+- **The long run is §52-exempt and race-anchored, so the trimable remainder swings
+  for no change in load.** A week moving from long 18 / total 25 to long 11 /
+  total 26 reads +114% trimable while the runner ran one extra kilometre. Both
+  the whole week and the trimable portion must now breach.
+
+§1 records the standard this would otherwise have failed — Willy, on an `error`
+firing at 71%: *"not a safety mechanism — it is noise, and noise gets suppressed,
+which is how a real violation gets missed later."*
+
+**What this ruling deliberately does NOT do.** It does not change the producer.
+Re-anchoring the following week to the trimmed value is the obvious fix and it is
+**not taken here**, because it would lower delivered peak volume — the tonnage
+ceiling §79 and §89 explicitly protect — and no measurement yet says by how much.
+The board's own precedent governs: on 2026-09-06 a healthy bounceback cap was
+built, measured (+50pp of plans flipped to "constrained by inputs", +7.6pp
+`maintenance`, zero safety benefit) and **rejected**. A producer change here gets
+the same treatment or it does not ship. This ruling makes the residual visible so
+that measurement is possible; it is the first half of RAMP-BOUNCEBACK-01's second
+half, not a substitute for it.
+
+**Excluded, each because another principle owns the question:** the post-deload
+bounceback (§2 — settled, and explicitly re-measured and left unbounded for
+healthy runners on 2026-09-06); deload weeks themselves (§90); taper (a planned
+drop); injury-history runners (already covered, more strictly, by §90); and
+foundation weeks (§57's own +10%).
+
+**Config.** `GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT` (10, unchanged —
+this ruling adds no numeric, it gives an existing one a second enforcement site).
+Enforced by `INV-PLAN-DELIVERED-RAMP` (`warn`, §34 declared AND exercised).
+
+**Board:** CB-RAMP-02, 2026-09-07 — Coaching Board CORRECT WITH AMENDMENT,
+Hutchinson chairing (Willy leading; the chronic-load and both-portions scopes are
+conditions of approval). Extends §90's basis to healthy runners at `warn`; does
+not loosen §2, §12, §52 or §90.
+
+---
+
+## 95. A recovery week must not fall on a phase's second week either
+
+**Principle.** A deload may not land on the **second** week of the build phase.
+§87 forbade a recovery week *opening* a phase; this is the same defect one week
+over — the runner gets exactly one week of a new stimulus and is then recovered
+from it. `INV-PLAN-DELOAD-PHASE-POSITION` (`warn`).
+
+**Why.** Measured 2026-09-07 on the founder's live 10K: week 3 carried the plan's
+first-ever quality session and week 4 was a deload. A one-week loading block is
+not a training block. §87's own reasoning applies unchanged — *"a deload before a
+hard block is defensible coaching, but a defensible outcome reached at random is a
+coincidence, not a decision"* — and position 2 is reached by the same accident of
+arithmetic §87 removed from position 1.
+
+**Attribution is clean.** It fired on both early-onset 10K cases and on **neither**
+the non-gated control nor the HM case. §89's shorter base was the cause: it slid
+the phase boundary underneath a deload cadence anchored to absolute week number.
+§87 fixed where deloads fall relative to phases; §89 then made phase length
+runner-dependent, and the two had not met.
+
+**This ships as a CHECK, not a placement change, and that is the whole point.**
+§91 moved the phase boundary again and the symptom **stopped reproducing on every
+measured case**. `computeDeloadWeeks` still knows nothing about position 2 — the
+defect is **masked by the current phase arithmetic, not repaired.** SC-10 is this
+codebase's standing reminder that a masked defect and a fixed one are
+indistinguishable until something moves, and that a green suite over a masked
+defect actively misleads. Changing the placement algorithm on a symptom that no
+longer reproduces would be unmeasurable; recording the rule so it goes red if a
+future ruling shifts a boundary back is not.
+
+That restraint is also forced by `deloadCadence.ts`'s own history: §87 records
+that rules 1 and 3 (*don't open a phase on a deload*; *never lengthen a loading
+block beyond the cadence's promise*) **cannot both be satisfied by moving a deload
+one week**, and that the first implementation "moved NOTHING while reading
+perfectly plausibly". Extending the constraint to position 2 tightens a system
+already proven over-constrained. That needs a measured proposal, not an edit.
+
+**Config.** No numeric — structural, and deliberately so. Enforced by
+`INV-PLAN-DELOAD-PHASE-POSITION` (`warn` — the placement is undesirable, not
+unsafe; it is more recovery, not less, the same reasoning §87 applied to its own
+backward-normalisation pass).
+
+**Board:** CB-DELOAD-02, 2026-09-07 — Coaching Board CORRECT WITH AMENDMENT,
+Hutchinson chairing. Amendment: detection now, placement change only on measured
+evidence. Extends §87; changes no existing placement.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
