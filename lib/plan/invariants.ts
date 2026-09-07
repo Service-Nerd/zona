@@ -2470,7 +2470,12 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     const baseWeeks = plan.weeks.filter(w => w.n >= 1 && w.phase === 'base').length
     const foundationCredit = plan.meta.foundation_weeks_planned ?? 0
     const onRamp = baseWeeks + foundationCredit
-    const floor = GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR
+    // §97 — the floor is cohort-dependent. A §89-gated runner may on-ramp in one
+    // week (Seiler, re-taken CB-ONSET-03) with VO2max withheld meanwhile
+    // (Willy's condition); everyone else keeps the two-week floor unchanged.
+    const floor = plan.meta.early_quality_onset
+      ? GENERATION_CONFIG.MIN_ONRAMP_WEEKS_GATED
+      : GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR
     if (onRamp < floor) {
       violations.push({
         code: 'INV-PLAN-ONRAMP-FLOOR',

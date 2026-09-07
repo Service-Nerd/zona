@@ -2,6 +2,9 @@
 // Plan length calculator. All date arithmetic uses local-time parsing (INV-PLAN-007 note: never
 // new Date("YYYY-MM-DD") — that parses as UTC midnight and drifts near midnight in west timezones).
 
+import { PLAN_SIGNATURES } from './planSignatures'
+import { raceDistanceKey } from './generationConfig'
+
 export interface DistanceConfig {
   maxKm: number
   minWeeks: number
@@ -105,6 +108,23 @@ export function calcPlanLength(
   distanceKm: number,
   raceDateIso: string,
   earliestStartIso: string,
+  /**
+   * §97 (CB-ONSET-03) — allow the plan to run to the distance's `max_weeks`
+   * rather than stopping at `idealWeeks`.
+   *
+   * Passed `true` only for a §89-gated runner. §76 delays the start when there
+   * are surplus weeks, and ADR-020 then fills the delay with a §57 foundation
+   * block — so those weeks are trained either way. The board's finding is that
+   * "delay the start" does not create rest; it creates training that sits
+   * outside the periodisation arc and is carved out of five invariants. For a
+   * runner the gate has certified as having a current base, converting that
+   * filler into validated, ramped base weeks is strictly better.
+   *
+   * `max_weeks` comes from PLAN_SIGNATURES and was DEAD CONFIG until now
+   * (PLANLEN-DUP-01) — this reads a bound the signature already declared, it
+   * does not invent a longer plan than §17 permits.
+   */
+  allowMaxWeeks = false,
 ): PlanLengthResult {
   const config = getDistanceConfig(distanceKm)
 
@@ -115,7 +135,13 @@ export function calcPlanLength(
   // gives exactly one available week (the race week itself).
   const weeksAvailable = weeksBetweenLocal(formatDate(earliestStart), formatDate(raceWeekStart)) + 1
 
-  const totalWeeks = Math.max(1, Math.min(weeksAvailable, config.idealWeeks))
+  // The cap is `idealWeeks` by default; §97 raises it to the signature's
+  // `max_weeks` for a gated runner. `weeksAvailable` still binds — this never
+  // invents weeks the calendar does not contain.
+  const weekCap = allowMaxWeeks
+    ? Math.max(config.idealWeeks, PLAN_SIGNATURES[raceDistanceKey(distanceKm)].max_weeks)
+    : config.idealWeeks
+  const totalWeeks = Math.max(1, Math.min(weeksAvailable, weekCap))
 
   // Count back from race week. When weeksAvailable <= ideal this lands on (or
   // after) earliestStart by construction; when the race is already in the past

@@ -4449,32 +4449,23 @@ export function generateRulePlan(
   // calcPlanLength anchors on race week and returns the actual start. Surplus
   // weeks delay the start rather than truncating the end. Everything downstream
   // (week dates, meta.plan_start) must use the anchored value.
-  const planLength = calcPlanLength(input.race_distance_km, input.race_date, planStartIso)
-  const { totalWeeks, compressed } = planLength
-  const anchoredStartIso  = planLength.planStartIso
-  const anchoredStartDate = parseDateLocal(anchoredStartIso)
-  // §89 — `phases` is computed BELOW, after the readiness predicate, so a
-  // demonstrably-ready runner can be given a shorter base. Nothing between here
-  // and that call reads `phases`.
-
-  // §79 (2026-08-31) — the metric recommendation follows EXPERIENCE (intensity),
-  // not raw current volume (structural). Duration is the beginner / ultra default
-  // (time on feet, §80); a returning or experienced runner sees distance even when
-  // their current volume reads low. intensityFitness is 'beginner' only when every
-  // signal agrees the runner is a true beginner, so this narrows duration to
-  // exactly that cohort. (User-overridable per session/globally — Phase 3.)
-  const metric: 'distance' | 'duration' =
-    intensityFitness === 'beginner' || input.race_distance_km >= 50 ? 'duration' : 'distance'
-
+  // ── §97 (CB-ONSET-03) — the readiness gate is decided BEFORE plan length ──
+  //
+  // These were computed ~20 lines below `calcPlanLength` purely by convention.
+  // None of them depends on plan length: `peakKm` is distance + fitness, and the
+  // fresh/returning/tissue predicates are input + fitness assessment. Verified
+  // before moving, because a genuine cycle here would have made §97 unbuildable
+  // rather than merely awkward.
+  //
+  // They must come first now, because §97 lets a gated runner's plan RUN LONGER
+  // instead of being preceded by a §57 foundation block — so plan length depends
+  // on the gate, and the gate must not depend on plan length.
   const peakKm = config.peakKmByLevel[fitness]
 
   // CoachingPrinciples §29 — fresh-from-layoff detection. Two paths:
-  //  1. Explicit: weeks_at_current_volume < threshold (the input the wizard
-  //     can surface as a "have you been at this volume long?" question).
+  //  1. Explicit: weeks_at_current_volume < threshold.
   //  2. Heuristic (R2/M-03): training_age says experienced, but current volume
-  //     and longest recent run are both below floors typical of that
-  //     experience. The mismatch points to a layoff regardless of whether
-  //     the user thought to mention it.
+  //     and longest recent run are both below floors typical of that experience.
   const explicitFreshReturn = input.weeks_at_current_volume !== undefined
     && input.weeks_at_current_volume < GENERATION_CONFIG.FRESH_RETURN_WEEKS_THRESHOLD
   // trainingAgeIsExperienced declared above (fed to assessFitness for the §79 lift).
@@ -4482,54 +4473,19 @@ export function generateRulePlan(
     && input.current_weekly_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_WEEKLY_KM
     && input.longest_recent_run_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_LONG_RUN_KM
   const isFreshReturn = explicitFreshReturn || heuristicFreshReturn
-  const declaredStartKm = isFreshReturn
-    ? input.current_weekly_km * GENERATION_CONFIG.FRESH_RETURN_START_FRACTION
-    : input.current_weekly_km
-  // CD-6 / §10 — a <6mo runner's declared volume is a self-reported bucket, not
-  // measured; cap the start so an over-claim can't hand a beginner too much.
-  const startKm = input.training_age === '<6mo'
-    ? Math.min(declaredStartKm, GENERATION_CONFIG.BEGINNER_WEEK1_VOLUME_CAP_KM)
-    : declaredStartKm
-
-  // Recovery cadence — masters (age ≥ 45) recover every 3 weeks (CoachingPrinciples §3).
-  // Computed once and shared between volume sequence + week badging so they stay aligned.
-  const recoveryFreq = input.age >= GENERATION_CONFIG.MASTERS_AGE_THRESHOLD
-    ? GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_MASTERS
-    : GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_STANDARD
 
   // Fresh-return runners get the standard 10% ramp (no allowance) — their
   // structural base is gone and the cap exists to protect them.
   const returningRunner = !isFreshReturn && isReturningRunner(input, peakKm)
 
-  // §89 (Coaching Board 2026-09-06) — EXPERIENCE-GATED QUALITY ONSET. The signal
-  // is DEMONSTRATED recent structured hard training (`recent_quality_training`),
-  // a tissue-readiness proxy, NOT self-image. An injury history is an absolute
-  // veto (Willy/Sims): a self-report cannot overrule a documented structure.
+  // §89 — EXPERIENCE-GATED QUALITY ONSET. The signal is DEMONSTRATED recent
+  // structured hard training, a tissue-readiness proxy, NOT self-image. An
+  // injury history is an absolute veto (Willy/Sims).
   const injuryFree = (input.injury_history ?? []).length === 0
   // Tissue conditioned by the exact stimulus §2196 protects — the premise-falsifier.
   const tissueConditioned =
     input.recent_quality_training === 'regular' && injuryFree && trainingAgeIsExperienced
 
-  // §79 (2026-08-31) — progressive intensity re-entry. A returning runner whose
-  // intensity was lifted (or who is otherwise detected as returning/fresh) has an
-  // aerobic engine ahead of their tissue tolerance. Withhold VO2max/hills for the
-  // opening RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS so quality leads with
-  // tempo/threshold. Surfaced in meta for honesty + the invariant.
-  const intensityReentryActive =
-    assessed.intensityLiftedForReturn || returningRunner || isFreshReturn
-  // §89 Lever A — a conditioned returning runner has the INTENSITY re-entry
-  // SHORTENED (not zeroed — Willy: one week tempo-first is cheap insurance); the
-  // VOLUME ramp caution (returning allowance) is untouched (tonnage is structure's).
-  const intensityReentryWeeks = !intensityReentryActive ? 0
-    : tissueConditioned ? GENERATION_CONFIG.REENTRY_WEEKS_TISSUE_READY
-    : GENERATION_CONFIG.RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS
-
-  // §89 Lever B — earlier quality onset via a SHORTER (still all-easy) base. Only
-  // for a demonstrably-ready runner with a real CURRENT base: experienced
-  // intensity, intermediate+ structure (volume floor), deep training age,
-  // conditioned tissue, and NOT returning/fresh (they have a base, not a layoff).
-  // Adds zero tonnage (peakKm unchanged, §79). Beginners/returners/injured keep
-  // the full base. Stamped in meta and enforced by INV-PLAN-EARLY-ONSET-GATED.
   // §96 — `overdo` is a BRAKE, not a preference. It was byte-identical to
   // `neutral` in every measured cell (training_age x distance x injury): a
   // wizard option that could never change anything, for any runner, ever.
@@ -4550,6 +4506,93 @@ export function generateRulePlan(
     // trusted MORE when it points toward caution than when it points toward
     // more work. Ignoring it entirely was the inconsistency.
     && !overdoBrake
+
+  // §97 — a gated runner's surplus weeks become BASE weeks inside the plan
+  // rather than a §57 foundation block in front of it.
+  const planLength = calcPlanLength(
+    input.race_distance_km, input.race_date, planStartIso, earlyQualityOnset)
+  const { totalWeeks, compressed } = planLength
+  const anchoredStartIso  = planLength.planStartIso
+  const anchoredStartDate = parseDateLocal(anchoredStartIso)
+  // §89 — `phases` is computed BELOW, after the readiness predicate, so a
+  // demonstrably-ready runner can be given a shorter base. Nothing between here
+  // and that call reads `phases`.
+
+  // §79 (2026-08-31) — the metric recommendation follows EXPERIENCE (intensity),
+  // not raw current volume (structural). Duration is the beginner / ultra default
+  // (time on feet, §80); a returning or experienced runner sees distance even when
+  // their current volume reads low. intensityFitness is 'beginner' only when every
+  // signal agrees the runner is a true beginner, so this narrows duration to
+  // exactly that cohort. (User-overridable per session/globally — Phase 3.)
+  const metric: 'distance' | 'duration' =
+    intensityFitness === 'beginner' || input.race_distance_km >= 50 ? 'duration' : 'distance'
+
+
+  // CoachingPrinciples §29 — fresh-from-layoff detection. Two paths:
+  //  1. Explicit: weeks_at_current_volume < threshold (the input the wizard
+  //     can surface as a "have you been at this volume long?" question).
+  //  2. Heuristic (R2/M-03): training_age says experienced, but current volume
+  //     and longest recent run are both below floors typical of that
+  //     experience. The mismatch points to a layoff regardless of whether
+  //     the user thought to mention it.
+  const declaredStartKm = isFreshReturn
+    ? input.current_weekly_km * GENERATION_CONFIG.FRESH_RETURN_START_FRACTION
+    : input.current_weekly_km
+  // CD-6 / §10 — a <6mo runner's declared volume is a self-reported bucket, not
+  // measured; cap the start so an over-claim can't hand a beginner too much.
+  const startKm = input.training_age === '<6mo'
+    ? Math.min(declaredStartKm, GENERATION_CONFIG.BEGINNER_WEEK1_VOLUME_CAP_KM)
+    : declaredStartKm
+
+  // Recovery cadence — masters (age ≥ 45) recover every 3 weeks (CoachingPrinciples §3).
+  // Computed once and shared between volume sequence + week badging so they stay aligned.
+  const recoveryFreq = input.age >= GENERATION_CONFIG.MASTERS_AGE_THRESHOLD
+    ? GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_MASTERS
+    : GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_STANDARD
+
+  // Fresh-return runners get the standard 10% ramp (no allowance) — their
+  // structural base is gone and the cap exists to protect them.
+
+  // §89 (Coaching Board 2026-09-06) — EXPERIENCE-GATED QUALITY ONSET. The signal
+  // is DEMONSTRATED recent structured hard training (`recent_quality_training`),
+  // a tissue-readiness proxy, NOT self-image. An injury history is an absolute
+  // veto (Willy/Sims): a self-report cannot overrule a documented structure.
+
+  // §79 (2026-08-31) — progressive intensity re-entry. A returning runner whose
+  // intensity was lifted (or who is otherwise detected as returning/fresh) has an
+  // aerobic engine ahead of their tissue tolerance. Withhold VO2max/hills for the
+  // opening RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS so quality leads with
+  // tempo/threshold. Surfaced in meta for honesty + the invariant.
+  // §97 — Willy's condition of approval on the one-week on-ramp. A gated runner
+  // is by definition NOT returning and NOT fresh, so none of the three arms
+  // below fired for them and the re-entry was zero. That was fine while their
+  // on-ramp was two weeks; at one week it is not. The gate now opens re-entry
+  // too, so quality starting in week 2 means a controlled tempo rather than
+  // intervals — the mitigation is the mechanism that already exists, not a
+  // second one invented alongside it.
+  const oneWeekOnRamp = earlyQualityOnset
+  const intensityReentryActive =
+    assessed.intensityLiftedForReturn || returningRunner || isFreshReturn || oneWeekOnRamp
+  // §89 Lever A — a conditioned returning runner has the INTENSITY re-entry
+  // SHORTENED (not zeroed — Willy: one week tempo-first is cheap insurance); the
+  // VOLUME ramp caution (returning allowance) is untouched (tonnage is structure's).
+  const intensityReentryWeeks = !intensityReentryActive ? 0
+    // §97 — the one-week-on-ramp arm is checked FIRST and is the longer of the
+    // two "ready" windows. A gated runner is tissueConditioned by construction,
+    // so ordering these the other way round would silently apply the shorter
+    // REENTRY_WEEKS_TISSUE_READY and discard Willy's condition entirely.
+    : oneWeekOnRamp ? Math.max(
+        GENERATION_CONFIG.REENTRY_WEEKS_ONE_WEEK_ONRAMP,
+        GENERATION_CONFIG.REENTRY_WEEKS_TISSUE_READY)
+    : tissueConditioned ? GENERATION_CONFIG.REENTRY_WEEKS_TISSUE_READY
+    : GENERATION_CONFIG.RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS
+
+  // §89 Lever B — earlier quality onset via a SHORTER (still all-easy) base. Only
+  // for a demonstrably-ready runner with a real CURRENT base: experienced
+  // intensity, intermediate+ structure (volume floor), deep training age,
+  // conditioned tissue, and NOT returning/fresh (they have a base, not a layoff).
+  // Adds zero tonnage (peakKm unchanged, §79). Beginners/returners/injured keep
+  // the full base. Stamped in meta and enforced by INV-PLAN-EARLY-ONSET-GATED.
   // §91 (CB-ONSET-02) — how many all-easy foundation weeks will sit in front of
   // week 1. From the single owner in foundationBlock.ts, using the SAME `today`
   // and the SAME anchored start that composePlanWithFoundation will use, so the
