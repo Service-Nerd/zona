@@ -10,6 +10,7 @@ import { BRAND } from '@/lib/brand'
 import { createClient } from '@/lib/supabase/client'
 import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
+import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import { TextField } from '@/components/shared/TextField'
@@ -41,13 +42,22 @@ const WIZARD_KEY = 'zona_wizard_draft'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
+// `paid` is DERIVED from the per-distance signature, never restated here.
+// It was a hardcoded boolean duplicating `PLAN_SIGNATURES[d].free_tier_available`
+// — a two-writer split on a COMMERCIAL boundary. The two agreed, so nothing was
+// broken, but §17 names the signature as the authority for per-distance shape
+// and this screen was quietly the real authority for who pays. Changing the
+// documented source of truth would not have moved the paywall.
+const isPaidDistance = (km: number) =>
+  !PLAN_SIGNATURES[raceDistanceKey(km)].free_tier_available
+
 const DISTANCES = [
-  { label: '5K',       sub: '5 km',    value: 5,    paid: false },
-  { label: '10K',      sub: '10 km',   value: 10,   paid: false },
-  { label: 'Half',     sub: '21.1 km', value: 21.1, paid: false },
-  { label: 'Marathon', sub: '42.2 km', value: 42.2, paid: true  },
-  { label: '50K',      sub: '50 km',   value: 50,   paid: true  },
-  { label: '100K',     sub: '100 km',  value: 100,  paid: true  },
+  { label: '5K',       sub: '5 km',    value: 5,    paid: isPaidDistance(5)    },
+  { label: '10K',      sub: '10 km',   value: 10,   paid: isPaidDistance(10)   },
+  { label: 'Half',     sub: '21.1 km', value: 21.1, paid: isPaidDistance(21.1) },
+  { label: 'Marathon', sub: '42.2 km', value: 42.2, paid: isPaidDistance(42.2) },
+  { label: '50K',      sub: '50 km',   value: 50,   paid: isPaidDistance(50)   },
+  { label: '100K',     sub: '100 km',  value: 100,  paid: isPaidDistance(100)  },
 ]
 
 const BENCHMARK_DISTANCES = [
