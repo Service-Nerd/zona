@@ -7,7 +7,7 @@
 // (e.g. -2, -1, 0 for a 3-week block). Week 1 of the main plan is always n=1.
 
 import { GENERATION_CONFIG } from './generationConfig'
-import { normaliseDays } from './days'
+import { normaliseDays, DAY_ORDER, type Day } from './days'
 import type { GeneratorInput } from '@/types/plan'
 import type { Week } from '@/types/plan'
 
@@ -121,6 +121,11 @@ function buildFoundationSessions(
   daysAvailable: number,
   blockedDays: string[],
   preferredLongRunDay: 'sat' | 'sun' | undefined,
+  // §92 — true when the runner passed the §89 readiness gate. Read from
+  // `plan.meta.early_quality_onset` by the caller rather than recomputed here:
+  // the gate has one owner (generateRulePlan) and a second evaluation of the
+  // same predicate is the two-writer split DELOAD-OWNER-01 removed.
+  earlyOnset = false,
 ): Week['sessions'] {
   // Normalise before comparing. The wizard sends full day names ('monday') and
   // DEFAULT_DAYS is short form ('mon'), so a raw `new Set(blockedDays)` matched
@@ -230,7 +235,13 @@ function buildFoundationSessions(
       // "Long" in its label, the exact D-17 coupling INV-CLASS-001 forbids.
       role: 'long_run',
       label: 'Long easy',
-      detail: `${longRunFinalKm.toFixed(1)}km easy — Zone 2 throughout. No exceptions.`,
+      // FOUND-ROUND-01 — the STATED number is the number, so `detail` must be
+      // built from the value that ships, not from the pre-rounded input.
+      // `toFixed(1)` rounds half-up while `floor1dp` floors, so a 6.66 km run
+      // shipped `distance_km: 6.6` under the text "6.7km easy" — the card and
+      // its own sentence disagreeing on the first screen a new runner sees.
+      // Same class as §40b/§78: the runner plans against the number.
+      detail: `${floor1dp(longRunFinalKm).toFixed(1)}km easy — Zone 2 throughout. No exceptions.`,
       distance_km: floor1dp(longRunFinalKm),
       zone: 'Zone 2',
       coach_notes: ['This is your longest run of the week. Keep it slow.'],
@@ -241,10 +252,50 @@ function buildFoundationSessions(
     sessions[day] = {
       type: 'easy',
       label: 'Easy run',
-      detail: `${eachKm.toFixed(1)}km easy — Zone 2. Conversational pace.`,
+      // FOUND-ROUND-01 — see the long run above. Built from the shipped value.
+      detail: `${floor1dp(eachKm).toFixed(1)}km easy — Zone 2. Conversational pace.`,
       distance_km: floor1dp(eachKm),
       zone: 'Zone 2',
       coach_notes: ['Zone 2 only. If you can\'t hold a conversation, slow down.'],
+    }
+  }
+
+  // ── §92 — strides, for a §89-gated runner only ────────────────────────────
+  //
+  // §57 bans strides in the foundation block. That ban was written for the
+  // block's actual population — fresh-return and novice runners whose
+  // musculoskeletal readiness lags their cardiovascular readiness (CB-1) — and
+  // §89's gated cohort did not exist when CB-1 ruled three days earlier.
+  //
+  // Strides are the one form of fast running with no grey-zone risk: 15-20
+  // seconds, fully recovered, neuromuscular rather than metabolic. They add no
+  // Z3 minutes (§1 untouched) and are not `quality`, so they do not count
+  // against INTENSITY_DISTRIBUTION or change the session's type — the week stays
+  // easy/rest/cross-train and INV-PLAN-FOUNDATION-BLOCK still holds.
+  //
+  // A FEEL fix, not a fitness one, and recorded as such: a runner who answered
+  // experienced / quality-most-weeks / bring-it-on should not open the app to a
+  // fortnight identical to a beginner's (§35). Willy's condition of approval is
+  // the gate itself, which carries an absolute injury veto.
+  //
+  // Never on the long run, and never on the day before it.
+  if (earlyOnset && GENERATION_CONFIG.FOUNDATION_STRIDES_REQUIRE_EARLY_ONSET) {
+    const longDayHere = Object.keys(sessions).find(d => sessions[d as Day]?.role === 'long_run')
+    const dayBeforeLong = longDayHere
+      ? DAY_ORDER[(DAY_ORDER.indexOf(longDayHere as Day) - 1 + 7) % 7]
+      : null
+    for (const day of ['wed', 'tue', 'thu', 'mon', 'fri'] as Day[]) {
+      const s = sessions[day]
+      if (!s || s.type !== 'easy' || s.role === 'long_run') continue
+      if (day === dayBeforeLong) continue
+      const note = '4×20s strides at 5K effort, full recovery between.'
+      // `coach_notes` is a 3-tuple, not an array — spreading widens the type and
+      // would let a fourth note through. Built positionally, same shape as §28's
+      // insertion on main weeks.
+      const e0 = s.coach_notes?.[0]
+      const e1 = s.coach_notes?.[1]
+      s.coach_notes = e0 && e1 ? [e0, e1, note] : e0 ? [e0, note] : [note]
+      break   // one stride run per week, same as §28 on main weeks
     }
   }
 
@@ -260,6 +311,12 @@ export interface FoundationBlockOptions {
   today: string          // ISO date — used for gap calculation
   /** Override week count (e.g. after user selects "Add Foundation Block") */
   forceWeeks?: number
+  /**
+   * §92 — the runner passed the §89 readiness gate, so this block may carry
+   * strides. Passed in from `plan.meta.early_quality_onset`, never recomputed:
+   * the gate has exactly one owner and a second evaluation would drift.
+   */
+  earlyOnset?: boolean
 }
 
 export interface FoundationBlockResult {
@@ -270,7 +327,7 @@ export interface FoundationBlockResult {
 }
 
 export function generateFoundationBlock(opts: FoundationBlockOptions): FoundationBlockResult {
-  const { input, planStartDate, today, forceWeeks } = opts
+  const { input, planStartDate, today, forceWeeks, earlyOnset = false } = opts
 
   const gap = gapDays(today, planStartDate)
   const weekCount = forceWeeks ?? foundationWeekCount(gap)
@@ -319,6 +376,7 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
       input.days_available ?? 4,
       input.days_cannot_train ?? [],
       input.preferred_long_run_day,
+      earlyOnset,
     )
 
     weeks.push({

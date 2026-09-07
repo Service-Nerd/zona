@@ -43,6 +43,8 @@ export function composePlanWithFoundation(
   if (weekCount > 0) {
     const { weeks: foundationWeeks } = generateFoundationBlock({
       input, planStartDate: plan.meta.plan_start, today, forceWeeks: weekCount,
+      // §92 — read the stamp, never re-derive the gate.
+      earlyOnset: plan.meta.early_quality_onset === true,
     })
     if (foundationWeeks.length) {
       assembled = { ...plan, weeks: [...foundationWeeks, ...plan.weeks] }

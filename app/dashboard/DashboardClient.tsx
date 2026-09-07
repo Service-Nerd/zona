@@ -1408,9 +1408,6 @@ export default function DashboardClient() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      // Archiving the previous plan now lives in savePlanForUser (single owner —
-      // fires for every mutation path, race-change-guarded, error-surfaced).
-      await savePlanForUser(user.id, savedPlan, supabase)
 
       // D3: the wizard writes HR into plan.meta only — never into this component's
       // restingHR/maxHR state (populated from user_settings at mount) nor into
@@ -1437,7 +1434,28 @@ export default function DashboardClient() {
       } = { id: user.id, has_onboarded: true, updated_at: new Date().toISOString() }
       if (typeof metaRhr === 'number') onboardPatch.resting_hr = metaRhr
       if (typeof metaMhr === 'number') onboardPatch.max_hr = metaMhr
-      const { error: onboardErr } = await supabase.from('user_settings').upsert(onboardPatch)
+
+      // SAVE-LATENCY-01 — these two writes touch DIFFERENT tables and neither
+      // reads the other's result, so they are started together instead of
+      // nose-to-tail. Run serially they added a whole round-trip to the
+      // "Saving..." the runner sits through, on top of auth.getUser above.
+      //
+      // Archiving the previous plan lives inside savePlanForUser (single owner —
+      // fires for every mutation path, race-change-guarded, error-surfaced).
+      //
+      // Promise.allSettled, not Promise.all: the plan write is the one that must
+      // not be lost, and a rejected settings write must not take it down with it.
+      // Their failure modes are graded separately below, exactly as before.
+      const [planWrite, onboardWrite] = await Promise.allSettled([
+        savePlanForUser(user.id, savedPlan, supabase),
+        supabase.from('user_settings').upsert(onboardPatch),
+      ])
+      // The plan write keeps its original semantics: it throws, and the wizard's
+      // catch surfaces it. Nothing below should run against a failed plan save.
+      if (planWrite.status === 'rejected') throw planWrite.reason
+      const onboardErr = onboardWrite.status === 'rejected'
+        ? { message: String(onboardWrite.reason) }
+        : onboardWrite.value.error
       // Non-fatal: the plan is already saved. Surface the failure rather than
       // swallowing it (the original silent-failure class). No client-side
       // recordOpsEvent — that helper is server-only (service-role key).

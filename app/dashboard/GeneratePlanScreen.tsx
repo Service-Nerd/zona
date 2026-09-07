@@ -117,10 +117,20 @@ const TRAINING_AGE_CHIPS: { label: string; value: TrainingAge }[] = [
 // base. Labels are neutral descriptions of past practice — recognition, never an
 // "unlock" (SLT framing guardrail).
 type RecentQuality = 'none' | 'occasional' | 'regular'
-const RECENT_QUALITY_CHIPS: { label: string; value: RecentQuality }[] = [
-  { label: 'Mostly easy',  value: 'none'       },
-  { label: 'Here and there', value: 'occasional' },
-  { label: 'Most weeks',   value: 'regular'    },
+// ui-patterns.md "Chip or CardSelect?" — CardSelect, on two counts: a runner can
+// pick the wrong option from the label alone (Q1), and the answer changes the
+// SHAPE of the plan rather than a number in it (Q2) — it is the demonstrated-
+// readiness signal §89/§91 gate on, so a careless tap moves the first quality
+// session by two weeks. It shipped as bare chips next to `your-level`, the same
+// kind of question with the full card treatment.
+//
+// Labels remain neutral descriptions of PAST PRACTICE — recognition, never an
+// "unlock" (SLT framing guardrail). Nothing here names what the runner gets for
+// answering upward, and no option is phrased as a tier to qualify for.
+const RECENT_QUALITY_OPTIONS: { label: string; sub: string; value: RecentQuality }[] = [
+  { value: 'none',       label: 'Mostly easy.',    sub: 'Steady running. Nothing structured lately.' },
+  { value: 'occasional', label: 'Here and there.', sub: 'The odd session. Not a routine.' },
+  { value: 'regular',    label: 'Most weeks.',     sub: 'Intervals, hills or tempo — consistently, recently.' },
 ]
 
 const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; optional?: boolean; eyebrow?: string; interstitial?: boolean; cta?: string }> = {
@@ -132,7 +142,11 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
   'weekly-volume':   { title: 'How much are you running now?', subtitle: 'Last four weeks, roughly. Real numbers only.' },
   'longest-run':     { title: 'Longest run in the last six weeks?', subtitle: 'Tells us how much you can already hold.' },
   'training-age':    { title: 'How long have you been at this?', subtitle: 'Consistent months, not total years.', optional: true },
-  'recent-quality':  { title: 'Been doing the hard stuff?', subtitle: 'Intervals, hills, tempo. Most weeks, lately? Honest answer.', optional: true },
+  // Subtitle no longer lists the session types — the option cards say it now, and
+  // repeating it above them is the redundancy the CardSelect promotion removes.
+  // What's left is the only thing the cards can't say: which window, and that
+  // this is past tense.
+  'recent-quality':  { title: 'Been doing the hard stuff?', subtitle: 'Last month or two. What you actually did, not what you meant to.', optional: true },
   'your-level':      { title: 'Where are you right now?', subtitle: "Based on what you told us. Overrule it if we've got it wrong." },
   'birth-year':      { title: 'What year were you born?', subtitle: "Only to estimate your max heart rate, if you haven't set one. Kept private.", optional: true },
   'benchmark':       { title: 'Recent race result?',   subtitle: 'Gives us precise pace targets for every session. Skip if you haven\'t raced lately.', optional: true },
@@ -1058,7 +1072,14 @@ export default function GeneratePlanScreen({
       // them go; the enricher (28–35s) keeps streaming and patches its copy in
       // when it lands. If it has already arrived, planRef holds the enriched
       // plan and it is saved here directly.
-      if (birthYear !== null && onBirthYearSave) await onBirthYearSave(birthYear).catch(() => {})
+      // SAVE-LATENCY-01 — the birth-year write is INDEPENDENT of the plan write
+      // and must not sit in front of it. Awaited serially, the finalise path ran
+      // four sequential Supabase round-trips (birth year -> auth.getUser ->
+      // savePlanForUser -> user_settings.upsert) before the screen could move,
+      // which is the "Saving..." hang. It is fire-and-forget on purpose: a
+      // failed birth-year write costs an estimated max-HR fallback, never the
+      // plan, and the runner can set it again in Profile.
+      if (birthYear !== null && onBirthYearSave) void onBirthYearSave(birthYear).catch(() => {})
       await onPlanSaved(planRef.current)
       sessionStorage.removeItem(WIZARD_KEY)
 
@@ -1067,6 +1088,13 @@ export default function GeneratePlanScreen({
       if (queued) void onPlanEnriched?.(queued)
     } catch {
       coordRef.current.saveFailed()
+      setIsSaving(false)
+    } finally {
+      // SAVE-LATENCY-01 — clear the flag on EVERY exit, not only the error one.
+      // On success `setIsSaving(false)` was never called, so the button stayed
+      // "Saving..." until the parent finished its own post-save work and swapped
+      // the screen. Every millisecond of that tail read to the runner as the save
+      // still being in flight, when the plan had already been written.
       setIsSaving(false)
     }
   }
@@ -1529,13 +1557,14 @@ export default function GeneratePlanScreen({
 
       case 'recent-quality':
         return (
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {RECENT_QUALITY_CHIPS.map(c => (
-              <Chip
-                key={c.value}
-                label={c.label}
-                active={recentQuality === c.value}
-                onClick={() => setRecentQuality(recentQuality === c.value ? null : c.value)}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {RECENT_QUALITY_OPTIONS.map(o => (
+              <CardSelect
+                key={o.value}
+                label={o.label}
+                sub={o.sub}
+                active={recentQuality === o.value}
+                onClick={() => setRecentQuality(recentQuality === o.value ? null : o.value)}
               />
             ))}
           </div>

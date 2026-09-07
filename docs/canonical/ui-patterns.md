@@ -1574,6 +1574,72 @@ The canonical user-input controls. **Never build a one-off input, toggle, chip, 
 | Days of the week — a plain multi/single day pick | Fixed 7-item select | **DayGridSelector** |
 | A whole training week — which days run, which is the long run | Per-day Rest/Run/Long grid | **WeekGrid** |
 
+### Chip or CardSelect? — the deciding question (2026-09-07)
+
+Count is not the rule, and treating it as one is what let the wizard drift. Both
+controls are single-select from a small set; the table above separates them on
+*"each earning a sentence"*, which is the right idea stated too softly to settle an
+argument. Three questions, in order — **any one "yes" means CardSelect**:
+
+1. **Can a reasonable runner pick the wrong option because the label alone doesn't
+   tell them what it means?** A self-assessment ("Where are you right now?") can.
+   An ordinal fact ("< 6 months / 2–5 years") cannot.
+2. **Does the answer change the SHAPE of the plan rather than a number in it?**
+   Volume moves a number. Readiness moves whether quality starts in week 3 or
+   week 5. Shape-changing answers get the space to explain themselves.
+3. **Is the option set a judgement rather than a measurement?** Judgements need
+   the sentence; measurements read fine as bare labels.
+
+Chip stays correct — and is *preferred* — for ordinal scales with self-evident
+labels (training age), multi-select from a longer list (injuries), and binary-ish
+picks (benchmark type, Sat/Sun long-run day). **Wrapping those in CardSelect is
+padding**, and a screen of four cards saying "< 6 months" with nothing underneath
+reads as a template, not a decision.
+
+> **Inconsistent-on-purpose is fine. Inconsistent-by-accident is the defect.**
+> The wizard deliberately runs several control idioms because it asks several
+> kinds of question. What it may not do is ask two questions of the *same kind*
+> two different ways — which is exactly what the inventory below exists to catch.
+
+### Wizard step inventory — control per step, and why
+
+The full sequence, so a new step can be placed by comparison instead of by guess.
+Keep this in sync with `getStepSequence` in `GeneratePlanScreen.tsx`.
+
+| Step | Question | Control | Why |
+|---|---|---|---|
+| `distance` | How far? | **CardSelect** (tile) | Judgement, and each option carries a distance + lock state |
+| `race-details` | Race name / date | **TextField** | Objective, typed |
+| `goal` | What matters most? | **CardSelect** | Judgement — "finish" vs "time" reframes the whole plan |
+| `target-time` | What's the target? | **DurationPicker** | A time |
+| `teach-easy` | *(interstitial)* | **Interstitial** | Teaching seam, no input |
+| `weekly-volume` | How much are you running now? | **Ruler** | Bounded estimate, stepped |
+| `longest-run` | Longest run in six weeks? | **Ruler** | Bounded estimate, stepped |
+| `training-age` | How long have you been at this? | **Chip** | Ordinal scale, labels self-evident — Q1/Q2/Q3 all "no" |
+| `recent-quality` | Been doing the hard stuff? | **CardSelect** | **Q1 and Q2 both "yes"** — a self-assessment that gates §89/§91 quality onset |
+| `your-level` | Where are you right now? | **CardSelect** | Self-assessment, carries a recommendation and an override warning |
+| `birth-year` | What year were you born? | **WheelPicker** | A bounded number from a long ordered list |
+| `benchmark` | Recent race result? | **Chip** + **TextField** + **DurationPicker** | Type is a binary pick; the result is typed |
+| `teach-easy-day` | *(interstitial)* | **Interstitial** | Teaching seam |
+| `your-week` | Which days do you run? | **WeekGrid** | A whole week, not a list |
+| `weekday-ceiling` | How long on a weekday? | **Chip** | Ordinal minutes, labels self-evident |
+| `hard-sessions` | You and hard sessions | **CardSelect** | Judgement about self |
+| `terrain` | Where do you run? | **CardSelect** | Judgement, each option changes pace targets |
+| `injuries` | Anything to flag? | **Chip** (multi) | Multi-select from a longer list |
+
+**`recent-quality` was the one miss**, corrected 2026-09-07. It shipped as three
+bare chips — *Mostly easy / Here and there / Most weeks* — while `your-level`, the
+very next step and the same kind of question, got the full card treatment. It is
+also the highest-stakes answer in the wizard: it is the demonstrated-readiness
+signal §89 gates on, so a careless tap moves the runner's first quality session by
+two weeks. That is the definition of a Q1+Q2 "yes".
+
+**The labels stay neutral descriptions of past practice** — recognition, never an
+unlock. No option may be phrased as a reward, a tier, or a thing to qualify for
+(standing SLT framing guardrail; see the `RECENT_QUALITY_CHIPS` note in
+`GeneratePlanScreen.tsx`). The sub-lines describe what the runner has *been doing*,
+past tense, and nothing describes what they get for it.
+
 ### TextField (`components/shared/TextField.tsx`)
 
 The single text/number/email/password/date input. Two rules are enforced inside it so they can never regress:

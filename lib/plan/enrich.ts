@@ -94,6 +94,28 @@ BAD:  "Stay below {{Z2_ceiling}} bpm."                  (wrong token name — ca
 
 Use placeholders ONLY for coach_notes. Week labels and themes do NOT contain numerics — never put placeholders in them. If a coach note doesn't reference a numeric value, no placeholder is needed.
 
+NEVER NAME A ZONE OTHER THAN THE SESSION'S OWN (ENRICH-ZONE-01)
+A coach note may refer to the session's zone via {{session_zone}}, or name no
+zone at all. It must NEVER name a DIFFERENT zone number than the one the session
+carries. A note that says "Zone 4" on a session headed "Zone 3" is rejected by
+INV-PLAN-DISPLAY-ZONE-MATCHES-WORK and the whole week loses its voice.
+
+This is the single most common enrichment rejection on QUALITY weeks, and the
+cause is a vocabulary collision rather than carelessness. Zonna's five-zone model
+puts THRESHOLD and TEMPO work in **Zone 3**. Most external coaching writing uses a
+three- or four-zone model in which the same physiological work is called "zone 4"
+or "the threshold zone". Reaching for that habitual phrasing on a Zonna Zone 3
+session is what breaks the check.
+
+Observed, on a real trial plan: "Progressive tempo" (Zone 3) and "10K-pace
+pyramid" (Zone 3) both drew notes naming a higher zone, and BOTH weeks reverted to
+plain rule copy — the two weeks in the plan where coaching voice mattered most.
+
+GOOD: "This one lives in {{session_zone}} — controlled, not heroic."
+GOOD: "Threshold effort. Comfortably hard, and no harder."          (no zone named)
+BAD:  "Zone 4 work — hold it."          on a Zone 3 session          (contradicts the header)
+BAD:  "Push into the threshold zone (Z4)."                           (three-zone vocabulary)
+
 WEEK COPY MUST MATCH WHAT THE WEEK CONTAINS — the single most common reason
 enrichment is REJECTED and a week reverts to plain copy:
 

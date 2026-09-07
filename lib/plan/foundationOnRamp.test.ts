@@ -134,6 +134,67 @@ describe('§91 — foundation weeks are credited against the on-ramp floor', () 
   })
 })
 
+describe('§92 — strides in the foundation block, gated runners only', () => {
+  const foundationSessions = (p: Plan) =>
+    p.weeks.filter(w => w.n <= 0).flatMap(w => Object.values(w.sessions).filter(Boolean))
+  const hasStrides = (p: Plan) =>
+    foundationSessions(p).some(s => (s!.coach_notes ?? []).some(n => /strides/i.test(n ?? '')))
+
+  it('a §89-gated runner gets strides — one run per foundation week', () => {
+    const input = ready10k()
+    const composed = composePlanWithFoundation(generateRulePlan(input, 'paid'), input, TODAY)
+    expect(hasStrides(composed.plan), 'gated runner should get strides').toBe(true)
+    for (const w of composed.plan.weeks.filter(w => w.n <= 0)) {
+      const withStrides = Object.values(w.sessions)
+        .filter(s => (s?.coach_notes ?? []).some(n => /strides/i.test(n ?? '')))
+      expect(withStrides.length, `W${w.n} should have exactly one stride run`).toBe(1)
+      // Never on the long run — strides belong on a midweek easy day (§28).
+      expect(withStrides[0]!.role).not.toBe('long_run')
+    }
+  })
+
+  it('an injury history vetoes strides — Willy condition of approval', () => {
+    const input = ready10k({ injury_history: ['Left knee, posterior, recurring'] })
+    const plan = generateRulePlan(input, 'paid')
+    expect(plan.meta.early_quality_onset).toBeFalsy()
+    const composed = composePlanWithFoundation(plan, input, TODAY)
+    expect(foundationSessions(composed.plan).length, 'fixture must have foundation weeks')
+      .toBeGreaterThan(0)
+    expect(hasStrides(composed.plan), 'injured runner must get no strides').toBe(false)
+  })
+
+  it('strides do not turn a foundation week into a quality week (§57 still holds)', () => {
+    const input = ready10k()
+    const composed = composePlanWithFoundation(generateRulePlan(input, 'paid'), input, TODAY)
+    for (const w of composed.plan.weeks.filter(w => w.n <= 0)) {
+      for (const s of Object.values(w.sessions)) {
+        expect(['easy', 'rest', 'cross_train']).toContain(s!.type)
+      }
+    }
+    expect(composed.violations.filter(v => v.code === 'INV-PLAN-FOUNDATION-BLOCK')).toHaveLength(0)
+  })
+})
+
+describe('FOUND-ROUND-01 — a foundation session states the distance it ships', () => {
+  it('detail text and distance_km agree to the decimal', () => {
+    // `detail` was built with toFixed(1) (rounds half-up) while `distance_km`
+    // used floor1dp, so a 6.66 km run shipped `6.6` under the text "6.7km" — on
+    // the first screen a new runner ever sees. Same class as §40b/§78.
+    const input = ready10k()
+    const composed = composePlanWithFoundation(generateRulePlan(input, 'paid'), input, TODAY)
+    const foundation = composed.plan.weeks.filter(w => w.n <= 0)
+    expect(foundation.length).toBeGreaterThan(0)
+    for (const w of foundation) {
+      for (const s of Object.values(w.sessions)) {
+        const stated = (s!.detail ?? '').match(/([\d.]+)km/)
+        expect(stated, `W${w.n} detail should state a distance`).not.toBeNull()
+        expect(Number(stated![1]), `W${w.n} "${s!.detail}" vs distance_km ${s!.distance_km}`)
+          .toBe(s!.distance_km)
+      }
+    }
+  })
+})
+
 describe('§91 — plannedFoundationWeeks is the single owner', () => {
   it('agrees with the number of weeks composePlanWithFoundation actually builds', () => {
     // DELOAD-OWNER-01's lesson, applied before it can bite: two callers deriving
