@@ -3,7 +3,7 @@
 // new Date("YYYY-MM-DD") — that parses as UTC midnight and drifts near midnight in west timezones).
 
 import { PLAN_SIGNATURES } from './planSignatures'
-import { raceDistanceKey } from './generationConfig'
+import { raceDistanceKey, GENERATION_CONFIG } from './generationConfig'
 
 export interface DistanceConfig {
   maxKm: number
@@ -139,7 +139,10 @@ export function calcPlanLength(
   // `max_weeks` for a gated runner. `weeksAvailable` still binds — this never
   // invents weeks the calendar does not contain.
   const weekCap = allowMaxWeeks
-    ? Math.max(config.idealWeeks, PLAN_SIGNATURES[raceDistanceKey(distanceKm)].max_weeks)
+    ? Math.min(
+        Math.max(config.idealWeeks, PLAN_SIGNATURES[raceDistanceKey(distanceKm)].max_weeks),
+        config.idealWeeks + GENERATION_CONFIG.MAX_ONSET_PLAN_EXTENSION_WEEKS,
+      )
     : config.idealWeeks
   const totalWeeks = Math.max(1, Math.min(weeksAvailable, weekCap))
 

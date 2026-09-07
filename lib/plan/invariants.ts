@@ -2473,7 +2473,12 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     // §97 — the floor is cohort-dependent. A §89-gated runner may on-ramp in one
     // week (Seiler, re-taken CB-ONSET-03) with VO2max withheld meanwhile
     // (Willy's condition); everyone else keeps the two-week floor unchanged.
-    const floor = plan.meta.early_quality_onset
+    // §97 — the gated floor is also DISTANCE-scoped, and the checker must use the
+    // same scope as the producer or it fails correct long-distance plans.
+    const shortOnRamp = plan.meta.early_quality_onset
+      && (GENERATION_CONFIG.ONSET_SHORT_ONRAMP_DISTANCES as readonly string[])
+        .includes(raceDistanceKey(input.race_distance_km))
+    const floor = shortOnRamp
       ? GENERATION_CONFIG.MIN_ONRAMP_WEEKS_GATED
       : GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR
     if (onRamp < floor) {

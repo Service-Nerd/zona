@@ -435,6 +435,10 @@ function computePhases(
   distanceKm: number,
   earlyOnset = false,
   foundationWeeks = 0,
+  // §97 — may this runner's on-ramp shorten to one week? Distance-scoped, because
+  // §1's ceiling tightens with distance while a shorter base raises the quality
+  // share. False falls back to §91's two-week cap.
+  shortOnRamp = false,
 ): Phase[] {
   const distKey = raceDistanceKey(distanceKm)
   const taperPhaseWeeks = GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey].length
@@ -470,7 +474,10 @@ function computePhases(
   // foundation weeks ARE the two-week floor. It is never negative, and the
   // floor still binds in full for every runner the §89 gate did not pass.
   if (earlyOnset) {
-    baseWeeks = Math.min(baseWeeks, GENERATION_CONFIG.EARLY_ONSET_BASE_MAX_WEEKS)
+    const cap = shortOnRamp
+      ? GENERATION_CONFIG.EARLY_ONSET_BASE_MAX_WEEKS
+      : GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR
+    baseWeeks = Math.min(baseWeeks, cap)
     baseWeeks = Math.max(0, baseWeeks - Math.min(foundationWeeks, baseWeeks))
   }
   let buildWeeks = Math.max(1, Math.round(remaining * dist.build_pct / denom))
@@ -2199,6 +2206,11 @@ function preferredQualityCategory(
   // against §5's declared 60% — which is the pre-existing shape measured on the
   // non-gated control.
   peakWeeksTotal = 0,
+  // §97 — the build-rotation index at which VO2max becomes ELIGIBLE, i.e. the
+  // first rotating build week not inside an intensity re-entry window. Computed
+  // by the caller, which owns both the deload cadence and the re-entry window;
+  // deriving it here would duplicate two rules that already have owners.
+  vo2BuildSlotIndex?: number,
 ): CatalogueCategory {
   if (phase === 'base')  return 'aerobic'
   if (phase === 'build') {
@@ -2222,6 +2234,31 @@ function preferredQualityCategory(
     const ordered = vo2MustOpenBuild && cats.includes('vo2max')
       ? ['vo2max', ...cats.filter(c => c !== 'vo2max')] as CatalogueCategory[]
       : cats
+
+    // §97 — THE SINGLE BUILD VO2MAX SLOT IS PLACED, NOT DISCOVERED.
+    //
+    // This used to read the slot off the rotation's own modulo and then veto
+    // any OTHER index that happened to land on vo2max. That works while the
+    // slot's week is always available — and breaks silently when it is not.
+    // With §79/§97's intensity re-entry withholding VO2max over the opening
+    // weeks, the slot's week could be inside the window: the week returned
+    // threshold, the slot was spent, and build ended with ZERO VO2max. The
+    // first exposure then landed in peak, past the §5 adaptation deadline,
+    // firing V2's swap safety net — which carries its own documented defect
+    // (a session built for an early week arrives in a second-half week still
+    // wearing the early week's goal-pace treatment). One dropped slot, four
+    // steps downstream, and every step looked locally correct.
+    //
+    // Stating the slot positively fixes it: build carries exactly one VO2max
+    // exposure, at the first eligible rotation index, and every other index
+    // rotates through the non-VO2max categories. `vo2BuildSlotIndex` is
+    // undefined for runners with no re-entry window, so their slot stays at the
+    // rotation's own index and nothing moves.
+    const vo2Slot = vo2MustOpenBuild ? 0
+      : vo2BuildSlotIndex ?? ordered.indexOf('vo2max')
+    if (ordered.includes('vo2max') && buildRotationIndex === vo2Slot) return 'vo2max'
+    const nonVo2 = ordered.filter(c => c !== 'vo2max')
+    if (nonVo2.length > 0) return nonVo2[buildRotationIndex % nonVo2.length]
     const picked = ordered[buildRotationIndex % ordered.length]
 
     // ONE VO2MAX EXPOSURE IN BUILD, AND NO MORE — Seiler's binding constraint
@@ -2239,12 +2276,6 @@ function preferredQualityCategory(
     //
     // Everything after that exposure falls back to the next category in the
     // rotation, which is threshold for both 5K and 10K.
-    if (picked === 'vo2max') {
-      const vo2SlotIndex = vo2MustOpenBuild ? 0 : ordered.indexOf('vo2max')
-      if (buildRotationIndex !== vo2SlotIndex) {
-        return ordered.find(c => c !== 'vo2max') ?? 'threshold'
-      }
-    }
     return picked
   }
   if (phase === 'taper') return 'threshold'
@@ -2313,6 +2344,9 @@ function buildWeekSessions(
   // cadence, so deriving it here would duplicate that rule and let the two
   // drift (DELOAD-OWNER-01).
   peakRotationIndex: number,
+  // §97 — see preferredQualityCategory. The rotation index at which VO2max
+  // first becomes eligible, given the intensity re-entry window.
+  vo2BuildSlotIndex: number | undefined,
   // SC-07 / CD-16 — the adaptation deadline lands on the first build quality
   // week, so the rotation must open on vo2max. Computed once by the caller.
   vo2MustOpenBuild: boolean,
@@ -2604,7 +2638,7 @@ function buildWeekSessions(
 
   const primaryCat = preferredQualityCategory(
     phase, distKey, input.goal === 'time_target', buildRotationIndex, vo2MustOpenBuild,
-    peakRotationIndex, peakWeeksTotal)
+    peakRotationIndex, peakWeeksTotal, vo2BuildSlotIndex)
   const vo2maxCapKm = durationForMainSet(GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS) / pace.minPerKmInterval
   const qualKmPrimary = primaryCat === 'vo2max'
     ? Math.min(qualKmPerSession, vo2maxCapKm)
@@ -2820,7 +2854,7 @@ function buildWeekSessions(
     const isTimeTarget = input.goal === 'time_target'
     let preferredCategory = preferredQualityCategory(
       phase, distKey, isTimeTarget, buildRotationIndex, vo2MustOpenBuild, peakRotationIndex,
-      peakWeeksTotal)
+      peakWeeksTotal, vo2BuildSlotIndex)
     let taperForceSharpener = false
     // CD-2 / §36 — goal-pace sharpening in the taper is a time-target tool; a
     // finish-goal taper stays on threshold (§80). Without the goal-gate, a
@@ -4602,8 +4636,12 @@ export function generateRulePlan(
   const foundationWeeksAhead = plannedFoundationWeeks(
     today, anchoredStartIso, input.foundation_decision,
   )
+  // §97 — the shortened on-ramp is distance-scoped; see ONSET_SHORT_ONRAMP_DISTANCES.
+  const shortOnRamp = earlyQualityOnset && (
+    GENERATION_CONFIG.ONSET_SHORT_ONRAMP_DISTANCES as readonly string[]
+  ).includes(raceDistanceKey(input.race_distance_km))
   const phases = computePhases(
-    totalWeeks, input.race_distance_km, earlyQualityOnset, foundationWeeksAhead,
+    totalWeeks, input.race_distance_km, earlyQualityOnset, foundationWeeksAhead, shortOnRamp,
   )
   // §87 (CB-DELOAD-01) — WHERE the deloads fall, decided once for the whole
   // plan and passed to every consumer. Computing it twice from the same inputs
@@ -4677,6 +4715,38 @@ export function generateRulePlan(
   // SC-07 / CD-16 — counts NON-DELOAD build weeks as they are emitted, so the
   // build quality rotation (threshold -> vo2max -> threshold for 5K/10K) is
   // driven by quality-carrying weeks rather than calendar position.
+  // §97 — the build-rotation index at which VO2max first becomes ELIGIBLE.
+  //
+  // Build carries exactly ONE VO2max exposure and its slot used to be fixed at
+  // the rotation's own index for 'vo2max'. If an intensity re-entry window
+  // (§79, and now §97's one-week-on-ramp arm) withheld VO2max on that exact
+  // week, the slot was spent on a threshold session and build ended with none.
+  //
+  // Walk the build weeks the same way the driver loop will — same deload set,
+  // same phase boundaries — and take the first rotation index whose week is
+  // clear of the window. Precomputed rather than discovered mid-loop because
+  // the decision must be made BEFORE week 1 is built.
+  const vo2BuildSlotIndex = (() => {
+    const cats = buildRotationCategories(raceDistanceKey(input.race_distance_km))
+    const naturalSlot = cats.indexOf('vo2max')
+    if (naturalSlot < 0) return undefined        // distance has no build VO2max
+    const buildPhase = phases.find(p => p.name === 'build')
+    if (!buildPhase) return undefined
+    // The slot is the first eligible index AT OR AFTER the rotation's natural
+    // one — never earlier. Returning the first non-withheld index outright
+    // would pull VO2max to index 0 for every runner with no re-entry window,
+    // opening build on its hardest category and contradicting §2 (and
+    // McMillan's "alternate, don't front-load" amendment on CD-16).
+    let idx = 0
+    for (let wn = buildPhase.start_week; wn <= buildPhase.end_week; wn++) {
+      if (deloadWeeks.has(wn)) continue          // deload weeks carry no quality
+      const withheld = intensityReentryActive && wn <= intensityReentryWeeks
+      if (idx >= naturalSlot && !withheld) return idx
+      idx++
+    }
+    return undefined   // no eligible week — build legitimately carries none
+  })()
+
   let buildRotationIndex = 0
   // §93 — peak's own rotation counter. Peak previously had no rotation: its
   // category was a per-distance constant, so however many weeks the phase grew
@@ -4764,6 +4834,7 @@ export function generateRulePlan(
       totalWeeks,
       buildRotationIndex,
       peakRotationIndex,
+      vo2BuildSlotIndex,
       vo2MustOpenBuild,
       intensityFitness,
       cueCtx,

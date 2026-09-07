@@ -244,6 +244,34 @@ export const GENERATION_CONFIG = {
   // runner whose gate requires `recent_quality_training: 'regular'`; he refuses
   // zero, which is what this constant existing rather than being deleted means.
   MIN_ONRAMP_WEEKS_GATED: 1,
+  // §97 — how many weeks a gated runner's plan may gain over `idealWeeks`.
+  //
+  // Unbounded, the extension is the signature's own headroom, and that headroom
+  // is NOT uniform: 2 weeks for 5K/10K/HM but 4 for MARATHON/50K/100K. A
+  // marathon extending by four weeks against a base capped at one pushes every
+  // gained week into build/peak, and the plan-wide quality share breached §1's
+  // 18% MARATHON ceiling (measured: 18.4%, 19/103, on the property sweep).
+  //
+  // §1 is a CEILING the board has twice refused to spend, so the extension
+  // yields rather than the ceiling. Bounding it at the short-distance headroom
+  // keeps the change the size it was argued at — the founder's problem is a 10K
+  // problem — and leaves long-distance base phases, which carry the long-run
+  // progression, proportionate.
+  MAX_ONSET_PLAN_EXTENSION_WEEKS: 2,
+  // §97 — the shortened on-ramp applies only at these distances.
+  //
+  // NOT arbitrary, and not "the founder races 10K". §1's ceiling DESCENDS with
+  // distance (25% for 5K/10K, 20% HM, 18% MARATHON, 15% 50K, 12%→15% 100K),
+  // while a shorter base moves every freed week into build/peak and pushes the
+  // quality share UP. So the shortened on-ramp is affordable exactly where the
+  // ceiling is loosest, and unaffordable where it is tightest — measured, a
+  // marathon went to 18.4% against its 18% ceiling on one extra quality session
+  // (19/103 vs 18/103).
+  //
+  // The load argument points the same way (Willy): a marathon's base phase
+  // carries the long-run progression, so it is the phase least able to spare a
+  // week. Long-distance runners keep MIN_BASE_WEEKS_FLOOR unchanged.
+  ONSET_SHORT_ONRAMP_DISTANCES: ['5K', '10K', 'HM'] as const,
   // §91 (Coaching Board CB-ONSET-02, 2026-09-07) — for a §89-gated runner, base
   // is capped in WEEKS, not only as a fraction. `EARLY_ONSET_BASE_PCT` is a
   // percentage, so a LONGER plan re-grew the base it was meant to shorten: a

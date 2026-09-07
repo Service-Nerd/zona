@@ -152,9 +152,7 @@ describe('Configuration Singularity — every numeric has a consumer, not just a
     sessions_per_week_default:
       'Superseded by the runner\'s own WeekGrid answer (days_available). A per-distance default would override a stated constraint, which §18 forbids.',
     ideal_weeks:
-      'Superseded by DISTANCE_CONFIGS.idealWeeks in length.ts, which is what calcPlanLength actually reads. TWO tables define plan-length bounds and only one is live.',
-    max_weeks:
-      'Same duplication, and this half is the DEAD one — calcPlanLength caps at DISTANCE_CONFIGS.idealWeeks and never consults max_weeks, so a 10K declaring max_weeks: 14 still caps at 12. That cap is what pushes surplus weeks into the §57 foundation block (see §91), so the field reads as a lever on plan length and is not one.',
+      'Superseded by DISTANCE_CONFIGS.idealWeeks in length.ts, which is what calcPlanLength actually reads. Its sibling `max_weeks` WAS listed here and is now live (§97) — calcPlanLength reads it for a §89-gated runner, which is what stopped their surplus weeks becoming a §57 foundation block. Removing it from this register is the register working.',
   }
 
   const SIG_UNBUILT: Record<string, string> = {
