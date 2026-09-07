@@ -246,6 +246,16 @@ export const GENERATION_CONFIG = {
   // entered their race earlier was punished for it. A demonstrated base does
   // not need more on-ramp because the race is further away.
   EARLY_ONSET_BASE_MAX_WEEKS: 2,
+  // §96 (Coaching Board CB-HSR-01, 2026-09-07) — `hard_session_relationship:
+  // 'overdo'` is a BRAKE. Measured across training_age x distance x injury, it
+  // was byte-identical to 'neutral' in EVERY cell: four wizard options, one of
+  // which could never change anything for any runner. Its label — "I overdo it.
+  // Rein me in." — is the only one asking for protection rather than more work,
+  // and it is the persona the whole product is built around ("You're trying
+  // hard. That's the problem"). Two effects, both §1-safe and neither adding or
+  // removing tonnage: it VETOES §89/§91 early quality onset, and it puts the
+  // §24c Z2-ceiling cue on every easy run rather than only build long runs.
+  OVERDO_IS_A_BRAKE: true,
   // §89 Lever A — a returning runner whose tissue is demonstrably conditioned
   // (`recent_quality_training: 'regular'`, injury-free) has the §2196 re-entry
   // withholding SHORTENED to this many weeks, not zeroed (Willy: one week of

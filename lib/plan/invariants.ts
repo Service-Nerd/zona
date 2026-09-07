@@ -38,6 +38,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-PEAK-SPECIFICITY',
   'INV-PLAN-DELIVERED-RAMP',
   'INV-PLAN-DELOAD-PHASE-POSITION',
+  'INV-PLAN-OVERDO-BRAKE',
   'INV-PLAN-DELOAD-IS-A-REDUCTION',
   'INV-PLAN-VOLUME-SHORTFALL-DECLARED',
   'INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED',
@@ -2422,6 +2423,34 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       })
     }
   }
+  // INV-PLAN-OVERDO-BRAKE (CoachingPrinciples §96)
+  //
+  // A runner who declared `hard_session_relationship: 'overdo'` — "I overdo it.
+  // Rein me in." — must never receive experience-gated early quality onset,
+  // however many readiness signals they also satisfy.
+  //
+  // §89's gate is a list of DEMONSTRATED READINESS signals; this is the wizard's
+  // one declared RISK signal, and before §96 it was weighted at zero — measured
+  // byte-identical to `neutral` in every cell of training_age x distance x
+  // injury. §79 already holds self-report is trusted MORE when it points toward
+  // caution than toward more work, so discarding it entirely was inconsistent
+  // rather than conservative.
+  //
+  // `error`, matching INV-PLAN-EARLY-ONSET-GATED's severity: both guard the same
+  // gate, and a gate that fires for a runner who asked to be reined in is the
+  // same class of harm as one that fires for a beginner.
+  if (plan.meta.early_quality_onset && input.hard_session_relationship === 'overdo') {
+    violations.push({
+      code: 'INV-PLAN-OVERDO-BRAKE',
+      principle_ref: 'CoachingPrinciples §96',
+      severity: 'error',
+      week: 0,  // plan-level
+      message: 'early_quality_onset fired for a runner who declared hard_session_relationship: "overdo". A runner who says they will push too hard if allowed is the last runner who should reach intensity two weeks sooner — the declared risk signal outranks the readiness signals (§96, §79).',
+      actual: 'early_quality_onset = true with overdo',
+      expected: 'early onset vetoed when the runner declares over-reaching',
+    })
+  }
+
   // INV-PLAN-ONRAMP-FLOOR (CoachingPrinciples §91, amending §89)
   //
   // Seiler's floor is a floor on ALL-EASY WEEKS THE RUNNER RUNS before their

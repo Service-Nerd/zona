@@ -3345,6 +3345,106 @@ evidence. Extends §87; changes no existing placement.
 
 ---
 
+## 96. `overdo` is a brake, not a preference
+
+**Principle.** `hard_session_relationship: 'overdo'` — *"I overdo it. Rein me in."* —
+is a **risk declaration**, and the engine acts on it in two ways: it **vetoes
+§89/§91 experience-gated quality onset**
+however ready every other signal says the runner is, and it puts §24c's Z2-ceiling
+cue on **every long run**, at every distance and in every phase, rather than only
+build-phase 5K/10K.
+
+**Why — it did nothing at all, and that was measured, not suspected.** Diffing
+generated plans across `training_age` × distance × injury history, `overdo` was
+**byte-identical to `neutral` in every single cell**. Four wizard options, one of
+which could never change anything for any runner, at any distance, ever.
+
+**The structural gap it exposes is §35's.** §35 builds a three-tier ladder
+*upward* — floor → target → stretch — selected by `hard_session_relationship:
+'love'`, and says in its own text that the tiering *"will eventually apply to
+weekly volume, quality session frequency, and goal-pace exposure."* **It never
+built the rung going the other way.** Every mechanism attached to this input
+pointed at giving a runner more work; the one answer asking for less had nowhere
+to land.
+
+**§79 supplies the decisive argument.** §79 already holds that a runner's
+self-report is asymmetric — it may raise *intensity* but never *tonnage*, because
+a claim pointing toward more work is trusted less than one pointing toward
+caution. `overdo` is a self-report pointing squarely toward caution and was
+weighted at **zero**. That is not conservatism; it is inconsistency.
+
+**Why the onset veto specifically (Willy, McMillan).** §89's gate is a list of
+*demonstrated readiness* signals — deep training age, current base, regular recent
+quality. `overdo` is the one declared *risk* signal in the wizard, and its effect
+was to be ignored while readiness signals accelerated the runner's first hard
+session by two weeks. A runner who tells you they cannot self-regulate load is the
+last runner who should reach intensity sooner. This is what a coach does: rope for
+the athlete who is disciplined, a hand on the shoulder for the one who says *"I
+know I'll push too hard if I can."*
+
+**Why the cue rather than more copy (McMillan's condition).** §24c already exists,
+already says the long run is where runners most often drift into Z3, and already
+carries wording in brand voice. Extending its placement costs nothing and invents
+nothing. It deliberately lands **once per week on the session where drift is
+worst**, not on every easy run — a note on everything is wallpaper, and wallpaper
+gets ignored. This is a cue the runner *experiences*, not a rule they must study.
+
+**What the brake actually costs, measured — because the first draft of this
+section got it wrong.** It claimed the veto "adds or removes no session and
+changes no tonnage." That is false, and the tests written to assert it failed
+immediately. Vetoing early onset lengthens the base phase, which is the whole
+point, and a longer base means fewer build/peak weeks. Measured on a 5-day 10K
+where every other readiness signal passes:
+
+| | quality sessions | total km | base weeks |
+|---|---|---|---|
+| `neutral` (gate fires, accelerated) | 10 | 482 | 0 |
+| `overdo` (gate vetoed) | **6** | **457** | **4** |
+| a runner who never passed the gate at all | **6** | **457** | **4** |
+
+**The brake returns the runner to the standard plan, byte for byte.** It does not
+cut below baseline; it declines to accelerate past it. That is the correct claim
+and it is stronger than the one it replaces — the runner who says "rein me in"
+gets the plan every ordinary runner gets, not a punished version of it.
+
+**What this is NOT, said plainly (Hutchinson).** It is not a claim that
+self-reported over-reaching predicts injury; the evidence for that is thinner than
+a strong claim would need. It is the weaker and defensible claim that **when a
+runner volunteers a risk signal, discarding it entirely is worse than acting on it
+conservatively** — and every effect here is in the conservative direction and
+bounded by the default plan.
+
+**Deliberately NOT done.** `overdo` does not suppress quality (that is `avoid`,
+and conflating them would take work from a runner who asked to be paced, not
+spared), does not alter the deload cadence (§3/§87 own that, and no measurement
+supports a change), and does not tighten §2's ramp (§94 governs delivered load for
+everyone; a per-persona cap would need the measurement §94 explicitly defers).
+
+**Two findings recorded alongside this ruling, both open:**
+
+1. **Is §24b's segmented long run an easy session?** It carries `type: 'easy'`, so
+   §1's session-count numerator excludes it — yet it is 50% at marathon/HM pace.
+   Measured on a 5-day 10K: **17.9% quality counted, 21.4% if segmented long runs
+   counted**, against a 25% ceiling. Neither figure breaches, so nothing is wrong
+   today. **But §35 anticipates extending goal-pace exposure, and the moment
+   anyone does, this becomes binding.** Recorded as a known accounting gap (§34,
+   declared and exercised) rather than reclassified on no failing evidence —
+   re-opening CD-19's numerator needs a case, and there isn't one yet.
+2. **`love` is gated on `training_age: '5yr+'`** (§47's exception) and on
+   `longest_recent_run_km ≥ floor` (§35's stretch tier). Both gates are correct on
+   their own terms — they are tissue-tolerance judgements about carrying
+   back-to-back peak long runs. **The defect is that nothing tells the runner the
+   answer is conditional.** That is copy, not coaching, and is routed to brand.
+
+**Config.** `GENERATION_CONFIG.OVERDO_IS_A_BRAKE` (true). Enforced by
+`INV-PLAN-OVERDO-BRAKE`.
+
+**Board:** CB-HSR-01, 2026-09-07 — Coaching Board CORRECT, Hutchinson chairing.
+Completes §35's unbuilt downward rung; consistent with §79's asymmetry. Amends §24c
+(placement) and §89/§91 (gate) by reference. Loosens nothing.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

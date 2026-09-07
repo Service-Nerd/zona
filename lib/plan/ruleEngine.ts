@@ -2753,8 +2753,21 @@ function buildWeekSessions(
       sessions[longDay] = finishGoalPeakLongRunSession(weekN, longDay, longKm, metric, zones, pace)
     } else {
       sessions[longDay] = longSession(weekN, longDay, longKm, metric, zones, pace)
-      // §24c — build phase: Z2-ceiling note on 5K/10K time-targeted long runs
-      if (is5K10K && input.goal === 'time_target' && phase === 'build' && !isDeload) {
+      // §24c — build phase: Z2-ceiling note on 5K/10K time-targeted long runs.
+      //
+      // §96 (CB-HSR-01) widens it for one cohort: a runner who answered "I
+      // overdo it. Rein me in." gets the same cue on EVERY long run, at every
+      // distance and in every phase. §24c's own reasoning is that the long run
+      // is where runners most often drift into Z3 — which is precisely what this
+      // runner has told us they do. Reusing §24c's existing cue rather than
+      // writing new copy is deliberate: one cue per week on the session where
+      // drift is worst, not a note on every easy run, which becomes wallpaper
+      // and gets ignored (McMillan: a rule you experience, not one you study).
+      const overdoCue = GENERATION_CONFIG.OVERDO_IS_A_BRAKE
+        && input.hard_session_relationship === 'overdo'
+      const z2CueApplies = !isDeload && (
+        (is5K10K && input.goal === 'time_target' && phase === 'build') || overdoCue)
+      if (z2CueApplies) {
         const s = sessions[longDay]!
         const ceilingNote = 'Zone 2 ceiling — if HR starts climbing, back off to a walk for 30 seconds before resuming.'
         const existing = s.coach_notes
@@ -4517,10 +4530,26 @@ export function generateRulePlan(
   // conditioned tissue, and NOT returning/fresh (they have a base, not a layoff).
   // Adds zero tonnage (peakKm unchanged, §79). Beginners/returners/injured keep
   // the full base. Stamped in meta and enforced by INV-PLAN-EARLY-ONSET-GATED.
+  // §96 — `overdo` is a BRAKE, not a preference. It was byte-identical to
+  // `neutral` in every measured cell (training_age x distance x injury): a
+  // wizard option that could never change anything, for any runner, ever.
+  // §35 builds a three-tier ladder UPWARD for runners who want more work
+  // (floor -> target -> stretch, selected by `love`) and never built the rung
+  // going the other way. This is that rung.
+  const overdoBrake = GENERATION_CONFIG.OVERDO_IS_A_BRAKE
+    && input.hard_session_relationship === 'overdo'
+
   const earlyQualityOnset = tissueConditioned
     && intensityFitness === 'experienced'
     && FITNESS_RANK[fitness] >= FITNESS_RANK['intermediate']
     && !returningRunner && !isFreshReturn
+    // §96 (CB-HSR-01) — a runner who says "I overdo it. Rein me in." does not
+    // get quality two weeks sooner, however ready every other signal says they
+    // are. §89's gate is a list of DEMONSTRATED READINESS signals; this is the
+    // one declared RISK signal, and §79 already holds that self-report is
+    // trusted MORE when it points toward caution than when it points toward
+    // more work. Ignoring it entirely was the inconsistency.
+    && !overdoBrake
   // §91 (CB-ONSET-02) — how many all-easy foundation weeks will sit in front of
   // week 1. From the single owner in foundationBlock.ts, using the SAME `today`
   // and the SAME anchored start that composePlanWithFoundation will use, so the
