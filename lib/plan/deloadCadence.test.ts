@@ -113,8 +113,14 @@ describe('DELOAD-OWNER-01 — single ownership is mechanical, not remembered', (
     // reads that set — which is a stronger form of the same ownership, since
     // even the predicate cannot now be applied inconsistently per site.
     const engine = readFileSync(join(LIB, 'plan', 'ruleEngine.ts'), 'utf8')
+    // 5 -> 6 on 2026-09-07 (§97). The sixth read is `vo2BuildSlotIndex`, which
+    // walks the build weeks to find the first one clear of an intensity re-entry
+    // window and must skip deload weeks (they carry no quality). It reads the
+    // OWNER's computed set, which is exactly what this test exists to require —
+    // the count is a proxy for "nobody recomputed the cadence", not a ceiling on
+    // legitimate consumers.
     const setReads = engine.match(/deloadWeeks\.has\(/g) ?? []
-    expect(setReads.length, 'every cadence decision should read the one computed set').toBe(5)
+    expect(setReads.length, 'every cadence decision should read the one computed set').toBe(6)
     const computes = engine.match(/computeDeloadWeeks\(/g) ?? []
     expect(computes.length, 'placement must be computed exactly once per plan').toBe(1)
   })

@@ -69,24 +69,28 @@ describe('§91 — foundation weeks are credited against the on-ramp floor', () 
       onsets.push(onset!)
     }
     // §89's own stated "before" number is week 5. Nothing may reach it.
+    // §97 tightened this further — most gaps now deliver week 2 — but the
+    // ceiling asserted here stays at 4, because a runner with an unusually long
+    // runway still receives a foundation block once the plan has extended to
+    // `max_weeks` and surplus weeks remain. See §97's recorded regression.
     for (const o of onsets) expect(o).toBeLessThanOrEqual(4)
-    // And the 12-week case (1 foundation week) must not be worse than the
-    // 20-week case (none) by more than the block length difference.
-    expect(Math.max(...onsets) - Math.min(...onsets)).toBeLessThanOrEqual(1)
   })
 
   it('credits the block: base shrinks by exactly the foundation weeks, floored at zero', () => {
-    // 14 weeks out → 3 foundation weeks (§57 cap) → base fully absorbed.
+    // §97 CHANGED THIS CASE and the change is the point. At 14 weeks out a
+    // gated runner used to get a 12-week plan behind 3 foundation weeks; now
+    // the plan extends to `max_weeks` and absorbs them, so the block is 1 week
+    // and the surplus is trained inside the periodisation arc.
     const input = ready10k({ race_date: race(14) })
     const plan = generateRulePlan(input, 'paid')
-    expect(plan.meta.foundation_weeks_planned).toBe(3)
-    expect(baseWeeks(plan)).toBe(0)
+    expect(plan.meta.foundation_weeks_planned).toBe(1)
+    expect(plan.weeks.length).toBeGreaterThan(12)
 
-    // No block at all → the floor binds in full, unchanged.
+    // No block at all → the GATED floor binds (1, §97), not the general one (2).
     const far = ready10k({ race_date: race(20) })
     const farPlan = generateRulePlan(far, 'paid')
     expect(farPlan.meta.foundation_weeks_planned).toBe(0)
-    expect(baseWeeks(farPlan)).toBe(GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR)
+    expect(baseWeeks(farPlan)).toBe(GENERATION_CONFIG.MIN_ONRAMP_WEEKS_GATED)
   })
 
   it('leaves every NON-gated runner untouched — the floor still binds on base alone', () => {

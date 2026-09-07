@@ -435,6 +435,10 @@ function computePhases(
   distanceKm: number,
   earlyOnset = false,
   foundationWeeks = 0,
+  // §97 — may this runner's on-ramp shorten to one week? Distance-scoped, because
+  // §1's ceiling tightens with distance while a shorter base raises the quality
+  // share. False falls back to §91's two-week cap.
+  shortOnRamp = false,
 ): Phase[] {
   const distKey = raceDistanceKey(distanceKm)
   const taperPhaseWeeks = GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey].length
@@ -470,7 +474,10 @@ function computePhases(
   // foundation weeks ARE the two-week floor. It is never negative, and the
   // floor still binds in full for every runner the §89 gate did not pass.
   if (earlyOnset) {
-    baseWeeks = Math.min(baseWeeks, GENERATION_CONFIG.EARLY_ONSET_BASE_MAX_WEEKS)
+    const cap = shortOnRamp
+      ? GENERATION_CONFIG.EARLY_ONSET_BASE_MAX_WEEKS
+      : GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR
+    baseWeeks = Math.min(baseWeeks, cap)
     baseWeeks = Math.max(0, baseWeeks - Math.min(foundationWeeks, baseWeeks))
   }
   let buildWeeks = Math.max(1, Math.round(remaining * dist.build_pct / denom))
@@ -2199,6 +2206,11 @@ function preferredQualityCategory(
   // against §5's declared 60% — which is the pre-existing shape measured on the
   // non-gated control.
   peakWeeksTotal = 0,
+  // §97 — the build-rotation index at which VO2max becomes ELIGIBLE, i.e. the
+  // first rotating build week not inside an intensity re-entry window. Computed
+  // by the caller, which owns both the deload cadence and the re-entry window;
+  // deriving it here would duplicate two rules that already have owners.
+  vo2BuildSlotIndex?: number,
 ): CatalogueCategory {
   if (phase === 'base')  return 'aerobic'
   if (phase === 'build') {
@@ -2222,6 +2234,31 @@ function preferredQualityCategory(
     const ordered = vo2MustOpenBuild && cats.includes('vo2max')
       ? ['vo2max', ...cats.filter(c => c !== 'vo2max')] as CatalogueCategory[]
       : cats
+
+    // §97 — THE SINGLE BUILD VO2MAX SLOT IS PLACED, NOT DISCOVERED.
+    //
+    // This used to read the slot off the rotation's own modulo and then veto
+    // any OTHER index that happened to land on vo2max. That works while the
+    // slot's week is always available — and breaks silently when it is not.
+    // With §79/§97's intensity re-entry withholding VO2max over the opening
+    // weeks, the slot's week could be inside the window: the week returned
+    // threshold, the slot was spent, and build ended with ZERO VO2max. The
+    // first exposure then landed in peak, past the §5 adaptation deadline,
+    // firing V2's swap safety net — which carries its own documented defect
+    // (a session built for an early week arrives in a second-half week still
+    // wearing the early week's goal-pace treatment). One dropped slot, four
+    // steps downstream, and every step looked locally correct.
+    //
+    // Stating the slot positively fixes it: build carries exactly one VO2max
+    // exposure, at the first eligible rotation index, and every other index
+    // rotates through the non-VO2max categories. `vo2BuildSlotIndex` is
+    // undefined for runners with no re-entry window, so their slot stays at the
+    // rotation's own index and nothing moves.
+    const vo2Slot = vo2MustOpenBuild ? 0
+      : vo2BuildSlotIndex ?? ordered.indexOf('vo2max')
+    if (ordered.includes('vo2max') && buildRotationIndex === vo2Slot) return 'vo2max'
+    const nonVo2 = ordered.filter(c => c !== 'vo2max')
+    if (nonVo2.length > 0) return nonVo2[buildRotationIndex % nonVo2.length]
     const picked = ordered[buildRotationIndex % ordered.length]
 
     // ONE VO2MAX EXPOSURE IN BUILD, AND NO MORE — Seiler's binding constraint
@@ -2239,12 +2276,6 @@ function preferredQualityCategory(
     //
     // Everything after that exposure falls back to the next category in the
     // rotation, which is threshold for both 5K and 10K.
-    if (picked === 'vo2max') {
-      const vo2SlotIndex = vo2MustOpenBuild ? 0 : ordered.indexOf('vo2max')
-      if (buildRotationIndex !== vo2SlotIndex) {
-        return ordered.find(c => c !== 'vo2max') ?? 'threshold'
-      }
-    }
     return picked
   }
   if (phase === 'taper') return 'threshold'
@@ -2313,6 +2344,9 @@ function buildWeekSessions(
   // cadence, so deriving it here would duplicate that rule and let the two
   // drift (DELOAD-OWNER-01).
   peakRotationIndex: number,
+  // §97 — see preferredQualityCategory. The rotation index at which VO2max
+  // first becomes eligible, given the intensity re-entry window.
+  vo2BuildSlotIndex: number | undefined,
   // SC-07 / CD-16 — the adaptation deadline lands on the first build quality
   // week, so the rotation must open on vo2max. Computed once by the caller.
   vo2MustOpenBuild: boolean,
@@ -2604,7 +2638,7 @@ function buildWeekSessions(
 
   const primaryCat = preferredQualityCategory(
     phase, distKey, input.goal === 'time_target', buildRotationIndex, vo2MustOpenBuild,
-    peakRotationIndex, peakWeeksTotal)
+    peakRotationIndex, peakWeeksTotal, vo2BuildSlotIndex)
   const vo2maxCapKm = durationForMainSet(GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS) / pace.minPerKmInterval
   const qualKmPrimary = primaryCat === 'vo2max'
     ? Math.min(qualKmPerSession, vo2maxCapKm)
@@ -2820,7 +2854,7 @@ function buildWeekSessions(
     const isTimeTarget = input.goal === 'time_target'
     let preferredCategory = preferredQualityCategory(
       phase, distKey, isTimeTarget, buildRotationIndex, vo2MustOpenBuild, peakRotationIndex,
-      peakWeeksTotal)
+      peakWeeksTotal, vo2BuildSlotIndex)
     let taperForceSharpener = false
     // CD-2 / §36 — goal-pace sharpening in the taper is a time-target tool; a
     // finish-goal taper stays on threshold (§80). Without the goal-gate, a
@@ -4449,32 +4483,23 @@ export function generateRulePlan(
   // calcPlanLength anchors on race week and returns the actual start. Surplus
   // weeks delay the start rather than truncating the end. Everything downstream
   // (week dates, meta.plan_start) must use the anchored value.
-  const planLength = calcPlanLength(input.race_distance_km, input.race_date, planStartIso)
-  const { totalWeeks, compressed } = planLength
-  const anchoredStartIso  = planLength.planStartIso
-  const anchoredStartDate = parseDateLocal(anchoredStartIso)
-  // §89 — `phases` is computed BELOW, after the readiness predicate, so a
-  // demonstrably-ready runner can be given a shorter base. Nothing between here
-  // and that call reads `phases`.
-
-  // §79 (2026-08-31) — the metric recommendation follows EXPERIENCE (intensity),
-  // not raw current volume (structural). Duration is the beginner / ultra default
-  // (time on feet, §80); a returning or experienced runner sees distance even when
-  // their current volume reads low. intensityFitness is 'beginner' only when every
-  // signal agrees the runner is a true beginner, so this narrows duration to
-  // exactly that cohort. (User-overridable per session/globally — Phase 3.)
-  const metric: 'distance' | 'duration' =
-    intensityFitness === 'beginner' || input.race_distance_km >= 50 ? 'duration' : 'distance'
-
+  // ── §97 (CB-ONSET-03) — the readiness gate is decided BEFORE plan length ──
+  //
+  // These were computed ~20 lines below `calcPlanLength` purely by convention.
+  // None of them depends on plan length: `peakKm` is distance + fitness, and the
+  // fresh/returning/tissue predicates are input + fitness assessment. Verified
+  // before moving, because a genuine cycle here would have made §97 unbuildable
+  // rather than merely awkward.
+  //
+  // They must come first now, because §97 lets a gated runner's plan RUN LONGER
+  // instead of being preceded by a §57 foundation block — so plan length depends
+  // on the gate, and the gate must not depend on plan length.
   const peakKm = config.peakKmByLevel[fitness]
 
   // CoachingPrinciples §29 — fresh-from-layoff detection. Two paths:
-  //  1. Explicit: weeks_at_current_volume < threshold (the input the wizard
-  //     can surface as a "have you been at this volume long?" question).
+  //  1. Explicit: weeks_at_current_volume < threshold.
   //  2. Heuristic (R2/M-03): training_age says experienced, but current volume
-  //     and longest recent run are both below floors typical of that
-  //     experience. The mismatch points to a layoff regardless of whether
-  //     the user thought to mention it.
+  //     and longest recent run are both below floors typical of that experience.
   const explicitFreshReturn = input.weeks_at_current_volume !== undefined
     && input.weeks_at_current_volume < GENERATION_CONFIG.FRESH_RETURN_WEEKS_THRESHOLD
   // trainingAgeIsExperienced declared above (fed to assessFitness for the §79 lift).
@@ -4482,54 +4507,19 @@ export function generateRulePlan(
     && input.current_weekly_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_WEEKLY_KM
     && input.longest_recent_run_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_LONG_RUN_KM
   const isFreshReturn = explicitFreshReturn || heuristicFreshReturn
-  const declaredStartKm = isFreshReturn
-    ? input.current_weekly_km * GENERATION_CONFIG.FRESH_RETURN_START_FRACTION
-    : input.current_weekly_km
-  // CD-6 / §10 — a <6mo runner's declared volume is a self-reported bucket, not
-  // measured; cap the start so an over-claim can't hand a beginner too much.
-  const startKm = input.training_age === '<6mo'
-    ? Math.min(declaredStartKm, GENERATION_CONFIG.BEGINNER_WEEK1_VOLUME_CAP_KM)
-    : declaredStartKm
-
-  // Recovery cadence — masters (age ≥ 45) recover every 3 weeks (CoachingPrinciples §3).
-  // Computed once and shared between volume sequence + week badging so they stay aligned.
-  const recoveryFreq = input.age >= GENERATION_CONFIG.MASTERS_AGE_THRESHOLD
-    ? GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_MASTERS
-    : GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_STANDARD
 
   // Fresh-return runners get the standard 10% ramp (no allowance) — their
   // structural base is gone and the cap exists to protect them.
   const returningRunner = !isFreshReturn && isReturningRunner(input, peakKm)
 
-  // §89 (Coaching Board 2026-09-06) — EXPERIENCE-GATED QUALITY ONSET. The signal
-  // is DEMONSTRATED recent structured hard training (`recent_quality_training`),
-  // a tissue-readiness proxy, NOT self-image. An injury history is an absolute
-  // veto (Willy/Sims): a self-report cannot overrule a documented structure.
+  // §89 — EXPERIENCE-GATED QUALITY ONSET. The signal is DEMONSTRATED recent
+  // structured hard training, a tissue-readiness proxy, NOT self-image. An
+  // injury history is an absolute veto (Willy/Sims).
   const injuryFree = (input.injury_history ?? []).length === 0
   // Tissue conditioned by the exact stimulus §2196 protects — the premise-falsifier.
   const tissueConditioned =
     input.recent_quality_training === 'regular' && injuryFree && trainingAgeIsExperienced
 
-  // §79 (2026-08-31) — progressive intensity re-entry. A returning runner whose
-  // intensity was lifted (or who is otherwise detected as returning/fresh) has an
-  // aerobic engine ahead of their tissue tolerance. Withhold VO2max/hills for the
-  // opening RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS so quality leads with
-  // tempo/threshold. Surfaced in meta for honesty + the invariant.
-  const intensityReentryActive =
-    assessed.intensityLiftedForReturn || returningRunner || isFreshReturn
-  // §89 Lever A — a conditioned returning runner has the INTENSITY re-entry
-  // SHORTENED (not zeroed — Willy: one week tempo-first is cheap insurance); the
-  // VOLUME ramp caution (returning allowance) is untouched (tonnage is structure's).
-  const intensityReentryWeeks = !intensityReentryActive ? 0
-    : tissueConditioned ? GENERATION_CONFIG.REENTRY_WEEKS_TISSUE_READY
-    : GENERATION_CONFIG.RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS
-
-  // §89 Lever B — earlier quality onset via a SHORTER (still all-easy) base. Only
-  // for a demonstrably-ready runner with a real CURRENT base: experienced
-  // intensity, intermediate+ structure (volume floor), deep training age,
-  // conditioned tissue, and NOT returning/fresh (they have a base, not a layoff).
-  // Adds zero tonnage (peakKm unchanged, §79). Beginners/returners/injured keep
-  // the full base. Stamped in meta and enforced by INV-PLAN-EARLY-ONSET-GATED.
   // §96 — `overdo` is a BRAKE, not a preference. It was byte-identical to
   // `neutral` in every measured cell (training_age x distance x injury): a
   // wizard option that could never change anything, for any runner, ever.
@@ -4550,6 +4540,93 @@ export function generateRulePlan(
     // trusted MORE when it points toward caution than when it points toward
     // more work. Ignoring it entirely was the inconsistency.
     && !overdoBrake
+
+  // §97 — a gated runner's surplus weeks become BASE weeks inside the plan
+  // rather than a §57 foundation block in front of it.
+  const planLength = calcPlanLength(
+    input.race_distance_km, input.race_date, planStartIso, earlyQualityOnset)
+  const { totalWeeks, compressed } = planLength
+  const anchoredStartIso  = planLength.planStartIso
+  const anchoredStartDate = parseDateLocal(anchoredStartIso)
+  // §89 — `phases` is computed BELOW, after the readiness predicate, so a
+  // demonstrably-ready runner can be given a shorter base. Nothing between here
+  // and that call reads `phases`.
+
+  // §79 (2026-08-31) — the metric recommendation follows EXPERIENCE (intensity),
+  // not raw current volume (structural). Duration is the beginner / ultra default
+  // (time on feet, §80); a returning or experienced runner sees distance even when
+  // their current volume reads low. intensityFitness is 'beginner' only when every
+  // signal agrees the runner is a true beginner, so this narrows duration to
+  // exactly that cohort. (User-overridable per session/globally — Phase 3.)
+  const metric: 'distance' | 'duration' =
+    intensityFitness === 'beginner' || input.race_distance_km >= 50 ? 'duration' : 'distance'
+
+
+  // CoachingPrinciples §29 — fresh-from-layoff detection. Two paths:
+  //  1. Explicit: weeks_at_current_volume < threshold (the input the wizard
+  //     can surface as a "have you been at this volume long?" question).
+  //  2. Heuristic (R2/M-03): training_age says experienced, but current volume
+  //     and longest recent run are both below floors typical of that
+  //     experience. The mismatch points to a layoff regardless of whether
+  //     the user thought to mention it.
+  const declaredStartKm = isFreshReturn
+    ? input.current_weekly_km * GENERATION_CONFIG.FRESH_RETURN_START_FRACTION
+    : input.current_weekly_km
+  // CD-6 / §10 — a <6mo runner's declared volume is a self-reported bucket, not
+  // measured; cap the start so an over-claim can't hand a beginner too much.
+  const startKm = input.training_age === '<6mo'
+    ? Math.min(declaredStartKm, GENERATION_CONFIG.BEGINNER_WEEK1_VOLUME_CAP_KM)
+    : declaredStartKm
+
+  // Recovery cadence — masters (age ≥ 45) recover every 3 weeks (CoachingPrinciples §3).
+  // Computed once and shared between volume sequence + week badging so they stay aligned.
+  const recoveryFreq = input.age >= GENERATION_CONFIG.MASTERS_AGE_THRESHOLD
+    ? GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_MASTERS
+    : GENERATION_CONFIG.RECOVERY_WEEK_FREQUENCY_STANDARD
+
+  // Fresh-return runners get the standard 10% ramp (no allowance) — their
+  // structural base is gone and the cap exists to protect them.
+
+  // §89 (Coaching Board 2026-09-06) — EXPERIENCE-GATED QUALITY ONSET. The signal
+  // is DEMONSTRATED recent structured hard training (`recent_quality_training`),
+  // a tissue-readiness proxy, NOT self-image. An injury history is an absolute
+  // veto (Willy/Sims): a self-report cannot overrule a documented structure.
+
+  // §79 (2026-08-31) — progressive intensity re-entry. A returning runner whose
+  // intensity was lifted (or who is otherwise detected as returning/fresh) has an
+  // aerobic engine ahead of their tissue tolerance. Withhold VO2max/hills for the
+  // opening RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS so quality leads with
+  // tempo/threshold. Surfaced in meta for honesty + the invariant.
+  // §97 — Willy's condition of approval on the one-week on-ramp. A gated runner
+  // is by definition NOT returning and NOT fresh, so none of the three arms
+  // below fired for them and the re-entry was zero. That was fine while their
+  // on-ramp was two weeks; at one week it is not. The gate now opens re-entry
+  // too, so quality starting in week 2 means a controlled tempo rather than
+  // intervals — the mitigation is the mechanism that already exists, not a
+  // second one invented alongside it.
+  const oneWeekOnRamp = earlyQualityOnset
+  const intensityReentryActive =
+    assessed.intensityLiftedForReturn || returningRunner || isFreshReturn || oneWeekOnRamp
+  // §89 Lever A — a conditioned returning runner has the INTENSITY re-entry
+  // SHORTENED (not zeroed — Willy: one week tempo-first is cheap insurance); the
+  // VOLUME ramp caution (returning allowance) is untouched (tonnage is structure's).
+  const intensityReentryWeeks = !intensityReentryActive ? 0
+    // §97 — the one-week-on-ramp arm is checked FIRST and is the longer of the
+    // two "ready" windows. A gated runner is tissueConditioned by construction,
+    // so ordering these the other way round would silently apply the shorter
+    // REENTRY_WEEKS_TISSUE_READY and discard Willy's condition entirely.
+    : oneWeekOnRamp ? Math.max(
+        GENERATION_CONFIG.REENTRY_WEEKS_ONE_WEEK_ONRAMP,
+        GENERATION_CONFIG.REENTRY_WEEKS_TISSUE_READY)
+    : tissueConditioned ? GENERATION_CONFIG.REENTRY_WEEKS_TISSUE_READY
+    : GENERATION_CONFIG.RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS
+
+  // §89 Lever B — earlier quality onset via a SHORTER (still all-easy) base. Only
+  // for a demonstrably-ready runner with a real CURRENT base: experienced
+  // intensity, intermediate+ structure (volume floor), deep training age,
+  // conditioned tissue, and NOT returning/fresh (they have a base, not a layoff).
+  // Adds zero tonnage (peakKm unchanged, §79). Beginners/returners/injured keep
+  // the full base. Stamped in meta and enforced by INV-PLAN-EARLY-ONSET-GATED.
   // §91 (CB-ONSET-02) — how many all-easy foundation weeks will sit in front of
   // week 1. From the single owner in foundationBlock.ts, using the SAME `today`
   // and the SAME anchored start that composePlanWithFoundation will use, so the
@@ -4559,8 +4636,12 @@ export function generateRulePlan(
   const foundationWeeksAhead = plannedFoundationWeeks(
     today, anchoredStartIso, input.foundation_decision,
   )
+  // §97 — the shortened on-ramp is distance-scoped; see ONSET_SHORT_ONRAMP_DISTANCES.
+  const shortOnRamp = earlyQualityOnset && (
+    GENERATION_CONFIG.ONSET_SHORT_ONRAMP_DISTANCES as readonly string[]
+  ).includes(raceDistanceKey(input.race_distance_km))
   const phases = computePhases(
-    totalWeeks, input.race_distance_km, earlyQualityOnset, foundationWeeksAhead,
+    totalWeeks, input.race_distance_km, earlyQualityOnset, foundationWeeksAhead, shortOnRamp,
   )
   // §87 (CB-DELOAD-01) — WHERE the deloads fall, decided once for the whole
   // plan and passed to every consumer. Computing it twice from the same inputs
@@ -4634,6 +4715,38 @@ export function generateRulePlan(
   // SC-07 / CD-16 — counts NON-DELOAD build weeks as they are emitted, so the
   // build quality rotation (threshold -> vo2max -> threshold for 5K/10K) is
   // driven by quality-carrying weeks rather than calendar position.
+  // §97 — the build-rotation index at which VO2max first becomes ELIGIBLE.
+  //
+  // Build carries exactly ONE VO2max exposure and its slot used to be fixed at
+  // the rotation's own index for 'vo2max'. If an intensity re-entry window
+  // (§79, and now §97's one-week-on-ramp arm) withheld VO2max on that exact
+  // week, the slot was spent on a threshold session and build ended with none.
+  //
+  // Walk the build weeks the same way the driver loop will — same deload set,
+  // same phase boundaries — and take the first rotation index whose week is
+  // clear of the window. Precomputed rather than discovered mid-loop because
+  // the decision must be made BEFORE week 1 is built.
+  const vo2BuildSlotIndex = (() => {
+    const cats = buildRotationCategories(raceDistanceKey(input.race_distance_km))
+    const naturalSlot = cats.indexOf('vo2max')
+    if (naturalSlot < 0) return undefined        // distance has no build VO2max
+    const buildPhase = phases.find(p => p.name === 'build')
+    if (!buildPhase) return undefined
+    // The slot is the first eligible index AT OR AFTER the rotation's natural
+    // one — never earlier. Returning the first non-withheld index outright
+    // would pull VO2max to index 0 for every runner with no re-entry window,
+    // opening build on its hardest category and contradicting §2 (and
+    // McMillan's "alternate, don't front-load" amendment on CD-16).
+    let idx = 0
+    for (let wn = buildPhase.start_week; wn <= buildPhase.end_week; wn++) {
+      if (deloadWeeks.has(wn)) continue          // deload weeks carry no quality
+      const withheld = intensityReentryActive && wn <= intensityReentryWeeks
+      if (idx >= naturalSlot && !withheld) return idx
+      idx++
+    }
+    return undefined   // no eligible week — build legitimately carries none
+  })()
+
   let buildRotationIndex = 0
   // §93 — peak's own rotation counter. Peak previously had no rotation: its
   // category was a per-distance constant, so however many weeks the phase grew
@@ -4721,6 +4834,7 @@ export function generateRulePlan(
       totalWeeks,
       buildRotationIndex,
       peakRotationIndex,
+      vo2BuildSlotIndex,
       vo2MustOpenBuild,
       intensityFitness,
       cueCtx,

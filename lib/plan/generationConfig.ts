@@ -239,13 +239,61 @@ export const GENERATION_CONFIG = {
   // hardcoded `Math.max(2, …)` in computePhases; named here because the invariant
   // and the phase builder must agree on it (Configuration Singularity).
   MIN_BASE_WEEKS_FLOOR: 2,
+  // §97 (CB-ONSET-03) — the on-ramp floor for the §89-GATED cohort only.
+  // Everyone else keeps MIN_BASE_WEEKS_FLOOR (2). Seiler accepts one week for a
+  // runner whose gate requires `recent_quality_training: 'regular'`; he refuses
+  // zero, which is what this constant existing rather than being deleted means.
+  MIN_ONRAMP_WEEKS_GATED: 1,
+  // §97 — how many weeks a gated runner's plan may gain over `idealWeeks`.
+  //
+  // Unbounded, the extension is the signature's own headroom, and that headroom
+  // is NOT uniform: 2 weeks for 5K/10K/HM but 4 for MARATHON/50K/100K. A
+  // marathon extending by four weeks against a base capped at one pushes every
+  // gained week into build/peak, and the plan-wide quality share breached §1's
+  // 18% MARATHON ceiling (measured: 18.4%, 19/103, on the property sweep).
+  //
+  // §1 is a CEILING the board has twice refused to spend, so the extension
+  // yields rather than the ceiling. Bounding it at the short-distance headroom
+  // keeps the change the size it was argued at — the founder's problem is a 10K
+  // problem — and leaves long-distance base phases, which carry the long-run
+  // progression, proportionate.
+  MAX_ONSET_PLAN_EXTENSION_WEEKS: 2,
+  // §97 — the shortened on-ramp applies only at these distances.
+  //
+  // NOT arbitrary, and not "the founder races 10K". §1's ceiling DESCENDS with
+  // distance (25% for 5K/10K, 20% HM, 18% MARATHON, 15% 50K, 12%→15% 100K),
+  // while a shorter base moves every freed week into build/peak and pushes the
+  // quality share UP. So the shortened on-ramp is affordable exactly where the
+  // ceiling is loosest, and unaffordable where it is tightest — measured, a
+  // marathon went to 18.4% against its 18% ceiling on one extra quality session
+  // (19/103 vs 18/103).
+  //
+  // The load argument points the same way (Willy): a marathon's base phase
+  // carries the long-run progression, so it is the phase least able to spare a
+  // week. Long-distance runners keep MIN_BASE_WEEKS_FLOOR unchanged.
+  ONSET_SHORT_ONRAMP_DISTANCES: ['5K', '10K', 'HM'] as const,
   // §91 (Coaching Board CB-ONSET-02, 2026-09-07) — for a §89-gated runner, base
   // is capped in WEEKS, not only as a fraction. `EARLY_ONSET_BASE_PCT` is a
   // percentage, so a LONGER plan re-grew the base it was meant to shorten: a
   // 14-week plan gave base 3, a 12-week plan gave base 2. The runner who
   // entered their race earlier was punished for it. A demonstrated base does
   // not need more on-ramp because the race is further away.
-  EARLY_ONSET_BASE_MAX_WEEKS: 2,
+  // §97 (Coaching Board CB-ONSET-03, 2026-09-07) — 2 -> 1. Seiler's on-ramp
+  // floor, re-taken eight days after §89 set it, on the specific question of
+  // whether "a short polarised on-ramp" means two weeks or one for a runner
+  // whose gate REQUIRES `recent_quality_training: 'regular'`. For someone doing
+  // intervals or tempo most weeks, a two-week cessation of intensity is
+  // detraining, not on-ramping. Seiler accepts one; he refuses zero, and the
+  // floor below still forbids it. Willy's condition of approval is that the
+  // opening quality exposures are threshold-domain — see REENTRY_WEEKS_ONE_WEEK_ONRAMP.
+  EARLY_ONSET_BASE_MAX_WEEKS: 1,
+  // §97 — Willy's condition. A one-week on-ramp gives tissue very little
+  // settling time before the first hard session, because week 1 of any plan is
+  // a change of stimulus even when it is all easy (new volume curve, new days,
+  // new structure). So quality may start in week 2, but the opening exposures
+  // lead with tempo/threshold and VO2max/hills are withheld this long — reusing
+  // §79's existing intensity re-entry rather than inventing a second mechanism.
+  REENTRY_WEEKS_ONE_WEEK_ONRAMP: 2,
   // §96 (Coaching Board CB-HSR-01, 2026-09-07) — `hard_session_relationship:
   // 'overdo'` is a BRAKE. Measured across training_age x distance x injury, it
   // was byte-identical to 'neutral' in EVERY cell: four wizard options, one of

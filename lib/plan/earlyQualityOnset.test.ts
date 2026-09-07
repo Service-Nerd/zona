@@ -52,8 +52,12 @@ describe('§89 — the gate FIRES for a demonstrably-ready runner', () => {
     // and WRONG afterwards: it would have forced two base weeks on top of a
     // foundation block that already delivers the same all-easy running, which is
     // the double-count §91 exists to remove.
-    expect(onRamp(p), 'on-ramp (base + foundation) sits at the floor')
-      .toBe(GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR)
+    // §97 — the gated cohort's floor is MIN_ONRAMP_WEEKS_GATED (1), not the
+    // general MIN_BASE_WEEKS_FLOOR (2). Seiler accepts one week for a runner
+    // whose gate requires `recent_quality_training: 'regular'`; he refuses
+    // zero, which is why the constant is a floor and not a deletion.
+    expect(onRamp(p), 'on-ramp (base + foundation) sits at the gated floor')
+      .toBe(GENERATION_CONFIG.MIN_ONRAMP_WEEKS_GATED)
     // The control: the same runner WITHOUT the signal keeps the full base.
     const control = generateRulePlan(base10k({ training_age: '5yr+', user_declared_level: 'experienced' }), 'paid', START)
     expect(control.meta.early_quality_onset).toBeFalsy()

@@ -3445,6 +3445,129 @@ Completes §35's unbuilt downward rung; consistent with §79's asymmetry. Amends
 
 ---
 
+## 97. A demonstrated runner's surplus weeks belong inside the plan
+
+**Principle.** For a §89-gated runner, surplus calendar weeks are **not** filled with
+a §57 foundation block. The plan itself extends to the distance's `max_weeks`, so
+those weeks become validated, periodised weeks inside the periodisation arc. The
+all-easy on-ramp floor for this cohort drops to `MIN_ONRAMP_WEEKS_GATED` (1), and —
+Willy's condition of approval — the opening quality exposures are **threshold-domain,
+with VO2max and hills withheld** for `REENTRY_WEEKS_ONE_WEEK_ONRAMP` weeks, reusing
+§79's existing intensity re-entry rather than a second mechanism.
+
+Delivered result: **quality in calendar week 2**, with the first VO2max in week 4.
+
+**Why — "delay the start" does not create rest.** §76 anchors the plan to race day
+and delays the start when there are surplus weeks; ADR-020 then fills the delay with
+a foundation block. So the runner **trains those weeks either way** — the founder's
+case is 30 km and 33 km. What §76 actually produces is not a later start but two
+weeks of real training sitting *outside* the periodisation arc, carved out of five
+invariants, and described by §57's own text as *"habit and routine, not adaptation."*
+For a runner the §89 gate has just certified as having a current base and doing
+structured work most weeks, that is the wrong object. `max_weeks` is the signature's
+own declared bound — this honours a limit §17 already set, it does not exceed one.
+
+**Why one week of on-ramp (Seiler).** §89's gate *requires*
+`recent_quality_training: 'regular'`. For a runner doing intervals or tempo most
+weeks, two weeks without intensity is detraining, not on-ramping. One week remains a
+settling week for the new structure — new volume curve, new blocked days. **Seiler
+accepts one and refuses zero**, which is why `MIN_ONRAMP_WEEKS_GATED` exists as a
+floor rather than the constraint simply being deleted.
+
+**The tension this ruling had to resolve, recorded because the first implementation
+got it wrong.** Part one's rationale is that filler becomes *base* weeks; part two
+shortens the on-ramp to one week. Those pull against each other — if the on-ramp is
+one week, the freed weeks land in **build and peak**, not base. So §97 does deliver
+*more* quality, not merely *earlier* quality: measured on the founder's input, 12
+weeks + 2 foundation → **13 weeks**, and the quality count rises. That is the honest
+description, and the board accepts it on the same ground as the rest: the weeks were
+being trained regardless, and training them inside a validated ramp is better than
+training them outside one.
+
+**One dropped slot, four steps downstream — the defect this ruling surfaced.** The
+first build implementation produced two `error` violations on the founder's own plan,
+and the chain is worth recording in full because every step looked locally correct:
+
+1. §97's re-entry withholds VO2max over the opening weeks.
+2. Build carries exactly **one** VO2max exposure (Seiler's cap on CD-16), and its
+   position was read off the rotation's own modulo. That week fell **inside** the
+   withholding window, so the week returned threshold and **the slot was spent**.
+3. Build therefore ended with **zero** VO2max, so the first exposure landed in peak
+   — past §5's adaptation deadline.
+4. That fired V2's swap safety net (`applyV2Vo2MaxOnsetTiming`), which carries its
+   own already-documented defect: `goalPaceWeek` is applied at CONSTRUCTION, so a
+   session built for an early week arrives in a second-half week still wearing the
+   early week's treatment — breaking `INV-PLAN-RACE-SPECIFIC-EXPOSURE` and
+   `INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT` on the displaced session.
+
+**The fix is to state the slot positively.** Build carries one VO2max exposure at the
+**first eligible rotation index at or after the rotation's natural one**, and every
+other index rotates through the non-VO2max categories. Never *earlier* than natural —
+pulling it to index 0 would open build on its hardest category, contradicting §2 and
+McMillan's "alternate, don't front-load" amendment on CD-16. Runners with no re-entry
+window are unaffected: their slot stays where it was.
+
+> **The generalisable lesson:** the old code found the slot by asking *"is this index
+> the VO2max one?"* and vetoing every other index that landed on it. That is a
+> question about the rotation, not about the plan, and it has no answer when the
+> slot's week turns out to be unavailable. A scarce resource should be **placed**,
+> not **discovered** — a rule that identifies a slot by coincidence of arithmetic
+> fails silently the moment the arithmetic and the availability disagree.
+
+**Delivered onset, measured before and after — including the one regression.**
+
+| weeks to race | §91 | §97 |
+|---|---|---|
+| 12 · 13 · 14 | 3 · 3 · 4 | **2 · 2 · 2** |
+| 15 | 4 | **3** |
+| 16 | 3 | **4** ← worse |
+| 18 · 20 | 3 · 3 | **2 · 2** |
+
+Six rows improve, one regresses. The 16-week case regresses for a specific and
+understandable reason: extending the plan to `max_weeks` moves `plan_start` two
+weeks earlier, which drops the gap from over 28 days (§57's *choice* band, where no
+block is auto-generated) into the *auto* band, so a runner who previously received
+no foundation block now receives one. **Recorded rather than chased** (§34): a runner
+16 weeks out from a 10K has more runway than the distance warrants even at
+`max_weeks`, and week 4 for them is not a bad plan — it is the honest consequence of
+§57's own banding. Chasing it would mean special-casing the gap classifier, which is
+how a rule accumulates exceptions nobody can reason about.
+
+**§1 YIELDS NOTHING — the ceiling constrained this ruling, not the other way round.**
+The first build breached it: a 7-day marathon reached **18.4% (19/103)** against §1's
+18% MARATHON ceiling, because one fewer base week moves a week into build/peak and
+one more quality session lands. §1 is a ceiling the board has twice refused to spend,
+so §97 yielded. Two bounds resulted:
+
+- `MAX_ONSET_PLAN_EXTENSION_WEEKS` (2) — the signature's headroom is **not uniform**
+  (2 weeks for 5K/10K/HM, 4 for MARATHON/50K/100K), so an unbounded extension is a
+  much larger change at long distances than the one argued here.
+- `ONSET_SHORT_ONRAMP_DISTANCES` (5K/10K/HM) — the shortened on-ramp itself is
+  distance-scoped. **This is not "the founder races 10K".** §1's ceiling *descends*
+  with distance (25% → 20% → 18% → 15%) while a shorter base pushes the quality share
+  *up*, so the shortened on-ramp is affordable exactly where the ceiling is loosest
+  and unaffordable where it is tightest. Willy's load argument points the same way: a
+  marathon's base carries the long-run progression and is the phase least able to
+  spare a week. **Long-distance runners keep `MIN_BASE_WEEKS_FLOOR` unchanged.**
+  The invariant applies the same scope as the producer — a checker using a different
+  scope would fail correct long-distance plans.
+
+**Config.** `GENERATION_CONFIG.MIN_ONRAMP_WEEKS_GATED` (1),
+`REENTRY_WEEKS_ONE_WEEK_ONRAMP` (2), `EARLY_ONSET_BASE_MAX_WEEKS` (1, was 2),
+`MAX_ONSET_PLAN_EXTENSION_WEEKS` (2), `ONSET_SHORT_ONRAMP_DISTANCES` (5K/10K/HM).
+`PLAN_SIGNATURES[d].max_weeks` becomes **live config** — it was declared and read by
+nothing (PLANLEN-DUP-01), which is precisely why surplus weeks became a foundation
+block in the first place. Enforced by the amended `INV-PLAN-ONRAMP-FLOOR`, whose
+floor is now cohort-dependent.
+
+**Board:** CB-ONSET-03, 2026-09-07 — Coaching Board CORRECT WITH AMENDMENT,
+Hutchinson chairing; Willy's threshold-first condition is a condition of approval.
+Amends §76 (surplus no longer delays the start for this cohort), §89/§91 (floor),
+§57 (block not generated for this cohort — bypassed, not weakened: its rules are
+unchanged for everyone who still gets one), and completes PLANLEN-DUP-01.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
