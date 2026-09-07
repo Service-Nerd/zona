@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Move a shipped feature from docs/releases/backlog.md to docs/canonical/feature-registry.md. Invoke after a commit that ships a tracked backlog item. The user can also invoke /ship explicitly with an item ID or short name.
+description: Move a shipped feature from docs/releases/backlog.md to docs/canonical/feature-registry.md, then append a learning entry to docs/build-log.md. Invoke after a commit that ships a tracked backlog item. The user can also invoke /ship explicitly with an item ID or short name.
 ---
 
 # /ship — Move a backlog item to the shipped registry
@@ -8,6 +8,8 @@ description: Move a shipped feature from docs/releases/backlog.md to docs/canoni
 ## Job
 
 Atomically transfer a backlog entry to `feature-registry.md`. Source of truth flips: backlog (forward work) → feature-registry (shipped log). An item lives in exactly one of the two.
+
+Then capture what the release taught in `docs/build-log.md` — raw notes, while it's fresh. The registry records *what* shipped; the build-log records *what was learned shipping it*, and feeds the weekly build-in-public content job.
 
 ## Pre-ship silent-failure gate (MANDATORY)
 
@@ -103,7 +105,48 @@ If the commit was a partial step (e.g. infra for a multi-commit feature, a bug f
 
 5. **Verify.** Re-read both files to confirm: backlog entry gone, registry entry present, no markdown table corruption, no stray separators.
 
-6. **Report.** One line back to the user: `Shipped: <feature> → registry. Removed from backlog.`
+6. **Append a build-log entry.** See the section below — this is a required step of every ship, not optional polish.
+
+7. **Report.** One line back to the user: `Shipped: <feature> → registry. Removed from backlog. Build-log entry added.`
+
+## Step: append a build-log entry
+
+After the release is shipped and documented, reflect on what this release
+actually taught — the thing you'd tell another builder over a coffee, not a
+changelog line. Then APPEND (never overwrite) one entry to the TOP of
+`docs/build-log.md` (directly under the `---` in the header), using this exact
+template:
+
+```
+## <YYYY-MM-DD> — <release id> · <one-line title>
+**Shipped:** <what changed, one sentence, plain>
+**Dev learning:** <a technical thing you now know that you didn't before — a
+  gotcha, a pattern, a wrong turn you backed out of, a decision and the real
+  reason for it. Name the actual file/type/error where it helps.>
+**Product/creator learning:** <what this taught about the product, the user,
+  positioning, or the SLC/brand-voice standard.>
+**AI-building learning:** <what building this with Claude taught — where the AI
+  sped you up, where it produced confident nonsense, a prompting or workflow
+  lesson. This is the differentiated angle; don't skip it.>
+**The honest bit:** <what was harder than expected, what broke, time lost, the
+  bit you'd normally hide. This is what makes the eventual post real.>
+**Hook material:** <one concrete specific — a number, an error message, an
+  "X hours to find a one-line fix", a before/after. Give the content system
+  something to build a first line on.>
+**Postable?:** <yes / no / maybe — your gut on whether this is worth a public
+  post, so the content job can prioritise.>
+```
+
+Rules:
+- One entry per ship. Newest at the top of the file.
+- If a release genuinely produced no learning worth telling anyone, write a
+  single line saying so and set Postable? = no. Do NOT invent a lesson.
+- Keep it to raw first-person notes. No DHTB comic voice here — that's the
+  content layer's job downstream. **Raw notes, not marketing.**
+- **Specific beats smooth.** "3 hours lost to a palette regression that was one
+  hardcoded hex in a button" is a post. "Learned about CSS discipline" is nothing.
+- File lives at `docs/build-log.md` (under `/docs/`, which is synced to the
+  Claude project; not under `/docs/releases/`, which is excluded).
 
 ## Edge cases
 
@@ -118,3 +161,4 @@ If the commit was a partial step (e.g. infra for a multi-commit feature, a bug f
 - It does not run tests, builds, or deploys. It is a documentation move only.
 - It does not write commit messages or push branches.
 - It does not update CLAUDE.md, ADRs, or contracts. Those updates remain the engineer's responsibility per CLAUDE.md rules.
+- It does not write marketing copy. The build-log entry is raw notes; the DHTB content job downstream supplies the voice.

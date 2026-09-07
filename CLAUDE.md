@@ -483,8 +483,11 @@ Three docs run the work pipeline. Keep them in sync:
 | `docs/releases/roadmap.md` | **The unified plan.** Now / Next / Later × workstream (🏃 Product · 📣 GTM & Marketing · 🔁 Growth & Retention · ⚖️ Legal & Ops). One-liners + status + links. Start here for "what are we doing, in what order, across product *and* market?" | Horizon/status updated as items move; new workstream items added here + detailed in backlog |
 | `docs/releases/backlog.md` | **What's left to ship — the detail bench.** Full specs, scope notes, SLC framing behind each roadmap item. | Item added when scoped; item removed when shipped (moves to feature-registry) |
 | `docs/canonical/feature-registry.md` | **What's been built + tier assignments.** Single source of truth for "does this exist? is it free or paid?" | New entry appended to "Shipped Features" table when a backlog item ships |
+| `docs/build-log.md` | **What each ship taught.** Raw first-person learning notes (dev / product / AI-building / the honest bit), newest first. Not marketing — the weekly build-in-public content job adds the voice. | One entry appended to the top by `/ship`, every ship |
 
-**The flow:** roadmap.md (plan) → backlog.md (spec) → ship → feature-registry.md (built). An open item lives in roadmap (as a line) + backlog (as detail); once shipped it lives only in feature-registry.
+**The flow:** roadmap.md (plan) → backlog.md (spec) → ship → feature-registry.md (built) + build-log.md (learned). An open item lives in roadmap (as a line) + backlog (as detail); once shipped it lives only in feature-registry.
+
+> `docs/build-log.md` sits at `/docs/` root deliberately — `/docs/releases/` is excluded from the Claude-project sync, and the content job needs to read it.
 
 > `docs/releases/launch-roadmap.md` is **superseded** (2026-06-03) — retained as the v1 App-Store-submission record only. Don't add forward work there.
 
