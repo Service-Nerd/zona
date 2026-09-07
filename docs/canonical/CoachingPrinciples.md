@@ -440,8 +440,7 @@ It is also **3 of 4 sessions hard — 50% by session count**, against §1's 25% 
 
 **Config.**
 - `GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT = 3`  (applied to easy + threshold paces only)
-- `GENERATION_CONFIG.VDOT_STALE_BENCHMARK_ADDITIONAL_DISCOUNT_PCT = 5`
-- `GENERATION_CONFIG.VDOT_STALE_BENCHMARK_MONTHS = 6`
+- Staleness is handled by the compounding ramp below (`VDOT_STALENESS_FRESH_WEEKS`, `VDOT_STALENESS_PER_4WK_PCT`, `VDOT_STALENESS_MAX_DISCOUNT_PCT`) — **not** by a months threshold.
 
 Implemented in `buildPaceFromVDOT(discountedVdot, rawVdot)` in `lib/plan/ruleEngine.ts`. Easy/quality paces use `discountedVdot`; interval pace uses `rawVdot`. The applied discount is surfaced in `plan.meta.vdot_discount_applied_pct` so the user can see what the engine did and why.
 
@@ -697,11 +696,13 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. The race-distan
 
 ## 24c. Long-run structure — build-phase Z2 ceiling (5K/10K, time-targeted)
 
-**Principle.** In build-phase long runs for time-targeted 5K and 10K plans, the middle 10% of the run includes a short Z2-ceiling reminder segment — a brief emphasis on running at the top of Zone 2 rather than drifting above it. This is not a pace segment; it carries no time target. It is a mindfulness cue embedded in the session note: "Zone 2 ceiling — if HR exceeds this, walk 30 seconds." Total session type remains `easy`; zone tag stays Z1–Z2.
+**Principle.** Build-phase long runs on time-targeted 5K and 10K plans carry a Z2-ceiling reminder in the session's coach notes — a brief emphasis on running at the top of Zone 2 rather than drifting above it. It is not a pace segment, carries no time target, and applies to the **whole run**, not a slice of it. The shipped cue is: *"Zone 2 ceiling — if HR starts climbing, back off to a walk for 30 seconds before resuming."* Total session type remains `easy`; zone tag stays Z1–Z2.
+
+> **Corrected 2026-09-07 — this section described a feature that was never built, next to one that was.** It previously said the cue covered *"the middle 10% of the run"* and quoted note text (*"if HR exceeds this, walk 30 seconds"*) that differs from what ships. The engine has emitted an unconditional whole-run note since `b856009`; there is no 10% segment and never was. `GENERATION_CONFIG.LR_BUILD_Z2_CEILING_SEGMENT_PCT` (0.10) existed to size that segment and was read by nothing — found by `configConsumer.test.ts` and **deleted**, because inventing a position for a note that has none would be building structure to justify a constant. A whole-run cue is also the right shape: HR drift on a long run is not confined to its middle. **The lesson is the adjacency** — §24b's segment percentages, twenty lines up, ARE read and DO work. One principle in a block of four quietly described something else, and nothing compared the prose to the code.
 
 **Why.** Build-phase long runs are the most common place where runners inadvertently drift into Zone 3 — aerobically comfortable but metabolically expensive. For a 5K runner doing a 90-minute long run, the last 20 minutes at Z3 costs them three days of residual fatigue that shows up in the Tuesday interval session. The Z2-ceiling reminder is a soft structural cue, not a hard physiological stimulus. It respects the session's aerobic intent while nudging execution quality.
 
-**Config.** `GENERATION_CONFIG.LR_BUILD_Z2_CEILING_SEGMENT_PCT` (0.10). Applied as a coach note segment in `buildWeekSessions()` build-phase long-run path when `distKey ∈ ['5K','10K']`. No invariant — this is a notes-layer cue, not a structural constraint.
+**Config.** None — deliberately. The cue is unconditional on qualifying weeks, so there is no numeric to tune; the qualifying condition (`is5K10K && goal === 'time_target' && phase === 'build' && !isDeload`) is the whole rule and lives in `buildWeekSessions()`. No invariant — this is a notes-layer cue, not a structural constraint. **A principle is allowed to have no config, and saying so is better than keeping a constant to make the section look complete.**
 
 ---
 
@@ -1117,7 +1118,9 @@ Worked examples:
 - 13–16 weeks: 6%
 - 17+ weeks: 7% (cap)
 
-Implemented in `applyVdotDiscount()` (`lib/plan/ruleEngine.ts`). Legacy `VDOT_STALE_BENCHMARK_*` config retained for back-compat with any consumer that hasn't migrated; the new ramp supersedes them in `applyVdotDiscount`.
+Implemented in `applyVdotDiscount()` (`lib/plan/ruleEngine.ts`).
+
+> **`VDOT_STALE_BENCHMARK_MONTHS` / `_ADDITIONAL_DISCOUNT_PCT` are DELETED (2026-09-07).** This paragraph used to say they were *"retained for back-compat with any consumer that hasn't migrated"*. `configConsumer.test.ts` proved there was no such consumer and never had been — a 6-month cliff and a flat 5% sat in config, documented as live, superseded by the ramp above, and read by nothing. Kept here as the worked example of why that test exists: **"retained for back-compat" is a claim about consumers, and nobody was counting them.**
 
 ---
 

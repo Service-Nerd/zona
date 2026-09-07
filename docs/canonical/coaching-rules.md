@@ -368,8 +368,12 @@ When a benchmark is provided, the engine derives VDOT and computes E/T/I paces. 
 
 ```
 GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT             = 3
-GENERATION_CONFIG.VDOT_STALE_BENCHMARK_ADDITIONAL_DISCOUNT_PCT = 5
-GENERATION_CONFIG.VDOT_STALE_BENCHMARK_MONTHS                  = 6
+# Staleness: the compounding ramp in §42, NOT a months cliff.
+# VDOT_STALE_BENCHMARK_* were deleted 2026-09-07 — documented as live,
+# superseded by the ramp, and read by no code (configConsumer.test.ts).
+GENERATION_CONFIG.VDOT_STALENESS_FRESH_WEEKS
+GENERATION_CONFIG.VDOT_STALENESS_PER_4WK_PCT
+GENERATION_CONFIG.VDOT_STALENESS_MAX_DISCOUNT_PCT
 ```
 
 Default discount: 3%.

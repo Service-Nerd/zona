@@ -1026,8 +1026,6 @@ export const GENERATION_CONFIG = {
   // ── VDOT conservatism (CoachingPrinciples §10) ──────────────────────────────
   // The signature Zonna move: err on the side of restraint when in doubt.
   VDOT_CONSERVATIVE_DISCOUNT_PCT: 3,
-  VDOT_STALE_BENCHMARK_ADDITIONAL_DISCOUNT_PCT: 5,
-  VDOT_STALE_BENCHMARK_MONTHS: 6,
 
   // R2/L-03 — staleness compounding. Discount scales with benchmark age:
   // base discount ≤ FRESH_WEEKS, then +PER_4WK_PCT per additional 4-week
@@ -1118,7 +1116,6 @@ export const GENERATION_CONFIG = {
   LR_5K10K_PEAK_FINAL_SEGMENT_PCT:     0.30,              // last 30% at HM pace
   LR_5K10K_PEAK_MID_PACE:              'marathonPaceStr' as const,
   LR_5K10K_PEAK_FINAL_PACE:            'hmPaceStr'       as const,
-  LR_BUILD_Z2_CEILING_SEGMENT_PCT:     0.10,              // last 10% at Z2 ceiling (build)
   LR_FINISH_GOAL_LATE_PEAK_SEGMENT_PCT: 0.10,             // last 10% at Z2 ceiling (finish-goal final peak)
 
   // ── Foundation Block (CoachingPrinciples §57) ─────────────────────────────

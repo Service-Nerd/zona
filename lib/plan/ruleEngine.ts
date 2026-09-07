@@ -2071,8 +2071,13 @@ function fiveKTenKPeakLongRunSession(
   const finalPct = GENERATION_CONFIG.LR_5K10K_PEAK_FINAL_SEGMENT_PCT   // 0.30
   const midKm    = Math.round(distKm * midPct * 10) / 10
   const finalKm  = Math.round(distKm * finalPct * 10) / 10
-  const mpStr    = pace.marathonPaceStr ?? 'marathon pace'
-  const hmStr    = pace.hmPaceStr ?? 'HM pace'
+  // §24b names WHICH pace each segment runs at, and those choices are coaching
+  // decisions (79% / 84% VDOT), so they are read from config rather than fixed
+  // here. They were declared and hardcoded at the same time — the config keys
+  // existed and this line ignored them, which is how a coaching choice ends up
+  // living in two places that can disagree.
+  const mpStr    = pace[GENERATION_CONFIG.LR_5K10K_PEAK_MID_PACE]   ?? 'marathon pace'
+  const hmStr    = pace[GENERATION_CONFIG.LR_5K10K_PEAK_FINAL_PACE] ?? 'HM pace'
   const easyPct  = Math.round((1 - midPct - finalPct) * 100)
   const coach_notes: [string, string?, string?] = [
     `Easy for the first ${easyPct}%. Let the aerobic base work.`,
