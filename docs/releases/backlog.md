@@ -296,6 +296,41 @@ No schedule. Ordered roughly by user value. Each needs FREE/PAID tag in `docs/ca
 
 *Both items opened and closed 2026-09-04 → feature-registry. The input-coverage gate found both on its first run; nothing open here.*
 
+### Verification that runs itself — VERIF (from the 2026-09-07 error post-mortem)
+
+**Why this section exists.** On 2026-09-07 ten errors were made and all ten were
+caught — but only **four** by a mechanism. The other six were caught because someone
+chose to check: reading git history before deleting a principle, diffing two plans
+instead of trusting a grep, measuring an invariant's firing rate before shipping it,
+echoing a real exit code instead of reading a summary. **Six of ten would have
+shipped on a tired afternoon.** Every one shared a shape — *a document was treated as
+evidence about code*.
+
+**BINDING REQUIREMENT ON ALL THREE ITEMS: they must be AUTONOMOUS.** Each ships as a
+`vitest` test in the `npm run verify` chain, or as a `.claude/hooks/` hook — **never**
+as a script that has to be invoked. A checker nobody runs is this repo's most
+repeated failure (SWEEP-VACUOUS-01, §5's specificity ladder, `INV-PLAN-FOUNDATION-BLOCK`
+never firing in production for months). If the answer to *"what makes this run?"* is
+*"someone remembers"*, it is not done. `configPrincipleSync.test.ts` and
+`configConsumer.test.ts` are the shape to copy.
+
+- 🔲 **INPUT-EFFECT-01 — prove every `GeneratorInput` field DOES something** *(P1, the one with product value attached, not just hygiene)* — for each field, generate two plans differing only in that field and diff them. Every field must either **change the delivered plan** or be **registered as intentionally inert with a stated reason** (same two-register shape as `configConsumer.test.ts`: DECLARATIVE vs DEBT).
+  - **This is the mechanical version of the question CAT-DEPTH-01 asks by hand**, and therefore of the paid proposition: *"do the wizard's answers mean anything?"* becomes a number that can only improve, checked on every commit.
+  - It would have caught **HSR-INERT-01 automatically** (`overdo` byte-identical to `neutral` in every cell, for every runner, forever) instead of a founder noticing a sibling symptom and a hand-written diff finding it.
+  - **Design note learned the hard way 2026-09-07:** the fixture must be able to REACH each field's branch. The first hand-written HSR diff used `training_age: '2-5yr'` and reported HM/MARATHON as inert — a property of the fixture, not the engine. Vary each field off a baseline KNOWN to fire the relevant gate, and assert the baseline fires.
+  - Pairs with the existing sweep input-coverage gate, which proves a field is *varied*; this proves it *matters*.
+  - *Verify still open:* no `lib/plan/inputEffect.test.ts`.
+
+- 🔲 **DOC-CLAIM-01 — a principle that quotes a literal string must have that string in the code** *(P2, ~30 lines, catches an exact observed defect class)* — `CoachingPrinciples.md` quotes engine strings in backticks (session labels, coach-note text, config key names). Each must exist in the codebase or be explicitly marked illustrative.
+  - **The observed case:** §24c quoted the cue *"Zone 2 ceiling — if HR exceeds this, walk 30 seconds."* The engine has emitted *"Zone 2 ceiling — if HR starts climbing, back off to a walk for 30 seconds before resuming"* since `b856009`. Searching the doc's words concluded the feature was **missing**; it had shipped in April. §24c also described a "middle 10% of the run" segment that never existed.
+  - Closes the gap between the two checks that already exist: `configPrincipleSync` proves *key → principle*, `configConsumer` proves *key → consumer*, and **nothing proves *principle → behaviour***.
+  - *Verify still open:* no `docs/` claim check in the verify chain.
+
+- 🔲 **NOISE-GATE-01 — a new invariant must declare its firing rate** *(P3)* — when an invariant is added, its rate across the property sweep is reported, and a rate above a threshold fails until justified or the check is re-scoped.
+  - **The observed case:** the first draft of `INV-PLAN-DELIVERED-RAMP` (§94) fired on **44.4%** of a 525-plan grid, worst reading 114%, and was almost entirely noise — it flagged plans ramping *up toward* the runner's own stated volume. Scoped correctly it is 17%. It was caught by choosing to measure; nothing required it.
+  - §1 already records the standard this enforces — Willy, on an `error` firing on 71% of a distance's plans: *"not a safety mechanism — it is noise, and noise gets suppressed, which is how a real violation gets missed later."* The standard is written down and unenforced.
+  - *Verify still open:* `grep -n "firing rate\|noise" scripts/property-validate-plans.ts` — absent.
+
 ### Zone & distance honesty (from the 2026-09-04 board, second sitting)
 
 - ✅ **RAMP-BOUNCEBACK-01 — SHIPPED 2026-09-06** (Coaching Board CORRECT WITH AMENDMENT, Willy-led). The §2 post-deload exemption is now **bounded** for knee/shin runners by the §12 cap (5%), removing the `Math.max` override that shipped +26–43% single-week rises to injured tissue. Healthy bouncebacks stay unbounded (measured — a healthy cap flipped +50pp of plans to constrained for zero safety benefit). `INV-PLAN-BOUNCEBACK-BOUNDED` (warn — the delivered arm's §52 long-run residual closed alongside DELOAD-INVERSION-01/§90). No new numeric. See feature-registry + §2 amendment. **CB-PHASE-01's global base 35→30 is NOT the follow-on** — it was superseded by the per-runner §89 experience-gated onset (a global base shortener harms beginners; onset gates on demonstrated readiness instead).
