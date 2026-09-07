@@ -6,6 +6,24 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-07 — §97 · I parked it, the founder said finish it, and the bug was four steps upstream
+
+**Shipped:** Quality now starts in calendar week 2 for a demonstrably-ready runner. It started at week 5 this morning.
+
+**Dev learning:** The bug that stopped me shipping this took four steps to explain and every one looked locally correct. A new rule withheld VO2max for the opening weeks. Build carries exactly one VO2max session, and its position was worked out from the rotation's modulo — so when the withholding window covered that week, the week quietly returned a threshold session and **the slot was spent**. Build ended with zero VO2max, which pushed the first one into the peak phase, past an adaptation deadline, which triggered a fallback that swaps two sessions — and that swap carries a documented defect where a session built for an early week arrives in a late week still wearing the early week's pace treatment. Two `error`-level violations, four steps from the cause. The fix was to stop *finding* the slot and start *placing* it. **A scarce resource identified by coincidence of arithmetic fails silently the moment the arithmetic and the availability disagree.**
+
+**Product/creator learning:** The founder asked for week 1. I refused, delivered week 3, and explained why. He came back with "week 2 — maybe". Measuring what week 2 actually required changed the question completely: his base phase was already zero weeks, so the lever I'd have reached for first — shortening the on-ramp — would have done **nothing** for him. His blocker was two pre-plan "foundation" weeks. Two different runners in the same product were blocked by two entirely different rules for the same symptom. If I'd argued from the mechanism I assumed, I'd have built the wrong thing and it would have looked like it worked for somebody.
+
+**AI-building learning:** I parked this branch once, explicitly, with a commit message listing three unresolved findings. That felt like failure at the time. It turned out to be the highest-leverage thing in the session — when I came back to it the message told me exactly where to start, and the "tension between the two halves of the ruling" I'd noted at 80% confidence turned out to be the thing that mattered. **Writing down why you stopped is worth more than pushing through**, and the cost of writing it is about four minutes.
+
+**The honest bit:** Six separate governance checks failed on this change and every single one was correct. The config-principle sync twice, the config-consumer check (a constant I'd declared dead that morning became live by afternoon), the deload single-ownership guard, and two assertions from a principle I'd written six hours earlier that this one supersedes. That's the system working — but it's also six chances I had to ship something wrong, in one change, on one afternoon. And a ceiling I'd been enforcing all day nearly got spent by accident: my first build pushed a marathon plan to 18.4% quality against an 18% limit, which I only caught because a sweep across 16,000 plans flagged exactly one of them.
+
+**Hook material:** A user asked for a feature. I said no and explained why. He asked for a smaller version. I measured it — and found the reason I'd given him for the "no" was wrong. Not the answer. The *reason*.
+
+**Postable?:** yes — three strong angles. The four-step bug chain (dev). Parking work with a written reason paying off (AI-building). And the founder-asks-twice story, where the second ask exposed that my first refusal rested on the wrong mechanism.
+
+---
+
 ## 2026-09-07 — §96 · Three greps agreed and all three were wrong
 
 **Shipped:** `hard_session_relationship: 'overdo'` now does something. Plus a config-consumer test that found 10 dead `GENERATION_CONFIG` keys and 14 dead `PLAN_SIGNATURES` fields.
