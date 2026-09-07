@@ -25,6 +25,7 @@ import { isV2Structure, StructureV2Schema, goalPaceShapeWord, type PaceAnchor } 
 import { durationForMainSet } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
 import { isDeloadWeek, computeDeloadWeeks } from './deloadCadence'
+import { plannedFoundationWeeks } from './foundationBlock'
 import type { GeneratorPhase } from '@/types/plan'
 import {
   V1_SESSION_CATALOGUE, selectCatalogueSession,
@@ -429,7 +430,12 @@ function buildFallbackPace(fitness: FitnessLevel): PaceGuide {
 // (covers full taper weeks + race week). Base/build/peak fill the remaining
 // weeks proportionally to PHASE_DISTRIBUTION (35:35:15). See ADR-009.
 
-function computePhases(totalWeeks: number, distanceKm: number, earlyOnset = false): Phase[] {
+function computePhases(
+  totalWeeks: number,
+  distanceKm: number,
+  earlyOnset = false,
+  foundationWeeks = 0,
+): Phase[] {
   const distKey = raceDistanceKey(distanceKm)
   const taperPhaseWeeks = GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey].length
   const remaining = Math.max(0, totalWeeks - taperPhaseWeeks)
@@ -443,6 +449,30 @@ function computePhases(totalWeeks: number, distanceKm: number, earlyOnset = fals
   const denom = basePct + dist.build_pct + dist.peak_pct
   const baseFloor = GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR
   let baseWeeks  = Math.max(baseFloor, Math.round(remaining * basePct  / denom))
+
+  // §91 (CB-ONSET-02) — THE ON-RAMP IS COUNTED IN WEEKS THE RUNNER RUNS.
+  //
+  // Two corrections, both scoped to the §89-gated runner so nobody else moves:
+  //
+  //  (a) Cap base in WEEKS as well as percent. A percentage re-grew the base on
+  //      longer plans — the runner who entered their race 14 weeks out got MORE
+  //      on-ramp than one 12 weeks out, which is backwards.
+  //
+  //  (b) Credit foundation weeks against it. §57 foundation weeks are all-easy
+  //      running at the runner's current volume; so is base. They are the same
+  //      object to the tissue, and Seiler's floor is a physiological on-ramp,
+  //      not an administrative one. Uncredited, §89's whole effect was cancelled
+  //      for the 62% of plans that carry a block: measured delivered onset was
+  //      calendar week 4/5/6/6 at 12/13/14/15 weeks-to-race, against week 3 for
+  //      a runner with no block at all.
+  //
+  // Base may reach ZERO here, and that is the intended terminal case: two
+  // foundation weeks ARE the two-week floor. It is never negative, and the
+  // floor still binds in full for every runner the §89 gate did not pass.
+  if (earlyOnset) {
+    baseWeeks = Math.min(baseWeeks, GENERATION_CONFIG.EARLY_ONSET_BASE_MAX_WEEKS)
+    baseWeeks = Math.max(0, baseWeeks - Math.min(foundationWeeks, baseWeeks))
+  }
   let buildWeeks = Math.max(1, Math.round(remaining * dist.build_pct / denom))
   let peakWeeks  = Math.max(2, remaining - baseWeeks - buildWeeks)
 
@@ -2153,6 +2183,17 @@ function preferredQualityCategory(
   // category. See the note below — this is why the rotation is deadline-aware
   // rather than letting V2 swap afterwards.
   vo2MustOpenBuild = false,
+  // §93 — index of this week within the peak phase's NON-DELOAD weeks, the peak
+  // twin of `buildRotationIndex`. Peak had no rotation at all: its category was
+  // a constant per distance, so the phase could not vary however long it grew.
+  peakRotationIndex = 0,
+  // §93 — how many non-deload weeks the peak phase actually has. The VO2max
+  // allowance is the LESSER of PEAK_MAX_VO2MAX_SESSIONS and half the phase, so
+  // peak is never majority-general however short it is. Without the second
+  // term a two-week peak spends both slots on VO2max and delivers 0% specific
+  // against §5's declared 60% — which is the pre-existing shape measured on the
+  // non-gated control.
+  peakWeeksTotal = 0,
 ): CatalogueCategory {
   if (phase === 'base')  return 'aerobic'
   if (phase === 'build') {
@@ -2202,8 +2243,34 @@ function preferredQualityCategory(
     return picked
   }
   if (phase === 'taper') return 'threshold'
-  // peak:
-  if (distKey === '5K' || distKey === '10K') return 'vo2max'
+
+  // ── peak ──────────────────────────────────────────────────────────────────
+  //
+  // §93 (CB-SPEC-01). This branch used to read
+  // `if (distKey === '5K' || distKey === '10K') return 'vo2max'` — unconditional,
+  // every peak week, both goals. It is the leftover CD-16 identified and did not
+  // remove: *"peak-only was a leftover from the superseded assumption that VO2max
+  // was the specific work for a 10K."* SC-05 reclassified 10K race pace as the
+  // specific work and VO2max as GENERAL; §5's ladder then asks peak for 60%
+  // SPECIFIC. Measured, 10K peak delivered 0% — the exact inverse — while HM,
+  // whose signature carries `race_specific`, delivered 5/5.
+  //
+  // 5K is deliberately untouched: §22/SC-05 (board-ratified 2026-09-03) excludes
+  // it because race pace ~ I-pace there, so the VO2max rows ARE the specific work.
+  // Requiring a separate race-pace row at 5K demands a distinction the physiology
+  // does not make (Seiler).
+  if (distKey === '5K') return 'vo2max'
+  if (distKey === '10K') {
+    // CD-16's own arithmetic, now enforced instead of assumed: "one build
+    // exposure ... plus peak's two". Beyond that the peak turns to race-specific
+    // work for a time goal — which is what §5 asked for all along — or to
+    // threshold for a finish goal, which has no goal pace to run (CD-2/§80).
+    const vo2Allowance = peakWeeksTotal > 0
+      ? Math.min(GENERATION_CONFIG.PEAK_MAX_VO2MAX_SESSIONS, Math.ceil(peakWeeksTotal / 2))
+      : GENERATION_CONFIG.PEAK_MAX_VO2MAX_SESSIONS
+    if (peakRotationIndex < vo2Allowance) return 'vo2max'
+    return isTimeTarget ? 'race_specific' : 'threshold'
+  }
   // CD-2 / §22 / §80 — race-pace ("race_specific") work is a TIME-TARGET tool.
   // A finish-goal runner has no goal pace to run it at, so selecting it here left
   // the engine naming a session "HM-pace intervals" and then prescribing generic
@@ -2236,6 +2303,11 @@ function buildWeekSessions(
   // and let the two drift. Deload weeks carry no quality, so counting them
   // would let the rotation skip a beat and drop vo2max out of a build phase.
   buildRotationIndex: number,
+  // §93 (CB-SPEC-01) — the peak twin of the above, counted over the peak
+  // phase's NON-DELOAD weeks. Same reasoning: the caller owns the deload
+  // cadence, so deriving it here would duplicate that rule and let the two
+  // drift (DELOAD-OWNER-01).
+  peakRotationIndex: number,
   // SC-07 / CD-16 — the adaptation deadline lands on the first build quality
   // week, so the rotation must open on vo2max. Computed once by the caller.
   vo2MustOpenBuild: boolean,
@@ -2516,8 +2588,18 @@ function buildWeekSessions(
   // percentage attempt (which was reasoned to lose volume) failed. Effort-governed
   // hills are priced at easy pace, so this leaves them longer — deliberately, they
   // are lower impact (SC-09) and not the work this ceiling exists to bound.
+  // §93 — the peak phase's length, derived from the phases array this function
+  // already receives rather than passed in, so it cannot disagree with the
+  // boundaries every other consumer reads. Deload weeks are NOT subtracted: the
+  // allowance is a share of the phase, and a deload inside peak is excluded from
+  // the rotation by the caller (isRotatingPeakWeek), so subtracting here would
+  // discount it twice.
+  const peakPhase = phases.find(p => p.name === 'peak')
+  const peakWeeksTotal = peakPhase ? Math.max(0, peakPhase.end_week - peakPhase.start_week + 1) : 0
+
   const primaryCat = preferredQualityCategory(
-    phase, distKey, input.goal === 'time_target', buildRotationIndex, vo2MustOpenBuild)
+    phase, distKey, input.goal === 'time_target', buildRotationIndex, vo2MustOpenBuild,
+    peakRotationIndex, peakWeeksTotal)
   const vo2maxCapKm = durationForMainSet(GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS) / pace.minPerKmInterval
   const qualKmPrimary = primaryCat === 'vo2max'
     ? Math.min(qualKmPerSession, vo2maxCapKm)
@@ -2718,7 +2800,9 @@ function buildWeekSessions(
     // taper weeks vary their stimulus. Even idx → threshold (default), odd idx
     // → race_specific (sharpener). Race week itself has no quality (§26).
     const isTimeTarget = input.goal === 'time_target'
-    let preferredCategory = preferredQualityCategory(phase, distKey, isTimeTarget, buildRotationIndex, vo2MustOpenBuild)
+    let preferredCategory = preferredQualityCategory(
+      phase, distKey, isTimeTarget, buildRotationIndex, vo2MustOpenBuild, peakRotationIndex,
+      peakWeeksTotal)
     let taperForceSharpener = false
     // CD-2 / §36 — goal-pace sharpening in the taper is a time-target tool; a
     // finish-goal taper stays on threshold (§80). Without the goal-gate, a
@@ -2846,8 +2930,21 @@ function buildWeekSessions(
         )
         if (qual2Day) {
           // Second slot prefers a different category for variety: vo2max if first was threshold and vice versa.
+          //
+          // §93 — the map must be EXHAUSTIVE, and it was not. The final
+          // `: preferredCategory` fallback returned the primary's own category
+          // unchanged for `race_specific` / `ultra_specific`, so a week whose
+          // primary was race-pace filled BOTH slots from the same category —
+          // and, since 10K owns exactly one `race_specific` row
+          // (`tenk_pace_intervals`), with the literally identical session twice
+          // in one week. Latent while only HM reached a race-specific primary;
+          // live the moment §93 gave 10K peak one. A race-pace primary pairs
+          // with threshold: pairing it with a second specific session is both
+          // duplicative and more goal-pace intensity than one week should carry.
           const altCategory: CatalogueCategory = preferredCategory === 'threshold' ? 'vo2max'
             : preferredCategory === 'vo2max' ? 'threshold'
+            : preferredCategory === 'race_specific' ? 'threshold'
+            : preferredCategory === 'ultra_specific' ? 'threshold'
             : preferredCategory
           // §79 (2026-09-02, Coaching Board) — select on the INTENSITY level, as
           // the primary slot above already does. This slot read the STRUCTURAL
@@ -4419,7 +4516,18 @@ export function generateRulePlan(
     && intensityFitness === 'experienced'
     && FITNESS_RANK[fitness] >= FITNESS_RANK['intermediate']
     && !returningRunner && !isFreshReturn
-  const phases = computePhases(totalWeeks, input.race_distance_km, earlyQualityOnset)
+  // §91 (CB-ONSET-02) — how many all-easy foundation weeks will sit in front of
+  // week 1. From the single owner in foundationBlock.ts, using the SAME `today`
+  // and the SAME anchored start that composePlanWithFoundation will use, so the
+  // number that sizes base here and the number of weeks built there cannot
+  // disagree. Zero whenever no block is coming (gap < 7 days, or the runner
+  // declined it) — in which case the base floor binds unchanged.
+  const foundationWeeksAhead = plannedFoundationWeeks(
+    today, anchoredStartIso, input.foundation_decision,
+  )
+  const phases = computePhases(
+    totalWeeks, input.race_distance_km, earlyQualityOnset, foundationWeeksAhead,
+  )
   // §87 (CB-DELOAD-01) — WHERE the deloads fall, decided once for the whole
   // plan and passed to every consumer. Computing it twice from the same inputs
   // is what DELOAD-OWNER-01 removed; re-deriving it inside buildVolumeSequence
@@ -4493,6 +4601,10 @@ export function generateRulePlan(
   // build quality rotation (threshold -> vo2max -> threshold for 5K/10K) is
   // driven by quality-carrying weeks rather than calendar position.
   let buildRotationIndex = 0
+  // §93 — peak's own rotation counter. Peak previously had no rotation: its
+  // category was a per-distance constant, so however many weeks the phase grew
+  // to, every one of them got the same session category.
+  let peakRotationIndex = 0
 
   // Does the VO2max adaptation deadline land on the first build quality week?
   // Mirrors applyV2Vo2MaxOnsetTiming's arithmetic deliberately — same inputs,
@@ -4537,6 +4649,7 @@ export function generateRulePlan(
     const { adjustedKm } = applyInjuryAdjustments(weeklyKm, prevWeeklyKm, true, input, phase)
 
     const isRotatingBuildWeek = phase === 'build' && !isDeload && !isRaceWeek
+    const isRotatingPeakWeek  = phase === 'peak'  && !isDeload && !isRaceWeek
 
     // §53 (Coaching Board 2026-09-03) — threshold_ladder's second eligibility
     // path. Read from ALREADY-BUILT prior weeks (weeks.push happens at the
@@ -4573,6 +4686,7 @@ export function generateRulePlan(
       goalPace,
       totalWeeks,
       buildRotationIndex,
+      peakRotationIndex,
       vo2MustOpenBuild,
       intensityFitness,
       cueCtx,
@@ -4587,6 +4701,7 @@ export function generateRulePlan(
     // Advance the rotation only on weeks that actually carried a build quality
     // slot — see isRotatingBuildWeek above.
     if (isRotatingBuildWeek) buildRotationIndex++
+    if (isRotatingPeakWeek) peakRotationIndex++
 
     // §78 — the benchmark session is the proof. `isRecalibration` was the
     // intent; a placed `hard` session is the fact. If the slot was too short to
@@ -5368,6 +5483,14 @@ export function generateRulePlan(
     // §89 — experience-gated quality onset surfaced for honesty + the
     // INV-PLAN-EARLY-ONSET-GATED invariant. Stamped only when it actually fired.
     ...(earlyQualityOnset ? { early_quality_onset: true } : {}),
+    // §91 — the on-ramp credit, stamped because the INVARIANT cannot otherwise
+    // see it. validatePlan runs twice on different objects: once here on the
+    // bare plan (no foundation weeks exist yet) and again in
+    // composePlanWithFoundation on the assembled one. Counting foundation weeks
+    // off `plan.weeks` would therefore give two different answers to the same
+    // question. The DECISION is made once, here, so the number is recorded once,
+    // here — and both validations read the same field.
+    foundation_weeks_planned: foundationWeeksAhead,
     goal:                      input.goal,
     target_time:               input.target_time,
     days_available:            input.days_available,

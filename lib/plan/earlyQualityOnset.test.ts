@@ -31,6 +31,9 @@ const base10k = (o: Partial<GeneratorInput>): GeneratorInput => ({
 const READY = base10k({ training_age: '5yr+', user_declared_level: 'experienced', recent_quality_training: 'regular' })
 
 const baseWeeks = (p: Plan) => p.weeks.filter(w => w.n >= 1 && w.phase === 'base').length
+// §91 — the all-easy on-ramp as the runner experiences it: base weeks plus the
+// §57 foundation weeks that will be prepended in front of week 1.
+const onRamp = (p: Plan) => baseWeeks(p) + (p.meta.foundation_weeks_planned ?? 0)
 const firstQualityWeek = (p: Plan) => {
   for (const w of p.weeks) if (Object.values(w.sessions).some(s => s?.type === 'quality')) return w.n
   return 0
@@ -43,7 +46,14 @@ describe('§89 — the gate FIRES for a demonstrably-ready runner', () => {
   it('shortens the base and starts quality sooner, and stamps meta', () => {
     const p = generateRulePlan(READY, 'paid', START)
     expect(p.meta.early_quality_onset, 'ready runner should get early onset').toBe(true)
-    expect(baseWeeks(p), 'base is shortened to the floor').toBe(GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR)
+    // §91 — the floor is on the ON-RAMP (base + foundation), not on base alone.
+    // This assertion used to read `baseWeeks(p) === MIN_BASE_WEEKS_FLOOR`, which
+    // was the right check while foundation weeks were invisible to computePhases
+    // and WRONG afterwards: it would have forced two base weeks on top of a
+    // foundation block that already delivers the same all-easy running, which is
+    // the double-count §91 exists to remove.
+    expect(onRamp(p), 'on-ramp (base + foundation) sits at the floor')
+      .toBe(GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR)
     // The control: the same runner WITHOUT the signal keeps the full base.
     const control = generateRulePlan(base10k({ training_age: '5yr+', user_declared_level: 'experienced' }), 'paid', START)
     expect(control.meta.early_quality_onset).toBeFalsy()

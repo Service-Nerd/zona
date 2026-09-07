@@ -12,7 +12,9 @@
 // case). Pure — no throw, no console.error; callers decide policy via
 // enforceViolations() (lib/plan/invariants.ts).
 
-import { generateFoundationBlock, classifyGap, gapDays, type GapClass } from './foundationBlock'
+import {
+  generateFoundationBlock, classifyGap, gapDays, plannedFoundationWeeks, type GapClass,
+} from './foundationBlock'
 import { validatePlan, type Violation } from './invariants'
 import type { Plan, GeneratorInput } from '@/types/plan'
 
@@ -31,12 +33,16 @@ export function composePlanWithFoundation(
   const gap = gapDays(today, plan.meta.plan_start)
   const gapClass = classifyGap(gap)
 
-  const shouldAdd = gapClass === 'auto' || (gapClass === 'choice' && decision === 'add')
+  // §91 — the count comes from the single owner, and is passed as `forceWeeks`
+  // so the number that sized the base phase in generateRulePlan and the number
+  // of weeks actually built here are literally the same value, not two
+  // computations that happen to agree.
+  const weekCount = plannedFoundationWeeks(today, plan.meta.plan_start, decision)
 
   let assembled = plan
-  if (shouldAdd) {
+  if (weekCount > 0) {
     const { weeks: foundationWeeks } = generateFoundationBlock({
-      input, planStartDate: plan.meta.plan_start, today,
+      input, planStartDate: plan.meta.plan_start, today, forceWeeks: weekCount,
     })
     if (foundationWeeks.length) {
       assembled = { ...plan, weeks: [...foundationWeeks, ...plan.weeks] }

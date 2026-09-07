@@ -178,6 +178,16 @@ export const GENERATION_CONFIG = {
 
   // ── Phase structure (CoachingPrinciples §4, §5) ─────────────────────────────
   // Specificity rises as the race approaches.
+  // §93 (Coaching Board CB-SPEC-01, 2026-09-07) — how many VO2max exposures the
+  // PEAK phase may carry for a short-distance plan. CD-16 already fixed the
+  // number in prose — "one build exposure ... plus peak's two: three spread
+  // exposures" — but nothing enforced it: `preferredQualityCategory` returned
+  // 'vo2max' for EVERY 10K peak week, and CD-16's arithmetic silently assumed
+  // peak was two weeks long. Once §91 shortened base, peak grew to five weeks
+  // and the same unbounded return produced FIVE consecutive VO2max sessions for
+  // a 44-year-old — with zero race-pace work before the taper.
+  PEAK_MAX_VO2MAX_SESSIONS: 2,
+
   SPECIFICITY_BY_PHASE: {
     base:  { general_pct: 100, specific_pct: 0 },
     build: { general_pct: 70,  specific_pct: 30 },
@@ -229,6 +239,13 @@ export const GENERATION_CONFIG = {
   // hardcoded `Math.max(2, …)` in computePhases; named here because the invariant
   // and the phase builder must agree on it (Configuration Singularity).
   MIN_BASE_WEEKS_FLOOR: 2,
+  // §91 (Coaching Board CB-ONSET-02, 2026-09-07) — for a §89-gated runner, base
+  // is capped in WEEKS, not only as a fraction. `EARLY_ONSET_BASE_PCT` is a
+  // percentage, so a LONGER plan re-grew the base it was meant to shorten: a
+  // 14-week plan gave base 3, a 12-week plan gave base 2. The runner who
+  // entered their race earlier was punished for it. A demonstrated base does
+  // not need more on-ramp because the race is further away.
+  EARLY_ONSET_BASE_MAX_WEEKS: 2,
   // §89 Lever A — a returning runner whose tissue is demonstrably conditioned
   // (`recent_quality_training: 'regular'`, injury-free) has the §2196 re-entry
   // withholding SHORTENED to this many weeks, not zeroed (Willy: one week of
@@ -1136,6 +1153,13 @@ export const GENERATION_CONFIG = {
   // foundation week below this many sessions has NO long run — it is equal easy
   // runs, which is what it actually is. See CoachingPrinciples §57.
   FOUNDATION_MIN_SESSIONS_FOR_LONG_RUN: 4,
+  // §92 (Coaching Board CB-ONSET-02, 2026-09-07) — §57 bans strides in the
+  // foundation block. That ban is lifted for, and ONLY for, a runner who passes
+  // the §89 readiness gate (which carries an absolute injury veto — Willy's
+  // condition). Strides are neuromuscular and fully recovered: they add no Z3
+  // minutes, so §1 is untouched, and they are not `quality`, so they do not
+  // count against INTENSITY_DISTRIBUTION. A feel fix, not a fitness one.
+  FOUNDATION_STRIDES_REQUIRE_EARLY_ONSET: true,
 
   // §81 (Coaching Board, MWM-02, 2026-09-03) — how far the long run may exceed
   // the runner's stated weekday ceiling before the plan stops calling itself a

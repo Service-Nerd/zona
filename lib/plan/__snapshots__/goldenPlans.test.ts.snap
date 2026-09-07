@@ -21,6 +21,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
     "fitness_intensity_level": "intermediate",
     "fitness_level": "beginner",
     "fitness_signal_note": "Your race benchmark and your training volume point to different levels (beginner on benchmark, intermediate on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.",
+    "foundation_weeks_planned": 1,
     "generator_input": {
       "age": 43,
       "benchmark": {
@@ -1143,6 +1144,7 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
     "days_required_ok": 2,
     "difficulty_band": "comfortable",
     "fitness_level": "beginner",
+    "foundation_weeks_planned": 3,
     "generator_input": {
       "age": 30,
       "current_weekly_km": 12,
@@ -1860,6 +1862,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
     "days_required_ok": 2,
     "difficulty_band": "comfortable",
     "fitness_level": "intermediate",
+    "foundation_weeks_planned": 3,
     "generator_input": {
       "age": 35,
       "benchmark": {
@@ -1899,7 +1902,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
       9,
       9,
       3,
-      3,
+      1,
     ],
     "quit_date": "",
     "race_date": "2026-11-18",
@@ -2848,8 +2851,8 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
       "sessions": {
         "fri": {
           "detail": null,
-          "distance_km": 11.5,
-          "duration_mins": 68,
+          "distance_km": 11,
+          "duration_mins": 65,
           "hr_target": "< 146 bpm",
           "id": "w10-fri",
           "label": "Easy run — Zone 2",
@@ -2864,8 +2867,8 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
             "4×20s strides at 5K effort, full recovery between.",
           ],
           "detail": null,
-          "distance_km": 11.5,
-          "duration_mins": 68,
+          "distance_km": 11,
+          "duration_mins": 65,
           "hr_target": "< 146 bpm",
           "id": "w10-mon",
           "label": "Easy run — Zone 2",
@@ -2896,9 +2899,9 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           "zone": "Zone 2–3",
         },
         "wed": {
-          "catalogue_id": "intervals_long",
+          "catalogue_id": "tenk_pace_intervals",
           "coach_notes": [
-            "Heroic openers ruin it. Even splits.",
+            "10K-pace work. Target 4:30 /km. Controlled, even splits — exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -2908,10 +2911,10 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
                 "steps": [
                   {
                     "advance": "auto",
-                    "length": "1 km",
+                    "length": "1200 m",
                     "modality": "run",
-                    "note": "Even splits. Heroic openers ruin it.",
-                    "pace": "4:07–4:18 /km",
+                    "note": "Goal pace, not faster. If rep one feels easy, that is correct.",
+                    "pace": "4:30 /km",
                     "pace_mode": "target",
                     "role": "work",
                   },
@@ -2919,7 +2922,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
                     "advance": "auto",
                     "length": "2 min",
                     "modality": "jog",
-                    "note": "Full jog recovery between the kilometres.",
+                    "note": "Full jog recovery. Two minutes.",
                     "pace": "5:23–6:27 /km",
                     "pace_mode": "ceiling",
                     "role": "recovery",
@@ -2930,17 +2933,17 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
             "version": 2,
           },
           "detail": null,
-          "distance_km": 9,
-          "duration_mins": 44,
-          "hr_target": "159–185 bpm",
+          "distance_km": 10,
+          "duration_mins": 50,
+          "hr_target": "146–159 bpm",
           "id": "w10-wed",
-          "label": "Long VO2max",
-          "pace_target": "4:07–4:18 /km",
+          "label": "10K-pace intervals",
+          "pace_target": "4:25–4:35 /km",
           "primary_metric": "distance",
           "rpe_target": 7,
-          "stimulus": "vo2max",
+          "stimulus": "race_pace",
           "type": "quality",
-          "zone": "Zone 4–5",
+          "zone": "Zone 3",
         },
       },
       "theme": "Consistency. The work is the volume.",
@@ -3117,6 +3120,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
     "days_required_ok": 3,
     "difficulty_band": "comfortable",
     "fitness_level": "intermediate",
+    "foundation_weeks_planned": 1,
     "generator_input": {
       "age": 40,
       "benchmark": {
@@ -4450,6 +4454,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
     "fitness_intensity_level": "experienced",
     "fitness_level": "intermediate",
     "fitness_signal_note": "Your race benchmark and your training volume point to different levels (intermediate on benchmark, experienced on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.",
+    "foundation_weeks_planned": 0,
     "generator_input": {
       "acknowledged_prep_warning": true,
       "age": 38,
@@ -6252,6 +6257,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
     "difficulty_band": "demanding",
     "difficulty_note": "Demanding — your inputs (days available, weekday time, or starting volume) cap how far the plan can build. Freeing one of those lifts the ceiling.",
     "fitness_level": "intermediate",
+    "foundation_weeks_planned": 1,
     "generator_input": {
       "age": 50,
       "current_weekly_km": 20,
@@ -7376,6 +7382,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
     "fitness_intensity_level": "experienced",
     "fitness_level": "intermediate",
     "fitness_signal_note": "Your race benchmark and your training volume point to different levels (intermediate on benchmark, experienced on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.",
+    "foundation_weeks_planned": 0,
     "generator_input": {
       "age": 29,
       "benchmark": {

@@ -71,12 +71,56 @@ describe('SC-10 — VO2max main-set ceiling', () => {
     }
   })
 
-  it('the dose does not exceed the WORK ceiling in PEAK — the biggest weeks (Willy)', () => {
+  it('the dose does not exceed the WORK ceiling in the LOADING phases — the biggest weeks (Willy)', () => {
+    // Scope widened from `phase === 'peak'` to build+peak on 2026-09-07 (§93),
+    // and the reason matters more than the change.
+    //
+    // Willy's condition is about the ceiling holding where sessions grow
+    // biggest, which is the loading phases. It was expressed as "peak" because,
+    // before §93, 10K peak was VO2max in EVERY week by construction. §93 makes
+    // peak's VO2max count proportional to the phase length, so a two-week peak
+    // now carries a single exposure — and that exposure can legitimately be
+    // `hill_reps`, which is effort-governed and which SC-09 exempts from this
+    // ceiling BY DESIGN ("effort-governed hills are priced at easy pace, so this
+    // leaves them longer — deliberately").
+    //
+    // Left as `phase === 'peak'`, the filter returned zero rows and the
+    // assertion below would have guarded nothing while still reading green.
+    // A test that stops reaching its subject is worse than a deleted one.
     const plan = generateRulePlan(TENK_HIGH, 'paid', PLAN_START)
-    const peakVo2 = quality(plan).filter(q => q.phase === 'peak' && q.s.stimulus === 'vo2max' && q.s.pace_target)
-    expect(peakVo2.length).toBeGreaterThan(0)
-    for (const q of peakVo2) {
-      expect(workMinutes(q.s)).toBeLessThanOrEqual(GENERATION_CONFIG.VO2MAX_WORK_MAX_MINS + 1)
+    const loadingVo2 = quality(plan).filter(q =>
+      (q.phase === 'build' || q.phase === 'peak') && q.s.stimulus === 'vo2max' && q.s.pace_target)
+    expect(loadingVo2.length, 'the ceiling must have something to bind on').toBeGreaterThan(0)
+    for (const q of loadingVo2) {
+      expect(workMinutes(q.s), `W${q.week} "${q.s.label}"`)
+        .toBeLessThanOrEqual(GENERATION_CONFIG.VO2MAX_WORK_MAX_MINS + 1)
+    }
+  })
+
+  it('§93 — peak never fills every week with VO2max, and never leaves a time goal unrehearsed', () => {
+    // The defect §93 closed: `preferredQualityCategory` returned 'vo2max' for
+    // EVERY 10K peak week. Measured on the founder's live input once §91 grew
+    // peak to five weeks — five consecutive VO2max sessions for a 44-year-old,
+    // and zero race-pace work before the taper on a plan whose whole job was
+    // closing a 4:54 -> 4:30 /km gap.
+    const plan = generateRulePlan(TENK_HIGH, 'paid', PLAN_START)
+    const peak = quality(plan).filter(q => q.phase === 'peak')
+    const vo2 = peak.filter(q => q.s.stimulus === 'vo2max')
+    const specific = peak.filter(q => q.s.stimulus === 'race_pace')
+
+    expect(vo2.length, 'peak VO2max is capped')
+      .toBeLessThanOrEqual(GENERATION_CONFIG.PEAK_MAX_VO2MAX_SESSIONS)
+    expect(specific.length, 'a time-targeted peak rehearses goal pace').toBeGreaterThan(0)
+
+    // §93's other arm: no week may fill both quality slots from one category —
+    // 10K owns a single `race_specific` row, so that shipped the SAME session
+    // twice in one week.
+    for (const w of plan.weeks) {
+      const ids = Object.values(w.sessions)
+        .filter(s => s?.type === 'quality')
+        .map(s => s!.catalogue_id)
+        .filter(Boolean)
+      expect(new Set(ids).size, `W${w.n} repeats a catalogue row within the week`).toBe(ids.length)
     }
   })
 

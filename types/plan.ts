@@ -620,6 +620,13 @@ export interface PlanMeta {
   // SHORTER (still all-easy) base so quality starts ~2 weeks sooner. Asserted by
   // INV-PLAN-EARLY-ONSET-GATED.
   early_quality_onset?: boolean
+  /**
+   * §91 — how many all-easy §57 foundation weeks the generator KNEW would be
+   * prepended, decided at generation time by `plannedFoundationWeeks`. Credited
+   * against the base-phase on-ramp floor and read by `INV-PLAN-ONRAMP-FLOOR`,
+   * which must give the same answer before and after composition.
+   */
+  foundation_weeks_planned?: number
 
   hr_zone_method?: 'karvonen' | 'karvonen_estimated_max' | 'percent_of_max' | 'percent_of_estimated_max'
                  | 'observed_max' | 'age_estimate_implausible_input' | 'age_estimate_max_floor'

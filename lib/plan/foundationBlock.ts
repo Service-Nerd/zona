@@ -48,6 +48,31 @@ export function foundationWeekCount(gapDays: number): number {
   return Math.min(rawWeeks, GENERATION_CONFIG.FOUNDATION_MAX_WEEKS)
 }
 
+// ── How many foundation weeks WILL be prepended — the single owner ──────────
+//
+// §91 (CB-ONSET-02). `computePhases` has to know this number BEFORE the block
+// exists, because the base-phase on-ramp is credited against it. Two callers
+// therefore need the same answer:
+//
+//   1. generateRulePlan  — to size the base phase (§91)
+//   2. composePlanWithFoundation — to actually build the block (ADR-020)
+//
+// They must never derive it independently. `computePhases` reasoning from
+// `nextMonday()` while `compose` reasoned from the real `today` disagreed by a
+// week whenever the plan was generated ON a Monday — the two-writer split this
+// codebase keeps paying for (DELOAD-OWNER-01, the deload cadence in five
+// places). One function, both callers, asserted in foundationOnRamp.test.ts.
+export function plannedFoundationWeeks(
+  today: string,
+  planStartIso: string,
+  decision?: 'add' | 'skip' | 'start_now',
+): number {
+  const gap = gapDays(today, planStartIso)
+  const cls = classifyGap(gap)
+  const shouldAdd = cls === 'auto' || (cls === 'choice' && decision === 'add')
+  return shouldAdd ? foundationWeekCount(gap) : 0
+}
+
 // ── Foundation week themes ─────────────────────────────────────────────────
 
 const THEMES: Record<number, string> = {

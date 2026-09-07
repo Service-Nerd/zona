@@ -2997,6 +2997,223 @@ injury → maintenance). Amends §3, §8, §12, §52 by reference; does not loos
 
 ---
 
+## 91. The on-ramp is counted in weeks the runner runs, not weeks in an array
+
+**Principle.** The all-easy on-ramp that must precede a runner's first quality
+session (§89's `MIN_BASE_WEEKS_FLOOR`, Seiler's condition of approval) is measured
+as **base weeks + §57 foundation weeks**, not base weeks alone. For a §89-gated
+runner, base is additionally capped in **weeks** (`EARLY_ONSET_BASE_MAX_WEEKS`),
+not only as a fraction of plan length.
+
+**Why — §89 did not deliver what §89 says it delivers.** §89 states its own purpose
+in numbers: *"first quality at week 5 of a 12-week plan ... the first third of the
+plan indistinguishable from a novice's."* It shortens base 35% → 15% so quality
+starts ~2 weeks sooner, and it does — **inside `plan.weeks`**. But §76 anchors the
+plan to race week and caps its length at the distance's `idealWeeks`, so a runner
+whose race is further out has the surplus **delayed**, not truncated; ADR-020 then
+fills the delay with up to three all-easy foundation weeks; and `computePhases`
+never saw them. Measured on the founder's live 10K input, delivered onset by
+weeks-to-race was:
+
+| weeks to race | foundation weeks | onset in `plan.weeks` | **onset the runner counts** |
+|---|---|---|---|
+| 12 | 1 | 3 | 4 |
+| 13 | 2 | 3 | **5** |
+| 14 | 3 | 3 | **6** |
+| 15 | 3 | 3 | **6** |
+| 16+ | 0 | 3 | 3 |
+
+**The relationship is non-monotonic, and that is the tell.** A runner who entered
+their race 14 weeks out waited *six* weeks for quality; one who entered it 20 weeks
+out waited *three*. Planning further ahead made the plan more conservative, which
+no one decided and no coach would defend. **62% of swept plans (9,905/16,035) carry
+a foundation block**, so this was not an edge case — it was the majority case, and
+it returned §89's cohort to almost exactly the week-5 number §89 was written to fix.
+
+**Why the credit is legitimate and not a loophole.** §57 foundation weeks are
+all-easy running at the runner's current volume, capped at +10%/week. Base weeks
+are all-easy running at the runner's current volume. **They are the same object to
+the tissue.** Seiler's floor is a physiological on-ramp — a short polarised
+approach before intensity — not an administrative property of which array a week
+is stored in. Crediting them is descriptively correct; refusing to would be
+double-counting the same easy running twice and charging the runner for it.
+
+**Why base is now capped in weeks as well as percent.** `EARLY_ONSET_BASE_PCT` is a
+fraction, so a *longer* plan re-grew the base it was meant to shorten — a 14-week
+plan gave base 3 where a 12-week plan gave base 2. A demonstrated base does not
+need more on-ramp because the race is further away. The cap makes §89's effect a
+fixed quantity of easy weeks rather than a proportion of an unrelated number.
+
+**Base may reach zero, and that is the intended terminal case** — two foundation
+weeks *are* the two-week floor. It is never negative, and the floor binds in full,
+unchanged, for every runner the §89 gate did not pass (beginners, returners,
+fresh-from-layoff, and anyone with an injury history).
+
+**What the board REFUSED, and why it matters more than what it approved.** Two
+routes to the founder's stated ask — quality in calendar week 1 — were put and
+both were declined:
+
+- **Quality sessions inside the foundation block.** §57's CB-1 ruling (2026-09-03)
+  already states the block's job is *"habit and routine, not adaptation"* and
+  records that finding *"so no future reader mistakes it for a training stimulus
+  and starts optimising it upward."* That is this proposal, three days later.
+  Declined as written (Sims, Willy). The block's volume rules, its long-run cap and
+  five of its invariant carve-outs are all premised on it containing no intensity;
+  putting a hard session in it changes the object those rules were written about.
+- **Dropping the floor to zero or one for gated runners.** Declined (Seiler). The
+  floor is the condition on which §89 was approved at all, and removing it three
+  days later on a single runner's preference is how a gate becomes decoration.
+
+**What the board granted instead:** §57's stride prohibition is lifted for
+§89-gated runners (§92). Strides are neuromuscular, fully recovered, and carry
+none of the grey-zone drift risk §1 exists to prevent — so a demonstrably-ready
+runner's first week can contain real fast running without the block becoming a
+training stimulus. **Delivered result: quality at calendar week 3 (from 5–6), with
+strides from week 1.**
+
+**Honest residual.** At 14–15 weeks to race the runner still waits four calendar
+weeks, because §57 caps the block at three weeks and all three are credited but
+only two are needed. The alternative — truncating the block — was not taken, since
+the weeks are otherwise the runner's own choice to train. Recorded, not hidden (§34).
+
+**Config.** `GENERATION_CONFIG.EARLY_ONSET_BASE_MAX_WEEKS` (2);
+`MIN_BASE_WEEKS_FLOOR` (2, unchanged) now applies to the SUM. The planned block
+length is stamped as `meta.foundation_weeks_planned` by the single owner
+`plannedFoundationWeeks()` in `lib/plan/foundationBlock.ts`, which both
+`generateRulePlan` (to size base) and `composePlanWithFoundation` (to build the
+block) call — they must never derive it independently, or a plan generated on a
+Monday sizes its base against a different number than the one it ships with.
+Enforced by `INV-PLAN-ONRAMP-FLOOR`, which replaces the base-only arm of
+`INV-PLAN-EARLY-ONSET-GATED`. **That arm tested `baseWeeks === 1` exactly, so a
+zero-week base — the more dangerous case — passed silently. An equality test on a
+floor is a hole.**
+
+**Board:** CB-ONSET-02, 2026-09-07 — Coaching Board CORRECT WITH AMENDMENT,
+Hutchinson chairing. Amends §89 (floor basis, weeks cap) and §57 by reference
+(§92). Does not loosen §1, §4, §5 or the §57 session-content rule.
+
+---
+
+## 92. A demonstrated runner's foundation block may carry strides
+
+**Principle.** §57's *"no strides"* rule is lifted for a runner who passes the §89
+readiness gate. Every other §57 session-content rule stands: no quality sessions,
+no tempo, no intervals. Strides only, on a midweek easy run, per §28's existing
+placement rule.
+
+**Why.** §57 forbids strides alongside quality because the block's population is
+fresh-return and novice runners whose musculoskeletal readiness lags their
+cardiovascular readiness (CB-1). §89's gated cohort is the opposite population, and
+it did not exist when CB-1 ruled three days earlier — so the prohibition was
+written without this runner in view rather than against them.
+
+Strides are the one form of fast running that carries no grey-zone risk: 15–20
+seconds, fully recovered, neuromuscular rather than metabolic. They are not a
+training stimulus in the sense §57 is protecting (Sims's "habit and routine, not
+adaptation" holds — strides do not change that), and they are not quality in the
+sense §1 is protecting (they add no Z3 minutes and do not count against
+`INTENSITY_DISTRIBUTION`, whose numerator is `quality` sessions).
+
+**What this buys, stated plainly.** It is a **feel** fix, not a fitness one, and it
+is recorded as such so no one later mistakes it for adaptation. A runner who has
+answered *experienced*, *quality most weeks* and *bring it on* should not open the
+app to a fortnight that looks identical to a beginner's. §35 already establishes
+that a plan which ignores its own inputs teaches the runner to ignore the plan.
+
+**Willy's condition of approval.** Strides are gated on the same predicate as §89 —
+including the **absolute injury veto**. A runner with any injury history gets no
+strides in foundation, regardless of every other signal.
+
+**Config.** `GENERATION_CONFIG.FOUNDATION_STRIDES_REQUIRE_EARLY_ONSET` (true).
+Enforced by the amended `INV-PLAN-FOUNDATION-BLOCK`, which permits strides only
+when `meta.early_quality_onset` is set.
+
+**Board:** CB-ONSET-02, 2026-09-07 — carried with §91. Amends §57 (session
+content) and §28 (placement scope) by reference.
+
+---
+
+## 93. Peak rehearses the race — the specificity ladder is enforced, not merely declared
+
+**Principle.** For a time-targeted 10K, the peak phase carries **at most
+`PEAK_MAX_VO2MAX_SESSIONS` (2) VO2max exposures, and never more than half the
+phase**; every remaining peak quality slot is race-specific work. No week may fill
+both of its quality slots from the same catalogue category.
+
+**Why — §5 has been decorative since R23.** §5 declares
+`SPECIFICITY_BY_PHASE` — peak 40% general / 60% specific — and **no engine code
+has ever read it.** Grepped 2026-09-07: the constant appears in
+`generationConfig.ts`, in three documents, and in one `keyof` type alias. Nothing
+computed it, so nobody could see what was being delivered against it.
+
+What was being delivered, measured on 10K time-target plans: **0% specific.**
+`preferredQualityCategory` opened its peak branch with
+
+```ts
+if (distKey === '5K' || distKey === '10K') return 'vo2max'
+```
+
+— unconditional, every peak week, both goals. This is the leftover CD-16 named and
+did not remove: *"peak-only was a leftover from the superseded assumption that
+VO2max was the specific work for a 10K."* SC-05 reclassified 10K race pace as the
+specific work and VO2max as **general**; §5 then asks peak for 60% specific, and
+the engine returned the exact inverse. HM, whose signature carries
+`race_specific`, delivered 5/5 — so the engine could always do it, and only 10K
+was wired the old way.
+
+**This is §1/CD-19 verbatim, one section over.** That entry records: *"the table
+was read by an offline script and by no engine code, and no invariant referenced
+it. The value being wrong was downstream of it never being exercised."* §34 exists
+to stop exactly this and §5 slipped through anyway. **Two further flags in
+`planSignatures.ts` are decorative the same way and are recorded here rather than
+quietly deleted: `peak_includes_race_pace` (HM) and `peak_includes_mp_long_runs`
+(MARATHON) are read by no engine code.** HM's correct behaviour comes from
+`quality_categories_focus`, not from the flag that appears to cause it. Anyone
+reasoning from those flags is reasoning about nothing.
+
+**Why the cap is proportional, not a flat two.** CD-16 fixed the number in prose —
+*"one build exposure ... plus peak's two: three spread exposures"* — but its
+arithmetic silently assumed a two-week peak. Once §91 shortened base, peak grew to
+**five** weeks and the same unbounded return produced **five consecutive VO2max
+sessions for a 44-year-old**, which no seat would sign. Capping at
+`min(2, ceil(peakWeeks / 2))` honours CD-16 on a long peak and stops a short peak
+spending both its slots on general work — peak is never majority-general at any
+phase length.
+
+**5K is untouched, deliberately.** §22/SC-05 (board-ratified 2026-09-03) excludes
+5K because race pace ≈ I-pace there, so the VO2max rows *are* the specific work.
+Requiring a separate race-pace row at 5K demands a distinction the physiology does
+not make (Seiler). Finish-goal plans are also untouched: with no goal pace there is
+nothing to rehearse, so peak falls to threshold (CD-2/§80).
+
+**The same-category-twice arm, and why it was latent.** The second quality slot
+picks an "alternate" category, and its map handled only `threshold ↔ vo2max`,
+falling through to *the primary's own category* for anything else. While only HM
+ever reached a race-specific primary this was invisible; the moment 10K peak got
+one, a week filled both slots from `race_specific` — and 10K owns exactly **one**
+such row, so it shipped the identical session twice in one week. The map is now
+exhaustive.
+
+**Honest residual — this exposes CAT-DEPTH-01 rather than solving it.** 10K owns a
+single `race_specific` row (`tenk_pace_intervals`), so a three-week race-pace peak
+reaches for it repeatedly, differentiated only by §22's rename of neighbouring
+threshold rows. HM has shipped the same shape (5 × "HM-pace reps") since R23, so
+this is not a new defect — but it is the clearest statement yet of the catalogue
+thinness CAT-DEPTH-01 tracks, and the fix is **content**, not logic: 10K needs more
+than one race-specific row. Recorded, not hidden (§34).
+
+**Config.** `GENERATION_CONFIG.PEAK_MAX_VO2MAX_SESSIONS` (2); `SPECIFICITY_BY_PHASE`
+(unchanged values, now actually read). Enforced by `INV-PLAN-PEAK-SPECIFICITY`
+(`warn` — a two-week peak at 50% against a 60% target is the plan a coach would
+write; it fires at **0%**, the state it was written to catch).
+
+**Board:** CB-SPEC-01, 2026-09-07 — Coaching Board CORRECT, Hutchinson chairing.
+Reclassified from "new principle" to **defect**: §5, §22 and CD-16 all already
+required this and the engine contradicted all three. Amends §5 (now enforced),
+completes CD-16.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

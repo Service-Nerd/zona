@@ -13,6 +13,7 @@ import type { Plan, GeneratorInput, Session, Week } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
+import { catalogueRowFor } from './catalogueLink'
 import { isLongRun, isShakeout, classifyStimulus, isVo2maxSession, isStructuredSession } from './sessionRole'
 import { mainSetMinutes, durationForMainSet } from './sessionFormat'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord } from './sessionStructureV2'
@@ -33,6 +34,8 @@ export const INVARIANT_CODES = [
   'INV-PLAN-BOUNCEBACK-BOUNDED',
   'INV-PLAN-INJURY-CAP-DELIVERED',
   'INV-PLAN-EARLY-ONSET-GATED',
+  'INV-PLAN-ONRAMP-FLOOR',
+  'INV-PLAN-PEAK-SPECIFICITY',
   'INV-PLAN-DELOAD-IS-A-REDUCTION',
   'INV-PLAN-VOLUME-SHORTFALL-DECLARED',
   'INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED',
@@ -1683,6 +1686,62 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     }
   }
 
+  // INV-PLAN-PEAK-SPECIFICITY (CoachingPrinciples §93, enforcing §5)
+  //
+  // §5 has declared `SPECIFICITY_BY_PHASE` since R23 — peak 40% general / 60%
+  // specific — and it has NEVER been read by engine code. Grepped 2026-09-07:
+  // the constant appears in `generationConfig.ts`, in three documents, and in
+  // one `keyof` type alias. Nothing computed it, so nobody could see that 10K
+  // peak was delivering the exact inverse (0% specific, 100% VO2max).
+  //
+  // This is the §1/CD-19 failure verbatim, one section over: *"the table was
+  // read by an offline script and by no engine code, and no invariant
+  // referenced it. The value being wrong was downstream of it never being
+  // exercised."* §34 exists to stop precisely this, and §5 slipped through.
+  //
+  // `warn`, not `error`, and the reason is scoped rather than squeamish: the
+  // ratio is a phase-level SHAPE target, and a 2-week peak carrying one VO2max
+  // and one race-pace session lands at 50% against a 60% target while being
+  // exactly the plan a coach would write. Making it `error` would fail correct
+  // plans on a rounding boundary. It becomes `error` if a distance is ever
+  // measured delivering 0% again — which is the state it was written to catch.
+  //
+  // 5K is exempt by §22/SC-05 (board-ratified 2026-09-03): race pace ~ I-pace
+  // there, so the VO2max rows ARE the specific work and the general/specific
+  // split is not a distinction the physiology makes.
+  if (isTimeTarget && plan.meta.race_distance_km && plan.meta.race_distance_km > 6) {
+    const peakWeeks = plan.weeks.filter(w =>
+      w.n >= 1 && w.phase === 'peak' && w.type !== 'deload' && w.type !== 'race')
+    let peakQuality = 0
+    let peakSpecific = 0
+    for (const w of peakWeeks) {
+      for (const session of Object.values(w.sessions)) {
+        if (!session || session.type !== 'quality') continue
+        peakQuality++
+        // Structural, not label-based (INV-CLASS-001 / ADR-018): the catalogue
+        // row's own category is the answer. VO2max is GENERAL work for these
+        // distances after SC-05 reclassified race pace as the specific work.
+        const row = catalogueRowFor(session, V1_SESSION_CATALOGUE)
+        if (row?.category === 'race_specific' || row?.category === 'ultra_specific') peakSpecific++
+      }
+    }
+    if (peakQuality > 0) {
+      const target = GENERATION_CONFIG.SPECIFICITY_BY_PHASE.peak.specific_pct
+      const actual = Math.round((peakSpecific / peakQuality) * 100)
+      if (peakSpecific === 0) {
+        violations.push({
+          code: 'INV-PLAN-PEAK-SPECIFICITY',
+          principle_ref: 'CoachingPrinciples §93 (§5)',
+          severity: 'warn',
+          week: 0,
+          message: `Peak phase carries NO race-specific work on a time-targeted plan (0 of ${peakQuality} peak quality sessions); §5 asks for ${target}%. A runner chasing a goal pace gets no rehearsal of it in the weeks closest to the race.`,
+          actual: `${actual}% specific`,
+          expected: `>= ${target}% (§5 SPECIFICITY_BY_PHASE.peak)`,
+        })
+      }
+    }
+  }
+
   // INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO — plan-level numeric check. For
   // time-targeted plans, ≥50% of non-VO2max quality in second-half build/peak
   // weeks must prescribe pace within ±5% of goal pace.
@@ -1723,9 +1782,15 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         if (w.type === 'deload') continue
         for (const session of Object.values(w.sessions)) {
           if (!session || session.type !== 'quality') continue
-          const label = (session.label ?? '').toLowerCase()
-          const isVo2 = label.includes('vo2max') || label.includes('vo2 max')
-          if (isVo2) continue
+          // SC-09's structural test, not the label. This call site was MISSED
+          // when SC-09 landed: it fixed §22's ownership arm (line ~755) and left
+          // its sibling ratio arm reading `label.includes('vo2max')`. So
+          // `hill_reps` ("Hill reps — 90s") and `intervals_rolling` ("Rolling
+          // reps") — both `category: 'vo2max'` — were counted as non-VO2max
+          // quality that failed to prescribe goal pace, inflating the
+          // denominator with sessions §22 explicitly exempts. Same defect SC-09
+          // was written to close, one function call away from the fix.
+          if (isVo2maxSession(session, V1_SESSION_CATALOGUE)) continue
           nonVo2Quality++
           if (!session.pace_target) continue
           const mid = parsePaceMidpoint(session.pace_target)
@@ -2196,20 +2261,35 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       })
     }
   }
-  // The 2-week base floor holds for EVERY plan (early onset only makes it more
-  // load-bearing). A build/peak/taper-only geometry is legitimate on very short
-  // plans, so this only fires when a base phase exists at all.
+  // INV-PLAN-ONRAMP-FLOOR (CoachingPrinciples §91, amending §89)
+  //
+  // Seiler's floor is a floor on ALL-EASY WEEKS THE RUNNER RUNS before their
+  // first quality session — not on the length of one array slice. §57 foundation
+  // weeks are all-easy running at current volume; so are base weeks. The runner's
+  // tissue cannot tell them apart, so the on-ramp is their SUM.
+  //
+  // Counted from `meta.foundation_weeks_planned` rather than from `plan.weeks`,
+  // because this same function validates the bare plan (foundation weeks not yet
+  // prepended) and the composed plan (they are) — reading the array would answer
+  // the same question two different ways.
+  //
+  // Fires at 0 and 1 as well as on the sum. The previous check tested
+  // `baseWeeks === 1` exactly, so a ZERO-week base — the more dangerous case —
+  // passed silently. An equality test on a floor is a hole.
   {
     const baseWeeks = plan.weeks.filter(w => w.n >= 1 && w.phase === 'base').length
-    if (baseWeeks === 1) {
+    const foundationCredit = plan.meta.foundation_weeks_planned ?? 0
+    const onRamp = baseWeeks + foundationCredit
+    const floor = GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR
+    if (onRamp < floor) {
       violations.push({
-        code: 'INV-PLAN-EARLY-ONSET-GATED',
-        principle_ref: 'CoachingPrinciples §89',
+        code: 'INV-PLAN-ONRAMP-FLOOR',
+        principle_ref: 'CoachingPrinciples §91',
         severity: 'error',
         week: 0,  // plan-level
-        message: `Base phase is ${baseWeeks} week — below the ${GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR}-week floor. A short polarised on-ramp must always remain (Seiler), even for a demonstrably-ready runner.`,
-        actual: `${baseWeeks} base week`,
-        expected: `>= ${GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR} base weeks`,
+        message: `All-easy on-ramp is ${onRamp} week(s) (${baseWeeks} base + ${foundationCredit} foundation) — below the ${floor}-week floor. A short polarised on-ramp must always remain (Seiler), even for a demonstrably-ready runner.`,
+        actual: `${onRamp} on-ramp week(s)`,
+        expected: `>= ${floor} (base + foundation)`,
       })
     }
   }
