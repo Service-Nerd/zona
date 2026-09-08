@@ -6,6 +6,28 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-08 — INPUT-EFFECT-01 · I wrote a test to check the wizard mattered, and it found a paid step that does nothing
+
+**Shipped:** A test that varies all 31 `GeneratorInput` fields and asserts each one changes the delivered plan. 25/31 do. Two are dead. One combination generates a plan that breaks the intensity constitution.
+
+**Dev learning:** We already had three checks over configuration and none of them asked the only question that matters. `configPrincipleSync` proves a config key has a *principle*. `configConsumer` proves it has a *consumer*. `sweepInputCoverage` proves the sweep *varies* a field. You can pass all three and still have a field that changes nothing — the sweep will happily vary `terrain` across 16,000 plans and report the same number either way. The gap between "this is referenced" and "this matters" is where two dead inputs had been sitting.
+
+The mechanic that made it honest was refusing to count throws. `acknowledged_prep_warning` never changes a plan — it decides whether one *exists* (§44's two-step UX). My first version discarded exceptions, so it reported the field inert. Now `PrepTimeError`/`DaysAvailableError` count as outcomes and **any other throw fails the run**, which is what surfaced the §1 defect instead of letting it be silently counted as "the field did something".
+
+**Product/creator learning:** The sharpest find is a **paid** wizard step. `GeneratePlanScreen.tsx:167` asks "Where do you run?" and subtitles it "Affects pace targets." It affects nothing — the value is echoed into meta and no code reads it. That's worse than `overdo` was, because the UI *states* the effect. We are charging for an answer we then throw away. "Do the wizard's answers mean anything?" stopped being an afternoon of manual measurement and became a number on every commit: 25/31.
+
+**AI-building learning:** I nearly filed two false findings in one session, both the same shape — concluding from a fixture rather than from the engine. `acknowledged_prep_warning` read inert because my baseline used `goal: 'finish'`, and `inputs.ts:137` treats the warn zone as ok for finish goals, so the gate never armed. `foundation_decision` read inert because the race was 14 weeks out and the choice only exists past a 28-day gap. Both times the code looked conclusive. The fix is the same one this repo keeps re-learning: **generate two plans and diff them, don't read the code and conclude.** I put THE FIXTURE TRAP at the top of the file with all three cases in it, because the next person (or the next me) will hit it again.
+
+The other thing worth saying: I only trusted the green because I broke it three ways first — un-registering an inert field, registering a working one, dropping a blocked value. All three went red. A test I hadn't falsified would have been worth roughly nothing here, and this repo has shipped checks that were dead on first write.
+
+**The honest bit:** The test passed on the first proper run and I almost stopped there. It ran in 5ms and reported green, which for ~90 plan generations should have looked wrong to me immediately. It wasn't wrong — the work happens at module load — but "fast green" is exactly the shape of the vacuous checks we've shipped before. Separately, `npm run verify` then failed on three TypeScript casts that vitest transpiles straight past, so the test was green and the build was broken at the same time. And I reported a background job as passing off a notification that said "exit code 0" when the actual verify exit was 2 — the 0 was the wrapper, not the command.
+
+**Hook material:** A test written to check whether the wizard's answers matter found, on its first run: a **paid** wizard step subtitled "Affects pace targets" that is read by zero lines of code, and a 3-day runner who calls themselves experienced being prescribed **26.8% hard work against a 25% ceiling** — in an app whose entire pitch is "you're trying hard, that's the problem." 25 of 31 inputs do something. Six don't.
+
+**Postable?:** yes — strongest one in a while. The angle is "I built a check to see if my own product's questions mattered, and 6 of 31 didn't", and the §1 breach is the punchline because it's the exact failure the product exists to prevent.
+
+---
+
 ## 2026-09-07 — §97 · I parked it, the founder said finish it, and the bug was four steps upstream
 
 **Shipped:** Quality now starts in calendar week 2 for a demonstrably-ready runner. It started at week 5 this morning.
