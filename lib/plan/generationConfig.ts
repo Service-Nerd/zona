@@ -76,7 +76,13 @@ export const GENERATION_CONFIG = {
     '10K':      { max_quality_session_pct: 25 },
     'HM':       { max_quality_session_pct: 20 },
     'MARATHON': { max_quality_session_pct: 18 },
-    '50K':      { max_quality_session_pct: 15 },
+    // 15 -> 17 (Coaching Board CB-INTENSITY-50K-01, 2026-09-09). §1 pre-registered
+    // "a 50K build-profile breach reopens it"; INTENSITY-LONGDIST-LOWDAY-01 is that
+    // breach (worst delivered build share 16.3%, 13/80). Resolved by the same
+    // precedent that set 100K's 15%: at ultra distances §1 yields to §8's quality
+    // dose rather than the reverse. Raised MINIMALLY to clear the observed worst
+    // while still binding (Hutchinson); Seiler holds 17% is a conservative floor.
+    '50K':      { max_quality_session_pct: 17 },
     '100K':     { max_quality_session_pct: 15 },
   },
 

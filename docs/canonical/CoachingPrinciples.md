@@ -124,7 +124,15 @@ The failing evidence — a 24-week, 6-day 100K build plan:
 
 15% clears every observed build-profile 100K plan (worst 14.7%) without clearing them so widely the check stops binding.
 
-**Unchanged, deliberately:** 5K/10K 25%, HM 20%, MARATHON 18%, 50K 15%. No build-profile plan fails them. **Seiler's dissent is recorded against 50K's 15%** — he holds it carries the same discredited basis. Hutchinson (chair) prevails: unfounded is not the same as wrong, and moving numerics with no failing evidence is how this config drifted from the engine in the first place. A 50K build-profile breach reopens it.
+**Unchanged, deliberately:** 5K/10K 25%, HM 20%, MARATHON 18%, 100K 15%. No build-profile plan fails them. ~~50K 15%~~ — see the amendment below.
+
+### 50K reopened — 15% → 17% (Coaching Board CB-INTENSITY-50K-01, 2026-09-09)
+
+**The reopener fired.** The line above pre-registered *"a 50K build-profile breach reopens it,"* and INTENSITY-LONGDIST-LOWDAY-01 is that breach: a delivered 50K/intermediate/4-day/16-week build plan at **15.6% (10/64)**, worst observed across the build space **16.3% (13/80)** at 5 days. Not an early-onset artifact (intermediate gets no §89) — it is the ordinary build (1/wk) + peak (§8's 1–2/wk) quality accumulating against a low-day running denominator at the tightest ultra ceiling. Detection had been masked by INTENSITY-FOUNDATION-BLIND-01 (the §1 check read the bare plan; foundation weeks it hadn't yet seen were lowering the delivered share), now fixed.
+
+**Resolved by yielding §1, not §8 — the 100K precedent, applied again.** When §8's quality dose and §1's ultra ceiling collide, the board has already ruled which yields: 100K went 12% → 15% *"and the engine obeyed §8; §1 is the section that yielded."* The alternatives were considered and rejected — **extending the base** (Willy: the 50K base carries the long-run progression and is the phase least able to spare a week) and **cutting a quality session** (contradicts §8 and coaches the decimal, not the athlete — McMillan). Raised **minimally** to clear the observed worst (16.3%) while still binding, exactly as 100K's 15% cleared its 14.7% worst — **17%**, not Seiler's session-basis-converged low-20s, because a ceiling that clears everything stops being a ceiling (Hutchinson, chair). The descending order holds (50K 17% < MARATHON 18%, longer race still skews easier).
+
+**Seiler's dissent, updated:** now *directionally vindicated* — a failing plan appeared exactly where he said the minutes-era 15% was too tight — but he accepts 17% as the conservative floor of what's defensible, not the ceiling of it. **Sims's condition of approval:** this is a **ceiling, not a target** (§1's own language) — a looser number must never read as licence to *add* quality; the failure mode for the peri/post-menopausal ultra runner is under-recovery. **A 50K build-profile plan above 17% reopens it again** — same backstop that produced this sitting.
 
 **Severity restored to `error`.** It was `warn` for one day while the values were unratified. Willy, decisive: an `error` firing on 71% of a distance's plans is not a safety mechanism — it is noise, and noise gets suppressed, which is how a real violation gets missed later.
 

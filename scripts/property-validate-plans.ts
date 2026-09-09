@@ -316,6 +316,22 @@ const CORNERS: any[] = [
     training_age: '5yr+', user_declared_level: 'experienced',
     recent_quality_training: 'regular',
   },
+  {
+    // INTENSITY-LONGDIST-LOWDAY-01 (Coaching Board CB-INTENSITY-50K-01) — the worst
+    // observed delivered 50K build-profile quality share (16.3%, 13/80). Not an
+    // early-onset artifact; intermediate gets no §89, the quality is the ordinary
+    // build+peak accumulation against a low-day denominator. The random grid forces
+    // foundation_decision 'add', which enlarged the denominator and masked it, so it
+    // is pinned. Must sit at/under §1's 50K ceiling (raised 15 -> 17).
+    label: 'intensity-longdist-50k-5d-build',
+    race_distance_km: 50, race_date: raceDate(16), goal: 'time_target',
+    target_time: '5:30:00', days_available: 5, age: 40,
+    current_weekly_km: 40, longest_recent_run_km: 14,
+    resting_hr: 50, max_hr: 185, preferred_long_run_day: 'sun',
+    benchmark: { type: 'race', distance_km: 50, time: '5:00:00' },
+    training_age: '2-5yr', user_declared_level: 'experienced',
+    acknowledged_prep_warning: true,
+  },
 ]
 
 // A distance added to the grid without a target time would silently sweep with

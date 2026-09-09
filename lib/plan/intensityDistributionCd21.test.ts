@@ -145,12 +145,14 @@ describe('CD-21 — maintenance-profile plans are exempt from the §1 ceiling', 
 })
 
 describe('CD-21 — the 100K ceiling', () => {
-  it('is 15%, matching 50K — the ladder flattens at the ultra end', () => {
+  it('is 15%; 50K reopened to 17% (CB-INTENSITY-50K-01) so they no longer match', () => {
     // Guards the numeric itself. 12% was the minutes-basis value carried across
     // the 2026-08-20 basis change; Seiler could not ratify it as a session share.
+    // 100K stays 15% — worst observed valid build share 15.0%, at the boundary but
+    // not over. 50K reopened to 17% on 2026-09-09: INTENSITY-LONGDIST-LOWDAY-01 is
+    // the "50K build-profile breach reopens it" that §1 pre-registered (worst 16.3%).
     expect(GENERATION_CONFIG.INTENSITY_DISTRIBUTION['100K'].max_quality_session_pct).toBe(15)
-    expect(GENERATION_CONFIG.INTENSITY_DISTRIBUTION['100K'].max_quality_session_pct)
-      .toBe(GENERATION_CONFIG.INTENSITY_DISTRIBUTION['50K'].max_quality_session_pct)
+    expect(GENERATION_CONFIG.INTENSITY_DISTRIBUTION['50K'].max_quality_session_pct).toBe(17)
   })
 
   it('a 6-day 100K build plan now passes, and passes because §8 is satisfied', () => {
