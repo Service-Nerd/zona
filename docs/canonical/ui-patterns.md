@@ -813,6 +813,41 @@ Reference: inline render in `MeScreen` above the existing Identity card.
 
 ---
 
+### 18. Plan Rationale — "Why this plan" (PLAN-NOTE-SURFACE-01)
+
+The engine's honest, rule-engine explanation of **why the plan is shaped this way**, surfaced on the Plan screen. Closes a systemic gap: a family of plan-level `meta` notes (`volume_constraint_note`, `volume_shortfall_note`, `long_run_shortfall_note`, `fitness_signal_note`, `terrain_effort_note`, `hard_pref_note`, plus a derived level-fit line) that were stamped but rendered nowhere.
+
+```
+[SectionLabel: Why this plan]
+┌─────────────────────────────────────────────┐
+│  MAINTENANCE                                │   ← CoachNoteBlock, variant="why"
+│  Plan generated as maintenance — 3 days a   │     rule-engine → NO AIMark/rail
+│  week is below what a build needs…          │
+└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│  OFF-ROAD                                   │
+│  Off-road, let effort and HR lead — the     │
+│  pace targets are a road reference…         │
+└─────────────────────────────────────────────┘
+```
+
+**Structure:**
+- Placement: `PlanScreen`, below `PlanArc` and the AI `plan_intro`, above the this-week voice card — the plan-level orientation zone.
+- `SectionLabel` **"Why this plan"** (only when ≥1 note).
+- A vertical stack (8px gap) of `CoachNoteBlock` (§9), `variant="why"`, `aiGenerated={false}` → **no CoachByline, no rail** (provenance honesty: these are deterministic rule-engine output, not AI — contrast the `plan_intro` card directly above, which IS AI and carries a byline).
+- Each card's eyebrow is the note's **topic label** (MAINTENANCE / VOLUME / LONG RUN / YOUR LEVEL / HARD SESSIONS / OFF-ROAD / SHAPED FOR YOU).
+
+**Rules (SLT 2026-09-09, Wood's guardrail — surface once, honest, never a "personalised!" brag):**
+- **Single owner:** `lib/plan/planRationale.ts → planRationaleNotes(meta)` decides which notes, in what order, under what label — the UI renders from it, never greps meta itself.
+- **Ordering:** honest *constraints* first (they explain a surprising shape and are behaviour-relevant); the brag-risky "Shaped for you" line ranks **last**.
+- **Cap:** `PLAN_RATIONALE_MAX_NOTES` (3) — a plan never becomes a wall of notes.
+- **Empty state:** zero notes → render nothing (no empty card).
+- **Provenance:** all rule-engine → no AIMark. If a note ever became AI-derived it would move to `aiGenerated`.
+
+Reference: `lib/plan/planRationale.ts` (logic + tests) · inline render in `PlanScreen` (`DashboardClient.tsx`).
+
+---
+
 ### 17a. TD-CLOSE (the day's close)
 
 When today's session is complete, skipped, or is a rest day, Today renders a small **calm closing read** above the session card. The brand's anti-cheerleading thesis is most visible here: restraint as reward, no confetti, no streak burn, no celebration.

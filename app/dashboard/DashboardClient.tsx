@@ -27,6 +27,7 @@ import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
 import { BRAND, PRICING } from '@/lib/brand'
 import { Wordmark } from '@/components/ui/Wordmark'
 import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
+import { planRationaleNotes } from '@/lib/plan/planRationale'
 import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
 import ZoneRings, { ZoneRingsSkeleton } from '@/components/shared/ZoneRings'
 import { TextField } from '@/components/shared/TextField'
@@ -8214,6 +8215,31 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           <PlanIntroCard text={plan.meta.plan_intro} />
         </div>
       )}
+
+      {/* ── WHY THIS PLAN — rule-engine plan rationale (PLAN-NOTE-SURFACE-01) ──
+          The engine's honest notes about WHY the plan is shaped this way
+          (why maintenance, a volume/long-run shortfall, your assessed level,
+          off-road effort, a conditional hard-session preference, and the level
+          decisions it made). These are RULE-ENGINE output → rendered WITHOUT the
+          AIMark/CoachByline (provenance honesty, unlike the AI plan_intro above).
+          Ordered, labelled and capped by the single owner planRationaleNotes();
+          nothing renders when the plan carries none. */}
+      {(() => {
+        const rationale = planRationaleNotes(plan.meta)
+        if (rationale.length === 0) return null
+        return (
+          <div style={{ padding: '16px 16px 0' }}>
+            <SectionLabel>Why this plan</SectionLabel>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+              {rationale.map((n, i) => (
+                <CoachNoteBlock key={i} label={n.label} variant="why">
+                  {n.text}
+                </CoachNoteBlock>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── PLAN VOICE — this-week coaching card (PLAN-VOICE-AI) ─────────
           Tier-divergent: paid/trial users see AI voice with CoachByline.
