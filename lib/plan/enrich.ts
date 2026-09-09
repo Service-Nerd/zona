@@ -11,6 +11,7 @@ import type { Tier } from './ruleEngine'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import { BRAND } from '@/lib/brand'
 import { weekIntensityFlags } from './weekIntensityFlags'
+import { planRationaleNotes } from './planRationale'
 
 // ─── System prompt (cached via prompt-caching-2024-07-31 beta) ───────────────
 // Brand name is interpolated from BRAND.name so a future rename doesn't bleed
@@ -282,7 +283,9 @@ export async function enrich(plan: Plan, input: GeneratorInput, tier: Tier): Pro
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function buildUserMessage(plan: Plan, input: GeneratorInput, wantPaidFields: boolean): string {
+// Exported for testing — pure function of its inputs (no I/O). Builds the enrichment
+// user prompt.
+export function buildUserMessage(plan: Plan, input: GeneratorInput, wantPaidFields: boolean): string {
   // Send a slim plan representation — numeric fields are context, not targets for change
   const slimWeeks = plan.weeks.map(w => ({
     n: w.n,
@@ -309,6 +312,15 @@ function buildUserMessage(plan: Plan, input: GeneratorInput, wantPaidFields: boo
     ),
   }))
 
+  // PLAN-NOTE-SURFACE-01 — the rule-engine rationale notes the runner ALREADY sees
+  // on the plan screen ("Why this plan"). Feed them so the AI voice stays consistent
+  // with them and does not paraphrase or contradict them. Reuses the single owner
+  // planRationaleNotes(); do NOT re-grep meta here (it would drift from the UI).
+  const rationaleNotes = planRationaleNotes(plan.meta)
+  const rationaleContext = rationaleNotes.length
+    ? `\n- Already shown to the runner on the plan screen (stay consistent, do NOT repeat or contradict these): ${rationaleNotes.map(n => `"${n.text}"`).join('; ')}`
+    : ''
+
   return `Add coaching voice to this ${plan.weeks.length}-week training plan.
 
 ATHLETE:
@@ -319,7 +331,7 @@ ATHLETE:
 - Current weekly volume: ${input.current_weekly_km} km/week
 - Days available: ${input.days_available}/week
 - Plan compressed (fewer weeks than ideal): ${plan.meta.time_compressed ?? plan.meta.compressed ?? false}
-${plan.meta.difficulty_band ? `- Plan demand (already assessed by the engine — stay consistent, do not contradict): ${plan.meta.difficulty_band}${plan.meta.difficulty_note ? ` ("${plan.meta.difficulty_note}")` : ''}` : ''}
+${plan.meta.difficulty_band ? `- Plan demand (already assessed by the engine — stay consistent, do not contradict): ${plan.meta.difficulty_band}${plan.meta.difficulty_note ? ` ("${plan.meta.difficulty_note}")` : ''}` : ''}${rationaleContext}
 ${input.injury_history?.length ? `- Injury history: ${input.injury_history.join(', ')}` : ''}
 ${input.training_style ? `- Training style: ${input.training_style}` : ''}
 ${input.hard_session_relationship ? `- Hard session relationship: ${input.hard_session_relationship}` : ''}
