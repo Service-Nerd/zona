@@ -6,7 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-09-08 — INPUT-EFFECT-01 · I wrote a test to check the wizard mattered, and it found a paid step that does nothing
+## 2026-09-09 — INTENSITY-3DAY-01 · the backlog told me the wrong cause, and a two-line diff told me the right one
+
+**Shipped:** A one-predicate fix so a 3-day runner who calls themselves "experienced" no longer gets a plan that's >25% hard — the exact over-training the whole product exists to prevent, shipping silently in production.
+
+**Dev learning:** The backlog entry named §79 (the intensity-allowance rule) as the cause, with a confident mechanism paragraph. It was wrong. I nearly built the fix against it. What saved me was generating two plans — `experienced` vs `intermediate`, then `experienced` with and without the readiness gate — and diffing the per-week quality counts. The real cause was §89 early-onset shortening the all-easy base, which drops a *constant* ~9 quality sessions into the plan regardless of how many days you run; on a 3-day week the denominator collapses to ~33 and 9/33 blows the ceiling. The kicker: §97 had *already* fixed this exact tension three days earlier — but scoped its guard to race distance and never to `days_available`, because the property sweep samples every input axis independently at random and the 6-way "ready runner" gate never coincided with `days: 3` in 20,000 draws. Same class as two other bugs this month. The durable fix wasn't more random iterations — it was pinning the exact combination as a deterministic corner case.
+
+**Product/creator learning:** This is the most on-brand bug possible. A runner self-identifies as *"I'm experienced, push me"* and the engine responds by prescribing a quarter of the plan as hard efforts — selling the anxious over-trainer the exact error the product's whole pitch ("you're trying hard, that's the problem") promises to protect them from. And it did it silently: the guardrail that's supposed to catch it only throws in dev/test; in production it logs and ships the plan anyway. The constitution had a law and no police on that street.
+
+**AI-building learning:** The lesson that keeps repeating — a document is not evidence about code. The backlog's mechanism paragraph read as authoritative and was a static-analysis guess that three greps had "confirmed". A one-line `diff` of two generated plans was worth more than all of it. When the question is "which input changes what the runner sees", make the software show you — don't reason about it, and definitely don't trust the prose written last week.
+
+**The honest bit:** I told the user my fix was "Option 1, minimal" before I'd measured it. Then the matrix showed the minimal version (a flat "require 4+ days" rule) would have *left the half-marathon broken* — its tighter 20% ceiling breaches at 4 days, not 3, and the 3-day HM only looks fine because it flips to a different plan profile that happens to be exempt. A day-count threshold would have shipped a second bug while closing the first. The honest fix had to be `ceiling × days ≥ 1`, which is the actual physics.
+
+**Hook material:** Two runners, same race, same everything — one ticks "experienced", one ticks "intermediate". The first gets 9 hard sessions, the second gets 6. The app built to stop you overtraining was handing the overtrainers 50% more hard running, and the safety check that should've caught it was switched off in production by design.
+
+**Postable?:** yes
 
 **Shipped:** A test that varies all 31 `GeneratorInput` fields and asserts each one changes the delivered plan. 25/31 do. Two are dead. One combination generates a plan that breaks the intensity constitution.
 
