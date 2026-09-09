@@ -6,6 +6,24 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-09 — DOC-CLAIM-01 · the test that failed against its own documentation
+
+**Shipped:** A build check that catches when our coaching docs quote a line the app "says to the runner" that the app no longer actually says. Because that already happened — a doc described a coaching cue that had quietly drifted from the shipped wording, and reading the doc made us think a feature was missing when it had shipped months earlier.
+
+**Dev learning:** The backlog estimated this at "~30 lines: scan every quoted string in the doc, check it's in the code." I measured first and the estimate was wrong by category, not degree. The doc has 56 quotes, and they're an indistinguishable mix: real cues the app emits, hypothetical runner speech ("I can't run 45 minutes on a weekday"), paraphrases ("a weather forecast, not a target"), and — the killer — *historical* quotes, where a "Corrected" note quotes the OLD wrong text on purpose to document the fix. A scanner that flags "this quote isn't in the code" flags all three of the last kinds. 34 false positives. No heuristic separates them, because there's no structural signal — a human knows from context, a regex never will. So the check had to become opt-in: only strings explicitly marked `**Engine copy:**` get verified. Zero false positives, coverage grows as people mark claims. Worse on paper (it doesn't check everything), correct in practice (a checker with 34 false positives gets deleted within a week).
+
+**Product/creator learning:** Nothing runner-facing — this is internal doc-integrity tooling. But it completes a set: we now have four checks that each prove one arrow between the docs and the engine (a config value has a principle; a principle has code that reads it; every wizard input changes the plan; and now, a doc quote matches what the app emits). The through-line of this whole week has been the same anxiety the product itself is about — trusting a number/word because it's written down, when nothing checked it was still true.
+
+**AI-building learning:** The sharpest one. My first two versions of the checker *matched their own documentation* — I wrote "**Engine copy:** `exact string the engine emits`" in the doc as the format example, and the parser dutifully tried to verify the placeholder text "exact string the engine emits" against the code and failed. Then it matched a prose sentence that mentioned the marker. Twice, the tool I built to check the doc was fooled by the doc describing the tool. Fixed by requiring the bold `**...**` form (real markers are bold; prose references use backticks) and single-line matching. The lesson: a checker that reads prose has to be robust to prose *about the checker* — the self-referential case is not an edge case, it's the first thing you write.
+
+**The honest bit:** I proposed building this three times before actually measuring the corpus, and each proposed design (scan backticks; scan italics; scan assertion-phrases) would have shipped noise. The measurement — 56 quotes, 34 false positives, the real cue not even in backticks — is what forced the opt-in design. If I'd trusted the backlog's "~30 lines, scan everything," I'd have shipped a check that cried wolf and got switched off, which is this repo's single most-repeated failure and the exact thing the check is supposed to prevent.
+
+**Hook material:** Built a test to check the docs match the code. It failed — against its own documentation. The example in the doc explaining the convention was being checked as if it were a real claim. Twice.
+
+**Postable?:** maybe — "the test that failed against its own documentation" is a good dev-humour hook, but it's inside-baseball; pairs better as a footnote to the week's bigger stories than standalone.
+
+---
+
 ## 2026-09-09 — NOISE-GATE-01 + INERT-INPUTS-01 + CB-TERRAIN-01 · a paid step that lied, and the board that wouldn't let me fix it the easy way
 
 **Shipped:** A test that catches "safety checks" firing so often they're noise; deleted one dead input; and a paid wizard step ("Where do you run — road or trail?") that promised to affect your pace targets and did absolutely nothing — now wired to real coaching, with the board vetoing the obvious version.

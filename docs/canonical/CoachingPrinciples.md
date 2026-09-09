@@ -704,7 +704,7 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. The race-distan
 
 ## 24c. Long-run structure — build-phase Z2 ceiling (5K/10K, time-targeted)
 
-**Principle.** Build-phase long runs on time-targeted 5K and 10K plans carry a Z2-ceiling reminder in the session's coach notes — a brief emphasis on running at the top of Zone 2 rather than drifting above it. It is not a pace segment, carries no time target, and applies to the **whole run**, not a slice of it. The shipped cue is: *"Zone 2 ceiling — if HR starts climbing, back off to a walk for 30 seconds before resuming."* Total session type remains `easy`; zone tag stays Z1–Z2.
+**Principle.** Build-phase long runs on time-targeted 5K and 10K plans carry a Z2-ceiling reminder in the session's coach notes — a brief emphasis on running at the top of Zone 2 rather than drifting above it. It is not a pace segment, carries no time target, and applies to the **whole run**, not a slice of it. **Engine copy:** `Zone 2 ceiling — if HR starts climbing, back off to a walk for 30 seconds before resuming.` (verified verbatim against `lib/` by DOC-CLAIM-01 — this is the exact drift that check exists to catch). Total session type remains `easy`; zone tag stays Z1–Z2.
 
 > **Corrected 2026-09-07 — this section described a feature that was never built, next to one that was.** It previously said the cue covered *"the middle 10% of the run"* and quoted note text (*"if HR exceeds this, walk 30 seconds"*) that differs from what ships. The engine has emitted an unconditional whole-run note since `b856009`; there is no 10% segment and never was. `GENERATION_CONFIG.LR_BUILD_Z2_CEILING_SEGMENT_PCT` (0.10) existed to size that segment and was read by nothing — found by `configConsumer.test.ts` and **deleted**, because inventing a position for a note that has none would be building structure to justify a constant. A whole-run cue is also the right shape: HR drift on a long run is not confined to its middle. **The lesson is the adjacency** — §24b's segment percentages, twenty lines up, ARE read and DO work. One principle in a block of four quietly described something else, and nothing compared the prose to the code.
 
@@ -848,6 +848,14 @@ Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) where `startKm` i
 **Why.** Round-1 H-02 added an invariant that didn't catch the regression it was designed for, because the per-week zone check passed while the pace was actually wrong (the discounted-VDOT issue). A registry + canonical-case coverage check is the cheapest mechanical guard against "principle written, invariant added, but no test ever fires it." When a future principle ships, the build fails until the corresponding invariant is wired AND the canonical cases stay clean.
 
 **Config.** `INVARIANT_CODES` constant in `lib/plan/invariants.ts` lists every code. `scripts/r2-coverage-check.ts` reads source, diffs registry vs emitted-code literals, and runs the three canonical cases through `validatePlan()`. Exits 1 on any failure. Run as part of CI pre-merge.
+
+### Verifiable engine-copy claims — the `**Engine copy:**` convention (DOC-CLAIM-01, 2026-09-09)
+
+**Principle.** When this document quotes a string the engine **emits to the runner** (a coach cue, a note, a label) and asserts it is the *shipped* text, mark it with a bold `Engine copy:` label immediately followed by the exact string **in backticks**, on one line. The §24c Z2-ceiling cue above is the live worked example. `docClaims.test.ts` extracts every such marker and verifies the string exists **verbatim** in `lib/`, failing the build if it drifts. Backticks delimit (cues contain quotes and em-dashes); the label makes the intent explicit and the parse unambiguous — and single-line, so an unterminated backtick can't swallow the document.
+
+**Why it is opt-in, not a scan of every quote.** §24c quoted a Z2-ceiling cue that had drifted from the shipped text, and reading the doc's words concluded the feature was *missing* when it had shipped in April — nothing compared the prose to the code (`configPrincipleSync` checks key→principle, `configConsumer` key→consumer, INPUT-EFFECT-01 input→effect; none check principle→behaviour). But a blanket "every `*"…"*` quote must exist in code" check is unbuildable-clean: the doc's quotes are an indistinguishable mix of emitted cues, **hypothetical** runner speech, **paraphrases**, and **historical** drift-descriptions (a "Corrected" note quoting the old wrong text on purpose). Measured 2026-09-09: 56 quotes, no heuristic separates them. So the marker is explicit and the check has **zero false positives** — and its coverage grows as authors mark claims.
+
+**The escape hatch.** A quote that is illustrative or paraphrased — not verbatim shipped copy — is written **`Example copy:`** (or left as plain `*"…"*`) and is **not** checked. Do not mark a templated string with interpolated values as `Engine copy:` — the literal won't match; describe the fixed part or use `Example copy:`.
 
 ---
 
@@ -2102,7 +2110,7 @@ Race-day RPE (≥ 8) and DNF still each add a restoration week, as before.
 Two rules keep it conservative in both paths: **recovery jogs don't count** as a committed run day (supplemental easy volume, not a committed day), and when run-days drift across weeks the **lower median** wins — maintain at the sustainable cadence, not the busiest week. Exactly one long day per week (the last training day in week order). A maintenance week may never schedule more run days than this source cadence. `INV-MAINT-CADENCE`. Config: `ACTUAL_CADENCE_MIN_COMPLETED_RUNS`.
 
 **Voice register during the block:**
-- Phase 1: flat, factual. One sentence. No race reference after week 2. No forward goal language. DNF register: most restrained in the product — zero pressure, zero forward-looking framing. *"The body doesn't know what it didn't finish. Recover anyway."*
+- Phase 1: flat, factual. One sentence. No race reference after week 2. No forward goal language. DNF register: most restrained in the product — zero pressure, zero forward-looking framing. **Engine copy:** `The body doesn't know what it didn't finish. Recover anyway.`
 - Phase 2: quiet and settled. *"Back to base."* Nothing to prove. No celebration of what was.
 - No "great job" framing anywhere in the block. The race happened. This is what comes after.
 
@@ -2112,7 +2120,7 @@ Two rules keep it conservative in both paths: **recovery jogs don't count** as a
 
 **Phase 3 — re-engagement (MAINT-07).** The final `PHASE3_LAST_WEEKS` (2) weeks of Phase 2 are the block's closing register. **Training does not change at all** — same volume, same one-mild-quality cap, same invariants; these weeks stay `phase: 'maintenance_base'` and carry a separate `reengagement: true` marker rather than a third phase value (a new phase string would force every call site that switches on `maintenance_restoration|maintenance_base` to learn a case that has no training meaning). What changes is only what the app is permitted to say:
 
-- The rule-engine theme becomes **"Still here. When you're ready."** (`PHASE3_THEME`) — the one place in the block where looking forward is allowed, stated once, without pressure. It never names a distance, a race, or a target, and never asks a question.
+- The rule-engine theme (`PHASE3_THEME`) is **Engine copy:** `Still here. When you're ready.` — the one place in the block where looking forward is allowed, stated once, without pressure. It never names a distance, a race, or a target, and never asks a question.
 - The **CA-03 goal ladder surfaces here and nowhere earlier** (§67, amended). Phase 3 is the *only* forward-goal surface in the entire block.
 - The PAID weekly debrief may match the register (`enrichMaintenance` prompt), still without naming a target.
 
