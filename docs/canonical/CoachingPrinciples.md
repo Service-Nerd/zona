@@ -2644,6 +2644,19 @@ steps"*. Rep COUNT is the dose; rep length is what the session IS. This is the
 third time the lever has been proposed and the first time the block has been
 written down.
 
+> **Re-vetoed a FOURTH time — CAT-DEPTH-01 Phase 2, 2026-09-09 (unanimous).** The
+> proposal returned in discrete clothing: *collapse `tempo_cruise`/`tempo_cruise_short`
+> into one parameterised row and `select_by: 'dose'` over whole-minute rep-LENGTH
+> variants*, so a fitter runner draws longer reps. **Same lever, same veto** — rep
+> length carrying the dose, plus Seiler's exact "converge on the biggest that fits"
+> failure, plus it kills the within-plan variety the two rows currently alternate.
+> Recorded because the item's own backlog still called rep_length *"the most likely
+> Phase 2 lever"* — it is not a lever, it is a wall. The *collapse* refactor itself
+> (with `select_by: 'rotation'`) remains permissible as variety, but it is not
+> fitness-differentiation and does not close CAT-DEPTH-01. Whether the already-shipping
+> plan-level differentiation (row eligibility + rep count + §8 quality count + §89
+> onset) is commercially sufficient is an **SLT** question, not a coaching one.
+
 **Also not re-opened: per-category sizing percentages.** CD-14 built and swept
 them — 15% produced 187 ordering breaches and 220 undersized sessions, 17% broke
 the ordering outright. That measurement stands.
