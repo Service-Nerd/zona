@@ -6,6 +6,24 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-09 — CAT-DEPTH-01 + PLAN-NOTE-SURFACE-01 · the feature was already built; nobody could see it
+
+**Shipped:** Stopped trying to make the training plan *more* personalised, and instead made the personalisation it *already does* visible to the runner — after discovering the "add more personalisation" lever had been rejected by our own coaching board three times before.
+
+**Dev learning:** I went in to build "make threshold sessions differ by fitness level" — the paid-proposition centrepiece, the thing the founder said would stop this being "just a Garmin plan." I read the doctrine first (as I'd been burned into doing all week) and found the exact lever I was about to build had a **written-down veto attached, rejected three times prior**. My refined version was the same lever in a disguise; the board rejected it a fourth time, unanimously. The thing that was supposed to be the headline build was a wall. What the recon *also* found: the plan already makes four real fitness-based decisions (earlier hard work, higher-tier sessions, an extra hard day, unlocked session types) — and communicates **none of them**. The engine writes an honest note explaining every one, and all of those notes rendered to precisely nobody. Six of them. The fix wasn't more engine; it was 40 lines of a render path that never existed.
+
+**Product/creator learning:** This is the most important reframe of the week. "My plan feels generic" is almost never "the plan IS generic" — it's "the plan never told me why it's mine." The differentiation was real and invisible, and invisible differentiation is worth exactly zero at the moment someone decides whether to pay. The behavioural scientist on the board (Wood) put a hard line on it: surface it *once, honestly*, never as a persistent "look how personalised we are!" banner — that's decoration, and decoration teaches the user the app is decorative. So: honest constraints first ("this is a maintenance plan because you gave us three days"), the flattering "shaped for you" line last and only if there's room.
+
+**AI-building learning:** Two governance bodies did real work this session — the coaching board *vetoed* my build, and the product board *reframed* it — and both times I was the one about to build the wrong thing. The value wasn't the boards being clever; it was them being **institutional memory I don't have**. A veto written down three sittings ago is invisible to me unless I read it, and "read the doctrine before you write the code" went from a nice principle to the single highest-leverage habit of the week. I'd have shipped a fourth attempt at a rejected lever otherwise.
+
+**The honest bit:** I proposed the vetoed lever to the user *twice* — once as "the backlog says implement rep_length," once refined as "discrete whole-minute variants" — before reading far enough into the doctrine to find both were the same blocked thing. And I have to be honest that the shipped surface isn't visually confirmed: it builds, the logic is unit-tested, but I didn't stand up an authenticated session with a plan carrying notes to *look* at it. Trivial render over tested logic, low risk — but "it compiles and the logic passes" is not "I saw it."
+
+**Hook material:** Spent the session trying to make a training plan more personalised. Turned out it already made four personalised decisions per plan and showed the runner none of them — the "make it personal" feature was 40 lines of rendering a note the engine had been writing, and silently discarding, for months.
+
+**Postable?:** yes — "your product's best feature might already be built and invisible" is a strong, honest founder post, and it pairs with the week's running theme (the app is about trusting what's written down; so is building it).
+
+---
+
 ## 2026-09-09 — DOC-CLAIM-01 · the test that failed against its own documentation
 
 **Shipped:** A build check that catches when our coaching docs quote a line the app "says to the runner" that the app no longer actually says. Because that already happened — a doc described a coaching cue that had quietly drifted from the shipped wording, and reading the doc made us think a feature was missing when it had shipped months earlier.
