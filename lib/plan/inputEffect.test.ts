@@ -104,6 +104,10 @@ const DERIVED_META = [
   'hr_estimated_max', 'hr_zone_method', 'notes', 'days_available_status', 'time_compressed',
   'goal_beyond_measured_fitness', 'primary_metric', 'zone2_ceiling', 'plan_start',
   'days_required_ok', 'prep_time_weeks_required_ok',
+  // §40b Amendment 2 (CB-TERRAIN-01) — a DECISION note (present only for
+  // trail/mixed), not a raw echo of the input, so it belongs in the compared set
+  // alongside volume_constraint_note: it is how `terrain` now changes the plan.
+  'terrain_effort_note',
 ] as const
 
 /** Everything the runner is prescribed, as one comparable string. */
@@ -225,11 +229,11 @@ const INERT_BY_DESIGN: Record<string, string> = {
  * believe it works". Either resolution closes the entry; leaving it does not.
  */
 const INERT_DEBT: Record<string, string> = {
-  terrain:
-    'THE SHARP ONE. A PAID wizard step — GeneratePlanScreen.tsx:167 asks "Where do you run?" and ' +
-    'subtitles it "Affects pace targets." It affects nothing: ruleEngine.ts:5649 echoes it into meta ' +
-    'and no code reads meta.terrain. The runner is told the answer matters and it does not. Same ' +
-    'class as HSR-INERT-01, and worse, because the UI states the effect.',
+  // terrain — RESOLVED 2026-09-09 (INERT-INPUTS-01 / Coaching Board CB-TERRAIN-01).
+  // trail/mixed now stamp meta.terrain_effort_note (§40b Amendment 2), so varying
+  // terrain changes the delivered plan — it is no longer inert. The board vetoed a
+  // pace multiplier (§40b), so the effect is the effort-lead note, not a number;
+  // the misleading "Affects pace targets" subtitle was re-copied alongside.
   // zone2_ceiling — RESOLVED 2026-09-09 by deletion (INERT-INPUTS-01, the
   // MAX-WEEKEND-MINS-01 treatment). The inert INPUT field is gone from
   // GeneratorInput; the engine-computed meta.zone2_ceiling output is untouched.

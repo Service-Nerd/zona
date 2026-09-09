@@ -81,6 +81,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
     ],
     "resting_hr": 72,
     "terrain": "mixed",
+    "terrain_effort_note": "Off-road, let effort and HR lead — the pace targets are a road reference, not a number to chase.",
     "tier": "trial",
     "time_compressed": false,
     "training_age": "<6mo",

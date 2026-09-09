@@ -259,6 +259,9 @@ export const PlanMetaSchema = z.object({
   // long_run_shortfall_note (§80).
   volume_shortfall_note:       z.string().optional(),
   volume_shortfall_pct:        z.number().optional(),
+  // §40b Amendment 2 / CB-TERRAIN-01 — trail/mixed effort-lead note. Same family
+  // as the notes above; asserted present by INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED.
+  terrain_effort_note:         z.string().optional(),
 })
 
 export const PrePlanGuidanceSchema = z.object({

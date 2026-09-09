@@ -449,7 +449,6 @@ const COVERAGE_EXEMPTIONS: Record<string, string> = {
   terrain:         'Copied to plan.meta only (ruleEngine.ts). No prescription path reads it.',
   motivation_type: 'Copied to plan.meta only. No prescription path reads it.',
   training_style:  'Read ONLY by the AI enricher prompt (enrich.ts) and copied to meta. This sweep runs the rule engine, which never reads it.',
-  zone2_ceiling:   'An OUTPUT the engine computes into plan.meta; the input field is never read back by generation. (Worth revisiting whether it belongs on GeneratorInput at all.)',
 
   // `max_weekend_mins` was exempted here on 2026-09-04 as DECLARED BUT
   // UNIMPLEMENTED, and removed from GeneratorInput the same day

@@ -299,6 +299,14 @@ export const GENERATION_CONFIG = {
   // never lost. §1 is a CEILING the board has twice refused to spend; the
   // on-ramp yields, not the ceiling (same disposition as the distance list).
   ONSET_SHORT_ONRAMP_MIN_WEEKLY_QUALITY_HEADROOM: 1,
+  // §40b Amendment 2 (Coaching Board CB-TERRAIN-01, 2026-09-09) — the runner's
+  // ENVIRONMENT terrain values for which the plan tells them to let effort/HR
+  // lead and treat pace targets as a road reference. NOT a pace multiplier: §40b
+  // forbids inventing a number the runner cannot act on, and trail pace swings too
+  // far with grade/footing for a 3-way enum to price. `road` is the pace-anchor
+  // baseline and gets no note. A coach could reasonably decide `mixed` should not
+  // trigger it — hence config, not inline.
+  TERRAIN_EFFORT_GOVERNS: ['trail', 'mixed'] as const,
   // §91 (Coaching Board CB-ONSET-02, 2026-09-07) — for a §89-gated runner, base
   // is capped in WEEKS, not only as a fraction. `EARLY_ONSET_BASE_PCT` is a
   // percentage, so a LONGER plan re-grew the base it was meant to shorten: a

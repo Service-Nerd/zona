@@ -164,7 +164,7 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
   'your-week':       { title: 'Which days do you run?',  subtitle: 'Tap the days you train. Tap a weekend day again to make it your long run.' },
   'weekday-ceiling': { title: 'How long on a weekday?',  subtitle: 'Your cap Monday–Friday. Weekends stay open. Skip if you\'re flexible.', optional: true },
   'hard-sessions':   { title: 'You and hard sessions.', subtitle: 'Intervals, tempo, threshold. Where do you land?' },
-  'terrain':         { title: 'Where do you run?',      subtitle: 'Road, trail, or a bit of both. Affects pace targets.' },
+  'terrain':         { title: 'Where do you run?',      subtitle: 'Road, trail, or a bit of both. Off-road, we coach by effort, not pace.' },
   'injuries':        { title: 'Anything to flag?',      subtitle: 'Old injuries that still show up. Skip if you\'re clean.', optional: true },
 }
 

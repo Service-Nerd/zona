@@ -5707,6 +5707,13 @@ export function generateRulePlan(
     ...(finishGoalLrShortfallNote ? { long_run_shortfall_note: finishGoalLrShortfallNote } : {}),
     ...(volumeShortfallNote ? { volume_shortfall_note: volumeShortfallNote } : {}),
     ...(volumeShortfallPct != null ? { volume_shortfall_pct: Math.round(volumeShortfallPct * 10) / 10 } : {}),
+    // §40b Amendment 2 (CB-TERRAIN-01) — runner-environment terrain governs the
+    // pace-vs-effort EMPHASIS, never a fabricated pace. Off-road, effort/HR leads
+    // and pace is a road reference (§40b: do not invent a number the runner cannot
+    // act on). Asserted present by INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED.
+    ...((GENERATION_CONFIG.TERRAIN_EFFORT_GOVERNS as readonly string[]).includes(input.terrain ?? '')
+      ? { terrain_effort_note: 'Off-road, let effort and HR lead — the pace targets are a road reference, not a number to chase.' }
+      : {}),
 
     // VDOT / zone model fields (CoachingPrinciples §10, §20).
     // `vdot` is raw (benchmark-derived) — what users compare against Daniels' tables.

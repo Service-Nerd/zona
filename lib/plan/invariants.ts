@@ -42,6 +42,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-DELOAD-IS-A-REDUCTION',
   'INV-PLAN-VOLUME-SHORTFALL-DECLARED',
   'INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED',
+  'INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED',
   'INV-PLAN-EFFORT-OR-PACE',
   'INV-PLAN-LABEL-MATCHES-STRUCTURE',
   'INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED',
@@ -2570,6 +2571,29 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           expected: 'volume_profile=maintenance and a volume_constraint_note naming the day-count lever',
         })
       }
+    }
+  }
+
+  // INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED (CoachingPrinciples §40b Amendment 2 —
+  // CB-TERRAIN-01). A runner whose environment terrain is in TERRAIN_EFFORT_GOVERNS
+  // (trail/mixed) must be TOLD to let effort/HR lead and treat pace as a road
+  // reference. The board vetoed a terrain pace multiplier (§40b: do not invent a
+  // number the runner cannot act on), so the wired effect is the note — and a wired
+  // effect that can silently go missing is no effect. Closes the input honestly:
+  // terrain now changes the delivered plan (INPUT-EFFECT-01) rather than echoing.
+  {
+    const terrainGoverns = (GENERATION_CONFIG.TERRAIN_EFFORT_GOVERNS as readonly string[])
+      .includes(plan.meta.terrain ?? '')
+    if (terrainGoverns && !plan.meta.terrain_effort_note) {
+      violations.push({
+        code: 'INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED',
+        principle_ref: 'CoachingPrinciples §40b',
+        severity: 'error',
+        week: 0,
+        message: `Terrain is '${plan.meta.terrain}' (effort-governed), but the plan carries no terrain_effort_note. §40b wires terrain to the effort-lead note, not a pace number — the note must be present, never silently absent.`,
+        actual: 'terrain_effort_note absent',
+        expected: `terrain_effort_note present for terrain in [${GENERATION_CONFIG.TERRAIN_EFFORT_GOVERNS.join(', ')}]`,
+      })
     }
   }
 
