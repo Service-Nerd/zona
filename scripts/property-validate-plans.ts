@@ -399,6 +399,11 @@ let refused = 0
 let violatingPlans = 0
 let hardFailures = 0
 const violationsByCode = new Map<string, number>()
+// NOISE-GATE-01 — warn-severity violations were counted by NOTHING (the loop below
+// filtered to `severity === 'error'`), so a `warn` invariant firing on 44% of the
+// grid was invisible — the exact §94 INV-PLAN-DELIVERED-RAMP noise this gate exists
+// to catch. Per-code warn firing rate is now measured and threshold-gated below.
+const warnByCode = new Map<string, number>()
 
 // SWEEP_EXPLAIN=<CODE> — dump the first few real examples of one violation code,
 // with the input that produced them. Added while triaging the baseline: knowing
@@ -554,6 +559,12 @@ for (const input of inputs) {
       if (samples.length < 5) samples.push({ input, violation: v })
     }
   }
+  // NOISE-GATE-01 — count PLANS where each warn fires (once per plan, not once
+  // per week-instance — the §94 standard is "fired on 44.4% of PLANS", so the
+  // denominator is plans and a plan with five week-instances still counts once).
+  const warnCodesThisPlan = Array.from(new Set(
+    composed.violations.filter(v => v.severity === 'warn').map(v => v.code)))
+  for (const code of warnCodesThisPlan) warnByCode.set(code, (warnByCode.get(code) ?? 0) + 1)
 }
 
 console.log(`Inputs attempted:  ${attempted}  (${CORNERS.length} corner + ${SWEEP_N} sampled, seed ${SEED})`)
@@ -783,6 +794,50 @@ if (violationsByCode.size > 0) {
     console.log(`  ${code}: ${n}`)
   }
   console.log()
+}
+
+// ── NOISE-GATE-01 — a `warn` invariant firing on too much of the grid is noise ──
+//
+// §1 records the standard (Willy): "an error firing on 71% of a distance's plans
+// is not a safety mechanism — it is noise, and noise gets suppressed, which is how
+// a real violation gets missed later." That was written down and unenforced. A
+// `warn` is worse than an `error` here: errors regress the run and get seen, warns
+// were counted by nothing. §94's INV-PLAN-DELIVERED-RAMP shipped firing on 44.4%
+// of the grid (worst 114%) and was almost entirely noise; it was caught by someone
+// choosing to measure. This gate measures for them.
+//
+// A rate above the threshold FAILS until it is either scoped down or acknowledged
+// here with a reason — the debt-register discipline of configPrincipleSync/BASELINE.
+// Acknowledgement is not amnesty: it records that a human looked and decided the
+// rate is the honest residual, not a mis-scoped check.
+// 30% sits between the current honest residuals (the two highest, PEAK-IN-PEAK and
+// INJURY-CAP-DELIVERED, both documented board-scoped known-opens, sit at ~23%) and
+// the noise band (§94's INV-PLAN-DELIVERED-RAMP shipped at 44.4%; Willy's example was
+// 71%). It gives real residuals headroom while catching a genuinely mis-scoped check.
+const NOISE_THRESHOLD_PCT = 30
+// ONLY codes genuinely ABOVE the threshold whose rate a human has confirmed is the
+// honest residual belong here — acknowledgement EXEMPTS a code from the gate, so a
+// sub-threshold code must NOT be listed (that would blind the gate to it regressing
+// upward). Empty today: nothing fires above 30%.
+const ACKNOWLEDGED_WARN_RATES: Record<string, string> = {}
+const noiseRates = Array.from(warnByCode.entries())
+  .map(([code, n]) => ({ code, n, pct: (n / generated) * 100 }))
+  .sort((a, b) => b.pct - a.pct)
+if (noiseRates.length > 0) {
+  console.log('Warn-invariant firing rates (NOISE-GATE-01):')
+  for (const { code, n, pct } of noiseRates) {
+    const ack = code in ACKNOWLEDGED_WARN_RATES ? ' (acknowledged)' : ''
+    console.log(`  ${code}: ${pct.toFixed(1)}% (${n}/${generated})${ack}`)
+  }
+  console.log()
+}
+const noisy = noiseRates.filter(r => r.pct > NOISE_THRESHOLD_PCT && !(r.code in ACKNOWLEDGED_WARN_RATES))
+if (noisy.length > 0) {
+  console.error(`✗ NOISE-GATE-01 — warn invariant(s) firing above ${NOISE_THRESHOLD_PCT}% of the grid:`)
+  for (const { code, pct, n } of noisy) {
+    console.error(`  ${code}: ${pct.toFixed(1)}% (${n}/${generated}) — re-scope the check, or add it to ACKNOWLEDGED_WARN_RATES with why the rate is the honest residual.`)
+  }
+  process.exit(1)
 }
 
 console.log(`✓ ${generated} plans generated and validated (${foundationPlans} carried a foundation block, ${foundationWeeks} foundation weeks). No NEW violations above baseline.`)
