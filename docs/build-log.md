@@ -6,6 +6,24 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-09 — NOISE-GATE-01 + INERT-INPUTS-01 + CB-TERRAIN-01 · a paid step that lied, and the board that wouldn't let me fix it the easy way
+
+**Shipped:** A test that catches "safety checks" firing so often they're noise; deleted one dead input; and a paid wizard step ("Where do you run — road or trail?") that promised to affect your pace targets and did absolutely nothing — now wired to real coaching, with the board vetoing the obvious version.
+
+**Dev learning:** Two mechanical lessons. (1) The plan sweep only ever counted `error`-severity violations — `warn`s were tallied by nothing, so a warn firing on half the plans was invisible. Added a firing-rate gate; it immediately surfaced two warns at ~23% I didn't know were that high. Caught my own bug building it: I first counted violation *instances* ÷ plans and got 36.5%, which is meaningless — a plan with five bad weeks isn't "500% bad." The real metric is *plans-firing* ÷ plans. (2) Deleting the dead input taught me the input/output trap: `zone2_ceiling` existed as both a *GeneratorInput* field nobody sent AND a computed *meta output* everything reads. Delete the wrong one and you break Strava HR fallback across the app. tsc stayed green because they're distinct declarations — only careful reading told them apart.
+
+**Product/creator learning:** The terrain step is the sharpest thing I've found in this codebase. A PAID wizard question — "road, trail, or mixed?" — subtitled "Affects pace targets," and the engine read the answer for *nothing*. You were charging people for a question whose answer you threw away, while telling them it mattered. The fix wasn't what I expected: I went in to add a trail pace adjustment (trail is slower, obviously), and the coaching board *vetoed* it — there's an existing principle (§40b) that says you never invent a pace number the runner can't act on, and trail pace swings 20%+ with the footing. The right answer was a coaching *note* ("off-road, run by effort, pace is a road reference"), not a number. The question I almost got wrong: "make the input do something" is not the same as "make the input do the thing the UI promised."
+
+**AI-building learning:** I proposed the fix ("add a days-based threshold," "add a trail pace multiplier") *before* checking doctrine, twice, and doctrine reversed me *both* times. The pattern is now unmistakable across this whole session: my first instinct is a plausible mechanical change, and the existing written principles encode a subtler correct answer that a plausible change would violate. Reading `CoachingPrinciples.md` before writing code isn't process overhead — it's the difference between shipping the fix and shipping a new bug that contradicts a ruling from three weeks ago.
+
+**The honest bit:** I built the terrain note, ran the tests, and INPUT-EFFECT-01 *still* said terrain changed nothing — because the test only compares a whitelist of "decision" meta fields and my new note wasn't on it. For a minute I thought the wiring hadn't worked. It had; the test just couldn't see it. Adding one field name to a list fixed it, but "the test that proves your fix worked can't see your fix" is a special kind of five-minute panic.
+
+**Hook material:** A running app had a paid onboarding question — "where do you run?" — that affected nothing, while its own subtitle claimed it "affects pace targets." Charging for a question, throwing away the answer, and telling you it mattered. The fix took a coaching-board veto to get right.
+
+**Postable?:** yes — the terrain story is the strongest of the three; "we charged for a question and ignored the answer" is a real founder-honesty post.
+
+---
+
 ## 2026-09-09 — INTENSITY-FOUNDATION-BLIND-01 + CB-INTENSITY-50K-01 · chasing two console warnings I was told to ignore
 
 **Shipped:** Fixed a safety check that was lying to us in two opposite directions — it flagged plans that were actually fine, and by doing so it hid a plan that was actually broken. Then a coaching board raised the 50K quality ceiling to close the real one.
