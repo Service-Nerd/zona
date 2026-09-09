@@ -108,6 +108,8 @@ const DERIVED_META = [
   // trail/mixed), not a raw echo of the input, so it belongs in the compared set
   // alongside volume_constraint_note: it is how `terrain` now changes the plan.
   'terrain_effort_note',
+  // §96 / HSR-INERT-01 — a DECISION note (present only for a sub-5yr+ `love` runner).
+  'hard_pref_note',
 ] as const
 
 /** Everything the runner is prescribed, as one comparable string. */

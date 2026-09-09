@@ -618,6 +618,14 @@ export interface PlanMeta {
   // pace targets as a road reference. Same family as volume_constraint_note — a
   // stamped plan-level note, asserted present by INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED.
   terrain_effort_note?: string
+  // §96 / HSR-INERT-01 (2026-09-09) — brand-routed honesty line. Set when the runner
+  // declared `hard_session_relationship: 'love'` but has not yet earned love's full
+  // structural effect (peak-LR stretch + §47 back-to-back exception are `5yr+`-gated
+  // tissue-tolerance judgements — CB-HSR-01 ruled the gate CORRECT). Tells the runner
+  // the preference is noted and the plan earns intensity with training history, rather
+  // than silently discarding it. Copy, not coaching — no invariant (would re-derive the
+  // trigger; see the anti-duplication note at the stamp site).
+  hard_pref_note?: string
   // §79 (HR-MAX/returning-runner, 2026-08-31) — progressive intensity re-entry.
   // When active, VO2max intervals + hill reps are withheld for the opening
   // `intensity_reentry_weeks` while tissue tolerance rebuilds. Asserted by

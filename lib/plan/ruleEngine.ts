@@ -5714,6 +5714,18 @@ export function generateRulePlan(
     ...((GENERATION_CONFIG.TERRAIN_EFFORT_GOVERNS as readonly string[]).includes(input.terrain ?? '')
       ? { terrain_effort_note: 'Off-road, let effort and HR lead — the pace targets are a road reference, not a number to chase.' }
       : {}),
+    // §96 / HSR-INERT-01 (brand-routed honesty, CB-HSR-01) — a `love` runner below the
+    // 5yr+ tier does not get love's full structural effect (peak-LR stretch + §47
+    // back-to-back exception are tissue-tolerance judgements the board ruled CORRECT).
+    // Tell them the preference is noted and earned with experience, rather than silently
+    // discarding it. TRIGGER IS DELIBERATELY THE SINGLE `!== '5yr+'` CONDITION, NOT the
+    // full multi-branch gate at :2695/:3497 — re-deriving that gate here would be the
+    // duplication this note's own review flagged. The copy is forward-looking, so it
+    // stays honest for a 2-5yr HM runner who did get the recent-run stretch (they still
+    // have not earned the 5yr+ exception).
+    ...(input.hard_session_relationship === 'love' && input.training_age !== '5yr+'
+      ? { hard_pref_note: 'You said you like hard sessions. The plan earns longer peak runs and more intensity as your training history deepens — not before your legs have proven they will take it.' }
+      : {}),
 
     // VDOT / zone model fields (CoachingPrinciples §10, §20).
     // `vdot` is raw (benchmark-derived) — what users compare against Daniels' tables.

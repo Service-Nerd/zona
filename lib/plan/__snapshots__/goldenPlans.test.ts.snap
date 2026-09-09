@@ -50,6 +50,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
     "generator_version": "2.0",
     "goal": "finish",
     "handle": "",
+    "hard_pref_note": "You said you like hard sessions. The plan earns longer peak runs and more intensity as your training history deepens — not before your legs have proven they will take it.",
     "hard_session_relationship": "love",
     "hr_derived_max": 178,
     "hr_estimated_max": 178,

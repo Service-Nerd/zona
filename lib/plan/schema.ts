@@ -262,6 +262,9 @@ export const PlanMetaSchema = z.object({
   // §40b Amendment 2 / CB-TERRAIN-01 — trail/mixed effort-lead note. Same family
   // as the notes above; asserted present by INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED.
   terrain_effort_note:         z.string().optional(),
+  // §96 / HSR-INERT-01 — brand-routed honesty line for a `love` runner not yet at
+  // the 5yr+ structural tier. Copy, not coaching (no invariant).
+  hard_pref_note:              z.string().optional(),
 })
 
 export const PrePlanGuidanceSchema = z.object({
