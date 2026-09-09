@@ -272,6 +272,27 @@ export const GENERATION_CONFIG = {
   // carries the long-run progression, so it is the phase least able to spare a
   // week. Long-distance runners keep MIN_BASE_WEEKS_FLOOR unchanged.
   ONSET_SHORT_ONRAMP_DISTANCES: ['5K', '10K', 'HM'] as const,
+  // §97 Amendment 1 (INTENSITY-3DAY-01, 2026-09-09) — the distance list above
+  // was the RIGHT axis, measured against an INCOMPLETE grid. Affordability of the
+  // shortened on-ramp is a function of BOTH the ceiling (distance) AND the §1
+  // DENOMINATOR (running sessions ≈ days_available × weeks). §97 controlled for
+  // distance and never for days, because the property sweep samples axes
+  // independently at random and never crossed `days_available: 3` with the full
+  // §89 gate. Result: a 3-day 10K and a 4-day HM declaring `experienced` shipped
+  // 27.3% / 21.2% quality against 25% / 20% ceilings — §1 breached in production.
+  //
+  // The shortened on-ramp drives ~1 quality session per running week in build+
+  // peak, so it is affordable only where the distance ceiling permits AT LEAST
+  // one quality session in a week the runner actually runs: ceiling_fraction ×
+  // days_available ≥ this value. Below it, ~1 quality/week necessarily exceeds
+  // the ceiling. Measured, this separates every breaching cell (10K@3d = 0.75,
+  // HM@4d = 0.80) from every safe one (≥ 1.0) with no residual and no
+  // over-denial of the 4-day-10K / 5-day-HM cases §97 already cleared. When the
+  // gate denies, base falls back to §91's two-week floor (onset one week later,
+  // still ~2 weeks sooner than a non-gated runner) — §89's benefit is trimmed,
+  // never lost. §1 is a CEILING the board has twice refused to spend; the
+  // on-ramp yields, not the ceiling (same disposition as the distance list).
+  ONSET_SHORT_ONRAMP_MIN_WEEKLY_QUALITY_HEADROOM: 1,
   // §91 (Coaching Board CB-ONSET-02, 2026-09-07) — for a §89-gated runner, base
   // is capped in WEEKS, not only as a fraction. `EARLY_ONSET_BASE_PCT` is a
   // percentage, so a LONGER plan re-grew the base it was meant to shorten: a

@@ -288,6 +288,34 @@ const CORNERS: any[] = [
     days_available: 3, age: 43, current_weekly_km: 20, longest_recent_run_km: 10,
     resting_hr: 55, max_hr: 185, preferred_long_run_day: 'sun',
   },
+  {
+    // INTENSITY-3DAY-01 (§97 Amendment 1) — a §89-gated `experienced` runner on
+    // 3 days delivered 27.3% quality against §1's 25% 10K ceiling, live in
+    // production. The random grid varies days_available: 3 but never crossed it
+    // with the full §89 gate, so it is pinned as a corner. `ceiling × days = 0.75`
+    // → short on-ramp must be DENIED, base holds at the two-week floor.
+    label: 'intensity-3day-01-10k-3d-experienced',
+    race_distance_km: 10, race_date: raceDate(12), goal: 'time_target',
+    target_time: '0:45:00', days_available: 3, age: 40,
+    current_weekly_km: 30, longest_recent_run_km: 14,
+    resting_hr: 52, max_hr: 185, preferred_long_run_day: 'sun',
+    benchmark: { type: 'race', distance_km: 10, time: '0:49:00' },
+    training_age: '5yr+', user_declared_level: 'experienced',
+    recent_quality_training: 'regular',
+  },
+  {
+    // INTENSITY-3DAY-01 — the tighter HM ceiling (20%) breaches one day later, at
+    // 4 days (`ceiling × days = 0.80`), where the 3-day case flips to maintenance
+    // and exempts. Proves the guard is denominator-scoped, not a flat day count.
+    label: 'intensity-3day-01-hm-4d-experienced',
+    race_distance_km: 21.1, race_date: raceDate(14), goal: 'time_target',
+    target_time: '1:45:00', days_available: 4, age: 40,
+    current_weekly_km: 45, longest_recent_run_km: 18,
+    resting_hr: 52, max_hr: 185, preferred_long_run_day: 'sun',
+    benchmark: { type: 'race', distance_km: 21.1, time: '1:50:00' },
+    training_age: '5yr+', user_declared_level: 'experienced',
+    recent_quality_training: 'regular',
+  },
 ]
 
 // A distance added to the grid without a target time would silently sweep with

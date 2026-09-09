@@ -123,3 +123,39 @@ describe('§89 — INV-PLAN-EARLY-ONSET-GATED rejects a forged plan', () => {
     expect(found[0].severity).toBe('error')
   })
 })
+
+describe('§97 Amendment 1 — early onset must not blow the §1 ceiling on low-day plans (INTENSITY-3DAY-01)', () => {
+  // DETERMINISTIC by design. The live P1 that motivated this reached production
+  // precisely because the property sweep samples axes independently at random and
+  // never crossed `days_available: 3` with the full §89 gate. A random grid could
+  // not be trusted to reproduce it, so the guard is pinned here as fixed cells.
+  //
+  // Each cell is a runner who PASSES the §89 gate (experienced + 5yr+ + regular
+  // quality, no injury) at a distance in ONSET_SHORT_ONRAMP_DISTANCES, on a day
+  // count small enough that `ceiling × days < 1`. Before the fix these delivered
+  // 27.3% (10K@3d) and 21.2% (HM@4d) quality against 25% / 20% ceilings.
+  const breachingCells: Array<{ label: string; input: GeneratorInput }> = [
+    { label: '10K @ 3 days, time_target', input: base10k({ training_age: '5yr+', user_declared_level: 'experienced', recent_quality_training: 'regular', days_available: 3 }) },
+    { label: '10K @ 3 days, finish',      input: base10k({ training_age: '5yr+', user_declared_level: 'experienced', recent_quality_training: 'regular', days_available: 3, goal: 'finish', target_time: undefined }) },
+    { label: '5K @ 3 days, time_target',  input: base10k({ race_distance_km: 5, target_time: '0:22:00', training_age: '5yr+', user_declared_level: 'experienced', recent_quality_training: 'regular', days_available: 3 }) },
+    { label: 'HM @ 4 days, time_target',  input: base10k({ race_distance_km: 21.1, target_time: '1:45:00', current_weekly_km: 45, longest_recent_run_km: 18, race_date: race(14), training_age: '5yr+', user_declared_level: 'experienced', recent_quality_training: 'regular', days_available: 4 }) },
+  ]
+
+  for (const { label, input } of breachingCells) {
+    it(`${label}: no INV-PLAN-INTENSITY-DISTRIBUTION violation`, () => {
+      const p = generateRulePlan(input, 'paid', START)
+      const found = validatePlan(p, input).filter(v => v.code === 'INV-PLAN-INTENSITY-DISTRIBUTION')
+      expect(found, `§1 ceiling breached: ${found[0]?.message ?? ''}`).toHaveLength(0)
+    })
+  }
+
+  it('the fix trims §89, it does not delete it — experienced still out-scores intermediate on 3 days', () => {
+    const quality = (i: GeneratorInput) =>
+      generateRulePlan(i, 'paid', START).weeks
+        .reduce((n, w) => n + Object.values(w.sessions).filter(s => s?.type === 'quality').length, 0)
+    const gate = { training_age: '5yr+' as const, recent_quality_training: 'regular' as const, days_available: 3 }
+    const exp = quality(base10k({ ...gate, user_declared_level: 'experienced' }))
+    const inter = quality(base10k({ ...gate, user_declared_level: 'intermediate' }))
+    expect(exp, 'early onset still yields more quality, just bounded by §1').toBeGreaterThan(inter)
+  })
+})

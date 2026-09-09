@@ -4637,9 +4637,19 @@ export function generateRulePlan(
     today, anchoredStartIso, input.foundation_decision,
   )
   // §97 — the shortened on-ramp is distance-scoped; see ONSET_SHORT_ONRAMP_DISTANCES.
-  const shortOnRamp = earlyQualityOnset && (
-    GENERATION_CONFIG.ONSET_SHORT_ONRAMP_DISTANCES as readonly string[]
-  ).includes(raceDistanceKey(input.race_distance_km))
+  // §97 Amendment 1 (INTENSITY-3DAY-01) — and denominator-scoped. A shortened base
+  // is affordable only where the §1 ceiling permits ≥1 quality session per week the
+  // runner actually runs (ceiling_fraction × days_available). Otherwise the ~1
+  // quality/week the short on-ramp drives breaches §1 on low-day plans — the 3-day
+  // 10K / 4-day HM the distance-only gate never saw. Base then falls back to §91's
+  // two-week floor. See ONSET_SHORT_ONRAMP_MIN_WEEKLY_QUALITY_HEADROOM.
+  const onsetDistKey = raceDistanceKey(input.race_distance_km)
+  const ceilingFraction =
+    GENERATION_CONFIG.INTENSITY_DISTRIBUTION[onsetDistKey].max_quality_session_pct / 100
+  const shortOnRamp = earlyQualityOnset
+    && (GENERATION_CONFIG.ONSET_SHORT_ONRAMP_DISTANCES as readonly string[]).includes(onsetDistKey)
+    && ceilingFraction * input.days_available
+       >= GENERATION_CONFIG.ONSET_SHORT_ONRAMP_MIN_WEEKLY_QUALITY_HEADROOM
   const phases = computePhases(
     totalWeeks, input.race_distance_km, earlyQualityOnset, foundationWeeksAhead, shortOnRamp,
   )

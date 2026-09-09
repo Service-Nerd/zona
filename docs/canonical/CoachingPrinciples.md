@@ -3566,6 +3566,46 @@ Amends §76 (surplus no longer delays the start for this cohort), §89/§91 (flo
 §57 (block not generated for this cohort — bypassed, not weakened: its rules are
 unchanged for everyone who still gets one), and completes PLANLEN-DUP-01.
 
+### Amendment 1 — the on-ramp is denominator-scoped, not only distance-scoped (INTENSITY-3DAY-01, 2026-09-09)
+
+The distance list above was the **right axis measured against an incomplete grid.**
+Affordability of the shortened on-ramp is a function of **both** the ceiling (distance)
+**and** the §1 denominator — running sessions, which is `days_available × weeks`. §97
+controlled for distance and never for days, because `property-validate-plans.ts` samples
+each input axis independently at random and never crossed `days_available: 3` with the
+full §89 gate. The consequence shipped to production (`enforceViolations` only throws in
+dev/test): a **3-day 10K** declaring `experienced` delivered **27.3% quality (9/33)** and
+a **4-day HM** delivered **21.2% (11/52)**, against 25% / 20% ceilings — the exact §1
+breach §97's own "the on-ramp yields, not the ceiling" disposition forbids. Same two-axes-
+meet-where-nothing-guards shape as §79-PEAKKM.
+
+**The rule.** The shortened on-ramp drives ~1 quality session per running week in
+build+peak, so it is granted only where the distance ceiling permits **at least one**
+quality session in a week the runner actually runs:
+
+```
+ceiling_fraction × days_available ≥ ONSET_SHORT_ONRAMP_MIN_WEEKLY_QUALITY_HEADROOM (1)
+```
+
+Below the threshold, ~1 quality/week necessarily exceeds the ceiling. Measured, this
+separates every breaching cell (`10K@3d = 0.75`, `HM@4d = 0.80`) from every safe one
+(`≥ 1.0`) with no residual and no over-denial of the 4-day-10K / 5-day-HM cases §97
+already cleared. When denied, base falls back to §91's two-week floor: onset moves one
+week later, still ~2 weeks sooner than a non-gated runner. **§89's benefit is trimmed,
+never lost** (`experienced` still outscores `intermediate` — 8 quality vs 6 on the 3-day
+10K). §1 yields nothing; the on-ramp yields — the same disposition as the distance list.
+
+This is a **defect fix restoring documented intent** (§79 "distribution still governs" +
+§97's own ceiling-yields ruling), so it is Coaching-Board-exempt; the fix that would need
+a sitting is the opposite one — deciding a low-day `experienced` runner *should* carry
+>25%, i.e. raising the ceiling.
+
+**Config.** `GENERATION_CONFIG.ONSET_SHORT_ONRAMP_MIN_WEEKLY_QUALITY_HEADROOM` (1).
+Checked by the existing `INV-PLAN-INTENSITY-DISTRIBUTION` (no new invariant — the ceiling
+was always the check; the gap was a producer that respected it on the days axis) plus a
+**deterministic** regression cell in `property-validate-plans.ts` and `earlyQualityOnset.test.ts`
+that the random grid could not be trusted to sample.
+
 ---
 
 ## 56. The constitution

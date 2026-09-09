@@ -147,10 +147,7 @@ const SPECS: Record<string, Spec> = {
   goal:                    { values: ['finish', 'time_target'] },
   current_weekly_km:       { values: [20, 45, 70] },
   longest_recent_run_km:   { values: [6, 12, 18] },
-  days_available:          { values: [3, 5, 6],
-                             blockedValues: [{ value: 3, defect: 'INTENSITY-3DAY-01' }],
-                             note: 'days_available=3 is excluded pending INTENSITY-3DAY-01 — see the ' +
-                                   'register below. 5 vs 6 still proves the field has an effect.' },
+  days_available:          { values: [3, 5, 6] },
   age:                     { values: [25, 40, 60], baseline: { max_hr: undefined } },
   fitness_level:           { values: [undefined, 'beginner', 'experienced'] },
   user_declared_level:     { values: [undefined, 'beginner', 'experienced'],
@@ -254,15 +251,13 @@ const REFUSAL_ERRORS = ['PrepTimeError', 'DaysAvailableError']
  * otherwise built to catch.
  */
 const TRACKED_DEFECTS: Record<string, string> = {
-  'INTENSITY-3DAY-01':
-    'Found by INPUT-EFFECT-01 on its first run, 2026-09-08. A 3-day/week runner who declares ' +
-    '`user_declared_level: "experienced"` receives a plan breaching INV-PLAN-INTENSITY-DISTRIBUTION ' +
-    '(§1): 26.8% quality on a 10K (11/41), 28.6% on a 5K (10/35), against a 25% ceiling. Reproduces ' +
-    'on 5K and 10K, both goals, at 2-5yr and 5yr+; `intermediate` is clean and HM is clean. §79 ' +
-    'raises the intensity allowance on an upward declaration, and on a 3-day week the denominator ' +
-    'is small enough that the allowance breaches the plan-wide ceiling. In production this LOGS AND ' +
-    'SHIPS (enforceViolations only throws in dev/test), so real 3-day runners are being prescribed ' +
-    'more than a quarter hard — the precise failure Zonna exists to prevent.',
+  // INTENSITY-3DAY-01 — CLOSED 2026-09-09 by §97 Amendment 1
+  // (ONSET_SHORT_ONRAMP_MIN_WEEKLY_QUALITY_HEADROOM). The cause was NOT §79's
+  // intensity allowance as first filed — measured by diff, it was §89 early onset
+  // shortening the base on a low-day plan, so ~1 quality/week breached §1's
+  // ceiling once the running-session denominator collapsed. The short on-ramp is
+  // now denominator-scoped. Regression cells: earlyQualityOnset.test.ts +
+  // the two `intensity-3day-01-*` CORNERS in property-validate-plans.ts.
 }
 
 interface Outcome { distinct: number; refusals: string[]; unexpected: string[]; blocked: string[] }
