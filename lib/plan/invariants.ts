@@ -3115,7 +3115,26 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   {
     const dist = GENERATION_CONFIG.INTENSITY_DISTRIBUTION[
       distKey as keyof typeof GENERATION_CONFIG.INTENSITY_DISTRIBUTION]
-    if (dist) {
+    // INTENSITY-FOUNDATION-BLIND-01 (2026-09-09) — this ratio must be measured on
+    // the DELIVERED plan, not the bare one. validatePlan runs twice on different
+    // objects (§91 note, ruleEngine.ts): once on the bare plan inside
+    // generateRulePlan, before composePlanWithFoundation prepends the §57
+    // foundation weeks, and again on the assembled plan. Foundation weeks (n <= 0)
+    // are all-easy running, so they ENLARGE this denominator and lower the share.
+    // Checking the bare plan therefore gives a different — and stricter — verdict
+    // than the runner's actual plan: it console.error'd a false positive in prod
+    // and THREW in dev/test on plans that ship clean. So when a block is pending
+    // (`foundation_weeks_planned > 0`) but not yet present (no n <= 0 week), DEFER
+    // to the assembled-plan check that composePlanWithFoundation runs. The count
+    // is not projected here — foundation weeks are day-fitted (§52b), so the
+    // running-session count per week is not a constant this check could reproduce
+    // without drifting from foundationBlock.ts. Same reasoning as §91 reading the
+    // stamped week count rather than re-deriving it. When no block is coming
+    // (== 0), the bare plan IS the delivered plan and the check binds in full —
+    // which is exactly where INTENSITY-LONGDIST-LOWDAY-01's real breach must fire.
+    const foundationPending =
+      (plan.meta.foundation_weeks_planned ?? 0) > 0 && !plan.weeks.some(w => w.n <= 0)
+    if (dist && !foundationPending) {
       // Denominator is RUNNING sessions — strength, cross-train and rest are not
       // part of an intensity distribution.
       //

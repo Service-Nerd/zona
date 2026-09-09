@@ -98,7 +98,15 @@ describe('SC-03 — intensity distribution is a session-share ceiling', () => {
     // enough sessions to distribute. This test is about the ceiling BITING, so
     // it asserts against a build profile. The exemption itself is covered in
     // intensityDistributionCd21.test.ts.
-    over.meta = { ...over.meta, volume_profile: 'build' }
+    // INTENSITY-FOUNDATION-BLIND-01 (2026-09-09): the check now measures the
+    // DELIVERED plan and defers when a foundation block is still pending (bare
+    // plan, `foundation_weeks_planned > 0`, no n<=0 week yet) — the block's
+    // all-easy weeks change the §1 denominator. This poisoned plan models a
+    // DELIVERED build 10K with no block, so pin `foundation_weeks_planned: 0`;
+    // otherwise the ceiling correctly defers to the assembled-plan check and this
+    // (never-assembled) fixture reads clean. Foundation-credit coverage lives in
+    // intensityFoundationBlind.test.ts.
+    over.meta = { ...over.meta, volume_profile: 'build', foundation_weeks_planned: 0 }
     for (const w of over.weeks) {
       for (const [day, s] of Object.entries(w.sessions)) {
         if (s && s.type === 'easy') {
