@@ -29,8 +29,9 @@ import type { GeneratorInput, Plan } from '../../types/plan'
  *   • `terrain`  — a PAID wizard step ("Where do you run?", subtitled "Affects
  *     pace targets") echoed into meta and read by NOTHING. The UI states an
  *     effect the engine does not deliver.
- *   • `zone2_ceiling` — a declared input no caller sends and no code reads. The
- *     engine overwrites meta.zone2_ceiling with its own computed value.
+ *   • `zone2_ceiling` — a declared input no caller sends and no code reads (the
+ *     engine overwrote meta.zone2_ceiling with its own computed value). RESOLVED
+ *     2026-09-09 by deletion (INERT-INPUTS-01); the input field is gone.
  *   • `foundation_decision` and `acknowledged_prep_warning` both looked inert
  *     until the fixture was corrected — see THE FIXTURE TRAP below.
  *
@@ -175,7 +176,6 @@ const SPECS: Record<string, Spec> = {
                                       { type: 'race', distance_km: 5, time: '28:00' }] },
   race_name:               { values: [undefined, 'Autumn 10K'] },
   target_time:             { values: ['0:40:00', '0:45:00', '0:55:00'] },
-  zone2_ceiling:           { values: [undefined, 140, 155] },
   days_cannot_train:       { values: [[], ['mon', 'tue'], ['wed']] },
   max_weekday_mins:        { values: [undefined, 30, 90] },
   training_style:          { values: ['predictable', 'variety', 'minimalist', 'structured'] },
@@ -230,11 +230,9 @@ const INERT_DEBT: Record<string, string> = {
     'subtitles it "Affects pace targets." It affects nothing: ruleEngine.ts:5649 echoes it into meta ' +
     'and no code reads meta.terrain. The runner is told the answer matters and it does not. Same ' +
     'class as HSR-INERT-01, and worse, because the UI states the effect.',
-  zone2_ceiling:
-    'A declared input no caller sends (absent from the wizard AND from ' +
-    'docs/contracts/api/generate-plan.md) and no code reads. ruleEngine.ts:5584 OVERWRITES ' +
-    'meta.zone2_ceiling with the engine\'s own computed zones.zone2Ceiling, so supplying it is ' +
-    'silently discarded. Strongest candidate for the MAX-WEEKEND-MINS-01 treatment: delete it.',
+  // zone2_ceiling — RESOLVED 2026-09-09 by deletion (INERT-INPUTS-01, the
+  // MAX-WEEKEND-MINS-01 treatment). The inert INPUT field is gone from
+  // GeneratorInput; the engine-computed meta.zone2_ceiling output is untouched.
 }
 
 /** Refusals that are a legitimate, designed effect of a field. Anything else that

@@ -114,7 +114,13 @@ export interface GeneratorInput {
   // Optional
   race_name?: string
   target_time?: string
-  zone2_ceiling?: number
+  // INERT-INPUTS-01 (2026-09-09) — `zone2_ceiling?: number` REMOVED. Same shape as
+  // MAX-WEEKEND-MINS-01 below: a declared INPUT no caller sends and no engine code
+  // reads. `ruleEngine.ts` computes `meta.zone2_ceiling` from `zones.zone2Ceiling`
+  // unconditionally, so a caller supplying an input `zone2_ceiling` was silently
+  // discarded — worse than absent, because a caller can reasonably believe it works.
+  // The META output `meta.zone2_ceiling` (PlanMetaSchema, the HR-target fallback) is
+  // untouched — it is engine-computed and legitimately consumed. Found by INPUT-EFFECT-01.
   days_cannot_train?: string[]
   max_weekday_mins?: number
   // MAX-WEEKEND-MINS-01 (2026-09-04) — `max_weekend_mins` REMOVED. It sat here
