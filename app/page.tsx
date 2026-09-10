@@ -41,7 +41,8 @@ export const dynamic = 'force-dynamic'  // auth check must run per-request
 // Description: 155 chars — rich enough for Google's snippet, honest tone.
 // Canonical: prevents /rts-training-hub.vercel.app and /zonna.run indexing
 // the same page as duplicates once the custom domain is live.
-// NEXT_PUBLIC_APP_URL must be set to https://zonna.run in Vercel env vars.
+// NEXT_PUBLIC_APP_URL is deliberately NOT set (GTM-SITE-01) — www is canonical
+// and the value lives in the committed default below. See CLAUDE.md.
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
 export const metadata: Metadata = {
