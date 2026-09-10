@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-10 — GTM-SITE-01 close-out · My verification passed because it checked the wrong environment
+**Shipped:** Closing out the site review — one constant header/footer span, the canonical host moved off a redirect, and two brand divergences (DIV-021, DIV-022) that only showed up when I stopped trusting my earlier pass and re-read the pages.
+
+**Dev learning:** The canonical tag on every page pointed at `https://zonna.run/...`, which **307-redirects** to `www`. Real defect: a canonical aimed at a redirect is a wasted signal and a sitemap full of them is worse. I "fixed" it by changing twelve code defaults from apex to www, verified it in the local build, and shipped it. It was a **no-op**. `NEXT_PUBLIC_APP_URL` was set in Vercel to the apex, and an env var beats a `??` default. My verification passed because `.env.local` has no such variable, so the local build fell through to my new default and showed me exactly the result I was hoping for. **I verified the change in the only environment where it had no effect.** The variable is now deleted entirely so the value lives in git and local and production cannot disagree.
+
+**Product/creator learning:** The founder looked at the live site and said the header "span" was inconsistent — home wider than plans. He was right, and it was a decision I had made deliberately: the header took a `width` prop so it matched each page's content width. Defensible on paper, wrong in a browser, because the header is site chrome and chrome should not move. I rebuilt it as a constant rather than a defaulted prop, because a defaulted prop is precisely how it drifted in the first place.
+
+**AI-building learning:** Twice today I asserted something I had only inferred. I told the founder an env var was unset — deduced from two metadata tags disagreeing — and put that in a commit message as fact. He pushed back, I checked, and it had been set for 141 days. The tell was available the whole time and I never ran the one command that would have settled it. **Inference dressed as measurement is the failure mode to watch for; it reads exactly like a finding.**
+
+**The honest bit:** I also introduced a brand defect while fixing brand defects. Standardising the footer put the brand statement on all 8 pages, and on the homepage it landed ~96px under the designed 48px closing moment — the same sentence twice in one scroll. And the feature-registry row I wrote documenting the new chrome was stale within the hour, describing a `width` prop and a footer line that no longer existed. The exact rot this review was convened to find, in a doc I wrote during the review.
+
+**Hook material:** Changed twelve files, verified locally, shipped, told the founder it was fixed. It changed nothing in production. An environment variable set 141 days earlier beat every one of them, and my test passed because the variable does not exist on my machine.
+
+**Postable?:** yes — "my verification passed because it checked the wrong environment" is the strongest post of the day.
+
+
 ## 2026-09-10 — GTM-SITE-01 · The logo changed size as you walked around the site
 **Shipped:** One `SiteHeader` and one `SiteFooter` across all 8 marketing pages, `/compare` renamed to `/comparisons` with a 308, and two stale homepage claims corrected.
 
