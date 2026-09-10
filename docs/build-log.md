@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-10 — CAT-ROW-ELIGIBILITY-01 + §99 · The fix I shipped exposed a lie the app had been telling since R23
+**Shipped:** The catalogue selector can finally say "this row needs a pace this runner has", which unblocked a migration the board had ruled correct six days earlier and then reverted — and the migration immediately exposed that one session had been telling runners 45 minutes for a session that takes over 70.
+
+**Dev learning:** Three separate silent traps in one afternoon, all the same shape: **a mechanism that looks applied and does nothing.** (1) I added the HM pace anchor to the numeric resolver used for sizing, but not to the string map used to build the displayed structure — two resolvers for one question, one updated. That shipped **859 sessions reading "HM-pace reps" with no pace at all**, and the only reason I saw it is that I'd written an invariant for exactly that case twenty minutes earlier. (2) The fixed-shape sizer only priced steps measured in *time*; my row is measured in *distance*, so it fell out at its own guard and kept the old behaviour. (3) It asserted the work anchor was `'T'` — written back when both rows it handled were threshold rows, so "exactly one anchor" and "the anchor is T" were the same sentence. They stopped being the same sentence the moment a third row joined. **Every one of those would have passed a code review and produced a green test run.**
+
+**Product/creator learning:** The 45-minutes-vs-70 thing is the one that actually matters. Zonna's entire promise is *"Slow down. You've got a day job."* Telling that runner a session takes 45 minutes and handing them 70 is not a rounding error — it's the session they bail on, or the evening they didn't have. And it had been shipping since R23. It was invisible because the row had no machine-readable structure to check the stated duration against; the migration didn't cause the bug, it **gave the codebase eyes**. That's the argument for structural stamping in one sentence.
+
+**AI-building learning:** I nearly shipped the migration with the dose quietly halved. Structure-driven sizing recomputed the session at 2 reps instead of 4, the tests were green, the sweep was clean, and the number was *defensible* — which is exactly what makes it dangerous. I only caught it because I'd decided to measure the dose before and after rather than trust "no violations". **A silent 50% cut to a peak session is not something any check in this repo would have flagged**, because nothing was violated; it was just different. So the migration went in with a literal `repeat: 4` and the dose question went to the board separately.
+
+**The honest bit:** I reported `REAL EXIT: 0` twice today on commands piped into `tail`, where `$?` is tail's status and not the command's. The first time, the test suite had actually failed. My own memory file has a warning about this exact trap, written the last time I did it. I now redirect to a file and read the code. Also: I spent several minutes convinced I'd found a live engine crash that was entirely my own malformed fixture — `goal: 'time_target'` with no `target_time`.
+
+**Hook material:** "Your training app says this session takes 45 minutes. It takes 70. It's been lying since R23, and the only reason anyone found out is that I migrated the session to a format that could be checked." Plus: one fix, three separate mechanisms that would have looked applied and done nothing.
+
+**Postable?:** yes — the 45-vs-70 story is the most human thing I've shipped in weeks, and "the fix gave the codebase eyes" is a real idea rather than a changelog line.
+
+---
+
 ## 2026-09-10 — §98 / CB-ONSET-YIELD-01 · The bug report named the wrong section, and I nearly fixed it anyway
 **Shipped:** §89's early quality onset now yields to §1's intensity ceiling — a ladder that walks the base phase back one week at a time until the plan complies, bounded so a runner can never end up waiting longer than if they had never demonstrated readiness at all.
 
