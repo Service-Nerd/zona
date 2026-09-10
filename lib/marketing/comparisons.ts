@@ -21,6 +21,7 @@
 // root catch-all would swallow every other route in the app.
 
 import { BRAND } from '@/lib/brand'
+import { articleJsonLd } from '@/lib/marketing/articleJsonLd'
 
 /** A run of article text. A bare string is plain copy; the object form is an
  *  inline text link. Links are never buttons in this content type. */
@@ -44,8 +45,15 @@ export interface ComparisonArticle {
   h1: string
   /** Human display form, e.g. '10 September 2026'. */
   lastUpdated: string
-  /** Machine form for <time dateTime> and sitemap lastModified. */
+  /** Machine form for <time dateTime>, sitemap lastModified, and the Article
+   *  JSON-LD `dateModified`. ONE field feeds all three, so the visible date and
+   *  the structured-data date cannot drift apart. Update this when the page's
+   *  facts are revised. */
   lastUpdatedISO: string
+  /** ISO date of FIRST publish. Fixed forever; unlike `lastUpdatedISO` it must
+   *  not move when the copy is revised, or the article claims to be brand new
+   *  every time a price is corrected. */
+  publishedISO: string
   body: ArticleBlock[]
   /** One line, plain and muted. Not an author bio block, no avatar. */
   signature: string
@@ -68,6 +76,7 @@ export const COMPARISON_ARTICLES: ComparisonArticle[] = [
     h1: `Runna alternatives for runners who don't want streaks`,
     lastUpdated: '10 September 2026',
     lastUpdatedISO: '2026-09-10',
+    publishedISO: '2026-09-10',
     signature: `Written by Russ Shear, who built ${BRAND.name} after running 100km in July 2026 and walking the last 40 of it.`,
     appStoreLinkText: `Get ${BRAND.name} on the App Store`,
     body: [
@@ -103,6 +112,24 @@ export const COMPARISON_ARTICLES: ComparisonArticle[] = [
     ],
   },
 ]
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zonna.run'
+
+/**
+ * Article JSON-LD for a comparison page. This is the WIRING, and it is the part
+ * worth protecting: `dateModified` is read from `lastUpdatedISO`, the same field
+ * that renders the visible "Last updated" line, so the structured data cannot
+ * claim one date while the page shows another. Asserted in comparisons.test.ts.
+ */
+export function comparisonArticleJsonLd(article: ComparisonArticle) {
+  return articleJsonLd({
+    headline: article.metaTitle,
+    datePublished: article.publishedISO,
+    dateModified: article.lastUpdatedISO,
+    description: article.metaDescription,
+    url: `${APP_URL}/${article.slug}`,
+  })
+}
 
 export function getComparison(slug: string): ComparisonArticle | undefined {
   return COMPARISON_ARTICLES.find(a => a.slug === slug)

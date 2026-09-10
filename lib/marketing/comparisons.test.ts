@@ -6,7 +6,7 @@
 // cover pages that do not exist yet.
 
 import { describe, it, expect } from 'vitest'
-import { COMPARISON_ARTICLES, type ArticleBlock } from './comparisons'
+import { COMPARISON_ARTICLES, comparisonArticleJsonLd, type ArticleBlock } from './comparisons'
 import { BRAND } from '@/lib/brand'
 
 const copyOf = (block: ArticleBlock): string =>
@@ -80,3 +80,50 @@ function readSource(): string {
   const { join } = require('node:path') as typeof import('node:path')
   return readFileSync(join(process.cwd(), 'lib/marketing/comparisons.ts'), 'utf8')
 }
+
+describe('comparison articles — Article JSON-LD', () => {
+  it.each(COMPARISON_ARTICLES.map(a => [a.slug, a] as const))(
+    '%s: dateModified is the SAME date the page displays', (_slug, a) => {
+      // The whole point of the wiring. If someone revises the copy and bumps the
+      // visible "Last updated" line without touching the structured data, Google
+      // is told one date while the reader sees another. One field feeds both, so
+      // this cannot happen — this test is what keeps it that way.
+      expect(comparisonArticleJsonLd(a).dateModified).toBe(a.lastUpdatedISO)
+    })
+
+  it.each(COMPARISON_ARTICLES.map(a => [a.slug, a] as const))(
+    '%s: datePublished is independent of dateModified', (_slug, a) => {
+      // Distinct FIELDS, even where they hold the same value at first publish.
+      // Deriving datePublished from lastUpdatedISO would make every revision
+      // look like a brand-new article.
+      expect(comparisonArticleJsonLd(a).datePublished).toBe(a.publishedISO)
+      expect(a.publishedISO <= a.lastUpdatedISO).toBe(true)
+    })
+
+  it.each(COMPARISON_ARTICLES.map(a => [a.slug, a] as const))(
+    '%s: headline and description match the page meta exactly', (_slug, a) => {
+      const ld = comparisonArticleJsonLd(a)
+      expect(ld.headline).toBe(a.metaTitle)
+      expect(ld.description).toBe(a.metaDescription)
+      expect(ld.mainEntityOfPage).toBe(`https://zonna.run/${a.slug}`)
+    })
+
+  it('carries the constant author and publisher, with the brand interpolated', () => {
+    const ld = comparisonArticleJsonLd(COMPARISON_ARTICLES[0])
+    expect(ld['@context']).toBe('https://schema.org')
+    expect(ld['@type']).toBe('Article')
+    expect(ld.author).toEqual({ '@type': 'Person', name: 'Russ Shear' })
+    expect(ld.publisher).toEqual({ '@type': 'Organization', name: BRAND.name, url: 'https://zonna.run' })
+  })
+
+  it('the helper is not hardcoded per page — every article produces valid output', () => {
+    // Guards the "pages 2 through 8 inherit this" promise: a new entry gets
+    // complete JSON-LD with no extra wiring.
+    for (const a of COMPARISON_ARTICLES) {
+      const ld = comparisonArticleJsonLd(a)
+      for (const k of ['headline', 'datePublished', 'dateModified', 'description', 'mainEntityOfPage'] as const) {
+        expect(String(ld[k]).length).toBeGreaterThan(0)
+      }
+    }
+  })
+})

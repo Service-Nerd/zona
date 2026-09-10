@@ -16,7 +16,7 @@
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
 import { Wordmark } from '@/components/ui/Wordmark'
-import type { ComparisonArticle, ArticleSpan } from '@/lib/marketing/comparisons'
+import { comparisonArticleJsonLd, type ComparisonArticle, type ArticleSpan } from '@/lib/marketing/comparisons'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zonna.run'
 const SECTION_MAX = 760
@@ -46,7 +46,7 @@ function renderSpans(spans: ArticleSpan[]) {
 export function ComparisonPage({ article }: { article: ComparisonArticle }) {
   const url = `${APP_URL}/${article.slug}`
 
-  const ld = {
+  const breadcrumbLd = {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: APP_URL },
@@ -54,9 +54,14 @@ export function ComparisonPage({ article }: { article: ComparisonArticle }) {
     ],
   }
 
+  // schema.org Article. Built by the shared wiring in comparisons.ts, which
+  // reads `dateModified` from the same field as the visible "Last updated" line.
+  const articleLd = comparisonArticleJsonLd(article)
+
   return (
     <main style={{ background: 'var(--bg)', color: 'var(--ink)', minHeight: '100vh', fontFamily: 'var(--font-ui)' }}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }} />
 
       <nav style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link href="/" style={{ textDecoration: 'none' }} aria-label={`${BRAND.name} home`}><Wordmark /></Link>
@@ -119,6 +124,20 @@ export function comparisonMetadata(article: ComparisonArticle) {
       url,
       siteName: BRAND.name,
       type: 'article' as const,
+      // Next merges metadata SHALLOWLY: a page that defines `openGraph` replaces
+      // the root layout's object outright rather than merging into it, so the
+      // site-wide og:image is dropped unless it is restated. Verified in the
+      // prerendered HTML — /plans has no og:image for exactly this reason.
+      images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630, alt: article.h1 }],
+    },
+    // Same shallow-merge rule, opposite symptom: without this block the page
+    // inherits the root layout's GENERIC twitter card, so every comparison page
+    // would share one title and description on social regardless of subject.
+    twitter: {
+      card: 'summary_large_image' as const,
+      title: article.ogTitle,
+      description: article.ogDescription,
+      images: [`${APP_URL}/api/og`],
     },
   }
 }
