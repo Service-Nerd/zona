@@ -25,7 +25,7 @@ import { isV2Structure, StructureV2Schema, goalPaceShapeWord, type PaceAnchor } 
 import { durationForMainSet } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
 import { isDeloadWeek, computeDeloadWeeks } from './deloadCadence'
-import { plannedFoundationWeeks, classifyGap, gapDays } from './foundationBlock'
+import { plannedFoundationWeeks } from './foundationBlock'
 import type { GeneratorPhase } from '@/types/plan'
 import {
   V1_SESSION_CATALOGUE, selectCatalogueSession,
@@ -4653,16 +4653,6 @@ export function generateRulePlan(
   const foundationWeeksAhead = plannedFoundationWeeks(
     today, anchoredStartIso, input.foundation_decision,
   )
-  // INTENSITY-FOUNDATION-BLIND-02 — `foundationWeeksAhead` is 0 in TWO states
-  // that mean opposite things: "no block is coming" and "the runner has not
-  // answered the modal yet". On the >28-day 'choice' band the decision arrives
-  // LATER, via POST /api/generate-plan/foundation — that deferral is the band's
-  // whole purpose — so a plan generated there is 0-weeks-planned and 3-weeks-
-  // delivered. Any check measuring a share across the whole plan has to be able
-  // to tell the two apart; see INV-PLAN-INTENSITY-DISTRIBUTION.
-  const foundationDecisionPending =
-    classifyGap(gapDays(today, anchoredStartIso)) === 'choice'
-    && input.foundation_decision === undefined
   // §97 — the shortened on-ramp is distance-scoped; see ONSET_SHORT_ONRAMP_DISTANCES.
   // §97 Amendment 1 (INTENSITY-3DAY-01) — and denominator-scoped. A shortened base
   // is affordable only where the §1 ceiling permits ≥1 quality session per week the
@@ -5676,10 +5666,6 @@ export function generateRulePlan(
     // question. The DECISION is made once, here, so the number is recorded once,
     // here — and both validations read the same field.
     foundation_weeks_planned: foundationWeeksAhead,
-    // INTENSITY-FOUNDATION-BLIND-02 — stamped only when true, so an ordinary
-    // plan's meta is unchanged and the flag reads as an exception rather than
-    // a field every plan carries.
-    ...(foundationDecisionPending ? { foundation_decision_pending: true } : {}),
     goal:                      input.goal,
     target_time:               input.target_time,
     days_available:            input.days_available,

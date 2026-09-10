@@ -86,6 +86,25 @@ export const GENERATION_CONFIG = {
     '100K':     { max_quality_session_pct: 15 },
   },
 
+  // §1 — WHICH weeks form the denominator above (Coaching Board
+  // CB-FOUNDATION-DENOM-01, 2026-09-10). `false` = main-plan weeks only (n >= 1);
+  // §57 foundation weeks are excluded.
+  //
+  // §57 states foundation weeks "are never part of the main plan's periodisation
+  // arc", and §22's SC-05 closure already ruled that counting them toward
+  // `totalWeeks` elsewhere in validatePlan was a defect. Including them here made
+  // the ceiling looser the earlier a runner generated their plan — same block,
+  // same quality sessions, different verdict — and spent weeks that §57's CB-1
+  // ruling defines as "habit and routine, not adaptation" inside a ratio that
+  // governs adaptation.
+  //
+  // A flag rather than a hard-coded filter because the board recorded a live
+  // dissent axis (Seiler would revisit if a cohort's delivered distribution is
+  // ever assessed across the block boundary) and because flipping it is the
+  // cheapest way to re-measure the trade. Read by INV-PLAN-INTENSITY-DISTRIBUTION
+  // — not decorative.
+  INTENSITY_DISTRIBUTION_COUNTS_FOUNDATION_WEEKS: false,
+
   // ── 10% rule + recovery cadence (CoachingPrinciples §2, §3) ─────────────────
   MAX_WEEKLY_VOLUME_INCREASE_PCT: 10,
   RETURNING_RUNNER_ALLOWANCE_PCT: 15,

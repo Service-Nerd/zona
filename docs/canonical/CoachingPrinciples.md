@@ -83,6 +83,22 @@ The reason the error survived is §34, not coaching judgement: **the table was r
 
 **Config.** `GENERATION_CONFIG.INTENSITY_DISTRIBUTION` — keyed by race distance, field `max_quality_session_pct`. The field is named for its unit so a call site cannot mistake it again. Checked by `INV-PLAN-INTENSITY-DISTRIBUTION`.
 
+### The denominator is the MAIN PLAN — §57 foundation weeks are excluded (Coaching Board CB-FOUNDATION-DENOM-01, 2026-09-10)
+
+**Principle.** The share is counted over weeks `n >= 1`. §57 foundation weeks (`n <= 0`) are **not** part of the numerator or the denominator.
+
+**Why.** §57 states that foundation weeks *"are never part of the main plan's periodisation arc"*, and §57's CB-1 ruling defines the block's job as *"habit and routine, not adaptation"*. A ratio that governs **training stimulus** cannot then spend weeks this document has already declared not to be training stimulus (Seiler). §22's SC-05 closure had already ruled the same way about a different measurement in the same file — `halfWeek` counting foundation weeks toward `totalWeeks` was a defect worth 155 violations, cited to that same §57 sentence. Two invariants were reading foundation weeks in opposite directions; this was the one out of step.
+
+**The decisive argument is that the old rule was gameable by the calendar.** Including the block made the ceiling *looser the earlier a runner generated their plan*. Two runners with an identical 17-week block and an identical 15 quality sessions — one compliant, one in breach — differing only in when they opened the app. A ceiling satisfiable by prepending easy weeks is not a ceiling on anything (Hutchinson). Note the direction is backwards from safety: more warning time bought more licence.
+
+**What this dissolved.** `validatePlan` runs twice on different objects — the bare plan inside `generateRulePlan`, and the assembled plan in `composePlanWithFoundation`. Foundation weeks exist on the second and not the first, so under the old rule **the two runs disagreed by construction**. That produced two successive defects (INTENSITY-FOUNDATION-BLIND-01, then -02 when the first fix's key proved false on the >28-day 'choice' band, where the decision arrives after generation), each fixed by deferring the check. Counting main weeks only makes both runs return the same verdict, so **the defers and their `foundation_decision_pending` / `foundation_composed` machinery were deleted rather than extended.** A defect class that cannot occur beats a check that catches it.
+
+**Measured cost, stated plainly.** Breaches go **1 → 2** across 16,038 swept plans, of which 4,642 carry a block. **This is a coherence fix, not a safety fix** — recorded at Sims's insistence, because the two are routinely conflated and the second claim is the one that gets repeated.
+
+**Config.** `GENERATION_CONFIG.INTENSITY_DISTRIBUTION_COUNTS_FOUNDATION_WEEKS` (`false`). A flag rather than a hard-coded filter because Seiler recorded a live revisit condition (if a cohort's delivered distribution is ever assessed across the block boundary) and flipping it is the cheapest way to re-measure. Read by `INV-PLAN-INTENSITY-DISTRIBUTION`; regression in `intensityFoundationBlind.test.ts`.
+
+**Board:** CB-FOUNDATION-DENOM-01, 2026-09-10 — CORRECT WITH AMENDMENT, Hutchinson chairing. Amends §1 (denominator) and §91 (see below). Does not touch the six ceiling values, §8, or §57's session-content rule.
+
 **The values are ratified, with two amendments — Coaching Board CD-21 (2026-08-20).**
 
 An earlier version of this section claimed the six values were *"verified against a 1,244,160-plan sweep"*. **That claim was void** — the sweep was silently generating *zero* plans (SWEEP-VACUOUS-01), so it verified nothing. Once repaired it produced a real finding, and the shape of that finding matters more than the numbers:
@@ -3132,7 +3148,30 @@ floor is a hole.**
 
 **Board:** CB-ONSET-02, 2026-09-07 — Coaching Board CORRECT WITH AMENDMENT,
 Hutchinson chairing. Amends §89 (floor basis, weeks cap) and §57 by reference
-(§92). Does not loosen §1, §4, §5 or the §57 session-content rule.
+(§92). Does not loosen §4, §5 or the §57 session-content rule.
+
+> **CORRECTION (CB-FOUNDATION-DENOM-01, 2026-09-10).** The sentence above used to
+> end *"Does not loosen §1, §4, §5…"*. **The §1 half was false and was never
+> measured.** The credit collapses base to zero for a demonstrated runner, quality
+> starts in calendar week 1, and the delivered plan can exceed §1's ceiling:
+> confirmed under production semantics at **19.0% (15/79) against MARATHON's 18%**
+> for a 4-day / 60 km / intermediate runner generating 24 days out. §1 binds; the
+> remedy — which lever yields to bring the share back under — is filed as
+> FOUNDATION-QUALITY-YIELD-01 and is NOT settled by this ruling.
+>
+> Recorded because of *how* it survived: a prose claim in a board ruling did the
+> job of a mechanical check for three days. §34's own lesson, one section over.
+>
+> **Also unresolved, and honest (§34):** on the >28-day 'choice' band the decision
+> arrives after generation, so the credit is never applied — the same runner gets
+> a 4-week on-ramp and quality in week 2 instead of a 3-week on-ramp and quality
+> in week 1, purely on when they answered a modal. This is the *non-monotonic
+> onset* defect §91 was written to fix, still live on that band. The board ruled
+> the conservative default **CORRECT AS IS** on Willy's condition — never size
+> base against a decision the runner has not made, because presuming 'add' and
+> receiving 'skip' hands a shortened on-ramp to someone who then does no
+> foundation weeks at all. The proper remedy is re-sizing when the answer lands,
+> which is an ADR-020 change. Filed as FOUNDATION-CHOICE-RESIZE-01.
 
 ---
 

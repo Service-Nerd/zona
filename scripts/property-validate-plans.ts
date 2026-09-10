@@ -789,7 +789,18 @@ const BASELINE: Record<string, number> = {
   // should dilute the §1 denominator at all — which belongs to the Coaching
   // Board, not to a checker-accuracy commit. Filed as FOUNDATION-ONSET-01.
   // A baseline is a debt register, not an amnesty: this must go DOWN.
-  'INV-PLAN-INTENSITY-DISTRIBUTION':      1,
+  // 1 -> 2 (2026-09-10, Coaching Board CB-FOUNDATION-DENOM-01). The second
+  // becomes visible because §1 now counts main-plan weeks only: a breach that
+  // all-easy §57 weeks had been diluting under the ceiling. Measured across the
+  // grid before ruling — 4,642 plans carry a block and the dilution masked
+  // exactly ONE of them, so this is a coherence fix, not a safety fix.
+  //
+  // Both entries are the SAME underlying defect: §91's on-ramp credit collapses
+  // base to zero for a demonstrated runner and quality starts in calendar week 1,
+  // pushing delivered share over the ceiling (worst confirmed: 19.0%, 15/79,
+  // MARATHON). Which lever yields is a prescription decision the board did NOT
+  // settle — filed FOUNDATION-QUALITY-YIELD-01. This must go DOWN to 0.
+  'INV-PLAN-INTENSITY-DISTRIBUTION':      2,
 }
 
 const regressions: string[] = []

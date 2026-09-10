@@ -3139,53 +3139,42 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   {
     const dist = GENERATION_CONFIG.INTENSITY_DISTRIBUTION[
       distKey as keyof typeof GENERATION_CONFIG.INTENSITY_DISTRIBUTION]
-    // INTENSITY-FOUNDATION-BLIND-01 (2026-09-09) — this ratio must be measured on
-    // the DELIVERED plan, not the bare one. validatePlan runs twice on different
-    // objects (§91 note, ruleEngine.ts): once on the bare plan inside
-    // generateRulePlan, before composePlanWithFoundation prepends the §57
-    // foundation weeks, and again on the assembled plan. Foundation weeks (n <= 0)
-    // are all-easy running, so they ENLARGE this denominator and lower the share.
-    // Checking the bare plan therefore gives a different — and stricter — verdict
-    // than the runner's actual plan: it console.error'd a false positive in prod
-    // and THREW in dev/test on plans that ship clean. So when a block is pending
-    // (`foundation_weeks_planned > 0`) but not yet present (no n <= 0 week), DEFER
-    // to the assembled-plan check that composePlanWithFoundation runs. The count
-    // is not projected here — foundation weeks are day-fitted (§52b), so the
-    // running-session count per week is not a constant this check could reproduce
-    // without drifting from foundationBlock.ts. Same reasoning as §91 reading the
-    // stamped week count rather than re-deriving it. When no block is coming
-    // (== 0), the bare plan IS the delivered plan and the check binds in full —
-    // which is exactly where INTENSITY-LONGDIST-LOWDAY-01's real breach must fire.
+    // CB-FOUNDATION-DENOM-01 (2026-09-10) — the denominator is the MAIN PLAN.
+    // Foundation weeks (n <= 0) are excluded.
     //
-    // INTENSITY-FOUNDATION-BLIND-02 (2026-09-10) — the defer above was keyed on
-    // `foundation_weeks_planned > 0`, and the fix that added it rested on a
-    // stated assumption: "composePlanWithFoundation uses the same
-    // plannedFoundationWeeks as generation, so fwp>0 on a DELIVERED plan always
-    // coincides with the weeks being present." That is false on the 'choice'
-    // band. `plannedFoundationWeeks` returns 0 for a >28-day gap unless the
-    // decision is already 'add' — and on that band the decision arrives LATER,
-    // from POST /api/generate-plan/foundation, which is the entire point of the
-    // band. So the plan is 0-weeks-planned at generation and 3-weeks-delivered,
-    // the defer never fired, and a compliant marathon plan (measured: 18.6%,
-    // 13/70 bare -> clean delivered) console.error'd in prod and THREW in
-    // dev/test. Two calls to one function with independently supplied arguments
-    // are two computations, not one — the same class as the checker/producer
-    // splits in the debug catalogue.
+    // §57: foundation weeks "are never part of the main plan's periodisation
+    // arc". §22's SC-05 closure already ruled that counting them toward
+    // `totalWeeks` in this very file was a DEFECT (155 violations), citing that
+    // exact sentence. Two invariants were reading foundation weeks in opposite
+    // ways; this is the one that was out of step.
     //
-    // The defer therefore covers both "a block is planned" and "the block is
-    // still undecided", and — critically — ENDS at composition. `skip` produces
-    // an assembled plan identical to the bare one, so without
-    // `foundation_composed` the widened defer would be terminal for a runner who
-    // declines the block, converting log noise into a silently unchecked plan.
-    // A defer that never expires is not a defer, it is a hole.
-    const foundationSettled = plan.meta.foundation_composed === true
-    const foundationWeeksPresent = plan.weeks.some(w => w.n <= 0)
-    const foundationPending =
-      !foundationSettled
-      && !foundationWeeksPresent
-      && ((plan.meta.foundation_weeks_planned ?? 0) > 0
-          || plan.meta.foundation_decision_pending === true)
-    if (dist && !foundationPending) {
+    // The coaching argument is Seiler's, and it is his own caveat turned around:
+    // §57's CB-1 ruling states the block's job is "habit and routine, not
+    // adaptation". A ratio that governs training stimulus cannot then spend weeks
+    // the constitution has already declared not to be training stimulus. Worse,
+    // including them made the ceiling LOOSER the earlier a runner happened to
+    // generate their plan — two runners with an identical 17-week block and an
+    // identical 15 quality sessions, one compliant and one in breach, differing
+    // only in when they opened the app. A ceiling satisfiable by prepending easy
+    // weeks is not a ceiling on anything (Hutchinson).
+    //
+    // This also DISSOLVES INTENSITY-FOUNDATION-BLIND-01/02 rather than guarding
+    // against them. Those defects — a false positive on the bare plan, then a
+    // second one on the 'choice' band — existed only because the denominator
+    // included weeks present on the assembled object and absent from the bare
+    // one, so `validatePlan`'s two runs disagreed by construction. Measuring main
+    // weeks only makes both runs return the SAME verdict, and the defer they each
+    // added (with its `foundation_decision_pending` / `foundation_composed`
+    // machinery) is deleted as unnecessary. A defect class that cannot occur beats
+    // a check that catches it.
+    //
+    // Measured cost, stated plainly: breaches go 1 -> 2 across 16,038 swept plans
+    // (4,642 of which carry a block). This is a COHERENCE fix, not a safety fix —
+    // recorded at Sims's insistence, because the two get conflated.
+    const mainPlanWeeks = GENERATION_CONFIG.INTENSITY_DISTRIBUTION_COUNTS_FOUNDATION_WEEKS
+      ? plan.weeks
+      : plan.weeks.filter(w => w.n >= 1)
+    if (dist) {
       // Denominator is RUNNING sessions — strength, cross-train and rest are not
       // part of an intensity distribution.
       //
@@ -3204,7 +3193,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       const HARD_TYPES = new Set(['quality', 'intervals', 'tempo'])
       let running = 0
       let hard = 0
-      for (const w of plan.weeks) {
+      for (const w of mainPlanWeeks) {
         for (const sn of Object.values(w.sessions)) {
           if (!sn || sn.type === 'rest' || sn.type === 'strength' || sn.type === 'cross-train') continue
           running++

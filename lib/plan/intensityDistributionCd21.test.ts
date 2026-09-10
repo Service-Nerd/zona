@@ -55,10 +55,14 @@ const TWO_DAY_HM: GeneratorInput = {
 
 const HARD_TYPES = new Set(['quality', 'intervals', 'tempo'])
 
-/** Mirrors the invariant's own counting rule (§1 numerator/denominator). */
+/** Mirrors the invariant's own counting rule (§1 numerator/denominator).
+ *  Main-plan weeks only (n >= 1) per CB-FOUNDATION-DENOM-01 — §57 foundation
+ *  weeks are not part of the periodisation arc and are not counted. If this
+ *  helper and the invariant ever disagree about WHICH weeks they count, the
+ *  "fixture must exceed the ceiling" guard below stops guarding anything. */
 function qualityShare(plan: Plan): { pct: number, hard: number, running: number } {
   let hard = 0, running = 0
-  for (const w of plan.weeks) {
+  for (const w of plan.weeks.filter(w => w.n >= 1)) {
     for (const s of Object.values(w.sessions)) {
       if (!s || s.type === 'rest' || s.type === 'strength' || s.type === 'cross-train') continue
       running++
@@ -68,21 +72,8 @@ function qualityShare(plan: Plan): { pct: number, hard: number, running: number 
   return { pct: (hard / running) * 100, hard, running }
 }
 
-// INTENSITY-FOUNDATION-BLIND-02 — validated as a SETTLED plan.
-//
-// CD-21 rules on the ceiling as it applies to the plan a runner receives, and §1
-// now defers while a §57 foundation decision is still outstanding (the >28-day
-// 'choice' band, where the answer arrives from a later route). This file's
-// frozen clock sits 32 days before BASE's ANCHORED start — 2026-09-07 anchors
-// forward to 2026-09-21 — so every fixture here is on that band.
-//
-// Left unstamped, the exemption assertions below would pass because §1 deferred
-// and measured nothing, not because the exemption held: exactly the vacuous
-// pass the "it genuinely BREACHES" comments exist to rule out. Stamping settled
-// keeps this file testing the ceiling rather than the deferral.
 const intensityViolations = (plan: Plan, input: GeneratorInput) =>
-  validatePlan({ ...plan, meta: { ...plan.meta, foundation_composed: true } }, input)
-    .filter(v => v.code === 'INV-PLAN-INTENSITY-DISTRIBUTION')
+  validatePlan(plan, input).filter(v => v.code === 'INV-PLAN-INTENSITY-DISTRIBUTION')
 
 beforeAll(() => { vi.useFakeTimers(); vi.setSystemTime(FROZEN_NOW) })
 afterAll(() => { vi.useRealTimers() })
