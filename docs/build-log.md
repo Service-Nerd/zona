@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-10 — INTENSITY-FOUNDATION-BLIND-02 + CB-FOUNDATION-DENOM-01 · Two fixes patched a symptom before anyone asked whether the rule was right
+**Shipped:** §1's intensity-distribution ceiling now counts main-plan weeks only (§57 foundation weeks excluded), which deleted the deferral machinery two prior fixes had built; and `today` became an injectable input to plan generation instead of an ambient `new Date()`.
+
+**Dev learning:** The property sweep pinned `PLAN_START = '2026-04-27'` and `gapDays` clamps negatives to zero — so once that date passed, generation saw a gap of **0 for every one of 16,038 plans**, planned zero foundation weeks, and then the sweep composed real 3-week blocks onto them using its own synthetic `today`. Generation and composition were reasoning about different calendars. Two consequences, both invisible: §91's on-ramp credit had literally zero coverage across the whole sweep, and the results drifted with the wall-clock date despite a pinned seed — so "no NEW violations vs baseline" was a comparison against a moving object. The general lesson: **if a test harness pins one date and lets another float, it isn't deterministic, it's just slow-moving.** Injecting `today` fixed both and immediately surfaced a real production breach.
+
+**Product/creator learning:** The best finding wasn't the bug, it was the *rule*. §1 capped quality as a share of the whole plan including the pre-plan foundation block — which meant the ceiling got **looser the earlier you generated your plan**. Two runners, identical 17-week block, identical 15 quality sessions: one compliant, one in breach, differing only by when they opened the app. Nobody decided that. It fell out of an implementation detail and sat in the constitution as if it were coaching.
+
+**AI-building learning:** I fixed this twice before questioning it. BLIND-01 added a deferral; BLIND-02 (mine, this morning) found BLIND-01's key was false on the choice band and *widened the deferral*, adding two meta fields and a compose-time marker. Both were locally correct. Both were wrong at the level above. It took running an actual board review — forcing a conflict scan against §57 — to notice the denominator was the problem and delete all of it. **The AI is very good at making a broken rule work and will not spontaneously ask whether the rule should exist.** The structured review is what supplies that question; the model supplies fluent, well-commented compliance either way.
+
+**The honest bit:** The commit I shipped this morning was superseded four hours later by a ruling that deleted most of it. I also nearly broke the free-tier AI intro without noticing — my first version of the compose marker spread `meta` into a new object, and the route stamps `plan_intro` on `rulePlan.meta` *after* composing, relying on it being the same object. A comment at `route.ts:150` was the only thing that said so. That would have shipped as "free users silently stop getting their one AI surface", with no error anywhere. And §91 had shipped three days earlier with the sentence "Does not loosen §1" — a prose claim doing a mechanical check's job. It does loosen §1: 19.0% against an 18% ceiling, confirmed under production semantics.
+
+**Hook material:** 16,038 plans in the property sweep. Foundation-block coverage in those plans: zero, for weeks — while the summary line cheerfully reported "9,905 carried a foundation block." The generator building them believed no block was coming.
+
+**Postable?:** yes — the "I fixed it twice before asking if the rule was right" arc is the strongest AI-building post I've had. The calendar-gameable ceiling is a good second.
+
+
 ## 2026-09-09 — CAT-DEPTH-01 + PLAN-NOTE-SURFACE-01 · the feature was already built; nobody could see it
 
 **Shipped:** Stopped trying to make the training plan *more* personalised, and instead made the personalisation it *already does* visible to the runner — after discovering the "add more personalisation" lever had been rejected by our own coaching board three times before.
