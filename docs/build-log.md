@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-10 — GTM-SITE-01 · The logo changed size as you walked around the site
+**Shipped:** One `SiteHeader` and one `SiteFooter` across all 8 marketing pages, `/compare` renamed to `/comparisons` with a 308, and two stale homepage claims corrected.
+
+**Dev learning:** Five hand-written headers and four hand-written footers, and they disagreed on nearly everything: the wordmark rendered at 20px on the homepage, 32px on `/plans` and every article, and 20px again on the legal pages. Nobody wrote that; it accreted, one page at a time, each copied from whichever page was nearest. The tell is that **three pages had no header or footer at all** — land on `/privacy` from Google and there was no route back into the site. Copy-paste chrome does not drift slowly, it drifts immediately and then nobody looks again.
+
+**Product/creator learning:** The homepage said "Your plan starts from four answers." The wizard asks about fifteen. That line was true once and was never revisited through five separate wizard changes. Worse, it was **underselling the thing we had just spent weeks making better** — the SLT ruled months ago that the personalisation is real but invisible, and here we were advertising it as shallower than it is. Marketing copy is a claim about the product, and claims rot exactly like code does, except nothing fails when they do.
+
+**AI-building learning:** The founder asked for the header to "pop a bit more" and said "I don't know what that means, but you know what I mean." That is the most useful kind of brief, and the wrong instinct is to reach for a shadow or an animation. Running it through the design skill and the SLT produced a constraint instead: presence, not decoration. Sticky so it never leaves, one point of colour, and it tells you where you are. **No motion, no shadow, no client JS.** Wood's line was the one that decided it: a sticky header is structural, an animated one is decorative.
+
+**The honest bit:** We also found the trial line said "or you walk", which contradicts our own monetisation doc — day 14 is a graceful downgrade where you keep the plan you built. We were advertising a worse deal than we actually offer, on the page where it costs most. That has been live since the marketing page shipped.
+
+**Hook material:** The wordmark was 20px, then 32px, then 20px again depending on which page you were on. Not a decision anyone made. Nobody had walked the site end to end since it was built.
+
+**Postable?:** yes — "your marketing copy rots like code, except nothing fails when it does" is the post.
+
+
 ## 2026-09-10 — GTM-SEO-COMPARE-01 · The metadata you write is not the metadata that ships
 **Shipped:** `/runna-alternatives`, the first of eight competitor-comparison pages, built as a shared template so the next seven are a catalogue entry plus a four-line route file.
 
