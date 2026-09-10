@@ -279,7 +279,7 @@ The first version took a `width` prop so the header matched its page's CONTENT w
 The header frame is now constant; the CONTENT column stays whatever each page needs (760 for reading measure on articles, 1100 on the homepage). That is the ordinary site-frame pattern: chrome is site-level, the text column is content-level, and they are allowed to differ. It is a **constant rather than a defaulted prop** specifically so no call site can reintroduce the drift.
 
 **Footer anatomy**
-- `BRAND.brandStatement` above the links (CLAUDE.md names this the voice moment and the privacy footer as one of its homes).
+- **No brand statement.** The footer is navigation and legal only. Putting `BRAND.brandStatement` in SHARED chrome rendered it on all 8 pages and duplicated it on two of them (the homepage already ends on a designed 48px closing moment; `/privacy` already carries its own quiet 10px line). That is DIV-020's "over-use degrades the asset" at site scale. The voice moment is a deliberate page-level placement, never chrome.
 - **One link set, one order, one label per destination**: Home · Plans · Comparisons · Support · Privacy · Terms. The current page stays in the list — omitting the self-link is what made every footer subtly different.
 - Copyright line last.
 

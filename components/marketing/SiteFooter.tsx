@@ -12,9 +12,17 @@
 // the self-link made every footer subtly different, which is the thing this
 // component exists to stop.
 //
-// `BRAND.brandStatement` sits above the links. Per CLAUDE.md that is the voice
-// moment ("You can't outrun your easy days") and the privacy footer is named as
-// one of its homes, so this placement is doctrine, not decoration.
+// NO BRAND STATEMENT HERE, deliberately (DIV-022, founder ruling 2026-09-10).
+//
+// The first version put `BRAND.brandStatement` above the links, on the reading
+// that CLAUDE.md names the "privacy footer" as one of its homes. Shipping it in
+// a SHARED footer turned that into the line rendering on all 8 pages — and on
+// the homepage it appeared TWICE, ~96px under the designed 48px closing voice
+// moment. That is DIV-020's "over-use degrades the asset" at site scale.
+//
+// The footer's job is navigation and legal. The voice moment is a deliberate,
+// designed placement: the homepage closing section, and a closing line on
+// /privacy (its documented home). Both are page-level decisions, not chrome.
 
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
@@ -40,18 +48,6 @@ export function SiteFooter() {
       }}
     >
       <div style={{ maxWidth: SITE_WIDTH, margin: '0 auto', padding: '36px 24px 48px' }}>
-        <p
-          style={{
-            fontFamily: 'var(--font-brand)',
-            fontSize: 15,
-            fontWeight: 700,
-            color: 'var(--ink-2)',
-            margin: '0 0 16px',
-          }}
-        >
-          {BRAND.brandStatement}
-        </p>
-
         <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13 }}>
           {LINKS.map(l => (
             <Link key={l.href} href={l.href} style={{ color: 'var(--mute)', textDecoration: 'none' }}>
