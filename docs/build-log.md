@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-10 — GTM-SEO-COMPARE-01 · The metadata you write is not the metadata that ships
+**Shipped:** `/runna-alternatives`, the first of eight competitor-comparison pages, built as a shared template so the next seven are a catalogue entry plus a four-line route file.
+
+**Dev learning:** Next.js App Router merges metadata **shallowly**. Define `openGraph` on a page and it does not merge into the root layout's object, it *replaces* it. Two consequences I only found by grepping the prerendered HTML in `.next/server/app/`: the site-wide `og:image` silently vanished, and `twitter:*` did the opposite, inheriting the root layout's generic card so the page advertised itself on social as "Zonna, Plans to stop you overtraining" with the site tagline as its description. `/plans` has had no `og:image` for the same reason since it shipped. The lesson is narrow and reusable: **read the built HTML, not the metadata object you wrote.** They are not the same artifact.
+
+**Product/creator learning:** The sitemap looked dynamic and wasn't, in the way that matters. `app/sitemap.ts` uses the Next Metadata API, so "is the sitemap generated dynamically?" reads as yes, but it is a hand-maintained array, not a walk of the route tree. A new page under `app/` would never have appeared in it. Wiring it to the article catalogue instead of adding one literal means the next seven pages list themselves.
+
+**AI-building learning:** The brief said "check first, do nothing if it already works" for three items. That instruction is worth more than it looks, because the default failure mode here is confidently adding a canonical tag that already existed and reporting it as done. Checking produced a genuinely mixed answer: canonical already correct (added nothing), OG partly correct but silently missing its image, Twitter not derived at all. **One of three needed no work, and I would not have known which without looking at the output.**
+
+**The honest bit:** I built and shipped the page before anyone asked how a user reaches it. It has zero inbound internal links. That is defensible for a search landing page, whose traffic model is Google to page to App Store, but it was not a decision I made, it was one I noticed afterwards when asked a direct question. Eight orphan pages is a different proposition to one.
+
+**Hook material:** Three SEO items to check. One was already done, one was half-broken in a way no build warning mentions, one was missing entirely. The half-broken one had been quietly shipping the wrong social card on `/plans` for weeks.
+
+**Postable?:** yes, the shallow-merge gotcha is a concrete, checkable thing most Next.js developers have shipped without noticing.
+
+
 ## 2026-09-10 — INTENSITY-FOUNDATION-BLIND-02 + CB-FOUNDATION-DENOM-01 · Two fixes patched a symptom before anyone asked whether the rule was right
 **Shipped:** §1's intensity-distribution ceiling now counts main-plan weeks only (§57 foundation weeks excluded), which deleted the deferral machinery two prior fixes had built; and `today` became an injectable input to plan generation instead of an ambient `new Date()`.
 
