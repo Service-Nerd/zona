@@ -143,7 +143,7 @@ export function comparisonArticleJsonLd(article: ComparisonArticle) {
  * its cards cannot drift apart.
  */
 export const COMPARISON_HUB = {
-  slug: 'compare',
+  slug: 'comparisons',
   metaTitle: `Running app comparisons | ${BRAND.name}`,
   metaDescription:
     `Honest comparisons of the running apps people choose between, including where ${BRAND.name} is the wrong answer. No affiliate links, no scores out of ten.`,

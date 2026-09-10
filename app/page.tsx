@@ -31,7 +31,8 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { BRAND, PRICING } from '@/lib/brand'
-import { Wordmark } from '@/components/ui/Wordmark'
+import { SiteHeader } from '@/components/marketing/SiteHeader'
+import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
 
 export const dynamic = 'force-dynamic'  // auth check must run per-request
@@ -122,21 +123,7 @@ export default async function Home() {
       />
 
       {/* ── Top nav — wordmark + free-plans link ─────────────────────────── */}
-      <nav style={{
-        maxWidth: '1100px', margin: '0 auto',
-        padding: '20px 24px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <Wordmark size="sm" />
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <Link href="/plans" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink-2)', textDecoration: 'none' }}>
-            Free plans
-          </Link>
-          <Link href="/compare" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink-2)', textDecoration: 'none' }}>
-            Comparisons
-          </Link>
-        </div>
-      </nav>
+      <SiteHeader width={1100} />
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <section style={{
@@ -424,36 +411,15 @@ export default async function Home() {
         </div>
       </section>
 
-      <footer style={{
-        padding: '40px 24px',
-        borderTop: '1px solid var(--line)',
-        background: 'var(--bg)',
-      }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          {/* One-line founder note — no headshot, no story page. */}
-          <p style={{
-            fontSize: '13px', lineHeight: 1.5, color: 'var(--ink-2)',
-            margin: '0 0 20px',
-          }}>
-            Built by Russell. Runs medium-hard on everything. That&apos;s how I know.
-          </p>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            flexWrap: 'wrap', gap: '16px',
-            fontSize: '13px', color: 'var(--mute)',
-            borderTop: '1px solid var(--line)', paddingTop: '20px',
-          }}>
-            <div>© {new Date().getFullYear()} {BRAND.name}</div>
-            <div style={{ display: 'flex', gap: '20px' }}>
-              <Link href="/plans" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Free plans</Link>
-              <Link href="/compare" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Comparisons</Link>
-              <Link href="/support" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Support</Link>
-              <Link href="/privacy" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Privacy</Link>
-              <Link href="/terms" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Terms</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* Founder note kept: it is real brand content and the only place the
+          site says who built it. Moved ABOVE the shared footer rather than
+          deleted, so the footer itself can be identical on every page. */}
+      <section style={{ padding: '40px 24px 0', maxWidth: '1100px', margin: '0 auto' }}>
+        <p style={{ fontSize: '13px', lineHeight: 1.5, color: 'var(--ink-2)', margin: 0 }}>
+          Built by Russell. Runs medium-hard on everything. That&apos;s how I know.
+        </p>
+      </section>
+      <SiteFooter width={1100} />
     </main>
   )
 }

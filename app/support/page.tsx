@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
-import { Wordmark } from '@/components/ui/Wordmark'
+import { SiteHeader } from '@/components/marketing/SiteHeader'
+import { SiteFooter } from '@/components/marketing/SiteFooter'
 
 export const metadata: Metadata = {
   title: `Support — ${BRAND.name}`,
@@ -17,33 +18,7 @@ export default function SupportPage() {
         padding: '0 0 80px',
       }}
     >
-      {/* Header bar */}
-      <div style={{
-        borderBottom: '0.5px solid var(--border-col)',
-        padding: '16px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        background: 'var(--bg)',
-        zIndex: 10,
-      }}>
-        <Wordmark size="sm" />
-        <Link
-          href="/"
-          style={{
-            fontFamily: 'var(--font-ui)',
-            fontSize: '11px',
-            color: 'var(--text-muted)',
-            textDecoration: 'none',
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-          }}
-        >
-          ← Back
-        </Link>
-      </div>
+      <SiteHeader />
 
       {/* Content */}
       <div style={{
@@ -154,6 +129,7 @@ export default function SupportPage() {
         </div>
 
       </div>
+      <SiteFooter />
     </div>
   )
 }

@@ -245,6 +245,44 @@ Small pill label. Used in session detail eyebrow.
 
 ---
 
+### 6b. Marketing Site Chrome — `SiteHeader` / `SiteFooter` (GTM-SITE-01, 2026-09-10)
+
+**Scope: the public marketing site only** (`/`, `/plans`, plan spokes, `/comparisons`, comparison articles, `/support`, `/privacy`, `/terms`). The authenticated app keeps its own chrome (§7 bottom nav); these two never appear inside the app.
+
+**One component each. No page hand-writes site chrome.** Before this there were five hand-written headers and four footers, plus three pages with neither:
+
+| page | wordmark | linked to `/` | width | right side |
+|---|---|---|---|---|
+| `/` | 20px | **no** | 1100 | Free plans, Comparisons |
+| `/plans` | **32px** | yes | 760 | Get the app |
+| `/compare` | **32px** | yes | 760 | Get the app |
+| plan spokes | **32px** | yes | 760 | Plans, Get the app |
+| articles | **32px** | yes | 760 | Get the app |
+| support / privacy / terms | 20px | yes | — | "← Back", **no nav, no footer** |
+
+The wordmark changed size as you navigated (20 → 32 → 20), the homepage wordmark was not a link, and the legal pages were dead ends with no route back into the site.
+
+**Header anatomy**
+- Wordmark `sm` (**20px**) everywhere. That is the documented header step in `Wordmark.tsx`. One size, no callsite override.
+- Always linked to `/`, always left. Nav + CTA always right.
+- Nav is exactly **two** items — Plans, Comparisons. It exists because there are two content sections users cannot otherwise find, not because sites have menus.
+- Current section marked with `--moss` + weight 700 and `aria-current="page"`. Never a box or pill.
+- One button in the chrome: the App Store CTA, a compact `--moss` pill. It is the only colour in the header.
+- `position: sticky` + a single hairline `--line` bottom border.
+
+**"Pop" means presence, not decoration.** The header is sticky so it never leaves, carries one point of moss, and marks where you are. **No shadow, no gradient, no motion, no scroll listener, no client JS** — the header is a server component and active state is a prop, not `usePathname`. (SLT review, Wood: *a sticky header is structural, an animated one is decorative*.)
+
+**Width matches the page's CONTENT width** (`width` prop: 1100 on the homepage, 760 default). The chrome — wordmark size, link set, order, alignment — is identical everywhere; that is the consistency requirement. A 760px header floating over 1100px content would be a different kind of wrong.
+
+**Footer anatomy**
+- `BRAND.brandStatement` above the links (CLAUDE.md names this the voice moment and the privacy footer as one of its homes).
+- **One link set, one order, one label per destination**: Home · Plans · Comparisons · Support · Privacy · Terms. The current page stays in the list — omitting the self-link is what made every footer subtly different.
+- Copyright line last.
+
+**Never** re-declare a header or footer inside a marketing page. If a page needs something extra (the homepage founder note), it goes in a section **above** `SiteFooter`, not inside a bespoke copy of it.
+
+---
+
 ### 7. Navigation Bar (Bottom)
 
 Minimal. 4–5 tabs max.

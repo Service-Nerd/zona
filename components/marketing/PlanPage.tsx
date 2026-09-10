@@ -7,7 +7,8 @@
 
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
-import { Wordmark } from '@/components/ui/Wordmark'
+import { SiteHeader } from '@/components/marketing/SiteHeader'
+import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { WaitlistForm } from '@/components/marketing/WaitlistForm'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { describeDerivedSet } from '@/lib/plan/resolveMainSet'
@@ -90,13 +91,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
 
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
-      <nav style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ textDecoration: 'none' }} aria-label={`${BRAND.name} home`}><Wordmark /></Link>
-        <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-          <Link href="/plans" style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink-2)', textDecoration: 'none' }}>Plans</Link>
-          <a href={BRAND.appStore.url} style={{ fontSize: 14, fontWeight: 600, color: 'var(--moss)', textDecoration: 'none' }}>Get the app →</a>
-        </div>
-      </nav>
+      <SiteHeader current="plans" />
 
       {/* ── Breadcrumbs ─────────────────────────────────────────────────── */}
       <nav aria-label="Breadcrumb" style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '0 24px' }}>
@@ -275,17 +270,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
       )}
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <footer style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '36px 24px 48px', borderTop: '1px solid var(--line)', marginTop: 28 }}>
-        <p style={{ fontFamily: 'var(--font-brand)', fontSize: 15, fontWeight: 700, color: 'var(--ink-2)', margin: '0 0 16px' }}>{BRAND.brandStatement}</p>
-        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13 }}>
-          <Link href="/" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Home</Link>
-          <Link href="/plans" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Free plans</Link>
-          <Link href="/compare" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Comparisons</Link>
-          <Link href="/support" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Support</Link>
-          <Link href="/privacy" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Privacy</Link>
-          <Link href="/terms" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Terms</Link>
-        </div>
-      </footer>
+      <SiteFooter />
     </main>
   )
 }

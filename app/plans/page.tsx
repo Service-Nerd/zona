@@ -4,7 +4,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
-import { Wordmark } from '@/components/ui/Wordmark'
+import { SiteHeader } from '@/components/marketing/SiteHeader'
+import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { MARKETING_PLANS, planCardTitle } from '@/lib/marketing/plans'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zonna.run'
@@ -39,10 +40,7 @@ export default function PlansHubPage() {
     <main style={{ background: 'var(--bg)', color: 'var(--ink)', minHeight: '100vh', fontFamily: 'var(--font-ui)' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
 
-      <nav style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ textDecoration: 'none' }} aria-label={`${BRAND.name} home`}><Wordmark /></Link>
-        <a href={BRAND.appStore.url} style={{ fontSize: 14, fontWeight: 600, color: 'var(--moss)', textDecoration: 'none' }}>Get the app →</a>
-      </nav>
+      <SiteHeader current="plans" />
 
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
         <p style={{ fontFamily: 'var(--font-brand)', fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss)', margin: '0 0 14px' }}>
@@ -97,22 +95,13 @@ export default function PlansHubPage() {
         <p style={{ fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
           Weighing up apps rather than plans? The comparisons are honest about where {BRAND.name} is
           the wrong answer.{' '}
-          <Link href="/compare" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
+          <Link href="/comparisons" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
             Compare the options &rarr;
           </Link>
         </p>
       </section>
 
-      <footer style={{ maxWidth: SECTION_MAX, margin: '36px auto 0', padding: '36px 24px 48px', borderTop: '1px solid var(--line)' }}>
-        <p style={{ fontFamily: 'var(--font-brand)', fontSize: 15, fontWeight: 700, color: 'var(--ink-2)', margin: '0 0 16px' }}>{BRAND.brandStatement}</p>
-        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13 }}>
-          <Link href="/" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Home</Link>
-          <Link href="/compare" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Comparisons</Link>
-          <Link href="/support" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Support</Link>
-          <Link href="/privacy" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Privacy</Link>
-          <Link href="/terms" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Terms</Link>
-        </div>
-      </footer>
+      <SiteFooter />
     </main>
   )
 }
