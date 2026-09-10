@@ -897,7 +897,46 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     phase_eligibility: ['peak'],
     distance_eligibility: ['HM'],
     fitness_level_min: 'intermediate', difficulty_tier: 4,
-    main_set_structure: { type: 'repeats', reps: 4, work: { distance_m: 2000, pace_target: 'HM' }, recovery: { duration_mins: 3, type: 'jog' } },
+    // Migrated to v2 (CAT-ROW-ELIGIBILITY-01, 2026-09-10) — completing the
+    // migration Coaching Board CB-CAT-02 ruled correct in principle on
+    // 2026-09-03 and then REVERTED in the same sitting, because a reps-scaled
+    // row needs its work anchor to resolve and neither available anchor did for
+    // every runner who could draw the row: 'goal' throws on every finish-goal
+    // plan, 'HM' throws for a structurally-beginner runner (§24b gives them no
+    // HM pace) who reaches this `intermediate` row through §79's upward
+    // intensity declaration. 71 hard sweep failures, all 21.1km/beginner.
+    // The blocker was never the anchor — it was that eligibility could not say
+    // "this row needs a pace this runner has". It can now (requiredPaceAnchors
+    // + the selector's resolvableAnchors gate), so the row is anchored at its
+    // real prescription, HM pace, and is simply not offered to a runner who has
+    // none. `reps: 4` was hardcoded for every runner at every fitness and phase.
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'fixed' },
+      blocks: [{
+        // LITERAL 4, not a sized parameter — this migration is deliberately
+        // PRESCRIPTION-NEUTRAL. Measured: under the generic minutes-stated
+        // threshold band a reps-scaled version sized to 3 x 2 km for every runner
+        // at every fitness, down from the 4 this row has always prescribed, for a
+        // PEAK half-marathon session. HM pace is a slower anchor than the 10K goal
+        // pace the sibling race_specific row uses, so an equal-minutes band doses
+        // it differently. Whether 3 or 4 is right is a real coaching question and
+        // is NOT settled by a migration commit — it went to the Coaching Board
+        // separately (see CoachingPrinciples §99). Until then the runner gets
+        // exactly what they got before, now with a resolvable anchor and a
+        // stamped derived set.
+        repeat: 4,
+        label: 'reps',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'distance', m: 2000 },
+            target: { kind: 'pace', anchor: 'HM', mode: 'target' }, advance: 'auto',
+            note: 'HM pace, not faster. Exit each rep wanting more.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 180 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Three minutes, easy jog.' },
+        ],
+      }],
+    },
     intensity_zones: ['Z3', 'Z4'],
     typical_duration_min: 50, typical_duration_max: 70, is_free_tier: true,
     coach_voice_notes: 'HM pace, not faster. Exit each rep wanting more.',
@@ -1073,6 +1112,14 @@ const FITNESS_RANK: Record<CatalogueFitness, number> = {
 }
 
 export interface CatalogueSelectorArgs {
+  /**
+   * CAT-ROW-ELIGIBILITY-01 — the pace anchors THIS runner has a resolvable pace
+   * for. Supplied by the caller (which owns the PaceGuide and the goal pace);
+   * rows whose work steps need anything outside it are filtered out before
+   * selection. Omit to disable the gate — v1-only call sites and unit tests
+   * that construct rows directly are unaffected.
+   */
+  resolvableAnchors?: ReadonlySet<string>
   catalogue:         SessionCatalogueRow[]
   phase:             'base' | 'build' | 'peak' | 'taper'
   distanceKey:       '5K' | '10K' | 'HM' | 'MARATHON' | '50K' | '100K'
@@ -1159,19 +1206,64 @@ function isLongRunSession(row: SessionCatalogueRow): boolean {
   return t === 'long_run_with_segment'
 }
 
+
+/**
+ * CAT-ROW-ELIGIBILITY-01 — the pace anchors a row's structure REQUIRES.
+ *
+ * Purely structural: reads the row, knows nothing about any runner's paces. The
+ * caller resolves which anchors THIS runner has and passes the set to
+ * `selectCatalogueSession`, which is the separation that keeps pace arithmetic
+ * out of the catalogue module.
+ *
+ * WHY THIS EXISTS. Eligibility could express phase, distance, fitness rank, tier
+ * and weekly volume — but not *"this row needs a pace this runner has"*. A
+ * reps-scaled v2 row whose work anchor cannot resolve produces no `reps`
+ * parameter, and `resolveMainSet` then THROWS at construction (`requireParam`).
+ * It is not a soft failure: `INV-PLAN-DERIVED-SET` requires a v2 row to stamp a
+ * derived set, so failing soft was measured at 1,439 violations and is not
+ * available either. The row must simply never be drawn.
+ *
+ * The case that forced it is §79's two axes meeting where nothing guarded them:
+ * a structurally-BEGINNER runner has no HM pace (§24b prescribes them no pace
+ * segments), yet an upward `user_declared_level` lifts their INTENSITY rank to
+ * `intermediate` — enough to reach an `intermediate` row. §79's asymmetry is
+ * explicit that a declaration buys intensity, never structure; this is the
+ * mechanical expression of that for pace-anchored rows.
+ *
+ * Only WORK steps count. A recovery step anchored 'E' always resolves, and a
+ * row is not ineligible because its jog has an anchor.
+ */
+export function requiredPaceAnchors(row: SessionCatalogueRow): string[] {
+  const m = row.main_set_structure as {
+    version?: number
+    blocks?: Array<{ steps?: Array<{ role?: string; target?: { kind?: string; anchor?: string } }> }>
+  }
+  if (m.version !== 2 || !Array.isArray(m.blocks)) return []
+  const anchors = new Set<string>()
+  for (const b of m.blocks) {
+    for (const st of b.steps ?? []) {
+      if (st.role !== 'work') continue
+      if (st.target?.kind === 'pace' && st.target.anchor) anchors.add(st.target.anchor)
+    }
+  }
+  return Array.from(anchors)
+}
+
 /**
  * Selects a catalogue row deterministically. Filter chain:
  *   1. phase_eligibility includes phase
  *   2. distance_eligibility includes distanceKey
  *   3. fitness_level_min ≤ user fitness
  *   4. tier-aware: free users see only is_free_tier=true rows
- *   5. preferred category, with graceful fallback if none match
+ *   5. anchor-resolvable: every pace anchor the row's WORK steps need is one
+ *      this runner actually has (CAT-ROW-ELIGIBILITY-01) — see requiredPaceAnchors
+ *   6. preferred category, with graceful fallback if none match
  *
  * Determinism: weekN + slotIndex → modulo eligible-row count. Same plan
  * regenerated produces same selection.
  */
 export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCatalogueRow | null {
-  const { catalogue, phase, distanceKey, fitness, tier, weekN, slotIndex = 0, weeklyKm, preferredCategory, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes, recentThresholdEligible } = args
+  const { catalogue, phase, distanceKey, fitness, tier, weekN, slotIndex = 0, weeklyKm, preferredCategory, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes, recentThresholdEligible, resolvableAnchors } = args
 
   const userRank = FITNESS_RANK[fitness]
   const tierFilter = (row: SessionCatalogueRow) => tier === 'free' ? row.is_free_tier : true
@@ -1192,7 +1284,13 @@ export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCata
     (!excludeHillSessions || !isHillSession(row)) &&
     // §79 — returning-runner re-entry withholds VO2max-category work (intervals
     // AND hill reps, which are categorised vo2max) until tissue tolerance rebuilds.
-    (!excludeHighTissueStress || row.category !== 'vo2max')
+    (!excludeHighTissueStress || row.category !== 'vo2max') &&
+    // CAT-ROW-ELIGIBILITY-01 — a row whose work anchor this runner has no pace
+    // for cannot be prescribed; it throws in resolveMainSet at construction.
+    // Undefined = caller did not supply the set, so the gate is inert (v1-only
+    // callers and tests are unaffected). It never fails open for a supplied set.
+    (resolvableAnchors === undefined
+      || requiredPaceAnchors(row).every(a => resolvableAnchors.has(a)))
   )
 
   if (baseEligible.length === 0) return null

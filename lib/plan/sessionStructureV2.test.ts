@@ -225,6 +225,17 @@ describe('SC-08b — migration posture (D-03)', () => {
       'intervals_classic',   // SC-08 vo2max (Coaching Board 2026-08-21)
       'intervals_short',     // SC-08 vo2max
       'intervals_long',      // SC-08 vo2max
+      'hm_pace_intervals',   // Coaching Board CB-CAT-02 (2026-09-03) ruled this
+                             // migration correct in principle and REVERTED it in
+                             // the same sitting — a reps-scaled row needs its work
+                             // anchor to resolve and neither candidate did for
+                             // every runner who could draw it. CAT-ROW-ELIGIBILITY-01
+                             // (2026-09-10) supplied the missing mechanism (the
+                             // selector anchor gate), so the ruling could land.
+                             // PRESCRIPTION-NEUTRAL: `repeat` is a literal 4, the
+                             // v1 dose, because a sized parameter re-doped this peak
+                             // session to 3 and that is a coaching question, not a
+                             // migration one.
       'tempo_cruise_short',  // Coaching Board 2026-09-03 — SC-08 generalised to threshold
       'tenk_pace_intervals', // Coaching Board 2026-09-03 — SC-08 generalised to race_specific
       'progressive_tempo',   // Coaching Board 2026-09-03 — Phase 2, continuous shape

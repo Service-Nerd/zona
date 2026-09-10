@@ -21,14 +21,14 @@ import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTi
 import { normaliseDays } from './days'
 import { isLongRun, isShakeout, classifyStimulus, isStructuredSession } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
-import { isV2Structure, StructureV2Schema, goalPaceShapeWord, type PaceAnchor } from './sessionStructureV2'
+import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor } from './sessionStructureV2'
 import { durationForMainSet } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
 import { isDeloadWeek, computeDeloadWeeks } from './deloadCadence'
 import { plannedFoundationWeeks } from './foundationBlock'
 import type { GeneratorPhase } from '@/types/plan'
 import {
-  V1_SESSION_CATALOGUE, selectCatalogueSession,
+  V1_SESSION_CATALOGUE, selectCatalogueSession, requiredPaceAnchors,
   type SessionCatalogueRow, type CatalogueCategory,
 } from './sessionCatalogueData'
 
@@ -66,6 +66,14 @@ interface PaceGuide {
   // Long run segment paces (CoachingPrinciples §24b, §24c, §24d)
   marathonPaceStr:  string | null  // ~79% VDOT; null for beginners
   hmPaceStr:        string | null  // ~84% VDOT; null for beginners
+  // CAT-ROW-ELIGIBILITY-01 — the CENTRES of the two bands above, so a v2 step
+  // anchored 'M'/'HM' can be priced. Null exactly when the band is null (§24b:
+  // a structurally-beginner runner is prescribed no pace segments), which is
+  // what makes "can this runner run this row?" answerable before selection
+  // rather than a throw inside resolveMainSet. Kept beside the Str fields
+  // deliberately: band and centre must not drift.
+  minPerKmMarathon: number | null
+  minPerKmHM:       number | null
   source: 'vdot' | 'fitness_level'
 }
 
@@ -172,6 +180,8 @@ function buildPaceFromVDOT(discountedVdot: number, rawVdot: number): PaceGuide {
     minPerKmInterval: iMid,
     marathonPaceStr:  paceBandStr(mpMins, 3),
     hmPaceStr:        paceBandStr(hmMins, 3),
+    minPerKmMarathon: mpMins,
+    minPerKmHM:       hmMins,
     source: 'vdot',
   }
 }
@@ -382,7 +392,7 @@ function buildHRZonesWithFallback(input: GeneratorInput): HRZoneFallbackResult {
 // ─── Pace guides by fitness level (fallback when no benchmark) ─────────────────
 
 // CV is deliberately absent here and derived in buildFallbackPace — see CV_PACE_RATIO_OF_T.
-const PACE_GUIDE: Record<FitnessLevel, Omit<PaceGuide, 'source' | 'marathonPaceStr' | 'hmPaceStr' | 'cvPaceStr' | 'minPerKmCV'>> = {
+const PACE_GUIDE: Record<FitnessLevel, Omit<PaceGuide, 'source' | 'marathonPaceStr' | 'hmPaceStr' | 'cvPaceStr' | 'minPerKmCV' | 'minPerKmMarathon' | 'minPerKmHM'>> = {
   beginner:     { easyPaceStr: '7:30–9:00 /km', qualityPaceStr: '6:30–7:30 /km', intervalPaceStr: '5:30–6:30 /km', minPerKmEasy: 8.0,  minPerKmQuality: 7.0,  minPerKmInterval: 6.0 },
   intermediate: { easyPaceStr: '6:30–7:30 /km', qualityPaceStr: '5:30–6:00 /km', intervalPaceStr: '4:30–5:00 /km', minPerKmEasy: 7.0,  minPerKmQuality: 5.75, minPerKmInterval: 4.75 },
   experienced:  { easyPaceStr: '5:45–6:45 /km', qualityPaceStr: '4:45–5:20 /km', intervalPaceStr: '3:50–4:20 /km', minPerKmEasy: 6.25, minPerKmQuality: 5.0,  minPerKmInterval: 4.05 },
@@ -408,12 +418,15 @@ function buildFallbackPace(fitness: FitnessLevel): PaceGuide {
   let marathonPaceStr: string | null = null
   let hmPaceStr:       string | null = null
   let hmMins:          number | null = null  // centre of hmPaceStr; kept so the band and its centre cannot drift
+  let mpMins:          number | null = null  // ditto for marathonPaceStr
   if (fitness === 'intermediate') {
-    marathonPaceStr = paceBandStr(base.minPerKmQuality + 0.50,       3)  // +30s/km
+    mpMins          = base.minPerKmQuality + 0.50
+    marathonPaceStr = paceBandStr(mpMins,                            3)  // +30s/km
     hmMins          = base.minPerKmQuality + 0.25
     hmPaceStr       = paceBandStr(hmMins,                            3)  // +15s/km
   } else if (fitness === 'experienced') {
-    marathonPaceStr = paceBandStr(base.minPerKmQuality + (25 / 60),  3)  // +25s/km
+    mpMins          = base.minPerKmQuality + (25 / 60)
+    marathonPaceStr = paceBandStr(mpMins,                            3)  // +25s/km
     hmMins          = base.minPerKmQuality + (12 / 60)
     hmPaceStr       = paceBandStr(hmMins,                            3)  // +12s/km
   }
@@ -421,7 +434,9 @@ function buildFallbackPace(fitness: FitnessLevel): PaceGuide {
     ...base,
     cvPaceStr:  paceBandStr(cvMins, 2),
     minPerKmCV: cvMins,
-    marathonPaceStr, hmPaceStr, source: 'fitness_level',
+    marathonPaceStr, hmPaceStr,
+    minPerKmMarathon: mpMins, minPerKmHM: hmMins,
+    source: 'fitness_level',
   }
 }
 
@@ -863,7 +878,12 @@ function resolveAnchorPace(anchor: PaceAnchor, pace: PaceGuide, goalPaceMinPerKm
     case 'CV':   return pace.minPerKmCV
     case 'I':    return pace.minPerKmInterval
     case 'goal': return goalPaceMinPerKm
-    default:     return null   // M/R/race_5K/race_3K: no numeric pace resolved here today
+    // §24b — null for a structurally-beginner runner, who is prescribed no pace
+    // segments. That is a legitimate "this runner has no such pace", not a gap:
+    // the selector's anchor gate keeps rows needing them out of their pool.
+    case 'M':    return pace.minPerKmMarathon
+    case 'HM':   return pace.minPerKmHM
+    default:     return null   // R/race_5K/race_3K: no numeric pace resolved here today
   }
 }
 
@@ -1525,6 +1545,14 @@ function makeQualitySession(args: {
       CV: pace.cvPaceStr,
       I: pace.intervalPaceStr,
       ...(pace.marathonPaceStr ? { M: pace.marathonPaceStr } : {}),
+      // CAT-ROW-ELIGIBILITY-01 — the DISPLAY half of the HM anchor. This map and
+      // `resolveAnchorPace` are two resolvers for the same question (which pace
+      // does this anchor mean for this runner?), one returning a band string for
+      // the derived set and one a numeric for sizing. Adding HM to only the
+      // numeric one shipped 859 sessions reading "HM-pace reps" with NO pace at
+      // all — caught by INV-PLAN-DERIVED-SET-PACED. Both are null for exactly the
+      // same runners (§24b), so the selector's gate stays consistent with both.
+      ...(pace.hmPaceStr ? { HM: pace.hmPaceStr } : {}),
       ...(goalPace ? { goal: goalPace } : {}),
     }
     const params = {
@@ -2866,6 +2894,17 @@ function buildWeekSessions(
     // taper weeks vary their stimulus. Even idx → threshold (default), odd idx
     // → race_specific (sharpener). Race week itself has no quality (§26).
     const isTimeTarget = input.goal === 'time_target'
+    // CAT-ROW-ELIGIBILITY-01 — the pace anchors THIS runner actually has, computed
+    // once per week and handed to every row-picking path below. Built from the
+    // single owner of anchor pricing (`resolveAnchorPace`) so the gate and the
+    // sizing can never disagree about whether a pace exists — a checker that
+    // reads a different source from the producer is this repo's own recorded
+    // silent-failure class.
+    const goalPaceMins = goalPace ? paceStrToMins(goalPace) : null
+    const resolvableAnchors: ReadonlySet<string> = new Set(
+      PACE_ANCHORS.filter(a => resolveAnchorPace(a, pace, goalPaceMins) != null),
+    )
+
     let preferredCategory = preferredQualityCategory(
       phase, distKey, isTimeTarget, buildRotationIndex, vo2MustOpenBuild, peakRotationIndex,
       peakWeeksTotal, vo2BuildSlotIndex)
@@ -2940,17 +2979,23 @@ function buildWeekSessions(
           .filter(r => r.category === 'race_specific'
             && r.phase_eligibility.includes('taper')
             && r.distance_eligibility.includes(distKey)
-            && (tier !== 'free' || r.is_free_tier))
+            && (tier !== 'free' || r.is_free_tier)
+            // CAT-ROW-ELIGIBILITY-01 — this path picks a row DIRECTLY rather than
+            // through selectCatalogueSession, so it needs the anchor gate applied
+            // explicitly or it re-opens the hole one line below the fix.
+            && requiredPaceAnchors(r).every(a => resolvableAnchors.has(a)))
           .sort((a, b) => a.distance_eligibility.length - b.distance_eligibility.length)
 
         cat1 = raceSpecificTaperRows[0] ?? selectCatalogueSession({
           catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
           weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes: poolSink, recentThresholdEligible,
+          resolvableAnchors,
         })
       } else {
         cat1 = selectCatalogueSession({
           catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 0, preferredCategory,
           weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes: poolSink, recentThresholdEligible,
+          resolvableAnchors,
         })
       }
       if (process.env.DEBUG_ROT) console.error(`      cat1 -> ${cat1?.id}:${cat1?.category} (pref=${preferredCategory})`)
@@ -3024,6 +3069,7 @@ function buildWeekSessions(
           const cat2 = selectCatalogueSession({
             catalogue, phase, distanceKey: distKey, fitness: intensityFitness, tier, weekN, slotIndex: 1, preferredCategory: altCategory,
             weeklyKm, excludeHillSessions, excludeHighTissueStress, rowUsage, rowLast, poolSizes: poolSink, recentThresholdEligible,
+            resolvableAnchors,
           })
           const secondaryFraction = GENERATION_CONFIG.SECONDARY_QUALITY_PCT_OF_PRIMARY / 100
           // SC-10 — size the second (softer) slot off the UNCAPPED base, never the

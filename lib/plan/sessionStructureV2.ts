@@ -28,7 +28,14 @@ import { z } from 'zod'
 // is what makes the excursion repeatable rather than a VO2max rep in disguise.
 // Zonna had NO anchor between T and I, which is why no over-under row could
 // exist. See CoachingPrinciples §85.
-export const PACE_ANCHORS = ['E', 'T', 'CV', 'I', 'R', 'M', 'goal', 'race_5K', 'race_3K'] as const
+// HM (half-marathon pace, ~84% VDOT) added 2026-09-10 (CAT-ROW-ELIGIBILITY-01).
+// NOT a new prescription: `hm_pace_intervals` and `hm_pace_long_run` already
+// prescribe HM pace in v1 via `pace_target: 'HM'`. v2 simply had no way to SAY
+// it, which is why the board's CB-CAT-02 migration of that row could not ship.
+// Like M, it resolves to null for a structurally-beginner runner (§24b) — which
+// is the case the selector's anchor-resolvability gate now handles rather than
+// letting it throw at construction.
+export const PACE_ANCHORS = ['E', 'T', 'CV', 'I', 'R', 'M', 'HM', 'goal', 'race_5K', 'race_3K'] as const
 export type PaceAnchor = typeof PACE_ANCHORS[number]
 
 const PaceAnchorSchema = z.enum(PACE_ANCHORS)

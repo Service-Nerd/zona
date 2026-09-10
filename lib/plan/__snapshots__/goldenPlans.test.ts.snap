@@ -4078,6 +4078,35 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "coach_notes": [
             "HM-pace work. Target 4:59 /km. Controlled, even splits — exit each rep wanting more.",
           ],
+          "derived_set": {
+            "blocks": [
+              {
+                "label": "reps",
+                "repeat": 4,
+                "steps": [
+                  {
+                    "advance": "auto",
+                    "length": "2 km",
+                    "modality": "run",
+                    "note": "HM pace, not faster. Exit each rep wanting more.",
+                    "pace": "5:00–5:18 /km",
+                    "pace_mode": "target",
+                    "role": "work",
+                  },
+                  {
+                    "advance": "auto",
+                    "length": "3 min",
+                    "modality": "jog",
+                    "note": "Three minutes, easy jog.",
+                    "pace": "5:42–6:49 /km",
+                    "pace_mode": "ceiling",
+                    "role": "recovery",
+                  },
+                ],
+              },
+            ],
+            "version": 2,
+          },
           "detail": null,
           "distance_km": 10,
           "duration_mins": 50,
@@ -4156,6 +4185,35 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "coach_notes": [
             "HM-pace work. Target 4:59 /km. Controlled, even splits — exit each rep wanting more.",
           ],
+          "derived_set": {
+            "blocks": [
+              {
+                "label": "reps",
+                "repeat": 4,
+                "steps": [
+                  {
+                    "advance": "auto",
+                    "length": "2 km",
+                    "modality": "run",
+                    "note": "HM pace, not faster. Exit each rep wanting more.",
+                    "pace": "5:00–5:18 /km",
+                    "pace_mode": "target",
+                    "role": "work",
+                  },
+                  {
+                    "advance": "auto",
+                    "length": "3 min",
+                    "modality": "jog",
+                    "note": "Three minutes, easy jog.",
+                    "pace": "5:42–6:49 /km",
+                    "pace_mode": "ceiling",
+                    "role": "recovery",
+                  },
+                ],
+              },
+            ],
+            "version": 2,
+          },
           "detail": null,
           "distance_km": 11,
           "duration_mins": 55,

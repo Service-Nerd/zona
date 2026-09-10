@@ -36,6 +36,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-EARLY-ONSET-GATED',
   'INV-PLAN-ONRAMP-FLOOR',
   'INV-PLAN-ONSET-YIELD-BOUNDED',
+  'INV-PLAN-DERIVED-SET-PACED',
   'INV-PLAN-PEAK-SPECIFICITY',
   'INV-PLAN-DELIVERED-RAMP',
   'INV-PLAN-DELOAD-PHASE-POSITION',
@@ -2493,6 +2494,50 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         actual: `${onRamp} on-ramp week(s)`,
         expected: `>= ${floor} (base + foundation)`,
       })
+    }
+  }
+
+  // INV-PLAN-DERIVED-SET-PACED (CAT-ROW-ELIGIBILITY-01)
+  //
+  // A derived WORK step that was authored against a pace anchor must carry a
+  // resolved pace. `INV-PLAN-DERIVED-SET` proves a v2 session HAS a derived set;
+  // it says nothing about whether the numbers in it resolved, and an unresolved
+  // anchor produces `pace: null` — a rep with a distance and no target, shipped
+  // silently to the runner.
+  //
+  // This is the enforcement half of the selector's anchor gate. Without it the
+  // gate is a rule nothing checks, which is this repo's most repeated failure
+  // (SWEEP-VACUOUS-01, §5's specificity ladder, INV-PLAN-FOUNDATION-BLOCK). The
+  // gate keeps such a row out of the runner's pool; this fires if one ever gets
+  // through by another path — a new call site that forgets to pass the set, or a
+  // row picked directly rather than through selectCatalogueSession (the taper
+  // race-specific path did exactly that until 2026-09-10).
+  //
+  // `pace_mode` is present on a derived step IFF its authored target was a pace
+  // (resolveMainSet), so effort-governed work (hill reps, §40b) is correctly out
+  // of scope rather than needing an exemption list.
+  {
+    for (const w of plan.weeks) {
+      for (const sn of Object.values(w.sessions ?? {})) {
+        const ds = (sn as { derived_set?: { blocks?: Array<{ steps?: Array<Record<string, unknown>> }> } } | null)?.derived_set
+        if (!ds?.blocks) continue
+        for (const b of ds.blocks) {
+          for (const st of b.steps ?? []) {
+            if (st.role !== 'work' || st.pace_mode === undefined) continue
+            if (st.pace == null) {
+              violations.push({
+                code: 'INV-PLAN-DERIVED-SET-PACED',
+                principle_ref: 'CoachingPrinciples §19, §24b',
+                severity: 'error',
+                week: w.n,
+                message: `Session "${(sn as { label?: string }).label}" has a work step authored at a pace anchor but no resolved pace — the runner is given a distance with no target. The row should not have been eligible for this runner (selector anchor gate, CAT-ROW-ELIGIBILITY-01).`,
+                actual: 'pace: null on a paced work step',
+                expected: 'a resolved pace, or the row filtered out before selection',
+              })
+            }
+          }
+        }
+      }
     }
   }
 
