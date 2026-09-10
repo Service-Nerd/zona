@@ -49,6 +49,14 @@ export const PLAN_SIGNATURES = {
     free_tier_available:          false,
   },
 
+  // Board ruling SIG-ULTRA-UNBUILT-01 (2026-09-10) governs the ultra fields
+  // below. `back_to_back_from_phase` / `back_to_back_frequency_weeks` and 100K's
+  // `time_on_feet_sessions_in_peak` are BOARD-RATIFIED real coaching commitments
+  // (§24e) that the engine does not yet honour — kept and tracked in
+  // configConsumer.test.ts SIG_UNBUILT, build SLT-gated on ultra acquisition.
+  // `fuelling_practice_from_week` (an absolute-week anchor, wrong shape per §44)
+  // and 100K's `night_run_optional` (unbuildable — no time-of-day, ADR-011) were
+  // STRUCK by the same ruling; see §24e for the fuelling re-spec.
   '50K': {
     min_weeks: 16, ideal_weeks: 18, max_weeks: 22,
     sessions_per_week_default:   5,
@@ -56,7 +64,6 @@ export const PLAN_SIGNATURES = {
     long_run_cap_minutes:        300,
     back_to_back_from_phase:     'build',
     back_to_back_frequency_weeks: 3,
-    fuelling_practice_from_week:  8,
     taper_final_session:         'ultra_race_sim',
     free_tier_available:         false,
   },
@@ -74,7 +81,6 @@ export const PLAN_SIGNATURES = {
     back_to_back_from_phase:      'build',
     back_to_back_frequency_weeks: 2,
     time_on_feet_sessions_in_peak: 2,
-    night_run_optional:           true,
     taper_final_session:          'time_on_feet',
     free_tier_available:          false,
   },

@@ -153,25 +153,33 @@ describe('Configuration Singularity — every numeric has a consumer, not just a
       'Superseded by the runner\'s own WeekGrid answer (days_available). A per-distance default would override a stated constraint, which §18 forbids.',
     ideal_weeks:
       'Superseded by DISTANCE_CONFIGS.idealWeeks in length.ts, which is what calcPlanLength actually reads. Its sibling `max_weeks` WAS listed here and is now live (§97) — calcPlanLength reads it for a §89-gated runner, which is what stopped their surplus weeks becoming a §57 foundation block. Removing it from this register is the register working.',
+    // SIG-ULTRA-UNBUILT-01 (Coaching Board 2026-09-10) reclassified these three
+    // from SIG_UNBUILT: they are not debt, they are DELIVERED by a shipped
+    // principle and the flag merely duplicates it decoratively — the same status
+    // as long_run_cap_minutes above.
+    peak_includes_race_pace:
+      'Delivered by §24d — the HM peak long run carries race pace via the hm_pace_long_run catalogue row, selected in the peak long-run path. The flag causes nothing; the principle does.',
+    peak_includes_mp_long_runs:
+      'Delivered by §24d — the MARATHON peak long run carries MP via the mp_long_run row. Same shape as above.',
+    mp_long_run_frequency_weeks:
+      'Delivered by §47 — "no two consecutive peak long runs" already alternates the peak MP long runs to ~every 2 weeks. A distinct BUILD-phase MP cadence would be a NEW commitment (not intended); until then this is superseded, not owed.',
   }
 
+  // BOARD-RATIFIED but UNBUILT. SIG-ULTRA-UNBUILT-01 (2026-09-10) ruled each of
+  // these a REAL coaching commitment the engine must one day honour — they may
+  // NOT be deleted. The build is SLT-gated on ultra acquisition (50K/100K are
+  // PAID with, currently, zero users), so they stay declared and tracked here
+  // rather than shipped. Two siblings the same ruling STRUCK — fuelling_practice_
+  // from_week (absolute-week anchor, wrong shape per §44 — re-spec as a §24e long-
+  // run cue) and night_run_optional (unbuildable, no time-of-day, ADR-011) — were
+  // removed from PLAN_SIGNATURES entirely and so are absent from this register.
   const SIG_UNBUILT: Record<string, string> = {
-    peak_includes_race_pace:
-      'HM peak DOES carry race pace, but via preferredQualityCategory\'s hardcoded distance branch, not this flag. Anyone reasoning from the flag is reasoning about nothing.',
-    peak_includes_mp_long_runs:
-      'Same shape as above for MARATHON.',
-    mp_long_run_frequency_weeks:
-      'Marathon-pace long-run cadence: declared every 2 weeks, never scheduled on that cadence.',
     back_to_back_from_phase:
-      'The back_to_back_long catalogue row exists; the declared PHASE it should start in is not read.',
+      'BOARD-RATIFIED commitment (SIG-ULTRA-UNBUILT-01). §24e names back-to-backs as the defining ultra adaptation; the back_to_back_long row exists but the declared start PHASE is not read, so ultras get them only if the rotation happens to pick them. Wire with Willy\'s three guards (counts as the week\'s peak long-run stimulus for §47; never adjacent to a deload; both days Z2). Build SLT-gated.',
     back_to_back_frequency_weeks:
-      'Ditto the declared cadence — ultras get back-to-backs only if the ordinary rotation happens to pick them.',
-    fuelling_practice_from_week:
-      'No implementation. Fuelling appears inside the time_on_feet row\'s structure, but the declared "from week 8" cadence does not exist.',
+      'BOARD-RATIFIED commitment (SIG-ULTRA-UNBUILT-01). The governed cadence (50K every 3 wk / 100K every 2 wk from build) the wiring above must honour. Build SLT-gated.',
     time_on_feet_sessions_in_peak:
-      'The time_on_feet row exists; the declared count of 2 in peak is not enforced.',
-    night_run_optional:
-      'No implementation of any kind.',
+      'BOARD-RATIFIED commitment (SIG-ULTRA-UNBUILT-01). The time_on_feet row exists; the declared 100K peak count of 2 is the ratified dose, not yet enforced. Build SLT-gated.',
   }
 
   it('PLAN_SIGNATURES — no field is silently dead', () => {
