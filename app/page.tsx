@@ -138,9 +138,16 @@ export default async function Home() {
             web expression of line #1. Two locked lines, one block.
 
             brand.md's placement table gives the tagline "Login, loading, OG
-            image, meta description" and gives the landing hero to the H1. The
-            tagline still does its job on THIS page as the meta/OG description;
-            it just no longer competes with the headline visually.
+            image, meta description" and gives the landing hero to the H1.
+
+            PRECISE about where it still lives, because the first version of this
+            comment was wrong: this page sets its OWN description, og:description
+            and twitter:description (SEO-01 keyword copy), so the tagline is NOT
+            the homepage's meta description — that inheritance only applies to
+            pages which set none, i.e. /support, /privacy, /terms. What the
+            tagline DOES still own here is the OG IMAGE: app/api/og/route.tsx
+            renders it bottom-left, so it appears on every share card. Plus
+            login and loading, per the table. None of those is the landing hero.
 
             Precedent: DIV-020 ("tagline rendered on splash + login +
             orientation... over-use degrades the asset") closed the same way. */}
