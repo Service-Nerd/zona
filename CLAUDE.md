@@ -81,6 +81,9 @@ and user_settings. Nothing is hardcoded to a specific person.
 
 - Supabase project ID: `wkppmpsvqkaxbekdgzdm`
 - Vercel app: `https://www.zonna.run` (production custom domain on Vercel project `zona`). The legacy `rts-training-hub` Vercel project still exists but no live traffic depends on it.
+  - **`www` is the canonical host and `NEXT_PUBLIC_APP_URL` is deliberately NOT set** (GTM-SITE-01, 2026-09-10). `https://zonna.run/*` **307-redirects** to `www`, so `www` is the only host that serves 200. The single source of truth for the site's own URL is now the committed default `process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'` in the 12 metadata surfaces (canonical, og, sitemap, robots, JSON-LD).
+  - **Why the env var was removed rather than corrected:** it was set to the APEX (`https://zonna.run`) while two files defaulted to `www` and ten to apex — so every canonical, the whole sitemap, robots.txt and the Article JSON-LD published a URL that redirects. An env var that overrides twelve committed defaults is invisible drift: the code said one thing, production did another, and a local build (where the var is absent) silently proved the "fix" worked while production was unchanged. Keeping the value in git makes it reviewable and makes local and production agree.
+  - **If you ever re-add it, it must be `https://www.zonna.run`.** A value of `''` is worse than absent — `??` does not fall back on an empty string, and `metadataBase: new URL('')` throws at build time.
 - Plan JSON: `https://gist.githubusercontent.com/Service-Nerd/efec07a87f65494f0e078a1ccb136100/raw/rts_plan.json`
   - Always fetched with `cache: 'no-store'`
 
