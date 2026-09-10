@@ -217,6 +217,13 @@ export const PlanMetaSchema = z.object({
   // foundation block; the client shows the modal. See types/plan.ts PlanMeta.
   foundation_gap_class: z.enum(['none', 'auto', 'choice']).optional(),
 
+  // INTENSITY-FOUNDATION-BLIND-02 — the two flags that let a whole-plan ratio
+  // tell "no block is coming" apart from "the block hasn't been decided yet".
+  // See types/plan.ts PlanMeta for why neither can be derived from the fields
+  // that already exist.
+  foundation_decision_pending: z.boolean().optional(),
+  foundation_composed:         z.boolean().optional(),
+
   // R24 — VDOT / zone model fields (these were missing from the schema; added here for completeness)
   age:                z.number().int().positive().optional(),
   vdot:               z.number().positive().optional(),

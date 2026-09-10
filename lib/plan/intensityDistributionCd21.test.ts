@@ -68,8 +68,21 @@ function qualityShare(plan: Plan): { pct: number, hard: number, running: number 
   return { pct: (hard / running) * 100, hard, running }
 }
 
+// INTENSITY-FOUNDATION-BLIND-02 — validated as a SETTLED plan.
+//
+// CD-21 rules on the ceiling as it applies to the plan a runner receives, and §1
+// now defers while a §57 foundation decision is still outstanding (the >28-day
+// 'choice' band, where the answer arrives from a later route). This file's
+// frozen clock sits 32 days before BASE's ANCHORED start — 2026-09-07 anchors
+// forward to 2026-09-21 — so every fixture here is on that band.
+//
+// Left unstamped, the exemption assertions below would pass because §1 deferred
+// and measured nothing, not because the exemption held: exactly the vacuous
+// pass the "it genuinely BREACHES" comments exist to rule out. Stamping settled
+// keeps this file testing the ceiling rather than the deferral.
 const intensityViolations = (plan: Plan, input: GeneratorInput) =>
-  validatePlan(plan, input).filter(v => v.code === 'INV-PLAN-INTENSITY-DISTRIBUTION')
+  validatePlan({ ...plan, meta: { ...plan.meta, foundation_composed: true } }, input)
+    .filter(v => v.code === 'INV-PLAN-INTENSITY-DISTRIBUTION')
 
 beforeAll(() => { vi.useFakeTimers(); vi.setSystemTime(FROZEN_NOW) })
 afterAll(() => { vi.useRealTimers() })

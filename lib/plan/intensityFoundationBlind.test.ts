@@ -21,6 +21,20 @@ import type { GeneratorInput, Plan, Week } from '@/types/plan'
  * as generation, `fwp > 0` on a DELIVERED plan always coincides with the weeks being
  * present — so the defer never masks a real delivered breach; it only skips the
  * transient mid-generation state.
+ *
+ * AMENDED by INTENSITY-FOUNDATION-BLIND-02 (2026-09-10). The last sentence above
+ * was true but incomplete, and the gap it left was live: `fwp > 0` is not the only
+ * state in which a block is coming. On the >28-day 'choice' band
+ * `plannedFoundationWeeks` returns 0 unless the decision is ALREADY 'add', and on
+ * that band the decision arrives later from POST /api/generate-plan/foundation —
+ * so a plan is 0-weeks-planned at generation and 3-weeks-delivered, the defer
+ * never fired, and the false positive this file was written to kill survived
+ * there. The defer now also covers `foundation_decision_pending`, and ends at
+ * `foundation_composed` so declining the block cannot leave §1 permanently
+ * unchecked. See intensityFoundationBlindChoice.test.ts.
+ *
+ * The cases below still hold as written — they construct meta explicitly and are
+ * scoped to the fwp axis.
  */
 
 const TENK_INPUT: GeneratorInput = {

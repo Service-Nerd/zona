@@ -3156,8 +3156,35 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     // stamped week count rather than re-deriving it. When no block is coming
     // (== 0), the bare plan IS the delivered plan and the check binds in full —
     // which is exactly where INTENSITY-LONGDIST-LOWDAY-01's real breach must fire.
+    //
+    // INTENSITY-FOUNDATION-BLIND-02 (2026-09-10) — the defer above was keyed on
+    // `foundation_weeks_planned > 0`, and the fix that added it rested on a
+    // stated assumption: "composePlanWithFoundation uses the same
+    // plannedFoundationWeeks as generation, so fwp>0 on a DELIVERED plan always
+    // coincides with the weeks being present." That is false on the 'choice'
+    // band. `plannedFoundationWeeks` returns 0 for a >28-day gap unless the
+    // decision is already 'add' — and on that band the decision arrives LATER,
+    // from POST /api/generate-plan/foundation, which is the entire point of the
+    // band. So the plan is 0-weeks-planned at generation and 3-weeks-delivered,
+    // the defer never fired, and a compliant marathon plan (measured: 18.6%,
+    // 13/70 bare -> clean delivered) console.error'd in prod and THREW in
+    // dev/test. Two calls to one function with independently supplied arguments
+    // are two computations, not one — the same class as the checker/producer
+    // splits in the debug catalogue.
+    //
+    // The defer therefore covers both "a block is planned" and "the block is
+    // still undecided", and — critically — ENDS at composition. `skip` produces
+    // an assembled plan identical to the bare one, so without
+    // `foundation_composed` the widened defer would be terminal for a runner who
+    // declines the block, converting log noise into a silently unchecked plan.
+    // A defer that never expires is not a defer, it is a hole.
+    const foundationSettled = plan.meta.foundation_composed === true
+    const foundationWeeksPresent = plan.weeks.some(w => w.n <= 0)
     const foundationPending =
-      (plan.meta.foundation_weeks_planned ?? 0) > 0 && !plan.weeks.some(w => w.n <= 0)
+      !foundationSettled
+      && !foundationWeeksPresent
+      && ((plan.meta.foundation_weeks_planned ?? 0) > 0
+          || plan.meta.foundation_decision_pending === true)
     if (dist && !foundationPending) {
       // Denominator is RUNNING sessions — strength, cross-train and rest are not
       // part of an intensity distribution.

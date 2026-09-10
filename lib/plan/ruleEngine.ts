@@ -25,7 +25,7 @@ import { isV2Structure, StructureV2Schema, goalPaceShapeWord, type PaceAnchor } 
 import { durationForMainSet } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
 import { isDeloadWeek, computeDeloadWeeks } from './deloadCadence'
-import { plannedFoundationWeeks } from './foundationBlock'
+import { plannedFoundationWeeks, classifyGap, gapDays } from './foundationBlock'
 import type { GeneratorPhase } from '@/types/plan'
 import {
   V1_SESSION_CATALOGUE, selectCatalogueSession,
@@ -4382,9 +4382,26 @@ export function generateRulePlan(
   tier: Tier,
   planStart?: string,
   catalogue: SessionCatalogueRow[] = V1_SESSION_CATALOGUE,
+  // INTENSITY-FOUNDATION-BLIND-02 — `today` is an INPUT to generation, not an
+  // ambient fact. It decides the §57 gap class and therefore how many all-easy
+  // foundation weeks §91 credits against the base on-ramp, so a caller that
+  // pins `planStart` while leaving `today` to the wall clock is generating a
+  // plan for a timeline that does not exist.
+  //
+  // That is exactly what the property sweep was doing: PLAN_START is pinned to
+  // 2026-04-27, `gapDays` clamps negatives to 0, so generation saw gap 0 ('none',
+  // zero foundation weeks) for all 16,038 plans while the sweep then composed
+  // 3-week blocks against its own synthetic `today`. Generation and composition
+  // were reasoning about different calendars — the two-writer split §91's own
+  // single-owner comment exists to prevent — which is why the sweep could not
+  // execute this file's foundation path at all, and why its results drifted with
+  // the wall-clock date despite a pinned seed.
+  //
+  // Production passes nothing and keeps the wall clock, unchanged.
+  todayOverride?: string,
 ): Plan {
   const planStartIso = planStart ?? formatDate(nextMonday())
-  const today = formatDate(new Date())
+  const today = todayOverride ?? formatDate(new Date())
 
   // CoachingPrinciples §55 — reject nonsense / out-of-range inputs before
   // any other logic. Distinct from §44 (prep-time) and §50 (HR fallbacks):
@@ -4636,6 +4653,16 @@ export function generateRulePlan(
   const foundationWeeksAhead = plannedFoundationWeeks(
     today, anchoredStartIso, input.foundation_decision,
   )
+  // INTENSITY-FOUNDATION-BLIND-02 — `foundationWeeksAhead` is 0 in TWO states
+  // that mean opposite things: "no block is coming" and "the runner has not
+  // answered the modal yet". On the >28-day 'choice' band the decision arrives
+  // LATER, via POST /api/generate-plan/foundation — that deferral is the band's
+  // whole purpose — so a plan generated there is 0-weeks-planned and 3-weeks-
+  // delivered. Any check measuring a share across the whole plan has to be able
+  // to tell the two apart; see INV-PLAN-INTENSITY-DISTRIBUTION.
+  const foundationDecisionPending =
+    classifyGap(gapDays(today, anchoredStartIso)) === 'choice'
+    && input.foundation_decision === undefined
   // §97 — the shortened on-ramp is distance-scoped; see ONSET_SHORT_ONRAMP_DISTANCES.
   // §97 Amendment 1 (INTENSITY-3DAY-01) — and denominator-scoped. A shortened base
   // is affordable only where the §1 ceiling permits ≥1 quality session per week the
@@ -5649,6 +5676,10 @@ export function generateRulePlan(
     // question. The DECISION is made once, here, so the number is recorded once,
     // here — and both validations read the same field.
     foundation_weeks_planned: foundationWeeksAhead,
+    // INTENSITY-FOUNDATION-BLIND-02 — stamped only when true, so an ordinary
+    // plan's meta is unchanged and the flag reads as an exception rather than
+    // a field every plan carries.
+    ...(foundationDecisionPending ? { foundation_decision_pending: true } : {}),
     goal:                      input.goal,
     target_time:               input.target_time,
     days_available:            input.days_available,

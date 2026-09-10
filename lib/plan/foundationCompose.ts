@@ -51,6 +51,24 @@ export function composePlanWithFoundation(
     }
   }
 
+  // INTENSITY-FOUNDATION-BLIND-02 — the foundation question is SETTLED for this
+  // plan, and that has to be stamped BEFORE validatePlan runs, because checks
+  // that defer while a decision is outstanding read it to know the deferral is
+  // over. It is set on every composed plan, whatever the decision and whether or
+  // not a week was added: a runner who picks 'skip' produces an assembled plan
+  // byte-identical to the bare one, and if that could not be distinguished from
+  // the still-undecided state, the deferred check would never bind for them.
+  // A defer must be transient; this is what makes it transient.
+  //
+  // Assigned onto the EXISTING meta object rather than spread into a new one.
+  // `composedRule.meta` is deliberately the same object as `rulePlan.meta` —
+  // this function spreads the plan, not its meta — and /api/generate-plan relies
+  // on that identity to land the free-tier CA-01 `plan_intro` and the
+  // `enrichment` stamp AFTER composing (route.ts:150). Replacing meta here would
+  // silently return free plans without their intro: no error, no symptom, just a
+  // missing wedge surface.
+  assembled.meta.foundation_composed = true
+
   // Unfiltered — CB-2 found that filtering by invariant code (or by week)
   // discards real violations (e.g. blocked-day breaches landing on a
   // foundation week under a non-foundation-specific code). validatePlan sees

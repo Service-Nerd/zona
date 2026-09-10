@@ -483,6 +483,34 @@ export interface PlanMeta {
    */
   foundation_gap_class?: 'none' | 'auto' | 'choice'
 
+  /**
+   * INTENSITY-FOUNDATION-BLIND-02 — true when generation happened on the
+   * 'choice' band with NO decision supplied, i.e. a foundation block may still
+   * be prepended by POST /api/generate-plan/foundation once the runner answers
+   * the modal. `foundation_weeks_planned` is 0 in that state (the block is not
+   * planned, it is merely possible), so it cannot express "undecided" and any
+   * whole-plan ratio measured on the bare plan reads a denominator the runner
+   * may never have. Read by INV-PLAN-INTENSITY-DISTRIBUTION's defer.
+   *
+   * Deliberately narrower than "a block is possible": 'skip'/'start_now' at
+   * generation mean no block is ever coming, so the bare plan IS the delivered
+   * plan and the check must bind.
+   */
+  foundation_decision_pending?: boolean
+
+  /**
+   * INTENSITY-FOUNDATION-BLIND-02 — stamped by composePlanWithFoundation (the
+   * ADR-020 single owner) BEFORE it validates, on every plan it assembles,
+   * whatever the decision and whether or not any week was added. It answers
+   * "has the foundation question been settled for this plan?" — which neither
+   * `foundation_weeks_planned` nor the presence of n<=0 weeks can, because a
+   * settled 'skip' looks identical to an unsettled 'choice'.
+   *
+   * Without it, deferring the undecided case would MASK the check on a runner
+   * who declines the block. The defer must be transient, never terminal.
+   */
+  foundation_composed?: boolean
+
   // R24 — VDOT / zone model fields
   age?: number                            // athlete age at time of generation
   vdot?: number                           // Jack Daniels VDOT score (raw, benchmark-derived) — matches Daniels' published tables

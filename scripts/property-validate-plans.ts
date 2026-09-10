@@ -489,11 +489,32 @@ for (const input of inputs) {
   attempted++
   let plan
   let planTier: 'free' | 'trial' | 'paid' = 'trial'
+  // INTENSITY-FOUNDATION-BLIND-02 — `today` is derived BEFORE generation and
+  // passed to BOTH generateRulePlan and composePlanWithFoundation, so the two
+  // reason about one calendar.
+  //
+  // It used to be derived AFTER generation and given only to compose, while
+  // generation read the wall clock. Since PLAN_START is pinned to 2026-04-27 and
+  // `gapDays` clamps negatives to 0, generation saw gap 0 ('none') on every run
+  // once that date passed: `foundation_weeks_planned` was 0 for all 16,038
+  // plans, so §91's on-ramp credit and the §1 defer had ZERO sweep coverage
+  // while 9,905 of those plans were nonetheless composed with a real 3-week
+  // block. The sweep was validating plans whose generator believed no block was
+  // coming — and its output drifted with the wall-clock date despite a pinned
+  // seed, which makes "no NEW violations" a comparison against a moving object.
+  //
+  // Derived from PLAN_START rather than the anchored week-1 date because
+  // generation needs it before a week-1 date exists. Anchoring can shift the
+  // effective gap by a few days; both sides shift together, which is the
+  // property that matters here.
+  const gapDaysForPlan = ((input as Record<string, unknown>).__foundationGapDays as number) ?? 0
+  const today = new Date(new Date(`${PLAN_START}T00:00:00Z`).getTime() - gapDaysForPlan * 86_400_000)
+    .toISOString().slice(0, 10)
   try {
     // PLAN_START passed EXPLICITLY — see the note at the top of this file. This
     // argument is the difference between a sweep and a very fast no-op.
     planTier = pick(tiers)
-    plan = generateRulePlan(input, planTier, PLAN_START)
+    plan = generateRulePlan(input, planTier, PLAN_START, undefined, today)
   } catch (e) {
     const msg = e instanceof Error ? e.message.split('\n')[0] : String(e)
     if (REFUSAL.test(msg)) { refused++; continue }
@@ -516,10 +537,7 @@ for (const input of inputs) {
   // would silently narrow here with no signal. CORNERS (unlike randomInput())
   // never set this field at all — default to 0 (gapClass 'none', a no-op),
   // not undefined (which produced NaN dates and crashed the sweep).
-  const gapDaysForPlan = ((input as Record<string, unknown>).__foundationGapDays as number) ?? 0
-  const planStart = plan.weeks.find(w => w.n === 1)?.date ?? PLAN_START
-  const today = new Date(new Date(planStart).getTime() - gapDaysForPlan * 86_400_000)
-    .toISOString().slice(0, 10)
+  // `today` and `gapDaysForPlan` are computed above, before generation.
   // Honour the swept decision rather than hardcoding 'add' — that hardcode is
   // what made `skip`/`start_now` unreachable (found by the coverage gate).
   // CORNERS never set it, so they keep the historical 'add' behaviour.
@@ -750,6 +768,28 @@ const BASELINE: Record<string, number> = {
   // Cost measured against the same grid: maintenance classification 131 -> 137 of
   // 315 (+1.9pp, 6 plans). Kept as an explicit 0 so a regression reads as NEW.
   'INV-PLAN-LR-MAX-WEEKLY-PCT':          0,
+  // 0 -> 1 (2026-09-10, INTENSITY-FOUNDATION-BLIND-02). NOT a regression from
+  // this change and NOT a false positive: it is the first DELIVERED-plan §1
+  // breach this sweep has ever been able to see.
+  //
+  // Until today generation read the wall clock while PLAN_START stayed pinned to
+  // a past date, so every swept plan was generated at gap 0 — no foundation
+  // weeks planned, full base phase — and then composed with a 3-week block
+  // anyway. Passing `today` into generation put both halves on one calendar, and
+  // the plan shapes it now produces are the ones production actually builds.
+  //
+  // Confirmed live under pure production semantics (real wall clock, no
+  // override): marathon / intermediate / 4 days / 60 km, plan_start 24 days out.
+  // §91 credits the 2 foundation weeks against the base on-ramp, base collapses
+  // to ZERO weeks, quality starts in week 1, and the delivered plan lands at
+  // 19.0% (15/79) against MARATHON's 18% ceiling.
+  //
+  // Baselined rather than fixed because the fix is a PRESCRIPTION decision —
+  // whether §91's credit may spend §1's headroom, and whether all-easy §57 weeks
+  // should dilute the §1 denominator at all — which belongs to the Coaching
+  // Board, not to a checker-accuracy commit. Filed as FOUNDATION-ONSET-01.
+  // A baseline is a debt register, not an amnesty: this must go DOWN.
+  'INV-PLAN-INTENSITY-DISTRIBUTION':      1,
 }
 
 const regressions: string[] = []
