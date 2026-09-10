@@ -19,7 +19,7 @@ import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { comparisonArticleJsonLd, type ComparisonArticle, type ArticleSpan } from '@/lib/marketing/comparisons'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zonna.run'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const SECTION_MAX = 760
 
 /** Inline text links only. No button or CTA styling in this content type. */
@@ -51,7 +51,8 @@ export function ComparisonPage({ article }: { article: ComparisonArticle }) {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: APP_URL },
-      { '@type': 'ListItem', position: 2, name: article.h1, item: url },
+      { '@type': 'ListItem', position: 2, name: 'Comparisons', item: `${APP_URL}/comparisons` },
+      { '@type': 'ListItem', position: 3, name: article.h1, item: url },
     ],
   }
 
@@ -66,7 +67,20 @@ export function ComparisonPage({ article }: { article: ComparisonArticle }) {
 
       <SiteHeader current="comparisons" />
 
-      <article style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
+      {/* GTM-SITE-01 — the plan spokes carried a breadcrumb and the comparison
+          articles did not, so a reader arriving from search had no sense of
+          where the page sat. Same markup and same type scale as PlanPage. */}
+      <nav aria-label="Breadcrumb" style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '20px 24px 0' }}>
+        <ol style={{ display: 'flex', gap: 8, listStyle: 'none', padding: 0, margin: 0, fontSize: 13, color: 'var(--mute)', flexWrap: 'wrap' }}>
+          <li><Link href="/" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Home</Link></li>
+          <li aria-hidden>›</li>
+          <li><Link href="/comparisons" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Comparisons</Link></li>
+          <li aria-hidden>›</li>
+          <li aria-current="page" style={{ color: 'var(--ink-2)' }}>{article.h1}</li>
+        </ol>
+      </nav>
+
+      <article style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '16px 24px 8px' }}>
         <h1 style={{ fontFamily: 'var(--font-brand)', fontSize: 'clamp(28px, 5.5vw, 44px)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'var(--ink)', margin: '0 0 12px' }}>
           {article.h1}
         </h1>

@@ -119,7 +119,7 @@ export const COMPARISON_ARTICLES: ComparisonArticle[] = [
   },
 ]
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zonna.run'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
 /**
  * Article JSON-LD for a comparison page. This is the WIRING, and it is the part

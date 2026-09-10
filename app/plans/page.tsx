@@ -8,7 +8,7 @@ import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { MARKETING_PLANS, planCardTitle } from '@/lib/marketing/plans'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zonna.run'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const SECTION_MAX = 760
 
 export const revalidate = 86400
@@ -24,6 +24,11 @@ export const metadata: Metadata = {
     url: `${APP_URL}/plans`,
     siteName: BRAND.name,
     type: 'website',
+    // Next merges metadata SHALLOWLY: defining `openGraph` here REPLACES the
+    // root layout's object rather than merging into it, so the site-wide
+    // og:image was silently dropped. /plans and all 9 spokes shared this bug —
+    // the most-linked marketing pages were sharing with no image at all.
+    images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630, alt: `${BRAND.name} free running training plans` }],
   },
 }
 

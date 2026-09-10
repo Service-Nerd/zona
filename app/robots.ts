@@ -5,7 +5,7 @@
 
 import type { MetadataRoute } from 'next'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zonna.run'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
 export default function robots(): MetadataRoute.Robots {
   return {

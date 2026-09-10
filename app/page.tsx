@@ -42,7 +42,7 @@ export const dynamic = 'force-dynamic'  // auth check must run per-request
 // Canonical: prevents /rts-training-hub.vercel.app and /zonna.run indexing
 // the same page as duplicates once the custom domain is live.
 // NEXT_PUBLIC_APP_URL must be set to https://zonna.run in Vercel env vars.
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zonna.run'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
 export const metadata: Metadata = {
   // SEO-01 — keyword-first, brand last. Deliberately NOT `${BRAND.appStoreSubtitle}`:

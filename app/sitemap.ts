@@ -7,7 +7,7 @@ import type { MetadataRoute } from 'next'
 import { MARKETING_PLANS } from '@/lib/marketing/plans'
 import { COMPARISON_ARTICLES, COMPARISON_HUB } from '@/lib/marketing/comparisons'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zonna.run'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

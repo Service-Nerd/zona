@@ -12,7 +12,7 @@
 
 import { BRAND } from '@/lib/brand'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zonna.run'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
 /** Constant across all articles. Not a parameter on purpose. */
 const AUTHOR_NAME = 'Russ Shear'

@@ -8,7 +8,7 @@ import { BRAND } from '@/lib/brand'
 import { MARKETING_PLANS, getPlan } from '@/lib/marketing/plans'
 import { PlanPage } from '@/components/marketing/PlanPage'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zonna.run'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
 export const revalidate = 86400
 export const dynamicParams = false
@@ -32,6 +32,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       url,
       siteName: BRAND.name,
       type: 'article',
+      // See /plans — a page-level `openGraph` replaces the parent's, so the
+      // site og:image has to be restated or these 9 pages share with no image.
+      images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630, alt: plan.ogTitle }],
     },
   }
 }

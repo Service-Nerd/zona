@@ -17,7 +17,7 @@ import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { COMPARISON_ARTICLES, COMPARISON_HUB } from '@/lib/marketing/comparisons'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zonna.run'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const SECTION_MAX = 760
 
 export const revalidate = 86400

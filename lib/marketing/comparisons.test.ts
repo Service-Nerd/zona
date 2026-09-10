@@ -105,7 +105,7 @@ describe('comparison articles — Article JSON-LD', () => {
       const ld = comparisonArticleJsonLd(a)
       expect(ld.headline).toBe(a.metaTitle)
       expect(ld.description).toBe(a.metaDescription)
-      expect(ld.mainEntityOfPage).toBe(`https://zonna.run/${a.slug}`)
+      expect(ld.mainEntityOfPage).toBe(`https://www.zonna.run/${a.slug}`)
     })
 
   it('carries the constant author and publisher, with the brand interpolated', () => {
@@ -113,7 +113,7 @@ describe('comparison articles — Article JSON-LD', () => {
     expect(ld['@context']).toBe('https://schema.org')
     expect(ld['@type']).toBe('Article')
     expect(ld.author).toEqual({ '@type': 'Person', name: 'Russ Shear' })
-    expect(ld.publisher).toEqual({ '@type': 'Organization', name: BRAND.name, url: 'https://zonna.run' })
+    expect(ld.publisher).toEqual({ '@type': 'Organization', name: BRAND.name, url: 'https://www.zonna.run' })
   })
 
   it('the helper is not hardcoded per page — every article produces valid output', () => {

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import './styles/polish-tokens.css'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -7,14 +7,32 @@ import { BRAND } from '@/lib/brand'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
+// GTM-SITE-01 — viewport moved out of `metadata` into its own export, which is
+// where Next 14 wants it. It warned on EVERY route, on every build ("Unsupported
+// metadata viewport is configured in metadata export"), which is exactly the
+// kind of always-on warning that trains you to ignore build output.
+//
+// Values are unchanged. viewport-fit=cover is REQUIRED for iOS to expose
+// env(safe-area-inset-*) to CSS — without it those insets resolve to 0, so the
+// fixed bottom nav and the scroll-container padding can't clear the home
+// indicator (nav renders under it). The app consumes env(safe-area-inset-bottom)
+// throughout, so this is load-bearing for the native shell, not cosmetic.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
+}
+
 export const metadata: Metadata = {
   title: `${BRAND.name} — ${BRAND.appStoreSubtitle}`,
   description: BRAND.tagline,
-  // viewport-fit=cover is REQUIRED for iOS to expose env(safe-area-inset-*) to
-  // CSS — without it those insets resolve to 0, so the fixed bottom nav and the
-  // scroll-container padding can't clear the home indicator (nav renders under
-  // it). The app already consumes env(safe-area-inset-bottom) throughout.
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover',
+  // GTM-SITE-01 — resolves every relative URL in metadata (canonical, og:image)
+  // against this origin. Without it, ONLY absolute URLs work: the marketing
+  // pages happened to emit absolute URLs everywhere, so nothing was broken, but
+  // the first relative one would have silently produced a malformed tag with no
+  // build error. Set once here rather than per page.
+  metadataBase: new URL(APP_URL),
   manifest: '/manifest.json',
   icons: {
     icon: [
