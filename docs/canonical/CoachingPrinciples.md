@@ -3774,6 +3774,70 @@ CB-FOUNDATION-DENOM-01 which she required be logged as coherence-only.
 
 ---
 
+## 99. A session states the length its own structure needs
+
+**Principle.** A session built from a fixed v2 shape is sized by **summing its own
+steps**, not by the flat `QUALITY_SESSION_PCT_OF_WEEKLY` share. The stated duration
+follows the structure; the structure never shrinks to fit a stated duration.
+
+**Why — the runner was told 45 minutes for a session that takes over 70.** Measured
+2026-09-10 on generated plans, `hm_pace_intervals` (4 x 2 km at HM pace, 3 min jog):
+
+| runner | stated | main set alone needs | real session with warm-up + cool-down |
+|---|---|---|---|
+| intermediate | **45 min** | **57 min** | ~71 min |
+| experienced | 59-61 min | 51 min | ~64 min |
+
+§86/CB-CAT-02 fixed this class for `threshold_ladder`, which **overstated** (61 for a
+session needing 50). This row **understated**, which is the direction that costs a
+day-job runner their evening — the session they skip, or the one that eats a night
+they had not budgeted (McMillan). For an app whose promise is *"Slow down. You've got
+a day job"*, understating session length is a brand failure as much as a coaching one.
+
+**It had been shipping since R23 and was invisible until the same day it was fixed.**
+The row was v1 and carried no `derived_set`, so there was no structure to compare a
+stated duration against. CAT-ROW-ELIGIBILITY-01's v2 migration EXPOSED it; the
+migration did not cause it. **A defect can be older than every mechanism capable of
+seeing it** — which is the argument for structural stamping generally (ADR-018/019).
+
+**The dose did not change** (Willy's condition of approval): 4 x 2 km at HM pace,
+before and after. Only the number the runner is told moved. A "fix" that trimmed reps
+to fit 45 minutes would have been the wrong half yielding.
+
+**What the honest number exposed, recorded rather than smoothed (§34).** The session's
+true length is ~80 minutes and it lands midweek. That is not deformed to fit
+`max_weekday_mins`, because §81 already ruled structured sessions exempt from the
+weekday cap — scaling the stated duration does not scale `derived_set`, so capping
+would restore exactly the lie this section removes. Where a runner's stated
+availability genuinely cannot hold it, §52's third remedy and §40c apply: the plan
+says so. **Whether 4 x 2 km is the right dose for a four-hour-a-week runner is a
+different question**, and the SLT closed it on CAT-DEPTH-01 (differentiation ruled
+coaching-sufficient; do not chase a finer dose). It is deliberately not reopened here.
+
+**Second-order effect, measured and accepted.** This row was consuming 10 km of the
+weekly budget while demanding 14 km of running, so every peak week was silently
+over-subscribed. With honest sizing the week's easy runs give up the difference
+(11.5 km -> 9.5 km on the golden plan) and the weekly total is preserved. That trade
+is correct: the alternative is a plan whose stated weekly volume is not what the
+runner would actually run.
+
+**Config.** No new numeric. `fixedShapePlan`'s `FIXED_SHAPE_SIZED` allowlist gains
+`hm_pace_intervals` — kept an explicit allowlist, not "every fixed row", because
+joining it changes the length the runner is told and that is a board matter.
+
+**Two mechanical traps this change had to clear, both silent.** (1) `fixedShapePlan`
+priced only `duration` and `parameter` steps, so a **distance**-based row fell out at
+its own guard and kept the flat share — the allowlist entry would have looked applied
+and done nothing. (2) It asserted `anchors.has('T')`, written when both allowlisted
+rows were threshold rows, so "one anchor" and "T" were the same statement; an
+HM-anchored row returned null. Both now generalised, priced through
+`resolveAnchorPace` so this and the derived set cannot disagree.
+
+**Board:** CB-HMPACE-SIZING-01, 2026-09-10 — Coaching Board CORRECT, Hutchinson
+chairing. Extends §86. Moves no ceiling, no dose, no §1.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

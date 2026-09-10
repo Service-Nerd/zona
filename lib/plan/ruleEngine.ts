@@ -1239,7 +1239,16 @@ function fixedShapePlan(
   //
   // Still an explicit ALLOWLIST rather than "every fixed row", because a row
   // joining it changes the length the runner is told, which is a board matter.
-  const FIXED_SHAPE_SIZED = new Set(['threshold_pyramid', 'threshold_ladder'])
+  // CB-HMPACE-SIZING-01 (2026-09-10) — `hm_pace_intervals` joins them, and it is
+  // the clearest case yet. MEASURED on generated plans: an intermediate runner was
+  // told **45 min** for a session whose main set alone needs **57** — over 70 with
+  // warm-up and cool-down. threshold_ladder OVERSTATED (61 for 50); this
+  // UNDERSTATES, which is the direction that costs a day-job runner their evening
+  // (McMillan). Invisible until 2026-09-10 because the row was v1 and had no
+  // derived set to compare a stated duration against: the migration EXPOSED this,
+  // it did not cause it. Dose is untouched — 4 x 2 km at HM pace, exactly as
+  // before (Willy's condition: the stated number yields, never the session).
+  const FIXED_SHAPE_SIZED = new Set(['threshold_pyramid', 'threshold_ladder', 'hm_pace_intervals'])
   if (!row || !FIXED_SHAPE_SIZED.has(row.id) || !isV2Structure(row.main_set_structure)) return null
   const parsed = StructureV2Schema.safeParse(row.main_set_structure)
   if (!parsed.success) return null
@@ -1248,11 +1257,22 @@ function fixedShapePlan(
     const repeat = typeof block.repeat === 'number' ? block.repeat : 1
     for (const step of block.steps) {
       const len = step.length
+      // CB-HMPACE-SIZING-01 — DISTANCE steps are priced against the step's own
+      // anchor, the same way `pacedRepPlan` prices them (`v2StepMinutes`). Before
+      // this, a distance-based fixed-shape row fell out of this sizer at the
+      // `typeof secs !== 'number'` guard below and silently kept the flat share —
+      // so adding such a row to the allowlist above would have changed nothing
+      // and looked like it had worked.
       const secs = len.kind === 'duration'
         ? len.secs
         : len.kind === 'parameter'
           ? variant?.values?.[len.param]
-          : undefined
+          : len.kind === 'distance'
+            ? (() => {
+                const mins = v2StepMinutes(step, pace, goalPaceMinPerKm)
+                return mins > 0 ? mins * 60 : undefined
+              })()
+            : undefined
       // A missing parameter is a catalogue defect, not a runtime condition —
       // same posture as resolveMainSet, which throws on one. Here it means the
       // session cannot be sized from its structure, so fall back rather than
@@ -1262,20 +1282,33 @@ function fixedShapePlan(
     }
   }
   if (totalSecs <= 0) return null
-  // Every work step is T-anchored, so the work pace is threshold. Asserted
-  // rather than assumed: if a future variant introduces a second anchor this
-  // returns null and the session falls back instead of being priced at a pace
-  // half its work is not run at.
-  const anchors = new Set(
+  // The row must have exactly ONE work anchor, and the session is priced at it.
+  // A second anchor still returns null — a session priced at a pace half its work
+  // is not run at is the defect this sizer exists to prevent, and that reasoning
+  // is unchanged.
+  //
+  // CB-HMPACE-SIZING-01 — what changed is that the anchor no longer has to be 'T'.
+  // The old assertion was written when both allowlisted rows were threshold rows,
+  // so "one anchor" and "T" were the same statement. They are not: hm_pace_intervals
+  // is HM-anchored, and under the old test it would have returned null and kept the
+  // flat share — the allowlist entry above would have LOOKED applied and done
+  // nothing. Priced through `resolveAnchorPace`, the single owner of anchor
+  // pricing, so this and the derived set cannot disagree about what the pace is.
+  const workAnchors = new Set(
     parsed.data.blocks.flatMap(b => b.steps)
       .filter(s => s.role === 'work')
       .map(s => (s.target.kind === 'pace' ? s.target.anchor : null)),
   )
-  if (anchors.size !== 1 || !anchors.has('T')) return null
-  return {
-    mainMins: totalSecs / 60,
-    workPaceMinPerKm: goalPaceMinPerKm ?? pace.minPerKmQuality,
-  }
+  if (workAnchors.size !== 1) return null
+  const [anchor] = Array.from(workAnchors)
+  if (anchor == null) return null
+  // §22's goal-pace override applies to a T-anchored row being run at goal pace;
+  // it must not silently re-price a row anchored at something else.
+  const workPaceMinPerKm = anchor === 'T' && goalPaceMinPerKm != null
+    ? goalPaceMinPerKm
+    : resolveAnchorPace(anchor as PaceAnchor, pace, goalPaceMinPerKm)
+  if (workPaceMinPerKm == null) return null
+  return { mainMins: totalSecs / 60, workPaceMinPerKm }
 }
 
 function continuousThresholdPlan(
