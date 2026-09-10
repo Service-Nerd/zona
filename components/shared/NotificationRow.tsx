@@ -52,6 +52,7 @@ export function NotificationRow({ item, relativeTime, onClick }: {
         background: 'var(--card)',
         border: '1px solid var(--line)',
         borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
         padding: '13px 16px 14px 18px',  // extra left padding clears the rail
         cursor: tappable ? 'pointer' : 'default',
         font: 'inherit',

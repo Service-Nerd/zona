@@ -55,10 +55,45 @@
   --font-brand:      'Inter', sans-serif;   /* Space Grotesk retired — see ADR-007 */
 
   /* ── Border radius ───────────────────────────────────────────────── */
-  --radius-sm:       8px;
-  --radius-md:       12px;
-  --radius-lg:       16px;
-  --radius-xl:       20px;
+  /* v2 modernisation (design_handoff_v2, 2026-09-10): each step raised once.
+     12px on a card reads 2019; 14–18px is where premium products sit now.
+     Pure token change — every surface using var(--radius-*) moves at once. */
+  --radius-sm:       10px;   /* was 8px  */
+  --radius-md:       14px;   /* was 12px */
+  --radius-lg:       18px;   /* was 16px */
+  --radius-xl:       22px;   /* was 20px */
+
+  /* ── Card elevation (v2, design_handoff_v2) ──────────────────────────
+     Two-layer card shadow. A 1px contact shadow seats the card on the warm
+     ground; a wide, heavily-offset soft layer does the lifting. Both sit well
+     below the threshold where a shadow reads as decoration — you feel it, you
+     don't see it. Replaces the old single 0 1px 2px/4% (effectively invisible,
+     so cards read as a document, not an interface). Applied to PRIMARY white
+     `--card` surfaces only — never contextual (--warn-bg) or data (--bg-soft)
+     surfaces, never chrome, never nested. See ui-patterns.md § Card Elevation. */
+  --shadow-card:     0 1px 2px rgba(26,26,26,.04), 0 10px 28px -10px rgba(26,26,26,.10);
+  --shadow-lifted:   0 1px 2px rgba(26,26,26,.05), 0 18px 42px -14px rgba(26,26,26,.16);
+
+  /* ── Rhythm ──────────────────────────────────────────────────────── */
+  /* v2: section air raised 28 → 36 (premium reads as space more than anything).
+     Applied at call sites where a screen stacks its primary sections. */
+  --section-gap:     36px;
+
+  /* ── Dark ground (v2, design_handoff_v2) ─────────────────────────────
+     One near-black section per marketing page — a punctuation mark, NOT a
+     theme (ADR-008 single light theme stands: no toggle, no dark mode, no
+     [data-theme]). Warm near-black so it can sit beside --bg (#F3F0EB), not a
+     blue-black. Marketing "receipt" band only; never an in-app surface. */
+  --ground:          #1A1A1A;                    /* warm near-black */
+  --ground-soft:     #242220;
+  --ground-line:     rgba(243,240,235,0.14);
+  --on-ground:       #F3F0EB;                    /* body text on ground */
+  --on-ground-2:     rgba(243,240,235,0.72);
+  --on-ground-mute:  rgba(243,240,235,0.50);
+  /* Brand moss (#6B8E6B) goes muddy below ~20% background luminance; this is
+     the same hue lifted to hold identity and clear 3:1 on #1A1A1A. Use for
+     ANY moss on a dark ground; never --moss there. */
+  --moss-on-ground:  #8FB08F;
 
   /* ── Coach voice ─────────────────────────────────────────────────── */
   --coach-ink:       #3D2600;   /* warm dark brown — coach copy on --warn-bg only */
@@ -179,6 +214,14 @@ html, body {
 /* WheelPicker — hide the scroll track; the centre band is the only affordance. */
 .wheel-scroll { scrollbar-width: none; -ms-overflow-style: none; }
 .wheel-scroll::-webkit-scrollbar { display: none; }
+
+/* Native <details> disclosure (marketing FAQ, v2) — drop the default marker so
+   the summary can carry its own +/− affordance. Firefox honours list-style:none
+   inline; Safari needs this pseudo. */
+summary { list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary > span[aria-hidden] { display: inline-block; transition: transform 0.15s ease; }
+details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
 
 /* ── Focus ring ──────────────────────────────────────────────────────── */
 

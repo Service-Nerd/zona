@@ -13,25 +13,28 @@
   --card-padding-generous:   18px 20px;
 
   /* PRIMARY card — tappable, main object on screen */
+  /* v2 (design_handoff_v2): radius 12→16, shadow → the two-layer --shadow-card
+     defined in globals.css :root. Kept in sync with the real components, which
+     set background/box-shadow inline rather than via the .card-primary class. */
   --card-primary-bg:         var(--card);
   --card-primary-border:     0.5px solid rgba(26,26,26,0.06);
-  --card-primary-shadow:     0 1px 2px rgba(26,26,26,0.04);
+  --card-primary-shadow:     var(--shadow-card);
   --card-primary-padding:    18px 20px;
-  --card-primary-radius:     12px;
+  --card-primary-radius:     16px;
 
   /* CONTEXTUAL card — coach notes, hints, system messages */
   --card-contextual-bg:      var(--bg-soft);
   --card-contextual-border:  none;
   --card-contextual-shadow:  none;
   --card-contextual-padding: 16px 18px;
-  --card-contextual-radius:  10px;
+  --card-contextual-radius:  14px;   /* v2: was 10px */
 
   /* DATA card — stat blocks, metrics, secondary info */
   --card-data-bg:            var(--bg-soft);
   --card-data-border:        none;
   --card-data-shadow:        none;
   --card-data-padding:       14px 16px;
-  --card-data-radius:        10px;
+  --card-data-radius:        12px;   /* v2: was 10px */
 
   /* ── Typography ─────────────────────────────────────────────────────── */
   --label-tracking:          0.06em;

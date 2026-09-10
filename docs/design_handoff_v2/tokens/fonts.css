@@ -1,0 +1,4 @@
+/* Zonna type source — Inter only (ADR-007; Space Grotesk retired).
+   Upstream loads Inter from Google Fonts (app/layout.tsx + globals.css); no font
+   binaries exist in the repo, so no local @font-face is declared here. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');

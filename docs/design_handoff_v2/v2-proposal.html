@@ -1,0 +1,91 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Zonna v2 — what changes</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+body{background:var(--bg-soft);font-family:var(--font-ui);padding:0;margin:0}
+.wrap{max-width:1100px;margin:0 auto;padding:40px 24px 64px}
+h1{font:800 32px/1.15 var(--font-ui);letter-spacing:-.02em;color:var(--ink);margin:0 0 10px}
+.lede{font:400 16px/1.6 var(--font-ui);color:var(--ink-2);max-width:640px;margin:0 0 12px}
+.note{font:400 13px/1.6 var(--font-ui);color:var(--mute);max-width:640px;margin:0 0 36px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px;margin-bottom:20px}
+.eyebrow{font:700 10px/1 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--moss);margin-bottom:10px}
+h2{font:700 20px/1.3 var(--font-ui);color:var(--ink);margin:0 0 8px;letter-spacing:-.01em}
+p{font:400 14px/1.6 var(--font-ui);color:var(--ink-2);margin:0 0 14px;max-width:660px}
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:16px}
+.cell{padding:14px 16px;border-radius:12px;border:1px solid var(--line)}
+.cell .lbl{font:700 9px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-bottom:10px}
+.mono{font:400 12px/1.7 ui-monospace,monospace;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.dark{background:#1A1A1A;color:#F3F0EB;border-color:transparent}
+.dark .lbl{color:rgba(243,240,235,.5)}
+.dark .mono{color:rgba(243,240,235,.72)}
+.r{display:flex;gap:10px;align-items:flex-end;margin-top:4px}
+.r div{flex:1;height:52px;background:var(--bg-soft);border:1px solid var(--line)}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.cta a{font:600 14px var(--font-ui);text-decoration:none;padding:12px 20px;border-radius:12px}
+.p{background:var(--moss);color:#fff}
+.s{background:transparent;color:var(--ink);border:1px solid var(--line-strong)}
+</style>
+</head><body><div class="wrap">
+<h1>v2 — four changes</h1>
+<p class="lede">A modernisation pass, not a redesign. Colour, type, voice and every section&rsquo;s copy are unchanged. Three of the four changes are token-level, so they land everywhere at once. Changes 1 and 2 are site-only; 3 and 4 affect the app too.</p>
+<p class="note">The token changes live in <span class="mono">tokens/v2-modern.css</span>, which is <strong>not</strong> imported by <span class="mono">styles.css</span> — the faithful recreation of the current product stays intact. Link the overlay after <span class="mono">styles.css</span> to preview.</p>
+
+<div class="item">
+  <div class="eyebrow">Change 1 · structural</div>
+  <h2>One dark band</h2>
+  <p>The site is warm off-white end to end, which reads honest but flat. A single near-black section gives the page a spine and a place for the brand statement to land properly. One per page — a second would make it a dark theme, which it isn&rsquo;t.</p>
+  <p>It replaces the light closing section that held &ldquo;You can&rsquo;t outrun your easy days.&rdquo; Moss lifts to <span class="mono">#8FB08F</span> on dark; the faithful <span class="mono">#6B8E6B</span> goes muddy below 20% luminance. The band is text-only &mdash; the statement is the moment, and anything beside it competes.</p>
+  <div class="pair">
+    <div class="cell"><div class="lbl">Now — closing section</div><div class="mono">background: #F3F0EB<br>ink: #1A1A1A<br>accent: #6B8E6B</div></div>
+    <div class="cell dark"><div class="lbl">Proposed — dark band</div><div class="mono">--ground: #1A1A1A<br>--on-ground: #F3F0EB<br>--moss-on-ground: #8FB08F</div></div>
+  </div>
+</div>
+
+<div class="item">
+  <div class="eyebrow">Change 2 · structural</div>
+  <h2>Real app screens, in a device frame</h2>
+  <p>All three reference sites lead with phone screenshots. The current hero uses CSS approximations of the session card, which are on-palette but obviously not the product. The v2 hero renders the actual Today screen inside a device shell.</p>
+  <p>It is the real screen from the app UI kit, scaled &mdash; not a screenshot and not a rebuilt mockup, so it cannot drift from the product as it changes. The frame mirrors the app shell: status bar, content area, and the bottom nav pinned.</p>
+  <p>The crop is <strong>measured, not fixed</strong>: the content area sizes itself to the bottom of a named anchor element (Today&rsquo;s &ldquo;Log this session&rdquo; button) plus a 32px gap, and the fade occupies exactly that gap. So the shot always ends on the session and its action, and the fade can never wash across content, whatever the screen&rsquo;s content does later.</p>
+  <p><strong>Open question:</strong> a second frame showing Coach inside the dark band rendered with a dark screen ground and I have not solved it yet, so the dark band is text-only. Frames work correctly on light sections.</p>
+  <div class="pair">
+    <div class="cell"><div class="lbl">Now</div><div class="mono">3 &times; hand-built CSS cards<br>no device context<br>drifts as the app changes</div></div>
+    <div class="cell"><div class="lbl">Proposed</div><div class="mono">Today in the hero, 320&times;744<br>30 status + 654 content + 60 nav<br>420px source at 0.762 scale<br>32px gap + fade below the CTA<br>renders the real components</div></div>
+  </div>
+</div>
+
+<div class="item">
+  <div class="eyebrow">Change 3 · token</div>
+  <h2>Radii up one step</h2>
+  <p>12px on a card is a 2019 default; 16px is where premium products sit now. This is the cheapest of the three and the one that touches the most surfaces — every card in the app and on the site, with no markup change.</p>
+  <div class="pair">
+    <div class="cell"><div class="lbl">Now</div><div class="mono">sm 8 &middot; md 12 &middot; lg 16 &middot; xl 20<br>card-primary 12 &middot; contextual 14 &middot; data 10</div><div class="r"><div style="border-radius:8px"></div><div style="border-radius:12px"></div><div style="border-radius:16px"></div><div style="border-radius:20px"></div></div></div>
+    <div class="cell"><div class="lbl">Proposed</div><div class="mono">sm 10 &middot; md 14 &middot; lg 18 &middot; xl 22<br>card-primary 16 &middot; contextual 14 &middot; data 12</div><div class="r"><div style="border-radius:10px"></div><div style="border-radius:14px"></div><div style="border-radius:18px"></div><div style="border-radius:22px"></div></div></div>
+  </div>
+</div>
+
+<div class="item">
+  <div class="eyebrow">Change 4 · token · app-facing</div>
+  <h2>A two-layer card shadow</h2>
+  <p>The current card shadow is a single <span class="mono">0 1px 2px</span> at 4% — effectively invisible, so cards sit flat on the warm ground and the app reads as a document rather than an interface. The replacement keeps that 1px contact shadow to seat the card, and adds a wide, heavily-offset soft layer to do the lifting.</p>
+  <p>Both layers stay well under the threshold where a shadow reads as decoration. You should feel it and not see it. This is the largest perceived-quality change of the four, and the one that touches the most surfaces — every card in the app.</p>
+  <div class="pair">
+    <div class="cell"><div class="lbl">Now</div><div class="mono">0 1px 2px rgba(26,26,26,.04)</div></div>
+    <div class="cell"><div class="lbl">Proposed — --shadow-card</div><div class="mono">0 1px 2px rgba(26,26,26,.04),<br>0 10px 28px -10px rgba(26,26,26,.10)</div></div>
+  </div>
+  <p style="margin-top:16px"><strong>Implementation note:</strong> the components set <span class="mono">background: var(--card)</span> inline with no shadow, so the token alone does nothing — each card component needs <span class="mono">box-shadow: var(--shadow-card)</span> added where it already sets that background. The app preview fakes this with an inline-style selector so it can be judged; that selector is a preview device, not the implementation.</p>
+</div>
+
+<div class="item">
+  <div class="eyebrow">Recommended, not built</div>
+  <h2>More air</h2>
+  <p>Section gaps 28px &rarr; 36px. Premium reads as space more than anything else, and this is the cheapest remaining lever. It is in the overlay as <span class="mono">--section-gap: 36px</span> but cannot be previewed by a token change: the screens set their gaps inline, so seeing it means editing the six screen files.</p>
+  <p>Also outstanding: an FAQ accordion and a facts band on the site, hero type up to ~68px, the Today hero line 44px &rarr; 52px, and replacing the bottom nav&rsquo;s placeholder dots with the app&rsquo;s real <span class="mono">IconToday / IconPlan / IconCoach / IconStrava</span> set.</p>
+</div>
+
+<div class="cta">
+  <a class="p" href="ui_kits/marketing/index-v2.html">Open the v2 homepage →</a>
+  <a class="p" href="ui_kits/app/index-v2.html">Open the v2 app →</a>
+  <a class="s" href="ui_kits/marketing/index.html">Current homepage</a>
+  <a class="s" href="ui_kits/app/index.html">Current app</a>
+</div>
+</div></body></html>

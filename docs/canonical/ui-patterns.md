@@ -100,6 +100,50 @@ Always use these CSS custom property names. Never hardcode hex values.
 | `--line` | Standard border (`rgba(26,26,26,0.08)`) |
 | `--line-strong` | Stronger border for current/active states |
 
+### v2 modernisation tokens (design_handoff_v2, 2026-09-10)
+
+| Token | Semantic role |
+|---|---|
+| `--radius-sm/md/lg/xl` | Corner radii — **raised one step** to `10 / 14 / 18 / 22`px (was `8/12/16/20`). 12px reads 2019; 14–18 is the current premium default. |
+| `--shadow-card` | **Card elevation** — two-layer (`0 1px 2px/.04` contact + `0 10px 28px -10px/.10` lift). See § Card Elevation. |
+| `--shadow-lifted` | Heavier variant for a raised/dragged surface. Same two-layer shape, deeper. |
+| `--section-gap` | `36px` (was 28) — primary section rhythm. Applied at call sites; screens set gaps inline. |
+| `--ground` / `--ground-soft` / `--ground-line` | Warm near-black surface for the ONE marketing dark band. See § Dark Ground. |
+| `--on-ground` / `--on-ground-2` / `--on-ground-mute` | Text on `--ground`. |
+| `--moss-on-ground` | `#8FB08F` — moss lifted for dark grounds (the brand moss goes muddy below ~20% luminance). Use for **any** moss on `--ground`; never `--moss` there. |
+
+---
+
+## Card Elevation (design_handoff_v2)
+
+Primary white cards carry `box-shadow: var(--shadow-card)` — a 1px contact shadow that seats the card on the warm ground plus a wide, heavily-offset soft layer that lifts it. Both sit below the threshold where a shadow reads as decoration: **you feel it, you don't see it.** Before this, cards were effectively flat and the app read as a document, not an interface.
+
+**Scope — apply to primary `--card` surfaces only:**
+- **Yes** — standalone white cards: `SessionCard` (live state only, not the transparent done/skipped state), `PlanIntroCard`, `NotificationRow`, `ZoneRings`, `TrendCard`, and marketing content cards.
+- **No** — contextual surfaces on `--warn-bg` (`CoachNoteBlock`, `PendingAdjustmentBanner`) and data surfaces on `--bg-soft` (`PreRunBandCard`, locked/empty states). These stay `box-shadow: none`.
+- **No** — chrome (bottom nav): a top hairline, not a floating card.
+- **Never nest.** A shadowed card inside a shadowed card doubles the effect and looks cheap — the parent carries the elevation, the children don't.
+
+> Live-app follow-up (device-verified): the inline `StatCell`/`StatRow`/`ActionListCard` primaries inside `DashboardClient.tsx` were left for an on-device pass — they sit inside other containers on the Coach/Me screens where nesting must be checked visually.
+
+## Dark Ground — "The receipt" band (design_handoff_v2)
+
+**Exactly one** near-black section per marketing page. It is a **punctuation mark, not a theme** — ADR-008 (single light theme, no dark mode, no toggle) stands. A second dark section would make it a dark theme; don't.
+
+- Surface `--ground`, text `--on-ground`, padding `112px 24px`, inner `max-width 760`, centred.
+- Eyebrow (`--moss-on-ground`) → statement (italic 500, `clamp(32px,5vw,48px)`, `--on-ground`) → body (`--on-ground-2`) → light-on-dark CTA (`color:--ground` on `background:--on-ground`) → **wordmark-only sign-off** (`<Wordmark size="sm" variant="light" />`).
+- **Never pair a second locked brand line** (tagline/statement) on this surface — one voice moment only (brand.md; DIV-021).
+- **No device frame on `--ground`** — a `PhoneFrame` renders its screen ground dark on a dark section (undiagnosed). Keep frames on light sections.
+- Home: `app/page.tsx` closing band. Reference implementation.
+
+## Marketing device frame — `PhoneFrame` (design_handoff_v2)
+
+`components/marketing/PhoneFrame.tsx` — a still (not a live demo) of the Today screen in a phone shell, for the marketing hero. A faithful **static** composition of the real Today anatomy (§1 SessionCard, § Session Card Layout) in Warm Slate tokens — the live screen can't mount on a public page (auth + data + client bundle). Fixed composition: 30px status bar + **654px content** + 60px nav = 744px screen; the content is authored so the "Log this session" CTA (the last element the shot must show) sits above a 32px bottom fade. Presentational, no hooks — renders inside the server-component page. Light sections only.
+
+## FAQ disclosure (design_handoff_v2)
+
+Native `<details>`/`<summary>` — zero-JS, server-rendered, keyboard-accessible; no new interaction model. Marker reset lives in `globals.css` (`summary::-webkit-details-marker`); the `+` affordance rotates to `×` on open. Dry brand voice, prices from `PRICING`.
+
 ---
 
 ## Component Patterns

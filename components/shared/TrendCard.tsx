@@ -125,6 +125,7 @@ function TrendCardSkeleton() {
     <div style={{
       background: 'var(--card)', border: '1px solid var(--line)',
       borderRadius: 'var(--radius-lg)', padding: '20px',
+      boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
     }}>
       {/* Eyebrow */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
@@ -294,6 +295,7 @@ export default function TrendCard(props: TrendCardProps) {
           style={{
             background: 'var(--card)', border: '1px solid var(--line)',
             borderRadius: 'var(--radius-lg)', padding: '20px',
+            boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
             cursor: 'pointer',
           }}
         >

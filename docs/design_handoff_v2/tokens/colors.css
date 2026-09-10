@@ -1,0 +1,22 @@
+/* Zonna — Warm Slate palette (ADR-007). Single light theme, no dark mode (ADR-008). */
+:root{
+/* Surface */
+--bg:#F3F0EB;--bg-soft:#EDE9E1;--card:#FFFFFF;
+/* Ink */
+--ink:#1A1A1A;--ink-2:#3D3A36;--mute:#8A857D;--mute-2:#B5B0A7;
+/* Lines */
+--line:rgba(26,26,26,0.08);--line-strong:rgba(26,26,26,0.15);
+/* Accent: moss */
+--moss:#6B8E6B;--moss-soft:rgba(107,142,107,0.1);--moss-mid:rgba(107,142,107,0.25);
+/* Semantic: warning / coaching */
+--warn:#B8853A;--warn-bg:#F5EBD4;--coach-ink:#3D2600;
+/* Semantic: danger — form/error states only, never training UI */
+--danger:#B84545;--danger-bg:rgba(184,69,69,0.1);
+/* Fixed third-party */
+--strava:#FC4C02;--strava-soft:rgba(252,76,2,0.1);
+/* Semantic aliases */
+--text-body:var(--ink-2);--text-heading:var(--ink);--text-muted:var(--mute);
+--surface-page:var(--bg);--surface-card:var(--card);--surface-inset:var(--bg-soft);
+--border-hairline:var(--line);--border-strong:var(--line-strong);
+--accent-primary:var(--moss);--accent-coach:var(--warn)
+}

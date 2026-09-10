@@ -266,6 +266,7 @@ export function ZoneRingsSkeleton({ label = 'This week in zones' }: { label?: st
         background: 'var(--card)',
         border: '1px solid var(--line)',
         borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
         padding: '20px',
       }}
     >
@@ -367,6 +368,7 @@ export default function ZoneRings(props: Props) {
           background: 'var(--card)',
           border: '1px solid var(--line)',
           borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
           padding: '20px',
         }}
       >

@@ -103,6 +103,9 @@ export default function SessionCard({
           ? 'none'
           : `1px solid var(--line)`,
         background: renderAsDone || isSkipped ? 'transparent' : 'var(--card)',
+        // v2 (design_handoff_v2) — two-layer elevation on the live white card only;
+        // the done/skipped states are transparent, so there is no surface to lift.
+        boxShadow: renderAsDone || isSkipped ? 'none' : 'var(--shadow-card)',
         cursor: onClick ? 'pointer' : 'default',
         minHeight: showHrPending ? '76px' : '64px',
         overflow: 'hidden',

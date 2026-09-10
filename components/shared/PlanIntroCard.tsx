@@ -29,6 +29,7 @@ export default function PlanIntroCard({ text, onBylineClick }: PlanIntroCardProp
         background:   'var(--card)',
         border:       '1px solid var(--line)',
         borderRadius: 'var(--radius-lg)',
+        boxShadow:    'var(--shadow-card)',   // v2 (design_handoff_v2)
         padding:      '14px 16px 14px 19px',
         overflow:     'hidden',
       }}
