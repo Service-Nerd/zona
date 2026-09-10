@@ -234,7 +234,7 @@ export default async function Home() {
         }}>
           <PillarCard
             title="A plan that fits you"
-            body="Rule-engine generated from your race, fitness, age, and weekly volume — not a one-size template. Pace bands and HR zones derived from your inputs, not guessed."
+            body="Rule-engine generated from your race, your training history, your week and what you have actually been running — not a one-size template. Pace bands and HR zones derived from your inputs, not guessed."
           />
           <PillarCard
             title="In-the-moment coaching"
