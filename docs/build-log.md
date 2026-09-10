@@ -21,6 +21,8 @@ it specific, no polish. The content system adds the voice.
 
 **Postable?:** yes — the "my fix worked and was still wrong" arc is the strongest one I've had, and it pairs with the same day's marketing lesson (verification that doesn't reach the change) without repeating it.
 
+**Late addition — the fix's own copy was lying.** I'd filed the runner-facing note as a follow-up and the founder pushed back on the habit of leaving a residual every time, which was fair, so I closed it in the same session. Doing it surfaced something filing it would have hidden for weeks: §98 had just made an existing line untrue. `levelFitNote` tells a gated runner *"quality starts earlier here than a novice plan"* — and when the yield ladder trims the onset all the way back to the ungated bound, it doesn't. The plan is compliant, the sentence was wrong, and no test would ever have caught a true-sounding string. **The follow-up I nearly deferred was the thing that found the defect in the work I'd just called done.**
+
 ---
 
 ## 2026-09-10 — GTM-SITE-01 close-out · My verification passed because it checked the wrong environment

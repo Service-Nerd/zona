@@ -39,3 +39,52 @@ describe('planRationaleNotes — the single owner of "why this plan"', () => {
     expect(levelFitNote(meta({}))).toBeNull()
   })
 })
+
+describe('§98 — the §1 yield is visible to the runner (ONSET-YIELD-NOTE-01)', () => {
+  const yielded = (over: any = {}) => ({
+    early_quality_onset: true,
+    onset_yield: { rungs: 2, bound: 5, effective: 4 },
+    ...over,
+  }) as any
+
+  it('a trimmed plan says so', () => {
+    const notes = planRationaleNotes(yielded())
+    const note = notes.find(n => n.label === 'Quality timing')
+    expect(note).toBeDefined()
+    expect(note!.text).toContain('starts later here')
+  })
+
+  it('an UNTRIMMED gated plan says nothing — 84% of the cohort', () => {
+    const notes = planRationaleNotes({ early_quality_onset: true } as any)
+    expect(notes.find(n => n.label === 'Quality timing')).toBeUndefined()
+    // and still gets to claim the early start, because it is true for them
+    expect(notes.find(n => n.label === 'Shaped for you')).toBeDefined()
+  })
+
+  it('STOPS the "earlier than a novice plan" claim when the trim reached a tie', () => {
+    // effective === bound: quality starts exactly when it would for an ungated
+    // runner, so the claim would be false. This is the case that would have
+    // silently shipped a untrue sentence.
+    const notes = planRationaleNotes(yielded({ onset_yield: { rungs: 3, bound: 5, effective: 5 } }))
+    expect(notes.find(n => n.label === 'Shaped for you')).toBeUndefined()
+    expect(notes.find(n => n.label === 'Quality timing')).toBeDefined()
+  })
+
+  it('keeps the claim when the trimmed plan is still genuinely earlier', () => {
+    const notes = planRationaleNotes(yielded({ onset_yield: { rungs: 1, bound: 6, effective: 4 } }))
+    expect(notes.find(n => n.label === 'Shaped for you')).toBeDefined()
+  })
+
+  it('a fell-through plan (rung 0, gate suppressed) explains itself and claims nothing', () => {
+    const notes = planRationaleNotes({
+      early_quality_onset: false,
+      onset_yield: { rungs: 0, bound: 5, effective: 5 },
+    } as any)
+    expect(notes.find(n => n.label === 'Quality timing')).toBeDefined()
+    expect(notes.find(n => n.label === 'Shaped for you')).toBeUndefined()
+  })
+
+  it('a plan the ladder never touched is completely unchanged', () => {
+    expect(planRationaleNotes({} as any)).toEqual([])
+  })
+})

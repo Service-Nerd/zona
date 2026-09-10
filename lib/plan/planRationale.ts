@@ -38,10 +38,39 @@ export const PLAN_RATIONALE_MAX_NOTES = 3
  * sooner than a novice, and saying why is honesty, not a brag.
  */
 export function levelFitNote(meta: Plan['meta']): string | null {
+  // §98 — the claim below is "earlier than a novice plan", and after CB-ONSET-YIELD-01
+  // that is not always true for a gated runner. The §1 yield ladder can trim the onset
+  // all the way back to the on-ramp an UNGATED runner would get (`effective === bound`),
+  // at which point quality starts exactly when it would for anyone else and the line
+  // would be overclaiming. The plan is still compliant, not compromised — but the
+  // honest note for that runner is `onsetYieldNote`, not this one.
+  if (meta.onset_yield && meta.onset_yield.effective >= meta.onset_yield.bound) return null
   if (meta.early_quality_onset) {
     return 'Quality work starts earlier here than a novice plan — your training history says your legs are ready for it.'
   }
   return null
+}
+
+/**
+ * §98 (CB-ONSET-YIELD-01) — the runner's half of the §1 yield.
+ *
+ * The ladder can push a demonstrated runner's first quality session 1-3 weeks later
+ * than §89 alone would, or drop the early onset entirely, to keep the plan's
+ * plan-wide easy/hard split inside §1's ceiling. Without this the decision is
+ * invisible: stamped in `meta.onset_yield` and shown nowhere — the exact gap
+ * PLAN-NOTE-SURFACE-01 exists to close.
+ *
+ * ONE string for both outcomes on purpose. It is true whether the ladder trimmed the
+ * onset by a week (still earlier than an ungated runner) or fell through to the
+ * ungated plan (not earlier at all), so there is no branch to get wrong and no way
+ * for the copy to drift from what the engine did.
+ *
+ * Stamped only when the ladder ACTED — 84% of gated plans comply at full benefit and
+ * are never stamped, so they say nothing here (Wood: once, honest, never a brag).
+ */
+export function onsetYieldNote(meta: Plan['meta']): string | null {
+  if (!meta.onset_yield) return null
+  return 'Quality starts later here than your training history alone would allow — across the whole plan, more hard sessions would tip too much of it out of easy.'
 }
 
 /**
@@ -58,6 +87,8 @@ export function planRationaleNotes(meta: Plan['meta'] | undefined | null): PlanR
   if (meta.long_run_shortfall_note) notes.push({ label: 'Long run',      text: meta.long_run_shortfall_note })
   if (meta.fitness_signal_note)     notes.push({ label: 'Your level',    text: meta.fitness_signal_note })
   if (meta.hard_pref_note)          notes.push({ label: 'Hard sessions', text: meta.hard_pref_note })
+  const yielded = onsetYieldNote(meta)
+  if (yielded)                      notes.push({ label: 'Quality timing', text: yielded })
   if (meta.terrain_effort_note)     notes.push({ label: 'Off-road',      text: meta.terrain_effort_note })
 
   // The "shaped for you" line ranks LAST (Wood: never a brag; constraints matter more).
