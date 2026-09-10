@@ -6,6 +6,20 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-10 — SIG-ULTRA-UNBUILT-01 + FOUNDATION-CHOICE-RESIZE-01 · A board sitting that mostly said "delete this", and a bug fixed by making a route re-run the engine it was built never to touch
+**Shipped:** Two things from the "buildable now" backlog. (1) The Coaching Board ruled on 8 ultra `PLAN_SIGNATURES` fields that described behaviour the engine never implemented — 5 struck (3 already done by a principle, 2 deleted as aspiration), 3 kept as ratified-but-unbuilt commitments the SLT will sequence. (2) A real fix: on the >28-day foundation "choice" band, a runner who *deferred* the "add a foundation block?" decision and then said yes got their hard sessions a week later than a runner who said yes up front — same runner, same block, worse plan, purely because of *when* they tapped a modal.
+
+**Dev learning:** The fix hinged on a property I almost didn't check: the §91 on-ramp credit is applied **only inside `if (earlyOnset)`** in `computePhases`. That one branch is the difference between "re-run the whole engine on a second route and pray the enrichment survives" and "no-op for ~everyone, gated on a flag the plan already stamps." The plan carries `meta.early_quality_onset`, so the resize is provably a no-op unless it would actually change something. The other near-miss was anchoring: I was nervous that re-running `generateRulePlan` with `planStart = meta.plan_start` would drift — but `calcPlanLength` counts back `totalWeeks` from race week, so passing the already-anchored start makes `weeksAvailable === totalWeeks` and it round-trips exactly. I didn't *trust* that, I wrote a parity test that generates the plan both ways under a frozen clock and asserts byte-identical skeletons. That test is the whole safety story.
+
+**Product/creator learning:** Half of "what should we build?" is "we already built it, we just lied about it in config." Five of the eight ultra fields were decoration — three were done by a principle and the flag took the credit, two were pure aspiration. A `100K` plan that `night_run_optional` implies exists, on a PAID distance, is worse than saying nothing. The board's most useful output was permission to *delete*, and a firm "you may NOT delete these three" on the ones that are real. Restraint cuts both ways.
+
+**AI-building learning:** The Coaching Board skill's mandatory conflict-scan is what stopped me miscategorising: I'd have filed all 8 as "unbuilt debt", but the scan forced me to check each against the shipped principles and three turned out to be *superseded* (§24d/§47 already do the work), not debt. Different disposition, different register, different honesty. The distinction only appeared because the process made me read the constitution instead of the config.
+
+**The honest bit:** I spent a good while designing an enrichment re-graft for paid users (re-run gives rule copy; graft the AI copy back onto unchanged weeks) — and it's genuinely narrow: it only fires for early-onset + >28-day gap + defer-then-add + already-enriched. Realistically a handful of users, maybe zero today. For a P3. I kept it because losing a paid runner's coaching voice on a re-size is a visible regression and the graft reused `revertWeeksToRuleCopy` so it was cheap — but I could argue I over-built it.
+
+**Hook material:** Same runner, same 3-week foundation block: tap "add" *before* you see the plan → first hard session in week 1. Tap it *after* → week 2. The engine was giving you a worse plan for reading it first.
+**Postable?:** yes — the "config that describes behaviour that doesn't exist" angle is a strong one, and "a bug where reading your plan made it worse" is a hook.
+
 ## 2026-09-10 — CAT-ROW-ELIGIBILITY-01 + §99 · The fix I shipped exposed a lie the app had been telling since R23
 **Shipped:** The catalogue selector can finally say "this row needs a pace this runner has", which unblocked a migration the board had ruled correct six days earlier and then reverted — and the migration immediately exposed that one session had been telling runners 45 minutes for a session that takes over 70.
 

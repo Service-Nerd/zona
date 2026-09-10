@@ -355,6 +355,27 @@ post-generation — the literal answer to this ADR's proposed
   `'choice'` band (>28-day gap) decision — composes onto the client's
   existing plan without re-running the rule engine or re-paying for AI
   enrichment.
+  - **AMENDMENT (FOUNDATION-CHOICE-RESIZE-01, 2026-09-10).** The "without
+    re-running the rule engine" clause is **narrowed to the AI enricher, not
+    the deterministic engine.** Because the base was sized at generation
+    against `foundation_decision: undefined` (the board-ratified conservative
+    default — never presume 'add'), §91's on-ramp credit was never applied, so
+    a deferred-then-added block delivered a *later* quality onset than the
+    identical decision made up front — the non-monotonic-onset defect §91
+    exists to remove, still live on this one band. The route now calls
+    `lib/plan/foundationResize.ts → resizeForDeferredFoundationAdd`, which
+    **re-runs `generateRulePlan` (deterministic, no AI) with the decision** to
+    re-derive the base — the only owner of phase sizing, per this ADR's own
+    single-construction principle; re-deriving it anywhere else is the
+    two-writer split (DELOAD-OWNER-01). It **still never re-pays for AI
+    enrichment**: the re-run yields rule copy, and the runner's existing
+    enriched copy is grafted back onto every week the re-size left structurally
+    unchanged (the `applied_partial` state, ENRICH-PARTIAL-01). It is a **no-op
+    for every non-early-onset plan** (the §91 credit is consumed only inside
+    `if (earlyOnset)` in `computePhases`, gated on the stamped
+    `meta.early_quality_onset`). Anchoring is provably stable — `calcPlanLength`
+    counts back `totalWeeks` from race week, so `planStart = meta.plan_start`
+    round-trips — and the onset-parity is pinned by `foundationResize.test.ts`.
 - **`GeneratePlanScreen.tsx`**: all client-side construction
   (`generateFoundationBlock`) and the best-effort console-only check
   (`validateFoundationBlock`) are removed. One piece of client-side logic

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { getUserTier } from '@/lib/trial'
 import { composePlanWithFoundation } from '@/lib/plan/foundationCompose'
+import { resizeForDeferredFoundationAdd } from '@/lib/plan/foundationResize'
 import { enforceViolations } from '@/lib/plan/invariants'
 import { formatDate } from '@/lib/plan/length'
 import type { GeneratorInput, Plan } from '@/types/plan'
@@ -12,13 +14,15 @@ import type { GeneratorInput, Plan } from '@/types/plan'
 // meta.foundation_gap_class === 'choice' (>28-day gap): the server declined
 // to add a block without asking, and the client showed the modal.
 //
-// Deliberately NOT a re-call to /api/generate-plan: this must not re-run
-// generateRulePlan or re-pay for AI enrichment (28-35s, real cost) just to
-// prepend a few easy weeks onto an already-good plan the runner may have
-// already seen or saved. Auth only, no tier gate — foundation block is FREE
-// infrastructure (ADR-020 §SLT-1), and this route calls no AI, so it uses the
-// plain auth pattern (mirrors app/api/revert-adjustment/route.ts), not
-// guardAiRequest's AI-cost rate limiting.
+// ADR-020 AMENDMENT (FOUNDATION-CHOICE-RESIZE-01, 2026-09-10): this route may
+// re-run the RULE ENGINE — deterministic, no AI — to apply §91's on-ramp credit
+// that a DEFERRED decision could not receive at generation (the base was sized
+// against `foundation_decision: undefined`, the board-ratified conservative
+// default). It still must NEVER re-pay for AI enrichment (28-35s, real cost).
+// `resizeForDeferredFoundationAdd` is the single owner of that re-run: it is a
+// no-op for every non-early-onset plan (the §91 credit changes nothing there)
+// and preserves the runner's enriched copy on every week the re-size left
+// structurally unchanged.
 //
 // The server re-derives gapClass itself from plan.meta.plan_start + its own
 // clock — only `decision` is client-supplied, per ADR-020's own framing
@@ -34,9 +38,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'input and plan are required' }, { status: 422 })
     }
 
+    const tier = await getUserTier(user.id)
     const today = formatDate(new Date())
+    // Apply §91's on-ramp credit the deferred decision missed, then compose the
+    // block onto the (possibly re-sized) plan. `resized` === `body.plan` for a
+    // non-early-onset plan, so this is free for the common case.
+    const resized = resizeForDeferredFoundationAdd(body.plan, body.input, tier, today)
     const { plan: composed, gapClass, violations } =
-      composePlanWithFoundation(body.plan, body.input, today, 'add')
+      composePlanWithFoundation(resized, body.input, today, 'add')
     enforceViolations(violations)
     composed.meta.foundation_gap_class = gapClass
 
