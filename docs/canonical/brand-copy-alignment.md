@@ -182,6 +182,7 @@ These are the gaps between what the code does and what it should do.
 | DIV-018 | `app/dashboard/DashboardClient.tsx:8077` (`LockedCoachingPreview`) | `'Your coaching appears here.'` — generic SaaS register. Tracked as part of VOICE-PATCH-01. | ✅ Fixed 2026-05-23 — now `'Kit reads here. He needs your runs first — Strava or Apple Health.'` |
 | DIV-019 | `app/auth/login/page.tsx:168` (signup success) | `'…or sign in if confirmation is disabled.'` — internal engineering escape hatch leaked into user copy. Tracked as part of VOICE-PATCH-01. | ✅ Fixed 2026-05-23 — now `'Account created. Check your email.'` |
 | DIV-020 | Tagline repetition | `BRAND.tagline` rendered on splash + login + orientation. Over-use degrades the asset. Tracked as STOP-01 (review 2026-05-23). | ✅ Fixed 2026-05-23 — splash + welcome + orientation now use `BRAND.voiceAnchor`; tagline stays on login only |
+| DIV-021 | `app/page.tsx` hero | **Two locked lines on one surface.** `BRAND.tagline` was rendered as a moss kicker directly above `BRAND.marketingH1` — the web expression of line #1 — in the same hero block. brand.md: *"never mix two on one surface"*, and its placement table gives the hero to the H1 and the tagline to login/loading/OG/meta. Same class as DIV-020. | ✅ Fixed 2026-09-10 (GTM-SITE-01) — kicker removed; the tagline still serves this page as the meta/OG description. |
 
 ---
 

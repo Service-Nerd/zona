@@ -132,17 +132,19 @@ export default async function Home() {
         padding: '56px 24px 80px',
         textAlign: 'center',
       }}>
-        {/* Tagline elevated to hero kicker — voice leads on this surface. */}
-        <div style={{
-          fontFamily: 'var(--font-brand)',
-          fontSize: 'clamp(17px, 2.4vw, 21px)',
-          fontWeight: 600, lineHeight: 1.3, letterSpacing: '-0.01em',
-          color: 'var(--moss)',
-          marginBottom: '18px',
-        }}>
-          {BRAND.tagline}
-        </div>
+        {/* GTM-SITE-01 — the tagline kicker was REMOVED from this hero.
+            brand.md locks three lines and says never mix two on one surface;
+            this stacked `BRAND.tagline` directly above `BRAND.marketingH1`, the
+            web expression of line #1. Two locked lines, one block.
 
+            brand.md's placement table gives the tagline "Login, loading, OG
+            image, meta description" and gives the landing hero to the H1. The
+            tagline still does its job on THIS page as the meta/OG description;
+            it just no longer competes with the headline visually.
+
+            Precedent: DIV-020 ("tagline rendered on splash + login +
+            orientation... over-use degrades the asset") closed the same way. */}
+        
         <h1 style={{
           fontFamily: 'var(--font-brand)',
           fontSize: 'clamp(36px, 6vw, 56px)',
