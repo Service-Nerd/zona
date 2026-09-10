@@ -5,10 +5,17 @@
 // DashboardClient.tsx — a client component that needs auth, a generated plan
 // and live user data, and the marketing page redirects signed-in visitors away.
 // It cannot be mounted here. So this is a faithful composition built from the
-// real Today anatomy (ui-patterns.md § SessionCard / Session Card Layout /
-// screen-architecture.md) using Warm Slate tokens, so it reads as the product
-// and stays on-palette automatically. Purely presentational — no hooks, no
-// handlers, no client boundary — so it renders inside the server-component page.
+// real Today anatomy (DashboardClient TodayScreen: wordmark row → context row →
+// greeting + 56px two-line hero → date strip → "Hold the zone" → session card →
+// zone bar → CTA) using Warm Slate tokens, so it reads as the product and stays
+// on-palette automatically. Purely presentational — no hooks, no handlers, no
+// client boundary — so it renders inside the server-component page.
+//
+// THE ANATOMY IS COPIED, NOT INVENTED. The signature of the real Today screen
+// is the giant 56px two-line restraint statement ("8 km, / easy.") — the number
+// then the adverb, ink then moss. There is NO "Today" title on the real screen.
+// If the live TodayScreen hero, context row or session-card shape changes, update
+// this still to match — it exists to look like the product, not like a brochure.
 //
 // THE CROP IS MEASURED, NOT CHOSEN (handoff Change 2). The content area is a
 // fixed 654px: 30px status bar + 654px content + 60px nav = the 744px screen.
@@ -16,7 +23,7 @@
 // the last element the shot must show — fully visible above a 32px bottom fade,
 // so the fade can only ever sit over empty space, never over content. If the
 // composition below grows past the CTA, raise CONTENT_H by the same amount and
-// keep the CTA above the fade. Pinned by phoneFrame.test.tsx.
+// keep the CTA above the fade.
 //
 // KNOWN CONSTRAINT (handoff): a device frame renders its screen ground dark when
 // placed inside a --ground (dark) section — cause undiagnosed. KEEP THIS ON A
@@ -29,6 +36,39 @@ const SCREEN_W = 320
 const STATUS_H = 30
 const CONTENT_H = 654
 const NAV_H = 60
+
+/** Date-strip day cell — matches DashboardClient DateStrip: day letter, date
+ *  circle (moss fill on today), session dot beneath. */
+function DayCell({ letter, date, today, dotColor }: {
+  letter: string; date: string; today?: boolean; dotColor?: string
+}) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
+      padding: '4px 2px',
+    }}>
+      <span style={{
+        fontSize: '10px', letterSpacing: '0.04em', textTransform: 'uppercase',
+        color: today ? 'var(--moss)' : 'var(--ink-2)',
+      }}>{letter}</span>
+      <div style={{
+        width: '26px', height: '26px', borderRadius: '50%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: today ? 'var(--moss)' : 'transparent',
+      }}>
+        <span style={{
+          fontSize: '13px', fontWeight: today ? 600 : 400,
+          color: today ? 'var(--card)' : 'var(--mute)',
+          fontVariantNumeric: 'tabular-nums',
+        }}>{date}</span>
+      </div>
+      <div style={{
+        width: '4px', height: '4px', borderRadius: '50%',
+        background: dotColor ?? 'transparent',
+      }} />
+    </div>
+  )
+}
 
 /** Bottom-nav tab — matches the real app's four tabs (Today · Plan · Coach · Me;
  *  Strava is admin-only and has no tab — CLAUDE.md). Minimal glyphs, not the
@@ -109,73 +149,144 @@ export function PhoneFrame() {
 
         {/* ── Content — fixed 654px, authored to fit ────────────────────── */}
         <div style={{ height: CONTENT_H, flexShrink: 0, position: 'relative' }}>
-          <div style={{ padding: '8px 18px 0', display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
-            {/* Header — wordmark chrome + greeting + voice anchor */}
-            <div>
-              <div style={{
-                fontSize: '12px', fontWeight: 600, color: 'var(--ink)',
-                letterSpacing: '0.14em', textTransform: 'lowercase', marginBottom: '14px',
-              }}>{BRAND.name.toLowerCase()}</div>
-              <div style={{
-                fontFamily: 'var(--font-brand)', fontSize: '26px', fontWeight: 700,
-                lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--ink)',
-              }}>Today</div>
-              <div style={{ fontSize: '13px', color: 'var(--mute)', marginTop: '4px' }}>
-                Tuesday · Week 6 of 14
-              </div>
+          {/* Wordmark row — brand chrome + moss dot. No "Today" title: the real
+              screen leads with the hero, not a page heading. */}
+          <div style={{
+            padding: '12px 18px 0', display: 'flex', alignItems: 'center', gap: '6px',
+          }}>
+            <span style={{
+              fontSize: '13px', fontWeight: 600, color: 'var(--ink)',
+              letterSpacing: '0.14em', textTransform: 'lowercase',
+            }}>{BRAND.name.toLowerCase()}</span>
+            <span style={{ position: 'relative', width: '8px', height: '8px' }}>
+              <span style={{ position: 'absolute', inset: '-3px', borderRadius: '50%', background: 'var(--moss-soft)' }} />
+              <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'var(--moss)' }} />
+            </span>
+          </div>
+
+          {/* Hero block — context row · greeting · 56px two-line restraint hero */}
+          <div style={{ padding: '18px 18px 0' }}>
+            {/* Context row: phase · Week N ——— race-countdown pill */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <span style={{
+                fontSize: '11px', fontWeight: 600, color: 'var(--mute)',
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+              }}>Base · Week 6</span>
+              <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
+              <span style={{
+                fontSize: '11px', fontWeight: 600, color: 'var(--moss)',
+                letterSpacing: '0.04em', background: 'var(--moss-soft)',
+                borderRadius: '20px', padding: '3px 9px',
+              }}>84 days out</span>
             </div>
 
-            {/* Session card — the main object. Left accent (easy = --s-easy),
-                metric hierarchy (zone · HR · pace · distance/duration), coach note. */}
+            {/* Greeting */}
+            <div style={{
+              fontSize: '15px', fontWeight: 500, color: 'var(--mute)',
+              marginBottom: '4px', lineHeight: 1,
+            }}>Good morning</div>
+
+            {/* The signature hero — number (ink) then adverb (moss), 56px */}
+            <div style={{ lineHeight: 1 }}>
+              <span style={{
+                fontSize: '56px', fontWeight: 800, color: 'var(--ink)',
+                letterSpacing: '-2.5px', fontVariantNumeric: 'tabular-nums',
+              }}>8 km,</span>
+              <br />
+              <span style={{
+                fontSize: '56px', fontWeight: 800, color: 'var(--moss)',
+                letterSpacing: '-2.5px',
+              }}>easy.</span>
+            </div>
+          </div>
+
+          {/* Date strip — week of day cells, today filled moss */}
+          <div style={{
+            marginTop: '20px', paddingBottom: '10px',
+            borderBottom: '0.5px solid var(--line-strong)',
+          }}>
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)',
+              padding: '0 8px', gap: '2px',
+            }}>
+              <DayCell letter="M" date="9" dotColor="var(--s-easy)" />
+              <DayCell letter="T" date="10" today dotColor="var(--s-easy)" />
+              <DayCell letter="W" date="11" dotColor="var(--s-quality)" />
+              <DayCell letter="T" date="12" />
+              <DayCell letter="F" date="13" dotColor="var(--s-easy)" />
+              <DayCell letter="S" date="14" dotColor="var(--s-long)" />
+              <DayCell letter="S" date="15" />
+            </div>
+          </div>
+
+          {/* Hold the zone — daily brand anchor, moss, above the session card */}
+          <div style={{
+            padding: '12px 18px 0', display: 'flex', alignItems: 'center', gap: '8px',
+          }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--moss)' }} />
+            <span style={{
+              fontSize: '11px', fontWeight: 700, color: 'var(--moss)',
+              letterSpacing: '0.12em', textTransform: 'uppercase',
+            }}>Hold the zone · Z2 today</span>
+          </div>
+
+          {/* Today's session — section label + session card + zone bar + CTA */}
+          <div style={{ padding: '14px 18px 0' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              marginBottom: '10px',
+            }}>
+              <span style={{
+                fontSize: '10px', fontWeight: 700, color: 'var(--mute)',
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+              }}>Today&apos;s session</span>
+              <span style={{ fontSize: '10px', color: 'var(--mute-2)' }}>Zone 2</span>
+            </div>
+
+            {/* Session card — left accent (easy = --s-easy), name + detail, right metric */}
             <div style={{
               display: 'flex', alignItems: 'stretch',
-              background: 'var(--card)', border: '1px solid var(--line)',
-              borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
+              background: 'var(--card)', border: '1px solid var(--line-strong)',
+              borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-card)',
               overflow: 'hidden',
             }}>
-              <div style={{ width: '3px', flexShrink: 0, background: 'var(--s-easy)' }} />
-              <div style={{ flex: 1, padding: '16px 16px 16px 15px' }}>
-                <div style={{
-                  fontSize: '10px', fontWeight: 700, color: 'var(--mute)',
-                  textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px',
-                }}>Easy run</div>
-                <div style={{
-                  fontFamily: 'var(--font-brand)', fontSize: '19px', fontWeight: 600,
-                  color: 'var(--ink)', marginBottom: '12px',
-                }}>Easy run — Zone 2</div>
-                <div style={{
-                  display: 'flex', gap: '16px', flexWrap: 'wrap',
-                  fontSize: '13px', color: 'var(--ink-2)', marginBottom: '12px',
-                }}>
-                  <div><strong style={{ color: 'var(--ink)' }}>8 km</strong> · 55 min</div>
-                  <div><strong style={{ color: 'var(--ink)' }}>&lt; 145 bpm</strong></div>
-                  <div>6:30–7:00 /km</div>
+              <div style={{ width: '3px', flexShrink: 0, background: 'var(--s-easy)', borderRadius: '2px 0 0 2px' }} />
+              <div style={{
+                flex: 1, padding: '14px 12px 14px 14px',
+                display: 'flex', alignItems: 'center', gap: '10px',
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2 }}>
+                    Easy run
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--mute)', marginTop: '2px', lineHeight: 1.3 }}>
+                    Zone 2 · &lt; 145 bpm · 6:30 /km
+                  </div>
                 </div>
                 <div style={{
-                  fontSize: '12px', lineHeight: 1.5, color: 'var(--mute)',
-                  borderTop: '1px solid var(--line)', paddingTop: '10px', fontStyle: 'italic',
-                }}>
-                  Keep HR below your Zone 2 ceiling — walk if it climbs.
-                </div>
+                  fontSize: '17px', fontWeight: 700, color: 'var(--ink)',
+                  fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.3px', lineHeight: 1,
+                }}>8 km</div>
               </div>
             </div>
 
-            {/* Voice anchor strip — brand moment (BRAND.voiceAnchor is in-product) */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              fontSize: '13px', color: 'var(--moss)', fontWeight: 600,
-            }}>
-              <span style={{ width: '3px', height: '16px', background: 'var(--moss)', borderRadius: '2px' }} />
-              {BRAND.voiceAnchor}
+            {/* Zone bar — 5 segments, Zone 2 lit (easy). Glance-only, no labels. */}
+            <div style={{ display: 'flex', gap: '3px', marginTop: '10px' }}>
+              {[1, 2, 3, 4, 5].map(z => (
+                <div key={z} style={{
+                  flex: 1, height: '4px', borderRadius: '2px',
+                  background: z === 2 ? 'var(--s-easy)' : 'var(--bg-soft)',
+                }} />
+              ))}
             </div>
 
             {/* Primary CTA — the last element the crop MUST show (measured). */}
             <button style={{
-              width: '100%', padding: '14px', border: 'none',
+              marginTop: '10px', width: '100%', padding: '14px', border: 'none',
               borderRadius: 'var(--radius-md)', background: 'var(--moss)',
-              color: 'var(--card)', fontSize: '15px', fontWeight: 600, fontFamily: 'var(--font-ui)',
-              cursor: 'default',
+              color: 'var(--card)', fontSize: '14px', fontWeight: 600,
+              fontFamily: 'var(--font-ui)', letterSpacing: '0.02em', cursor: 'default',
             }}>Log this session</button>
           </div>
 
