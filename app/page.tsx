@@ -187,8 +187,9 @@ export default async function Home() {
           marginTop: '22px',
           fontSize: '14px', lineHeight: 1.5, color: 'var(--ink-2)',
         }}>
-          Two weeks, full access. Then {PRICING.monthly.display}/month or {PRICING.annual.display}/year —
-          or you walk. We won&apos;t email you to come back.
+          Two weeks, full access. After that, keep the plan you built on the free tier, or
+          stay on all of it for {PRICING.monthly.display}/month or {PRICING.annual.display}/year.
+          We won&apos;t email you to come back.
         </p>
 
         {/* HR-SYNC-04 — device expectation-setter. Replaces the older, weaker
@@ -278,8 +279,8 @@ export default async function Home() {
       }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <Eyebrow>Personalised, not generic</Eyebrow>
-          <SectionTitle sub="Race, fitness, age, weekly volume. Pace bands and HR zones are derived from those — not lifted from a template.">
-            Your plan starts from four answers.
+          <SectionTitle sub="Your race, your history, your week, your legs. Pace bands and HR zones are derived from what you actually tell it, not lifted from a template.">
+            Your plan starts from your answers.
           </SectionTitle>
 
           {/* Answers → generated session. Lifted from the real wizard + Today
@@ -550,10 +551,24 @@ function PillarCard({ title, body }: { title: string; body: string }) {
 /** Wizard answers receipt — lifted from GeneratePlanScreen's core inputs.
  *  Four answered rows: the inputs the rule-engine actually derives from. */
 function AnswersCard() {
+  // Mirrors the REAL wizard, which asks ~15 questions. The card previously
+  // showed four and the section was headed "four answers" — written when the
+  // wizard was that short, and never updated through WIZARD-REDESIGN, §79
+  // (fitness level), ADR-021 (recent quality training), CB-TERRAIN-01 and the
+  // hard-session step.
+  //
+  // Deliberately shows the INPUTS rather than the count (SLT, this review):
+  // Sutherland wanted the depth surfaced as proof of consideration, Wood warned
+  // that "15 questions" as a headline reads as friction and suppresses starts.
+  // Listing them lets the depth speak without turning it into a number.
   const answers: Array<[string, string]> = [
     ['How far?', 'Half marathon'],
     ['Goal', 'Sub-2:00'],
     ['Weekly volume', '20–40 km'],
+    ['Longest run', '15–20 km'],
+    ['Training history', '2–5 years'],
+    ['Recent hard work', 'Here and there'],
+    ['Days you run', 'Tue Thu Sat Sun'],
     ['Age', '38'],
   ]
   return (
@@ -589,6 +604,9 @@ function AnswersCard() {
           </div>
         ))}
       </div>
+      <p style={{ fontSize: '12px', lineHeight: 1.45, color: 'var(--mute)', margin: '14px 0 0' }}>
+        Plus injury history, terrain, your weekday time cap and a recent race result if you have one.
+      </p>
     </div>
   )
 }
