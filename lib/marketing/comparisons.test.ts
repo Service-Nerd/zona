@@ -6,7 +6,7 @@
 // cover pages that do not exist yet.
 
 import { describe, it, expect } from 'vitest'
-import { COMPARISON_ARTICLES, comparisonArticleJsonLd, type ArticleBlock } from './comparisons'
+import { COMPARISON_ARTICLES, COMPARISON_HUB, comparisonArticleJsonLd, type ArticleBlock } from './comparisons'
 import { BRAND } from '@/lib/brand'
 
 const copyOf = (block: ArticleBlock): string =>
@@ -124,6 +124,31 @@ describe('comparison articles — Article JSON-LD', () => {
       for (const k of ['headline', 'datePublished', 'dateModified', 'description', 'mainEntityOfPage'] as const) {
         expect(String(ld[k]).length).toBeGreaterThan(0)
       }
+    }
+  })
+})
+
+describe('comparison hub — /compare', () => {
+  it('obeys the same SEO limits as the articles', () => {
+    expect(COMPARISON_HUB.metaTitle.length).toBeLessThan(60)
+    expect(COMPARISON_HUB.metaDescription.length).toBeLessThan(155)
+  })
+
+  it('has no em dashes, and names the brand by interpolation', () => {
+    const copy = [COMPARISON_HUB.metaTitle, COMPARISON_HUB.metaDescription,
+                  COMPARISON_HUB.h1, COMPARISON_HUB.sub, COMPARISON_HUB.eyebrow]
+    expect(copy.filter(c => c.includes('—'))).toEqual([])
+    expect(copy.some(c => c.includes(BRAND.name))).toBe(true)
+  })
+
+  it('every article can be rendered as a hub card', () => {
+    // The hub is driven off COMPARISON_ARTICLES, so pages 2-8 list themselves.
+    // `hubSummary` is required precisely so a new article cannot ship with a
+    // blank card, which is the failure mode of a derived-summary hub.
+    for (const a of COMPARISON_ARTICLES) {
+      expect(a.hubSummary.length).toBeGreaterThan(0)
+      expect(a.hubSummary).not.toBe(a.metaDescription)
+      expect(a.lastUpdated.length).toBeGreaterThan(0)
     }
   })
 })

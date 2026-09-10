@@ -97,6 +97,7 @@ export default function PlansHubPage() {
         <p style={{ fontFamily: 'var(--font-brand)', fontSize: 15, fontWeight: 700, color: 'var(--ink-2)', margin: '0 0 16px' }}>{BRAND.brandStatement}</p>
         <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13 }}>
           <Link href="/" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Home</Link>
+          <Link href="/compare" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Comparisons</Link>
           <Link href="/support" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Support</Link>
           <Link href="/privacy" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Privacy</Link>
           <Link href="/terms" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Terms</Link>

@@ -59,6 +59,11 @@ export interface ComparisonArticle {
   signature: string
   /** The single plain-text App Store link that closes every article. */
   appStoreLinkText: string
+  /** One line for the /compare hub card: what this page actually answers.
+   *  REQUIRED on purpose. A hub entry that has to be written is a hub entry
+   *  that exists; deriving it from the meta description would produce eight
+   *  near-identical cards. */
+  hubSummary: string
 }
 
 const p = (...spans: ArticleSpan[]): ArticleBlock => ({ kind: 'p', spans })
@@ -79,6 +84,7 @@ export const COMPARISON_ARTICLES: ComparisonArticle[] = [
     publishedISO: '2026-09-10',
     signature: `Written by Russ Shear, who built ${BRAND.name} after running 100km in July 2026 and walking the last 40 of it.`,
     appStoreLinkText: `Get ${BRAND.name} on the App Store`,
+    hubSummary: `Runna is Strava's now. What else exists, what it costs, and who each one actually suits.`,
     body: [
       p(`If you want a coaching app that isn't Runna, three actually work: Coopah, TrainAsONE, and ${BRAND.name}, which I built. Runna is still the best-resourced app in this category. The plans are good, it runs on iOS and Android, and it's now backed by Strava's engineering team. The reason to look elsewhere isn't that Runna is bad. It's that Runna is now Strava's, and Strava is built on kudos, segments, leaderboards and Local Legend badges.`),
       p(`Strava announced the acquisition in 2025 and the deal has since closed. Runna says it's staying a standalone app "for the foreseeable future," and you can still buy a Runna subscription on its own without touching Strava at all. But the two are now one company, and the joint Strava-and-Runna subscription is the direction being pushed. If you'd rather your coach and your social feed lived in different apps, that's worth knowing going in.`),
@@ -130,6 +136,21 @@ export function comparisonArticleJsonLd(article: ComparisonArticle) {
     url: `${APP_URL}/${article.slug}`,
   })
 }
+
+/**
+ * Copy for the /compare hub. Here rather than in the page component for the same
+ * reason the article copy is: a wording change touches one file, and the hub and
+ * its cards cannot drift apart.
+ */
+export const COMPARISON_HUB = {
+  slug: 'compare',
+  metaTitle: `Running app comparisons | ${BRAND.name}`,
+  metaDescription:
+    `Honest comparisons of the running apps people choose between, including where ${BRAND.name} is the wrong answer. No affiliate links, no scores out of ten.`,
+  eyebrow: 'Comparisons',
+  h1: `Which running app, honestly.`,
+  sub: `Comparisons of the coaching apps people actually choose between, including the ones that beat ${BRAND.name} and the runners it is wrong for. No affiliate links, no scores out of ten.`,
+} as const
 
 export function getComparison(slug: string): ComparisonArticle | undefined {
   return COMPARISON_ARTICLES.find(a => a.slug === slug)

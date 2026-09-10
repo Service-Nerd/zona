@@ -440,6 +440,7 @@ export default async function Home() {
             <div>© {new Date().getFullYear()} {BRAND.name}</div>
             <div style={{ display: 'flex', gap: '20px' }}>
               <Link href="/plans" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Free plans</Link>
+              <Link href="/compare" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Comparisons</Link>
               <Link href="/support" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Support</Link>
               <Link href="/privacy" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Privacy</Link>
               <Link href="/terms" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Terms</Link>

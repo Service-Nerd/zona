@@ -5,7 +5,7 @@
 
 import type { MetadataRoute } from 'next'
 import { MARKETING_PLANS } from '@/lib/marketing/plans'
-import { COMPARISON_ARTICLES } from '@/lib/marketing/comparisons'
+import { COMPARISON_ARTICLES, COMPARISON_HUB } from '@/lib/marketing/comparisons'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://zonna.run'
 
@@ -27,7 +27,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly' as const,
       priority: 0.8,
     })),
-    // GTM-SEO-COMPARE-01 — competitor-comparison articles, root-level slugs.
+    // GTM-SEO-COMPARE-01 — the comparison hub, then each article.
+    {
+      url: `${APP_URL}/${COMPARISON_HUB.slug}`,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    // Competitor-comparison articles, root-level slugs.
     // This sitemap is a HAND-MAINTAINED list, not a walk of the route tree, so a
     // new page under app/ does NOT appear here on its own. Driving it off the
     // catalogue means the remaining seven articles are listed the moment they

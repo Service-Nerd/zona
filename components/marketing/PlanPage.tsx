@@ -280,6 +280,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
         <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13 }}>
           <Link href="/" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Home</Link>
           <Link href="/plans" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Free plans</Link>
+          <Link href="/compare" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Comparisons</Link>
           <Link href="/support" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Support</Link>
           <Link href="/privacy" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Privacy</Link>
           <Link href="/terms" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Terms</Link>
