@@ -124,7 +124,7 @@ export default async function Home() {
       />
 
       {/* ── Top nav — wordmark + free-plans link ─────────────────────────── */}
-      <SiteHeader width={1100} />
+      <SiteHeader />
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
       <section style={{
@@ -420,7 +420,7 @@ export default async function Home() {
           Built by Russell. Runs medium-hard on everything. That&apos;s how I know.
         </p>
       </section>
-      <SiteFooter width={1100} />
+      <SiteFooter />
     </main>
   )
 }

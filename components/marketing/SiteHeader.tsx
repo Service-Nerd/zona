@@ -28,17 +28,27 @@
 //   animated one is decorative. So no shadow, no gradient, no scroll listener,
 //   no motion — and no client-side JS.
 // - Active state is a prop, not `usePathname`, so this stays a server component.
-// - `width` matches the CONTENT width of the page it sits on (the homepage is a
-//   1100px layout, everything else is 760px). The chrome itself — wordmark size,
-//   link set, order, alignment — is identical everywhere, which is the actual
-//   consistency requirement. A 760px header floating over 1100px content would
-//   be a different kind of wrong.
+// - ONE width everywhere: `SITE_WIDTH`. Not a prop.
+//
+//   The first version took a `width` prop so the header matched the CONTENT
+//   width of its page (1100 homepage, 760 elsewhere). That reasoning was wrong
+//   in practice: the header is site chrome, not page content, so a reader
+//   walking from / to /plans watched the whole bar snap narrower. Consistent
+//   layout with an inconsistent span still reads as broken.
+//
+//   The header frame is now constant and the CONTENT column stays whatever each
+//   page needs (760 for reading measure on articles, 1100 on the homepage) —
+//   the standard site-frame pattern. It is a constant rather than a defaulted
+//   prop so no call site can reintroduce the drift.
 
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
 import { Wordmark } from '@/components/ui/Wordmark'
 
 export type SiteSection = 'plans' | 'comparisons' | null
+
+/** The site frame. One value for header and footer, on every page. */
+export const SITE_WIDTH = 1100
 
 /** The nav. Two items on purpose (Fried, SLT review): a menu exists because
  *  there are two content sections people cannot otherwise find, not because
@@ -48,13 +58,7 @@ const NAV: Array<{ href: string; label: string; section: SiteSection }> = [
   { href: '/comparisons', label: 'Comparisons', section: 'comparisons' },
 ]
 
-export function SiteHeader({
-  current = null,
-  width = 760,
-}: {
-  current?: SiteSection
-  width?: number
-}) {
+export function SiteHeader({ current = null }: { current?: SiteSection }) {
   return (
     <header
       style={{
@@ -67,7 +71,7 @@ export function SiteHeader({
     >
       <nav
         style={{
-          maxWidth: width,
+          maxWidth: SITE_WIDTH,
           margin: '0 auto',
           padding: '14px 24px',
           display: 'flex',

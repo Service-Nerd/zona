@@ -272,7 +272,11 @@ The wordmark changed size as you navigated (20 → 32 → 20), the homepage word
 
 **"Pop" means presence, not decoration.** The header is sticky so it never leaves, carries one point of moss, and marks where you are. **No shadow, no gradient, no motion, no scroll listener, no client JS** — the header is a server component and active state is a prop, not `usePathname`. (SLT review, Wood: *a sticky header is structural, an animated one is decorative*.)
 
-**Width matches the page's CONTENT width** (`width` prop: 1100 on the homepage, 760 default). The chrome — wordmark size, link set, order, alignment — is identical everywhere; that is the consistency requirement. A 760px header floating over 1100px content would be a different kind of wrong.
+**ONE width everywhere — `SITE_WIDTH`, a constant, not a prop.**
+
+The first version took a `width` prop so the header matched its page's CONTENT width (1100 homepage, 760 elsewhere), on the reasoning that a narrow header over wide content looks wrong. **That reasoning did not survive contact with the actual site.** Walking from `/` to `/plans`, the whole bar snapped narrower — consistent layout with an inconsistent span still reads as broken, and it was the first thing the founder noticed after the rebuild.
+
+The header frame is now constant; the CONTENT column stays whatever each page needs (760 for reading measure on articles, 1100 on the homepage). That is the ordinary site-frame pattern: chrome is site-level, the text column is content-level, and they are allowed to differ. It is a **constant rather than a defaulted prop** specifically so no call site can reintroduce the drift.
 
 **Footer anatomy**
 - `BRAND.brandStatement` above the links (CLAUDE.md names this the voice moment and the privacy footer as one of its homes).

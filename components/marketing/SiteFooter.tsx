@@ -18,6 +18,7 @@
 
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
+import { SITE_WIDTH } from '@/components/marketing/SiteHeader'
 
 const LINKS: Array<{ href: string; label: string }> = [
   { href: '/', label: 'Home' },
@@ -28,7 +29,8 @@ const LINKS: Array<{ href: string; label: string }> = [
   { href: '/terms', label: 'Terms' },
 ]
 
-export function SiteFooter({ width = 760 }: { width?: number }) {
+// Same single frame as the header — see SiteHeader's SITE_WIDTH note.
+export function SiteFooter() {
   return (
     <footer
       style={{
@@ -37,7 +39,7 @@ export function SiteFooter({ width = 760 }: { width?: number }) {
         background: 'var(--bg)',
       }}
     >
-      <div style={{ maxWidth: width, margin: '0 auto', padding: '36px 24px 48px' }}>
+      <div style={{ maxWidth: SITE_WIDTH, margin: '0 auto', padding: '36px 24px 48px' }}>
         <p
           style={{
             fontFamily: 'var(--font-brand)',
