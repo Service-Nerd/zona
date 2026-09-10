@@ -93,6 +93,16 @@ export default function PlansHubPage() {
         </div>
       </section>
 
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '18px 24px 8px' }}>
+        <p style={{ fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
+          Weighing up apps rather than plans? The comparisons are honest about where {BRAND.name} is
+          the wrong answer.{' '}
+          <Link href="/compare" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
+            Compare the options &rarr;
+          </Link>
+        </p>
+      </section>
+
       <footer style={{ maxWidth: SECTION_MAX, margin: '36px auto 0', padding: '36px 24px 48px', borderTop: '1px solid var(--line)' }}>
         <p style={{ fontFamily: 'var(--font-brand)', fontSize: 15, fontWeight: 700, color: 'var(--ink-2)', margin: '0 0 16px' }}>{BRAND.brandStatement}</p>
         <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13 }}>

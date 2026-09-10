@@ -128,9 +128,14 @@ export default async function Home() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <Wordmark size="sm" />
-        <Link href="/plans" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink-2)', textDecoration: 'none' }}>
-          Free plans
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Link href="/plans" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink-2)', textDecoration: 'none' }}>
+            Free plans
+          </Link>
+          <Link href="/compare" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink-2)', textDecoration: 'none' }}>
+            Comparisons
+          </Link>
+        </div>
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
