@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-10 — §98 / CB-ONSET-YIELD-01 · The bug report named the wrong section, and I nearly fixed it anyway
+**Shipped:** §89's early quality onset now yields to §1's intensity ceiling — a ladder that walks the base phase back one week at a time until the plan complies, bounded so a runner can never end up waiting longer than if they had never demonstrated readiness at all.
+
+**Dev learning:** The item was filed as *"§91's foundation-week credit spends §1's headroom"*. I built the fix for that. It took breaches from 34 to 31, and I only noticed it was wrong because I'd measured the baseline first: some breaching plans had **no foundation block at all**. The isolation that settled it took four lines — same runner, toggle `recent_quality_training` alone, count breaches. **29 with the gate open, 0 with it closed.** The credit was an amplifier; §89 was the cause. Second thing worth keeping: two prior board rulings (§97's distance scoping, then its headroom amendment) were *completely inert* here, because both set the base **cap** and §91's credit then subtracts from the cap — so base landed at zero whether the gate granted or denied. Two guards, twelve cells, zero protection. A gate that sets a ceiling cannot govern a rule that subtracts from it.
+
+**Product/creator learning:** The thing I keep relearning is that a threshold is a guess wearing a number. Three separate proxy levers died today, the last one decisively: breaches occur at `ceiling × days` of **0.60 and also 1.25**, so no constant of that shape could ever separate the safe cells from the breaking ones. What shipped instead measures the actual quality share and walks back until it complies. Nothing to tune, nothing to drift. Yesterday's board ruling had already written the principle for me — *"a defect class that cannot occur beats a check that catches it"* — I just hadn't applied it to my own work yet.
+
+**AI-building learning:** My first remedy was clean, plausible, well-argued and aimed at the wrong section, because I inherited the filing's framing instead of testing it. The correction came from a measurement, not from thinking harder. The other one: I ran the unbounded version, got "all 34 fixed", and it would have been very easy to stop there — but I'd written the check for *"is anyone now worse off than ungated?"* before running it, and it came back **1**. One runner, punished for demonstrating readiness, which is the exact defect §91 exists to prevent. **Writing the regression check before seeing the good result is what caught it.** Afterwards I disabled the ladder on purpose to confirm 12 of 13 tests went red; a test suite you haven't seen fail is a rumour.
+
+**The honest bit:** I reported `REAL EXIT: 0` on a run where the test suite had actually **failed** — I piped `npm run verify` into `tail`, so `$?` was tail's exit code, not npm's. My own memory file has a warning about this exact trap, written after doing it before. I caught it in the same message because the failure was visible in the output above the line, but if the failing test had scrolled past the `tail` window I'd have shipped it and told the founder it was green. Also lost time to a fixture I'd built wrong — `goal: 'time_target'` with no `target_time` — which threw deep inside `resolveMainSet` and looked exactly like a live engine defect for several minutes.
+
+**Hook material:** A bug report named the wrong cause, my fix for it worked (34 → 31 breaches), and it was wrong. Four lines of measurement found the real one: 29 breaches with the gate open, 0 with it closed. Also: two ratified safety gates protecting twelve cells, and measurably protecting none of them.
+
+**Postable?:** yes — the "my fix worked and was still wrong" arc is the strongest one I've had, and it pairs with the same day's marketing lesson (verification that doesn't reach the change) without repeating it.
+
+---
+
 ## 2026-09-10 — GTM-SITE-01 close-out · My verification passed because it checked the wrong environment
 **Shipped:** Closing out the site review — one constant header/footer span, the canonical host moved off a redirect, and two brand divergences (DIV-021, DIV-022) that only showed up when I stopped trusting my earlier pass and re-read the pages.
 
