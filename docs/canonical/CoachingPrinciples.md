@@ -3686,6 +3686,94 @@ that the random grid could not be trusted to sample.
 
 ---
 
+## 98. §89's onset is granted only as far as §1 permits
+
+**Principle.** §89's earlier quality onset is **conditional, not absolute**. A gated
+plan that would breach §1's distance ceiling gives base back **one week at a time**
+until it complies. The walk is bounded by the **effective on-ramp an ungated runner
+would receive** (§91: base weeks + §57 foundation weeks); if no rung complies within
+that bound, the runner receives the plain ungated plan. §1 is never spent, and §8's
+per-week quality dose is never reduced.
+
+**Why — §89 breached §1 on its own, and the defect was filed against the wrong
+section.** Measured 2026-09-10 over a 240-plan grid (4 distances x 3-6 days x 30-80
+km x 14-26 weeks out, all `experienced` / `5yr+` / `recent_quality_training: regular`):
+**34 of 212 gated plans exceeded their ceiling**, worst **HM at 3 days: 29.5% against
+20%**; MARATHON at 5 days 24.7% against 18%; 10K at 3 days 29.3% against 25%. The
+same cells with the gate closed produced **zero** breaches.
+
+The item was filed as *"§91's foundation credit spends §1's headroom"*. **It is not.**
+Isolation on 120 comparable cells, toggling only `recent_quality_training`: 29 breaches
+with the gate open, 0 with it closed — and **11 of the 29 carried no foundation block
+at all**. §91's credit is an amplifier (18 of 29), not the mechanism. A remedy aimed at
+the credit was built and measured: breaches 34 -> 31. It would have closed the item
+having fixed a third of it.
+
+**Why §97's existing gates could not reach this.** §97 scopes the shortened on-ramp by
+distance, and Amendment 1 by denominator headroom. Both decide the base **cap** (2 weeks
+or 1). §91's credit then subtracts `min(foundation_weeks, cap)` — so base lands at
+**zero in all twelve distance x day cells regardless of which verdict the gate returned**.
+HM at 3 days and every MARATHON cell were explicitly *denied* the short on-ramp and
+reached zero anyway. A gate that sets a cap cannot govern a rule that subtracts from it.
+
+**Why a ladder and not a numeric.** Three threshold-shaped levers were measured and
+rejected, the last decisively: breaches occur at `ceiling_fraction x days_available`
+of **0.60 and also 1.25**, so no proxy of that shape separates the breaching cells from
+the safe ones. **This measures the actual §1 share instead of predicting it.** There is
+no constant to drift, and the breach becomes impossible by construction rather than
+caught afterwards — CB-FOUNDATION-DENOM-01's own standard, one day earlier: *"a defect
+class that cannot occur beats a check that catches it."*
+
+**The bound is the load-bearing half.** An unbounded ladder cleared all 34 breaches and
+introduced a regression: one runner (10K, 3 days, 14 weeks out) ended with an effective
+on-ramp of **6 weeks against 5 for the same runner ungated** — demonstrating readiness
+made the plan *more* conservative, which is exactly the non-monotonic onset §91 exists
+to prevent. So the ladder stops at the ungated runner's effective on-ramp and falls
+through to the ungated plan rather than past it. §89's benefit is **trimmed, never
+inverted** — §97's own language, now mechanically true.
+
+**Measured, bounded, over the same grid — no residual:**
+
+| outcome | plans |
+|---|---|
+| compliant at full §89 benefit, untouched | **178** (84% of the gated cohort) |
+| corrected within the bound (rungs 1 / 2 / 3) | **33** (13 / 16 / 4) |
+| fell through to the ungated plan | **1** |
+| **§1 breaches remaining** | **0** |
+| **plans worse than ungated** | **0** |
+
+Mean cost to a corrected plan **+1.71 on-ramp weeks** (max +3). Of the 34 corrected
+plans, 31 still reach quality earlier than the same runner ungated; 2 tie; none is later.
+
+**Why the check may run on the bare plan.** CB-FOUNDATION-DENOM-01 (2026-09-10) made
+§1 count main-plan weeks only, so `validatePlan`'s bare and assembled verdicts are now
+identical. The ladder therefore lives entirely inside `generateRulePlan` and does not
+touch ADR-020's compose path. **This is a direct dividend of that ruling** — under the
+old denominator the ladder would have had to run after composition, or measure a share
+it could not yet see.
+
+**Cost, stated.** Up to four generations for the ~16% of gated plans that breach; one
+generation for everyone else, including every ungated runner. Not profiled.
+
+**Config.** `GENERATION_CONFIG.ONSET_YIELD_MAX_RUNGS` (4) — a **safety stop, not a
+tuning knob**: the real bound is the ungated effective on-ramp comparison, and the
+measured maximum rung actually required is 3.
+
+**Mechanical check.** `INV-PLAN-ONSET-YIELD-BOUNDED` (`error`). The ladder stamps
+`meta.onset_yield = { rungs, bound, effective }` when it acts, and the invariant asserts
+`effective <= bound` — so the §91 guarantee is checkable from a single plan without
+regenerating a hypothetical ungated one. **Falsification-tested**: it goes red on
+`effective 6 > bound 4`, stays green at equality, and stays green when absent. §1 itself
+remains policed by the existing `INV-PLAN-INTENSITY-DISTRIBUTION`, which is now expected
+to be unreachable for this cohort rather than merely baselined.
+
+**Board:** CB-ONSET-YIELD-01, 2026-09-10 — Coaching Board CORRECT, Hutchinson chairing.
+Amends §89, §91 and §97 (the onset becomes conditional). **Moves no ceiling and reduces
+no §8 quality dose.** Sims recorded this as safety-adjacent, explicitly unlike
+CB-FOUNDATION-DENOM-01 which she required be logged as coherence-only.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

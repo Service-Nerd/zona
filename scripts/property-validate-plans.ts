@@ -789,18 +789,17 @@ const BASELINE: Record<string, number> = {
   // should dilute the §1 denominator at all — which belongs to the Coaching
   // Board, not to a checker-accuracy commit. Filed as FOUNDATION-ONSET-01.
   // A baseline is a debt register, not an amnesty: this must go DOWN.
-  // 1 -> 2 (2026-09-10, Coaching Board CB-FOUNDATION-DENOM-01). The second
-  // becomes visible because §1 now counts main-plan weeks only: a breach that
-  // all-easy §57 weeks had been diluting under the ceiling. Measured across the
-  // grid before ruling — 4,642 plans carry a block and the dilution masked
-  // exactly ONE of them, so this is a coherence fix, not a safety fix.
+  // 1 -> 2 (2026-09-10, Coaching Board CB-FOUNDATION-DENOM-01).
   //
-  // Both entries are the SAME underlying defect: §91's on-ramp credit collapses
-  // base to zero for a demonstrated runner and quality starts in calendar week 1,
-  // pushing delivered share over the ceiling (worst confirmed: 19.0%, 15/79,
-  // MARATHON). Which lever yields is a prescription decision the board did NOT
-  // settle — filed FOUNDATION-QUALITY-YIELD-01. This must go DOWN to 0.
-  'INV-PLAN-INTENSITY-DISTRIBUTION':      2,
+  // 2 -> 0, DEBT PAID (2026-09-10, Coaching Board CB-ONSET-YIELD-01, §98).
+  // Both entries were the same underlying defect, and it was NOT §91's credit as
+  // filed: measured, §89's early onset breaches §1 on its own (29 breaches with
+  // the gate open, 0 with it closed, and 11 of the 29 carried no foundation block
+  // at all). §98's yield ladder trims the onset until the plan complies — bounded
+  // by the on-ramp an ungated runner would get — so the breach is now impossible
+  // by construction rather than tolerated here. Deterministic regressions live in
+  // `onsetYieldLadder.test.ts` (falsification-tested: 12 of 13 go red when the
+  // ladder is disabled). If this ever needs raising again, §98 has regressed.
 }
 
 const regressions: string[] = []

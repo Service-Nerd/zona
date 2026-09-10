@@ -439,6 +439,12 @@ function computePhases(
   // §1's ceiling tightens with distance while a shorter base raises the quality
   // share. False falls back to §91's two-week cap.
   shortOnRamp = false,
+  // §98 (CB-ONSET-YIELD-01) — how many weeks of base to give BACK, walking §89's
+  // benefit down one rung at a time until the plan satisfies §1. Zero for every
+  // plan that complies at full benefit, which is 84% of the gated cohort.
+  // Bounded by the base an UNGATED runner would receive: §89 may be trimmed to
+  // nothing, never past nothing.
+  onsetRelax = 0,
 ): Phase[] {
   const distKey = raceDistanceKey(distanceKm)
   const taperPhaseWeeks = GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey].length
@@ -479,6 +485,14 @@ function computePhases(
       : GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR
     baseWeeks = Math.min(baseWeeks, cap)
     baseWeeks = Math.max(0, baseWeeks - Math.min(foundationWeeks, baseWeeks))
+    // §98 — the §1 yield. See the ladder in generateRulePlan.
+    if (onsetRelax > 0) {
+      const ungatedBase = Math.max(
+        baseFloor,
+        Math.round(remaining * dist.base_pct / (dist.base_pct + dist.build_pct + dist.peak_pct)),
+      )
+      baseWeeks = Math.min(ungatedBase, baseWeeks + onsetRelax)
+    }
   }
   let buildWeeks = Math.max(1, Math.round(remaining * dist.build_pct / denom))
   let peakWeeks  = Math.max(2, remaining - baseWeeks - buildWeeks)
@@ -4377,7 +4391,95 @@ export function applyRecalibration(
   return updated
 }
 
+// ─── §98 — the §1 yield ladder (Coaching Board CB-ONSET-YIELD-01, 2026-09-10) ──
+//
+// §89 grants a demonstrably-ready runner a shorter all-easy base so quality
+// starts sooner. Measured 2026-09-10, that grant BREACHES §1 on its own: over a
+// 240-plan grid, 34 of 212 gated plans exceeded their distance ceiling (worst
+// HM@3d 29.5% against 20%), and the SAME cells with the gate closed produced
+// ZERO breaches. 11 of the 34 carried no §57 foundation block at all, so §91's
+// on-ramp credit — which the defect was originally filed against — is an
+// amplifier, not the cause.
+//
+// THE BOARD RULED §1 BINDS AND THE ONSET YIELDS. This is §97's own stated
+// disposition ("the on-ramp yields, not the ceiling"), applied where §97's two
+// gates could not reach: they set the base CAP, and §91's credit then subtracts
+// from it, so base landed at 0 whether the gate granted or denied.
+//
+// WHY A LADDER AND NOT A NUMBER. Three threshold-shaped levers were measured and
+// died, the last decisively: breaches occur at `ceiling_fraction × days_available`
+// of 0.60 AND 1.25, so no proxy separates them. This measures the actual §1 share
+// instead of predicting it — there is no constant to drift, and the breach becomes
+// impossible by construction rather than caught afterwards (CB-FOUNDATION-DENOM-01:
+// "a defect class that cannot occur beats a check that catches it").
+//
+// THE BOUND IS THE LOAD-BEARING PART. An unbounded ladder fixed all 34 breaches
+// and introduced a regression: one runner ended up with a LATER first quality
+// session than the same runner ungated (effective on-ramp 6 vs 5) — which is
+// exactly the §91 non-monotonicity defect, where demonstrating readiness makes
+// your plan more conservative. So the ladder never walks past the ungated
+// runner's EFFECTIVE on-ramp (base + §57 foundation weeks, per §91 — the runner
+// cannot tell the two apart), and if no rung complies within that bound it
+// returns the genuinely ungated plan. That is the ladder's true terminal rung,
+// and it is §1-clean by measurement.
+//
+// MEASURED, bounded, over the same 240-plan grid: 178 plans clean at full
+// benefit (84% of the gated cohort keep §89 untouched) · 33 corrected within the
+// bound (rungs 1/2/3 = 13/16/4) · 1 fell back to ungated · §1 breaches remaining
+// ZERO · plans worse than ungated ZERO. Mean cost to a corrected plan +1.71
+// on-ramp weeks, max +3.
+//
+// The §1 check runs on the BARE plan, which is only sound because
+// CB-FOUNDATION-DENOM-01 (2026-09-10) made §1 count main-plan weeks only — the
+// bare and assembled verdicts are now identical, so the ladder does not need the
+// ADR-020 compose path.
 export function generateRulePlan(
+  input: GeneratorInput,
+  tier: Tier,
+  planStart?: string,
+  catalogue: SessionCatalogueRow[] = V1_SESSION_CATALOGUE,
+  todayOverride?: string,
+): Plan {
+  const build = (relax: number, ungated: boolean) =>
+    buildRulePlanOnce(input, tier, planStart, catalogue, todayOverride, relax, ungated, false)
+
+  const breachesIntensity = (plan: Plan) =>
+    validatePlan(plan, input).some(v => v.code === 'INV-PLAN-INTENSITY-DISTRIBUTION')
+
+  // §91 — the on-ramp the RUNNER counts: all-easy main-plan base weeks plus the
+  // §57 foundation weeks that will be prepended ahead of week 1.
+  const effectiveOnRamp = (plan: Plan) =>
+    plan.weeks.filter(w => w.n >= 1 && w.phase === 'base').length
+    + (plan.meta.foundation_weeks_planned ?? 0)
+
+  const finalise = (plan: Plan, yielded?: { rungs: number; bound: number }) => {
+    if (yielded) {
+      plan.meta.onset_yield = { ...yielded, effective: effectiveOnRamp(plan) }
+    }
+    enforceViolations(validatePlan(plan, input))
+    return plan
+  }
+
+  const atFullBenefit = build(0, false)
+  // Not §89-gated, or already compliant: the overwhelming majority. No extra work.
+  if (!atFullBenefit.meta.early_quality_onset || !breachesIntensity(atFullBenefit)) {
+    return finalise(atFullBenefit)
+  }
+
+  const ungatedPlan = build(0, true)
+  const bound = effectiveOnRamp(ungatedPlan)
+
+  for (let rung = 1; rung <= GENERATION_CONFIG.ONSET_YIELD_MAX_RUNGS; rung++) {
+    const candidate = build(rung, false)
+    // Never trade a §1 breach for the §91 defect.
+    if (effectiveOnRamp(candidate) > bound) break
+    if (!breachesIntensity(candidate)) return finalise(candidate, { rungs: rung, bound })
+  }
+
+  return finalise(ungatedPlan, { rungs: 0, bound })
+}
+
+function buildRulePlanOnce(
   input: GeneratorInput,
   tier: Tier,
   planStart?: string,
@@ -4399,6 +4501,12 @@ export function generateRulePlan(
   //
   // Production passes nothing and keeps the wall clock, unchanged.
   todayOverride?: string,
+  // §98 — set by the ladder in generateRulePlan. Never passed by production callers.
+  onsetRelax = 0,
+  suppressEarlyOnset = false,
+  // Intermediate rungs are candidates, not deliveries — only the CHOSEN plan is
+  // put to the constitution, or a discarded attempt would throw in dev/test.
+  validate = true,
 ): Plan {
   const planStartIso = planStart ?? formatDate(nextMonday())
   const today = todayOverride ?? formatDate(new Date())
@@ -4546,7 +4654,8 @@ export function generateRulePlan(
   const overdoBrake = GENERATION_CONFIG.OVERDO_IS_A_BRAKE
     && input.hard_session_relationship === 'overdo'
 
-  const earlyQualityOnset = tissueConditioned
+  // §98 — the ladder's terminal rung regenerates the runner as if ungated.
+  const earlyQualityOnset = !suppressEarlyOnset && tissueConditioned
     && intensityFitness === 'experienced'
     && FITNESS_RANK[fitness] >= FITNESS_RANK['intermediate']
     && !returningRunner && !isFreshReturn
@@ -4669,6 +4778,7 @@ export function generateRulePlan(
        >= GENERATION_CONFIG.ONSET_SHORT_ONRAMP_MIN_WEEKLY_QUALITY_HEADROOM
   const phases = computePhases(
     totalWeeks, input.race_distance_km, earlyQualityOnset, foundationWeeksAhead, shortOnRamp,
+    onsetRelax,
   )
   // §87 (CB-DELOAD-01) — WHERE the deloads fall, decided once for the whole
   // plan and passed to every consumer. Computing it twice from the same inputs
@@ -5847,7 +5957,7 @@ export function generateRulePlan(
   // Constitutional review — verify the plan honours its own coaching principles.
   // In dev, throw on errors so the matrix / property tests fail loudly.
   // In prod, log + return the plan (don't break the user). See lib/plan/invariants.ts.
-  enforceViolations(validatePlan(plan, input))
+  if (validate) enforceViolations(validatePlan(plan, input))
 
   return plan
 }

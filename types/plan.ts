@@ -648,6 +648,19 @@ export interface PlanMeta {
    */
   foundation_weeks_planned?: number
 
+  /**
+   * §98 (CB-ONSET-YIELD-01) — the §1 yield ladder's decision, stamped ONLY when
+   * the ladder actually acted (a §89-gated plan that breached §1 at full
+   * benefit). Absent on the 84% of gated plans that comply untouched.
+   *
+   * `rungs` — weeks of base given back (0 = fell through to the ungated plan).
+   * `bound` / `effective` — the ungated runner's effective on-ramp and this
+   * plan's, both counted as §91 counts it (base + foundation weeks). Stamped so
+   * INV-PLAN-ONSET-YIELD-BOUNDED can check the §91 non-monotonicity guarantee
+   * from a single plan, without regenerating a hypothetical ungated one.
+   */
+  onset_yield?: { rungs: number; bound: number; effective: number }
+
   hr_zone_method?: 'karvonen' | 'karvonen_estimated_max' | 'percent_of_max' | 'percent_of_estimated_max'
                  | 'observed_max' | 'age_estimate_implausible_input' | 'age_estimate_max_floor'
   hr_assumption_note?: string

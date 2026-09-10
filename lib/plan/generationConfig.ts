@@ -318,6 +318,21 @@ export const GENERATION_CONFIG = {
   // never lost. §1 is a CEILING the board has twice refused to spend; the
   // on-ramp yields, not the ceiling (same disposition as the distance list).
   ONSET_SHORT_ONRAMP_MIN_WEEKLY_QUALITY_HEADROOM: 1,
+  // §98 (Coaching Board CB-ONSET-YIELD-01, 2026-09-10) — how many rungs the §1
+  // yield ladder may walk before falling back to the ungated plan.
+  //
+  // A SAFETY STOP, NOT A TUNING KNOB. The real bound is the ungated runner's
+  // effective on-ramp (§91: base + §57 foundation weeks) — the ladder stops
+  // there regardless of this value, because walking past it re-creates §91's
+  // non-monotonic onset (measured: one runner finished LATER than if they had
+  // never demonstrated readiness at all). This constant only stops an unbounded
+  // loop if that comparison is ever wrong.
+  //
+  // Measured max rung actually needed across a 240-plan grid: 3 (13 plans
+  // resolved at rung 1, 16 at rung 2, 4 at rung 3, 1 fell through to ungated).
+  // 4 leaves one rung of headroom without letting a runaway loop regenerate a
+  // plan a dozen times.
+  ONSET_YIELD_MAX_RUNGS: 4,
   // §40b Amendment 2 (Coaching Board CB-TERRAIN-01, 2026-09-09) — the runner's
   // ENVIRONMENT terrain values for which the plan tells them to let effort/HR
   // lead and treat pace targets as a road reference. NOT a pace multiplier: §40b

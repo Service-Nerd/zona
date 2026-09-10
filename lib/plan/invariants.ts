@@ -35,6 +35,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-INJURY-CAP-DELIVERED',
   'INV-PLAN-EARLY-ONSET-GATED',
   'INV-PLAN-ONRAMP-FLOOR',
+  'INV-PLAN-ONSET-YIELD-BOUNDED',
   'INV-PLAN-PEAK-SPECIFICITY',
   'INV-PLAN-DELIVERED-RAMP',
   'INV-PLAN-DELOAD-PHASE-POSITION',
@@ -2491,6 +2492,35 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         message: `All-easy on-ramp is ${onRamp} week(s) (${baseWeeks} base + ${foundationCredit} foundation) — below the ${floor}-week floor. A short polarised on-ramp must always remain (Seiler), even for a demonstrably-ready runner.`,
         actual: `${onRamp} on-ramp week(s)`,
         expected: `>= ${floor} (base + foundation)`,
+      })
+    }
+  }
+
+  // INV-PLAN-ONSET-YIELD-BOUNDED (CoachingPrinciples §98)
+  //
+  // §98's ladder trims §89's early onset until the plan satisfies §1. The thing
+  // that can go wrong is NOT the trim — it is trimming too far: an unbounded
+  // ladder was measured shipping a runner a LATER first quality session than the
+  // same runner would get with no §89 gate at all, which is precisely §91's
+  // non-monotonic onset (demonstrating readiness making the plan more
+  // conservative). The bound is therefore the load-bearing half of §98, and this
+  // is the check on it.
+  //
+  // Reads the stamped decision rather than regenerating a hypothetical ungated
+  // plan: the invariant sees one plan, and `meta.onset_yield` is written by the
+  // single owner that made the comparison (generateRulePlan's ladder). Absent on
+  // every plan the ladder did not touch, which is the overwhelming majority.
+  {
+    const y = plan.meta.onset_yield
+    if (y && y.effective > y.bound) {
+      violations.push({
+        code: 'INV-PLAN-ONSET-YIELD-BOUNDED',
+        principle_ref: 'CoachingPrinciples §98',
+        severity: 'error',
+        week: 0,  // plan-level
+        message: `§1 yield ladder walked to an effective on-ramp of ${y.effective} week(s) against an ungated bound of ${y.bound} (rung ${y.rungs}). A runner who demonstrated readiness must never wait LONGER for quality than one who did not (§91).`,
+        actual: `${y.effective} on-ramp week(s)`,
+        expected: `<= ${y.bound} (the ungated runner's effective on-ramp)`,
       })
     }
   }
