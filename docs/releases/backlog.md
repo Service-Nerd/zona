@@ -187,13 +187,45 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 *Source: founder review of Planzy (6 screens) + a described Runzy chatbot. Full ruling: `docs/decisions/slt-2026-08-29-planzy-ux.md`. **Engineering scope + board brief: `docs/investigations/competitive-ux-scope-2026-08-29.md`** (current-state facts, per-item scope, the decisions each board must make — a living doc that absorbs incoming competitor analysis). Evidence: `docs/investigations/planzy-*.png`. Two Planzy screens (profile / data-source toggles) were dropped — Zonna already has the equivalents and Garmin/Apple Watch direct sync is not buildable (ADR-011).*
 
-- 🔲 **[W5]** **UX-WIZARD-01 (build) — per-day TIME budgets. Option A is already shipped.** *(SLT unanimous BUILD; Coaching Board ruled option B 2026-09-11 — but see the correction below)* **Tier: FREE.** Trigger `frontend-design`.
-  - ⚠️ **CORRECTION 2026-09-11, founder-caught. The scoping in this entry, and the premise I put to the Coaching Board, were WRONG about day selection.** Both said "the engine picks WHICH days itself; the runner cannot say Tuesday yes, Wednesday no". **That has not been true since the WeekGrid shipped.** `components/shared/WeekGrid.tsx` is a seven-day tap-to-cycle grid (Rest → Run → Long), and `days_available`, `days_cannot_train` and `preferred_long_run_day` are all DERIVED from it by `weekPlanToInputs` — its own comment says it "absorbs the old two scheduling steps (days-per-week + days-you-can't-train) into one tactile moment". **Option A is built.** I described shipped work as missing because I read the engine's inputs and never opened the wizard.
-  - **Long run restricted to Sat/Sun is a DESIGN CHOICE, not a gap.** `cycleDay` only offers `long` on `LONG_ELIGIBLE` days, so the `'sat' | 'sun'` type is honest and nothing is silently dropped. This entry previously listed "widen `preferred_long_run_day` beyond Sat/Sun" as required work for option A; it is a separate product question, not a defect.
-  - **WHAT IS ACTUALLY LEFT, and it is smaller than this entry claimed.** One thing: **the weekday time budget is a single number** (`max_weekday_mins`, wizard substep `weekday-ceiling`) applied to Mon–Fri. A runner with 30 minutes on Tuesday and 90 on Thursday must enter 30, and every weekday shrinks to it. **Measured: 23.5% of mean peak volume lost at a 30-minute cap** (worst 41.6%); 15.2% at 45; 8.6% at 60; 1.7% at 90. **That measurement is unaffected by the correction** — it was always about the time model, never day selection, so the board's ruling for B stands on its own evidence.
-  - **Scope of B, restated honestly:** a per-day budget on the existing grid (the control is already there — this adds a time to each day the runner has marked Run); the budget feeding SIZING rather than a post-hoc trim; and day-identity-aware placement so the hard session lands on a day that HAS the budget instead of being exempted from a cap it cannot honour (§81). **Effort: M, not L** — the day-selection half is done.
-  - **The new invariant must assert:** no session exceeds its OWN day's budget except by §81's exemption, and where the exemption fires §81's SPEAK obligation is discharged. Placement must still satisfy §6/§8/§18 — a runner's calendar may choose WHICH day carries quality, never HOW MUCH.
-  - **Regression gate:** `npm run cohort:shape` must be run before and after; this change moves peak volume by construction, so the number has to be declared.
+- 🔲 **[W5]** **UX-WIZARD-01 — per-day TIME budgets** *(SLT unanimous BUILD; Coaching Board ruled option B 2026-09-11)* — **Tier: FREE. Effort: M.** Trigger `frontend-design`. Everything needed to start is below; nothing here should need re-deriving.
+
+  ### ⚠️ READ FIRST — what is ALREADY BUILT (corrected 2026-09-11, founder-caught)
+  This entry and the brief I put to the Coaching Board both said *"the engine picks WHICH days itself; the runner cannot say Tuesday yes, Wednesday no."* **That has been false since the WeekGrid shipped. Option A is done.**
+  - `components/shared/WeekGrid.tsx` — seven-day tap-to-cycle grid, wizard substep **`your-week`**. Its own header: *"absorbs the old two scheduling steps (days-per-week + days-you-can't-train) into one tactile moment"*.
+  - `components/shared/WeekGrid.logic.ts` — `WeekPlan` (per-day `'rest' | 'run' | 'long'`), `cycleDay()`, `weekPlanToInputs()`. **`days_available`, `days_cannot_train` and `preferred_long_run_day` are all DERIVED here**, never entered separately (`GeneratePlanScreen.tsx:909/916/918`).
+  - **Long run is Sat/Sun BY DESIGN, not a gap.** `cycleDay` only offers `'long'` on `LONG_ELIGIBLE` days, so the `'sat' | 'sun'` type is honest and nothing is silently dropped. Widening it is a separate product question. **Do not list it as required work for this item again.**
+  - I got this wrong by reading the engine's inputs (`days_available` is a count) and never opening the wizard that produces them.
+
+  ### What is actually left — ONE thing
+  The weekday time budget is a **single number**: `max_weekday_mins`, wizard substep **`weekday-ceiling`** (`GeneratePlanScreen.tsx:170` — *"Your cap Monday–Friday. Weekends stay open."*), held in `maxWeekdayChip`. A runner with 30 minutes on Tuesday and 90 on Thursday must enter **30**, and every weekday shrinks to it.
+
+  ### The measurement that justifies it (reproduce with `npx tsx scripts/measure-weekday-cap.ts`)
+  Same runner, capped vs generous (180 min), measured AFTER §81/§82 are in force:
+  | cap | mean peak volume lost | worst |
+  |---|---|---|
+  | 30 min | **23.5%** | 41.6% |
+  | 45 min | 15.2% | 36.6% |
+  | 60 min | 8.6% | 30.4% |
+  | 90 min | 1.7% | 18.0% |
+  **This measurement was always about the TIME model, never day selection, so the board's ruling stands on its own evidence despite the correction above.**
+
+  ### Where `max_weekday_mins` is consumed today — every site B has to reach
+  - `ruleEngine.ts:3261` → `applyWeekdayMinsCap()` (**:3295**) — a POST-placement TRIM, not a sizing input. Sessions are built, then shortened.
+  - **§81 exemptions inside that trim (`:3300–3320`)**: the long run and any `isStructuredSession()` are skipped entirely — capping a structured session scales the label but not `derived_set`. **§82** floor-protects easy runs at `MIN_SESSION_DISTANCE_KM.easy`.
+  - `:5558` §38 remedy suggestions · `:5685`/`:5698` pinned-session detection · `:5709`/`:5726`/`:5732` the §40c shortfall note · `:5808` the §81 long-run overrun.
+  - Invariants: `INV-PLAN-MAX-WEEKDAY-MINS`, `INV-PLAN-VOLUME-SHORTFALL-DECLARED`, `INV-PLAN-STRUCTURED-OVERRUN-DECLARED`. **The engine exemption and the validator exemption must agree** (§81: *"an engine exemption the validator does not share is a plan that fails its own constitution"*).
+
+  ### Scope of the build
+  1. **Input** — `day_budgets` (minutes per day, on the days already marked Run in the grid). The control exists; this adds a time to each cell. `max_weekday_mins` must keep working for every stored plan and every API caller that does not send `day_budgets`.
+  2. **Sizing, not trimming** — a day's budget feeds how its session is built, so the cap stops being a post-hoc shortening.
+  3. **Day-identity-aware placement** — put the structured session on a day that HAS the budget. **This is the real prize:** measured at `max_weekday_mins: 30`, **54% of plans currently contain a weekday session longer than the stated cap** (worst 54 min against 30), because §81 rightly refuses to deform it. Placement makes the exemption mostly unnecessary instead of merely honest.
+  4. **Redistribution** — volume that will not fit Tuesday moves to Thursday rather than being lost.
+
+  ### The new invariant must assert
+  No session exceeds its OWN day's budget except by §81's exemption, and where the exemption fires §81's **SPEAK** obligation is discharged (§81 amendment 2026-09-11: SPEAK applies to long run and structured sessions alike; the `maintenance` CLASSIFY half is the long run's remedy only). Placement must still satisfy **§6 / §8 / §18** — a runner's calendar may choose WHICH day carries quality, never HOW MUCH, and never whether hard/easy alternation survives.
+
+  ### Regression gate — non-negotiable
+  `npm run cohort:shape` **before and after**. This change moves peak volume by construction, so the number must be declared in the commit, not discovered afterwards. That is the harness built on 2026-09-11 precisely because a +60pp reclassification shipped unnoticed through a green suite.
 
 - ❌ **UX-WIZARD-CHATBOT — Runzy-style conversational plan setup — NOT BUILDING (SLT rejected 2026-08-29)** — recorded so it doesn't resurface. A chatbot is "a form that's decided to have a personality" — feels innovative, is more work (Sutherland); raises cognitive load for an anxious Type-A runner (Wood); expensive to build + run (LLM per setup, latency) and a conversion risk on the one flow you can't afford to leak (Traynor). The per-day slider (UX-WIZARD-01) is the preferred answer to the same surface.
 - ❌ **UX-PROGRESS-01 — race-time projection graph — NOT BUILDING (value already ships)** — Planzy draws a today→race finish-time curve. Zonna **already has the honest version, PAID**: `RaceTimesCard` ("Estimated race times", VDOT, 5-state confidence) + "Target race time delta" (R31, current→target delta). A smooth curve over-claims (fitness isn't linear; no per-week GPS/power data to model a real trajectory — ADR-011), is the **illusion-of-progress class** the product exists to counter (Wood), and violates **"No dashboards or noise."** If ever revisited: **Coaching Board first** — expected to reject a fabricated slope; honest ceiling is a 3-point baseline→current→target, not a line. Do **not** touch/duplicate `RaceTimesCard` / `/api/race-times` / the `race_time_estimates` gate.
