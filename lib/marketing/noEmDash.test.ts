@@ -42,11 +42,13 @@ const SURFACES = [
   'components/marketing/AppStoreBadge.tsx',
   'components/marketing/ComparisonPage.tsx',
   'components/marketing/PhoneFrame.tsx',
+  'components/marketing/ProductStill.tsx',
   'components/marketing/PlanPage.tsx',
   'components/marketing/SiteFooter.tsx',
   'components/marketing/SiteHeader.tsx',
   'components/marketing/WaitlistForm.tsx',
   'lib/marketing/comparisons.ts',
+  'lib/marketing/demoSurfaces.ts',
   'lib/marketing/plans.ts',
   'lib/marketing/pricing.ts',
 ]

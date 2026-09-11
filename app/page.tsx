@@ -23,8 +23,14 @@
 // Separately: BRAND.voiceAnchor ("Hold the zone.") is product-internal and
 // explicitly NOT for marketing copy — it has been removed from this hero.
 //
-// Product mockups are pure CSS (Warm Slate tokens). Faster than maintaining
-// real screenshots through redesigns, and stays on-palette automatically.
+// ─── Product visuals: the real components, not mockups ────────────────────
+// This page used to hand-draw imitations of app surfaces in CSS. It now mounts
+// `SessionCard`, `CoachNoteBlock` and `ZoneRings` themselves (GTM-SITE-02
+// item 3), so there is one definition of each and the website cannot drift
+// away from the app. Sample data lives in `lib/marketing/demoSurfaces.ts`.
+//
+// `PhoneFrame` is the remaining exception and stays hand-built on purpose: it
+// reproduces a whole SCREEN with a status bar and nav, not one component.
 
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
@@ -35,7 +41,29 @@ import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
 import { PhoneFrame } from '@/components/marketing/PhoneFrame'
+import { ProductStill } from '@/components/marketing/ProductStill'
 import { Wordmark } from '@/components/ui/Wordmark'
+
+// GTM-SITE-02 item 3 — the real app components, not imitations of them.
+//
+// None of these three is a client component and none requires a handler, so a
+// server-rendered marketing page can mount them directly. That was the whole
+// obstacle this item was parked on, and it turned out not to exist: the
+// backlog assumed they were `'use client'` with event handlers, and they are
+// not. No wrapper, no second copy, one definition. Change the card in the app
+// and the website changes with it.
+//
+// What they replaced: `MockSessionCard`, `MockReflectCard` and
+// `MockCoachNoteCard`, three hand-written imitations that had already started
+// diverging (the coach mock painted its rail in `--moss`, which the design
+// system reserves for the generic accent, while the real coach note uses
+// `--warn`, which is the colour that means "Kit is talking").
+//
+// Guarded by `lib/marketing/realComponents.test.ts`.
+import SessionCard from '@/components/shared/SessionCard'
+import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
+import ZoneRings from '@/components/shared/ZoneRings'
+import { DEMO_WEEK, DEMO_ZONE_WEEK, DEMO_COACH_NOTE } from '@/lib/marketing/demoSurfaces'
 
 export const dynamic = 'force-dynamic'  // auth check must run per-request
 
@@ -297,32 +325,66 @@ export default async function Home() {
         <Eyebrow>The product</Eyebrow>
         <SectionTitle accent="done with restraint.">Three things,</SectionTitle>
 
+        {/* Claim above, proof directly beneath it, three times.
+            Previously these were two unrelated grids: three text cards making
+            claims, then three hand-drawn imitations of app surfaces that were
+            not tied to any of them. Pairing each claim with the real component
+            that demonstrates it is the item (SLT, GTM-SITE-02): a card saying
+            "every run has a zone" is a promise, and a SessionCard reading
+            "Zone 2 · < 145 bpm · 6:30-7:30 /km" is a demonstration.
+
+            The claims lost their card. When the proof beneath is itself a
+            framed object, putting the sentence in a box too gives every column
+            two boxes and the page stops having a subject. */}
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '20px', marginBottom: '64px',
+          display: 'grid',
+          // `min(100%, 280px)`, not a bare 280px. A bare minimum track cannot
+          // shrink below itself, so at a 320px viewport the 280px column plus
+          // the section's 24px gutters came to 328 and the whole page scrolled
+          // sideways. Pre-existing on both grids in this section; found while
+          // sweeping widths for this change. Same guard as the hero above and
+          // the pricing page.
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+          gap: '18px 24px',
         }}>
-          <PillarCard
+          <Pillar
             title="A plan that fits you"
             body="Rule-engine generated from your race, your training history, your week and what you have actually been running, not a one-size template. Pace bands and HR zones derived from your inputs, not guessed."
-          />
-          <PillarCard
+          >
+            <ProductStill caption="Your week, on Plan">
+              {DEMO_WEEK.map(s => (
+                <SessionCard key={s.name} {...s} />
+              ))}
+            </ProductStill>
+          </Pillar>
+
+          <Pillar
             title="In-the-moment coaching"
             body="Each session knows what it's for and tells you exactly that. Bit keen on an easy day? You'll see it in the post-run line, not buried in a chart."
-          />
-          <PillarCard
+          >
+            <ProductStill caption={`${BRAND.coachName}, on Today`}>
+              <CoachNoteBlock aiGenerated timestamp={DEMO_COACH_NOTE.timestamp}>
+                <span style={{ display: 'block', marginBottom: '10px' }}>
+                  {DEMO_COACH_NOTE.observation}
+                </span>
+                <span style={{ display: 'block', fontStyle: 'italic' }}>
+                  {DEMO_COACH_NOTE.instruction}
+                </span>
+              </CoachNoteBlock>
+            </ProductStill>
+          </Pillar>
+
+          <Pillar
             title="Nothing you don't need"
             body="One job per screen. The plan shows up, you run, the plan adjusts. No noise, no dashboards, nothing competing for the run itself."
-          />
-        </div>
-
-        {/* Mock product surfaces — pure CSS, Warm Slate tokens */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '20px',
-        }}>
-          <MockSessionCard />
-          <MockReflectCard />
-          <MockCoachNoteCard />
+          >
+            {/* The anti-dashboard, which is why it proves THIS claim and not
+                one of the other two. A whole week of running is four rings and
+                four numbers, and the rings are the brand mark itself. */}
+            <ProductStill caption="Your zones, on Coach">
+              <ZoneRings pctByZone={DEMO_ZONE_WEEK.pct} meta={DEMO_ZONE_WEEK.meta} />
+            </ProductStill>
+          </Pillar>
         </div>
       </section>
 
@@ -343,18 +405,26 @@ export default async function Home() {
               session card. Stacks on mobile; the arrow flips to vertical. */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
             gap: '20px', alignItems: 'stretch',
           }}>
             <AnswersCard />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
               <div style={{
                 fontSize: '10px', fontWeight: 700, color: 'var(--moss)',
                 textTransform: 'uppercase', letterSpacing: '0.1em',
               }}>
                 → Generates
               </div>
-              <MockSessionCard />
+              {/* The real card, from the real component. This is the payoff of
+                  the answers beside it, so an imitation here was the weakest
+                  possible place to have one.
+
+                  No ProductStill frame: this section's ground is already
+                  --bg-soft, which is the ground the card has in the app, and
+                  the "Generates" eyebrow above is the caption. Framing it would
+                  have added a second label saying the same thing. */}
+              <SessionCard {...DEMO_WEEK[0]} />
             </div>
           </div>
         </div>
@@ -683,28 +753,45 @@ function ThesisCard({ label, line }: { label: string; line: string }) {
   )
 }
 
-function PillarCard({ title, body }: { title: string; body: string }) {
+/** One claim about the product, with the real app surface that proves it
+ *  directly beneath. No card: the proof beneath is the framed object in the
+ *  column, and boxing the sentence as well gives the column two subjects. */
+function Pillar({ title, body, children }: { title: string; body: string; children: React.ReactNode }) {
   return (
+    // `subgrid` so the heading, the sentence and the product still each sit on
+    // a row shared with the other two columns. Without it the three bodies run
+    // to different line counts and the three stills start at three different
+    // heights, which reads as a page that was assembled rather than set.
+    //
+    // Degrades safely: a browser without subgrid ignores the value and the
+    // three children stack in their own auto rows, exactly as they did before.
     <div style={{
-      background: 'var(--card)',
-      border: '1px solid var(--line)',
-      borderRadius: 'var(--radius-lg, 12px)',
-      boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
-      padding: '28px',
+      display: 'grid',
+      gridRow: 'span 3',
+      gridTemplateRows: 'subgrid',
+      // `minmax(0, 1fr)`, never the implicit `auto` column. Without it the
+      // single column sizes to its MAX-CONTENT, and SessionCard's detail line
+      // ("Zone 2 · < 145 bpm · 6:30-7:30 /km") is `white-space: nowrap`, so the
+      // track grew to 321px inside a 272px box and the page scrolled sideways
+      // at 320px wide. In the app that text ellipsises because its flex parent
+      // sets minWidth 0; a grid track has to be told the same thing.
+      gridTemplateColumns: 'minmax(0, 1fr)',
+      alignContent: 'start',
     }}>
       <h3 style={{
         fontFamily: 'var(--font-brand)',
         fontSize: '20px', fontWeight: 600, lineHeight: 1.3,
-        color: 'var(--ink)', margin: '0 0 12px',
+        color: 'var(--ink)', margin: 0,
       }}>
         {title}
       </h3>
       <p style={{
         fontSize: '14px', lineHeight: 1.6, color: 'var(--ink-2)',
-        margin: 0,
+        margin: 0, alignSelf: 'start',
       }}>
         {body}
       </p>
+      {children}
     </div>
   )
 }
@@ -725,8 +812,14 @@ function AnswersCard() {
   const answers: Array<[string, string]> = [
     ['How far?', 'Half marathon'],
     ['Goal', 'Sub-2:00'],
-    ['Weekly volume', '20–40 km'],
-    ['Longest run', '15–20 km'],
+    // CONTENT-ACCURACY (2026-09-11): these two read "20–40 km" and "15–20 km",
+    // which were the labels of WEEKLY_KM_CHIPS / LONGEST_RUN_CHIPS. Those chip
+    // tables are marked "Not rendered" in GeneratePlanScreen: the Coaching
+    // Board replaced both questions with a Ruler on 2026-08-30, so the wizard
+    // has not asked for a band in months. The Ruler reads out a number and a
+    // unit ("32 km"), which is what a visitor will actually see.
+    ['Weekly volume', '32 km'],
+    ['Longest run', '18 km'],
     ['Training history', '2–5 years'],
     ['Recent hard work', 'Here and there'],
     ['Days you run', 'Tue Thu Sat Sun'],
@@ -769,144 +862,6 @@ function AnswersCard() {
       <p style={{ fontSize: '12px', lineHeight: 1.45, color: 'var(--mute)', margin: '14px 0 0' }}>
         Plus injury history, terrain, your weekday time cap and a recent race result if you have one.
       </p>
-    </div>
-  )
-}
-
-/** Mock session card — mirrors the Today screen session card pattern.
- *  Pure CSS; no real plan data. Showcases left-accent type bar, structured
- *  metric hierarchy (zone → HR → distance), and a coach note bottom. */
-function MockSessionCard() {
-  return (
-    <div style={{
-      background: 'var(--card)',
-      border: '1px solid var(--line)',
-      borderRadius: 'var(--radius-lg, 12px)',
-      boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
-      padding: '20px 20px 20px 24px',
-      borderLeft: '3px solid var(--s-easy)',
-    }}>
-      <div style={{
-        fontSize: '10px', fontWeight: 700, color: 'var(--mute)',
-        textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px',
-      }}>
-        Today · Easy run
-      </div>
-      <div style={{
-        fontFamily: 'var(--font-brand)',
-        fontSize: '20px', fontWeight: 600, color: 'var(--ink)',
-        marginBottom: '14px',
-      }}>
-        {/* Middot, not an em dash: matches the device shot above, which joins
-            "Zone 2 · < 145 bpm · 6:30–7:30 /km" the same way. The ENGINE's own
-            session labels still read "Easy run — Zone 2"; changing those is an
-            app-wide copy change with a live coupling (catalogueRowFor falls
-            back to matching row.name against session.label on legacy plans),
-            so it is a separate decision, not a website edit. */}
-        Easy run · Zone 2
-      </div>
-      <div style={{
-        display: 'flex', gap: '18px', flexWrap: 'wrap',
-        fontSize: '13px', color: 'var(--ink-2)',
-        marginBottom: '14px',
-      }}>
-        <div><strong style={{ color: 'var(--ink)' }}>8 km</strong> · 55 min</div>
-        <div><strong style={{ color: 'var(--ink)' }}>&lt; 145 bpm</strong></div>
-        {/* Matches the engine's actual easy band for this profile, and the
-            device shot above — the two stills show the same session. */}
-        <div>6:30–7:30 /km</div>
-      </div>
-      <div style={{
-        fontSize: '13px', lineHeight: 1.5, color: 'var(--mute)',
-        borderTop: '1px solid var(--line)', paddingTop: '12px',
-        fontStyle: 'italic',
-      }}>
-        Keep HR below your zone 2 ceiling. Walk if needed.
-      </div>
-    </div>
-  )
-}
-
-/** Mock reflect view — RPE + voice response. Mirrors getReflectResponse output. */
-function MockReflectCard() {
-  return (
-    <div style={{
-      background: 'var(--card)',
-      border: '1px solid var(--line)',
-      borderRadius: 'var(--radius-lg, 12px)',
-      boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
-      padding: '20px',
-    }}>
-      <div style={{
-        fontSize: '10px', fontWeight: 700, color: 'var(--mute)',
-        textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px',
-      }}>
-        After your run
-      </div>
-      <div style={{ marginBottom: '14px' }}>
-        <div style={{ fontSize: '12px', color: 'var(--ink-2)', marginBottom: '8px' }}>How hard?</div>
-        <div style={{ display: 'flex', gap: '6px' }}>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-            <div key={n} style={{
-              flex: 1, height: '10px', borderRadius: '5px',
-              background: n <= 4 ? 'var(--moss)' : 'var(--line)',
-            }} />
-          ))}
-        </div>
-      </div>
-      <div style={{
-        fontFamily: 'var(--font-brand)',
-        fontSize: '15px', lineHeight: 1.4,
-        color: 'var(--ink)',
-        background: 'var(--bg-soft)',
-        padding: '14px',
-        borderRadius: 'var(--radius-md, 8px)',
-        borderLeft: '3px solid var(--moss)',
-      }}>
-        Kept it under control. That&apos;s the session.
-      </div>
-    </div>
-  )
-}
-
-/** Mock coach note — sparkle indicator + weekly check-in. */
-function MockCoachNoteCard() {
-  return (
-    <div style={{
-      background: 'var(--card)',
-      border: '1px solid var(--line)',
-      borderRadius: 'var(--radius-lg, 12px)',
-      boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
-      padding: '20px',
-      // GTM-SITE-02 — was --moss, which is wrong and meant nothing. CLAUDE.md
-      // reserves --warn for COACHING ("moss is the primary accent; warn/amber
-      // is reserved for coaching only"), and the real coach note does use it:
-      // see PhoneFrame's Kit card and CoachNoteBlock. A marketing mock painting
-      // a coach note in the generic accent throws away the one thing the colour
-      // was carrying, which is that Kit is talking.
-      borderLeft: '3px solid var(--warn)',
-    }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '6px',
-        fontSize: '10px', fontWeight: 700, color: 'var(--warn)',
-        textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px',
-      }}>
-        <span>✦</span>
-        <span>{BRAND.coachName} · this week</span>
-      </div>
-      <div style={{
-        fontSize: '14px', lineHeight: 1.55, color: 'var(--ink)',
-        marginBottom: '12px',
-      }}>
-        HR on Tuesday&apos;s easy run drifted 8 bpm above ceiling. Wednesday looked the same.
-        Two easy days in a row above Z2 is the pattern we&apos;re trying to break.
-      </div>
-      <div style={{
-        fontSize: '13px', lineHeight: 1.5, color: 'var(--ink-2)',
-        fontStyle: 'italic',
-      }}>
-        Hold Zone 2 on Thursday. Even if it feels too slow.
-      </div>
     </div>
   )
 }

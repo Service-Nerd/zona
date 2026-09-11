@@ -13,9 +13,20 @@
 // passed across the RSC boundary), so their markup is reproduced inline and
 // kept in sync by hand. If those components change, update this still to match.
 //
+// DISTANCE STRINGS COME FROM lib/format.ts, ALWAYS. This still said "8 km" in
+// both the 56px hero and the session card. The real screens render
+// `formatDistance()`, which emits "8km" with no space (ADR-015 makes that
+// module the sole owner of every distance string), so the device shot had
+// quietly drifted from the app in the one place a visitor is being told "this
+// is the app". Found on 2026-09-11 by putting the REAL SessionCard on the
+// homepage beside this still and seeing the two disagree, which is the whole
+// argument for rendering real components rather than drawing them.
+// `lib/marketing/realComponents.test.ts` now calls formatDistance and fails if
+// this file stops matching it.
+//
 // WHAT IT SHOWS — the real Today screen's element ORDER, exactly:
 //   wordmark + notification bell → context row + greeting + 56px restraint hero
-//   ("8 km, / easy." — the number then the adverb, ink then moss, the screen's
+//   ("8km, / easy." — the number then the adverb, ink then moss, the screen's
 //   signature; there is NO "Today" title on the real screen) → Kit's coach note
 //   → date strip (week nav + 7 day cells) → "Hold the zone" voice anchor →
 //   session card + CTA → four-tab nav with the real icons.
@@ -243,7 +254,7 @@ export function PhoneFrame() {
               Good morning
             </div>
             <div style={{ lineHeight: 1 }}>
-              <span style={{ fontSize: '56px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-2.5px', fontVariantNumeric: 'tabular-nums' }}>8 km,</span>
+              <span style={{ fontSize: '56px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-2.5px', fontVariantNumeric: 'tabular-nums' }}>8km,</span>
               <br />
               <span style={{ fontSize: '56px', fontWeight: 800, color: 'var(--moss)', letterSpacing: '-2.5px' }}>easy.</span>
             </div>
@@ -357,7 +368,7 @@ export function PhoneFrame() {
                   </div>
                 </div>
                 <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.3px', lineHeight: 1 }}>
-                  8 km
+                  8km
                 </div>
               </div>
             </div>
