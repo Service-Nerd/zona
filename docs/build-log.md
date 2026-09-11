@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-11 (evening) — §100 / SEC-08 / V2-POLISH-01 · Three items, and a table that was never there
+**Shipped:** The week after a safety trim now ramps from what the runner actually ran (§100); RLS rollout tooling plus five routes converted; card elevation on the 16 cards that were actually standalone.
+
+**Dev learning:** The best find of the day came from cross-referencing code against production rather than reading either. `daily_coach_notes` was queried by a live route, committed as a migration in April, recorded in the applied-migrations ledger as done, and absent from the database. Both call sites discarded the error, so the cache never hit and every app open paid for a fresh model call. The ledger is appended by hand: it records an INTENTION, and the session-start hook only warns about migrations MISSING from it — the opposite direction to the one that broke. Also found `core.hooksPath` unset, so the committed pre-commit hook was not the one running; the local copy was 31 lines behind and the missing lines were a security check. Two guards, both believed to be on, both off.
+
+**Product/creator learning:** The coaching board's value was the conflict scan, not the debate. Before anyone spoke, scanning the constitution turned up §12's boxed correction from August: the injury cap had made the *identical* mistake — capping a week against the curve's unadjusted previous value, so it never compounded — and it accounted for 394 of 981 violations. So the ruling was not a new judgement, it was applying a decided one. Then §52 supplied the amendment: my fix drove two 11.5 km easy runs to the 4 km floor, and §52's own Case 04 from April already forbade exactly that shape, in nearly those words. Eighty principles is past what anyone holds in working memory, which is the whole argument for scanning rather than reasoning.
+
+**AI-building learning:** My measurement harness generated 900 plans and reported "0% breach" with total confidence. It had actually generated zero — the input was missing `age` — and then, once fixed, generated 611 *degenerate* plans, because the engine takes `days_available` and I passed `days_per_week`. Mean peak week: 6.49 km, for runners doing 15–50. Both runs printed a clean, plausible-looking table. A measurement script is a check like any other, and a check that has never been seen to produce a non-trivial result has not been verified. I only caught it because 6.49 km is obviously wrong to anyone who runs.
+
+**The honest bit:** I gave the founder a list an hour earlier with "RAMP-BOUNCEBACK-01 (P1)" on it. That shipped on 2026-09-06. I had taken the name from a stale memory file and the status from a different, still-open item, and welded them into one confident line. He picked it off the list and I had to correct it before starting. Third time today that something I wrote down myself sent work in the wrong direction.
+
+**Hook material:** The cache had never worked. The comment above it said "this only pays the AI cost once per user per day" and had been false since April.
+
+**Postable?:** yes
+
+---
+
 ## 2026-09-11 (later still) — GTM-CHARITY-04 follow-ups · The risk I filed was fake and the real one was in the outbox
 **Shipped:** One owner for tier resolution, the third charity redeem door, and a stop on telling comped runners their trial had ended.
 
