@@ -43,6 +43,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-OVERDO-BRAKE',
   'INV-PLAN-DELOAD-IS-A-REDUCTION',
   'INV-PLAN-VOLUME-SHORTFALL-DECLARED',
+  'INV-PLAN-STRUCTURED-OVERRUN-DECLARED',
   'INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED',
   'INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED',
   'INV-PLAN-EFFORT-OR-PACE',
@@ -2637,6 +2638,54 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // INV-PLAN-VOLUME-SHORTFALL-DECLARED (CoachingPrinciples §40c — VOL-SHORTFALL-01)
   //
   // When a life-first constraint suppresses the peak week by
+  // INV-PLAN-STRUCTURED-OVERRUN-DECLARED (§81 as amended 2026-09-11)
+  //
+  // §81 exempts a structured session from `max_weekday_mins` because capping it
+  // scales the LABEL and not `derived_set` — the runner gets the same intervals
+  // in less time. The exemption carries an obligation, and §81's amendment makes
+  // its two halves explicit:
+  //
+  //   SPEAK      — applies to the long run AND structured sessions alike.
+  //   CLASSIFY   — the LONG RUN's remedy only. `maintenance` is defined by §23
+  //                as a VOLUME-OVERLOAD failure; a session that will not fit a
+  //                weekday is a TIME-BUDGET failure. Conflating them would make
+  //                `maintenance` mean two things, which is precisely the defect
+  //                §101 diagnosed for `compressed`.
+  //
+  // This checks the half that applies: when a weekday structured session runs
+  // materially past the runner's stated ceiling, the plan must say so. Shipping
+  // the downgrade instead took maintenance from 20% to 80% of plans at a
+  // 30-minute cap and was reverted; the note stayed.
+  //
+  // Same shape as INV-PLAN-VOLUME-SHORTFALL-DECLARED below: it verifies the
+  // honesty obligation, not the arithmetic behind it.
+  if (input.max_weekday_mins) {
+    const limit = input.max_weekday_mins *
+      (1 + GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT / 100)
+    let worstMins = 0
+    let worstWeek = 0
+    for (const w of plan.weeks) {
+      if (w.type === 'race') continue
+      for (const [d, sn] of Object.entries(w.sessions)) {
+        if (!sn || d === 'sat' || d === 'sun') continue
+        if (isLongRun(sn) || !isStructuredSession(sn)) continue
+        const mins = sn.duration_mins ?? 0
+        if (mins > limit && mins > worstMins) { worstMins = mins; worstWeek = w.n }
+      }
+    }
+    if (worstMins > 0 && !plan.meta.volume_constraint_note) {
+      violations.push({
+        code: 'INV-PLAN-STRUCTURED-OVERRUN-DECLARED',
+        principle_ref: 'CoachingPrinciples §81 (§40c)',
+        severity: 'warn',
+        week: worstWeek,
+        message: `A weekday structured session runs ${Math.round(worstMins)} min against a stated ${input.max_weekday_mins}-min ceiling (past the ${GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT}% overrun limit), and the plan says nothing. §81 exempts the session from the cap; the exemption obliges the plan to tell the runner it does not fit.`,
+        actual: `${Math.round(worstMins)} min, no volume_constraint_note`,
+        expected: 'a note naming the trade and the lever',
+      })
+    }
+  }
+
   // VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT or more, the plan must SAY SO.
   //
   // The constraint itself is correct and stays — `max_weekday_mins` is the

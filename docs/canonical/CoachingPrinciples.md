@@ -2429,14 +2429,51 @@ weekday, i.e. the runner blocked both weekend days. Among those runners, 823 of
 than double the time they said they had.
 
 **The obligation that comes with the exemption.** An exemption is not a licence to
-ignore the runner — it applies to the long run and to structured sessions alike. Past
-`GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT` (50%) the session is
-not a stretch, it is a different time budget, and the plan must:
+ignore the runner. Past `GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT`
+(50%) the session is not a stretch, it is a different time budget, and the plan must:
 
 1. **Say so** — §40c's rule, *a suppressed target is stated, never absorbed
-   silently*, via `volume_constraint_note`.
+   silently*, via `volume_constraint_note`. **This half applies to the long run
+   AND to structured sessions alike.**
 2. **Classify `maintenance`** — §52's third remedy. The runner keeps a plan; the
-   plan stops claiming to build a long run it cannot build.
+   plan stops claiming to build a long run it cannot build. **This half is the
+   LONG RUN's remedy only** — see the amendment below.
+
+### Amendment (Coaching Board, 2026-09-11) — the CLASSIFICATION does not extend to structured sessions
+
+This section originally said the obligation applies "to the long run and to
+structured sessions alike", and the engine applied neither half to structured
+sessions. Fixing that as a defect shipped both halves, and the measurement after
+the fact showed why the second is wrong.
+
+**`maintenance` already has a defined meaning, and it is not this one.** §23 sets
+it: a plan whose peak weekly volume fails to reach `PEAK_OVER_BASE_RATIO` times
+week 1 — **a volume-overload failure**. A quality session that will not fit inside
+a weekday is a **time-budget** failure. The plan's volume may ramp perfectly well;
+what will not fit is one session, on one kind of day, in a week whose weekend is
+not capped at all.
+
+Conflating the two would make `maintenance` mean two unrelated things — which is
+exactly the defect §101 diagnosed for `compressed` ("One boolean OR-combined both,
+and was `true` for five of six test personas. A flag that is almost always true
+carries no information"). The board is not going to repeat it one section later.
+
+**Measured, which is what settled it.** Extending the classification took
+`volume_profile: 'maintenance'` from **20% to 80% of plans at a 30-minute weekday
+cap (+60pp)**; at a cap of 45 or above nothing crosses the limit at all. §81's own
+description of the long-run case is *rare* — "only when the long run has been
+forced onto a weekday", 896 plans. The structured case is 60% of 30-minute-cap
+plans. The same remedy at sixty times the incidence is a different decision, and
++60pp is the magnitude this board rejected on 2026-09-06.
+
+**And the substance, not only the number.** Weekends are not capped. A runner with
+thirty-minute weekdays and a free Sunday can build perfectly well for a 10K.
+Classifying that plan `maintenance` would tell them their training is not building
+when it is — and it would tell it disproportionately to the cohort this section's
+own closing paragraph exists not to turn away.
+
+**So: the runner is told, and the plan is not relabelled.** Enforced by
+`INV-PLAN-STRUCTURED-OVERRUN-DECLARED` (`warn`).
 
 **Framing (Sims).** This constraint profile — no weekend availability — skews
 heavily toward people with caregiving loads, disproportionately women. A bare
