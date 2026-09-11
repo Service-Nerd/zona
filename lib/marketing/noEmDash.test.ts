@@ -30,6 +30,7 @@ const SURFACES = [
   'app/layout.tsx',
   'app/page.tsx',
   'app/plans/page.tsx',
+  'app/pricing/page.tsx',
   'app/plans/[slug]/page.tsx',
   'app/comparisons/page.tsx',
   'app/runna-alternatives/page.tsx',
@@ -46,6 +47,7 @@ const SURFACES = [
   'components/marketing/WaitlistForm.tsx',
   'lib/marketing/comparisons.ts',
   'lib/marketing/plans.ts',
+  'lib/marketing/pricing.ts',
 ]
 
 const EM_DASH = '—'

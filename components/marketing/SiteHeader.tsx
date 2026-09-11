@@ -45,7 +45,7 @@ import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
 import { Wordmark } from '@/components/ui/Wordmark'
 
-export type SiteSection = 'plans' | 'comparisons' | null
+export type SiteSection = 'plans' | 'pricing' | 'comparisons' | null
 
 /** The site frame. One value for header and footer, on every page. */
 export const SITE_WIDTH = 1100
@@ -55,6 +55,12 @@ export const SITE_WIDTH = 1100
  *  sites have menus. */
 const NAV: Array<{ href: string; label: string; section: SiteSection }> = [
   { href: '/plans', label: 'Plans', section: 'plans' },
+  // GTM-SITE-02 — third item, added on the ORIGINAL ruling's own reasoning
+  // rather than against it: the menu exists for sections people cannot
+  // otherwise find, and pricing is the most looked-for page on any
+  // subscription product. It was missing entirely, which the SLT called a
+  // commercial defect: a charity partner could not evaluate the offer at all.
+  { href: '/pricing', label: 'Pricing', section: 'pricing' },
   { href: '/comparisons', label: 'Comparisons', section: 'comparisons' },
 ]
 
