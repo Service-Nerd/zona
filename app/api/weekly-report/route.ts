@@ -15,6 +15,7 @@ import { getCurrentWeekIndex, isDateWithinWeek, isDateBeforePlan } from '@/lib/p
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
+import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 
 // POST /api/weekly-report
 // Auth-gated (paid/trial). Computes this week's coaching report.
@@ -44,10 +45,26 @@ export async function POST(req: NextRequest) {
 
   const force = req.nextUrl.searchParams.get('force') === 'true'
 
-  const serviceSupabase = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  // SEC-08 — BRANCHED, not swapped.
+  //
+  // This route serves two callers. The interactive one carries the runner's
+  // bearer token, so it gets a user-scoped client and RLS applies — the
+  // `.eq(user_id)` filters below become a second layer rather than the only one.
+  // The INTERNAL one is a cron calling on the runner's behalf with
+  // `x-service-key` + `x-user-id`, where there is no user JWT at all;
+  // `createUserScopedClient` would return null and the route would have nothing
+  // to query with.
+  //
+  // That distinction is invisible to table-usage analysis, which is why
+  // `scripts/rls-convertible-routes.ts` asks `acceptsInternalServiceCall()`
+  // separately and blocks these two from a blanket conversion.
+  const serviceSupabase = isInternalCall
+    ? createServiceClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      )
+    : createUserScopedClient(req)
+  if (!serviceSupabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Fetch plan + user settings in parallel
   const [planRes, settingsRes] = await Promise.all([

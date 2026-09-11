@@ -21,6 +21,7 @@ import { FATIGUE_HIGH_TAGS } from '@/lib/coaching/constants'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import type { Plan, Session } from '@/types/plan'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
+import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 
 // POST /api/analyse-run
 // Auth-gated (paid/trial). Called after a Strava activity is linked to a planned session.
@@ -65,10 +66,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'strava_activity_id or apple_health_uuid required' }, { status: 422 })
   }
 
-  const serviceSupabase = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  // SEC-08 — BRANCHED, not swapped.
+  //
+  // This route serves two callers. The interactive one carries the runner's
+  // bearer token, so it gets a user-scoped client and RLS applies — the
+  // `.eq(user_id)` filters below become a second layer rather than the only one.
+  // The INTERNAL one is a cron calling on the runner's behalf with
+  // `x-service-key` + `x-user-id`, where there is no user JWT at all;
+  // `createUserScopedClient` would return null and the route would have nothing
+  // to query with.
+  //
+  // That distinction is invisible to table-usage analysis, which is why
+  // `scripts/rls-convertible-routes.ts` asks `acceptsInternalServiceCall()`
+  // separately and blocks these two from a blanket conversion.
+  const serviceSupabase = isInternalCall
+    ? createServiceClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      )
+    : createUserScopedClient(req)
+  if (!serviceSupabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Activity lookup uses whichever ID was provided
   const activityQuery = serviceSupabase
