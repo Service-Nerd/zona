@@ -2547,6 +2547,20 @@ export default function DashboardClient() {
         const isOnboarding = screen === 'generate' && (!plan || plan === EMPTY_PLAN)
         if (isOnboarding) return null
 
+        // UX-REDEEM-01 — the redeem screen is a FULL SCREEN, so it replaces the
+        // tab bar rather than floating above it.
+        //
+        // Reported from a real device: "Got a code page (it has the nav bar at
+        // the bottom)". `RedeemCodeScreen` has its own back arrow and owns the
+        // whole viewport, but the tab bar stayed mounted underneath — so a
+        // runner mid-redemption could tap away to Today/Plan/Coach and lose the
+        // flow, on the one screen standing between them and free access.
+        //
+        // `ui-patterns.md` is explicit and this was neither of its two shapes:
+        // a full screen replaces the tab bar; a slide-up sheet keeps a MIRRORED
+        // nav at the bottom. It has a back arrow, so it is the former.
+        if (screen === 'redeem') return null
+
         const navItems: { id: Screen; label: string; icon: (a: boolean) => React.ReactNode }[] = [
           { id: 'today', label: 'Today', icon: (a) => <IconToday active={a} /> },
           { id: 'plan',  label: 'Plan',  icon: (a) => <IconPlan  active={a} /> },

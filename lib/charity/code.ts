@@ -52,6 +52,34 @@ export function normaliseCode(input: string | null | undefined): string | null {
   return body.length ? body : null
 }
 
+/**
+ * Format what the runner is typing, live, as they type it.
+ *
+ * UX-REDEEM-01 (2026-09-11). The input's placeholder read `ZONNA-XXXX-XXXX`, so
+ * a runner typed the prefix and counted out the hyphens — work `normaliseCode`
+ * has never required. The founder did exactly that on a real device and reported
+ * it as bad UI, which it was: a box that IMPLIES a strict format the parser does
+ * not want makes people feel they got a gift wrong.
+ *
+ * This is the same normalisation rules, run forwards: strip everything that is
+ * not a code character, drop a prefix the runner typed themselves, and group
+ * what is left. Paste `zonna x7k2 9mqf`, hold a phone keyboard down, or type it
+ * bare — it lands the same way.
+ *
+ * Shares `normaliseCode` deliberately rather than re-deriving the rules, so the
+ * box can never disagree with the parser about what a code is.
+ */
+export function formatCodeInput(raw: string): string {
+  const body = normaliseCode(raw)
+  if (!body) return ''
+  const trimmed = body.slice(0, GROUP_LEN * GROUPS)
+  return (trimmed.match(/.{1,4}/g) ?? []).join('-')
+}
+
+/** How many code characters a complete code carries, prefix excluded. Exported
+ *  so the input can size itself and enable its button from one source. */
+export const CODE_BODY_LENGTH = GROUP_LEN * GROUPS
+
 /** The display form, for showing a code back to an admin after minting. */
 export function formatCode(normalised: string): string {
   const groups = normalised.match(/.{1,4}/g) ?? [normalised]

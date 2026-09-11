@@ -20,6 +20,7 @@
 import { useState } from 'react'
 import { BRAND } from '@/lib/brand'
 import { authedFetch } from '@/lib/supabase/authedFetch'
+import { formatCodeInput, CODE_PREFIX } from '@/lib/charity/code'
 
 function formatEnds(iso: string): string {
   try {
@@ -182,27 +183,62 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
             >
               Your code
             </label>
-            <input
-              id="charity-code"
-              value={code}
-              onChange={e => { setCode(e.target.value); setError(null) }}
-              onKeyDown={e => { if (e.key === 'Enter') handleRedeem() }}
-              placeholder="ZONNA-XXXX-XXXX"
-              autoCapitalize="characters"
-              autoCorrect="off"
-              spellCheck={false}
-              style={{
-                width: '100%', padding: '14px 16px',
-                background: 'var(--card)', border: '1px solid var(--line-strong)',
-                borderRadius: 'var(--radius-md)',
-                fontFamily: 'var(--font-ui)',
-                // 16px minimum: anything smaller makes iOS Safari zoom the
-                // viewport on focus, which reads as the app breaking.
-                fontSize: '16px', fontWeight: 600,
-                color: 'var(--ink)', letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-              }}
-            />
+            {/* UX-REDEEM-01 — the box no longer asks for work the parser does
+                not want. `ZONNA-` is a STATIC ADORNMENT because it is known and
+                never varies, and the separator is inserted as the runner types
+                (`formatCodeInput`, which shares `normaliseCode`'s rules so the
+                box and the parser can never disagree).
+
+                The old placeholder was `ZONNA-XXXX-XXXX`, which implied a strict
+                format `normaliseCode` has always been forgiving about — it
+                accepts the code "lowercase, spaced, hyphenated, with or without
+                the prefix". The founder typed the prefix and counted hyphens on
+                a real device and reported it. Paste, type bare, or type it in
+                full: all three land identically now. */}
+            <div style={{
+              display: 'flex', alignItems: 'center',
+              background: 'var(--card)', border: '1px solid var(--line-strong)',
+              borderRadius: 'var(--radius-md)',
+              paddingLeft: '16px', overflow: 'hidden',
+            }}>
+              <span aria-hidden style={{
+                fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 600,
+                color: 'var(--mute)', letterSpacing: '0.06em', flexShrink: 0,
+              }}>
+                {CODE_PREFIX}-
+              </span>
+              <input
+                id="charity-code"
+                value={code}
+                onChange={e => { setCode(formatCodeInput(e.target.value)); setError(null) }}
+                onKeyDown={e => { if (e.key === 'Enter') handleRedeem() }}
+                placeholder="XXXX-XXXX"
+                inputMode="text"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                aria-describedby="charity-code-help"
+                style={{
+                  flex: 1, minWidth: 0,
+                  padding: '14px 16px 14px 2px',
+                  background: 'transparent', border: 'none', outline: 'none',
+                  fontFamily: 'var(--font-ui)',
+                  // 16px minimum: anything smaller makes iOS Safari zoom the
+                  // viewport on focus, which reads as the app breaking.
+                  fontSize: '16px', fontWeight: 600,
+                  color: 'var(--ink)', letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                }}
+              />
+            </div>
+
+            <p id="charity-code-help" style={{
+              margin: '8px 0 0', fontFamily: 'var(--font-ui)', fontSize: '13px',
+              lineHeight: 1.5, color: 'var(--mute)',
+            }}>
+              Eight characters. Hyphens and capitals sort themselves out, and you can
+              paste the whole thing from the email.
+            </p>
 
             {error && (
               <div role="alert" style={{
