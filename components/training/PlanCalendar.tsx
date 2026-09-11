@@ -5,7 +5,7 @@ import type { Week, Session } from '@/types/plan'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import { createClient } from '@/lib/supabase/client'
 import { authedFetch } from '@/lib/supabase/authedFetch'
-import { SESSION_COLORS, SESSION_LABELS } from '@/lib/session-types'
+import { SESSION_COLORS } from '@/lib/session-types'
 import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
 import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric, type DistanceUnits, type SessionMetric, type SessionMetricOverrides } from '@/lib/format'
 
@@ -780,22 +780,29 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
                 {isMoving && <span style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.7 }}>moving...</span>}
                 {isSwapTarget && <span style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.7 }}>tap to swap</span>}
               </div>
-              {!isMoving && SESSION_LABELS[session.type] && (
-                <span style={{
-                  fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 600,
-                  textTransform: 'uppercase', letterSpacing: '0.07em',
-                  color: accent, background: `color-mix(in srgb, ${accent} 18%, transparent)`,
-                  borderRadius: '4px', padding: '2px 6px', whiteSpace: 'nowrap',
-                  // D9: the session label is primary — let this secondary type chip
-                  // yield first when the row is tight (the label is flex:1/basis-0,
-                  // so a shrinkable chip absorbs the squeeze and the label stays
-                  // readable instead of clipping to "Long ea…"). No effect when the
-                  // row has room. flexShrink was 0, which forced the label to clip.
-                  flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>
-                  {SESSION_LABELS[session.type]}
-                </span>
-              )}
+              {/* UX-PLAN-MOVE-01 (2026-09-11) — the type chip is GONE, and the
+                  session label has the row back.
+                  MEASURED over 5,280 generated sessions before removing it:
+                    · 65.7% of chips were a VERBATIM DUPLICATE of the label
+                      beside them (label "Easy run — Zone 2", chip "Easy run —
+                      Zone 2"), and the duplicate took 115px of a 172px row
+                      while clipping the original to 51px — "Easy…".
+                    · On a long run it was WRONG. `SESSION_LABELS[session.type]`
+                      reads `type`, and a long run carries `type: 'easy'`, so a
+                      row labelled "Long run — marathon pace + HM-pace finish"
+                      wore a chip saying "Easy run — Zone 2".
+                    · On quality it was strictly LESS informative: "Quality
+                      session" against a label reading "Short VO2max".
+                  In no measured case did it add anything. The type signal the
+                  chip carried in its colour is already on the row, in the
+                  coloured left accent bar.
+
+                  D9 had already asserted the intent — "the session label is
+                  primary... let this secondary type chip yield first" — and set
+                  `flexShrink: 1` on the chip to achieve it. It never fired: the
+                  label is `flex: 1 1 0%`, so its basis is 0, there is never
+                  negative free space, and a shrink factor with nothing to shrink
+                  is decoration. A fix that looks applied and does nothing. */}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px', flexWrap: 'wrap' }}>
               {/* Structured metric (R23+ plans). Render only the chosen metric;
@@ -848,33 +855,48 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
           <span style={{ color: 'var(--moss)', fontSize: '15px', lineHeight: 1 }} aria-label="Swap with this session">⇄</span>
         )}
         {isMovable && !isMoveMode && (
-          // RESHAPE-FIX-WAVE2C (Defect 11) — clearer move affordance.
-          // Pre-fix: a 3-line hamburger at 0.45 opacity looked like a
-          // "more options" icon, not a move handle. The 2026-06-26
-          // incident user reported never having "dragged" anything —
-          // because he hadn't; he'd tapped this icon without realising
-          // it initiated a move. Now: explicit ↕ glyph in a soft moss
-          // pill, aria-labelled, opacity 0.85. Still unobtrusive
-          // (restraint = brand) but legible as "move this session."
+          // UX-PLAN-MOVE-01 (2026-09-11) — the pill loses its chrome and its word.
+          //
+          // It arrived as RESHAPE-FIX-WAVE2C Defect 11, replacing a 3-line
+          // hamburger at 0.45 opacity that read as "more options". THE RECORD OF
+          // WHY HAS SINCE BEEN MISREAD, including by the backlog entry that
+          // scheduled this change: it said the old handle "caused a documented
+          // incident" and that reverting "re-opens a real defect". It did not.
+          //
+          // Wave 2c shipped THREE things, and the safety is in the other two:
+          // `pendingMove` stages the move between target-tap and write, and an
+          // inline confirmation row ("Move Long run from Sun to Thu?") must be
+          // confirmed before anything is written. Before that, tapping the icon
+          // then a day wrote to `session_overrides` and posted `/api/adjust-plan`
+          // immediately — no preview, no confirm. THAT was the defect. An
+          // accidental tap today costs a tap on Cancel and zero DB side-effect.
+          //
+          // So the affordance is free to be quiet again, and the founder asked
+          // for that. What it must NOT go back to is the hamburger: `≡` is the
+          // universal "menu" glyph, which is exactly the ambiguity Defect 11
+          // named. `↕` means one thing. It now sits in `--mute` beside the row's
+          // own `›` chevron, sharing that vocabulary — a handle, not a CTA.
+          // Moss is reserved for CTA and active states (ADR-007); spending it on
+          // every movable row devalues it where it has to mean something.
+          //
+          // Hit area is 44x44 (iOS HIG) with negative margins so the row height
+          // is unchanged — the old pill was roughly 24px tall and under-sized.
           <button
             onClick={e => { e.stopPropagation(); onMoveIconTap() }}
             aria-label={`Move ${session?.label ?? 'session'}`}
             title="Move this session"
             style={{
-              background: 'var(--moss-soft)',
-              border: '1px solid var(--moss-mid, var(--line))',
-              borderRadius: '999px',
+              background: 'none',
+              border: 'none',
               cursor: 'pointer',
-              padding: '3px 8px',
+              width: '44px', height: '44px',
+              margin: '-11px -7px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'var(--font-ui)', fontSize: '11px',
-              color: 'var(--moss)', fontWeight: 600,
-              letterSpacing: '0.05em',
-              opacity: 0.85,
+              color: 'var(--mute)',
+              fontSize: '16px', lineHeight: 1,
             }}
           >
-            <span style={{ marginRight: '3px', fontSize: '12px', lineHeight: 1 }}>↕</span>
-            Move
+            ↕
           </button>
         )}
         {isMoving && (

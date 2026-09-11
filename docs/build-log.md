@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-11 — UX-PLAN-MOVE-01 · The constraint I wrote down was wrong, and the real bug was next to it
+
+**Shipped:** The `↕ Move` pill on Plan rows is a quiet `↕` handle. And the type chip that was clipping every session label to "Easy…" is gone.
+
+**Dev learning:** `flexShrink: 1` does nothing when the sibling has `flex-basis: 0`. The label was `flex: 1 1 0%`, so it claims only leftover space and there is never negative free space for the chip's shrink factor to act on. A previous fix (D9) set that shrink factor, wrote a five-line comment explaining that the label is primary and the chip should yield first, and changed nothing. It read as solved for months.
+
+**Product/creator learning:** The chip said "Easy run — Zone 2" next to a label saying "Easy run — Zone 2". The row spent two thirds of its width repeating itself and truncated the original to pay for it. Nobody reported it, because a row that says "Easy…" still looks like a design decision.
+
+**AI-building learning:** I nearly designed around a constraint I had invented. My own backlog entry said the old move handle "caused a documented incident" and reverting would "re-open a real defect". Reading the actual record: the incident was the ENGINE auto-applying a day swap, and the affordance change was one of three fixes — the other two (a staged move plus a confirmation row) are what made it safe. I had conflated the handle with the confirmation. That is the third time this week a confident note of mine sent work the wrong way, and the only defence that worked was opening the code instead of trusting the doc.
+
+**The honest bit:** I only found the truncation because I could not reach the Plan screen in a browser without auth, so I built a throwaway page that renders `PlanCalendar` with a generated plan. If I had shipped on a diff read, the move handle would have been fine and every session label on the demo screen would still say "Easy…". The scratch page took ten minutes. It also immediately threw, because my hand-written fixture used invalid enum values and the §55 validation I shipped this morning caught it — so I used a real grid input instead, which is the lesson I keep relearning.
+
+**Hook material:** 65.7% of 5,280 generated sessions rendered a chip that was a word-for-word duplicate of the label beside it. The duplicate took 115px of a 172px row. The original got 51.
+
+**Postable?:** yes
+
+
 ## 2026-09-11 — UX-AUTH-02 · Two bug reports that were both about the same thing
 
 **Shipped:** Sign-in shows Apple, Google and "Use email instead"; the email block opens and closes on one toggle. Plus the Google button got a visible outline back.
