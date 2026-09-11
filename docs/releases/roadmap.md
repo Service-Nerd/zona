@@ -88,8 +88,8 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 | **UX-COACH-01** (Coach screen redesign) | Fried: *"a half-redesigned Coach screen is worse than a busy one."* Wood exercised the kill mandate: the progress dashboard is the founder describing himself, and he is not this cohort. **Recorded as a real disagreement with the founder, not synthesised away.** |
 | **UX-POSTRUN-01** (four numbers → one) | Hutchinson: *"collapsing zone %, RPE and fatigue into one score is a claim that those three trade off in a known ratio. They do not."* Needs a Coaching Board sitting that will not happen in a fortnight. |
 | **UX-WIZARD-01** (per-day time budgets) | Board-ruled BUILD, but it **moves peak volume by construction**. Not in the same fortnight as a launch. |
-| **UX-PLAN-MOVE-01** (the Move pill) | The handle the founder prefers caused a documented 2026-06-26 incident. Needs thought, not haste. |
-| **MAINT-LABEL-01 (the `volume_profile` value)** | Engine change; feeds the paid confidence score. Board first. |
+| ~~**UX-PLAN-MOVE-01**~~ | ✅ **DONE 2026-09-11.** **The premise of this row was wrong and I wrote it:** the handle did NOT cause the incident. RESHAPE-FIX-WAVE2C shipped three things and the safety is the other two (a staged move plus a confirmation row), so an accidental tap has cost nothing since June. Shipped quiet, and fixed a label-clipping defect found on the same row. |
+| ~~**MAINT-LABEL-01 (the `volume_profile` value)**~~ | ✅ **BOARD SAT 2026-09-11 → §106.** **"Feeds the paid confidence score" was wrong** — nothing in any confidence path reads it. The board withdrew three of four filed findings at the conflict scan and ruled on the one that was real: the peak ceiling is volume-blind. |
 | CAT-DEPTH-01 · marathon race-specific residual · SEC-08's last route · GTM-SITE-03 | None are between the email and a plan on screen. |
 
 ### The beginner gap, stated plainly
