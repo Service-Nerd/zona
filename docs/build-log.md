@@ -6,6 +6,27 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-11 — GTM-CHARITY-01 / GTM-CHARITY-03 / GTM-SEO-PLANS-01 · Three ships that never got recorded
+
+*(Backfilled the same day, by a hook written to catch exactly this. Recorded as
+one entry because the lesson is shared and inventing three separate reflections
+would be writing to fill a template.)*
+
+**Shipped:** the charity-runner landing page, the RevenueCat comp fix, and the quality-session structure on the SEO plan pages.
+
+**Dev learning:** The comp one is the pick of them. RevenueCat's webhook is the single writer of `subscriptions`, and `toStatus()` handled seven lifecycle events. A promotional entitlement granted from the dashboard arrives as `NON_RENEWING_PURCHASE`, hit `default`, and the route replied "received" while writing nothing at all. So a runner we had deliberately comped stayed on the free tier and met the marathon paywall anyway. The fix that matters is not the two new mappings — it is that unknown events now record `revenuecat_event_unhandled` instead of returning 200 and doing nothing. A webhook that says "received" and drops the payload is indistinguishable from one that works.
+
+**Product/creator learning:** Open-ended grants had been inheriting the 30-day subscription default, which would have cut a comped runner off around week four of a sixteen-week block. Wood's line in the SLT was that a mid-block cliff is worse than never granting access at all, and she was right — you would be taking the plan away at the point it starts to hurt.
+
+**AI-building learning:** These three went unrecorded for a whole day through three separate manual audits of my own. The audits were not careless; they were scoped to the items I remembered working on, and these were not on that list. The hook that found them reads git history instead of memory, which is the entire difference.
+
+**The honest bit:** I told the founder the doc audit was clean, twice, and it was not. What made it look clean was that I was checking my recollection against the docs, and both came from the same place. The fix was to check the docs against git.
+
+**Hook material:** Three manual audits in one day, all reporting clean, all scoped to what I could remember. The first automated pass found three more in ten seconds.
+
+**Postable?:** yes
+
+
 ## 2026-09-11 — GTM-CHARITY-02 · The qualifier was never in the sentence that mattered
 
 **Shipped:** Co-branding settled as no. The "1+ years' experience" qualifier removed from the stated audience.
