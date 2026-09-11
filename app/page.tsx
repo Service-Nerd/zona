@@ -129,11 +129,25 @@ export default async function Home() {
       <SiteHeader />
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
+      {/* GTM-SITE-02 — TWO COLUMNS, product on the right.
+          The device shot used to sit two sections down, so a first-time visitor
+          read a headline, a paragraph, a price and a hardware caveat before
+          seeing any evidence the software exists. We sell software; show the
+          software. SLT: "no debate".
+
+          Also now LEFT-ALIGNED, which the design system asked for all along
+          ("left-aligned content with a consistent horizontal margin, never
+          centred-only layouts"). The centring was never a reviewed decision:
+          GTM-SITE-01 only ruled on the tagline kicker. */}
       <section style={{
-        maxWidth: '780px', margin: '0 auto',
-        padding: '56px 24px 80px',
-        textAlign: 'center',
+        maxWidth: '1100px', margin: '0 auto',
+        padding: '48px 24px 56px',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))',
+        gap: '32px',
+        alignItems: 'center',
       }}>
+        <div>
         {/* GTM-SITE-01 — the tagline kicker was REMOVED from this hero.
             brand.md locks three lines and says never mix two on one surface;
             this stacked `BRAND.tagline` directly above `BRAND.marketingH1`, the
@@ -158,7 +172,11 @@ export default async function Home() {
             with tighter tracking; the marketing H1 is the page's largest statement. */}
         <h1 style={{
           fontFamily: 'var(--font-brand)',
-          fontSize: 'clamp(40px, 7vw, 68px)',
+          // Reduced from clamp(40,7vw,68). design_handoff_v2 raised it for a
+          // FULL-WIDTH hero; this column is about half that, where 68px
+          // reads cramped rather than confident. A considered revision of
+          // that decision, not an accident.
+          fontSize: 'clamp(34px, 3.6vw, 52px)',
           fontWeight: 700, lineHeight: 1.03, letterSpacing: '-0.025em',
           color: 'var(--ink)',
           margin: '0 0 24px',
@@ -171,7 +189,7 @@ export default async function Home() {
 
         <p style={{
           fontSize: '18px', lineHeight: 1.55, color: 'var(--ink-2)',
-          maxWidth: '560px', margin: '0 auto 36px',
+          maxWidth: '540px', margin: '0 0 28px',
         }}>
           You&apos;re trying hard. That&apos;s the problem. Most amateur runners go medium-hard on
           everything, never truly recover, never truly push, and wonder why they don&apos;t improve.
@@ -179,7 +197,7 @@ export default async function Home() {
         </p>
 
         {/* Primary action — App Store download. Single CTA, post-launch. */}
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
           <AppStoreBadge />
         </div>
 
@@ -204,13 +222,22 @@ export default async function Home() {
         }}>
           {BRAND.hrRecommendation}
         </p>
+        </div>
+
+        {/* The product. Light section only: the frame renders its screen ground
+            dark inside a --ground section (PhoneFrame's known constraint).
+            `.phone-fit` scales it below 430px so it cannot force the document
+            wider than the viewport. */}
+        <div className="phone-fit" style={{ justifySelf: 'center' }}>
+          <PhoneFrame />
+        </div>
       </section>
 
       {/* ── Facts band — MoorHub stat-strip structure, no vanity metrics ──
           v2 (design_handoff_v2). Honest facts only; price from PRICING. */}
-      <section style={{ maxWidth: '780px', margin: '0 auto', padding: '0 24px 8px' }}>
+      <section style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px 56px' }}>
         <div style={{
-          display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
+          display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-start',
           gap: '10px 22px',
           fontSize: '13px', fontWeight: 600, color: 'var(--ink-2)',
           letterSpacing: '0.01em',
@@ -232,13 +259,6 @@ export default async function Home() {
               </span>
             ))}
         </div>
-      </section>
-
-      {/* ── Device frame — the real Today anatomy, in a phone shell ───────
-          v2 (design_handoff_v2) Change 2. Light section only (frame ground
-          renders dark on --ground sections — known constraint). */}
-      <section style={{ padding: '40px 24px 72px', display: 'flex', justifyContent: 'center' }}>
-        <div className="phone-fit"><PhoneFrame /></div>
       </section>
 
       {/* ── Thesis ───────────────────────────────────────────────────── */}
