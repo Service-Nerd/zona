@@ -19,6 +19,7 @@ import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, type F
 import { validatePlan, enforceViolations } from './invariants'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
 import { normaliseDays } from './days'
+import { sessionKmOrZero } from '@/lib/plan/sessionDistance'
 import { isLongRun, isShakeout, classifyStimulus, isStructuredSession } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor } from './sessionStructureV2'
@@ -2035,7 +2036,7 @@ function applyRecalibrationTimeTrial(
     .filter(d => {
       const s = sessions[d]
       if (!s || s.type !== 'easy') return false
-      const km = s.distance_km ?? (s.duration_mins ? s.duration_mins / pace.minPerKmEasy : 0)
+      const km = sessionKmOrZero(s, pace.minPerKmEasy)
       return km >= cfg.min_slot_km
     })
     // Furthest from the long run — freshest legs, and it keeps the hard effort
@@ -3160,7 +3161,7 @@ function buildWeekSessions(
     // converts duration_mins back to km via easy pace. Strength has no volume.
     const placedKm = Object.values(sessions).reduce((sum, s) => {
       if (!s || s.type === 'strength' || s.type === 'rest') return sum
-      return sum + (s.distance_km ?? (s.duration_mins ?? 0) / pace.minPerKmEasy)
+      return sum + sessionKmOrZero(s, pace.minPerKmEasy)
     }, 0)
     const remainingVolume = Math.max(0, weeklyKm - placedKm)
     // DELOAD-INVERSION-01 part 2b (§12, Coaching Board 2026-09-06) — on an
@@ -3537,7 +3538,7 @@ function sumWeeklyKm(sessions: Partial<Record<Day, Session>>, pace: PaceGuide): 
   let total = 0
   for (const s of Object.values(sessions)) {
     if (!s || s.type === 'strength' || s.type === 'rest') continue
-    total += s.distance_km ?? ((s.duration_mins ?? 0) / pace.minPerKmEasy)
+    total += sessionKmOrZero(s, pace.minPerKmEasy)
   }
   return Math.round(total)
 }
@@ -3940,7 +3941,7 @@ function trimWeekEasyToTarget(
   const easyKm = Object.entries(curr.sessions).reduce((sum, [d, s]) => {
     if (!s || s.type !== 'easy') return sum
     if (lr && d === lr.day) return sum  // long-run excluded
-    return sum + (s.distance_km ?? (s.duration_mins ?? 0) / pace.minPerKmEasy)
+    return sum + sessionKmOrZero(s, pace.minPerKmEasy)
   }, 0)
 
   if (easyKm <= 0) return null  // no easies to scale
@@ -4051,7 +4052,7 @@ function smallestEasyKm(w: Week, pace: PaceGuide): number {
   const lr = longRunOfWeek(w)
   const easies = Object.entries(w.sessions)
     .filter(([d, s]) => s && s.type === 'easy' && !(lr && d === lr.day))
-    .map(([, s]) => s!.distance_km ?? (s!.duration_mins ?? 0) / pace.minPerKmEasy)
+    .map(([, s]) => sessionKmOrZero(s, pace.minPerKmEasy))
     .filter(km => km > 0)
   return easies.length ? Math.min(...easies) : 0
 }
@@ -5791,7 +5792,7 @@ function buildRulePlanOnce(
     let longest = 0
     for (const sn of Object.values(w.sessions)) {
       if (!sn || sn.type === 'strength' || sn.type === 'rest') continue
-      const km = sn.distance_km ?? ((sn.duration_mins ?? 0) / pace.minPerKmEasy)
+      const km = sessionKmOrZero(sn, pace.minPerKmEasy)
       if (km > longest) longest = km
     }
     return longest / w.weekly_km > lrCapPct
