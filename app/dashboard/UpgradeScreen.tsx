@@ -35,9 +35,12 @@ const LOSSES = [
   { name: 'The plan stops moving',           detail: "Miss a week, you're on your own." },
 ]
 
-export default function UpgradeScreen({ onBack, trialExpired = false }: {
+export default function UpgradeScreen({ onBack, trialExpired = false, onOpenRedeem }: {
   onBack: () => void
   trialExpired?: boolean
+  /** GTM-CHARITY-04 — opens the redeem screen. Optional so the component still
+   *  renders anywhere it is mounted without the door. */
+  onOpenRedeem?: () => void
 }) {
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState<string | null>(null)
@@ -407,6 +410,28 @@ export default function UpgradeScreen({ onBack, trialExpired = false }: {
         >
           Stay with the free plan →
         </button>
+
+        {/* GTM-CHARITY-04 — the gate door. This is the moment the comped runner
+            who filed their charity's email away actually needs it: Kit has just
+            gone quiet and they are being asked to pay. Sits beside Restore
+            because it is the same kind of action — "I already have access,
+            let me prove it" — not a second purchase option. Web and native
+            both, unlike Restore: a code is not an Apple purchase. */}
+        {onOpenRedeem && (
+          <button
+            onClick={onOpenRedeem}
+            style={{
+              marginTop: '8px', alignSelf: 'center',
+              background: 'none', border: 'none',
+              fontFamily: 'var(--font-ui)', fontWeight: 400,
+              fontSize: '0.8125rem', color: 'var(--text-muted)',
+              cursor: 'pointer', textDecoration: 'underline',
+              padding: '4px 0',
+            }}
+          >
+            Have a charity code?
+          </button>
+        )}
 
         {/* Restore Purchases — iOS only, required by App Store guideline 3.1.1 */}
         {Capacitor.isNativePlatform() && (

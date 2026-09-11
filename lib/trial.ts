@@ -1,3 +1,5 @@
+import { isGrantActive } from '@/lib/charity/grantWindow'
+
 export const TRIAL_DAYS = 14
 
 export type UserTier = 'free' | 'trial' | 'paid'
@@ -10,10 +12,20 @@ export function isTrialActive(trialStartedAt: string | null | undefined): boolea
 }
 
 // Server-only — uses service role to bypass RLS.
-// Resolution order: admin → active subscription → trial window → free.
+// Resolution order: admin → active subscription → charity grant → trial → free.
 // `is_admin` accounts (owner / developer / support) always resolve as paid so
 // the full server feature set — push registration, AI routes, Strava — is
 // available without a billing artefact. See ADR-003 § Admin entitlement.
+//
+// GTM-CHARITY-04 — a redeemed charity code resolves as `paid`, and is read from
+// `charity_codes` rather than written into `subscriptions`. Three reasons:
+// `subscriptions.provider` has CHECK (provider IN ('revenuecat','stripe')) so a
+// grant row would fail on insert; that table is upserted `onConflict: user_id`
+// by the RevenueCat webhook, so a later RC event would silently overwrite a
+// grant; and a comp is not a subscription, so conflating an entitlement with
+// billing state is the two-writer class this codebase keeps getting bitten by.
+// It sits BELOW an active subscription deliberately: a runner who later pays
+// should be resolved by their payment, not by an expiring gift.
 export async function getUserTier(userId: string): Promise<UserTier> {
   const { createClient } = await import('@supabase/supabase-js')
   const supabase = createClient(
@@ -21,7 +33,7 @@ export async function getUserTier(userId: string): Promise<UserTier> {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const [{ data: sub }, { data: settings }] = await Promise.all([
+  const [{ data: sub }, { data: settings }, { data: grant }] = await Promise.all([
     supabase
       .from('subscriptions')
       .select('status, current_period_end')
@@ -32,6 +44,11 @@ export async function getUserTier(userId: string): Promise<UserTier> {
       .select('trial_started_at, is_admin')
       .eq('id', userId)
       .maybeSingle(),
+    supabase
+      .from('charity_codes')
+      .select('expires_at')
+      .eq('claimed_by', userId)
+      .maybeSingle(),
   ])
 
   if (settings?.is_admin) return 'paid'
@@ -41,6 +58,10 @@ export async function getUserTier(userId: string): Promise<UserTier> {
     ['trialing', 'active'].includes(sub.status) &&
     new Date(sub.current_period_end) > new Date()
   ) {
+    return 'paid'
+  }
+
+  if (isGrantActive(grant?.expires_at ? new Date(grant.expires_at) : null, new Date())) {
     return 'paid'
   }
 

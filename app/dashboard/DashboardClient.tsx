@@ -22,6 +22,7 @@ import { isLongRun, coachingSessionType } from '@/lib/plan/sessionRole'
 import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
 import { isTrialActive, TRIAL_DAYS } from '@/lib/trial'
+import { isGrantActive } from '@/lib/charity/grantWindow'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
 import { BRAND, PRICING } from '@/lib/brand'
@@ -72,12 +73,13 @@ import PullToRefresh from '@/components/shared/PullToRefresh'
 import { syncOnAppOpen } from '@/lib/health/clientSync'
 const GeneratePlanScreen = dynamic(() => import('./GeneratePlanScreen'), { ssr: false })
 const UpgradeScreen = dynamic(() => import('./UpgradeScreen'), { ssr: false })
+const RedeemCodeScreen = dynamic(() => import('./RedeemCodeScreen'), { ssr: false })
 const BenchmarkUpdateScreen = dynamic(() => import('./BenchmarkUpdateScreen'), { ssr: false })
 const FounderNoteScreen = dynamic(() => import('./FounderNoteScreen'), { ssr: false })
 import { RecalibrationReadyTile, RecalibrationEntryScreen } from './RecalibrationTile'
 import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
 
-type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'notifications' | 'recalibration'
+type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration'
 
 /**
  * Data passed to PostRunScreen — the destination screen for a Strava-linked
@@ -281,6 +283,9 @@ export default function DashboardClient() {
 
   // Paid access — default true to avoid flash of locked state during load
   const [hasPaidAccess, setHasPaidAccess] = useState(true)
+  // GTM-CHARITY-04 — ISO end date of a live charity grant, or null. Surfaced on
+  // Me so the grant never lapses silently.
+  const [charityGrantEndsAt, setCharityGrantEndsAt] = useState<string | null>(null)
 
   // PV2-H — recalibration prompt (the living plan). Status drives the entry screen.
   const [recalStatus, setRecalStatus] = useState<'idle' | 'confirming' | 'applied' | 'error'>('idle')
@@ -839,11 +844,14 @@ export default function DashboardClient() {
         setUserId(user.id)
 
         // Fetch overrides + user settings + completions in parallel
-        const [settingsRes, overridesRes, completionsRes, subRes, guidanceRes, pendingReshapeRes] = await Promise.all([
+        const [settingsRes, overridesRes, completionsRes, subRes, charityGrantRes, guidanceRes, pendingReshapeRes] = await Promise.all([
           supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, max_hr_source, birth_year, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at, push_permission_seen, healthkit_connected_at').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
           supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
+          // GTM-CHARITY-04 — readable under RLS by its owner only (the policy is
+          // `auth.uid() = claimed_by`), which is all the client needs.
+          supabase.from('charity_codes').select('expires_at').eq('claimed_by', user.id).maybeSingle(),
           supabase.from('session_guidance').select('*').order('phase', { ascending: false, nullsFirst: false }),
           supabase.from('post_race_reshapes')
             .select('id, summary_text, weeks_affected, sessions_modified, recovery_config_key')
@@ -1014,15 +1022,22 @@ export default function DashboardClient() {
           void supabase.from('user_settings').upsert({ id: user.id, trial_started_at: trialStartedAt, updated_at: new Date().toISOString() })
         }
 
-        // Paid access — admin OR active subscription OR within trial window.
-        // Mirrors getUserTier's resolution order (admin → sub → trial → free)
-        // so the client gate and every server gate agree. ADR-003 § Admin
-        // entitlement; D-16 (no parallel semantics).
+        // Paid access — admin OR active subscription OR live charity grant OR
+        // within trial window. Mirrors getUserTier's resolution order
+        // (admin → sub → charity grant → trial → free) so the client gate and
+        // every server gate agree. ADR-003 § Admin entitlement; D-16 (no
+        // parallel semantics) — if you change getUserTier, change this in the
+        // SAME commit, or a comped runner is `paid` on the server and `free`
+        // in the UI, and sees paywalls over features the API is happily
+        // serving.
         const sub = subRes.data
         const hasActiveSub = sub?.status &&
           ['trialing', 'active'].includes(sub.status) &&
           new Date(sub.current_period_end) > new Date()
-        const paidAccess = !!(data?.is_admin || hasActiveSub || isTrialActive(trialStartedAt))
+        const charityExpiry = charityGrantRes.data?.expires_at
+        const hasCharityGrant = isGrantActive(charityExpiry ? new Date(charityExpiry) : null, new Date())
+        setCharityGrantEndsAt(hasCharityGrant ? charityExpiry! : null)
+        const paidAccess = !!(data?.is_admin || hasActiveSub || hasCharityGrant || isTrialActive(trialStartedAt))
         setHasPaidAccess(paidAccess)
         setTrialExpired(!paidAccess && !!trialStartedAt)
 
@@ -2372,7 +2387,7 @@ export default function DashboardClient() {
     //    is better than blocking the HR save.
     void authedFetch('/api/recalibrate-hr', { method: 'POST' })
   } catch {}
-}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
+}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onOpenRedeem={() => setScreen('redeem')} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onDone={() => {
@@ -2394,7 +2409,7 @@ export default function DashboardClient() {
           setRunAnalysisMap(prev => ({ ...prev, [wN]: { ...(prev[wN] ?? {}), [sessionDay]: row } }))
         }} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={(activePostRunData.weekN != null ? runAnalysisMap[activePostRunData.weekN]?.[activePostRunData.session?.key ?? ''] : null) ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
         {screen === 'generate' && <GeneratePlanScreen onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await supabase.from('user_settings').update({ birth_year: y, date_of_birth: null }).eq('id', userId) }} onPlanSaved={handlePlanSaved} onPlanEnriched={handlePlanEnriched} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} />}
-        {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} onBack={() => {
+        {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} onOpenRedeem={() => setScreen('redeem')} onBack={() => {
           // Legacy key name — preserved to avoid wiping active user state. Future: migrate via key translation layer.
           const hasWizardDraft = typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('zona_wizard_draft')
           setScreen(hasWizardDraft ? 'generate' : 'today')
@@ -2403,6 +2418,8 @@ export default function DashboardClient() {
         {screen === 'recalibration' && <RecalibrationEntryScreen distanceKm={recalDistanceKm} status={recalStatus} onBack={() => { setRecalStatus('idle'); setScreen('today') }} onConfirm={handleRecalConfirm} />}
         {screen === 'reshape'   && <ReshapeScreen plan={plan} onBack={() => setScreen('me')} onReshapeApplied={(updatedPlan) => { setPlan(updatedPlan); setPendingAdjustment(null); setScreen('today') }} onChecked={(foundChange) => { setLastAdjustmentCheckAt(new Date().toISOString()); setLastAdjustmentCheckFoundChange(foundChange) }} onOpenBenchmark={() => setScreen('benchmark')} preferredUnits={preferredUnits} />}
         {screen === 'founder'   && <FounderNoteScreen onBack={() => setScreen('me')} />}
+        {/* GTM-CHARITY-04 — full screen, never a modal (no-popups rule). */}
+        {screen === 'redeem'    && <RedeemCodeScreen onBack={() => setScreen('me')} onRedeemed={(expiresAt: string | null) => { setHasPaidAccess(true); setTrialExpired(false); setCharityGrantEndsAt(expiresAt) }} />}
         {screen === 'notifications' && <NotificationsScreen onBack={() => setScreen('today')} onNavigate={navigateFromNotificationUrl} onAllRead={() => setUnreadNotifications(0)} />}
       </PullToRefresh>
 
@@ -11484,7 +11501,7 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
   )
 }
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onHRChange, onDeviceHRFound, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onHRChange, onDeviceHRFound, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onOpenRedeem, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void
@@ -11500,6 +11517,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   onOpenBenchmark?: () => void
   onOpenReshape?: () => void
   onOpenFounderNote?: () => void
+  onOpenRedeem?: () => void
   onUpgrade?: () => void
   hasPaidAccess?: boolean
   trialDaysLeft?: number | null
@@ -12105,6 +12123,30 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         {/* FOUNDER-01 — quiet footer link. Moved here from "Your profile"
             (where it competed with profile editing). Same register as
             About / Privacy / Terms — discoverable, doesn't compete. */}
+        {/* GTM-CHARITY-04 — the day-one door. A runner whose charity gave them
+            a code can redeem it immediately instead of waiting to be stopped by
+            the gate a fortnight later. Quiet register: most users have no code
+            and this must not read like a discount prompt. */}
+        {onOpenRedeem && (
+          <button
+            onClick={onOpenRedeem}
+            style={{
+              alignSelf: 'center',
+              marginTop: '16px',
+              padding: '14px 16px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-ui)',
+              fontSize: '12px',
+              fontWeight: 400,
+              color: 'var(--mute)',
+            }}
+          >
+            Have a charity code? →
+          </button>
+        )}
+
         {onOpenFounderNote && (
           <button
             onClick={onOpenFounderNote}

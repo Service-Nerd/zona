@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { reanchorCharityGrant } from '@/lib/charity/reanchor'
 import type { Plan, Session, Week } from '@/types/plan'
 import {
   resolveEffectiveSessions,
@@ -171,6 +172,15 @@ export async function savePlanForUser(
   if (deleteRes.error) {
     throw new Error(`savePlanForUser: weekly-notes invalidation failed — ${deleteRes.error.message}`)
   }
+
+  // GTM-CHARITY-04 — a comped charity runner's grant runs to race day + 7, and
+  // the race date only exists once a plan does. Re-anchored HERE rather than in
+  // the wizard route so every path that can set a race date is covered (wizard,
+  // reshape, recalibration, maintenance handoff) and the next new route cannot
+  // silently miss it. No-op and one indexed read for everyone without a grant,
+  // which is almost everyone. Never throws: a grant date is not worth failing a
+  // plan save over.
+  await reanchorCharityGrant(userId, plan.meta?.race_date, supabase)
 }
 
 // Parse a YYYY-MM-DD string as local midnight — avoids UTC-offset week mismatches

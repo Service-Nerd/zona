@@ -211,7 +211,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
   - **What remains open:** only the server-side gate, deliberately deferred above. **Tier: FREE (infra).** Effort: S when picked up.
   - **Why it matters:** marathon is the disputed distance, and the charity referral channel (GTM-CHARITY-01) sends marathon runners — though comped runners resolve as paid and never meet the gate at all.
 
-- 🔲 **GTM-CHARITY-04 — charity access codes** *(SLT-reviewed and approved 2026-09-11; grant mechanics decided by founder)* — the mechanism that delivers on "we give the app away free" to a partner's runners. **Tier: FREE (infra) to build; what it GRANTS is full PAID access.** Effort: M.
+- 🔄 **GTM-CHARITY-04 — charity access codes** *(SLT-reviewed 2026-09-11; **code SHIPPED 2026-09-11, migration NOT YET APPLIED**)* — **⚠️ NOT LIVE until the migration runs and a batch is minted. See "Before this works" at the end of this entry.** — the mechanism that delivers on "we give the app away free" to a partner's runners. **Tier: FREE (infra) to build; what it GRANTS is full PAID access.** Effort: M.
 
   **THE RULING — paid access, not the free tier.** Unanimous. Three reasons, in order of force:
   1. **The free tier cannot honour the promise.** `free_tier_available: false` for MARATHON/50K/100K, so a charity runner doing the London Marathon downloads the app their charity vouched for and hits a paywall on the first screen that matters.
@@ -245,6 +245,16 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
   - Redemption is a full screen, not a modal.
   - Codes grant access; they reward nothing. Not gamification.
   - **Apple:** comping our own service is fine. Never describe it as a discount or promotion on the App Store listing without checking the rules — that is a different thing.
+
+  **DEVIATIONS FROM THIS SPEC, both discovered while building and both deliberate:**
+  1. **The grant does NOT write a `subscriptions` row.** It cannot: `subscriptions.provider` has `CHECK (provider IN ('revenuecat','stripe'))`, so `'charity_grant'` fails on insert outright. It also would have re-created the overwrite risk below. The grant lives in `charity_codes` and `getUserTier` reads it directly — one extra indexed query, no shared writer, billing data stays clean.
+  2. **`getUserTier` DID change**, contrary to the spec's "zero change to tier logic". Order is now admin → subscription → **charity grant** → trial → free. The grant sits BELOW an active subscription on purpose: a runner who later pays should be resolved by their payment, not by an expiring gift. **`DashboardClient` mirrors this resolution on the client and had to change in the same commit** (D-16, no parallel semantics) — the server order was changed first and the mirror was briefly behind, which would have made a comped runner `paid` on the server and `free` in the UI, seeing paywalls over features the API was serving.
+
+  **BEFORE THIS WORKS — two operational steps, neither done:**
+  1. **Apply the migration** `supabase/migrations/20260911_charity_access_codes.sql`, then append its basename to `.claude/state/applied-migrations.txt` or every session will warn. Until it runs, redemption 500s and `getUserTier` errors on a missing table.
+  2. **Mint a batch:** `npx tsx scripts/mint-charity-codes.ts "Make-A-Wish UK" 100 > codes.csv` (needs `SUPABASE_SERVICE_ROLE_KEY`). Capped at 1000 per run by design.
+
+  **STILL OPEN:** the onboarding entry point. The SLT asked for three doors; two shipped (Me screen, Upgrade screen). Me is reachable from day one so the day-one case IS covered; adding a step to the onboarding wizard is more invasive and was not worth bundling into this commit. **End-to-end redemption is also unverified against a real database** — the route, the screen and the rules are tested, but nobody has yet minted a code and redeemed it. Do that before telling a partner it works.
 
   **⚠️ RISK.** `subscriptions` is the single writer behind every tier decision and the RevenueCat webhook upserts `onConflict: 'user_id'`, so **a later RevenueCat event could overwrite a charity grant row.** Needs an explicit test. (The webhook itself was fixed 2026-09-11 to handle comp events at all — `GTM-CHARITY-03` — after it was found to acknowledge them and write nothing.)
 
