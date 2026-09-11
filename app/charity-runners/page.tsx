@@ -1,45 +1,45 @@
 // GTM-CHARITY-01 — landing page for runners on a charity place.
 //
-// WHY THIS PAGE EXISTS. A charity partner is referring its runners to Zonna,
-// the product's first real referral channel. The SLT ruled on 2026-09-11: do
-// NOT bend the homepage toward this audience, give them their own page, the way
-// the SEO plan pages already do.
+// WHY THIS PAGE EXISTS. A charity partner refers its runners to Zonna, the
+// product's first real referral channel. The SLT ruled 2026-09-11: do NOT bend
+// the homepage toward this audience, give them their own page, the way the SEO
+// plan pages already do. This is very likely the FIRST thing one of their
+// runners ever sees of the product.
 //
-// NOT MARATHON-SPECIFIC (founder correction, 2026-09-11). The first version of
-// this page was marathon-only in its URL, title, every FAQ and both CTAs. That
-// was wrong about the audience: charity places are most often 10K and half
-// marathon, with marathons and the occasional ultra on top. A distance-shaped
-// page turns most of the people it is written for away at the headline. The
-// page now leads with the shared problem and lets the runner pick the distance.
+// REWRITTEN 2026-09-11 (second time today, founder call both times):
+//   1. It was marathon-only in its URL, title, FAQs and CTAs. Charity places
+//      are most often 10K and half marathon, with marathons and the odd ultra
+//      on top, so a distance-shaped page turned most of its own audience away
+//      at the headline.
+//   2. It then led with the free STATIC plans, because when it was written
+//      charity runners still had to pay for the app. GTM-CHARITY-04 changed
+//      that: they now get the whole product free via a code from their charity.
+//      Leading with "here are some free PDFs-in-HTML" buries the actual offer
+//      and reads as a downsell. The code is the headline now; the static plans
+//      are the honest fallback for someone without one.
 //
 // THE AUDIENCE IS NOT THE STATED ICP, AND THAT IS THE POINT OF THE PAGE.
 // brand.md defines the audience as "adult runners, 1+ years' experience".
 // Charity-place runners skew the other way: often a first race at the distance,
 // entered for a cause. The homepage is written for someone who already runs.
-// This page is written for someone who may not yet, WITHOUT changing what the
+// This is written for someone who may not yet, WITHOUT changing what the
 // product claims.
 //
-// The honest bridge, and the reason this is not a bolt-on: Zonna's core truth
-// is "you're trying hard, that's the problem". A charity runner's version of
-// that failure is not grey-zoning every easy day, it is heroing sessions early
-// with a fundraising page watching, breaking down mid-block, and missing the
-// start line. Same mechanism, different surface. So the page leads with the
-// injury risk rather than with a promise of speed.
+// The honest bridge: Zonna's core truth is "you're trying hard, that's the
+// problem". A charity runner's version of that failure is heroing sessions
+// early with a fundraising page watching, breaking down mid-block, and missing
+// the start line. Same mechanism, different surface. So the page leads with
+// injury risk rather than a promise of speed.
 //
-// NO PARTNER BRANDING, DELIBERATELY. This page names no charity, carries no
-// charity logo, and claims no endorsement. Naming a real organisation implies a
-// relationship the page cannot evidence, and co-branding is a founder and legal
-// decision made WITH the partner, not a copy decision made here. The page works
-// as a generic charity-runner landing page, so it serves the traffic either way.
+// NO PARTNER BRANDING, DELIBERATELY. Names no charity, carries no logo, claims
+// no endorsement: that would imply a relationship the page cannot evidence, and
+// co-branding is a founder and legal decision made WITH the partner. It works
+// as a generic charity-runner page, so it serves the traffic either way.
 //
-// NO MENTION OF ACCESS CODES. Free app access for charity runners is being
-// designed (see backlog) and does not exist yet. The page describes what is
-// true TODAY. Add that section when redemption actually ships, not before.
-//
-// LAYOUT: SECTION_MAX, like every other marketing page. The first version used
-// SITE_WIDTH (1100) for its sections while /plans, /comparisons and the plan
-// spokes all use 760, so the content column jumped width as you navigated into
-// it. Same class of defect GTM-SITE-01 fixed for the header.
+// WE DO NOT HAND OUT CODES HERE, and the page must never imply we might. The
+// charity issues them, because they are the only party who knows who holds a
+// place with them. Every "no code?" path leads to the free plans or the normal
+// two-week trial, never to a request form.
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -57,14 +57,14 @@ const SECTION_MAX = 760
 export const revalidate = 86400
 
 export const metadata: Metadata = {
-  title: `Training Plans for Charity Runners | ${BRAND.name}`,
+  title: `Free Coaching for Charity Runners | ${BRAND.name}`,
   description:
-    'Free training plans for runners with a charity place, from 10K to marathon. Mostly easy running, every session zoned, built so you reach the start line uninjured.',
+    'Running for a charity? Your charity may have covered the full app for you, free. Mostly easy running, every session zoned, built so you reach the start line uninjured.',
   alternates: { canonical: PAGE_URL },
   openGraph: {
     title: `Running for charity? Make the start line. | ${BRAND.name}`,
     description:
-      'Most charity runners do not miss their race because they were slow. They miss it because they got injured in training. Here are the free plans that do not do that.',
+      'Most charity runners do not miss their race because they were slow. They miss it because they got injured in training. If your charity gave you a code, the whole app is yours.',
     url: PAGE_URL,
     siteName: BRAND.name,
     images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630 }],
@@ -75,19 +75,19 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: `Charity running, without breaking yourself | ${BRAND.name}`,
     description:
-      'Free plans built on easy running, for runners with a charity place and a start line to reach.',
+      'A coach that tells you to slow down, free for runners whose charity has covered it.',
     images: [`${APP_URL}/api/og`],
   },
 }
 
 /** The four free plans, by distance. Ultra is deliberately absent: 50K and 100K
- *  have no free static plan on this site, and the page says so rather than
- *  linking somewhere that does not answer the question. */
+ *  have no free static plan, and the page says so rather than linking somewhere
+ *  that does not answer the question. */
 const DISTANCES = [
-  { slug: '5k-12-week',            label: '5K',            weeks: '12 weeks', note: 'A real race distance, and the sanest place to start if this is new.' },
-  { slug: '10k-12-week',           label: '10K',           weeks: '12 weeks', note: 'The most common charity place, and far enough to punish a rushed build.' },
-  { slug: 'half-marathon-12-week', label: 'Half marathon', weeks: '12 weeks', note: 'Long enough that the easy days stop being optional.' },
-  { slug: 'marathon-16-week',      label: 'Marathon',      weeks: '16 weeks', note: 'The one where getting to the start line is most of the job.' },
+  { slug: '5k-12-week',            label: '5K',            weeks: '12 weeks' },
+  { slug: '10k-12-week',           label: '10K',           weeks: '12 weeks' },
+  { slug: 'half-marathon-12-week', label: 'Half marathon', weeks: '12 weeks' },
+  { slug: 'marathon-16-week',      label: 'Marathon',      weeks: '16 weeks' },
 ]
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
@@ -119,32 +119,40 @@ function P({ children }: { children: React.ReactNode }) {
 
 const FAQS: { q: string; a: string }[] = [
   {
+    q: 'Where do I get a code?',
+    a: 'From the charity you are running for. They are given a set number for their runners, and they decide who gets one. We cannot issue codes directly, so if you think you should have one and do not, your charity is the place to ask.',
+  },
+  {
+    q: 'What does the code actually give me?',
+    a: 'The whole app, free. Your plan built around your race, real heart-rate zones, the coaching after every run, and the reshaping when a week goes sideways. Not a trial and not a cut-down version: the same thing paying subscribers get.',
+  },
+  {
+    q: 'How long does it last?',
+    a: 'Through your training and a week past race day. When you set your race date in the app the access stretches to cover it, so it cannot run out halfway through a block. If you never get round to building a plan it lapses after 90 days, which is fair enough.',
+  },
+  {
     q: 'I have never raced this distance. Is this for me?',
-    a: 'Yes, with one caveat worth saying out loud. These plans assume you can already run about 30 minutes without stopping. If you cannot yet, spend a few weeks building to that first and then start. Beginning a structured block from zero is the single most reliable way to get injured before race day.',
+    a: 'Yes, with one caveat worth saying out loud. The plans assume you can already run about 30 minutes without stopping. If you cannot yet, spend a few weeks building to that first and then start. Beginning a structured block from zero is the most reliable way to get injured before race day.',
   },
   {
     q: 'Why is so much of it easy? I have a race to train for.',
     a: 'Because that is what works, and because the alternative is what breaks people. Running easy on your easy days is what lets the one hard session a week actually be hard. Charity runners rarely miss the start line through lack of effort. They miss it through too much of it, too early.',
   },
   {
-    q: 'How many weeks do I need?',
-    a: 'Twelve for a 5K, 10K or half marathon, sixteen for a marathon. Less is workable if you are already running a few times a week. Well under that, the honest answer is to pick a shorter goal race first, or accept that the day becomes about finishing rather than a time. We would rather say that now than sell you a plan that pretends otherwise.',
-  },
-  {
-    q: 'I am doing an ultra. Is there a plan here?',
-    a: 'Not as a free plan on this site. The app builds 50K and 100K plans, and those sit inside the trial and the paid tier. If your charity place is an ultra and you have never raced one, the most useful thing on this page is still the advice: most of your week should be easy, and the long run is the session that earns the day.',
-  },
-  {
     q: 'What if I miss a week? Work, illness, life.',
-    a: 'Nothing breaks. Missed sessions are a feature of adult life, not a failure. On the paid tier the plan reshapes around what you actually did. On the free tier the plan stays as generated and you pick it back up. Either way nobody guilt-trips you.',
+    a: 'Nothing breaks. Missed sessions are a feature of adult life, not a failure. The plan reshapes around what you actually did rather than leaving you to catch up on a week that has gone. Nobody guilt-trips you.',
   },
   {
     q: 'Do I need a watch?',
     a: 'It works best with a heart-rate source, an Apple Watch or a chest strap that writes to Apple Health, because that is what proves your easy days are genuinely easy. Without one you still get the plan, the paces and the structure. You just judge effort yourself.',
   },
   {
-    q: 'Is it free?',
-    a: `Every plan on this page is free to read, right now, with no signup. In the app you get two weeks of everything, then a free tier that keeps the plan you built. ${PRICING.monthly.display}/month or ${PRICING.annual.display}/year if you want the coaching and the reshaping.`,
+    q: 'I am doing an ultra. Does this cover that?',
+    a: 'The app builds 50K and 100K plans and a code covers them like any other distance. There is no free static ultra plan on this site, so if you are without a code the advice on this page still holds, and holds harder: the further the race, the more of your week should be easy.',
+  },
+  {
+    q: 'What happens when the access ends?',
+    a: `You keep the plan you built and drop to the free tier. Nothing is deleted and nothing nags you. If you want to keep the coaching and the reshaping it is ${PRICING.monthly.display}/month or ${PRICING.annual.display}/year, and if you do not, that is genuinely fine.`,
   },
 ]
 
@@ -180,28 +188,24 @@ export default function CharityRunnersPage() {
           fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1,
           margin: '0 0 18px', color: 'var(--ink)',
         }}>
-          You got the place. The job now is making the start line.
+          You got the place. Your charity may have covered the coaching.
         </h1>
         <p style={{ fontSize: '17px', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 26px' }}>
-          Whether it is a 10K or a marathon, most people who take a charity place and do
-          not make it to race day are not stopped by the distance. They are stopped in the
-          middle of the block by a calf or a knee, after training that asked too much too
-          early. These are the plans that do not do that to you.
+          Some charities give their runners a code for the full {BRAND.name} app, free for
+          the whole training block. If yours did, it takes about a minute to use. If it
+          did not, everything below still applies and the plans are free to read anyway.
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
-          <a href="#pick" style={{
+          <a href="#code" style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
             background: 'var(--moss)', color: 'var(--card)',
             fontSize: '15px', fontWeight: 600, textDecoration: 'none',
             padding: '14px 22px', borderRadius: '100px',
           }}>
-            Find your free plan <span aria-hidden style={{ opacity: 0.6 }}>&darr;</span>
+            How to use your code <span aria-hidden style={{ opacity: 0.6 }}>&darr;</span>
           </a>
           <AppStoreBadge />
         </div>
-        <p style={{ fontSize: '13px', color: 'var(--mute)', margin: '14px 0 0' }}>
-          No signup to read them. No wall.
-        </p>
       </section>
 
       {/* ── The real risk ───────────────────────────────────────────────── */}
@@ -229,67 +233,64 @@ export default function CharityRunnersPage() {
         </div>
       </section>
 
-      {/* ── Pick your distance ──────────────────────────────────────────── */}
-      <section id="pick" style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '64px 24px 0', scrollMarginTop: '80px' }}>
-        <Eyebrow>Pick your distance</Eyebrow>
-        <H2>Free plans, whatever you signed up for.</H2>
-        <p style={{ fontSize: '16px', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 24px' }}>
-          Every one of these is the real thing the engine builds, laid out week by week and
-          free to read in full. No email, no signup.
-        </p>
+      {/* ── How to use the code. The founder's note: nothing on this page
+            told a runner that codes existed or what to do with one. ───── */}
+      <section id="code" style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '64px 24px 0', scrollMarginTop: '80px' }}>
+        <Eyebrow>If you have a code</Eyebrow>
+        <H2>Three steps, about a minute.</H2>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {DISTANCES.map(d => (
-            <Link key={d.slug} href={`/plans/${d.slug}`} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              gap: '16px', textDecoration: 'none',
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' }}>
+          {[
+            ['Download the app', `${BRAND.name} is on the App Store. Sign up with Apple, Google or an email address.`],
+            ['Open Me, then "Have a charity code?"', 'It is at the bottom of the Me tab. Type the code your charity sent you. Case and dashes do not matter.'],
+            ['Build your plan', 'Tell it your race and your week. That is when your access stretches to cover race day, so it cannot run out mid-block.'],
+          ].map(([title, body], i) => (
+            <div key={title} style={{
+              display: 'flex', gap: '16px', alignItems: 'flex-start',
               background: 'var(--card)', border: '1px solid var(--line)',
               borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
               padding: '18px 20px',
             }}>
+              <span style={{
+                flexShrink: 0, width: '26px', height: '26px', borderRadius: '50%',
+                background: 'var(--moss)', color: 'var(--card)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '13px', fontWeight: 800,
+              }}>{i + 1}</span>
               <div style={{ minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '17px', fontWeight: 700, color: 'var(--ink)' }}>{d.label}</span>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--mute)' }}>{d.weeks}</span>
-                </div>
-                <div style={{ fontSize: '14px', lineHeight: 1.5, color: 'var(--ink-2)', marginTop: '4px' }}>
-                  {d.note}
-                </div>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)', marginBottom: '4px' }}>{title}</div>
+                <div style={{ fontSize: '14.5px', lineHeight: 1.55, color: 'var(--ink-2)' }}>{body}</div>
               </div>
-              <span aria-hidden style={{ color: 'var(--moss)', fontWeight: 700, flexShrink: 0 }}>&rarr;</span>
-            </Link>
+            </div>
           ))}
         </div>
 
-        {/* Ultra: say the true thing rather than link somewhere that does not answer it. */}
         <p style={{
           fontSize: '14px', lineHeight: 1.6, color: 'var(--mute)',
           margin: '16px 0 0', borderLeft: '2px solid var(--line-strong)', paddingLeft: '14px',
         }}>
-          Doing an ultra? There is no free 50K or 100K plan on this site. The app builds
-          them, and that sits inside the trial and the paid tier. The advice on this page
-          still holds, and holds harder: the further the race, the more of your week should
-          be easy.
+          Codes come from your charity, not from us, and each one works once. If you think
+          you should have one and do not, ask whoever organises your place.
         </p>
       </section>
 
-      {/* ── What every plan does ────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '64px 24px 0' }}>
+      {/* ── What the code unlocks ───────────────────────────────────────── */}
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '56px 24px 0' }}>
         <Eyebrow>What you get</Eyebrow>
-        <H2>Mostly easy. One hard day. Every run zoned.</H2>
+        <H2>The whole thing. Not a trial, not a cut-down version.</H2>
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 330px), 1fr))',
           gap: '14px', marginTop: '24px',
         }}>
           {[
-            ['Most of it is easy on purpose',
-             'The majority of every plan is run at a conversational effort. That is not the plan being gentle with you, it is the plan working.'],
-            ['One quality session a week',
-             'From the build phase, one session a week asks something of you. One. The rest protects it.'],
+            ['A plan built round your race',
+             'Your distance, your date, the days you can actually run. Any distance, 5K through ultra.'],
             ['Every run has a zone and a pace band',
-             'Derived from your inputs, not guessed, so "easy" is a number you can check rather than a feeling you can talk yourself out of.'],
-            ['A long run that builds you up',
-             'It climbs steadily and backs off on recovery weeks, instead of getting longer every single week until something gives.'],
+             'Derived from your numbers, not guessed, so "easy" is something you can check rather than talk yourself out of.'],
+            [`${BRAND.coachName} reads every run`,
+             'Tells you afterwards whether you actually held the zone, in one line, without a dashboard.'],
+            ['A plan that moves when life does',
+             'Miss a week and it reshapes around what you did, instead of leaving you to catch up on a week that has gone.'],
           ].map(([title, body]) => (
             <div key={title} style={{
               background: 'var(--card)', border: '1px solid var(--line)',
@@ -303,37 +304,33 @@ export default function CharityRunnersPage() {
         </div>
       </section>
 
-      {/* ── Honest about the paid line. Do not soften this section. ─────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '48px 24px 0' }}>
-        <div style={{
-          background: 'var(--card)', border: '1px solid var(--line)',
-          borderLeft: '3px solid var(--warn)',
-          borderRadius: 'var(--radius-lg)', padding: '24px 22px',
-        }}>
-          <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 10px' }}>
-            What is free and what is not
-          </h3>
-          <P>
-            Every plan linked above is free to read on this site, in full, with no signup.
-            You can follow one from a screenshot and never pay us anything.
-          </P>
-          <P>
-            The app is the part that adapts. It sets your real heart-rate zones, moves
-            sessions when your week changes, and tells you afterwards whether you actually
-            held the zone. New accounts get two weeks of all of it. After that a free tier
-            keeps the plan you built.
-          </P>
-          <p style={{ fontSize: '16px', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
-            One thing worth knowing before you start rather than after: in the app, 5K, 10K
-            and half marathon plans can be built on the free tier. Marathon and ultra plan
-            generation sits inside the trial and the paid tier. You keep a plan you built
-            during the trial either way.
-          </p>
+      {/* ── No code. The honest fallback, deliberately AFTER the offer. ── */}
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '56px 24px 0' }}>
+        <Eyebrow>No code?</Eyebrow>
+        <H2>Then start with a free plan.</H2>
+        <p style={{ fontSize: '16px', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 22px' }}>
+          Every plan below is the real thing the engine builds, laid out week by week and
+          free to read in full. No email, no signup. And every new account gets two weeks
+          of the full app regardless, so you can see what the coaching adds.
+        </p>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+          {DISTANCES.map(d => (
+            <Link key={d.slug} href={`/plans/${d.slug}`} style={{
+              display: 'inline-flex', alignItems: 'baseline', gap: '8px',
+              textDecoration: 'none',
+              background: 'var(--card)', border: '1px solid var(--line)',
+              borderRadius: '100px', padding: '10px 18px',
+            }}>
+              <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink)' }}>{d.label}</span>
+              <span style={{ fontSize: '12px', color: 'var(--mute)' }}>{d.weeks}</span>
+            </Link>
+          ))}
         </div>
       </section>
 
       {/* ── FAQ ─────────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '64px 24px 0' }}>
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '56px 24px 0' }}>
         <Eyebrow>Questions</Eyebrow>
         <H2>The ones charity runners actually ask.</H2>
         <div style={{
@@ -365,24 +362,16 @@ export default function CharityRunnersPage() {
           padding: '28px 24px',
         }}>
           <h2 style={{ fontSize: '21px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 10px', letterSpacing: '-0.01em' }}>
-            Start with the plan. Decide about the app later.
+            Get to the start line in one piece.
           </h2>
           <p style={{ fontSize: '15px', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 18px' }}>
-            Read the whole thing, see how much of it is easy, and judge for yourself whether
-            that looks like training you could actually hold down alongside a job and a
-            fundraising target.
+            That is the job, and it is a harder one than going fast. Download the app,
+            put your code in, and let it tell you to slow down.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
-            <a href="#pick" style={{
-              display: 'inline-flex', alignItems: 'center', gap: '8px',
-              background: 'var(--moss)', color: 'var(--card)',
-              fontSize: '15px', fontWeight: 600, textDecoration: 'none',
-              padding: '13px 20px', borderRadius: '100px',
-            }}>
-              Pick your distance <span aria-hidden style={{ opacity: 0.6 }}>&uarr;</span>
-            </a>
+            <AppStoreBadge />
             <Link href="/plans" style={{ fontSize: '15px', fontWeight: 600, color: 'var(--moss)', textDecoration: 'none' }}>
-              Or see every free plan &rarr;
+              Or read a free plan first &rarr;
             </Link>
           </div>
         </div>

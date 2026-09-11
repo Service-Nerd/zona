@@ -508,6 +508,7 @@ Three docs run the work pipeline. Keep them in sync:
 | `docs/architecture/` | Architectural decision records (ADRs) and architecture overview |
 | `docs/releases/` | Backlog (what's left). Shipped record lives in `feature-registry.md`. |
 | `docs/alignment/` | Brand-product alignment, redesign phase tracking |
+| `docs/runbooks/` | **Step-by-step operational procedures you run by hand.** Start here for "how do I actually do X?" — e.g. `charity-codes.md` for giving a charity partner free access for its runners. |
 
 **Before building any new feature**: check `docs/canonical/feature-registry.md` — every feature must be tagged FREE or PAID before implementation begins.
 
