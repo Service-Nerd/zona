@@ -128,14 +128,22 @@ async function main(): Promise<void> {
   const baseSha = run('git', ['rev-parse', '--short', baseRef], repo).trim()
   const headSha = run('git', ['rev-parse', '--short', 'HEAD'], repo).trim()
 
-  if (baseSha === headSha) {
-    console.error(`✗ ${baseRef} resolves to HEAD (${headSha}). Nothing to compare.`)
+  // The "current" side runs from the REPO DIRECTORY, so it executes whatever is
+  // in the working tree — uncommitted edits included. That is the behaviour you
+  // want (you are usually checking work you have not committed yet), but the
+  // report used to name two commit shas, which reads as "I compared these two
+  // commits" and is false the moment the tree is dirty. Say which it was.
+  const dirty = run('git', ['status', '--porcelain'], repo).trim().length > 0
+  const headLabel = dirty ? `working tree (on top of ${headSha})` : headSha
+
+  if (baseSha === headSha && !dirty) {
+    console.error(`✗ ${baseRef} resolves to HEAD (${headSha}) and the tree is clean. Nothing to compare.`)
     process.exit(2)
   }
 
   console.log(`Plan-generation parity`)
   console.log(`  baseline : ${baseSha} (${baseRef})`)
-  console.log(`  head     : ${headSha}`)
+  console.log(`  current  : ${headLabel}`)
   console.log(`  cases    : ${EXPECTED_ROWS}\n`)
 
   const self = join(repo, 'scripts', 'verify-parity.ts')
@@ -143,7 +151,7 @@ async function main(): Promise<void> {
   let created = false
 
   try {
-    console.log('→ generating at HEAD')
+    console.log(`→ generating from the ${dirty ? 'working tree' : 'current commit'}`)
     const headOut = run('npx', ['tsx', '--tsconfig', 'tsconfig.json', self, '--probe'], repo)
 
     console.log(`→ checking out ${baseSha} into a worktree`)
@@ -169,7 +177,7 @@ async function main(): Promise<void> {
 
     if (changed.length === 0) {
       console.log(`✓ IDENTICAL — ${EXPECTED_ROWS} cases, byte-for-byte unchanged.`)
-      console.log(`  Generation is provably unaffected between ${baseSha} and ${headSha}.`)
+      console.log(`  Generation is provably unaffected between ${baseSha} and ${headLabel}.`)
       return
     }
 
@@ -178,7 +186,7 @@ async function main(): Promise<void> {
     for (const k of changed.slice(0, 25)) {
       console.log(`  ${k}`)
       console.log(`     ${baseSha}: ${base.get(k)}`)
-      console.log(`     ${headSha}: ${head.get(k)}`)
+      console.log(`     ${headLabel}: ${head.get(k)}`)
     }
     if (changed.length > 25) console.log(`\n  ...and ${changed.length - 25} more.`)
     console.log(`\n  If this was intended, say so explicitly and record WHY.`)

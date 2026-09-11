@@ -4,6 +4,7 @@ import { secretMatches } from '@/lib/security/secrets'
 import { sendEmail } from '@/lib/email/resend'
 import { buildDay11Email, buildDay14Email, type RunSummary } from '@/lib/email/trialEmailTemplates'
 import { trialDayNumber, decideTrialEmails } from '@/lib/email/trialEmailWindow'
+import { resolveTier } from '@/lib/trial'
 
 // POST /api/email/send-trial
 //
@@ -67,13 +68,33 @@ export async function POST(req: NextRequest) {
 
   const { data: allSettings, error } = await supabase
     .from('user_settings')
-    .select('id, trial_started_at, trial_email_day11_sent_at, trial_email_day14_sent_at')
+    .select('id, is_admin, trial_started_at, trial_email_day11_sent_at, trial_email_day14_sent_at')
     .not('trial_started_at', 'is', null)
 
   if (error) {
     console.error('[email/send-trial] user_settings read failed:', error.message)
     return NextResponse.json({ error: 'Read failed' }, { status: 500 })
   }
+
+  // ── Who must NOT be told their trial is ending ──────────────────────────
+  //
+  // This route used to send on `trial_started_at` alone, so a charity runner
+  // holding a 90-day grant got "3 days left." on day 11 and "Trial ends today"
+  // on day 14, and someone who subscribed mid-trial got the same. The rule
+  // lives in `decideTrialEmails`; this just supplies the facts.
+  //
+  // TWO BULK READS, deliberately not `getUserTier` per user. That would be
+  // three queries per runner per night (N+1), and the cron already walks every
+  // trialling account. Two set-shaped reads answer it for everyone at once.
+  const [{ data: subRows }, { data: grantRows }] = await Promise.all([
+    supabase.from('subscriptions').select('user_id, status, current_period_end'),
+    supabase.from('charity_codes').select('claimed_by, expires_at').not('claimed_by', 'is', null),
+  ])
+
+  const subByUser = new Map((subRows ?? []).map(r => [r.user_id, r]))
+  // Keyed on the ROW, not on liveness: a lapsed grant still means this runner
+  // never had a trial story, so they never get trial copy.
+  const grantByUser = new Map((grantRows ?? []).map(r => [r.claimed_by, r]))
 
   const now = new Date()
   let day11Sent = 0
@@ -84,7 +105,20 @@ export async function POST(req: NextRequest) {
   for (const settings of allSettings ?? []) {
     try {
       const day = trialDayNumber(settings.trial_started_at, now)
-      const { needsDay11, needsDay14 } = decideTrialEmails(day, settings)
+      const sub = subByUser.get(settings.id)
+      const grant = grantByUser.get(settings.id)
+      const { tier } = resolveTier({
+        isAdmin: settings.is_admin,
+        subStatus: sub?.status,
+        subPeriodEnd: sub?.current_period_end,
+        grantExpiresAt: grant?.expires_at,
+        trialStartedAt: settings.trial_started_at,
+      }, now)
+
+      const { needsDay11, needsDay14 } = decideTrialEmails(day, settings, {
+        tier,
+        hasCharityGrant: !!grant,
+      })
 
       if (!needsDay11 && !needsDay14) { skipped++; continue }
 

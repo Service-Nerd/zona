@@ -436,7 +436,7 @@ function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
 export default function GeneratePlanScreen({
   onBack, firstName: _firstName, lastName: _lastName, restingHR: initialRHR, maxHR: initialMHR,
   maxHrSource: initialMhrSource,
-  birthYear: initialBirthYear, onBirthYearSave, onPlanSaved, onPlanEnriched, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade,
+  birthYear: initialBirthYear, onBirthYearSave, onPlanSaved, onPlanEnriched, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade, onOpenRedeem,
 }: {
   onBack: () => void
   firstName?: string
@@ -456,6 +456,8 @@ export default function GeneratePlanScreen({
   hasExistingPlan?: boolean
   hasPaidAccess?: boolean
   onUpgrade?: () => void
+  /** GTM-CHARITY-04 door 3 of 3. See the distance step. */
+  onOpenRedeem?: () => void
 }) {
   // ── App-level step state ──────────────────────────────────────────────────
   const [appStep, setAppStep]   = useState<AppStep>('distance')
@@ -1466,6 +1468,41 @@ export default function GeneratePlanScreen({
                 Marathon and longer require a paid plan.{' '}
                 <button onClick={onUpgrade} style={{ background: 'none', border: 'none', color: 'var(--moss)', fontFamily: 'var(--font-ui)', fontSize: '12px', cursor: 'pointer', padding: 0 }}>
                   Start free trial →
+                </button>
+              </div>
+            )}
+
+            {/* GTM-CHARITY-04 — the third redeem door. The SLT asked for three;
+                Me and Upgrade shipped, and this is the onboarding one.
+                Deliberately NOT a wizard step: a step is invasive for the ~all
+                of users who have no code, and Wood's objection to onboarding
+                friction is about steps, not about one muted line.
+
+                SHOWN ON DAY ONE TOO, not only once the paywall bites. A charity
+                runner arrives holding a code and full trial access, so the gate
+                above never renders for them; without this their access silently
+                depends on remembering to redeem before day 15. Redeeming early
+                costs them nothing, because `savePlanForUser` re-anchors the
+                grant to race date + 7 days as soon as they build a plan
+                (lib/charity/reanchor.ts, called from ADR-020's single writer).
+
+                Hidden for an established paid user: they are neither
+                onboarding nor gated, so it would be noise.
+
+                String is the one the other two doors use. A third phrasing for
+                the same action is how surfaces drift apart. */}
+            {onOpenRedeem && (isOnboarding || !hasPaidAccess) && (
+              <div style={{ gridColumn: '1/-1', marginTop: '2px' }}>
+                <button
+                  onClick={onOpenRedeem}
+                  style={{
+                    background: 'none', border: 'none', padding: '4px 0',
+                    fontFamily: 'var(--font-ui)', fontSize: '12px',
+                    color: 'var(--mute)', cursor: 'pointer',
+                    textDecoration: 'underline', textUnderlineOffset: '3px',
+                  }}
+                >
+                  Have a charity code?
                 </button>
               </div>
             )}

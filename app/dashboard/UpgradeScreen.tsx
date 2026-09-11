@@ -4,13 +4,22 @@
 // Pattern: upgrade screen (see frontend-design skill for anatomy rules).
 // Single job: show what paid access includes, offer subscription.
 //
-// Two variants:
-//   trialExpired=false — gain framing (fresh gate during/before trial)
-//   trialExpired=true  — loss framing (trial ended, user has experienced the product)
+// Three variants:
+//   gain  — fresh gate during/before trial
+//   loss  — the 14-day trial ended; the user has experienced the product
+//   grant — a CHARITY GRANT ended (GTM-CHARITY-04 follow-up)
+//
+// The third exists because the first two were a boolean, and a comped charity
+// runner fell into the trial branch: they were told "14 days done" months
+// after a charity gave them the app. Mechanically the access did end, but the
+// words were wrong about something that runner would notice, and they are the
+// cohort a partner like Make-A-Wish sends us.
 
 import { useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { BRAND, PRICING } from '@/lib/brand'
+import { TRIAL_DAYS } from '@/lib/trial'
+import { upgradeFraming, isLossFraming } from '@/lib/subscriptions/upgradeFraming'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { createClient } from '@/lib/supabase/client'
 
@@ -35,9 +44,13 @@ const LOSSES = [
   { name: 'The plan stops moving',           detail: "Miss a week, you're on your own." },
 ]
 
-export default function UpgradeScreen({ onBack, trialExpired = false, onOpenRedeem }: {
+export default function UpgradeScreen({ onBack, trialExpired = false, grantExpired = false, onOpenRedeem }: {
   onBack: () => void
   trialExpired?: boolean
+  /** A charity grant ended. Takes precedence over `trialExpired`: a comped
+   *  runner usually has a long-dead trial clock too, and the gift is the thing
+   *  they will remember being given. */
+  grantExpired?: boolean
   /** GTM-CHARITY-04 — opens the redeem screen. Optional so the component still
    *  renders anywhere it is mounted without the door. */
   onOpenRedeem?: () => void
@@ -178,10 +191,23 @@ export default function UpgradeScreen({ onBack, trialExpired = false, onOpenRede
     )
   }
 
-  const items    = trialExpired ? LOSSES    : FEATURES
-  const accent   = trialExpired ? 'var(--amber)' : 'var(--teal)'
-  const headline = trialExpired ? `${BRAND.coachName}'s gone quiet.` : `Keep ${BRAND.coachName} on.`
-  const sub      = trialExpired ? "14 days done. Here's what stopped." : 'Pick the coach, not the template.'
+  // Which story, decided by the tested rule rather than by a ternary here.
+  const framing  = upgradeFraming({ trialExpired, grantExpired })
+  const ended    = isLossFraming(framing)
+
+  const items    = ended ? LOSSES : FEATURES
+  // --warn / --moss, not the retired --amber / --teal aliases (ADR-007).
+  const accent   = ended ? 'var(--warn)' : 'var(--moss)'
+  const headline = ended ? `${BRAND.coachName}'s gone quiet.` : `Keep ${BRAND.coachName} on.`
+
+  // The only line that differs between the two endings. What STOPPED is the
+  // same list either way; what ended is not. TRIAL_DAYS rather than a literal
+  // "14" so the copy cannot drift from the trial length (CLAUDE.md: brand
+  // strings and numerics are parameterised, never typed into a component).
+  const sub =
+    framing === 'grant-ended' ? "Your charity access has ended. Here's what stopped."
+    : framing === 'trial-ended' ? `${TRIAL_DAYS} days done. Here's what stopped.`
+    : 'Pick the coach, not the template.'
 
   return (
     <div style={{
