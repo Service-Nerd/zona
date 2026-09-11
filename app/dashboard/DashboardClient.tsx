@@ -6971,7 +6971,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       {/* ── HERO BLOCK ───────────────────────────────────────────────── */}
       <div style={{ padding: '20px 16px 0' }}>
 
-        {/* Context row: Week N · hairline · 84 days out */}
+        {/* Context row: Phase · Week N · hairline · "10 weeks out"
+            (formatRaceCountdown — weeks, flipping to days inside the final
+            week. NOT raw days; that was the pre-2026 format.) */}
         <div style={{
           display: 'flex',
           alignItems: 'center',

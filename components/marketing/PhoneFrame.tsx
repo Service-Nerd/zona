@@ -13,20 +13,31 @@
 // passed across the RSC boundary), so their markup is reproduced inline and
 // kept in sync by hand. If those components change, update this still to match.
 //
-// WHAT IT SHOWS (a curated, realistic slice — the still is a composite proof,
-// not a literal screenshot; the bottom fade implies the screen scrolls):
+// WHAT IT SHOWS — the real Today screen's element ORDER, exactly:
 //   wordmark + notification bell → context row + greeting + 56px restraint hero
 //   ("8 km, / easy." — the number then the adverb, ink then moss, the screen's
-//   signature; there is NO "Today" title on the real screen) → Kit's plan-
-//   adjustment card (Confirm/Revert — the "your plan adapts" proof point) →
-//   Kit's coach note → session card + CTA → four-tab nav with the real icons.
-// The date strip and "Hold the zone" strip are omitted so the frame keeps a
-// realistic phone aspect ratio with the extra cards in view.
+//   signature; there is NO "Today" title on the real screen) → Kit's coach note
+//   → date strip (week nav + 7 day cells) → "Hold the zone" voice anchor →
+//   session card + CTA → four-tab nav with the real icons.
 //
-// THE CROP IS MEASURED. content = CONTENT_H; the "Log this session" CTA — the
-// last element the shot must show — sits fully above a 32px bottom fade, so the
-// fade only ever covers empty space. If the composition grows, raise CONTENT_H
-// by the same amount and keep the CTA above the fade.
+// SLT review 2026-09-11 (Make-A-Wish partnership made this a cold-audience
+// first-impression surface) cut the plan-adjustment card that used to sit above
+// the coach note. Two reasons, unanimous: it drew Confirm/Revert buttons nobody
+// can press — a still pretending to be a demo — and "we rescheduled your
+// session" is a claim every competitor makes. The kept coach note says
+// "keep today just as dull", which no competitor would put on a homepage.
+// The freed space restored the date strip (the only element that shows the
+// week's STRUCTURE — the habit scaffold) and the voice anchor.
+// Do NOT re-add an adjustment card here; the adaptivity claim belongs in page
+// copy, where it can be stated honestly in a sentence.
+//
+// THE CROP IS STRUCTURAL, NOT MEASURED. content = CONTENT_H with
+// overflow:hidden, so a composition that outgrows the box gets clipped at the
+// fade — which is exactly the "screen scrolls" illusion the fade already
+// implies. This replaced a hand-measured crop that silently broke: the content
+// div is position:relative and the nav is static, so when the cards pushed the
+// content ~32px past CONTENT_H it painted straight OVER the bottom nav and the
+// nav vanished. A measurement maintained by memory is not a measurement.
 //
 // KNOWN CONSTRAINT (handoff): a device frame renders its screen ground dark when
 // placed inside a --ground (dark) section — cause undiagnosed. KEEP THIS ON A
@@ -34,11 +45,35 @@
 // same reason.
 
 import { BRAND } from '@/lib/brand'
+import { Wordmark } from '@/components/ui/Wordmark'
 
 const SCREEN_W = 320
 const STATUS_H = 30
 const CONTENT_H = 700
 const NAV_H = 60
+
+// The still's plan: week 6 of a 16-week build, so 10 weeks remain. Every
+// number below is derived from these two so the screen is internally coherent
+// — a visitor who reads "Week 6 of 16" and "10 weeks out" should be able to
+// check the arithmetic. The countdown wording mirrors formatRaceCountdown()
+// in DashboardClient (runners think in weeks; the unit flips to days inside
+// the final week). It is NOT "84 days out" — that was the pre-2026 format.
+const WEEK_N = 6
+const TOTAL_WEEKS = 16
+const COUNTDOWN = `${TOTAL_WEEKS - WEEK_N} weeks out`
+
+/** Date-strip day cells. `date` is the calendar number, `dot` the session-type
+ *  accent (null = rest day, no dot). Thu is selected/today. Mirrors the real
+ *  DateStrip's DOW_LETTER order (Mon-first) and getDotColor() semantics. */
+const DAYS = [
+  { letter: 'M', date: 6,  dot: 'var(--s-easy)' },
+  { letter: 'T', date: 7,  dot: 'var(--s-quality)' },
+  { letter: 'W', date: 8,  dot: null },
+  { letter: 'T', date: 9,  dot: 'var(--s-easy)', today: true },
+  { letter: 'F', date: 10, dot: null },
+  { letter: 'S', date: 11, dot: 'var(--s-inter)' },
+  { letter: 'S', date: 12, dot: 'var(--s-long)' },
+]
 
 /** AIMark sparkle — copy of components/shared/AIMark.tsx (single-source glyph). */
 function Sparkle({ size = 10, color = 'var(--warn)' }: { size?: number; color?: string }) {
@@ -149,8 +184,12 @@ export function PhoneFrame() {
           </div>
         </div>
 
-        {/* ── Content — fixed CONTENT_H, authored to fit ────────────────── */}
-        <div style={{ height: CONTENT_H, flexShrink: 0, position: 'relative' }}>
+        {/* ── Content — fixed CONTENT_H. overflow:hidden is load-bearing:
+            this div is position:relative and the nav below is static, so
+            anything spilling past CONTENT_H paints straight over the nav and
+            the nav disappears. Clipping here makes that class of regression
+            impossible instead of relying on someone re-measuring. ────────── */}
+        <div style={{ height: CONTENT_H, flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
 
           {/* Wordmark row + notification bell (paid affordance). No "Today"
               title — the real screen leads with the hero. */}
@@ -159,10 +198,13 @@ export function PhoneFrame() {
             justifyContent: 'space-between',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{
-                fontSize: '13px', fontWeight: 600, color: 'var(--ink)',
-                letterSpacing: '0.14em', textTransform: 'lowercase',
-              }}>{BRAND.name.toLowerCase()}</span>
+              {/* The REAL wordmark component — not a hand-rolled span. The
+                  previous inline copy rendered lowercase at weight 600 with
+                  +0.14em tracking and no NN-moss accent, i.e. a different
+                  logo from the one the app and the rest of the site ship.
+                  Wordmark is pure/presentational (no hooks, no handlers) so it
+                  imports cleanly into this server component. */}
+              <Wordmark size="xs" />
               <span style={{ position: 'relative', width: '8px', height: '8px' }}>
                 <span style={{ position: 'absolute', inset: '-3px', borderRadius: '50%', background: 'var(--moss-soft)' }} />
                 <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'var(--moss)' }} />
@@ -187,14 +229,14 @@ export function PhoneFrame() {
           <div style={{ padding: '16px 18px 0' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
               <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                Base · Week 6
+                Base · Week {WEEK_N}
               </span>
               <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
               <span style={{
                 fontSize: '11px', fontWeight: 600, color: 'var(--moss)',
                 letterSpacing: '0.04em', background: 'var(--moss-soft)',
                 borderRadius: '20px', padding: '3px 9px',
-              }}>84 days out</span>
+              }}>{COUNTDOWN}</span>
             </div>
 
             <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--mute)', marginBottom: '4px', lineHeight: 1 }}>
@@ -207,30 +249,8 @@ export function PhoneFrame() {
             </div>
           </div>
 
-          {/* Kit's plan-adjustment card — copy of PendingAdjustmentBanner.
-              The "your plan adapts to your life" proof point: Confirm / Revert. */}
-          <div style={{ padding: '18px 18px 0' }}>
-            <div style={{ position: 'relative', background: 'var(--warn-bg)', borderRadius: '14px', padding: '14px 16px 14px 24px' }}>
-              <span style={{ position: 'absolute', left: '8px', top: '14px', bottom: '14px', width: '3px', borderRadius: '2px', background: 'var(--warn)' }} />
-              <div style={{ marginBottom: '10px' }}>
-                <KitByline role="Moved your tempo" />
-              </div>
-              <div style={{ fontSize: '13px', lineHeight: 1.55, color: 'var(--coach-ink)', marginBottom: '14px' }}>
-                Three hard days in a row. I&rsquo;ve pushed Thursday&rsquo;s tempo to Saturday so you actually recover.
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <span style={{ flex: 1, textAlign: 'center', padding: '10px 0', background: 'var(--warn)', borderRadius: '100px', fontSize: '13px', fontWeight: 600, color: 'var(--card)' }}>
-                  Confirm
-                </span>
-                <span style={{ flex: 1, textAlign: 'center', padding: '10px 0', background: 'transparent', border: '1px solid rgba(61,38,0,0.2)', borderRadius: '100px', fontSize: '13px', fontWeight: 500, color: 'var(--coach-ink)' }}>
-                  Revert
-                </span>
-              </div>
-            </div>
-          </div>
-
           {/* Kit's coach note — copy of CoachNoteBlock (aiGenerated) */}
-          <div style={{ padding: '14px 18px 0' }}>
+          <div style={{ padding: '18px 18px 0' }}>
             <div style={{ position: 'relative', background: 'var(--warn-bg)', borderRadius: '14px', padding: '16px 18px 16px 26px' }}>
               <span style={{ position: 'absolute', left: '8px', top: '16px', bottom: '16px', width: '3px', borderRadius: '2px', background: 'var(--warn)' }} />
               <div style={{ marginBottom: '10px' }}>
@@ -242,8 +262,76 @@ export function PhoneFrame() {
             </div>
           </div>
 
+          {/* Date strip — copy of DateStrip. The only element that shows the
+              week's STRUCTURE rather than a message: seven days, what's on
+              them, where you are. Restored on the SLT's reading that a cold
+              visitor reads a week strip faster than any sentence, and because
+              week-strip navigation is a named reference-aesthetic anchor
+              (CLAUDE.md). Static: the real one is a client component with
+              swipe handlers, so its markup is reproduced by hand here. */}
+          <div style={{ marginTop: '18px', borderBottom: '0.5px solid var(--line)', paddingBottom: '8px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '0 16px 8px',
+            }}>
+              <span style={{ color: 'var(--mute)', lineHeight: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <span style={{
+                fontSize: '11px', fontWeight: 600, color: 'var(--mute)',
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+              }}>Week {WEEK_N} of {TOTAL_WEEKS}</span>
+              <span style={{ color: 'var(--ink-2)', lineHeight: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M7 4L13 10L7 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '0 8px', gap: '2px' }}>
+              {DAYS.map((d, i) => (
+                <div key={i} style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  gap: '3px', padding: '2px',
+                }}>
+                  <span style={{
+                    fontSize: '10px', letterSpacing: '0.04em', textTransform: 'uppercase',
+                    color: d.today ? 'var(--moss)' : 'var(--ink-2)',
+                  }}>{d.letter}</span>
+                  <div style={{
+                    width: '26px', height: '26px', borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: d.today ? 'var(--moss)' : 'transparent',
+                  }}>
+                    <span style={{
+                      fontSize: '13px', fontWeight: d.today ? 700 : 500,
+                      color: d.today ? 'var(--card)' : 'var(--ink)',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}>{d.date}</span>
+                  </div>
+                  <span style={{
+                    width: '4px', height: '4px', borderRadius: '50%',
+                    background: d.dot ?? 'transparent',
+                  }} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Hold the zone — BRAND.voiceAnchor, the in-product voice moment.
+              In-product content, not marketing copy, so it does not collide
+              with the "never two locked brand lines on one surface" rule. */}
+          <div style={{ padding: '12px 18px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--moss)', flexShrink: 0 }} />
+            <span style={{
+              fontSize: '11px', fontWeight: 700, color: 'var(--moss)',
+              letterSpacing: '0.12em', textTransform: 'uppercase',
+            }}>Hold the zone · 132&ndash;145 bpm today</span>
+          </div>
+
           {/* Today's session — section label + session card + zone bar + CTA */}
-          <div style={{ padding: '16px 18px 0' }}>
+          <div style={{ padding: '14px 18px 0' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
               <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                 Today&apos;s session
