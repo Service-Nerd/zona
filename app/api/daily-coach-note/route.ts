@@ -14,6 +14,7 @@ import { getCurrentWeekIndex, isDateWithinWeek, isPlanComplete, parseLocalDate }
 import { resolveEffectiveSessions, slotForOriginalDay, type SessionOverride } from '@/lib/plan/effectiveSessions'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
 // GET /api/daily-coach-note?date=YYYY-MM-DD
@@ -55,13 +56,31 @@ export async function GET(req: NextRequest) {
   )
 
   // Cache hit?
+  //
+  // The `error` here is NOT discardable, and discarding it cost real money.
+  // `daily_coach_notes` was absent from production for months — the migration
+  // was committed and recorded in the applied-migrations ledger, but never
+  // landed — so this read returned `{ data: null, error: <relation does not
+  // exist> }` every time. `existing?.content` was falsy, the route regenerated,
+  // and the whole thing looked exactly like a cold cache. Every app open by a
+  // paid or trial runner paid for a fresh model call.
+  //
+  // A cache that never hits is invisible by construction. The only way to
+  // notice is to make the failure say so.
   if (!force) {
-    const { data: existing } = await serviceSupabase
+    const { data: existing, error: cacheReadError } = await serviceSupabase
       .from('daily_coach_notes')
       .select('content, generated_at')
       .eq('user_id', userId)
       .eq('note_date', noteDate)
       .maybeSingle()
+
+    if (cacheReadError) {
+      console.error('[daily-coach-note] cache read failed', cacheReadError.message)
+      await recordOpsEvent('coach_note_cache_unavailable',
+        { stage: 'read', message: cacheReadError.message }, userId)
+    }
+
     if (existing?.content) {
       return NextResponse.json({ note: existing.content, cached: true })
     }
@@ -312,7 +331,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ note: null, cached: false, fallback: true })
   }
 
-  await serviceSupabase
+  // Unchecked before. A failed write here means the next request pays for the
+  // model again, so silence is the expensive option.
+  const { error: cacheWriteError } = await serviceSupabase
     .from('daily_coach_notes')
     .upsert({
       user_id:      userId,
@@ -321,6 +342,12 @@ export async function GET(req: NextRequest) {
       generated_at: new Date().toISOString(),
       ai_model:     ANTHROPIC_MODEL,
     }, { onConflict: 'user_id,note_date' })
+
+  if (cacheWriteError) {
+    console.error('[daily-coach-note] cache write failed', cacheWriteError.message)
+    await recordOpsEvent('coach_note_cache_unavailable',
+      { stage: 'write', message: cacheWriteError.message }, userId)
+  }
 
   return NextResponse.json({ note: content, cached: false })
 }

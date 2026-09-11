@@ -59,3 +59,4 @@
 20260819_subscription_event_ordering.sql
 20260831_max_hr_source.sql
 20260911_charity_access_codes.sql
+20260911_daily_coach_notes_restore.sql

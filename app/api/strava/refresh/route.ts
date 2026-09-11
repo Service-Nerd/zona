@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { getStravaToken } from '@/lib/strava'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,11 +13,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Use service role to bypass RLS — safe, server-side only
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    )
+    // SEC-08 — user-scoped (JWT) client, not the service role. Queries run as the
+    // user, so RLS backstops the .eq(user_id) filters below instead of the filter
+    // being the only thing between one runner's data and another's. Every table
+    // touched here is covered by a policy: verified against production and
+    // enforced on every build by `lib/supabase/rlsCoverage.test.ts`.
+    const supabase = createUserScopedClient(request)
+    if (!supabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { data: settings, error } = await supabase
       .from('user_settings')

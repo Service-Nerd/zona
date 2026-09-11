@@ -16,8 +16,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { estimateBenchmarkFromRuns, type AerobicRun } from '@/lib/plan/aerobicEstimate'
+import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 
 const WINDOW_WEEKS = 6
 
@@ -40,10 +40,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ available: false, reason: 'no_hr' })
   }
 
-  const supabase = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  )
+  // SEC-08 — user-scoped (JWT) client, not the service role. Queries run as the
+  // user, so RLS backstops the .eq(user_id) filters below instead of the filter
+  // being the only thing between one runner's data and another's. Every table
+  // touched here is covered by a policy: verified against production and
+  // enforced on every build by `lib/supabase/rlsCoverage.test.ts`.
+  const supabase = createUserScopedClient(req)
+  if (!supabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const windowStart = new Date()
   windowStart.setDate(windowStart.getDate() - WINDOW_WEEKS * 7)

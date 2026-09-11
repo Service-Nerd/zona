@@ -9,7 +9,16 @@ set -euo pipefail
 
 FAIL=0
 
-STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(tsx?|jsx?)$' | grep -vE '^globals\.css$' | grep -E '^(app|components)/' || true)
+# `app/api/og/**` is excluded from the palette check. `next/og` renders in a
+# satori runtime with no CSS custom properties, so a token resolves to nothing
+# and the image comes out unstyled — CLAUDE.md records this exception for
+# app/api/og/route.tsx and it applies to every OG route. Those files carry the
+# hex WITH the token name in a trailing comment, which is the reviewable form.
+# Without this the hook blocked any commit that so much as touched an OG route,
+# over pre-existing lines, which is how a guard gets switched off entirely.
+PALETTE_EXEMPT_REGEX='^app/api/og/'
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(tsx?|jsx?)$' | grep -vE '^globals\.css$' | grep -E '^(app|components)/' | grep -vE "$PALETTE_EXEMPT_REGEX" || true)
 
 # ── Hardcoded hex colours ─────────────────────────────────────────────────────
 HEX_HITS=$(echo "$STAGED" | xargs grep -lnE '#[0-9A-Fa-f]{3,8}\b' 2>/dev/null || true)

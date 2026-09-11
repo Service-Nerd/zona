@@ -26,6 +26,14 @@ export type OpsEventKind =
   // we had lifted. Unhandled is still the correct BEHAVIOUR (we must not guess a
   // status), but it must be visible.
   | 'revenuecat_event_unhandled'
+  // SEC-08 sweep (2026-09-11) — the daily coach note's CACHE could not be read
+  // or written. Found because `daily_coach_notes` did not exist in production
+  // at all: the migration was committed AND recorded in the applied-migrations
+  // ledger, but never landed. Both call sites discarded their error, so the
+  // only symptom was an Anthropic call on every app open instead of one per
+  // user per day. A cache that silently never hits is indistinguishable from a
+  // cache that works, which is why this needs a trace and not a comment.
+  | 'coach_note_cache_unavailable'
 
 /**
  * Record an internal ops event. Fire-and-forget by nature but awaitable, so a

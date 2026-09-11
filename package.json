@@ -17,7 +17,8 @@
     "sync:ios": "npx cap sync ios && node scripts/fix-cap-config.mjs && node scripts/verify-cap-config.mjs",
     "verify:ios-plugins": "node scripts/verify-cap-config.mjs",
     "icons:pwa": "node scripts/generate-pwa-icons.mjs",
-    "verify:parity": "tsx scripts/verify-parity.ts"
+    "verify:parity": "tsx scripts/verify-parity.ts",
+    "check:db": "tsx scripts/check-db-drift.ts"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",

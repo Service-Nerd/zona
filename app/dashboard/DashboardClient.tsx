@@ -821,6 +821,14 @@ export default function DashboardClient() {
   // Daily coach note — paid/trial only. Skip fetch entirely for free users.
   // Cached daily; the route returns instantly on cache hit, so this only
   // pays the AI cost once per user per day.
+  //
+  // ⚠️ That last sentence was FALSE in production until 2026-09-11. The
+  // `daily_coach_notes` table did not exist — the migration was committed and
+  // recorded in the applied-migrations ledger, but never landed — so the cache
+  // read errored, the route regenerated, and every app open by a paid or trial
+  // runner paid for a fresh model call. Both call sites discarded the error, so
+  // there was no symptom other than the bill. Table applied, and the route now
+  // records `coach_note_cache_unavailable` rather than failing quietly.
   useEffect(() => {
     if (!hasPaidAccess || !appReady) return
     let cancelled = false
