@@ -62,7 +62,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 
 | # | Item | Owner | Effort | Why it is on the path |
 |---|------|-------|--------|----------------------|
-| **0** | **Redeem ONE code end-to-end** | **FOUNDER** | minutes | ⚠️ **Nothing else matters if this is broken.** No code has ever gone through the real database. Check with `npx tsx scripts/check-charity-code.ts <CODE>`, **never** by looking at the app — on an `is_admin` account `getUserTier` resolves admin → paid before the grant, so the UI is identical whether redemption landed or failed silently. |
+| ~~0~~ | ~~Redeem ONE code end-to-end~~ | founder | — | ✅ **DONE 2026-09-11 14:21.** Verified in production: 3 minted, **1 redeemed**, grant runs to 2026-12-10. The mechanism works end to end. **This is also how the ten UX observations below were found** — the founder redeemed a code and walked the flow. Closed; stop listing it as the blocker. |
 | **1** | **UX-BEGINNER-01** | me | S | A beginner types the honest answer (0 — never run) and is refused with a database field name. Wood: *"the first thing you asked them to be honest about, you punished."* |
 | **2** | **MAINT-LABEL-01 (copy half only)** | me | S | **89% of beginner marathon plans are labelled "maintenance"** — "maintains current fitness rather than building it" — to the exact cohort going 5km/week → 26.2 miles. Copy ships now; the `volume_profile` VALUE is load-bearing (confidence score, §38 notes) and needs a Coaching Board sitting. |
 | **3** | **UX-REDEEM-01** | me | XS | The last screen between a Make-A-Wish runner and their free access, and it asks for work the parser does not require. |
