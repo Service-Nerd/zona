@@ -734,6 +734,43 @@ export const GENERATION_CONFIG = {
   BUILD_VOL_INIT_FLOOR_VS_PEAK:   35,
   BUILD_VOL_INIT_CEILING_VS_PEAK: 85,
 
+  // ── §106 — PEAK WEEKLY VOLUME CEILING, AND THE FLOOR UNDER IT ─────────────
+  // (Coaching Board MAINT-PROFILE-01, 2026-09-11)
+  //
+  // PEAK_KM_BY_LEVEL was 18 coaching numerics living in `lib/plan/length.ts`,
+  // OUTSIDE this file. It therefore had no principle section, `configPrincipleSync`
+  // could not see it, and the coaching-guard hook did not fire on edits to it —
+  // while setting the single most consequential number in a plan. Moved here so
+  // it is governed like every other coaching numeric (Hutchinson: "every other
+  // numeric in this app has a section explaining what it is for, and that is
+  // precisely the discipline that would have caught this").
+  //
+  // PEAK_FLOOR_VS_START_RATIO is the fix itself. The ceiling is VOLUME-BLIND: it
+  // reads distance and fitness level and never asks what the runner already
+  // runs. Measured 2026-09-11: a 100 km/week experienced marathoner was handed a
+  // block starting at 76 km and peaking at 73 — below their own current volume,
+  // in both directions. The engine then correctly failed §23 and labelled it
+  // maintenance, so every honesty layer worked perfectly on a plan that should
+  // never have been built.
+  //
+  // ⚠️ THIS IS A FLOOR ON THE CEILING, NEVER A SCALED TARGET (Willy's condition
+  // of approval, and he would veto the general form). Self-reported weekly
+  // volume is the least reliable number on the intake form, and scaling the
+  // ceiling off it would turn an unverified self-report into permission to ADD
+  // load. This adds none: `startKm` is already the runner's declared volume, and
+  // all this does is refuse to build a curve whose top is below its own start.
+  // §2's 10% rule, §45's long-run cap and §3's deload cadence stay fully binding.
+  // §10/CD-6's `<6mo` over-claim cap still governs `startKm` before it is read.
+  PEAK_KM_BY_LEVEL: {
+    '5K':       { beginner: 28, intermediate: 38, experienced: 48 },
+    '10K':      { beginner: 32, intermediate: 46, experienced: 56 },
+    'HM':       { beginner: 38, intermediate: 52, experienced: 65 },
+    'MARATHON': { beginner: 52, intermediate: 65, experienced: 80 },
+    '50K':      { beginner: 62, intermediate: 80, experienced: 95 },
+    '100K':     { beginner: 72, intermediate: 90, experienced: 110 },
+  },
+  PEAK_FLOOR_VS_START_RATIO: 1.0,
+
   // CoachingPrinciples §10 (CD-6) — a `training_age: '<6mo'` runner's declared
   // weekly volume is a self-reported wizard bucket midpoint, not measured. Cap
   // the starting volume regardless of the claim, so an over-stated figure can't

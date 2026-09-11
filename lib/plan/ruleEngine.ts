@@ -4839,8 +4839,6 @@ function buildRulePlanOnce(
   // They must come first now, because §97 lets a gated runner's plan RUN LONGER
   // instead of being preceded by a §57 foundation block — so plan length depends
   // on the gate, and the gate must not depend on plan length.
-  const peakKm = config.peakKmByLevel[fitness]
-
   // CoachingPrinciples §29 — fresh-from-layoff detection. Two paths:
   //  1. Explicit: weeks_at_current_volume < threshold.
   //  2. Heuristic (R2/M-03): training_age says experienced, but current volume
@@ -4852,6 +4850,60 @@ function buildRulePlanOnce(
     && input.current_weekly_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_WEEKLY_KM
     && input.longest_recent_run_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_LONG_RUN_KM
   const isFreshReturn = explicitFreshReturn || heuristicFreshReturn
+
+  const declaredStartKm = isFreshReturn
+    ? input.current_weekly_km * GENERATION_CONFIG.FRESH_RETURN_START_FRACTION
+    : input.current_weekly_km
+  // CD-6 / §10 — a <6mo runner's declared volume is a self-reported bucket, not
+  // measured; cap the start so an over-claim can't hand a beginner too much.
+  const startKm = input.training_age === '<6mo'
+    ? Math.min(declaredStartKm, GENERATION_CONFIG.BEGINNER_WEEK1_VOLUME_CAP_KM)
+    : declaredStartKm
+
+  // §106 (Coaching Board MAINT-PROFILE-01, 2026-09-11) — THE CEILING GETS A FLOOR.
+  //
+  // `peakKmByLevel` reads distance and fitness level and never asks what the
+  // runner already runs. Measured: a 100 km/week experienced marathoner was
+  // handed a block starting at 76 km and peaking at 73 — below their own current
+  // volume in both directions. §23 then correctly observed the peak was 96% of
+  // week 1 and labelled the plan maintenance, so every honesty layer worked
+  // perfectly on a plan that should never have been built. §23 and §46 license
+  // maintenance when THE RUNNER'S constraints prevent overload — they name
+  // `days_available` and `max_weekday_mins`. Neither was binding here. Ours was.
+  //
+  // A FLOOR, NOT A SCALED TARGET (Willy's condition of approval; he would veto
+  // the general form). This adds no tissue load: `startKm` is already the
+  // runner's declared volume, and all this does is refuse to build a curve whose
+  // top is below its own start. §2's 10% rule, §45's long-run cap and §3's
+  // deload cadence stay fully binding — nothing here permits a bigger
+  // week-to-week step. §10/CD-6's `<6mo` over-claim cap governs `startKm` above,
+  // so a novice's over-stated volume cannot reach this line un-capped.
+  //
+  // Ordering: `startKm` and the fresh-return predicates moved up with it. Both
+  // depend only on `input` and the fitness assessment, never on plan length, so
+  // the §97 constraint documented above (the gate must not depend on plan
+  // length) is preserved.
+  //
+  // ⚠️ §79 YIELDS NOTHING HERE, AND §106 YIELDS TO IT. The conflict scan for
+  // MAINT-PROFILE-01 missed §79 and the engine caught it: a runner who declares
+  // UPWARD gets an intensity allowance only — "peak km, the week-1 volume floor,
+  // the ramp and the long-run caps stay on the assessment". A floor that lifts
+  // `peakKm` above the assessed band is exactly the tonnage rise §79 exists to
+  // refuse, and `INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE` cannot tell a floor
+  // driven by `current_weekly_km` from one driven by the dropdown.
+  //
+  // So the floor does not apply to an upward declaration. The residual is real
+  // and deliberate — a declared-upward runner on high volume still gets a
+  // reduced plan — and it is VISIBLE rather than silent:
+  // `INV-PLAN-PEAK-NOT-BELOW-START` warns on it. The two principles compose;
+  // neither was weakened to fit the other.
+  const levelPeakKm = config.peakKmByLevel[fitness]
+  const declaredUpward = declaredLevel !== undefined
+    && FITNESS_RANK[declaredLevel] > FITNESS_RANK[assessedStructural]
+  const peakKm = declaredUpward
+    ? levelPeakKm
+    : Math.max(levelPeakKm, startKm * GENERATION_CONFIG.PEAK_FLOOR_VS_START_RATIO)
+
 
   // Fresh-return runners get the standard 10% ramp (no allowance) — their
   // structural base is gone and the cap exists to protect them.
@@ -4915,14 +4967,6 @@ function buildRulePlanOnce(
   //     and longest recent run are both below floors typical of that
   //     experience. The mismatch points to a layoff regardless of whether
   //     the user thought to mention it.
-  const declaredStartKm = isFreshReturn
-    ? input.current_weekly_km * GENERATION_CONFIG.FRESH_RETURN_START_FRACTION
-    : input.current_weekly_km
-  // CD-6 / §10 — a <6mo runner's declared volume is a self-reported bucket, not
-  // measured; cap the start so an over-claim can't hand a beginner too much.
-  const startKm = input.training_age === '<6mo'
-    ? Math.min(declaredStartKm, GENERATION_CONFIG.BEGINNER_WEEK1_VOLUME_CAP_KM)
-    : declaredStartKm
 
   // Recovery cadence — masters (age ≥ 45) recover every 3 weeks (CoachingPrinciples §3).
   // Computed once and shared between volume sequence + week badging so they stay aligned.

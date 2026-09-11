@@ -14,13 +14,24 @@ export interface DistanceConfig {
 
 // taperWeeks removed in R23 rebuild — taper duration now sourced from
 // GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey].length (single source of truth).
+// §106 (Coaching Board MAINT-PROFILE-01, 2026-09-11) — `peakKmByLevel` USED TO BE
+// WRITTEN OUT HERE, and that was the defect behind the defect. Eighteen coaching
+// numerics, setting the single most consequential number in a plan, living
+// outside `GENERATION_CONFIG` — so no principle governed them,
+// `configPrincipleSync.test.ts` could not see them, and the coaching-guard hook
+// did not fire on edits to this file. They now come from
+// `GENERATION_CONFIG.PEAK_KM_BY_LEVEL`, keyed by the same `raceDistanceKey`
+// bands this table's `maxKm` boundaries already encode (6 / 12 / 22 / 43 / 55 / ∞).
+// The values are unchanged; only their home and their governance are.
+const PEAK = GENERATION_CONFIG.PEAK_KM_BY_LEVEL
+
 export const DISTANCE_CONFIGS: DistanceConfig[] = [
-  { maxKm: 6,        minWeeks: 8,  idealWeeks: 12, peakKmByLevel: { beginner: 28, intermediate: 38, experienced: 48 } },
-  { maxKm: 12,       minWeeks: 10, idealWeeks: 12, peakKmByLevel: { beginner: 32, intermediate: 46, experienced: 56 } },
-  { maxKm: 22,       minWeeks: 10, idealWeeks: 14, peakKmByLevel: { beginner: 38, intermediate: 52, experienced: 65 } },
-  { maxKm: 43,       minWeeks: 14, idealWeeks: 18, peakKmByLevel: { beginner: 52, intermediate: 65, experienced: 80 } },
-  { maxKm: 55,       minWeeks: 16, idealWeeks: 20, peakKmByLevel: { beginner: 62, intermediate: 80, experienced: 95 } },
-  { maxKm: Infinity, minWeeks: 18, idealWeeks: 24, peakKmByLevel: { beginner: 72, intermediate: 90, experienced: 110 } },
+  { maxKm: 6,        minWeeks: 8,  idealWeeks: 12, peakKmByLevel: PEAK['5K'] },
+  { maxKm: 12,       minWeeks: 10, idealWeeks: 12, peakKmByLevel: PEAK['10K'] },
+  { maxKm: 22,       minWeeks: 10, idealWeeks: 14, peakKmByLevel: PEAK['HM'] },
+  { maxKm: 43,       minWeeks: 14, idealWeeks: 18, peakKmByLevel: PEAK['MARATHON'] },
+  { maxKm: 55,       minWeeks: 16, idealWeeks: 20, peakKmByLevel: PEAK['50K'] },
+  { maxKm: Infinity, minWeeks: 18, idealWeeks: 24, peakKmByLevel: PEAK['100K'] },
 ]
 
 export function getDistanceConfig(distanceKm: number): DistanceConfig {

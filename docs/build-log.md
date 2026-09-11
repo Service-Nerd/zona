@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-11 — §106 / MAINT-PROFILE-01 · The investigation dissolved its own question and found the real bug underneath
+
+**Shipped:** A plan can no longer prescribe a peak week below the volume the runner already runs. Plus the 18 numerics that caused it, moved into the config file everything else lives in.
+
+**Dev learning:** The most consequential number in a plan — peak weekly volume — was set by a table in `lib/plan/length.ts`, outside `GENERATION_CONFIG`. So no principle explained it, the test that checks every numeric has a principle could not see it, and the hook that convenes the coaching board on doctrine edits did not fire on that file. Every governance layer this project has built, bypassed by a table being in the wrong file. That is a more interesting failure than the bug it hid.
+
+**Product/creator learning:** A runner on 100 km a week was handed an 18-week marathon block peaking at 73. What makes it worth writing down is that nothing was broken downstream: the engine noticed the peak was below the start, correctly refused to call it a build, labelled it maintenance and explained why in plain English. The honesty machinery worked perfectly on a plan that should never have been built. Honest output is not the same as correct output, and a system that is good at explaining itself can talk you out of noticing.
+
+**AI-building learning:** I wrote the board brief and then had to withdraw three of its four findings during the mandatory conflict scan, because the constitution already answered them — §45 literally says "this principle wins" about the conflict I was about to report as unresolved. That scan is the single highest-value step in the process and it works by making you read the thing you are about to contradict. Then the engine caught what the scan still missed: my fix collided with §79, a principle I never checked, and an invariant failed the build rather than a runner finding out.
+
+**The honest bit:** Three separate claims I made to the founder today were wrong and I corrected all three in writing — "it feeds the confidence score" (nothing reads it), "49.8% of plans are exempt from five invariants" (each exemption is the principle's own remedy), and my expectation that fixing the 0 km bug would move the classification (measured: it does not). The pattern is the same every time: I reason from the code I have read to the code I have not, and the fix is always to go and measure.
+
+**Hook material:** 100% of time-targeted marathon plans — 54 of 54 — were classified "not a build". A distinction that never varies isn't a distinction.
+
+**Postable?:** yes
+
+
 ## 2026-09-11 — MAINT-LABEL-01 second pass + SESSION-KM-01 · The engine told runners their long run was 0 km
 
 **Shipped:** A single owner for "how far is this session", and three lies removed from the notes runners read.

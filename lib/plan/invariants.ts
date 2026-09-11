@@ -23,6 +23,7 @@ import { zonesFromZoneString } from '@/lib/coaching/zoneRules'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
 import { parseDateLocal, formatDate, getDistanceConfig } from './length'
 import { FITNESS_RANK } from './fitnessAssessment'
+import { sessionKm } from './sessionDistance'
 
 export type Severity = 'error' | 'warn'
 
@@ -87,6 +88,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-PEAK-LR-RACE-RATIO',
   'INV-PLAN-RACE-SPECIFIC-LONG-RUN',
   'INV-PLAN-PEAK-OVER-BASE',
+  'INV-PLAN-PEAK-NOT-BELOW-START',
   'INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR',
   'INV-PLAN-TAPER-VARIETY',
   'INV-PLAN-PREP-TIME-STATUS-ANNOTATED',
@@ -1666,12 +1668,33 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     const requiredKm = input.race_distance_km * ratio
     const peakWeeks = plan.weeks.filter(w => w.phase === 'peak' && w.type !== 'deload')
     if (peakWeeks.length > 0) {
-      const peakLrKm = Math.max(...peakWeeks.flatMap(w => {
-        const long = Object.values(w.sessions).find(s =>
-          s && isLongRun(s)
-        )
-        return long?.distance_km != null ? [long.distance_km] : [0]
-      }))
+      // SESSION-KM-02 (2026-09-11) — was `long?.distance_km != null ? [d] : [0]`.
+      //
+      // A beginner's plan is DURATION-ANCHORED (`duration_mins` set,
+      // `distance_km` null), so this asserted "the peak long run is 0 km" and
+      // the check errored on a perfectly good 2h12 long run. It went unnoticed
+      // because those plans were almost all classified `maintenance`, which
+      // exempts this invariant — until §106 raised their peaks and 126 of them
+      // stopped being exempt. The defect was always there; the exemption was
+      // hiding it.
+      //
+      // The session carries its own prescribed pace, which is a better
+      // conversion than any plan-level easy pace. When there is NO pace to
+      // convert with, the week contributes `null` and the check SKIPS rather
+      // than asserting zero — a km floor cannot be evaluated against a plan
+      // that has no km, and inventing a 0 is how this broke in the first place.
+      const longRunKmOf = (w: Week): number | null => {
+        const long = Object.values(w.sessions).find(sn => sn && isLongRun(sn))
+        if (!long) return 0
+        if (long.distance_km != null) return long.distance_km
+        const mid = long.pace_target ? parsePaceMidpoint(long.pace_target) : null
+        return sessionKm(long, mid)
+      }
+      const peakLrKms = peakWeeks.map(longRunKmOf)
+      const peakLrKm = peakLrKms.some(k => k == null)
+        ? null
+        : Math.max(...(peakLrKms as number[]))
+      if (peakLrKm !== null) {
       // Time-cap check — if even an unrounded long run at the time cap is below
       // requiredKm, the cap is binding and the invariant relaxes.
       const peakLongRunHrs = peakWeeks[0].long_run_hrs ?? 0
@@ -1686,10 +1709,11 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           principle_ref: 'CoachingPrinciples §24',
           severity: 'error',
           week: 0,
-          message: `Peak long run ${peakLrKm}km is below ${effectiveRequired.toFixed(1)}km (${Math.round(ratio * 100)}% of ${input.race_distance_km}km race)`,
+          message: `Peak long run ${Math.round(peakLrKm * 10) / 10}km is below ${effectiveRequired.toFixed(1)}km (${Math.round(ratio * 100)}% of ${input.race_distance_km}km race)`,
           actual: peakLrKm,
           expected: `≥ ${effectiveRequired.toFixed(1)}`,
         })
+      }
       }
     }
   }
@@ -1874,6 +1898,46 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           message: `Peak volume ${peakKm}km is ${Math.round(ratio * 100)}% of W1 ${w1}km — below ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% threshold and not flagged as maintenance`,
           actual: `${Math.round(ratio * 100)}%`,
           expected: `≥ ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% or volume_profile=maintenance`,
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-PEAK-NOT-BELOW-START — a plan never peaks below where the runner
+  // already is. (CoachingPrinciples §106, Coaching Board MAINT-PROFILE-01)
+  //
+  // MEASURED ON THE DELIVERED WEEK, NOT THE TARGET — and that distinction is the
+  // whole check. §106 puts a floor under `peakKm`, but `peakKm` is the internal
+  // curve's target; the runner sees `weekly_km` on placed sessions, and the two
+  // diverge downward through the weekday cap, §52's long-run interaction and the
+  // §12 trims. That is ADR-022's finding restated: the load rules were enforced
+  // on the CURVE while the runner read the DELIVERY. Checking the target here
+  // would pass on a plan that still detrains them.
+  //
+  // NOT EXCUSABLE BY `volume_profile: 'maintenance'`, deliberately and unlike
+  // its neighbours §23/§46/§52. Those license maintenance when the RUNNER'S
+  // constraints prevent overload. A detraining block is not an honest response
+  // to a constraint, it is a worse plan than no plan, and relabelling it must
+  // not make it acceptable (Coaching Board, explicit).
+  //
+  // Warn, not error, for the residual: §106's floor moves the target, and the
+  // delivered week can still land under it for a runner whose life constraints
+  // bite. Same honest-residual precedent as ADR-022's `warn` invariants (§34).
+  {
+    const declared = input?.current_weekly_km
+    const nonFoundation = plan.weeks.filter(w => w.phase !== 'foundation' && w.type !== 'deload')
+    if (declared != null && declared > 0 && nonFoundation.length > 0) {
+      const deliveredPeak = Math.max(...nonFoundation.map(w => w.weekly_km))
+      const floor = declared * GENERATION_CONFIG.PEAK_FLOOR_VS_START_RATIO
+      if (deliveredPeak + 0.5 < floor) {
+        violations.push({
+          code: 'INV-PLAN-PEAK-NOT-BELOW-START',
+          principle_ref: 'CoachingPrinciples §106',
+          severity: 'warn',
+          week: 0,
+          message: `Delivered peak week is ${deliveredPeak}km but the runner already runs ${declared}km — the plan reduces their volume for its whole length`,
+          actual: `${deliveredPeak}km`,
+          expected: `>= ${Math.round(floor)}km`,
         })
       }
     }

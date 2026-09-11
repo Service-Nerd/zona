@@ -30,10 +30,20 @@ import type { GeneratorInput, Plan } from '@/types/plan'
 const FROZEN_NOW = new Date('2026-08-20T09:00:00Z')
 const PLAN_START = '2026-04-27'
 
+// §106 (2026-09-11) — `current_weekly_km` was 60. THE FIXTURE WAS ITSELF AN
+// INSTANCE OF THE DEFECT §106 FIXES: the 10K/experienced peak ceiling is 56, so
+// this runner was being handed a plan capped BELOW the volume they already run,
+// and part of the "structural inversion" this test exercises was that cap rather
+// than the structural squeeze it means to test. With §106's floor the inversion
+// fell to 6.1% and the test's own `fixture must invert materially` guard caught
+// it — working exactly as its author intended.
+// 50 km/wk sits under the ceiling, so the squeeze is purely structural (3 days,
+// long run at its time cap, easy runs capped against it) and the inversion is
+// 12.2%, comfortably over the 10% the assertion needs.
 const TENK: GeneratorInput = {
   race_date: '2026-07-27', race_distance_km: 10, goal: 'time_target',
   target_time: '0:45:00', age: 35, fitness_level: 'experienced',
-  days_available: 3, current_weekly_km: 60, longest_recent_run_km: 22,
+  days_available: 3, current_weekly_km: 50, longest_recent_run_km: 22,
 }
 
 const phaseMax = (p: Plan, phase: string) => {

@@ -3,20 +3,20 @@
   "generated": 621,
   "refused": 27,
   "failed": 0,
-  "maintenancePct": 49.8,
+  "maintenancePct": 51,
   "constrainedByInputsPct": 25.6,
   "volumeConstrainedPct": 27.1,
   "timeCompressedPct": 0,
-  "constraintNotePct": 65.7,
+  "constraintNotePct": 66.8,
   "meanQualityPerBuildWeek": 0.49,
   "plansWithNoQualityPct": 33.3,
-  "meanDeliveredPeakKm": 39.26,
+  "meanDeliveredPeakKm": 39.96,
   "meanPlanWeeks": 13.83,
   "earlyQualityOnsetPct": 0,
   "maintenanceByDistance": {
-    "5": 50.6,
-    "10": 41.4,
-    "21.1": 39.5,
+    "5": 51.2,
+    "10": 44.4,
+    "21.1": 40.7,
     "42.2": 71.1
   }
 }

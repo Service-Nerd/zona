@@ -4161,6 +4161,89 @@ Better, not solved; the depth question stays CAT-DEPTH-01's.
 
 ---
 
+## 106. A plan never peaks below where the runner already is
+
+*(Coaching Board MAINT-PROFILE-01, 2026-09-11. CORRECT WITH AMENDMENT.)*
+
+**Principle.** The peak weekly volume target is the runner's level band **or the
+volume they already run, whichever is higher**. A plan may never prescribe a peak
+week below the weekly volume the runner told us they are currently doing.
+
+**Why.** `PEAK_KM_BY_LEVEL` reads race distance and fitness level and never asks
+what the runner already runs. Measured 2026-09-11: an experienced marathoner
+declaring **100 km/week** was handed an 18-week block starting at 76 km and
+peaking at **73** — below their current volume in both directions. Every honesty
+layer then worked perfectly on a plan that should never have been built: §23
+correctly observed the peak was 96% of week 1, the plan was classified
+`maintenance`, and the note explained itself. **§23 and §46 license maintenance
+when THE RUNNER'S constraints prevent overload — they name `days_available` and
+`max_weekday_mins`. Neither was binding. Ours was.** The constitution has never
+licensed the engine creating the condition it then honestly reports.
+
+Sims, on who pays for it: a peri- or post-menopausal runner has usually built her
+volume deliberately for bone loading. A block that quietly reduces her training
+for 18 weeks while she believes she is building — and while she eats for the
+training she thinks she is doing — is an unopposed loss of mechanical stimulus at
+the age it is hardest to recover. That is not a label problem.
+
+**A FLOOR ON THE CEILING, NEVER A SCALED TARGET.** This was Willy's condition of
+approval and he would veto the general form: self-reported weekly volume is the
+least reliable number on the intake form, and scaling the ceiling off it turns an
+unverified self-report into permission to **add** load. This adds none. `startKm`
+is already the runner's declared volume; all §106 does is refuse to build a curve
+whose top is below its own start. §2's 10% rule, §45's long-run progression cap
+and §3's deload cadence remain **fully binding** — nothing here permits a larger
+week-to-week step. §10/CD-6's `<6mo` over-claim cap still governs `startKm`
+before §106 reads it. Raising the ceiling **above** the level band on the strength
+of a self-report is a new sitting.
+
+**§79 wins where they meet.** A runner who declares UPWARD gets an intensity
+allowance only — *"peak km, the week-1 volume floor, the ramp and the long-run
+caps stay on the assessment"*. §106's floor therefore **does not apply to an
+upward declaration**, and `INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE` keeps its veto.
+The residual is real and deliberate: a declared-upward runner on high volume still
+gets a reduced plan. It is **visible rather than silent** —
+`INV-PLAN-PEAK-NOT-BELOW-START` warns on it. *(The board's own conflict scan
+missed §79; the engine's invariant caught it. Recorded because the layered
+governance working is the point of having it.)*
+
+**Deferred, not settled.** The sitting also measured that **100% of time-targeted
+marathon plans (54 of 54)** classify `maintenance` — a distinction that never
+varies carries no information, and Willy's own standard is that a check firing on
+71% of a distance is noise. The chair declined to recalibrate §23's ratio or
+§46's floor in the same sitting: this defect inflates the population those
+thresholds measure, and you do not tune a threshold against a broken input.
+**Re-measure after §106 has been live.**
+
+**Config.**
+- `GENERATION_CONFIG.PEAK_FLOOR_VS_START_RATIO = 1.0` — the floor, as a multiple
+  of the runner's declared weekly volume. Tunable: a coach could argue for 0.95
+  (allow a slight reduction) or 1.05 (require growth).
+- `GENERATION_CONFIG.PEAK_KM_BY_LEVEL` — **moved here from `lib/plan/length.ts`
+  in the same commit.** Eighteen coaching numerics setting the single most
+  consequential figure in a plan had been living outside `GENERATION_CONFIG`, so
+  no principle governed them, `configPrincipleSync.test.ts` could not see them,
+  and the coaching-guard hook did not fire on edits. Values unchanged; only their
+  home and their governance are. Hutchinson: *"every other numeric in this app has
+  a section explaining what it is for, and that is precisely the discipline that
+  would have caught this."*
+
+**Measured effect** (`npm run cohort:shape`, 621 plans): mean delivered peak
+**39.26 → 39.96 km**, maintenance **49.8% → 51.0%**, constraint-note
+**65.7% → 66.8%**, marathon maintenance unchanged at 71.1%. The maintenance rise
+is a consequence, not a regression: a larger plan trips more structural checks,
+and each one is declared to the runner.
+
+Enforced by `INV-PLAN-PEAK-NOT-BELOW-START` (`warn`), which measures the
+**DELIVERED** week rather than the target — §106 floors `peakKm`, but the runner
+reads `weekly_km` on placed sessions and the two diverge downward through the
+weekday cap and the §12 trims. ADR-022's finding restated. **Not excusable by
+`volume_profile: 'maintenance'`**, unlike its neighbours §23/§46/§52: a
+detraining block is not an honest response to a constraint, and relabelling it
+must not make it acceptable.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
