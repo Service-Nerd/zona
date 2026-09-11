@@ -11,7 +11,8 @@
 // and falls back silently to "no card" if the model breaks the shape.
 
 import { buildVoiceHeader } from './voiceRules'
-import { formatPace, formatPaceDelta, formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
+import { formatPace, formatPaceDelta, type DistanceUnits } from '@/lib/format'
+import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
 
 export interface FreeInsightInput {
   /** Reader's preferred units (FMT-01). Defaults to 'km' so km prompts stay
@@ -55,7 +56,7 @@ Output: {"headline": "Two on the board.", "body": "RPE 6 both times, Fine both t
 
 export function buildFreeInsightPrompt(input: FreeInsightInput): string {
   const units: DistanceUnits = input.units ?? 'km'
-  const fmtDist = (v: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(v, units, dp) ?? '—'
+  const { fmtPlanned } = promptDistanceFormatters(units)
   const voiceHeader = buildVoiceHeader({
     role: 'writing a short weekly check-in for a free-tier runner',
     outputConstraint: 'Return JSON exactly: {"headline": "...", "body": "..."}. Headline: 3–6 words. Body: one or two sentences, max 200 chars.',
@@ -65,7 +66,7 @@ export function buildFreeInsightPrompt(input: FreeInsightInput): string {
   const completionFacts = input.completions
     .map(c => {
       const ago = c.daysAgo === 0 ? 'today' : c.daysAgo === 1 ? 'yesterday' : `${c.daysAgo}d ago`
-      const dist = c.plannedDistanceKm ? `${fmtDist(c.plannedDistanceKm, 0)} ` : ''
+      const dist = c.plannedDistanceKm ? `${fmtPlanned(c.plannedDistanceKm)} ` : ''
       const rpe = c.rpe !== null ? `, RPE ${c.rpe}` : ''
       const fat = c.fatigueTag ? `, ${c.fatigueTag}` : ''
       return `- ${ago}: ${dist}${c.sessionType}${rpe}${fat}`

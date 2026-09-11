@@ -51,3 +51,49 @@ Per-session overrides move from `localStorage` to a **new `session_metric_overri
 - Changing units or metric — global or per-session — propagates to every surface **including notifications**, across devices.
 - New invariants gate this before ship: **INV-FMT-001** (all time/distance/metric strings come from `lib/format.ts`), **INV-FMT-002** (the ≥60→hours rule is defined once), **INV-PREF-001** (no hardcoded `km`/`mi`; server fetches prefs). Added to the `zona-architectural-principles` skill with a pre-ship checklist.
 - Rollout is phased: Phase 1 lands the core (`formatDuration`, `formatSessionMetric`, `getUserDisplayPrefs`, the migration + backfill helper) additively — no user-facing change. Phases 2+ migrate call sites surface-by-surface (diff-verified identical), wire the server prefs, and run the AI-prompt unit conversion last (behind the reframe golden suite, the one spot that can shift golden output).
+
+---
+
+## Amendment — 2026-09-11 (BUG-KIT-DECIMALS-01): the model is a display surface
+
+The Phase-2 rollout carved one exemption. `formatDistanceForPrompt()` keeps full
+precision on the km path, and its comment said:
+
+> *"Do not use this for anything the user reads directly — that is formatDistance's job."*
+
+That sentence is true about the function and false about the system. **A number
+handed to the model becomes user-facing the moment the model repeats it**, and Kit
+repeats distances constantly. The exemption made the AI layer a second owner of
+distance strings — precisely what INV-FMT-001 exists to prevent — and the two
+owners disagreed on **50.4% of prescribed session distances** (measured over the
+648-input cohort grid: 13,093 of 25,959 sessions across 621 plans; every
+half-kilometre session, which is half of them). The runner saw `6km` on the card
+and read `5.5km` in Kit's note on the same screen.
+
+**The rule now, and it is about what the number IS, not which layer it is in:**
+
+| The number | Formatter | Why |
+|---|---|---|
+| A distance the engine PRESCRIBED, referenced on its own | `fmtPlanned` → `formatDistance(km, units)` | It is on the card in front of the runner |
+| A race distance | `fmtRace` → `formatDistance(km, units, { exact: true })` | The race card keeps the iconic decimal — `21.1km`, never `21.0975km` |
+| A MEASURED or analytical value | `fmtDist` → `formatDistanceForPrompt(km, units, dp)` | The engine's own arithmetic runs on it |
+| **Both sides of a planned-vs-actual COMPARISON** | `fmtDist(km, 1)` on each | See below — this is the exemption's real and only job |
+
+**The surviving exemption is narrow and load-bearing.** On a comparison, both
+numbers must carry the same precision. Quote a 5.5 km session as "6km" beside an
+actual of "5.5km" and the model narrates a shortfall that did not happen — its own
+few-shot example is *"Cut it 2km short."* One decimal is also exactly what the app
+renders on that surface (`manualSessionFeedback.ts` and the `DashboardClient`
+distance line both use `{ exact: true }` for planned AND actual), so the prompt and
+the screen still agree. Measured: every session distance the engine emits is at
+most 1dp, so this is lossless.
+
+**Owner:** `lib/coaching/prompts/promptFormat.ts → promptDistanceFormatters(units)`.
+Ten builders share it; nine previously declared an identical `const fmtDist = …`
+closure, so the classification could be right in one file and wrong in the next.
+`formatDistanceForPrompt` now has exactly one caller in the prompts layer.
+
+**Enforcement:** `lib/coaching/prompts/promptDistanceParity.test.ts` — the
+formatters must equal `formatDistance` for the surface they mirror; real builders
+are asserted end-to-end; and a source scan permits `fmtDist` only on an explicit
+measured allowlist, so a new prompt fails until someone classifies its number.

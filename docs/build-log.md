@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-11 — BUG-KIT-DECIMALS-01 · The AI layer is a display surface, and nobody had written that down
+
+**Shipped:** Kit now quotes the same distance string the runner is looking at on the card, via a new single owner (`promptDistanceFormatters`) that splits prescribed distances from measured ones.
+
+**Dev learning:** The bug was sitting inside a comment that argued for it. `formatDistanceForPrompt()` said *"Do not use this for anything the user reads directly — that is formatDistance's job."* That sentence is true about the function and false about the system: the model repeats the number, so everything handed to it is read directly. ADR-015 has said for months that `lib/format.ts` is the sole owner of every distance string a runner reads, and the exemption was carved without noticing it made the model a second owner. Also: nine prompt builders each declared a byte-identical `const fmtDist = …` closure. That is not nine copies of a trivial line, it is nine independent places to get a classification right.
+
+**Product/creator learning:** "Is it a display surface?" turned out to be the wrong question. The right one is "does the number reach a human's eyes?" — and once you ask it that way, the answer for an LLM prompt is obviously yes and always was.
+
+**AI-building learning:** The honest part of this fix is the part I nearly got wrong. The instinct was "make every prompt distance match the card." An existing test stopped me — it asserted the raw behaviour and carried the reason in a comment: quote a 5.5km session as "6km" beside an actual of "5.5km" and the model narrates a shortfall that did not happen. Its own few-shot example is literally *"Cut it 2km short."* So the rule ended up conditional on context, not on file: a prompt that REFERENCES a prescribed distance quotes the card, and a prompt COMPARING planned to actual keeps both sides at the same precision. A test written by a past version of me, with its reasoning attached, was worth more than my first instinct.
+
+**The honest bit:** I asserted the root cause before measuring it, and the measurement script was wrong twice before it produced a number — first the wrong export name, then a pinned cohort start that made every input refuse ("-8 weeks is not enough preparation for a 5K", 0 plans, and it would have reported cheerfully). That is the fourth time this week a measurement script has produced confident nonsense. The habit that saves it is printing the FIRST exception instead of silently `continue`-ing.
+
+**Hook material:** 50.4% — over half of every prescribed session distance the engine produces formatted differently for the AI than for the screen. 13,093 of 25,959 sessions across 621 plans. Not an edge case: every half-kilometre session, and half of them are.
+
+**Postable?:** yes
+
+
 ## 2026-09-11 (night) — TIER-ENFORCE-01 / SEC-08 / §81 / §104 · Four items, and my own tooling kept catching me
 **Shipped:** The distance paywall reaches the server; SEC-08 finished to 14 routes; §81's obligation extended to structured sessions; §104 gave 10K a second race-specific session.
 

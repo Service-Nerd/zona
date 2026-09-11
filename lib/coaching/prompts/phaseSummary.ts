@@ -1,5 +1,6 @@
 import { buildVoiceHeader } from './voiceRules'
-import { formatPace, formatPaceDelta, formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
+import { formatPace, formatPaceDelta, type DistanceUnits } from '@/lib/format'
+import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
 
 export interface PhaseSummaryPromptInput {
   /** Reader's preferred units (FMT-01). Defaults to 'km' so km prompts stay
@@ -29,7 +30,7 @@ const PHASE_LABELS: Record<string, string> = {
 
 export function buildPhaseSummaryPrompt(input: PhaseSummaryPromptInput): string {
   const units: DistanceUnits = input.units ?? 'km'
-  const fmtDist = (v: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(v, units, dp) ?? '—'
+  const { fmtDist } = promptDistanceFormatters(units)
   const {
     phaseEnded, phaseNewName, totalWeeksInPhase,
     avgZoneDisciplinePct, efTrendPct, completionRate,

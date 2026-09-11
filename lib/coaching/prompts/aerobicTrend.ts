@@ -18,7 +18,8 @@
  * See: docs/canonical/brand.md § Reframe Voice for tone reference.
  */
 
-import { formatPace, formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
+import { formatPace, type DistanceUnits } from '@/lib/format'
+import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
 
 export interface AerobicTrendContext {
   /** Short month label for the oldest bucket e.g. 'Feb'. */
@@ -44,6 +45,7 @@ export interface AerobicTrendContext {
 
 export function buildAerobicTrendPrompt(ctx: AerobicTrendContext): string {
   const units: DistanceUnits = ctx.units ?? 'km'
+  const { fmtDist } = promptDistanceFormatters(units)
   const pace = formatPace(ctx.avgPaceSecPerKm, units)
   // Voice examples must quote the reader's unit or the model copies '/km' back.
   const examplePace = formatPace(340, units) ?? '5:40/km'
@@ -55,7 +57,7 @@ export function buildAerobicTrendPrompt(ctx: AerobicTrendContext): string {
 
 Trend data:
 - Long runs${paceCtx}: average HR ${directionLabel} ${absDelta} bpm from ${ctx.earlierHr} bpm (${ctx.earlierMonth}) to ${ctx.nowHr} bpm (now)
-- Anchor distance: approximately ${formatDistanceForPrompt(ctx.anchorDistanceKm, units, 1) ?? '—'} long runs
+- Anchor distance: approximately ${fmtDist(ctx.anchorDistanceKm, 1)} long runs
 
 Voice examples (match this register):
   HR down → "Long run at ${examplePace}. Easy is easier than it was."

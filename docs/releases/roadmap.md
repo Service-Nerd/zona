@@ -66,7 +66,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 | **1** | **UX-BEGINNER-01** | me | S | A beginner types the honest answer (0 — never run) and is refused with a database field name. Wood: *"the first thing you asked them to be honest about, you punished."* |
 | **2** | **MAINT-LABEL-01 (copy half only)** | me | S | **89% of beginner marathon plans are labelled "maintenance"** — "maintains current fitness rather than building it" — to the exact cohort going 5km/week → 26.2 miles. Copy ships now; the `volume_profile` VALUE is load-bearing (confidence score, §38 notes) and needs a Coaching Board sitting. |
 | **3** | **UX-REDEEM-01** | me | XS | The last screen between a Make-A-Wish runner and their free access, and it asks for work the parser does not require. |
-| **4** | **BUG-KIT-DECIMALS-01** | me | S | Kit says "5.7km" while the plan says "6km", on the same screen, during a demo. |
+| ~~4~~ | ~~**BUG-KIT-DECIMALS-01**~~ | me | S | ✅ **DONE 2026-09-11.** Measured at **50.4% of prescribed session distances** disagreeing between prompt and card. `promptDistanceFormatters()` now owns the split; the raw-precision path survives only where both sides of a planned-vs-actual comparison need matching precision. |
 | **5** | **UX-AUTH-01 + UX-AUTH-03** | me + founder | S + XS | Sign-out drops the app into the marketing website; password reset is unverified and fails **silently** if the Supabase `token_hash` template is unset. |
 | **6** | **UX-AUTH-02** | me | S | SSO-first sign-in. Cheap, both providers already built, and it is the first screen a code-holder sees. |
 

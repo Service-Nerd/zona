@@ -1,5 +1,6 @@
 import { buildVoiceHeader } from './voiceRules'
-import { formatPace, formatPaceDelta, formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
+import { formatPace, formatPaceDelta, type DistanceUnits } from '@/lib/format'
+import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
 
 export interface RaceReadinessPromptInput {
   /** Reader's preferred units (FMT-01). Defaults to 'km' so km prompts stay
@@ -28,7 +29,7 @@ export interface RaceReadinessPromptInput {
 
 export function buildRaceReadinessPrompt(input: RaceReadinessPromptInput): string {
   const units: DistanceUnits = input.units ?? 'km'
-  const fmtDist = (v: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(v, units, dp) ?? '—'
+  const { fmtDist, fmtRace } = promptDistanceFormatters(units)
   const {
     raceName, raceDistanceKm, daysToRace,
     totalPlannedSessions, completedSessions,
@@ -48,7 +49,7 @@ export function buildRaceReadinessPrompt(input: RaceReadinessPromptInput): strin
     : null
 
   const dataBlock = [
-    `Race: ${raceName}${raceDistanceKm ? ` (${fmtDist(raceDistanceKm)})` : ''}`,
+    `Race: ${raceName}${raceDistanceKm ? ` (${fmtRace(raceDistanceKm)})` : ''}`,
     `Days to race: ${daysToRace}`,
     `Current training phase: ${currentPhase ?? 'unknown'}`,
     completionRate !== null

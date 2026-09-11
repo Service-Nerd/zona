@@ -53,9 +53,16 @@ describe('formatPaceDelta — thresholds restated, not relabelled', () => {
 
 describe('formatDistanceForPrompt — converts units, keeps precision', () => {
   it('does NOT adopt the UI rounding', () => {
-    // The whole point: formatDistance rounds for calm UI, prompts must not.
-    // A model told "6km" for a 5.7km session narrates a shortfall the engine
-    // (planAdjustment.ts, §66) does not recognise.
+    // The low-level helper keeps precision, and that is still right for the one
+    // job it has left: the MEASURED side of a comparison, plus the planned side
+    // beside it, which must match its precision. A model told "6km" for a 5.7km
+    // session narrates a shortfall the engine (planAdjustment.ts, §66) does not
+    // recognise.
+    //
+    // BUG-KIT-DECIMALS-01 narrowed WHERE this applies, not whether it is true:
+    // a prompt that merely REFERENCES a prescribed distance (today's session,
+    // the plan's weeks) now quotes the card via formatDistance. See
+    // lib/coaching/prompts/promptFormat.ts and promptDistanceParity.test.ts.
     expect(formatDistance(5.7, 'km')).toBe('6km')
     expect(formatDistanceForPrompt(5.7, 'km')).toBe('5.7km')
   })
@@ -112,7 +119,10 @@ describe('sessionFeedback prompt — units propagation', () => {
 
   it('a mi prompt converts distance and pace, and never says km', () => {
     const p = build('mi')
-    expect(p).toContain('6.21mi')
+    // 6.2mi, not 6.21mi, since BUG-KIT-DECIMALS-01: the planned side of a
+    // planned-vs-actual comparison now carries the same precision as the actual
+    // beside it (and as the comparison line the app renders on that screen).
+    expect(p).toContain('6.2mi')
     expect(p).toContain('8:51/mi')
     // The data section must not leak km to a miles reader.
     const dataSection = p.slice(p.indexOf('Now write feedback'))

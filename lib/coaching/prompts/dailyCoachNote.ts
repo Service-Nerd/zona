@@ -6,7 +6,8 @@
 // voice instructions here. Output contract: exactly one sentence. No quotes.
 
 import { buildVoiceHeader } from './voiceRules'
-import { formatPace, formatPaceDelta, formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
+import { formatPace, formatPaceDelta, type DistanceUnits } from '@/lib/format'
+import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
 
 export interface DailyCoachNoteInput {
   /** Reader's preferred units (FMT-01). Defaults to 'km' so km prompts stay
@@ -161,7 +162,7 @@ Output: "The marathon's in the book. Rest is the work now — the next goal can 
 
 export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
   const units: DistanceUnits = input.units ?? 'km'
-  const fmtDist = (v: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(v, units, dp) ?? '—'
+  const { fmtPlanned, fmtRace } = promptDistanceFormatters(units)
   // Plan-complete branch — the plan is over, so there is no "today's session".
   // Prescribing one (the old bug pulled the final week's stale weekday slot)
   // is wrong; the note is a recovery / what's-next line anchored on the last run.
@@ -181,7 +182,7 @@ export function buildDailyCoachNotePrompt(input: DailyCoachNoteInput): string {
     } else {
       facts.push('No recent completed sessions')
     }
-    if (input.raceName) facts.push(`Goal race: ${input.raceName}${input.raceDistanceKm ? ` (${fmtDist(input.raceDistanceKm)})` : ''}`)
+    if (input.raceName) facts.push(`Goal race: ${input.raceName}${input.raceDistanceKm ? ` (${fmtRace(input.raceDistanceKm)})` : ''}`)
     if (lastWasRace && input.raceAchievement) {
       facts.push(`Achievement to lead with (use this framing — do NOT invent a finish time, and do NOT invent a shortfall): "${input.raceAchievement}"`)
     }
@@ -224,7 +225,7 @@ Output: one or two short sentences in the voice described above. No quotes. No p
   if (input.todaySessionType === 'rest' || !input.todaySessionType) {
     facts.push(`Today (${input.todayDayName}): rest day`)
   } else {
-    const dist = input.todayDistanceKm ? `${fmtDist(input.todayDistanceKm, 0)} ` : ''
+    const dist = input.todayDistanceKm ? `${fmtPlanned(input.todayDistanceKm)} ` : ''
     const zone  = input.todayZoneLabel ? ` (${input.todayZoneLabel})` : ''
     const label = input.todaySessionLabel ? ` — "${input.todaySessionLabel}"` : ''
     facts.push(`Today (${input.todayDayName}): ${dist}${input.todaySessionType}${zone}${label}`)
@@ -253,7 +254,7 @@ Output: one or two short sentences in the voice described above. No quotes. No p
   // Plan context
   if (input.weekPhase) facts.push(`Phase: ${input.weekPhase} (week ${input.weekN}/${input.totalWeeks})`)
   if (input.weeksToRace !== null && input.weeksToRace >= 0) {
-    facts.push(`Race: ${input.raceName ?? 'target race'}${input.raceDistanceKm ? ` (${fmtDist(input.raceDistanceKm)})` : ''}, ${input.weeksToRace} weeks away`)
+    facts.push(`Race: ${input.raceName ?? 'target race'}${input.raceDistanceKm ? ` (${fmtRace(input.raceDistanceKm)})` : ''}, ${input.weeksToRace} weeks away`)
   }
 
   // Pattern signals

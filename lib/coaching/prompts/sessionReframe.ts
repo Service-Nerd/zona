@@ -31,7 +31,8 @@ import { limiterLabel } from '../limiter'
 import { buildRaceNarrativeBlock } from '../raceNarrative'
 import { LIMITER } from '../constants'
 import { buildVoiceHeader } from './voiceRules'
-import { formatPace, formatPaceDelta, formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
+import { formatPace, formatPaceDelta, type DistanceUnits } from '@/lib/format'
+import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
 import type { ReframeTier } from '../reframeTier'
 
 /** Builder version — bump when the prompt structure or instructions change.
@@ -163,7 +164,7 @@ Output: "You're not running the wrong plan — week 2 is exactly when this hits.
 export function buildSessionReframePrompt(input: SessionReframePromptInput): string {
   const units: DistanceUnits = input.units ?? 'km'
   const pace = (v: number | null | undefined) => formatPace(v, units) ?? '—'
-  const fmtDist = (v: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(v, units, dp) ?? '—'
+  const { fmtDist, fmtRace } = promptDistanceFormatters(units)
   const {
     userNote,
     tier,
@@ -221,7 +222,7 @@ ULTRA-DISTANCE EFFORT (${fmtDist(actualDistKm, 0)}) — for sentence 2 (CAUSE), 
     ? Math.max(0, Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000)))
     : null
   const raceContext = plan.meta.race_name
-    ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${fmtDist(plan.meta.race_distance_km)})` : ''}${weeksToRace !== null ? `, ${weeksToRace} weeks away` : ''}`
+    ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${fmtRace(plan.meta.race_distance_km)})` : ''}${weeksToRace !== null ? `, ${weeksToRace} weeks away` : ''}`
     : null
   const anchorInstruction = raceContext
     ? `Sentence 4 (anchor): name the race ("${plan.meta.race_name}") and the time-to-race (${weeksToRace !== null ? `${weeksToRace} weeks` : 'unknown'}). Factual, not motivational.`
@@ -379,7 +380,7 @@ Runner said: "${userNote}"
 
 Session type: ${session.type} (${session.label})
 Week: ${weekN} of ${plan.weeks.length}
-Planned distance: ${session.distance_km ? fmtDist(session.distance_km) : 'not set'}
+Planned distance: ${session.distance_km ? fmtDist(session.distance_km, 1) : 'not set'}
 Actual distance: ${actualDistKm !== null ? fmtDist(actualDistKm, 1) : 'not logged'}
 ${hrLine}
 RPE: ${rpe !== null ? rpe : 'not logged'}

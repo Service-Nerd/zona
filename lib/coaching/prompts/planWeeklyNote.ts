@@ -1,5 +1,6 @@
 import { buildVoiceHeader } from './voiceRules'
-import { formatPace, formatPaceDelta, formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
+import { formatPace, formatPaceDelta, type DistanceUnits } from '@/lib/format'
+import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
 
 export interface PlanWeeklyNotePromptInput {
   /** Reader's preferred units (FMT-01). Defaults to 'km' so km prompts stay
@@ -60,7 +61,7 @@ const PHASE_LABELS: Record<string, string> = {
  */
 export function buildPlanWeeklyNotePrompt(input: PlanWeeklyNotePromptInput): string {
   const units: DistanceUnits = input.units ?? 'km'
-  const fmtDist = (v: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(v, units, dp) ?? '—'
+  const { fmtPlanned } = promptDistanceFormatters(units)
   const {
     weekN, phase, weeksToRace, raceName, raceDistance,
     sessions, firstName, athleteContext, previousWeeklyNote, isRestHeavyWeek,
@@ -80,7 +81,7 @@ export function buildPlanWeeklyNotePrompt(input: PlanWeeklyNotePromptInput): str
     : sessions
         .map(s => {
           const dist = s.distanceKm != null && s.distanceKm > 0
-            ? ` · ${fmtDist(s.distanceKm, s.distanceKm < 10 ? 1 : 0)}`
+            ? ` · ${fmtPlanned(s.distanceKm)}`
             : ''
           return `${s.day}: ${s.type}${dist}`
         })

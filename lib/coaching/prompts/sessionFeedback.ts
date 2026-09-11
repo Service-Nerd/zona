@@ -8,7 +8,8 @@ import { limiterLabel } from '../limiter'
 import { buildRaceNarrativeBlock } from '../raceNarrative'
 import { LIMITER } from '../constants'
 import { buildVoiceHeader } from './voiceRules'
-import { formatPace, formatPaceDelta, formatDistanceForPrompt, type DistanceUnits } from '@/lib/format'
+import { formatPace, formatPaceDelta, type DistanceUnits } from '@/lib/format'
+import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
 
 export interface SessionFeedbackPromptInput {
   session: Session
@@ -136,7 +137,7 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
   // byte-identical; only a miles reader sees a different string.
   const units: DistanceUnits = input.units ?? 'km'
   const pace = (secPerKm: number | null | undefined) => formatPace(secPerKm, units) ?? '—'
-  const fmtDist = (km: number | null | undefined, dp: number | null = null) => formatDistanceForPrompt(km, units, dp) ?? '—'
+  const { fmtDist, fmtRace } = promptDistanceFormatters(units)
   // The fade thresholds are coaching numerics expressed as a RATE, so they must
   // be restated in the reader's unit or the model compares 15s/km against a
   // s/mi figure. Restating a rate is arithmetic, not a coaching change.
@@ -169,7 +170,7 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
     :                            ` — run ${Math.abs(signedWeeksToRace)} week${signedWeeksToRace === -1 ? '' : 's'} ago`
 
   const raceContext = plan.meta.race_name
-    ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${fmtDist(plan.meta.race_distance_km)})` : ''}${isMaintenance ? '' : raceTiming}`
+    ? `${plan.meta.race_name}${plan.meta.race_distance_km ? ` (${fmtRace(plan.meta.race_distance_km)})` : ''}${isMaintenance ? '' : raceTiming}`
     : 'target race'
 
   // Maintenance weeks keep continuous `n` carried from the race plan (e.g. n=21)
@@ -191,7 +192,7 @@ export function buildSessionFeedbackPrompt(input: SessionFeedbackPromptInput): s
           ?? plan.meta.race_name?.replace(/^After\s+/i, '')
           ?? 'your race'
         const srcDist = plan.meta.source_race_distance_km ?? plan.meta.race_distance_km ?? null
-        const distStr = srcDist ? ` (${fmtDist(srcDist)})` : ''
+        const distStr = srcDist ? ` (${fmtRace(srcDist)})` : ''
         const srcDate = plan.meta.source_race_date
         let recency: string
         if (srcDate) {
@@ -372,7 +373,7 @@ Race context: ${raceContext}
 ${weekLine}${weekPhase ? ` — ${weekPhase} phase` : ''}
 
 Session type: ${session.type} (${session.label})
-Planned distance: ${session.distance_km ? fmtDist(session.distance_km) : 'not set'}
+Planned distance: ${session.distance_km ? fmtDist(session.distance_km, 1) : 'not set'}
 Actual distance: ${fmtDist(actualDistKm, 1)}
 ${paceLine ? paceLine + '\n' : ''}${hrLine}
 ${efLine ? efLine + '\n' : ''}RPE: ${rpe !== null ? rpe : 'not logged'}
