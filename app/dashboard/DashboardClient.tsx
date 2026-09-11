@@ -2211,6 +2211,19 @@ export default function DashboardClient() {
               // array restarts at index 0 but week.n continues (26+), so the old
               // `getCurrentWeekIndex+1` key collided with the archived race plan's
               // week-1 completions (all 'complete') → false 4/4. Derive from week.n.
+              // COACH-NULLWEEK-01 (2026-09-11) — `currentWeek` CAN be undefined and
+              // this block used to prove it knew: the line below optional-chains
+              // it, then the next two dereference it raw.
+              //
+              // `getCurrentWeek(plan?.weeks ?? [])` returns `past ?? weeks[0]`,
+              // which is `undefined ?? undefined` for an EMPTY weeks array — so a
+              // plan that loads with no weeks (or a `weeks` key that is not an
+              // array) crashes Coach on render with "Cannot read properties of
+              // undefined (reading 'sessions')". Reproduced against the real
+              // function, not inferred. Coach is the only screen that does this:
+              // Today and Plan both take `plan` and guard internally, which is
+              // why this presents as a Coach-only crash.
+              if (!currentWeek) return <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => setScreen('upgrade')} />
               const wn = (currentWeek as any)?.n ?? (getCurrentWeekIndex(plan.weeks) + 1)
               const comps = allCompletions[wn] ?? {}
               const wSessions = Object.entries((currentWeek as any).sessions ?? {})
