@@ -114,7 +114,7 @@ function accentFor(s: Session): string {
 }
 
 const PHASE_META: Record<string, { label: string; note: string }> = {
-  base: { label: 'Base', note: 'All easy. Building the engine — no hard running yet, and that is the point.' },
+  base: { label: 'Base', note: 'All easy. Building the engine, with no hard running yet, and that is the point.' },
   build: { label: 'Build', note: 'Quality arrives. One hard session a week; the rest stays genuinely easy.' },
   peak: { label: 'Peak', note: 'The sharpest weeks. Hold the zone on the hard days, protect the easy ones.' },
   taper: { label: 'Taper', note: 'Less volume, same intensity. Arrive fresh, not flat.' },
@@ -207,7 +207,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
           <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', margin: '0 0 10px' }}>Why so much easy?</h2>
           <p style={{ fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
             You can&rsquo;t outrun your easy days. Run easy when it&rsquo;s easy so you can run hard
-            when it&rsquo;s hard. Going medium-hard on everything &mdash; the grey middle &mdash; is
+            when it&rsquo;s hard. Going medium-hard on everything, the grey middle, is
             where amateur runners stall and where injuries come from. This plan puts a ceiling on
             your easy runs and saves the effort for the one day a week that earns it.
           </p>
@@ -296,7 +296,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
         <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 16, padding: '26px 22px' }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px' }}>The plan above is yours. No catch.</h2>
           <p style={{ fontSize: 15, lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 18px', maxWidth: 520 }}>
-            Want the version that adapts to you &mdash; your zones, your week, your race? Leave your
+            Want the version that adapts to you, with your zones, your week and your race? Leave your
             email and we&rsquo;ll tell you when to start.
           </p>
           <WaitlistForm />

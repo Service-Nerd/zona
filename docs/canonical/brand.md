@@ -121,6 +121,39 @@ Honest, slightly sarcastic, self-aware, encouraging without cringe.
 
 The canonical response matrix for session-type-aware coaching lives in `getReflectResponse()` in `DashboardClient.tsx` and must stay consistent with these guidelines.
 
+### Punctuation — no em dashes (founder call, 2026-09-11)
+
+**Do not use the em dash (`—`) in copy.** Extended site-wide from the rule the
+comparison pages already carried. Use a colon, a comma, a semicolon or a full
+stop. In almost every case the sentence reads better for it, which is the point.
+
+| Instead of | Write |
+|---|---|
+| `That's not a mistake — it's the plan.` | `That's not a mistake. It's the plan.` |
+| `a heart-rate source — an Apple Watch` | `a heart-rate source: an Apple Watch` |
+| `the grey middle — medium-hard on everything — is` | `the grey middle, medium-hard on everything, is` |
+| `Zonna — Plans to stop you overtraining` | `Zonna: Plans to stop you overtraining` |
+
+**What is NOT banned:**
+- **En dashes (`–`) in ranges.** `6:30–7:30 /km`, `Zone 4–5`, `RPE 1–10`. These
+  are correct typography and the engine emits them everywhere. Never strip them.
+- **Code comments.** They are not copy, and mangling them costs legibility for
+  no reader benefit.
+
+**Enforced mechanically** by `lib/marketing/noEmDash.test.ts`, which fails the
+build on an em dash in any public marketing surface. A written style rule is not
+a rule in this repo — see the canonical-host default, the config/principle sync
+and the deload cadence, all of which drifted while a doc said they shouldn't.
+When a new marketing page ships, add it to that test's `SURFACES` list.
+
+**Currently out of scope: the app.** Engine session labels (`Easy run — Zone 2`,
+`Base — easy start`, 30 of them) and 7 coach notes still use em dashes. Those
+render in the product as well as on the plan pages, and the labels have a live
+coupling — `catalogueRowFor()` falls back to matching `row.name` against
+`session.label` for plans generated before `catalogue_id` was stamped, so
+changing label text can break the join on legacy plans. Converting them is a
+separate, deliberate change, not a copy edit.
+
 ### Correction Voice — "we got something wrong" (added 2026-08-06)
 
 The second sanctioned multi-sentence exception. Zonna voice is one sentence; the post-run reframe is the other exception. This one exists because **the app will sometimes be wrong about the runner's data, and it is going to have to say so.**

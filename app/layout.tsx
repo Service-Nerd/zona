@@ -25,7 +25,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: `${BRAND.name} — ${BRAND.appStoreSubtitle}`,
+  title: `${BRAND.name}: ${BRAND.appStoreSubtitle}`,
   description: BRAND.tagline,
   // GTM-SITE-01 — resolves every relative URL in metadata (canonical, og:image)
   // against this origin. Without it, ONLY absolute URLs work: the marketing
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${BRAND.name} — ${BRAND.appStoreSubtitle}`,
+    title: `${BRAND.name}: ${BRAND.appStoreSubtitle}`,
     description: BRAND.tagline,
     images: [`${APP_URL}/api/og`],
   },

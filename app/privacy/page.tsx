@@ -5,7 +5,7 @@ import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 
 export const metadata: Metadata = {
-  title: `Privacy Policy — ${BRAND.name}`,
+  title: `Privacy Policy | ${BRAND.name}`,
   description: `How ${BRAND.name} collects, uses, and protects your data.`,
 }
 
@@ -57,7 +57,7 @@ export default function PrivacyPage() {
             lineHeight: 1.7,
             margin: '0 0 8px',
           }}>
-            We built {BRAND.name} to help you train smarter, not to harvest your data. This policy explains what we collect, why, and what you can do about it. Plain English throughout — no legal fog.
+            We built {BRAND.name} to help you train smarter, not to harvest your data. This policy explains what we collect, why, and what you can do about it. Plain English throughout. No legal fog.
           </p>
           <div style={{
             fontFamily: 'var(--font-ui)',
@@ -79,21 +79,21 @@ export default function PrivacyPage() {
           <SubHead>Account data</SubHead>
           <P>When you sign up, we store your email address and an encrypted password (if using email sign-in), or a reference to your Google or Apple account (if using OAuth). We also store your first name, last name, and any profile details you choose to add.</P>
           <SubHead>Training data</SubHead>
-          <P>To deliver a personalised training plan, we store: your race date, race distance, weekly training volume, HR zones (resting HR, max HR), fitness level, year of birth (used only to estimate your max heart rate when you haven't entered your own — we don't ask for day or month), and plan preferences. This data is provided by you during plan generation and is stored in your account.</P>
+          <P>To deliver a personalised training plan, we store: your race date, race distance, weekly training volume, HR zones (resting HR, max HR), fitness level, year of birth (used only to estimate your max heart rate when you haven't entered your own; we don't ask for day or month), and plan preferences. This data is provided by you during plan generation and is stored in your account.</P>
           <SubHead>Session data</SubHead>
-          <P>When you log a training session, we store: completion status, RPE (rate of perceived exertion, 1–10), fatigue tags, distance, duration, and — where available from Strava — your average heart rate. This is used to provide coaching feedback and track your progress.</P>
+          <P>When you log a training session, we store: completion status, RPE (rate of perceived exertion, 1–10), fatigue tags, distance, duration, and, where available from Strava, your average heart rate. This is used to provide coaching feedback and track your progress.</P>
           <SubHead>Usage data</SubHead>
           <P>We do not currently collect analytics or behavioural data beyond what is required for core app functionality. When analytics are added, this policy will be updated.</P>
         </Section>
 
         <Section title="Strava">
           <P>If you connect Strava, {BRAND.name} requests read-only access to your Strava activities. Specifically: <strong>{BRAND.name} will read your Strava activities to provide coaching insights.</strong> We do not write to Strava, we do not access your social connections, and we do not share your Strava data with third parties.</P>
-          <P>Your Strava access token is stored securely in your account. You can disconnect Strava at any time from the Profile screen — this deletes the stored token immediately.</P>
+          <P>Your Strava access token is stored securely in your account. You can disconnect Strava at any time from the Profile screen. This deletes the stored token immediately.</P>
         </Section>
 
         <Section title="Apple Health">
           <P>If you connect Apple Health (iOS app only), {BRAND.name} requests <strong>read-only</strong> access to your runs and recovery signals: workouts, heart rate samples within those workouts, resting heart rate, heart rate variability, sleep duration, and VO₂ max. We use this data to coach your training and detect days when your body needs a softer session.</P>
-          <P>Apple Health authorisation is managed entirely by iOS. {BRAND.name} never writes to Apple Health and never reads any health categories outside those listed above. For your runs, we store both summary values (distance, duration, average heart rate) and the per-workout heart rate sample stream — this lets the coach detect cardiac drift and effort fade across a single session. For daily recovery signals (resting heart rate, HRV, sleep), we store one daily summary value per metric, not raw sample streams. You can disconnect at any time from the Profile screen, or revoke access from iOS Settings → Privacy → Health → {BRAND.name}.</P>
+          <P>Apple Health authorisation is managed entirely by iOS. {BRAND.name} never writes to Apple Health and never reads any health categories outside those listed above. For your runs, we store both summary values (distance, duration, average heart rate) and the per-workout heart rate sample stream. This lets the coach detect cardiac drift and effort fade across a single session. For daily recovery signals (resting heart rate, HRV, sleep), we store one daily summary value per metric, not raw sample streams. You can disconnect at any time from the Profile screen, or revoke access from iOS Settings → Privacy → Health → {BRAND.name}.</P>
         </Section>
 
         <Section title="How we use your data">
@@ -127,11 +127,11 @@ export default function PrivacyPage() {
           <SubHead>Vercel</SubHead>
           <P>The app is hosted on Vercel. Request logs may be retained by Vercel per their standard policies. <A href="https://vercel.com/legal/privacy-policy">Vercel privacy policy →</A></P>
           <SubHead>RevenueCat</SubHead>
-          <P>App Store subscriptions are managed via RevenueCat, which gives us a unified view of subscription status. RevenueCat receives the App Store transaction ID, your subscription status (active, cancelled, refunded), and a pseudonymous user identifier tied to your {BRAND.name} account — not your name, email, or payment details. Apple handles all payment information directly. <A href="https://www.revenuecat.com/privacy">RevenueCat privacy policy →</A></P>
+          <P>App Store subscriptions are managed via RevenueCat, which gives us a unified view of subscription status. RevenueCat receives the App Store transaction ID, your subscription status (active, cancelled, refunded), and a pseudonymous user identifier tied to your {BRAND.name} account, not your name, email, or payment details. Apple handles all payment information directly. <A href="https://www.revenuecat.com/privacy">RevenueCat privacy policy →</A></P>
         </Section>
 
         <Section title="Data retention">
-          <P>We keep your data for as long as your account is active. If you delete your account, all associated data is permanently deleted within 30 days — including your plan, session history, and Strava connection.</P>
+          <P>We keep your data for as long as your account is active. If you delete your account, all associated data is permanently deleted within 30 days, including your plan, session history, and Strava connection.</P>
           <P>Supabase authentication records are deleted immediately on account deletion.</P>
         </Section>
 
@@ -139,12 +139,12 @@ export default function PrivacyPage() {
           <P>If you are based in the UK or European Economic Area, you have the following rights under GDPR:</P>
           <ul style={{ margin: '0 0 16px', padding: '0 0 0 20px' }}>
             {[
-              'Right of access — request a copy of all data we hold about you',
-              'Right to rectification — correct inaccurate or incomplete data',
-              'Right to erasure — request deletion of your data ("right to be forgotten")',
-              'Right to portability — receive your data in a structured, machine-readable format',
-              'Right to object — object to processing of your data for specific purposes',
-              'Right to withdraw consent — where processing is based on consent, you may withdraw it at any time',
+              'Right of access: request a copy of all data we hold about you',
+              'Right to rectification: correct inaccurate or incomplete data',
+              'Right to erasure: request deletion of your data ("right to be forgotten")',
+              'Right to portability: receive your data in a structured, machine-readable format',
+              'Right to object: object to processing of your data for specific purposes',
+              'Right to withdraw consent: where processing is based on consent, you may withdraw it at any time',
             ].map((item, i) => (
               <li key={i} style={{
                 fontFamily: 'var(--font-ui)',

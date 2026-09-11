@@ -5,8 +5,8 @@ import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 
 export const metadata: Metadata = {
-  title: `Support — ${BRAND.name}`,
-  description: `Get help with ${BRAND.name} — contact, account, subscription, and data questions.`,
+  title: `Support | ${BRAND.name}`,
+  description: `Get help with ${BRAND.name}: contact, account, subscription, and data questions.`,
 }
 
 export default function SupportPage() {
@@ -57,7 +57,7 @@ export default function SupportPage() {
             lineHeight: 1.7,
             margin: '0 0 8px',
           }}>
-            Something not working, or a question about your account? Email us — a real person reads it.
+            Something not working, or a question about your account? Email us. A real person reads it.
           </p>
         </div>
 
@@ -78,11 +78,11 @@ export default function SupportPage() {
 
         <Section title="Managing your subscription">
           <SubHead>Cancel or change your plan</SubHead>
-          <P>If you subscribed through the App Store, manage or cancel your subscription in iOS <em>Settings → [your name] → Subscriptions → {BRAND.name}</em>. Cancellation takes effect at the end of the current billing period — you keep paid access until then.</P>
+          <P>If you subscribed through the App Store, manage or cancel your subscription in iOS <em>Settings → [your name] → Subscriptions → {BRAND.name}</em>. Cancellation takes effect at the end of the current billing period, so you keep paid access until then.</P>
           <SubHead>Free trial</SubHead>
           <P>New accounts include a free trial of the paid tier. You will not be charged during the trial, and it downgrades automatically to the free tier if you do not subscribe. Full terms are in the <A href="/terms">Terms of Service</A>.</P>
           <SubHead>Refunds</SubHead>
-          <P>App Store purchases are handled by Apple — request refunds through your Apple account. For anything that looks like a billing error, email <A href="mailto:support@zonna.run">support@zonna.run</A> and we will look into it.</P>
+          <P>App Store purchases are handled by Apple, so request refunds through your Apple account. For anything that looks like a billing error, email <A href="mailto:support@zonna.run">support@zonna.run</A> and we will look into it.</P>
         </Section>
 
         <Section title="Your account & data">

@@ -5,7 +5,7 @@ import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 
 export const metadata: Metadata = {
-  title: `Terms of Service — ${BRAND.name}`,
+  title: `Terms of Service | ${BRAND.name}`,
   description: `The terms governing use of ${BRAND.name}.`,
 }
 
@@ -57,7 +57,7 @@ export default function TermsPage() {
             lineHeight: 1.7,
             margin: '0 0 8px',
           }}>
-            The agreement between you and {BRAND.name}. Plain English throughout. If something is unclear, email us — we will explain it.
+            The agreement between you and {BRAND.name}. Plain English throughout. If something is unclear, email us and we will explain it.
           </p>
           <div style={{
             fontFamily: 'var(--font-ui)',
@@ -108,10 +108,10 @@ export default function TermsPage() {
           <P>If you subscribe through the App Store, payment is charged to your Apple ID at confirmation of purchase, and renewals are charged to your Apple ID within 24 hours before the end of the current period. If you subscribe through our website, payment is charged to your selected payment method via our payment processor (Stripe).</P>
 
           <SubHead>Cancellation</SubHead>
-          <P>You can cancel at any time. Cancellation takes effect at the end of the current billing period — you keep paid access until then. <strong>If you subscribed through the App Store</strong>, manage and cancel your subscription in iOS <em>Settings → [your name] → Subscriptions</em>. <strong>If you subscribed through our website</strong>, cancel from the Profile screen in the app or by emailing <A href="mailto:support@zonna.run">support@zonna.run</A>.</P>
+          <P>You can cancel at any time. Cancellation takes effect at the end of the current billing period, so you keep paid access until then. <strong>If you subscribed through the App Store</strong>, manage and cancel your subscription in iOS <em>Settings → [your name] → Subscriptions</em>. <strong>If you subscribed through our website</strong>, cancel from the Profile screen in the app or by emailing <A href="mailto:support@zonna.run">support@zonna.run</A>.</P>
 
           <SubHead>Refunds</SubHead>
-          <P>App Store purchases are subject to Apple&apos;s refund policy — refund requests go to Apple, not to us. For website purchases, refunds are at our discretion: contact <A href="mailto:support@zonna.run">support@zonna.run</A> within 14 days of a renewal charge if you believe it was made in error and we will review it.</P>
+          <P>App Store purchases are subject to Apple&apos;s refund policy, so refund requests go to Apple, not to us. For website purchases, refunds are at our discretion: contact <A href="mailto:support@zonna.run">support@zonna.run</A> within 14 days of a renewal charge if you believe it was made in error and we will review it.</P>
 
           <SubHead>Price changes</SubHead>
           <P>If we change the subscription price, we will notify you by email or in-app at least 30 days before the change takes effect, so you have time to cancel before being charged the new price.</P>
@@ -147,7 +147,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="Intellectual property">
-          <P>{BRAND.name} — including the software, the training plan engine, the coaching content, the brand, the design system, and the underlying methodology — is owned by us and protected by copyright and other intellectual property laws. We grant you a personal, non-exclusive, non-transferable licence to use the service for your own training, subject to these terms.</P>
+          <P>{BRAND.name}, including the software, the training plan engine, the coaching content, the brand, the design system, and the underlying methodology, is owned by us and protected by copyright and other intellectual property laws. We grant you a personal, non-exclusive, non-transferable licence to use the service for your own training, subject to these terms.</P>
           <P>Nothing in these terms transfers ownership of any intellectual property to you.</P>
         </Section>
 
@@ -158,7 +158,7 @@ export default function TermsPage() {
         <Section title="Health and safety disclaimer">
           <P><strong>{BRAND.name} is not a medical device or a healthcare service.</strong> Training plans, coaching feedback, readiness signals, and session targets are generated from algorithms and your self-reported data. They are guidance, not prescriptions.</P>
           <P>You are solely responsible for monitoring how you feel during exercise and for deciding to stop, slow down, or skip a session. Stop immediately and seek medical attention if you experience chest pain, severe shortness of breath, dizziness, fainting, or any other concerning symptom.</P>
-          <P>Consult a qualified healthcare professional before starting any new training programme — particularly if you have a heart condition, high blood pressure, are pregnant, are recovering from an injury, or have not exercised regularly in the past 12 months.</P>
+          <P>Consult a qualified healthcare professional before starting any new training programme, particularly if you have a heart condition, high blood pressure, are pregnant, are recovering from an injury, or have not exercised regularly in the past 12 months.</P>
         </Section>
 
         <Section title="Disclaimers">
@@ -167,7 +167,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="Limitation of liability">
-          <P>To the fullest extent permitted by law, {BRAND.name} and its operators will not be liable for any indirect, incidental, consequential, special, or punitive damages — including loss of profits, loss of data, or personal injury — arising from your use of the service.</P>
+          <P>To the fullest extent permitted by law, {BRAND.name} and its operators will not be liable for any indirect, incidental, consequential, special, or punitive damages, including loss of profits, loss of data, or personal injury, arising from your use of the service.</P>
           <P>Our total aggregate liability to you for any claim arising from these terms or the service will not exceed the amount you have paid us in the 12 months preceding the event giving rise to the claim, or £100, whichever is greater.</P>
           <P>Nothing in these terms limits liability for death or personal injury caused by negligence, fraud, or any liability that cannot be excluded by law.</P>
         </Section>
@@ -175,7 +175,7 @@ export default function TermsPage() {
         <Section title="Termination">
           <P>You can stop using the service at any time and delete your account from the Profile screen.</P>
           <P>We may suspend or terminate your access if you breach these terms, if continued operation creates legal or security risk, or if we discontinue the service. We will give reasonable notice unless immediate action is required to protect the service or other users.</P>
-          <P>On termination, your right to use the service ends. Sections that by their nature should survive termination — including intellectual property, disclaimers, limitation of liability, and governing law — survive.</P>
+          <P>On termination, your right to use the service ends. Sections that by their nature should survive termination, including intellectual property, disclaimers, limitation of liability, and governing law, survive.</P>
         </Section>
 
         <Section title="Changes to these terms">

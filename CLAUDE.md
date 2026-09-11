@@ -55,6 +55,8 @@ Honest, slightly sarcastic, self-aware, encouraging without cringe.
 
 One sentence is better than two. Specific beats abstract. Never motivational.
 
+**No em dashes (`—`) in copy** (founder call, 2026-09-11). Use a colon, comma, semicolon or full stop. **En dashes (`–`) in ranges are correct and must be kept** (`6:30–7:30 /km`, `Zone 4–5`, `RPE 1–10`). Code comments are exempt. Enforced by `lib/marketing/noEmDash.test.ts` across all public marketing surfaces — **add any new marketing page to that test's `SURFACES` list.** Full rule + the app-side exception in `docs/canonical/brand.md` § Punctuation.
+
 ---
 
 ## What Is Zonna?

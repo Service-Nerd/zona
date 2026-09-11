@@ -257,7 +257,7 @@ export function PhoneFrame() {
                 <KitByline role="Your coach" />
               </div>
               <div style={{ fontSize: '14px', lineHeight: 1.55, color: 'var(--coach-ink)' }}>
-                Yesterday held Zone 2 the whole way. That&rsquo;s the win — keep today just as dull.
+                Yesterday held Zone 2 the whole way. That&rsquo;s the win. Keep today just as dull.
               </div>
             </div>
           </div>

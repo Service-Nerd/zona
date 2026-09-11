@@ -58,17 +58,17 @@ export const metadata: Metadata = {
     canonical: APP_URL,
   },
   openGraph: {
-    title: `${BRAND.name} — ${BRAND.appStoreSubtitle}`,
-    description: `Training plans for runners who overtrain. ${BRAND.name} prescribes the zone for each session — easy when it's easy, hard when it's hard.`,
+    title: `${BRAND.name}: ${BRAND.appStoreSubtitle}`,
+    description: `Training plans for runners who overtrain. ${BRAND.name} prescribes the zone for each session: easy when it's easy, hard when it's hard.`,
     url: APP_URL,
     siteName: BRAND.name,
-    images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630, alt: `${BRAND.name} — ${BRAND.appStoreSubtitle}` }],
+    images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630, alt: `${BRAND.name}: ${BRAND.appStoreSubtitle}` }],
     type: 'website',
     locale: 'en_GB',
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${BRAND.name} — ${BRAND.appStoreSubtitle}`,
+    title: `${BRAND.name}: ${BRAND.appStoreSubtitle}`,
     description: `Training plans for runners who go medium-hard on everything. ${BRAND.name} holds you to your zones.`,
     images: [`${APP_URL}/api/og`],
   },
@@ -174,7 +174,7 @@ export default async function Home() {
           maxWidth: '560px', margin: '0 auto 36px',
         }}>
           You&apos;re trying hard. That&apos;s the problem. Most amateur runners go medium-hard on
-          everything — never truly recover, never truly push, and wonder why they don&apos;t improve.
+          everything, never truly recover, never truly push, and wonder why they don&apos;t improve.
           {' '}{BRAND.name} prescribes the zone for each session and holds you to it.
         </p>
 
@@ -274,7 +274,7 @@ export default async function Home() {
         }}>
           <PillarCard
             title="A plan that fits you"
-            body="Rule-engine generated from your race, your training history, your week and what you have actually been running — not a one-size template. Pace bands and HR zones derived from your inputs, not guessed."
+            body="Rule-engine generated from your race, your training history, your week and what you have actually been running, not a one-size template. Pace bands and HR zones derived from your inputs, not guessed."
           />
           <PillarCard
             title="In-the-moment coaching"
@@ -399,7 +399,7 @@ export default async function Home() {
                 display: 'flex', gap: '12px', alignItems: 'baseline',
                 fontSize: '17px', lineHeight: 1.45, color: 'var(--ink)',
               }}>
-                <span aria-hidden style={{ color: 'var(--moss)', fontWeight: 700, flexShrink: 0 }}>—</span>
+                <span aria-hidden style={{ color: 'var(--moss)', fontWeight: 700, flexShrink: 0 }}>·</span>
                 <span>{line}</span>
               </li>
             ))}
@@ -426,13 +426,13 @@ export default async function Home() {
         }}>
           {[
             ['Do I need an Apple Watch?',
-             `It works best with a heart-rate source — an Apple Watch, or a chest strap that writes to Apple Health. Without one you still get the plan, the paces and the structure. You just don't get heart-rate coaching.`],
+             `It works best with a heart-rate source: an Apple Watch, or a chest strap that writes to Apple Health. Without one you still get the plan, the paces and the structure. You just don't get heart-rate coaching.`],
             ['Is it free?',
              `Two weeks of everything, then a free tier that keeps the plan you built. ${PRICING.monthly.display}/month or ${PRICING.annual.display}/year if you want the coaching and the reshaping. We won't email you to come back.`],
             ['What distances?',
              `5K, 10K, half and full marathon, and ultra. Every plan is mostly easy running, with each session set to a zone and held there.`],
             ['Will it make me faster?',
-             `If your problem is going medium-hard on everything, yes — by making your easy days genuinely easy, so your hard days can be genuinely hard. It won't turn four hours a week into an elite plan, and it won't pretend to.`],
+             `If your problem is going medium-hard on everything, yes, by making your easy days genuinely easy, so your hard days can be genuinely hard. It won't turn four hours a week into an elite plan, and it won't pretend to.`],
             ['Any streaks, badges or leaderboards?',
              `No. On purpose. The app is built to get out of the way, not to keep you in it.`],
           ].map(([q, a], i) => (
@@ -493,7 +493,7 @@ export default async function Home() {
             maxWidth: '520px', margin: '0 auto 36px',
           }}>
             Every week, {BRAND.coachName} tells you one true thing about how you actually
-            ran &mdash; then shows the numbers behind it. Same effort, lower heart rate.
+            ran, then shows the numbers behind it. Same effort, lower heart rate.
             That&apos;s the whole game.
           </p>
 
@@ -535,7 +535,7 @@ export default async function Home() {
             Not ready for the app? Start with a free plan.
           </h2>
           <p style={{ fontSize: '15px', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 16px', maxWidth: '520px' }}>
-            5K to marathon, built the same way &mdash; mostly easy running, every run zoned. Read
+            5K to marathon, built the same way: mostly easy running, every run zoned. Read
             any of them free. No signup, no wall.
           </p>
           <Link href="/plans" style={{ fontSize: '15px', fontWeight: 600, color: 'var(--moss)', textDecoration: 'none' }}>
@@ -737,7 +737,13 @@ function MockSessionCard() {
         fontSize: '20px', fontWeight: 600, color: 'var(--ink)',
         marginBottom: '14px',
       }}>
-        Easy run — Zone 2
+        {/* Middot, not an em dash: matches the device shot above, which joins
+            "Zone 2 · < 145 bpm · 6:30–7:30 /km" the same way. The ENGINE's own
+            session labels still read "Easy run — Zone 2"; changing those is an
+            app-wide copy change with a live coupling (catalogueRowFor falls
+            back to matching row.name against session.label on legacy plans),
+            so it is a separate decision, not a website edit. */}
+        Easy run · Zone 2
       </div>
       <div style={{
         display: 'flex', gap: '18px', flexWrap: 'wrap',
@@ -755,7 +761,7 @@ function MockSessionCard() {
         borderTop: '1px solid var(--line)', paddingTop: '12px',
         fontStyle: 'italic',
       }}>
-        Keep HR below your zone 2 ceiling — walk if needed.
+        Keep HR below your zone 2 ceiling. Walk if needed.
       </div>
     </div>
   )

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     `Free 5K, 10K, half marathon and marathon training plans built to stop you overtraining. Mostly easy running, every run zoned. For the day-job runner.`,
   alternates: { canonical: `${APP_URL}/plans` },
   openGraph: {
-    title: `Free running training plans — ${BRAND.name}`,
+    title: `Free running training plans | ${BRAND.name}`,
     description: `5K to marathon. Mostly easy running, every run zoned. Read them free, then get the version that adapts to you.`,
     url: `${APP_URL}/plans`,
     siteName: BRAND.name,
@@ -56,7 +56,7 @@ export default function PlansHubPage() {
         </h1>
         <p style={{ fontSize: 18, lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 8px', maxWidth: 600 }}>
           5K to marathon. Mostly easy running, one quality session a week, every run zoned.
-          Read any of them free &mdash; no signup, no wall.
+          Read any of them free. No signup, no wall.
         </p>
       </section>
 
@@ -89,8 +89,8 @@ export default function PlansHubPage() {
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
         <div style={{ borderLeft: '3px solid var(--moss)', paddingLeft: 18 }}>
           <p style={{ fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
-            Every plan here is the flat version. The app takes the same plan and adapts it &mdash;
-            your real heart-rate zones, your week, your race &mdash; and moves the sessions when life
+            Every plan here is the flat version. The app takes the same plan and adapts it:
+            your real heart-rate zones, your week, your race, and moves the sessions when life
             gets in the way. <a href={BRAND.appStore.url} style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>Start free in the app →</a>
           </p>
         </div>
