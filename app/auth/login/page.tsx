@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { BRAND } from '@/lib/brand'
 import { NATIVE_AUTH_CALLBACK } from '@/lib/native'
 import { sendPasswordReset, RESET_SENT_MESSAGE } from '@/lib/auth/sendPasswordReset'
+import { authErrorCopy } from '@/lib/auth/authErrorCopy'
 import { Wordmark } from '@/components/ui/Wordmark'
 import { TextField } from '@/components/shared/TextField'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
@@ -48,6 +49,11 @@ export default function LoginPage() {
   const [ageConfirmed, setAgeConfirmed] = useState(false)
   // AUTH-RESET-01 — forgot-password request view (toggled from signin mode).
   const [forgot, setForgot]     = useState(false)
+  // UX-AUTH-02 — the email form is disclosed, not displayed. Apple and Google
+  // are the two taps that work for a runner who has just installed the app from
+  // a charity email; a segmented control, two fields and a "Forgot password?"
+  // sitting under them is four decisions asked before the first one is made.
+  const [emailOpen, setEmailOpen] = useState(false)
   const supabase = createClient()
   const router   = useRouter()
 
@@ -176,7 +182,7 @@ export default function LoginPage() {
     try {
       if (mode === 'signin') {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) { setError(error.message); setLoading(false); return }
+        if (error) { setError(authErrorCopy(error.message, 'signin')); setLoading(false); return }
         // Hard navigation ensures auth cookies are fully committed before
         // the next request — router.push (soft nav) can race the cookie write.
         // Loading stays true: we are navigating away.
@@ -188,7 +194,7 @@ export default function LoginPage() {
         email, password,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       })
-      if (error) { setError(error.message); setLoading(false); return }
+      if (error) { setError(authErrorCopy(error.message, 'signup')); setLoading(false); return }
       // Auto-confirm (email confirmation disabled): signUp returns a live session
       // and the browser client has already persisted it — sign the user straight in
       // rather than stranding them on the login screen. Loading stays true: navigating away.
@@ -374,6 +380,26 @@ export default function LoginPage() {
             {loading ? 'Redirecting...' : 'Continue with Google'}
           </button>
 
+          {/* UX-AUTH-02 — progressive disclosure. Everything below is the
+              email path; it stays closed until the runner asks for it. Apple
+              and Google remain visible once it opens, so nothing is taken away
+              and Apple keeps the prominence its HIG requires. */}
+          {!emailOpen ? (
+            <button
+              onClick={() => { setEmailOpen(true); setError(null); setMessage(null) }}
+              aria-expanded={false}
+              style={{
+                marginTop: '20px', width: '100%',
+                background: 'none', border: 'none',
+                fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
+                cursor: 'pointer', padding: '4px 0',
+                textDecoration: 'underline', textUnderlineOffset: '3px',
+              }}
+            >
+              Use email instead
+            </button>
+          ) : (
+          <>
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '20px 0' }}>
             <div style={{ flex: 1, height: '0.5px', background: 'var(--line)' }} />
@@ -451,6 +477,9 @@ export default function LoginPage() {
             >
               Forgot password?
             </button>
+          )}
+
+          </>
           )}
 
           {error && (
