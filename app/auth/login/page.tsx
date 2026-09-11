@@ -7,9 +7,11 @@ import { Browser } from '@capacitor/browser'
 import { createClient } from '@/lib/supabase/client'
 import { BRAND } from '@/lib/brand'
 import { NATIVE_AUTH_CALLBACK } from '@/lib/native'
+import { sendPasswordReset, RESET_SENT_MESSAGE } from '@/lib/auth/sendPasswordReset'
 import { Wordmark } from '@/components/ui/Wordmark'
 import { TextField } from '@/components/shared/TextField'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
+import ExternalLink from '@/components/shared/ExternalLink'
 
 // NATIVE_AUTH_CALLBACK is the custom URL scheme registered in
 // ios/App/App/Info.plist. Google OAuth requires SFSafariViewController on iOS
@@ -57,12 +59,10 @@ export default function LoginPage() {
   async function handleForgot(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true); setError(null); setMessage(null)
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset`,
-    })
+    const { error } = await sendPasswordReset(supabase, email)
     setLoading(false)
-    if (error) { setError(error.message); return }
-    setMessage("If that email has an account, a reset link is on its way. Check your inbox.")
+    if (error) { setError(error); return }
+    setMessage(RESET_SENT_MESSAGE)
   }
 
   async function signInWithApple() {
@@ -492,10 +492,8 @@ export default function LoginPage() {
           marginTop: '12px', textAlign: 'center',
           display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px',
         }}>
-          <a
+          <ExternalLink
             href="/privacy"
-            target="_blank"
-            rel="noopener noreferrer"
             style={{
               fontFamily: 'var(--font-ui)',
               fontSize: '10px', color: 'var(--mute)',
@@ -504,16 +502,14 @@ export default function LoginPage() {
             }}
           >
             Privacy Policy
-          </a>
+          </ExternalLink>
           <span style={{
             fontFamily: 'var(--font-ui)',
             fontSize: '10px', color: 'var(--mute)',
             opacity: 0.4,
           }}>·</span>
-          <a
+          <ExternalLink
             href="/terms"
-            target="_blank"
-            rel="noopener noreferrer"
             style={{
               fontFamily: 'var(--font-ui)',
               fontSize: '10px', color: 'var(--mute)',
@@ -522,7 +518,7 @@ export default function LoginPage() {
             }}
           >
             Terms of Service
-          </a>
+          </ExternalLink>
         </div>
       </div>
     </div>

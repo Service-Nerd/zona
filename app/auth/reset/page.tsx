@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import { BRAND } from '@/lib/brand'
 import { Wordmark } from '@/components/ui/Wordmark'
 import { TextField } from '@/components/shared/TextField'
+import { sendPasswordReset, RESET_SENT_MESSAGE } from '@/lib/auth/sendPasswordReset'
+import { DEAD_END_COPY, isDeadEnd, type ResetPhase } from '@/lib/auth/resetDeadEnd'
 
 // AUTH-RESET-01 — password reset landing.
 //
@@ -24,18 +26,40 @@ import { TextField } from '@/components/shared/TextField'
 // Either way the page ends with a recovery session, then updateUser sets the
 // new password. Middleware allows the unauthenticated landing; the session is
 // only established client-side here.
+//
+// UX-AUTH-03 (2026-09-11) — WHY THE DEAD END IS SPLIT IN THREE.
+// Path 2 failing used to render "This reset link is invalid or has already been
+// used. Request a fresh one and try again." When the template is NOT configured
+// for token_hash that sentence is false AND it is a loop: the link is fine, the
+// verifier simply lives in another browser, and every fresh link fails the same
+// way. On iOS-native it can never succeed — the request is made in the Capacitor
+// webview and the email opens in Safari, so the two browsers are different by
+// construction, on the same device.
+// So: say which of the three things actually happened, and offer a new link
+// here rather than bouncing the runner back to sign-in to start again.
 
 const MIN_PASSWORD = 8
 
-type Phase = 'verifying' | 'ready' | 'invalid' | 'saving' | 'done'
 
 export default function ResetPasswordPage() {
   const supabase = createClient()
-  const [phase, setPhase]       = useState<Phase>('verifying')
+  const [phase, setPhase]       = useState<ResetPhase>('verifying')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm]   = useState('')
   const [error, setError]       = useState<string | null>(null)
+  const [resendEmail, setResendEmail] = useState('')
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle')
+  const [resendError, setResendError] = useState<string | null>(null)
   const settled = useRef(false)
+
+  async function handleResend(e: React.FormEvent) {
+    e.preventDefault()
+    setResendError(null)
+    setResendState('sending')
+    const { error } = await sendPasswordReset(supabase, resendEmail)
+    if (error) { setResendError(error); setResendState('idle'); return }
+    setResendState('sent')
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -52,17 +76,17 @@ export default function ResetPasswordPage() {
       cleanUrl()
       setPhase('ready')
     }
-    const markInvalid = () => {
+    const markDeadEnd = (why: 'expired' | 'wrong_browser' | 'no_credential') => {
       if (settled.current) return
       settled.current = true
-      setPhase('invalid')
+      setPhase(why)
     }
 
     // Path 1 — explicit OTP verification (cross-device safe).
     if (tokenHash) {
       supabase.auth
         .verifyOtp({ token_hash: tokenHash, type: (type as EmailOtpType) || 'recovery' })
-        .then(({ error }) => (error ? markInvalid() : markReady()))
+        .then(({ error }) => (error ? markDeadEnd('expired') : markReady()))
       return
     }
 
@@ -77,8 +101,10 @@ export default function ResetPasswordPage() {
     supabase.auth.getSession().then(({ data }) => { if (data.session) markReady() })
 
     const timer = setTimeout(() => {
-      if (!code) markInvalid()           // no credential at all → bad link
-      else markInvalid()                 // had a code but exchange never landed
+      // The distinction is the whole point. No credential means a mangled link.
+      // A credential that never exchanged means the PKCE verifier is not in THIS
+      // browser, which is a different problem with a different answer.
+      markDeadEnd(code ? 'wrong_browser' : 'no_credential')
     }, 5000)
 
     return () => { sub.subscription.unsubscribe(); clearTimeout(timer) }
@@ -116,21 +142,57 @@ export default function ResetPasswordPage() {
             </div>
           )}
 
-          {phase === 'invalid' && (
+          {isDeadEnd(phase) && (
             <>
               <div style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 500, color: 'var(--ink)', marginBottom: '6px', letterSpacing: '-0.3px' }}>
-                Link expired
+                {DEAD_END_COPY[phase].heading}
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: '20px', lineHeight: 1.6 }}>
-                This reset link is invalid or has already been used. Request a fresh one and try again.
+                {DEAD_END_COPY[phase].body}
               </div>
+
+              {resendState === 'sent' ? (
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss)', lineHeight: 1.6, marginBottom: '16px' }}>
+                  {RESET_SENT_MESSAGE}
+                </div>
+              ) : (
+                <form onSubmit={handleResend} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+                  <TextField
+                    type="email" placeholder="Your email" required
+                    autoComplete="email"
+                    value={resendEmail} onChange={setResendEmail}
+                  />
+                  <button
+                    type="submit"
+                    disabled={resendState === 'sending' || !resendEmail}
+                    style={{
+                      width: '100%', padding: '13px',
+                      background: 'var(--moss)', color: 'var(--card)',
+                      border: 'none', borderRadius: '10px',
+                      fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500,
+                      cursor: resendState === 'sending' || !resendEmail ? 'default' : 'pointer',
+                      opacity: resendState === 'sending' || !resendEmail ? 0.5 : 1,
+                      transition: 'opacity 0.15s',
+                    }}
+                  >
+                    {resendState === 'sending' ? 'Sending…' : 'Send a new link'}
+                  </button>
+                </form>
+              )}
+
+              {resendError && (
+                <div style={{ marginBottom: '16px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--amber)', padding: '8px 12px', background: 'var(--amber-soft)', borderRadius: '8px' }}>
+                  {resendError}
+                </div>
+              )}
+
               <a
                 href="/auth/login"
                 style={{
                   display: 'block', width: '100%', boxSizing: 'border-box', textAlign: 'center',
-                  padding: '13px', background: 'var(--moss)', color: 'var(--card)',
-                  border: 'none', borderRadius: '10px', textDecoration: 'none',
-                  fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500,
+                  padding: '13px', background: 'none', color: 'var(--mute)',
+                  border: '1px solid var(--line)', borderRadius: '10px', textDecoration: 'none',
+                  fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500,
                 }}
               >
                 Back to sign in

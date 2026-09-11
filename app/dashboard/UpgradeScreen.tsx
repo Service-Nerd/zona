@@ -22,6 +22,7 @@ import { TRIAL_DAYS } from '@/lib/trial'
 import { upgradeFraming, isLossFraming } from '@/lib/subscriptions/upgradeFraming'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { createClient } from '@/lib/supabase/client'
+import ExternalLink from '@/components/shared/ExternalLink'
 
 // Ordered by recurring value — Kit's daily read and the weekly zone score are the ongoing
 // proof of subscription value. AI plan generation is high at onboarding but low thereafter.
@@ -376,23 +377,19 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
             marginTop: '10px',
             display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px',
           }}>
-            <a
+            <ExternalLink
               href="/terms"
-              target="_blank"
-              rel="noopener noreferrer"
               style={{ color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: '2px' }}
             >
               Terms of Service
-            </a>
+            </ExternalLink>
             <span aria-hidden="true">·</span>
-            <a
+            <ExternalLink
               href="/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
               style={{ color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: '2px' }}
             >
               Privacy Policy
-            </a>
+            </ExternalLink>
           </div>
         </div>
 

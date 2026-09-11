@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-11 — UX-AUTH-01 + UX-AUTH-03 · Two ways out of the app, both of them wrong
+
+**Shipped:** Links to the legal pages now open in SFSafariViewController instead of replacing the app with the marketing site, and a failed password reset says which of three things actually went wrong instead of claiming the link is invalid.
+
+**Dev learning:** `target="_blank"` has no meaning inside a Capacitor webview. There is no second tab, so Capacitor's UI delegate loads the navigation into the same webview — the app becomes the marketing site, header and all, with no back button. Second: `preventDefault()` after an `await` does nothing. My first version dynamically imported `@capacitor/core`, checked `isNativePlatform()`, then called `preventDefault()` — by which point the browser had already begun navigating, so the page loaded AND the sheet opened. The static import is not a style choice, it is the fix, so there is a test asserting the guard precedes the first `await` rather than a comment hoping someone reads it.
+
+**Product/creator learning:** The worst error message is not the unhelpful one, it is the confidently wrong one. "This reset link is invalid or has already been used. Request a fresh one and try again" was doing real damage: the link was fine, the instruction was impossible, and following it produced the identical failure forever. Nobody would have reported that as a bug. They would have decided the app was broken and stopped.
+
+**AI-building learning:** I nearly built the wrong fix twice today. On the decimals item I nearly rounded every prompt distance to match the card, which would have made Kit narrate a shortfall that never happened; an old test with its reasoning attached stopped me. On this one I nearly rebuilt the whole recovery email on our own Resend sender to remove a dashboard dependency I cannot verify — real, tempting, and a new unauthenticated email-sending endpoint two weeks before a launch. The discipline that saved both was the same: write down what the change would cost before writing the change.
+
+**The honest bit:** I cannot verify the Supabase template setting. Not with the service-role key, not with the Management API tools I hold. So half of UX-AUTH-03 is a runbook and a founder's two minutes, and I have to say so rather than mark it done. The code half exists precisely because the setting is unverifiable: if it is wrong, the runner now learns something true rather than being sent round the loop.
+
+**Hook material:** On iOS, PKCE password reset cannot work. Not "usually fails", cannot. The request is made inside the Capacitor webview and the email opens in Safari, so the verifier is in one browser and the link in another, on the same phone, every time.
+
+**Postable?:** yes
+
+
 ## 2026-09-11 — BUG-KIT-DECIMALS-01 · The AI layer is a display surface, and nobody had written that down
 
 **Shipped:** Kit now quotes the same distance string the runner is looking at on the card, via a new single owner (`promptDistanceFormatters`) that splits prescribed distances from measured ones.
