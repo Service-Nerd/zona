@@ -3844,6 +3844,105 @@ chairing. Extends §86. Moves no ceiling, no dose, no §1.
 
 ---
 
+## 100. A safety trim must not hand its deficit to the next week
+
+*(Coaching Board, 2026-09-11 — RAMP-PRODUCER-01. CORRECT WITH AMENDMENT.)*
+
+**Principle.** When a rule deliberately holds a week's volume DOWN, the following
+week ramps from the volume the runner **actually received**, not from the volume
+curve's value for the week that was trimmed. The cap is §2's existing 10%; it is
+applied forward until the curve catches up with delivered volume.
+
+**Why.** `V1-volume-quality-split` holds a week flat when it introduces the first
+quality or VO2max session (Willy's gate on CD-16: intensity and volume must not
+progress in the same week). That is correct and is not changed here. But the next
+week was built from the CURVE, which still believed the trimmed week sat at its
+curve value, so **the trim handed its entire deficit forward**. The safety rule
+was not removing a spike, it was moving it by seven days.
+
+Measured on the founder's live 10K: the curve read 33 → 37 → 40 (+8%, legal); the
+trim held week 2 at 33; the runner therefore ran 33, 33, 40 — a **+23% delivered
+rise against a chronic load of 33**.
+
+**This exact defect has been ruled on before, in another place.** §12's boxed
+correction of 2026-08-20 records the injury cap doing the same thing: "applied
+per-week downstream of the curve, measured against the curve's *unadjusted*
+previous value. **So it never compounded.** A week capped down was followed by a
+week measured against the higher curve value, which sailed through uncapped." It
+accounted for 394 of 981 long-run progression violations. The board did not need
+to decide whether a cap measured against an unadjusted curve is wrong; it decided
+that in August. §100 applies the same finding to the volume/quality split.
+
+**It cascades, and is self-limiting.** Capping only the immediately-following
+week moves the spike one week further out: the curve keeps climbing while
+delivered volume restarts lower. Each capped week raises the delivered baseline
+by the full 10%, so the walk forward terminates on its own when the curve catches
+up. Deloads, taper and race week end it immediately — those are planned drops and
+§2's rise cap has nothing to say about them.
+
+### Amendment (§52) — it partial-applies rather than emptying the week
+
+**The board amended the proposal on §52's authority.** As first built, the cap
+drove two 11.5 km easy runs to the 4 km `MIN_SESSION_DISTANCE` floor in a single
+week, to hold a +62% delivered rise down to +10%. §52 has already ruled on that
+shape, in its own Case 04: weekday runs "cut to 4 km each ... a lopsided week is
+a week that doesn't actually train the runner", and "the constitutional answer is
+to **surface the constraint, not to silently truncate weekday runs to single-digit
+km**".
+
+So no easy run may be trimmed below **the smallest easy run of the week the runner
+has just completed**. This introduces no numeric: the floor is the runner's own
+most recent easy session. Where it prevents reaching the cap, the trim
+partial-applies and §94 continues to report the residual as a `warn` — the same
+honest-residual treatment §52 and §90 already use, and §34's standard.
+
+**Config.** No new constant. Reuses `GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT`
+(10) — the same §2 cap, measured at delivery instead of on the curve.
+
+**Mechanical check.** `INV-PLAN-DELIVERED-RAMP` (§94) already measures exactly
+this and needs no change: it was written as the detector for this producer and
+stays `warn` because of the §52-exempt long run and the partial-apply above.
+Producer is `reanchorWeekAfterTrim` in `ruleEngine.ts`; the shared trimmer
+`trimWeekEasyToTarget` is used by both V1 and the re-anchor, so the two cannot
+drift apart (Willy's standing instruction from CD-16: "that machinery exists —
+extend it rather than inventing a parallel rule").
+
+**Measured — 611 healthy plans, 5K/10K/HM, 3–6 days, 15–50 km/wk, pinned seed.**
+V1 fires in 48.8% of them.
+
+| | baseline | §100 (cascade + §52 floor) |
+|---|---|---|
+| plans breaching §94 | 22.7% | **11.5%** |
+| worst delivered week rise | 55% | **39%** |
+| mean rise among breaches | 27.1% | 22.1% |
+| mean delivered PEAK week | 18.99 km | 18.88 km |
+| max delivered PEAK week | 53 km | 53 km |
+| constrained by inputs | 28% | 28% |
+| maintenance profile | 38.3% | 38.8% |
+
+**And the same change on the FULL property sweep, which is the honest denominator.**
+16,038 plans across every distance: `INV-PLAN-DELIVERED-RAMP` fell from **4.0%
+(644 plans) to 3.6% (572)**, a 11% relative reduction rather than 49%. Both
+figures are real and they measure different populations. The focused grid above
+is 5K/10K/HM only — the distances where the catalogue emits a VO2max session and
+therefore the only ones where V1 can fire at all — so it reports the effect where
+the mechanism lives. The full sweep dilutes it with marathon and ultra plans the
+rule never touches, plus the injury-history runners §94 excludes by design.
+**Quote the sweep number when asked "how much did this improve the product", and
+the grid number when asked "does the fix work".** Reporting only the second would
+be the flattering half of a true answer.
+
+**Why this shipped when the 2026-09-06 healthy bounceback cap did not.** That one
+was built, measured and REJECTED: +50pp of plans flipped to "constrained by
+inputs", +7.6pp maintenance, zero safety benefit. §79/§89 reserve peak structure
+to the runner's inputs, and the board will not spend it for nothing. The profile
+here is the inverse — half the breaches removed for 0.6% of mean peak volume and
+0.5pp of maintenance — because the capped week sits in base or early build, not
+at peak. **The precedent is the METHOD, not the verdict:** measure the cost in
+the same units, then decide.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

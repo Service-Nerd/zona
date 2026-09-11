@@ -3892,35 +3892,46 @@ function applyV1VolumeQualityStimulusSplit(
   ])).filter(i => i > 0).sort((a, b) => a - b)
 
   for (const triggerIdx of triggerIdxs) {
-    flattenIntroducingWeek(weeks, triggerIdx, pace, adjustments, threshold, precision, minEasy, minRatio)
+    const trimmed = flattenIntroducingWeek(
+      weeks, triggerIdx, pace, adjustments, threshold, precision, minEasy, minRatio,
+    )
+    // RAMP-PRODUCER-01 — a trim that hands its deficit to the next week has not
+    // protected the runner, it has moved the spike by seven days.
+    if (trimmed) {
+      reanchorWeekAfterTrim(
+        weeks, triggerIdx, trimmed.trimmedToKm, pace, adjustments, precision, minEasy, minRatio,
+      )
+    }
   }
 }
 
-function flattenIntroducingWeek(
-  weeks: Week[],
-  triggerIdx: number,
+/**
+ * Trim a week's EASY runs until its weekly volume is at or under `rawTargetKm`.
+ * Long run and quality are never touched, and §52's long-run-share floor is
+ * respected (a partial apply is preferred to breaking it).
+ *
+ * Extracted from `flattenIntroducingWeek` so the V1 flatten and the RAMP-PRODUCER
+ * re-anchor below share ONE trimmer. Willy's instruction when V1 gained its
+ * second trigger was "that machinery exists — extend it rather than inventing a
+ * parallel rule", and a second near-identical flattening routine is how two
+ * rules drift apart. Same argument, one level down.
+ *
+ * Returns the before/after weekly km, or null when nothing was changed.
+ */
+function trimWeekEasyToTarget(
+  curr: Week,
+  rawTargetKm: number,
   pace: PaceGuide,
-  adjustments: RuleAdjustment[],
-  threshold: number,
   precision: number,
   minEasy: number,
   minRatio: number,
-): void {
-  const curr = weeks[triggerIdx]
-  const prev = weeks[triggerIdx - 1]
-
-  // Name the stimulus this week actually introduced, so the record says which
-  // of the two triggers fired rather than always claiming "first quality".
-  const introducesVo2 = Object.values(curr.sessions)
-    .some(s => s != null && s.type === 'quality' && classifyStimulus(s) === 'vo2max')
-  const isFirstQualityWeek = !weeks.slice(0, triggerIdx)
-    .some(w => Object.values(w.sessions).some(s => s?.type === 'quality'))
-  const introduced = isFirstQualityWeek
-    ? (introducesVo2 ? 'the first quality session of the plan (VO2max)' : 'the first quality session')
-    : 'the first VO2max session'
-  if (curr.type === 'race' || curr.type === 'deload') return
-  if (curr.weekly_km <= prev.weekly_km * threshold) return  // bump is small enough
-
+  /**
+   * §52 — a floor on how small an individual easy run may be driven, ABOVE the
+   * absolute MIN_SESSION_DISTANCE. Defaults to `minEasy` (V1's own behaviour,
+   * unchanged). The re-anchor passes a higher floor: see the call site.
+   */
+  perSessionFloorKm: number = minEasy,
+): { before: number; after: number } | null {
   // Identify the long-run session — it is excluded from scaling.
   const lr = longRunOfWeek(curr)
 
@@ -3932,7 +3943,7 @@ function flattenIntroducingWeek(
     return sum + (s.distance_km ?? (s.duration_mins ?? 0) / pace.minPerKmEasy)
   }, 0)
 
-  if (easyKm <= 0) return  // no easies to scale
+  if (easyKm <= 0) return null  // no easies to scale
 
   // §52 guard — V1 must not shrink weekly so much that LR / weekly exceeds the
   // 60% lopsidedness cap. Compute a floor on weekly_target so the ratio
@@ -3946,8 +3957,8 @@ function flattenIntroducingWeek(
   // Round the floor UP to the next km — sumWeeklyKm rounds the final total to
   // an integer, which can bring us back below the strict floor by up to 1 km.
   const weeklyFloorFromLR = lrKm > 0 ? Math.ceil(lrKm / lrMaxPctOfWeekly) + 1 : 0
-  const targetWeeklyKm = Math.max(prev.weekly_km, weeklyFloorFromLR)
-  if (targetWeeklyKm >= curr.weekly_km) return  // would leave plan unchanged or grow it
+  const targetWeeklyKm = Math.max(rawTargetKm, weeklyFloorFromLR)
+  if (targetWeeklyKm >= curr.weekly_km) return null  // unchanged, or would grow it
 
   // The volume this week had BEFORE V1 trimmed it. Captured here because
   // `curr.weekly_km` is reassigned below, and the adjustment message needs the
@@ -3962,7 +3973,7 @@ function flattenIntroducingWeek(
   // weekly = quality + long + easy_total + recovery. Only easy_total moves.
   const fixedKm = (curr.weekly_km - easyKm)  // quality + long + recovery — held constant
   const easyTargetKm = Math.max(0, targetWeeklyKm - fixedKm)
-  if (easyTargetKm >= easyKm) return  // already under target — nothing to do
+  if (easyTargetKm >= easyKm) return null  // already under target
 
   const scale = easyTargetKm / easyKm
   // Easy ceiling per §9: easy ≤ long / minRatio. Apply both the V1 scale and
@@ -3983,7 +3994,7 @@ function flattenIntroducingWeek(
         Math.round(s.distance_km * scale / precision) * precision,
         easyCeilingFromLR,
       ),
-      minEasy,
+      Math.max(minEasy, perSessionFloorKm),
     )
     s.distance_km = scaled
     s.duration_mins = dur(scaled, pace.minPerKmEasy)
@@ -3991,12 +4002,141 @@ function flattenIntroducingWeek(
   const newWeekly = sumWeeklyKm(curr.sessions, pace)
   curr.weekly_km = newWeekly
   curr.long_run_hrs = computeLongRunHrs(curr.sessions, pace)
+  return { before: preCorrectionWeeklyKm, after: newWeekly }
+}
+
+function flattenIntroducingWeek(
+  weeks: Week[],
+  triggerIdx: number,
+  pace: PaceGuide,
+  adjustments: RuleAdjustment[],
+  threshold: number,
+  precision: number,
+  minEasy: number,
+  minRatio: number,
+): { trimmedToKm: number } | null {
+  const curr = weeks[triggerIdx]
+  const prev = weeks[triggerIdx - 1]
+
+  // Name the stimulus this week actually introduced, so the record says which
+  // of the two triggers fired rather than always claiming "first quality".
+  const introducesVo2 = Object.values(curr.sessions)
+    .some(s => s != null && s.type === 'quality' && classifyStimulus(s) === 'vo2max')
+  const isFirstQualityWeek = !weeks.slice(0, triggerIdx)
+    .some(w => Object.values(w.sessions).some(s => s?.type === 'quality'))
+  const introduced = isFirstQualityWeek
+    ? (introducesVo2 ? 'the first quality session of the plan (VO2max)' : 'the first quality session')
+    : 'the first VO2max session'
+  if (curr.type === 'race' || curr.type === 'deload') return null
+  if (curr.weekly_km <= prev.weekly_km * threshold) return null  // bump is small enough
+
+  const trimmed = trimWeekEasyToTarget(curr, prev.weekly_km, pace, precision, minEasy, minRatio)
+  if (!trimmed) return null
+  const { before: preCorrectionWeeklyKm, after: newWeekly } = trimmed
 
   adjustments.push({
     rule:           'V1-volume-quality-split',
     violation:      `Week ${curr.n} introduced ${introduced} AND stepped volume up from ${prev.weekly_km} to ${preCorrectionWeeklyKm} km (>${GENERATION_CONFIG.V1_VOLUME_QUALITY_SPLIT_THRESHOLD_PCT}% bump).`,
     resolution:     `Held weekly volume at ${newWeekly} km (target ${prev.weekly_km}) by trimming easy runs; long run + quality preserved.`,
     weeks_affected: [curr.n],
+  })
+
+  return { trimmedToKm: newWeekly }
+}
+
+/** The smallest easy (non-long-run) run in a week, in km. The §52 floor the
+ *  re-anchor may not trim below. Returns 0 when the week has no easy runs, which
+ *  makes the floor a no-op rather than an accidental constraint. */
+function smallestEasyKm(w: Week, pace: PaceGuide): number {
+  const lr = longRunOfWeek(w)
+  const easies = Object.entries(w.sessions)
+    .filter(([d, s]) => s && s.type === 'easy' && !(lr && d === lr.day))
+    .map(([, s]) => s!.distance_km ?? (s!.duration_mins ?? 0) / pace.minPerKmEasy)
+    .filter(km => km > 0)
+  return easies.length ? Math.min(...easies) : 0
+}
+
+/**
+ * RAMP-PRODUCER-01 — the week AFTER a V1 trim must ramp from what the runner
+ * actually ran, not from the curve.
+ *
+ * V1 holds the introducing week flat (correct — intensity and volume must not
+ * progress together). The next week was then built from the volume CURVE, which
+ * still believed the trimmed week was at its curve value, so the trim handed its
+ * whole deficit forward. On the founder's live 10K the curve read 33 -> 37 -> 40
+ * (+8%, legal); the trim held week 2 at 33; the runner therefore ran 33, 33, 40,
+ * a +23% delivered rise against a chronic load of 33. §94 detects this; until
+ * now nothing produced a different plan.
+ *
+ * Bounded by §2's own cap, measured from the DELIVERED value. Trims easy runs
+ * only, through the same trimmer V1 uses, so the long run (§52-exempt,
+ * race-anchored) and every quality session are untouched.
+ *
+ * Deliberately caps ONE week, not the remaining curve. The deficit is a
+ * one-week artefact of the trim; damping the whole curve would lower delivered
+ * peak volume everywhere, and §79/§89 reserve peak structure to the runner's
+ * inputs. The board REJECTED exactly that trade on 2026-09-06 when a healthy
+ * bounceback cap flipped +50pp of plans to "constrained by inputs" for zero
+ * safety benefit.
+ */
+function reanchorWeekAfterTrim(
+  weeks: Week[],
+  trimIdx: number,
+  trimmedToKm: number,
+  pace: PaceGuide,
+  adjustments: RuleAdjustment[],
+  precision: number,
+  minEasy: number,
+  minRatio: number,
+): void {
+  const capPct = GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT
+  let deliveredKm = trimmedToKm
+  const reanchored: number[] = []
+  let firstBefore = 0
+
+  // CASCADE, not a single week. Capping only week N+1 moves the spike to N+2:
+  // the curve keeps climbing while delivered volume restarts lower, so the gap
+  // reappears one week later. Measured on the 10K golden plan, the single-week
+  // variant produced exactly that. Walk forward until the curve catches up with
+  // what the runner is actually running, then stop — the loop is self-limiting
+  // because each capped week raises the delivered baseline by the full 10%.
+  for (let i = trimIdx + 1; i < weeks.length; i++) {
+    const w = weeks[i]
+    // Planned DROPS. §2's rise cap has nothing to say about them, and
+    // INV-PLAN-DELOAD-IS-A-REDUCTION owns the first.
+    if (w.type === 'race' || w.type === 'deload' || w.phase === 'taper') break
+
+    const allowedKm = deliveredKm * (1 + capPct / 100)
+    if (w.weekly_km <= allowedKm) break   // curve has caught up — nothing left to damp
+
+    const before = w.weekly_km
+    // §52 — "the constitutional answer is to surface the constraint, not to
+    // silently truncate weekday runs to single-digit km". Without this floor the
+    // cap did exactly that: on the 10K golden plan it drove two 11.5 km easy
+    // runs to the 4 km MIN_SESSION_DISTANCE to hold a +62% rise down to +10%,
+    // reproducing §52's own Case 04 (weekday runs cut to 4 km each, "a week that
+    // doesn't actually train the runner").
+    //
+    // So no easy run may be pushed below the SMALLEST easy run of the week the
+    // runner has just completed. No new numeric: the floor is the runner's own
+    // most recent easy session. Where that prevents reaching the cap, the trim
+    // PARTIAL-APPLIES and §94 keeps reporting the residual as a `warn` — the
+    // same honest-residual treatment §52 and §90 already use.
+    const floorKm = smallestEasyKm(weeks[trimIdx], pace)
+    const result = trimWeekEasyToTarget(w, allowedKm, pace, precision, minEasy, minRatio, floorKm)
+    if (!result) break                     // §52 floor or no easy left to trim
+    if (!firstBefore) firstBefore = before
+    reanchored.push(w.n)
+    deliveredKm = result.after
+  }
+
+  if (!reanchored.length) return
+
+  adjustments.push({
+    rule:           'V1-volume-quality-split-reanchor',
+    violation:      `Week ${reanchored[0]} stepped up from the volume curve (${firstBefore} km) rather than from the ${trimmedToKm} km week ${weeks[trimIdx].n} actually delivered after its quality-split trim, a +${Math.round((firstBefore - trimmedToKm) / trimmedToKm * 100)}% delivered rise.`,
+    resolution:     `Re-anchored week${reanchored.length > 1 ? 's' : ''} ${reanchored.join(', ')} to §2's ${capPct}% cap measured from delivered volume (now ${deliveredKm} km) by trimming easy runs; long run + quality preserved.`,
+    weeks_affected: reanchored,
   })
 }
 

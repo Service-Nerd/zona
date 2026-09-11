@@ -2312,6 +2312,14 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   //     INV-PLAN-INJURY-CAP-DELIVERED (§90).
   //   - foundation weeks, which have their own +10% rule (§57).
   //
+  // PRODUCER SHIPPED 2026-09-11 (§100, RAMP-PRODUCER-01). Until then this was
+  // detection with nothing behind it: `reanchorWeekAfterTrim` in ruleEngine now
+  // ramps the week after a V1 trim from DELIVERED volume rather than the curve,
+  // which took the breach rate on a 611-plan grid from 22.7% to 11.5% and the
+  // worst delivered rise from 55% to 39%. This check stays `warn` and stays
+  // exactly as written — it is the measurement the board ruled against, and
+  // relaxing it now would delete the evidence that the fix worked.
+  //
   // `warn`, and honestly so (§34): the long run is §52-exempt and sized on its
   // own race-anchored schedule, so part of any residual is placement the engine
   // is not permitted to trim. Measured against the TRIMABLE (non-long-run)
