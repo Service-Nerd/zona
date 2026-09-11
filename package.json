@@ -20,7 +20,8 @@
     "verify:parity": "tsx scripts/verify-parity.ts",
     "check:db": "tsx scripts/check-db-drift.ts",
     "cohort:shape": "tsx scripts/cohort-shape.ts",
-    "prepare": "git config core.hooksPath .githooks || true"
+    "prepare": "git config core.hooksPath .githooks || true",
+    "invariant:liveness": "tsx scripts/invariant-liveness.ts"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",
