@@ -38,12 +38,12 @@ const DEPTH_REGISTER: Record<string, number> = {
                   // `goal_pace_sharpener` covers 5K but is taper-only. Not a gap.
   '10K':      2,  // tenk_pace_intervals + tenk_race_simulation (added 2026-09-11)
   'HM':       2,  // hm_pace_intervals + hm_pace_long_run
-  'MARATHON': 1,  // ⚠️ KNOWN GAP — mp_long_run only. The identical thinness 10K
-                  // had, found by the same scan, at the distance the charity
-                  // referral channel sends us. NOT fixed here: a marathon
-                  // race-specific row is its own board sitting, and shipping one
-                  // as a by-product of a 10K ruling is how unreviewed
-                  // prescription gets in. Tracked by CAT-DEPTH-01.
+  'MARATHON': 2,  // mp_long_run + mp_blocks (added 2026-09-11, §105). Was 1 —
+                  // the identical thinness 10K had, and worse: 100% of marathon
+                  // time-target plans reused mp_long_run up to THREE times, so
+                  // every scrap of marathon-specific work lived in the long run.
+                  // Given its own board sitting rather than shipped as a
+                  // by-product of the 10K ruling.
   '50K':      0,  // ultra_specific rows carry the specificity at these distances
   '100K':     0,  // (ultra_race_sim, back_to_back_long, time_on_feet); race pace
                   // sits at long-run pace, so §22's "distinct from I-pace" test

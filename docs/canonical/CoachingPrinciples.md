@@ -4088,6 +4088,79 @@ question from §93's existing slot logic.
 
 ---
 
+## 105. Marathon pace must exist away from the long run
+
+*(Coaching Board, 2026-09-11 — CAT-MARATHON-RACE-SPECIFIC-01. CORRECT WITH AMENDMENT.)*
+
+**Principle.** A distance's race-specific work must not live entirely inside one
+session shape. For MARATHON it did: every scrap of goal-pace exposure was a
+segment of the long run.
+
+**Measured on 96 marathon time-target plans: 100% reused `mp_long_run`, up to
+THREE times in a single plan** (216 placements). So a marathon runner met goal
+pace on long-run day or not at all — and a runner whose long run was already the
+week's binding constraint (§52 lopsidedness, §81's weekday ceiling, a step-back
+week under §47) met it nowhere.
+
+**What shipped.** `mp_blocks` — "Marathon-pace blocks", reps × 4km at goal pace
+off 3 minutes jog, peak only, intermediate minimum. It separates goal-pace
+exposure from long-run day, so MP work survives a week the long run does not. A
+well-established shape (Daniels' M-pace repeats, Pfitzinger's MP work), and
+distinct from the threshold rows beside it by ANCHOR — MP, not T.
+
+**Named in the "…-pace…" family, on §104's rule.** `Session.stimulus` is stamped
+from the generator label, so a `race_specific` row named outside that family
+stamps nothing and is invisible to §22's own check. Learned the expensive way
+hours earlier, when "Broken 10K" failed every 10K plan.
+
+### Amendment 1 — the proposed load guard was WITHDRAWN
+
+The brief proposed an invariant forbidding `mp_blocks` from sharing a week with a
+race-pace long run, on the reasoning that ~12km at MP plus a long run 40% at MP is
+too much race-pace load. **It does not survive contact with the catalogue.**
+
+Written broadly it failed 228 existing tests, because §22 renames a borrowed
+threshold row to "10K-pace intervals" in the second half of a time-targeted plan
+— so a race-pace long run beside a race-pace-renamed quality session is the
+engine's normal, board-sanctioned behaviour and has been since R23. Narrowed to
+genuine `race_specific` rows it still failed 57, because **HM has paired
+`hm_pace_long_run` with `hm_pace_intervals` in one week since R23** and no board
+has objected.
+
+And the premise is weak on its own terms: **marathon pace is easier per kilometre
+than HM pace.** The marathon pairing is a LOWER intensity than the one already
+shipping. There is no evidence the pairing harms anyone, and the precedent argues
+it is fine. A new error-severity rule condemning long-shipped, reviewed behaviour
+is not a finding — it is inventing a rule. Withdrawn.
+
+### Amendment 2 — §104's invariant was MIS-SCOPED, and this found it
+
+`INV-PLAN-RACE-SPECIFIC-VARIETY` (§104, shipped hours earlier) counted the LONG
+RUN as a race-specific slot. `mp_long_run` is a race_specific row that occupies
+the long run, and repeating it across peak weeks is **§47's alternation working
+as designed**, not a variety failure.
+
+The moment marathon gained a second row, the invariant fired on **92% of marathon
+plans** — which by Willy's own NOISE-GATE-01 standard ("a check firing at 71% is
+not a safety mechanism, it is noise, and noise gets suppressed") would have made
+it worthless within a week. It now excludes the long run, and excludes
+long-run-shaped rows from counting as an *alternative* for a quality slot.
+
+It was not caught when §104 shipped because 10K's only race_specific rows are
+quality sessions, so the distinction never arose. Firing rate went 5.7% → 0% on
+the full sweep; falsification-tested that it still fires on the real defect (two
+peak quality slots filled from one row while an alternative exists).
+
+**Config.** No new numeric. Content plus a scoping correction to an existing
+check.
+
+**Honest residual.** Plans seeing both marathon race-specific rows: **0% → 8%.**
+Lower than 10K's 25%, because `mp_long_run` occupies the long run while
+`mp_blocks` competes for a quality slot against the threshold and VO2max rows.
+Better, not solved; the depth question stays CAT-DEPTH-01's.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

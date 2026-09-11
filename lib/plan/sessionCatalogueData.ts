@@ -892,6 +892,59 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     coach_voice_notes: 'Easy first. Hit goal pace on tired legs.',
   },
   {
+    // CAT-MARATHON-RACE-SPECIFIC-01 (Coaching Board, 2026-09-11, §105) —
+    // MARATHON's SECOND race-specific row, and the first that is not a long run.
+    //
+    // Measured before the sitting, 96 marathon time-target plans: 100% reused
+    // `mp_long_run`, up to THREE times in a single plan (216 placements). So
+    // EVERY scrap of marathon-specific work lived inside the long run. A runner
+    // met goal pace on long-run day or not at all, and a runner whose long run
+    // was already the week's binding constraint met it nowhere.
+    //
+    // Separating goal-pace exposure from long-run day is the point: MP work now
+    // survives a week where the long run is trimmed, capped or stepped back.
+    // Well-established shape (Daniels' M-pace repeats, Pfitzinger's MP work).
+    //
+    // NOT a duplicate of the threshold rows beside it: those are anchored at T,
+    // this at MP. §22 is explicit that goal-pace exposure is the thing being
+    // bought, and MP sits meaningfully below T for a four-hour-a-week marathoner.
+    //
+    // NAMED IN THE "…-pace…" FAMILY, on §104's rule. `Session.stimulus` is
+    // stamped from the generator label, so a race_specific row named outside
+    // that family stamps nothing and is invisible to §22's own check. "Broken
+    // 10K" cost a red suite learning this on 2026-09-11; not repeating it.
+    //
+    // WILLY'S GUARD IS §105's INVARIANT, not this row's eligibility: 12km at MP
+    // in a week that already carries a long run 40% at MP is too much race-pace
+    // load, so the two may not share a week. Enforced by
+    // INV-PLAN-RACE-PACE-WEEK-CONCENTRATION, because eligibility cannot see what
+    // else got placed.
+    id: 'mp_blocks', name: 'Marathon-pace blocks', category: 'race_specific',
+    purpose: 'Marathon pace away from the long run. Goal pace on fresh legs, so it survives a week the long run does not.',
+    phase_eligibility: ['peak'],
+    distance_eligibility: ['MARATHON'],
+    fitness_level_min: 'intermediate', difficulty_tier: 4,
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'blocks',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'distance', m: 4000 },
+            target: { kind: 'pace', anchor: 'goal', mode: 'target' }, advance: 'auto',
+            note: 'Marathon pace, and it should feel comfortable. If it does not, it is not marathon pace.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 180 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Three minutes easy. Enough to reset, not enough to forget the pace.' },
+        ],
+      }],
+    },
+    intensity_zones: ['Z2', 'Z3'],
+    typical_duration_min: 50, typical_duration_max: 80, is_free_tier: true,
+    coach_voice_notes: 'Marathon pace should feel controlled. The discipline is holding back, not pushing on.',
+  },
+  {
     id: 'hm_pace_intervals', name: 'HM-pace intervals', category: 'race_specific',
     purpose: 'Race-specific intervals at HM pace. Bridges the gap between threshold and race day.',
     phase_eligibility: ['peak'],

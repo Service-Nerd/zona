@@ -2008,10 +2008,24 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // is explicit that an honest residual beats a check nobody can satisfy.
   {
     if (isTimeTarget) {
+      // ⚠️ THE LONG RUN IS EXCLUDED, and leaving it in was wrong.
+      //
+      // §104 is about the QUALITY slots §93 provisions. `mp_long_run` is a
+      // race_specific row that occupies the LONG RUN, and repeating it across
+      // peak weeks is not a variety failure — it is §47's alternation working
+      // as designed ("peak long run → step-back long run"). Counting it made
+      // this invariant fire on 92% of marathon plans the moment marathon gained
+      // a second row, which by Willy's own NOISE-GATE-01 standard ("a check
+      // firing at 71% is not a safety mechanism, it is noise, and noise gets
+      // suppressed") would have made it worthless.
+      //
+      // Not caught when §104 shipped because 10K's only race_specific rows are
+      // quality sessions, so the distinction never arose. Found by extending the
+      // same principle to marathon hours later.
       const peakRaceSpecific = plan.weeks
         .filter(w => w.phase === 'peak' && w.type !== 'race')
         .flatMap(w => Object.values(w.sessions)
-          .filter((sn): sn is Session => sn != null && !!sn.catalogue_id)
+          .filter((sn): sn is Session => sn != null && !!sn.catalogue_id && !isLongRun(sn))
           .map(sn => ({ week: w.n, id: sn.catalogue_id! })))
         .filter(x => V1_SESSION_CATALOGUE
           .find(r => r.id === x.id)?.category === 'race_specific')
@@ -2026,7 +2040,9 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           r.category === 'race_specific'
           && r.id !== used
           && (r.distance_eligibility as readonly string[]).includes(distKey)
-          && (r.phase_eligibility as readonly string[]).includes('peak'))
+          && (r.phase_eligibility as readonly string[]).includes('peak')
+          // A long-run-shaped row is not an alternative for a QUALITY slot.
+          && r.main_set_structure?.type !== 'long_run_with_segment')
 
         if (alternatives.length > 0) {
           violations.push({
