@@ -74,10 +74,23 @@
   --shadow-card:     0 1px 2px rgba(26,26,26,.04), 0 10px 28px -10px rgba(26,26,26,.10);
   --shadow-lifted:   0 1px 2px rgba(26,26,26,.05), 0 18px 42px -14px rgba(26,26,26,.16);
 
-  /* ── Rhythm ──────────────────────────────────────────────────────── */
-  /* v2: section air raised 28 → 36 (premium reads as space more than anything).
-     Applied at call sites where a screen stacks its primary sections. */
-  --section-gap:     36px;
+  /* ── Rhythm ──────────────────────────────────────────────────────────
+     `--section-gap: 36px` was declared here by the v2 pass and DELETED on
+     2026-09-11 (V2-POLISH-01). It was never read by a single call site, and
+     its comment claimed it was "applied at call sites where a screen stacks
+     its primary sections" — which was not true when it was written.
+
+     It was also wrong about the codebase it described. The app's actual
+     section rhythm is marginBottom 20px (23 sites in DashboardClient) with a
+     handful of 28px (5 sites); none of them stacks primary sections, and
+     nothing used 36px at all. So "adopting" it would not have been polish,
+     it would have been a 16px regression applied 23 times.
+
+     A token nothing reads is worse than no token: the next person treats it
+     as the intent and edits real spacing to match it. Same class as the
+     decorative GENERATION_CONFIG entries that produced §93 — declared,
+     ratified, consumed by nothing. If a section rhythm is ever wanted, decide
+     it against what the screens do and wire it in the same commit. */
 
   /* ── Dark ground (v2, design_handoff_v2) ─────────────────────────────
      One near-black section per marketing page — a punctuation mark, NOT a

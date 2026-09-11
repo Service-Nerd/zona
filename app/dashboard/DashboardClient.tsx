@@ -3308,7 +3308,7 @@ function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
         <div aria-busy="true" style={{ padding: '8px 16px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {[0, 1, 2].map(i => (
             <div key={i} style={{
-              background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)',
+              background: 'var(--card)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)',
               padding: '13px 16px 14px 18px', minHeight: '64px',
             }}>
               <div style={{ width: '38%', height: '9px', borderRadius: '3px', background: 'var(--bg-soft)', marginBottom: '10px' }} />
@@ -6470,7 +6470,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
         )}
 
         {status === 'clean' && (
-          <div style={{ background: 'var(--card)', borderRadius: '14px', border: '1px solid var(--line)', padding: '20px' }}>
+          <div style={{ background: 'var(--card)', boxShadow: 'var(--shadow-card)', borderRadius: '14px', border: '1px solid var(--line)', padding: '20px' }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--moss-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M3 8l3.5 3.5L13 5" stroke="var(--moss)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -7381,7 +7381,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           <div style={{ marginBottom: '16px' }}>
             <div style={{
               position: 'relative',
-              background: 'var(--card)',
+              background: 'var(--card)', boxShadow: 'var(--shadow-card)',
               borderRadius: 'var(--radius-lg)',
               padding: '16px 16px 12px 19px',
               border: '1px solid var(--line)',
@@ -7455,7 +7455,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
           <div style={{ marginBottom: '16px' }}>
             <div style={{
               position: 'relative',
-              background: 'var(--card)',
+              background: 'var(--card)', boxShadow: 'var(--shadow-card)',
               borderRadius: 'var(--radius-lg)',
               padding: (maintDebrief || maintReengagement) ? '14px 16px 10px 19px' : '14px 16px 10px',
               border: '1px solid var(--line)',
@@ -8339,7 +8339,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           <div style={{ padding: '16px 16px 0' }}>
             <div style={{
               position: 'relative',
-              background: 'var(--card)',
+              background: 'var(--card)', boxShadow: 'var(--shadow-card)',
               border: '1px solid var(--line)',
               borderRadius: 'var(--radius-lg)',
               overflow: 'hidden',
@@ -8572,7 +8572,7 @@ function PlanCoachingCard({ plan, currentWeek, units = 'km', trackedKm }: {
     : null
 
   return (
-    <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--card)', boxShadow: 'var(--shadow-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
       {/* Header */}
       <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Week notes</span>
@@ -8890,7 +8890,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
         </button>
 
         {/* Locked race projections stub — display only, not a CTA */}
-        <div style={{ width: '100%', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
+        <div style={{ width: '100%', background: 'var(--card)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px', opacity: 0.5 }}>
             Race projections
           </div>
@@ -9036,7 +9036,7 @@ function LedgerCard({ ledger: ledgerProp }: { ledger?: LedgerSnapshot | null }) 
   const ledger = ledgerProp ?? hookLedger
   return (
     <div style={{
-      background: 'var(--card)',
+      background: 'var(--card)', boxShadow: 'var(--shadow-card)',
       border: '1px solid var(--line)',
       borderRadius: 'var(--radius-lg)',
       padding: '20px',
@@ -10312,7 +10312,7 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
     : "Off. Tap to let Kit ping you when he's read your run."
 
   return (
-    <div style={{ margin: '4px 0', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+    <div style={{ margin: '4px 0', background: 'var(--card)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', gap: '12px' }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500 }}>Run notifications</div>
@@ -10362,7 +10362,7 @@ function DailyPushToggleRow({ enabled, onChange, disabled = false }: {
   // user isn't lied to about getting a push that can never arrive.
   const effectiveOn = enabled && !disabled
   return (
-    <div style={{ margin: '4px 0', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', opacity: disabled ? 0.55 : 1 }}>
+    <div style={{ margin: '4px 0', background: 'var(--card)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', opacity: disabled ? 0.55 : 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', gap: '12px' }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500 }}>Morning training push</div>
@@ -10585,7 +10585,7 @@ function ConnectRunsBanner() {
       position: 'relative',
       margin: '12px 16px 0',
       padding: '14px 16px 14px 24px',
-      background: 'var(--card)',
+      background: 'var(--card)', boxShadow: 'var(--shadow-card)',
       border: '1px solid var(--line)',
       borderRadius: '14px',
       display: 'flex', alignItems: 'flex-start', gap: '10px',
@@ -11402,7 +11402,7 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
           }
           return (
             <div key={p.id} style={{
-              background: 'var(--card)', borderRadius: 'var(--radius-lg)',
+              background: 'var(--card)', boxShadow: 'var(--shadow-card)', borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--line)',
               borderLeft: p.isCurrent ? '3px solid var(--moss)' : '1px solid var(--line)',
               padding: '14px 16px',
@@ -11496,7 +11496,7 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
 
       <div style={{ padding: '8px 16px 40px', display: 'flex', flexDirection: 'column', gap: '20px', flex: 1 }}>
         {/* Intro + expectation-setting (the anxiety-killer line) */}
-        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ background: 'var(--card)', boxShadow: 'var(--shadow-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', color: 'var(--ink)', lineHeight: 1.55 }}>
             Something not working, or a question about your plan? Tell us.
           </div>
@@ -12280,7 +12280,7 @@ function PendingAnalysisCard({ onOpenCoach }: { onOpenCoach?: () => void }) {
     <div style={{
       position: 'relative',
       marginTop: '12px',
-      background: 'var(--card)',
+      background: 'var(--card)', boxShadow: 'var(--shadow-card)',
       borderRadius: '14px',
       border: '1px solid var(--line)',
       padding: '14px 16px 14px 22px',
@@ -12948,7 +12948,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
         )}
 
         <div style={{
-          background: 'var(--card)',
+          background: 'var(--card)', boxShadow: 'var(--shadow-card)',
           borderRadius: 'var(--radius-lg)',
           border: `1px solid var(--line)`,
           borderLeft: `3px solid ${color}`,
@@ -13444,7 +13444,7 @@ function PostRunScreen({
 
         {/* ── HOW DID IT FEEL? ────────────────────────────────────── */}
         <div style={{
-          background: 'var(--card)',
+          background: 'var(--card)', boxShadow: 'var(--shadow-card)',
           borderRadius: '14px',
           border: '1px solid var(--line)',
           padding: '16px 18px',
