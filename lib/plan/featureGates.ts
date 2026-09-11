@@ -31,7 +31,22 @@ export const FEATURE_GATES = {
   PAID_ONLY_ONGOING: [
     'dynamic_reshape_r20',       // R20 auto + user-initiated reshape
     'ai_coach_notes_new',        // new coach notes (e.g. after a reshape) — also gates AI enrichment on regenerated plans
-    'injury_adaptations_new',    // adaptations applied to new plans or after reshape
+    // REMOVED 2026-09-11 — 'injury_adaptations_new'.
+    //
+    // It declared that injury adaptations applied to NEW plans were paid-only.
+    // It was enforced nowhere: `ruleEngine` reads `input.injury_history` and
+    // adapts with no tier check at all, on every plan, for every user.
+    //
+    // The engine was right and the gate was the defect. CLAUDE.md is explicit —
+    // "gate richness (AI labels, coaching voice), never gate access" — and an
+    // injury adaptation is neither richness nor voice. It is the plan not hurting
+    // someone. Hutchinson's ruling at the 2026-09-11 SLT, wearing the Coaching
+    // Board chair: first-time and returning-from-injury runners are the cohort
+    // least able to afford it and most likely to be on the free tier.
+    //
+    // Deleted rather than annotated because it was not merely unenforced, it was
+    // WRONG: leaving the line invites a future "fix" that wires it and ships the
+    // harm. No behaviour changes — nothing ever read it.
     'activity_intelligence',     // run analysis, weekly report, plan adjustment triggers (HealthKit + Strava)
     'confidence_score',          // R18 confidence scoring
     // DISTANCE PAYWALL — MARATHON, 50K and 100K. Named "ultra_" for historical

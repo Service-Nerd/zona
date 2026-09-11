@@ -39,7 +39,13 @@ Required to use the PAID feature again *after* the trial ends.
 
 - Dynamic reshape (R20 — auto and user-initiated)
 - AI coach notes on *new* sessions (after a reshape OR on regenerated plans)
-- Injury adaptations applied to *new* plans or after a reshape
+- ~~Injury adaptations applied to *new* plans or after a reshape~~ **REMOVED 2026-09-11.**
+  It was enforced nowhere (the rule engine adapts on `injury_history` with no tier
+  check, for every user) and it should not have existed: CLAUDE.md says gate
+  richness, never access, and an injury adaptation is the plan not hurting
+  someone. SLT ruling, Hutchinson wearing the Coaching Board chair. Deleted from
+  `featureGates.ts` rather than annotated, so a future "fix" cannot wire it.
+  No behaviour changed.
 - Strava intelligence (run analysis, weekly report, plan adjustment triggers)
 - Confidence score
 - **Distance paywall: Marathon, 50K and 100K plan generation** (locked at the wizard
