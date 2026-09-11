@@ -52,6 +52,7 @@ export function RestraintCardSkeleton({ label = 'Zone discipline' }: { label?: s
         background: 'var(--card)',
         border: `1px solid var(--line)`,
         borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
         padding: '20px',
       }}
     >
@@ -184,6 +185,7 @@ export default function RestraintCard(props: Props) {
           background: 'var(--card)',
           border: '1px solid var(--line)',
           borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
           padding: '20px',
         }}
       >
@@ -218,6 +220,7 @@ export default function RestraintCard(props: Props) {
         background: 'var(--card)',
         border: `1px solid var(--line)`,
         borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
         padding: '20px',
       }}
     >
