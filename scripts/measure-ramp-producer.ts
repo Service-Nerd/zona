@@ -45,7 +45,7 @@ const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)]
 // <= 21km (see the V2 note in ruleEngine). Marathon+ is a no-op for this
 // mechanism, so the grid concentrates where the effect actually lives.
 const DISTANCES = [5, 10, 21.1] as const
-const LEVELS = ['beginner', 'intermediate', 'advanced'] as const
+const LEVELS = ['beginner', 'intermediate', 'experienced'] as const
 // The engine takes availability as `days_available` + `days_cannot_train`,
 // NOT `days_per_week`. Passing the latter alone produced a one-session week
 // (a 9 km Sunday run for a 30 km/week runner) and every plan failed
@@ -58,7 +58,7 @@ const DAY_SETS = [
   { days_available: 6, days_cannot_train: [] },
 ] as const
 const VOLUMES = [15, 20, 25, 30, 40, 50] as const
-const QUALITY = ['none', 'occasionally', 'regular'] as const
+const QUALITY = ['none', 'occasional', 'regular'] as const
 const WEEKS_OUT = [10, 12, 14, 16, 20] as const
 
 function buildInput() {
@@ -85,7 +85,7 @@ function buildInput() {
     longest_recent_run_km: Math.max(3, Math.round(cwk * 0.4)),
     fitness_level: pick(LEVELS),
     recent_quality_training: pick(QUALITY),
-    hard_session_relationship: 'occasionally',
+    hard_session_relationship: 'neutral',
     injury_history: [] as string[],   // §94 is healthy-only; injury is §90's
     max_weekday_mins: 60,
   } as any

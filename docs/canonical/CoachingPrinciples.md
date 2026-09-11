@@ -3916,22 +3916,40 @@ Producer is `reanchorWeekAfterTrim` in `ruleEngine.ts`; the shared trimmer
 drift apart (Willy's standing instruction from CD-16: "that machinery exists —
 extend it rather than inventing a parallel rule").
 
-**Measured — 611 healthy plans, 5K/10K/HM, 3–6 days, 15–50 km/wk, pinned seed.**
-V1 fires in 48.8% of them.
+**Measured — 900 healthy plans, 5K/10K/HM, 3–6 days, 15–50 km/wk, pinned seed.**
+V1 fires in 64.2% of them.
 
 | | baseline | §100 (cascade + §52 floor) |
 |---|---|---|
-| plans breaching §94 | 22.7% | **11.5%** |
-| worst delivered week rise | 55% | **39%** |
-| mean rise among breaches | 27.1% | 22.1% |
-| mean delivered PEAK week | 18.99 km | 18.88 km |
-| max delivered PEAK week | 53 km | 53 km |
-| constrained by inputs | 28% | 28% |
-| maintenance profile | 38.3% | 38.8% |
+| plans breaching §94 | 34.0% | **16.4%** |
+| worst delivered week rise | 79% | **79% — unchanged** |
+| mean rise among breaches | 30.4% | 26.2% |
+| mean delivered PEAK week | 27.04 km | 26.78 km |
+| max delivered PEAK week | 65.5 km | 65.5 km |
+| constrained by inputs | 38.4% | 38.4% |
+| maintenance profile | 32.8% | 33.3% |
+
+> **⚠️ CORRECTED 2026-09-11, hours after this section shipped.** The table first
+> published here read 22.7% → 11.5% with the worst rise falling 55% → 39%. Those
+> came from a grid that passed **two invalid enum values** (`recent_quality_training:
+> 'occasionally'` and `hard_session_relationship: 'regularly'`, neither of which
+> exists) plus `fitness_level: 'advanced'`, which is not in the union either. The
+> engine did not reject any of them — it matched nothing and fell to defaults — so
+> 611 plans generated cleanly from inputs that were partly fiction. §55 now
+> rejects an unrecognised enum (`InputEnumError`), which is how this was found.
+>
+> **The ruling is unaffected and the benefit is LARGER than first reported** — a
+> 52% relative cut in breaches rather than 49%. But one claim was simply wrong:
+> **the worst delivered rise does not improve at all.** 79% before, 79% after.
+> The improvement is in how OFTEN a plan breaches, not in the ceiling of the
+> worst case, because the worst cases are driven by long-run placement the engine
+> is not permitted to trim — which is the residual §94 already documents as
+> `warn`. Recorded rather than quietly restated: a measurement that flatters the
+> change is exactly the one to re-check.
 
 **And the same change on the FULL property sweep, which is the honest denominator.**
 16,038 plans across every distance: `INV-PLAN-DELIVERED-RAMP` fell from **4.0%
-(644 plans) to 3.6% (572)**, a 11% relative reduction rather than 49%. Both
+(644 plans) to 3.6% (572)**, a 11% relative reduction rather than 52%. Both
 figures are real and they measure different populations. The focused grid above
 is 5K/10K/HM only — the distances where the catalogue emits a VO2max session and
 therefore the only ones where V1 can fire at all — so it reports the effect where

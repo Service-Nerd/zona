@@ -277,6 +277,30 @@ export interface InputFieldRange {
   max: number
 }
 
+/**
+ * A PRESENT but invalid enum value. Separate from InputFieldError because that
+ * one carries a numeric range and this one carries an allowed set — and the
+ * remedy the runner needs differs ("that number is out of range" vs "that is
+ * not one of the options").
+ */
+export class InputEnumError extends Error {
+  field: string
+  value: unknown
+  allowed: readonly string[]
+  constructor(field: string, value: unknown, allowed: readonly string[]) {
+    super(
+      `Invalid input: ${field}=${JSON.stringify(value)} is not one of ` +
+      `${allowed.map(a => `'${a}'`).join(', ')}. Unrecognised values are rejected rather ` +
+      `than silently ignored, because an ignored input produces a real plan built ` +
+      `from something you did not say.`,
+    )
+    this.name = 'InputEnumError'
+    this.field = field
+    this.value = value
+    this.allowed = allowed
+  }
+}
+
 export class InputFieldError extends Error {
   field: string
   value: number
@@ -314,6 +338,52 @@ export function validateInputFields(input: GeneratorInput): void {
     const value = input[field]
     if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
       throw new InputFieldError(field, Number(value), { min: 1, max: 300 })
+    }
+  }
+
+  // ENUM FIELDS WERE NEVER VALIDATED (added 2026-09-11) — the same class this
+  // function already records for the volume fields, one type away.
+  //
+  // `fitness_level: 'advanced'` is not a value. It is not in the union, so
+  // TypeScript rejects it at a typed call site — but the API route parses JSON,
+  // and a plausible-looking string sails through. It then indexes a config table
+  // that has no such key, and the engine dies with "Cannot read properties of
+  // undefined (reading 'minPerKmQuality')" deep inside `buildFallbackPace`. The
+  // route returns a 500 naming nothing. That is verbatim the failure the
+  // volume-field block above was added to stop.
+  //
+  // WORSE, AND THE REASON THIS IS NOT COSMETIC: most of these fields fail
+  // SILENTLY rather than loudly. A bad `recent_quality_training` or
+  // `hard_session_relationship` does not crash — it misses every comparison and
+  // falls to a default, so the runner gets a real plan built from an input the
+  // engine quietly discarded. Found while measuring something else: two
+  // measurement grids in scripts/ had been passing 'occasionally' and
+  // 'regularly', neither of which exists, and every plan generated cleanly.
+  //
+  // §55's own words: "reject nonsense values". D-04: failure is data.
+  const enums: Record<string, readonly string[]> = {
+    goal:                    ['finish', 'time_target'],
+    fitness_level:           ['beginner', 'intermediate', 'experienced'],
+    user_declared_level:     ['beginner', 'intermediate', 'experienced'],
+    fitness_intensity_level: ['beginner', 'intermediate', 'experienced'],
+    max_hr_source:           ['observed', 'user_confirmed'],
+    recent_quality_training: ['none', 'occasional', 'regular'],
+    preferred_long_run_day:  ['sat', 'sun'],
+    training_style:          ['predictable', 'variety', 'minimalist', 'structured'],
+    hard_session_relationship: ['avoid', 'neutral', 'love', 'overdo'],
+    motivation_type:         ['identity', 'achievement', 'health', 'social'],
+    terrain:                 ['road', 'trail', 'mixed'],
+    foundation_decision:     ['add', 'skip', 'start_now'],
+  }
+  for (const [field, allowed] of Object.entries(enums)) {
+    const value = (input as unknown as Record<string, unknown>)[field]
+    // Absent is valid for every one of these — the engine has a documented
+    // behaviour for "not supplied" (§79 runs its own assessment when
+    // `fitness_level` is absent, for instance). Only a PRESENT-and-wrong value
+    // is an error.
+    if (value === undefined || value === null || value === '') continue
+    if (typeof value !== 'string' || !allowed.includes(value)) {
+      throw new InputEnumError(field, value, allowed)
     }
   }
 

@@ -32,7 +32,7 @@ const DAY_SETS = [
 ]
 const DISTANCES = [10, 21.1, 42.2] as const
 const VOLUMES = [25, 40, 55] as const
-const LEVELS = ['beginner', 'intermediate', 'advanced'] as const
+const LEVELS = ['beginner', 'intermediate', 'experienced'] as const
 
 function input(km: number, cwk: number, level: string, days: any, cap: number) {
   return {
@@ -42,8 +42,8 @@ function input(km: number, cwk: number, level: string, days: any, cap: number) {
       .toISOString().slice(0, 10),
     target_time: km === 10 ? '0:52:00' : km === 21.1 ? '1:55:00' : '4:00:00',
     current_weekly_km: cwk, longest_recent_run_km: Math.round(cwk * 0.4),
-    fitness_level: level, recent_quality_training: 'occasionally',
-    hard_session_relationship: 'occasionally', injury_history: [] as string[],
+    fitness_level: level, recent_quality_training: 'occasional',
+    hard_session_relationship: 'neutral', injury_history: [] as string[],
     max_weekday_mins: cap, ...days,
   } as any
 }
