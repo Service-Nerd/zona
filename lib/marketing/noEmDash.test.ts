@@ -33,7 +33,7 @@ const SURFACES = [
   'app/plans/[slug]/page.tsx',
   'app/comparisons/page.tsx',
   'app/runna-alternatives/page.tsx',
-  'app/charity-marathon-training-plan/page.tsx',
+  'app/charity-runners/page.tsx',
   'app/support/page.tsx',
   'app/privacy/page.tsx',
   'app/terms/page.tsx',

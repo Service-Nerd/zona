@@ -45,11 +45,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly' as const,
       priority: 0.7,
     })),
-    // GTM-CHARITY-01 — audience landing page for charity-place marathon
-    // runners. Priority 0.8: it is a primary entry point for a real referral
+    // GTM-CHARITY-01 — audience landing page for charity-place runners, all
+    // distances. Priority 0.8: it is a primary entry point for a real referral
     // channel, not a supporting page.
     {
-      url: `${APP_URL}/charity-marathon-training-plan`,
+      url: `${APP_URL}/charity-runners`,
       changeFrequency: 'monthly',
       priority: 0.8,
     },

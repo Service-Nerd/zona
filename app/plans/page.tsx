@@ -102,9 +102,9 @@ export default function PlansHubPage() {
           content section people browse to. */}
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '18px 24px 8px' }}>
         <p style={{ fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
-          Running a marathon on a charity place? The risk is not the distance, it is getting
-          hurt before race day.{' '}
-          <Link href="/charity-marathon-training-plan" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
+          Running on a charity place? The risk is not the distance, it is getting hurt
+          before race day.{' '}
+          <Link href="/charity-runners" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
             Read this first &rarr;
           </Link>
         </p>

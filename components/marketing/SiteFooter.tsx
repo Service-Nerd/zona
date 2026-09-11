@@ -37,7 +37,7 @@ const LINKS: Array<{ href: string; label: string }> = [
   // This link exists so the page is inspectable and shareable by us: the
   // founder could not find his own page, which meant he could not QA it or
   // notice it rotting. A maintenance argument, not a traffic one.
-  { href: '/charity-marathon-training-plan', label: 'Charity runners' },
+  { href: '/charity-runners', label: 'Charity runners' },
   { href: '/support', label: 'Support' },
   { href: '/privacy', label: 'Privacy' },
   { href: '/terms', label: 'Terms' },
