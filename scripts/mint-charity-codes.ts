@@ -24,8 +24,17 @@
  */
 
 import { randomInt } from 'node:crypto'
+import { resolve } from 'node:path'
+import { loadEnvConfig } from '@next/env'
 import { createClient } from '@supabase/supabase-js'
 import { mintCode, normaliseCode, formatCode } from '../lib/charity/code'
+
+// `npx tsx` is not Next, so it does NOT read .env.local on its own — the first
+// version of this script assumed it did and failed with "must be set" even
+// though both keys were sitting in the file. `@next/env` is the same loader
+// Next uses, so the script sees exactly the environment the app does, with the
+// same precedence rules, rather than a hand-rolled parser that drifts from it.
+loadEnvConfig(resolve(__dirname, '..'))
 
 const MAX_CAP = 1000   // a typo in the count should not mint ten thousand codes
 
