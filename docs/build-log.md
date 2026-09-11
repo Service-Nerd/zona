@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-11 — MAINT-LABEL-01 second pass + SESSION-KM-01 · The engine told runners their long run was 0 km
+
+**Shipped:** A single owner for "how far is this session", and three lies removed from the notes runners read.
+
+**Dev learning:** `distance_km ?? 0` looks like a safe default and is an assertion. It says "this session covered no ground", and a beginner's plan is duration-anchored — every session has a duration and no distance — so on those plans it is wrong for every session. The engine already had the right expression, `distance_km ?? duration_mins / minPerKmEasy`, written out by hand in six places. The wrong one was written out in fourteen. Same question, two answers, no owner.
+
+**Product/creator learning:** The worst thing it produced was a sentence: "Peak long run 0 km is below the 17.9 km floor." That went to a third of half-marathon and marathon runners on a time goal, about a 2h12 long run. Nobody would report it, because a plan that calls itself constrained is doing something people half expect.
+
+**AI-building learning:** I fixed it expecting the maintenance classification to move, and measured: it did not. 49.8%, per-distance identical. My hypothesis was wrong — the false 0 km was producing a false REASON, not a false verdict; those plans were hitting other triggers too and were correctly classified all along. If I had shipped on the hypothesis I would have written a commit message claiming a cohort shift that never happened. The measurement contradicting me is the most useful thing that happened today.
+
+**The honest bit:** I reported the copy half of this item as done this morning. It was not — I rewrote one variant of five and never read what the other four actually emit. The way I found out was generating 621 plans and printing the distinct note texts, which takes about four minutes and which I should have done before saying "done" the first time. Two more defects fell out of the same print: database field names in the remedies, and a "defer your race" suggestion that told runners with exactly enough runway to change nothing.
+
+**Hook material:** A 132-minute long run, measured as 0 km, on 45 of 135 plans. The floor it failed was 17.9.
+
+**Postable?:** yes
+
+
 ## 2026-09-11 — UX-PLAN-MOVE-01 · The constraint I wrote down was wrong, and the real bug was next to it
 
 **Shipped:** The `↕ Move` pill on Plan rows is a quiet `↕` handle. And the type chip that was clipping every session label to "Easy…" is gone.

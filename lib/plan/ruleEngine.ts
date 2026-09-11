@@ -5517,7 +5517,22 @@ function buildRulePlanOnce(
               if (wk.phase !== 'peak' || wk.type === 'deload') continue
               for (const s of Object.values(wk.sessions)) {
                 if (s && isLongRun(s)) {
-                  actualPeakLrKm = Math.max(actualPeakLrKm, s.distance_km ?? 0)
+                  // SESSION-KM-01 (2026-09-11) — was `s.distance_km ?? 0`.
+                  //
+                  // A beginner's plan is DURATION-ANCHORED: `duration_mins` is
+                  // set and `distance_km` is null. So this read 0 for a 132-minute
+                  // long run, `lrFails` was unconditionally true, and the plan was
+                  // downgraded to `maintenance` on a false premise — while telling
+                  // the runner "Peak long run 0 km is below the 17.9 km floor".
+                  // Measured before the fix: 45 of 135 HM/marathon time-target
+                  // plans in the cohort grid (33.3%).
+                  //
+                  // §24's floor means the runner's ACTUAL peak long run. Reading
+                  // 0 is not a conservative default, it is a wrong measurement,
+                  // so this is a defect fix restoring documented intent and is
+                  // Coaching-Board exempt (ADR-017). The classification it moves
+                  // is declared against `cohort:shape` in the same commit.
+                  actualPeakLrKm = Math.max(actualPeakLrKm, sessionKmOrZero(s, pace.minPerKmEasy))
                 }
               }
             }
@@ -5548,22 +5563,40 @@ function buildRulePlanOnce(
             reasons.push(`Peak weekly volume ${peakKmActual} km is below the ${Math.round(volumeFloor)} km floor for a time-targeted ${distKey} (${Math.round((volumeFloor / distKm) * 100)}% of race distance).`)
           }
           if (lrFails) {
-            reasons.push(`Peak long run ${actualPeakLrKm} km is below the ${Math.round(longRunFloorKm * 10) / 10} km floor (${Math.round(GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey as 'HM' | 'MARATHON'] * 100)}% of race distance) — week-on-week long-run cap (§45) prevented reaching the ratio.`)
+            reasons.push(`Peak long run ${Math.round(actualPeakLrKm * 10) / 10} km is below the ${Math.round(longRunFloorKm * 10) / 10} km floor (${Math.round(GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey as 'HM' | 'MARATHON'] * 100)}% of race distance) — week-on-week long-run cap (§45) prevented reaching the ratio.`)
           }
-          const diagnosis = reasons.join(' ') + ' Plan maintains current fitness rather than building it.'
+          // MAINT-LABEL-01 (2026-09-11, second pass) — two defects in one string.
+          //
+          // (1) It ended "Plan maintains current fitness rather than building
+          //     it." That is the sentence the founder objected to, and the first
+          //     pass only rewrote the lopsided-week variant; this family kept
+          //     shipping it, to beginners, on 5K through marathon.
+          // (2) The remedies named DATABASE FIELDS — "increase days_available
+          //     from 4 to 5", "raise max_weekday_mins from 30 to 90". Same
+          //     defect class as UX-BEGINNER-01, which was fixed in `inputs.ts`
+          //     and missed here: a runner is told to change a column name.
+          const diagnosis = reasons.join(' ')
+            + ' You will get fitter doing it — starting from where you are, you could hardly not.'
+            + ' What it will not do is push your volume toward a time goal.'
 
           const suggestions: string[] = []
           if (input.days_available < 6) {
-            suggestions.push(`increase days_available from ${input.days_available} to ${input.days_available + 1}`)
+            suggestions.push(`run ${input.days_available + 1} days a week instead of ${input.days_available}`)
           }
           if (input.max_weekday_mins != null && input.max_weekday_mins < 90) {
-            suggestions.push(`raise max_weekday_mins from ${input.max_weekday_mins} to 90`)
+            suggestions.push(`give your weekday runs more room — you have capped them at ${input.max_weekday_mins} minutes`)
           }
-          if (lrFails || volumeFails) {
-            suggestions.push(`defer the race so the build has more weeks (current ${totalWeeks}, recommended ≥${GENERATION_CONFIG.PREP_TIME_THRESHOLDS[distKey].warn})`)
+          // The weeks suggestion is gated on the weeks ACTUALLY being short.
+          // It used to fire whenever the long-run or volume floor failed, so a
+          // runner with exactly enough runway was told "current 16, recommended
+          // ≥16" — advice to change nothing. Invisible while the copy was
+          // schema-shaped; obvious the moment it read as a sentence.
+          const weeksWanted = GENERATION_CONFIG.PREP_TIME_THRESHOLDS[distKey].warn
+          if ((lrFails || volumeFails) && totalWeeks < weeksWanted) {
+            suggestions.push(`give yourself more weeks before race day (you have ${totalWeeks}, this distance wants at least ${weeksWanted})`)
           }
           const prescription = suggestions.length > 0
-            ? ` To enable a build profile: ${suggestions.join(', OR ')}.`
+            ? ` If you want it to build instead: ${suggestions.join(', or ')}.`
             : ''
           return {
             volume_profile: 'maintenance' as const,
@@ -5588,7 +5621,7 @@ function buildRulePlanOnce(
   const daysLowNote = daysLowMaintenance
     ? `This plan is built to get you round, not to build you up — ${input.days_available} day${input.days_available === 1 ? '' : 's'}/week is ${
         input.days_available <= 2 ? 'too few sessions to avoid structurally lopsided weeks (long run dominates weekly volume)' : `below the recommended ${daysCheck.days_required_ok}-day-minimum for a ${raceDistanceKey(input.race_distance_km)} build`
-      }. Plan maintains current fitness rather than building it. To enable a build profile: increase days_available to ${Math.max(daysCheck.days_required_ok, 3)}.`
+      }. You will get fitter doing it — starting from where you are, you could hardly not. What it will not do is build toward a time goal. If you want it to build instead: run at least ${Math.max(daysCheck.days_required_ok, 3)} days a week.`
     : null
 
   // VOL-STRUCTURE-01 / §52 (fourth trigger, 2026-08-20) — the runner's volume
