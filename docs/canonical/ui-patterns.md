@@ -980,7 +980,7 @@ The engine's honest, rule-engine explanation of **why the plan is shaped this wa
 [SectionLabel: Why this plan]
 ┌─────────────────────────────────────────────┐
 │  MAINTENANCE                                │   ← CoachNoteBlock, variant="why"
-│  Plan generated as maintenance — 3 days a   │     rule-engine → NO AIMark/rail
+│  Built to get you round, not build you   │     rule-engine → NO AIMark/rail
 │  week is below what a build needs…          │
 └─────────────────────────────────────────────┘
 ┌─────────────────────────────────────────────┐

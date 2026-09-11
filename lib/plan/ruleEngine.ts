@@ -5585,7 +5585,7 @@ function buildRulePlanOnce(
     || input.days_available < daysCheck.days_required_ok
     || daysCheck.status === 'warn'
   const daysLowNote = daysLowMaintenance
-    ? `Plan generated as maintenance — ${input.days_available} day${input.days_available === 1 ? '' : 's'}/week is ${
+    ? `This plan is built to get you round, not to build you up — ${input.days_available} day${input.days_available === 1 ? '' : 's'}/week is ${
         input.days_available <= 2 ? 'too few sessions to avoid structurally lopsided weeks (long run dominates weekly volume)' : `below the recommended ${daysCheck.days_required_ok}-day-minimum for a ${raceDistanceKey(input.race_distance_km)} build`
       }. Plan maintains current fitness rather than building it. To enable a build profile: increase days_available to ${Math.max(daysCheck.days_required_ok, 3)}.`
     : null
@@ -5763,7 +5763,7 @@ function buildRulePlanOnce(
   // disclaimer. More days is the honest first lever, because the defect scales
   // with volume-per-available-day — 4% at <=8 km/day against 73% at 17+.
   const structuralNote: string | null = structuralPeakInversion
-    ? `Plan generated as maintenance — ${input.current_weekly_km}km a week across ${input.days_available} day${input.days_available === 1 ? '' : 's'} cannot be built on. The long run is already at its time cap and the easy runs are capped against it, so adding a quality session takes volume out of the week rather than adding to it: this plan peaks at ${Math.round(structuralPeakInversion.peakMax)}km against ${Math.round(structuralPeakInversion.baseMax)}km earlier in the plan. It maintains your fitness rather than building it. The lever is days, not effort — ${input.days_available + 1} running days would let the same volume progress.`
+    ? `This plan is built to hold your fitness rather than grow it — ${input.current_weekly_km}km a week across ${input.days_available} day${input.days_available === 1 ? '' : 's'} cannot be built on. The long run is already at its time cap and the easy runs are capped against it, so adding a quality session takes volume out of the week rather than adding to it: this plan peaks at ${Math.round(structuralPeakInversion.peakMax)}km against ${Math.round(structuralPeakInversion.baseMax)}km earlier in the plan. It maintains your fitness rather than building it. The lever is days, not effort — ${input.days_available + 1} running days would let the same volume progress.`
     : null
 
   // §52 (2026-09-02) — LOPSIDED-WEEK maintenance trigger. §52 itself names the
@@ -5797,8 +5797,31 @@ function buildRulePlanOnce(
     return longest / w.weekly_km > lrCapPct
   })
   const lopsidedNote: string | null = lopsidedWeek
-    ? `Plan generated as maintenance — the long run this race needs is larger than your current weekly volume can carry around it. By week ${lopsidedWeek.n} the long run is ${Math.round(GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY)}%+ of the whole week, which is a lopsided week however it is arranged: the race sets the long run, your current ${input.current_weekly_km}km a week sets everything else. It maintains your fitness and gets you round rather than building you up. The lever is weekly volume — more running on the other days, not a longer long run.`
+    ? `This plan is built to get you to the finish, not to chase a time — the long run this race needs is larger than your current weekly volume can carry around it. By week ${lopsidedWeek.n} the long run is ${Math.round(GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY)}%+ of the whole week, which is a lopsided week however it is arranged: the race sets the long run, your current ${input.current_weekly_km}km a week sets everything else. You will get fitter doing it — starting from where you are, you could hardly not. What it will not do is push your volume toward a time goal, because the long run already takes most of the week. The lever is weekly volume: more running on the other days, not a longer long run.`
     : null
+
+  // ── MAINT-LABEL-01 (2026-09-11) — WHAT THESE NOTES CALL THE PLAN ──────────
+  //
+  // Every one of these used to open "Plan generated as maintenance". Measured:
+  // **89% of beginner MARATHON plans** carry one (320 of 360; 10K 0%, HM 4%),
+  // including a parkrun-er with a 24-week runway. So the first thing the product
+  // says to a first-time charity marathoner is a word §23 defines as "maintains
+  // current fitness rather than building it".
+  //
+  // That is TRUE of the volume curve and FALSE about the runner. Someone going
+  // from 5km a week to 26.2 miles will improve more than any other user of this
+  // product; what the engine actually means is "the long run already takes most
+  // of your week, so the week cannot also grow".
+  //
+  // SLT 2026-09-11, Sutherland: "Fix the word. Not the engine — the word."
+  // So `volume_profile` is UNCHANGED — it feeds the paid confidence score and
+  // §38's remedies, and changing the VALUE is a Coaching Board question
+  // (MAINT-LABEL-01's second half). Only the prose moved: lead with what the
+  // plan IS and what it will do, keep every diagnosis and every lever (§38
+  // requires both), and never open with an internal classification.
+  //
+  // The post-race maintenance BLOCK (`plan_kind === 'maintenance'`, the badge in
+  // PlanCalendar) is untouched — that one genuinely is maintenance.
 
   // §81 (MWM-02) — the long run does not fit the runner's stated weekday ceiling.
   // Only reachable when the long run has been forced onto a weekday (both
@@ -5881,7 +5904,7 @@ function buildRulePlanOnce(
     : null
 
   const longRunOverrunNote: string | null = longRunOverrun
-    ? `Plan generated as maintenance — your long run does not fit the time you have. You've kept both weekend days clear of training and capped weekdays at ${longRunOverrun.cap} minutes, but by week ${longRunOverrun.n} the long run this race needs is about ${Math.round(longRunOverrun.mins)} minutes. It stays in the plan at full length, because a long run cut to ${longRunOverrun.cap} minutes stops being a long run. What it can't do is build toward the race on those terms. The lever is one longer session a week — a weekend morning, or a single weekday you can give more time to.`
+    ? `This plan is built to get you round on the time you have — your long run does not fit it. You've kept both weekend days clear of training and capped weekdays at ${longRunOverrun.cap} minutes, but by week ${longRunOverrun.n} the long run this race needs is about ${Math.round(longRunOverrun.mins)} minutes. It stays in the plan at full length, because a long run cut to ${longRunOverrun.cap} minutes stops being a long run. What it can't do is build toward the race on those terms. The lever is one longer session a week — a weekend morning, or a single weekday you can give more time to.`
     : null
 
   // §82 — easy-run floor protection recurring across weeks. One week is
@@ -5895,7 +5918,7 @@ function buildRulePlanOnce(
   }, 0)
   const easyFloorProtectionOverrun = floorProtectedWeekCount >= GENERATION_CONFIG.EASY_RUN_FLOOR_PROTECTION_MAINTENANCE_WEEKS
   const easyFloorProtectionNote: string | null = easyFloorProtectionOverrun
-    ? `Plan generated as maintenance — your easy runs don't fit the time you have on ${floorProtectedWeekCount} of this plan's weeks. You've capped weekdays at ${input.max_weekday_mins} minutes, and at that limit some easy runs would shrink to a distance too short to train anything, so they stay a few minutes over your cap instead. The lever is day count — fewer, fuller sessions fit your time better than more, thinner ones.`
+    ? `This plan is shaped by the time you have — your easy runs don't fit it on ${floorProtectedWeekCount} of this plan's weeks. You've capped weekdays at ${input.max_weekday_mins} minutes, and at that limit some easy runs would shrink to a distance too short to train anything, so they stay a few minutes over your cap instead. The lever is day count — fewer, fuller sessions fit your time better than more, thinner ones.`
     : null
 
   const finalVolumeProfile: 'build' | 'maintenance' | undefined =
