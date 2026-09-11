@@ -79,8 +79,11 @@ function useCountUp(target: number, duration = 600): { value: number; done: bool
     }
     rafRef.current = requestAnimationFrame(tick)
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // fire once on mount
+  // HOOKS-ORDER-01 — was `[]` ("fire once on mount"). It has to depend on
+  // `target` now that the call is hoisted above the early returns: on a
+  // skeleton render the target is 0, and with `[]` the animation would run to
+  // zero once and never move again when the real value arrived.
+  }, [target, duration])
 
   return { value, done }
 }
@@ -245,6 +248,28 @@ function ExplanationSheet({
 export default function TrendCard(props: TrendCardProps) {
   const [sheetOpen, setSheetOpen] = useState(false)
 
+  // ── HOOKS-ORDER-01 (2026-09-11) — REACT ERROR 310, AND IT WAS THIS ────────
+  //
+  // These two calls used to sit at the bottom, below the skeleton / locked /
+  // pending early returns. `useCountUp` is a hook containing FIVE hooks
+  // (2 useState, 2 useRef, 1 useEffect), so this component rendered ONE hook in
+  // its skeleton state and ELEVEN in its live state.
+  //
+  // On the Coach screen TrendCard mounts as `skeleton` while the aerobic trend
+  // is fetched, then flips to `live` when it lands. 1 hook → 11 hooks on the
+  // next render is precisely "Rendered more hooks than during the previous
+  // render", and it took down the whole screen through the error boundary —
+  // deterministically, for any runner with enough history for the trend to
+  // return. A runner with no trend data never saw it, which is why it looked
+  // like a mystery rather than a rule violation.
+  //
+  // Hoisted, so the hook count is identical in every state. `props` is a
+  // discriminated union on `state`, so the live fields are read through a
+  // narrowed local rather than asserted.
+  const live    = props.state === 'live' ? props : null
+  const earlier = useCountUp(live?.earlierHr ?? 0)
+  const now     = useCountUp(live?.nowHr ?? 0)
+
   // ── Skeleton ─────────────────────────────────────────────────────────────
   if (props.state === 'skeleton') return <TrendCardSkeleton />
 
@@ -331,9 +356,7 @@ export default function TrendCard(props: TrendCardProps) {
   const eyebrow    = label       ?? 'Aerobic trend'
   const runNoun    = sessionLabel ?? 'long run'
 
-  // Count-up animation — both values from 0 to target on first mount.
-  const earlier = useCountUp(earlierHr)
-  const now     = useCountUp(nowHr)
+  // Count-up values come from the hoisted calls above (HOOKS-ORDER-01).
   // Gloss fades in after both count-ups complete.
   const glossVisible = earlier.done && now.done
 
