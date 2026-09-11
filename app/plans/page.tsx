@@ -96,6 +96,20 @@ export default function PlansHubPage() {
         </div>
       </section>
 
+      {/* GTM-CHARITY-01 — internal link so the charity landing page is not an
+          SEO orphan. It is deliberately NOT in the site nav: that stays two
+          items by SLT ruling, and this is a referral landing page rather than a
+          content section people browse to. */}
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '18px 24px 8px' }}>
+        <p style={{ fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
+          Running a marathon on a charity place? The risk is not the distance, it is getting
+          hurt before race day.{' '}
+          <Link href="/charity-marathon-training-plan" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
+            Read this first &rarr;
+          </Link>
+        </p>
+      </section>
+
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '18px 24px 8px' }}>
         <p style={{ fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
           Weighing up apps rather than plans? The comparisons are honest about where {BRAND.name} is
