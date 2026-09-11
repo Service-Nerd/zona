@@ -80,10 +80,32 @@ export function computeReshapeMagnitude(
       return 'high'
     }
     if (entry.kind === 'modified' && entry.before && entry.after) {
-      const beforeKm = entry.before.distance_km ?? 0
-      const afterKm  = entry.after.distance_km  ?? 0
-      if (beforeKm > 0) {
-        const pctChange = Math.abs(afterKm - beforeKm) / beforeKm * 100
+      // SESSION-KM-02 (2026-09-11) — was `distance_km ?? 0` on both sides, and
+      // the `beforeKm > 0` guard then made this check UNREACHABLE for a
+      // duration-anchored session. A beginner's plan is duration-anchored
+      // (measured: 95.8% of their sessions), so ADR-012's >15% structural-change
+      // threshold never ran for them: **a beginner's session could be trimmed
+      // silently where an experienced runner's identical trim surfaced a
+      // confirmation tile.** That is the 2026-06-26 incident class — a plan
+      // changing under someone without their consent — reintroduced for the one
+      // cohort least able to tell it had happened.
+      //
+      // Compared on whichever axis the session is ANCHORED. For a
+      // duration-anchored session the duration IS the prescription, so a
+      // minutes-to-minutes comparison is both simpler and more faithful than
+      // converting to km and back. Same threshold either way — ADR-012's
+      // magnitude question is "did this change materially", not "by how many km".
+      const beforeKm = entry.before.distance_km
+      const afterKm  = entry.after.distance_km
+      const beforeMins = entry.before.duration_mins
+      const afterMins  = entry.after.duration_mins
+      const [before, after] = (beforeKm != null && afterKm != null)
+        ? [beforeKm, afterKm]
+        : (beforeMins != null && afterMins != null)
+          ? [beforeMins, afterMins]
+          : [0, 0]
+      if (before > 0) {
+        const pctChange = Math.abs(after - before) / before * 100
         if (pctChange > config.DISTANCE_CHANGE_PCT_THRESHOLD) return 'high'
       }
     }

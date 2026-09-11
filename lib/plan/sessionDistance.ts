@@ -59,3 +59,45 @@ export function sessionKmOrZero(
 ): number {
   return sessionKm(session, easyMinPerKm) ?? 0
 }
+
+/**
+ * Midpoint of a pace band like "6:30–7:00 /km", in minutes per km.
+ *
+ * A second copy of this parse already lives in `invariants.ts`. It stays there
+ * (it is used for pace checks that have nothing to do with distance); this one
+ * exists so `sessionKmSelfPaced` below can be the SINGLE place that turns a
+ * duration-anchored session into kilometres, rather than three call sites each
+ * doing their own parse-and-divide.
+ */
+export function paceBandMidpointMinPerKm(band: string | null | undefined): number | null {
+  if (!band) return null
+  const range = band.match(/^(\d+):(\d+)\s*[–-]\s*(\d+):(\d+)/)
+  if (range) {
+    const fast = parseInt(range[1]!, 10) + parseInt(range[2]!, 10) / 60
+    const slow = parseInt(range[3]!, 10) + parseInt(range[4]!, 10) / 60
+    return (fast + slow) / 2
+  }
+  const single = band.match(/^(\d+):(\d+)/)
+  if (!single) return null
+  return parseInt(single[1]!, 10) + parseInt(single[2]!, 10) / 60
+}
+
+/**
+ * How far did this session cover, using the session's OWN prescribed pace band.
+ *
+ * For any consumer that has a `Session` but no `PaceGuide` — the validator, the
+ * cohort-shape harness, the reshape-magnitude classifier. The session's own band
+ * is a better conversion than a plan-level easy pace anyway: a long run with a
+ * race-pace segment is not run at easy pace.
+ *
+ * Returns `null` when the session is duration-anchored AND carries no pace to
+ * convert with, so the caller decides between skipping the check and defaulting.
+ * Never silently zero.
+ */
+export function sessionKmSelfPaced(
+  session: (Pick<Session, 'type' | 'distance_km' | 'duration_mins'> & { pace_target?: string | null }) | null | undefined,
+): number | null {
+  if (!session) return 0
+  if (session.distance_km != null) return session.distance_km
+  return sessionKm(session, paceBandMidpointMinPerKm(session.pace_target))
+}

@@ -23,7 +23,7 @@ import { zonesFromZoneString } from '@/lib/coaching/zoneRules'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
 import { parseDateLocal, formatDate, getDistanceConfig } from './length'
 import { FITNESS_RANK } from './fitnessAssessment'
-import { sessionKm } from './sessionDistance'
+import { sessionKmSelfPaced } from './sessionDistance'
 
 export type Severity = 'error' | 'warn'
 
@@ -238,6 +238,35 @@ function dayGap(a: Day, b: Day): number {
 // Parse "M:SS–M:SS /km" pace string → midpoint in min/km. Used by
 // INV-PLAN-LABEL-MATCHES-PACE pace-band check. Returns null when the string
 // doesn't match (defensive — engine emits ranges, but legacy plans may not).
+/**
+ * How far did this session cover, for a VALIDATOR (SESSION-KM-02).
+ *
+ * A beginner's plan is duration-anchored: `duration_mins` set, `distance_km`
+ * null. Measured across the 621-plan cohort grid: **95.8% of beginner sessions**
+ * carry no distance, against 0% for intermediate and experienced. So
+ * `distance_km ?? 0` is not a conservative default in this file — it is the
+ * assertion "this session covered no ground", and it made four separate checks
+ * SILENTLY PASS for beginners rather than fire falsely:
+ *
+ *   · INV-PLAN-INJURY-CAP-DELIVERED — an injury-capped long run looked like it
+ *     never grew, so the delivered cap was never tested
+ *   · the healthy weekly-increase equivalent — same
+ *   · the peak long-run alternation check — every peak read 0, so alternation
+ *     was satisfied vacuously
+ *   · INV-PLAN-FOUNDATION-BLOCK's long-run share — `longestKm > cap` can never
+ *     be true when every session reads 0, and foundation blocks are almost
+ *     entirely a beginner surface
+ *
+ * The net effect was that the cohort with the least training history ran with
+ * the LEAST enforcement, which is the exact inverse of the intent.
+ *
+ * Conversion uses the session's OWN prescribed pace band — better than any
+ * plan-level easy pace, and already parsed here. Returns `null` when there is
+ * nothing to convert with, so callers choose between skipping and defaulting
+ * rather than inheriting a silent zero.
+ */
+const sessionKmForCheck = (s: Session | null | undefined): number | null => sessionKmSelfPaced(s)
+
 function parsePaceMidpoint(s: string): number | null {
   const m = s.match(/^(\d+):(\d+)\s*[–-]\s*(\d+):(\d+)/)
   if (!m) {
@@ -1687,8 +1716,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         const long = Object.values(w.sessions).find(sn => sn && isLongRun(sn))
         if (!long) return 0
         if (long.distance_km != null) return long.distance_km
-        const mid = long.pace_target ? parsePaceMidpoint(long.pace_target) : null
-        return sessionKm(long, mid)
+        return sessionKmSelfPaced(long)
       }
       const peakLrKms = peakWeeks.map(longRunKmOf)
       const peakLrKm = peakLrKms.some(k => k == null)
@@ -2341,7 +2369,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     const DELIVERED_ROUNDING_TOLERANCE_PCT = 10
     const longKmOf = (w: Week) => {
       const l = Object.values(w.sessions).find(s => s && isLongRun(s))
-      return l?.distance_km ?? 0
+      return sessionKmForCheck(l) ?? 0   // SESSION-KM-02
     }
     for (let i = 1; i < plan.weeks.length; i++) {
       const w = plan.weeks[i]
@@ -2472,10 +2500,14 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       const DELIVERED_ROUNDING_TOLERANCE_PCT = 10
       const longKmOf = (w: Week) => {
         const l = Object.values(w.sessions).find(s => s && isLongRun(s))
-        return l?.distance_km ?? 0
+        return sessionKmForCheck(l) ?? 0   // SESSION-KM-02
       }
+      // SESSION-KM-02 — easy runs are duration-anchored on 38.5% of sessions in
+      // the cohort grid, so `?? 0` under-counted the delivered week for every
+      // beginner and the healthy weekly-increase cap was measured against a
+      // number that was not the week.
       const deliveredKm = (w: Week) =>
-        Object.values(w.sessions).reduce((a, s) => a + (s?.distance_km ?? 0), 0)
+        Object.values(w.sessions).reduce((a, s) => a + (sessionKmForCheck(s) ?? 0), 0)
 
       for (let i = 1; i < plan.weeks.length; i++) {
         const w = plan.weeks[i]
@@ -4308,7 +4340,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         const lr = Object.values(w.sessions).find(s =>
           !!s && isLongRun(s)
         )
-        return lr?.distance_km ?? 0
+        return sessionKmForCheck(lr) ?? 0   // SESSION-KM-02
       })
       const maxPeakLrKm = peakLrKms.length > 0 ? Math.max(...peakLrKms) : 0
       const threshold = (GENERATION_CONFIG.PEAK_LR_ALTERNATION_THRESHOLD_PCT / 100) * maxPeakLrKm
@@ -4407,7 +4439,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         // and false-flag a week that carries no binge.
         const runKms = Object.values(fw.sessions)
           .filter(s => s && s.type !== 'rest' && s.type !== 'cross-train')
-          .map(s => s?.distance_km ?? 0)
+          .map(s => sessionKmForCheck(s) ?? 0)   // SESSION-KM-02
         const longestKm = Math.max(0, ...runKms)
         const lrCapKm = fw.weekly_km * (GENERATION_CONFIG.FOUNDATION_LONG_RUN_MAX_PCT / 100)
         if (runKms.length >= 3 && fw.weekly_km > 0 && longestKm > lrCapKm + 0.01) {

@@ -20,6 +20,7 @@
 // DECLARED, with a number, before it ships.
 
 import type { Plan, GeneratorInput, Week } from '@/types/plan'
+import { sessionKmSelfPaced } from './sessionDistance'
 import { isLongRun } from './sessionRole'
 
 export interface CohortShape {
@@ -145,6 +146,10 @@ export function longRunShareOfPeak(plan: Plan): number {
   if (!real.length) return 0
   const peak = real.reduce((a, b) => deliveredKm(a) > deliveredKm(b) ? a : b)
   const total = deliveredKm(peak)
-  const lr = Object.values(peak.sessions).find(s => s && isLongRun(s))?.distance_km ?? 0
+  // SESSION-KM-02 — was `?? 0`, which read every beginner's long run as zero.
+  // This metric is deliberately outside the baselined summary, so the error did
+  // not corrupt any published measurement — but it is the same trap that made
+  // this harness understate delivered peak by 30% on its first cut.
+  const lr = sessionKmSelfPaced(Object.values(peak.sessions).find(s => s && isLongRun(s))) ?? 0
   return total > 0 ? +(lr / total * 100).toFixed(1) : 0
 }
