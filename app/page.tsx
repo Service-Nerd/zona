@@ -215,7 +215,16 @@ export default async function Home() {
           fontSize: '13px', fontWeight: 600, color: 'var(--ink-2)',
           letterSpacing: '0.01em',
         }}>
-          {['5 zones', 'Mostly easy running', `${PRICING.monthly.display}/month`, '1 notification a day']
+          {/* CONTENT-ACCURACY (2026-09-11): this read "1 notification a day",
+              which is not true. Five senders exist (send-daily,
+              send-weekly-report, send-trial-insight, adjust-plan, and the
+              run-linked push in autoAnalyse). Only send-daily is capped at one
+              per day; the run-linked push has NO preference gate, so any day
+              you run is already two. "One daily nudge" is the true version: it
+              describes the single SCHEDULED daily push, and everything else is
+              a response to something the runner did, not an engagement ping.
+              Same class as the "four answers" overclaim fixed in GTM-SITE-01. */}
+          {['5 zones', 'Mostly easy running', `${PRICING.monthly.display}/month`, 'One daily nudge']
             .map((fact, i) => (
               <span key={fact} style={{ display: 'inline-flex', alignItems: 'center', gap: '22px' }}>
                 {i > 0 && <span aria-hidden style={{ color: 'var(--line-strong)' }}>·</span>}
@@ -433,6 +442,14 @@ export default async function Home() {
              `5K, 10K, half and full marathon, and ultra. Every plan is mostly easy running, with each session set to a zone and held there.`],
             ['Will it make me faster?',
              `If your problem is going medium-hard on everything, yes, by making your easy days genuinely easy, so your hard days can be genuinely hard. It won't turn four hours a week into an elite plan, and it won't pretend to.`],
+            // SLT 2026-09-11. The device shot used to carry a plan-adjustment
+            // card with Confirm/Revert buttons nobody could press. The board cut
+            // it but ruled the objection behind it real: the question a first
+            // marathon runner actually has is "what happens when life gets in
+            // the way?". It belongs here, answered in a sentence, and honest
+            // about which half is paid. Do not move it back into the mock.
+            ['What if I miss a week?',
+             `Nothing breaks. Missed sessions are a feature of adult life, not a failure, and the plan is built to absorb them. On the paid tier it reshapes around what you actually did; on the free tier the plan stays as generated and you pick it back up. Either way nobody guilt-trips you.`],
             ['Any streaks, badges or leaderboards?',
              `No. On purpose. The app is built to get out of the way, not to keep you in it.`],
           ].map(([q, a], i) => (
