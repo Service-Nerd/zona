@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-11 (late) — GTM-SITE-02 item 3 · The blocker I had written down was not real
+**Shipped:** The homepage stopped describing the product and started showing it. Three hand-written CSS imitations of app surfaces are gone; it now renders the real `SessionCard`, `CoachNoteBlock` and `ZoneRings`, each sitting under the claim it proves.
+
+**Dev learning:** I had parked this item behind a paragraph I wrote myself: "`SessionCard`, `ZoneRings` and `TrendCard` are `'use client'` with event handlers, so they cannot render inside a server-component marketing page." First thing I did this time was check. `head -1` on all three: `SessionCard` and `ZoneRings` have no `'use client'` directive at all, and `SessionCard`'s only handler prop is optional. The item was blocked on a fact nobody had verified, and the workaround I had specified (build shared presentational wrappers) would have added a third layer to solve a problem that did not exist. The actual diff deletes 174 lines and adds one import block. Separately: a `subgrid` child with no `grid-template-columns` gets an implicit `auto` column that sizes to **max-content**, so `SessionCard`'s `white-space: nowrap` detail line grew the track to 321px inside a 272px box. `minmax(0, 1fr)` is the fix, and it is the grid equivalent of the `min-width: 0` you already have to remember for flex children.
+
+**Product/creator learning:** Putting the real component on the page found a content bug within about ninety seconds of it rendering. The hand-built phone mockup said "8 km" and the real card, right next to it, said "8km" — because `formatDistance()` emits no space and ADR-015 makes that function the only thing allowed to produce a distance string. Two pictures of the same session, disagreeing, on the page whose entire job is to say "this is what the app looks like". Nobody would have caught that by reading either file. The drift only becomes visible when you put the copy and the original side by side, which is an argument for never having a copy.
+
+**AI-building learning:** My own guard test passed its first falsification, and it took deliberately trying to break it to notice. I wrote a check that PhoneFrame still contains the same distance as the homepage card, changed the session card back to "8 km" to prove the test would go red, and it stayed green — because the file states that distance **twice** (a 56px hero and the card), so "the correct string appears somewhere" was still true while one of the two had drifted. A check that confirms a good thing is present is not the same as a check that confirms the bad thing is absent. Rewrote it to scan every renderable line for `\d\s+km`, re-falsified both paths, both went red. I have now been burned by this exact class enough times that "green" means nothing to me until I have seen the test fail on purpose.
+
+**The honest bit:** The parking note was mine, written confidently, and it was wrong in the one sentence that mattered. It cost this item weeks of sitting at the bottom of a list labelled "needs a clean run" when it was the smallest of the six. The lesson is not "check your assumptions" in the abstract — it is that a *written-down* assumption is more dangerous than an unwritten one, because the next person (me) treats the document as settled fact and re-reads the plan instead of the code.
+
+**Hook material:** The task was blocked for weeks on a `'use client'` directive that was not in any of the three files. Checking took one `head -1` and the fix deleted 174 lines.
+
+**Postable?:** yes
+
+---
+
 ## 2026-09-11 (eve) — GTM-SITE-02 · Four times I said it was done, and four times the next question found a bug
 **Shipped:** A pricing page that did not exist, an about page, the product moved above the fold, and a fix for every marketing page scrolling sideways on a phone. Plus a charity access-code system earlier the same day.
 

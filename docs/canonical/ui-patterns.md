@@ -146,6 +146,26 @@ Primary white cards carry `box-shadow: var(--shadow-card)` — a 1px contact sha
 
 Presentational, no hooks — renders inside the server-component page. **Light sections only** (the frame renders its screen ground dark inside a `--ground` section; cause undiagnosed).
 
+## Real app components on marketing pages — `ProductStill` (GTM-SITE-02, 2026-09-11)
+
+**The rule: a marketing page renders the REAL component. It does not draw a picture of one.**
+
+The homepage used to hand-write CSS imitations of app surfaces (`MockSessionCard`, `MockReflectCard`, `MockCoachNoteCard`) beside text cards describing the product. They drifted, exactly as `PhoneFrame`'s wordmark did: the coach mock painted its rail `--moss` while the real `CoachNoteBlock` uses `--warn`, so the site showed a coach note in the colour that does not mean "coach".
+
+**Most shared components mount directly in a server-rendered marketing page.** This was wrongly believed to be impossible, and an entire backlog item sat parked on the belief. Check before assuming: of the 33 files in `components/shared/`, **16 carry no `'use client'` directive at all**, including `SessionCard`, `CoachNoteBlock`, `ZoneRings`, `ZoneBar`, `RestraintCard`, `PlanArc` and `SessionSteps`. A component only needs a wrapper if it is genuinely `'use client'` **and** takes a required function prop. (Count it with `grep -l "^'use client'"`, not `head -1`: three of the client components carry the directive below a comment block, so a first-line check undercounts them.) `SessionCard`'s `onClick` is optional; passing nothing renders the static card.
+
+**`components/marketing/ProductStill.tsx`** is the frame they sit in: an **inset**, not a card. `--bg-soft`, one hairline, **no shadow of its own** — because `SessionCard` and `ZoneRings` bring their own white card and shadow, and wrapping those in another card is card-in-card with two stacked shadows (banned, § What Not to Build). The inset reproduces the ground the surface has in the app. Its caption names **the screen the surface actually lives on**, so check before writing one: `ZoneRings` is on **Coach**, not Today.
+
+**Skip the frame when the section ground is already `--bg-soft`** — that IS the app's ground, and an eyebrow above the component is already the caption. Two labels on one object is a label too many.
+
+**Sample data lives in `lib/marketing/demoSurfaces.ts`, never inline.** Markup is the thing that must not be duplicated; the data is what is left over. Keep it to ONE coherent runner: `PhoneFrame` and the homepage `SessionCard` are presented as the same person's session, so a change to one is a change to both.
+
+**Distance strings come from `lib/format.ts`, including in hand-built stills.** ADR-015 makes it the sole owner. `formatDistance()` emits `8km`, never `8 km`. `PhoneFrame` had drifted to `8 km` in two places and it only became visible when the real card was put beside it.
+
+**Grid gotcha.** A `subgrid` child with no `grid-template-columns` gets an implicit `auto` column that sizes to **max-content**. `SessionCard`'s detail line is `white-space: nowrap`, so the track grew to 321px inside a 272px box and the page scrolled sideways at 320px. Set `gridTemplateColumns: 'minmax(0, 1fr)'` — the grid equivalent of `min-width: 0` on a flex child.
+
+Guarded by `lib/marketing/realComponents.test.ts`: fails if an import goes away, if an import stops being rendered, if a `function Mock*` reappears, or if either file hand-writes a distance `formatDistance()` would not emit.
+
 ## Marketing feature row (GTM-SITE-02, 2026-09-11)
 
 A 3px rail, a name, and **one sentence on what it does for the runner**. Used on `/pricing` (both tiers), `/charity-runners` and `/about`.
