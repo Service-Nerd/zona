@@ -211,6 +211,43 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
   - **What remains open:** only the server-side gate, deliberately deferred above. **Tier: FREE (infra).** Effort: S when picked up.
   - **Why it matters:** marathon is the disputed distance, and the charity referral channel (GTM-CHARITY-01) sends marathon runners — though comped runners resolve as paid and never meet the gate at all.
 
+- 🔲 **GTM-CHARITY-04 — charity access codes** *(SLT-reviewed and approved 2026-09-11; grant mechanics decided by founder)* — the mechanism that delivers on "we give the app away free" to a partner's runners. **Tier: FREE (infra) to build; what it GRANTS is full PAID access.** Effort: M.
+
+  **THE RULING — paid access, not the free tier.** Unanimous. Three reasons, in order of force:
+  1. **The free tier cannot honour the promise.** `free_tier_available: false` for MARATHON/50K/100K, so a charity runner doing the London Marathon downloads the app their charity vouched for and hits a paywall on the first screen that matters.
+  2. **Duty of care (Hutchinson).** Every injury-protective feature is paid — `dynamic_reshape_r20` (the plan bending when life breaks the week), `activity_intelligence` (HR drift, run analysis), the honest read on whether an easy day was easy. First-time charity runners with a fundraising page and no base are the **highest injury-risk cohort the product will ever serve.** Handing the most at-risk runners the least protection is the wrong call even before the commercial argument.
+  3. For a 10K or half runner the free tier is roughly what `zonna.run` already gives away with no account, so "download the app" would add almost nothing.
+
+  **GRANT WINDOW — race date + 7 days** (founder decision, 2026-09-11; Wood's structural argument is that an expiry must never land mid-block, and the week after the race is the only point where withdrawal is behaviourally safe). Rules, in order:
+  - **On redemption:** `grant_expires_at = redemption + 90 days`. Deliberately SHORT, not generous: it has to be shorter than a typical block so that the race-date anchor below is the value that actually binds. A runner who redeems and never builds a plan lapses at 90 days, which is correct.
+  - **On any plan saved while the grant is live:** `grant_expires_at = min( max(current, race_date + 7 days), redemption + 18 months )`.
+  - **It only ever extends, never shrinks.** A deferred or changed race extends the grant; switching from a marathon to a 10K does not claw access back. The 18-month ceiling is what stops a runner extending it indefinitely by entering a new race each season.
+  - **Surface the end date in-app before it lands** (Traynor). A silent expiry turns a goodwill gesture into a complaint.
+
+  **CODES — and why verification dissolves.** Founder asked how we confirm a runner is really running for that charity before we know who they are. **We do not verify, and we never need to.** We issue a capped batch of unique single-use codes to the partner; they decide who gets one, because they are the only party who knows who holds a place with them. **Possession of the code IS the verification** — trust is delegated to the party that has the information.
+  - Unique, single-use, bound to the first account that redeems it.
+  - **Batched and capped per partner** (Traynor, hard requirement): a fixed number, never open-ended, so exposure is bounded and per-partner ROI is measurable.
+  - Batch-level revocation for the leaked-code case.
+
+  **DATA MODEL.** `charity_codes` (code, batch_id, claimed_by_user_id, claimed_at, revoked_at) + `charity_batches` (partner name, cap, issued_at, notes). The grant itself writes a **`subscriptions` row with `provider: 'charity_grant'`** — `getUserTier` already resolves admin → subscription → trial → free, so this needs **zero change to tier logic and zero change to any of the ten gated API routes.** That is what makes it cheap.
+
+  **REDEMPTION UX — one screen, three doors.** A single redeem screen (full screen, never a modal, per the no-popups UI principle), reachable from: onboarding (optional step), the Me screen, and the Upgrade screen beside the existing Restore purchases. One mechanism, not three. The organised runner redeems on day one; the one who forgets is prompted exactly when the gate bites.
+
+  **INSTRUMENT FROM DAY ONE** (Traynor): redemptions, activation, and the number that actually decides whether this is a channel or a donation — **what fraction are still paying 90 days after the grant expires.** Both are legitimate; discovering which one by accident is not.
+
+  **EXPLICITLY OUT OF SCOPE — do not build these:**
+  - ❌ **A charities table, a charity API, or a charity picker.** Attribution comes free from code → batch → partner, which covers exactly the population we care about. Research: the Charity Commission publishes a free full-register bulk extract, but it is ~170k orgs and England/Wales only (Scotland is OSCR, NI is CCNI), so it is hopeless as a picker. If a picker is ever genuinely needed it is a curated list of the ~100-300 mass-participation fundraising charities plus free-text "Other", never the register.
+  - ❌ **A "what charity are you running for?" wizard question.** The wizard is already ~15 questions and the **CI-3 precedent** (weight + height, VETOED as "data without a use") applies directly. If we want to know which charities existing users run for, email a hundred of them.
+  - ❌ **Verifying charity affiliation.** See above.
+
+  **🚨 MUST/NEVER:**
+  - **NEVER display the runner's charity back to them as motivation.** Wood's veto: extrinsic motivation (the fundraising page, the people watching) is the exact mechanism that makes this cohort overtrain, and reflecting it into the app amplifies the thing that hurts them. It is also cheerleading, which the brand refuses. Capture for business use, never surface.
+  - Redemption is a full screen, not a modal.
+  - Codes grant access; they reward nothing. Not gamification.
+  - **Apple:** comping our own service is fine. Never describe it as a discount or promotion on the App Store listing without checking the rules — that is a different thing.
+
+  **⚠️ RISK.** `subscriptions` is the single writer behind every tier decision and the RevenueCat webhook upserts `onConflict: 'user_id'`, so **a later RevenueCat event could overwrite a charity grant row.** Needs an explicit test. (The webhook itself was fixed 2026-09-11 to handle comp events at all — `GTM-CHARITY-03` — after it was found to acknowledge them and write nothing.)
+
 - 🔲 **GTM-CHARITY-02 — charity partnership follow-ups** *(from GTM-CHARITY-01, shipped 2026-09-11)* — the landing page is live and deliberately generic. Two things it could not decide on its own:
   1. **Co-branding is unresolved.** The page names no charity, carries no logo and claims no endorsement, because that implies a relationship the page cannot evidence and is a founder/legal decision made *with* the partner. If they want their name on it, that is a conversation plus a legal check, not a copy edit.
   2. **The stated audience does not cover these runners.** `brand.md` defines the audience as "adult runners, **1+ years' experience**"; charity-place runners are mostly first-time marathoners. The page bridges it honestly (a first-timer's version of "trying too hard" is heroing sessions and breaking down mid-block) but **the brand doc has not been updated and should not be changed casually** — widening the stated audience is a positioning decision, not a documentation tidy. Worth an SLT sitting if this channel produces real volume.
