@@ -1,7 +1,7 @@
 {
   "_comment_brand": "name + short_name mirror BRAND.name; description mirrors BRAND.appStoreSubtitle. Source: lib/brand.ts. Keep this file in sync when BRAND constants change — JSON cannot import them.",
   "_comment_colors": "theme_color = var(--ink), background_color = var(--bg). Source: app/globals.css.",
-  "_comment_icons": "PWA icon PNGs in public/icons/ are still the legacy ring-and-dot design — regeneration into the new concentric-rings mark is tracked as BRAND-08-pwa in the backlog.",
+  "_comment_icons": "PWA icon PNGs in public/icons/ are generated from public/icons/source/*.svg by scripts/generate-pwa-icons.mjs (BRAND-08-pwa, 2026-09-11). Never hand-edit them — re-run the script. Website only: the iOS app icon is a separate native asset in ios/App/App/Assets.xcassets/.",
   "name": "Zonna",
   "short_name": "Zonna",
   "description": "Plans that stop overtraining.",
