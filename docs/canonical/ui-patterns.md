@@ -138,7 +138,48 @@ Primary white cards carry `box-shadow: var(--shadow-card)` — a 1px contact sha
 
 ## Marketing device frame — `PhoneFrame` (design_handoff_v2)
 
-`components/marketing/PhoneFrame.tsx` — a still (not a live demo) of the Today screen in a phone shell, for the marketing hero. A faithful **static** composition of the real Today anatomy (§1 SessionCard, § Session Card Layout) in Warm Slate tokens — the live screen can't mount on a public page (auth + data + client bundle). Fixed composition: 30px status bar + **654px content** + 60px nav = 744px screen; the content is authored so the "Log this session" CTA (the last element the shot must show) sits above a 32px bottom fade. Presentational, no hooks — renders inside the server-component page. Light sections only.
+`components/marketing/PhoneFrame.tsx` — a still (not a live demo) of the Today screen in a phone shell, for the marketing hero. A faithful **static** composition of the real Today anatomy (§1 SessionCard, § Session Card Layout) in Warm Slate tokens — the live screen can't mount on a public page (auth + data + client bundle). Fixed composition: 30px status bar + **700px content** + 60px nav = **790px screen** (810 outer, including the 10px frame padding). *(Corrected 2026-09-11: this doc said 654/744, which had been stale since the content box grew.)*
+
+**The crop is STRUCTURAL, not measured.** The content box is `overflow: hidden`, so a composition that outgrows it is clipped at the fade — which is the "screen scrolls" illusion the fade already implies. This replaced a hand-measured crop that broke silently: the content div is `position: relative` and the nav is `static`, so when cards pushed content ~32px past `CONTENT_H` it painted straight OVER the nav and **the nav disappeared**. A measurement maintained by memory is not a measurement.
+
+**`.phone-fit` is required at every mount site** (`globals.css`). The frame is a fixed 340px wide with `flexShrink: 0`, so on a 375px phone a section with the standard 24px gutter left 327px and the frame forced the whole DOCUMENT to ~388px: every page scrolled sideways and hero headlines clipped mid-word. Below 430px the wrapper takes the post-scale box (292 x 697) and the child scales from its top-left. **Note `transform` alone does not fix this** — it changes painting, not layout, so the first attempt scaled the frame and the page overflowed by exactly as much as before.
+
+Presentational, no hooks — renders inside the server-component page. **Light sections only** (the frame renders its screen ground dark inside a `--ground` section; cause undiagnosed).
+
+## Marketing feature row (GTM-SITE-02, 2026-09-11)
+
+A 3px rail, a name, and **one sentence on what it does for the runner**. Used on `/pricing` (both tiers), `/charity-runners` and `/about`.
+
+```
+│ Every run read back to you
+│ Whether you actually held the zone, what your heart rate did, and
+│ the weekly score for how disciplined the week was.
+```
+
+- Rail `3px`, `border-radius: 2px`, `align-self: stretch`. **Moss for paid/positive rows, `--line-strong` for neutral ones.**
+- Name: 15-16px / 700 / `--ink`. Detail: 14-14.5px / 1.55 / `--ink-2`.
+- **The sentence is not optional.** A bare list of feature nouns tells a first-timer nothing, and this audience is often a first-timer. It is the one thing competitor pricing pages do better than most.
+- Deliberately NOT a card grid. Four boxed cards in a row was more card soup on pages that already had ~20 rounded rectangles; this is the same visual language as session cards (accent, not flood).
+
+## Section title accent line (GTM-SITE-02, 2026-09-11)
+
+`SectionTitle` takes an optional `accent`, rendering a **second line in `--moss`**.
+
+> Every run ends up in
+> **the same grey zone.**
+
+- Borrowed from a competitor that gradients the second half of every headline. **Gradients are banned here** (CLAUDE.md), and the useful part was never the gradient, it was the RHYTHM: a coloured second line tells the eye which half of the sentence carries the argument.
+- **Split on the clause that IS the argument**, never an arbitrary midpoint. A single-clause headline gets no accent rather than being forced into two.
+- One moss line. Not a gradient, not a third colour.
+
+## Two-column marketing hero (GTM-SITE-02, 2026-09-11)
+
+Copy left, product right, at the site width; collapses to one column below ~420px where copy leads and the device follows.
+
+- `repeat(auto-fit, minmax(min(100%, 420px), 1fr))`. The `min(100%, …)` is load-bearing: without it the column floors at 420px and overflows a phone.
+- **Left-aligned**, per "left-aligned content with a consistent horizontal margin, never centred-only layouts". The homepage's previous centring was never a reviewed decision.
+- Hero type drops to `clamp(34px, 3.6vw, 52px)`. `design_handoff_v2` raised it to 68px for a FULL-WIDTH hero; in a half-width column that reads cramped rather than confident.
+- **Why it exists:** the device shot sat two sections down, so a first-time visitor read a headline, a paragraph, a price and a hardware caveat before seeing evidence the software exists.
 
 ## FAQ disclosure (design_handoff_v2)
 
@@ -290,6 +331,18 @@ Small pill label. Used in session detail eyebrow.
 ---
 
 ### 6b. Marketing Site Chrome — `SiteHeader` / `SiteFooter` (GTM-SITE-01, 2026-09-10)
+
+> **Amended 2026-09-11 (GTM-SITE-02) — three nav items, and the header MUST wrap on a phone.**
+>
+> Nav is now **Plans · Pricing · Comparisons**. The third item was added on the original two-item ruling's own reasoning rather than against it: the menu exists for sections people cannot otherwise find, and there was no pricing page at all, which the SLT called a commercial defect.
+>
+> **It does not fit a phone on one row, and that is a measured fact, not a worry.** At 375px the row came to 433px (wordmark 60 + Plans 37 + Pricing 47 + Comparisons 90 + the 104px CTA pill, plus gaps), so the whole DOCUMENT was 433 wide and every page scrolled sideways. It was already within a few pixels of overflowing with TWO items.
+>
+> Below 430px the links therefore wrap to their own row under the wordmark, and that row wraps again so the CTA drops to a third line on a 320px SE. Rules live in `globals.css` (`.site-nav-row`, `.site-nav`). **Nothing is hidden and no hamburger is introduced** — chrome the design system rejects — so every destination stays one tap away at any width.
+>
+> **The CTA is INSIDE `.site-nav`, not a sibling of it.** Assuming otherwise cost a wrong fix: the group carries four items, so it needs `flex-wrap` too.
+>
+> **If a fourth nav item is ever proposed, measure first.** `/about` was deliberately put in the footer only for this reason.
 
 **Scope: the public marketing site only** (`/`, `/plans`, plan spokes, `/comparisons`, comparison articles, `/support`, `/privacy`, `/terms`). The authenticated app keeps its own chrome (§7 bottom nav); these two never appear inside the app.
 

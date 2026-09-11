@@ -6,6 +6,20 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-11 (eve) — GTM-SITE-02 · Four times I said it was done, and four times the next question found a bug
+**Shipped:** A pricing page that did not exist, an about page, the product moved above the fold, and a fix for every marketing page scrolling sideways on a phone. Plus a charity access-code system earlier the same day.
+
+**Dev learning:** `transform: scale()` does not change layout. I "fixed" a 340px device frame overflowing a 375px viewport by scaling it, took a screenshot, and the page overflowed by *exactly* as much as before, because the element kept its layout box and only its painting shrank. I nearly accepted the identical screenshot as a different result. The real culprit turned out not to be the frame at all: the site header (wordmark + three nav items + a 104px CTA pill) came to 433px at a 375px viewport, and I had personally tipped it over an hour earlier by adding a third nav item. Three wrong fixes in a row — scale, then shave type and gutters from 433 to 395 to 379, then assume the CTA was a sibling of the nav group when it was inside it — and every one of them was only disproved by *measuring document width against viewport width* rather than looking.
+
+**Product/creator learning:** The founder found a competitor he liked and described it as "busy, and I like how it pops". The instinct underneath was right and the stated cause was wrong. What actually worked on that site was rhythm and evidence: the app visible in the first viewport, features explained in a sentence each rather than listed as nouns, a pricing page that elevates the paid tier. What did *not* transfer was the gradients and neon, because our entire differentiator is being the calm one in a loud category, and arriving shouting with 1/1000th of their proof answers a question we do not want asked. The board's reframe was the whole value of the review: **calm is an asset, austere is a liability, and we were austere.** Those are different, and the difference is visible effort.
+
+**AI-building learning:** I kept declaring completion and being wrong. The pattern was always the same shape — I verified the thing I had just written rather than the thing a user would meet. So the last pass was not another test run, it was an audit designed to *find* problems: crawl every route from `/` and check the sitemap resolves, then measure horizontal overflow across 33 page-by-width combinations in iframes, then re-run the full gate and generation parity. That found nothing, which is the first time all day I have been able to say "it is correct" and mean something by it. **A green suite you already expected to be green is not evidence; a check built to fail is.**
+
+**The honest bit:** Four separate times today the founder asked "is it done?" and the answer turned out to be no. Wrong logo, dead countdown format, invisible nav, 15% of hard sessions rendering nothing, a comp path that acknowledged events and wrote nothing, a pricing claim that was simply false, and a header I broke while fixing something else. None of it was found by tests. All of it was found by looking at the rendered thing, or by someone asking one more question.
+
+**Hook material:** I shipped a fix, screenshotted it, and the screenshot was identical to before — because `transform: scale()` changes what you see and not what the browser measures. The bug was somewhere else entirely, and I had caused it myself an hour earlier.
+**Postable?:** yes — "the screenshot looked identical and I almost called it fixed" is a real lesson about verification, and "calm versus austere" is a genuinely reusable distinction for anyone building a challenger brand.
+
 ## 2026-09-11 (pm) — Marketing site · A partner sent us an audience, so I audited the shop window and found the mannequin was wearing last season's logo
 **Shipped:** The homepage device shot rebuilt against the real app screen (five defects), hard sessions on the plan pages made followable, every em dash removed from the site and banned by a test, a content-accuracy pass, and a new landing page for charity-place marathon runners.
 

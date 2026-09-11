@@ -55,6 +55,8 @@ Honest, slightly sarcastic, self-aware, encouraging without cringe.
 
 One sentence is better than two. Specific beats abstract. Never motivational.
 
+**Marketing copy has two mechanical guards, because prose about a rule always drifts from the rule** (the homepage once claimed "four answers" against a ~15-question wizard and survived five wizard changes): `lib/marketing/noEmDash.test.ts` (below) and `lib/marketing/pricing.test.ts`, which fails the build if a `PAID_ONLY_ONGOING` gate has no row on `/pricing` or an argued omission. **Add a paid feature, update the pricing page.**
+
 **No em dashes (`—`) in copy** (founder call, 2026-09-11). Use a colon, comma, semicolon or full stop. **En dashes (`–`) in ranges are correct and must be kept** (`6:30–7:30 /km`, `Zone 4–5`, `RPE 1–10`). Code comments are exempt. Enforced by `lib/marketing/noEmDash.test.ts` across all public marketing surfaces — **add any new marketing page to that test's `SURFACES` list.** Full rule + the app-side exception in `docs/canonical/brand.md` § Punctuation.
 
 ---
