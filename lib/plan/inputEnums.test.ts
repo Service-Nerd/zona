@@ -49,15 +49,24 @@ describe('enum inputs are validated', () => {
     expect(() => validateInputFields(withField(field, value))).toThrow(InputEnumError)
   })
 
-  it('names the field and the allowed set, so the error is actionable', () => {
+  // UX-BEGINNER-01 — the CONTRACT changed on 2026-09-11 and this test with it.
+  // The structured data must still carry the detail (the client highlights the
+  // input, the logs name the field); the PROSE must not, because a runner read
+  // "longest_recent_run_km=0" and that is what started this.
+  it('carries the detail structurally but never leaks it into the prose', () => {
     try {
       validateInputFields(withField('fitness_level', 'advanced'))
       throw new Error('should have thrown')
     } catch (e) {
       expect(e).toBeInstanceOf(InputEnumError)
       const err = e as InputEnumError
+      // Structured: intact, for the client and the logs.
       expect(err.field).toBe('fitness_level')
-      expect(err.message).toContain('experienced')
+      expect(err.allowed).toContain('experienced')
+      // Prose: no field name, no internal value, no allowed set.
+      expect(err.message).not.toContain('fitness_level')
+      expect(err.message).not.toContain('advanced')
+      expect(err.message).not.toContain('experienced')
     }
   })
 

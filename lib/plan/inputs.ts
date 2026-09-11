@@ -288,11 +288,19 @@ export class InputEnumError extends Error {
   value: unknown
   allowed: readonly string[]
   constructor(field: string, value: unknown, allowed: readonly string[]) {
+    // UX-BEGINNER-01 — same treatment as InputFieldError. This class shipped on
+    // 2026-09-11 leaking the field name in exactly the way that item was raised
+    // about; fixed the same day rather than left as a matching defect.
+    //
+    // A runner cannot produce this from the wizard (every control emits a valid
+    // value), so it means a stale draft, an old client or a hand-built request.
+    // "Something we sent was out of date" is the true and useful thing to say —
+    // the structured `field` + `allowed` still ride on the error for the client
+    // and the logs.
     super(
-      `Invalid input: ${field}=${JSON.stringify(value)} is not one of ` +
-      `${allowed.map(a => `'${a}'`).join(', ')}. Unrecognised values are rejected rather ` +
-      `than silently ignored, because an ignored input produces a real plan built ` +
-      `from something you did not say.`,
+      `We could not read one of your answers, so the plan was not built. ` +
+      `This usually means the app needs a refresh — try again, and if it keeps ` +
+      `happening it is ours to fix, not yours.`,
     )
     this.name = 'InputEnumError'
     this.field = field
@@ -301,12 +309,50 @@ export class InputEnumError extends Error {
   }
 }
 
+/**
+ * What the runner is told when a field is refused.
+ *
+ * UX-BEGINNER-01 (2026-09-11). `InputFieldError` used to say:
+ *   "Invalid input: longest_recent_run_km=0 (acceptable range: 1–300).
+ *    Empty or out-of-range physiological inputs are rejected."
+ * A first-time charity runner set the slider to the honest answer and got a
+ * database column name back. It was also the ONLY input refusal speaking that
+ * way — `PrepTimeError` and `DaysAvailableError` have always said things like
+ * "12 weeks is not enough preparation for a MARATHON. Minimum is 16 weeks."
+ * This is that same voice, for the fields that never had one.
+ *
+ * The STRUCTURED data is unchanged (`field`, `value`, `range` still ride on the
+ * error and `/api/generate-plan` still returns them) so the client can keep
+ * highlighting the offending input. Only the prose changed.
+ */
+const FIELD_COPY: Record<string, (value: number, range: InputFieldRange) => string> = {
+  age: (_v, r) =>
+    `We need your age to work out your heart-rate zones. It has to be between ${r.min} and ${r.max}.`,
+  resting_hr: (_v, r) =>
+    `That resting heart rate does not look right. A real one sits between ${r.min} and ${r.max} bpm — or leave it blank and we will estimate.`,
+  max_hr: (_v, r) =>
+    `That maximum heart rate does not look right. A real one sits between ${r.min} and ${r.max} bpm — or leave it blank and we will estimate from your age.`,
+  // Zero is accepted, so this only fires on a negative or missing value —
+  // broken input rather than an answer.
+  current_weekly_km: () =>
+    `We could not read how far you run in a week. Put in roughly what you cover now, and zero is fine if you are starting from scratch.`,
+  longest_recent_run_km: () =>
+    `We could not read your longest recent run. Put in the furthest you have gone in the last six weeks, and zero is fine if you have not run.`,
+}
+
+/** Falls back to plain language rather than the field name, always. */
+function fieldMessage(field: string, value: number, range: InputFieldRange): string {
+  const copy = FIELD_COPY[field]
+  if (copy) return copy(value, range)
+  return `One of your answers was outside what we can use (it needs to be between ${range.min} and ${range.max}).`
+}
+
 export class InputFieldError extends Error {
   field: string
   value: number
   range: InputFieldRange
   constructor(field: string, value: number, range: InputFieldRange) {
-    super(`Invalid input: ${field}=${value} (acceptable range: ${range.min}–${range.max}). Empty or out-of-range physiological inputs are rejected.`)
+    super(fieldMessage(field, value, range))
     this.name = 'InputFieldError'
     this.field = field
     this.value = value
@@ -334,11 +380,45 @@ export function validateInputFields(input: GeneratorInput): void {
   //
   // Rejecting here turns an opaque crash into a named field error, which is the
   // whole point of this function (D-04: failure is data).
-  for (const field of ['current_weekly_km', 'longest_recent_run_km'] as const) {
-    const value = input[field]
-    if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-      throw new InputFieldError(field, Number(value), { min: 1, max: 300 })
-    }
+  // UX-BEGINNER-01 (2026-09-11) — ZERO IS A REAL ANSWER, FOR BOTH.
+  //
+  // The `<= 0` here was written to catch a MISSING value (its own comment says
+  // so: an absent `current_weekly_km` produced NaN weekly volumes and a 500
+  // naming no field). It caught a legitimate zero with it, and refused the
+  // product's newest users in schema language.
+  //
+  // BOTH ZEROS ARE SAFE, and it took two goes to establish that. A first pass
+  // concluded `current_weekly_km: 0` produced an empty week 1 and had to stay
+  // refused. That was a measurement error: it summed `distance_km`, and a
+  // beginner's plan is DURATION-ANCHORED — sessions carry `duration_mins` with
+  // `distance_km` null, because without pace data the engine prescribes time.
+  // Reading the engine's own `Week.weekly_km` instead:
+  //
+  //   current_weekly_km: 0, longest_recent_run_km: 0, beginner
+  //     10K  → week 1 = 13km over 3 sessions, peak 18, profile BUILD, 0 errors
+  //     HM   → week 1 = 14km over 3 sessions, peak 27, profile BUILD, 0 errors
+  //     M    → week 1 = 18km over 4 sessions, peak 42, 0 errors
+  //
+  // The engine applies a beginner floor, so a 0 and a 1 produce the same plan.
+  // Accepting zero therefore changes no prescription — it only stops us refusing
+  // the honest answer.
+  //
+  // NEGATIVE and MISSING are still refused: those are broken input, not an
+  // answer. `Number.isFinite` keeps NaN out, which is the case this block has
+  // always existed for.
+  //
+  // 🔎 SEPARATE QUESTION, NOT A BLOCKER: whether ~13km across 3 sessions is the
+  // right WEEK 1 for someone who has never run is a beginner-floor question for
+  // the Coaching Board. It is not new and not caused by this change — the same
+  // plan is produced at `current_weekly_km: 1` today. Filed, not fixed here.
+  const MISSING_OR_NEGATIVE = (v: unknown) =>
+    typeof v !== 'number' || !Number.isFinite(v) || v < 0
+
+  if (MISSING_OR_NEGATIVE(input.longest_recent_run_km)) {
+    throw new InputFieldError('longest_recent_run_km', Number(input.longest_recent_run_km), { min: 0, max: 300 })
+  }
+  if (MISSING_OR_NEGATIVE(input.current_weekly_km)) {
+    throw new InputFieldError('current_weekly_km', Number(input.current_weekly_km), { min: 0, max: 300 })
   }
 
   // ENUM FIELDS WERE NEVER VALIDATED (added 2026-09-11) — the same class this

@@ -54,8 +54,21 @@ export interface CohortShape {
 const pct = (n: number, d: number) => d > 0 ? +(n / d * 100).toFixed(1) : 0
 const mean = (a: number[]) => a.length ? +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(2) : 0
 
-const deliveredKm = (w: Week) =>
-  Object.values(w.sessions).reduce((a: number, s) => a + (s?.distance_km ?? 0), 0)
+/**
+ * A week's volume, as the ENGINE computed it.
+ *
+ * ⚠️ This used to re-sum `distance_km` across the sessions, and that was wrong
+ * in a way that mattered: a beginner's plan is DURATION-ANCHORED — sessions
+ * carry `duration_mins` with `distance_km` null, because without pace data the
+ * engine prescribes time rather than distance. Re-summing distance reported
+ * those weeks as **0 km**, so the one harness built to prove a cohort had not
+ * been reshaped was blind to the cohort this product is about to onboard.
+ *
+ * `Week.weekly_km` is the engine's own stamped answer (`sumWeeklyKm`, which
+ * divides duration by easy pace where distance is absent). Using it means one
+ * definition, and it is the number the runner sees.
+ */
+const deliveredKm = (w: Week) => w.weekly_km ?? 0
 
 export interface CohortCase { input: GeneratorInput; plan: Plan | null; refused: boolean }
 
