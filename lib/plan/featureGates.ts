@@ -34,7 +34,24 @@ export const FEATURE_GATES = {
     'injury_adaptations_new',    // adaptations applied to new plans or after reshape
     'activity_intelligence',     // run analysis, weekly report, plan adjustment triggers (HealthKit + Strava)
     'confidence_score',          // R18 confidence scoring
-    'ultra_plan_generation',     // 50K and 100K plan generation
+    // DISTANCE PAYWALL — MARATHON, 50K and 100K. Named "ultra_" for historical
+    // reasons; it has covered the marathon since R23 and the name is the only
+    // thing that says otherwise. Authority: feature-registry "Distance tier
+    // gating" (5K/10K/HM = FREE, Marathon/50K/100K = PAID) and CLAUDE.md's FREE
+    // row (5K/10K/HM). This entry used to read "50K and 100K plan generation",
+    // which contradicted both, and monetisation-strategy.md inherited the same
+    // omission.
+    //
+    // ⚠️ THIS CONSTANT IS NOT THE ENFORCER. Nothing calls
+    // isFeatureAllowed('ultra_plan_generation'). The paywall the user actually
+    // meets is `PLAN_SIGNATURES[d].free_tier_available` read by
+    // GeneratePlanScreen, which renders a PAID lock on the distance tile and
+    // routes a tap to Upgrade. /api/generate-plan does NOT check either one, so
+    // this commercial boundary lives only in a client component — see
+    // TIER-ENFORCE-01 in the backlog. Do not "fix" that by wiring this constant
+    // without reading the item first: a server gate would also block a free user
+    // regenerating an EXISTING marathon plan, which Option A arguably grants.
+    'ultra_plan_generation',
     'strength_sessions_tailored', // R21 tailored strength (when shipped)
     'race_time_estimates',        // estimated race times from VDOT / Strava aerobic pace
     'post_run_reframe',           // POST-RUN-REFRAME-01 — text/voice reflection + AI reframe

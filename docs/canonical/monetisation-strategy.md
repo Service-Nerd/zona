@@ -42,7 +42,15 @@ Required to use the PAID feature again *after* the trial ends.
 - Injury adaptations applied to *new* plans or after a reshape
 - Strava intelligence (run analysis, weekly report, plan adjustment triggers)
 - Confidence score
-- Ultra plan generation (50K, 100K — locked at the wizard distance picker)
+- **Distance paywall: Marathon, 50K and 100K plan generation** (locked at the wizard
+  distance picker). *Corrected 2026-09-11: this line read "Ultra plan generation
+  (50K, 100K)" and omitted the marathon, which the product has locked since R23.
+  `feature-registry.md` ("Distance tier gating": 5K/10K/HM = FREE,
+  Marathon/50K/100K = PAID) and CLAUDE.md's FREE row are the authorities and both
+  say marathon is paid; this doc and the `ultra_plan_generation` constant were the
+  two places that disagreed. The gate constant is still NAMED `ultra_` and is read
+  by nothing — the real enforcer is `PLAN_SIGNATURES[d].free_tier_available` in
+  `GeneratePlanScreen`, and there is no server-side check. See TIER-ENFORCE-01.*
 - Tailored strength sessions (R21 — when shipped)
 
 **Note on regeneration (R23-D6 resolution, 2026-04-25):** Free users may regenerate
