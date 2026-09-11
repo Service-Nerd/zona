@@ -47,6 +47,7 @@ import { BRAND, PRICING } from '@/lib/brand'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
+import { PhoneFrame } from '@/components/marketing/PhoneFrame'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const PAGE_URL = `${APP_URL}/charity-runners`
@@ -208,6 +209,25 @@ export default function CharityRunnersPage() {
         </div>
       </section>
 
+      {/* ── The product, before the argument ──────────────────────────────
+          The page previously showed NOTHING of the app: six stacked sections
+          of text and cards, and a first-timer deciding whether to download had
+          seen no evidence at all. The device shot is also the only thing on the
+          page that is not a rounded rectangle, so it breaks a rhythm that had
+          become a template loop.
+
+          Light section only: the frame renders its screen ground dark inside a
+          --ground section (known constraint, PhoneFrame header). */}
+      <section style={{ padding: '8px 24px 56px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px' }}>
+        <PhoneFrame />
+        <p style={{
+          fontSize: '14px', lineHeight: 1.55, color: 'var(--mute)',
+          margin: 0, maxWidth: '420px', textAlign: 'center',
+        }}>
+          One screen, one job: the run you are doing today and the zone to hold it in.
+        </p>
+      </section>
+
       {/* ── The real risk ───────────────────────────────────────────────── */}
       <section style={{
         background: 'var(--bg-soft)',
@@ -274,33 +294,46 @@ export default function CharityRunnersPage() {
         </p>
       </section>
 
-      {/* ── What the code unlocks ───────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '56px 24px 0' }}>
-        <Eyebrow>What you get</Eyebrow>
-        <H2>The whole thing. Not a trial, not a cut-down version.</H2>
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 330px), 1fr))',
-          gap: '14px', marginTop: '24px',
-        }}>
-          {[
-            ['A plan built round your race',
-             'Your distance, your date, the days you can actually run. Any distance, 5K through ultra.'],
-            ['Every run has a zone and a pace band',
-             'Derived from your numbers, not guessed, so "easy" is something you can check rather than talk yourself out of.'],
-            [`${BRAND.coachName} reads every run`,
-             'Tells you afterwards whether you actually held the zone, in one line, without a dashboard.'],
-            ['A plan that moves when life does',
-             'Miss a week and it reshapes around what you did, instead of leaving you to catch up on a week that has gone.'],
-          ].map(([title, body]) => (
-            <div key={title} style={{
-              background: 'var(--card)', border: '1px solid var(--line)',
-              borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
-              padding: '20px 18px',
-            }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 8px' }}>{title}</h3>
-              <p style={{ fontSize: '14px', lineHeight: 1.55, color: 'var(--ink-2)', margin: 0 }}>{body}</p>
-            </div>
-          ))}
+      {/* ── What the code unlocks ────────────────────────────────────────
+          On --bg-soft: the page had exactly ONE tonal break in its whole
+          length, so everything after the risk section flattened into an
+          undifferentiated run of white cards. A second band re-establishes
+          rhythm at the point the page makes its offer.
+
+          Left-accent rows, not a card grid. That is the documented feature-list
+          pattern (same visual language as session cards) and it removes four
+          more boxes from a middle that had about twenty. */}
+      <section style={{
+        background: 'var(--bg-soft)',
+        borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)',
+        padding: '64px 24px', marginTop: '56px',
+      }}>
+        <div style={{ maxWidth: SECTION_MAX, margin: '0 auto' }}>
+          <Eyebrow>What you get</Eyebrow>
+          <H2>The same app everyone else pays for.</H2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '24px' }}>
+            {[
+              ['A plan built round your race',
+               'Your distance, your date, the days you can actually run. 5K through ultra.'],
+              ['Every run has a zone and a pace band',
+               'Derived from your numbers, not guessed, so "easy" is something you can check rather than talk yourself out of.'],
+              [`${BRAND.coachName} reads every run`,
+               'Tells you afterwards whether you actually held the zone. One line, no dashboard.'],
+              ['A plan that moves when life does',
+               'Miss a week and it reshapes around what you did, instead of leaving you to catch up on a week that has gone.'],
+            ].map(([title, body]) => (
+              <div key={title} style={{ display: 'flex', gap: '16px', padding: '14px 0' }}>
+                <span aria-hidden style={{
+                  width: '3px', alignSelf: 'stretch', borderRadius: '2px',
+                  background: 'var(--moss)', flexShrink: 0,
+                }} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)', marginBottom: '3px' }}>{title}</div>
+                  <div style={{ fontSize: '14.5px', lineHeight: 1.55, color: 'var(--ink-2)' }}>{body}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -370,9 +403,6 @@ export default function CharityRunnersPage() {
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
             <AppStoreBadge />
-            <Link href="/plans" style={{ fontSize: '15px', fontWeight: 600, color: 'var(--moss)', textDecoration: 'none' }}>
-              Or read a free plan first &rarr;
-            </Link>
           </div>
         </div>
       </section>
