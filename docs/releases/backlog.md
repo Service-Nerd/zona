@@ -187,6 +187,73 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 
 *Source: founder review of Planzy (6 screens) + a described Runzy chatbot. Full ruling: `docs/decisions/slt-2026-08-29-planzy-ux.md`. **Engineering scope + board brief: `docs/investigations/competitive-ux-scope-2026-08-29.md`** (current-state facts, per-item scope, the decisions each board must make — a living doc that absorbs incoming competitor analysis). Evidence: `docs/investigations/planzy-*.png`. Two Planzy screens (profile / data-source toggles) were dropped — Zonna already has the equivalents and Garmin/Apple Watch direct sync is not buildable (ADR-011).*
 
+### 🩺 Founder test pass, 2026-09-11 — UX review for the Make-A-Wish demo
+
+*Ten observations from using the app and site. Analysed as UX, not as tickets: root cause named in code where there is one. Audience for all of them is a BEGINNER on 10K / HM / marathon.*
+
+- 🔲 **MAINT-LABEL-01 — 89% of beginner MARATHON plans are labelled "maintenance"** *(**P0 — found 2026-09-11 answering the SLT's "what else breaks for a beginner"; bigger than all ten UX items for this partnership**)* — a first-time charity marathoner generates a plan whose `volume_profile` is `maintenance`, which §23 defines as *"a plan that maintains current fitness rather than building it"*, and whose note reads *"Plan generated as maintenance — the long run this race needs is larger than your current weekly volume can carry around it."*
+  - **Measured, 360 beginner plans per distance** (`current_weekly_km` 5–25, longest run 2–10km, 12–24 weeks, 3–5 days, `fitness_level: 'beginner'`, `goal: 'finish'`):
+    | distance | labelled maintenance |
+    |---|---|
+    | 10K | **0%** |
+    | HM | 4% |
+    | **Marathon** | **89%** (320 of 360) |
+    Even a parkrun-er at 15km/week with a 24-week runway gets it.
+  - **THE ENGINE IS NOT WRONG. THE WORD IS.** §52 is correct: a 32km long run against a 25km week is lopsided, and remedy (c) downgrades rather than pretending otherwise. What is wrong is that §23 lends its vocabulary to a case it was not written for. `maintenance` means *peak ≈ base — there is nowhere to ramp to*. A beginner going 5km/week → marathon is **not maintaining anything**; they will improve more than any other user of this product.
+  - **Third instance of one label doing two jobs** — §101 (`compressed` OR-combined two failures), §81 (`maintenance` asked to mean a time-budget failure as well as a volume one, amended 2026-09-11), and now this. The pattern is worth naming.
+  - **SPLIT THE FIX, and only half is pre-demo.** The **runner-facing copy** is brand voice and ships now (see the critical path). The **`volume_profile` VALUE** is load-bearing — it feeds the paid confidence score and §38's prescriptive notes — so changing it is an engine change requiring a **Coaching Board** sitting. Do not change the value before the demo.
+  - **Copy must not become reassurance.** "You're trying hard. That's the problem" does not licence telling a beginner the plan builds them more than it does. The honest line names what the plan IS (getting you round, safely, off a low base) rather than what it is not. **Tier: FREE.** Effort: S (copy) + M (the value, post-board).
+
+- 🔲 **UX-BEGINNER-01 — a beginner who has never run is rejected with a database field name** *(**P0 — the single worst item for this audience**)* — the wizard's longest-run Ruler has `LONGEST_RUN_KM_MIN: 0`, so a true beginner can legitimately set **0**. `validateInputFields` then rejects anything `<= 0` and the route returns the raw exception text: **`Invalid input: longest_recent_run_km=0 (acceptable range: 1–300). Empty or out-of-range physiological inputs are rejected.`**
+  - ⭐ **SLT 2026-09-11: CRITICAL PATH #1.** Wood: "the first thing you asked them to be honest about, you punished."
+  - **Three defects in one.** (1) **Two owners disagree** — the wizard permits a value the API refuses (`min 0` vs `min 1`). (2) The message **leaks the internal field name**. (3) The voice is hostile and clinical; "physiological inputs are rejected" is not Zonna's voice by any reading of `brand.md`.
+  - **Who hits it: exactly the Make-A-Wish cohort.** Someone entering a charity marathon who has never run. The first thing the product does is refuse them in schema language.
+  - **Same leak in `InputEnumError`**, added 2026-09-11. Fix both together.
+  - **Scope:** decide what 0 MEANS (a real answer for a beginner, not an error), reconcile the two owners, and give every `InputFieldError` / `InputEnumError` a runner-facing message that names no field. **Tier: FREE.** Effort: S.
+
+- 🔲 **UX-AUTH-01 — signing out lands the app on the marketing website** *(P1, native)* — reported from a real device. Sign-out is `supabase.auth.signOut()` then `router.replace('/auth/login')` (`DashboardClient.tsx:12178`; a second button at `:3043` uses `window.location.href`). **Not reproducible from here — it needs the device** — but the analysis narrows it to three candidates, and one is confirmed independently:
+  - ⭐ **SLT: CRITICAL PATH #5.**
+  1. **CONFIRMED, and worth fixing regardless:** the login screen links to `/privacy` and `/terms`, which are **marketing pages carrying `SiteHeader`/`SiteFooter`**. From inside the app that drops the runner into the full website (Plans / Pricing / Comparisons / "Get the app") with no way back. The app should never render marketing chrome.
+  2. **Root `/` is the marketing site** for a signed-out user (`app/page.tsx`). Anything that lands on `/` after sign-out shows the website inside the webview. `capacitor.config.ts` opens at `/dashboard`, so a reload after sign-out is a candidate path.
+  3. **Apex vs www.** `allowNavigation` lists `www.zonna.run` only; `https://zonna.run/...` is a *different host* and Capacitor opens a non-allowed host **in Safari**. Any absolute apex URL anywhere in the signed-out path would do exactly what was reported.
+  - **Exit criteria:** sign out on a device ends on the app's own login screen, and no in-app route can reach `SiteHeader`. **Tier: FREE.** Effort: S.
+
+- 🔲 **UX-AUTH-02 — sign-in options page: progressive disclosure** *(P2)* — today the login screen shows email fields AND "Continue with Apple" AND "Continue with Google" together. Runzy's pattern (founder's reference): **Continue with Apple / Continue with Google / Use email instead**, and only that third tap reveals sign-in vs sign-up.
+  - ⭐ **SLT: CRITICAL PATH #6** — cheap, and it is the first screen a code-holder sees. Promoted from P2.
+  - **Why it is right, not just tidier:** for a charity runner arriving on a phone, Apple/Google is one tap and no password to invent or forget. Putting email first offers the highest-friction path most prominently. It also removes the sign-in/sign-up ambiguity from first contact — the SSO buttons do both.
+  - Both providers are **already implemented** (`signInWithApple` at native via `@capawesome/capacitor-apple-sign-in`, Google via `Browser.open`). This is presentation, not plumbing. **Keep the Apple name-handoff** (`updateUser({ data: { full_name } })`) — Apple returns the name only on first authorisation. **Tier: FREE.** Effort: S.
+
+- 🔲 **UX-AUTH-03 — forgotten password: verify end-to-end** *(P1, mostly ops)* — the flow EXISTS (`app/auth/login/page.tsx:47–61`, `forgot` view → `resetPasswordForEmail` → `/auth/reset`), so this is verification, not build. **AUTH-RESET-01's one-time Supabase setup is the risk:** the recovery email template must link with `{{ .TokenHash }}`, not the default PKCE `?code=`, or a reset opened on another device (the iOS-native case — the email never opens in the Capacitor webview) **fails silently**. CLAUDE.md records the setting; nobody has confirmed it is applied. **Exit criteria:** a real reset completed from a phone, on a device that did not request it. **Tier: FREE.** Effort: XS + a dashboard check.
+  - ⭐ **SLT: CRITICAL PATH #5** (with UX-AUTH-01). Mostly a Supabase dashboard check.
+
+- 🔲 **BUG-KIT-DECIMALS-01 — Kit says 5.7km, the plan says 6km** *(P1, confirmed root cause)* — `formatDistanceForPrompt(km, units, dp = null)` returns the **raw** number on the km path (`` `${km}km` ``), and **nine prompt builders** default `dp` to null (`dailyCoachNote`, `weeklyReport`, `sessionFeedback`, `sessionReframe`, `freeInsight`, `phaseSummary`, `planWeeklyNote`, `raceReadiness`, `postRaceReshape`). The UI uses `formatDistance()`, which rounds to a whole km. Kit repeats the number it was given, so the two disagree on the same screen.
+  - ⭐ **SLT: CRITICAL PATH #4** — Kit contradicting the plan on screen, during a demo.
+  - **The conceptual error is in the helper's own comment:** *"Do not use this for anything the user reads directly — that is formatDistance's job."* But a number handed to the model **becomes** user-facing the moment the model repeats it. ADR-015's singularity has a hole exactly the width of the AI layer.
+  - **Fix direction:** the prompt must receive the same string the UI shows. Then a `docClaims`-style guard so a new prompt cannot reintroduce raw decimals. **Tier: FREE (correctness).** Effort: S.
+
+- 🔲 **UX-PLAN-MOVE-01 — the "↕ Move" pill on plan rows** *(P2, **not a straight revert**)* — founder prefers the previous 3-line handle. **The current pill replaced that handle deliberately, on an incident.** `PlanCalendar.tsx:850` records it: *"a 3-line hamburger at 0.45 opacity looked like a 'more options' icon, not a move handle. The 2026-06-26 incident user reported never having 'dragged' anything — because he hadn't; he'd tapped this icon without realising it initiated a move."*
+  - 🚫 **SLT: NOT BEFORE THE DEMO.** The old handle caused a documented incident; changing it needs thought, not haste.
+  - So the old visual has a documented failure against it, and the new one bought discoverability with visual noise on **every movable row**. Reverting re-opens a real defect.
+  - **The UX question is a third option**, not either of these two: keep the glyph, drop the word; or reveal the affordance on row-tap rather than persistently. Needs a decision against the incident, not a preference. **Tier: FREE.** Effort: S.
+
+- 🔲 **UX-POSTRUN-01 — four numbers after a run; should it be one?** *(P2, **Coaching Board + SLT**)* — founder: "4 numbers which can be confusing… should we make this one clear number (percentage), Garmin does that. If we do, it needs to be known what that means."
+  - 🚫 **SLT: NOT BEFORE THE DEMO — Hutchinson + Wood.** Hutchinson: "collapsing zone %, RPE and fatigue into one score is a claim that those three trade off in a known ratio. They do not, and I cannot defend a number I cannot derive." Needs a Coaching Board sitting that will not happen in a fortnight.
+  - Today `SessionCompleteCard` carries **zone %**, **RPE**, a **fatigue tag** and the **ledger advance**, beside the run's own distance/duration/HR.
+  - **This is a coaching question before it is a design one**, which is why it routes to the board: a single composite score is a CLAIM about what made the session good, and §1's whole thesis is that zone discipline is the thing. Compressing RPE and zone into one number may say something the data cannot support (Hutchinson), or create the illusion-of-progress Wood exists to veto. **Do not build before the ruling.** **Tier: FREE.** Effort: M.
+
+- 🔲 **UX-COACH-01 — the Coach screen is the wow moment and currently isn't** *(P2)* — founder: messy, lots going on, wants premium feel and "how am I doing vs X ago". **Counted: seven distinct blocks** — the consolidated Kit read, a 2×2 stats grid (zone discipline / load ratio / sessions / phase+weeks), ZoneRings, a load-ratio sheet, a zone-discipline sheet, the LedgerCard, and TrendCard ×2. That is not a screen with a subject.
+  - 🚫 **SLT: NOT BEFORE THE DEMO — Fried + Wood, kill mandate exercised.** Fried: "a half-redesigned Coach screen is worse than a busy one." Wood: "'I want to see I am improving' is the founder describing himself, and he is not this cohort. A first-time charity marathoner does not need a progress dashboard; they need to know what to do on Tuesday." **Recorded as a genuine disagreement with the founder, not synthesised away** — he may overrule it.
+  - **The raw material for what he wants already exists and is in the wrong place.** `TrendCard` (aerobic trend, with a series) is here; **`RaceTimesCard` — the estimated-finish projection he named — is on the PLAN screen (`:8471`), not Coach.**
+  - **Constraint he set: no new data points.** So this is composition and hierarchy: one answer at the top ("are you getting fitter, yes/no, by how much"), evidence beneath, and the sheets moved behind a tap. **Tier: PAID surface (Coach is paid/trial).** Effort: M. Trigger `frontend-design`.
+
+- 🔲 **UX-REDEEM-01 — the code box tells the runner to do work it does not require** *(P1, tiny fix, real conversion risk)* — founder had to type hyphens and count characters. **He did not have to.** `normaliseCode` already strips everything: *"Accepts the code however the runner types it: lowercase, spaced, hyphenated, with or without the prefix, with stray whitespace from a copy-paste."*
+  - ⭐ **SLT: CRITICAL PATH #3** — Traynor: the path between the email and a plan on screen IS the product.
+  - **So this is a pure affordance failure:** the placeholder `ZONNA-XXXX-XXXX` *implies* a strict format the parser does not want. The runner does the work, gets it wrong, and feels refused by a gift.
+  - **Fix direction:** render `ZONNA-` as a static adornment (it is known), auto-insert the separator as they type, and say hyphens are optional. **This sits on the charity critical path** — it is the last screen between a Make-A-Wish runner and their free access. **Tier: FREE.** Effort: XS.
+
+- 🔲 **GTM-SITE-03 — one founder story, two surfaces** *(P3)* — `/about` (web) and `FounderNoteScreen` (in-app) tell the same story with deliberately different framing: the in-app note has **no photograph** ("voice is the asset, not the face"), the web page has a photo slot because a charity vetting a stranger needs a face. **That divergence was a decision, not drift** — standardise the *narrative and the locked strings*, not the treatment. **Tier: FREE.** Effort: S.
+  - 🚫 **SLT: NOT ON THE PATH.** P3, and the divergence was a decision.
+
 - 🔲 **[W5]** **UX-WIZARD-01 — per-day TIME budgets** *(SLT unanimous BUILD; Coaching Board ruled option B 2026-09-11)* — **Tier: FREE. Effort: M.** Trigger `frontend-design`. Everything needed to start is below; nothing here should need re-deriving.
 
   ### ⚠️ READ FIRST — what is ALREADY BUILT (corrected 2026-09-11, founder-caught)

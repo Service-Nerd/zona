@@ -49,6 +49,49 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 
 ---
 
+## 🔴 NOW — CRITICAL PATH: Make-A-Wish handover (SLT-sequenced 2026-09-11)
+
+> **The hard date.** The founder demos the site AND the app to Make-A-Wish within
+> ~2 weeks, then charity codes go to their runners. Audience: **beginners at 10K,
+> half marathon and marathon.** Standard: SLC — nothing ships with a known bug.
+>
+> **Traynor's framing, which sets the whole order: the demo is not the product and
+> the codes are not the product. The product is week one for a runner who got a
+> code.** So the path is everything between the email and a plan on screen.
+> Nothing else is on it.
+
+| # | Item | Owner | Effort | Why it is on the path |
+|---|------|-------|--------|----------------------|
+| **0** | **Redeem ONE code end-to-end** | **FOUNDER** | minutes | ⚠️ **Nothing else matters if this is broken.** No code has ever gone through the real database. Check with `npx tsx scripts/check-charity-code.ts <CODE>`, **never** by looking at the app — on an `is_admin` account `getUserTier` resolves admin → paid before the grant, so the UI is identical whether redemption landed or failed silently. |
+| **1** | **UX-BEGINNER-01** | me | S | A beginner types the honest answer (0 — never run) and is refused with a database field name. Wood: *"the first thing you asked them to be honest about, you punished."* |
+| **2** | **MAINT-LABEL-01 (copy half only)** | me | S | **89% of beginner marathon plans are labelled "maintenance"** — "maintains current fitness rather than building it" — to the exact cohort going 5km/week → 26.2 miles. Copy ships now; the `volume_profile` VALUE is load-bearing (confidence score, §38 notes) and needs a Coaching Board sitting. |
+| **3** | **UX-REDEEM-01** | me | XS | The last screen between a Make-A-Wish runner and their free access, and it asks for work the parser does not require. |
+| **4** | **BUG-KIT-DECIMALS-01** | me | S | Kit says "5.7km" while the plan says "6km", on the same screen, during a demo. |
+| **5** | **UX-AUTH-01 + UX-AUTH-03** | me + founder | S + XS | Sign-out drops the app into the marketing website; password reset is unverified and fails **silently** if the Supabase `token_hash` template is unset. |
+| **6** | **UX-AUTH-02** | me | S | SSO-first sign-in. Cheap, both providers already built, and it is the first screen a code-holder sees. |
+
+### 🚫 Explicitly NOT before the demo — do not pick these up opportunistically
+
+| Item | Why not |
+|---|---|
+| **UX-COACH-01** (Coach screen redesign) | Fried: *"a half-redesigned Coach screen is worse than a busy one."* Wood exercised the kill mandate: the progress dashboard is the founder describing himself, and he is not this cohort. **Recorded as a real disagreement with the founder, not synthesised away.** |
+| **UX-POSTRUN-01** (four numbers → one) | Hutchinson: *"collapsing zone %, RPE and fatigue into one score is a claim that those three trade off in a known ratio. They do not."* Needs a Coaching Board sitting that will not happen in a fortnight. |
+| **UX-WIZARD-01** (per-day time budgets) | Board-ruled BUILD, but it **moves peak volume by construction**. Not in the same fortnight as a launch. |
+| **UX-PLAN-MOVE-01** (the Move pill) | The handle the founder prefers caused a documented 2026-06-26 incident. Needs thought, not haste. |
+| **MAINT-LABEL-01 (the `volume_profile` value)** | Engine change; feeds the paid confidence score. Board first. |
+| CAT-DEPTH-01 · marathon race-specific residual · SEC-08's last route · GTM-SITE-03 | None are between the email and a plan on screen. |
+
+### The beginner gap, stated plainly
+
+`brand.md` defines the audience as **"adult runners, 1+ years' experience"**. This
+cohort is not that, and the product shows it in two places: the wizard refuses an
+honest zero, and 89% of beginner marathon plans carry a label that reads as *you
+will not improve*. **Both are fixable in copy and validation without touching the
+engine** — which is why they are on the path and the Coach screen is not.
+Whether the stated ICP widens is GTM-CHARITY-02's question, not a pre-demo one.
+
+---
+
 ## NOW — Launch ✅ COMPLETE (v1.7 live 2026-06-15)
 
 *Goal was: get the binary in front of users. Done — app approved and released. Section retained as the launch record; live work now sits in NEXT.*
