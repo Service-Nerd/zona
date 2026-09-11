@@ -983,6 +983,73 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     typical_duration_min: 40, typical_duration_max: 55, is_free_tier: true,
     coach_voice_notes: 'Goal pace, not faster. If rep one feels easy, that is correct.',
   },
+  {
+    // CAT-10K-RACE-SPECIFIC-01 (Coaching Board, 2026-09-11) — 10K's SECOND
+    // race-specific row.
+    //
+    // Measured before the sitting: across 96 generated 10K time-target plans,
+    // 100% placed `tenk_pace_intervals` TWICE and no plan saw two different
+    // race-specific sessions. §93 provisions a time-targeted 10K peak with up to
+    // three race-specific slots; the catalogue supplied one row to fill them.
+    // §22's CD-18 amendment ("specific must resolve to a real catalogue entry,
+    // not a rename") was satisfied — 10K owns an entry — and satisfied by a
+    // single entry repeated, which is the thinness CAT-DEPTH-01 tracks.
+    //
+    // WHY THIS IS A DIFFERENT SESSION AND NOT A VARIANT. It differs on the axis
+    // that carries 10K specificity: time at goal pace per repetition, against a
+    // recovery ratio closer to the race's continuous demand. 3 x 2km is ~6km at
+    // pace in three efforts; `tenk_pace_intervals` is ~4.8km in four. The runner
+    // learns to hold the pace when it stops being comfortable, which is the part
+    // of a 10K that actually decides the result (McMillan).
+    //
+    // NOT a duplicate of the threshold rows it sits beside. `threshold_mile_repeats`
+    // and `tempo_cruise_short` are anchored at THRESHOLD pace; this is anchored at
+    // `goal`. Different anchor, different physiology, and §22 is explicit that the
+    // goal-pace exposure is the point.
+    //
+    // Willy's guard, accepted: 90-second recovery on 2km reps is a real step up
+    // in continuous load, so it stays `peak` only and `intermediate` minimum —
+    // it never reaches a beginner or a build phase. `reps` scaling keeps the dose
+    // proportional rather than fixed (CD-14 / SC-08's sizing-coherence rule).
+    // ⚠️ THE NAME IS LOAD-BEARING, not cosmetic. This row was first written as
+    // "Broken 10K" — a coach's term, and every 10K plan then failed
+    // INV-PLAN-RACE-SPECIFIC-EXPOSURE. `Session.stimulus` is stamped at
+    // construction from the generator LABEL (CLASSIFY-STIMULUS-01), and the
+    // heuristic keys on "-pace" / "goal pace" / "sharpener". A race-specific row
+    // named outside that family stamps no stimulus, so §22's own check reads the
+    // session as not-goal-pace work and rejects the plan.
+    //
+    // The stamp deliberately does NOT derive from `row.category` — that would
+    // mis-map a threshold row re-prescribed at goal pace as `tempo` rather than
+    // `race_pace`, and §22 makes those two things different on purpose. So the
+    // naming convention IS the contract: §22 requires "a race-distance-specific
+    // label (e.g. '10K-pace intervals')", and a new race_specific row must join
+    // that family or it is invisible to the principle that justifies it.
+    id: 'tenk_race_simulation', name: '10K-pace race simulation', category: 'race_specific',
+    purpose: 'Longer reps at 10K pace off short recovery. Rehearses the second half of the race.',
+    phase_eligibility: ['peak'],
+    distance_eligibility: ['10K'],
+    fitness_level_min: 'intermediate', difficulty_tier: 4,
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'reps',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'distance', m: 2000 },
+            target: { kind: 'pace', anchor: 'goal', mode: 'target' }, advance: 'auto',
+            note: 'Goal pace. The second kilometre of each rep is the one that counts.' },
+          { role: 'recovery', modality: 'jog', length: { kind: 'duration', secs: 90 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Ninety seconds. Deliberately short — you start the next rep unrecovered.' },
+        ],
+      }],
+    },
+    intensity_zones: ['Z3', 'Z4'],
+    typical_duration_min: 40, typical_duration_max: 60, is_free_tier: true,
+    coach_voice_notes: 'Goal pace off short recovery. You should finish knowing you could not have done a fourth.',
+  },
   // ── CAT-ULTRA-THIN-01 — power hiking. THE ULTRA-SPECIFIC SKILL NOTHING TAUGHT.
   //
   // Board-ruled 2026-08-20. Before this, a 100K build phase had exactly ONE

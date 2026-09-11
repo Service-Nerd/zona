@@ -242,6 +242,11 @@ describe('SC-08b — migration posture (D-03)', () => {
       'tempo_continuous',    // Coaching Board 2026-09-03 — continuous, single-pace shape
       'tempo_cruise',        // Coaching Board 2026-09-03 — same mechanism as tempo_cruise_short
       'goal_pace_sharpener', // Coaching Board 2026-09-03 — same mechanism as tenk_pace_intervals
+      'tenk_race_simulation', // Coaching Board 2026-09-11 (CAT-10K-RACE-SPECIFIC-01) — born v2.
+                             // Every row ruled since 2026-09-03 is authored v2; a new
+                             // race_specific row shipping v1 would re-open the sizing
+                             // incoherence CD-14/SC-08 closed (a flat %-of-weekly dose
+                             // giving a session less time than its own structure needs).
       // CB-CAT-01 (2026-09-04) — NEW rows, not migrations. ADR-019's
       // "additive: no row is migrated" posture is untouched: nothing existing
       // changed shape, three rows were authored v2 from birth.

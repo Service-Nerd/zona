@@ -3970,6 +3970,87 @@ the same units, then decide.
 
 ---
 
+## 104. A peak rehearses the race more than one way
+
+*(Coaching Board, 2026-09-11 — CAT-10K-RACE-SPECIFIC-01. CORRECT WITH AMENDMENT.)*
+
+**Principle.** Where a distance's peak carries more than one race-specific slot,
+those slots should not all be filled by the same catalogue row while another
+eligible row exists. A peak that rehearses the race with one session repeated is
+not several rehearsals; it is one rehearsal run several times.
+
+**Why.** §93 provisions a time-targeted 10K peak with up to three race-specific
+slots. §22's CD-18 amendment requires such a distance to OWN a race-specific row,
+and 10K did. Neither said how many, and 10K owned exactly one.
+
+**Measured before the sitting, on 96 generated 10K time-target plans: 100% placed
+`tenk_pace_intervals` twice, and not one plan saw two different race-specific
+sessions.** The all-distance `goal_pace_sharpener` landed zero times, because it
+is taper-only and loses to the 10K row that covers peak AND taper.
+
+This is the SC-05/CD-18 finding one turn further on. That sitting found §33 had
+"fixed the symptom (borrowed voice) and left the cause (no 10K entry) in place".
+The entry exists now. There is one of it, and §22/§33 rename neighbouring
+threshold rows so the plan still LOOKS varied.
+
+**The remedy is content, never a selection tweak.** A scheduler told to prefer
+unused rows would spread a thin catalogue more evenly and teach nobody anything.
+
+### What shipped
+
+`tenk_race_simulation` — "10K-pace race simulation", 3 × 2km at goal pace off 90s
+jog, peak only, intermediate minimum. It differs from `tenk_pace_intervals` on the
+axis that carries 10K specificity: time at goal pace per repetition against a
+recovery ratio closer to the race's continuous demand (~6km at pace in three
+efforts, against ~4.8km in four). It is **not** a duplicate of the threshold rows
+beside it — `threshold_mile_repeats` and `tempo_cruise_short` are anchored at
+threshold, this at `goal`, and §22 is explicit that the goal-pace exposure is the
+point. Peak-only and intermediate-minimum on Willy's guard: 90 seconds of recovery
+on 2km repetitions is a real step up in continuous load.
+
+**Measured after: plans seeing two different race-specific sessions went 0% → 25%.**
+Reported honestly — the other 75% still repeat, because two rows across several
+slots is better, not solved. That residual is CAT-DEPTH-01's.
+
+### Amendment 1 — Row B was KILLED
+
+A second row was proposed: 10K pace with a *float* recovery (5 × 1km at goal pace
+with 1km at easy-moderate between). **Rejected.** A float at easy-moderate is
+Zonna **Z3** — the grey zone this product exists to prevent (§1). Prescribing it
+deliberately, to a runner training four hours a week, contradicts the positioning
+in the one place the runner would be sure they were doing the right thing. Seiler's
+own caveat is the argument: recreational runners already drift into that band
+without being told to; a session that mandates it is the wrong tool for this
+population, however sound it is for an elite.
+
+### Amendment 2 — `goal_pace_sharpener` stays taper-only
+
+Proposed for `peak` so it could fill a slot. Declined: it is a taper sharpener and
+it is correct as one. The reason it never lands for 10K is §22's own
+most-specific-row-wins rule working, not a phase error.
+
+### The check does NOT encode a content target
+
+`INV-PLAN-RACE-SPECIFIC-VARIETY` (`warn`) fires when a time-targeted peak fills
+two or more race-specific slots from one row **while another peak-eligible row for
+that distance exists**. It deliberately does not assert "a distance must own N
+rows" — that writes a content target into the constitution and would be wrong the
+moment §93's slot logic changed. Where the catalogue genuinely offers one row it
+stays silent: a plan is not defective because the catalogue is thin. The depth
+itself is a register, `catalogueDepth.test.ts`, in the shape of SWEEP-BASELINE-01.
+
+**⚠️ MARATHON HAS THE IDENTICAL GAP — one peak-eligible race-specific row
+(`mp_long_run`).** Found by the same scan and deliberately NOT fixed here: a
+marathon race-specific row needs its own sitting, and shipping prescription as a
+by-product of a 10K ruling is how unreviewed coaching gets in. It is the distance
+the charity referral channel sends us, so it should not wait long. Registered in
+`catalogueDepth.test.ts` as a known gap rather than left to be rediscovered.
+
+**Config.** No new numeric. The row is catalogue content; the check derives its
+question from §93's existing slot logic.
+
+---
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

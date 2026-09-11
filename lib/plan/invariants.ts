@@ -67,6 +67,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RACE-WEEK-SHARPENING',
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE',
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO',
+  'INV-PLAN-RACE-SPECIFIC-VARIETY',
   // INV-PLAN-THEME-MATCHES-PRESCRIPTION retired by GEN-FIX-06 (incident N4, P0,
   // 2026-08-06) — its four-literal denylist was replaced by the semantic
   // INV-PLAN-COPY-MATCHES-SESSIONS below, which checks the label as well as the
@@ -1986,6 +1987,61 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // Deliberately not plan-shape-dependent — it holds for every plan at these
   // distances regardless of phase layout.
   //
+  // INV-PLAN-RACE-SPECIFIC-VARIETY (CoachingPrinciples §104, 2026-09-11)
+  //
+  // A peak that rehearses the race with the SAME session every time is not three
+  // rehearsals, it is one rehearsal run three times. §93 provisions a
+  // time-targeted 10K peak with up to three race-specific slots; before
+  // CAT-10K-RACE-SPECIFIC-01 the catalogue had one 10K row to fill them, and
+  // 100% of 96 measured plans placed it twice.
+  //
+  // DELIBERATELY NOT "a distance must own N rows". That would write a content
+  // target into the constitution, and the number would be wrong the moment the
+  // slot logic changed. This asserts the thing that actually reaches the runner:
+  // if the plan repeats one race-specific row while ANOTHER eligible row existed,
+  // the repetition was a choice, not a constraint. Where the catalogue genuinely
+  // offers only one, this stays silent and `catalogueDepth.test.ts` tracks the
+  // content gap instead — a plan is not defective because the catalogue is thin.
+  //
+  // `warn`: variety is a quality of a good plan, not a safety property, and §34
+  // is explicit that an honest residual beats a check nobody can satisfy.
+  {
+    if (isTimeTarget) {
+      const peakRaceSpecific = plan.weeks
+        .filter(w => w.phase === 'peak' && w.type !== 'race')
+        .flatMap(w => Object.values(w.sessions)
+          .filter((sn): sn is Session => sn != null && !!sn.catalogue_id)
+          .map(sn => ({ week: w.n, id: sn.catalogue_id! })))
+        .filter(x => V1_SESSION_CATALOGUE
+          .find(r => r.id === x.id)?.category === 'race_specific')
+
+      const distinctUsed = new Set(peakRaceSpecific.map(x => x.id))
+      if (peakRaceSpecific.length >= 2 && distinctUsed.size === 1) {
+        // Was there an alternative the engine could have reached at all? Phase
+        // and distance only — the runner-specific gates (fitness, pace anchors)
+        // are the selector's business, so this asks the weaker, safer question.
+        const used = Array.from(distinctUsed)[0]
+        const alternatives = V1_SESSION_CATALOGUE.filter(r =>
+          r.category === 'race_specific'
+          && r.id !== used
+          && (r.distance_eligibility as readonly string[]).includes(distKey)
+          && (r.phase_eligibility as readonly string[]).includes('peak'))
+
+        if (alternatives.length > 0) {
+          violations.push({
+            code: 'INV-PLAN-RACE-SPECIFIC-VARIETY',
+            principle_ref: 'CoachingPrinciples §104 (§93, §22)',
+            severity: 'warn',
+            week: peakRaceSpecific[0].week,
+            message: `Peak fills ${peakRaceSpecific.length} race-specific slots with the same catalogue row (${used}), though ${alternatives.length} other peak-eligible ${distKey} race-specific row(s) exist (${alternatives.map(a => a.id).join(', ')}). The race is rehearsed once, repeated.`,
+            actual: `${peakRaceSpecific.length}x ${used}`,
+            expected: 'more than one distinct race-specific row where the catalogue offers one',
+          })
+        }
+      }
+    }
+  }
+
   // 5K is EXCLUDED, and that is an engineering judgement flagged for the board
   // (SC-05): at 5K, race pace and I-pace largely coincide, so the VO2max rows
   // already deliver race-specific physiology. The board's CD-18 aside said 5K
