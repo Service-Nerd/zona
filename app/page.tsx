@@ -540,9 +540,15 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── Footer ───────────────────────────────────────────────────── */}
-      {/* ── Free-plans teaser — routes the not-ready-yet visitor to the SEO hub ── */}
-      <section style={{ maxWidth: '780px', margin: '0 auto', padding: '8px 24px 48px' }}>
+      {/* ── Free-plans teaser — routes the not-ready-yet visitor to the SEO hub ──
+          Top padding is 56px, not 8px. The dark band above it is a full-bleed
+          block with 112px of internal padding, so an 8px gap read as a
+          collision: the card looked stuck to the band's hard edge rather than
+          following it. 56px sits below the page's 72/80px major-section rhythm
+          because this is a secondary closing card, not a section in its own
+          right. (A stray "Footer" comment used to sit here, above the teaser
+          rather than above <SiteFooter/> at the end. Removed.) */}
+      <section style={{ maxWidth: '780px', margin: '0 auto', padding: '56px 24px 48px' }}>
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)',
           boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
