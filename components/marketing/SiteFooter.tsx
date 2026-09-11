@@ -32,6 +32,12 @@ const LINKS: Array<{ href: string; label: string }> = [
   { href: '/', label: 'Home' },
   { href: '/plans', label: 'Plans' },
   { href: '/comparisons', label: 'Comparisons' },
+  // GTM-CHARITY-01. In the FOOTER, not the nav — the nav stays two items by SLT
+  // ruling, and the charity's own email is the real front door for this page.
+  // This link exists so the page is inspectable and shareable by us: the
+  // founder could not find his own page, which meant he could not QA it or
+  // notice it rotting. A maintenance argument, not a traffic one.
+  { href: '/charity-marathon-training-plan', label: 'Charity runners' },
   { href: '/support', label: 'Support' },
   { href: '/privacy', label: 'Privacy' },
   { href: '/terms', label: 'Terms' },

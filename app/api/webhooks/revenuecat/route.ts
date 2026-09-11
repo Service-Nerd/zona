@@ -1,29 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { secretMatches } from '@/lib/security/secrets'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
+import { toStatus, isGrantEvent, NON_EXPIRING_GRANT_YEARS } from '@/lib/subscriptions/revenuecatEvents'
 
 // RevenueCat webhook docs: https://www.revenuecat.com/docs/integrations/webhooks
 // Authorization: header value compared against REVENUECAT_WEBHOOK_SECRET
 
 const REVENUECAT_WEBHOOK_SECRET = process.env.REVENUECAT_WEBHOOK_SECRET
-
-function toStatus(eventType: string): 'trialing' | 'active' | 'cancelled' | 'expired' | null {
-  switch (eventType) {
-    case 'INITIAL_PURCHASE':
-    case 'RENEWAL':
-    case 'UNCANCELLATION':
-      return 'active'
-    case 'TRIAL_STARTED':
-    case 'TRIAL_CONVERTED':
-      return eventType === 'TRIAL_STARTED' ? 'trialing' : 'active'
-    case 'CANCELLATION':
-      return 'cancelled'
-    case 'EXPIRATION':
-      return 'expired'
-    default:
-      return null
-  }
-}
 
 export async function POST(req: NextRequest) {
   // Finding 3: fail closed. A missing secret must never mean "accept every
@@ -55,14 +39,25 @@ export async function POST(req: NextRequest) {
 
   const status = toStatus(rc.type)
   if (!status) {
-    // Unhandled event type — acknowledge without acting
+    // Unhandled event type. Still acknowledge and still do nothing — guessing a
+    // status from an event we do not understand would mis-tier a real customer.
+    // But RECORD it: this branch used to be silent, which is how a comp grant
+    // could fail with no trace at all. If a charity runner reports a paywall
+    // they should not be seeing, look here first.
+    await recordOpsEvent('revenuecat_event_unhandled',
+      { event_type: rc.type }, rc.app_user_id ?? null)
     return NextResponse.json({ received: true })
   }
 
   const appUserId: string = rc.app_user_id
   const expiresAt: string = rc.expiration_at_ms
     ? new Date(rc.expiration_at_ms).toISOString()
-    : rc.expires_date ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    : rc.expires_date ?? (
+        isGrantEvent(rc.type)
+          // Open-ended comp: do NOT apply the 30-day subscription default.
+          ? new Date(Date.now() + NON_EXPIRING_GRANT_YEARS * 365 * 24 * 60 * 60 * 1000).toISOString()
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      )
 
   const { error } = await supabase
     .from('subscriptions')

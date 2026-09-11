@@ -19,6 +19,13 @@ export type OpsEventKind =
   // backstop nobody can see firing is one nobody trusts.
   | 'plan_enrich_server_saved'
   | 'plan_enrich_server_save_failed'
+  // GTM-CHARITY-03 (2026-09-11) — a RevenueCat webhook event the handler has no
+  // mapping for. It used to reply "received" and do nothing, which is why a
+  // comp grant could fail without a trace: the subscriptions row was never
+  // written, getUserTier stayed 'free', and the runner met a paywall we thought
+  // we had lifted. Unhandled is still the correct BEHAVIOUR (we must not guess a
+  // status), but it must be visible.
+  | 'revenuecat_event_unhandled'
 
 /**
  * Record an internal ops event. Fire-and-forget by nature but awaitable, so a
