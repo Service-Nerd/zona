@@ -98,6 +98,39 @@ ongoing coaching, reshaping and run analysis.
 
 ---
 
+## Where a runner enters their code
+
+Three doors, all reaching the same screen. If a partner asks "where do they put
+it?", the answer is any of these:
+
+| Door | When they hit it |
+|---|---|
+| **Me screen** → "Have a charity code?" | Any time, from day one. |
+| **Setting up a plan** → under the distance tiles | During onboarding, and again at the paywall. |
+| **Upgrade screen** → under Restore | When they hit a paid gate. |
+
+**Tell them to redeem when they install, not when they get blocked.** It costs
+them nothing: the grant re-anchors to race date + 7 days as soon as they build a
+plan, so redeeming early does not shorten it. Waiting means their access quietly
+depends on remembering before day 15.
+
+## What a comped runner will NOT receive
+
+Worth knowing before a partner asks, because it used to be wrong (fixed
+2026-09-11). Anyone who has redeemed a code is excluded from the trial emails
+**permanently**, live grant or lapsed:
+
+- Day 11: *"3 days left."*
+- Day 14: *"Trial ends today."*
+
+They never had a trial story to end, and those emails going to a partner's
+fundraisers is the worst possible first impression. The same exclusion covers
+the in-app trial countdown and the account label, so a grant holder reads as
+**Pro**, not **Trial**.
+
+When their grant does eventually lapse, the Upgrade screen says "Your charity
+access has ended", not "14 days done".
+
 ## First time only, per environment
 
 The database tables come from `supabase/migrations/20260911_charity_access_codes.sql`.

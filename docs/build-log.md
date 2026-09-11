@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-11 (later still) — GTM-CHARITY-04 follow-ups · The risk I filed was fake and the real one was in the outbox
+**Shipped:** One owner for tier resolution, the third charity redeem door, and a stop on telling comped runners their trial had ended.
+
+**Dev learning:** The order `admin → subscription → grant → trial → free` existed in three places: the server function, an OR-chain in the client, and a private copy inside the test that was supposed to be guarding it. So the test asserted its own copy was right. It could not have caught either real producer drifting, and I only noticed because I went to verify a filed risk by hand and had to re-derive the rule to do it. The tell is generic: if a test file contains a reimplementation of the thing it tests, it is documentation wearing a test's clothes. Also learned that a required function argument is a better guard than a defaulted one when the dangerous outcome is the default. Making `decideTrialEmails`' new argument required meant `tsc` handed me every call site instead of me hoping I had found them.
+
+**Product/creator learning:** The filed risk ("a RevenueCat event could overwrite a charity grant") was written from an earlier design where grants lived in the subscriptions table. They never shipped there, because a CHECK constraint rejected them. So the scary-sounding item was already impossible, already tested, and had been sitting near the top of the list looking urgent. Meanwhile the actual defect was that we would have emailed a Make-A-Wish fundraiser "3 days left." and "Trial ends today" while they held a 90-day gift from the charity. Nobody filed that one, because nothing was broken in a way anything could detect. The in-app screen I had filed as P3 was the small half of it; the outbox was the big half.
+
+**AI-building learning:** Falsification testing paid for itself twice in one session. I swapped the grant and trial checks in the real producer expecting the suite to go red, and it stayed green. Not because the test was fake this time, but because every existing case paired a live grant with an EXPIRED trial, and the two orderings only disagree when both are live. That case is the most likely real arrival: a charity runner who installs and redeems on day one. A suite can be genuinely well written, pass honestly, and still have a hole shaped exactly like your most common user. You find that by breaking the code on purpose, not by reading the tests.
+
+**The honest bit:** I wrote the fake risk. It sat in the backlog for a day with a warning triangle on it, and the founder reasonably asked me to fix it first because it looked like the scariest thing on the list. Second time this session that a confident note of mine sent work in the wrong direction.
+
+**Hook material:** The bug I had filed was impossible. The bug I had not filed would have emailed a charity's fundraisers "Trial ends today" while they held a 90-day gift.
+
+**Postable?:** yes
+
+---
+
 ## 2026-09-11 (late) — GTM-SITE-02 item 3 · The blocker I had written down was not real
 **Shipped:** The homepage stopped describing the product and started showing it. Three hand-written CSS imitations of app surfaces are gone; it now renders the real `SessionCard`, `CoachNoteBlock` and `ZoneRings`, each sitting under the claim it proves.
 
