@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-11 (night) — TIER-ENFORCE-01 / SEC-08 / §81 / §104 · Four items, and my own tooling kept catching me
+**Shipped:** The distance paywall reaches the server; SEC-08 finished to 14 routes; §81's obligation extended to structured sessions; §104 gave 10K a second race-specific session.
+
+**Dev learning:** Three separate times today a measurement script of mine printed a confident, clean-looking table from plans that had never generated, or had generated from inputs the engine silently discarded. The last one was the worst: `fitness_level: 'advanced'` is not a value (the union is beginner/intermediate/experienced), `recent_quality_training: 'occasionally'` is not a value, `hard_session_relationship: 'regularly'` is not a value — and the engine accepted all three, matched none of them, fell to defaults, and produced 611 perfectly valid plans. I had already published numbers from that grid in a coaching principle. §55's own stated job is "reject nonsense values"; it validated numeric ranges and nothing else. It does enums now.
+
+**Product/creator learning:** The Coaching Board's value today was almost entirely the conflict scan, twice, and both times it found that a decision had already been made. For the ramp fix, §12's boxed correction from August had already ruled the identical mechanism wrong in another part of the engine. For the weekday cap, §81 already said the obligation "applies to the long run and to structured sessions alike" and the engine applied it to the long run only — a principle honoured at 50%. Neither was a new judgement. At 100+ sections, the scan is not ceremony; it is the only way to know whether you are legislating or just re-legislating.
+
+**AI-building learning:** My conflict scan looked up "§81" and got the wrong section, because §55, §81 and §82 each appeared TWICE in the constitution. I put a brief to the board asserting §81 said something it does not say. The document that exists to prevent contradictions had three internal collisions, and nothing checked. It does now. The broader lesson for building with an assistant: I resolve principles by number the way code resolves a symbol, and a duplicate identifier in a prose document fails silently in exactly the way it would fail loudly in a compiler.
+
+**The honest bit:** I recommended TIER-ENFORCE-01 to the founder as the next thing to do, having written "❌ Do not wire the server gate yet" into the backlog myself that morning, with two good reasons. He picked it off my list. I only noticed when I opened the entry to start work. Then my own new test caught a fail-open in the gate I was writing — `tier !== 'free'` grants a paid distance to any unrecognised tier string. Four separate times today, the thing that caught the error was a check, not me.
+
+**Hook material:** The engine accepted `fitness_level: 'advanced'`, silently ignored it, and built 611 valid training plans. I had already published numbers from them.
+
+**Postable?:** yes
+
+---
+
 ## 2026-09-11 (evening) — §100 / SEC-08 / V2-POLISH-01 · Three items, and a table that was never there
 **Shipped:** The week after a safety trim now ramps from what the runner actually ran (§100); RLS rollout tooling plus five routes converted; card elevation on the 16 cards that were actually standalone.
 
