@@ -350,7 +350,10 @@ export function PhoneFrame() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2 }}>Easy run</div>
                   <div style={{ fontSize: '12px', color: 'var(--mute)', marginTop: '2px', lineHeight: 1.3 }}>
-                    Zone 2 · &lt; 145 bpm · 6:30 /km
+                    {/* Pace is a BAND — the engine emits "6:30–7:30 /km" and
+                        never a single easy pace. A lone "6:30 /km" is a format
+                        the product does not produce. */}
+                    Zone 2 · &lt; 145 bpm · 6:30&ndash;7:30 /km
                   </div>
                 </div>
                 <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.3px', lineHeight: 1 }}>

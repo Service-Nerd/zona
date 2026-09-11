@@ -746,7 +746,9 @@ function MockSessionCard() {
       }}>
         <div><strong style={{ color: 'var(--ink)' }}>8 km</strong> · 55 min</div>
         <div><strong style={{ color: 'var(--ink)' }}>&lt; 145 bpm</strong></div>
-        <div>6:30–7:00 /km</div>
+        {/* Matches the engine's actual easy band for this profile, and the
+            device shot above — the two stills show the same session. */}
+        <div>6:30–7:30 /km</div>
       </div>
       <div style={{
         fontSize: '13px', lineHeight: 1.5, color: 'var(--mute)',
