@@ -75,11 +75,20 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 |---|------|-------|--------|----------------------|
 | ~~0~~ | ~~Redeem ONE code end-to-end~~ | founder | — | ✅ **DONE 2026-09-11 14:21.** Verified in production: 3 minted, **1 redeemed**, grant runs to 2026-12-10. The mechanism works end to end. **This is also how the ten UX observations below were found** — the founder redeemed a code and walked the flow. Closed; stop listing it as the blocker. |
 | ~~1~~ | ~~**UX-BEGINNER-01**~~ | me | S | ✅ **DONE 2026-09-11.** A beginner types the honest answer (0 — never run) and is refused with a database field name. Wood: *"the first thing you asked them to be honest about, you punished."* |
-| ~~2~~ | ~~**MAINT-LABEL-01 (copy half only)**~~ | me | S | ✅ **COPY HALF DONE 2026-09-11.** The `volume_profile` VALUE still needs a Coaching Board sitting and is NOT on this path. **89% of beginner marathon plans are labelled "maintenance"** — "maintains current fitness rather than building it" — to the exact cohort going 5km/week → 26.2 miles. Copy ships now; the `volume_profile` VALUE is load-bearing (confidence score, §38 notes) and needs a Coaching Board sitting. |
+| ~~2~~ | ~~**MAINT-LABEL-01 (copy half only)**~~ | me | S | ✅ **BOTH HALVES DONE 2026-09-11.** **89% of beginner marathon plans were labelled "maintenance"** and told so in those words, to the exact cohort going 5km/week → 26.2 miles. Copy shipped in two passes (the first missed four of five note families). The `volume_profile` VALUE went to the Coaching Board, which **withdrew three of the four filed findings at the conflict scan** and ruled on the one that was real → **§106**. *(The reason recorded here for deferring it — "load-bearing (confidence score)" — was wrong: nothing in any confidence path reads `volume_profile`.)* |
 | ~~3~~ | ~~**UX-REDEEM-01**~~ | me | XS | ✅ **DONE 2026-09-11.** The last screen between a Make-A-Wish runner and their free access, and it asks for work the parser does not require. |
 | ~~4~~ | ~~**BUG-KIT-DECIMALS-01**~~ | me | S | ✅ **DONE 2026-09-11.** Measured at **50.4% of prescribed session distances** disagreeing between prompt and card. `promptDistanceFormatters()` now owns the split; the raw-precision path survives only where both sides of a planned-vs-actual comparison need matching precision. |
 | ~~5~~ | ~~**UX-AUTH-01**~~ + **UX-AUTH-03** | me + **founder** | S + XS | ✅ **UX-AUTH-01 DONE 2026-09-11** — the four `/privacy` and `/terms` links now go through `ExternalLink`, which opens native in SFSafariViewController; the other two candidate causes were read in the code and are not live. 🟡 **UX-AUTH-03 code half done; template WIRED by the founder 2026-09-11, device test still owed.** Until it was set, password reset could **never** succeed on iOS (the request is made in the Capacitor webview, the email opens in Safari, PKCE needs the same browser). The failure now names the real cause instead of claiming the link is invalid, so a bad template shows as *"This link cannot finish here"* rather than silence. |
 | ~~6~~ | ~~**UX-AUTH-02**~~ | me | S | ✅ **DONE 2026-09-11.** The email form is now disclosed rather than displayed: Apple, Google, "Use email instead". Also fixed on the way through — a first-time runner typing their real email on the Sign in tab got GoTrue's "Invalid login credentials" verbatim, which never mentions that the account does not exist yet. |
+
+> **Update, end of 2026-09-11: the path finished early, so three of the items
+> below were pulled forward on the founder's call** — UX-PLAN-MOVE-01,
+> MAINT-LABEL-01's value half (→ Coaching Board → §106), and SESSION-KM-02. Two
+> of the three rows in this table turned out to be held back by a premise that
+> was wrong; both corrections are in the rows themselves. **The rest of the table
+> still stands** — UX-COACH-01 and UX-POSTRUN-01 for the reasons the SLT gave,
+> UX-WIZARD-01 because it moves peak volume by construction and that is not a
+> fortnight-before-launch change.
 
 ### 🚫 Explicitly NOT before the demo — do not pick these up opportunistically
 
@@ -91,6 +100,9 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 | ~~**UX-PLAN-MOVE-01**~~ | ✅ **DONE 2026-09-11.** **The premise of this row was wrong and I wrote it:** the handle did NOT cause the incident. RESHAPE-FIX-WAVE2C shipped three things and the safety is the other two (a staged move plus a confirmation row), so an accidental tap has cost nothing since June. Shipped quiet, and fixed a label-clipping defect found on the same row. |
 | ~~**MAINT-LABEL-01 (the `volume_profile` value)**~~ | ✅ **BOARD SAT 2026-09-11 → §106.** **"Feeds the paid confidence score" was wrong** — nothing in any confidence path reads it. The board withdrew three of four filed findings at the conflict scan and ruled on the one that was real: the peak ceiling is volume-blind. |
 | CAT-DEPTH-01 · marathon race-specific residual · SEC-08's last route · GTM-SITE-03 | None are between the email and a plan on screen. |
+| **SESSION-KM-02's last two sites** (§47 long-run alternation, §52 easy floor) | Both change what a BEGINNER is prescribed, so they need the Coaching Board. ⚠️ **Their impact is NOT measured** — a first detector reported 0% step-backs for non-beginners too, which cannot be right. Build a working detector before the sitting. |
+| **The 54/54 marathon question** (§23 ratio / §46 floor) | **Deferred by the chair, not settled.** 100% of time-targeted marathon plans classify maintenance. Hutchinson: *"you do not tune a threshold against a broken input"* — re-measure now §106 is live. |
+| **PLAN-LONGRUN-COLOUR-01** | `--s-long` is unreachable for any engine-generated plan (a long run carries `type: 'easy'`, and every surface colours by `type`). Fixing one surface makes the app disagree with itself; needs a single pass over every colour call site. |
 
 ### The beginner gap, stated plainly
 

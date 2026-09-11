@@ -6,6 +6,39 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-11 — SESSION-KM-02 · The checks that never ran, for the people who needed them most
+
+**Shipped:** Four constitutional checks and ADR-012's reshape-confirmation threshold now actually run for beginners. They never had.
+
+**Dev learning:** I went in expecting false alarms and found the opposite. `distance_km ?? 0` on a duration-anchored plan does not make a check fire wrongly, it makes it pass vacuously: `longestKm > cap` is never true when everything reads zero. Four invariants had been silently inert for beginners, and nobody would ever have noticed, because a check that does not fire looks exactly like a check that passes. The worst one was in `reshapeMagnitude` — `beforeKm ?? 0` then `if (beforeKm > 0)` meant a beginner's session could be trimmed without the confirmation tile an experienced runner's identical trim would trigger. That is the incident this app already had once, reintroduced for the cohort least able to spot it.
+
+**Product/creator learning:** The cohort with the least training history was running with the least enforcement. Nothing chose that; it fell out of a null-coalescing operator. It is worth asking, of any system, which users end up in the code path nobody tested — and the answer is usually the ones furthest from whoever wrote it.
+
+**AI-building learning:** Measuring before touching anything cut the work in half and stopped me doing damage. 95.8% of beginner sessions are duration-anchored against 0% for everyone else, and quality sessions are never duration-anchored — so four of the sites on my own list were unreachable, and sweeping them would have been churn with a regression risk attached. The list I wrote confidently yesterday was about 30% wrong, and four minutes of measurement is what corrected it.
+
+**The honest bit:** I could not measure the impact of the two sites I did not fix. My detector reported 0% long-run step-backs for non-beginners, which cannot be true, so the detector is broken rather than the finding. I filed it saying exactly that instead of reporting a zero I did not believe, because a number nobody trusts is worse than no number — and the temptation to write "no measurable impact" and move on was real.
+
+**Hook material:** Four invariants, silently inert for every beginner, for months. They fire on nobody and find zero violations now they run — the engine was right all along, the checks just were not looking.
+
+**Postable?:** yes
+
+## 2026-09-11 — COHORT-SHAPE-01 · The third question nobody was asking
+
+**Shipped:** `npm run cohort:shape` — a regression that can see a population being reclassified.
+
+**Dev learning:** We had two verification questions and needed three. `verify` answers "are these plans valid?", `verify:parity` answers "are they unchanged?", and neither can answer "did the shape of who-gets-what move?" A plan can be perfectly valid, structurally identical, and still have been silently downgraded for most of a cohort.
+
+**Product/creator learning:** The gap was not theoretical. A §81 fix took `volume_profile: maintenance` from 20% to 80% at a 30-minute weekday cap — a +60pp swing, the same magnitude the Coaching Board had rejected five days earlier — and the suite stayed green the whole time: 16,038 plans, zero violations, nothing to see. The founder had to ask.
+
+**AI-building learning:** The harness's first cut understated delivered peak by 30%, because it re-summed `distance_km` and beginner plans are duration-anchored. The check built to catch beginners being misclassified was itself blind to how beginners' plans are stored. I found it because a number looked implausibly low and I pulled on it rather than baselining it — and a baseline captured from a broken measurement is worse than no baseline, because every future run then agrees with the error.
+
+**The honest bit:** The rule I wrote into the file is "never re-baseline to turn a test green". I wrote it because I do not trust future-me not to. It has already been re-baselined twice today, both times with the moved numbers stated in the commit.
+
+**Hook material:** 16,038 plans, zero violations, and 60% of a cohort had been quietly reclassified. Green does not mean unchanged.
+
+**Postable?:** maybe
+
+
 ## 2026-09-11 — §106 / MAINT-PROFILE-01 · The investigation dissolved its own question and found the real bug underneath
 
 **Shipped:** A plan can no longer prescribe a peak week below the volume the runner already runs. Plus the 18 numerics that caused it, moved into the config file everything else lives in.
