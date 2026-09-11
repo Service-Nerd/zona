@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-11 — HOOKS-ORDER-01 · The bug was invisible to every gate we have
+
+**Shipped:** Coach stops crashing. `TrendCard` rendered 1 hook in one state and 11 in another.
+
+**Dev learning:** `useCountUp` looks like a value, not a hook. It sat at the bottom of the component below three early returns, and because it internally holds five hooks, the component rendered 1 hook as a skeleton and 11 once live. On Coach it mounts as skeleton while the trend loads and flips to live when it lands — which is React error 310, every time, for anyone with enough history for the trend to return. A custom hook whose name does not start with a visible `use` in the call site's mental model is a trap; the linter has no such blind spot.
+
+**Product/creator learning:** The crash only hit runners with data. Someone new never sees it, because their trend never resolves and the card stays on the skeleton branch forever. The users you accumulate are the ones who find your worst bugs, and they are the ones you can least afford to lose.
+
+**AI-building learning:** I could not reproduce it, and the reason is the lesson. My scratch harness rendered the Coach screen against real production data and it worked — because without an authenticated session the trend fetch 401s, so the card never left skeleton and the hook count never changed. **I was faithfully reproducing the one code path that cannot fail.** An hour of reading diffs found nothing. Then one targeted run of `rules-of-hooks` named the exact two lines in about three seconds.
+
+**The honest bit:** `eslint-plugin-react-hooks` was already installed — it ships with Next — but this repo has no eslint config at all, so that rule had never once run over this code. We have 1,404 tests, 93 constitutional invariants, a property sweep over 16,038 plans, a cohort-shape harness and four commit hooks, and none of them can see a Rules of Hooks violation. I built an invariant-liveness prober this same afternoon to catch checks that cannot fire, and missed that an entire category of check was not installed.
+
+**Hook material:** 1,404 tests, 93 invariants, 16,038 swept plans, four commit hooks. The bug was found by a linter that ships with the framework and had never been run.
+
+**Postable?:** yes
+
+
 ## 2026-09-11 — GTM-CHARITY-01 / GTM-CHARITY-03 / GTM-SEO-PLANS-01 · Three ships that never got recorded
 
 *(Backfilled the same day, by a hook written to catch exactly this. Recorded as

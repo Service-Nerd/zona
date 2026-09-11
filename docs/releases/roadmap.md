@@ -60,6 +60,14 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > code.** So the path is everything between the email and a plan on screen.
 > Nothing else is on it.
 
+> 🔴 **DEPLOYMENT IS RATE-LIMITED, 2026-09-11 evening.** Vercel Hobby caps at
+> **100 deployments per rolling 24h** and 80 commits in one day exhausted it:
+> `api-deployments-free-per-day`. Deployments stop **silently** — no failed
+> builds, everything reads `● Ready`, pushes produce nothing. **A push is not a
+> deploy; verify with `npx vercel ls zona` before saying a fix is live.**
+> **Batch commits into one push from now on.** `d1f40b1` (the Coach crash fix)
+> is committed and waiting on the rolling reset. Founder's call: wait, or Pro.
+>
 > **STATUS 2026-09-11, end of day: every item on this path is shipped, and the
 > one founder-owned setting is wired.**
 > The Supabase *Reset Password* template (UX-AUTH-03, item 5) was set by the
