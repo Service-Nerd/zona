@@ -5853,11 +5853,31 @@ function buildRulePlanOnce(
     return worst
   })()
 
-  // Names the trade and the lever, per §81's Sims framing — a bare refusal reads
-  // as "you don't fit our app", and this constraint profile skews toward people
-  // with caregiving loads.
+  // ⚠️ DELIBERATE PARTIAL — the NOTE ships, the maintenance downgrade does NOT.
+  //
+  // §81's obligation is two things: (1) say so, (2) classify maintenance. I
+  // shipped both, then measured the after and found the second is far larger
+  // than §81 anticipated. At `max_weekday_mins: 30`, maintenance classification
+  // went **20% -> 80% of plans** (+60pp). §81's maintenance clause was written
+  // for the LONG RUN case, which the section itself describes as rare — "only
+  // when the long run has been forced onto a weekday, i.e. the runner blocked
+  // both weekend days", 896 plans. The structured-session case is not rare: it
+  // is 60% of 30-minute-cap plans. Applying the same remedy at sixty times the
+  // incidence is a different decision from the one §81 recorded.
+  //
+  // It is also the exact magnitude the board REJECTED on 2026-09-06, when a
+  // healthy bounceback cap flipped +50pp of plans and was thrown out for it.
+  //
+  // And the substance is genuinely arguable: weekends are NOT capped, so a
+  // runner with 30-minute weekdays and a free Sunday can build perfectly well
+  // for a 10K. Calling that plan "maintenance" may be over-classifying the very
+  // cohort §81's closing paragraph (Sims) is trying not to turn away.
+  //
+  // So the runner is TOLD (the original defect — silence — is fixed), and the
+  // reclassification waits for a board sitting with this measurement in front of
+  // it. Tracked as CAT/MWM-STRUCTURED-MAINTENANCE-01 in the backlog.
   const structuredOverrunNote: string | null = structuredOverrun
-    ? `Plan generated as maintenance — your hard sessions do not fit the time you have. You've capped weekdays at ${structuredOverrun.cap} minutes, but by week ${structuredOverrun.n} the quality session this race needs runs about ${Math.round(structuredOverrun.mins)} minutes. It stays in the plan at full length, because shortening the label without shortening the intervals would just hand you the same work in less time. What it can't do is build toward the race on those terms. The lever is one longer session a week — a weekend morning, or a single weekday you can give more time to.`
+    ? `Your hard sessions do not fit the time you have. You've capped weekdays at ${structuredOverrun.cap} minutes, but by week ${structuredOverrun.n} the quality session this race needs runs about ${Math.round(structuredOverrun.mins)} minutes. It stays in the plan at full length, because shortening the label without shortening the intervals would just hand you the same work in less time. What it can't do is build toward the race on those terms. The lever is one longer session a week — a weekend morning, or a single weekday you can give more time to.`
     : null
 
   const longRunOverrunNote: string | null = longRunOverrun
@@ -5879,7 +5899,7 @@ function buildRulePlanOnce(
     : null
 
   const finalVolumeProfile: 'build' | 'maintenance' | undefined =
-    (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance || structuralPeakInversion || lopsidedWeek || longRunOverrun || structuredOverrun || easyFloorProtectionOverrun)
+    (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance || structuralPeakInversion || lopsidedWeek || longRunOverrun || easyFloorProtectionOverrun)
       ? 'maintenance'
       : peakOverloadResult?.volume_profile  // 'build' or undefined
   // Order matters: the more specific diagnosis wins. A structural inversion
