@@ -197,11 +197,22 @@ export default function CharityRunnersPage() {
           did not, everything below still applies and the plans are free to read anyway.
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
+          {/* Geometry MATCHES AppStoreBadge deliberately: same padding, same
+              radius token, same font size, same lineHeight: 1. It previously
+              sat beside the badge as a 51px full capsule next to a 38px soft
+              rectangle, which read as two unrelated buttons that happened to be
+              adjacent. Measured, not eyeballed. If the badge's shape ever
+              changes, change this with it. */}
           <a href="#code" style={{
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            display: 'inline-flex', alignItems: 'center', gap: '10px',
             background: 'var(--moss)', color: 'var(--card)',
-            fontSize: '15px', fontWeight: 600, textDecoration: 'none',
-            padding: '14px 22px', borderRadius: '100px',
+            // lineHeight 18px, not 1: the badge's content box is set by its
+            // 18px Apple icon, so matching font size alone still left this 4px
+            // shorter (34 vs 38). Matching the CONTENT height is what makes the
+            // two boxes agree.
+            fontSize: '14px', fontWeight: 600, lineHeight: '18px',
+            textDecoration: 'none',
+            padding: '10px 18px', borderRadius: 'var(--radius-md, 8px)',
           }}>
             How to use your code <span aria-hidden style={{ opacity: 0.6 }}>&darr;</span>
           </a>
